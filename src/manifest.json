@@ -668,6 +668,15 @@
 					"enabled": true,
 					"showMetadata": true
 				},
+				"folderSidebar": {
+					"source": "register",
+					"register": "procest",
+					"schema": "caseType",
+					"idField": "@self.id",
+					"nameField": "title",
+					"filterField": "caseType",
+					"allLabel": "All cases"
+				},
 				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
@@ -679,41 +688,53 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
-				"_note": "CASE archetype (unified zaak) — the flagship record and the operational hub of the whole app. A caseworker lands here to (1) see the case's own fields and its outbound relations (caseType, parent/related cases, workflow, assignee, result) via the Data + Related pair, (2) work its FK-scoped child collections — Tasks (task.case), Documents (caseDocument.case), Decisions (decision.case), Proposals (voorstel.case), Locations (location.case) — as live object-lists that deep-link to their own detail pages, and (3) collaborate through the content leaves the case genuinely carries: Files to attach documents to the dossier, Notes to jot working annotations, Contacts to see the people connected to the case, and Calendar for hearing/appointment meetings. summaryAggregates chip the header with open-task / document / decision / sub-case counts, and lifecycleActions drive the case status transitions. Audit history is a rarely-read log, so it stays a single sidebar tab.",
+				"_note": "CASE archetype (unified zaak) — the flagship record and the ADR-062 reference page (the cell is the budget: every widget fills its gridHeight exactly, no inner scrollbars, no reserved voids). The lead row pairs the field-scoped 'Core case data' widget (include: identity/ownership fields) with a right column of KPI stats-block (open tasks / documents / decisions / sub-cases, replacing the deprecated header summaryAggregates) over the Related panel. Row two pairs the 'Process' data widget (include: status/procedure/workflow fields) with Initiator, Contacts and Notes sized to their small content. FK-scoped child collections (task.case, caseDocument.case, decision.case, voorstel.case, location.case) fit their rows to their cells with View-all/+N-more footers. Files and Calendar leaves close the page. lifecycleActions drive status transitions; audit history stays the single sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "case-data", "type": "data", "title": "Case", "content": { "columns": 2 } },
-					{ "id": "case-related", "type": "related", "title": "Case type, parent & related cases" },
-					{ "id": "initiator", "type": "custom", "title": "Initiator", "_note": "Initiator (indiener) display — brp-kvk register sets. Resolved via page slots (widget-initiator -> InitiatorSection); self-fetches the case from the route id and renders nothing when no initiator is set." },
-					{ "id": "case-tasks", "type": "object-list", "title": "Tasks", "content": { "register": "procest", "schema": "task", "filter": { "case": "@objectId" }, "sort": { "field": "dueDate", "dir": "asc" }, "limit": 25, "columns": [ { "key": "title", "label": "Title" }, { "key": "status", "label": "Status" }, { "key": "assignee", "label": "Assignee" }, { "key": "dueDate", "label": "Due" }, { "key": "priority", "label": "Priority" } ], "rowRoute": "TaskDetail" } },
-					{ "id": "case-documents", "type": "object-list", "title": "Documents", "content": { "register": "procest", "schema": "caseDocument", "filter": { "case": "@objectId" }, "sort": { "field": "registrationDate", "dir": "desc" }, "limit": 25, "columns": [ { "key": "title", "label": "Title" }, { "key": "description", "label": "Description" }, { "key": "registrationDate", "label": "Registered" } ] } },
-					{ "id": "case-decisions", "type": "object-list", "title": "Decisions", "content": { "register": "procest", "schema": "decision", "filter": { "case": "@objectId" }, "sort": { "field": "decisionDate", "dir": "desc" }, "limit": 25, "columns": [ { "key": "title", "label": "Title" }, { "key": "decisionType", "label": "Type" }, { "key": "decisionDate", "label": "Decision date" }, { "key": "effectiveDate", "label": "Effective" } ] } },
-					{ "id": "case-voorstellen", "type": "object-list", "title": "Proposals", "content": { "register": "procest", "schema": "voorstel", "filter": { "case": "@objectId" }, "sort": { "field": "order", "dir": "asc" }, "limit": 25, "columns": [ { "key": "onderwerp", "label": "Subject" }, { "key": "type", "label": "Type" }, { "key": "status", "label": "Status" }, { "key": "currentStep", "label": "Current step" } ], "rowRoute": "VoorstelDetail" } },
-					{ "id": "case-locaties", "type": "object-list", "title": "Locations", "content": { "register": "procest", "schema": "location", "filter": { "case": "@objectId" }, "sort": { "field": "order", "dir": "asc" }, "limit": 100, "columns": [ { "key": "label", "label": "Label" }, { "key": "formattedAddress", "label": "Address" }, { "key": "nummeraanduidingId", "label": "Nummeraanduiding id" }, { "key": "parcelId", "label": "Parcel id" }, { "key": "source", "label": "Source" } ], "rowRoute": "LocationDetail" } },
-					{ "id": "case-files", "type": "integration", "integrationId": "files", "title": "Files & attachments" },
-					{ "id": "case-notes", "type": "integration", "integrationId": "notes", "title": "Notes" },
-					{ "id": "case-contacts", "type": "integration", "integrationId": "contacts", "title": "Connected contacts" },
-					{ "id": "case-calendar", "type": "integration", "integrationId": "calendar", "title": "Appointments & hearings" }
+					{ "id": "case-core", "type": "data", "title": "Core case data", "icon": "FileDocument", "content": { "columns": 2, "include": [ "title", "identifier", "description", "caseType", "assignee", "requester", "priority", "confidentiality", "deadline", "startDate" ] } },
+					{ "id": "case-process", "type": "data", "title": "Process", "icon": "Cog", "content": { "columns": 2, "include": [ "status", "procedureType", "workflowTemplate", "workflowVersion", "result", "plannedEndDate", "endDate", "extensionCount", "handoffSource", "intakeChannel" ] } },
+					{ "id": "case-kpis-open-tasks", "type": "stats-block", "title": "Open tasks", "icon": "Gauge", "content": { "entries": [
+						{ "title": "Open tasks", "register": "procest", "schema": "task", "metric": "count", "filter": { "case": "@objectId", "status": "active" }, "route": { "name": "Tasks" } }
+					] } },
+					{ "id": "case-kpis-documents", "type": "stats-block", "title": "Documents", "icon": "Gauge", "content": { "entries": [
+						{ "title": "Documents", "register": "procest", "schema": "caseDocument", "metric": "count", "filter": { "case": "@objectId" } }
+					] } },
+					{ "id": "case-kpis-decisions", "type": "stats-block", "title": "Decisions", "icon": "Gauge", "content": { "entries": [
+						{ "title": "Decisions", "register": "procest", "schema": "decision", "metric": "count", "filter": { "case": "@objectId" } }
+					] } },
+					{ "id": "case-kpis-sub-cases", "type": "stats-block", "title": "Sub-cases", "icon": "Gauge", "content": { "entries": [
+						{ "title": "Sub-cases", "register": "procest", "schema": "case", "metric": "count", "filter": { "parentCase": "@objectId" }, "route": { "name": "Cases" } }
+					] } },
+					{ "id": "case-related", "type": "related", "title": "Case type, parent & related cases", "icon": "LinkVariant" },
+					{ "id": "initiator", "type": "custom", "title": "Initiator", "icon": "Account", "_note": "Initiator (indiener) display — brp-kvk register sets. Resolved via page slots (widget-initiator -> InitiatorSection); self-fetches the case from the route id and renders nothing when no initiator is set." },
+					{ "id": "case-tasks", "type": "object-list", "title": "Tasks", "icon": "ClipboardCheckOutline", "content": { "register": "procest", "schema": "task", "filter": { "case": "@objectId" }, "sort": { "field": "dueDate", "dir": "asc" }, "limit": 25, "columns": [ { "key": "title", "label": "Title" }, { "key": "status", "label": "Status" }, { "key": "assignee", "label": "Assignee" }, { "key": "dueDate", "label": "Due" }, { "key": "priority", "label": "Priority" } ], "rowRoute": "TaskDetail", "viewAllRoute": "Tasks", "viewAllQuery": { "case": "@objectId" }, "emptyText": "No tasks for this case yet" } },
+					{ "id": "case-documents", "type": "object-list", "title": "Documents", "icon": "FolderOutline", "content": { "register": "procest", "schema": "caseDocument", "filter": { "case": "@objectId" }, "sort": { "field": "registrationDate", "dir": "desc" }, "limit": 25, "columns": [ { "key": "title", "label": "Title" }, { "key": "description", "label": "Description" }, { "key": "registrationDate", "label": "Registered" } ], "emptyText": "No documents registered on this case yet" } },
+					{ "id": "case-decisions", "type": "object-list", "title": "Decisions", "icon": "ScaleBalance", "content": { "register": "procest", "schema": "decision", "filter": { "case": "@objectId" }, "sort": { "field": "decisionDate", "dir": "desc" }, "limit": 25, "columns": [ { "key": "title", "label": "Title" }, { "key": "decisionType", "label": "Type" }, { "key": "decisionDate", "label": "Decision date" }, { "key": "effectiveDate", "label": "Effective" } ], "emptyText": "No decisions taken on this case yet" } },
+					{ "id": "case-voorstellen", "type": "object-list", "title": "Proposals", "icon": "ClipboardList", "content": { "register": "procest", "schema": "voorstel", "filter": { "case": "@objectId" }, "sort": { "field": "order", "dir": "asc" }, "limit": 25, "columns": [ { "key": "onderwerp", "label": "Subject" }, { "key": "type", "label": "Type" }, { "key": "status", "label": "Status" }, { "key": "currentStep", "label": "Current step" } ], "rowRoute": "VoorstelDetail", "viewAllRoute": "Voorstellen", "viewAllQuery": { "case": "@objectId" }, "emptyText": "No proposals for this case" } },
+					{ "id": "case-locaties", "type": "object-list", "title": "Locations", "icon": "Earth", "content": { "register": "procest", "schema": "location", "filter": { "case": "@objectId" }, "sort": { "field": "order", "dir": "asc" }, "limit": 25, "columns": [ { "key": "label", "label": "Label" }, { "key": "formattedAddress", "label": "Address" }, { "key": "nummeraanduidingId", "label": "Nummeraanduiding id" }, { "key": "parcelId", "label": "Parcel id" }, { "key": "source", "label": "Source" } ], "rowRoute": "LocationDetail", "viewAllRoute": "Locations", "viewAllQuery": { "case": "@objectId" }, "emptyText": "No locations linked to this case yet" } },
+					{ "id": "case-files", "type": "integration", "integrationId": "files", "title": "Files & attachments", "icon": "FolderOutline" },
+					{ "id": "case-notes", "type": "integration", "integrationId": "notes", "title": "Notes", "icon": "NoteTextOutline" },
+					{ "id": "case-contacts", "type": "integration", "integrationId": "contacts", "title": "Connected contacts", "icon": "AccountGroup" },
+					{ "id": "case-calendar", "type": "integration", "integrationId": "calendar", "title": "Appointments & hearings", "icon": "Calendar" }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "case-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "case-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 },
-					{ "id": "3", "widgetId": "initiator", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 2, "showTitle": true },
-					{ "id": "4", "widgetId": "case-tasks", "gridX": 0, "gridY": 6, "gridWidth": 6, "gridHeight": 5 },
-					{ "id": "5", "widgetId": "case-documents", "gridX": 6, "gridY": 6, "gridWidth": 6, "gridHeight": 5 },
-					{ "id": "6", "widgetId": "case-decisions", "gridX": 0, "gridY": 11, "gridWidth": 6, "gridHeight": 5 },
-					{ "id": "7", "widgetId": "case-voorstellen", "gridX": 6, "gridY": 11, "gridWidth": 6, "gridHeight": 5 },
-					{ "id": "8", "widgetId": "case-locaties", "gridX": 0, "gridY": 16, "gridWidth": 12, "gridHeight": 5 },
-					{ "id": "9", "widgetId": "case-files", "gridX": 0, "gridY": 21, "gridWidth": 6, "gridHeight": 5 },
-					{ "id": "10", "widgetId": "case-notes", "gridX": 6, "gridY": 21, "gridWidth": 6, "gridHeight": 5 },
-					{ "id": "11", "widgetId": "case-contacts", "gridX": 0, "gridY": 26, "gridWidth": 6, "gridHeight": 5 },
-					{ "id": "12", "widgetId": "case-calendar", "gridX": 6, "gridY": 26, "gridWidth": 6, "gridHeight": 5 }
-				],
-				"summaryAggregates": [
-					{ "label": "Open tasks", "register": "procest", "schema": "task", "metric": "count", "filter": { "case": "@objectId", "status": "active" } },
-					{ "label": "Documents", "register": "procest", "schema": "caseDocument", "metric": "count", "filter": { "case": "@objectId" } },
-					{ "label": "Decisions", "register": "procest", "schema": "decision", "metric": "count", "filter": { "case": "@objectId" } },
-					{ "label": "Sub-cases", "register": "procest", "schema": "case", "metric": "count", "filter": { "parentCase": "@objectId" } }
+					{ "id": "1", "widgetId": "case-core", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
+					{ "id": "15", "widgetId": "case-kpis-open-tasks", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "16", "widgetId": "case-kpis-documents", "gridX": 8, "gridY": 2, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "17", "widgetId": "case-kpis-decisions", "gridX": 8, "gridY": 4, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "18", "widgetId": "case-kpis-sub-cases", "gridX": 8, "gridY": 6, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "3", "widgetId": "case-related", "gridX": 8, "gridY": 8, "gridWidth": 4, "gridHeight": 7 },
+					{ "id": "4", "widgetId": "case-process", "gridX": 0, "gridY": 5, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
+					{ "id": "5", "widgetId": "initiator", "gridX": 0, "gridY": 12, "gridWidth": 8, "gridHeight": 3, "showTitle": true },
+					{ "id": "8", "widgetId": "case-tasks", "gridX": 0, "gridY": 15, "gridWidth": 6, "gridHeight": 4 },
+					{ "id": "9", "widgetId": "case-documents", "gridX": 6, "gridY": 15, "gridWidth": 6, "gridHeight": 4 },
+					{ "id": "10", "widgetId": "case-decisions", "gridX": 0, "gridY": 19, "gridWidth": 6, "gridHeight": 3 },
+					{ "id": "11", "widgetId": "case-voorstellen", "gridX": 6, "gridY": 19, "gridWidth": 6, "gridHeight": 3 },
+					{ "id": "12", "widgetId": "case-locaties", "gridX": 0, "gridY": 22, "gridWidth": 12, "gridHeight": 3 },
+					{ "id": "13", "widgetId": "case-files", "gridX": 0, "gridY": 25, "gridWidth": 6, "gridHeight": 3 },
+					{ "id": "14", "widgetId": "case-calendar", "gridX": 6, "gridY": 25, "gridWidth": 6, "gridHeight": 3 },
+					{ "id": "6", "widgetId": "case-contacts", "gridX": 0, "gridY": 28, "gridWidth": 6, "gridHeight": 3 },
+					{ "id": "7", "widgetId": "case-notes", "gridX": 6, "gridY": 28, "gridWidth": 6, "gridHeight": 4 }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -796,21 +817,56 @@
 			"config": {
 				"register": "procest",
 				"schema": "bezwaar",
-				"_note": "OBJECTION-CASE archetype (AWB bezwaar). `bezwaar` is a supporting schema on a unified case (bezwaar.case) and declares NO comms linkedTypes — so NO files/notes/contacts/calendar leaves here; those live on the parent CaseDetail. The body leads with the objection dossier (data, incl. the AWB statutory-clock fields ontvangstdatum/verdaging/opschorting/ingebrekestelling/dwangsom/decisionDeadline), then its two real child collections as FK-scoped object-lists: committee advice requests (bacAdviceRequest.bezwaar) and decisions on the objection (bezwaarDecision.bezwaar), each deep-linking to its own detail page. summaryAggregates chip advice/decision counts; lifecycleActions drive the bezwaar status (Ontvangen → … → Afgehandeld). Audit history stays a sidebar tab.",
+				"_note": "OBJECTION-CASE archetype (AWB bezwaar), ADR-062 round 2. `bezwaar` is a supporting schema on a unified case (bezwaar.case) and declares NO comms linkedTypes — so NO files/notes/contacts/calendar leaves here; those live on the parent CaseDetail. The lead row pairs the field-scoped 'Objection' core widget (case/objection/status/awbReference/ontvangstdatum/decisionDeadline) with an in-grid KPI stats-block (advice-request and decision counts, replacing the deprecated header summaryAggregates). The AWB statutory-clock fields (verdaging/opschorting/hearing waiver/ingebrekestelling/dwangsom) are a genuinely distinct group and get their own 'Statutory clock & suspension' data widget. The two real child collections follow as FK-scoped object-lists side by side: committee advice requests (bacAdviceRequest.bezwaar) and decisions on the objection (bezwaarDecision.bezwaar), each deep-linking to its own detail page. lifecycleActions drive the bezwaar status (Ontvangen → … → Afgehandeld). Audit history stays a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
-						"id": "bezwaar-data",
+						"id": "bezwaar-core",
 						"type": "data",
-						"title": "Bezwaar",
+						"title": "Objection",
+						"icon": "Gavel",
 						"content": {
-							"columns": 2
+							"columns": 2,
+							"include": [ "case", "objection", "status", "awbReference", "ontvangstdatum", "decisionDeadline" ]
+						}
+					},
+					{
+						"id": "bezwaar-kpis-advice-requests",
+						"type": "stats-block",
+						"title": "Advice requests",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{ "title": "Advice requests", "register": "procest", "schema": "bacAdviceRequest", "metric": "count", "filter": { "bezwaar": "@objectId" } }
+							]
+						}
+					},
+					{
+						"id": "bezwaar-kpis-decisions",
+						"type": "stats-block",
+						"title": "Decisions",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{ "title": "Decisions", "register": "procest", "schema": "bezwaarDecision", "metric": "count", "filter": { "bezwaar": "@objectId" } }
+							]
+						}
+					},
+					{
+						"id": "bezwaar-terms",
+						"type": "data",
+						"title": "Statutory clock & suspension",
+						"icon": "Timeline",
+						"content": {
+							"columns": 2,
+							"include": [ "verdaagdOp", "verdagingsperiode", "opschorting", "opschortingStart", "opschortingEnd", "hearingWaived", "waiverReason", "ingebrekestelling", "dwangsom" ]
 						}
 					},
 					{
 						"id": "bezwaar-advies",
 						"type": "object-list",
 						"title": "Advies",
+						"icon": "MessageTextOutline",
 						"content": {
 							"register": "procest",
 							"schema": "bacAdviceRequest",
@@ -821,7 +877,7 @@
 								"field": "order",
 								"dir": "asc"
 							},
-							"limit": 100,
+							"limit": 25,
 							"columns": [
 								{ "key": "commissie", "label": "Commissie" },
 								{ "key": "status", "label": "Status" },
@@ -829,13 +885,15 @@
 								{ "key": "deadline", "label": "Deadline" },
 								{ "key": "conclusion", "label": "Conclusion" }
 							],
-							"rowRoute": "BezwaarAdviceRequestDetail"
+							"rowRoute": "BezwaarAdviceRequestDetail",
+							"emptyText": "No advice requests raised for this objection yet"
 						}
 					},
 					{
 						"id": "bezwaar-beslissingen",
 						"type": "object-list",
 						"title": "Beslissingen",
+						"icon": "ScaleBalance",
 						"content": {
 							"register": "procest",
 							"schema": "bezwaarDecision",
@@ -846,7 +904,7 @@
 								"field": "order",
 								"dir": "asc"
 							},
-							"limit": 100,
+							"limit": 25,
 							"columns": [
 								{ "key": "dispositionType", "label": "Disposition type" },
 								{ "key": "decisionDate", "label": "Decision date" },
@@ -854,18 +912,18 @@
 								{ "key": "status", "label": "Status" },
 								{ "key": "publishedAt", "label": "Published at" }
 							],
-							"rowRoute": "BezwaarDecisionDetail"
+							"rowRoute": "BezwaarDecisionDetail",
+							"emptyText": "No decisions recorded for this objection yet"
 						}
 					}
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "bezwaar-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "bezwaar-advies", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 6 },
-					{ "id": "3", "widgetId": "bezwaar-beslissingen", "gridX": 0, "gridY": 10, "gridWidth": 12, "gridHeight": 6 }
-				],
-				"summaryAggregates": [
-					{ "label": "Advice requests", "register": "procest", "schema": "bacAdviceRequest", "metric": "count", "filter": { "bezwaar": "@objectId" } },
-					{ "label": "Decisions", "register": "procest", "schema": "bezwaarDecision", "metric": "count", "filter": { "bezwaar": "@objectId" } }
+					{ "id": "1", "widgetId": "bezwaar-core", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
+					{ "id": "6", "widgetId": "bezwaar-kpis-advice-requests", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "7", "widgetId": "bezwaar-kpis-decisions", "gridX": 8, "gridY": 2, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "3", "widgetId": "bezwaar-terms", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 6 },
+					{ "id": "4", "widgetId": "bezwaar-advies", "gridX": 0, "gridY": 10, "gridWidth": 6, "gridHeight": 4 },
+					{ "id": "5", "widgetId": "bezwaar-beslissingen", "gridX": 6, "gridY": 10, "gridWidth": 6, "gridHeight": 4 }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -885,15 +943,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "bezwaarDecision",
-				"_note": "DECISION-RECORD archetype (beslissing op bezwaar, AWB art. 7:11). No comms linkedTypes and no child schemas point at it. The Data widget carries the full legally-structured decision — the disposition and reasoning (dispositionType, reasoning, legalBasis, advisoryOpinion, followsAdvice, deviationRationale, proceskostenvergoeding), the rechtsmiddel/appealNotice, the decisionDocument/replacementDecision references and the publication fields (publishedAt, notifiedRecipients). A Related panel surfaces the parent bezwaar and case, and lifecycleActions drive the status (draft → published). No files/notes leaves: document references are plain fields, not a files-leaf. Audit history is a sidebar tab.",
+				"_note": "DECISION-RECORD archetype (beslissing op bezwaar, AWB art. 7:11), ADR-062 round 2. No comms linkedTypes and no child schemas point at it. The 17-field schema splits into two genuinely distinct groups: 'Disposition & reasoning' (the legal substance — dispositionType, reasoning, legalBasis, advisoryOpinion, followsAdvice, deviationRationale, proceskostenvergoeding, status) paired with the Related panel (parent bezwaar and case), and 'Publication & documents' (the formal paper trail — replacementDecision, appealNotice, dates, decisionMaker, decisionDocument, publishedAt, notifiedRecipients) full-width below. lifecycleActions drive the status (draft → published). No files/notes leaves: document references are plain fields, not a files-leaf. Audit history is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "bezwaardecision-data", "type": "data", "title": "Beslissing op bezwaar", "content": { "columns": 2 } },
-					{ "id": "bezwaardecision-related", "type": "related", "title": "Bezwaar & case" }
+					{ "id": "bezwaardecision-data", "type": "data", "title": "Disposition & reasoning", "icon": "ScaleBalance", "content": { "columns": 2, "include": [ "dispositionType", "reasoning", "legalBasis", "advisoryOpinion", "followsAdvice", "deviationRationale", "proceskostenvergoeding", "status" ] } },
+					{ "id": "bezwaardecision-publication", "type": "data", "title": "Publication & documents", "icon": "FileSign", "content": { "columns": 2, "include": [ "replacementDecision", "appealNotice", "decisionDate", "effectiveDate", "decisionMaker", "decisionDocument", "publishedAt", "notifiedRecipients" ] } },
+					{ "id": "bezwaardecision-related", "type": "related", "title": "Bezwaar & case", "icon": "LinkVariant" }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "bezwaardecision-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "bezwaardecision-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 }
+					{ "id": "1", "widgetId": "bezwaardecision-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
+					{ "id": "2", "widgetId": "bezwaardecision-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 5 },
+					{ "id": "3", "widgetId": "bezwaardecision-publication", "gridX": 0, "gridY": 5, "gridWidth": 12, "gridHeight": 5 }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -953,13 +1013,14 @@
 						"id": "tasknew-data",
 						"type": "data",
 						"title": "Nieuwe taak",
+						"icon": "ClipboardCheckOutline",
 						"content": {
 							"columns": 2
 						}
 					}
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "tasknew-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
+					{ "id": "1", "widgetId": "tasknew-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 6, "showTitle": false }
 				],
 				"sidebar": {
 					"enabled": true,
@@ -978,10 +1039,10 @@
 				"_note": "ACTION-ITEM archetype — a work item on a case (task.case) with assignee/dueDate/priority/status and an inline checklist[]. The schema declares NO comms linkedTypes and has NO child schemas pointing at it, so it stays deliberately lean: the Data widget carries the who/when/status and the checklist, and lifecycleActions drive the status machine (available → active → completed / terminated). No files/notes/contacts/calendar leaves — a task carries none of that content; those live on the parent case. Audit history (status transitions) is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "task-data", "type": "data", "title": "Taak", "content": { "columns": 2 } }
+					{ "id": "task-data", "type": "data", "title": "Taak", "icon": "ClipboardCheckOutline", "content": { "columns": 2 } }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "task-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
+					{ "id": "1", "widgetId": "task-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 6, "showTitle": false }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -1179,12 +1240,12 @@
 				"_note": "ADVICE-REQUEST archetype (adviesAanvraag on a case). No comms linkedTypes and no child schemas point at it, so it stays lean: the Data widget carries the request and its clock (case, adviseur, type, onderwerp, deadline, requestedAt, receivedAt, the questions[] and the returned adviesDocument), a Related panel exposes the parent case and adviser links, and lifecycleActions drive the status (aangevraagd → ontvangen / verlopen) — deadline-vs-received being the primary at-a-glance signal. No files/notes/contacts/calendar leaves: the advice document is a plain field and comms live on the parent case. Audit history is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "advice-data", "type": "data", "title": "Advice request", "content": { "columns": 2 } },
-					{ "id": "advice-related", "type": "related", "title": "Case & adviser" }
+					{ "id": "advice-data", "type": "data", "title": "Advice request", "icon": "MessageTextOutline", "content": { "columns": 2 } },
+					{ "id": "advice-related", "type": "related", "title": "Case & adviser", "icon": "LinkVariant" }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "advice-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "advice-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 }
+					{ "id": "1", "widgetId": "advice-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
+					{ "id": "2", "widgetId": "advice-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 5 }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -1451,10 +1512,10 @@
 				"_note": "CONFIG/TECHNICAL archetype (WMS/WFS map-layer definition). Admin-only, no comms, no child schemas and no status lifecycle — so deliberately lean. The single Data widget holds the full endpoint config (url, layerName, srs, opacity, queryable, format, version, isDefault, active). No object-lists (nothing is a child of a layer), no content leaves (a layer carries no files/notes/calendar), no lifecycleActions (active is a plain boolean). Audit history (config edits) is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "wmslayer-data", "type": "data", "title": "Kaartlaag", "content": { "columns": 2 } }
+					{ "id": "wmslayer-data", "type": "data", "title": "Kaartlaag", "icon": "MapMarker", "content": { "columns": 2 } }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "wmslayer-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
+					{ "id": "1", "widgetId": "wmslayer-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 7, "showTitle": false }
 				],
 				"sidebar": {
 					"enabled": true,
@@ -1473,21 +1534,45 @@
 			"config": {
 				"register": "procest",
 				"schema": "legesverordening",
-				"_note": "FINANCIAL-CONFIG archetype (fee by-law / legesverordening). No comms leaves. The by-law IS its tariff table, so the body pairs the Data header (name, year, effectiveDate/endDate, globalMaximum, status, isActive) with a full-width object-list of the child legesartikel entries (legesartikel.verordening=@objectId). summaryAggregates chip the article count and lifecycleActions drive the status (concept → vastgesteld → vervallen). No files/notes/contacts/calendar — a fee schedule carries none of that content. Audit history (rate changes) is a sidebar tab.",
+				"_note": "FINANCIAL-CONFIG archetype (fee by-law / legesverordening), ADR-062 round 2. No comms leaves. The by-law IS its tariff table: the lead row pairs the Data widget (name, year, effectiveDate/endDate, globalMaximum, status, isActive — 9 fields, no split: one coherent config group) with an in-grid KPI stats-block (article count + calculations issued under this by-law via legesberekening.verordeningId, replacing the deprecated header summaryAggregates; calculations deep-link to the Legesberekeningen index). Below, the full-width child legesartikel object-list (legesartikel.verordening=@objectId). lifecycleActions drive the status (concept → vastgesteld → vervallen). Audit history (rate changes) is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
 						"id": "leges-data",
 						"type": "data",
 						"title": "Verordening",
+						"icon": "CurrencyEur",
 						"content": {
 							"columns": 2
+						}
+					},
+					{
+						"id": "leges-kpis-articles",
+						"type": "stats-block",
+						"title": "Articles",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{ "title": "Articles", "register": "procest", "schema": "legesartikel", "metric": "count", "filter": { "verordening": "@objectId" } }
+							]
+						}
+					},
+					{
+						"id": "leges-kpis-calculations",
+						"type": "stats-block",
+						"title": "Calculations",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{ "title": "Calculations", "register": "procest", "schema": "legesberekening", "metric": "count", "filter": { "verordeningId": "@objectId" }, "route": { "name": "Legesberekeningen" } }
+							]
 						}
 					},
 					{
 						"id": "leges-artikelen",
 						"type": "object-list",
 						"title": "Artikelen",
+						"icon": "TableColumn",
 						"content": {
 							"register": "procest",
 							"schema": "legesartikel",
@@ -1498,22 +1583,22 @@
 								"field": "order",
 								"dir": "asc"
 							},
-							"limit": 100,
+							"limit": 25,
 							"columns": [
 								{ "key": "nummer", "label": "Nummer" },
 								{ "key": "omschrijving", "label": "Omschrijving" },
 								{ "key": "type", "label": "Type" },
 								{ "key": "category", "label": "Categorie" }
-							]
+							],
+							"emptyText": "No articles in this by-law yet"
 						}
 					}
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "leges-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "leges-artikelen", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 6 }
-				],
-				"summaryAggregates": [
-					{ "label": "Articles", "register": "procest", "schema": "legesartikel", "metric": "count", "filter": { "verordening": "@objectId" } }
+					{ "id": "1", "widgetId": "leges-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
+					{ "id": "4", "widgetId": "leges-kpis-articles", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "5", "widgetId": "leges-kpis-calculations", "gridX": 8, "gridY": 2, "gridWidth": 4, "gridHeight": 3 },
+					{ "id": "3", "widgetId": "leges-artikelen", "gridX": 0, "gridY": 5, "gridWidth": 12, "gridHeight": 6 }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -1569,15 +1654,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "legesberekening",
-				"_note": "FINANCIAL-RECORD archetype (fee assessment on a case). No comms — a calculation communicates through its parent case, and breakdown[] is an embedded array (no separate legesregel entity), so there is NO object-list. The Data widget carries the header and the itemised breakdown plus the versioning/correction trail (case, verordening, total, breakdown, version, previousVersion, previousTotal, difference, correctionReason, calculatedBy/At, exportedAt); a Related panel links the parent case; lifecycleActions drive the status (concept → opgelegd → verrekend / teruggegeven). No files/notes/contacts/calendar leaves. Audit history is a sidebar tab.",
+				"_note": "FINANCIAL-RECORD archetype (fee assessment on a case), ADR-062 round 2. No comms — a calculation communicates through its parent case, and breakdown[] is an embedded array (no separate legesregel entity), so there is NO object-list. The 15-field schema splits into two genuinely distinct groups: 'Calculation' (the assessment itself — case, verordening, total, breakdown, status) paired with the Related panel, and 'Versioning & export' (the correction/audit trail — version chain, difference, correctionReason, calculatedBy/At, export fields) full-width below. lifecycleActions drive the status (concept → opgelegd → verrekend / teruggegeven). No files/notes/contacts/calendar leaves. Audit history is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "legesberekening-data", "type": "data", "title": "Legesberekening", "content": { "columns": 2 } },
-					{ "id": "legesberekening-related", "type": "related", "title": "Case" }
+					{ "id": "legesberekening-data", "type": "data", "title": "Calculation", "icon": "CurrencyEur", "content": { "columns": 2, "include": [ "case", "verordening", "verordeningId", "total", "breakdown", "status" ] } },
+					{ "id": "legesberekening-versioning", "type": "data", "title": "Versioning & export", "icon": "History", "content": { "columns": 2, "include": [ "version", "previousVersion", "previousTotal", "difference", "correctionReason", "calculatedBy", "calculatedAt", "exportedAt", "exportFormat" ] } },
+					{ "id": "legesberekening-related", "type": "related", "title": "Case", "icon": "LinkVariant" }
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "legesberekening-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "legesberekening-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 }
+					{ "id": "2", "widgetId": "legesberekening-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 },
+					{ "id": "3", "widgetId": "legesberekening-versioning", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 6 }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -1619,10 +1706,10 @@
 				],
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "tenant-data", "type": "data", "title": "Tenant", "content": { "columns": 2 } }
+					{ "id": "tenant-data", "type": "data", "title": "Tenant", "icon": "OfficeBuilding", "content": { "columns": 2 } }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "tenant-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
+					{ "id": "1", "widgetId": "tenant-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 6, "showTitle": false }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -1645,7 +1732,7 @@
 				"_note": "CONFIG/TECHNICAL archetype (initialling/approval route template consumed by voorstel records). No comms, no status lifecycle, no child schemas. The single Data widget carries the binding + defaults (name, caseType, voorstelType, isDefault, description) and the ordered steps[] (actor/actorType/mandatory/label per stage) — the routing definition. No object-lists, no content leaves, no lifecycleActions. Audit history (template edits) is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "parafeerroute-data", "type": "data", "title": "Parafeerroute", "content": { "columns": 2 } }
+					{ "id": "parafeerroute-data", "type": "data", "title": "Parafeerroute", "icon": "FileSign", "content": { "columns": 2 } }
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "parafeerroute-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
@@ -1728,21 +1815,34 @@
 			"config": {
 				"register": "procest",
 				"schema": "partnerOrganization",
-				"_note": "ORG-CONFIG archetype (partner organisation for cross-org case sharing). The schema is intentionally thin (name, slug, oin, contactEmail, defaultPermissionLevel, groupId, isActive) with no contact/document sub-entities, so the Data widget stays lean. The one relationship that matters operationally — which cases are shared with this partner — is a full-width object-list of caseShare (caseShare.partnerId=@objectId) showing label/type/permission/expiry, chipped by a share-count aggregate. No comms leaves (contactEmail is a plain field, not a mail-leaf) and no status lifecycle (isActive is a boolean). Audit history (activation/permission changes) is a sidebar tab.",
+				"_note": "ORG-CONFIG archetype (partner organisation for cross-org case sharing), ADR-062 round 2. The schema is intentionally thin (name, slug, oin, contactEmail, defaultPermissionLevel, groupId, isActive, qualityScore/qualityStatus) — one coherent config group, no include-split. The lead row pairs the Data widget with an in-grid single-stat KPI card (share count, replacing the deprecated header summaryAggregates; deep-links to the CaseShares index). The one relationship that matters operationally — which cases are shared with this partner — is a full-width caseShare object-list (caseShare.partnerId=@objectId) showing label/type/permission/expiry; allowCreate:false because shares are minted by the share flow (token/password/audit), never hand-created from a list. No comms leaves (contactEmail is a plain field, not a mail-leaf) and no status lifecycle (isActive is a boolean). Audit history (activation/permission changes) is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
 						"id": "partner-data",
 						"type": "data",
 						"title": "Partner organisation",
+						"icon": "HandshakeOutline",
 						"content": {
 							"columns": 2
+						}
+					},
+					{
+						"id": "partner-kpis",
+						"type": "stats-block",
+						"title": "Key figures",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{ "title": "Shared cases", "register": "procest", "schema": "caseShare", "metric": "count", "filter": { "partnerId": "@objectId" }, "route": { "name": "CaseShares" } }
+							]
 						}
 					},
 					{
 						"id": "partner-gedeelde-zaken",
 						"type": "object-list",
 						"title": "Gedeelde zaken",
+						"icon": "LinkVariant",
 						"content": {
 							"register": "procest",
 							"schema": "caseShare",
@@ -1753,23 +1853,25 @@
 								"field": "order",
 								"dir": "asc"
 							},
-							"limit": 100,
+							"limit": 25,
 							"columns": [
 								{ "key": "label", "label": "Label" },
 								{ "key": "shareType", "label": "Share type" },
 								{ "key": "permissionLevel", "label": "Permission level" },
 								{ "key": "expiresAt", "label": "Expires at" },
 								{ "key": "revokedAt", "label": "Revoked at" }
-							]
+							],
+							"viewAllRoute": "CaseShares",
+							"viewAllQuery": { "partnerId": "@objectId" },
+							"emptyText": "No cases shared with this partner yet",
+							"allowCreate": false
 						}
 					}
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "partner-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "partner-gedeelde-zaken", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 6 }
-				],
-				"summaryAggregates": [
-					{ "label": "Shared cases", "register": "procest", "schema": "caseShare", "metric": "count", "filter": { "partnerId": "@objectId" } }
+					{ "id": "1", "widgetId": "partner-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
+					{ "id": "2", "widgetId": "partner-kpis", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 5 },
+					{ "id": "3", "widgetId": "partner-gedeelde-zaken", "gridX": 0, "gridY": 5, "gridWidth": 12, "gridHeight": 5 }
 				],
 				"sidebar": {
 					"enabled": true,
@@ -1791,10 +1893,10 @@
 				"_note": "WORKFLOW-RECORD archetype (inter-organisation case handover). No comms/documents and no child schemas — a transfer is a small state machine, not a dossier. The single Data widget carries the request and its resolution (caseId, sourceOrganization, targetOrganization, reason, requestedDate, rejectionReason, completedAt), and lifecycleActions drive the status (pending → accepted / rejected). No object-lists (nothing is a child of a transfer), no content leaves. Audit history (the pending→accepted/rejected transition) is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "transfer-data", "type": "data", "title": "Transfer", "content": { "columns": 2 } }
+					{ "id": "transfer-data", "type": "data", "title": "Transfer", "icon": "SourceBranch", "content": { "columns": 2 } }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "transfer-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
+					{ "id": "1", "widgetId": "transfer-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 5, "showTitle": false }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -1853,10 +1955,10 @@
 				"_note": "CONFIG/TECHNICAL archetype (workflow automation handler definition — a rule consumed by the workflow engine). No comms, no child schemas, no status enum (isPublished/active are booleans). The single Data widget carries identity + the handler-specific config[] payload (slug, type, title, description, tenantId, version, isPublished, active, config). No object-lists, no content leaves, no lifecycleActions. Audit history (publish/activation changes) is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "automaticaction-data", "type": "data", "title": "Automatische actie", "content": { "columns": 2 } }
+					{ "id": "automaticaction-data", "type": "data", "title": "Automatische actie", "icon": "Cog", "content": { "columns": 2 } }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "automaticaction-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
+					{ "id": "1", "widgetId": "automaticaction-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 5, "showTitle": false }
 				],
 				"sidebar": {
 					"enabled": true,
@@ -1928,7 +2030,7 @@
 			"config": {
 				"register": "procest",
 				"schema": "workflowTemplate",
-				"_note": "CASE-TYPE / WORKFLOW-DEFINITION archetype (the state machine that drives cases of a caseType). No comms. The Data widget holds identity + the two defining payloads — steps[] (stages, roles, SLAs, checklists) and transitions[] (from/to status, guards, allowed roles, actions) — plus caseType, version, isActive, parentWorkflow. Cases driven by this workflow are reached through their caseType index rather than a direct FK (case.workflowTemplate stores a version reference, not this object's id), so no object-list is scoped here. Publish/Deprecate/Clone admin actions are preserved as page actions and lifecycleActions drive the lifecycleStatus. Audit history (version changes) is a sidebar tab.",
+				"_note": "CASE-TYPE / WORKFLOW-DEFINITION archetype (the state machine that drives cases of a caseType), ADR-062 round 2. No comms. The schema splits into two genuinely distinct groups: 'Definition' (identity + versioning — title, description, caseType, version, lifecycleStatus, isActive, isDraft, parentWorkflow) and 'State machine' (the two defining graph payloads — steps[] with stages/roles/SLAs/checklists, transitions[] with from/to/guards/actions, plus editor nodePositions). Cases driven by this workflow are reached through their caseType index rather than a direct FK (case.workflowTemplate stores a version reference, not this object's id), so no object-list is scoped here. Publish/Deprecate/Clone admin actions are preserved as page actions and lifecycleActions drive the lifecycleStatus. Audit history (version changes) is a sidebar tab.",
 				"actions": [
 					{
 						"id": "publish",
@@ -1958,10 +2060,12 @@
 				],
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "workflowdef-data", "type": "data", "title": "Workflow definition", "content": { "columns": 2 } }
+					{ "id": "workflowdef-data", "type": "data", "title": "Definition", "icon": "Sitemap", "content": { "columns": 2, "include": [ "title", "description", "caseType", "version", "lifecycleStatus", "isActive", "isDraft", "parentWorkflow" ] } },
+					{ "id": "workflowdef-machine", "type": "data", "title": "State machine", "icon": "SourceBranch", "content": { "columns": 2, "include": [ "steps", "transitions", "nodePositions" ] } }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "workflowdef-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
+					{ "id": "1", "widgetId": "workflowdef-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 5, "showTitle": false },
+					{ "id": "2", "widgetId": "workflowdef-machine", "gridX": 0, "gridY": 5, "gridWidth": 12, "gridHeight": 5 }
 				],
 				"lifecycleActions": { "field": "lifecycleStatus" },
 				"sidebar": {
@@ -1984,12 +2088,12 @@
 				"_note": "TRANSITION-RECORD archetype (an immutable entry for one case status transition). No comms/documents and it is itself a history entry, so it stays lean. The Data widget shows the transition and its side-effects (case, fromStatus→statusType, transitionLabel, noWorkflowTemplate, the evaluatedGuards[] that were checked and the dispatchedActions[] that fired); a Related panel links the parent case. No lifecycleActions — a status record is a frozen fact, not a mutable object. No content leaves. Audit history is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "statusrecord-data", "type": "data", "title": "Status record", "content": { "columns": 2 } },
-					{ "id": "statusrecord-related", "type": "related", "title": "Case" }
+					{ "id": "statusrecord-data", "type": "data", "title": "Status record", "icon": "Timeline", "content": { "columns": 2 } },
+					{ "id": "statusrecord-related", "type": "related", "title": "Case", "icon": "LinkVariant" }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "statusrecord-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "statusrecord-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 }
+					{ "id": "1", "widgetId": "statusrecord-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
+					{ "id": "2", "widgetId": "statusrecord-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 5 }
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2097,10 +2201,10 @@
 				"_note": "CONFIG/TECHNICAL archetype (Landelijke Handhavingsstrategie intervention matrix — versioned, immutable enforcement policy). Admin-only, no comms/documents. The Data widget carries header + axes + substance in one form (name, version, active, ernstAxis, gedragAxis, actorTypeAxis, createdAt, the cells[] grid ernst×gedrag×actorType→interventie, and the domain auditTrail[] of per-version actor/notes). lhsRecommendation records reference this matrix by version, not a FK, so no object-list is scoped here. No content leaves, no status lifecycle (active is a boolean). Register-level audit history is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "lhsmatrix-data", "type": "data", "title": "LHS Matrix", "content": { "columns": 2 } }
+					{ "id": "lhsmatrix-data", "type": "data", "title": "LHS Matrix", "icon": "TableColumn", "content": { "columns": 2 } }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "lhsmatrix-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
+					{ "id": "1", "widgetId": "lhsmatrix-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 5, "showTitle": false }
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2155,15 +2259,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "lhsRecommendation",
-				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix). No comms/documents, no child schemas. The Data widget shows the inputs, the outcome and — critically — the accountability-bearing deviation fields (case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, finalIntervention, recommendedBy, override, overrideJustification, overrideBy, overrideAuthority). A Related panel links the parent case and inspection. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
+				"_note": "ASSESSMENT-RECORD archetype (a per-case LHS intervention recommendation derived from an lhsMatrix), ADR-062 round 2. No comms/documents, no child schemas. The 13-field schema splits into two genuinely distinct groups: 'Recommendation' (the matrix inputs and outcome — case, inspection, ernst, gedrag, actorType, matrixVersion, recommendedInterventie, recommendedBy) paired with the Related panel (parent case and inspection), and 'Override & final' (the accountability-bearing deviation fields — finalIntervention, override, overrideJustification, overrideBy, overrideAuthority) full-width below. No status lifecycle field and no content leaves. Audit history is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "lhsrecommendation-data", "type": "data", "title": "LHS Recommendation", "content": { "columns": 2 } },
-					{ "id": "lhsrecommendation-related", "type": "related", "title": "Case & inspection" }
+					{ "id": "lhsrecommendation-data", "type": "data", "title": "Recommendation", "icon": "Lightbulb", "content": { "columns": 2, "include": [ "case", "inspection", "ernst", "gedrag", "actorType", "matrixVersion", "recommendedInterventie", "recommendedBy" ] } },
+					{ "id": "lhsrecommendation-override", "type": "data", "title": "Override & final", "icon": "ShieldCheckOutline", "content": { "columns": 2, "include": [ "finalIntervention", "override", "overrideJustification", "overrideBy", "overrideAuthority" ] } },
+					{ "id": "lhsrecommendation-related", "type": "related", "title": "Case & inspection", "icon": "LinkVariant" }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "lhsrecommendation-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "lhsrecommendation-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 }
+					{ "id": "1", "widgetId": "lhsrecommendation-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
+					{ "id": "2", "widgetId": "lhsrecommendation-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 5 },
+					{ "id": "3", "widgetId": "lhsrecommendation-override", "gridX": 0, "gridY": 5, "gridWidth": 12, "gridHeight": 4 }
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2189,15 +2295,16 @@
 						"id": "location-data",
 						"type": "data",
 						"title": "Location",
+						"icon": "MapMarker",
 						"content": {
 							"columns": 2
 						}
 					},
-					{ "id": "location-related", "type": "related", "title": "Case" }
+					{ "id": "location-related", "type": "related", "title": "Case", "icon": "LinkVariant" }
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "location-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "location-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 }
+					{ "id": "1", "widgetId": "location-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
+					{ "id": "2", "widgetId": "location-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 5 }
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2250,21 +2357,56 @@
 			"config": {
 				"register": "procest",
 				"schema": "bezwaaradviescommissie",
-				"_note": "COMMITTEE archetype (bezwaaradviescommissie / BAC). No comms leaves on the schema. A committee is defined by its constitution and its caseload, so the body pairs the Data widget (name, type, domain, jurisdiction, chair, secretary, quorum, termStartsOn/termEndsOn, active, and the members[] roster) with a full-width object-list of its advice assignments (bacAdviceRequest.commissie=@objectId), chipped by an assignment-count aggregate. No files/notes/contacts/calendar — the committee record carries none of that content. No status lifecycle (active is a boolean). Audit history (composition/term changes) is a sidebar tab.",
+				"_note": "COMMITTEE archetype (bezwaaradviescommissie / BAC), ADR-062 round 2. No comms leaves on the schema. A committee is defined by its constitution and its caseload; the schema splits into two genuinely distinct groups: 'Committee' (name, type, domain, jurisdiction, quorum, active — the constitution) and 'Roster & term' (chair, secretary, members[], termStartsOn, termEndsOn, created — who sits and until when). The lead row pairs the constitution widget with an in-grid KPI stats-block (total assignments + in-deliberation workload via bacAdviceRequest.status, replacing the deprecated header summaryAggregates). Below: the roster widget full-width, then the advice-assignment object-list (bacAdviceRequest.commissie=@objectId). No status lifecycle (active is a boolean). Audit history (composition/term changes) is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
 					{
 						"id": "bezwaarcommittee-data",
 						"type": "data",
-						"title": "Bezwaaradviescommissie",
+						"title": "Committee",
+						"icon": "AccountGroup",
 						"content": {
-							"columns": 2
+							"columns": 2,
+							"include": [ "name", "type", "domain", "jurisdiction", "quorum", "active" ]
+						}
+					},
+					{
+						"id": "bezwaarcommittee-kpis-advice-assignments",
+						"type": "stats-block",
+						"title": "Advice assignments",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{ "title": "Advice assignments", "register": "procest", "schema": "bacAdviceRequest", "metric": "count", "filter": { "commissie": "@objectId" } }
+							]
+						}
+					},
+					{
+						"id": "bezwaarcommittee-kpis-in-deliberation",
+						"type": "stats-block",
+						"title": "In deliberation",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
+								{ "title": "In deliberation", "register": "procest", "schema": "bacAdviceRequest", "metric": "count", "filter": { "commissie": "@objectId", "status": "in-deliberation" } }
+							]
+						}
+					},
+					{
+						"id": "bezwaarcommittee-roster",
+						"type": "data",
+						"title": "Roster & term",
+						"icon": "Account",
+						"content": {
+							"columns": 2,
+							"include": [ "chair", "secretary", "members", "termStartsOn", "termEndsOn", "created" ]
 						}
 					},
 					{
 						"id": "bezwaarcommittee-adviesaanvragen",
 						"type": "object-list",
 						"title": "Adviesaanvragen",
+						"icon": "MessageTextOutline",
 						"content": {
 							"register": "procest",
 							"schema": "bacAdviceRequest",
@@ -2275,7 +2417,7 @@
 								"field": "order",
 								"dir": "asc"
 							},
-							"limit": 100,
+							"limit": 25,
 							"columns": [
 								{ "key": "bezwaar", "label": "Bezwaar" },
 								{ "key": "status", "label": "Status" },
@@ -2283,16 +2425,17 @@
 								{ "key": "deadline", "label": "Deadline" },
 								{ "key": "conclusion", "label": "Conclusion" }
 							],
-							"rowRoute": "BezwaarAdviceRequestDetail"
+							"rowRoute": "BezwaarAdviceRequestDetail",
+							"emptyText": "No advice requests assigned to this committee yet"
 						}
 					}
 				],
 				"layout": [
-					{ "id": "1", "widgetId": "bezwaarcommittee-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "bezwaarcommittee-adviesaanvragen", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 6 }
-				],
-				"summaryAggregates": [
-					{ "label": "Advice assignments", "register": "procest", "schema": "bacAdviceRequest", "metric": "count", "filter": { "commissie": "@objectId" } }
+					{ "id": "1", "widgetId": "bezwaarcommittee-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
+					{ "id": "5", "widgetId": "bezwaarcommittee-kpis-advice-assignments", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "6", "widgetId": "bezwaarcommittee-kpis-in-deliberation", "gridX": 8, "gridY": 2, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "3", "widgetId": "bezwaarcommittee-roster", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 4 },
+					{ "id": "4", "widgetId": "bezwaarcommittee-adviesaanvragen", "gridX": 0, "gridY": 8, "gridWidth": 12, "gridHeight": 5 }
 				],
 				"sidebar": {
 					"enabled": true,
@@ -2311,15 +2454,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "bacAdviceRequest",
-				"_note": "ADVICE-ASSIGNMENT archetype (a committee advice request on a bezwaar). No comms leaves and no child schemas. The Data widget carries the assignment, the substantive opinion, the committee dissent and the evidence references in one form (bezwaar, commissie, panel, assignedAt, deadline, advice, recommendation, conclusion, adviceIssuedAt, dissentingOpinions[], adviceDocuments, signatureEvidence, hearingReportRef); a Related panel links the parent bezwaar and the committee; lifecycleActions drive the status (assigned → in-deliberation → advice-issued / niet-ontvankelijk). Document references are plain fields, not a files-leaf. Audit history is a sidebar tab.",
+				"_note": "ADVICE-ASSIGNMENT archetype (a committee advice request on a bezwaar), ADR-062 round 2. No comms leaves and no child schemas. The 15-field schema splits into two genuinely distinct groups: 'Assignment' (who/when — bezwaar, commissie, panel, status, assignedAt, deadline) paired with the Related panel (parent bezwaar and committee), and 'Advice & outcome' (the substantive opinion, dissent and evidence — advice, recommendation, conclusion, adviceIssuedAt, dissentingOpinions[], adviceDocuments, signatureEvidence, hearingReportRef) full-width below. lifecycleActions drive the status (assigned → in-deliberation → advice-issued / niet-ontvankelijk). Document references are plain fields, not a files-leaf. Audit history is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "bacadvicerequest-data", "type": "data", "title": "BAC-advies", "content": { "columns": 2 } },
-					{ "id": "bacadvicerequest-related", "type": "related", "title": "Bezwaar & committee" }
+					{ "id": "bacadvicerequest-data", "type": "data", "title": "Assignment", "icon": "ClipboardList", "content": { "columns": 2, "include": [ "bezwaar", "commissie", "panel", "status", "assignedAt", "deadline" ] } },
+					{ "id": "bacadvicerequest-advice", "type": "data", "title": "Advice & outcome", "icon": "MessageTextOutline", "content": { "columns": 2, "include": [ "advice", "recommendation", "conclusion", "adviceIssuedAt", "dissentingOpinions", "adviceDocuments", "signatureEvidence", "hearingReportRef" ] } },
+					{ "id": "bacadvicerequest-related", "type": "related", "title": "Bezwaar & committee", "icon": "LinkVariant" }
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "bacadvicerequest-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "bacadvicerequest-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 }
+					{ "id": "2", "widgetId": "bacadvicerequest-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 },
+					{ "id": "3", "widgetId": "bacadvicerequest-advice", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 5 }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -2379,15 +2524,17 @@
 			"config": {
 				"register": "procest",
 				"schema": "beroep",
-				"_note": "APPEAL-CASE archetype (AWB beroep at the rechtbank). `beroep` is a supporting schema on a unified case (beroep.case) and declares NO comms linkedTypes, so no files/notes/contacts/calendar here — those live on the parent CaseDetail. The Data widget carries the full judicial record: the appeal header and filing clock (sourceBezwaar, contestedDecision, courtReference, responsibleChamber, competentCourt, appellantFilingDate/NotifiedDate, filingDeadline, voorzieningRequested), the file-inspection sub-process (fileInspectionRequests[]), the judgment (judgmentOutcome/judgmentDate/judgmentDocument) and the cascade follow-on (cascadeAction/cascadeBezwaarCase). A Related panel links the parent case and the source bezwaar. No status enum on this schema, so no lifecycleActions. Audit history is a sidebar tab.",
+				"_note": "APPEAL-CASE archetype (AWB beroep at the rechtbank), ADR-062 round 2. `beroep` is a supporting schema on a unified case (beroep.case) and declares NO comms linkedTypes, so no files/notes/contacts/calendar here — those live on the parent CaseDetail. The 17-field schema splits into two genuinely distinct groups: 'Appeal' (the court header — case, sourceBezwaar, contestedDecision, courtReference, responsibleChamber, competentCourt) paired with the Related panel (parent case and source bezwaar), and 'Filing & judgment' (the clock, sub-process and outcome — appellantFilingDate/NotifiedDate, filingDeadline, voorzieningRequested, latefilingNotice, fileInspectionRequests[], judgmentOutcome/Date/Document, cascadeAction/cascadeBezwaarCase) full-width below. No status enum on this schema, so no lifecycleActions. Audit history is a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
-					{ "id": "beroep-data", "type": "data", "title": "Beroep", "content": { "columns": 2 } },
-					{ "id": "beroep-related", "type": "related", "title": "Case & source bezwaar" }
+					{ "id": "beroep-data", "type": "data", "title": "Appeal", "icon": "Gavel", "content": { "columns": 2, "include": [ "case", "sourceBezwaar", "contestedDecision", "courtReference", "responsibleChamber", "competentCourt" ] } },
+					{ "id": "beroep-judgment", "type": "data", "title": "Filing & judgment", "icon": "ScaleBalance", "content": { "columns": 2, "include": [ "appellantFilingDate", "appellantNotifiedDate", "filingDeadline", "voorzieningRequested", "latefilingNotice", "fileInspectionRequests", "judgmentOutcome", "judgmentDate", "judgmentDocument", "cascadeAction", "cascadeBezwaarCase" ] } },
+					{ "id": "beroep-related", "type": "related", "title": "Case & source bezwaar", "icon": "LinkVariant" }
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "beroep-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "beroep-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 }
+					{ "id": "2", "widgetId": "beroep-related", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 },
+					{ "id": "3", "widgetId": "beroep-judgment", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 6 }
 				],
 				"sidebar": {
 					"enabled": true,

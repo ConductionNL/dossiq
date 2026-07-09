@@ -13,12 +13,26 @@
 		:columns="columns"
 		:show-view-action="false"
 		@view="openCase"
-		@row-click="openCase" />
+		@row-click="openCase">
+		<!-- Custom card so case-type + status render as names, not raw UUIDs
+		     (card view does not apply column formatters). -->
+		<template #card="{ object, selected }">
+			<MyWorkCaseCard
+				:object="object"
+				:selected="selected"
+				:case-type-map="caseTypeMap"
+				:status-map="statusMap"
+				@open="openCase" />
+		</template>
+	</CnIndexPage>
 </template>
 
 <script>
 import { CnIndexPage } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
+import MyWorkCaseCard from './MyWorkCaseCard.vue'
+import { initializeStores } from '../store/store.js'
+import { useObjectStore } from '../store/modules/object.js'
 
 /**
  * My Work — the current user's assigned cases, rendered as a standard
@@ -31,7 +45,16 @@ import { getCurrentUser } from '@nextcloud/auth'
 export default {
 	name: 'MyWorkCards',
 
-	components: { CnIndexPage },
+	components: { CnIndexPage, MyWorkCaseCard },
+
+	data() {
+		return {
+			/** { caseTypeUuid: humanName } for the card's Case type chip. */
+			caseTypeMap: {},
+			/** { statusTypeUuid: humanName } for the card's Status chip. */
+			statusMap: {},
+		}
+	},
 
 	computed: {
 		/**
@@ -62,7 +85,45 @@ export default {
 		},
 	},
 
+	/**
+	 * Load the caseType / statusType collections up front and build UUID→name
+	 * maps so the cards show human names (card view does not apply the column
+	 * formatters, and the lazy formatter self-load is unreliable through a
+	 * scoped-slot child's computed).
+	 */
+	async mounted() {
+		await initializeStores()
+		const store = useObjectStore()
+		try {
+			const [caseTypes, statuses] = await Promise.all([
+				store.fetchCollection('caseType', { _limit: 200 }),
+				store.fetchCollection('statusType', { _limit: 200 }),
+			])
+			this.caseTypeMap = this.buildNameMap(caseTypes)
+			this.statusMap = this.buildNameMap(statuses)
+		} catch (e) {
+			// Names simply fall back to hidden chips; never block the list.
+		}
+	},
+
 	methods: {
+		/**
+		 * Build a UUID→name map from an OpenRegister collection.
+		 *
+		 * @param {Array<object>} collection The fetched objects.
+		 * @return {Object<string, string>} id → title/name.
+		 */
+		buildNameMap(collection) {
+			const map = {}
+			for (const o of (collection || [])) {
+				const id = o.id || (o['@self'] && o['@self'].id)
+				if (id) {
+					map[id] = o.title || o.name || String(id)
+				}
+			}
+			return map
+		},
+
 		/**
 		 * Open a case detail page from a clicked row/card.
 		 *

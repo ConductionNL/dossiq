@@ -50,11 +50,6 @@ parameters:
 			path: lib/Service/CaseDefinitionImportService.php
 
 		-
-			message: "#^Property OCA\\\\Procest\\\\Service\\\\InspectionService\\:\\:\\$settingsService is never read, only written\\.$#"
-			count: 1
-			path: lib/Service/InspectionService.php
-
-		-
 			message: "#^Property OCA\\\\Procest\\\\Service\\\\Pdok\\\\PdokBagService\\:\\:\\$settingsService is never read, only written\\.$#"
 			count: 1
 			path: lib/Service/Pdok/PdokBagService.php
