@@ -693,10 +693,16 @@
 				"widgets": [
 					{ "id": "case-core", "type": "data", "title": "Core case data", "icon": "FileDocument", "content": { "columns": 2, "include": [ "title", "identifier", "description", "caseType", "assignee", "requester", "priority", "confidentiality", "deadline", "startDate" ] } },
 					{ "id": "case-process", "type": "data", "title": "Process", "icon": "Cog", "content": { "columns": 2, "include": [ "status", "procedureType", "workflowTemplate", "workflowVersion", "result", "plannedEndDate", "endDate", "extensionCount", "handoffSource", "intakeChannel" ] } },
-					{ "id": "case-kpis", "type": "stats-block", "title": "Key figures", "icon": "Gauge", "content": { "entries": [
-						{ "title": "Open tasks", "register": "procest", "schema": "task", "metric": "count", "filter": { "case": "@objectId", "status": "active" }, "route": { "name": "Tasks" } },
-						{ "title": "Documents", "register": "procest", "schema": "caseDocument", "metric": "count", "filter": { "case": "@objectId" } },
-						{ "title": "Decisions", "register": "procest", "schema": "decision", "metric": "count", "filter": { "case": "@objectId" } },
+					{ "id": "case-kpis-open-tasks", "type": "stats-block", "title": "Open tasks", "icon": "Gauge", "content": { "entries": [
+						{ "title": "Open tasks", "register": "procest", "schema": "task", "metric": "count", "filter": { "case": "@objectId", "status": "active" }, "route": { "name": "Tasks" } }
+					] } },
+					{ "id": "case-kpis-documents", "type": "stats-block", "title": "Documents", "icon": "Gauge", "content": { "entries": [
+						{ "title": "Documents", "register": "procest", "schema": "caseDocument", "metric": "count", "filter": { "case": "@objectId" } }
+					] } },
+					{ "id": "case-kpis-decisions", "type": "stats-block", "title": "Decisions", "icon": "Gauge", "content": { "entries": [
+						{ "title": "Decisions", "register": "procest", "schema": "decision", "metric": "count", "filter": { "case": "@objectId" } }
+					] } },
+					{ "id": "case-kpis-sub-cases", "type": "stats-block", "title": "Sub-cases", "icon": "Gauge", "content": { "entries": [
 						{ "title": "Sub-cases", "register": "procest", "schema": "case", "metric": "count", "filter": { "parentCase": "@objectId" }, "route": { "name": "Cases" } }
 					] } },
 					{ "id": "case-related", "type": "related", "title": "Case type, parent & related cases", "icon": "LinkVariant" },
@@ -713,19 +719,22 @@
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "case-core", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
-					{ "id": "2", "widgetId": "case-kpis", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 6 },
-					{ "id": "3", "widgetId": "case-related", "gridX": 8, "gridY": 6, "gridWidth": 4, "gridHeight": 7 },
+					{ "id": "15", "widgetId": "case-kpis-open-tasks", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "16", "widgetId": "case-kpis-documents", "gridX": 8, "gridY": 2, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "17", "widgetId": "case-kpis-decisions", "gridX": 8, "gridY": 4, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "18", "widgetId": "case-kpis-sub-cases", "gridX": 8, "gridY": 6, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "3", "widgetId": "case-related", "gridX": 8, "gridY": 8, "gridWidth": 4, "gridHeight": 7 },
 					{ "id": "4", "widgetId": "case-process", "gridX": 0, "gridY": 5, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
-					{ "id": "5", "widgetId": "initiator", "gridX": 0, "gridY": 10, "gridWidth": 8, "gridHeight": 3, "showTitle": true },
-					{ "id": "8", "widgetId": "case-tasks", "gridX": 0, "gridY": 13, "gridWidth": 6, "gridHeight": 4 },
-					{ "id": "9", "widgetId": "case-documents", "gridX": 6, "gridY": 13, "gridWidth": 6, "gridHeight": 4 },
-					{ "id": "10", "widgetId": "case-decisions", "gridX": 0, "gridY": 17, "gridWidth": 6, "gridHeight": 3 },
-					{ "id": "11", "widgetId": "case-voorstellen", "gridX": 6, "gridY": 17, "gridWidth": 6, "gridHeight": 3 },
-					{ "id": "12", "widgetId": "case-locaties", "gridX": 0, "gridY": 20, "gridWidth": 12, "gridHeight": 3 },
-					{ "id": "13", "widgetId": "case-files", "gridX": 0, "gridY": 23, "gridWidth": 6, "gridHeight": 3 },
-					{ "id": "14", "widgetId": "case-calendar", "gridX": 6, "gridY": 23, "gridWidth": 6, "gridHeight": 3 },
-					{ "id": "6", "widgetId": "case-contacts", "gridX": 0, "gridY": 26, "gridWidth": 6, "gridHeight": 3 },
-					{ "id": "7", "widgetId": "case-notes", "gridX": 6, "gridY": 26, "gridWidth": 6, "gridHeight": 4 }
+					{ "id": "5", "widgetId": "initiator", "gridX": 0, "gridY": 12, "gridWidth": 8, "gridHeight": 3, "showTitle": true },
+					{ "id": "8", "widgetId": "case-tasks", "gridX": 0, "gridY": 15, "gridWidth": 6, "gridHeight": 4 },
+					{ "id": "9", "widgetId": "case-documents", "gridX": 6, "gridY": 15, "gridWidth": 6, "gridHeight": 4 },
+					{ "id": "10", "widgetId": "case-decisions", "gridX": 0, "gridY": 19, "gridWidth": 6, "gridHeight": 3 },
+					{ "id": "11", "widgetId": "case-voorstellen", "gridX": 6, "gridY": 19, "gridWidth": 6, "gridHeight": 3 },
+					{ "id": "12", "widgetId": "case-locaties", "gridX": 0, "gridY": 22, "gridWidth": 12, "gridHeight": 3 },
+					{ "id": "13", "widgetId": "case-files", "gridX": 0, "gridY": 25, "gridWidth": 6, "gridHeight": 3 },
+					{ "id": "14", "widgetId": "case-calendar", "gridX": 6, "gridY": 25, "gridWidth": 6, "gridHeight": 3 },
+					{ "id": "6", "widgetId": "case-contacts", "gridX": 0, "gridY": 28, "gridWidth": 6, "gridHeight": 3 },
+					{ "id": "7", "widgetId": "case-notes", "gridX": 6, "gridY": 28, "gridWidth": 6, "gridHeight": 4 }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -822,13 +831,23 @@
 						}
 					},
 					{
-						"id": "bezwaar-kpis",
+						"id": "bezwaar-kpis-advice-requests",
 						"type": "stats-block",
-						"title": "Key figures",
+						"title": "Advice requests",
 						"icon": "Gauge",
 						"content": {
 							"entries": [
-								{ "title": "Advice requests", "register": "procest", "schema": "bacAdviceRequest", "metric": "count", "filter": { "bezwaar": "@objectId" } },
+								{ "title": "Advice requests", "register": "procest", "schema": "bacAdviceRequest", "metric": "count", "filter": { "bezwaar": "@objectId" } }
+							]
+						}
+					},
+					{
+						"id": "bezwaar-kpis-decisions",
+						"type": "stats-block",
+						"title": "Decisions",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
 								{ "title": "Decisions", "register": "procest", "schema": "bezwaarDecision", "metric": "count", "filter": { "bezwaar": "@objectId" } }
 							]
 						}
@@ -900,7 +919,8 @@
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "bezwaar-core", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "bezwaar-kpis", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 },
+					{ "id": "6", "widgetId": "bezwaar-kpis-advice-requests", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "7", "widgetId": "bezwaar-kpis-decisions", "gridX": 8, "gridY": 2, "gridWidth": 4, "gridHeight": 2 },
 					{ "id": "3", "widgetId": "bezwaar-terms", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 6 },
 					{ "id": "4", "widgetId": "bezwaar-advies", "gridX": 0, "gridY": 10, "gridWidth": 6, "gridHeight": 4 },
 					{ "id": "5", "widgetId": "bezwaar-beslissingen", "gridX": 6, "gridY": 10, "gridWidth": 6, "gridHeight": 4 }
@@ -1527,13 +1547,23 @@
 						}
 					},
 					{
-						"id": "leges-kpis",
+						"id": "leges-kpis-articles",
 						"type": "stats-block",
-						"title": "Key figures",
+						"title": "Articles",
 						"icon": "Gauge",
 						"content": {
 							"entries": [
-								{ "title": "Articles", "register": "procest", "schema": "legesartikel", "metric": "count", "filter": { "verordening": "@objectId" } },
+								{ "title": "Articles", "register": "procest", "schema": "legesartikel", "metric": "count", "filter": { "verordening": "@objectId" } }
+							]
+						}
+					},
+					{
+						"id": "leges-kpis-calculations",
+						"type": "stats-block",
+						"title": "Calculations",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
 								{ "title": "Calculations", "register": "procest", "schema": "legesberekening", "metric": "count", "filter": { "verordeningId": "@objectId" }, "route": { "name": "Legesberekeningen" } }
 							]
 						}
@@ -1566,7 +1596,8 @@
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "leges-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
-					{ "id": "2", "widgetId": "leges-kpis", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 5 },
+					{ "id": "4", "widgetId": "leges-kpis-articles", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "5", "widgetId": "leges-kpis-calculations", "gridX": 8, "gridY": 2, "gridWidth": 4, "gridHeight": 3 },
 					{ "id": "3", "widgetId": "leges-artikelen", "gridX": 0, "gridY": 5, "gridWidth": 12, "gridHeight": 6 }
 				],
 				"lifecycleActions": { "field": "status" },
@@ -2340,13 +2371,23 @@
 						}
 					},
 					{
-						"id": "bezwaarcommittee-kpis",
+						"id": "bezwaarcommittee-kpis-advice-assignments",
 						"type": "stats-block",
-						"title": "Key figures",
+						"title": "Advice assignments",
 						"icon": "Gauge",
 						"content": {
 							"entries": [
-								{ "title": "Advice assignments", "register": "procest", "schema": "bacAdviceRequest", "metric": "count", "filter": { "commissie": "@objectId" } },
+								{ "title": "Advice assignments", "register": "procest", "schema": "bacAdviceRequest", "metric": "count", "filter": { "commissie": "@objectId" } }
+							]
+						}
+					},
+					{
+						"id": "bezwaarcommittee-kpis-in-deliberation",
+						"type": "stats-block",
+						"title": "In deliberation",
+						"icon": "Gauge",
+						"content": {
+							"entries": [
 								{ "title": "In deliberation", "register": "procest", "schema": "bacAdviceRequest", "metric": "count", "filter": { "commissie": "@objectId", "status": "in-deliberation" } }
 							]
 						}
@@ -2391,7 +2432,8 @@
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "bezwaarcommittee-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
-					{ "id": "2", "widgetId": "bezwaarcommittee-kpis", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 4 },
+					{ "id": "5", "widgetId": "bezwaarcommittee-kpis-advice-assignments", "gridX": 8, "gridY": 0, "gridWidth": 4, "gridHeight": 2 },
+					{ "id": "6", "widgetId": "bezwaarcommittee-kpis-in-deliberation", "gridX": 8, "gridY": 2, "gridWidth": 4, "gridHeight": 2 },
 					{ "id": "3", "widgetId": "bezwaarcommittee-roster", "gridX": 0, "gridY": 4, "gridWidth": 12, "gridHeight": 4 },
 					{ "id": "4", "widgetId": "bezwaarcommittee-adviesaanvragen", "gridX": 0, "gridY": 8, "gridWidth": 12, "gridHeight": 5 }
 				],
