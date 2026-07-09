@@ -668,6 +668,15 @@
 					"enabled": true,
 					"showMetadata": true
 				},
+				"folderSidebar": {
+					"source": "register",
+					"register": "procest",
+					"schema": "caseType",
+					"idField": "@self.id",
+					"nameField": "title",
+					"filterField": "caseType",
+					"allLabel": "All cases"
+				},
 				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
