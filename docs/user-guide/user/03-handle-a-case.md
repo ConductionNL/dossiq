@@ -25,11 +25,15 @@ By the end you will have opened the **Cases** list, filtered it by case type, op
 
 2. On the left of the list sits the **case-type folder sidebar**. Click a folder — for example **Building Permit** — to show only cases of that type. Click **All cases** to clear the filter.
 
+   ![Filter by case type](/screenshots/tutorials/user/03-handle-a-case-02.png)
+
 3. Click a case to open its **detail page**. The page is a grid of widgets: **Core case data** (title, identifier, case type, assignee, deadline), **Process** (status, procedure, workflow), KPI tiles (open tasks, documents, decisions, sub-cases), and a **Related** panel. Below sit the case's collections — **Tasks**, **Documents**, **Decisions** and more — each fitting its own cell.
 
    ![Case detail page](/screenshots/tutorials/user/03-handle-a-case-03.png)
 
 4. Open the sidebar's **History** tab to see the full audit trail of every read, create and update on this case, newest first.
+
+   ![Case history / audit trail](/screenshots/tutorials/user/03-handle-a-case-04.png)
 
 5. To advance the case, go to **Work queue → Workflow board**. Each column is a non-final status (for example *Received*, *In progress*, *Assessment*, *Decision*). Because status names are shared across case types, the board shows one clean column per status name, not one per case type.
 
