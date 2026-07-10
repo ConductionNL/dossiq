@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
+// Must stay first: sets __webpack_public_path__ before any dynamic import()
+// (map/Leaflet, manifest validator) triggers lazy-chunk loading.
+import './publicPath.js'
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import { PiniaVuePlugin } from 'pinia'
