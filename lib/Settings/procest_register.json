@@ -787,7 +787,8 @@
                         "forms",
                         "photos",
                         "maps",
-                        "shares"
+                        "shares",
+                        "decidesk-decisions"
                     ],
                     "x-openregister-processing": {
                         "logReads": true,
@@ -1345,6 +1346,19 @@
                         "type": "string",
                         "title": "Portal subject reference",
                         "description": "Pseudonymous, one-way subject reference (never a raw BSN/KvK) of the citizen this case belongs to in the external Portaliq portal (ADR-046 citizen audience). Server-stamped from the authenticated portal identity; the sole IDOR-safe scope key for a citizen's 'Mijn gemeente' cases. Empty for cases with no external citizen owner."
+                    },
+                    "decisions": {
+                        "type": "array",
+                        "title": "Decisions",
+                        "description": "Governance decisions raised for this case (advice, objection rulings, permit decisions). References decidesk Decision objects (ADR-066); Decidesk owns the making and eIDAS signing.",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid",
+                            "$ref": "Decision",
+                            "x-external-register": "decidesk"
+                        },
+                        "referenceType": "decision",
+                        "x-allow-create": true
                     }
                 }
             },
