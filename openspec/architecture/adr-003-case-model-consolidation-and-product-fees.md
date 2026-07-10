@@ -85,12 +85,21 @@ detail/index pages) modelling concepts that belong to a smaller, sharper core.
   bezwaar / leges objects are example/seed data and are **dropped, not
   migrated** — the same treatment leges gets here. Every wave is a forward-only
   model change.
-- **Parafering (signing) is a Decidesk concern, not procest.** The
-  `parafeerroute` / `parafeeractie` approval-signing workflow behind `voorstel`
-  is a *signing* action; signing belongs to Decidesk (which owns motions,
-  amendments and decisions). Procest removes parafering rather than re-hosting
-  it as a case-type workflow; a case that needs a signature invokes a Decidesk
-  action (a cross-app action, analogous to the Pipelinq-product fee link).
+- **The whole decision-making / signing subsystem moves to Decidesk.**
+  `voorstel` → `parafeerroute`/`parafeeractie` (signing) → `decision` is one
+  chain: procest's Besluitvorming subsystem, which produces municipal
+  college/raad besluiten, WOO decisions and contract decisions, delegating
+  approval to OpenRegister. Signing belongs to Decidesk (motions, amendments,
+  decisions), and the decision apparatus goes with it — not just the parafering
+  layer. Procest cases invoke Decidesk for signing/decisions (a cross-app
+  action, analogous to the Pipelinq-product fee link). **This is a cross-app
+  migration, not a procest-internal deletion, and warrants its own ADR** (the
+  procest↔Decidesk decision boundary): the `decision` schema is a dependency
+  hub (`bezwaarDecision`, contract decisions, WOO decisions all reference it),
+  so it cannot be removed from procest until those dependents are resolved and
+  Decidesk owns the capability. Sequencing is therefore: (a) design the
+  boundary + confirm/build Decidesk's decision capability, (b) migrate
+  consumers, (c) retire procest's Besluitvorming last.
 - **The bezwaar dependents are removed, not retained.** `DwangsomBezwaarService`
   (penalty payments), `IngebrekestellingController` (notice of default) and the
   bezwaar-coupled deadline logic go with the objection subsystem in Wave 4.
