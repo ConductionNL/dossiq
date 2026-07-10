@@ -142,7 +142,7 @@
 			"id": "CaseTypesMenu",
 			"label": "Case types",
 			"icon": "icon-category-customization",
-			"route": "Settings",
+			"route": "CaseTypes",
 			"section": "settings",
 			"order": 95
 		},
@@ -1290,6 +1290,32 @@
 			"_note": "Bespoke Kanban board (one column per non-final status type, drag-to-transition) rendered by a host-app SFC; no standard page type offers the drag-between-status-columns workflow surface. Mounted directly (not wrapped in a dashboard widget) so its own header is the single page title.",
 			"config": {
 				"register": "procest"
+			}
+		},
+		{
+			"id": "CaseTypes",
+			"route": "/case-types",
+			"type": "index",
+			"title": "Case types",
+			"config": {
+				"register": "procest",
+				"schema": "caseType",
+				"columns": ["title", "identifier", "subject", "processingDeadline", "confidentiality"],
+				"showViewAction": false,
+				"actions": ["create", "edit", "delete", { "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "CaseTypeDetail", "type": "handler" }],
+				"sidebar": { "enabled": true },
+				"documentationUrl": "https://procest.conduction.nl"
+			}
+		},
+		{
+			"id": "CaseTypeDetail",
+			"route": "/case-types/:id",
+			"type": "detail",
+			"title": "Case type",
+			"config": {
+				"register": "procest",
+				"schema": "caseType",
+				"documentationUrl": "https://procest.conduction.nl"
 			}
 		},
 		{
