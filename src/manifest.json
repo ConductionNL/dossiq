@@ -1380,12 +1380,12 @@
 				"register": "procest",
 				"schema": "tenant",
 				"columns": [
-					"name",
-					"slug",
-					"oin",
-					"domain",
-					"groupId",
-					"isActive"
+					{ "key": "displayName", "label": "Name" },
+					{ "key": "legalName", "label": "Legal name" },
+					{ "key": "kvkNumber", "label": "KvK number" },
+					{ "key": "status", "label": "Status" },
+					{ "key": "tier", "label": "Tier" },
+					{ "key": "dataResidency", "label": "Data residency" }
 				],
 				"showViewAction": false,
 				"actions": [
