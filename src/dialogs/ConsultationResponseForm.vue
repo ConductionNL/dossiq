@@ -140,7 +140,7 @@ export default {
 				{ label: this.t('procest', 'Positief'), value: 'positief' },
 				{ label: this.t('procest', 'Positief met voorwaarden'), value: 'positief_met_voorwaarden' },
 				{ label: this.t('procest', 'Negatief'), value: 'negatief' },
-				{ label: this.t('procest', 'Niet van toepassing'), value: 'niet_van_toepassing' },
+				{ label: this.t('procest', 'Not applicable'), value: 'niet_van_toepassing' },
 			],
 			priorityOptions: [
 				{ label: this.t('procest', 'Hoog'), value: 'hoog' },

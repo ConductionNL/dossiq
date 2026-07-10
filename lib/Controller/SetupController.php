@@ -95,16 +95,23 @@ class SetupController extends Controller
             $this->appConfig->setValueString('procest', 'setup_completed_version', (string) self::SETUP_VERSION);
         }
 
-        return new DataResponse(
-            [
-                'version'   => self::SETUP_VERSION,
-                'completed' => $completed,
-                'steps'     => [
-                    'register-check' => ['done' => $registerDone],
-                    'seed'           => ['done' => $seedDone],
-                ],
-            ]
-        );
+        $response = [
+            'version'   => self::SETUP_VERSION,
+            'completed' => $completed,
+            'steps'     => [
+                'register-check' => ['done' => $registerDone],
+                'seed'           => ['done' => $seedDone],
+            ],
+        ];
+
+        // Financial-integration (dwangsom uitbetaling) capability: surface a
+        // missing callback secret before go-live rather than after an
+        // incident (enforce-dwangsom-callback-signature spec).
+        if ($this->config(key: 'dwangsom_uitbetaling_schema') !== '') {
+            $response['dwangsom_callback_secret_configured'] = $this->config(key: 'dwangsom_callback_secret') !== '';
+        }
+
+        return new DataResponse($response);
     }//end status()
 
     /**

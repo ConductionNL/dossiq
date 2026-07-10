@@ -57,6 +57,15 @@ class SubstitutionController extends Controller
     use SearchesObjects;
 
     /**
+     * Maximum number of substitution rows fetched per call, matching the
+     * pagination pattern used elsewhere in this app (e.g.
+     * RaadsinformatieFeedController::FEED_LIMIT).
+     *
+     * @var int
+     */
+    private const SUBSTITUTION_LIMIT = 200;
+
+    /**
      * Constructor.
      *
      * @param string                   $appName             The app name.
@@ -428,6 +437,8 @@ class SubstitutionController extends Controller
      * Fetch all substitutions (used by index, then filtered per role).
      *
      * @return array<int, array<string, mixed>>
+     *
+     * @spec openspec/changes/performance-hardening-audit-log-and-boot/specs/performance-hardening/spec.md
      */
     private function allSubstitutions(): array
     {
@@ -439,7 +450,12 @@ class SubstitutionController extends Controller
         }
 
         try {
-            return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema);
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['_limit' => self::SUBSTITUTION_LIMIT]
+            );
         } catch (\Throwable $e) {
             return [];
         }

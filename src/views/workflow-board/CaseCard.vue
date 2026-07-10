@@ -3,9 +3,11 @@
 <!--
 	Workflow-board case card — a single draggable Kanban card. Shows the case
 	identifier, truncated title, case-type chip, assignee and a deadline
-	indicator. Emits `dragstart` (with the case id) and `click` (open detail).
+	indicator. Emits `dragstart` (with the case id), `click` (open detail), and
+	`move` (caseId, newStatusId) from the keyboard-operable "Move to…" menu —
+	the same status-transition path as the drag gesture (WCAG 2.1.1 Keyboard).
 
-	Spec: openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-006
+	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
 -->
 <template>
 	<div
@@ -36,22 +38,67 @@
 				{{ deadlineLabel }}
 			</span>
 		</div>
+
+		<!-- Keyboard-operable status move control (REQ-KBD-01). Separate
+			focusable control from the card body's open-detail action; stop
+			propagation so activating it never also fires the card's own
+			click/open handler. -->
+		<NcActions
+			v-if="otherColumns.length > 0"
+			class="case-card__move-actions"
+			:inline="0"
+			@click.native.stop
+			@keydown.native.stop>
+			<template #icon>
+				<ArrowRightBoldCircleOutline :size="18" />
+			</template>
+			<NcActionButton
+				v-for="col in otherColumns"
+				:key="col.id"
+				@click="$emit('move', caseItem.id, col.id)">
+				{{ t('procest', 'Move to {status}', { status: col.name }) }}
+			</NcActionButton>
+		</NcActions>
 	</div>
 </template>
 
 <script>
+import { NcActions, NcActionButton } from '@nextcloud/vue'
+import ArrowRightBoldCircleOutline from 'vue-material-design-icons/ArrowRightBoldCircleOutline.vue'
 import { getDaysRemaining } from '../../utils/caseHelpers.js'
+import { columnsExcludingCurrent } from '../../utils/workflowBoardHelpers.js'
 
 export default {
 	name: 'CaseCard',
+	components: {
+		NcActions,
+		NcActionButton,
+		ArrowRightBoldCircleOutline,
+	},
 	props: {
 		/** The case object: { id, identifier, title, caseType, assignee, deadline }. */
 		caseItem: { type: Object, required: true },
 		/** Resolved case-type display name (parent resolves from the type map). */
 		caseTypeName: { type: String, default: '' },
+		/**
+		 * All board columns (status types), used to populate the "Move to…"
+		 * menu with every status other than this card's current one.
+		 *
+		 * @type {Array<{id: string, name: string}>}
+		 */
+		columns: { type: Array, default: () => [] },
 	},
-	emits: ['click', 'dragstart'],
+	emits: ['click', 'dragstart', 'move'],
 	computed: {
+		/**
+		 * Status columns the card can move to — every column except the one
+		 * it is currently in.
+		 *
+		 * @return {Array<{id: string, name: string}>}
+		 */
+		otherColumns() {
+			return columnsExcludingCurrent(this.columns, this.caseItem.status)
+		},
 		/**
 		 * Days remaining on the deadline, or null when there is no deadline.
 		 *
@@ -113,6 +160,7 @@ export default {
 
 <style scoped>
 .case-card {
+	position: relative;
 	background: var(--color-main-background);
 	border: 1px solid var(--color-border);
 	border-left: 3px solid var(--color-border);
@@ -121,6 +169,12 @@ export default {
 	margin-bottom: 8px;
 	cursor: grab;
 	transition: box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.case-card__move-actions {
+	position: absolute;
+	top: 4px;
+	right: 4px;
 }
 
 .case-card:hover,

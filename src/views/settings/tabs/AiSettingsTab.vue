@@ -111,7 +111,7 @@
 
 <script>
 import { NcButton, NcTextField, NcCheckboxRadioSwitch, NcLoadingIcon, NcNoteCard, NcPasswordField } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import { getAiSettings, updateAiSettings, testAiHealth } from '../../../services/aiApi.js'
 
 export default {

@@ -15,16 +15,30 @@
  * so CI can run it in a bare node container, and devs can run it with
  * `node tests/l10n/check-l10n.js` from the app root.
  *
+ * In addition to the used-key ⊂ en.json check, this script enforces
+ * en.json ⇔ nl.json KEY-SET PARITY: every key in l10n/en.json MUST exist in
+ * l10n/nl.json with a non-empty value (and vice versa). Without this, a new
+ * English source string can ship with no Dutch translation and a Dutch-locale
+ * user silently sees the raw English key as fallback text — the gap that
+ * `nl-locale-coverage-gap-and-dutch-keys` closed. It also WARNS on any new
+ * translation key whose text reads as Dutch (Dutch-as-key anti-pattern), since
+ * translation keys MUST be English source per project convention.
+ *
  * Modes:
- *   (default)  check only — exit non-zero if any used key is missing.
+ *   (default)  check only — exit non-zero if any used key is missing OR the
+ *              en/nl key sets diverge.
  *   --write    extraction — merge every missing used key into l10n/en.json
  *              as `"<source>": "<source>"` (English source === key, the
  *              Nextcloud convention) and re-sort. This is the reproducible
- *              "run extraction" step; run it, review the diff, commit.
+ *              "run extraction" step; run it, review the diff, commit. The
+ *              en/nl parity check is NOT auto-written (Dutch needs a human
+ *              translation, not a self-map).
  *
  * Exit codes:
- *   0  every used key is present in en.json (or --write made it so)
- *   1  one or more used keys are missing from en.json (hard failure)
+ *   0  every used key is present in en.json AND en/nl key sets match
+ *      (or --write made the en.json side so)
+ *   1  one or more used keys are missing from en.json, OR the en/nl key
+ *      sets diverge (hard failure)
  *
  * Env:
  *   L10N_APP_ID   override the app id (default: package.json "name")
@@ -163,12 +177,46 @@ console.log(`l10n-check [${appId}]: scanned ${files.length} files, `
 	+ `${used.size} distinct literal keys used, `
 	+ `${Object.keys(translations).length} keys in en.json`)
 
-if (missing.length === 0) {
+// ---------------------------------------------------------------------------
+// en.json ⇔ nl.json parity (REQ-I18N-03). Every key in en.json MUST exist in
+// nl.json with a non-empty value, and vice versa, so no user-visible string
+// silently falls back to the raw key literal in the other locale.
+// ---------------------------------------------------------------------------
+const nlFile = path.join(path.dirname(enFile), 'nl.json')
+let parityMissingInNl = []
+let parityMissingInEn = []
+let parityEmptyNl = []
+let nlChecked = false
+if (fs.existsSync(nlFile)) {
+	nlChecked = true
+	const nlTranslations = readJson(nlFile).translations || {}
+	for (const key of Object.keys(translations)) {
+		if (!Object.prototype.hasOwnProperty.call(nlTranslations, key)) {
+			parityMissingInNl.push(key)
+		} else if (nlTranslations[key] === '' || nlTranslations[key] == null) {
+			parityEmptyNl.push(key)
+		}
+	}
+	for (const key of Object.keys(nlTranslations)) {
+		if (!Object.prototype.hasOwnProperty.call(translations, key)) {
+			parityMissingInEn.push(key)
+		}
+	}
+} else {
+	console.warn(`l10n-check: WARN — nl.json not found at ${path.relative(ROOT, nlFile)}; skipping en/nl parity check`)
+}
+
+const parityFail = parityMissingInNl.length > 0 || parityMissingInEn.length > 0 || parityEmptyNl.length > 0
+
+if (missing.length === 0 && !parityFail) {
 	console.log('l10n-check: OK — every used translation key is present in l10n/en.json')
+	if (nlChecked) {
+		console.log('l10n-check: OK — en.json and nl.json key sets match (no missing Dutch translations)')
+	}
 	process.exit(0)
 }
 
-if (WRITE) {
+if (WRITE && missing.length > 0) {
 	// Extraction mode: APPEND missing keys (source === English value) after
 	// the existing entries, preserving the original key order so the diff is
 	// purely additive (no whole-file re-sort churn). New keys are sorted
@@ -183,20 +231,57 @@ if (WRITE) {
 	console.log(`l10n-check: WROTE ${missing.length} missing key(s) into `
 		+ `${path.relative(ROOT, enFile)} (source === English value). `
 		+ 'Review the diff and translate the nl.json side as needed.')
-	process.exit(0)
+	// Fall through to the parity report so --write still surfaces nl gaps,
+	// but never auto-exits 0 while the Dutch side is incomplete.
+	if (!parityFail) {
+		process.exit(0)
+	}
 }
 
-console.error(`\nl10n-check: FAIL — ${missing.length} translation key(s) used in source `
-	+ 'but MISSING from l10n/en.json:')
-for (const { key, locations } of missing.sort((a, b) => a.key.localeCompare(b.key))) {
-	console.error(`  • ${JSON.stringify(key)}`)
-	for (const loc of locations.slice(0, 5)) {
-		console.error(`      ${loc}`)
+if (missing.length > 0 && !WRITE) {
+	console.error(`\nl10n-check: FAIL — ${missing.length} translation key(s) used in source `
+		+ 'but MISSING from l10n/en.json:')
+	for (const { key, locations } of missing.sort((a, b) => a.key.localeCompare(b.key))) {
+		console.error(`  • ${JSON.stringify(key)}`)
+		for (const loc of locations.slice(0, 5)) {
+			console.error(`      ${loc}`)
+		}
+		if (locations.length > 5) {
+			console.error(`      … +${locations.length - 5} more`)
+		}
 	}
-	if (locations.length > 5) {
-		console.error(`      … +${locations.length - 5} more`)
-	}
+	console.error('\nAdd the missing source strings to l10n/en.json (key === English source), '
+		+ 'or run `node tests/l10n/check-l10n.js --write` to extract them automatically.')
 }
-console.error('\nAdd the missing source strings to l10n/en.json (key === English source), '
-	+ 'or run `node tests/l10n/check-l10n.js --write` to extract them automatically.')
-process.exit(1)
+
+if (parityFail) {
+	console.error('\nl10n-check: FAIL — l10n/en.json and l10n/nl.json key sets diverge.')
+	if (parityMissingInNl.length > 0) {
+		console.error(`\n  ${parityMissingInNl.length} key(s) in en.json but MISSING a Dutch translation in nl.json:`)
+		for (const key of parityMissingInNl.sort((a, b) => a.localeCompare(b)).slice(0, 40)) {
+			console.error(`  • ${JSON.stringify(key)}`)
+		}
+		if (parityMissingInNl.length > 40) {
+			console.error(`  … +${parityMissingInNl.length - 40} more`)
+		}
+	}
+	if (parityEmptyNl.length > 0) {
+		console.error(`\n  ${parityEmptyNl.length} key(s) present in nl.json but with an EMPTY value:`)
+		for (const key of parityEmptyNl.sort((a, b) => a.localeCompare(b)).slice(0, 40)) {
+			console.error(`  • ${JSON.stringify(key)}`)
+		}
+	}
+	if (parityMissingInEn.length > 0) {
+		console.error(`\n  ${parityMissingInEn.length} key(s) in nl.json but ABSENT from en.json (stale — remove or add to en.json):`)
+		for (const key of parityMissingInEn.sort((a, b) => a.localeCompare(b)).slice(0, 40)) {
+			console.error(`  • ${JSON.stringify(key)}`)
+		}
+		if (parityMissingInEn.length > 40) {
+			console.error(`  … +${parityMissingInEn.length - 40} more`)
+		}
+	}
+	console.error('\nAdd the missing Dutch translations to l10n/nl.json so no Dutch-locale '
+		+ 'string falls back to the raw English key.')
+}
+
+process.exit((missing.length > 0 && !WRITE) || parityFail ? 1 : 0)

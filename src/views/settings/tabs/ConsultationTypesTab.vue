@@ -18,7 +18,7 @@
 				:aria-label-combobox="t('procest', 'Selecteer zaaktype')"
 				label="label"
 				:reduce="opt => opt.value"
-				:placeholder="t('procest', 'Selecteer een zaaktype')" />
+				:placeholder="t('procest', 'Select a case type')" />
 		</div>
 
 		<template v-if="selectedCaseTypeId">
@@ -185,7 +185,7 @@ export default {
 					value: { [this.selectedCaseTypeId]: this.consultationTypes },
 				})
 			} catch (e) {
-				this.saveError = this.t('procest', 'Opslaan mislukt. Probeer het opnieuw.')
+				this.saveError = this.t('procest', 'Save failed. Please try again.')
 				console.error('Failed to save consultation types', e)
 			} finally {
 				this.saving = false

@@ -22,7 +22,7 @@
 			<NcSelect
 				v-model="filters.berichtSoort"
 				:options="berichtSoortOptions"
-				:input-label="t('procest', 'Bericht soort')"
+				:input-label="t('procest', 'Message type')"
 				clearable />
 			<NcSelect
 				v-model="filters.status"
@@ -44,7 +44,7 @@
 				<tr>
 					<th>{{ t('procest', 'Sent at') }}</th>
 					<th>{{ t('procest', 'Direction') }}</th>
-					<th>{{ t('procest', 'Bericht') }}</th>
+					<th>{{ t('procest', 'Message') }}</th>
 					<th>{{ t('procest', 'Functie') }}</th>
 					<th>{{ t('procest', 'Status') }}</th>
 					<th>{{ t('procest', 'HTTP') }}</th>

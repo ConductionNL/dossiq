@@ -22,7 +22,7 @@
 		<div class="consultation-dashboard__filters">
 			<NcTextField
 				:value="filters.search"
-				:label="t('procest', 'Zoeken')"
+				:label="t('procest', 'Search')"
 				:placeholder="t('procest', 'Zoek op onderwerp, afdeling...')"
 				@update:value="v => filters.search = v" />
 
@@ -32,11 +32,11 @@
 				:aria-label-combobox="t('procest', 'Status filter')"
 				label="label"
 				:reduce="opt => opt.value"
-				:placeholder="t('procest', 'Alle statussen')" />
+				:placeholder="t('procest', 'All statuses')" />
 
 			<div class="consultation-dashboard__date-range">
 				<label class="consultation-dashboard__filter-label">
-					{{ t('procest', 'Deadline van') }}
+					{{ t('procest', 'Deadline from') }}
 				</label>
 				<input
 					v-model="filters.dateFrom"
@@ -52,7 +52,7 @@
 			</div>
 
 			<NcButton @click="loadConsultations">
-				{{ t('procest', 'Filteren') }}
+				{{ t('procest', 'Filter') }}
 			</NcButton>
 		</div>
 
@@ -151,7 +151,7 @@ export default {
 				{ label: this.t('procest', 'Open'), value: 'open' },
 				{ label: this.t('procest', 'In behandeling'), value: 'in_behandeling' },
 				{ label: this.t('procest', 'Advies uitgebracht'), value: 'advies_uitgebracht' },
-				{ label: this.t('procest', 'Afgesloten'), value: 'afgesloten' },
+				{ label: this.t('procest', 'Closed'), value: 'afgesloten' },
 			],
 		}
 	},
@@ -257,7 +257,7 @@ export default {
 				open: this.t('procest', 'Open'),
 				in_behandeling: this.t('procest', 'In behandeling'),
 				advies_uitgebracht: this.t('procest', 'Advies uitgebracht'),
-				afgesloten: this.t('procest', 'Afgesloten'),
+				afgesloten: this.t('procest', 'Closed'),
 			}
 			return labels[status] || status
 		},
@@ -270,7 +270,7 @@ export default {
 				await axios.post(`/apps/procest/api/consultations/${encodeURIComponent(item.id)}/claim`)
 				await this.loadConsultations()
 			} catch (err) {
-				this.error = this.t('procest', 'Oppakken mislukt.')
+				this.error = this.t('procest', 'Could not take on the consultation.')
 			}
 		},
 	},
