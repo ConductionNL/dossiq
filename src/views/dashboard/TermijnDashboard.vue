@@ -5,13 +5,13 @@
 <template>
 	<div class="termijn-dashboard">
 		<div class="termijn-dashboard__header">
-			<h2>{{ t('procest', 'AWB termijnbewaking dashboard') }}</h2>
+			<h2>{{ t('procest', 'Deadline monitoring') }}</h2>
 			<div class="termijn-dashboard__controls">
 				<NcSelect
 					:value="selectedZaaktype"
 					:options="zaaktypeOptions"
-					:input-label="t('procest', 'Filter by zaaktype')"
-					:placeholder="t('procest', 'All zaaktypes')"
+					:input-label="t('procest', 'Filter by case type')"
+					:placeholder="t('procest', 'All case types')"
 					@input="onZaaktypeChange" />
 				<NcButton type="secondary" @click="load">
 					<template #icon>
