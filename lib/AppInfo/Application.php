@@ -51,8 +51,6 @@ use OCA\Procest\Listener\DecisionConcludedListener;
 use OCA\Procest\Event\ParafeerTransitionEvent;
 use OCA\Procest\Listener\ApprovalStepNotificationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
-use OCA\Procest\Listener\LegesCaseCreatedListener;
-use OCA\Procest\Listener\LegesCaseWithdrawnListener;
 use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
 use OCA\Procest\Mcp\ProcestToolProvider;
@@ -237,7 +235,6 @@ class Application extends App implements IBootstrap
         );
 
         $this->registerBezwaarListeners(context: $context);
-        $this->registerLegesListeners(context: $context);
         $this->registerTermijnListeners(context: $context);
         $this->registerDecisionListeners(context: $context);
 
@@ -498,30 +495,6 @@ class Application extends App implements IBootstrap
             listener: BezwaarDecisionListener::class
         );
     }//end registerBezwaarListeners()
-
-    /**
-     * Register leges-heffingen lifecycle listeners.
-     *
-     * On case creation, an automatic leges calculation is triggered for cases
-     * whose case type is coupled to a tariff; on case withdrawal, the refund
-     * workflow is triggered. Both listeners are pure observers that defer to
-     * the leges services and never own calculation/refund logic (ADR-022).
-     *
-     * @param IRegistrationContext $context The registration context
-     *
-     * @return void
-     */
-    private function registerLegesListeners(IRegistrationContext $context): void
-    {
-        $context->registerEventListener(
-            event: ObjectCreatedEvent::class,
-            listener: LegesCaseCreatedListener::class
-        );
-        $context->registerEventListener(
-            event: ObjectUpdatedEvent::class,
-            listener: LegesCaseWithdrawnListener::class
-        );
-    }//end registerLegesListeners()
 
     /**
      * Register termijnbewaking (AWB deadline engine) listeners.

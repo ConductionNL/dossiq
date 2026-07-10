@@ -81,9 +81,6 @@ import RelatedCasesSection from './views/cases/components/RelatedCasesSection.vu
 import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
 import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
 import InspectionPanel from './views/cases/components/InspectionPanel.vue'
-// Leges-heffingen: case detail sidebar tab + admin verordeningen page.
-import LegesBerekeningPanel from './views/cases/components/LegesBerekeningPanel.vue'
-import LegesVerordeningenAdmin from './views/settings/LegesVerordeningenAdmin.vue'
 
 // ADR-049 dissolution: the manifest Dashboard page's signal widgets (open /
 // overdue / stalled cases, my tasks, task reminders, deadline alerts) and the
@@ -381,19 +378,6 @@ const registry = {
 	// --- Zaakportaal "Mijn gemeente" citizen portal MOVED to Portaliq
 	//     (ADR-046, procest#162): re-expressed as the `citizen` audience in
 	//     lib/Portal/PortalContributionProvider.php. See import-section comment. ---
-
-	// --- Leges-heffingen: case detail tab + admin page. ---
-	// @spec openspec/changes/leges-heffingen/specs.md#req-leges-002
-	LegesBerekeningPanel: {
-		kind: 'page',
-		component: LegesBerekeningPanel,
-		_note: 'Leges panel — shows the calculation, audit trail and refund action on case detail',
-	},
-	LegesVerordeningenAdmin: {
-		kind: 'page',
-		component: LegesVerordeningenAdmin,
-		_note: 'Admin page listing leges tariff tables with import + approve workflow',
-	},
 
 	// --- Dashboard signal widgets + charts + header actions DISSOLVED (ADR-049). ---
 	// casesOverview / overdueCases / stalledCases / myTasks / taskReminders /
