@@ -38,9 +38,14 @@ detail/index pages) modelling concepts that belong to a smaller, sharper core.
    separate object graph. (Implemented in later waves; this ADR fixes the
    direction.)
 
-2. **Transfers are actions.** A hand-off between handlers is an operation on a
-   case (`CaseReassignmentService`), invoked from a case action — never a
-   first-class object with a detail page.
+2. **Handler hand-offs are actions, not objects.** Reassigning a case from one
+   handler to the next is a stateless operation (`CaseReassignmentService`,
+   invoked from a case action) — it already persists no object and needs none.
+   (Distinct and out of scope: `casetransfer` models **cross-organisation**
+   case ownership handover with an accept/reject handshake between partner
+   orgs; that persisted record is legitimate and **stays**. The two were
+   conflated in the initial review — only the stateless handler hand-off is an
+   "action", and it already is one.)
 
 3. **Fees are products, owned by Pipelinq.** Procest does **not** implement a
    fee engine. A municipal fee is a **product** in Pipelinq's product register
@@ -66,9 +71,10 @@ detail/index pages) modelling concepts that belong to a smaller, sharper core.
   Pipelinq-product relation. **Existing leges data is dropped, not migrated**
   (deliberate — the fee model is replaced, not ported). `beschikking.legesbedrag`
   remains as a stored amount on a decision and is out of scope here.
-- **Later waves:** `casetransfer` collapses to the reassignment action (Wave 2);
-  `voorstel` / advice / `beroep` (Wave 3) and the `bezwaar` objection subsystem
-  (Wave 4) fold into the `case` model as case types. Each is its own change.
+- **Later waves:** `voorstel` / advice / `beroep` (Wave 2) and the `bezwaar`
+  objection subsystem (Wave 3) fold into the `case` model as case types. Each is
+  its own change. (Handler reassignment is already an action and `casetransfer`
+  cross-org handover stays — there is no transfer-deletion wave.)
 - Procest gains a soft dependency on Pipelinq's product register for the fee
   relation. This is a reference, not a code dependency; procest degrades to an
   empty picker if Pipelinq is absent.
