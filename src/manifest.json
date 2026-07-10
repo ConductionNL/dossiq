@@ -9,10 +9,10 @@
 		"version": 1,
 		"completionConfigKey": "setup_completed_version",
 		"steps": [
-			{ "id": "welcome", "type": "info", "title": "Welcome to Procest", "body": "Let's set up Procest. First initialise the register; then optionally load the example demo data." },
-			{ "id": "register-check", "type": "run-action", "title": "Initialise register and schemas", "action": "init-register", "required": true },
-			{ "id": "seed", "type": "run-action", "title": "Load example demo data", "action": "seed", "required": false },
-			{ "id": "done", "type": "summary", "title": "Done", "healthCheck": true }
+			{ "id": "welcome", "type": "info", "title": "Welkom bij Procest", "body": "Laten we Procest klaarzetten. Initialiseer eerst het register; laad daarna optioneel de Bezwaar & Beroep voorbeelddata." },
+			{ "id": "register-check", "type": "run-action", "title": "Register en schema's initialiseren", "action": "init-register", "required": true },
+			{ "id": "seed", "type": "run-action", "title": "Bezwaar & Beroep voorbeelddata laden", "action": "seed", "required": false },
+			{ "id": "done", "type": "summary", "title": "Klaar", "healthCheck": true }
 		]
 	},
 	"walkthrough": {
@@ -57,11 +57,17 @@
 			"order": 20
 		},
 		{
-			"id": "Cases",
+			"id": "CasesGroup",
 			"label": "Cases",
 			"icon": "icon-folder",
-			"route": "Cases",
 			"order": 30
+		},
+		{
+			"id": "Cases",
+			"label": "All cases",
+			"icon": "icon-folder",
+			"route": "Cases",
+			"order": 40
 		},
 		{
 			"id": "WorkflowBoard",
@@ -142,7 +148,7 @@
 			"id": "CaseTypesMenu",
 			"label": "Case types",
 			"icon": "icon-category-customization",
-			"route": "CaseTypes",
+			"route": "Settings",
 			"section": "settings",
 			"order": 95
 		},
@@ -347,7 +353,7 @@
 								"register": "procest",
 								"schema": "case",
 								"filter": { "isFinalStatus": false },
-								"aggregate": { "groupBy": "status", "metric": "count", "mergeByLabel": true, "labelResolve": { "schema": "statusType", "labelField": "name" } },
+								"aggregate": { "groupBy": "status", "metric": "count", "labelResolve": { "schema": "statusType", "labelField": "name" } },
 								"drilldown": { "route": "Cases", "filterParam": "status" }
 							}
 						}
@@ -612,12 +618,11 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
-				"viewMode": "list",
-				"viewModes": ["list", "table", "cards", "map"],
+				"viewModes": ["table", "cards", "map"],
 				"mapConfig": {
 					"geoField": "geometry",
 					"popupField": "title",
-					"center": [52.517, 13.404]
+					"center": [52.1326, 5.2913]
 				},
 				"showViewAction": false,
 				"actions": [
@@ -703,7 +708,8 @@
 					{ "id": "case-files", "type": "integration", "integrationId": "files", "title": "Files & attachments", "icon": "FolderOutline" },
 					{ "id": "case-notes", "type": "integration", "integrationId": "notes", "title": "Notes", "icon": "NoteTextOutline" },
 					{ "id": "case-contacts", "type": "integration", "integrationId": "contacts", "title": "Connected contacts", "icon": "AccountGroup" },
-					{ "id": "case-calendar", "type": "integration", "integrationId": "calendar", "title": "Appointments & hearings", "icon": "Calendar" }
+					{ "id": "case-calendar", "type": "integration", "integrationId": "calendar", "title": "Appointments & hearings", "icon": "Calendar" },
+					{ "id": "case-decidesk-decisions", "type": "integration", "integrationId": "decidesk-decisions", "title": "Besluitvorming", "icon": "Gavel" }
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "case-core", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
@@ -722,7 +728,8 @@
 					{ "id": "13", "widgetId": "case-files", "gridX": 0, "gridY": 25, "gridWidth": 6, "gridHeight": 3 },
 					{ "id": "14", "widgetId": "case-calendar", "gridX": 6, "gridY": 25, "gridWidth": 6, "gridHeight": 3 },
 					{ "id": "6", "widgetId": "case-contacts", "gridX": 0, "gridY": 28, "gridWidth": 6, "gridHeight": 3 },
-					{ "id": "7", "widgetId": "case-notes", "gridX": 6, "gridY": 28, "gridWidth": 6, "gridHeight": 4 }
+					{ "id": "7", "widgetId": "case-notes", "gridX": 6, "gridY": 28, "gridWidth": 6, "gridHeight": 4 },
+					{ "id": "19", "widgetId": "case-decidesk-decisions", "gridX": 0, "gridY": 32, "gridWidth": 12, "gridHeight": 4 }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -801,7 +808,7 @@
 			"id": "BezwaarDetail",
 			"route": "/bezwaren/:id",
 			"type": "detail",
-			"title": "Objection",
+			"title": "Bezwaar",
 			"config": {
 				"register": "procest",
 				"schema": "bezwaar",
@@ -853,7 +860,7 @@
 					{
 						"id": "bezwaar-advies",
 						"type": "object-list",
-						"title": "Advice",
+						"title": "Advies",
 						"icon": "MessageTextOutline",
 						"content": {
 							"register": "procest",
@@ -927,7 +934,7 @@
 			"id": "BezwaarDecisionDetail",
 			"route": "/bezwaar-decisions/:id",
 			"type": "detail",
-			"title": "Objection decision",
+			"title": "Beslissing op bezwaar",
 			"config": {
 				"register": "procest",
 				"schema": "bezwaarDecision",
@@ -936,7 +943,7 @@
 				"widgets": [
 					{ "id": "bezwaardecision-data", "type": "data", "title": "Disposition & reasoning", "icon": "ScaleBalance", "content": { "columns": 2, "include": [ "dispositionType", "reasoning", "legalBasis", "advisoryOpinion", "followsAdvice", "deviationRationale", "proceskostenvergoeding", "status" ] } },
 					{ "id": "bezwaardecision-publication", "type": "data", "title": "Publication & documents", "icon": "FileSign", "content": { "columns": 2, "include": [ "replacementDecision", "appealNotice", "decisionDate", "effectiveDate", "decisionMaker", "decisionDocument", "publishedAt", "notifiedRecipients" ] } },
-					{ "id": "bezwaardecision-related", "type": "related", "title": "Objection & case", "icon": "LinkVariant" }
+					{ "id": "bezwaardecision-related", "type": "related", "title": "Bezwaar & case", "icon": "LinkVariant" }
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "bezwaardecision-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
@@ -1000,7 +1007,7 @@
 					{
 						"id": "tasknew-data",
 						"type": "data",
-						"title": "New task",
+						"title": "Nieuwe taak",
 						"icon": "ClipboardCheckOutline",
 						"content": {
 							"columns": 2
@@ -1058,7 +1065,7 @@
 			"id": "Voorstellen",
 			"route": "/voorstellen",
 			"type": "index",
-			"title": "Proposals",
+			"title": "Voorstellen",
 			"config": {
 				"register": "procest",
 				"schema": "voorstel",
@@ -1075,7 +1082,7 @@
 						}
 					},
 					{
-						"label": "In progress",
+						"label": "In behandeling",
 						"filter": {
 							"status": [
 								"in_parafering",
@@ -1164,7 +1171,7 @@
 			"id": "VoorstelDetail",
 			"route": "/voorstellen/:id",
 			"type": "detail",
-			"title": "Proposal",
+			"title": "Voorstel",
 			"config": {
 				"register": "procest",
 				"schema": "voorstel",
@@ -1249,12 +1256,12 @@
 			"id": "Doorlooptijd",
 			"route": "/doorlooptijd",
 			"type": "dashboard",
-			"title": "Processing time",
+			"title": "Doorlooptijd",
 			"config": {
 				"widgets": [
 					{
 						"id": "doorlooptijd",
-						"title": "Processing time",
+						"title": "Doorlooptijd",
 						"type": "custom"
 					}
 				],
@@ -1286,32 +1293,6 @@
 			}
 		},
 		{
-			"id": "CaseTypes",
-			"route": "/case-types",
-			"type": "index",
-			"title": "Case types",
-			"config": {
-				"register": "procest",
-				"schema": "caseType",
-				"columns": ["title", "identifier", "subject", "processingDeadline", "confidentiality"],
-				"showViewAction": false,
-				"actions": ["create", "edit", "delete", { "id": "view", "label": "View", "icon": "icon-info", "handler": "navigate", "route": "CaseTypeDetail", "type": "handler" }],
-				"sidebar": { "enabled": true },
-				"documentationUrl": "https://procest.conduction.nl"
-			}
-		},
-		{
-			"id": "CaseTypeDetail",
-			"route": "/case-types/:id",
-			"type": "detail",
-			"title": "Case type",
-			"config": {
-				"register": "procest",
-				"schema": "caseType",
-				"documentationUrl": "https://procest.conduction.nl"
-			}
-		},
-		{
 			"id": "Settings",
 			"route": "/settings",
 			"type": "settings",
@@ -1337,12 +1318,12 @@
 				"register": "procest",
 				"schema": "tenant",
 				"columns": [
-					{ "key": "displayName", "label": "Name" },
-					{ "key": "legalName", "label": "Legal name" },
-					{ "key": "kvkNumber", "label": "KvK number" },
-					{ "key": "status", "label": "Status" },
-					{ "key": "tier", "label": "Tier" },
-					{ "key": "dataResidency", "label": "Data residency" }
+					"name",
+					"slug",
+					"oin",
+					"domain",
+					"groupId",
+					"isActive"
 				],
 				"showViewAction": false,
 				"actions": [
@@ -1375,7 +1356,7 @@
 			"id": "Parafeerroutes",
 			"route": "/settings/parafeerroutes",
 			"type": "index",
-			"title": "Approval routes",
+			"title": "Parafeerroutes",
 			"config": {
 				"register": "procest",
 				"schema": "parafeerroute",
@@ -1553,7 +1534,7 @@
 			"id": "ParafeerrouteDetail",
 			"route": "/settings/parafeerroutes/:id",
 			"type": "detail",
-			"title": "Approval route",
+			"title": "Parafeerroute",
 			"config": {
 				"register": "procest",
 				"schema": "parafeerroute",
@@ -1936,7 +1917,7 @@
 			"id": "LhsMatrices",
 			"route": "/settings/lhs-matrices",
 			"type": "index",
-			"title": "Enforcement strategy",
+			"title": "Handhavingsstrategie",
 			"permission": "admin",
 			"config": {
 				"register": "procest",
@@ -2147,7 +2128,7 @@
 			"id": "BezwaarCommittees",
 			"route": "/settings/bezwaar-committees",
 			"type": "index",
-			"title": "Objection advisory committees",
+			"title": "Bezwaaradviescommissies",
 			"config": {
 				"register": "procest",
 				"schema": "bezwaaradviescommissie",
@@ -2181,7 +2162,7 @@
 			"id": "BezwaarCommitteeDetail",
 			"route": "/settings/bezwaar-committees/:id",
 			"type": "detail",
-			"title": "Objection advisory committee",
+			"title": "Bezwaaradviescommissie",
 			"config": {
 				"register": "procest",
 				"schema": "bezwaaradviescommissie",
@@ -2233,7 +2214,7 @@
 					{
 						"id": "bezwaarcommittee-adviesaanvragen",
 						"type": "object-list",
-						"title": "Advice requests",
+						"title": "Adviesaanvragen",
 						"icon": "MessageTextOutline",
 						"content": {
 							"register": "procest",
@@ -2278,7 +2259,7 @@
 			"id": "BezwaarAdviceRequestDetail",
 			"route": "/bezwaar-advice-requests/:id",
 			"type": "detail",
-			"title": "Committee advice",
+			"title": "BAC-advies",
 			"config": {
 				"register": "procest",
 				"schema": "bacAdviceRequest",
@@ -2287,7 +2268,7 @@
 				"widgets": [
 					{ "id": "bacadvicerequest-data", "type": "data", "title": "Assignment", "icon": "ClipboardList", "content": { "columns": 2, "include": [ "bezwaar", "commissie", "panel", "status", "assignedAt", "deadline" ] } },
 					{ "id": "bacadvicerequest-advice", "type": "data", "title": "Advice & outcome", "icon": "MessageTextOutline", "content": { "columns": 2, "include": [ "advice", "recommendation", "conclusion", "adviceIssuedAt", "dissentingOpinions", "adviceDocuments", "signatureEvidence", "hearingReportRef" ] } },
-					{ "id": "bacadvicerequest-related", "type": "related", "title": "Objection & committee", "icon": "LinkVariant" }
+					{ "id": "bacadvicerequest-related", "type": "related", "title": "Bezwaar & committee", "icon": "LinkVariant" }
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "bacadvicerequest-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
@@ -2308,7 +2289,7 @@
 			"id": "Beroepen",
 			"route": "/beroepen",
 			"type": "index",
-			"title": "Appeals",
+			"title": "Beroepen",
 			"config": {
 				"register": "procest",
 				"schema": "case",
@@ -2348,7 +2329,7 @@
 			"id": "BeroepDetail",
 			"route": "/beroepen/:id",
 			"type": "detail",
-			"title": "Appeal",
+			"title": "Beroep",
 			"config": {
 				"register": "procest",
 				"schema": "beroep",
@@ -2357,7 +2338,7 @@
 				"widgets": [
 					{ "id": "beroep-data", "type": "data", "title": "Appeal", "icon": "Gavel", "content": { "columns": 2, "include": [ "case", "sourceBezwaar", "contestedDecision", "courtReference", "responsibleChamber", "competentCourt" ] } },
 					{ "id": "beroep-judgment", "type": "data", "title": "Filing & judgment", "icon": "ScaleBalance", "content": { "columns": 2, "include": [ "appellantFilingDate", "appellantNotifiedDate", "filingDeadline", "voorzieningRequested", "latefilingNotice", "fileInspectionRequests", "judgmentOutcome", "judgmentDate", "judgmentDocument", "cascadeAction", "cascadeBezwaarCase" ] } },
-					{ "id": "beroep-related", "type": "related", "title": "Case & source objection", "icon": "LinkVariant" }
+					{ "id": "beroep-related", "type": "related", "title": "Case & source bezwaar", "icon": "LinkVariant" }
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "beroep-data", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 4, "showTitle": false },
@@ -2386,7 +2367,7 @@
 			"id": "TermijnDashboard",
 			"route": "/termijn-dashboard",
 			"type": "custom",
-			"title": "Deadline monitoring",
+			"title": "Termijn dashboard",
 			"component": "TermijnDashboard",
 			"_note": "AWB termijnbewaking (statutory-deadline) monitor: a zaaktype filter drives a server-computed KPI bundle (total cases in period, within-term %, breached, at-risk) rendered as colour-coded compliance cards. The figures come from a dedicated deadline-aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
 		},
