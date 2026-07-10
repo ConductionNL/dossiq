@@ -73,6 +73,24 @@ detail/index pages) modelling concepts that belong to a smaller, sharper core.
   relation. This is a reference, not a code dependency; procest degrades to an
   empty picker if Pipelinq is absent.
 
+### Decisions governing the later waves (2026-07-09)
+
+- **No data migration in any wave.** Existing voorstel / advies / beroep /
+  bezwaar / leges objects are example/seed data and are **dropped, not
+  migrated** — the same treatment leges gets here. Every wave is a forward-only
+  model change.
+- **Parafering (signing) is a Decidesk concern, not procest.** The
+  `parafeerroute` / `parafeeractie` approval-signing workflow behind `voorstel`
+  is a *signing* action; signing belongs to Decidesk (which owns motions,
+  amendments and decisions). Procest removes parafering rather than re-hosting
+  it as a case-type workflow; a case that needs a signature invokes a Decidesk
+  action (a cross-app action, analogous to the Pipelinq-product fee link).
+- **The bezwaar dependents are removed, not retained.** `DwangsomBezwaarService`
+  (penalty payments), `IngebrekestellingController` (notice of default) and the
+  bezwaar-coupled deadline logic go with the objection subsystem in Wave 4.
+  (Scope caveat: general, non-bezwaar termijnbewaking, if any, is preserved —
+  only the objection-coupled deadline behaviour is removed.)
+
 ## Alternatives considered
 
 - **Keep a thin leges engine and sync to Pipelinq** — rejected: two sources of
