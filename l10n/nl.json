@@ -2221,6 +2221,7 @@
         "Test": "Test",
         "Test connection": "Verbinding testen",
         "Text": "Tekst",
+        "That status is not part of this case's workflow.": "Die status maakt geen deel uit van de workflow van deze zaak.",
         "The application is refused due to conflict with the omgevingsplan...": "De aanvraag wordt geweigerd wegens strijd met het omgevingsplan...",
         "The application meets all criteria of the omgevingsplan...": "De aanvraag voldoet aan alle criteria van het omgevingsplan...",
         "The archival pipeline (e-Depot, GiHandover/MDTO) is being delivered in the archief-edepot-handover chain. This panel will host retention rules, dashboard, batch controls and proof viewer.": "De archiveringspijplijn (e-Depot, GiHandover/MDTO) wordt geleverd in de archief-edepot-handover-keten. Dit paneel zal bewaarregels, dashboard, batchbesturing en bewijsviewer bevatten.",

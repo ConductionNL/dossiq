@@ -2672,7 +2672,8 @@
         "{reached} of {total} milestones reached": "{reached} of {total} milestones reached",
         "{within}/{total} within SLA": "{within}/{total} within SLA",
         "{years} years": "{years} years",
-        "— choose —": "— choose —"
+        "— choose —": "— choose —",
+        "That status is not part of this case's workflow.": "That status is not part of this case's workflow."
     },
     "plurals": ""
 }
