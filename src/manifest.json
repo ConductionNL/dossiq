@@ -57,17 +57,11 @@
 			"order": 20
 		},
 		{
-			"id": "CasesGroup",
+			"id": "Cases",
 			"label": "Cases",
 			"icon": "icon-folder",
-			"order": 30
-		},
-		{
-			"id": "Cases",
-			"label": "All cases",
-			"icon": "icon-folder",
 			"route": "Cases",
-			"order": 40
+			"order": 30
 		},
 		{
 			"id": "WorkflowBoard",

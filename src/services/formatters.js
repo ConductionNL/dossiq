@@ -77,7 +77,13 @@ function lookupRelatedName(type, uuid) {
 		return uuid
 	}
 	const collection = store.collections[type]
-	if (!collection && !lookupFetchStarted[type]) {
+	// `registerObjectType` seeds `collections[type] = []` (a truthy empty
+	// array) before any fetch, so a plain `!collection` guard treats a
+	// registered-but-unfetched type as already loaded and never fires the
+	// lookup — leaving reference cells stuck on the raw UUID. Fetch whenever
+	// the collection is empty; `lookupFetchStarted` still guards against
+	// re-fetching a type that genuinely resolved to zero rows.
+	if ((!collection || collection.length === 0) && !lookupFetchStarted[type]) {
 		// Only fetch once the type is registered (initializeStores done).
 		if (store.objectTypeRegistry && store.objectTypeRegistry[type]) {
 			lookupFetchStarted[type] = true

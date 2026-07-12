@@ -76,6 +76,11 @@ webpackConfig.resolve = {
 		'vue$': path.resolve(__dirname, 'node_modules/vue'),
 		'pinia$': path.resolve(__dirname, 'node_modules/pinia'),
 		'@nextcloud/vue$': path.resolve(__dirname, 'node_modules/@nextcloud/vue'),
+		// @nextcloud/dialogs v6 ships its stylesheet at dist/style.css and exposes it
+		// via the package "exports" map. When the aliased nextcloud-vue source imports
+		// '@nextcloud/dialogs/style.css', this webpack build resolves the raw subpath
+		// (not the exports condition), so point it at the real file explicitly.
+		'@nextcloud/dialogs/style.css$': path.resolve(__dirname, 'node_modules/@nextcloud/dialogs/dist/style.css'),
 	},
 }
 
