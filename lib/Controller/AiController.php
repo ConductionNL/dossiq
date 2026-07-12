@@ -322,11 +322,15 @@ class AiController extends Controller
     /**
      * Get AI audit trail entries.
      *
+     * Queries the recorded `aiAuditEntry` objects from OpenRegister via
+     * {@see AiService::listAuditEntries()} — filterable by `caseId`/`type`,
+     * paged via `limit`/`offset`, newest first.
+     *
      * @return JSONResponse
      *
      * @NoAdminRequired
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     * @spec openspec/changes/ai-oversight-log/tasks.md#1.2
      */
     public function auditIndex(): JSONResponse
     {
@@ -334,20 +338,37 @@ class AiController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $filters = [
-            'caseId' => $this->request->getParam('caseId'),
-            'type'   => $this->request->getParam('type'),
-            'limit'  => (int) $this->request->getParam('limit', '50'),
-            'offset' => (int) $this->request->getParam('offset', '0'),
-        ];
+        $caseId = $this->request->getParam('caseId');
+        $type   = $this->request->getParam('type');
+        $limit  = (int) $this->request->getParam('limit', '50');
+        $offset = (int) $this->request->getParam('offset', '0');
 
-        return new JSONResponse(
-                [
-                    'success' => true,
-                    'filters' => array_filter($filters),
-                    'message' => 'Audit trail query — implement with OpenRegister object listing',
-                ]
-                );
+        try {
+            $result = $this->aiService->listAuditEntries(
+                filters: array_filter(['caseId' => $caseId, 'type' => $type]),
+                limit: $limit,
+                offset: $offset,
+            );
+
+            return new JSONResponse(
+                    [
+                        'success' => true,
+                        'entries' => $result['entries'],
+                        'total'   => $result['total'],
+                        'limit'   => $result['limit'],
+                        'offset'  => $result['offset'],
+                    ]
+                    );
+        } catch (\Exception $e) {
+            $this->logger->error(
+                'AI audit trail query failed',
+                ['error' => $e->getMessage()]
+            );
+            return new JSONResponse(
+                    ['error' => 'AI audit trail query failed: '.$e->getMessage()],
+                    Http::STATUS_INTERNAL_SERVER_ERROR
+                    );
+        }//end try
     }//end auditIndex()
 
     /**

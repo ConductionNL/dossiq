@@ -172,6 +172,14 @@
 			"order": 96
 		},
 		{
+			"id": "AiOversightMenu",
+			"label": "AI oversight",
+			"icon": "icon-category-monitoring",
+			"route": "AiOversight",
+			"section": "settings",
+			"order": 96
+		},
+		{
 			"id": "WmsLayersMenu",
 			"label": "Map layers",
 			"icon": "icon-category-files",
@@ -1413,6 +1421,49 @@
 			}
 		},
 		{
+			"id": "AiOversight",
+			"route": "/settings/ai-oversight",
+			"type": "index",
+			"title": "AI oversight",
+			"config": {
+				"register": "procest",
+				"schema": "aiAuditEntry",
+				"columns": [
+					{
+						"key": "type"
+					},
+					{
+						"key": "action"
+					},
+					{
+						"key": "model"
+					},
+					{
+						"key": "userAction"
+					},
+					{
+						"key": "userId"
+					}
+				],
+				"showViewAction": false,
+				"actions": [
+					{
+						"id": "view",
+						"label": "View",
+						"icon": "icon-info",
+						"handler": "navigate",
+						"route": "AiOversightDetail",
+						"type": "handler"
+					}
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true
+				},
+				"documentationUrl": "https://procest.conduction.nl"
+			}
+		},
+		{
 			"id": "WmsLayers",
 			"route": "/settings/wms-layers",
 			"type": "index",
@@ -1557,6 +1608,31 @@
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "parafeerroute-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 4, "showTitle": false }
+				],
+				"sidebar": {
+					"enabled": true,
+					"showMetadata": true,
+					"tabs": [
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+					]
+				}
+			}
+		},
+		{
+			"id": "AiOversightDetail",
+			"route": "/settings/ai-oversight/:id",
+			"type": "detail",
+			"title": "AI audit entry",
+			"config": {
+				"register": "procest",
+				"schema": "aiAuditEntry",
+				"_note": "IMMUTABLE AUDIT-LOG archetype (one frozen AI suggestion + human decision, EU AI Act Art. 14 human-oversight evidence). No comms/documents, no lifecycleActions, no edit/delete — a log entry is a frozen fact, not a mutable object. The single Data widget carries the full record (type, action, caseId, documentId, model, prompt, suggestion, confidence, userAction, actualValue, reason, userId, timestamp, responseTimeMs). No content leaves, no object-lists. Register-level audit history is a sidebar tab.",
+				"documentationUrl": "https://procest.conduction.nl",
+				"widgets": [
+					{ "id": "ai-audit-data", "type": "data", "title": "AI audit entry", "icon": "RobotOutline", "content": { "columns": 2 } }
+				],
+				"layout": [
+					{ "id": "1", "widgetId": "ai-audit-data", "gridX": 0, "gridY": 0, "gridWidth": 12, "gridHeight": 8, "showTitle": false }
 				],
 				"sidebar": {
 					"enabled": true,

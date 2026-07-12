@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -48,6 +49,8 @@ use Psr\Log\LoggerInterface;
  */
 class AiService
 {
+    use SearchesObjects;
+
     /**
      * RFC1918 + loopback + link-local CIDR blocks to deny (SSRF protection).
      *
@@ -165,7 +168,7 @@ class AiService
             $this->recordAuditEntry(
                     entry: [
                         'type'           => 'classification',
-                        'action'         => 'suggested',
+                        'action'         => 'suggestion',
                         'caseId'         => $caseId,
                         'documentId'     => $documentId,
                         'model'          => $this->getModelIdentifier(),
@@ -227,7 +230,7 @@ class AiService
             $this->recordAuditEntry(
                     entry: [
                         'type'           => 'extraction',
-                        'action'         => 'suggested',
+                        'action'         => 'suggestion',
                         'caseId'         => $caseId,
                         'documentId'     => ($documentId ?? ''),
                         'model'          => $this->getModelIdentifier(),
@@ -288,7 +291,7 @@ class AiService
             $this->recordAuditEntry(
                     entry: [
                         'type'           => 'qa',
-                        'action'         => 'suggested',
+                        'action'         => 'suggestion',
                         'caseId'         => $caseId,
                         'model'          => $this->getModelIdentifier(),
                         'prompt'         => $question,
@@ -351,7 +354,7 @@ class AiService
             $this->recordAuditEntry(
                     entry: [
                         'type'           => 'summary',
-                        'action'         => 'suggested',
+                        'action'         => 'suggestion',
                         'caseId'         => $caseId,
                         'documentId'     => ($documentId ?? ''),
                         'model'          => $this->getModelIdentifier(),
@@ -410,7 +413,7 @@ class AiService
             $this->recordAuditEntry(
                     entry: [
                         'type'           => 'routing',
-                        'action'         => 'suggested',
+                        'action'         => 'suggestion',
                         'caseId'         => $caseId,
                         'model'          => $this->getModelIdentifier(),
                         'prompt'         => $prompt,
@@ -469,7 +472,7 @@ class AiService
             $this->recordAuditEntry(
                     entry: [
                         'type'           => 'decision_support',
-                        'action'         => 'suggested',
+                        'action'         => 'suggestion',
                         'caseId'         => $caseId,
                         'model'          => $this->getModelIdentifier(),
                         'prompt'         => $prompt,
@@ -539,6 +542,118 @@ class AiService
 
         return ['success' => true];
     }//end recordUserAction()
+
+    /**
+     * List recorded AI audit entries from OpenRegister, newest first.
+     *
+     * Resolves the register + `ai_audit_entry_schema` config exactly like
+     * {@see self::recordAuditEntry()}. Degrades gracefully (empty result,
+     * warning logged, no throw) when AI audit storage is not configured or
+     * the OpenRegister lookup fails, so a misconfigured instance never 500s
+     * the oversight surface.
+     *
+     * @param array<string, mixed> $filters Optional filters: 'caseId', 'type'.
+     * @param int                  $limit   Page size (clamped to 1-200, default 50).
+     * @param int                  $offset  Paging offset (clamped to >= 0).
+     *
+     * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
+     *
+     * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+     */
+    public function listAuditEntries(array $filters=[], int $limit=50, int $offset=0): array
+    {
+        $limit  = $this->clampAuditLimit(limit: $limit);
+        $offset = max(0, $offset);
+
+        $empty = [
+            'entries' => [],
+            'total'   => null,
+            'limit'   => $limit,
+            'offset'  => $offset,
+        ];
+
+        try {
+            $registerId = $this->appConfig->getValueString(
+                Application::APP_ID,
+                'register',
+                ''
+            );
+            $schemaId   = $this->appConfig->getValueString(
+                Application::APP_ID,
+                'ai_audit_entry_schema',
+                ''
+            );
+
+            if (empty($registerId) === true || empty($schemaId) === true) {
+                $this->logger->warning('AI audit: register or schema ID not configured');
+                return $empty;
+            }
+
+            $objectService = $this->container->get(
+                'OCA\OpenRegister\Service\ObjectService'
+            );
+
+            $query = [
+                '_limit'  => $limit,
+                '_offset' => $offset,
+                // Newest first — the schema's business timestamp, not OR's
+                // system @self.created, is the ordering key the oversight
+                // page needs (matches when the AI call actually happened).
+                '_order'  => ['timestamp' => 'DESC'],
+            ];
+
+            $caseId = ($filters['caseId'] ?? null);
+            if (empty($caseId) === false) {
+                $query['caseId'] = $caseId;
+            }
+
+            $type = ($filters['type'] ?? null);
+            if (empty($type) === false) {
+                $query['type'] = $type;
+            }
+
+            $entries = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $registerId,
+                schema: $schemaId,
+                filters: $query
+            );
+
+            return [
+                'entries' => $entries,
+                // The array-normalising search bridge (searchObjectsAsArrays)
+                // does not expose a cheap row count for slug-resolved
+                // register/schema — a real total would require a second,
+                // uncapped fetch. Left null rather than faked; callers page
+                // by whether a full page of `limit` rows came back.
+                'total'   => null,
+                'limit'   => $limit,
+                'offset'  => $offset,
+            ];
+        } catch (\Exception $e) {
+            $this->logger->error(
+                'Failed to list AI audit entries',
+                ['error' => $e->getMessage()]
+            );
+            return $empty;
+        }//end try
+    }//end listAuditEntries()
+
+    /**
+     * Clamp a requested audit-listing page size to a safe range.
+     *
+     * @param int $limit The requested limit.
+     *
+     * @return int The clamped limit (1-200, default 50 for non-positive input).
+     */
+    private function clampAuditLimit(int $limit): int
+    {
+        if ($limit <= 0) {
+            return 50;
+        }
+
+        return min($limit, 200);
+    }//end clampAuditLimit()
 
     /**
      * Test AI model connectivity.
@@ -644,13 +759,19 @@ class AiService
      * Routes through n8n MCP workflow or directly to the model
      * depending on configuration.
      *
+     * Visibility is `protected` (not `private`) so PHPUnit tests can stub
+     * this single outbound-network seam via an anonymous subclass, rather
+     * than mocking curl — see {@see \OCA\Procest\Tests\Unit\Service\AiServiceAuditLoggingCompletenessTest}
+     * which asserts every suggestion-time operation records an audit entry
+     * without making a real HTTP call.
+     *
      * @param string $prompt The prompt to send
      *
      * @return array The AI model response
      *
      * @throws \RuntimeException If the AI model call fails
      */
-    private function callAiModel(string $prompt): array
+    protected function callAiModel(string $prompt): array
     {
         $modelUrl = $this->appConfig->getValueString(
             Application::APP_ID,
