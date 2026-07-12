@@ -286,6 +286,14 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'statusTransition#freeform',  'url' => '/api/case/{caseId}/transition-freeform',   'verb' => 'POST'],
         ['name' => 'statusTransition#history',   'url' => '/api/case/{caseId}/transition-history',    'verb' => 'GET'],
 
+        // Bulk transitions (case-bulk-status-transition) — plural `/api/cases/`
+        // prefix with literal `bulk-transition` segments, distinct from the
+        // singular `/api/case/{caseId}/...` engine routes above and from every
+        // other `/api/cases/{id}/...` parameterised route (none of which use a
+        // single literal `bulk-transition` first segment), so no collision.
+        ['name' => 'statusTransition#bulkPreview', 'url' => '/api/cases/bulk-transition/preview', 'verb' => 'POST'],
+        ['name' => 'statusTransition#bulkExecute', 'url' => '/api/cases/bulk-transition/execute', 'verb' => 'POST'],
+
         // Multi-Tenant SaaS — domain endpoints only. Generic tenant CRUD
         // (list/create/update/destroy) is rendered by the manifest pages
         // at /settings/tenants and proxied directly to OpenRegister; this

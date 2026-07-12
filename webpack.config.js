@@ -77,6 +77,13 @@ const useLocalLib = process.env.USE_LOCAL_LIB === 'false'
 
 webpackConfig.resolve = {
 	extensions: ['.vue', '.js'],
+	// @nextcloud/dialogs v6's FilePicker chunk imports node's 'path' module
+	// (webpack 5 no longer auto-polyfills node core modules). The FilePicker
+	// UI is not used by this app; stub it out rather than shipping a real
+	// polyfill so the browser bundle stays free of node internals.
+	fallback: {
+		path: false,
+	},
 	alias: {
 		'@': path.resolve(__dirname, 'src'),
 		...(useLocalLib ? { '@conduction/nextcloud-vue': localLib } : {}),

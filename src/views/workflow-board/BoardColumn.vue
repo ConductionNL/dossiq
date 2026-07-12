@@ -6,9 +6,12 @@
 	and accepts drag-and-drop of cards. On drop it emits `drop(caseId, statusId)`
 	to the parent board, which performs the actual status transition. Also
 	re-emits `move(caseId, newStatusId)` from each CaseCard's keyboard-operable
-	"Move to…" menu — the same status-transition path as drag-and-drop.
+	"Move to…" menu — the same status-transition path as drag-and-drop — and
+	`toggle-select(caseId, columnId)` from each CaseCard's selection checkbox,
+	used by the column-scoped bulk-selection UI (case-bulk-status-transition).
 
 	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
 -->
 <template>
 	<div
@@ -38,9 +41,12 @@
 					:case-item="c"
 					:case-type-name="caseTypeName(c.caseType)"
 					:columns="allColumns"
+					:selected="selectedCaseIds.includes(String(c.id))"
+					:selection-mode="selectionColumnId === statusType.id"
 					@click="$emit('click-case', $event)"
 					@dragstart="$emit('dragstart', $event)"
-					@move="(caseId, newStatusId) => $emit('move', caseId, newStatusId)" />
+					@move="(caseId, newStatusId) => $emit('move', caseId, newStatusId)"
+					@toggle-select="caseId => $emit('toggle-select', caseId, statusType.id)" />
 			</template>
 		</div>
 	</div>
@@ -72,8 +78,12 @@ export default {
 		 * @type {Array<{id: string, name: string}>}
 		 */
 		allColumns: { type: Array, default: () => [] },
+		/** Case ids currently selected (bulk selection), as strings. */
+		selectedCaseIds: { type: Array, default: () => [] },
+		/** The column id that owns the active selection scope, or null. */
+		selectionColumnId: { type: String, default: null },
 	},
-	emits: ['drop', 'click-case', 'dragstart', 'move'],
+	emits: ['drop', 'click-case', 'dragstart', 'move', 'toggle-select'],
 	data() {
 		return {
 			dragOver: false,

@@ -3,16 +3,24 @@
 <!--
 	Workflow-board case card — a single draggable Kanban card. Shows the case
 	identifier, truncated title, case-type chip, assignee and a deadline
-	indicator. Emits `dragstart` (with the case id), `click` (open detail), and
+	indicator. Emits `dragstart` (with the case id), `click` (open detail),
 	`move` (caseId, newStatusId) from the keyboard-operable "Move to…" menu —
-	the same status-transition path as the drag gesture (WCAG 2.1.1 Keyboard).
+	the same status-transition path as the drag gesture (WCAG 2.1.1 Keyboard) —
+	and `toggle-select` (caseId) from its selection checkbox, used by the
+	column-scoped bulk-selection UI (case-bulk-status-transition).
 
 	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
 -->
 <template>
 	<div
 		class="case-card"
-		:class="{ 'case-card--overdue': deadlineSeverity === 'overdue', 'case-card--warning': deadlineSeverity === 'warning' }"
+		:class="{
+			'case-card--overdue': deadlineSeverity === 'overdue',
+			'case-card--warning': deadlineSeverity === 'warning',
+			'case-card--selection-mode': selectionMode,
+			'case-card--selected': selected,
+		}"
 		draggable="true"
 		role="button"
 		tabindex="0"
@@ -20,6 +28,14 @@
 		@click="$emit('click', caseItem.id)"
 		@keydown.enter="$emit('click', caseItem.id)"
 		@keydown.space.prevent="$emit('click', caseItem.id)">
+		<NcCheckboxRadioSwitch
+			class="case-card__select"
+			:checked="selected"
+			@update:checked="$emit('toggle-select', caseItem.id)"
+			@click.native.stop
+			@keydown.native.stop>
+			<span class="hidden-visually">{{ t('procest', 'Select case {identifier}', { identifier: caseItem.identifier || caseItem.id }) }}</span>
+		</NcCheckboxRadioSwitch>
 		<div class="case-card__header">
 			<span class="case-card__identifier">{{ caseItem.identifier || '—' }}</span>
 			<span v-if="caseTypeName" class="case-card__type">{{ caseTypeName }}</span>
@@ -63,7 +79,7 @@
 </template>
 
 <script>
-import { NcActions, NcActionButton } from '@nextcloud/vue'
+import { NcActions, NcActionButton, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import ArrowRightBoldCircleOutline from 'vue-material-design-icons/ArrowRightBoldCircleOutline.vue'
 import { getDaysRemaining } from '../../utils/caseHelpers.js'
 import { columnsExcludingCurrent } from '../../utils/workflowBoardHelpers.js'
@@ -73,6 +89,7 @@ export default {
 	components: {
 		NcActions,
 		NcActionButton,
+		NcCheckboxRadioSwitch,
 		ArrowRightBoldCircleOutline,
 	},
 	props: {
@@ -87,8 +104,16 @@ export default {
 		 * @type {Array<{id: string, name: string}>}
 		 */
 		columns: { type: Array, default: () => [] },
+		/** Whether this card is currently in the bulk-selection set. */
+		selected: { type: Boolean, default: false },
+		/**
+		 * Whether this card's column is the active selection scope — while
+		 * true the selection checkbox stays visible even without hover/focus
+		 * (case-bulk-status-transition column-scoped selection).
+		 */
+		selectionMode: { type: Boolean, default: false },
 	},
-	emits: ['click', 'dragstart', 'move'],
+	emits: ['click', 'dragstart', 'move', 'toggle-select'],
 	computed: {
 		/**
 		 * Status columns the card can move to — every column except the one
@@ -175,6 +200,25 @@ export default {
 	position: absolute;
 	top: 4px;
 	right: 4px;
+}
+
+.case-card__select {
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	opacity: 0;
+	transition: opacity 0.1s ease;
+}
+
+.case-card:hover .case-card__select,
+.case-card:focus-within .case-card__select,
+.case-card--selection-mode .case-card__select,
+.case-card--selected .case-card__select {
+	opacity: 1;
+}
+
+.case-card__header {
+	padding-left: 26px;
 }
 
 .case-card:hover,
