@@ -1,0 +1,224 @@
+openapi: 3.0.3
+info:
+  title: Procest ZGW Notificaties API (NRC)
+  description: |
+    Machine-readable description of the routed surface of Procest's ZGW
+    Notificaties Component (NRC) API, generated from the app's route table
+    (appinfo/routes.php). It documents paths, verbs and parameters only —
+    payload semantics (request/response bodies, business rules) follow the
+    VNG ZGW 1.x standard. See
+    https://vng-realisatie.github.io/gemma-zaken/standaard/notificaties/index
+    for the authoritative resource schemas. Procest tracks the ZGW 1.x
+    standard line.
+  version: '1.0.0'
+servers:
+  - url: /apps/procest
+    description: Procest app base path
+components:
+  securitySchemes:
+    ZGWToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT bearer token issued to a registered ZGW consumer (applicatie).
+  schemas:
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+        code:
+          type: string
+        invalidParams:
+          type: array
+          items:
+            type: object
+  responses:
+    BadRequest:
+      description: Bad Request — validation error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized — missing or invalid JWT bearer token.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden — consumer lacks the required scope.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not Found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+security:
+  - ZGWToken: []
+paths:
+  /api/zgw/notificaties/v1/notificaties:
+    post:
+      operationId: nrc#notificatieCreate
+      summary: Accept an inbound notificatie (webhook-style acceptance endpoint; this route is registered before the generic {resource} routes so it is not shadowed).
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /api/zgw/notificaties/v1/{resource}/{uuid}/audittrail:
+    get:
+      operationId: nrc#audittrailIndex
+      summary: List audit trail entries for a notificaties resource.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [kanaal, abonnement]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: array, items: { type: object } } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/zgw/notificaties/v1/{resource}/{uuid}/audittrail/{auditUuid}:
+    get:
+      operationId: nrc#audittrailShow
+      summary: Retrieve a specific audit trail entry for a notificaties resource.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [kanaal, abonnement]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+        - name: auditUuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/zgw/notificaties/v1/{resource}:
+    get:
+      operationId: nrc#index
+      summary: List resources of the given notificaties type (kanaal or abonnement).
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [kanaal, abonnement]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      operationId: nrc#create
+      summary: Create a resource of the given notificaties type (kanaal or abonnement).
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [kanaal, abonnement]
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/zgw/notificaties/v1/{resource}/{uuid}:
+    get:
+      operationId: nrc#show
+      summary: Retrieve a single resource of the given notificaties type by UUID.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [kanaal, abonnement]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      operationId: nrc#update
+      summary: Full update of a resource of the given notificaties type.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [kanaal, abonnement]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: nrc#patch
+      summary: Partial update of a resource of the given notificaties type.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [kanaal, abonnement]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { type: object } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      operationId: nrc#destroy
+      summary: Delete a resource of the given notificaties type.
+      parameters:
+        - name: resource
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [kanaal, abonnement]
+        - name: uuid
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204': { description: No Content }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
