@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\StatusTransitionController;
+use OCA\Procest\Service\BulkStatusTransitionService;
 use OCA\Procest\Service\StatusTransitionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -55,6 +56,11 @@ class StatusTransitionControllerBodyRegressionTest extends TestCase
     private StatusTransitionService $transitionEngine;
 
     /**
+     * @var BulkStatusTransitionService&MockObject
+     */
+    private BulkStatusTransitionService $bulkEngine;
+
+    /**
      * @var IUserSession&MockObject
      */
     private IUserSession $userSession;
@@ -80,6 +86,7 @@ class StatusTransitionControllerBodyRegressionTest extends TestCase
     {
         $this->request          = $this->createMock(IRequest::class);
         $this->transitionEngine = $this->createMock(StatusTransitionService::class);
+        $this->bulkEngine       = $this->createMock(BulkStatusTransitionService::class);
         $this->userSession      = $this->createMock(IUserSession::class);
         $this->logger           = $this->createMock(LoggerInterface::class);
 
@@ -87,6 +94,7 @@ class StatusTransitionControllerBodyRegressionTest extends TestCase
             'procest',
             $this->request,
             $this->transitionEngine,
+            $this->bulkEngine,
             $this->userSession,
             $this->logger,
         );

@@ -6,9 +6,13 @@
 	operable by both drag-and-drop AND keyboard alone (each CaseCard's "Move
 	to…" menu). Both paths call the same onDrop() -> saveObject('case', …),
 	which is RBAC-enforced server-side; on failure the card reverts and an
-	error toast shows.
+	error toast shows. Also holds the column-scoped bulk-selection state: a
+	case card's checkbox toggles selection via toggleSelection() (cross-column
+	selection resets), and a bulk-actions bar opens BulkTransitionDialog to
+	preview/execute one status transition across every selected case.
 
 	Spec: openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#requirement-req-dash-v1-006-workflow-board-view-v1
+	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
 -->
 <template>
 	<div class="workflow-board">
@@ -37,25 +41,49 @@
 			<p>{{ t('procest', 'No workflow statuses configured. Define status types in Settings to use the board.') }}</p>
 		</div>
 
-		<div
-			v-else
-			class="workflow-board__columns"
-			tabindex="0"
-			role="region"
-			:aria-label="t('procest', 'Workflow board columns')">
-			<BoardColumn
-				v-for="col in columns"
-				:key="col.id"
-				:status-type="col"
-				:cases="casesByStatus[col.id] || []"
-				:case-type-map="caseTypeMap"
-				:all-columns="columns"
-				:loading="false"
-				@drop="onDrop"
-				@move="onDrop"
-				@click-case="goToCase"
-				@dragstart="onDragStart" />
-		</div>
+		<template v-else>
+			<div v-if="selection.caseIds.length > 0" class="workflow-board__bulk-bar">
+				<span class="workflow-board__bulk-bar__count">
+					{{ n('procest', '%n case selected', '%n cases selected', selection.caseIds.length) }}
+				</span>
+				<div class="workflow-board__bulk-bar__actions">
+					<NcButton @click="openBulkDialog">
+						{{ t('procest', 'Change status…') }}
+					</NcButton>
+					<NcButton type="tertiary" @click="clearSelectionHandler">
+						{{ t('procest', 'Cancel') }}
+					</NcButton>
+				</div>
+			</div>
+
+			<div
+				class="workflow-board__columns"
+				tabindex="0"
+				role="region"
+				:aria-label="t('procest', 'Workflow board columns')">
+				<BoardColumn
+					v-for="col in columns"
+					:key="col.id"
+					:status-type="col"
+					:cases="casesByStatus[col.id] || []"
+					:case-type-map="caseTypeMap"
+					:all-columns="columns"
+					:loading="false"
+					:selected-case-ids="selection.caseIds.map(id => String(id))"
+					:selection-column-id="selection.columnId"
+					@drop="onDrop"
+					@move="onDrop"
+					@click-case="goToCase"
+					@dragstart="onDragStart"
+					@toggle-select="onToggleSelect" />
+			</div>
+		</template>
+
+		<BulkTransitionDialog
+			v-if="showBulkDialog"
+			:case-ids="selection.caseIds"
+			@close="onBulkDialogClose"
+			@completed="onBulkDialogCompleted" />
 	</div>
 </template>
 
@@ -64,8 +92,10 @@ import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { showError } from '@nextcloud/dialogs'
 import Vue from 'vue'
 import BoardColumn from './BoardColumn.vue'
+import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
+import { emptySelection, toggleSelection, clearSelection } from '../../utils/bulkTransitionHelpers.js'
 
 export default {
 	name: 'WorkflowBoard',
@@ -73,6 +103,7 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 		BoardColumn,
+		BulkTransitionDialog,
 	},
 	data() {
 		return {
@@ -94,6 +125,14 @@ export default {
 			statusIdByTypeAndName: {},
 			/** Id of the case currently being dragged. */
 			draggedCaseId: null,
+			/**
+			 * Column-scoped bulk-selection state: `{ columnId, caseIds }`.
+			 * Selecting a case in a different column resets the selection
+			 * (case-bulk-status-transition).
+			 */
+			selection: emptySelection(),
+			/** Whether the bulk-transition dialog is open. */
+			showBulkDialog: false,
 		}
 	},
 	computed: {
@@ -263,6 +302,54 @@ export default {
 		goToCase(caseId) {
 			this.$router.push({ name: 'CaseDetail', params: { id: caseId } }).catch(() => {})
 		},
+		/**
+		 * Toggle a case's bulk-selection membership, scoped to its column.
+		 * Selecting in a different column than the current selection resets
+		 * the selection to only the newly selected case.
+		 *
+		 * @param {string} caseId The case id
+		 * @param {string} columnId The column (merged status name) the case belongs to
+		 * @return {void}
+		 */
+		onToggleSelect(caseId, columnId) {
+			this.selection = toggleSelection(this.selection, caseId, columnId)
+		},
+		/**
+		 * Clear the bulk selection.
+		 *
+		 * @return {void}
+		 */
+		clearSelectionHandler() {
+			this.selection = clearSelection()
+		},
+		/**
+		 * Open the bulk-transition dialog for the current selection.
+		 *
+		 * @return {void}
+		 */
+		openBulkDialog() {
+			this.showBulkDialog = true
+		},
+		/**
+		 * Close the bulk-transition dialog without clearing the selection.
+		 *
+		 * @return {void}
+		 */
+		onBulkDialogClose() {
+			this.showBulkDialog = false
+		},
+		/**
+		 * Handle a completed bulk transition: close the dialog, clear the
+		 * selection, and refresh the board so moved cases land in their new
+		 * columns.
+		 *
+		 * @return {Promise<void>}
+		 */
+		async onBulkDialogCompleted() {
+			this.showBulkDialog = false
+			this.selection = clearSelection()
+			await this.fetchData()
+		},
 	},
 }
 </script>
@@ -296,6 +383,23 @@ export default {
 	overflow-x: auto;
 	align-items: flex-start;
 	padding-bottom: 8px;
+}
+
+.workflow-board__bulk-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 12px;
+	background-color: var(--color-background-hover);
+	border-radius: var(--border-radius);
+	margin-bottom: 12px;
+}
+
+.workflow-board__bulk-bar__actions {
+	display: flex;
+	gap: 8px;
 }
 
 .workflow-board__loading {

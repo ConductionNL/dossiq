@@ -5,12 +5,14 @@
  *
  * REST surface for the status-transition engine. CRUD on `statusRecord`
  * objects is delegated to the manifest renderer (OpenRegister); this
- * controller exposes only the four engine endpoints:
+ * controller exposes the engine endpoints:
  *
  *  - GET  /api/case/{caseId}/available-transitions
  *  - POST /api/case/{caseId}/transition           (body {transitionId, comment?})
  *  - POST /api/case/{caseId}/transition-freeform  (admin only; body {toStatusId, comment?})
  *  - GET  /api/case/{caseId}/transition-history
+ *  - POST /api/cases/bulk-transition/preview      (body {caseIds[], transitionId})
+ *  - POST /api/cases/bulk-transition/execute      (body {caseIds[], transitionId, comment?})
  *
  * Error responses use static messages — `$e->getMessage()` is NEVER returned.
  *
@@ -33,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\BulkStatusTransitionService;
 use OCA\Procest\Service\StatusTransitionService;
 use OCA\Procest\Service\Transitions\GuardFailedException;
 use OCP\AppFramework\Controller;
@@ -53,16 +56,18 @@ class StatusTransitionController extends Controller
     /**
      * Constructor.
      *
-     * @param string                  $appName          The app name
-     * @param IRequest                $request          The HTTP request
-     * @param StatusTransitionService $transitionEngine The engine service
-     * @param IUserSession            $userSession      The current session
-     * @param LoggerInterface         $logger           The logger
+     * @param string                      $appName          The app name
+     * @param IRequest                    $request          The HTTP request
+     * @param StatusTransitionService     $transitionEngine The engine service
+     * @param BulkStatusTransitionService $bulkEngine       The bulk wrapper service
+     * @param IUserSession                $userSession      The current session
+     * @param LoggerInterface             $logger           The logger
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly StatusTransitionService $transitionEngine,
+        private readonly BulkStatusTransitionService $bulkEngine,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
@@ -261,6 +266,110 @@ class StatusTransitionController extends Controller
             );
         }
     }//end history()
+
+    /**
+     * Preview a bulk transition across multiple cases: per case, is the
+     * transition available and do its guards currently pass? Read-only — the
+     * bulk service never invokes the engine's `execute()` here.
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+
+     * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
+     */
+    public function bulkPreview(): JSONResponse
+    {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $body         = $this->readJsonBody();
+        $caseIds      = $this->readCaseIds(body: $body);
+        $transitionId = (string) ($body['transitionId'] ?? '');
+
+        try {
+            $result = $this->bulkEngine->preview(caseIds: $caseIds, transitionId: $transitionId);
+            return new JSONResponse($result);
+        } catch (RuntimeException $e) {
+            $this->logger->info('StatusTransitionController: bulkPreview rejected', ['code' => $e->getMessage()]);
+            return new JSONResponse(['error' => 'Could not preview bulk transition'], Http::STATUS_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'StatusTransitionController: bulkPreview failed',
+                ['exception' => $e->getMessage(), 'transitionId' => $transitionId],
+            );
+            return new JSONResponse(
+                ['error' => 'Could not preview bulk transition'],
+                Http::STATUS_INTERNAL_SERVER_ERROR,
+            );
+        }
+    }//end bulkPreview()
+
+    /**
+     * Execute a bulk transition across multiple cases. Loops the engine's
+     * `execute()` once per case (the engine's single write path); partial
+     * success is allowed and reported per case, never silently swallowed.
+     *
+     * @return JSONResponse
+     *
+     * @NoAdminRequired
+
+     * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
+     */
+    public function bulkExecute(): JSONResponse
+    {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $body         = $this->readJsonBody();
+        $caseIds      = $this->readCaseIds(body: $body);
+        $transitionId = (string) ($body['transitionId'] ?? '');
+        $comment      = null;
+        if (isset($body['comment']) === true) {
+            $comment = (string) $body['comment'];
+        }
+
+        try {
+            $result = $this->bulkEngine->execute(caseIds: $caseIds, transitionId: $transitionId, comment: $comment);
+            return new JSONResponse($result);
+        } catch (RuntimeException $e) {
+            $this->logger->info('StatusTransitionController: bulkExecute rejected', ['code' => $e->getMessage()]);
+            return new JSONResponse(['error' => 'Could not execute bulk transition'], Http::STATUS_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'StatusTransitionController: bulkExecute failed',
+                ['exception' => $e->getMessage(), 'transitionId' => $transitionId],
+            );
+            return new JSONResponse(
+                ['error' => 'Could not execute bulk transition'],
+                Http::STATUS_INTERNAL_SERVER_ERROR,
+            );
+        }
+    }//end bulkExecute()
+
+    /**
+     * Read and normalise the `caseIds` array from a decoded request body.
+     *
+     * @param array<string, mixed> $body Decoded request body
+     *
+     * @return array<int, string>
+     */
+    private function readCaseIds(array $body): array
+    {
+        $caseIds = $body['caseIds'] ?? [];
+        if (is_array($caseIds) === false) {
+            return [];
+        }
+
+        $list = [];
+        foreach ($caseIds as $caseId) {
+            $list[] = (string) $caseId;
+        }
+
+        return $list;
+    }//end readCaseIds()
 
     /**
      * Decode a JSON request body safely.
