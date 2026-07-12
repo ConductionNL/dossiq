@@ -3,7 +3,7 @@
     "info": {
         "title": "Procest Case Management Register",
         "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-        "version": "0.11.0"
+        "version": "0.12.0"
     },
     "x-openregister": {
         "type": "application",
@@ -1360,7 +1360,8 @@
                         "referenceType": "decision",
                         "x-allow-create": true
                     }
-                }
+                },
+                "searchable": true
             },
             "task": {
                 "slug": "task",
@@ -1485,6 +1486,7 @@
                         "title": "Checklist"
                     }
                 },
+                "searchable": true,
                 "configuration": {
                     "x-openregister-calculations": {
                         "isTerminalStatus": {
@@ -2768,6 +2770,7 @@
                         "title": "Decision"
                     }
                 },
+                "searchable": true,
                 "configuration": {
                     "x-openregister-lifecycle": {
                         "field": "status",
@@ -3391,6 +3394,7 @@
                         "title": "Decision Deadline"
                     }
                 },
+                "searchable": true,
                 "x-openregister-calculations": [
                     {
                         "field": "decisionDeadline",
@@ -4402,7 +4406,8 @@
                         "description": "The reopened bezwaar case created by cascadeAction = reopen_bezwaar",
                         "title": "Cascade Bezwaar Case"
                     }
-                }
+                },
+                "searchable": true
             },
             "mapLayer": {
                 "slug": "mapLayer",
