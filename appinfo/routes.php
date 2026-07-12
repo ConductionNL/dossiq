@@ -47,6 +47,7 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'setup#runAction',    'url' => '/api/setup/action/{actionId}',   'verb' => 'POST'],
         ['name' => 'ai#recordAction',    'url' => '/api/ai/record-action',   'verb' => 'POST'],
         ['name' => 'ai#auditIndex',      'url' => '/api/ai/audit',           'verb' => 'GET'],
+        ['name' => 'aiAuditExport#export', 'url' => '/api/ai/audit/export',  'verb' => 'GET'],
         ['name' => 'ai#getSettings',     'url' => '/api/ai/settings',        'verb' => 'GET'],
         ['name' => 'ai#updateSettings',  'url' => '/api/ai/settings',        'verb' => 'POST'],
         ['name' => 'ai#healthCheck',     'url' => '/api/ai/health',          'verb' => 'POST'],
