@@ -2500,6 +2500,24 @@
 			"schemaSlug": "task",
 			"urlTemplate": "/apps/procest/tasks/{uuid}",
 			"displayName": "Task"
+		},
+		{
+			"registerSlug": "procest",
+			"schemaSlug": "bezwaar",
+			"urlTemplate": "/apps/procest/bezwaren/{uuid}",
+			"displayName": "Bezwaar"
+		},
+		{
+			"registerSlug": "procest",
+			"schemaSlug": "voorstel",
+			"urlTemplate": "/apps/procest/voorstellen/{uuid}",
+			"displayName": "Voorstel"
+		},
+		{
+			"registerSlug": "procest",
+			"schemaSlug": "beroep",
+			"urlTemplate": "/apps/procest/beroepen/{uuid}",
+			"displayName": "Beroep"
 		}
 	]
 }
