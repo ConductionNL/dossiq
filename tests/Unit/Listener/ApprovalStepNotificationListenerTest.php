@@ -177,6 +177,14 @@ class ApprovalStepNotificationListenerTest extends TestCase
      */
     public function testApprovedWithNextStepNotifiesNextRoleGroup(): void
     {
+        // Exercises the real OR approval Db/Event classes (ApprovalStep,
+        // ApprovalChain and the named-parameter event constructors), which only
+        // OpenRegister provides. Skip when they are absent (unit CI without OR);
+        // the deployed env with OpenRegister present runs this for real.
+        if (class_exists(ApprovalStep::class) === false) {
+            $this->markTestSkipped('OpenRegister approval classes not available in this environment.');
+        }
+
         $this->stubVoorstel(['onderwerp' => 'Omgevingsvergunning', 'steller' => 'steller1']);
 
         $member = $this->createMock(IUser::class);
@@ -243,6 +251,12 @@ class ApprovalStepNotificationListenerTest extends TestCase
      */
     public function testRejectedNotifiesStellerWithDecodedComment(): void
     {
+        // See testApprovedWithNextStepNotifiesNextRoleGroup — needs the real OR
+        // approval Db/Event classes; skip when OpenRegister is absent.
+        if (class_exists(ApprovalStep::class) === false) {
+            $this->markTestSkipped('OpenRegister approval classes not available in this environment.');
+        }
+
         $this->stubVoorstel(['onderwerp' => 'Subsidiebesluit', 'steller' => 'steller2']);
 
         $this->notifications->expects($this->once())

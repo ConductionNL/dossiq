@@ -51,7 +51,7 @@
 					maxlength="2000"
 					data-testid="leverancier-renewal-reason"
 					class="lz-input lz-textarea"
-					:placeholder="t('procest', 'Optioneel — toelichting bij het verzoek')" />
+					:placeholder="t('procest', 'Optional — note on the request')" />
 			</div>
 
 			<div class="lz-form-actions">
@@ -65,7 +65,7 @@
 					class="lz-button lz-button--primary"
 					data-testid="leverancier-renewal-submit"
 					:disabled="submitting">
-					{{ submitting ? t('procest', 'Verzenden…') : t('procest', 'Verzoek indienen') }}
+					{{ submitting ? t('procest', 'Sending…') : t('procest', 'Submit request') }}
 				</button>
 			</div>
 		</form>

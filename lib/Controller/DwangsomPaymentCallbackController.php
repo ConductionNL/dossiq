@@ -46,6 +46,8 @@ use RuntimeException;
  * Public webhook endpoint for dwangsom payment confirmation callbacks.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/enforce-dwangsom-callback-signature/specs/financial-integration/spec.md
  */
 class DwangsomPaymentCallbackController extends Controller
 {
@@ -139,20 +141,22 @@ class DwangsomPaymentCallbackController extends Controller
     /**
      * Validate a webhook signature header against the configured secret.
      *
-     * Compares HMAC-SHA256 of the raw body, hex-encoded. Returns true
-     * when no secret is configured (dev-mode permissive) but logs at
-     * info level so production deployments notice.
+     * Compares HMAC-SHA256 of the raw body, hex-encoded. Fails closed
+     * (returns false) when no secret is configured — an unconfigured
+     * secret MUST NEVER be treated as an implicit pass.
      *
      * @param string $rawBody Raw request body.
      *
      * @return bool
+     *
+     * @spec openspec/changes/enforce-dwangsom-callback-signature/specs/financial-integration/spec.md
      */
     private function validateSignature(string $rawBody): bool
     {
         $secret = (string) $this->appConfig->getValueString('procest', 'dwangsom_callback_secret', '');
         if ($secret === '') {
-            $this->logger->info('Dwangsom callback: no secret configured (dev-mode permissive)');
-            return true;
+            $this->logger->warning('Dwangsom callback: rejected — no dwangsom_callback_secret configured');
+            return false;
         }
 
         $supplied = (string) $this->request->getHeader('X-Procest-Signature');

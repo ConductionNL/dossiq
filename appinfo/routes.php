@@ -30,6 +30,10 @@ declare(strict_types=1);
 // dashboard#webManifest) and every domain route below are passed through as
 // `$extra`; they are inserted before the catch-all so they keep priority.
 return \OCA\OpenRegister\AppHost\Routes::standard([
+        // Backend manifest delta — case-type navigation (case-type-navigation).
+        // Consumed by useAppManifest('procest', bundled, { mergeStrategy: 'delta' }).
+        ['name' => 'manifest#manifest',  'url' => '/api/manifest',           'verb' => 'GET'],
+
         // AI-Assisted Processing (specific endpoints precede wildcard routes).
         ['name' => 'ai#classify',        'url' => '/api/ai/classify',        'verb' => 'POST'],
         ['name' => 'ai#extract',         'url' => '/api/ai/extract',         'verb' => 'POST'],

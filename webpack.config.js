@@ -6,7 +6,11 @@ const { VueLoaderPlugin } = require('vue-loader')
 
 const buildMode = process.env.NODE_ENV
 const isDev = buildMode === 'development'
-webpackConfig.devtool = isDev ? 'cheap-source-map' : 'source-map'
+// Production builds must not ship a full 'source-map' devtool: it emits a
+// separate .js.map exposing original, unminified source alongside the
+// publicly-served bundle. Use the non-source-exposing variant instead.
+// @spec openspec/changes/performance-hardening-audit-log-and-boot/specs/performance-hardening/spec.md
+webpackConfig.devtool = isDev ? 'cheap-source-map' : 'nosources-source-map'
 
 webpackConfig.stats = {
 	colors: true,

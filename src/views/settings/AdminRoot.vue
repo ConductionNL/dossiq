@@ -76,6 +76,13 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			:name="t('procest', 'Financial Integration — Dwangsom Callback')"
+			:description="t('procest', 'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.')"
+			:loading="!storesReady">
+			<FinancialIntegrationTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('procest', 'StUF-ZKN Endpoints')"
 			:description="t('procest', 'Outbound StUF-ZKN/BG zaaksysteem endpoints per gemeente, with per-endpoint circuit-breaker health. Endpoints, WSSE credentials and mTLS certificates are managed by the platform operator.')"
 			:loading="!storesReady">
@@ -102,6 +109,7 @@ import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
 import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
 import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
 import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
+import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import EmailSettings from './EmailSettings.vue'
 import KccIntegrationSettings from './KccIntegrationSettings.vue'
 import StufEndpoints from './StufEndpoints.vue'
@@ -122,6 +130,7 @@ export default {
 		MandaatMatrixTab,
 		MandaatMatrixSettingsTab,
 		ConsultationSettingsTab,
+		FinancialIntegrationTab,
 		EmailSettings,
 		KccIntegrationSettings,
 		StufEndpoints,

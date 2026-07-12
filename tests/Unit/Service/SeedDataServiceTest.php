@@ -222,6 +222,15 @@ class SeedDataServiceTest extends TestCase
      */
     public function testSeedBezwaarBeroepDataSkipsExistingCaseTypes(): void
     {
+        // The seeder reads `caseTypes` from the real seed file. When the Dutch
+        // demo case types are parked under `_caseTypes_disabled` (see the file's
+        // _note), there is nothing to skip, so the skip-existing behaviour can
+        // only be exercised while Dutch seeding is enabled.
+        $seedData = json_decode(file_get_contents(__DIR__.'/../../../lib/Settings/bezwaar_seed_data.json'), true);
+        if (empty($seedData['caseTypes']) === true) {
+            $this->markTestSkipped('Dutch bezwaar caseTypes are disabled (parked under _caseTypes_disabled).');
+        }
+
         $this->appConfig
             ->method('getValueString')
             ->willReturnCallback(
@@ -284,7 +293,14 @@ class SeedDataServiceTest extends TestCase
 
         $this->assertSame(JSON_ERROR_NONE, json_last_error(), 'bezwaar_seed_data.json must be valid JSON');
         $this->assertIsArray($seedData);
-        $this->assertArrayHasKey('caseTypes', $seedData, 'Seed data must have caseTypes key');
+        // The case-type array may be parked under `_caseTypes_disabled` when the
+        // Dutch demo seeding is turned off in favour of the English demo (see the
+        // file's `_note`). Accept either the active or the parked key.
+        $this->assertTrue(
+            (array_key_exists('caseTypes', $seedData) === true
+                || array_key_exists('_caseTypes_disabled', $seedData) === true),
+            'Seed data must have a caseTypes key (or _caseTypes_disabled when parked)'
+        );
 
     }//end testBezwaarSeedDataFileExistsAndIsValidJson()
 
