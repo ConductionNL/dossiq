@@ -98,6 +98,13 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'caseDefinition#validate', 'url' => '/api/case-definitions/validate', 'verb' => 'POST'],
         ['name' => 'caseDefinition#import', 'url' => '/api/case-definitions/import', 'verb' => 'POST'],
 
+        // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
+        // Literal routes registered before the ZGW {resource}-wildcard
+        // blocks below so `openapi`/`openapi.yaml` segments are never
+        // swallowed by a parameterized ZGW route.
+        ['name' => 'zgwOpenApi#index', 'url' => '/api/zgw/openapi', 'verb' => 'GET'],
+        ['name' => 'zgwOpenApi#spec', 'url' => '/api/zgw/{api}/openapi.yaml', 'verb' => 'GET'],
+
         // ── DRC (Documenten) ────────────────────────────────────────────
         // Special endpoints (must precede wildcard routes).
         ['name' => 'drc#download', 'url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download', 'verb' => 'GET'],
