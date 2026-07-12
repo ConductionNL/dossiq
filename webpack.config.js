@@ -65,7 +65,12 @@ webpackConfig.entry = {
 // package. The USE_LOCAL_LIB env var lets CI/release builds force the published
 // @conduction/nextcloud-vue (npm) even when a stale sibling worktree is present
 // next to this repo: `USE_LOCAL_LIB=false` disables the sibling-source alias.
-const localLib = path.resolve(__dirname, '../nextcloud-vue/src')
+// LOCAL_LIB_PATH repoints the alias at another checkout of the library's `src`
+// (e.g. a git worktree on a feature branch), so a library change can be built
+// and tested here without touching the shared sibling checkout.
+const localLib = process.env.LOCAL_LIB_PATH
+	? path.resolve(process.env.LOCAL_LIB_PATH)
+	: path.resolve(__dirname, '../nextcloud-vue/src')
 const useLocalLib = process.env.USE_LOCAL_LIB === 'false'
 	? false
 	: fs.existsSync(localLib)

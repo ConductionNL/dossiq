@@ -616,7 +616,24 @@
 				"mapConfig": {
 					"geoField": "geometry",
 					"popupField": "title",
-					"center": [52.1326, 5.2913]
+					"center": [52.1326, 5.2913],
+					"basemaps": [
+						{
+							"name": "Standard",
+							"url": "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors"
+						},
+						{
+							"name": "Humanitarian",
+							"url": "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors, tiles by HOT"
+						},
+						{
+							"name": "Terrain",
+							"url": "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+							"attribution": "© OpenStreetMap contributors, SRTM | © OpenTopoMap"
+						}
+					]
 				},
 				"showViewAction": false,
 				"actions": [

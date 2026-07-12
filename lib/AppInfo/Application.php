@@ -67,6 +67,8 @@ use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\AppFramework\Http\ContentSecurityPolicy;
+use OCP\Security\IContentSecurityPolicyManager;
 
 /**
  * Main application class for the Procest case management app.
@@ -563,5 +565,41 @@ class Application extends App implements IBootstrap
      */
     public function boot(IBootContext $context): void
     {
+        $this->relaxCspForMapTiles(server: $context->getServerContainer());
     }//end boot()
+
+    /**
+     * Allowlist the base-map tile hosts the cases map view renders.
+     *
+     * Leaflet loads tiles as plain `<img>` elements, so Nextcloud's default
+     * Content-Security-Policy (`img-src 'self' data: blob:`) blocks every
+     * third-party tile server. The hosts here mirror `mapConfig.basemaps` in
+     * `src/manifest.json` — keep the two in step, or a base map the user can pick
+     * from the switcher will silently render blank.
+     *
+     * Procest declares these itself rather than relying on another app: the OSM
+     * host happened to be allowed only because the (optional) Nextcloud `maps` app
+     * pushes a default policy, so the map broke on any instance without it.
+     *
+     * NC merges policies additively via `addDefaultPolicy()` and never narrows, so
+     * this is idempotent and cannot loosen anything another app already set.
+     *
+     * @param mixed $server Server container (passed in from boot()).
+     *
+     * @return void
+     */
+    private function relaxCspForMapTiles($server): void
+    {
+        try {
+            $cspManager = $server->get(IContentSecurityPolicyManager::class);
+            $policy     = new ContentSecurityPolicy();
+            $policy->addAllowedImageDomain('https://*.tile.openstreetmap.org');
+            $policy->addAllowedImageDomain('https://*.tile.openstreetmap.fr');
+            $policy->addAllowedImageDomain('https://*.tile.opentopomap.org');
+            $cspManager->addDefaultPolicy($policy);
+        } catch (\Throwable $e) {
+            // CSP manager unavailable. Degrade to "no base map" rather than
+            // failing the boot — every other page keeps working.
+        }
+    }//end relaxCspForMapTiles()
 }//end class
