@@ -43,6 +43,12 @@ import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicati
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
 
+// Case-list CSV/Excel export via the OR export leaf — actions-slot component
+// on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
+// export-leaf URL client-side; no procest-side serialization (ADR-022).
+// @spec openspec/changes/case-list-export-via-or-export-leaf/specs/case-list-export-via-or-export-leaf/spec.md
+import CaseListExportAction from './components/export/CaseListExportAction.vue'
+
 // Cases-on-map — full-screen multi-object overview. Consumes OpenRegister's
 // page-level maps-overview leaf (OR #154): OR owns the geometry extraction,
 // RBAC scoping, and base-layer config; the markers render through the lib's
@@ -127,6 +133,14 @@ const registry = {
 		kind: 'page',
 		component: BezwaarBeroepOverview,
 		_note: 'Card-grid landing page replacing the BezwaarBeroepGroup four-leaf nav (ADR-044 cards-collapse). Four former leaves stay routable as deep links.',
+	},
+
+	// --- Case-list CSV/Excel export via the OR export leaf. ---
+	// @spec openspec/changes/case-list-export-via-or-export-leaf/specs/case-list-export-via-or-export-leaf/spec.md
+	CaseListExportAction: {
+		kind: 'page',
+		component: CaseListExportAction,
+		_note: 'Cases-page actions-slot "Export" menu (CSV/Excel); receives no props (CnIndexPage\'s #actions slot is unscoped). Builds the OR export-leaf URL client-side — no procest-side serialization (ADR-022).',
 	},
 
 	// --- Genuine exceptions: no abstract manifest analogue. ---
