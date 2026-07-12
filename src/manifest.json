@@ -609,6 +609,7 @@
 			"route": "/cases",
 			"type": "index",
 			"title": "Cases",
+			"actionsComponent": "CaseListExportAction",
 			"config": {
 				"register": "procest",
 				"schema": "case",
