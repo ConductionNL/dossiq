@@ -164,6 +164,7 @@ const EMPTY_FORM = {
 	extensionPeriod: '',
 	suspensionAllowed: false,
 	confidentiality: '',
+	iv3Taakveld: '',
 	publicationRequired: false,
 	publicationText: '',
 	responsibleUnit: '',

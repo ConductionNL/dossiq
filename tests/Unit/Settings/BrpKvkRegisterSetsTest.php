@@ -64,7 +64,10 @@ class BrpKvkRegisterSetsTest extends TestCase
         $this->assertContains('kvkCompany', $this->fragment['components']['registers']['procest']['schemas']);
 
         $person = $schemas['brpPerson']['properties'];
-        $this->assertSame('bsn', $person['burgerservicenummer']['format'], 'BSN must reuse OR\'s registered bsn format (ADR-011)');
+        // 'bsn' is not a registered OpenRegister string format (see the field's
+        // own description); the fragment intentionally pattern-validates the
+        // nine-digit BSN instead (ADR-011 — no procest-side validator).
+        $this->assertSame('^[0-9]{9}$', $person['burgerservicenummer']['pattern'], 'BSN must be pattern-validated as nine digits (ADR-011)');
         foreach (['naam', 'geboorte', 'verblijfplaats'] as $block) {
             $this->assertArrayHasKey($block, $person, "Haal Centraal block {$block} required");
         }

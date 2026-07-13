@@ -34,6 +34,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IGroupManager;
+use OCP\IL10N;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -41,6 +42,8 @@ use RuntimeException;
 
 /**
  * Controller for managing Procest application settings.
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
 class SettingsController extends Controller
 {
@@ -61,6 +64,7 @@ class SettingsController extends Controller
      * @param SettingsService    $settingsService The settings service
      * @param IGroupManager      $groupManager    The group manager
      * @param IUserSession       $userSession     The user session
+     * @param IL10N              $l10n            The translation service (libresign-besluit-signing hint).
      *
      * @return void
      */
@@ -71,6 +75,7 @@ class SettingsController extends Controller
         private SettingsService $settingsService,
         private readonly IGroupManager $groupManager,
         private readonly IUserSession $userSession,
+        private readonly IL10N $l10n,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -133,12 +138,24 @@ class SettingsController extends Controller
             $config = $this->settingsService->getPublicSettings();
         }//end if
 
+        $libresignAvailable = $this->appManager->isEnabledForUser('libresign');
+        $libresignHint      = null;
+        if ($libresignAvailable === false) {
+            $libresignHint = $this->l10n->t(
+                'LibreSign is not installed or enabled. Digital signing falls back to '
+                .'the built-in stub adapter — install and enable the LibreSign app to '
+                .'sign beschikkingen with a real eIDAS-aligned signature.'
+            );
+        }
+
         return new JSONResponse(
             [
-                'success'       => true,
-                'openRegisters' => in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()),
-                'isAdmin'       => $isAdmin,
-                'config'        => $config,
+                'success'            => true,
+                'openRegisters'      => in_array(needle: 'openregister', haystack: $this->appManager->getInstalledApps()),
+                'isAdmin'            => $isAdmin,
+                'config'             => $config,
+                'libresignAvailable' => $libresignAvailable,
+                'libresignHint'      => $libresignHint,
             ]
         );
     }//end index()

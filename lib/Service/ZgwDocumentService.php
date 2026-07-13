@@ -38,6 +38,8 @@ use Psr\Log\LoggerInterface;
  *
  * Stores document files under the admin user's Nextcloud files at:
  * /admin/files/procest/documenten/{uuid}/{filename}
+ *
+ * @spec openspec/changes/document-zaakdossier/tasks.md#T02
  */
 class ZgwDocumentService
 {
@@ -127,6 +129,33 @@ class ZgwDocumentService
 
         return $node->getContent();
     }//end getContent()
+
+    /**
+     * Get the Nextcloud file id of a stored document.
+     *
+     * Additive read accessor alongside {@see storeRaw()}/{@see getContent()} — callers that
+     * need the raw Nextcloud file id (e.g. to persist it on a domain object) resolve it here
+     * instead of duplicating this service's storage-path convention.
+     *
+     * @param string $uuid     The document UUID
+     * @param string $fileName The file name
+     *
+     * @return int The Nextcloud file id
+     *
+     * @throws NotFoundException If the file does not exist.
+     *
+     * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+     */
+    public function getFileId(string $uuid, string $fileName): int
+    {
+        $folder = $this->getDocumentFolder(uuid: $uuid);
+        $node   = $folder->get(path: $fileName);
+        if ($node instanceof File === false) {
+            throw new NotFoundException('Expected a file, got a folder');
+        }
+
+        return $node->getId();
+    }//end getFileId()
 
     /**
      * Check whether a document file exists.

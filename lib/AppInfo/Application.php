@@ -29,11 +29,14 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
+use OCA\Procest\Service\Beschikking\LibresignApiClient;
+use OCA\Procest\Service\Beschikking\LibresignSigningAdapter;
 use OCA\Procest\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Procest\Service\Beschikking\MockSigningAdapter;
 use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
 use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
 use OCA\Procest\Service\Beschikking\TemplateEngineAdapterInterface;
+use OCA\Procest\Service\ZgwDocumentService;
 use OCA\Procest\Dashboard\CasesOverviewWidget;
 use OCA\Procest\Dashboard\DeadlineAlertsWidget;
 use OCA\Procest\Dashboard\MyTasksWidget;
@@ -158,7 +161,8 @@ class Application extends App implements IBootstrap
                     appManager: $c->get('OCP\\App\\IAppManager'),
                     settingsService: $c->get(\OCA\Procest\Service\SettingsService::class),
                     groupManager: $c->get('OCP\\IGroupManager'),
-                    userSession: $c->get('OCP\\IUserSession')
+                    userSession: $c->get('OCP\\IUserSession'),
+                    l10n: $c->get('OCP\\IL10N')
                 );
             }
         );
@@ -288,7 +292,45 @@ class Application extends App implements IBootstrap
         // Docudesk (template render), and OpenRegister (archief ingest)
         // endpoints land in their own repos (tasks T23-T26).
         $context->registerServiceAlias(TemplateEngineAdapterInterface::class, MockTemplateEngineAdapter::class);
-        $context->registerServiceAlias(SigningAdapterInterface::class, MockSigningAdapter::class);
+        // SigningAdapterInterface: LibreSign (LibreCode) when the app is
+        // installed+enabled, else the pre-existing MockSigningAdapter stub —
+        // see openspec/changes/libresign-besluit-signing/design.md §6.
+        // procest never hard-depends on LibreSign: its absence is a clean,
+        // logged, translated fallback to the unchanged pre-existing
+        // behaviour, not an error.
+        $context->registerService(
+            SigningAdapterInterface::class,
+            static function (\Psr\Container\ContainerInterface $c): SigningAdapterInterface {
+                $appManager = $c->get('OCP\\App\\IAppManager');
+                if ($appManager->isEnabledForUser('libresign') === true) {
+                    return new LibresignSigningAdapter(
+                        apiClient: new LibresignApiClient(
+                            clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+                            urlGenerator: $c->get('OCP\\IURLGenerator'),
+                            appConfig: $c->get('OCP\\IAppConfig'),
+                            logger: $c->get('Psr\\Log\\LoggerInterface'),
+                        ),
+                        appManager: $appManager,
+                        appConfig: $c->get('OCP\\IAppConfig'),
+                        userManager: $c->get('OCP\\IUserManager'),
+                        rootFolder: $c->get('OCP\\Files\\IRootFolder'),
+                        documentService: $c->get(ZgwDocumentService::class),
+                        logger: $c->get('Psr\\Log\\LoggerInterface'),
+                    );
+                }
+
+                $c->get('Psr\\Log\\LoggerInterface')->warning(
+                    $c->get('OCP\\IL10N')->t(
+                        'LibreSign is not installed or enabled. Digital signing falls back to '
+                        .'the built-in stub adapter — install and enable the LibreSign app to '
+                        .'sign beschikkingen with a real eIDAS-aligned signature.'
+                    ),
+                    ['app' => Application::APP_ID]
+                );
+
+                return $c->get(MockSigningAdapter::class);
+            }
+        );
         // Beschikking archival is repointed onto OpenRegister's declarative
         // archival pipeline (ADR-022 / migrate-archival-to-or): retention/
         // destruction are governed by x-openregister-archival on the case
@@ -399,6 +441,36 @@ class Application extends App implements IBootstrap
                 }
 
                 return $c->get(\OCA\Procest\Service\External\Brp\LogBrpHaalCentraalAdapter::class);
+            }
+        );
+        // BAG (Basisregistratie Adressen en Gebouwen) — authoritative address +
+        // pand/verblijfsobject lookup (bag-register-adapter). Selected by
+        // `integration.bag.mode` (external-integrations-test-environments config-tier
+        // model). DEFAULT `log` = dormant (no external call). `test`/`live` binds the
+        // BagApiAdapter (Kadaster BAG API Individuele Bevragingen v2). Deliberately
+        // distinct from PdokBagService's free/open BAG WFS mirror — see
+        // openspec/changes/bag-register-adapter/design.md.
+        $context->registerService(
+            \OCA\Procest\Service\External\Bag\BagAdapterInterface::class,
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\External\Bag\BagAdapterInterface {
+                $modeService = $c->get(\OCA\Procest\Service\External\IntegrationMode::class);
+                $mode        = $modeService->resolve(
+                        'bag',
+                        [
+                            \OCA\Procest\Service\External\IntegrationMode::TEST,
+                            \OCA\Procest\Service\External\IntegrationMode::LIVE,
+                        ]
+                        );
+                if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
+                    return new \OCA\Procest\Service\External\Bag\BagApiAdapter(
+                        clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+                        mode: $modeService,
+                        mapper: $c->get(\OCA\Procest\Service\External\Bag\BagResponseMapper::class),
+                        logger: $c->get('Psr\\Log\\LoggerInterface'),
+                    );
+                }
+
+                return $c->get(\OCA\Procest\Service\External\Bag\LogBagAdapter::class);
             }
         );
         // TMLO metadata building + e-Depot submission adapter seams retired

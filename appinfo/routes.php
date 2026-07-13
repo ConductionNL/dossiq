@@ -209,6 +209,14 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         // (issue #112, ADR-022). PDOK address resolution is owned separately by
         // the migrate-pdok-to-openconnector change.
 
+        // ── BAG (Basisregistratie Adressen en Gebouwen) lookup (bag-register-adapter) ──
+        // Authoritative address + pand/verblijfsobject lookup, dormant by default
+        // (integration.bag.mode). Distinct from PDOK's free/open BAG WFS mirror
+        // (PdokBagService) — see openspec/changes/bag-register-adapter/design.md.
+        ['name' => 'bag#address', 'url' => '/api/external/bag/address', 'verb' => 'GET'],
+        ['name' => 'bag#pand', 'url' => '/api/external/bag/pand/{id}', 'verb' => 'GET'],
+        ['name' => 'bag#verblijfsobject', 'url' => '/api/external/bag/verblijfsobject/{id}', 'verb' => 'GET'],
+
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
         // /api/objects/<register>/<schema> endpoints — only engine routes remain.
@@ -258,6 +266,10 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'caseRelation#destroy', 'url' => '/api/cases/{caseId}/relations/{targetId}/{aardRelatie}', 'verb' => 'DELETE'],
         // Dashboard KPI aggregation endpoint.
         ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
+
+        // Intelligent work-queue: urgency-scored personal queue + coordinator workload.
+        ['name' => 'workQueue#index',    'url' => '/api/work-queue',          'verb' => 'GET'],
+        ['name' => 'workQueue#workload', 'url' => '/api/work-queue/workload', 'verb' => 'GET'],
 
         // PWA assets (must precede the catch-all /{path} shell route below).
         ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
@@ -441,6 +453,8 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'wOOAssessment#bulkAssess',      'url' => '/api/cases/{id}/woo/assessment',     'verb' => 'POST'],
         ['name' => 'wOOAssessment#extendDeadline',  'url' => '/api/cases/{id}/woo/extend-deadline','verb' => 'POST'],
         ['name' => 'wOOAssessment#createDecision',  'url' => '/api/cases/{id}/woo/decision',       'verb' => 'POST'],
+        ['name' => 'wOOAssessment#publishDecision', 'url' => '/api/cases/{id}/woo/publish',        'verb' => 'POST'],
+        ['name' => 'wOOAssessment#withdrawPublication', 'url' => '/api/cases/{id}/woo/withdraw',   'verb' => 'POST'],
 
         // ── Milestone tracking ───────────────────────────────────────────
         ['name' => 'milestone#progress', 'url' => '/api/cases/{caseId}/milestones/progress/{caseTypeId}', 'verb' => 'GET'],
@@ -558,6 +572,9 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'termijnReporting#dashboard',         'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
         ['name' => 'termijnReporting#kwartaalrapport',   'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
         ['name' => 'termijnReporting#jaarrekening',      'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+        // IV3 (Informatie voor Derden) quarterly cost report (controller / beheerder).
+        ['name' => 'iv3Report#report',                   'url' => '/api/reports/iv3',                      'verb' => 'GET'],
+        ['name' => 'iv3Report#taakvelden',                'url' => '/api/reports/iv3/taakvelden',           'verb' => 'GET'],
 
         // ── ZGW DRC Case Dossier (document-zaakdossier spec) ────────────
         // Specific endpoints precede the {infoObjectId} wildcards so bulk/status routes resolve first.

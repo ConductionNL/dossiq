@@ -159,7 +159,7 @@ class SeedVthMatrixCells implements IRepairStep
                     ['exception' => $e->getMessage(), 'cell' => $cell]
                 );
             }
-        }
+        }//end foreach
 
         $output->info('VTH LHS matrix cells seeded: '.$seeded.' of '.count($data['cells']).' cells.');
     }//end run()

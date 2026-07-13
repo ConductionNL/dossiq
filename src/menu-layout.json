@@ -8,7 +8,8 @@
 		"MyWork": "WorkGroup",
 		"WorkflowBoard": "WorkGroup",
 		"Analytics": "AnalyticsGroup",
-		"TermijnDashboardMenu": "AnalyticsGroup"
+		"TermijnDashboardMenu": "AnalyticsGroup",
+		"Iv3ReportDashboardMenu": "AnalyticsGroup"
 	},
 	"removals": [
 		"SubstitutionMenu",

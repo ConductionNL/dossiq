@@ -139,7 +139,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep
                             ['caseTypeSlug' => $caseTypeSlug, 'error' => $e->getMessage()]
                         );
                         continue;
-                    }
+                    }//end try
 
                     if (is_array($cases) === false) {
                         continue;
