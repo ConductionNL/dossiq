@@ -700,6 +700,20 @@ OC.L10N.register(
     "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions." : "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.",
     "OpenRegister is not available." : "OpenRegister is not available.",
     "No documents are ready to publish yet. Documents marked \"not public\" are never published, and partially public documents need a finalized redaction first." : "No documents are ready to publish yet. Documents marked \"not public\" are never published, and partially public documents need a finalized redaction first.",
-    "The publication could not be sent." : "The publication could not be sent."
+    "The publication could not be sent." : "The publication could not be sent.",
+    "Avg. cost per case" : "Avg. cost per case",
+    "Classifies cases of this type for the quarterly IV3 (Informatie voor Derden) cost report to CBS. Leave empty if this case type has no taakveld — such cases are reported as uncategorized." : "Classifies cases of this type for the quarterly IV3 (Informatie voor Derden) cost report to CBS. Leave empty if this case type has no taakveld — such cases are reported as uncategorized.",
+    "CSV export failed" : "CSV export failed",
+    "Failed to load IV3 report" : "Failed to load IV3 report",
+    "IV3 cost report" : "IV3 cost report",
+    "IV3 taakveld" : "IV3 taakveld",
+    "Leges income" : "Leges income",
+    "No cost activity recorded for this quarter." : "No cost activity recorded for this quarter.",
+    "No IV3 classification" : "No IV3 classification",
+    "Q{q}" : "Q{q}",
+    "Quarterly case cost breakdown per IV3 taakveld, for the CBS Informatie voor Derden submission." : "Quarterly case cost breakdown per IV3 taakveld, for the CBS Informatie voor Derden submission.",
+    "Taakveld" : "Taakveld",
+    "Total cost" : "Total cost",
+    "Uncategorized" : "Uncategorized"
 },
 "nplurals=2; plural=(n != 1);");

@@ -245,6 +245,13 @@
 			"order": 71
 		},
 		{
+			"id": "Iv3ReportDashboardMenu",
+			"label": "IV3 cost report",
+			"icon": "icon-category-monitoring",
+			"route": "Iv3ReportDashboard",
+			"order": 72
+		},
+		{
 			"id": "TenantOnboardingMenu",
 			"label": "Organisation onboarding",
 			"icon": "icon-user",
@@ -2458,6 +2465,14 @@
 			"title": "Termijn dashboard",
 			"component": "TermijnDashboard",
 			"_note": "AWB termijnbewaking (statutory-deadline) monitor: a zaaktype filter drives a server-computed KPI bundle (total cases in period, within-term %, breached, at-risk) rendered as colour-coded compliance cards. The figures come from a dedicated deadline-aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
+		},
+		{
+			"id": "Iv3ReportDashboard",
+			"route": "/iv3-report",
+			"type": "custom",
+			"title": "IV3 cost report",
+			"component": "Iv3ReportDashboard",
+			"_note": "Quarterly IV3 (Informatie voor Derden) per-taakveld cost report: a year/quarter picker drives a server-computed aggregation (case counts, recorded costs, leges income, avg cost per case per BBV taakveld) plus a CSV download for the CBS submission. The figures come from a dedicated Iv3ReportService aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
 		},
 		{
 			"id": "TenantOnboardingDashboard",
