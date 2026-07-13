@@ -131,29 +131,40 @@ class VthSeedDataRepairStep implements IRepairStep
             return;
         }
 
-        $caseSummary      = $this->seedCaseTypes(
+        // Repair steps run without a Nextcloud user session — anonymous
+        // callers are fail-closed by OpenRegister RBAC (#1955) on every
+        // boot, so the idempotency reads + writes below run inside
+        // runAsSystem().
+        [$caseSummary, $checklistSummary] = $this->runAsSystemIfAvailable(
             objectService: $objectService,
-            register: $register,
-            caseTypeSchema: $caseTypeSchema,
-            data: $data,
-            output: $output
-        );
-        $checklistSummary = $this->seedInspectionChecklists(
-            objectService: $objectService,
-            register: $register,
-            data: $data,
-            output: $output
+            operation: function () use ($objectService, $register, $caseTypeSchema, $data, $output): array {
+                return [
+                    $this->seedCaseTypes(
+                        objectService: $objectService,
+                        register: $register,
+                        caseTypeSchema: $caseTypeSchema,
+                        data: $data,
+                        output: $output
+                    ),
+                    $this->seedInspectionChecklists(
+                        objectService: $objectService,
+                        register: $register,
+                        data: $data,
+                        output: $output
+                    ),
+                ];
+            }
         );
 
         $output->info(
-                sprintf(
-            'VTH seed complete: %d case-types (%d skipped), %d checklists (%d skipped).',
-            $caseSummary['seeded'],
-            $caseSummary['skipped'],
-            $checklistSummary['seeded'],
-            $checklistSummary['skipped']
-        )
-                );
+            sprintf(
+                'VTH seed complete: %d case-types (%d skipped), %d checklists (%d skipped).',
+                $caseSummary['seeded'],
+                $caseSummary['skipped'],
+                $checklistSummary['seeded'],
+                $checklistSummary['skipped']
+            )
+        );
     }//end run()
 
     /**

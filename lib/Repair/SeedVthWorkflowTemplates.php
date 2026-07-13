@@ -138,26 +138,43 @@ class SeedVthWorkflowTemplates implements IRepairStep
             'failed'    => 0,
         ];
 
-        foreach ($files as $file) {
-            try {
-                $result           = $this->processCatalogFile(file: $file, output: $output);
-                $summary[$result] = ($summary[$result] ?? 0) + 1;
-            } catch (\Throwable $e) {
-                $summary['failed']++;
-                $this->logger->error(
-                    'Procest: failed to process VTH workflow template catalog file',
-                    [
-                        'app'       => Application::APP_ID,
-                        'file'      => basename($file),
-                        'exception' => $e->getMessage(),
-                    ]
-                );
-                $output->warning(
-                    'Skipping catalog file '.basename($file)
-                    .' due to processing error (see log).'
-                );
-            }//end try
-        }//end foreach
+        // This repair step runs without a Nextcloud user session — anonymous
+        // callers are fail-closed by OpenRegister RBAC (#1955) on every
+        // boot. Without this, every caseType/statusType lookup below reads
+        // as empty and every template is (mis)reported as "caseType not
+        // found", never actually seeding. runAsSystem() also covers the
+        // nested WorkflowDefinitionService::createDraft()/publish() calls,
+        // since the elevation is scoped to this callable for the whole
+        // process, not to one ObjectService instance.
+        $objectService = $this->settingsService->getObjectService();
+        $runner        = function () use ($files, &$summary, $output): void {
+            foreach ($files as $file) {
+                try {
+                    $result           = $this->processCatalogFile(file: $file, output: $output);
+                    $summary[$result] = ($summary[$result] ?? 0) + 1;
+                } catch (\Throwable $e) {
+                    $summary['failed']++;
+                    $this->logger->error(
+                        'Procest: failed to process VTH workflow template catalog file',
+                        [
+                            'app'       => Application::APP_ID,
+                            'file'      => basename($file),
+                            'exception' => $e->getMessage(),
+                        ]
+                    );
+                    $output->warning(
+                        'Skipping catalog file '.basename($file)
+                        .' due to processing error (see log).'
+                    );
+                }//end try
+            }//end foreach
+        };
+
+        if ($objectService !== null) {
+            $this->runAsSystemIfAvailable(objectService: $objectService, operation: $runner);
+        } else {
+            $runner();
+        }
 
         $output->info(
             'VTH workflow templates seed complete: '
@@ -236,7 +253,10 @@ class SeedVthWorkflowTemplates implements IRepairStep
 
         $caseTypeId = $this->resolveCaseTypeId(slug: $caseTypeSlug);
         if ($caseTypeId === '') {
-            $this->logger->warning(
+            // Expected precondition on every boot until base-register-seed-data
+            // has run (or while the anonymous repair context cannot read the
+            // caseType) — debug, not warning, so it does not spam the log.
+            $this->logger->debug(
                 'Procest: VTH workflow template — caseType not found, skipping',
                 [
                     'app'          => Application::APP_ID,
@@ -244,7 +264,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
                     'caseTypeSlug' => $caseTypeSlug,
                 ]
             );
-            $output->warning(
+            $output->info(
                 'VTH catalog: caseType "'.$caseTypeSlug.'" not found for template "'
                 .$slug.'" — skipping (run base-register-seed-data first).'
             );

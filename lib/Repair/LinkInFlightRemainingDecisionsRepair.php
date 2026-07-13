@@ -37,6 +37,7 @@ namespace OCA\Procest\Repair;
 use OCA\Procest\Service\AdviceDelegationService;
 use OCA\Procest\Service\BezwaarDecisionDelegationService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCA\Procest\Service\TenantSaasService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
@@ -52,6 +53,9 @@ use Throwable;
  */
 class LinkInFlightRemainingDecisionsRepair implements IRepairStep
 {
+
+    use SearchesObjects;
+
     /**
      * Statuses considered terminal / already-decided — skipped (historical).
      *
@@ -172,78 +176,90 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep
             },
         ];
 
-        foreach ($surfaces as $configKey => $raise) {
-            $schema = $this->settingsService->getConfigValue(key: $configKey);
-            if ($schema === '') {
-                continue;
+        // This repair step runs without a Nextcloud user session — anonymous
+        // callers are fail-closed by OpenRegister RBAC (#1955) on every
+        // boot, so the list/save calls below run inside runAsSystem().
+        $this->runAsSystemIfAvailable(
+            objectService: $objectService,
+            operation: function () use ($objectService, $output, $surfaces, &$linked, &$skipped, &$errors): void {
+                foreach ($surfaces as $configKey => $raise) {
+                    $schema = $this->settingsService->getConfigValue(key: $configKey);
+                    if ($schema === '') {
+                        continue;
+                    }
+
+                    try {
+                        // ObjectService::findAll() takes a single $config array — the
+                        // previous named-argument call (register:/schema:/limit:) threw
+                        // "Unknown named parameter" on every run. Use the shared
+                        // slug-aware search bridge, which also normalises the rows to
+                        // the associative arrays this loop expects.
+                        $objects = $this->searchObjectsAsArrays(
+                            objectService: $objectService,
+                            register: TenantSaasService::REGISTER,
+                            schema: $schema,
+                            filters: ['_limit' => 500],
+                        );
+                    } catch (Throwable $e) {
+                        $output->warning('Could not list objects for schema '.$schema.': '.$e->getMessage());
+                        $this->logger->warning(
+                            'LinkInFlightRemainingDecisionsRepair: list failed',
+                            ['schema' => $schema, 'error' => $e->getMessage()]
+                        );
+                        continue;
+                    }
+
+                    if (is_array($objects) === false) {
+                        continue;
+                    }
+
+                    foreach ($objects as $obj) {
+                        if (is_array($obj) === false) {
+                            continue;
+                        }
+
+                        $objUuid     = (string) ($obj['uuid'] ?? ($obj['id'] ?? ''));
+                        $decisionRef = (string) ($obj['decisionRef'] ?? '');
+                        $besluitRef  = (string) ($obj['besluitRef'] ?? '');
+                        $status      = (string) ($obj['status'] ?? '');
+
+                        if ($objUuid === '') {
+                            continue;
+                        }
+
+                        // REQ-PDRD-006: keep already-linked / already-decided /
+                        // historical records as the authoritative record — no relink.
+                        if ($decisionRef !== '' || $besluitRef !== '' || in_array($status, self::TERMINAL_STATUSES, true) === true) {
+                            $skipped++;
+                            continue;
+                        }
+
+                        try {
+                            $newRef = $raise($obj);
+
+                            // Persist the decisionRef so the outcome can complete in
+                            // decidesk. Merge the existing object — no field is dropped.
+                            $objectService->saveObject(
+                                object: array_merge($obj, ['decisionRef' => $newRef]),
+                                register: TenantSaasService::REGISTER,
+                                schema: $schema,
+                                uuid: $objUuid,
+                            );
+                            $linked++;
+                            $output->info('Linked '.$schema.' '.$objUuid.' → decidesk Decision '.$newRef);
+                        } catch (RuntimeException $e) {
+                            // Decidesk leaf unavailable — warn + skip; never fail the migration.
+                            $output->warning('Could not link '.$schema.' '.$objUuid.': '.$e->getMessage().' — skipping.');
+                            $this->logger->warning(
+                                'LinkInFlightRemainingDecisionsRepair: could not link object',
+                                ['schema' => $schema, 'uuid' => $objUuid, 'error' => $e->getMessage()]
+                            );
+                            $errors++;
+                        }//end try
+                    }//end foreach
+                }//end foreach
             }
-
-            try {
-                $objects = $objectService->findAll(
-                    register: TenantSaasService::REGISTER,
-                    schema: $schema,
-                    limit: 500,
-                    offset: 0,
-                    filters: [],
-                );
-            } catch (Throwable $e) {
-                $output->warning('Could not list objects for schema '.$schema.': '.$e->getMessage());
-                $this->logger->warning(
-                    'LinkInFlightRemainingDecisionsRepair: list failed',
-                    ['schema' => $schema, 'error' => $e->getMessage()]
-                );
-                continue;
-            }
-
-            if (is_array($objects) === false) {
-                continue;
-            }
-
-            foreach ($objects as $obj) {
-                if (is_array($obj) === false) {
-                    continue;
-                }
-
-                $objUuid     = (string) ($obj['uuid'] ?? ($obj['id'] ?? ''));
-                $decisionRef = (string) ($obj['decisionRef'] ?? '');
-                $besluitRef  = (string) ($obj['besluitRef'] ?? '');
-                $status      = (string) ($obj['status'] ?? '');
-
-                if ($objUuid === '') {
-                    continue;
-                }
-
-                // REQ-PDRD-006: keep already-linked / already-decided /
-                // historical records as the authoritative record — no relink.
-                if ($decisionRef !== '' || $besluitRef !== '' || in_array($status, self::TERMINAL_STATUSES, true) === true) {
-                    $skipped++;
-                    continue;
-                }
-
-                try {
-                    $newRef = $raise($obj);
-
-                    // Persist the decisionRef so the outcome can complete in
-                    // decidesk. Merge the existing object — no field is dropped.
-                    $objectService->saveObject(
-                        object: array_merge($obj, ['decisionRef' => $newRef]),
-                        register: TenantSaasService::REGISTER,
-                        schema: $schema,
-                        uuid: $objUuid,
-                    );
-                    $linked++;
-                    $output->info('Linked '.$schema.' '.$objUuid.' → decidesk Decision '.$newRef);
-                } catch (RuntimeException $e) {
-                    // Decidesk leaf unavailable — warn + skip; never fail the migration.
-                    $output->warning('Could not link '.$schema.' '.$objUuid.': '.$e->getMessage().' — skipping.');
-                    $this->logger->warning(
-                        'LinkInFlightRemainingDecisionsRepair: could not link object',
-                        ['schema' => $schema, 'uuid' => $objUuid, 'error' => $e->getMessage()]
-                    );
-                    $errors++;
-                }//end try
-            }//end foreach
-        }//end foreach
+        );
 
         $output->info(
             sprintf(
