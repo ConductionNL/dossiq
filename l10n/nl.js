@@ -2350,7 +2350,15 @@ OC.L10N.register(
         "newly opened": "nieuw geopend",
         "past deadline": "over de termijn",
         "closed this year": "dit jaar afgesloten",
-        "assigned to me": "aan mij toegewezen"
+        "assigned to me": "aan mij toegewezen",
+        "Publish (Woo)": "Publiceren (Woo)",
+        "View publication": "Bekijk publicatie",
+        "Withdraw": "Intrekken",
+        "Publication unavailable": "Publicatie niet mogelijk",
+        "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.": "OpenCatalogi is niet geïnstalleerd op deze omgeving. Vraag een beheerder om de app in te schakelen om Woo-besluiten te kunnen publiceren.",
+        "OpenRegister is not available.": "OpenRegister is niet beschikbaar.",
+        "No documents are ready to publish yet. Documents marked \"not public\" are never published, and partially public documents need a finalized redaction first.": "Er zijn nog geen documenten klaar om te publiceren. Documenten met classificatie \"niet openbaar\" worden nooit gepubliceerd, en documenten met classificatie \"deels openbaar\" hebben eerst een afgeronde lakking nodig.",
+        "The publication could not be sent.": "De publicatie kon niet worden verstuurd."
     },
     "nplurals=2; plural=(n != 1);"
 )

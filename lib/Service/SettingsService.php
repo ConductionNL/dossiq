@@ -463,6 +463,22 @@ class SettingsService
         'quick_action_templates'                     => '{}',
     ];
 
+    /**
+     * Default values for the WOO-publication-via-OpenCatalogi bridge.
+     *
+     * Match OpenCatalogi's own shipped bundle (`lib/Settings/publication_register.json`
+     * in the opencatalogi repo, register slug `publication`, schemas
+     * `publication`/`document`) so publishing works out of the box on a
+     * default install; overridable per instance via getWooPublicationConfigValue().
+     *
+     * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
+     */
+    public const WOO_PUBLICATION_DEFAULTS = [
+        'woo_publication_register'        => 'publication',
+        'woo_publication_schema'          => 'publication',
+        'woo_publication_document_schema' => 'document',
+    ];
+
     private const OPENREGISTER_APP_ID = 'openregister';
 
     /**
@@ -820,6 +836,32 @@ class SettingsService
 
         return $value;
     }//end getKccConfigValue()
+
+    /**
+     * Get a WOO-publication-via-OpenCatalogi bridge setting, falling back to
+     * its documented default.
+     *
+     * Mirrors getKccConfigValue(): an unset key resolves to the value
+     * declared in self::WOO_PUBLICATION_DEFAULTS (OpenCatalogi's own shipped
+     * register/schema slugs) rather than an empty string, so publishing works
+     * out of the box before an administrator visits the settings form.
+     *
+     * @param string $key The configuration key (must exist in self::WOO_PUBLICATION_DEFAULTS).
+     *
+     * @return string The configured value, or the documented default.
+     *
+     * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d1
+     */
+    public function getWooPublicationConfigValue(string $key): string
+    {
+        $default = (self::WOO_PUBLICATION_DEFAULTS[$key] ?? '');
+        $value   = $this->appConfig->getValueString(Application::APP_ID, $key, $default);
+        if ($value === '') {
+            return $default;
+        }
+
+        return $value;
+    }//end getWooPublicationConfigValue()
 
     /**
      * Set a single configuration value.
