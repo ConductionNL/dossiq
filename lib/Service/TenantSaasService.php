@@ -189,12 +189,22 @@ class TenantSaasService
         }
 
         try {
+            // ObjectService::findAll() takes a single $config array — the previous
+            // named-argument form threw "Unknown named parameter $register" and
+            // was swallowed by the catch below. Register/schema are read from
+            // inside `filters`; limit/offset are top-level config keys.
             $rows = $os->findAll(
-                register: self::REGISTER,
-                schema: self::SCHEMA_TENANT,
-                limit: $limit,
-                offset: $offset,
-                filters: $filters,
+                [
+                    'filters' => array_merge(
+                        [
+                            'register' => self::REGISTER,
+                            'schema'   => self::SCHEMA_TENANT,
+                        ],
+                        $filters
+                    ),
+                    'limit'   => $limit,
+                    'offset'  => $offset,
+                ]
             );
             if (is_array($rows) === true) {
                 return array_values($rows);
@@ -204,7 +214,7 @@ class TenantSaasService
         } catch (Throwable $e) {
             $this->logger->error('Procest: TenantSaasService::listActive failed', ['exception' => $e->getMessage()]);
             return [];
-        }
+        }//end try
     }//end listActive()
 
     /**
@@ -344,12 +354,18 @@ class TenantSaasService
         }
 
         try {
+            // ObjectService::findAll() takes a single $config array — see the
+            // note in listActive(); register/schema live inside `filters`.
             $rows = $os->findAll(
-                register: self::REGISTER,
-                schema: self::SCHEMA_TENANT,
-                limit: 1,
-                offset: 0,
-                filters: ['slug' => $slug],
+                [
+                    'filters' => [
+                        'register' => self::REGISTER,
+                        'schema'   => self::SCHEMA_TENANT,
+                        'slug'     => $slug,
+                    ],
+                    'limit'   => 1,
+                    'offset'  => 0,
+                ]
             );
             return is_array($rows) && count($rows) > 0;
         } catch (Throwable $e) {
