@@ -2690,6 +2690,14 @@
         "Failed to duplicate case type": "Zaaktype dupliceren mislukt",
         "No cases selected.": "Geen zaken geselecteerd.",
         "Select a status transition": "Selecteer een statusovergang",
-        "Select case {identifier}": "Selecteer zaak {identifier}"
+        "Select case {identifier}": "Selecteer zaak {identifier}",
+        "No documents are ready to publish yet. Documents marked \"not public\" are never published, and partially public documents need a finalized redaction first.": "Er zijn nog geen documenten klaar om te publiceren. Documenten met classificatie \"niet openbaar\" worden nooit gepubliceerd, en documenten met classificatie \"deels openbaar\" hebben eerst een afgeronde lakking nodig.",
+        "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.": "OpenCatalogi is niet geïnstalleerd op deze omgeving. Vraag een beheerder om de app in te schakelen om Woo-besluiten te kunnen publiceren.",
+        "OpenRegister is not available.": "OpenRegister is niet beschikbaar.",
+        "Publication unavailable": "Publicatie niet mogelijk",
+        "Publish (Woo)": "Publiceren (Woo)",
+        "The publication could not be sent.": "De publicatie kon niet worden verstuurd.",
+        "View publication": "Bekijk publicatie",
+        "Withdraw": "Intrekken"
     }
 }

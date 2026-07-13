@@ -2690,7 +2690,15 @@
         "Failed to duplicate case type": "Failed to duplicate case type",
         "No cases selected.": "No cases selected.",
         "Select a status transition": "Select a status transition",
-        "Select case {identifier}": "Select case {identifier}"
+        "Select case {identifier}": "Select case {identifier}",
+        "No documents are ready to publish yet. Documents marked \"not public\" are never published, and partially public documents need a finalized redaction first.": "No documents are ready to publish yet. Documents marked \"not public\" are never published, and partially public documents need a finalized redaction first.",
+        "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.": "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.",
+        "OpenRegister is not available.": "OpenRegister is not available.",
+        "Publication unavailable": "Publication unavailable",
+        "Publish (Woo)": "Publish (Woo)",
+        "The publication could not be sent.": "The publication could not be sent.",
+        "View publication": "View publication",
+        "Withdraw": "Withdraw"
     },
     "plurals": ""
 }

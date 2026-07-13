@@ -692,6 +692,14 @@ OC.L10N.register(
     "Sentiment trigger words (one per line)" : "Sentiment trigger words (one per line)",
     "Specialist availability polling interval (seconds)" : "Specialist availability polling interval (seconds)",
     "Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both." : "Whether burgers are identified via DigiD (portaal/chat), identificatievragen (telefoon), or both.",
-    "_%n document selected_::_%n documents selected_" : ["%n document selected","%n documents selected"]
+    "_%n document selected_::_%n documents selected_" : ["%n document selected","%n documents selected"],
+    "Publish (Woo)" : "Publish (Woo)",
+    "View publication" : "View publication",
+    "Withdraw" : "Withdraw",
+    "Publication unavailable" : "Publication unavailable",
+    "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions." : "OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.",
+    "OpenRegister is not available." : "OpenRegister is not available.",
+    "No documents are ready to publish yet. Documents marked \"not public\" are never published, and partially public documents need a finalized redaction first." : "No documents are ready to publish yet. Documents marked \"not public\" are never published, and partially public documents need a finalized redaction first.",
+    "The publication could not be sent." : "The publication could not be sent."
 },
 "nplurals=2; plural=(n != 1);");
