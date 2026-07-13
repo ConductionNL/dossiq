@@ -8,7 +8,9 @@
  * workflowTemplate objects in OpenRegister.
  */
 import { defineStore } from 'pinia'
+import { generateUrl } from '@nextcloud/router'
 import { useObjectStore } from './object.js'
+import { validateWorkflowGraph } from '../../utils/workflowGraphValidation.js'
 
 /**
  * Generate a UUID v4.
@@ -303,18 +305,36 @@ export const useWorkflowStore = defineStore('workflow', {
 		/**
 		 * Publish a draft workflow template, making it the active version.
 		 *
+		 * Calls the canonical `POST /api/workflow-definitions/{id}/publish`
+		 * endpoint (`WorkflowDefinitionController::publish` ->
+		 * `WorkflowDefinitionService::publish()`) instead of writing
+		 * isDraft/isActive flags directly through the generic object store.
+		 * That backend method is the ONLY place that enforces referential
+		 * integrity (transitions must reference statuses of the same case
+		 * type), freezes role-authorization group ids onto transitions
+		 * (ADR-022), atomically deprecates the previously active version, and
+		 * pins `caseType.workflowDefinition` — none of which a flag-only
+		 * write through `objectStore.saveObject()` would trigger. Client
+		 * validation still runs first for fast, itemised feedback; the
+		 * backend call remains the authoritative backstop.
+		 *
 		 * @param {string} templateId UUID of the template to publish
+		 * @param {Array} [statusNodes] `statusType` graph nodes for client-side
+		 *  validation (see `validateWorkflow`) — defense in depth; the caller
+		 *  (`WorkflowTab.vue::publish()`) already validates via the editor's
+		 *  `validate()` before invoking this action.
 		 * @return {Promise<object|null>} The published template or null
 		 */
 		/**
 		 * @param templateId
-		 * @spec openspec/specs/workflow-definition-model/spec.md
+		 * @param statusNodes
+		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-publish-uses-the-canonical-write-path
 		 */
-		async publishVersion(templateId) {
+		async publishVersion(templateId, statusNodes = []) {
 			this.error = null
 
 			// Validate first
-			const errors = this.validateWorkflow()
+			const errors = this.validateWorkflow(statusNodes)
 			if (errors.length > 0) {
 				this.validationErrors = errors
 				this.error = t('procest', 'Workflow validation failed')
@@ -323,38 +343,24 @@ export const useWorkflowStore = defineStore('workflow', {
 
 			this.loading = true
 			try {
-				const objectStore = useObjectStore()
+				const response = await fetch(generateUrl(`/apps/procest/api/workflow-definitions/${templateId}/publish`), {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						requesttoken: OC.requestToken,
+						'OCS-APIREQUEST': 'true',
+					},
+				})
 
-				// Deactivate any currently active version for this case type
-				const caseTypeId = this.currentTemplate?.caseType
-				if (caseTypeId) {
-					const activeVersions = await objectStore.fetchCollection('workflowTemplate', {
-						'_filters[caseType]': caseTypeId,
-						'_filters[isActive]': true,
-						_limit: 10,
-					})
-					if (activeVersions) {
-						for (const v of activeVersions) {
-							if (v.id !== templateId) {
-								await objectStore.saveObject('workflowTemplate', {
-									...v,
-									isActive: false,
-								})
-							}
-						}
-					}
+				const body = await response.json().catch(() => null)
+				if (!response.ok || !body?.success) {
+					this.error = body?.error || t('procest', 'Could not publish workflow definition')
+					return null
 				}
 
-				// Publish
-				const published = await objectStore.saveObject('workflowTemplate', {
-					...this.currentTemplate,
-					id: templateId,
-					isDraft: false,
-					isActive: true,
-				})
-				this.currentTemplate = published
+				this.currentTemplate = body.definition
 				this.validationErrors = []
-				return published
+				return body.definition
 			} catch (err) {
 				this.error = err.message
 				return null
@@ -932,57 +938,27 @@ export const useWorkflowStore = defineStore('workflow', {
 		// --- Workflow Validation ---
 
 		/**
-		 * Validate the current workflow template.
+		 * Validate the current workflow template against the real engine
+		 * constraints (see `src/utils/workflowGraphValidation.js`): missing/
+		 * unreachable final status, dangling/duplicate transitions, orphan
+		 * nodes, cycles with no exit. Delegates to the pure util so the same
+		 * rules are unit-testable without a store/Pinia instance.
 		 *
-		 * @return {Array} Array of error/warning objects {type, message}
+		 * @param {Array} [statusNodes] The `statusType` graph nodes — only the
+		 *  component (which loads them) has this list, so callers must pass
+		 *  it through; defaults to [] which yields no NO_FINAL_STATUS-style
+		 *  findings (nothing to validate against yet).
+		 * @return {Array} Array of {type, code, message} issue objects
 		 */
-		/** @spec openspec/specs/workflow-definition-model/spec.md */
-		validateWorkflow() {
-			const errors = []
-			const steps = this.parsedSteps
-			const transitions = this.parsedTransitions
-
-			if (transitions.length === 0) {
-				errors.push({
-					type: 'error',
-					message: t('procest', 'Workflow has no transitions defined'),
-				})
-				return errors
-			}
-
-			// Collect all referenced statuses
-			const allStatuses = new Set()
-			transitions.forEach((t) => {
-				allStatuses.add(t.fromStatus)
-				allStatuses.add(t.toStatus)
+		/**
+		 * @param statusNodes
+		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
+		 */
+		validateWorkflow(statusNodes = []) {
+			return validateWorkflowGraph({
+				statusNodes,
+				transitions: this.parsedTransitions,
 			})
-			steps.forEach((s) => {
-				if (s.status) allStatuses.add(s.status)
-			})
-
-			// Check for orphaned nodes (statuses with no transitions)
-			const connectedStatuses = new Set()
-			transitions.forEach((t) => {
-				connectedStatuses.add(t.fromStatus)
-				connectedStatuses.add(t.toStatus)
-			})
-
-			// Check for reachability (simple BFS from initial statuses)
-			const hasIncoming = new Set()
-			transitions.forEach((t) => hasIncoming.add(t.toStatus))
-
-			const initialStatuses = [...connectedStatuses].filter(
-				(s) => !hasIncoming.has(s),
-			)
-
-			if (initialStatuses.length === 0 && transitions.length > 0) {
-				errors.push({
-					type: 'warning',
-					message: t('procest', 'Circular route detected without initial status'),
-				})
-			}
-
-			return errors
 		},
 
 		// --- Import/Export ---
@@ -1302,6 +1278,36 @@ export const useWorkflowStore = defineStore('workflow', {
 			const positions = { ...this.parsedNodePositions }
 			positions[statusId] = { x, y }
 			if (this.currentTemplate) {
+				this.currentTemplate.nodePositions = JSON.stringify(positions)
+			}
+		},
+
+		/**
+		 * Remove a status node from the working copy of the current workflow
+		 * template: drops its steps, its incident transitions (as source or
+		 * target) and its node position. Does NOT delete the underlying
+		 * `statusType` object itself — the caller (`WorkflowEditor.vue::
+		 * onDeleteStatusNode()`) does that via `objectStore.deleteObject()`
+		 * after the same "at least one final status must remain" guard
+		 * `StatusesTab.vue::deleteStatusType()` already enforces.
+		 *
+		 * @param {string} statusId UUID of the status to remove
+		 */
+		/**
+		 * @param statusId
+		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
+		 */
+		removeStatusNode(statusId) {
+			const steps = this.parsedSteps.filter((s) => s.status !== statusId)
+			const transitions = this.parsedTransitions.filter(
+				(t) => t.fromStatus !== statusId && t.toStatus !== statusId,
+			)
+			const positions = { ...this.parsedNodePositions }
+			delete positions[statusId]
+
+			if (this.currentTemplate) {
+				this.currentTemplate.steps = JSON.stringify(steps)
+				this.currentTemplate.transitions = JSON.stringify(transitions)
 				this.currentTemplate.nodePositions = JSON.stringify(positions)
 			}
 		},

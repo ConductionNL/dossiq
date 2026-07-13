@@ -2689,6 +2689,25 @@
         "Failed to duplicate case type": "Zaaktype dupliceren mislukt",
         "No cases selected.": "Geen zaken geselecteerd.",
         "Select a status transition": "Selecteer een statusovergang",
-        "Select case {identifier}": "Selecteer zaak {identifier}"
+        "Select case {identifier}": "Selecteer zaak {identifier}",
+        "Actions for status {name}": "Acties voor status {name}",
+        "Add status node": "Statusknooppunt toevoegen",
+        "At least one status must be marked as final": "Ten minste één status moet als definitief zijn gemarkeerd",
+        "Connect nodes by dragging from one port to another, or use a node's keyboard actions menu.": "Verbind knooppunten door van de ene poort naar de andere te slepen, of gebruik het toetsenbord-actiemenu van een knooppunt.",
+        "Connect to {name}": "Verbinden met {name}",
+        "Could not publish workflow definition": "Workflowdefinitie kon niet worden gepubliceerd",
+        "Cycle detected with no exit to a final status: {names}": "Cyclus gevonden zonder uitgang naar een definitieve status: {names}",
+        "Delete status": "Status verwijderen",
+        "Delete status \"{name}\"? This also removes its steps and transitions.": "Status \"{name}\" verwijderen? Dit verwijdert ook de bijbehorende stappen en overgangen.",
+        "Delete step": "Stap verwijderen",
+        "Disconnect from {name}": "Verbinding met {name} verbreken",
+        "Drag a status node onto the canvas to add it, or use the \"Add status node\" button.": "Sleep een statusknooppunt naar het canvas om het toe te voegen, of gebruik de knop \"Statusknooppunt toevoegen\".",
+        "Duplicate transition from \"{from}\" to \"{to}\"": "Dubbele overgang van \"{from}\" naar \"{to}\"",
+        "Failed to delete status": "Status verwijderen mislukt",
+        "Final status \"{name}\" cannot be reached from any starting status": "Definitieve status \"{name}\" is vanuit geen enkele startstatus bereikbaar",
+        "Status \"{name}\" has no transitions connecting it to the rest of the workflow": "Status \"{name}\" heeft geen overgangen die deze verbinden met de rest van de workflow",
+        "Status: {name}": "Status: {name}",
+        "Transition \"{label}\" references a status that no longer exists": "Overgang \"{label}\" verwijst naar een status die niet meer bestaat",
+        "Workflow has no final status defined": "Workflow heeft geen definitieve status gedefinieerd"
     }
 }

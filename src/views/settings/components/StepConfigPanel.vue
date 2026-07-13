@@ -2,11 +2,20 @@
 	<div class="step-config-panel">
 		<div class="step-config-panel__header">
 			<h4>{{ t('procest', 'Step Configuration') }}</h4>
-			<NcButton type="tertiary" @click="$emit('close')">
-				<template #icon>
-					<CloseIcon :size="20" />
-				</template>
-			</NcButton>
+			<div class="step-config-panel__header-actions">
+				<NcButton
+					v-if="!readOnly"
+					type="tertiary"
+					class="step-config-panel__delete-button"
+					@click="$emit('delete', localStep.id)">
+					{{ t('procest', 'Delete step') }}
+				</NcButton>
+				<NcButton type="tertiary" @click="$emit('close')">
+					<template #icon>
+						<CloseIcon :size="20" />
+					</template>
+				</NcButton>
+			</div>
 		</div>
 
 		<div class="step-config-panel__body">
@@ -330,7 +339,7 @@ export default {
 			default: false,
 		},
 	},
-	emits: ['update', 'close'],
+	emits: ['update', 'close', 'delete'],
 	data() {
 		return {
 			localStep: { ...this.step },
@@ -559,6 +568,12 @@ export default {
 	justify-content: space-between;
 	padding: 12px 16px;
 	border-bottom: 1px solid var(--color-border);
+}
+
+.step-config-panel__header-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
 }
 
 .step-config-panel__header h4 {
