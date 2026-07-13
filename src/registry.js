@@ -13,11 +13,12 @@
 // Migration notes:
 // - `voorstelReminder` is a function (row-action handler), not a component.
 //   It cannot be a registry entry and stays in customComponents.js.
-// - `VisualWorkflowEditor` is intentionally kept out of the registry because
-//   @vue-flow/{core,controls,background} are Vue-3-only and break the Vue 2
-//   build. The manifest page WorkflowTemplateEditor remains `type:"custom"` but
-//   unresolvable until procest migrates to Vue 3 or a Vue-2-compatible flow lib.
-//   See customComponents.js for context.
+// - The visual workflow editor (`WorkflowEditor.vue`) is not a registry entry
+//   — it is a plain child component mounted by `WorkflowTab.vue` inside the
+//   case-type detail page's "Workflow" tab, not a manifest `type:"custom"`
+//   page or sidebar-tab component. See openspec/specs/visual-workflow-editor.
+//   A second, @vue-flow-based implementation (Vue-3-only, incompatible with
+//   this app's Vue 2.7 build) was removed by workflow-editor-integration.
 // - `MapComponent` is kept in customComponents.js for backward compat with any
 //   manifest entries that reference it by string outside the registry. No
 //   current manifest pages reference MapComponent by key directly; retained as

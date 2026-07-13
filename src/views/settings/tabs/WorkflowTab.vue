@@ -268,7 +268,10 @@ export default {
 				await this.save()
 			}
 
-			const result = await this.workflowStore.publishVersion(this.selectedVersionId)
+			const result = await this.workflowStore.publishVersion(
+				this.selectedVersionId,
+				this.$refs.editor?.statusNodes || [],
+			)
 			if (!result) {
 				this.publishErrors = this.workflowStore.validationErrors
 			} else {

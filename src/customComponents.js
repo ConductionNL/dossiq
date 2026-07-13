@@ -70,16 +70,6 @@ import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
 // @spec openspec/changes/document-zaakdossier/tasks.md#T10
 import DossierTab from './views/cases/components/DossierTab.vue'
 
-// --- Visual workflow editor — TEMPORARILY UNWIRED. ---
-// `@vue-flow/{core,controls,background}` v1.x are Vue-3-only (they import
-// Fragment / Teleport / createElementVNode / toValue from 'vue'), which breaks
-// the webpack build under procest's Vue 2.7 base (272 errors). The component
-// files remain in src/components/workflow/ but are no longer pulled into the
-// bundle. Re-wire once @vue-flow is replaced with a Vue-2-compatible flow
-// library (or procest migrates to Vue 3). See
-// openspec/changes/visual-workflow-editor/design.md.
-// import VisualWorkflowEditor from './components/workflow/VisualWorkflowEditor.vue'
-
 // --- Features & Roadmap page — thin wrapper around the lib's
 //     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by
 //     OpenRegister's github-issue-proxy). See ConductionNL/hydra#251. ---
@@ -164,9 +154,6 @@ export default {
 
 	// --- ZGW DRC case dossier tab (document-zaakdossier). ---
 	DossierTab,
-
-	// --- Visual workflow editor — temporarily unwired (see import comment above). ---
-	// VisualWorkflowEditor,
 
 	// --- Features & Roadmap page (lib's CnFeaturesAndRoadmapView). ---
 }
