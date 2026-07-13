@@ -255,6 +255,10 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         // Dashboard KPI aggregation endpoint.
         ['name' => 'kpi#index', 'url' => '/api/dashboard/kpis', 'verb' => 'GET'],
 
+        // Intelligent work-queue: urgency-scored personal queue + coordinator workload.
+        ['name' => 'workQueue#index',    'url' => '/api/work-queue',          'verb' => 'GET'],
+        ['name' => 'workQueue#workload', 'url' => '/api/work-queue/workload', 'verb' => 'GET'],
+
         // PWA assets (must precede the catch-all /{path} shell route below).
         ['name' => 'dashboard#serviceWorker', 'url' => '/service-worker.js',           'verb' => 'GET'],
         ['name' => 'dashboard#webManifest',   'url' => '/manifest.webmanifest',        'verb' => 'GET'],

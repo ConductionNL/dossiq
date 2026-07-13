@@ -14,6 +14,12 @@
 			<span v-if="identifier" class="mywork-card__ref">{{ identifier }}</span>
 			<span v-if="caseTypeLabel" class="mywork-card__chip">{{ caseTypeLabel }}</span>
 			<span v-if="statusLabel" class="mywork-card__chip mywork-card__chip--status">{{ statusLabel }}</span>
+			<span
+				v-if="urgencyChipLabel"
+				class="mywork-card__chip mywork-card__urgency-chip"
+				:class="urgencyChipClassName">
+				{{ urgencyChipLabel }}
+			</span>
 		</span>
 		<span v-if="deadlineLabel" class="mywork-card__deadline" :class="{ 'mywork-card__deadline--overdue': overdue }">
 			{{ t('procest', 'Deadline') }}: {{ deadlineLabel }}
@@ -22,12 +28,16 @@
 </template>
 
 <script>
+import { urgencyChipClass } from '../utils/workQueueHelpers.js'
+
 /**
  * Card for a single case on the My Work index. Renders the case with its
  * case-type and status resolved to human names via the parent-supplied
  * UUID→name maps (the default CnObjectCard shows raw relation UUIDs because
  * card view does not apply column formatters — see
  * reference_ncvue-manifest-feature-version-gating).
+ *
+ * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export default {
 	name: 'MyWorkCaseCard',
@@ -50,6 +60,14 @@ export default {
 		},
 		/** { statusTypeUuid: name } supplied by the parent index. */
 		statusMap: {
+			type: Object,
+			default: () => ({}),
+		},
+		/**
+		 * { caseId: { tier, score, daysUntilDeadline } } supplied by the parent
+		 * index, sourced from GET /api/work-queue.
+		 */
+		urgencyMap: {
 			type: Object,
 			default: () => ({}),
 		},
@@ -88,6 +106,29 @@ export default {
 			if (!raw) return false
 			const d = new Date(raw)
 			return !isNaN(d.getTime()) && d.getTime() < Date.now()
+		},
+		/** This card's urgency entry from the parent-supplied work-queue map. */
+		urgencyEntry() {
+			const id = this.object.id || (this.object['@self'] && this.object['@self'].id)
+			return id ? (this.urgencyMap[id] || null) : null
+		},
+		/** CSS modifier class for the urgency chip; '' when no chip should render. */
+		urgencyChipClassName() {
+			return urgencyChipClass(this.urgencyEntry && this.urgencyEntry.tier)
+		},
+		/** Human label for the urgency chip; '' hides the chip (normal tier). */
+		urgencyChipLabel() {
+			const tier = this.urgencyEntry && this.urgencyEntry.tier
+			switch (tier) {
+			case 'overdue':
+				return t('procest', 'Overdue')
+			case 'critical':
+				return t('procest', 'Critical')
+			case 'warning':
+				return t('procest', 'Due soon')
+			default:
+				return ''
+			}
 		},
 	},
 }
@@ -165,6 +206,29 @@ export default {
 	&--overdue {
 		color: var(--color-error);
 		font-weight: 600;
+	}
+}
+
+// Urgency chip — overdue uses the error colour, critical/warning use the
+// warning colour (critical solid, warning a softer outline), all via NC CSS
+// variables per the werkvoorraad-intelligent-queue spec's colour rule.
+.mywork-card__urgency-chip {
+	font-weight: 600;
+
+	&--overdue {
+		background: var(--color-error);
+		color: var(--color-primary-element-text, #fff);
+	}
+
+	&--critical {
+		background: var(--color-warning);
+		color: var(--color-primary-element-text, #000);
+	}
+
+	&--warning {
+		color: var(--color-warning);
+		background: transparent;
+		border: 1px solid var(--color-warning);
 	}
 }
 </style>

@@ -151,17 +151,24 @@ covered by PHPUnit + smoke tests, not Playwright browser assertions.
 - **Card**: `src/views/MyWorkCaseCard.vue` — title, description, identifier,
   case-type + status names (resolved via parent-supplied UUID→name maps because
   card view does not apply column formatters), deadline with overdue
-  highlighting; click emits `open` → `CaseDetail`.
+  highlighting; an urgency chip (see below); click emits `open` → `CaseDetail`.
+- **Sort toggle + urgency chip** (see capability `werkvoorraad-intelligent-queue`):
+  a server-computed urgency score (deadline incl. termijn extensions/pauses,
+  priority, case age) drives an Urgency/Newest sort toggle and a per-card
+  urgency chip, sourced from `GET /api/work-queue`. This is deliberately
+  narrower than the retired board below — the list itself stays a plain
+  `CnIndexPage`; only the ordering signal and the chip are new.
 - **Dashboard widgets** (unchanged, still present): `lib/Dashboard/MyTasksWidget.php`,
   `lib/Dashboard/OverdueCasesWidget.php`, `lib/Dashboard/CasesOverviewWidget.php`
   + `src/views/dashboard/MyWorkPreview.vue`.
 
 **Deliberately dropped (was the old werkvoorraad board):**
-- Task aggregation, All/Cases/Tasks filter tabs, urgency grouping
-  (Overdue/Due-this-week/Upcoming/No-deadline), sorting-by-priority, the
-  show-completed toggle, and cross-app (Pipelinq) workload. The `Werkvoorraad`
-  work-queue page was also retired (the Workflow Board covers the in-progress
-  view).
+- Task aggregation, All/Cases/Tasks filter tabs, client-side urgency grouping
+  (Overdue/Due-this-week/Upcoming/No-deadline), the show-completed toggle, and
+  cross-app (Pipelinq) workload. The `Werkvoorraad` work-queue page was also
+  retired (the Workflow Board covers the in-progress view). Sorting-by-priority
+  was later reintroduced in server-computed form (see above) — the ad-hoc
+  client-side board it originally shipped in was not.
 
 **Not implemented:**
 - `@me` support in the nc-vue index base filter (would let My Work be a pure
