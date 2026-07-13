@@ -119,12 +119,20 @@ class TenantOnboardingService
         }
 
         try {
+            // ObjectService::findAll() takes a single $config array — the previous
+            // named-argument form threw "Unknown named parameter $register" and
+            // was swallowed by the catch below. Register/schema are read from
+            // inside `filters`.
             $rows = $os->findAll(
-                register: TenantSaasService::REGISTER,
-                schema: 'tenantOnboardingTask',
-                limit: 100,
-                offset: 0,
-                filters: ['tenantRef' => $tenantId]
+                [
+                    'filters' => [
+                        'register'  => TenantSaasService::REGISTER,
+                        'schema'    => 'tenantOnboardingTask',
+                        'tenantRef' => $tenantId,
+                    ],
+                    'limit'   => 100,
+                    'offset'  => 0,
+                ]
             );
         } catch (Throwable $e) {
             $rows = [];
@@ -179,12 +187,19 @@ class TenantOnboardingService
         }
 
         try {
+            // ObjectService::findAll() takes a single $config array — see the
+            // note in getProgress(); register/schema live inside `filters`.
             $rows = $os->findAll(
-                register: TenantSaasService::REGISTER,
-                schema: 'tenantOnboardingTask',
-                limit: 1,
-                offset: 0,
-                filters: ['tenantRef' => $tenantId, 'step' => $step]
+                [
+                    'filters' => [
+                        'register'  => TenantSaasService::REGISTER,
+                        'schema'    => 'tenantOnboardingTask',
+                        'tenantRef' => $tenantId,
+                        'step'      => $step,
+                    ],
+                    'limit'   => 1,
+                    'offset'  => 0,
+                ]
             );
             if (is_array($rows) === false || count($rows) === 0) {
                 return null;
@@ -292,12 +307,20 @@ class TenantOnboardingService
     private function countSchemaRows($os, string $schema, array $filters): int
     {
         try {
+            // ObjectService::findAll() takes a single $config array — see the
+            // note in getProgress(); register/schema live inside `filters`.
             $rows = $os->findAll(
-                register: TenantSaasService::REGISTER,
-                schema: $schema,
-                limit: 1,
-                offset: 0,
-                filters: $filters
+                [
+                    'filters' => array_merge(
+                        [
+                            'register' => TenantSaasService::REGISTER,
+                            'schema'   => $schema,
+                        ],
+                        $filters
+                    ),
+                    'limit'   => 1,
+                    'offset'  => 0,
+                ]
             );
             if (is_array($rows) === true) {
                 return count($rows);
@@ -306,7 +329,7 @@ class TenantOnboardingService
             return 0;
         } catch (Throwable $e) {
             return 0;
-        }
+        }//end try
     }//end countSchemaRows()
 
     /**

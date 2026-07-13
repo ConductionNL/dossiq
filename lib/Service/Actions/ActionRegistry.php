@@ -328,13 +328,20 @@ class ActionRegistry
             return null;
         }
 
-        // Use the manifest-aligned findAll filter API. Slug uniqueness is
+        // ObjectService::findAll() takes a single $config array — the previous
+        // named-argument form (register:/schema:/filters:/limit:) threw
+        // "Unknown named parameter $register". Register/schema are read from
+        // inside `filters`; limit is a top-level config key. Slug uniqueness is
         // enforced per-tenant at write time, so a slug match is exact here.
         $results = $objectService->findAll(
-            register: $register,
-            schema: $schema,
-            filters: ['slug' => $slug],
-            limit: 1
+            [
+                'filters' => [
+                    'register' => $register,
+                    'schema'   => $schema,
+                    'slug'     => $slug,
+                ],
+                'limit'   => 1,
+            ]
         );
 
         if (is_array($results) === false || $results === []) {
@@ -376,9 +383,15 @@ class ActionRegistry
             return [];
         }
 
+        // ObjectService::findAll() takes a single $config array — see the note in
+        // findAction(); register/schema are read from inside `filters`.
         $results = $objectService->findAll(
-            register: $register,
-            schema: $schema
+            [
+                'filters' => [
+                    'register' => $register,
+                    'schema'   => $schema,
+                ],
+            ]
         );
 
         if (is_array($results) === false) {
