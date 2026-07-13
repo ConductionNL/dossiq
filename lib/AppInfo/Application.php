@@ -443,6 +443,36 @@ class Application extends App implements IBootstrap
                 return $c->get(\OCA\Procest\Service\External\Brp\LogBrpHaalCentraalAdapter::class);
             }
         );
+        // BAG (Basisregistratie Adressen en Gebouwen) — authoritative address +
+        // pand/verblijfsobject lookup (bag-register-adapter). Selected by
+        // `integration.bag.mode` (external-integrations-test-environments config-tier
+        // model). DEFAULT `log` = dormant (no external call). `test`/`live` binds the
+        // BagApiAdapter (Kadaster BAG API Individuele Bevragingen v2). Deliberately
+        // distinct from PdokBagService's free/open BAG WFS mirror — see
+        // openspec/changes/bag-register-adapter/design.md.
+        $context->registerService(
+            \OCA\Procest\Service\External\Bag\BagAdapterInterface::class,
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\External\Bag\BagAdapterInterface {
+                $modeService = $c->get(\OCA\Procest\Service\External\IntegrationMode::class);
+                $mode        = $modeService->resolve(
+                        'bag',
+                        [
+                            \OCA\Procest\Service\External\IntegrationMode::TEST,
+                            \OCA\Procest\Service\External\IntegrationMode::LIVE,
+                        ]
+                        );
+                if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
+                    return new \OCA\Procest\Service\External\Bag\BagApiAdapter(
+                        clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+                        mode: $modeService,
+                        mapper: $c->get(\OCA\Procest\Service\External\Bag\BagResponseMapper::class),
+                        logger: $c->get('Psr\\Log\\LoggerInterface'),
+                    );
+                }
+
+                return $c->get(\OCA\Procest\Service\External\Bag\LogBagAdapter::class);
+            }
+        );
         // TMLO metadata building + e-Depot submission adapter seams retired
         // (migrate-archival-to-or, ADR-022): OpenRegister's TmloService builds
         // TMLO/MDTO metadata from schema config and its Edepot/Transport seam owns
