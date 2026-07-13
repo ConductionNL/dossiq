@@ -195,7 +195,7 @@ class MigrateWorkflowDefinitions implements IRepairStep
                     }
 
                     $createdNormalized = $this->normalize(row: $created);
-                    $newId             = (string) ($createdNormalized['id'] ?? '');
+                    $newId = (string) ($createdNormalized['id'] ?? '');
 
                     // Pin the caseType to the new template.
                     if ($newId !== '') {
