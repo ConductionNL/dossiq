@@ -99,6 +99,10 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'caseDefinition#validate', 'url' => '/api/case-definitions/validate', 'verb' => 'POST'],
         ['name' => 'caseDefinition#import', 'url' => '/api/case-definitions/import', 'verb' => 'POST'],
 
+        // Case type duplicate (zaaktype-copy) + draft-only guarded delete.
+        ['name' => 'caseDefinition#copy',   'url' => '/api/case-definitions/{id}/copy', 'verb' => 'POST'],
+        ['name' => 'caseDefinition#delete', 'url' => '/api/case-definitions/{id}',      'verb' => 'DELETE'],
+
         // ── ZGW OpenAPI Discovery (zgw-openapi-publication) ─────────────
         // Literal routes registered before the ZGW {resource}-wildcard
         // blocks below so `openapi`/`openapi.yaml` segments are never

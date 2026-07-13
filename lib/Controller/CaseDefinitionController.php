@@ -23,6 +23,8 @@
  * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
  * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md#task-1
  * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md#task-2
+ * @spec openspec/changes/zaaktype-copy/tasks.md#T06
+ * @spec openspec/changes/zaaktype-copy/tasks.md#T07
  */
 
 declare(strict_types=1);
@@ -31,6 +33,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\CaseDefinitionExportService;
 use OCA\Procest\Service\CaseDefinitionImportService;
+use OCA\Procest\Service\CaseTypeCopyService;
 use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -44,6 +47,8 @@ use Psr\Log\LoggerInterface;
  * Controller for case definition export/import operations.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/zaaktype-copy/tasks.md#T06
  */
 class CaseDefinitionController extends Controller
 {
@@ -54,6 +59,7 @@ class CaseDefinitionController extends Controller
      * @param IRequest                    $request       The request object.
      * @param CaseDefinitionExportService $exportService The export service.
      * @param CaseDefinitionImportService $importService The import service.
+     * @param CaseTypeCopyService         $copyService   The copy/guarded-delete service.
      * @param LoggerInterface             $logger        The logger.
      */
     public function __construct(
@@ -61,6 +67,7 @@ class CaseDefinitionController extends Controller
         IRequest $request,
         private readonly CaseDefinitionExportService $exportService,
         private readonly CaseDefinitionImportService $importService,
+        private readonly CaseTypeCopyService $copyService,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
@@ -208,4 +215,81 @@ class CaseDefinitionController extends Controller
             );
         }//end try
     }//end import()
+
+    /**
+     * Deep-copy a case type into a new draft.
+     *
+     * @param string $id The case type id to copy.
+     *
+     * @return JSONResponse
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/zaaktype-copy/tasks.md#T06
+     */
+    #[AuthorizedAdminSetting(AdminSettings::class)]
+    public function copy(string $id): JSONResponse
+    {
+        try {
+            $copy = $this->copyService->copy($id);
+
+            if ($copy === null) {
+                return new JSONResponse(
+                    ['error' => 'Case type not found'],
+                    Http::STATUS_NOT_FOUND
+                );
+            }
+
+            return new JSONResponse($copy);
+        } catch (\Throwable $e) {
+            $this->logger->error('Case type copy failed: '.$e->getMessage());
+            return new JSONResponse(
+                ['error' => 'Copy failed: '.$e->getMessage()],
+                Http::STATUS_INTERNAL_SERVER_ERROR
+            );
+        }
+    }//end copy()
+
+    /**
+     * Delete a case type, but only when it is a draft.
+     *
+     * @param string $id The case type id to delete.
+     *
+     * @return JSONResponse
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/zaaktype-copy/tasks.md#T07
+     */
+    #[AuthorizedAdminSetting(AdminSettings::class)]
+    public function delete(string $id): JSONResponse
+    {
+        try {
+            $result = $this->copyService->deleteDraft($id);
+
+            if ($result['ok'] === true) {
+                return new JSONResponse(['success' => true]);
+            }
+
+            $statusCode = match ($result['reason'] ?? 'error') {
+                'not_found' => Http::STATUS_NOT_FOUND,
+                'published' => Http::STATUS_CONFLICT,
+                default => Http::STATUS_INTERNAL_SERVER_ERROR,
+            };
+
+            $message = match ($result['reason'] ?? 'error') {
+                'not_found' => 'Case type not found',
+                'published' => 'Cannot delete a published case type. Unpublish it first.',
+                default => 'Delete failed',
+            };
+
+            return new JSONResponse(['error' => $message], $statusCode);
+        } catch (\Throwable $e) {
+            $this->logger->error('Case type delete failed: '.$e->getMessage());
+            return new JSONResponse(
+                ['error' => 'Delete failed: '.$e->getMessage()],
+                Http::STATUS_INTERNAL_SERVER_ERROR
+            );
+        }//end try
+    }//end delete()
 }//end class

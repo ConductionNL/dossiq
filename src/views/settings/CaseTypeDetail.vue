@@ -26,6 +26,16 @@
 					{{ t('procest', 'Unpublish') }}
 				</NcButton>
 				<NcButton
+					v-if="!isCreate"
+					type="secondary"
+					:disabled="duplicating"
+					@click="duplicate">
+					<template v-if="duplicating" #icon>
+						<NcLoadingIcon :size="20" />
+					</template>
+					{{ t('procest', 'Duplicate') }}
+				</NcButton>
+				<NcButton
 					type="primary"
 					:disabled="saving"
 					@click="save">
@@ -122,6 +132,8 @@
 
 <script>
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import { generateUrl } from '@nextcloud/router'
+import axios from '@nextcloud/axios'
 import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
 import GeneralTab from './tabs/GeneralTab.vue'
 import StatusesTab from './tabs/StatusesTab.vue'
@@ -197,6 +209,7 @@ export default {
 			publishErrors: [],
 			statusTypes: [],
 			activeCaseCount: 0,
+			duplicating: false,
 		}
 	},
 	computed: {
@@ -331,6 +344,29 @@ export default {
 
 			this.form.isDraft = true
 			await this.save()
+		},
+
+		/**
+		 * Deep-copy this case type into a new draft, then navigate to it.
+		 *
+		 * @spec openspec/changes/zaaktype-copy/tasks.md#T11
+		 */
+		async duplicate() {
+			this.saveError = ''
+			this.duplicating = true
+			try {
+				const response = await axios.post(
+					generateUrl('/apps/procest/api/case-definitions/{id}/copy', { id: this.caseTypeId }),
+				)
+				const newId = response.data?.id
+				if (newId) {
+					this.$emit('duplicated', newId)
+				}
+			} catch (err) {
+				this.saveError = err.response?.data?.error || t('procest', 'Failed to duplicate case type')
+			} finally {
+				this.duplicating = false
+			}
 		},
 	},
 }

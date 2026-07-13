@@ -2673,6 +2673,22 @@
         "{reached} of {total} milestones reached": "{reached} van {total} mijlpalen bereikt",
         "{within}/{total} within SLA": "{within}/{total} binnen SLA",
         "{years} years": "{years} jaar",
-        "— choose —": "— kies —"
+        "— choose —": "— kies —",
+        "{ready} of {total} cases are ready to transition.": "{ready} van {total} zaken zijn klaar om over te gaan.",
+        "{succeeded} of {total} cases were transitioned.": "{succeeded} van {total} zaken zijn overgegaan.",
+        "%n case selected": "%n zaak geselecteerd",
+        "%n cases selected": "%n zaken geselecteerd",
+        "Cannot delete: unpublish this case type first": "Verwijderen niet mogelijk: haal dit zaaktype eerst uit publicatie",
+        "Change status for {count} cases": "Status wijzigen voor {count} zaken",
+        "Change status…": "Status wijzigen…",
+        "Comment (optional, applied to every case)": "Toelichting (optioneel, toegepast op elke zaak)",
+        "Duplicate": "Dupliceren",
+        "Execute": "Uitvoeren",
+        "Export as CSV": "Exporteren als CSV",
+        "Export as Excel": "Exporteren als Excel",
+        "Failed to duplicate case type": "Zaaktype dupliceren mislukt",
+        "No cases selected.": "Geen zaken geselecteerd.",
+        "Select a status transition": "Selecteer een statusovergang",
+        "Select case {identifier}": "Selecteer zaak {identifier}"
     }
 }
