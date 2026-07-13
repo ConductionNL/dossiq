@@ -1,0 +1,37 @@
+{
+    "_embedded": {
+        "adressen": [
+            {
+                "identificatie": "0518200000123456",
+                "adresseerbaarObjectIdentificatie": "0518010000123456",
+                "openbareRuimteNaam": "Voorstraat",
+                "huisnummer": 10,
+                "huisletter": null,
+                "huisnummertoevoeging": null,
+                "postcode": "1234AB",
+                "woonplaatsNaam": "Voorbeeldstad",
+                "gemeenteNaam": "Voorbeeldgemeente",
+                "gebruiksdoelen": [
+                    "woonfunctie"
+                ],
+                "oppervlakte": 120,
+                "oorspronkelijkBouwjaar": 1998,
+                "adresseerbaarObjectStatus": "Verblijfsobject in gebruik",
+                "geometrie": {
+                    "punt": {
+                        "type": "Point",
+                        "coordinates": [
+                            4.4699,
+                            51.9244
+                        ]
+                    }
+                }
+            }
+        ]
+    },
+    "_links": {
+        "self": {
+            "href": "/lvbag/individuelebevragingen/v2/adressen?postcode=1234AB&huisnummer=10"
+        }
+    }
+}
