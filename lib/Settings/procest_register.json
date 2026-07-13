@@ -3,7 +3,7 @@
     "info": {
         "title": "Procest Case Management Register",
         "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-        "version": "0.12.0"
+        "version": "0.13.0"
     },
     "x-openregister": {
         "type": "application",
@@ -17,7 +17,7 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "BriefcaseVariantOutline",
-                "version": "1.1.0",
+                "version": "1.2.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
@@ -228,6 +228,11 @@
                         "default": [],
                         "description": "Subscribed wmsLayer UUIDs visible on this case type's maps (wms-wfs-layers REQ-WMS-4). Empty array = only isDefault layers visible.",
                         "title": "Layer IDs"
+                    },
+                    "iv3Taakveld": {
+                        "type": "string",
+                        "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
+                        "title": "IV3 taakveld"
                     }
                 }
             },
@@ -674,7 +679,7 @@
                     }
                 },
                 "icon": "BriefcaseOutline",
-                "version": "1.7.0",
+                "version": "1.8.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1359,6 +1364,12 @@
                         },
                         "referenceType": "decision",
                         "x-allow-create": true
+                    },
+                    "kosten": {
+                        "type": "string",
+                        "description": "JSON-encoded array of IV3 cost entries: [{bedrag, type, datum}]. type is \"leges_income\" or \"handling_cost\"; datum is an ISO date. IV3-reporting record only (Iv3ReportService) — not a general ledger; real municipal fee transactions live in Pipelinq per ADR-003.",
+                        "visible": false,
+                        "title": "Costs"
                     }
                 },
                 "searchable": true
