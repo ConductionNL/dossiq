@@ -48,6 +48,16 @@
 					</NcButton>
 					<NcButton
 						type="tertiary"
+						:disabled="duplicating === row.id"
+						:title="t('procest', 'Duplicate')"
+						@click="duplicate(row)">
+						<template #icon>
+							<NcLoadingIcon v-if="duplicating === row.id" :size="20" />
+							<ContentDuplicateIcon v-else :size="20" />
+						</template>
+					</NcButton>
+					<NcButton
+						type="tertiary"
 						:title="t('procest', 'Delete')"
 						@click="confirmDelete(row)">
 						<template #icon>
@@ -67,6 +77,10 @@
 <script>
 import StarIcon from 'vue-material-design-icons/Star.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import ContentDuplicateIcon from 'vue-material-design-icons/ContentDuplicate.vue'
+import { NcLoadingIcon } from '@nextcloud/vue'
+import { generateUrl } from '@nextcloud/router'
+import axios from '@nextcloud/axios'
 import { CnIndexPage } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { useSettingsStore } from '../../store/modules/settings.js'
@@ -77,6 +91,8 @@ export default {
 	components: {
 		StarIcon,
 		DeleteIcon,
+		ContentDuplicateIcon,
+		NcLoadingIcon,
 		CnIndexPage,
 	},
 	data() {
@@ -84,6 +100,7 @@ export default {
 			statusTypeCounts: {},
 			error: '',
 			schema: null,
+			duplicating: null,
 		}
 	},
 	computed: {
@@ -241,9 +258,16 @@ export default {
 				}
 			}
 
-			const ok = await this.objectStore.deleteObject('caseType', ct.id)
-			if (!ok) {
-				this.error = t('procest', 'Failed to delete case type')
+			try {
+				await axios.delete(
+					generateUrl('/apps/procest/api/case-definitions/{id}', { id: ct.id }),
+				)
+			} catch (err) {
+				this.error = err.response?.status === 409
+					? t('procest', 'Cannot delete: unpublish this case type first')
+					: (err.response?.data?.error || t('procest', 'Failed to delete case type'))
+				await this.fetchCaseTypes()
+				return
 			}
 
 			if (this.defaultCaseTypeId === ct.id) {
@@ -252,6 +276,31 @@ export default {
 			}
 
 			await this.fetchCaseTypes()
+		},
+
+		/**
+		 * Deep-copy a case type into a new draft, then navigate to it.
+		 *
+		 * @param ct
+		 * @spec openspec/changes/zaaktype-copy/tasks.md#T09
+		 */
+		async duplicate(ct) {
+			this.error = ''
+			this.duplicating = ct.id
+			try {
+				const response = await axios.post(
+					generateUrl('/apps/procest/api/case-definitions/{id}/copy', { id: ct.id }),
+				)
+				const newId = response.data?.id
+				await this.fetchCaseTypes()
+				if (newId) {
+					this.$emit('select', newId)
+				}
+			} catch (err) {
+				this.error = err.response?.data?.error || t('procest', 'Failed to duplicate case type')
+			} finally {
+				this.duplicating = null
+			}
 		},
 	},
 }

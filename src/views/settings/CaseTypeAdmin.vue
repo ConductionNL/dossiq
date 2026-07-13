@@ -4,7 +4,8 @@
 			v-if="currentView === 'detail'"
 			:case-type-id="currentId"
 			@back="showList"
-			@saved="onSaved" />
+			@saved="onSaved"
+			@duplicated="openDetail" />
 		<CaseTypeList
 			v-else
 			@select="openDetail"

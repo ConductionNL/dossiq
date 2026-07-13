@@ -2678,7 +2678,23 @@
         "{within}/{total} within SLA": "{within}/{total} within SLA",
         "{years} years": "{years} years",
         "— choose —": "— choose —",
-        "That status is not part of this case's workflow.": "That status is not part of this case's workflow."
+        "That status is not part of this case's workflow.": "That status is not part of this case's workflow.",
+        "{ready} of {total} cases are ready to transition.": "{ready} of {total} cases are ready to transition.",
+        "{succeeded} of {total} cases were transitioned.": "{succeeded} of {total} cases were transitioned.",
+        "%n case selected": "%n case selected",
+        "%n cases selected": "%n cases selected",
+        "Cannot delete: unpublish this case type first": "Cannot delete: unpublish this case type first",
+        "Change status for {count} cases": "Change status for {count} cases",
+        "Change status…": "Change status…",
+        "Comment (optional, applied to every case)": "Comment (optional, applied to every case)",
+        "Duplicate": "Duplicate",
+        "Execute": "Execute",
+        "Export as CSV": "Export as CSV",
+        "Export as Excel": "Export as Excel",
+        "Failed to duplicate case type": "Failed to duplicate case type",
+        "No cases selected.": "No cases selected.",
+        "Select a status transition": "Select a status transition",
+        "Select case {identifier}": "Select case {identifier}"
     },
     "plurals": ""
 }
