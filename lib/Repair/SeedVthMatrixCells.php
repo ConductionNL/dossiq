@@ -97,13 +97,21 @@ class SeedVthMatrixCells implements IRepairStep
             return;
         }
 
-        // Check if cells already exist (idempotent).
+        // Check if cells already exist (idempotent). Repair steps run without
+        // a Nextcloud user session, so both this read and the writes below
+        // are wrapped in runAsSystem() — anonymous callers are otherwise
+        // fail-closed by OpenRegister RBAC (#1955) on every boot.
         try {
-            $existing = $this->searchObjectsAsArrays(
+            $existing = $this->runAsSystemIfAvailable(
                 objectService: $objectService,
-                register: $register,
-                schema: 'lhsMatrixCell',
-                filters: ['_limit' => 1]
+                operation: function () use ($objectService, $register): array {
+                    return $this->searchObjectsAsArrays(
+                        objectService: $objectService,
+                        register: $register,
+                        schema: 'lhsMatrixCell',
+                        filters: ['_limit' => 1]
+                    );
+                }
             );
             if (is_array($existing) === true && count($existing) > 0) {
                 $output->info('LHS matrix cells already seeded. Skipping.');
@@ -133,10 +141,15 @@ class SeedVthMatrixCells implements IRepairStep
             }
 
             try {
-                $objectService->saveObject(
-                    register: $register,
-                    schema: 'lhsMatrixCell',
-                    object: $cell
+                $this->runAsSystemIfAvailable(
+                    objectService: $objectService,
+                    operation: function () use ($objectService, $register, $cell): void {
+                        $objectService->saveObject(
+                            register: $register,
+                            schema: 'lhsMatrixCell',
+                            object: $cell
+                        );
+                    }
                 );
                 $seeded++;
             } catch (Throwable $e) {

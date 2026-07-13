@@ -106,107 +106,129 @@ class MigrateWorkflowDefinitions implements IRepairStep
             return;
         }
 
-        try {
-            $caseTypes = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $caseTypeSchema,
-                filters: ['_limit' => 500]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: workflow backfill failed to list caseTypes',
-                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-            );
-            $output->warning('Could not list caseTypes — skipping workflow backfill.');
-            return;
-        }
-
         $migrated = 0;
         $skipped  = 0;
-        foreach ($caseTypes as $caseType) {
-            $row = $this->normalize(row: $caseType);
-            if ($row === null) {
-                continue;
-            }
 
-            $caseTypeId = (string) ($row['id'] ?? '');
-            if ($caseTypeId === '') {
-                continue;
-            }
-
-            if ((string) ($row['workflowDefinition'] ?? '') !== '') {
-                $skipped++;
-                continue;
-            }
-
-            // Already has at least one workflowTemplate? Skip — admin
-            // will set the pin via the UI.
-            $existing = $this->workflowService->listVersions($caseTypeId);
-            if ($existing !== []) {
-                $skipped++;
-                continue;
-            }
-
-            $template = $this->buildTemplateFor(
-                caseTypeId: $caseTypeId,
-                caseType: $row,
-                objectService: $objectService,
-                register: $register,
-                statusSchema: $statusSchema,
-            );
-
-            if ($template === null) {
-                continue;
-            }
-
-            try {
-                $created = $objectService->saveObject(
-                    object: $template,
-                    register: $register,
-                    schema: $templateSchema,
-                );
-            } catch (\Throwable $e) {
-                $this->logger->error(
-                    'Procest: workflow backfill failed to save template',
-                    ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-                );
-                continue;
-            }
-
-            $createdNormalized = $this->normalize(row: $created);
-            $newId = (string) ($createdNormalized['id'] ?? '');
-
-            // Pin the caseType to the new template.
-            if ($newId !== '') {
+        // This repair step runs without a Nextcloud user session — anonymous
+        // callers are fail-closed by OpenRegister RBAC (#1955) on every
+        // boot, so the list/save calls below run inside runAsSystem(). The
+        // elevation also covers the nested WorkflowDefinitionService::
+        // listVersions() call, since it is scoped to this callable for the
+        // whole process rather than to one ObjectService instance.
+        $this->runAsSystemIfAvailable(
+            objectService: $objectService,
+            operation: function () use (
+                $objectService,
+                $register,
+                $caseTypeSchema,
+                $statusSchema,
+                $templateSchema,
+                $caseSchema,
+                $output,
+                &$migrated,
+                &$skipped
+            ): void {
                 try {
-                    $objectService->saveObject(
-                        object: ['workflowDefinition' => $newId],
+                    $caseTypes = $this->searchObjectsAsArrays(
+                        objectService: $objectService,
                         register: $register,
                         schema: $caseTypeSchema,
-                        uuid: (string) $caseTypeId,
+                        filters: ['_limit' => 500]
                     );
                 } catch (\Throwable $e) {
                     $this->logger->error(
-                        'Procest: workflow backfill failed to pin caseType',
+                        'Procest: workflow backfill failed to list caseTypes',
                         ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
                     );
+                    $output->warning('Could not list caseTypes — skipping workflow backfill.');
+                    return;
                 }
 
-                // Pin existing open cases to workflowVersion = 1.
-                if ($caseSchema !== '') {
-                    $this->pinOpenCases(
+                foreach ($caseTypes as $caseType) {
+                    $row = $this->normalize(row: $caseType);
+                    if ($row === null) {
+                        continue;
+                    }
+
+                    $caseTypeId = (string) ($row['id'] ?? '');
+                    if ($caseTypeId === '') {
+                        continue;
+                    }
+
+                    if ((string) ($row['workflowDefinition'] ?? '') !== '') {
+                        $skipped++;
+                        continue;
+                    }
+
+                    // Already has at least one workflowTemplate? Skip — admin
+                    // will set the pin via the UI.
+                    $existing = $this->workflowService->listVersions($caseTypeId);
+                    if ($existing !== []) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $template = $this->buildTemplateFor(
+                        caseTypeId: $caseTypeId,
+                        caseType: $row,
                         objectService: $objectService,
                         register: $register,
-                        caseSchema: $caseSchema,
-                        caseTypeId: $caseTypeId,
-                        templateId: $newId,
+                        statusSchema: $statusSchema,
                     );
-                }
-            }//end if
 
-            $migrated++;
-        }//end foreach
+                    if ($template === null) {
+                        continue;
+                    }
+
+                    try {
+                        $created = $objectService->saveObject(
+                            object: $template,
+                            register: $register,
+                            schema: $templateSchema,
+                        );
+                    } catch (\Throwable $e) {
+                        $this->logger->error(
+                            'Procest: workflow backfill failed to save template',
+                            ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+                        );
+                        continue;
+                    }
+
+                    $createdNormalized = $this->normalize(row: $created);
+                    $newId             = (string) ($createdNormalized['id'] ?? '');
+
+                    // Pin the caseType to the new template.
+                    if ($newId !== '') {
+                        try {
+                            $objectService->saveObject(
+                                object: ['workflowDefinition' => $newId],
+                                register: $register,
+                                schema: $caseTypeSchema,
+                                uuid: (string) $caseTypeId,
+                            );
+                        } catch (\Throwable $e) {
+                            $this->logger->error(
+                                'Procest: workflow backfill failed to pin caseType',
+                                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+                            );
+                        }
+
+                        // Pin existing open cases to workflowVersion = 1.
+                        if ($caseSchema !== '') {
+                            $this->pinOpenCases(
+                                objectService: $objectService,
+                                register: $register,
+                                caseSchema: $caseSchema,
+                                caseTypeId: $caseTypeId,
+                                templateId: $newId,
+                            );
+                        }
+                    }//end if
+
+                    $migrated++;
+                }//end foreach
+            }
+        );
 
         $output->info(
             'Workflow backfill complete — migrated '.$migrated.', skipped '.$skipped.'.'

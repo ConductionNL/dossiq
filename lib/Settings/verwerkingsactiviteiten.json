@@ -7,7 +7,7 @@
       "beschrijving": "Umbrella activity for handling municipal cases in procest: intake, status lifecycle, task assignment, participant roles, decisions and closure. Default attribution for reads of case and role objects; specific case types refine this once per-case-type attribution is available.",
       "doelbinding": "Uitvoering van gemeentelijke taken door het gestructureerd behandelen van zaken van inwoners en bedrijven (aanvraag tot en met besluit).",
       "rechtsgrond": "publieke_taak",
-      "bewaartermijn": "Conform de gemeentelijke selectielijst (VNG); per zaaktype bepaald bij archivering.",
+      "bewaartermijn": "Conform de gemeentelijke selectielijst (VNG), per zaaktype.",
       "categorieenBetrokkenen": ["inwoners", "ondernemers", "zaakbehandelaars"],
       "categorieenPersoonsgegevens": ["NAW-gegevens", "contactgegevens", "zaakinhoudelijke gegevens"],
       "ontvangers": ["behandelende afdeling", "ketenpartners (indien van toepassing)"]
@@ -18,7 +18,7 @@
       "beschrijving": "Processing permit applications received through the DSO/Omgevingsloket intake (vergunningaanvraag), including deadline monitoring and formal decisions.",
       "doelbinding": "Beoordelen en besluiten op aanvragen omgevingsvergunning zoals bedoeld in de Omgevingswet.",
       "rechtsgrond": "publieke_taak",
-      "bewaartermijn": "Conform de gemeentelijke selectielijst; vergunningdossiers doorgaans blijvend te bewaren.",
+      "bewaartermijn": "Conform selectielijst; vergunningdossiers blijvend te bewaren.",
       "categorieenBetrokkenen": ["aanvragers", "belanghebbenden"],
       "categorieenPersoonsgegevens": ["NAW-gegevens", "contactgegevens", "locatiegegevens", "aanvraaggegevens"],
       "ontvangers": ["vergunningverleners", "adviseurs (o.a. veiligheidsregio, omgevingsdienst)"]
@@ -29,7 +29,7 @@
       "beschrijving": "Processing objections (bezwaar) against municipal decisions, including hearings and the advisory committee workflow.",
       "doelbinding": "Behandelen van bezwaarschriften tegen besluiten van het college of de raad (Awb hoofdstuk 7).",
       "rechtsgrond": "wettelijke_verplichting",
-      "bewaartermijn": "Conform de gemeentelijke selectielijst; bezwaardossiers doorgaans 5 jaar na afhandeling.",
+      "bewaartermijn": "Conform selectielijst; bezwaardossiers 5 jaar na afhandeling.",
       "categorieenBetrokkenen": ["bezwaarmakers", "derde-belanghebbenden"],
       "categorieenPersoonsgegevens": ["NAW-gegevens", "contactgegevens", "dossiergegevens van het bestreden besluit"],
       "ontvangers": ["bezwaarschriftencommissie", "behandelende afdeling"]
@@ -51,7 +51,7 @@
       "beschrijving": "Processing complaints about municipal conduct (Awb hoofdstuk 9) received through the complaints intake.",
       "doelbinding": "Behoorlijke behandeling van klachten over gedragingen van het bestuursorgaan.",
       "rechtsgrond": "wettelijke_verplichting",
-      "bewaartermijn": "Conform de gemeentelijke selectielijst; klachtdossiers doorgaans 5 jaar.",
+      "bewaartermijn": "Conform selectielijst; klachtdossiers doorgaans 5 jaar.",
       "categorieenBetrokkenen": ["klagers", "medewerkers waarover geklaagd wordt"],
       "categorieenPersoonsgegevens": ["NAW-gegevens", "contactgegevens", "klachtinhoud"],
       "ontvangers": ["klachtencoordinator", "behandelende afdeling"]
@@ -62,7 +62,7 @@
       "beschrijving": "Logging inbound and outbound customer contacts in the KCC-werkplek (contactmomenten, customer contacts), including caller identification and case linkage. Default attribution for reads of contactmoment and customerContact objects.",
       "doelbinding": "Registreren en afhandelen van klantcontacten om inwoners en ondernemers goed te woord te staan en zaken correct te koppelen.",
       "rechtsgrond": "publieke_taak",
-      "bewaartermijn": "Contactmomenten 2 jaar na registratie, tenzij gekoppeld aan een lopende zaak.",
+      "bewaartermijn": "Contactmomenten 2 jaar, tenzij gekoppeld aan een lopende zaak.",
       "categorieenBetrokkenen": ["bellers", "inwoners", "ondernemers"],
       "categorieenPersoonsgegevens": ["contactgegevens", "identificatiegegevens", "gespreksinhoud"],
       "ontvangers": ["KCC-medewerkers", "zaakbehandelaars (bij doorzetting)"]

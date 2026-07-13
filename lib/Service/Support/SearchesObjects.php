@@ -30,6 +30,9 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
  * @link https://conduction.nl
  *
  * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
@@ -144,6 +147,38 @@ trait SearchesObjects
 
         return null;
     }//end findObjectAsArray()
+
+    /**
+     * Run a callable through `ObjectService::runAsSystem()` when available,
+     * falling back to a direct call otherwise.
+     *
+     * Repair steps and boot-time seed services run with NO Nextcloud user
+     * session — anonymous callers are fail-closed for create/update/delete
+     * (OpenRegister #1955) and, on schemas without an explicit `public`
+     * grant, for reads too. `ObjectService::runAsSystem()` scopes a trusted
+     * "system principal" elevation to exactly the callable passed in, so
+     * only wrap operations whose inputs originate from code or the app's
+     * own shipped seed data — never user-supplied request data.
+     *
+     * The `method_exists()` guard keeps this call site working against
+     * older OpenRegister releases that predate `runAsSystem()`, running the
+     * operation directly (the pre-existing behaviour) instead of failing.
+     *
+     * @param object   $objectService The OpenRegister ObjectService instance.
+     * @param callable $operation     The trusted, code/seed-data-driven operation to run.
+     *
+     * @return mixed Whatever the callable returns.
+     *
+     * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
+     */
+    protected function runAsSystemIfAvailable(object $objectService, callable $operation): mixed
+    {
+        if (method_exists($objectService, 'runAsSystem') === true) {
+            return $objectService->runAsSystem($operation);
+        }
+
+        return $operation();
+    }//end runAsSystemIfAvailable()
 
     /**
      * Coerce a searchObjects()/searchObjectsBySlug() return into a list of arrays.

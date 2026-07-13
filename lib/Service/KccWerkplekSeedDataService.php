@@ -93,22 +93,32 @@ class KccWerkplekSeedDataService
 
         $counts = ['quickActions' => 0, 'belplannen' => 0, 'skipped' => 0];
 
-        $this->seedRows(
+        // This service is only ever invoked from boot-time repair steps
+        // (SeedKccWerkplekData, SeedTermijnbewakingData) — never from a live
+        // user request — so it is safe to elevate the whole seed for the
+        // duration of this call. Anonymous callers are otherwise fail-closed
+        // by OpenRegister RBAC (#1955) on every boot.
+        $this->runAsSystemIfAvailable(
             objectService: $objectService,
-            register: $register,
-            schema: $quickActionSchema,
-            rows: (array) ($data['kccQuickActions'] ?? []),
-            counterKey: 'quickActions',
-            counts: $counts,
-        );
+            operation: function () use ($objectService, $register, $quickActionSchema, $belplanSchema, $data, &$counts): void {
+                $this->seedRows(
+                    objectService: $objectService,
+                    register: $register,
+                    schema: $quickActionSchema,
+                    rows: (array) ($data['kccQuickActions'] ?? []),
+                    counterKey: 'quickActions',
+                    counts: $counts,
+                );
 
-        $this->seedRows(
-            objectService: $objectService,
-            register: $register,
-            schema: $belplanSchema,
-            rows: (array) ($data['belplannen'] ?? []),
-            counterKey: 'belplannen',
-            counts: $counts,
+                $this->seedRows(
+                    objectService: $objectService,
+                    register: $register,
+                    schema: $belplanSchema,
+                    rows: (array) ($data['belplannen'] ?? []),
+                    counterKey: 'belplannen',
+                    counts: $counts,
+                );
+            }
         );
 
         $this->logger->info('Procest KCC-werkplek: seed complete', $counts);
@@ -150,7 +160,13 @@ class KccWerkplekSeedDataService
             }
 
             try {
-                $objectService->saveObject($register, $schema, $row);
+                // ObjectService::saveObject()'s first parameter is the
+                // object payload, not the register — the previous
+                // positional call passed $register/$schema/$row into
+                // $object/$extend/$register, which either threw a
+                // TypeError or silently wrote the wrong data. Named
+                // arguments make the mapping unambiguous.
+                $objectService->saveObject(object: $row, register: $register, schema: $schema);
                 $counts[$counterKey]++;
             } catch (Throwable $e) {
                 $this->logger->warning(
@@ -172,10 +188,6 @@ class KccWerkplekSeedDataService
      */
     private function existingIds(object $objectService, string $register, string $schema): array
     {
-        if (method_exists($objectService, 'findObjects') === false) {
-            return [];
-        }
-
         try {
             $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema);
         } catch (Throwable $e) {

@@ -25,9 +25,9 @@
                 "properties": {
                     "burgerservicenummer": {
                         "type": "string",
-                        "format": "bsn",
+                        "pattern": "^[0-9]{9}$",
                         "title": "Burgerservicenummer",
-                        "description": "BSN of the person (11-proef validated by OpenRegister's registered bsn format — no procest-side validator, ADR-011)."
+                        "description": "BSN of the person (nine digits, pattern-validated; 'bsn' is not a registered OpenRegister string format — no procest-side validator, ADR-011)."
                     },
                     "naam": {
                         "type": "object",

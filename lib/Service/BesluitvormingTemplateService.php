@@ -32,6 +32,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -44,6 +45,8 @@ use RuntimeException;
  */
 class BesluitvormingTemplateService
 {
+    use SearchesObjects;
+
     /**
      * Recognised template slugs and their backing JSON files.
      *
@@ -134,33 +137,43 @@ class BesluitvormingTemplateService
             throw new RuntimeException('Template mist een caseType.identifier');
         }
 
-        // Idempotency: skip if a caseType with this identifier already exists.
-        $existing = $this->findByIdentifier(
+        // This service is only ever invoked from the boot-time
+        // SeedBesluitvormingTemplates repair step — never from a live user
+        // request — so it is safe to elevate the idempotency read + bundle
+        // writes below for the duration of this call. Anonymous callers are
+        // otherwise fail-closed by OpenRegister RBAC (#1955) on every boot.
+        return $this->runAsSystemIfAvailable(
             objectService: $objectService,
-            register: $register,
-            schema: $schemas['caseType'],
-            identifier: $identifier,
-        );
-        if ($existing !== null) {
-            $this->logger->info(
-                'Procest: besluitvorming template already active, skipping',
-                ['slug' => $slug, 'identifier' => $identifier],
-            );
-            return ['success' => true, 'skipped' => true, 'slug' => $slug];
-        }
+            operation: function () use ($objectService, $register, $schemas, $slug, $caseTypeData, $bundle, $identifier): array {
+                // Idempotency: skip if a caseType with this identifier already exists.
+                $existing = $this->findByIdentifier(
+                    objectService: $objectService,
+                    register: $register,
+                    schema: $schemas['caseType'],
+                    identifier: $identifier,
+                );
+                if ($existing !== null) {
+                    $this->logger->info(
+                        'Procest: besluitvorming template already active, skipping',
+                        ['slug' => $slug, 'identifier' => $identifier],
+                    );
+                    return ['success' => true, 'skipped' => true, 'slug' => $slug];
+                }
 
-        // The default parafeerroute lives either at the bundle top level or
-        // nested under caseType; accept both shapes.
-        $parafeerroute = (array) ($bundle['parafeerroute'] ?? ($caseTypeData['parafeerroute'] ?? []));
-        unset($caseTypeData['parafeerroute']);
+                // The default parafeerroute lives either at the bundle top level or
+                // nested under caseType; accept both shapes.
+                $parafeerroute = (array) ($bundle['parafeerroute'] ?? ($caseTypeData['parafeerroute'] ?? []));
+                unset($caseTypeData['parafeerroute']);
 
-        return $this->seedBundle(
-            objectService: $objectService,
-            register: $register,
-            schemas: $schemas,
-            slug: $slug,
-            caseTypeData: $caseTypeData,
-            parafeerroute: $parafeerroute,
+                return $this->seedBundle(
+                    objectService: $objectService,
+                    register: $register,
+                    schemas: $schemas,
+                    slug: $slug,
+                    caseTypeData: $caseTypeData,
+                    parafeerroute: $parafeerroute,
+                );
+            }
         );
     }//end activate()
 
