@@ -86,11 +86,20 @@ class ResetMonthlyQuotasJob extends TimedJob
         }
 
         try {
+            // ObjectService::findAll() takes a single $config array — the previous
+            // named-argument form (register:/schema:/limit:/offset:) threw
+            // "Unknown named parameter $register" and was swallowed by the catch
+            // below, so this job never reset a single quota. Register/schema are
+            // read from inside `filters`; limit/offset are top-level config keys.
             $rows = $os->findAll(
-                register: TenantSaasService::REGISTER,
-                schema: 'tenantQuota',
-                limit: 1000,
-                offset: 0,
+                [
+                    'filters' => [
+                        'register' => TenantSaasService::REGISTER,
+                        'schema'   => 'tenantQuota',
+                    ],
+                    'limit'   => 1000,
+                    'offset'  => 0,
+                ]
             );
         } catch (Throwable $e) {
             $this->logger->error('Procest: ResetMonthlyQuotasJob fetch failed', ['exception' => $e->getMessage()]);

@@ -29,6 +29,7 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\Service\WOODecisionService;
 use OCA\Procest\Service\WOODeadlineService;
 use OCA\Procest\Service\WOODocumentAssessmentService;
+use OCA\Procest\Service\WooPublicationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -41,26 +42,32 @@ use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
 /**
- * Controller for WOO document assessment, deadline extension, and besluit.
+ * Controller for WOO document assessment, deadline extension, besluit, and publication.
  *
  * @psalm-suppress UnusedClass
  *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — one focused service per WOO
+ * sub-capability (assessment/deadline/decision/publication); each dependency is
+ * used, none is a redundant pass-through (ADR-022).
+ *
  * @spec openspec/changes/woo-case-type/tasks.md#task-5
  * @spec openspec/changes/woo-case-type/tasks.md#task-7
+ * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
  */
 class WOOAssessmentController extends Controller
 {
     /**
      * Constructor.
      *
-     * @param string                       $appName           The app name
-     * @param IRequest                     $request           The request
-     * @param WOODocumentAssessmentService $assessmentService Document assessment service
-     * @param WOODeadlineService           $deadlineService   Deadline service
-     * @param WOODecisionService           $decisionService   Decision service
-     * @param IUserSession                 $userSession       Current user session
-     * @param IGroupManager                $groupManager      Group manager for authorization
-     * @param LoggerInterface              $logger            Logger
+     * @param string                       $appName            The app name
+     * @param IRequest                     $request            The request
+     * @param WOODocumentAssessmentService $assessmentService  Document assessment service
+     * @param WOODeadlineService           $deadlineService    Deadline service
+     * @param WOODecisionService           $decisionService    Decision service
+     * @param WooPublicationService        $publicationService WOO publication (via OpenCatalogi) service
+     * @param IUserSession                 $userSession        Current user session
+     * @param IGroupManager                $groupManager       Group manager for authorization
+     * @param LoggerInterface              $logger             Logger
      */
     public function __construct(
         string $appName,
@@ -68,6 +75,7 @@ class WOOAssessmentController extends Controller
         private readonly WOODocumentAssessmentService $assessmentService,
         private readonly WOODeadlineService $deadlineService,
         private readonly WOODecisionService $decisionService,
+        private readonly WooPublicationService $publicationService,
         private readonly IUserSession $userSession,
         private readonly IGroupManager $groupManager,
         private readonly LoggerInterface $logger,
@@ -187,6 +195,74 @@ class WOOAssessmentController extends Controller
             return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
         }
     }//end createDecision()
+
+    /**
+     * Publish an assembled WOO decision to OpenCatalogi.
+     *
+     * @param string $id The case UUID
+     *
+     * @return JSONResponse `{available, reason?, publicationId?, publicationUrl?}`
+     *
+     * @throws OCSForbiddenException If user is not authenticated or not authorized
+     *
+     * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+     */
+    #[NoAdminRequired]
+    public function publishDecision(string $id): JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $this->requireCaseMutationAccess(caseId: $id, user: $user);
+
+        $decisionId = (string) $this->request->getParam('decisionId', '');
+        if ($decisionId === '') {
+            return new JSONResponse(['error' => 'decisionId is required'], Http::STATUS_BAD_REQUEST);
+        }
+
+        try {
+            $result = $this->publicationService->publish(caseId: $id, decisionId: $decisionId);
+            return new JSONResponse($result);
+        } catch (\RuntimeException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+    }//end publishDecision()
+
+    /**
+     * Withdraw (depublish) a previously published WOO decision.
+     *
+     * @param string $id The case UUID
+     *
+     * @return JSONResponse `{available, reason?}`
+     *
+     * @throws OCSForbiddenException If user is not authenticated or not authorized
+     *
+     * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+     */
+    #[NoAdminRequired]
+    public function withdrawPublication(string $id): JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $this->requireCaseMutationAccess(caseId: $id, user: $user);
+
+        $decisionId = (string) $this->request->getParam('decisionId', '');
+        if ($decisionId === '') {
+            return new JSONResponse(['error' => 'decisionId is required'], Http::STATUS_BAD_REQUEST);
+        }
+
+        try {
+            $result = $this->publicationService->withdraw(decisionId: $decisionId);
+            return new JSONResponse($result);
+        } catch (\RuntimeException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+    }//end withdrawPublication()
 
     /**
      * Require that the current user can mutate the given case.

@@ -75,17 +75,27 @@
 				{{ t('procest', 'Pending') }}: {{ counts.pending }}
 			</span>
 		</div>
+
+		<!-- Woo publication (via OpenCatalogi) -->
+		<WooPublicationPanel
+			v-if="showPublicationPanel"
+			:case-id="caseId"
+			:decision-id="decisionId"
+			:initial-status="wooPublication.status || 'pending'"
+			:initial-publication-url="wooPublication.publicationUrl || ''" />
 	</div>
 </template>
 
 <script>
 import { NcButton, NcSelect } from '@nextcloud/vue'
+import WooPublicationPanel from './WooPublicationPanel.vue'
 
 export default {
 	name: 'DocumentAssessmentPanel',
 	components: {
 		NcButton,
 		NcSelect,
+		WooPublicationPanel,
 	},
 	props: {
 		documents: {
@@ -99,6 +109,26 @@ export default {
 		isReadOnly: {
 			type: Boolean,
 			default: false,
+		},
+		caseId: {
+			type: String,
+			default: '',
+		},
+		/**
+		 * The assembled WOO decision id (set once WOODecisionService::assembleDecision()
+		 * has run for this case). The publish action only renders once a decision exists.
+		 */
+		decisionId: {
+			type: String,
+			default: '',
+		},
+		/**
+		 * The decision's `wooPublication` field ({status, publicationUrl, ...}),
+		 * when already loaded by the parent.
+		 */
+		wooPublication: {
+			type: Object,
+			default: () => ({}),
 		},
 	},
 	data() {
@@ -135,6 +165,10 @@ export default {
 				}
 			}
 			return result
+		},
+		/** @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md */
+		showPublicationPanel() {
+			return this.caseId !== '' && this.decisionId !== ''
 		},
 	},
 	methods: {

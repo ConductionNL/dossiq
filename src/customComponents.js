@@ -26,6 +26,7 @@ import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
 // Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
 // views are owned by OpenRegister.
 import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
+import Iv3ReportDashboard from './views/dashboard/Iv3ReportDashboard.vue'
 import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
 // VoorstellenView removed — the Voorstellen list page is now a declarative
 // `type:"index"` on the `voorstel` schema (formatter columns + status badge,
@@ -130,6 +131,7 @@ export default {
 	DoorlooptijdView, // SLA dashboard — charts via OR analytics-series leaf + lib CnChartWidget (ADR-022)
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 	TermijnDashboard, // AWB termijnbewaking + dwangsom KPI dashboard
+	Iv3ReportDashboard, // IV3 (Informatie voor Derden) quarterly per-taakveld cost report
 	TenantOnboardingDashboard, // SaaS tenant onboarding (7-step + go-live)
 
 	// --- Migration cost: deferred to a follow-up. ---

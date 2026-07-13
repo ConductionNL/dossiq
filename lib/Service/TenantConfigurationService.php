@@ -111,12 +111,20 @@ class TenantConfigurationService
         }
 
         try {
+            // ObjectService::findAll() takes a single $config array — the previous
+            // named-argument form threw "Unknown named parameter $register" and
+            // was swallowed by the catch below. Register/schema live inside
+            // `filters`; limit/offset are top-level config keys.
             $rows = $os->findAll(
-                register: TenantSaasService::REGISTER,
-                schema: 'tenantConfiguration',
-                limit: 1,
-                offset: 0,
-                filters: ['tenantRef' => $tenantId]
+                [
+                    'filters' => [
+                        'register'  => TenantSaasService::REGISTER,
+                        'schema'    => 'tenantConfiguration',
+                        'tenantRef' => $tenantId,
+                    ],
+                    'limit'   => 1,
+                    'offset'  => 0,
+                ]
             );
             if (is_array($rows) === true && count($rows) > 0) {
                 return $rows[0];
@@ -125,7 +133,7 @@ class TenantConfigurationService
             return null;
         } catch (Throwable $e) {
             return null;
-        }
+        }//end try
     }//end getConfig()
 
     /**
