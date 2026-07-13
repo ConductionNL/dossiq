@@ -1186,6 +1186,7 @@
         "Letter": "Brief",
         "Letter (brief)": "Brief",
         "Leveranciersportaal": "Leveranciersportaal",
+        "LibreSign is not installed or enabled. Digital signing falls back to the built-in stub adapter — install and enable the LibreSign app to sign beschikkingen with a real eIDAS-aligned signature.": "LibreSign is niet geïnstalleerd of ingeschakeld. Digitaal ondertekenen valt terug op de ingebouwde stub-adapter — installeer en schakel de LibreSign-app in om beschikkingen te ondertekenen met een echte eIDAS-conforme handtekening.",
         "Limit to case type": "Beperken tot zaaktype",
         "Limit to case type (optional)": "Beperken tot zaaktype (optioneel)",
         "Limited public": "Beperkt openbaar",
