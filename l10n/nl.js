@@ -2372,7 +2372,16 @@ OC.L10N.register(
         "Quarterly case cost breakdown per IV3 taakveld, for the CBS Informatie voor Derden submission.": "Kwartaaloverzicht van zaakkosten per IV3-taakveld, voor de Informatie voor Derden (Iv3)-opgave aan het CBS.",
         "Taakveld": "Taakveld",
         "Total cost": "Totale kosten",
-        "Uncategorized": "Ongecategoriseerd"
+        "Uncategorized": "Ongecategoriseerd",
+        "Ask a question about this case. Answers are based only on case data you can already see.": "Stel een vraag over deze zaak. Antwoorden zijn uitsluitend gebaseerd op zaakgegevens die u al kunt zien.",
+        "Ask a question about this case…": "Stel een vraag over deze zaak…",
+        "Ask the assistant": "Vraag de assistent",
+        "The assistant is thinking…": "De assistent denkt na…",
+        "The case assistant is currently unavailable. Please try again later.": "De zaakassistent is momenteel niet beschikbaar. Probeer het later opnieuw.",
+        "The message could not be sent. It may be empty or too long.": "Het bericht kon niet worden verzonden. Het is mogelijk leeg of te lang.",
+        "This case could not be found.": "Deze zaak kon niet worden gevonden.",
+        "This message was blocked by your organisation's AI guardrail policy.": "Dit bericht is geblokkeerd door het AI-guardrailbeleid van uw organisatie.",
+        "You are not allowed to use the assistant on this case.": "U mag de assistent niet gebruiken voor deze zaak."
     },
     "nplurals=2; plural=(n != 1);"
 )

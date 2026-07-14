@@ -37,6 +37,10 @@ import VerwerkingenOverviewView from './views/admin/VerwerkingenOverview.vue'
 // @spec openspec/specs/initiator-selection/spec.md
 import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
 import InitiatorSection from './components/initiator/InitiatorSection.vue'
+// Case-assistant chat panel — conversational assistance delegated to Hermiq
+// (fleet rule: AI functionality lives in Hermiq; procest is a thin consumer).
+// @spec openspec/specs/case-assistant-via-hermiq/spec.md
+import CaseAssistantPanel from './views/cases/components/CaseAssistantPanel.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
 import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
@@ -212,6 +216,14 @@ const registry = {
 		kind: 'widget',
 		component: InitiatorSection,
 		_note: 'CaseDetail overview widget: initiator name + type + source id deep-linking to the seeded brpPerson/kvkCompany record in OpenRegister. Renders nothing when the case has no initiator.',
+	},
+
+	// --- Case assistant via Hermiq (case-assistant-via-hermiq). ---
+	// @spec openspec/specs/case-assistant-via-hermiq/spec.md
+	CaseAssistantPanel: {
+		kind: 'widget',
+		component: CaseAssistantPanel,
+		_note: 'CaseDetail chat panel delegating conversational assistance to Hermiq (fleet rule: AI lives in Hermiq; procest only enriches with authorized case context). Availability-gated: renders NOTHING when the hermiq app is not installed/enabled.',
 	},
 
 	// --- Migration cost: deferred to a follow-up. ---
