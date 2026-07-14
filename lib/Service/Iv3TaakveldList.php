@@ -51,16 +51,31 @@ class Iv3TaakveldList
     /**
      * In-memory cache of the flattened taakveld list.
      *
-     * @var array<int, array{code: string, label: string, categoryCode: string, categoryLabel: string}>|null
+     * @var array<int, array{
+     *     code: string, label: string, categoryCode: string,
+     *     categoryLabel: string, deprecated: bool, aggregatesUnder: string|null
+     * }>|null
      */
     private ?array $flattened = null;
 
     /**
      * Return every taakveld as a flat list, in category then code order.
      *
-     * @return array<int, array{code: string, label: string, categoryCode: string, categoryLabel: string}>
+     * `deprecated` is TRUE for a pre-2023-refinement taakveld-6 code that
+     * was split into finer codes (`6.71`, `6.72`, `6.81`, `6.82`) — it
+     * remains resolvable (`isValidCode()`/`labelFor()`) for backward
+     * compatibility with cases classified before the refinement.
+     * `aggregatesUnder` is set on a 2023-refinement code to the pre-2023
+     * parent code it rolls up under for quarterly reporting (see
+     * {@see aggregationKeyFor()}); `null` for every other taakveld.
+     *
+     * @return array<int, array{
+     *     code: string, label: string, categoryCode: string,
+     *     categoryLabel: string, deprecated: bool, aggregatesUnder: string|null
+     * }>
      *
      * @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/specs/iv3-case-cost-reporting/spec.md
+     * @spec openspec/changes/archive/2026-07-14-iv3-taakveld-2023-refinement/specs/iv3-taakveld-2023-refinement/spec.md
      */
     public function allTaakvelden(): array
     {
@@ -74,18 +89,93 @@ class Iv3TaakveldList
             $categoryCode  = (string) ($category['code'] ?? '');
             $categoryLabel = (string) ($category['label'] ?? '');
             foreach ((array) ($category['taakvelden'] ?? []) as $taakveld) {
-                $out[] = [
-                    'code'          => (string) ($taakveld['code'] ?? ''),
-                    'label'         => (string) ($taakveld['label'] ?? ''),
-                    'categoryCode'  => $categoryCode,
-                    'categoryLabel' => $categoryLabel,
-                ];
+                $out[] = $this->flattenTaakveld(taakveld: $taakveld, categoryCode: $categoryCode, categoryLabel: $categoryLabel);
             }
         }
 
         $this->flattened = $out;
         return $out;
     }//end allTaakvelden()
+
+    /**
+     * Flatten one raw JSON taakveld entry into its public shape.
+     *
+     * @param array<string, mixed> $taakveld      Raw taakveld entry.
+     * @param string               $categoryCode  Owning category code.
+     * @param string               $categoryLabel Owning category label.
+     *
+     * @return array{code: string, label: string, categoryCode: string, categoryLabel: string, deprecated: bool, aggregatesUnder: string|null}
+     */
+    private function flattenTaakveld(array $taakveld, string $categoryCode, string $categoryLabel): array
+    {
+        $aggregatesUnder = ($taakveld['aggregatesUnder'] ?? null);
+        if (is_string($aggregatesUnder) === false || $aggregatesUnder === '') {
+            $aggregatesUnder = null;
+        }
+
+        return [
+            'code'            => (string) ($taakveld['code'] ?? ''),
+            'label'           => (string) ($taakveld['label'] ?? ''),
+            'categoryCode'    => $categoryCode,
+            'categoryLabel'   => $categoryLabel,
+            'deprecated'      => (bool) ($taakveld['deprecated'] ?? false),
+            'aggregatesUnder' => $aggregatesUnder,
+        ];
+    }//end flattenTaakveld()
+
+    /**
+     * Whether the given code is a deprecated (pre-2023-refinement)
+     * taakveld-6 code. A deprecated code remains resolvable — this only
+     * flags it for UI/reporting treatment, it never affects
+     * `isValidCode()`/`labelFor()`.
+     *
+     * @param string $code The taakveld code.
+     *
+     * @return bool
+     *
+     * @spec openspec/changes/archive/2026-07-14-iv3-taakveld-2023-refinement/specs/iv3-taakveld-2023-refinement/spec.md
+     */
+    public function isDeprecated(string $code): bool
+    {
+        foreach ($this->allTaakvelden() as $taakveld) {
+            if ($taakveld['code'] === $code) {
+                return $taakveld['deprecated'];
+            }
+        }
+
+        return false;
+    }//end isDeprecated()
+
+    /**
+     * Resolve the aggregation bucket key for a taakveld code — the single
+     * entry point {@see Iv3ReportService} uses so cases classified under a
+     * deprecated pre-2023 code (e.g. `6.72`) and cases classified under one
+     * of its 2023-refinement successors (e.g. `6.72a`, `6.73a`, `6.74b`)
+     * land in the SAME quarterly report bucket, keyed by the pre-2023
+     * parent code.
+     *
+     * A code with no `aggregatesUnder` entry (every non-refinement code,
+     * and every deprecated parent code itself) aggregates under itself. An
+     * unknown code also passes through unchanged, so an unrecognised
+     * `caseType.iv3Taakveld` value still buckets predictably instead of
+     * being silently dropped.
+     *
+     * @param string $code The taakveld code.
+     *
+     * @return string The aggregation bucket key.
+     *
+     * @spec openspec/changes/archive/2026-07-14-iv3-taakveld-2023-refinement/specs/iv3-taakveld-2023-refinement/spec.md
+     */
+    public function aggregationKeyFor(string $code): string
+    {
+        foreach ($this->allTaakvelden() as $taakveld) {
+            if ($taakveld['code'] === $code) {
+                return ($taakveld['aggregatesUnder'] ?? $code);
+            }
+        }
+
+        return $code;
+    }//end aggregationKeyFor()
 
     /**
      * Whether the given code exists in the taakveld list.
@@ -138,6 +228,20 @@ class Iv3TaakveldList
     {
         return (string) ($this->load()['version'] ?? 'unknown');
     }//end version()
+
+    /**
+     * The date the shipped taakveld list became officially valid
+     * (`geldigVanaf` in `iv3_taakvelden.json`, e.g. the 2023 Wmo/Jeugd
+     * refinement's effective date), or an empty string when unset.
+     *
+     * @return string
+     *
+     * @spec openspec/changes/archive/2026-07-14-iv3-taakveld-2023-refinement/specs/iv3-taakveld-2023-refinement/spec.md
+     */
+    public function geldigVanaf(): string
+    {
+        return (string) ($this->load()['geldigVanaf'] ?? '');
+    }//end geldigVanaf()
 
     /**
      * Load + decode `iv3_taakvelden.json`, cached for the lifetime of this
