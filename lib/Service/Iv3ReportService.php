@@ -54,6 +54,14 @@ class Iv3ReportService
     private const TYPE_HANDLING_COST = 'handling_cost';
 
     /**
+     * Cost-entry type: a subsidie vaststelling settlement amount, auto-appended
+     * to the linked case by {@see \OCA\Procest\Service\Subsidie\VaststellingService::finalize()}
+     * (subsidie-settlement-case-costs). Counted toward `totalCosts` — a
+     * disbursed grant is real municipal expenditure, same as handling_cost.
+     */
+    private const TYPE_SUBSIDY_DISBURSEMENT = 'subsidy_disbursement';
+
+    /**
      * Bucket key used for cases whose case type carries no taakveld.
      */
     private const UNCATEGORIZED_KEY = 'uncategorized';
@@ -184,7 +192,7 @@ class Iv3ReportService
             $type   = (string) ($entry['type'] ?? '');
             if ($type === self::TYPE_LEGES_INCOME) {
                 $bucket['totalLegesIncome'] += $bedrag;
-            } else if ($type === self::TYPE_HANDLING_COST) {
+            } else if ($type === self::TYPE_HANDLING_COST || $type === self::TYPE_SUBSIDY_DISBURSEMENT) {
                 $bucket['totalCosts'] += $bedrag;
             }
         }
