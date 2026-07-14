@@ -23,6 +23,38 @@ define('PHPUNIT_RUN', 1);
 
 require_once __DIR__.'/../vendor/autoload.php';
 
+// Guard against a dangling vendor/nextcloud/ocp/OCP symlink. The nextcloud/ocp
+// composer package normally vendors real OCP\ source files, but when its
+// post-install step runs inside a live Nextcloud dev container (bind-mounted
+// at /var/www/html), it instead symlinks OCP/ -> /var/www/html/lib/public as
+// an optimisation. That symlink is only valid *inside that specific live
+// container*. If vendor/ is later copied (e.g. rsync'd) into a bare CI/test
+// container that has no /var/www/html, the symlink dangles and every OCP\
+// class fails to resolve — surfacing 100+ lines deep as a misleading
+// "Class ... not found" error from an unrelated stub include (see the
+// 2026-07-14 dev-test-failures investigation, where this dangling symlink
+// was mistaken for a code regression across PRs #202-#211 before being
+// traced here). Fail fast with an actionable message instead.
+$ocpVendorDir = __DIR__.'/../vendor/nextcloud/ocp/OCP';
+if (is_link($ocpVendorDir) === true && file_exists($ocpVendorDir) === false) {
+    fwrite(
+        STDERR,
+        "\nFATAL: vendor/nextcloud/ocp/OCP is a dangling symlink to "
+        .(readlink($ocpVendorDir) ?: '(unknown target)')."\n"
+        ."This happens when vendor/ is copied from a checkout that was "
+        ."composer-installed inside a live Nextcloud dev container (which "
+        ."symlinks OCP/ to that container's /var/www/html/lib/public) into "
+        ."an environment without that path — e.g. rsync'ing vendor/ into a "
+        ."bare php:8.3-cli test container.\n"
+        ."Fix: rm -rf vendor && composer install --no-interaction "
+        ."--ignore-platform-reqs (do NOT rsync vendor/ from a live-NC-mounted "
+        ."checkout).\n\n"
+    );
+    exit(1);
+}//end if
+
+unset($ocpVendorDir);
+
 // Polyfill easter_date() when the PHP `calendar` extension is not loaded
 // (it is absent from the slim PHP-CLI image used in the dev container).
 // Production Nextcloud images ship the calendar extension, so this guard is a
