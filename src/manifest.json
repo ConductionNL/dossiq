@@ -628,6 +628,7 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
+				"allowSavedViews": true,
 				"viewModes": ["table", "cards", "map"],
 				"mapConfig": {
 					"geoField": "geometry",
@@ -763,7 +764,9 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" },
+						{ "id": "notes", "label": "Notes", "icon": "NoteTextOutline", "component": "CaseNotesTab" }
 					]
 				}
 			},
@@ -799,6 +802,7 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
+				"allowSavedViews": true,
 				"filter": {
 					"caseType": "b3c1a000-0000-4000-a000-00000000be2a"
 				},
@@ -952,7 +956,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -982,7 +987,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -995,6 +1001,7 @@
 			"config": {
 				"register": "procest",
 				"schema": "task",
+				"allowSavedViews": true,
 				"showViewAction": false,
 				"actions": [
 					{
@@ -1071,7 +1078,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -1096,6 +1104,7 @@
 			"config": {
 				"register": "procest",
 				"schema": "voorstel",
+				"allowSavedViews": true,
 				"quickFilters": [
 					{
 						"label": "Alle",
@@ -1208,7 +1217,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				},
 				"documentationUrl": "https://procest.conduction.nl"
@@ -1225,6 +1235,7 @@
 			"config": {
 				"register": "procest",
 				"schema": "adviesAanvraag",
+				"allowSavedViews": true,
 				"showViewAction": false,
 				"actions": [
 					{
@@ -1274,7 +1285,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -1550,7 +1562,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -1595,7 +1608,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -1620,7 +1634,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -1645,7 +1660,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -1781,7 +1797,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -1807,7 +1824,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -1868,7 +1886,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -1976,7 +1995,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -2003,7 +2023,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -2114,7 +2135,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -2179,7 +2201,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -2214,7 +2237,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -2345,7 +2369,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -2375,7 +2400,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}
@@ -2388,6 +2414,7 @@
 			"config": {
 				"register": "procest",
 				"schema": "case",
+				"allowSavedViews": true,
 				"filter": {
 					"caseType": "b3c1a000-0000-4000-a000-00000000be30"
 				},
@@ -2444,7 +2471,8 @@
 					"enabled": true,
 					"showMetadata": true,
 					"tabs": [
-						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] }
+						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
+						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" }
 					]
 				}
 			}

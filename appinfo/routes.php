@@ -282,6 +282,13 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'advice#transitionStatus',  'url' => '/api/advice/{id}/transition', 'verb' => 'POST'],
         ['name' => 'advice#dispatchReminder',  'url' => '/api/advice/{id}/remind',     'verb' => 'POST'],
 
+        // ── Notes @mention notifications (ncvue-w2-leaves-adoption) ─────
+        // Note storage/CRUD is owned entirely by the OpenRegister notes
+        // integration leaf (nc-vue CnNotesTab). This is the only
+        // procest-side side-effect: turning a saved note's @mention
+        // tokens into real Nextcloud notifications.
+        ['name' => 'notes#mention', 'url' => '/api/notes/mention', 'verb' => 'POST'],
+
         // ── Workflow Definitions (workflowTemplate) ─────────────────────
         // CRUD on workflowTemplate is served by the manifest renderer +
         // OpenRegister auto-routing (/api/objects/<register>/<schema>).
