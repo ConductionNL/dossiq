@@ -2736,7 +2736,23 @@
         "Quarterly case cost breakdown per IV3 taakveld, for the CBS Informatie voor Derden submission.": "Quarterly case cost breakdown per IV3 taakveld, for the CBS Informatie voor Derden submission.",
         "Taakveld": "Taakveld",
         "Total cost": "Total cost",
-        "Uncategorized": "Uncategorized"
+        "Uncategorized": "Uncategorized",
+        "{percent}% of recorded transitions revisit a status the case had already left — a high rework rate usually means guard conditions or handler routing need a closer look.": "{percent}% of recorded transitions revisit a status the case had already left — a high rework rate usually means guard conditions or handler routing need a closer look.",
+        "Bottleneck analysis from recorded case status history": "Bottleneck analysis from recorded case status history",
+        "Bottleneck ranking": "Bottleneck ranking",
+        "Cases analysed": "Cases analysed",
+        "Dwell time by status (median hours)": "Dwell time by status (median hours)",
+        "Failed to load process-mining report": "Failed to load process-mining report",
+        "Median hours": "Median hours",
+        "No bottleneck data for the selected period.": "No bottleneck data for the selected period.",
+        "No dwell-time data available": "No dwell-time data available",
+        "No status history in the selected period.": "No status history in the selected period.",
+        "Overall rework rate": "Overall rework rate",
+        "Process Mining": "Process Mining",
+        "Ranked by median dwell time × case volume — the statuses most worth investigating first.": "Ranked by median dwell time × case volume — the statuses most worth investigating first.",
+        "Score": "Score",
+        "Top bottleneck": "Top bottleneck",
+        "Visits": "Visits"
     },
     "plurals": ""
 }
