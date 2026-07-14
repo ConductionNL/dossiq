@@ -26,8 +26,10 @@ namespace OCA\Procest\AppInfo;
 
 use OCA\OpenRegister\AppHost\Bootstrap;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Procest\Service\Beschikking\LibresignApiClient;
 use OCA\Procest\Service\Beschikking\LibresignSigningAdapter;
@@ -54,6 +56,7 @@ use OCA\Procest\Listener\DecisionConcludedListener;
 use OCA\Procest\Event\ParafeerTransitionEvent;
 use OCA\Procest\Listener\ApprovalStepNotificationListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
+use OCA\Procest\Listener\LocationBagValidationListener;
 use OCA\Procest\Listener\ParaferingAuditListener;
 use OCA\Procest\Listener\RoleMutationListener;
 use OCA\Procest\Mcp\ProcestToolProvider;
@@ -238,6 +241,17 @@ class Application extends App implements IBootstrap
         $context->registerEventListener(
             event: ObjectCreatedEvent::class,
             listener: VergunningaanvraagCreatedListener::class
+        );
+
+        // Bag-location-save-validation: pre-persist location source=bag
+        // enforcement (closes bag-register-adapter tasks.md item 4.1).
+        $context->registerEventListener(
+            event: ObjectCreatingEvent::class,
+            listener: LocationBagValidationListener::class
+        );
+        $context->registerEventListener(
+            event: ObjectUpdatingEvent::class,
+            listener: LocationBagValidationListener::class
         );
 
         $this->registerBezwaarListeners(context: $context);
