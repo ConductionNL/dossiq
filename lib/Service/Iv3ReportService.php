@@ -149,7 +149,12 @@ class Iv3ReportService
             $taakveld   = ($taakveldByCaseType[$caseTypeId] ?? null);
             $bucketKey  = self::UNCATEGORIZED_KEY;
             if ($taakveld !== null && $taakveld !== '') {
-                $bucketKey = $taakveld;
+                // Iv3-taakveld-2023-refinement: a case classified under a
+                // 2023-refinement code (e.g. 6.72a) aggregates into the SAME
+                // bucket as one still classified under its deprecated
+                // pre-2023 parent (6.72), so historical trend reporting
+                // stays continuous across the refinement.
+                $bucketKey = $this->taakveldList->aggregationKeyFor($taakveld);
             }
 
             $buckets[$bucketKey] ??= [
