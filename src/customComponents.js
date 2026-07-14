@@ -27,6 +27,7 @@ import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
 // views are owned by OpenRegister.
 import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
 import Iv3ReportDashboard from './views/dashboard/Iv3ReportDashboard.vue'
+import ProcessMiningDashboard from './views/dashboard/ProcessMiningDashboard.vue'
 import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
 // VoorstellenView removed — the Voorstellen list page is now a declarative
 // `type:"index"` on the `voorstel` schema (formatter columns + status badge,
@@ -122,6 +123,7 @@ export default {
 	AdminRootView, // multi-tab admin root (lib settings-custom-slot gap)
 	TermijnDashboard, // AWB termijnbewaking + dwangsom KPI dashboard
 	Iv3ReportDashboard, // IV3 (Informatie voor Derden) quarterly per-taakveld cost report
+	ProcessMiningDashboard, // bottleneck analysis — dwell time, transition matrix, rework, throughput (CnKpiGrid + CnChartWidget leaves)
 	TenantOnboardingDashboard, // SaaS tenant onboarding (7-step + go-live)
 
 	// --- Migration cost: deferred to a follow-up. ---

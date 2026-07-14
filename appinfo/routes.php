@@ -253,6 +253,10 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         // Doorlooptijd (throughput-time) dashboard metrics.
         ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],
 
+        // Process mining bottleneck report — dwell-time, bottleneck ranking,
+        // transition matrix + rework detection, throughput trend.
+        ['name' => 'processMining#report', 'url' => '/api/reports/process-mining', 'verb' => 'GET'],
+
         // Deelzaak (sub-case) parent-child relations.
         ['name' => 'deelzaak#counts',   'url' => '/api/deelzaken/counts',                'verb' => 'GET'],
         ['name' => 'deelzaak#validate', 'url' => '/api/deelzaken/validate',              'verb' => 'POST'],

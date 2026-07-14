@@ -224,6 +224,19 @@ if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {
     include_once __DIR__.'/Stubs/Decidesk/Event/DecisionConcludedEvent.php';
 }
 
+// bag-location-save-validation: pre-persist OpenRegister event stubs —
+// loaded when the openregister runtime is absent so
+// LocationBagValidationListenerTest can exercise handle() against real
+// stopPropagation()/setErrors() semantics. Self-skip when openregister is
+// installed (real classes present).
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectCreatingEvent') === false) {
+    include_once __DIR__.'/Stubs/Event/ObjectCreatingEventStub.php';
+}
+
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatingEvent') === false) {
+    include_once __DIR__.'/Stubs/Event/ObjectUpdatingEventStub.php';
+}
+
 // OpenRegister AppHost stubs (ADR-040) — loaded when the openregister runtime
 // is absent so Application::register() (Bootstrap::register) and procest's
 // DashboardController (extends GenericDashboardController) resolve in bare CI
