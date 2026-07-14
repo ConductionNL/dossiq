@@ -2740,6 +2740,22 @@
         "Quarterly case cost breakdown per IV3 taakveld, for the CBS Informatie voor Derden submission.": "Kwartaaloverzicht van zaakkosten per IV3-taakveld, voor de Informatie voor Derden (Iv3)-opgave aan het CBS.",
         "Taakveld": "Taakveld",
         "Total cost": "Totale kosten",
-        "Uncategorized": "Ongecategoriseerd"
+        "Uncategorized": "Ongecategoriseerd",
+        "{percent}% of recorded transitions revisit a status the case had already left — a high rework rate usually means guard conditions or handler routing need a closer look.": "{percent}% van de geregistreerde overgangen keert terug naar een status die de zaak al had verlaten — een hoog herbewerkingspercentage duidt meestal op voorwaarden of routering die nader onderzoek verdienen.",
+        "Bottleneck analysis from recorded case status history": "Knelpuntenanalyse op basis van de geregistreerde statusgeschiedenis van zaken",
+        "Bottleneck ranking": "Knelpuntenranglijst",
+        "Cases analysed": "Geanalyseerde zaken",
+        "Dwell time by status (median hours)": "Verblijftijd per status (mediaan in uren)",
+        "Failed to load process-mining report": "Laden van het process mining-rapport mislukt",
+        "Median hours": "Mediaan uren",
+        "No bottleneck data for the selected period.": "Geen knelpuntgegevens voor de geselecteerde periode.",
+        "No dwell-time data available": "Geen verblijftijdgegevens beschikbaar",
+        "No status history in the selected period.": "Geen statusgeschiedenis in de geselecteerde periode.",
+        "Overall rework rate": "Algeheel herbewerkingspercentage",
+        "Process Mining": "Process mining",
+        "Ranked by median dwell time × case volume — the statuses most worth investigating first.": "Gerangschikt op mediane verblijftijd × zaakvolume — de statussen die het eerst onderzoek verdienen.",
+        "Score": "Score",
+        "Top bottleneck": "Grootste knelpunt",
+        "Visits": "Bezoeken"
     }
 }

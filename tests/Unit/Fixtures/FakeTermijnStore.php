@@ -79,6 +79,13 @@ class FakeTermijnStore
     /**
      * Equality-filter object search.
      *
+     * OpenRegister's real `searchObjects()`/`searchObjectsBySlug()` treat
+     * `_limit`/`_offset` as pagination keys passed straight through — NOT
+     * object-field equality filters (see SearchesObjects trait docblock).
+     * They are stripped here before filtering so a caller that paginates
+     * (e.g. `['_limit' => 2000]`) doesn't zero out every row by matching
+     * against a `_limit` field none of them have.
+     *
      * @param string               $register Register.
      * @param string               $schema   Schema.
      * @param array<string, mixed> $filters  Filters.
@@ -88,6 +95,8 @@ class FakeTermijnStore
     public function findObjects(string $register, string $schema, array $filters = []): array
     {
         $rows = array_values($this->store[$schema] ?? []);
+
+        unset($filters['_limit'], $filters['_offset']);
         if (count($filters) === 0) {
             return $rows;
         }
