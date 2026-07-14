@@ -208,6 +208,11 @@ class Application extends App implements IBootstrap
             }
         );
 
+        // Note @mention notifications (nc-vue #207, ncvue-w2-leaves-adoption):
+        // MentionNotificationService raises `note_mention` notifications;
+        // this Notifier renders them for the bell menu.
+        $context->registerNotifierService(\OCA\Procest\Notification\Notifier::class);
+
         $context->registerEventListener(
             event: ObjectCreatedEvent::class,
             listener: KpiCacheInvalidationListener::class

@@ -318,4 +318,81 @@ class Iv3ReportServiceTest extends TestCase
 
         $this->assertStringContainsString('Uncategorized', $csv);
     }//end testCsvIncludesUncategorizedRowWhenPresent()
+
+    /**
+     * iv3-taakveld-2023-refinement: a case classified under the deprecated
+     * pre-2023 code 6.72 and a case classified under one of its 2023
+     * refinement successors (6.72a) aggregate into the SAME report bucket,
+     * keyed and labelled by the pre-2023 parent code.
+     *
+     * @return void
+     */
+    public function testMixedOldAndNewTaakveldCodesAggregateIntoSameBucket(): void
+    {
+        $this->seedCaseType('ct-old', '6.72');
+        $this->seedCaseType('ct-new', '6.72a');
+        $this->seedCase('case-old', 'ct-old', [['bedrag' => 30, 'type' => 'handling_cost', 'datum' => '2026-05-01']]);
+        $this->seedCase('case-new', 'ct-new', [['bedrag' => 70, 'type' => 'handling_cost', 'datum' => '2026-05-02']]);
+
+        $report = $this->service->generateQuarterlyReport(2026, 2);
+
+        $this->assertArrayHasKey('6.72', $report['perTaakveld']);
+        $this->assertArrayNotHasKey('6.72a', $report['perTaakveld']);
+        $bucket = $report['perTaakveld']['6.72'];
+        $this->assertSame(2, $bucket['caseCount']);
+        $this->assertSame(100.0, $bucket['totalCosts']);
+        $this->assertSame('Maatwerkdienstverlening 18-', $bucket['taakveldLabel']);
+    }//end testMixedOldAndNewTaakveldCodesAggregateIntoSameBucket()
+
+    /**
+     * Two cases classified under different 2023-refinement successors of
+     * the same pre-2023 parent (6.73a and 6.74b, both under 6.72) also
+     * aggregate together.
+     *
+     * @return void
+     */
+    public function testTwoDifferentRefinementSuccessorsAggregateTogether(): void
+    {
+        $this->seedCaseType('ct-a', '6.73a');
+        $this->seedCaseType('ct-b', '6.74b');
+        $this->seedCase('case-a', 'ct-a', [['bedrag' => 15, 'type' => 'handling_cost', 'datum' => '2026-05-01']]);
+        $this->seedCase('case-b', 'ct-b', [['bedrag' => 25, 'type' => 'handling_cost', 'datum' => '2026-05-02']]);
+
+        $report = $this->service->generateQuarterlyReport(2026, 2);
+
+        $this->assertArrayHasKey('6.72', $report['perTaakveld']);
+        $this->assertSame(2, $report['perTaakveld']['6.72']['caseCount']);
+        $this->assertSame(40.0, $report['perTaakveld']['6.72']['totalCosts']);
+    }//end testTwoDifferentRefinementSuccessorsAggregateTogether()
+
+    /**
+     * subsidie-settlement-case-costs: a subsidy_disbursement kosten entry
+     * (auto-appended by VaststellingService::finalize()) counts toward
+     * totalCosts, alongside handling_cost, and never toward leges income.
+     *
+     * @return void
+     */
+    public function testSubsidyDisbursementEntriesCountTowardTotalCosts(): void
+    {
+        $this->seedCaseType('ct-1', '6.3');
+        $this->seedCase(
+            'case-1',
+            'ct-1',
+            [
+                ['bedrag' => 100, 'type' => 'handling_cost', 'datum' => '2026-05-01'],
+                [
+                    'bedrag'         => 330000,
+                    'type'           => 'subsidy_disbursement',
+                    'datum'          => '2026-05-02',
+                    'source'         => 'subsidie_vaststelling',
+                    'vaststellingId' => 'vst-1',
+                ],
+            ]
+        );
+
+        $report = $this->service->generateQuarterlyReport(2026, 2);
+
+        $this->assertSame(330100.0, $report['perTaakveld']['6.3']['totalCosts']);
+        $this->assertSame(0.0, $report['perTaakveld']['6.3']['totalLegesIncome']);
+    }//end testSubsidyDisbursementEntriesCountTowardTotalCosts()
 }//end class

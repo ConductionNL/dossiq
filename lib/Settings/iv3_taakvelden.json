@@ -1,6 +1,7 @@
 {
-    "version": "iv3-bbv-v1",
-    "source": "BBV/Iv3 functional classification (CBS Informatie voor Derden), cross-checked against gemeente Leiden and gemeente Eindhoven published taakveld overviews. See openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/design.md for the known limitation re: the 2023 Wmo/Jeugd taakveld-6 refinement (not yet included).",
+    "version": "iv3-bbv-v2",
+    "geldigVanaf": "2023-01-01",
+    "source": "BBV/Iv3 functional classification (CBS Informatie voor Derden). v2 resolves the v1 known limitation by adding the official 2023 Wmo/Jeugd taakveld-6 refinement, sourced directly from the Rijksoverheid 'Iv3-Informatievoorschrift Gemeenten en Gemeenschappelijke regelingen 2023 1.0' (section 1 'Belangrijkste wijzigingen', blad 4-5, and the per-taakveld definitions blad 27-34) plus the accompanying 'Veelgestelde vragen verfijning Iv3 jeugd en Wmo' FAQ (both rijksoverheid.nl, retrieved 2026-07-14). See openspec/changes/archive/2026-07-14-iv3-taakveld-2023-refinement/design.md for the full citation, the deprecated-code / aggregatesUnder design, and the 6.2/6.4 rename note.",
     "categories": [
         {
             "code": "0",
@@ -78,15 +79,33 @@
             "label": "Sociaal domein",
             "taakvelden": [
                 { "code": "6.1", "label": "Samenkracht en burgerparticipatie" },
-                { "code": "6.2", "label": "Wijkteams" },
+                { "code": "6.2", "label": "Toegang en eerstelijnsvoorzieningen" },
                 { "code": "6.3", "label": "Inkomensregelingen" },
-                { "code": "6.4", "label": "Begeleide participatie" },
+                { "code": "6.4", "label": "WSW en beschut werk" },
                 { "code": "6.5", "label": "Arbeidsparticipatie" },
                 { "code": "6.6", "label": "Maatwerkvoorzieningen (Wmo)" },
-                { "code": "6.71", "label": "Maatwerkdienstverlening 18+" },
-                { "code": "6.72", "label": "Maatwerkdienstverlening 18-" },
-                { "code": "6.81", "label": "Geëscaleerde zorg 18+" },
-                { "code": "6.82", "label": "Geëscaleerde zorg 18-" }
+                { "code": "6.71", "label": "Maatwerkdienstverlening 18+", "deprecated": true },
+                { "code": "6.71a", "label": "Hulp bij het huishouden (Wmo)", "aggregatesUnder": "6.71" },
+                { "code": "6.71b", "label": "Begeleiding (Wmo)", "aggregatesUnder": "6.71" },
+                { "code": "6.71c", "label": "Dagbesteding (Wmo)", "aggregatesUnder": "6.71" },
+                { "code": "6.71d", "label": "Overige maatwerkarrangementen (Wmo)", "aggregatesUnder": "6.71" },
+                { "code": "6.72", "label": "Maatwerkdienstverlening 18-", "deprecated": true },
+                { "code": "6.72a", "label": "Jeugdhulp begeleiding", "aggregatesUnder": "6.72" },
+                { "code": "6.72b", "label": "Jeugdhulp behandeling", "aggregatesUnder": "6.72" },
+                { "code": "6.72c", "label": "Jeugdhulp dagbesteding", "aggregatesUnder": "6.72" },
+                { "code": "6.72d", "label": "Jeugdhulp zonder verblijf overig", "aggregatesUnder": "6.72" },
+                { "code": "6.73a", "label": "Pleegzorg", "aggregatesUnder": "6.72" },
+                { "code": "6.73b", "label": "Gezinsgericht", "aggregatesUnder": "6.72" },
+                { "code": "6.73c", "label": "Jeugdhulp met verblijf overig", "aggregatesUnder": "6.72" },
+                { "code": "6.74a", "label": "Jeugdhulp behandeling GGZ zonder verblijf", "aggregatesUnder": "6.72" },
+                { "code": "6.74b", "label": "Jeugdhulp crisis/LTA/GGZ-verblijf", "aggregatesUnder": "6.72" },
+                { "code": "6.74c", "label": "Gesloten plaatsing", "aggregatesUnder": "6.72" },
+                { "code": "6.81", "label": "Geëscaleerde zorg 18+", "deprecated": true },
+                { "code": "6.81a", "label": "Beschermd wonen (Wmo)", "aggregatesUnder": "6.81" },
+                { "code": "6.81b", "label": "Maatschappelijke- en vrouwenopvang (Wmo)", "aggregatesUnder": "6.81" },
+                { "code": "6.82", "label": "Geëscaleerde zorg 18-", "deprecated": true },
+                { "code": "6.82a", "label": "Jeugdbescherming", "aggregatesUnder": "6.82" },
+                { "code": "6.82b", "label": "Jeugdreclassering", "aggregatesUnder": "6.82" }
             ]
         },
         {

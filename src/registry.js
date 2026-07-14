@@ -25,6 +25,7 @@
 //   a pass-through.
 
 import { leafTab } from './integrations/leafTabs.js'
+import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
 import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
 import MyWorkView from './views/MyWorkCards.vue'
 import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
@@ -120,6 +121,18 @@ import InspectionPanel from './views/cases/components/InspectionPanel.vue'
 // shared dashboard-widget catalog for CnDetailPage's config-grid body). The
 // built-in resolves register/schema/objectId from the same detail object-context
 // injects/props, so detail-page audit trails are unchanged.
+//
+// `version-history` (nc-vue #216, ncvue-w2-leaves-adoption): unlike
+// `audit-trail`/`audit`, this integration id is NOT one of the four hardcoded
+// keys in CnObjectSidebar's BUILTIN_WIDGETS map (`data`, `metadata`,
+// `audit`/`audit-trail`, `object-table`), so a manifest sidebar tab cannot
+// resolve it via `widgets: [{ "type": "version-history" }]` the way `audit`
+// does — it would silently fail to render. It IS a real
+// `builtinIntegrations` descriptor though (same registry `notes`/`calendar`/
+// `forms`/`photos` live in), so it resolves the same way those leaves do:
+// through `leafTab()` into a `component:` sidebar tab. See
+// src/integrations/leafTabs.js.
+// @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#version-history
 
 /**
  * V2 component registry.
@@ -318,6 +331,33 @@ const registry = {
 		kind: 'page',
 		component: leafTab('calendar'),
 		_note: 'OR calendar integration leaf (CnCalendarTab) surfaced on the case detail; replaces the bespoke LocalBackend appointment UI (ADR-022).',
+	},
+
+	// --- Version history sidebar tab (ncvue-w2-leaves-adoption, nc-vue #216). ---
+	// Field-by-field diff viewer over the same audit-trail data as the
+	// existing "audit" tab, resolved via leafTab('version-history') because
+	// CnObjectSidebar's BUILTIN_WIDGETS map does not carry a
+	// 'version-history' key (see the ADR-049-adjacent comment above). Wired
+	// as a `component:` sidebar tab beside "audit" on every detail page's
+	// manifest sidebar.tabs[] (src/manifest.json).
+	// @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#version-history
+	VersionHistoryLeafTab: {
+		kind: 'page',
+		component: leafTab('version-history'),
+		_note: 'nc-vue built-in version-history integration leaf (CnVersionHistory) surfaced on every detail page sidebar beside the existing audit-trail tab.',
+	},
+
+	// --- Notes sidebar tab with @mention notifications (ncvue-w2-leaves-adoption, nc-vue #207). ---
+	// The existing "case-notes" CaseDetail body widget renders CnNotesCard,
+	// which predates @mention and does not emit it. This sidebar tab renders
+	// the full CnNotesTab (which does emit `mention`) and forwards the event
+	// to procest's own notification endpoint — see CaseNotesTab.vue for the
+	// full rationale. Wired as a `component:` sidebar tab on CaseDetail.
+	// @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#mentions
+	CaseNotesTab: {
+		kind: 'page',
+		component: CaseNotesTab,
+		_note: 'Mention-aware notes sidebar tab: wraps the library CnNotesTab (via leafTab(\'notes\')) and POSTs mention payloads to /api/notes/mention. Zero note/mention UI logic reimplemented — see CaseNotesTab.vue.',
 	},
 	AdviesPanel: {
 		kind: 'page',

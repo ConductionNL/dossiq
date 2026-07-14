@@ -66,7 +66,9 @@ class Iv3TaakveldListTest extends TestCase
 
         $seenCodes = [];
         foreach ($all as $taakveld) {
-            $this->assertMatchesRegularExpression('/^\d+\.\d{1,3}$/', $taakveld['code']);
+            // iv3-taakveld-2023-refinement: refinement codes carry a
+            // trailing lowercase letter (e.g. "6.71a").
+            $this->assertMatchesRegularExpression('/^\d+\.\d{1,3}[a-z]?$/', $taakveld['code']);
             $this->assertNotSame('', $taakveld['label']);
             $this->assertContains($taakveld['categoryCode'], ['0', '1', '2', '3', '4', '5', '6', '7', '8']);
             $this->assertArrayNotHasKey($taakveld['code'], $seenCodes, 'Duplicate taakveld code: '.$taakveld['code']);
@@ -128,4 +130,120 @@ class Iv3TaakveldListTest extends TestCase
         $this->assertNotSame('', $this->list->version());
         $this->assertNotSame('unknown', $this->list->version());
     }//end testVersionIsNonEmpty()
+
+    /**
+     * geldigVanaf() returns the shipped list's effective date.
+     *
+     * @return void
+     */
+    public function testGeldigVanafIsNonEmpty(): void
+    {
+        $this->assertNotSame('', $this->list->geldigVanaf());
+    }//end testGeldigVanafIsNonEmpty()
+
+    /**
+     * A deprecated pre-2023 taakveld-6 code remains resolvable — valid,
+     * labelled, and flagged deprecated.
+     *
+     * @return void
+     */
+    public function testDeprecatedCodeRemainsResolvable(): void
+    {
+        $this->assertTrue($this->list->isValidCode('6.72'));
+        $this->assertSame('Maatwerkdienstverlening 18-', $this->list->labelFor('6.72'));
+        $this->assertTrue($this->list->isDeprecated('6.72'));
+    }//end testDeprecatedCodeRemainsResolvable()
+
+    /**
+     * A 2023-refinement code is valid, labelled, and NOT flagged deprecated.
+     *
+     * @return void
+     */
+    public function testRefinementCodeIsNotDeprecated(): void
+    {
+        $this->assertTrue($this->list->isValidCode('6.72a'));
+        $this->assertSame('Jeugdhulp begeleiding', $this->list->labelFor('6.72a'));
+        $this->assertFalse($this->list->isDeprecated('6.72a'));
+    }//end testRefinementCodeIsNotDeprecated()
+
+    /**
+     * An unaffected code (outside taakveld 6's refinement) is never
+     * deprecated.
+     *
+     * @return void
+     */
+    public function testUnaffectedCodeIsNeverDeprecated(): void
+    {
+        $this->assertFalse($this->list->isDeprecated('8.1'));
+    }//end testUnaffectedCodeIsNeverDeprecated()
+
+    /**
+     * Every 2023-refinement code under 6.71 aggregates under its deprecated
+     * pre-2023 parent 6.71.
+     *
+     * @return void
+     */
+    public function testRefinementCodesAggregateUnderTheirPre2023Parent(): void
+    {
+        foreach (['6.71a', '6.71b', '6.71c', '6.71d'] as $code) {
+            $this->assertSame('6.71', $this->list->aggregationKeyFor($code), $code.' must aggregate under 6.71');
+        }
+
+        // The old 6.72 catch-all was split into TEN refinement codes
+        // (6.72a-d, 6.73a-c, 6.74a-c) — all ten aggregate under 6.72.
+        foreach (['6.72a', '6.72b', '6.72c', '6.72d', '6.73a', '6.73b', '6.73c', '6.74a', '6.74b', '6.74c'] as $code) {
+            $this->assertSame('6.72', $this->list->aggregationKeyFor($code), $code.' must aggregate under 6.72');
+        }
+
+        foreach (['6.81a', '6.81b'] as $code) {
+            $this->assertSame('6.81', $this->list->aggregationKeyFor($code), $code.' must aggregate under 6.81');
+        }
+
+        foreach (['6.82a', '6.82b'] as $code) {
+            $this->assertSame('6.82', $this->list->aggregationKeyFor($code), $code.' must aggregate under 6.82');
+        }
+    }//end testRefinementCodesAggregateUnderTheirPre2023Parent()
+
+    /**
+     * A deprecated pre-2023 code aggregates under itself (it is its own
+     * bucket — the refinement codes fold into it, not the other way round).
+     *
+     * @return void
+     */
+    public function testDeprecatedCodeAggregatesUnderItself(): void
+    {
+        $this->assertSame('6.72', $this->list->aggregationKeyFor('6.72'));
+    }//end testDeprecatedCodeAggregatesUnderItself()
+
+    /**
+     * A code with no refinement relationship aggregates under itself.
+     *
+     * @return void
+     */
+    public function testUnaffectedCodeAggregatesUnderItself(): void
+    {
+        $this->assertSame('8.1', $this->list->aggregationKeyFor('8.1'));
+    }//end testUnaffectedCodeAggregatesUnderItself()
+
+    /**
+     * An unknown code passes through aggregationKeyFor() unchanged rather
+     * than being dropped.
+     *
+     * @return void
+     */
+    public function testUnknownCodeAggregatesUnderItself(): void
+    {
+        $this->assertSame('99.9', $this->list->aggregationKeyFor('99.9'));
+    }//end testUnknownCodeAggregatesUnderItself()
+
+    /**
+     * The taakveld-6 renamed codes (6.2, 6.4) resolve to their 2023 labels.
+     *
+     * @return void
+     */
+    public function testRenamedCodesResolveToTheir2023Labels(): void
+    {
+        $this->assertSame('Toegang en eerstelijnsvoorzieningen', $this->list->labelFor('6.2'));
+        $this->assertSame('WSW en beschut werk', $this->list->labelFor('6.4'));
+    }//end testRenamedCodesResolveToTheir2023Labels()
 }//end class
