@@ -98,6 +98,13 @@
 			"order": 55
 		},
 		{
+			"id": "ProcessMiningDashboardMenu",
+			"label": "Process mining",
+			"icon": "icon-category-monitoring",
+			"route": "ProcessMiningDashboard",
+			"order": 56
+		},
+		{
 			"id": "CaseMap",
 			"label": "Map",
 			"icon": "icon-address",
@@ -1307,6 +1314,14 @@
 			"slots": {
 				"widget-doorlooptijd": "DoorlooptijdView"
 			}
+		},
+		{
+			"id": "ProcessMiningDashboard",
+			"route": "/process-mining",
+			"type": "custom",
+			"title": "Process mining",
+			"component": "ProcessMiningDashboard",
+			"_note": "Bottleneck analysis over the case statusRecord history: a period + case-type picker drives a server-computed ProcessMiningService aggregation (per-status dwell time, bottleneck ranking, transition matrix + rework-loop detection, weekly throughput trend). The figures come from a dedicated aggregation endpoint, not a register query, so the standard dashboard/object-stats type can't supply or shape this data."
 		},
 		{
 			"id": "WorkflowBoard",

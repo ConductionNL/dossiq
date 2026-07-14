@@ -1,0 +1,190 @@
+<?php
+
+/**
+ * Procest Process Mining Controller
+ *
+ * REST surface for the process-mining bottleneck report:
+ * `GET /api/reports/process-mining`. Same gate shape as
+ * {@see Iv3ReportController} — the report spans every case in the tenant,
+ * not just the caller's own work, so access is restricted to the
+ * controller/beheerder/admin roles rather than any authenticated user.
+ * Defers all logic to {@see ProcessMiningService} (ADR-022).
+ *
+ * @category Controller
+ * @package  OCA\Procest\Controller
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-License-Identifier: EUPL-1.2
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ *
+ * @version GIT: <git-id>
+ *
+ * @link https://procest.nl
+ *
+ * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+ */
+
+declare(strict_types=1);
+
+namespace OCA\Procest\Controller;
+
+use OCA\Procest\Service\ProcessMiningService;
+use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
+use OCP\AppFramework\Http\JSONResponse;
+use OCP\IGroupManager;
+use OCP\IRequest;
+use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
+use Throwable;
+
+/**
+ * Process-mining bottleneck REST surface.
+ *
+ * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+ *
+ * @psalm-suppress UnusedClass
+ */
+class ProcessMiningController extends Controller
+{
+    /**
+     * Groups that may read the process-mining report — same gate shape as
+     * {@see Iv3ReportController::ALLOWED_GROUPS}: the report spans the
+     * whole case population, not just the caller's own work.
+     */
+    private const ALLOWED_GROUPS = ['controllers', 'beheerders', 'admin'];
+
+    /**
+     * Constructor.
+     *
+     * @param string                $appName              Nextcloud app id.
+     * @param IRequest              $request              Incoming request.
+     * @param IUserSession          $userSession          Current user session.
+     * @param IGroupManager         $groupManager          Group manager (for RBAC check).
+     * @param ProcessMiningService $processMiningService Report aggregation service.
+     * @param LoggerInterface       $logger               PSR-3 logger.
+     */
+    public function __construct(
+        string $appName,
+        IRequest $request,
+        private readonly IUserSession $userSession,
+        private readonly IGroupManager $groupManager,
+        private readonly ProcessMiningService $processMiningService,
+        private readonly LoggerInterface $logger,
+    ) {
+        parent::__construct(appName: $appName, request: $request);
+    }//end __construct()
+
+    /**
+     * Return the process-mining bottleneck report.
+     *
+     * @return JSONResponse Report body, 401 when unauthenticated, 403 when
+     *                       the caller lacks the controller/beheerder/admin
+     *                       role, or 400 on invalid parameters.
+     *
+     * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T02
+     */
+    #[NoAdminRequired]
+    public function report(): JSONResponse
+    {
+        $denied = $this->ensureAllowed();
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        $from     = $this->request->getParam('from');
+        $to       = $this->request->getParam('to');
+        $caseType = $this->request->getParam('caseType');
+
+        if ($from !== null && (is_string($from) === false || $this->isValidDate($from) === false)) {
+            return new JSONResponse(['message' => 'from must be a Y-m-d date'], Http::STATUS_BAD_REQUEST);
+        }
+
+        if ($to !== null && (is_string($to) === false || $this->isValidDate($to) === false)) {
+            return new JSONResponse(['message' => 'to must be a Y-m-d date'], Http::STATUS_BAD_REQUEST);
+        }
+
+        if ($caseType !== null && is_string($caseType) === false) {
+            return new JSONResponse(['message' => 'caseType must be a string'], Http::STATUS_BAD_REQUEST);
+        }
+
+        $params = [];
+        if (is_string($from) === true && $from !== '') {
+            $params['from'] = $from;
+        }
+
+        if (is_string($to) === true && $to !== '') {
+            $params['to'] = $to;
+        }
+
+        if (is_string($caseType) === true && $caseType !== '') {
+            $params['caseType'] = $caseType;
+        }
+
+        try {
+            return new JSONResponse($this->processMiningService->getReport(params: $params));
+        } catch (Throwable $e) {
+            $this->logger->error('Procest: process-mining report generation failed', ['exception' => $e->getMessage()]);
+            return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+    }//end report()
+
+    /**
+     * Authentication + RBAC guard for {@see self::report()}.
+     *
+     * @return JSONResponse|null Null when the caller is allowed.
+     */
+    private function ensureAllowed(): ?JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['message' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        if ($this->isAllowed(uid: $user->getUID()) === false) {
+            return new JSONResponse(
+                ['message' => 'Process-mining report access requires the controller/beheerder role'],
+                Http::STATUS_FORBIDDEN,
+            );
+        }
+
+        return null;
+    }//end ensureAllowed()
+
+    /**
+     * Check whether the given user id belongs to an allowed group (or is an
+     * NC admin, defensive default) — same shape as
+     * {@see Iv3ReportController::isAllowed()}.
+     *
+     * @param string $uid The Nextcloud user id.
+     *
+     * @return bool
+     */
+    private function isAllowed(string $uid): bool
+    {
+        foreach (self::ALLOWED_GROUPS as $group) {
+            if ($this->groupManager->isInGroup($uid, $group) === true) {
+                return true;
+            }
+        }
+
+        return $this->groupManager->isAdmin($uid) === true;
+    }//end isAllowed()
+
+    /**
+     * Validate a `Y-m-d` date string.
+     *
+     * @param string $value Candidate date string.
+     *
+     * @return bool
+     */
+    private function isValidDate(string $value): bool
+    {
+        $date = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
+        return ($date !== false && $date->format('Y-m-d') === $value);
+    }//end isValidDate()
+}//end class
