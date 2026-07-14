@@ -679,7 +679,7 @@
                     }
                 },
                 "icon": "BriefcaseOutline",
-                "version": "1.8.0",
+                "version": "1.9.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "Zaak",
                 "x-openregister-archival": {
@@ -1367,7 +1367,7 @@
                     },
                     "kosten": {
                         "type": "string",
-                        "description": "JSON-encoded array of IV3 cost entries: [{bedrag, type, datum}]. type is \"leges_income\" or \"handling_cost\"; datum is an ISO date. IV3-reporting record only (Iv3ReportService) — not a general ledger; real municipal fee transactions live in Pipelinq per ADR-003.",
+                        "description": "JSON-encoded array of IV3 cost entries: [{bedrag, type, datum, source?, vaststellingId?}]. type is \"leges_income\", \"handling_cost\", or \"subsidy_disbursement\" (auto-appended by VaststellingService::finalize() on a subsidie settlement, source=\"subsidie_vaststelling\" + vaststellingId for idempotency); datum is an ISO date. IV3-reporting record only (Iv3ReportService) — not a general ledger; real municipal fee transactions live in Pipelinq per ADR-003.",
                         "visible": false,
                         "title": "Costs"
                     }

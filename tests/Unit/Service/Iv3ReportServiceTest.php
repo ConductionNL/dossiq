@@ -364,4 +364,35 @@ class Iv3ReportServiceTest extends TestCase
         $this->assertSame(2, $report['perTaakveld']['6.72']['caseCount']);
         $this->assertSame(40.0, $report['perTaakveld']['6.72']['totalCosts']);
     }//end testTwoDifferentRefinementSuccessorsAggregateTogether()
+
+    /**
+     * subsidie-settlement-case-costs: a subsidy_disbursement kosten entry
+     * (auto-appended by VaststellingService::finalize()) counts toward
+     * totalCosts, alongside handling_cost, and never toward leges income.
+     *
+     * @return void
+     */
+    public function testSubsidyDisbursementEntriesCountTowardTotalCosts(): void
+    {
+        $this->seedCaseType('ct-1', '6.3');
+        $this->seedCase(
+            'case-1',
+            'ct-1',
+            [
+                ['bedrag' => 100, 'type' => 'handling_cost', 'datum' => '2026-05-01'],
+                [
+                    'bedrag'         => 330000,
+                    'type'           => 'subsidy_disbursement',
+                    'datum'          => '2026-05-02',
+                    'source'         => 'subsidie_vaststelling',
+                    'vaststellingId' => 'vst-1',
+                ],
+            ]
+        );
+
+        $report = $this->service->generateQuarterlyReport(2026, 2);
+
+        $this->assertSame(330100.0, $report['perTaakveld']['6.3']['totalCosts']);
+        $this->assertSame(0.0, $report['perTaakveld']['6.3']['totalLegesIncome']);
+    }//end testSubsidyDisbursementEntriesCountTowardTotalCosts()
 }//end class
