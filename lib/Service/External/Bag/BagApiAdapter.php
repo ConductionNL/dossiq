@@ -74,8 +74,9 @@ class BagApiAdapter implements BagAdapterInterface
      * @var array<string,string>
      */
     private const OBJECT_PATHS = [
-        'pand'            => 'panden',
-        'verblijfsobject' => 'verblijfsobjecten',
+        'pand'             => 'panden',
+        'verblijfsobject'  => 'verblijfsobjecten',
+        'nummeraanduiding' => 'nummeraanduidingen',
     ];
 
     /**
@@ -267,10 +268,11 @@ class BagApiAdapter implements BagAdapterInterface
     }//end foundAddressResult()
 
     /**
-     * Look up a BAG object (pand or verblijfsobject) by identificatie
-     * against the configured tier.
+     * Look up a BAG object (pand, verblijfsobject, or nummeraanduiding) by
+     * identificatie against the configured tier.
      *
-     * @param string              $objectType `pand` or `verblijfsobject`.
+     * @param string              $objectType `pand`, `verblijfsobject`, or
+     *                                        `nummeraanduiding`.
      * @param string              $id         BAG identificatie.
      * @param array<string,mixed> $context    Lookup context.
      *

@@ -91,7 +91,8 @@ class LogBagAdapter implements BagAdapterInterface
     /**
      * Log the intent + synthesise a LOOKUP_DEFERRED result.
      *
-     * @param string              $objectType `pand` or `verblijfsobject`.
+     * @param string              $objectType `pand`, `verblijfsobject`, or
+     *                                        `nummeraanduiding`.
      * @param string              $id         BAG identificatie.
      * @param array<string,mixed> $context    Lookup context.
      *

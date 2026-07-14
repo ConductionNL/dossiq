@@ -333,6 +333,48 @@ class BagAdapterTest extends TestCase
     }//end testObjectLookup404IsNotFound()
 
     /**
+     * `nummeraanduiding` is a supported object type (bag-location-save-validation)
+     * — it hits `/nummeraanduidingen/{id}` and maps 404 → NOT_FOUND, 2xx →
+     * FOUND, exactly like `pand`/`verblijfsobject`.
+     *
+     * @return void
+     */
+    public function testNummeraanduidingLookupHitsCorrectResourceAndMaps404(): void
+    {
+        $captured = [];
+        $adapter  = new BagApiAdapter(
+            clientService: $this->clientCapturing(404, '', $captured),
+            mode: $this->mode(['integration.bag.mode' => 'test']),
+            mapper: new BagResponseMapper(),
+            logger: $this->createMock(LoggerInterface::class),
+        );
+
+        $result = $adapter->lookupObject(objectType: 'nummeraanduiding', id: '0363010000123456');
+        $this->assertSame('NOT_FOUND', $result->lookupStatus);
+        $this->assertStringEndsWith('/nummeraanduidingen/0363010000123456', $captured['url']);
+    }//end testNummeraanduidingLookupHitsCorrectResourceAndMaps404()
+
+    /**
+     * A found nummeraanduiding maps to FOUND.
+     *
+     * @return void
+     */
+    public function testNummeraanduidingLookupFoundMapsToFound(): void
+    {
+        $captured = [];
+        $adapter  = new BagApiAdapter(
+            clientService: $this->clientCapturing(200, json_encode(['nummeraanduiding' => ['postcode' => '1234AB']]), $captured),
+            mode: $this->mode(['integration.bag.mode' => 'test']),
+            mapper: new BagResponseMapper(),
+            logger: $this->createMock(LoggerInterface::class),
+        );
+
+        $result = $adapter->lookupObject(objectType: 'nummeraanduiding', id: '0363010000123456');
+        $this->assertSame('FOUND', $result->lookupStatus);
+        $this->assertSame('1234AB', $result->address['postcode']);
+    }//end testNummeraanduidingLookupFoundMapsToFound()
+
+    /**
      * A 5xx (or any non-404 non-2xx) status degrades to LOOKUP_ERROR.
      *
      * @return void

@@ -94,9 +94,11 @@ interface BagAdapterInterface
     ): BagLookupResult;
 
     /**
-     * Look up a BAG object (pand or verblijfsobject) by its identificatie.
+     * Look up a BAG object (pand, verblijfsobject, or nummeraanduiding) by
+     * its identificatie.
      *
-     * @param string              $objectType `pand` or `verblijfsobject`.
+     * @param string              $objectType `pand`, `verblijfsobject`, or
+     *                                        `nummeraanduiding`.
      * @param string              $id         BAG identificatie (16 digits).
      * @param array<string,mixed> $context    Optional context — caseId,
      *                                        lookupReason, correlationId.
