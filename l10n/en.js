@@ -714,6 +714,15 @@ OC.L10N.register(
     "Quarterly case cost breakdown per IV3 taakveld, for the CBS Informatie voor Derden submission." : "Quarterly case cost breakdown per IV3 taakveld, for the CBS Informatie voor Derden submission.",
     "Taakveld" : "Taakveld",
     "Total cost" : "Total cost",
-    "Uncategorized" : "Uncategorized"
+    "Uncategorized" : "Uncategorized",
+    "Ask a question about this case. Answers are based only on case data you can already see." : "Ask a question about this case. Answers are based only on case data you can already see.",
+    "Ask a question about this case…" : "Ask a question about this case…",
+    "Ask the assistant" : "Ask the assistant",
+    "The assistant is thinking…" : "The assistant is thinking…",
+    "The case assistant is currently unavailable. Please try again later." : "The case assistant is currently unavailable. Please try again later.",
+    "The message could not be sent. It may be empty or too long." : "The message could not be sent. It may be empty or too long.",
+    "This case could not be found." : "This case could not be found.",
+    "This message was blocked by your organisation's AI guardrail policy." : "This message was blocked by your organisation's AI guardrail policy.",
+    "You are not allowed to use the assistant on this case." : "You are not allowed to use the assistant on this case."
 },
 "nplurals=2; plural=(n != 1);");

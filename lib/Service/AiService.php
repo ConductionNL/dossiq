@@ -46,6 +46,9 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
+ *
+ * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
+ * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
 class AiService
 {
@@ -667,7 +670,8 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $result = $this->callAiModel(prompt: 'Respond with "ok" to confirm connectivity.');
+            // The call itself is the health probe; its payload is irrelevant.
+            $this->callAiModel(prompt: 'Respond with "ok" to confirm connectivity.');
 
             $responseTimeMs = (int) ((microtime(true) - $startTime) * 1000);
 
@@ -867,6 +871,35 @@ class AiService
 
         return $parsed;
     }//end callAiModel()
+
+    /**
+     * Record an audit entry for a case-assistant-via-hermiq conversational
+     * exchange, using the SAME audit sink (register/schema, append-only
+     * OpenRegister write) every discrete AI operation in this class already
+     * writes to — so the existing AI oversight trail
+     * (`listAuditEntries()`/`AiAuditExportController`) covers the
+     * conversational surface too, with no second audit mechanism.
+     *
+     * A thin public forwarder is needed (rather than widening
+     * `recordAuditEntry()` itself to public) because the case-assistant
+     * surface lives in `AssistantController`/`HermiqAssistantClient` — a
+     * separate class per the fleet rule that AI functionality/LLM calls live
+     * in Hermiq, not in this class. This method carries no LLM logic; it only
+     * forwards an already-built entry to the existing writer.
+     *
+     * @param array $entry The audit entry data — same shape as the other
+     *                     `recordAuditEntry()` call sites (`type`, `action`,
+     *                     `caseId`, `model`, `prompt`, `suggestion`,
+     *                     `confidence`, `userId`, `timestamp`, `responseTimeMs`).
+     *
+     * @return void
+     *
+     * @spec openspec/specs/case-assistant-via-hermiq/spec.md
+     */
+    public function recordAssistantAuditEntry(array $entry): void
+    {
+        $this->recordAuditEntry(entry: $entry);
+    }//end recordAssistantAuditEntry()
 
     /**
      * Record an AI audit trail entry in OpenRegister.

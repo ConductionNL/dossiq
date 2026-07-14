@@ -52,6 +52,12 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'ai#updateSettings',  'url' => '/api/ai/settings',        'verb' => 'POST'],
         ['name' => 'ai#healthCheck',     'url' => '/api/ai/health',          'verb' => 'POST'],
 
+        // Case assistant via Hermiq (case-assistant-via-hermiq): thin consumer
+        // surface — conversational assistance is delegated to Hermiq's
+        // case-assistant-surface; this app only enriches with case context.
+        ['name' => 'assistant#availability', 'url' => '/api/assistant/availability', 'verb' => 'GET'],
+        ['name' => 'assistant#converse',     'url' => '/api/assistant/converse',     'verb' => 'POST'],
+
         // Parafering Actions (must precede any wildcard routes).
         ['name' => 'parafeerActie#create', 'url' => '/api/parafeer-actie', 'verb' => 'POST'],
         ['name' => 'parafeerActie#index',  'url' => '/api/parafeer-actie', 'verb' => 'GET'],
