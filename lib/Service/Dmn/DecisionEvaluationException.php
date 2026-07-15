@@ -21,7 +21,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dmn-decision-tables/design.md#decision-4-errors-are-typed-never-silent
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use RuntimeException;
 /**
  * Typed evaluation failure with a stable machine-readable error code.
  *
- * @spec openspec/changes/dmn-decision-tables/tasks.md#task-2.1
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 class DecisionEvaluationException extends RuntimeException
 {
@@ -55,7 +55,7 @@ class DecisionEvaluationException extends RuntimeException
      *
      * @return string
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function getErrorCode(): string
     {
@@ -67,7 +67,7 @@ class DecisionEvaluationException extends RuntimeException
      *
      * @return array<string, mixed>
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function getDetails(): array
     {

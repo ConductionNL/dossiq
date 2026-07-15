@@ -10,7 +10,7 @@
  * execution of any kind, so rule authoring (which end users can do through
  * the settings UI) can never become a code-injection vector.
  *
- * Grammar (see openspec/changes/dmn-decision-tables/design.md Decision 2):
+ * Grammar (see openspec/changes/archive/2026-07-14-dmn-decision-tables/design.md Decision 2):
  *   ''  or  '-'          wildcard — always matches
  *   '"literal"'          explicit quoted literal (escapes wildcard collision)
  *   '< X' '<= X' '> X' '>= X' '= X' '!= X'   comparison, X coerced to type
@@ -32,7 +32,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dmn-decision-tables/design.md#decision-2-expression-grammar-bounded-safe-subset-of-feel
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
@@ -45,7 +45,7 @@ use Throwable;
 /**
  * Pure grammar evaluator for decision-table rule cells.
  *
- * @spec openspec/changes/dmn-decision-tables/tasks.md#task-2.2
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — a closed grammar parser is branchy by nature; every branch is a fixed, tested form
  */
@@ -72,7 +72,7 @@ class ExpressionEvaluator
      *                                      `type_mismatch` when a literal in the expression
      *                                      cannot be coerced to `$type`.
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — one dispatch per grammar form; splitting hides the grammar
      * @SuppressWarnings(PHPMD.NPathComplexity)      — same: the branches are a flat form-dispatch, not nested logic
@@ -134,7 +134,7 @@ class ExpressionEvaluator
      *
      * @throws DecisionEvaluationException `type_mismatch` when coercion fails.
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public static function coerce(mixed $value, string $type): string|float|bool|int
     {

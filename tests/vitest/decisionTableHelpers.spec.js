@@ -7,7 +7,7 @@
  * shape), the rule-count alignment check, the summary string, and the JSON
  * parse guard. No network, no Vue.
  *
- * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 import { describe, it, expect } from 'vitest'

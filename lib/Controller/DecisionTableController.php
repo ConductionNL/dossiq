@@ -21,7 +21,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dmn-decision-tables/tasks.md#task-4.2
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCP\IUserSession;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/dmn-decision-tables/tasks.md#task-4.2
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 class DecisionTableController extends Controller
 {
@@ -95,7 +95,7 @@ class DecisionTableController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function index(): JSONResponse
     {
@@ -120,7 +120,7 @@ class DecisionTableController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function create(): JSONResponse
@@ -148,7 +148,7 @@ class DecisionTableController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function update(string $id): JSONResponse
@@ -176,7 +176,7 @@ class DecisionTableController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function destroy(string $id): JSONResponse
@@ -208,7 +208,7 @@ class DecisionTableController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function evaluate(string $id): JSONResponse
     {

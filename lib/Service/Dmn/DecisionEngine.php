@@ -23,7 +23,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dmn-decision-tables/design.md#decision-3-hit-policies
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ namespace OCA\Procest\Service\Dmn;
 /**
  * Evaluates a decisionTable definition against a runtime inputs map.
  *
- * @spec openspec/changes/dmn-decision-tables/tasks.md#task-3.1
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 class DecisionEngine
 {
@@ -58,7 +58,7 @@ class DecisionEngine
      *                                      `invalid_expression`, `no_rule_matched`,
      *                                      `hit_policy_violation`, `hit_policy_not_implemented`.
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function evaluate(array $decisionTable, array $inputs): array
     {

@@ -23,7 +23,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dmn-decision-tables/tasks.md#task-4.1
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use OCP\AppFramework\OCS\OCSBadRequestException;
 /**
  * Persists and validates decision-table definitions.
  *
- * @spec openspec/changes/dmn-decision-tables/tasks.md#task-4.1
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 class DecisionTableService
 {
@@ -55,7 +55,7 @@ class DecisionTableService
      *
      * @return array<int, array<string, mixed>>
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function listTables(): array
     {
@@ -73,7 +73,7 @@ class DecisionTableService
      *
      * @throws OCSBadRequestException When validation fails.
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function createTable(array $data): array
     {
@@ -92,7 +92,7 @@ class DecisionTableService
      *
      * @throws OCSBadRequestException When validation fails.
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function updateTable(string $id, array $data): array
     {
@@ -108,7 +108,7 @@ class DecisionTableService
      *
      * @return void
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function deleteTable(string $id): void
     {
@@ -123,7 +123,7 @@ class DecisionTableService
      *
      * @return array<string, mixed>|null Null when not found.
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function getTable(string $id): ?array
     {
@@ -152,7 +152,7 @@ class DecisionTableService
      *
      * @return array<string, mixed>|null Null when not found or `key` is empty.
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function findByKey(string $key): ?array
     {
