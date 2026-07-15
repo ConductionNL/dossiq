@@ -29,7 +29,7 @@ export const FIELD_TYPES = ['string', 'number', 'boolean', 'date']
  *
  * @param {object} table The decision table object
  * @return {string} e.g. "UNIQUE · 2 inputs · 2 outputs · 3 rules"
- * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 export function summariseTable(table) {
 	const hitPolicy = (table && table.hitPolicy) || 'UNIQUE'
@@ -47,7 +47,7 @@ export function summariseTable(table) {
  *
  * @param {object} parsed The parsed `{inputs, outputs, rules}` object
  * @return {{valid: boolean, errors: string[]}} Validation result
- * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 export function validateTableStructure(parsed) {
 	const errors = []
@@ -133,7 +133,7 @@ function validateRule(rule, index, inputCount, outputCount, errors) {
  *
  * @param {string} raw The textarea content
  * @return {{ok: boolean, value?: object, error?: string}} Parse result
- * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 export function parseDefinitionJson(raw) {
 	if (typeof raw !== 'string' || raw.trim() === '') {

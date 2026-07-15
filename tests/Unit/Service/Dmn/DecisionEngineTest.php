@@ -20,7 +20,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dmn-decision-tables/tasks.md#task-7.2
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);

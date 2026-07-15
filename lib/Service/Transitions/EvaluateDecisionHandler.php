@@ -29,7 +29,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dmn-decision-tables/design.md#decision-5-workflow-integration-not-an-orphaned-capability
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use RuntimeException;
 /**
  * Built-in handler for `evaluateDecision` automatic actions.
  *
- * @spec openspec/changes/dmn-decision-tables/tasks.md#task-5.1
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 class EvaluateDecisionHandler implements ActionHandlerInterface
 {
@@ -75,7 +75,7 @@ class EvaluateDecisionHandler implements ActionHandlerInterface
      *
      * @return ActionResult
      *
-     * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+     * @spec openspec/specs/dmn-decision-tables/spec.md
      */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {

@@ -18,7 +18,7 @@ const baseUrl = generateUrl('/apps/procest/api/decisions')
  * List all decision tables.
  *
  * @return {Promise<object[]>} The decision tables
- * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 export async function listDecisionTables() {
 	const response = await axios.get(baseUrl)
@@ -30,7 +30,7 @@ export async function listDecisionTables() {
  *
  * @param {object} table The decision table payload
  * @return {Promise<object>} The saved table
- * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 export async function createDecisionTable(table) {
 	const response = await axios.post(baseUrl, table)
@@ -43,7 +43,7 @@ export async function createDecisionTable(table) {
  * @param {string} id The table id
  * @param {object} table The decision table payload
  * @return {Promise<object>} The saved table
- * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 export async function updateDecisionTable(id, table) {
 	const response = await axios.put(`${baseUrl}/${id}`, table)
@@ -55,7 +55,7 @@ export async function updateDecisionTable(id, table) {
  *
  * @param {string} id The table id
  * @return {Promise<void>}
- * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 export async function deleteDecisionTable(id) {
 	await axios.delete(`${baseUrl}/${id}`)
@@ -67,7 +67,7 @@ export async function deleteDecisionTable(id) {
  * @param {string} id The table id
  * @param {object} inputs The input values keyed by input name
  * @return {Promise<object>} `{outputs, matchedRuleIds, hitPolicy}`
- * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+ * @spec openspec/specs/dmn-decision-tables/spec.md
  */
 export async function evaluateDecisionTable(id, inputs) {
 	const response = await axios.post(`${baseUrl}/${id}/evaluate`, inputs)

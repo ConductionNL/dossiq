@@ -142,7 +142,7 @@ export default {
 		 * A blank edit form seeded with a starter definition.
 		 *
 		 * @return {object} The blank form
-		 * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+		 * @spec openspec/specs/dmn-decision-tables/spec.md
 		 */
 		emptyForm() {
 			return {
@@ -159,7 +159,7 @@ export default {
 		 *
 		 * @param {object} item The decision table
 		 * @return {string} The summary
-		 * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+		 * @spec openspec/specs/dmn-decision-tables/spec.md
 		 */
 		summarise(item) {
 			return summariseTable(item)
@@ -168,7 +168,7 @@ export default {
 		 * Load all decision tables.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+		 * @spec openspec/specs/dmn-decision-tables/spec.md
 		 */
 		async loadItems() {
 			this.loading = true
@@ -183,7 +183,7 @@ export default {
 		 * Begin adding a new decision table.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+		 * @spec openspec/specs/dmn-decision-tables/spec.md
 		 */
 		startAdd() {
 			this.editingId = 'new'
@@ -197,7 +197,7 @@ export default {
 		 *
 		 * @param {object} item The decision table
 		 * @return {void}
-		 * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+		 * @spec openspec/specs/dmn-decision-tables/spec.md
 		 */
 		startEdit(item) {
 			this.editingId = item.id
@@ -220,7 +220,7 @@ export default {
 		 * Cancel the current edit.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+		 * @spec openspec/specs/dmn-decision-tables/spec.md
 		 */
 		cancelEdit() {
 			if (this.editingId === 'new') this.items = this.items.filter(i => i.id !== 'new')
@@ -232,7 +232,7 @@ export default {
 		 * Validate and persist the current edit.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+		 * @spec openspec/specs/dmn-decision-tables/spec.md
 		 */
 		async saveEdit() {
 			this.editError = ''
@@ -290,7 +290,7 @@ export default {
 		 *
 		 * @param {object} item The decision table
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/dmn-decision-tables/specs/dmn-decision-tables/spec.md
+		 * @spec openspec/specs/dmn-decision-tables/spec.md
 		 */
 		async deleteItem(item) {
 			if (!confirm(t('procest', 'Delete decision table "{name}"?', { name: item.name }))) return
