@@ -492,6 +492,65 @@ class Application extends App implements IBootstrap
                 return $c->get(\OCA\Procest\Service\External\Bag\LogBagAdapter::class);
             }
         );
+        // BRK (Basisregistratie Kadaster) — authoritative parcel/ownership-reference
+        // lookup (brk-woz-register-adapters). Selected by `integration.brk.mode`
+        // (external-integrations-test-environments config-tier model). DEFAULT `log` =
+        // dormant (no external call). `test`/`live` binds the BrkApiAdapter (Kadaster
+        // Haal Centraal BRK Bevragen API v2) — see
+        // openspec/changes/brk-woz-register-adapters/design.md.
+        $context->registerService(
+            \OCA\Procest\Service\External\Brk\BrkAdapterInterface::class,
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\External\Brk\BrkAdapterInterface {
+                $modeService = $c->get(\OCA\Procest\Service\External\IntegrationMode::class);
+                $mode        = $modeService->resolve(
+                        'brk',
+                        [
+                            \OCA\Procest\Service\External\IntegrationMode::TEST,
+                            \OCA\Procest\Service\External\IntegrationMode::LIVE,
+                        ]
+                        );
+                if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
+                    return new \OCA\Procest\Service\External\Brk\BrkApiAdapter(
+                        clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+                        mode: $modeService,
+                        mapper: $c->get(\OCA\Procest\Service\External\Brk\BrkResponseMapper::class),
+                        logger: $c->get('Psr\\Log\\LoggerInterface'),
+                    );
+                }
+
+                return $c->get(\OCA\Procest\Service\External\Brk\LogBrkAdapter::class);
+            }
+        );
+        // WOZ (Waardering Onroerende Zaken) — authoritative property-valuation lookup
+        // (brk-woz-register-adapters). Selected by `integration.woz.mode`
+        // (external-integrations-test-environments config-tier model). DEFAULT `log` =
+        // dormant (no external call). `test`/`live` binds the WozApiAdapter (Kadaster
+        // Haal Centraal WOZ Bevragen API). Deliberately NOT bound to the public
+        // WOZ-waardeloket, which has no programmatic API — see
+        // openspec/changes/brk-woz-register-adapters/design.md Decision 2.
+        $context->registerService(
+            \OCA\Procest\Service\External\Woz\WozAdapterInterface::class,
+            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\External\Woz\WozAdapterInterface {
+                $modeService = $c->get(\OCA\Procest\Service\External\IntegrationMode::class);
+                $mode        = $modeService->resolve(
+                        'woz',
+                        [
+                            \OCA\Procest\Service\External\IntegrationMode::TEST,
+                            \OCA\Procest\Service\External\IntegrationMode::LIVE,
+                        ]
+                        );
+                if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
+                    return new \OCA\Procest\Service\External\Woz\WozApiAdapter(
+                        clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+                        mode: $modeService,
+                        mapper: $c->get(\OCA\Procest\Service\External\Woz\WozResponseMapper::class),
+                        logger: $c->get('Psr\\Log\\LoggerInterface'),
+                    );
+                }
+
+                return $c->get(\OCA\Procest\Service\External\Woz\LogWozAdapter::class);
+            }
+        );
         // TMLO metadata building + e-Depot submission adapter seams retired
         // (migrate-archival-to-or, ADR-022): OpenRegister's TmloService builds
         // TMLO/MDTO metadata from schema config and its Edepot/Transport seam owns

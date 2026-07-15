@@ -230,6 +230,21 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'bag#pand', 'url' => '/api/external/bag/pand/{id}', 'verb' => 'GET'],
         ['name' => 'bag#verblijfsobject', 'url' => '/api/external/bag/verblijfsobject/{id}', 'verb' => 'GET'],
 
+        // ── BRK (Basisregistratie Kadaster) lookup (brk-woz-register-adapters) ──
+        // Authoritative parcel/ownership-reference lookup, dormant by default
+        // (integration.brk.mode) — see
+        // openspec/changes/brk-woz-register-adapters/design.md.
+        ['name' => 'brk#parcel', 'url' => '/api/external/brk/parcel', 'verb' => 'GET'],
+        ['name' => 'brk#object', 'url' => '/api/external/brk/parcel/{id}', 'verb' => 'GET'],
+
+        // ── WOZ (Waardering Onroerende Zaken) lookup (brk-woz-register-adapters) ──
+        // Authoritative property-valuation lookup, dormant by default
+        // (integration.woz.mode). Deliberately NOT bound to the public
+        // WOZ-waardeloket, which has no programmatic API — see
+        // openspec/changes/brk-woz-register-adapters/design.md Decision 2.
+        ['name' => 'woz#value', 'url' => '/api/external/woz/value', 'verb' => 'GET'],
+        ['name' => 'woz#object', 'url' => '/api/external/woz/value/{wozobjectnummer}', 'verb' => 'GET'],
+
         // ── Parafeerroute (B&W parafering engine) ───────────────────────
         // CRUD on parafeerroute objects is served by OpenRegister's auto-exposed
         // /api/objects/<register>/<schema> endpoints — only engine routes remain.
