@@ -138,6 +138,8 @@ class SettingsService
         'routing_rule_schema',
         'kcc_agent_schema',
         'callback_request_schema',
+        // DMN decision tables (dmn-decision-tables spec).
+        'decision_table_schema',
         // Subsidieverlening-keten (subsidieverlening-keten spec) — AWB titel 4.2.
         'subsidie_regeling_schema',
         'subsidie_aanvraag_schema',
@@ -363,6 +365,7 @@ class SettingsService
         'bezwaarDecision'              => 'bezwaar_decision_schema',
         'routingRule'                  => 'routing_rule_schema',
         'kccAgent'                     => 'kcc_agent_schema',
+        'decisionTable'                => 'decision_table_schema',
         'callbackRequest'              => 'callback_request_schema',
         'subsidieRegeling'             => 'subsidie_regeling_schema',
         'subsidieAanvraag'             => 'subsidie_aanvraag_schema',

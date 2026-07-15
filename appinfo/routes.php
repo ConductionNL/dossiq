@@ -70,6 +70,13 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'kccRouting#update',   'url' => '/api/kcc/routing-rules/{id}', 'verb' => 'PUT'],
         ['name' => 'kccRouting#destroy',  'url' => '/api/kcc/routing-rules/{id}', 'verb' => 'DELETE'],
 
+        // DMN decision tables (dmn-decision-tables spec).
+        ['name' => 'decisionTable#index',    'url' => '/api/decisions',              'verb' => 'GET'],
+        ['name' => 'decisionTable#create',   'url' => '/api/decisions',              'verb' => 'POST'],
+        ['name' => 'decisionTable#evaluate', 'url' => '/api/decisions/{id}/evaluate', 'verb' => 'POST'],
+        ['name' => 'decisionTable#update',   'url' => '/api/decisions/{id}',          'verb' => 'PUT'],
+        ['name' => 'decisionTable#destroy',  'url' => '/api/decisions/{id}',          'verb' => 'DELETE'],
+
         ['name' => 'kccContact#indexCallbacks',  'url' => '/api/kcc/callback-requests', 'verb' => 'GET'],
         ['name' => 'kccContact#scheduleCallback', 'url' => '/api/kcc/callback-requests', 'verb' => 'POST'],
         ['name' => 'kccContact#cancelCallback',  'url' => '/api/kcc/callback-requests/{id}/cancel', 'verb' => 'POST'],

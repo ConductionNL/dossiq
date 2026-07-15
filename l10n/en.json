@@ -2776,7 +2776,19 @@
         "No case plan items": "No case plan items",
         "optional": "optional",
         "Terminate this task": "Terminate this task",
-        "This action could not be completed. The case plan may have changed — try reloading.": "This action could not be completed. The case plan may have changed — try reloading."
+        "This action could not be completed. The case plan may have changed — try reloading.": "This action could not be completed. The case plan may have changed — try reloading.",
+        "A JSON object with inputs[], outputs[] and rules[]. Each rule row aligns positionally to the inputs and outputs.": "A JSON object with inputs[], outputs[] and rules[]. Each rule row aligns positionally to the inputs and outputs.",
+        "Add Decision Table": "Add Decision Table",
+        "Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.": "Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.",
+        "Could not save the decision table.": "Could not save the decision table.",
+        "Decision Tables (DMN)": "Decision Tables (DMN)",
+        "Delete decision table \"{name}\"?": "Delete decision table \"{name}\"?",
+        "Hit policy": "Hit policy",
+        "Inputs, outputs and rules (JSON)": "Inputs, outputs and rules (JSON)",
+        "Key (used to invoke the decision)": "Key (used to invoke the decision)",
+        "Key is required": "Key is required",
+        "No decision tables configured yet.": "No decision tables configured yet.",
+        "The decision definition has structural errors.": "The decision definition has structural errors."
     },
     "plurals": ""
 }

@@ -2381,7 +2381,19 @@ OC.L10N.register(
         "The message could not be sent. It may be empty or too long.": "Het bericht kon niet worden verzonden. Het is mogelijk leeg of te lang.",
         "This case could not be found.": "Deze zaak kon niet worden gevonden.",
         "This message was blocked by your organisation's AI guardrail policy.": "Dit bericht is geblokkeerd door het AI-guardrailbeleid van uw organisatie.",
-        "You are not allowed to use the assistant on this case.": "U mag de assistent niet gebruiken voor deze zaak."
+        "You are not allowed to use the assistant on this case.": "U mag de assistent niet gebruiken voor deze zaak.",
+        "Decision Tables (DMN)": "Beslistabellen (DMN)",
+        "Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.": "Configureer DMN-beslistabellen (inputs, outputs, regels en een hit policy) die domeinexperts zonder ontwikkelaar kunnen beheren. Een workflowstap kan een beslissing op sleutel aanroepen, en beslissingen zijn ook te evalueren via de REST-API.",
+        "Add Decision Table": "Beslistabel toevoegen",
+        "No decision tables configured yet.": "Nog geen beslistabellen geconfigureerd.",
+        "Key (used to invoke the decision)": "Sleutel (gebruikt om de beslissing aan te roepen)",
+        "Hit policy": "Hit policy",
+        "Inputs, outputs and rules (JSON)": "Inputs, outputs en regels (JSON)",
+        "A JSON object with inputs[], outputs[] and rules[]. Each rule row aligns positionally to the inputs and outputs.": "Een JSON-object met inputs[], outputs[] en rules[]. Elke regelrij correspondeert positioneel met de inputs en outputs.",
+        "Key is required": "Sleutel is verplicht",
+        "The decision definition has structural errors.": "De beslisdefinitie bevat structurele fouten.",
+        "Could not save the decision table.": "Kon de beslistabel niet opslaan.",
+        "Delete decision table \"{name}\"?": "Beslistabel \"{name}\" verwijderen?"
     },
     "nplurals=2; plural=(n != 1);"
 )

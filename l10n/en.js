@@ -723,6 +723,18 @@ OC.L10N.register(
     "The message could not be sent. It may be empty or too long." : "The message could not be sent. It may be empty or too long.",
     "This case could not be found." : "This case could not be found.",
     "This message was blocked by your organisation's AI guardrail policy." : "This message was blocked by your organisation's AI guardrail policy.",
-    "You are not allowed to use the assistant on this case." : "You are not allowed to use the assistant on this case."
+    "You are not allowed to use the assistant on this case." : "You are not allowed to use the assistant on this case.",
+    "Decision Tables (DMN)" : "Decision Tables (DMN)",
+    "Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API." : "Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.",
+    "Add Decision Table" : "Add Decision Table",
+    "No decision tables configured yet." : "No decision tables configured yet.",
+    "Key (used to invoke the decision)" : "Key (used to invoke the decision)",
+    "Hit policy" : "Hit policy",
+    "Inputs, outputs and rules (JSON)" : "Inputs, outputs and rules (JSON)",
+    "A JSON object with inputs[], outputs[] and rules[]. Each rule row aligns positionally to the inputs and outputs." : "A JSON object with inputs[], outputs[] and rules[]. Each rule row aligns positionally to the inputs and outputs.",
+    "Key is required" : "Key is required",
+    "The decision definition has structural errors." : "The decision definition has structural errors.",
+    "Could not save the decision table." : "Could not save the decision table.",
+    "Delete decision table \"{name}\"?" : "Delete decision table \"{name}\"?"
 },
 "nplurals=2; plural=(n != 1);");
