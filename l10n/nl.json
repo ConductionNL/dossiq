@@ -2768,6 +2768,14 @@
         "Ranked by median dwell time × case volume — the statuses most worth investigating first.": "Gerangschikt op mediane verblijftijd × zaakvolume — de statussen die het eerst onderzoek verdienen.",
         "Score": "Score",
         "Top bottleneck": "Grootste knelpunt",
-        "Visits": "Bezoeken"
+        "Visits": "Bezoeken",
+        "Achieved": "Behaald",
+        "Complete this task": "Deze taak afronden",
+        "Enable": "Inschakelen",
+        "Enable this optional task": "Deze optionele taak inschakelen",
+        "No case plan items": "Geen zaakplanonderdelen",
+        "optional": "optioneel",
+        "Terminate this task": "Deze taak beëindigen",
+        "This action could not be completed. The case plan may have changed — try reloading.": "Deze actie kon niet worden voltooid. Het zaakplan is mogelijk gewijzigd — probeer opnieuw te laden."
     }
 }

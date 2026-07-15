@@ -343,6 +343,17 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'statusTransition#bulkPreview', 'url' => '/api/cases/bulk-transition/preview', 'verb' => 'POST'],
         ['name' => 'statusTransition#bulkExecute', 'url' => '/api/cases/bulk-transition/execute', 'verb' => 'POST'],
 
+        // ── CMMN Adaptive Case Engine (cmmn-adaptive-case) ──────────────
+        // Sibling to the Status Transition Engine above: single write-path
+        // for case.casePlanState on CMMN-managed caseTypes (handlingModel =
+        // 'cmmn'). BPMN-managed caseTypes never reach these routes — the
+        // engine itself refuses to operate on them (case_not_cmmn_managed).
+        ['name' => 'cmmnCase#plan',      'url' => '/api/case/{caseId}/cmmn-plan',           'verb' => 'GET'],
+        ['name' => 'cmmnCase#enable',    'url' => '/api/case/{caseId}/cmmn-plan/enable',    'verb' => 'POST'],
+        ['name' => 'cmmnCase#complete',  'url' => '/api/case/{caseId}/cmmn-plan/complete',  'verb' => 'POST'],
+        ['name' => 'cmmnCase#terminate', 'url' => '/api/case/{caseId}/cmmn-plan/terminate', 'verb' => 'POST'],
+        ['name' => 'cmmnCase#signal',    'url' => '/api/case/{caseId}/cmmn-plan/signal',    'verb' => 'POST'],
+
         // Multi-Tenant SaaS — domain endpoints only. Generic tenant CRUD
         // (list/create/update/destroy) is rendered by the manifest pages
         // at /settings/tenants and proxied directly to OpenRegister; this

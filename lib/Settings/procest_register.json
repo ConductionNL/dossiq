@@ -82,6 +82,16 @@
                         "title": "Initial status",
                         "description": "Reference to the statusType a new case of this type starts in (typically the lowest-order status). Read by the case schema's x-openregister-lifecycle to set status declaratively on create."
                     },
+                    "handlingModel": {
+                        "type": "string",
+                        "enum": [
+                            "bpmn",
+                            "cmmn"
+                        ],
+                        "default": "bpmn",
+                        "title": "Handling Model",
+                        "description": "Which process-handling engine drives cases of this type. 'bpmn' (default) = the structured workflowTemplate/StatusTransitionService engine, unchanged. 'cmmn' = the adaptive CaseModelEngine (caseModel definition, case.casePlanState runtime). A caseType is driven by exactly one of the two — see openspec/specs/cmmn-adaptive-case/spec.md REQ-CMMN-008."
+                    },
                     "confidentiality": {
                         "type": "string",
                         "enum": [
@@ -1169,6 +1179,12 @@
                         "description": "History of status changes (JSON-encoded array)",
                         "visible": false,
                         "title": "Status History"
+                    },
+                    "casePlanState": {
+                        "type": "string",
+                        "description": "CMMN runtime plan-item state (JSON-encoded object: planItemStates, milestones, caseFile, eventLog), written exclusively by CaseModelEngine. Present only when caseType.handlingModel = 'cmmn'; absent/empty for BPMN-handled cases. Single OR write path per case — see openspec/specs/cmmn-adaptive-case/spec.md REQ-CMMN-006.",
+                        "visible": false,
+                        "title": "Case Plan State"
                     },
                     "activity": {
                         "type": "string",

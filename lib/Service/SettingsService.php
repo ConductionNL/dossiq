@@ -425,6 +425,8 @@ class SettingsService
         'zaakinformatieobject'         => 'dossier_zaakinformatieobject_schema',
         'besluitinformatieobject'      => 'dossier_besluitinformatieobject_schema',
         'informatieobjecttype'         => 'dossier_informatieobjecttype_schema',
+        // CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).
+        'caseModel'                    => 'case_model_schema',
     ];
 
     /**

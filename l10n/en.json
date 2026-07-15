@@ -2768,7 +2768,15 @@
         "The message could not be sent. It may be empty or too long.": "The message could not be sent. It may be empty or too long.",
         "This case could not be found.": "This case could not be found.",
         "This message was blocked by your organisation's AI guardrail policy.": "This message was blocked by your organisation's AI guardrail policy.",
-        "You are not allowed to use the assistant on this case.": "You are not allowed to use the assistant on this case."
+        "You are not allowed to use the assistant on this case.": "You are not allowed to use the assistant on this case.",
+        "Achieved": "Achieved",
+        "Complete this task": "Complete this task",
+        "Enable": "Enable",
+        "Enable this optional task": "Enable this optional task",
+        "No case plan items": "No case plan items",
+        "optional": "optional",
+        "Terminate this task": "Terminate this task",
+        "This action could not be completed. The case plan may have changed — try reloading.": "This action could not be completed. The case plan may have changed — try reloading."
     },
     "plurals": ""
 }

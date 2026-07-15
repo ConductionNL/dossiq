@@ -745,7 +745,8 @@
 					{ "id": "case-contacts", "type": "integration", "integrationId": "contacts", "title": "Connected contacts", "icon": "AccountGroup" },
 					{ "id": "case-calendar", "type": "integration", "integrationId": "calendar", "title": "Appointments & hearings", "icon": "Calendar" },
 					{ "id": "case-decidesk-decisions", "type": "integration", "integrationId": "decidesk-decisions", "title": "Besluitvorming", "icon": "Gavel" },
-					{ "id": "case-assistant", "type": "custom", "title": "Case assistant", "icon": "Creation", "_note": "Case-assistant chat panel (case-assistant-via-hermiq). Resolved via page slots (widget-case-assistant -> CaseAssistantPanel); conversational assistance is delegated to Hermiq (fleet rule: AI lives in Hermiq), procest only enriches with case context the current user may read. Availability-gated: renders nothing when the hermiq app is not installed/enabled." }
+					{ "id": "case-assistant", "type": "custom", "title": "Case assistant", "icon": "Creation", "_note": "Case-assistant chat panel (case-assistant-via-hermiq). Resolved via page slots (widget-case-assistant -> CaseAssistantPanel); conversational assistance is delegated to Hermiq (fleet rule: AI lives in Hermiq), procest only enriches with case context the current user may read. Availability-gated: renders nothing when the hermiq app is not installed/enabled." },
+					{ "id": "cmmn-case-plan", "type": "custom", "title": "Adaptive case plan", "icon": "Sitemap", "_note": "CMMN adaptive case-plan panel (cmmn-adaptive-case). Resolved via page slots (widget-cmmn-case-plan -> CmmnCasePlanPanel); the CMMN counterpart to the BPMN status-transition engine, for caseTypes with handlingModel = 'cmmn'. Renders nothing when this case's caseType is BPMN-managed." }
 				],
 				"layout": [
 					{ "id": "1", "widgetId": "case-core", "gridX": 0, "gridY": 0, "gridWidth": 8, "gridHeight": 5, "showTitle": false },
@@ -766,7 +767,8 @@
 					{ "id": "6", "widgetId": "case-contacts", "gridX": 0, "gridY": 28, "gridWidth": 6, "gridHeight": 3 },
 					{ "id": "7", "widgetId": "case-notes", "gridX": 6, "gridY": 28, "gridWidth": 6, "gridHeight": 4 },
 					{ "id": "19", "widgetId": "case-decidesk-decisions", "gridX": 0, "gridY": 32, "gridWidth": 12, "gridHeight": 4 },
-					{ "id": "20", "widgetId": "case-assistant", "gridX": 0, "gridY": 36, "gridWidth": 12, "gridHeight": 5, "showTitle": true }
+					{ "id": "20", "widgetId": "case-assistant", "gridX": 0, "gridY": 36, "gridWidth": 12, "gridHeight": 5, "showTitle": true },
+					{ "id": "21", "widgetId": "cmmn-case-plan", "gridX": 0, "gridY": 41, "gridWidth": 12, "gridHeight": 6, "showTitle": true }
 				],
 				"lifecycleActions": { "field": "status" },
 				"sidebar": {
@@ -781,7 +783,8 @@
 			},
 			"slots": {
 				"widget-initiator": "InitiatorSection",
-				"widget-case-assistant": "CaseAssistantPanel"
+				"widget-case-assistant": "CaseAssistantPanel",
+				"widget-cmmn-case-plan": "CmmnCasePlanPanel"
 			}
 		},
 		{
