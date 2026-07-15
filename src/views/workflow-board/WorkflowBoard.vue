@@ -133,11 +133,39 @@ export default {
 			selection: emptySelection(),
 			/** Whether the bulk-transition dialog is open. */
 			showBulkDialog: false,
+			/**
+			 * Live-updates handle for the or-collection-{register}-{schema}
+			 * subscription on the `case` type (nc-vue liveUpdatesPlugin,
+			 * default-on since beta.212). Managed by syncLiveSubscription().
+			 * livePending marks an in-flight subscribe so a concurrent call
+			 * doesn't double-subscribe; liveEpoch invalidates in-flight
+			 * resolutions after a release (destroy). Events are refetch
+			 * HINTS only: the board re-runs fetchData() (debounced via
+			 * liveRefetchTimer), never patching from a payload.
+			 */
+			liveHandle: null,
+			livePending: false,
+			liveEpoch: 0,
+			liveRefetchTimer: null,
+			/** Whether a non-blanking background refresh is in flight. */
+			liveRefreshing: false,
 		}
 	},
 	computed: {
 		objectStore() {
 			return useObjectStore()
+		},
+	},
+	watch: {
+		/**
+		 * Live event hint received on the store (or-collection event →
+		 * liveUpdatesPlugin) — refresh the board through the existing
+		 * fetch path, debounced, never patched from a payload.
+		 *
+		 * @spec openspec/specs/realtime-updates-ui/spec.md
+		 */
+		'objectStore.liveLastEventAt'() {
+			this.onLiveEvent()
 		},
 	},
 	// @spec exclude Boot-order guard (register OR object types before fetch); no spec scenario.
@@ -147,16 +175,115 @@ export default {
 		// resolved, otherwise fetchCollection() throws "type not registered".
 		await initializeStores()
 		await this.fetchData()
+		this.syncLiveSubscription()
+	},
+	/**
+	 * Release the live collection subscription on unmount.
+	 *
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
+	 */
+	beforeDestroy() {
+		clearTimeout(this.liveRefetchTimer)
+		this.releaseLiveSubscription()
 	},
 	methods: {
+		/**
+		 * Subscribe to live updates for the `case` collection scope
+		 * (or-collection-{register}-{schema} via notify_push, with
+		 * visibility-gated polling fallback). Idempotent; guarded with a
+		 * pending marker plus an epoch counter so a release during an
+		 * in-flight subscribe drops the stale handle instead of leaking it.
+		 *
+		 * @spec openspec/specs/realtime-updates-ui/spec.md
+		 * @return {Promise<void>}
+		 */
+		async syncLiveSubscription() {
+			const store = this.objectStore
+			if (typeof store.subscribe !== 'function' || this.liveHandle || this.livePending) {
+				return
+			}
+			if (!store.objectTypeRegistry?.case) {
+				return
+			}
+			this.livePending = true
+			const epoch = this.liveEpoch
+			try {
+				const handle = await store.subscribe('case')
+				if (this.liveEpoch !== epoch) {
+					// Released while awaiting (destroy) — drop the stale
+					// subscription instead of leaking it.
+					store.unsubscribe(handle)
+					return
+				}
+				this.liveHandle = handle
+			} catch (err) {
+				console.warn('[WorkflowBoard] live subscription failed:', err?.message ?? err)
+			} finally {
+				if (this.liveEpoch === epoch) {
+					this.livePending = false
+				}
+			}
+		},
+		/**
+		 * Release the live collection subscription, if any, and invalidate
+		 * any in-flight subscribe (its resolution unsubscribes itself via
+		 * the epoch check).
+		 *
+		 * @spec openspec/specs/realtime-updates-ui/spec.md
+		 */
+		releaseLiveSubscription() {
+			this.liveEpoch += 1
+			this.livePending = false
+			if (this.liveHandle && typeof this.objectStore.unsubscribe === 'function') {
+				this.objectStore.unsubscribe(this.liveHandle)
+			}
+			this.liveHandle = null
+		},
+		/**
+		 * Debounced refetch on a live event hint. The board keeps its own
+		 * column/grouping model, so re-run the existing fetchData() path
+		 * instead of patching from a payload. Skipped while a fetch is
+		 * already in flight.
+		 *
+		 * @spec openspec/specs/realtime-updates-ui/spec.md
+		 */
+		onLiveEvent() {
+			if (!this.liveHandle) {
+				return
+			}
+			clearTimeout(this.liveRefetchTimer)
+			this.liveRefetchTimer = setTimeout(async () => {
+				// Skip while an initial load / another refresh is running, or
+				// while the user is mid-drag or mid-bulk-transition — the
+				// post-save server event triggers a fresh hint anyway.
+				if (this.loading || this.liveRefreshing || this.draggedCaseId || this.showBulkDialog) {
+					return
+				}
+				// Non-blanking: the template swaps the whole board for a
+				// spinner on `loading`, so a background refresh must not
+				// toggle it.
+				this.liveRefreshing = true
+				try {
+					await this.fetchData({ background: true })
+				} finally {
+					this.liveRefreshing = false
+				}
+			}, 500)
+		},
 		/**
 		 * Load status types, case types and open cases in parallel, then build
 		 * the column model and the status → cases grouping.
 		 *
+		 * @param {object} [options] Fetch options
+		 * @param {boolean} [options.background] When true (live-update refresh),
+		 *   don't toggle `loading` — the template blanks the whole board for a
+		 *   spinner on it, which would flash on every push event.
 		 * @return {Promise<void>}
 		 */
-		async fetchData() {
-			this.loading = true
+		async fetchData({ background = false } = {}) {
+			if (!background) {
+				this.loading = true
+			}
 			this.error = null
 			try {
 				const [statusTypes, caseTypes, cases] = await Promise.all([
@@ -223,7 +350,9 @@ export default {
 				console.error('[procest] failed to load workflow board', err)
 				this.error = this.t('procest', 'Failed to load the workflow board.')
 			} finally {
-				this.loading = false
+				if (!background) {
+					this.loading = false
+				}
 			}
 		},
 		/**

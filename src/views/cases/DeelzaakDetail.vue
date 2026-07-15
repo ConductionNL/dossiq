@@ -134,6 +134,22 @@ export default {
 			caseType: null,
 			statusType: null,
 			loading: true,
+			/**
+			 * Live-updates handle for the or-object-{uuid} subscription of
+			 * the viewed sub-case (nc-vue liveUpdatesPlugin, default-on
+			 * since beta.212). Managed by syncLiveSubscription(); liveKey
+			 * is the subscribed uuid so a re-render for the same object is
+			 * a no-op. livePendingKey marks an in-flight subscribe;
+			 * liveEpoch invalidates in-flight resolutions after a release
+			 * (object switch / destroy). Events are refetch HINTS only —
+			 * reload() re-runs the existing fetch path (debounced).
+			 */
+			liveHandle: null,
+			liveKey: '',
+			livePendingKey: '',
+			liveEpoch: 0,
+			liveRefetchTimer: null,
+			liveRefreshing: false,
 		}
 	},
 	computed: {
@@ -172,7 +188,18 @@ export default {
 			immediate: false,
 			handler() {
 				this.reload()
+				this.syncLiveSubscription()
 			},
+		},
+		/**
+		 * Live event hint received on the store (or-object event →
+		 * liveUpdatesPlugin) — reload through the existing fetch path,
+		 * debounced, never patched from a payload.
+		 *
+		 * @spec openspec/specs/realtime-updates-ui/spec.md
+		 */
+		'objectStore.liveLastEventAt'() {
+			this.onLiveEvent()
 		},
 	},
 	async mounted() {
@@ -181,15 +208,124 @@ export default {
 		// mount first, so wait for the registry before fetching.
 		await initializeStores()
 		await this.reload()
+		this.syncLiveSubscription()
+	},
+	/**
+	 * Release the live object subscription on unmount.
+	 *
+	 * @spec openspec/specs/realtime-updates-ui/spec.md
+	 */
+	beforeDestroy() {
+		clearTimeout(this.liveRefetchTimer)
+		this.releaseLiveSubscription()
 	},
 	methods: {
 		formatDate,
-		async reload() {
+		/**
+		 * Subscribe to live updates for the viewed sub-case
+		 * (or-object-{uuid} via notify_push, polling fallback).
+		 * Idempotent per uuid; releases the previous subscription when
+		 * another sub-case is opened. Guarded with a pending-key marker
+		 * plus an epoch counter so a release during an in-flight
+		 * subscribe drops the stale handle instead of leaking it.
+		 *
+		 * @spec openspec/specs/realtime-updates-ui/spec.md
+		 * @return {Promise<void>}
+		 */
+		async syncLiveSubscription() {
+			const store = this.objectStore
+			if (typeof store.subscribe !== 'function') {
+				return
+			}
+			const uuid = this.subCaseIdFromRoute
+			if (!uuid || !store.objectTypeRegistry?.case) {
+				this.releaseLiveSubscription()
+				return
+			}
+			if ((this.liveHandle && this.liveKey === uuid) || this.livePendingKey === uuid) {
+				return
+			}
+			this.releaseLiveSubscription()
+			const epoch = this.liveEpoch
+			this.livePendingKey = uuid
+			this.liveKey = uuid
+			try {
+				const handle = await store.subscribe('case', uuid)
+				if (this.liveEpoch !== epoch) {
+					// Released while awaiting (another sub-case opened, or
+					// the view was destroyed) — drop the stale subscription.
+					store.unsubscribe(handle)
+					return
+				}
+				this.liveHandle = handle
+			} catch (err) {
+				this.liveHandle = null
+				this.liveKey = ''
+				console.warn('[DeelzaakDetail] live subscription failed:', err?.message ?? err)
+			} finally {
+				if (this.livePendingKey === uuid) {
+					this.livePendingKey = ''
+				}
+			}
+		},
+		/**
+		 * Release the current live object subscription and invalidate any
+		 * in-flight subscribe (its resolution unsubscribes itself via the
+		 * epoch check).
+		 *
+		 * @spec openspec/specs/realtime-updates-ui/spec.md
+		 */
+		releaseLiveSubscription() {
+			this.liveEpoch += 1
+			this.livePendingKey = ''
+			if (this.liveHandle && typeof this.objectStore.unsubscribe === 'function') {
+				this.objectStore.unsubscribe(this.liveHandle)
+			}
+			this.liveHandle = null
+			this.liveKey = ''
+		},
+		/**
+		 * Debounced reload on a live event hint — through the existing
+		 * reload() path (non-blanking), never patched from a payload.
+		 *
+		 * @spec openspec/specs/realtime-updates-ui/spec.md
+		 */
+		onLiveEvent() {
+			if (!this.liveHandle) {
+				return
+			}
+			clearTimeout(this.liveRefetchTimer)
+			this.liveRefetchTimer = setTimeout(async () => {
+				if (this.loading || this.liveRefreshing) {
+					return
+				}
+				// Non-blanking: the template swaps the content for a spinner
+				// on `loading`, so a background reload must not toggle it.
+				this.liveRefreshing = true
+				try {
+					await this.reload({ background: true })
+				} finally {
+					this.liveRefreshing = false
+				}
+			}, 500)
+		},
+		/**
+		 * Load the sub-case with its parent, case type and status type.
+		 *
+		 * @param {object} [options] Fetch options
+		 * @param {boolean} [options.background] When true (live-update
+		 *   refresh), don't toggle `loading` — the template blanks the
+		 *   whole view for a spinner on it.
+		 * @return {Promise<void>}
+		 */
+		async reload({ background = false } = {}) {
 			if (!this.subCaseIdFromRoute) {
 				this.loading = false
 				return
 			}
-			this.loading = true
+			if (!background) {
+				this.loading = true
+			}
 			try {
 				this.subCase = await this.objectStore
 					.fetchObject('case', this.subCaseIdFromRoute)
@@ -227,7 +363,9 @@ export default {
 			} catch (err) {
 				console.error('[DeelzaakDetail] reload failed', err)
 			} finally {
-				this.loading = false
+				if (!background) {
+					this.loading = false
+				}
 			}
 		},
 		goToParent() {
