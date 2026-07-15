@@ -42,6 +42,10 @@ import InitiatorSection from './components/initiator/InitiatorSection.vue'
 // (fleet rule: AI functionality lives in Hermiq; procest is a thin consumer).
 // @spec openspec/specs/case-assistant-via-hermiq/spec.md
 import CaseAssistantPanel from './views/cases/components/CaseAssistantPanel.vue'
+// CMMN adaptive case-plan panel — sibling to the BPMN status-transition
+// engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
+// @spec openspec/specs/cmmn-adaptive-case/spec.md
+import CmmnCasePlanPanel from './views/cases/components/CmmnCasePlanPanel.vue'
 import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
 import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
@@ -237,6 +241,14 @@ const registry = {
 		kind: 'widget',
 		component: CaseAssistantPanel,
 		_note: 'CaseDetail chat panel delegating conversational assistance to Hermiq (fleet rule: AI lives in Hermiq; procest only enriches with authorized case context). Availability-gated: renders NOTHING when the hermiq app is not installed/enabled.',
+	},
+
+	// --- CMMN adaptive case plan (cmmn-adaptive-case). ---
+	// @spec openspec/specs/cmmn-adaptive-case/spec.md
+	CmmnCasePlanPanel: {
+		kind: 'widget',
+		component: CmmnCasePlanPanel,
+		_note: 'CaseDetail adaptive case-plan panel — the CMMN counterpart to the BPMN status-transition header actions. Renders items grouped by stage with state badges and enable/complete/terminate actions. Renders NOTHING when the case\'s caseType is not CMMN-managed (handlingModel !== "cmmn").',
 	},
 
 	// --- Migration cost: deferred to a follow-up. ---
