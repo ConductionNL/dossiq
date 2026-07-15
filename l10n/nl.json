@@ -2768,6 +2768,18 @@
         "Ranked by median dwell time × case volume — the statuses most worth investigating first.": "Gerangschikt op mediane verblijftijd × zaakvolume — de statussen die het eerst onderzoek verdienen.",
         "Score": "Score",
         "Top bottleneck": "Grootste knelpunt",
-        "Visits": "Bezoeken"
+        "Visits": "Bezoeken",
+        "Decision Tables (DMN)": "Beslistabellen (DMN)",
+        "Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.": "Configureer DMN-beslistabellen (inputs, outputs, regels en een hit policy) die domeinexperts zonder ontwikkelaar kunnen beheren. Een workflowstap kan een beslissing op sleutel aanroepen, en beslissingen zijn ook te evalueren via de REST-API.",
+        "Add Decision Table": "Beslistabel toevoegen",
+        "No decision tables configured yet.": "Nog geen beslistabellen geconfigureerd.",
+        "Key (used to invoke the decision)": "Sleutel (gebruikt om de beslissing aan te roepen)",
+        "Hit policy": "Hit policy",
+        "Inputs, outputs and rules (JSON)": "Inputs, outputs en regels (JSON)",
+        "A JSON object with inputs[], outputs[] and rules[]. Each rule row aligns positionally to the inputs and outputs.": "Een JSON-object met inputs[], outputs[] en rules[]. Elke regelrij correspondeert positioneel met de inputs en outputs.",
+        "Key is required": "Sleutel is verplicht",
+        "The decision definition has structural errors.": "De beslisdefinitie bevat structurele fouten.",
+        "Could not save the decision table.": "Kon de beslistabel niet opslaan.",
+        "Delete decision table \"{name}\"?": "Beslistabel \"{name}\" verwijderen?"
     }
 }

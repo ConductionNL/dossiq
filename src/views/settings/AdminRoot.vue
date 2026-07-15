@@ -76,6 +76,13 @@
 		</CnSettingsSection>
 
 		<CnSettingsSection
+			:name="t('procest', 'Decision Tables (DMN)')"
+			:description="t('procest', 'Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.')"
+			:loading="!storesReady">
+			<DecisionTablesTab v-if="storesReady" />
+		</CnSettingsSection>
+
+		<CnSettingsSection
 			:name="t('procest', 'Financial Integration — Dwangsom Callback')"
 			:description="t('procest', 'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.')"
 			:loading="!storesReady">
@@ -112,6 +119,7 @@ import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
 import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import EmailSettings from './EmailSettings.vue'
 import KccIntegrationSettings from './KccIntegrationSettings.vue'
+import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
 import StufEndpoints from './StufEndpoints.vue'
 import StufAuditLog from './StufAuditLog.vue'
 import { initializeStores } from '../../store/store.js'
@@ -133,6 +141,7 @@ export default {
 		FinancialIntegrationTab,
 		EmailSettings,
 		KccIntegrationSettings,
+		DecisionTablesTab,
 		StufEndpoints,
 		StufAuditLog,
 	},

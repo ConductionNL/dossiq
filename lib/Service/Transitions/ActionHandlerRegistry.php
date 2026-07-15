@@ -54,6 +54,7 @@ class ActionHandlerRegistry
      * @param NotifyHandler                 $notify                 Built-in notification handler
      * @param BesluitvormingActivateHandler $besluitvormingActivate Parafering-chain activation handler
      * @param BesluitvormingPublishHandler  $besluitvormingPublish  DROP/LVBB publication handler
+     * @param EvaluateDecisionHandler       $evaluateDecision       DMN decision-evaluation handler
      */
     public function __construct(
         SendEmailHandler $sendEmail,
@@ -64,6 +65,7 @@ class ActionHandlerRegistry
         NotifyHandler $notify,
         BesluitvormingActivateHandler $besluitvormingActivate,
         BesluitvormingPublishHandler $besluitvormingPublish,
+        EvaluateDecisionHandler $evaluateDecision,
     ) {
         $this->handlers = [
             'sendEmail'              => $sendEmail,
@@ -74,6 +76,7 @@ class ActionHandlerRegistry
             'notify'                 => $notify,
             'besluitvormingActivate' => $besluitvormingActivate,
             'besluitvormingPublish'  => $besluitvormingPublish,
+            'evaluateDecision'       => $evaluateDecision,
         ];
     }//end __construct()
 
