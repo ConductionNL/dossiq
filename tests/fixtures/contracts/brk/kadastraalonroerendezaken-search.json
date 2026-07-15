@@ -1,0 +1,46 @@
+{
+    "_embedded": {
+        "kadastraalOnroerendeZaken": [
+            {
+                "identificatie": "10280123450000",
+                "kadastraleAanduiding": {
+                    "kadastraleGemeentecode": {
+                        "waarde": "VBSTD"
+                    },
+                    "kadastraleGemeente": {
+                        "waarde": "Voorbeeldstad"
+                    },
+                    "sectie": "A",
+                    "perceelnummer": 1234
+                },
+                "kadastraleAanduidingVolledig": "VBSTD A 1234",
+                "kadastraleGrootte": {
+                    "waarde": 350
+                },
+                "soortCultuurBebouwd": [
+                    "wonen"
+                ],
+                "zakelijkGerechtigdheid": [
+                    {
+                        "identificatie": "ZG0001",
+                        "aardZakelijkRecht": {
+                            "waarde": "Eigendom (recht van)"
+                        }
+                    }
+                ],
+                "centroideLL": {
+                    "type": "Point",
+                    "coordinates": [
+                        4.4699,
+                        51.9244
+                    ]
+                }
+            }
+        ]
+    },
+    "_links": {
+        "self": {
+            "href": "/esd-eto-apikey/bevragen/v2/kadastraalonroerendezaken?kadastraleGemeenteCode=VBSTD&sectie=A&perceelnummer=1234"
+        }
+    }
+}
