@@ -29,6 +29,38 @@ use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
+ * Object service stub for redaction-proposal tests — matches the
+ * `searchObjectsBySlug()`/`saveObject()` shape `SearchesObjects` calls
+ * (woo-llm-anonymisation).
+ */
+interface RedactionProposalObjectServiceStub
+{
+    /**
+     * Search objects by register/schema slug.
+     *
+     * @param string $registerSlug The register slug.
+     * @param string $schemaSlug   The schema slug.
+     * @param array  $filters      Query filters.
+     *
+     * @return array
+     */
+    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters=[]): array;
+
+    /**
+     * Save an object (OpenRegister object-first signature).
+     *
+     * @param array       $object   Object data.
+     * @param array       $extend   Extend parameters.
+     * @param string|null $register Register id/slug.
+     * @param string|null $schema   Schema id/slug.
+     * @param string|null $uuid     Optional object uuid.
+     *
+     * @return array
+     */
+    public function saveObject(array $object, array $extend=[], ?string $register=null, ?string $schema=null, ?string $uuid=null): array;
+}//end interface
+
+/**
  * Unit tests for WOODocumentAssessmentService.
  *
  * @covers \OCA\Procest\Service\WOODocumentAssessmentService
@@ -213,4 +245,127 @@ class WOODocumentAssessmentServiceTest extends TestCase
         $this->assertTrue($result);
     }//end testAllDocumentsAssessedReturnsTrueWhenNoneOutstanding()
 
+    /**
+     * FindAssessment returns null when OpenRegister is unavailable.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+     */
+    public function testFindAssessmentReturnsNullWhenORUnavailable(): void
+    {
+        $this->settingsService->method('getObjectService')->willReturn(null);
+
+        $this->assertNull($this->service->findAssessment('case-uuid-001', 'doc-001'));
+    }//end testFindAssessmentReturnsNullWhenORUnavailable()
+
+    /**
+     * FindAssessment returns the matching record when one exists.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+     */
+    public function testFindAssessmentReturnsExistingRecord(): void
+    {
+        $objectServiceMock = $this->createMock(RedactionProposalObjectServiceStub::class);
+        $objectServiceMock->method('searchObjectsBySlug')->willReturn([
+            ['id' => 'assessment-001', 'documentRef' => 'doc-001', 'classification' => 'deels_openbaar'],
+        ]);
+
+        $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+        $this->settingsService->method('getConfigValue')->willReturnMap([
+            ['register', '', 'procest-register'],
+            ['woo_assessment_schema', '', 'woo-assessment'],
+        ]);
+
+        $result = $this->service->findAssessment('case-uuid-001', 'doc-001');
+
+        $this->assertSame('assessment-001', $result['id']);
+        $this->assertSame('deels_openbaar', $result['classification']);
+    }//end testFindAssessmentReturnsExistingRecord()
+
+    /**
+     * SaveRedactionProposal throws when OpenRegister is unavailable.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+     */
+    public function testSaveRedactionProposalThrowsWhenORUnavailable(): void
+    {
+        $this->settingsService->method('getObjectService')->willReturn(null);
+
+        $this->expectException(\RuntimeException::class);
+
+        $this->service->saveRedactionProposal('case-uuid-001', 'doc-001', ['status' => 'pending_review']);
+    }//end testSaveRedactionProposalThrowsWhenORUnavailable()
+
+    /**
+     * SaveRedactionProposal throws when the document has not been assessed
+     * yet — assess-first business rule.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+     */
+    public function testSaveRedactionProposalThrowsWhenNotYetAssessed(): void
+    {
+        $objectServiceMock = $this->createMock(RedactionProposalObjectServiceStub::class);
+        $objectServiceMock->method('searchObjectsBySlug')->willReturn([]);
+
+        $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+        $this->settingsService->method('getConfigValue')->willReturnMap([
+            ['register', '', 'procest-register'],
+            ['woo_assessment_schema', '', 'woo-assessment'],
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessageMatches('/must be assessed/i');
+
+        $this->service->saveRedactionProposal('case-uuid-001', 'doc-001', ['status' => 'pending_review']);
+    }//end testSaveRedactionProposalThrowsWhenNotYetAssessed()
+
+    /**
+     * SaveRedactionProposal attaches the proposal to the existing record and
+     * never touches `classification`/`weigeringsgronden`.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+     */
+    public function testSaveRedactionProposalAttachesProposalToExistingRecord(): void
+    {
+        $existing = [
+            'id'             => 'assessment-001',
+            'documentRef'    => 'doc-001',
+            'caseRef'        => 'case-uuid-001',
+            'classification' => 'deels_openbaar',
+        ];
+
+        $objectServiceMock = $this->createMock(RedactionProposalObjectServiceStub::class);
+        $objectServiceMock->method('searchObjectsBySlug')->willReturn([$existing]);
+
+        $capturedObject = null;
+        $objectServiceMock->method('saveObject')->willReturnCallback(
+            function (array $object) use (&$capturedObject) {
+                $capturedObject = $object;
+                return $object;
+            }
+        );
+
+        $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+        $this->settingsService->method('getConfigValue')->willReturnMap([
+            ['register', '', 'procest-register'],
+            ['woo_assessment_schema', '', 'woo-assessment'],
+        ]);
+
+        $proposal = ['status' => 'pending_review', 'spans' => [], 'source' => 'rules_only'];
+
+        $result = $this->service->saveRedactionProposal('case-uuid-001', 'doc-001', $proposal);
+
+        $this->assertSame($proposal, $capturedObject['redactionProposal']);
+        $this->assertSame('deels_openbaar', $capturedObject['classification']);
+        $this->assertSame($proposal, $result['redactionProposal']);
+    }//end testSaveRedactionProposalAttachesProposalToExistingRecord()
 }//end class

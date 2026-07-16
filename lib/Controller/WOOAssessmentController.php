@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\WOOAnonymisationAssistService;
 use OCA\Procest\Service\WOODecisionService;
 use OCA\Procest\Service\WOODeadlineService;
 use OCA\Procest\Service\WOODocumentAssessmentService;
@@ -49,6 +50,10 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — one focused service per WOO
  * sub-capability (assessment/deadline/decision/publication); each dependency is
  * used, none is a redundant pass-through (ADR-022).
+ * @SuppressWarnings(PHPMD.ExcessiveParameterList) — constructor DI: every
+ * parameter is a distinct, independently-used collaborator (same rationale
+ * as CouplingBetweenObjects above); `woo-llm-anonymisation` adds one more
+ * (`WOOAnonymisationAssistService`) to an already-wide, long-established list.
  *
  * @spec openspec/changes/woo-case-type/tasks.md#task-5
  * @spec openspec/changes/woo-case-type/tasks.md#task-7
@@ -59,15 +64,17 @@ class WOOAssessmentController extends Controller
     /**
      * Constructor.
      *
-     * @param string                       $appName            The app name
-     * @param IRequest                     $request            The request
-     * @param WOODocumentAssessmentService $assessmentService  Document assessment service
-     * @param WOODeadlineService           $deadlineService    Deadline service
-     * @param WOODecisionService           $decisionService    Decision service
-     * @param WooPublicationService        $publicationService WOO publication (via OpenCatalogi) service
-     * @param IUserSession                 $userSession        Current user session
-     * @param IGroupManager                $groupManager       Group manager for authorization
-     * @param LoggerInterface              $logger             Logger
+     * @param string                        $appName             The app name
+     * @param IRequest                      $request             The request
+     * @param WOODocumentAssessmentService  $assessmentService   Document assessment service
+     * @param WOODeadlineService            $deadlineService     Deadline service
+     * @param WOODecisionService            $decisionService     Decision service
+     * @param WooPublicationService         $publicationService  WOO publication (via OpenCatalogi) service
+     * @param WOOAnonymisationAssistService $anonymisationAssist LLM-assisted redaction-span proposal
+     *                                                           service (woo-llm-anonymisation)
+     * @param IUserSession                  $userSession         Current user session
+     * @param IGroupManager                 $groupManager        Group manager for authorization
+     * @param LoggerInterface               $logger              Logger
      */
     public function __construct(
         string $appName,
@@ -76,6 +83,7 @@ class WOOAssessmentController extends Controller
         private readonly WOODeadlineService $deadlineService,
         private readonly WOODecisionService $decisionService,
         private readonly WooPublicationService $publicationService,
+        private readonly WOOAnonymisationAssistService $anonymisationAssist,
         private readonly IUserSession $userSession,
         private readonly IGroupManager $groupManager,
         private readonly LoggerInterface $logger,
@@ -263,6 +271,100 @@ class WOOAssessmentController extends Controller
             return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
         }
     }//end withdrawPublication()
+
+    /**
+     * Request an LLM-assisted redaction-span proposal for a document
+     * (woo-llm-anonymisation). ASSISTS the existing `WOORedactionService` —
+     * never replaces it, never publishes, never marks anything
+     * "anonymised". Always returns a proposal (rules-only when Hermiq is
+     * unavailable or fails) awaiting human review.
+     *
+     * @param string $id          The case UUID
+     * @param string $documentRef The document UUID
+     *
+     * @return JSONResponse The proposal `{spans, source, llmAvailable, llmError?, status}`
+     *
+     * @throws OCSForbiddenException If user is not authenticated or not authorized
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+     */
+    #[NoAdminRequired]
+    public function proposeRedaction(string $id, string $documentRef): JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $this->requireCaseMutationAccess(caseId: $id, user: $user);
+
+        $text = (string) $this->request->getParam('text', '');
+
+        try {
+            $result = $this->anonymisationAssist->proposeSpans(
+                caseId: $id,
+                documentRef: $documentRef,
+                text: $text,
+                userId: $user->getUID(),
+            );
+            return new JSONResponse($result);
+        } catch (\InvalidArgumentException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        } catch (\RuntimeException $e) {
+            $this->logger->warning(
+                'WOO redaction proposal failed: '.$e->getMessage(),
+                ['app' => 'procest', 'caseId' => $id, 'documentRef' => $documentRef],
+            );
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+    }//end proposeRedaction()
+
+    /**
+     * Record a human reviewer's approve/reject decision on a pending
+     * redaction proposal. On approve, hands the reviewed spans to the
+     * EXISTING, unchanged `WOORedactionService` pipeline as guidance — the
+     * redaction execution itself is entirely unaffected by this feature.
+     *
+     * @param string $id          The case UUID
+     * @param string $documentRef The document UUID
+     *
+     * @return JSONResponse The updated proposal record
+     *
+     * @throws OCSForbiddenException If user is not authenticated or not authorized
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+     */
+    #[NoAdminRequired]
+    public function reviewRedactionProposal(string $id, string $documentRef): JSONResponse
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        $this->requireCaseMutationAccess(caseId: $id, user: $user);
+
+        $decision    = (string) $this->request->getParam('decision', '');
+        $editedSpans = $this->request->getParam('spans', null);
+        if (is_array($editedSpans) === false) {
+            $editedSpans = null;
+        }
+
+        try {
+            $result = $this->anonymisationAssist->reviewProposal(
+                caseId: $id,
+                documentRef: $documentRef,
+                decision: $decision,
+                reviewerId: $user->getUID(),
+                editedSpans: $editedSpans,
+            );
+            return new JSONResponse($result);
+        } catch (\InvalidArgumentException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        } catch (\RuntimeException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+    }//end reviewRedactionProposal()
 
     /**
      * Require that the current user can mutate the given case.

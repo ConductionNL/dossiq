@@ -2788,7 +2788,25 @@
         "Key (used to invoke the decision)": "Key (used to invoke the decision)",
         "Key is required": "Key is required",
         "No decision tables configured yet.": "No decision tables configured yet.",
-        "The decision definition has structural errors.": "The decision definition has structural errors."
+        "The decision definition has structural errors.": "The decision definition has structural errors.",
+        "{count} / {max} characters": "{count} / {max} characters",
+        "AI assist is currently unavailable — showing rule-based matches only.": "AI assist is currently unavailable — showing rule-based matches only.",
+        "AI-assisted detection failed ({error}) — falling back to rule-based matches only.": "AI-assisted detection failed ({error}) — falling back to rule-based matches only.",
+        "AI-assisted redaction suggestions": "AI-assisted redaction suggestions",
+        "AI-assisted redaction suggestions for {doc}": "AI-assisted redaction suggestions for {doc}",
+        "AI-proposed": "AI-proposed",
+        "Applying…": "Applying…",
+        "Approve selected": "Approve selected",
+        "Detect redaction candidates": "Detect redaction candidates",
+        "Document text": "Document text",
+        "No redaction candidates found.": "No redaction candidates found.",
+        "Paste or confirm the document text below, then request redaction suggestions. Rule-based matches (BSN, IBAN, phone, postcode) are always applied; AI-proposed spans can be reviewed and deselected before approval.": "Paste or confirm the document text below, then request redaction suggestions. Rule-based matches (BSN, IBAN, phone, postcode) are always applied; AI-proposed spans can be reviewed and deselected before approval.",
+        "Paste the document text to scan for redaction candidates…": "Paste the document text to scan for redaction candidates…",
+        "Redaction": "Redaction",
+        "Redaction assist": "Redaction assist",
+        "Rule (always applied)": "Rule (always applied)",
+        "Scanning…": "Scanning…",
+        "Source": "Source"
     },
     "plurals": ""
 }

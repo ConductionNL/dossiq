@@ -31,6 +31,7 @@ use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for WOO per-document disclosure assessments.
@@ -102,7 +103,7 @@ class WOODocumentAssessmentService
      *
      * @return array<string, mixed> Result with saved assessments and outstanding documents
      *
-     * @throws \RuntimeException If OpenRegister unavailable
+     * @throws RuntimeException If OpenRegister unavailable
      *
      * @spec openspec/changes/woo-case-type/tasks.md#task-5
      */
@@ -110,14 +111,14 @@ class WOODocumentAssessmentService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register         = $this->settingsService->getConfigValue('register');
         $assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
 
         if (empty($register) === true || empty($assessmentSchema) === true) {
-            throw new \RuntimeException('WOO assessment schema not configured');
+            throw new RuntimeException('WOO assessment schema not configured');
         }
 
         $user = $this->userSession->getUser();
@@ -322,4 +323,107 @@ class WOODocumentAssessmentService
         $outstanding = $this->getOutstanding(caseId: $caseId);
         return ($outstanding['count'] === 0);
     }//end allDocumentsAssessed()
+
+    /**
+     * Load the existing wooAssessment record for a (case, document) pair, or
+     * null when the document has not been assessed yet — the SAME
+     * search-then-update lookup `bulkUpsert()` already performs, extracted
+     * so `WOOAnonymisationAssistService` can find the record it attaches a
+     * `redactionProposal` to without duplicating the OpenRegister query
+     * shape (woo-llm-anonymisation).
+     *
+     * @param string $caseId      The case UUID.
+     * @param string $documentRef The document UUID.
+     *
+     * @return array<string, mixed>|null The assessment record, or null if not yet assessed.
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+     */
+    public function findAssessment(string $caseId, string $documentRef): ?array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        $register         = $this->settingsService->getConfigValue('register');
+        $assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
+        if (empty($register) === true || empty($assessmentSchema) === true) {
+            return null;
+        }
+
+        $existing = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $assessmentSchema,
+            filters: [
+                'caseRef'     => $caseId,
+                'documentRef' => $documentRef,
+                '_limit'      => 1,
+            ],
+        );
+
+        if (is_array($existing) === true && count($existing) > 0) {
+            return $existing[0];
+        }
+
+        return null;
+    }//end findAssessment()
+
+    /**
+     * Attach (or update) a `redactionProposal` on an EXISTING wooAssessment
+     * record — the document must already have a disclosure classification
+     * (business rule: assess first, then request redaction assistance).
+     * Never creates a new assessment record and never touches
+     * `classification`/`weigeringsgronden` (woo-llm-anonymisation).
+     *
+     * @param string               $caseId      The case UUID.
+     * @param string               $documentRef The document UUID.
+     * @param array<string, mixed> $proposal    `{spans, source, llmAvailable, proposedBy,
+     *                                          proposedAt, status}` — see
+     *                                          `WOOAnonymisationAssistService::proposeSpans()`.
+     *
+     * @return array<string, mixed> The updated assessment record.
+     *
+     * @throws RuntimeException When OpenRegister is unavailable or the document has not
+     *                            yet been assessed.
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-1
+     */
+    public function saveRedactionProposal(string $caseId, string $documentRef, array $proposal): array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            throw new RuntimeException('OpenRegister is not available');
+        }
+
+        $existing = $this->findAssessment(caseId: $caseId, documentRef: $documentRef);
+        if ($existing === null) {
+            throw new RuntimeException(
+                'Document '.$documentRef.' must be assessed before requesting redaction assistance'
+            );
+        }
+
+        $register         = $this->settingsService->getConfigValue('register');
+        $assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
+        $existingId       = $existing['id'] ?? $existing['uuid'] ?? null;
+
+        $updated = $existing;
+        $updated['redactionProposal'] = $proposal;
+
+        $savedObject = $objectService->saveObject(
+            object: $updated,
+            register: $register,
+            schema: $assessmentSchema,
+            uuid: (string) $existingId,
+        );
+
+        $this->logger->info(
+            'WOO redaction proposal saved for document '.$documentRef.' in case '.$caseId
+            .' (status: '.($proposal['status'] ?? 'unknown').')',
+            ['app' => Application::APP_ID],
+        );
+
+        return $savedObject;
+    }//end saveRedactionProposal()
 }//end class
