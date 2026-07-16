@@ -36,6 +36,7 @@
 						<th>{{ t('procest', 'Assessment') }}</th>
 						<th>{{ t('procest', 'Grounds (WOO Art. 5.1/5.2)') }}</th>
 						<th>{{ t('procest', 'Motivation') }}</th>
+						<th>{{ t('procest', 'Redaction') }}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -78,10 +79,27 @@
 								:placeholder="t('procest', 'Optional motivation...')"
 								@update:value="val => setMotivering(doc.id, val)" />
 						</td>
+						<td>
+							<NcButton
+								v-if="redactionAssistEnabled && localAssessments[doc.id] && localAssessments[doc.id].classification === 'deels_openbaar'"
+								type="tertiary"
+								:aria-label="t('procest', 'AI-assisted redaction suggestions for {doc}', { doc: doc.title || doc.name || doc.id })"
+								@click="openRedactionAssist(doc.id)">
+								{{ t('procest', 'Redaction assist') }}
+							</NcButton>
+							<span v-else class="document-assessment-table__na">---</span>
+						</td>
 					</tr>
 				</tbody>
 			</table>
 		</div>
+
+		<RedactionAssistDialog
+			v-if="activeRedactionDoc"
+			:case-id="caseId"
+			:document-ref="activeRedactionDoc"
+			@close="activeRedactionDoc = null"
+			@reviewed="onRedactionReviewed" />
 
 		<!-- Validation errors -->
 		<div v-if="validationErrors.length > 0" class="document-assessment-table__errors">
@@ -127,6 +145,7 @@
 import { NcButton, NcProgressBar, NcSelect, NcTextField } from '@nextcloud/vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
+import RedactionAssistDialog from '../../../dialogs/RedactionAssistDialog.vue'
 
 export default {
 	name: 'DocumentAssessmentTable',
@@ -135,6 +154,7 @@ export default {
 		NcProgressBar,
 		NcSelect,
 		NcTextField,
+		RedactionAssistDialog,
 	},
 	props: {
 		caseId: {
@@ -153,14 +173,27 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+		/**
+		 * Whether the "Redaction assist" (woo-llm-anonymisation) action is
+		 * shown for `deels_openbaar` documents. Defaults to true — the
+		 * action itself degrades gracefully to a rules-only proposal when
+		 * Hermiq is unavailable, so there is no separate availability probe
+		 * gating visibility here (see design.md).
+		 */
+		redactionAssistEnabled: {
+			type: Boolean,
+			default: true,
+		},
 	},
-	emits: ['saved', 'error'],
+	emits: ['saved', 'error', 'redaction-reviewed'],
 	data() {
 		return {
 			/** Local copy of assessments, keyed by document ID. */
 			localAssessments: {},
 			saving: false,
 			validationErrors: [],
+			/** documentRef of the document whose RedactionAssistDialog is open, or null. */
+			activeRedactionDoc: null,
 			classificationOptions: [
 				'openbaar',
 				'deels_openbaar',
@@ -281,6 +314,30 @@ export default {
 					motivering: value,
 				},
 			}
+		},
+
+		/**
+		 * Open the RedactionAssistDialog for a document
+		 * (woo-llm-anonymisation) — an ASSIST to the existing rule-based/
+		 * Docudesk/manual redaction flow, never a replacement.
+		 *
+		 * @param {string} docId
+		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+		 */
+		openRedactionAssist(docId) {
+			this.activeRedactionDoc = docId
+		},
+
+		/**
+		 * Relay the reviewer's decision to the parent — closes the dialog
+		 * (handled by its own `@close`) and lets the parent refresh whatever
+		 * redaction-status indicator it renders.
+		 *
+		 * @param {object} result The updated proposal record.
+		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+		 */
+		onRedactionReviewed(result) {
+			this.$emit('redaction-reviewed', result)
 		},
 
 		/**

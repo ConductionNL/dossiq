@@ -2835,6 +2835,24 @@
         "Transfer request submitted": "Overdrachtsverzoek ingediend",
         "Write a note visible to both organisations...": "Schrijf een bericht dat zichtbaar is voor beide organisaties...",
         "You have accepted this case transfer.": "U heeft deze zaakoverdracht geaccepteerd.",
-        "You have rejected this case transfer.": "U heeft deze zaakoverdracht afgewezen."
+        "You have rejected this case transfer.": "U heeft deze zaakoverdracht afgewezen.",
+        "{count} / {max} characters": "{count} / {max} tekens",
+        "AI assist is currently unavailable — showing rule-based matches only.": "AI-assistentie is momenteel niet beschikbaar — alleen regelgebaseerde overeenkomsten worden getoond.",
+        "AI-assisted detection failed ({error}) — falling back to rule-based matches only.": "AI-gestuurde detectie is mislukt ({error}) — terugvallen op alleen regelgebaseerde overeenkomsten.",
+        "AI-assisted redaction suggestions": "AI-gestuurde lak-suggesties",
+        "AI-assisted redaction suggestions for {doc}": "AI-gestuurde lak-suggesties voor {doc}",
+        "AI-proposed": "AI-voorstel",
+        "Applying…": "Toepassen…",
+        "Approve selected": "Geselecteerde goedkeuren",
+        "Detect redaction candidates": "Lak-kandidaten detecteren",
+        "Document text": "Documenttekst",
+        "No redaction candidates found.": "Geen lak-kandidaten gevonden.",
+        "Paste or confirm the document text below, then request redaction suggestions. Rule-based matches (BSN, IBAN, phone, postcode) are always applied; AI-proposed spans can be reviewed and deselected before approval.": "Plak of bevestig hieronder de documenttekst en vraag vervolgens lak-suggesties aan. Regelgebaseerde overeenkomsten (BSN, IBAN, telefoon, postcode) worden altijd toegepast; AI-voorgestelde fragmenten kunnen vóór goedkeuring worden beoordeeld en uitgevinkt.",
+        "Paste the document text to scan for redaction candidates…": "Plak de documenttekst om te scannen op lak-kandidaten…",
+        "Redaction": "Lakken",
+        "Redaction assist": "Lak-assistentie",
+        "Rule (always applied)": "Regel (altijd toegepast)",
+        "Scanning…": "Scannen…",
+        "Source": "Bron"
     }
 }

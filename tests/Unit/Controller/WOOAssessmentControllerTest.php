@@ -23,6 +23,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\WOOAssessmentController;
+use OCA\Procest\Service\WOOAnonymisationAssistService;
 use OCA\Procest\Service\WOODeadlineService;
 use OCA\Procest\Service\WOODecisionService;
 use OCA\Procest\Service\WOODocumentAssessmentService;
@@ -64,6 +65,11 @@ class WOOAssessmentControllerTest extends TestCase
     private WooPublicationService $publicationService;
 
     /**
+     * @var WOOAnonymisationAssistService|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private WOOAnonymisationAssistService $anonymisationAssist;
+
+    /**
      * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
      */
     private IUserSession $userSession;
@@ -99,6 +105,7 @@ class WOOAssessmentControllerTest extends TestCase
         $this->deadlineService   = $this->createMock(WOODeadlineService::class);
         $this->decisionService     = $this->createMock(WOODecisionService::class);
         $this->publicationService  = $this->createMock(WooPublicationService::class);
+        $this->anonymisationAssist = $this->createMock(WOOAnonymisationAssistService::class);
         $this->userSession         = $this->createMock(IUserSession::class);
         $this->groupManager        = $this->createMock(IGroupManager::class);
         $this->request             = $this->createMock(IRequest::class);
@@ -111,6 +118,7 @@ class WOOAssessmentControllerTest extends TestCase
             $this->deadlineService,
             $this->decisionService,
             $this->publicationService,
+            $this->anonymisationAssist,
             $this->userSession,
             $this->groupManager,
             $this->logger,
@@ -330,4 +338,186 @@ class WOOAssessmentControllerTest extends TestCase
         $this->assertTrue($data['available']);
     }//end testWithdrawPublicationReturnsResultWhenAuthenticated()
 
+    /**
+     * ProposeRedaction returns 401 when user is not authenticated.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+     */
+    public function testProposeRedactionReturns401WhenNotAuthenticated(): void
+    {
+        $this->userSession->method('getUser')->willReturn(null);
+
+        $response = $this->controller->proposeRedaction('case-uuid-001', 'doc-uuid-001');
+
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+    }//end testProposeRedactionReturns401WhenNotAuthenticated()
+
+    /**
+     * ProposeRedaction is gated by the SAME per-case authorization check
+     * every other WOO mutation endpoint uses — a non-admin user outside the
+     * `procest-gebruikers` group is forbidden.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+     */
+    public function testProposeRedactionEnforcesCaseMutationAuthorization(): void
+    {
+        $user = $this->createMock(IUser::class);
+        $user->method('getUID')->willReturn('outsider');
+        $this->userSession->method('getUser')->willReturn($user);
+
+        $this->groupManager->method('isAdmin')->willReturn(false);
+        $this->groupManager->method('groupExists')->willReturn(true);
+        $this->groupManager->method('isInGroup')->willReturn(false);
+
+        $this->anonymisationAssist->expects($this->never())->method('proposeSpans');
+
+        $this->expectException(\OCP\AppFramework\OCS\OCSForbiddenException::class);
+
+        $this->controller->proposeRedaction('case-uuid-001', 'doc-uuid-001');
+    }//end testProposeRedactionEnforcesCaseMutationAuthorization()
+
+    /**
+     * ProposeRedaction returns 200 with the proposal when authenticated and authorized.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+     */
+    public function testProposeRedactionReturnsResultWhenAuthenticated(): void
+    {
+        $user = $this->createMock(IUser::class);
+        $user->method('getUID')->willReturn('j.dejong');
+        $this->userSession->method('getUser')->willReturn($user);
+        $this->groupManager->method('isAdmin')->willReturn(true);
+
+        $this->request->method('getParam')->willReturnMap([
+            ['text', '', 'Jan Jansen, BSN 123456782'],
+        ]);
+
+        $this->anonymisationAssist->method('proposeSpans')->with(
+            'case-uuid-001',
+            'doc-uuid-001',
+            'Jan Jansen, BSN 123456782',
+            'j.dejong'
+        )->willReturn([
+            'spans'        => [['start' => 0, 'end' => 10, 'category' => 'person', 'source' => 'llm']],
+            'source'       => 'rules_plus_llm',
+            'llmAvailable' => true,
+            'status'       => 'pending_review',
+        ]);
+
+        $response = $this->controller->proposeRedaction('case-uuid-001', 'doc-uuid-001');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $data = $response->getData();
+        $this->assertSame('pending_review', $data['status']);
+    }//end testProposeRedactionReturnsResultWhenAuthenticated()
+
+    /**
+     * ProposeRedaction maps a validation failure from the service to 400.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+     */
+    public function testProposeRedactionMapsValidationFailureTo400(): void
+    {
+        $user = $this->createMock(IUser::class);
+        $user->method('getUID')->willReturn('j.dejong');
+        $this->userSession->method('getUser')->willReturn($user);
+        $this->groupManager->method('isAdmin')->willReturn(true);
+
+        $this->request->method('getParam')->willReturnMap([['text', '', '']]);
+
+        $this->anonymisationAssist->method('proposeSpans')->willThrowException(
+            new \InvalidArgumentException('text is required')
+        );
+
+        $response = $this->controller->proposeRedaction('case-uuid-001', 'doc-uuid-001');
+
+        $this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+    }//end testProposeRedactionMapsValidationFailureTo400()
+
+    /**
+     * ReviewRedactionProposal returns 401 when user is not authenticated.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+     */
+    public function testReviewRedactionProposalReturns401WhenNotAuthenticated(): void
+    {
+        $this->userSession->method('getUser')->willReturn(null);
+
+        $response = $this->controller->reviewRedactionProposal('case-uuid-001', 'doc-uuid-001');
+
+        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+    }//end testReviewRedactionProposalReturns401WhenNotAuthenticated()
+
+    /**
+     * ReviewRedactionProposal returns 200 with the updated proposal when
+     * authenticated and authorized.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+     */
+    public function testReviewRedactionProposalReturnsResultWhenAuthenticated(): void
+    {
+        $user = $this->createMock(IUser::class);
+        $user->method('getUID')->willReturn('j.dejong');
+        $this->userSession->method('getUser')->willReturn($user);
+        $this->groupManager->method('isAdmin')->willReturn(true);
+
+        $this->request->method('getParam')->willReturnMap([
+            ['decision', '', 'approve'],
+            ['spans', null, null],
+        ]);
+
+        $this->anonymisationAssist->method('reviewProposal')->with(
+            'case-uuid-001',
+            'doc-uuid-001',
+            'approve',
+            'j.dejong',
+            null
+        )->willReturn(['status' => 'approved', 'reviewedBy' => 'j.dejong']);
+
+        $response = $this->controller->reviewRedactionProposal('case-uuid-001', 'doc-uuid-001');
+
+        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+        $data = $response->getData();
+        $this->assertSame('approved', $data['status']);
+    }//end testReviewRedactionProposalReturnsResultWhenAuthenticated()
+
+    /**
+     * ReviewRedactionProposal maps a "no pending proposal" failure to 400.
+     *
+     * @return void
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-4
+     */
+    public function testReviewRedactionProposalMapsRuntimeFailureTo400(): void
+    {
+        $user = $this->createMock(IUser::class);
+        $user->method('getUID')->willReturn('j.dejong');
+        $this->userSession->method('getUser')->willReturn($user);
+        $this->groupManager->method('isAdmin')->willReturn(true);
+
+        $this->request->method('getParam')->willReturnMap([
+            ['decision', '', 'approve'],
+            ['spans', null, null],
+        ]);
+
+        $this->anonymisationAssist->method('reviewProposal')->willThrowException(
+            new \RuntimeException('No pending redaction proposal found for document doc-uuid-001 in case case-uuid-001')
+        );
+
+        $response = $this->controller->reviewRedactionProposal('case-uuid-001', 'doc-uuid-001');
+
+        $this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+    }//end testReviewRedactionProposalMapsRuntimeFailureTo400()
 }//end class

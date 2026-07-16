@@ -519,6 +519,23 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'wOOAssessment#publishDecision', 'url' => '/api/cases/{id}/woo/publish',        'verb' => 'POST'],
         ['name' => 'wOOAssessment#withdrawPublication', 'url' => '/api/cases/{id}/woo/withdraw',   'verb' => 'POST'],
 
+        // LLM-assisted redaction-span proposal (woo-llm-anonymisation): an ASSIST
+        // to the existing WOORedactionService, never a replacement — proposals are
+        // always human-reviewed (proposeRedaction → reviewRedactionProposal) before
+        // any hand-off to the unchanged Docudesk/manual redaction pipeline.
+        [
+            'name'         => 'wOOAssessment#proposeRedaction',
+            'url'          => '/api/cases/{id}/woo/documents/{documentRef}/redaction-proposal',
+            'verb'         => 'POST',
+            'requirements' => ['documentRef' => '[^/]+'],
+        ],
+        [
+            'name'         => 'wOOAssessment#reviewRedactionProposal',
+            'url'          => '/api/cases/{id}/woo/documents/{documentRef}/redaction-proposal/review',
+            'verb'         => 'POST',
+            'requirements' => ['documentRef' => '[^/]+'],
+        ],
+
         // ── Milestone tracking ───────────────────────────────────────────
         ['name' => 'milestone#progress', 'url' => '/api/cases/{caseId}/milestones/progress/{caseTypeId}', 'verb' => 'GET'],
         ['name' => 'milestone#mark',     'url' => '/api/cases/{caseId}/milestones/{milestoneId}/mark',    'verb' => 'POST'],
