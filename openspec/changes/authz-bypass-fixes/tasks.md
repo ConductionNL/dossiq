@@ -1,15 +1,15 @@
 # Tasks: authz-bypass-fixes
 
 ## 1. Hole 1 — port the advice guard to the LIVE path (before any deletion)
-- [ ] 1.1 `AdviceService`: add `assertAdviceTransitionAuthorized(array $advice, string $to): void` — fail-closed matrix per design D2 (`ontvangen` ⇒ `adviseur`; `aangevraagd` ⇒ `case.assignee`/`adviseur`; `verlopen` ⇒ system-only; unknown ⇒ deny). Uses the live `adviesAanvraag` fields, not the dead guard's `requestedBy`.
-- [ ] 1.2 `AdviceService`: split `transitionStatus()` into public guarded path + private `applyTransition()`; `transitionStatus()` asserts then applies.
-- [ ] 1.3 `AdviceService::expireAdvice()` calls `applyTransition()` directly (documented system/cron seam — no session; keeps `AdviceDeadlineJob` working).
-- [ ] 1.4 Tests: BAD path — a user who is neither `adviseur` nor case assignee nor admin is REJECTED on `transitionStatus(..., 'ontvangen')`; `verlopen` rejected over the HTTP path; `expireAdvice()` still succeeds with no session; adviseur + admin still allowed.
+- [x] 1.1 `AdviceService`: add `assertAdviceTransitionAuthorized(array $advice, string $to): void` — fail-closed matrix per design D2 (`ontvangen` ⇒ `adviseur`; `aangevraagd` ⇒ `case.assignee`/`adviseur`; `verlopen` ⇒ system-only; unknown ⇒ deny). Uses the live `adviesAanvraag` fields, not the dead guard's `requestedBy`.
+- [x] 1.2 `AdviceService`: split `transitionStatus()` into public guarded path + private `applyTransition()`; `transitionStatus()` asserts then applies.
+- [x] 1.3 `AdviceService::expireAdvice()` calls `applyTransition()` directly (documented system/cron seam — no session; keeps `AdviceDeadlineJob` working).
+- [x] 1.4 Tests: BAD path — a user who is neither `adviseur` nor case assignee nor admin is REJECTED on `transitionStatus(..., 'ontvangen')`; `verlopen` rejected over the HTTP path; `expireAdvice()` still succeeds with no session; adviseur + admin still allowed.
 
 ## 2. Hole 1 — remove the dead code (ONLY after 1.4 is green)
-- [ ] 2.1 Delete `submitAdvice()` (zero-caller, unrouted, wrong schema, invalid status) and `cancelAdvice()` (zero-caller, unrouted).
-- [ ] 2.2 Delete the now-unreferenced `assertAdviceCallerIsAuthorized()`; drop the stale `submitAdvice` entry from `lib/Settings/procest_register.json`.
-- [ ] 2.3 Re-run suite; confirm no caller/test regression vs the pristine baseline test-name list.
+- [x] 2.1 Delete `submitAdvice()` (zero-caller, unrouted, wrong schema, invalid status) and `cancelAdvice()` (zero-caller, unrouted).
+- [x] 2.2 Delete the now-unreferenced `assertAdviceCallerIsAuthorized()`. NOTE (verify-first): the `submitAdvice` hit in `lib/Settings/procest_register.json:4887` is a FALSE POSITIVE — it is a declarative `x-openregister-lifecycle` transition key on the unrelated `consultation` schema, not a reference to the PHP method, and carries no guard/class binding. Left untouched.
+- [x] 2.3 Re-run suite; confirm no caller/test regression vs the pristine baseline test-name list.
 
 ## 3. Hole 2 — real per-case WOO guard, fail closed
 - [ ] 3.1 New `lib/Service/CaseAccessGuard.php` (SPDX EUPL-1.2) — `assertCaseMutationAccess(string $caseId, IUser $user): void`; consumes OR `ObjectService` via `SettingsService` + `SearchesObjects` (ADR-022); deny on no-OR / not-found / non-assignee; allow admin + `case.assignee`.
