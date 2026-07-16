@@ -3426,7 +3426,7 @@
                     "decisionDeadline": {
                         "type": "date",
                         "materialise": true,
-                        "description": "Statutory beslistermijn op bezwaar (AWB 7:10 lid 1, 3, 4): ontvangstdatum + 6 weeks + verdagingsperiode (days, AWB 7:10 lid 3) + opschorting (days, AWB 7:10 lid 4). Materialised (server-side filterable); recomputed on every bezwaar save. Replaces the pre-2026-07 inert array-form string-DSL declaration (addWeeks/addDays), which OpenRegister's calculation engine never honoured — it accepts only a field-keyed map of AST expressions.",
+                        "description": "Statutory beslistermijn op bezwaar (AWB 7:10 lid 1, 3, 4): ontvangstdatum + 6 weeks + verdagingsperiode (days, AWB 7:10 lid 3) + opschorting (days, AWB 7:10 lid 4). Materialised (server-side filterable); recomputed on every bezwaar save. Replaces the pre-2026-07 inert array-form string-DSL declaration (addWeeks/addDays), which OpenRegister's calculation engine never honoured — it accepts only a field-keyed map of AST expressions. verdagingsperiode/opschorting are coalesced to 0: OpenRegister's dateAdd returns NULL for a non-numeric amount, so a bare prop ref would null the entire statutory deadline on any bezwaar saved without those optional fields (schema defaults do not protect the PUT-semantic update path).",
                         "expression": {
                             "dateAdd": {
                                 "date": {
@@ -3438,11 +3438,11 @@
                                                 "unit": "weeks"
                                             }
                                         },
-                                        "amount": { "prop": "verdagingsperiode" },
+                                        "amount": { "coalesce": [ { "prop": "verdagingsperiode" }, 0 ] },
                                         "unit": "days"
                                     }
                                 },
-                                "amount": { "prop": "opschorting" },
+                                "amount": { "coalesce": [ { "prop": "opschorting" }, 0 ] },
                                 "unit": "days"
                             }
                         }

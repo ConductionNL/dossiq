@@ -162,6 +162,33 @@ final class BezwaarCalculationRegistryTest extends TestCase
     }//end testDecisionDeadlineMatchesWorkedAwbExample()
 
     /**
+     * The common case: a bezwaar filed with no verdaging and no opschorting,
+     * where those optional fields are simply ABSENT from the payload (OR's
+     * saveObject is PUT-semantic, so a partial update omits them and the
+     * schema default never lands).
+     *
+     * OpenRegister's dateAdd returns NULL for a non-numeric amount, so a bare
+     * `{prop: verdagingsperiode}` would null the ENTIRE statutory deadline —
+     * a missing AWB 7:10 beslistermijn on an ordinary objection. The coalesce
+     * guards against that. Without it this test returns null.
+     *
+     * @return void
+     */
+    public function testDecisionDeadlineSurvivesAbsentOptionalFields(): void
+    {
+        $expr = $this->calcs['decisionDeadline']['expression'];
+
+        // Only the required field is present — no verdagingsperiode/opschorting keys at all.
+        $deadline = $this->eval($expr, ['ontvangstdatum' => '2026-01-01']);
+
+        $this->assertNotNull(
+            $deadline,
+            'a bezwaar without verdaging/opschorting MUST still get its AWB 7:10 deadline'
+        );
+        $this->assertSame('2026-02-12', $deadline, 'ontvangstdatum + 6 weeks');
+    }//end testDecisionDeadlineSurvivesAbsentOptionalFields()
+
+    /**
      * Worked AWB 4:17 example: tiered dwangsom accrual with EUR1442 plafond.
      *
      * @return void
@@ -296,7 +323,17 @@ final class BezwaarCalculationRegistryTest extends TestCase
                     return null;
                 }
 
-                $amount = (int) $this->eval($args['amount'], $object, $now);
+                // Mirror OpenRegister's intervalFromAmountUnit() EXACTLY: a
+                // non-numeric amount yields no interval, so dateAdd returns
+                // null. Casting null to 0 here (as this mirror originally did)
+                // is strictly more lenient than the engine and would hide a
+                // nulled-out statutory deadline behind a green test.
+                $amount = $this->eval($args['amount'], $object, $now);
+                if (is_numeric($amount) === false) {
+                    return null;
+                }
+
+                $amount = (int) $amount;
                 $days   = ($args['unit'] === 'weeks') ? ($amount * 7) : $amount;
                 return $date->modify(($days >= 0 ? '+' : '').$days.' days')->format('Y-m-d');
             case 'dateDiff':
