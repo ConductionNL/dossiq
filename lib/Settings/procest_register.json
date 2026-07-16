@@ -6604,6 +6604,160 @@
                     }
                 }
             },
+            "caseFederatedShare": {
+                "slug": "caseFederatedShare",
+                "icon": "Earth",
+                "version": "1.0.0",
+                "x-schema-org": "schema:CreativeWork",
+                "title": "Federated case share",
+                "description": "Field-scoped, redacted case summary shared with a remote Nextcloud instance over OpenRegister's OCM federation leaf. Never a live view of the case; a snapshot taken at share time.",
+                "type": "object",
+                "required": [
+                    "caseId",
+                    "remoteCloudId",
+                    "permissionLevel",
+                    "status"
+                ],
+                "properties": {
+                    "caseId": {
+                        "type": "string",
+                        "description": "UUID of the case this federated share summarises",
+                        "title": "Case ID"
+                    },
+                    "remoteCloudId": {
+                        "type": "string",
+                        "description": "Federated target address (slug@host / NC cloud id)",
+                        "title": "Remote Cloud ID"
+                    },
+                    "sharedFields": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Case field names included in fieldSnapshot (validated against the federation allow-list)",
+                        "title": "Shared Fields"
+                    },
+                    "sharedDocuments": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Document references (ids) validated to be attached to the case; content is NOT federated, only the reference",
+                        "title": "Shared Documents"
+                    },
+                    "fieldSnapshot": {
+                        "type": "object",
+                        "description": "The redacted case-summary values at share-creation time (allow-listed fields only)",
+                        "title": "Field Snapshot"
+                    },
+                    "permissionLevel": {
+                        "type": "string",
+                        "default": "bekijken",
+                        "description": "Permission level slug for the remote org's read access",
+                        "title": "Permission Level"
+                    },
+                    "federationShareId": {
+                        "type": "integer",
+                        "description": "OpenRegister FederatedShare id minted for this share (scope: object, permissions: read)",
+                        "title": "Federation Share ID"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "active",
+                            "revoked"
+                        ],
+                        "default": "pending",
+                        "description": "Local lifecycle status; mirrors the OR FederatedShare status",
+                        "title": "Status"
+                    },
+                    "createdBy": {
+                        "type": "string",
+                        "description": "User ID of the share creator",
+                        "title": "Created By"
+                    },
+                    "revokedAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Revocation datetime in ISO 8601",
+                        "title": "Revoked At"
+                    },
+                    "revokedBy": {
+                        "type": "string",
+                        "description": "User ID of the revoker",
+                        "title": "Revoked By"
+                    }
+                }
+            },
+            "caseFederatedActivity": {
+                "slug": "caseFederatedActivity",
+                "icon": "MessageTextOutline",
+                "version": "1.0.0",
+                "x-schema-org": "schema:CreativeWork",
+                "title": "Federated case activity",
+                "description": "Async, append-only collaboration stream scoped to one federated case share. Not real-time co-editing.",
+                "type": "object",
+                "required": [
+                    "federatedShareId",
+                    "caseId"
+                ],
+                "properties": {
+                    "federatedShareId": {
+                        "type": "string",
+                        "description": "UUID of the caseFederatedShare this activity stream belongs to",
+                        "title": "Federated Share ID"
+                    },
+                    "caseId": {
+                        "type": "string",
+                        "description": "UUID of the case (denormalised for lookups)",
+                        "title": "Case ID"
+                    },
+                    "entries": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "actor": {
+                                    "type": "string",
+                                    "description": "Local user id, or the remote cloud id",
+                                    "title": "Actor"
+                                },
+                                "actorType": {
+                                    "type": "string",
+                                    "enum": [
+                                        "local",
+                                        "remote"
+                                    ],
+                                    "title": "Actor Type"
+                                },
+                                "cloudId": {
+                                    "type": "string",
+                                    "description": "Remote cloud id, set only for actorType=remote",
+                                    "title": "Cloud ID"
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "title": "Message"
+                                },
+                                "createdAt": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "title": "Created At"
+                                }
+                            }
+                        },
+                        "description": "Append-only activity entries; never edited or removed",
+                        "title": "Entries"
+                    },
+                    "lastActivityAt": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Timestamp of the most recent entry",
+                        "title": "Last Activity At"
+                    }
+                }
+            },
             "partnerOrganization": {
                 "slug": "partnerOrganization",
                 "icon": "AccountGroup",
@@ -6786,6 +6940,67 @@
                         "format": "date-time",
                         "description": "When the transfer was completed (ISO 8601)",
                         "title": "Completed At"
+                    },
+                    "remoteCloudId": {
+                        "type": "string",
+                        "description": "Federated target address (slug@host); set only when this transfer crosses instances",
+                        "title": "Remote Cloud ID"
+                    },
+                    "federationShareId": {
+                        "type": "integer",
+                        "description": "OpenRegister FederatedShare id minted for this transfer object (scope: object, permissions: read-write), used only to authenticate the remote accept/reject call",
+                        "title": "Federation Share ID"
+                    },
+                    "idempotencyKey": {
+                        "type": "string",
+                        "description": "sha256(caseId|targetOrganization|remoteCloudId); a repeat initiate with the same key returns the existing transfer",
+                        "title": "Idempotency Key"
+                    },
+                    "initiatedBy": {
+                        "type": "string",
+                        "description": "User ID of the transfer initiator",
+                        "title": "Initiated By"
+                    },
+                    "custodyAuditTrail": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "event": {
+                                    "type": "string",
+                                    "enum": [
+                                        "initiated",
+                                        "accepted",
+                                        "rejected"
+                                    ],
+                                    "title": "Event"
+                                },
+                                "actor": {
+                                    "type": "string",
+                                    "description": "Local user id, or the remote cloud id",
+                                    "title": "Actor"
+                                },
+                                "actorType": {
+                                    "type": "string",
+                                    "enum": [
+                                        "local",
+                                        "remote"
+                                    ],
+                                    "title": "Actor Type"
+                                },
+                                "cloudId": {
+                                    "type": "string",
+                                    "title": "Cloud ID"
+                                },
+                                "timestamp": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "title": "Timestamp"
+                                }
+                            }
+                        },
+                        "description": "Append-only custody-change audit trail",
+                        "title": "Custody Audit Trail"
                     }
                 }
             },

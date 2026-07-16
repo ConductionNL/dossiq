@@ -10,11 +10,14 @@
  *
  * `procest-gebruikers` existed nowhere in the codebase, so `groupExists()`
  * returned false, the `&&` short-circuited, nothing was thrown, and EVERY
- * authenticated user could mutate ANY WOO case across all five
- * `#[NoAdminRequired]` endpoints — including statutory deadline extension.
+ * authenticated user could mutate ANY WOO case across every
+ * `#[NoAdminRequired]` endpoint on this controller — including statutory
+ * deadline extension.
  *
- * These tests prove the BAD path is now rejected on every one of those five
- * endpoints, and that the absent-group case does NOT grant access.
+ * These tests prove the BAD path is now rejected on all SEVEN of them, and that
+ * the absent-group case does NOT grant access. (The audit reported 3; there were
+ * 5 at the time of writing, and `woo-llm-anonymisation` has since added 2 more
+ * that silently inherited the same fail-open.)
  *
  * @category Tests
  * @package  OCA\Procest\Tests\Unit\Controller
@@ -38,6 +41,7 @@ namespace OCA\Procest\Tests\Unit\Controller;
 use OCA\Procest\Controller\WOOAssessmentController;
 use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\WOOAnonymisationAssistService;
 use OCA\Procest\Service\WOODecisionService;
 use OCA\Procest\Service\WOODeadlineService;
 use OCA\Procest\Service\WOODocumentAssessmentService;
@@ -117,6 +121,11 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase
     private $publicationService;
 
     /**
+     * @var WOOAnonymisationAssistService|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private $anonymisationAssist;
+
+    /**
      * Set up fixtures. The case under test is handled by `alice`.
      *
      * @return void
@@ -130,7 +139,8 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase
         $this->assessmentService  = $this->createMock(WOODocumentAssessmentService::class);
         $this->deadlineService    = $this->createMock(WOODeadlineService::class);
         $this->decisionService    = $this->createMock(WOODecisionService::class);
-        $this->publicationService = $this->createMock(WooPublicationService::class);
+        $this->publicationService  = $this->createMock(WooPublicationService::class);
+        $this->anonymisationAssist = $this->createMock(WOOAnonymisationAssistService::class);
 
         $this->settingsService->method('getObjectService')->willReturn($this->objectService);
         $this->settingsService->method('getConfigValue')->willReturnCallback(
@@ -173,6 +183,7 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase
             deadlineService: $this->deadlineService,
             decisionService: $this->decisionService,
             publicationService: $this->publicationService,
+            anonymisationAssist: $this->anonymisationAssist,
             userSession: $this->userSession,
             caseAccessGuard: $guard,
             logger: $this->createMock(LoggerInterface::class),
@@ -180,18 +191,26 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase
     }//end controllerFor()
 
     /**
-     * Every WOO mutation endpoint, invoked on the controller.
+     * Every `#[NoAdminRequired]` WOO mutation endpoint, with its arguments.
      *
-     * @return array<string, array{0: string}>
+     * All of them route through `requireCaseMutationAccess()`, so all of them
+     * inherited the fail-open. `proposeRedaction` / `reviewRedactionProposal`
+     * arrived later (woo-llm-anonymisation) and inherited it too — the blast
+     * radius grows every time an endpoint is added to this controller, which is
+     * exactly why the guard itself must fail closed.
+     *
+     * @return array<string, array{0: string, 1: array<int, string>}>
      */
     public static function mutationEndpointProvider(): array
     {
         return [
-            'bulkAssess'          => ['bulkAssess'],
-            'extendDeadline'      => ['extendDeadline'],
-            'createDecision'      => ['createDecision'],
-            'publishDecision'     => ['publishDecision'],
-            'withdrawPublication' => ['withdrawPublication'],
+            'bulkAssess'              => ['bulkAssess', ['case-1']],
+            'extendDeadline'          => ['extendDeadline', ['case-1']],
+            'createDecision'          => ['createDecision', ['case-1']],
+            'publishDecision'         => ['publishDecision', ['case-1']],
+            'withdrawPublication'     => ['withdrawPublication', ['case-1']],
+            'proposeRedaction'        => ['proposeRedaction', ['case-1', 'doc-1']],
+            'reviewRedactionProposal' => ['reviewRedactionProposal', ['case-1', 'doc-1']],
         ];
     }//end mutationEndpointProvider()
 
@@ -203,13 +222,14 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase
      * manager mock — i.e. this test runs in exactly the absent-group condition
      * that previously granted access to everyone.
      *
-     * @param string $method The controller method under test.
+     * @param string            $method The controller method under test.
+     * @param array<int, string> $args  The method arguments.
      *
      * @return void
      *
      * @dataProvider mutationEndpointProvider
      */
-    public function testAuthenticatedNonAssigneeIsRejectedFromEveryMutationEndpoint(string $method): void
+    public function testAuthenticatedNonAssigneeIsRejectedFromEveryMutationEndpoint(string $method, array $args): void
     {
         $controller = $this->controllerFor('mallory');
 
@@ -219,10 +239,12 @@ class WOOAssessmentControllerAuthorizationTest extends TestCase
         $this->decisionService->expects($this->never())->method('assembleDecision');
         $this->publicationService->expects($this->never())->method('publish');
         $this->publicationService->expects($this->never())->method('withdraw');
+        $this->anonymisationAssist->expects($this->never())->method('proposeSpans');
+        $this->anonymisationAssist->expects($this->never())->method('reviewProposal');
 
         $this->expectException(OCSForbiddenException::class);
 
-        $controller->$method('case-1');
+        $controller->$method(...$args);
     }//end testAuthenticatedNonAssigneeIsRejectedFromEveryMutationEndpoint()
 
     /**

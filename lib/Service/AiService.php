@@ -49,6 +49,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
+ * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
  */
 class AiService
 {
@@ -730,6 +731,54 @@ class AiService
 
         return $type.'/'.$name;
     }//end getModelIdentifier()
+
+    /**
+     * Deterministically detect PII spans in free text using the SAME
+     * `PII_PATTERNS` regex set `stripPiiIfEnabled()` uses to scrub prompts
+     * before they leave this app. Returns character offsets rather than
+     * scrubbing, so callers (e.g. `WOOAnonymisationAssistService`) can
+     * present the exact matched ranges for human review and treat them as an
+     * immutable "rules floor" that an LLM-assisted proposal is layered on
+     * top of, never allowed to remove (woo-llm-anonymisation design.md).
+     *
+     * Public and pure (no I/O, no config lookups) — this is the ONE place
+     * the deterministic PII pattern set is defined; `stripPiiIfEnabled()`
+     * keeps its own `preg_replace()` call for the (different) scrub-in-place
+     * shape it needs, but both read from the same `PII_PATTERNS` constant so
+     * the two can never drift apart on WHICH patterns count as PII.
+     *
+     * @param string $text The text to scan.
+     *
+     * @return array<int, array{start: int, end: int, category: string, text: string}>
+     *         Spans sorted by `start`, ascending.
+     *
+     * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-1-1
+     */
+    public function detectDeterministicPiiSpans(string $text): array
+    {
+        $spans = [];
+
+        foreach (self::PII_PATTERNS as $category => $pattern) {
+            $matches = [];
+            if (preg_match_all($pattern, $text, $matches, PREG_OFFSET_CAPTURE) === false) {
+                continue;
+            }
+
+            foreach ($matches[0] as $match) {
+                [$matchedText, $byteOffset] = $match;
+                $spans[] = [
+                    'start'    => $byteOffset,
+                    'end'      => ($byteOffset + strlen($matchedText)),
+                    'category' => $category,
+                    'text'     => $matchedText,
+                ];
+            }
+        }
+
+        usort($spans, static fn (array $a, array $b): int => ($a['start'] <=> $b['start']));
+
+        return $spans;
+    }//end detectDeterministicPiiSpans()
 
     /**
      * Strip PII from prompt text if PII stripping is enabled.
