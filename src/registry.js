@@ -52,6 +52,10 @@ import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+// Federated case sharing/transfer/activity — federated-case-collaboration.
+// @spec openspec/specs/federated-case-collaboration/spec.md
+import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
+import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
@@ -289,6 +293,13 @@ const registry = {
 		kind: 'page',
 		component: PublicStatusPage,
 	},
+	// Remote-org accept/reject for a federated zaakoverdracht — authenticated
+	// via the transfer-scoped OR federated-share bearer token in the URL,
+	// not a local session (federated-case-collaboration).
+	PublicFederatedTransferPage: {
+		kind: 'page',
+		component: PublicFederatedTransferPage,
+	},
 
 	// --- Detail-tab components (sidebar component: entries). ---
 	// These resolve when a sidebarTab uses `component: "<key>"` instead of
@@ -370,6 +381,17 @@ const registry = {
 		kind: 'page',
 		component: CaseNotesTab,
 		_note: 'Mention-aware notes sidebar tab: wraps the library CnNotesTab (via leafTab(\'notes\')) and POSTs mention payloads to /api/notes/mention. Zero note/mention UI logic reimplemented — see CaseNotesTab.vue.',
+	},
+	// --- Sharing/transfer sidebar tab (federated-case-collaboration). ---
+	// Wires the previously-orphaned ShareTab/CreateShareDialog/
+	// CaseTransferDialog components (zero references anywhere before this
+	// change) plus the new federated-share/activity UI into the real
+	// case-detail sidebar. See CaseSharingTab.vue + design.md §7.
+	// @spec openspec/specs/federated-case-collaboration/spec.md#the-case-detail-sharing-surface-is-wired-not-orphaned
+	CaseSharingTab: {
+		kind: 'page',
+		component: CaseSharingTab,
+		_note: 'Partner + federated case sharing, transfer and activity — container that wires ShareTab/CreateShareDialog/CaseTransferDialog/CreateFederatedShareDialog/FederatedActivityPanel to the backend API.',
 	},
 	AdviesPanel: {
 		kind: 'page',
