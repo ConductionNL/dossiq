@@ -35,6 +35,7 @@ namespace OCA\Procest\Service;
 use InvalidArgumentException;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
+use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -92,16 +93,47 @@ class TenantSaasService
     /**
      * Constructor.
      *
-     * @param IAppManager        $appManager App manager (for OR availability check).
-     * @param ContainerInterface $container  DI container (graceful OR resolution).
-     * @param LoggerInterface    $logger     Logger.
+     * @param IAppManager             $appManager  App manager (for OR availability check).
+     * @param ContainerInterface      $container   DI container (graceful OR resolution).
+     * @param LoggerInterface         $logger      Logger.
+     * @param TenantAuditTrailService $audit       Tenant-stamped audit-trail emitter.
+     * @param IUserSession            $userSession Current user session (audit actor).
      */
     public function __construct(
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
+        private TenantAuditTrailService $audit,
+        private IUserSession $userSession,
     ) {
     }//end __construct()
+
+    /**
+     * Emit a tenant-stamped audit-trail entry for a provisioning/status
+     * mutation. Backs the `audit_logged_mutations` hardening-checklist claim —
+     * every create/updateStatus writes an audit row (procest#223 finding 2:
+     * this was a false compliance attestation before the wiring landed).
+     *
+     * @param string $action   Audit action verb.
+     * @param string $tenantId Tenant UUID.
+     * @param string $resource Affected resource description.
+     *
+     * @return void
+     */
+    private function auditMutation(string $action, string $tenantId, string $resource): void
+    {
+        $user  = $this->userSession->getUser();
+        $actor = ($user === null) ? 'system' : $user->getUID();
+        $this->audit->emit(
+            [
+                'action'   => $action,
+                'actor'    => $actor,
+                'role'     => 'tenant-admin',
+                'resource' => $resource,
+                'tenantId' => $tenantId,
+            ]
+        );
+    }//end auditMutation()
 
     /**
      * Create a new tenant in `onboarding` status.
@@ -114,6 +146,8 @@ class TenantSaasService
      *
      * @throws InvalidArgumentException On invalid tier or duplicate slug.
      * @throws RuntimeException         When OpenRegister is unavailable.
+     *
+     * @spec openspec/specs/tenant-crud-lifecycle/spec.md
      */
     public function create(string $name, string $kvkNumber, string $tier): array
     {
@@ -137,7 +171,10 @@ class TenantSaasService
             'createdAt'     => (new \DateTimeImmutable('now'))->format(DATE_ATOM),
         ];
 
-        return $this->saveTenant(tenant: $tenant, uuid: null);
+        $saved    = $this->saveTenant(tenant: $tenant, uuid: null);
+        $tenantId = (string) ($saved['id'] ?? $saved['uuid'] ?? $slug);
+        $this->auditMutation(action: 'tenant.provisioned', tenantId: $tenantId, resource: 'tenant:'.$slug);
+        return $saved;
     }//end create()
 
     /**
@@ -227,6 +264,8 @@ class TenantSaasService
      *
      * @throws InvalidArgumentException On illegal transition or missing tenant.
      * @throws RuntimeException         When OpenRegister is unavailable.
+     *
+     * @spec openspec/specs/tenant-crud-lifecycle/spec.md
      */
     public function updateStatus(string $tenantId, string $newStatus): array
     {
@@ -247,7 +286,13 @@ class TenantSaasService
             $row['terminatedAt'] = (new \DateTimeImmutable('now'))->format(DATE_ATOM);
         }
 
-        return $this->saveTenant(tenant: $row, uuid: $tenantId);
+        $saved = $this->saveTenant(tenant: $row, uuid: $tenantId);
+        $this->auditMutation(
+            action: 'tenant.status_changed',
+            tenantId: $tenantId,
+            resource: 'tenant:'.$tenantId.' '.$current.'->'.$newStatus
+        );
+        return $saved;
     }//end updateStatus()
 
     /**
@@ -383,8 +428,10 @@ class TenantSaasService
      * @return array<string,mixed> Persisted tenant row.
      *
      * @throws RuntimeException When OpenRegister is unavailable.
+     *
+     * @spec openspec/specs/tenant-crud-lifecycle/spec.md
      */
-    private function saveTenant(array $tenant, ?string $uuid): array
+    protected function saveTenant(array $tenant, ?string $uuid): array
     {
         $os = $this->getObjectService();
         if ($os === null) {

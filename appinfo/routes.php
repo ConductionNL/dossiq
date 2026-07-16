@@ -379,6 +379,10 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'tenantSaas#update',  'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'PATCH'],
         ['name' => 'tenantSaas#destroy', 'url' => '/api/saas/tenants/{tenantId}',       'verb' => 'DELETE'],
 
+        // SaaS metered billing (chain member 10) — aggregate usage + run Shillinq invoicing.
+        ['name' => 'tenantSaas#billingSummary', 'url' => '/api/saas/tenants/{tenantId}/billing/{month}',     'verb' => 'GET'],
+        ['name' => 'tenantSaas#runBilling',     'url' => '/api/saas/tenants/{tenantId}/billing/{month}/run', 'verb' => 'POST'],
+
         // SaaS onboarding (chain member 07) — checklist init/progress/complete + go-live activation.
         ['name' => 'tenantOnboarding#initialise', 'url' => '/api/saas/tenants/{tenantId}/onboarding/initialise',     'verb' => 'POST'],
         ['name' => 'tenantOnboarding#progress',   'url' => '/api/saas/tenants/{tenantId}/onboarding/progress',       'verb' => 'GET'],

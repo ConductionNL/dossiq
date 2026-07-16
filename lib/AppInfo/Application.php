@@ -67,6 +67,7 @@ use OCA\Procest\Middleware\TenantContextMiddleware;
 use OCA\Procest\Middleware\TenantIsolationMiddleware;
 use OCA\Procest\Middleware\TenantMiddleware;
 use OCA\Procest\Middleware\ZgwAuthMiddleware;
+use OCA\Procest\Service\ShillinqIntegrationService;
 use OCA\Procest\Service\TenantJwtService;
 use OCP\IConfig;
 use OCP\AppFramework\App;
@@ -299,6 +300,26 @@ class Application extends App implements IBootstrap
                     }
 
                     return new TenantJwtService(signingSecret: $secret);
+                }
+                );
+
+        // SaaS chain (member 10): factory the ShillinqIntegrationService with
+        // the invoicing endpoint + API key from app config. Without this the
+        // string constructor args default to '' and exportInvoice short-circuits
+        // to "Shillinq not configured" — leaving every tenant invoice unexported
+        // (procest#223 finding 2). Empty config keeps the graceful no-op.
+        $context->registerService(
+                ShillinqIntegrationService::class,
+                function (\Psr\Container\ContainerInterface $c): ShillinqIntegrationService {
+                    $config  = $c->get(IConfig::class);
+                    $baseUrl = (string) $config->getAppValue(self::APP_ID, 'shillinq_base_url', '');
+                    $apiKey  = (string) $config->getAppValue(self::APP_ID, 'shillinq_api_key', '');
+                    return new ShillinqIntegrationService(
+                        httpClientService: $c->get('OCP\\Http\\Client\\IClientService'),
+                        logger: $c->get(\Psr\Log\LoggerInterface::class),
+                        shillinqBaseUrl: $baseUrl,
+                        shillinqApiKey: $apiKey,
+                    );
                 }
                 );
 

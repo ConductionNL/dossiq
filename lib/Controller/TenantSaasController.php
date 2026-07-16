@@ -31,6 +31,7 @@ namespace OCA\Procest\Controller;
 
 use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\TenantBillingService;
 use OCA\Procest\Service\TenantSaasService;
 use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -56,12 +57,14 @@ class TenantSaasController extends Controller
     /**
      * Constructor.
      *
-     * @param IRequest          $request           HTTP request.
-     * @param TenantSaasService $tenantSaasService Tenant SaaS service.
+     * @param IRequest             $request           HTTP request.
+     * @param TenantSaasService    $tenantSaasService Tenant SaaS service.
+     * @param TenantBillingService $billingService    Tenant billing service.
      */
     public function __construct(
         IRequest $request,
         private readonly TenantSaasService $tenantSaasService,
+        private readonly TenantBillingService $billingService,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -210,4 +213,50 @@ class TenantSaasController extends Controller
 
         return new JSONResponse(['success' => true]);
     }//end destroy()
+
+    /**
+     * Aggregate a tenant's usage billing for a month (computed, not exported).
+     *
+     * @param string $tenantId Tenant UUID.
+     * @param string $month    YYYY-MM.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/specs/tenant-billing/spec.md
+     */
+    #[AuthorizedAdminSetting(AdminSettings::class)]
+    public function billingSummary(string $tenantId, string $month): JSONResponse
+    {
+        try {
+            $summary = $this->billingService->getMonthBilling(tenantId: $tenantId, month: $month);
+        } catch (InvalidArgumentException $e) {
+            return new JSONResponse(['success' => false, 'error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+
+        return new JSONResponse(['success' => true, 'summary' => $summary]);
+    }//end billingSummary()
+
+    /**
+     * Run monthly invoicing for a tenant: aggregate unbilled usage, export a
+     * Shillinq invoice, and stamp the events. Returns the computed amount and
+     * the invoice reference.
+     *
+     * @param string $tenantId Tenant UUID.
+     * @param string $month    YYYY-MM.
+     *
+     * @return JSONResponse
+     *
+     * @spec openspec/specs/tenant-billing/spec.md
+     */
+    #[AuthorizedAdminSetting(AdminSettings::class)]
+    public function runBilling(string $tenantId, string $month): JSONResponse
+    {
+        try {
+            $result = $this->billingService->runInvoicing(tenantId: $tenantId, month: $month);
+        } catch (InvalidArgumentException $e) {
+            return new JSONResponse(['success' => false, 'error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+
+        return new JSONResponse(['success' => true, 'invoice' => $result]);
+    }//end runBilling()
 }//end class

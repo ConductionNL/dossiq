@@ -38,7 +38,50 @@ class TenantBillingServiceTest extends TestCase
             appManager: $this->createMock(IAppManager::class),
             container: $this->createMock(ContainerInterface::class),
             logger: $this->createMock(LoggerInterface::class),
+            shillinq: $this->createMock(\OCA\Procest\Service\ShillinqIntegrationService::class),
         );
+    }
+
+    public function testTierMonthlyPriceResolvesKnownTiersAndDefaultsToZero(): void
+    {
+        $this->assertSame(49.0, $this->svc->tierMonthlyPrice('basic'));
+        $this->assertSame(149.0, $this->svc->tierMonthlyPrice('standard'));
+        $this->assertSame(499.0, $this->svc->tierMonthlyPrice('enterprise'));
+        $this->assertSame(0.0, $this->svc->tierMonthlyPrice('unknown'));
+    }
+
+    public function testRunInvoicingComputesNonZeroAmountAndExports(): void
+    {
+        // A tenant with one activation event at the standard tier price.
+        $events = [
+            ['uuid' => 'e-1', 'tenantRef' => 't-1', 'eventType' => 'user_activated', 'quantity' => 1.0, 'unitPrice' => 149.0, 'currency' => 'EUR', 'occurredAt' => '2026-07-05T10:00:00+00:00', 'invoiceRef' => null],
+        ];
+
+        $shillinq = $this->createMock(\OCA\Procest\Service\ShillinqIntegrationService::class);
+        $shillinq->method('buildInvoicePayload')->willReturn(['tenant_id' => 't-1', 'period' => '2026-07', 'currency' => 'EUR', 'line_items' => []]);
+        $shillinq->expects($this->once())
+            ->method('exportInvoice')
+            ->willReturn(['success' => true, 'invoiceRef' => 'INV-2026-07-t1', 'attempts' => 1]);
+
+        $svc = $this->getMockBuilder(TenantBillingService::class)
+            ->setConstructorArgs([
+                $this->createMock(IAppManager::class),
+                $this->createMock(ContainerInterface::class),
+                $this->createMock(LoggerInterface::class),
+                $shillinq,
+            ])
+            ->onlyMethods(['fetchEventsForMonth', 'markExported'])
+            ->getMock();
+        $svc->method('fetchEventsForMonth')->willReturn($events);
+        $svc->expects($this->once())->method('markExported')->willReturn(1);
+
+        $result = $svc->runInvoicing('t-1', '2026-07');
+
+        $this->assertGreaterThan(0.0, $result['amount'], 'invoice amount must be non-zero for real usage');
+        $this->assertSame(149.0, $result['amount']);
+        $this->assertTrue($result['exported']);
+        $this->assertSame('INV-2026-07-t1', $result['invoiceRef']);
+        $this->assertSame(1, $result['eventCount']);
     }
 
     public function testEmitEventRejectsUnknownType(): void
