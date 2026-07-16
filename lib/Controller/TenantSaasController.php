@@ -222,7 +222,7 @@ class TenantSaasController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/compliance-and-tenant-fixes/specs/compliance-and-tenant-fixes/spec.md
+     * @spec openspec/specs/tenant-billing/spec.md
      */
     #[AuthorizedAdminSetting(AdminSettings::class)]
     public function billingSummary(string $tenantId, string $month): JSONResponse
@@ -246,7 +246,7 @@ class TenantSaasController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/compliance-and-tenant-fixes/specs/compliance-and-tenant-fixes/spec.md
+     * @spec openspec/specs/tenant-billing/spec.md
      */
     #[AuthorizedAdminSetting(AdminSettings::class)]
     public function runBilling(string $tenantId, string $month): JSONResponse

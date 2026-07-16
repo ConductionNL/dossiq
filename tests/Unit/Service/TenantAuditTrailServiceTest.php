@@ -14,7 +14,7 @@
  * @copyright 2026 Conduction B.V.
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
- * @spec openspec/changes/compliance-and-tenant-fixes/specs/compliance-and-tenant-fixes/spec.md
+ * @spec openspec/specs/tenant-compliance/spec.md
  */
 
 declare(strict_types=1);

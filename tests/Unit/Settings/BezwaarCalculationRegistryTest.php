@@ -35,7 +35,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/compliance-and-tenant-fixes/specs/compliance-and-tenant-fixes/spec.md
+ * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 
 declare(strict_types=1);

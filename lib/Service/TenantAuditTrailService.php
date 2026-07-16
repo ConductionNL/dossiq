@@ -95,7 +95,7 @@ class TenantAuditTrailService
      *
      * @return array<string,mixed> Normalised entry (with `persisted`).
      *
-     * @spec openspec/changes/compliance-and-tenant-fixes/specs/compliance-and-tenant-fixes/spec.md
+     * @spec openspec/specs/tenant-compliance/spec.md
      */
     public function emit(array $payload): array
     {
@@ -251,7 +251,7 @@ class TenantAuditTrailService
      *
      * @return array<int, array{key:string, description:string, evidence:string, status:string}>
      *
-     * @spec openspec/changes/compliance-and-tenant-fixes/specs/compliance-and-tenant-fixes/spec.md
+     * @spec openspec/specs/tenant-compliance/spec.md
      */
     public function hardeningChecklist(): array
     {
