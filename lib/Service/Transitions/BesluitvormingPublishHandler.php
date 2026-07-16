@@ -25,7 +25,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-006
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Auto-action handler that dispatches a besluit to DROP/LVBB.
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-006
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 class BesluitvormingPublishHandler implements ActionHandlerInterface
 {
@@ -67,7 +67,7 @@ class BesluitvormingPublishHandler implements ActionHandlerInterface
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      *
-     * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-006
+     * @spec openspec/specs/besluitvorming-workflow/spec.md
      */
     public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
     {

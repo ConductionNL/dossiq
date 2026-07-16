@@ -17,7 +17,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-25-procest-app-scaffold/tasks.md#task-2
+ * @spec openspec/specs/procest-app-scaffold/spec.md
  */
 
 declare(strict_types=1);

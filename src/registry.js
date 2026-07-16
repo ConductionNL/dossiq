@@ -60,7 +60,7 @@ import PublicFederatedTransferPage from './views/public/PublicFederatedTransferP
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
 // export-leaf URL client-side; no procest-side serialization (ADR-022).
-// @spec openspec/changes/case-list-export-via-or-export-leaf/specs/case-list-export-via-or-export-leaf/spec.md
+// @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 import CaseListExportAction from './components/export/CaseListExportAction.vue'
 
 // Cases-on-map — full-screen multi-object overview. Consumes OpenRegister's
@@ -140,7 +140,7 @@ import InspectionPanel from './views/cases/components/InspectionPanel.vue'
 // `forms`/`photos` live in), so it resolves the same way those leaves do:
 // through `leafTab()` into a `component:` sidebar tab. See
 // src/integrations/leafTabs.js.
-// @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#version-history
+// @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 
 /**
  * V2 component registry.
@@ -162,7 +162,7 @@ const registry = {
 	},
 
 	// --- Case-list CSV/Excel export via the OR export leaf. ---
-	// @spec openspec/changes/case-list-export-via-or-export-leaf/specs/case-list-export-via-or-export-leaf/spec.md
+	// @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 	CaseListExportAction: {
 		kind: 'page',
 		component: CaseListExportAction,
@@ -191,7 +191,7 @@ const registry = {
 	},
 
 	// --- Workflow Board — Kanban with drag-to-advance status transitions. ---
-	// @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-006
+	// @spec openspec/specs/dashboard/spec.md
 	WorkflowBoardView: {
 		kind: 'page',
 		component: WorkflowBoardView,
@@ -363,7 +363,7 @@ const registry = {
 	// 'version-history' key (see the ADR-049-adjacent comment above). Wired
 	// as a `component:` sidebar tab beside "audit" on every detail page's
 	// manifest sidebar.tabs[] (src/manifest.json).
-	// @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#version-history
+	// @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	VersionHistoryLeafTab: {
 		kind: 'page',
 		component: leafTab('version-history'),
@@ -376,7 +376,7 @@ const registry = {
 	// the full CnNotesTab (which does emit `mention`) and forwards the event
 	// to procest's own notification endpoint — see CaseNotesTab.vue for the
 	// full rationale. Wired as a `component:` sidebar tab on CaseDetail.
-	// @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#mentions
+	// @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 	CaseNotesTab: {
 		kind: 'page',
 		component: CaseNotesTab,

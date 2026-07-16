@@ -25,7 +25,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
  */
 
 declare(strict_types=1);
@@ -66,7 +66,7 @@ class CircuitBreakerService
      *
      * @return bool True when the endpoint may be called.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
      */
     public function checkEndpoint(array $endpoint): bool
     {
@@ -90,7 +90,7 @@ class CircuitBreakerService
      *
      * @return void
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
      */
     public function recordFailure(array $endpoint, array $fout=[]): void
     {
@@ -122,7 +122,7 @@ class CircuitBreakerService
      *
      * @return void
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
      */
     public function resetEndpoint(array $endpoint): void
     {
@@ -142,7 +142,7 @@ class CircuitBreakerService
      *
      * @return bool
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
      */
     public function isCircuitOpen(array $endpoint): bool
     {

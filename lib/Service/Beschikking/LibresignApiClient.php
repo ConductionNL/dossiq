@@ -32,7 +32,7 @@
  * @link https://procest.nl
  * @link https://github.com/LibreSign/libresign
  *
- * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+ * @spec openspec/specs/libresign-besluit-signing/spec.md
  */
 
 declare(strict_types=1);
@@ -50,7 +50,7 @@ use Throwable;
 /**
  * Thin HTTP client for LibreSign's local OCS API.
  *
- * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+ * @spec openspec/specs/libresign-besluit-signing/spec.md
  */
 class LibresignApiClient
 {
@@ -106,7 +106,7 @@ class LibresignApiClient
      *
      * @throws RuntimeException 'libresign_api_error' on any transport/decode failure.
      *
-     * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+     * @spec openspec/specs/libresign-besluit-signing/spec.md
      */
     public function requestSignature(int $fileId, string $documentName, array $signers): array
     {
@@ -129,7 +129,7 @@ class LibresignApiClient
      *
      * @throws RuntimeException 'libresign_api_error' on any transport/decode failure.
      *
-     * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+     * @spec openspec/specs/libresign-besluit-signing/spec.md
      */
     public function getStatus(string $uuid): array
     {

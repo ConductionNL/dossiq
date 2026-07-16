@@ -34,8 +34,8 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-stuf-integration/tasks.md#task-5
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
+ * @spec openspec/specs/stuf-integration/spec.md
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
  */
 
 declare(strict_types=1);
@@ -352,7 +352,7 @@ class StufMessageBuilder
      * @throws ZaaktypeNotMappedException When case.type has no mapping on the endpoint.
      * @throws PayloadTooLargeException   When the attached documents exceed the configured ceiling.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
      */
     public function buildLk01CreeerZaak(
         array $case,
@@ -422,7 +422,7 @@ class StufMessageBuilder
      *
      * @return string The envelope XML.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
      */
     public function buildLk02ActualiseerZaak(array $case, array $mapping, array $endpoint): string
     {
@@ -455,7 +455,7 @@ class StufMessageBuilder
      *
      * @return string The envelope XML.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
      */
     public function buildLv01GeefDetails(string $zaakId, array $endpoint, array $gewensteElementen=[]): string
     {
@@ -490,7 +490,7 @@ class StufMessageBuilder
      *
      * @return string The envelope XML.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-zaak-identificatie-allocation
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-zaak-identificatie-allocation
      */
     public function buildDu01GenereerZaakId(array $endpoint): string
     {
@@ -518,7 +518,7 @@ class StufMessageBuilder
      *
      * @throws VrijBerichtNotRegisteredException If the template is not registered.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
      */
     public function buildDu01VrijBericht(string $name, array $payload, array $endpoint): string
     {
@@ -579,7 +579,7 @@ class StufMessageBuilder
      *
      * @return string The stuurgegevens XML snippet.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
      */
     public function buildOutboundStuurgegevens(
         string $berichtCode,
@@ -616,7 +616,7 @@ class StufMessageBuilder
      *
      * @return string A 26-character uppercase identifier.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
      */
     public function generateReferentienummer(): string
     {
@@ -641,7 +641,7 @@ class StufMessageBuilder
      *
      * @return string The 17-character timestamp.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-envelope-construction
      */
     public function currentTimestampStuf(): string
     {
@@ -660,7 +660,7 @@ class StufMessageBuilder
      *
      * @throws PayloadTooLargeException If the limit is exceeded.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-document-payload-limit
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-document-payload-limit
      */
     private function assertPayloadFitsAndEncode(array $documents, int $limitBytes): array
     {
@@ -778,7 +778,7 @@ class StufMessageBuilder
      *
      * @return string The full envelope XML.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
      */
     private function wrapEnvelope(string $bodyXml, array $endpoint): string
     {

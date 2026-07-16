@@ -26,7 +26,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
 /**
  * Materialises the ZGW Besluit from a decidesk Decision outcome.
  *
- * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-003
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 class BesluitMaterialisationService
 {
@@ -70,7 +70,7 @@ class BesluitMaterialisationService
      *
      * @throws RuntimeException When the case cannot be loaded or the Besluit cannot be persisted.
      *
-     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-003
+     * @spec openspec/specs/contract-decision-delegation/spec.md
      */
     public function materialise(string $caseId, string $besluitId, array $outcome): array
     {
@@ -165,7 +165,7 @@ class BesluitMaterialisationService
      *
      * @return array<string,mixed> The Besluit payload ready for saveObject.
      *
-     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-003
+     * @spec openspec/specs/contract-decision-delegation/spec.md
      */
     public function buildBesluitPayload(string $caseId, array $outcome): array
     {

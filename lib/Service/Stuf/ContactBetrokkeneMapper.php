@@ -24,7 +24,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
  */
 
 declare(strict_types=1);
@@ -65,7 +65,7 @@ class ContactBetrokkeneMapper
      *
      * @return array The persisted ZaaksysteemMapping.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
      */
     public function linkContact(array $contact, string $betrokkene, array $endpoint, string $entiteit='NPS'): array
     {
@@ -99,7 +99,7 @@ class ContactBetrokkeneMapper
      *
      * @return string The betrokkene identificatie (existing or freshly returned).
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
      */
     public function findOrCreateBetrokkene(array $contact, array $endpoint, callable $lookupCallable): string
     {
@@ -136,7 +136,7 @@ class ContactBetrokkeneMapper
      *
      * @return array|null
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
      */
     public function getContactMapping(array $contact, array $endpoint): ?array
     {

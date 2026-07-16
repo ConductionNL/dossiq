@@ -570,7 +570,7 @@ export function formatRelativeTime(dateString) {
  * @return {Array<{ type: string, label: string, count: number }>} `type` = caseType id
  *   (the case's stored value), `label` = title. Sorted by count descending.
  *
- * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-003
+ * @spec openspec/specs/dashboard/spec.md
  */
 export function aggregateByType(openCases, caseTypes) {
 	const labelMap = new Map()
@@ -624,7 +624,7 @@ export const WOO_WARNING_DAYS = 14
  * @return {Array<{ id, identifier, title, initiator, deadline, daysRemaining, isOverdue, severity }>}
  *   Sorted overdue first (most overdue), then by ascending daysRemaining.
  *
- * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-004
+ * @spec openspec/specs/dashboard/spec.md
  */
 export function getWooCases(openCases, caseTypes) {
 	const typeTitleMap = new Map()
@@ -686,7 +686,7 @@ export function getWooCases(openCases, caseTypes) {
  * @param {number} weeks Number of trailing weeks to include
  * @return {Array<{ weekLabel: string, count: number }>} Oldest week first
  *
- * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-005
+ * @spec openspec/specs/dashboard/spec.md
  */
 export function computeWeeklyThroughput(completedCases, weeks = 12) {
 	// Build a Monday-anchored week key for an ISO-week approximation.

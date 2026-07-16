@@ -20,8 +20,8 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-2
- * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-4
+ * @spec openspec/specs/berichtenbox-integration/spec.md
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 declare(strict_types=1);
@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Service for sending messages to Mijn Overheid Berichtenbox.
  *
- * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-2
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 class BerichtenboxService
 {
@@ -167,7 +167,7 @@ class BerichtenboxService
      *
      * @return array<int, mixed> List of pending message records.
 
-     * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-5
+     * @spec openspec/specs/berichtenbox-integration/spec.md
      */
     public function getPendingMessages(): array
     {

@@ -15,7 +15,7 @@ const DURATION_REGEX = /^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?$/
  */
 /**
  * @param value
- * @spec openspec/changes/milestone-tracking/tasks.md
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 export function isValidDuration(value) {
 	if (!value || typeof value !== 'string') return false
@@ -30,7 +30,7 @@ export function isValidDuration(value) {
  */
 /**
  * @param iso
- * @spec openspec/changes/milestone-tracking/tasks.md
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 export function parseDuration(iso) {
 	if (!isValidDuration(iso)) return null
@@ -51,7 +51,7 @@ export function parseDuration(iso) {
  */
 /**
  * @param iso
- * @spec openspec/changes/milestone-tracking/tasks.md
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 export function formatDuration(iso) {
 	const parsed = parseDuration(iso)
@@ -94,7 +94,7 @@ export function formatDuration(iso) {
  */
 /**
  * @param value
- * @spec openspec/changes/milestone-tracking/tasks.md
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 export function getDurationError(value) {
 	if (!value) return ''

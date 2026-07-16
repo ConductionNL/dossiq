@@ -17,9 +17,9 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-dso-omgevingsloket-client/tasks.md#task-1
- * @spec openspec/changes/retrofit-2026-05-24-dso-omgevingsloket-client/tasks.md#task-2
- * @spec openspec/changes/retrofit-2026-05-24-dso-omgevingsloket-client/tasks.md#task-3
+ * @spec openspec/specs/dso-omgevingsloket-client/spec.md
+ * @spec openspec/specs/dso-omgevingsloket-client/spec.md
+ * @spec openspec/specs/dso-omgevingsloket-client/spec.md
  */
 
 declare(strict_types=1);

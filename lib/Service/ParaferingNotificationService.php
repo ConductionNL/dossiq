@@ -16,7 +16,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-parafering-actions-impl/tasks.md#task-3
+ * @spec openspec/specs/parafering-actions/spec.md
  */
 
 declare(strict_types=1);

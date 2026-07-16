@@ -10,7 +10,7 @@
  *
  * @return {Promise<{ available: boolean, configured: boolean, error: string|null }>}
  */
-/** @spec openspec/changes/openregister-integration/tasks.md */
+/** @spec openspec/specs/openregister-integration/spec.md */
 export async function checkOpenRegisterStatus() {
 	try {
 		const response = await fetch('/apps/procest/api/settings', {
@@ -45,7 +45,7 @@ export async function checkOpenRegisterStatus() {
  */
 /**
  * @param status
- * @spec openspec/changes/openregister-integration/tasks.md
+ * @spec openspec/specs/openregister-integration/spec.md
  */
 export function getStatusMessage(status) {
 	if (status.error) {

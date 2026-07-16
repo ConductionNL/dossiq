@@ -21,7 +21,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
  */
 
 declare(strict_types=1);
@@ -66,7 +66,7 @@ class StufRegisterAccess
      *
      * @return array The saved object as a plain array.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
      */
     public function saveObject(string $schema, array $data): array
     {

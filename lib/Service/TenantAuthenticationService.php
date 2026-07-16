@@ -220,7 +220,7 @@ class TenantAuthenticationService
      *
      * @return string|null Role name or null when unresolved.
      *
-     * @spec openspec/changes/procest-security-hardening/specs/security-hardening/spec.md
+     * @spec openspec/specs/security-hardening/spec.md
      */
     public function resolveUserRole(string $tenantId, string $userId): ?string
     {

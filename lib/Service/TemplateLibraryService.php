@@ -18,9 +18,9 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-2
- * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-3
- * @spec openspec/changes/retrofit-2026-05-24-template-library/tasks.md#task-4
+ * @spec openspec/specs/template-library/spec.md
+ * @spec openspec/specs/template-library/spec.md
+ * @spec openspec/specs/template-library/spec.md
  */
 
 declare(strict_types=1);

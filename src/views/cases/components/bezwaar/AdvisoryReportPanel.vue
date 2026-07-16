@@ -176,7 +176,7 @@ export default {
 		 * fields below remain procest input that feeds the raised Decision.
 		 *
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
-		 * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-003-the-zgw-besluitadvice-record-is-a-projection-of-the-decidesk-outcome
+		 * @spec openspec/specs/remaining-decision-delegation/spec.md
 		 */
 		report() {
 			const bezwaarStore = useBezwaarStore()

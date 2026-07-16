@@ -21,8 +21,8 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
- * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md#task-1
- * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md#task-2
+ * @spec openspec/specs/case-types/spec.md
+ * @spec openspec/specs/case-types/spec.md
  * @spec openspec/changes/zaaktype-copy/tasks.md#T06
  * @spec openspec/changes/zaaktype-copy/tasks.md#T07
  */

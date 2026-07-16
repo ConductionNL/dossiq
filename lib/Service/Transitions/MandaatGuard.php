@@ -26,7 +26,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-007
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use OCA\Procest\Service\MandaatValidationService;
 /**
  * Guard: verifies signing-official mandate against the mandaatregister.
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-007
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 class MandaatGuard implements GuardEvaluatorInterface
 {
@@ -65,7 +65,7 @@ class MandaatGuard implements GuardEvaluatorInterface
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      *
-     * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-007
+     * @spec openspec/specs/besluitvorming-workflow/spec.md
      */
     public function evaluate(array $guardConfig, array $case, string $userId): GuardResult
     {

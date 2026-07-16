@@ -7,7 +7,7 @@
  * DROP/LVBB publication, mandaat validation). All HTTP traffic uses
  * @nextcloud/axios for CSRF + auth interop. Never use raw fetch().
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'

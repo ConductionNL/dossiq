@@ -23,7 +23,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md
+ * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
@@ -83,8 +83,8 @@ class VoorstelBesluitController extends Controller
      *
      * @psalm-suppress PossiblyUnusedMethod
      *
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+     * @spec openspec/specs/remaining-decision-delegation/spec.md
+     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
      */
     #[NoAdminRequired]
     public function registerBesluit(string $voorstelId): JSONResponse

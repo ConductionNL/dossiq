@@ -22,7 +22,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-workflow-definition-model/tasks.md#task-3
+ * @spec openspec/specs/workflow-definition-model/spec.md
  */
 
 declare(strict_types=1);

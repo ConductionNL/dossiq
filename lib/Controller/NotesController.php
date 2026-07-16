@@ -25,7 +25,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#mentions
+ * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
 
 declare(strict_types=1);
@@ -79,7 +79,7 @@ class NotesController extends Controller
      *
      * @NoAdminRequired
      *
-     * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#mentions
+     * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
      */
     #[NoAdminRequired]
     public function mention(): JSONResponse

@@ -21,7 +21,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use Psr\Log\LoggerInterface;
  * Service computing the intelligent work-queue urgency score and the
  * coordinator workload summary.
  *
- * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — cohesive unit split into
  * many small, individually-simple, individually-unit-tested methods (case
@@ -134,7 +134,7 @@ class WorkQueueService
      *
      * @return array<int, array<string, mixed>> Scored, sorted queue items.
      *
-     * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+     * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
      */
     public function computeQueue(string $userId, ?DateTimeImmutable $now=null): array
     {
@@ -188,7 +188,7 @@ class WorkQueueService
      *
      * @return array<int, array{handler: string, openCaseCount: int}> Handlers sorted by count descending.
      *
-     * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+     * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
      */
     public function computeWorkload(): array
     {
@@ -278,7 +278,7 @@ class WorkQueueService
      *     scoreBreakdown: array{deadline: float, priority: float, age: float}
      * } Score result.
      *
-     * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+     * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
      */
     public function scoreItem(?string $deadline, string $priority, ?string $referenceDate, DateTimeImmutable $now): array
     {

@@ -34,7 +34,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-needs-input-escalation
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-needs-input-escalation
  */
 
 declare(strict_types=1);
@@ -73,7 +73,7 @@ class NeedsInputDispatcher
      *
      * @return void
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-needs-input-escalation
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-needs-input-escalation
      */
     public function dispatch(string $type, array $context=[]): void
     {

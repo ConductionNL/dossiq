@@ -19,7 +19,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-1
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 
 declare(strict_types=1);

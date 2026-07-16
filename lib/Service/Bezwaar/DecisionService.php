@@ -67,7 +67,7 @@ use Throwable;
  * Bezwaar decision service: draft, publish, and apply to the linked
  * bezwaar via the status-transition-engine.
  *
- * @spec openspec/changes/bezwaar-decision/specs/bezwaar-decision/spec.md
+ * @spec openspec/specs/bezwaar-decision/spec.md
  */
 class DecisionService
 {
@@ -260,9 +260,9 @@ class DecisionService
      * @throws RuntimeException When validation fails, the decidesk leaf is
      *                          unavailable (fail closed), or persistence errors.
 
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
+     * @spec openspec/specs/remaining-decision-delegation/spec.md
+     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
      */
     public function publish(string $decisionId): array
     {

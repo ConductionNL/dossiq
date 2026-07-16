@@ -37,7 +37,7 @@ use RuntimeException;
 /**
  * Bulk wrapper around the status-transition engine.
  *
- * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
  */
 class BulkStatusTransitionService
 {
@@ -71,7 +71,7 @@ class BulkStatusTransitionService
      *
      * @throws RuntimeException When the id count is 0, the cap is exceeded, or transitionId is empty
      *
-     * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
+     * @spec openspec/specs/case-bulk-status-transition/spec.md
      */
     public function preview(array $caseIds, string $transitionId): array
     {
@@ -147,7 +147,7 @@ class BulkStatusTransitionService
      *
      * @throws RuntimeException When the id count is 0, the cap is exceeded, or transitionId is empty
      *
-     * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
+     * @spec openspec/specs/case-bulk-status-transition/spec.md
      */
     public function execute(array $caseIds, string $transitionId, ?string $comment): array
     {

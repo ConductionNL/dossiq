@@ -21,7 +21,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
  */
 
 declare(strict_types=1);
@@ -63,7 +63,7 @@ class StufMessageHandler
      *
      * @return array The persisted StufMessage as array.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
      */
     public function logOutbound(
         array $endpoint,
@@ -107,7 +107,7 @@ class StufMessageHandler
      *
      * @return array The persisted StufMessage as array.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
      */
     public function logInbound(
         array $endpoint,
@@ -146,7 +146,7 @@ class StufMessageHandler
      *
      * @return array The updated row.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
      */
     public function recordRetry(array $msg, int $attempt, int $httpStatus, array $fout, int $durationMs): array
     {
@@ -173,7 +173,7 @@ class StufMessageHandler
      *
      * @return array The updated row.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
      */
     public function transitionStatus(array $msg, string $newStatus, array $extras=[]): array
     {

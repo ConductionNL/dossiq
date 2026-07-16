@@ -35,7 +35,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/bag-location-save-validation/specs/bag-location-save-validation/spec.md
+ * @spec openspec/specs/bag-location-save-validation/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -62,7 +62,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/bag-location-save-validation/specs/bag-location-save-validation/spec.md
+ * @spec openspec/specs/bag-location-save-validation/spec.md
  */
 class LocationBagValidationListener implements IEventListener
 {
@@ -96,7 +96,7 @@ class LocationBagValidationListener implements IEventListener
      *
      * @return void
      *
-     * @spec openspec/changes/bag-location-save-validation/specs/bag-location-save-validation/spec.md
+     * @spec openspec/specs/bag-location-save-validation/spec.md
      */
     public function handle(Event $event): void
     {

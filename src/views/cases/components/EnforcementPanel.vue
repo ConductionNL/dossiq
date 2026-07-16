@@ -114,23 +114,23 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		enforcementStore() {
 			return useEnforcementStore()
 		},
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		actions() {
 			return this.enforcementStore.actions
 		},
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		activeAction() {
 			return this.enforcementStore.activeAction
 		},
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		totalVerbeurd() {
 			return this.enforcementStore.totalVerbeurd
 		},
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		loading() {
 			return this.enforcementStore.loading
 		},
@@ -141,7 +141,7 @@ export default {
 			immediate: true,
 			/**
 			 * @param newId
-			 * @spec openspec/changes/vth-module/tasks.md
+			 * @spec openspec/specs/vth-module/spec.md
 			 */
 			handler(newId) {
 				if (newId) {
@@ -156,7 +156,7 @@ export default {
 
 		/**
 		 * @param status
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		statusLabel(status) {
 			const labels = {
@@ -168,7 +168,7 @@ export default {
 			return labels[status] || status
 		},
 
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		onActionCreated() {
 			this.enforcementStore.fetchActions(this.caseId)
 		},

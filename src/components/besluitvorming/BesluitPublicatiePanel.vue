@@ -70,7 +70,7 @@ export default {
 		/**
 		 * Trigger (retry) the DROP/LVBB publication.
 		 *
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-006
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async retry() {
 			this.busy = true

@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
- * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-4
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 class ZgwJwtValidator
 {
@@ -124,7 +124,7 @@ class ZgwJwtValidator
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — sequential JWT validation guards
      * @SuppressWarnings(PHPMD.NPathComplexity)      — sequential JWT validation guards
      *
-     * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-4
+     * @spec openspec/specs/zgw-api-mapping/spec.md
      */
     public function validate(string $authorization): void
     {

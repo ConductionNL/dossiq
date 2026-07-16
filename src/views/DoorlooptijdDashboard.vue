@@ -229,7 +229,7 @@ export default {
 		/**
 		 * Open Woo cases with statutory-deadline countdown and severity.
 		 *
-		 * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-004
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		wooCases() {
 			return getWooCases(this.openCases, this.caseTypes)
@@ -318,7 +318,7 @@ export default {
 		 * Weekly throughput — completed cases closed per ISO week over the
 		 * trailing 12 weeks of the selected range.
 		 *
-		 * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-V1-005
+		 * @spec openspec/specs/dashboard/spec.md
 		 */
 		throughputData() {
 			return computeWeeklyThroughput(this.filteredCompletedCases, 12)

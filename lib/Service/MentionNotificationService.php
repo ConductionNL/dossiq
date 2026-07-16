@@ -22,7 +22,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#mentions
+ * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
 
 declare(strict_types=1);
@@ -63,7 +63,7 @@ class MentionNotificationService
      *
      * @return int Number of notifications actually dispatched
      *
-     * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#mentions
+     * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
      */
     public function notifyMention(
         string $actorUserId,

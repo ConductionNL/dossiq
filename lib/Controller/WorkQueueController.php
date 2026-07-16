@@ -20,7 +20,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller for the intelligent work-queue endpoints.
  *
- * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 class WorkQueueController extends Controller
 {
@@ -74,7 +74,7 @@ class WorkQueueController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+     * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
      */
     #[NoAdminRequired]
     public function index(): JSONResponse
@@ -105,7 +105,7 @@ class WorkQueueController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+     * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
      */
     #[NoAdminRequired]
     public function workload(): JSONResponse

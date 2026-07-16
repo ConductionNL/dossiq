@@ -47,7 +47,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/bezwaar-hearing/specs/bezwaar-hearing/spec.md
+ * @spec openspec/specs/bezwaar-hearing/spec.md
  */
 class BezwaarHearingScheduledListener implements IEventListener
 {

@@ -30,7 +30,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-secure-transport
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-transport
  */
 
 declare(strict_types=1);
@@ -71,7 +71,7 @@ class StufHttpClient
      *
      * @return array{httpStatus:int,responseXml:string,durationMs:int,fout:array<string,string>|null}
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-secure-transport
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-transport
      */
     public function send(
         array $endpoint,

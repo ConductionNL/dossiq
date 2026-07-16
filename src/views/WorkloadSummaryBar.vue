@@ -27,7 +27,7 @@
  * swallows a 403 for non-coordinators, so this component never needs to
  * distinguish "no access" from "no data".
  *
- * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export default {
 	name: 'WorkloadSummaryBar',

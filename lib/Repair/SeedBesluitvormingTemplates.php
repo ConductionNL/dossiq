@@ -22,7 +22,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-001
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Repair step that seeds besluitvorming zaaktype templates into OpenRegister.
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-001
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 class SeedBesluitvormingTemplates implements IRepairStep
 {
@@ -63,7 +63,7 @@ class SeedBesluitvormingTemplates implements IRepairStep
      *
      * @return string
      *
-     * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-001
+     * @spec openspec/specs/besluitvorming-workflow/spec.md
      */
     public function getName(): string
     {
@@ -77,7 +77,7 @@ class SeedBesluitvormingTemplates implements IRepairStep
      *
      * @return void
      *
-     * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-001
+     * @spec openspec/specs/besluitvorming-workflow/spec.md
      */
     public function run(IOutput $output): void
     {

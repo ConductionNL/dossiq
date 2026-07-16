@@ -22,7 +22,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
  */
 
 declare(strict_types=1);
@@ -61,7 +61,7 @@ class StufRetryJob extends Job
      *
      * @return void
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
      */
     protected function run(mixed $argument): void
     {

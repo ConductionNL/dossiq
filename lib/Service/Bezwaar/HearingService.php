@@ -60,7 +60,7 @@ use RuntimeException;
 /**
  * Hearing service: scheduling, waiver, attendance and minutes capture.
  *
- * @spec openspec/changes/bezwaar-hearing/specs/bezwaar-hearing/spec.md
+ * @spec openspec/specs/bezwaar-hearing/spec.md
  */
 class HearingService
 {

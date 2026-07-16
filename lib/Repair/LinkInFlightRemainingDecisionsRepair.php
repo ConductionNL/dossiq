@@ -27,7 +27,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
+ * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
  */
 
 declare(strict_types=1);
@@ -49,7 +49,7 @@ use Throwable;
  * Links in-flight bezwaar-decision / advies / consultatie / voorstel objects
  * forward to decidesk Decisions without dropping any recorded data.
  *
- * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
+ * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
  */
 class LinkInFlightRemainingDecisionsRepair implements IRepairStep
 {
@@ -111,7 +111,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep
      *
      * @return void
      *
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
+     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-006-in-flight-remaining-decision-cases-are-migrated-without-data-loss
      */
     public function run(IOutput $output): void
     {

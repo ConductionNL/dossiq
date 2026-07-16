@@ -77,7 +77,7 @@ class PublicationService
      * @throws \RuntimeException When OR is unavailable or the case can't be loaded.
      *
      * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
-     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-003
+     * @spec openspec/specs/contract-decision-delegation/spec.md
      */
     public function publish(string $caseId, array $payload): array
     {

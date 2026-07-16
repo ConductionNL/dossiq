@@ -181,12 +181,12 @@ export default {
 	},
 
 	computed: {
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		enforcementStore() {
 			return useEnforcementStore()
 		},
 
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		ernstOptions() {
 			return [
 				{ value: 'gering', label: t('procest', 'Minor (gering)') },
@@ -195,7 +195,7 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		gedragOptions() {
 			return [
 				{ value: 'goedwillend', label: t('procest', 'Cooperative (goedwillend)') },
@@ -205,7 +205,7 @@ export default {
 			]
 		},
 
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		suggestedIntervention() {
 			if (!this.ernst || !this.gedrag) {
 				return null
@@ -221,7 +221,7 @@ export default {
 			return this.interventie?.toLowerCase().includes('bestuursdwang')
 		},
 
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		canProceed() {
 			if (this.step === 1) {
 				return this.ernst && this.gedrag
@@ -236,7 +236,7 @@ export default {
 	watch: {
 		/**
 		 * @param val
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		suggestedIntervention(val) {
 			if (val && !this.interventie) {
@@ -252,7 +252,7 @@ export default {
 	methods: {
 		t,
 
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		async submit() {
 			this.submitting = true
 			try {
@@ -277,7 +277,7 @@ export default {
 
 		/**
 		 * @param intervention
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		mapInterventionToType(intervention) {
 			const lower = (intervention || '').toLowerCase()

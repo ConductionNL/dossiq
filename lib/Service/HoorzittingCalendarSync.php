@@ -47,7 +47,7 @@ use Psr\Log\LoggerInterface;
  * Mirrors a hearingSession into the Nextcloud Calendar (best-effort) and
  * builds the invitation ICS.
  *
- * @spec openspec/changes/bezwaar-beroep-workflow/specs/bezwaar-beroep-workflow/spec.md
+ * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
 class HoorzittingCalendarSync
 {
@@ -83,7 +83,7 @@ class HoorzittingCalendarSync
      *
      * @return array<string, mixed> The hearingSession record to persist.
      *
-     * @spec openspec/changes/bezwaar-beroep-workflow/specs/bezwaar-beroep-workflow/spec.md
+     * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
      */
     public function sync(array $hearingSession): array
     {

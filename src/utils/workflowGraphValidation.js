@@ -14,7 +14,7 @@
 // enforces server-side at publish time (DANGLING_EDGE below) — the backend
 // call remains the authoritative backstop; this util never replaces it.
 //
-// @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
+// @spec openspec/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
 
 /** Validation rule codes. */
 export const RULES = {
