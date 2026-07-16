@@ -1,6 +1,27 @@
 ---
-status: done
-status-note: Reverse-synced 2026-06-13 from an archived fully-implemented change; capability code confirmed present on development.
+status: partial
+status-note: |
+  Downgraded from `done` on 2026-07-16 (procest#229). The prior note read
+  "capability code confirmed present on development" — but code being present is
+  not the same as the feature running, and REQ-SUB-007 and REQ-SUB-008 do not
+  run. Their capability methods are implemented and unit-tested yet have ZERO
+  callers, so no user or API path can reach them:
+
+  - REQ-SUB-007 (bewijsstukken): `BewijsstukService::verifyHash()` and
+    `::assertMutable()` are never invoked — no hash is verified on read, and no
+    document is locked once linked to a vaststelling. There is no bewijsstuk
+    route, no nightly archief-trigger, and no Docudesk PDF/A handover.
+  - REQ-SUB-008 (staatssteun): `StaatssteunClassifier::requiresStaatssteunGrondslag()`
+    is never invoked — no de-minimis gate runs on assessment, and no AGVV/TAM
+    melding is emitted.
+  - Related: `SubsidieService::isVoorschotReleasable()` has no caller, and
+    `TussenrapportageService::approveReport()` only sets a status — there is no
+    voorschot-release engine behind it, so an approved report releases nothing.
+
+  The remaining REQ-SUB requirements are implemented and reachable. Completing
+  007/008 is tracked feature work, not a bug fix: it needs a product decision on
+  the archival/Docudesk and TAM-register integrations. Tracked in procest#229.
+  This spec must NOT be marked `done` again until those paths execute.
 ---
 # subsidieverlening-keten Specification
 
