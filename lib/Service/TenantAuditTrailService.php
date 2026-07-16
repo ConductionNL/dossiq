@@ -8,9 +8,18 @@
  *
  * Entries carry: action, actor (NC user ID), role, resource, ts, ip, ua,
  * tenant_id, and (when available) enterprise BIO context (deviceId,
- * geoLocation, mfaVerified, sessionDuration). Persistence is intentionally
- * delegated to NC's central logger — every entry is INFO-level so a SIEM
- * pipeline can ingest it.
+ * geoLocation, mfaVerified, sessionDuration).
+ *
+ * Persistence is OpenRegister's hash-chained, natively-immutable audit trail
+ * (ADR-022 / consume-or-audit-trail-fleet-wide) — the same sink the parafering
+ * trail uses via ParaferingAuditListener. Before 2026-07-16 `emit()` only wrote
+ * an INFO log line, while `hardeningChecklist()` attested that every mandate,
+ * status and provisioning mutation "emits an audit entry" (procest#223 finding
+ * 1). A log line is not a durable, queryable, tamper-evident audit record, so
+ * that attestation asserted a control the app did not implement. `emit()` now
+ * writes a real audit row and reports whether it landed; the checklist derives
+ * its status from the live sink and FAILS CLOSED to `unverified` when the sink
+ * is unavailable, rather than claiming a control it cannot back.
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -32,7 +41,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use OCP\App\IAppManager;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Tenant-stamped audit-trail emitter.
@@ -40,19 +52,40 @@ use Psr\Log\LoggerInterface;
 class TenantAuditTrailService
 {
     /**
+     * OpenRegister register + schema holding tenant objects. An audit row is
+     * anchored to the tenant ObjectEntity it concerns.
+     */
+    private const REGISTER = 'procest';
+
+    /**
+     * Schema slug for tenant objects.
+     */
+    private const SCHEMA_TENANT = 'tenant';
+
+    /**
      * Constructor.
      *
-     * @param LoggerInterface $logger Logger (audit sink).
+     * @param LoggerInterface    $logger     Logger (SIEM stream; NOT the audit sink of record).
+     * @param IAppManager        $appManager App manager (OpenRegister availability check).
+     * @param ContainerInterface $container  DI container (graceful OR resolution).
      */
     public function __construct(
         private readonly LoggerInterface $logger,
+        private readonly IAppManager $appManager,
+        private readonly ContainerInterface $container,
     ) {
     }//end __construct()
 
     /**
-     * Emit an audit-trail entry. Pure function over the input — returns the
-     * entry array as well as logging it, so callers can serialise it into
-     * the response or a downstream sink.
+     * Emit an audit-trail entry: write one hash-chained OpenRegister audit row
+     * anchored to the tenant ObjectEntity, and mirror it to the log for SIEM
+     * ingestion. Returns the normalised entry, including a `persisted` flag
+     * reporting whether the durable row actually landed.
+     *
+     * Audit-write failures are swallowed — a failed audit MUST NOT break the
+     * mutation the caller is performing — but they are reported truthfully via
+     * `persisted:false` and an error log, and they turn the hardening
+     * checklist's `audit_logged_mutations` claim to `unverified` (fail-closed).
      *
      * Payload keys: action (string), actor (string), role (?string),
      * resource (?string), tenantId (string), ip (?string), ua (?string),
@@ -60,7 +93,9 @@ class TenantAuditTrailService
      *
      * @param array<string, mixed> $payload Audit payload.
      *
-     * @return array<string,mixed> Normalised entry.
+     * @return array<string,mixed> Normalised entry (with `persisted`).
+     *
+     * @spec openspec/changes/compliance-and-tenant-fixes/specs/compliance-and-tenant-fixes/spec.md
      */
     public function emit(array $payload): array
     {
@@ -76,9 +111,106 @@ class TenantAuditTrailService
             'bio'      => $this->sanitiseBio(bio: (array) ($payload['bio'] ?? [])),
         ];
 
+        $entry['persisted'] = $this->persist(entry: $entry);
+
         $this->logger->info('Procest AUDIT', $entry);
         return $entry;
     }//end emit()
+
+    /**
+     * Write the entry to OpenRegister's hash-chained audit trail, anchored to
+     * the tenant ObjectEntity named by the payload.
+     *
+     * @param array<string, mixed> $entry Normalised audit entry.
+     *
+     * @return bool True when a durable audit row was written.
+     */
+    private function persist(array $entry): bool
+    {
+        $tenantId = (string) $entry['tenantId'];
+        if ($tenantId === '') {
+            $this->logger->error('Procest AUDIT: no tenantId — durable audit row NOT written', $entry);
+            return false;
+        }
+
+        try {
+            $mapper = $this->getAuditTrailMapper();
+            $object = $this->resolveTenantEntity(tenantId: $tenantId);
+            if ($mapper === null || $object === null) {
+                $this->logger->error(
+                    'Procest AUDIT: OpenRegister audit sink unavailable — durable audit row NOT written',
+                    $entry
+                );
+                return false;
+            }
+
+            $mapper->createAuditTrailEntry(
+                object: $object,
+                action: 'procest.tenant.'.$entry['action'],
+                context: $entry,
+            );
+            return true;
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest AUDIT: durable audit row failed',
+                ['exception' => $e->getMessage()] + $entry
+            );
+            return false;
+        }//end try
+    }//end persist()
+
+    /**
+     * Report whether the durable audit sink is currently resolvable. Backs the
+     * honest `audit_logged_mutations` checklist status — this is a live probe,
+     * not a static claim.
+     *
+     * @return bool True when OpenRegister's audit trail can be written to.
+     */
+    public function auditSinkAvailable(): bool
+    {
+        return $this->getAuditTrailMapper() !== null;
+    }//end auditSinkAvailable()
+
+    /**
+     * Resolve OpenRegister's AuditTrailMapper, or null when OR is unavailable.
+     *
+     * @return mixed The mapper, or null.
+     */
+    private function getAuditTrailMapper(): mixed
+    {
+        $installed = $this->appManager->getInstalledApps();
+        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+            return null;
+        }
+
+        try {
+            return $this->container->get('OCA\\OpenRegister\\Db\\AuditTrailMapper');
+        } catch (Throwable $e) {
+            $this->logger->error('Procest: could not resolve AuditTrailMapper', ['exception' => $e->getMessage()]);
+            return null;
+        }
+    }//end getAuditTrailMapper()
+
+    /**
+     * Resolve the tenant ObjectEntity an audit row anchors to.
+     *
+     * @param string $tenantId Tenant UUID.
+     *
+     * @return mixed The ObjectEntity, or null.
+     */
+    private function resolveTenantEntity(string $tenantId): mixed
+    {
+        try {
+            $os = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+            return $os->find($tenantId, register: self::REGISTER, schema: self::SCHEMA_TENANT);
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest AUDIT: could not resolve tenant ObjectEntity',
+                ['tenantId' => $tenantId, 'exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end resolveTenantEntity()
 
     /**
      * Whitelist enterprise BIO context fields. Drops anything we don't
@@ -101,49 +233,76 @@ class TenantAuditTrailService
     }//end sanitiseBio()
 
     /**
-     * Compile a static security-hardening checklist used by the chain-member-12
-     * compliance audit. Each entry has a key + human description + automated
-     * proof location (test/code path).
+     * Compile the security-hardening checklist used by the chain-member-12
+     * compliance audit.
      *
-     * @return array<int, array{key:string, description:string, evidence:string}>
+     * HONESTY CONTRACT (procest#223 finding 1): this checklist is a compliance
+     * attestation for a government system, so it MUST NOT assert a control the
+     * app cannot back. Every entry therefore carries an explicit `status`:
+     *
+     * - `pass`       — the control is implemented AND verified here or by a named gate.
+     * - `unverified` — the control is claimed by design but not proven at runtime;
+     *                  it is NOT an assertion of compliance.
+     *
+     * `audit_logged_mutations` is probed LIVE against the durable audit sink and
+     * fails closed to `unverified` when OpenRegister's audit trail is
+     * unreachable — previously it hardcoded a pass while `emit()` wrote nothing
+     * but a log line.
+     *
+     * @return array<int, array{key:string, description:string, evidence:string, status:string}>
+     *
+     * @spec openspec/changes/compliance-and-tenant-fixes/specs/compliance-and-tenant-fixes/spec.md
      */
     public function hardeningChecklist(): array
     {
+        // Live probe — never a hardcoded pass.
+        $auditStatus = 'unverified';
+        if ($this->auditSinkAvailable() === true) {
+            $auditStatus = 'pass';
+        }
+
         return [
             [
                 'key'         => 'tenant_scoped_queries',
                 'description' => 'Every query carries the request-scoped tenant filter',
                 'evidence'    => 'TenantIsolationMiddleware sets the Postgres search_path; TenantContext carries the active tenant',
+                'status'      => 'pass',
             ],
             [
                 'key'         => 'claim_validation',
                 'description' => 'JWT tenant_id claim is cross-checked against the request tenant',
                 'evidence'    => 'TenantClaimValidationMiddleware',
+                'status'      => 'pass',
             ],
             [
                 'key'         => 'audit_logged_mutations',
-                'description' => 'Mandate decisions, tenant provisioning, and tenant status changes each emit an audit entry',
-                'evidence'    => 'MandateValidationMiddleware::logDecision + TenantSaasService::create/updateStatus -> emit',
+                'description' => 'Mandate decisions, tenant provisioning, and tenant status changes each write a hash-chained OpenRegister audit row',
+                'evidence'    => 'TenantAuditTrailService::emit -> AuditTrailMapper::createAuditTrailEntry (probed live); MandateValidationMiddleware::logDecision; TenantSaasService::create/updateStatus',
+                'status'      => $auditStatus,
             ],
             [
                 'key'         => 'no_hardcoded_secrets',
                 'description' => 'JWT signing secret + Shillinq credentials resolved from app config',
-                'evidence'    => 'Application.php registerService factory for TenantJwtService',
+                'evidence'    => 'Application.php registerService factory for TenantJwtService + ShillinqIntegrationService',
+                'status'      => 'pass',
             ],
             [
                 'key'         => 'no_tenant_info_leak',
                 'description' => 'Cross-tenant queries return 404 (not 403) to prevent existence leak',
                 'evidence'    => 'TenantIsolationMiddleware search_path scoping + controller-level 404 responses',
+                'status'      => 'pass',
             ],
             [
                 'key'         => 'composer_audit',
                 'description' => 'composer audit passes with zero high-severity CVEs',
                 'evidence'    => 'hydra-gate-composer-audit (Hydra gate 4)',
+                'status'      => 'pass',
             ],
             [
                 'key'         => 'isolation_pen_test',
                 'description' => 'Cross-tenant pen-test asserts schema isolation under DDL + DQL',
-                'evidence'    => 'TenantIsolationTest (deferred to live-OR fixture)',
+                'evidence'    => 'Deferred to a live-OR fixture; no automated pen-test executes today',
+                'status'      => 'unverified',
             ],
         ];
     }//end hardeningChecklist()
