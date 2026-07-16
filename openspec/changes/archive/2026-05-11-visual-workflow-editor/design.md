@@ -1,5 +1,53 @@
 # Design: visual-workflow-editor
 
+> ## ⚠️ CORRECTION (2026-07-16) — the library choice below rested on a false premise
+>
+> This document is archived and is kept verbatim as a record of what was decided.
+> It is **factually wrong** in a way that cost a whole feature, so it must not be
+> read as guidance. Corrected by ADR-065 (hydra:
+> `openspec/architecture/adr-065-flow-engine-and-canvas.md`).
+>
+> **What this document claims (row 1 of the table below):**
+> *"Native Vue 2.7 + Vue 3 support via the same package"*, and in `proposal.md`:
+> *"the `vue-flow` graph library targets exactly that ... no new framework, no migration."*
+>
+> **What is actually true.** `@vue-flow/core` has published exactly `0.4.41` and
+> then `1.0.0`–`1.48.2`. **Every single release declares
+> `peerDependencies: { "vue": "^3.x" }`** — the lone 0.x is `^3.2.25`, current is
+> `^3.3.0`. There has never been a Vue-2-compatible release of `@vue-flow/core`
+> at any point in the package's history. The npm package literally named
+> `vue-flow` is an unrelated 2016 state-management library.
+>
+> **What it cost.** The build failed with **272 errors** under procest's Vue 2.7
+> base (`@vue-flow` imports `Fragment` / `Teleport` / `createElementVNode` /
+> `toValue` from `vue`). The components were unwired in `customComponents.js`,
+> the manifest page `WorkflowTemplateEditor` was left unresolvable at runtime,
+> and this change was archived **as done while its code never ran once** — a
+> textbook phantom-green (ADR-060, hydra).
+> The dead components and the `@vue-flow/*` dependencies have since been removed
+> from `development`.
+>
+> **Two process lessons, both cheap to apply:**
+>
+> 1. **A peer-dependency claim is checkable in one command.** `npm view
+>    @vue-flow/core peerDependencies` would have refuted this table in seconds,
+>    before any code was written. Verify the compatibility claim that a library
+>    choice rests on — don't infer it from a README or a docs page.
+> 2. **The rejected option won.** "Roll our own SVG canvas" is dismissed in row 5
+>    below as *"six months of yak-shaving"*. Procest went on to hand-roll exactly
+>    that, and `src/views/settings/WorkflowEditor.vue` (~722 LOC, Vue 2.7 native)
+>    is **the only canvas here that has ever worked in production**. It is now the
+>    extraction source for the shared `CnGraphCanvas` in nc-vue per ADR-065. The
+>    cost estimate that justified rejecting it was wrong by roughly an order of
+>    magnitude.
+>
+> The alternatives table below evaluates svelte-flow, cytoscape.js,
+> jsplumb-toolkit and roll-your-own — but **no Vue-2-compatible flow library**.
+> Vue 2.7 was treated as an immovable constraint rather than a decision variable,
+> so Vue 3 was never considered. For the record, the one verified Vue-2-compatible
+> option is `rete.js` + `rete-vue-plugin/vue2`; ADR-065 declines it because
+> procest's hand-rolled canvas already works.
+
 ## Library Choice — vue-flow
 
 **Decision: adopt `@vue-flow/core` 1.x as the graph rendering and interaction library.**

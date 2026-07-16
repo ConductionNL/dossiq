@@ -1,5 +1,28 @@
 # Proposal: visual-workflow-editor
 
+> ## ⚠️ CORRECTION (2026-07-16) — shipped, archived as done, never ran
+>
+> Archived and kept verbatim as a record. The **Why** section's fourth bullet
+> ("Re-use over rebuild") is **factually false** and is the reason this feature
+> died. See `design.md` in this directory for the full correction, and ADR-065
+> (hydra: `openspec/architecture/adr-065-flow-engine-and-canvas.md`).
+>
+> **The false claim:** *"Procest already ships Vue 2.7 — the `vue-flow` graph
+> library targets exactly that ... no new framework, no migration."*
+>
+> **The fact:** every `@vue-flow/core` release ever published (`0.4.41`, then
+> `1.0.0`–`1.48.2`) declares a **Vue 3 peer dependency**. It has never targeted
+> Vue 2.7. The build failed with 272 errors, the components were unwired, and
+> this change was archived as done while its code never ran once.
+>
+> **What is still true and still wanted:** the problem statement holds. The
+> **18 NL/BE tenders requiring a "no-code workflow editor"** remain a live
+> driver, and UUID-laden form authoring is still hostile to
+> vergunningverleners. That need was ultimately met by the hand-rolled
+> `src/views/settings/WorkflowEditor.vue` (Vue 2.7 native SVG, ~722 LOC) — the
+> option this proposal's design.md rejected as "six months of yak-shaving".
+> Per ADR-065 it is now the extraction source for the shared `CnGraphCanvas`.
+
 ## Summary
 
 Procest needs a drag-and-drop visual editor so tenant administrators can author workflow definitions without hand-editing JSON. The `workflow-definition-model` and `role-based-step-routing` specs deliver the data contract, but today the only authoring surface is the form-based `WorkflowDefinitionsTab.vue` shipped with V1 of the definition model. Administrators are forced to imagine the graph in their head, type status UUIDs into form fields, and iterate by save-and-refresh. This change introduces `VisualEditor.vue` — a graph-based authoring canvas built on `vue-flow` — that reads and writes the same `workflowTemplate` objects, validates them live against the existing model, and persists changes through the same `WorkflowDefinitionService` lifecycle (draft → published → deprecated).
