@@ -279,6 +279,8 @@ class TenantOnboardingService
      * @param string $tenantId Tenant UUID.
      *
      * @return array{activated: bool, missing?: array<int, string>}
+     *
+     * @spec openspec/specs/tenant-onboarding/spec.md
      */
     public function activate(string $tenantId): array
     {

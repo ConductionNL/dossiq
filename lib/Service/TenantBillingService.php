@@ -70,6 +70,8 @@ class TenantBillingService
      * @param string $tier Tier slug.
      *
      * @return float
+     *
+     * @spec openspec/specs/tenant-billing/spec.md
      */
     public function tierMonthlyPrice(string $tier): float
     {
@@ -109,6 +111,8 @@ class TenantBillingService
      * @return array{tenantId:string, month:string, eventCount:int, amount:float, currency:string, exported:bool, invoiceRef:?string, error:?string}
      *
      * @throws InvalidArgumentException When month is malformed.
+     *
+     * @spec openspec/specs/tenant-billing/spec.md
      */
     public function runInvoicing(string $tenantId, string $month): array
     {

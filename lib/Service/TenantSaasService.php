@@ -146,6 +146,8 @@ class TenantSaasService
      *
      * @throws InvalidArgumentException On invalid tier or duplicate slug.
      * @throws RuntimeException         When OpenRegister is unavailable.
+     *
+     * @spec openspec/specs/tenant-crud-lifecycle/spec.md
      */
     public function create(string $name, string $kvkNumber, string $tier): array
     {
@@ -262,6 +264,8 @@ class TenantSaasService
      *
      * @throws InvalidArgumentException On illegal transition or missing tenant.
      * @throws RuntimeException         When OpenRegister is unavailable.
+     *
+     * @spec openspec/specs/tenant-crud-lifecycle/spec.md
      */
     public function updateStatus(string $tenantId, string $newStatus): array
     {
@@ -424,6 +428,8 @@ class TenantSaasService
      * @return array<string,mixed> Persisted tenant row.
      *
      * @throws RuntimeException When OpenRegister is unavailable.
+     *
+     * @spec openspec/specs/tenant-crud-lifecycle/spec.md
      */
     protected function saveTenant(array $tenant, ?string $uuid): array
     {

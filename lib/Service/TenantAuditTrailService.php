@@ -165,6 +165,8 @@ class TenantAuditTrailService
      * not a static claim.
      *
      * @return bool True when OpenRegister's audit trail can be written to.
+     *
+     * @spec openspec/specs/tenant-compliance/spec.md
      */
     public function auditSinkAvailable(): bool
     {
