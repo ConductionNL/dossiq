@@ -42,8 +42,27 @@ class TenantSaasServiceTest extends TestCase
     private TenantSaasService $service;
 
     /**
-     * @return void
+     * Build a TenantAuditTrailService with no OpenRegister audit sink, so these
+     * tests assert the emit() WIRING (that a mutation emits an audit entry at
+     * all) without needing a live OR. The durable-row contract itself is proven
+     * in TenantAuditTrailServiceTest.
+     *
+     * @param LoggerInterface $logger Audit logger to observe.
+     *
+     * @return TenantAuditTrailService
      */
+    private function makeAudit(LoggerInterface $logger): TenantAuditTrailService
+    {
+        $appManager = $this->createMock(IAppManager::class);
+        $appManager->method('getInstalledApps')->willReturn([]);
+
+        return new TenantAuditTrailService(
+            logger: $logger,
+            appManager: $appManager,
+            container: $this->createMock(ContainerInterface::class),
+        );
+    }//end makeAudit()
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -55,7 +74,7 @@ class TenantSaasServiceTest extends TestCase
             appManager: $appManager,
             container: $container,
             logger: $logger,
-            audit: new TenantAuditTrailService($this->createMock(LoggerInterface::class)),
+            audit: $this->makeAudit($this->createMock(LoggerInterface::class)),
             userSession: $this->createMock(IUserSession::class),
         );
     }//end setUp()
@@ -79,7 +98,7 @@ class TenantSaasServiceTest extends TestCase
                 $this->createMock(IAppManager::class),
                 $this->createMock(ContainerInterface::class),
                 $this->createMock(LoggerInterface::class),
-                new TenantAuditTrailService($auditLogger),
+                $this->makeAudit($auditLogger),
                 $userSession,
             ])
             ->onlyMethods(['slugExists', 'saveTenant'])
@@ -114,7 +133,7 @@ class TenantSaasServiceTest extends TestCase
                 $this->createMock(IAppManager::class),
                 $this->createMock(ContainerInterface::class),
                 $this->createMock(LoggerInterface::class),
-                new TenantAuditTrailService($auditLogger),
+                $this->makeAudit($auditLogger),
                 $userSession,
             ])
             ->onlyMethods(['getById', 'saveTenant'])
