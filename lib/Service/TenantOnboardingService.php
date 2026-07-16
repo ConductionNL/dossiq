@@ -53,16 +53,18 @@ class TenantOnboardingService
     /**
      * Constructor.
      *
-     * @param TenantSaasService  $tenantSaasService Tenant SaaS service.
-     * @param IAppManager        $appManager        App manager.
-     * @param ContainerInterface $container         Service container.
-     * @param LoggerInterface    $logger            Logger.
+     * @param TenantSaasService    $tenantSaasService Tenant SaaS service.
+     * @param IAppManager          $appManager        App manager.
+     * @param ContainerInterface   $container         Service container.
+     * @param LoggerInterface      $logger            Logger.
+     * @param TenantBillingService $billingService    Billing-event emitter.
      */
     public function __construct(
         private readonly TenantSaasService $tenantSaasService,
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
+        private readonly TenantBillingService $billingService,
     ) {
     }//end __construct()
 
@@ -286,11 +288,24 @@ class TenantOnboardingService
         }
 
         try {
-            $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'active');
+            $tenant = $this->tenantSaasService->updateStatus(tenantId: $tenantId, newStatus: 'active');
         } catch (Throwable $e) {
             $this->logger->error('Procest: activation transition failed', ['exception' => $e->getMessage()]);
             return ['activated' => false, 'missing' => ['transition_failed']];
         }
+
+        // Go-live emits the first billing line (the tier subscription). Without
+        // a real usage event no invoice ever has a non-zero amount — this is
+        // the wiring the metered-billing pipeline lacked (procest#223 finding 2).
+        $tier      = (string) ($tenant['tier'] ?? 'basic');
+        $unitPrice = $this->billingService->tierMonthlyPrice(tier: $tier);
+        $this->billingService->emitEvent(
+            tenantId: $tenantId,
+            eventType: 'user_activated',
+            quantity: 1.0,
+            unitPrice: $unitPrice,
+            currency: 'EUR',
+        );
 
         return ['activated' => true];
     }//end activate()

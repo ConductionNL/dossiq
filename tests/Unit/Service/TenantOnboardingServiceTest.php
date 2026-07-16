@@ -42,6 +42,7 @@ class TenantOnboardingServiceTest extends TestCase
             appManager: $this->createMock(IAppManager::class),
             container: $this->createMock(ContainerInterface::class),
             logger: $this->createMock(LoggerInterface::class),
+            billingService: $this->createMock(\OCA\Procest\Service\TenantBillingService::class),
         );
     }
 

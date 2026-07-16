@@ -25,8 +25,11 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use InvalidArgumentException;
+use OCA\Procest\Service\TenantAuditTrailService;
 use OCA\Procest\Service\TenantSaasService;
 use OCP\App\IAppManager;
+use OCP\IUser;
+use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -52,8 +55,82 @@ class TenantSaasServiceTest extends TestCase
             appManager: $appManager,
             container: $container,
             logger: $logger,
+            audit: new TenantAuditTrailService($this->createMock(LoggerInterface::class)),
+            userSession: $this->createMock(IUserSession::class),
         );
     }//end setUp()
+
+    /**
+     * create() emits a `tenant.provisioned` audit row — the wiring that backs
+     * the hardening-checklist `audit_logged_mutations` claim (procest#223 #2).
+     *
+     * @return void
+     */
+    public function testCreateEmitsProvisioningAuditRow(): void
+    {
+        $auditLogger = $this->createMock(LoggerInterface::class);
+        $user        = $this->createMock(IUser::class);
+        $user->method('getUID')->willReturn('admin');
+        $userSession = $this->createMock(IUserSession::class);
+        $userSession->method('getUser')->willReturn($user);
+
+        $service = $this->getMockBuilder(TenantSaasService::class)
+            ->setConstructorArgs([
+                $this->createMock(IAppManager::class),
+                $this->createMock(ContainerInterface::class),
+                $this->createMock(LoggerInterface::class),
+                new TenantAuditTrailService($auditLogger),
+                $userSession,
+            ])
+            ->onlyMethods(['slugExists', 'saveTenant'])
+            ->getMock();
+        $service->method('slugExists')->willReturn(false);
+        $service->method('saveTenant')->willReturn(['id' => 't-1', 'slug' => 'gemeente-x', 'status' => 'onboarding']);
+
+        $auditLogger->expects($this->once())
+            ->method('info')
+            ->with(
+                'Procest AUDIT',
+                $this->callback(static fn (array $e): bool => $e['action'] === 'tenant.provisioned' && $e['actor'] === 'admin')
+            );
+
+        $service->create('Gemeente X', '12345678', 'basic');
+    }//end testCreateEmitsProvisioningAuditRow()
+
+    /**
+     * updateStatus() emits a `tenant.status_changed` audit row on every
+     * status mutation.
+     *
+     * @return void
+     */
+    public function testUpdateStatusEmitsStatusChangeAuditRow(): void
+    {
+        $auditLogger = $this->createMock(LoggerInterface::class);
+        $userSession = $this->createMock(IUserSession::class);
+        $userSession->method('getUser')->willReturn(null);
+
+        $service = $this->getMockBuilder(TenantSaasService::class)
+            ->setConstructorArgs([
+                $this->createMock(IAppManager::class),
+                $this->createMock(ContainerInterface::class),
+                $this->createMock(LoggerInterface::class),
+                new TenantAuditTrailService($auditLogger),
+                $userSession,
+            ])
+            ->onlyMethods(['getById', 'saveTenant'])
+            ->getMock();
+        $service->method('getById')->willReturn(['id' => 't-1', 'status' => 'onboarding']);
+        $service->method('saveTenant')->willReturn(['id' => 't-1', 'status' => 'active']);
+
+        $auditLogger->expects($this->once())
+            ->method('info')
+            ->with(
+                'Procest AUDIT',
+                $this->callback(static fn (array $e): bool => $e['action'] === 'tenant.status_changed' && $e['actor'] === 'system')
+            );
+
+        $service->updateStatus('t-1', 'active');
+    }//end testUpdateStatusEmitsStatusChangeAuditRow()
 
     /**
      * Slugify lowercases and collapses non-alphanumerics into single hyphens.

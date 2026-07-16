@@ -53,18 +53,107 @@ class TenantBillingService
     ];
 
     /**
+     * Monthly subscription price per tier, in EUR. Drives the `user_activated`
+     * billing line emitted at tenant go-live.
+     *
+     * @var array<string, float>
+     */
+    public const TIER_MONTHLY_PRICE = [
+        'basic'      => 49.0,
+        'standard'   => 149.0,
+        'enterprise' => 499.0,
+    ];
+
+    /**
+     * Resolve the monthly subscription price for a tier (0.0 when unknown).
+     *
+     * @param string $tier Tier slug.
+     *
+     * @return float
+     */
+    public function tierMonthlyPrice(string $tier): float
+    {
+        return (float) (self::TIER_MONTHLY_PRICE[$tier] ?? 0.0);
+    }//end tierMonthlyPrice()
+
+    /**
      * Constructor.
      *
-     * @param IAppManager        $appManager App manager.
-     * @param ContainerInterface $container  Service container.
-     * @param LoggerInterface    $logger     Logger.
+     * @param IAppManager                $appManager App manager.
+     * @param ContainerInterface         $container  Service container.
+     * @param LoggerInterface            $logger     Logger.
+     * @param ShillinqIntegrationService $shillinq   Shillinq invoice exporter.
      */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
         private readonly LoggerInterface $logger,
+        private readonly ShillinqIntegrationService $shillinq,
     ) {
     }//end __construct()
+
+    /**
+     * Run the end-to-end monthly invoicing for one tenant: collect the month's
+     * unbilled usage events, compute the amount, export a Shillinq invoice, and
+     * stamp the events with the returned invoice reference.
+     *
+     * This is the orchestration the billing pipeline lacked: emitEvent /
+     * aggregate / groupForInvoicing / buildInvoicePayload / exportInvoice /
+     * markExported all existed but nothing chained them, so every tenant
+     * invoice was EUR0 and exportInvoice had zero callers (procest#223
+     * finding 2 — orphaned billing capability).
+     *
+     * @param string $tenantId Tenant UUID.
+     * @param string $month    YYYY-MM.
+     *
+     * @return array{tenantId:string, month:string, eventCount:int, amount:float, currency:string, exported:bool, invoiceRef:?string, error:?string}
+     *
+     * @throws InvalidArgumentException When month is malformed.
+     */
+    public function runInvoicing(string $tenantId, string $month): array
+    {
+        if (preg_match('/^[0-9]{4}-(0[1-9]|1[0-2])$/', $month) !== 1) {
+            throw new InvalidArgumentException('Month must be YYYY-MM: '.$month);
+        }
+
+        $events   = $this->fetchEventsForMonth(tenantId: $tenantId, month: $month);
+        $unbilled = array_values(array_filter($events, static fn ($e) => ($e['invoiceRef'] ?? null) === null));
+        $summary  = $this->aggregate(events: $unbilled);
+        $amount   = (float) $summary['totalAmount'];
+        $currency = 'EUR';
+        if ($unbilled !== []) {
+            $currency = (string) ($unbilled[0]['currency'] ?? 'EUR');
+        }
+
+        $result = [
+            'tenantId'   => $tenantId,
+            'month'      => $month,
+            'eventCount' => count($unbilled),
+            'amount'     => $amount,
+            'currency'   => $currency,
+            'exported'   => false,
+            'invoiceRef' => null,
+            'error'      => null,
+        ];
+
+        if ($unbilled === []) {
+            $result['error'] = 'no unbilled events';
+            return $result;
+        }
+
+        $payload  = $this->shillinq->buildInvoicePayload(tenantId: $tenantId, month: $month, events: $unbilled);
+        $exportRc = $this->shillinq->exportInvoice(payload: $payload);
+        if (($exportRc['success'] ?? false) === true) {
+            $invoiceRef           = (string) ($exportRc['invoiceRef'] ?? '');
+            $result['exported']   = true;
+            $result['invoiceRef'] = $invoiceRef;
+            $this->markExported(events: $unbilled, invoiceRef: $invoiceRef);
+        } else {
+            $result['error'] = (string) ($exportRc['lastError'] ?? 'export failed');
+        }
+
+        return $result;
+    }//end runInvoicing()
 
     /**
      * Emit a billing event. Insert-only — invoiceRef stays NULL until the

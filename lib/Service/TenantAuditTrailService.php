@@ -122,8 +122,8 @@ class TenantAuditTrailService
             ],
             [
                 'key'         => 'audit_logged_mutations',
-                'description' => 'All mandate, status, and provisioning mutations emit an audit entry',
-                'evidence'    => 'TenantAuditTrailService::emit + MandateValidationMiddleware decision log',
+                'description' => 'Mandate decisions, tenant provisioning, and tenant status changes each emit an audit entry',
+                'evidence'    => 'MandateValidationMiddleware::logDecision + TenantSaasService::create/updateStatus -> emit',
             ],
             [
                 'key'         => 'no_hardcoded_secrets',

@@ -3422,36 +3422,49 @@
                     }
                 },
                 "searchable": true,
-                "x-openregister-calculations": [
-                    {
-                        "field": "decisionDeadline",
-                        "label": {
-                            "nl": "Beslistermijn bezwaar (AWB 7:10)",
-                            "en": "Bezwaar decision deadline (AWB 7:10)"
-                        },
-                        "expression": "addDays(addDays(addWeeks($.ontvangstdatum, 6), $.verdagingsperiode), $.opschorting)",
-                        "inputs": [
-                            "ontvangstdatum",
-                            "verdagingsperiode",
-                            "opschorting"
-                        ],
-                        "outputField": "decisionDeadline",
-                        "legalSource": "AWB Art. 7:10 lid 1, 3, 4"
+                "x-openregister-calculations": {
+                    "decisionDeadline": {
+                        "type": "date",
+                        "materialise": true,
+                        "description": "Statutory beslistermijn op bezwaar (AWB 7:10 lid 1, 3, 4): ontvangstdatum + 6 weeks + verdagingsperiode (days, AWB 7:10 lid 3) + opschorting (days, AWB 7:10 lid 4). Materialised (server-side filterable); recomputed on every bezwaar save. Replaces the pre-2026-07 inert array-form string-DSL declaration (addWeeks/addDays), which OpenRegister's calculation engine never honoured — it accepts only a field-keyed map of AST expressions.",
+                        "expression": {
+                            "dateAdd": {
+                                "date": {
+                                    "dateAdd": {
+                                        "date": {
+                                            "dateAdd": {
+                                                "date": { "prop": "ontvangstdatum" },
+                                                "amount": 6,
+                                                "unit": "weeks"
+                                            }
+                                        },
+                                        "amount": { "prop": "verdagingsperiode" },
+                                        "unit": "days"
+                                    }
+                                },
+                                "amount": { "prop": "opschorting" },
+                                "unit": "days"
+                            }
+                        }
                     },
-                    {
-                        "field": "dwangsom",
-                        "label": {
-                            "nl": "Dwangsom bij niet tijdig beslissen (AWB 4:17)",
-                            "en": "Dwangsom on missed deadline (AWB 4:17)"
-                        },
-                        "expression": "min(1442, max(0, daysSince(addDays($.ingebrekestelling, 14)) * 23))",
-                        "inputs": [
-                            "ingebrekestelling"
-                        ],
-                        "outputField": "dwangsom",
-                        "legalSource": "AWB Art. 4:17 lid 1-2"
+                    "dwangsom": {
+                        "type": "number",
+                        "materialise": false,
+                        "description": "Accrued dwangsom for niet tijdig beslissen (AWB 4:17 lid 1-2): tiered EUR23/day (days 1-14), EUR35/day (15-28), EUR45/day (29-42), capped at EUR1442, accruing from 14 days after the ingebrekestelling. Virtual (materialise:false): time-dependent (references now), computed at read time via _extend=calculations. Zero until the 14-day grace after ingebrekestelling lapses; null ingebrekestelling yields 0.",
+                        "expression": {
+                            "min": [
+                                1442,
+                                {
+                                    "+": [
+                                        { "*": [ { "min": [ 14, { "max": [ 0, { "coalesce": [ { "dateDiff": { "from": { "dateAdd": { "date": { "prop": "ingebrekestelling" }, "amount": 14, "unit": "days" } }, "to": { "now": [] }, "unit": "days" } }, 0 ] } ] } ] }, 23 ] },
+                                        { "*": [ { "min": [ 14, { "max": [ 0, { "-": [ { "coalesce": [ { "dateDiff": { "from": { "dateAdd": { "date": { "prop": "ingebrekestelling" }, "amount": 14, "unit": "days" } }, "to": { "now": [] }, "unit": "days" } }, 0 ] }, 14 ] } ] } ] }, 35 ] },
+                                        { "*": [ { "min": [ 14, { "max": [ 0, { "-": [ { "coalesce": [ { "dateDiff": { "from": { "dateAdd": { "date": { "prop": "ingebrekestelling" }, "amount": 14, "unit": "days" } }, "to": { "now": [] }, "unit": "days" } }, 0 ] }, 28 ] } ] } ] }, 45 ] }
+                                    ]
+                                }
+                            ]
+                        }
                     }
-                ],
+                },
                 "configuration": {
                     "x-openregister-lifecycle": {
                         "field": "status",
