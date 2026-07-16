@@ -417,6 +417,19 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'caseSharing#initiateTransfer', 'url' => '/api/transfers',                'verb' => 'POST'],
         ['name' => 'caseSharing#handleTransfer',   'url' => '/api/transfers/{transferId}',   'verb' => 'PUT'],
 
+        // Federated (cross-instance) case collaboration (federated-case-collaboration).
+        // Local session endpoints — case-access RBAC enforced in the controller.
+        ['name' => 'caseSharing#createFederatedShare', 'url' => '/api/federation/shares',                              'verb' => 'POST'],
+        ['name' => 'caseSharing#revokeFederatedShare', 'url' => '/api/federation/shares/{shareId}',                    'verb' => 'DELETE'],
+        ['name' => 'caseSharing#postActivity',         'url' => '/api/federation/activity/{federatedShareId}',         'verb' => 'POST'],
+        ['name' => 'caseSharing#listActivity',         'url' => '/api/federation/activity/{federatedShareId}',         'verb' => 'GET'],
+        // Public (remote-instance) endpoints — authenticated via the OR-minted
+        // scoped bearer token, NOT a local session (the caller is another
+        // Nextcloud instance). See design.md §1/§4.
+        ['name' => 'caseSharing#handleFederatedTransfer', 'url' => '/api/public/federation/transfers/{shareToken}/{transferId}',        'verb' => 'PUT'],
+        ['name' => 'caseSharing#postRemoteActivity',      'url' => '/api/public/federation/activity/{shareToken}/{federatedShareId}',   'verb' => 'POST'],
+        ['name' => 'caseSharing#listRemoteActivity',      'url' => '/api/public/federation/activity/{shareToken}/{federatedShareId}',   'verb' => 'GET'],
+
         // Role-based routing engine action — manual recompute of step assignees.
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
         ['name' => 'routing#reroute', 'url' => '/api/cases/{id}/reroute', 'verb' => 'POST'],

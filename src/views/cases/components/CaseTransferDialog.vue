@@ -35,6 +35,21 @@
 					v-model="form.requestedDate"
 					type="date" />
 			</div>
+
+			<!--
+				Federated (cross-instance) zaakoverdracht — optional. When set,
+				the transfer mints a transfer-scoped OpenRegister federated
+				share so the remote instance can authenticate its accept/reject
+				call (design.md §4). Leave empty for a same-instance transfer.
+			-->
+			<div class="form-group">
+				<label for="case-transfer-remote-cloud-id">{{ t('procest', 'Remote cloud ID (optional, for cross-instance transfer)') }}</label>
+				<input
+					id="case-transfer-remote-cloud-id"
+					v-model="form.remoteCloudId"
+					type="text"
+					:placeholder="t('procest', 'e.g. partner-org@partner.example.com')">
+			</div>
 		</div>
 
 		<template #actions>
@@ -84,6 +99,7 @@ export default {
 				targetOrganization: null,
 				reason: '',
 				requestedDate: new Date(),
+				remoteCloudId: '',
 			},
 		}
 	},
@@ -93,7 +109,10 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
+		/**
+		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+		 * @spec openspec/specs/federated-case-collaboration/spec.md#case-transfer-extends-across-federation-with-idempotent-acceptreject-and-a-custody-audit-trail
+		 */
 		async submitTransfer() {
 			this.saving = true
 			try {
@@ -104,6 +123,7 @@ export default {
 					requestedDate: this.form.requestedDate
 						? new Date(this.form.requestedDate).toISOString().slice(0, 10)
 						: new Date().toISOString().slice(0, 10),
+					remoteCloudId: this.form.remoteCloudId?.trim() || null,
 				})
 			} finally {
 				this.saving = false

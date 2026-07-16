@@ -36,6 +36,8 @@ import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 import AdminRootView from './views/settings/AdminRoot.vue'
 import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
 import PublicStatusPage from './views/public/PublicStatusPage.vue'
+// Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration).
+import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
 
 // --- Leverancier-zaakportaal (external supplier portal) MOVED to Portaliq
 //     (ADR-046, procest#162): the /leverancier Vue surface is retired here and
@@ -135,6 +137,7 @@ export default {
 	// --- Anonymous-public routes (no auth, no main menu). ---
 	PublicAppointmentPage,
 	PublicStatusPage,
+	PublicFederatedTransferPage,
 
 	// --- Leverancier-zaakportaal external supplier portal MOVED to Portaliq
 	//     (ADR-046, procest#162) — see import-section comment. ---

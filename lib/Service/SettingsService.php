@@ -120,6 +120,9 @@ class SettingsService
         'partner_organization_schema',
         'share_permission_level_schema',
         'case_transfer_schema',
+        // Federated case collaboration (OCM, via OpenRegister's federation leaf).
+        'case_federated_share_schema',
+        'case_federated_activity_schema',
         'automatic_action_schema',
         'location_schema',
         // Bezwaar (lifecycle) — Awb Hoofdstuk 7.
@@ -354,6 +357,8 @@ class SettingsService
         'partnerOrganization'          => 'partner_organization_schema',
         'sharePermissionLevel'         => 'share_permission_level_schema',
         'casetransfer'                 => 'case_transfer_schema',
+        'caseFederatedShare'           => 'case_federated_share_schema',
+        'caseFederatedActivity'        => 'case_federated_activity_schema',
         'automaticAction'              => 'automatic_action_schema',
         'lhsMatrix'                    => 'lhs_matrix_schema',
         'lhsRecommendation'            => 'lhs_recommendation_schema',
