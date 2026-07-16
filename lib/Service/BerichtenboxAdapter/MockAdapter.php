@@ -17,7 +17,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md#task-3
+ * @spec openspec/specs/berichtenbox-integration/spec.md
  */
 
 declare(strict_types=1);

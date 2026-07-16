@@ -80,7 +80,7 @@ use OCP\Security\IContentSecurityPolicyManager;
 /**
  * Main application class for the Procest case management app.
  *
- * @spec openspec/changes/beschikking-generatie/tasks.md
+ * @spec openspec/specs/beschikking-generatie/spec.md
  */
 class Application extends App implements IBootstrap
 {
@@ -103,7 +103,7 @@ class Application extends App implements IBootstrap
      *
      * @return void
      *
-     * @spec openspec/changes/beschikking-generatie/tasks.md
+     * @spec openspec/specs/beschikking-generatie/spec.md
      */
     public function register(IRegistrationContext $context): void
     {
@@ -732,7 +732,7 @@ class Application extends App implements IBootstrap
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter)
      *
-     * @spec openspec/changes/beschikking-generatie/tasks.md
+     * @spec openspec/specs/beschikking-generatie/spec.md
      */
     public function boot(IBootContext $context): void
     {

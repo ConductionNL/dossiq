@@ -48,7 +48,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/bezwaar-decision/specs/bezwaar-decision/spec.md
+ * @spec openspec/specs/bezwaar-decision/spec.md
  */
 class BezwaarDecisionListener implements IEventListener
 {

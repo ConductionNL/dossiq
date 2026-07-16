@@ -88,7 +88,7 @@ export default {
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-005 */
+		/** @spec openspec/specs/besluitvorming-workflow/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
@@ -100,7 +100,7 @@ export default {
 		/**
 		 * Load all geagendeerde cases for the meeting.
 		 *
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-005
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async loadCases() {
 			this.loading = true
@@ -141,7 +141,7 @@ export default {
 		 * Create the decision object and transition the case.
 		 *
 		 * @param {object} agendaCase The case object.
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-005
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async recordBesluit(agendaCase) {
 			const f = this.forms[agendaCase.id]
@@ -189,7 +189,7 @@ export default {
 		 * Defer (aanhouden) — route the case back to Gereed voor agendering.
 		 *
 		 * @param {object} agendaCase The case object.
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-005
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async aanhouden(agendaCase) {
 			try {

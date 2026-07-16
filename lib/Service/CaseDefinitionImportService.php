@@ -21,7 +21,7 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-3
- * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md#task-2
+ * @spec openspec/specs/case-types/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md#task-2
+ * @spec openspec/specs/case-types/spec.md
  */
 class CaseDefinitionImportService
 {

@@ -27,7 +27,7 @@
   `component:` sidebar tab (alongside the "audit" widgets-tab) on
   CaseDetail in src/manifest.json.
 
-  @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#mentions
+  @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
 -->
 <template>
 	<CnNotesTabComponent

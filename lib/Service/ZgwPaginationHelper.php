@@ -16,7 +16,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-3
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);

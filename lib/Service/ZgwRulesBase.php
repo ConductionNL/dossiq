@@ -18,7 +18,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-1
+ * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  *
- * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-1
+ * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 abstract class ZgwRulesBase
 {

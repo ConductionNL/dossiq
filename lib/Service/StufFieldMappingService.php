@@ -18,7 +18,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-stuf-integration/tasks.md#task-4
+ * @spec openspec/specs/stuf-integration/spec.md
  */
 
 declare(strict_types=1);

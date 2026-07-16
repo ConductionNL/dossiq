@@ -27,7 +27,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
@@ -89,7 +89,7 @@ class StufAdapterService
      *
      * @return array{success:bool,referentienummer:string,stufMessageId:string,zaakIdentificatie:?string,mappingId:?string,fout:?array<string,mixed>}
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
      */
     public function creeerZaak(array $case, array $endpoint, ?array $opts=[]): array
     {
@@ -162,7 +162,7 @@ class StufAdapterService
      *
      * @return array{success:bool,referentienummer:string,stufMessageId:string,fout:?array<string,mixed>}
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
      */
     public function actualiseerZaak(array $case, array $endpoint): array
     {
@@ -236,7 +236,7 @@ class StufAdapterService
      *
      * @throws TimeoutException When the response does not arrive within the timeout.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
      */
     public function geefZaakDetails(string $zaakId, array $endpoint, array $gewensteElementen=[]): ?array
     {
@@ -309,7 +309,7 @@ class StufAdapterService
      *
      * @throws VrijBerichtNotRegisteredException If the template is not registered.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
      */
     public function vrijBericht(string $name, array $payload, array $endpoint): array
     {
@@ -357,7 +357,7 @@ class StufAdapterService
      *
      * @return string The allocated zaak ID (empty on failure).
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-zaak-identificatie-allocation
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-zaak-identificatie-allocation
      */
     public function genereerZaakIdentificatie(array $endpoint): string
     {
@@ -406,7 +406,7 @@ class StufAdapterService
      *
      * @return void
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
      */
     public function retrySend(string $stufMessageId): void
     {

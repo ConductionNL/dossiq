@@ -23,7 +23,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#mentions
+ * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
  */
 
 declare(strict_types=1);
@@ -128,7 +128,7 @@ class Notifier implements INotifier
      *
      * @return array{0:string,1:string} The [subject, message] pair.
      *
-     * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#mentions
+     * @spec openspec/specs/ncvue-w2-leaves-adoption/spec.md
      */
     private function noteMentionText(array $subjectRaw, \OCP\IL10N $l): array
     {

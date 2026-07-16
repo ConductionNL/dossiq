@@ -31,7 +31,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md#task-1
+ * @spec openspec/specs/vth-workflow-templates/spec.md
  */
 
 declare(strict_types=1);
@@ -51,7 +51,7 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — needs OpenRegister + WorkflowDefinitionService.
  *
- * @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md#task-1
+ * @spec openspec/specs/vth-workflow-templates/spec.md
  */
 class SeedVthWorkflowTemplates implements IRepairStep
 {
@@ -90,7 +90,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
      *
      * @return string
      *
-     * @spec openspec/changes/retrofit-2026-05-25-vth-workflow-templates/tasks.md#task-1
+     * @spec openspec/specs/vth-workflow-templates/spec.md
      */
     public function getName(): string
     {

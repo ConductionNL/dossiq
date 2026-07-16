@@ -30,7 +30,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+ * @spec openspec/specs/libresign-besluit-signing/spec.md
  */
 
 declare(strict_types=1);
@@ -52,7 +52,7 @@ use Throwable;
 /**
  * LibreSign-backed implementation of the beschikking signing adapter.
  *
- * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+ * @spec openspec/specs/libresign-besluit-signing/spec.md
  */
 class LibresignSigningAdapter implements SigningAdapterInterface
 {
@@ -119,7 +119,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface
      *                          'libresign_signing_declined', 'libresign_signing_pending', or
      *                          'libresign_signed_file_missing'.
      *
-     * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+     * @spec openspec/specs/libresign-besluit-signing/spec.md
      */
     public function sign(string $bestandId, string $ondertekenaar, string $tspProvider): array
     {
@@ -194,7 +194,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface
      *
      * @return array<string, mixed>
      *
-     * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+     * @spec openspec/specs/libresign-besluit-signing/spec.md
      */
     public function fetchValidationReport(string $validatieRapportId): array
     {

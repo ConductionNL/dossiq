@@ -25,7 +25,7 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-1
- * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-1
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
@@ -2521,7 +2521,7 @@ class ZrcController extends ZgwController
      *
      * @return array<int, array{url: string, aardRelatie: string}>
      *
-     * @spec openspec/changes/related-case-linking/specs/zgw-api-mapping/spec.md
+     * @spec openspec/specs/zgw-api-mapping/spec.md
      */
     private function buildRelevanteAndereZaken(array $zaakData): array
     {
@@ -2570,7 +2570,7 @@ class ZrcController extends ZgwController
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/related-case-linking/specs/zgw-api-mapping/spec.md
+     * @spec openspec/specs/zgw-api-mapping/spec.md
      */
     private function enrichZaakRelevanteAndereZaken(JSONResponse $response): JSONResponse
     {
@@ -2590,7 +2590,7 @@ class ZrcController extends ZgwController
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/related-case-linking/specs/zgw-api-mapping/spec.md
+     * @spec openspec/specs/zgw-api-mapping/spec.md
      */
     private function enrichZakenListRelevanteAndereZaken(JSONResponse $response): JSONResponse
     {
@@ -2622,7 +2622,7 @@ class ZrcController extends ZgwController
      *
      * @return JSONResponse|null A 400 validation error, or null on success.
      *
-     * @spec openspec/changes/related-case-linking/specs/zgw-api-mapping/spec.md
+     * @spec openspec/specs/zgw-api-mapping/spec.md
      */
     private function applyInboundRelevanteAndereZaken(string $caseUuid, array $body): ?JSONResponse
     {

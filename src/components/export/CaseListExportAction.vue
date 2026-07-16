@@ -16,7 +16,7 @@
   and enforces access as the current user (ADR-022: no procest-side
   serialization).
 
-  @spec openspec/changes/case-list-export-via-or-export-leaf/specs/case-list-export-via-or-export-leaf/spec.md
+  @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 -->
 <template>
 	<NcActions :aria-label="t('procest', 'Export')">

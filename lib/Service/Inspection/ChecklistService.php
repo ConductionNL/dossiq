@@ -402,7 +402,7 @@ class ChecklistService
      *
      * @return int Number of photos attached via the photos leaf (or legacy inline).
      *
-     * @spec openspec/changes/migrate-inspection-forms-to-forms-leaf/specs/inspection-forms-via-forms-leaf/spec.md
+     * @spec openspec/specs/inspection-forms-via-forms-leaf/spec.md
      */
     private function photoCount(array $response): int
     {
@@ -433,7 +433,7 @@ class ChecklistService
      *
      * @return array<string, mixed> The response without an inline photo blob.
      *
-     * @spec openspec/changes/migrate-inspection-forms-to-forms-leaf/specs/inspection-forms-via-forms-leaf/spec.md
+     * @spec openspec/specs/inspection-forms-via-forms-leaf/spec.md
      */
     private function stripInlinePhotoBlobs(array $response): array
     {

@@ -48,7 +48,7 @@ use RuntimeException;
  * Establishes primair-besluit linking and the objection record for a
  * newly created bezwaar case.
  *
- * @spec openspec/changes/bezwaar-beroep-workflow/specs/bezwaar-beroep-workflow/spec.md
+ * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
 class BezwaarCreationHook
 {
@@ -84,7 +84,7 @@ class BezwaarCreationHook
      * @throws RuntimeException When OpenRegister or schemas are unavailable,
      *                          or the contested decision cannot be resolved.
      *
-     * @spec openspec/changes/bezwaar-beroep-workflow/specs/bezwaar-beroep-workflow/spec.md
+     * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
      */
     public function onBezwaarCreated(
         string $bezwaarCaseId,

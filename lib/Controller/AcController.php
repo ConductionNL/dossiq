@@ -43,7 +43,7 @@ use OCP\IRequest;
  * - ac-002: heeftAlleAutorisaties consistency with autorisaties array
  * - ac-003: Scope-based field requirements per component
  *
- * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+ * @spec openspec/specs/zgw-autorisaties-api/spec.md
  *
  * @psalm-suppress UnusedClass
  *
@@ -77,8 +77,8 @@ class AcController extends ZgwController
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      *
      * @NoCSRFRequired
      * @PublicPage
@@ -162,8 +162,8 @@ class AcController extends ZgwController
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      *
      * @NoCSRFRequired
      * @CORS
@@ -249,8 +249,8 @@ class AcController extends ZgwController
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      *
      * @NoCSRFRequired
      * @PublicPage
@@ -304,8 +304,8 @@ class AcController extends ZgwController
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      *
      * @NoCSRFRequired
      * @CORS
@@ -411,8 +411,8 @@ class AcController extends ZgwController
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      *
      * @NoCSRFRequired
      * @CORS
@@ -429,8 +429,8 @@ class AcController extends ZgwController
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-5
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      *
      * @NoCSRFRequired
      * @CORS
@@ -492,7 +492,7 @@ class AcController extends ZgwController
      *
      * @return object|null The consumer entity, or null if not found.
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      */
     private function findConsumerByUuid(string $uuid): ?object
     {
@@ -515,9 +515,9 @@ class AcController extends ZgwController
      *
      * @return JSONResponse|null Validation error response or null if valid.
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-2
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-3
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-4
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      */
     private function validateApplicatieBody(array $body, ?string $excludeUuid=null): ?JSONResponse
     {
@@ -550,7 +550,7 @@ class AcController extends ZgwController
      *
      * @return JSONResponse|null Error response or null if valid.
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-2
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      */
     private function validateClientIdUniqueness(array $body, ?string $excludeUuid=null): ?JSONResponse
     {
@@ -619,7 +619,7 @@ class AcController extends ZgwController
      *
      * @return JSONResponse|null Error response or null if valid.
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-3
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      */
     private function validateAutorisatieConsistency(array $body): ?JSONResponse
     {
@@ -684,7 +684,7 @@ class AcController extends ZgwController
      *
      * @return JSONResponse|null Error response or null if valid.
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-4
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      *
      * @SuppressWarnings(PHPMD.CyclomaticComplexity)
      * @SuppressWarnings(PHPMD.NPathComplexity)
@@ -783,7 +783,7 @@ class AcController extends ZgwController
      *
      * @return bool True if any scope contains the keyword.
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-4
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      */
     private function scopesContain(array $scopes, string $keyword): bool
     {
@@ -803,7 +803,7 @@ class AcController extends ZgwController
      *
      * @return array List of all clientIds.
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-2
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      */
     private function getConsumerClientIds(object $consumer): array
     {
@@ -833,7 +833,7 @@ class AcController extends ZgwController
      *
      * @return array The ZGW applicatie array.
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      */
     private function consumerToApplicatie(object $consumer, string $baseUrl): array
     {
@@ -880,7 +880,7 @@ class AcController extends ZgwController
      *
      * @return array The consumer data array.
      *
-     * @spec openspec/changes/retrofit-2026-05-25-zgw-autorisaties-api/tasks.md#task-1
+     * @spec openspec/specs/zgw-autorisaties-api/spec.md
      */
     private function applicatieToConsumer(array $body): array
     {

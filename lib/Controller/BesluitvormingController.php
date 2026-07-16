@@ -81,7 +81,7 @@ class BesluitvormingController extends Controller
      *             ContractDecisionDelegationService::raiseContractDecision().
      *
      * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-2
-     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
+     * @spec openspec/specs/contract-decision-delegation/spec.md
      */
     #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function activateTemplate(string $slug): JSONResponse

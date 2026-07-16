@@ -2,7 +2,7 @@ import { useObjectStore } from './modules/object.js'
 import { useSettingsStore } from './modules/settings.js'
 import { useBezwaarStore } from './modules/bezwaar.js'
 
-/** @spec openspec/changes/openregister-integration/tasks.md */
+/** @spec openspec/specs/openregister-integration/spec.md */
 export async function initializeStores() {
 	const settingsStore = useSettingsStore()
 	const objectStore = useObjectStore()

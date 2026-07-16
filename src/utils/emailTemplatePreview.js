@@ -7,7 +7,7 @@
  * variables green and unknown (unresolved) variables red. No DOM/Vue deps so
  * the logic is unit-testable under the node vitest environment.
  *
- * @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 
 const PLACEHOLDER_RE = /{{\s*([a-zA-Z][a-zA-Z0-9_]*)\s*}}/g

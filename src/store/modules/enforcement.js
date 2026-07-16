@@ -55,7 +55,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param state
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		activeAction(state) {
 			return state.actions.find((a) => a.status === 'opgelegd') || null
@@ -69,7 +69,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param state
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		totalVerbeurd(state) {
 			return state.actions
@@ -85,7 +85,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param state
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		ernstLevels(state) {
 			return Object.keys(state.lhsMatrix)
@@ -99,7 +99,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param state
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		gedragLevels(state) {
 			const first = Object.values(state.lhsMatrix)[0]
@@ -116,7 +116,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param caseId
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async fetchActions(caseId) {
 			this.loading = true
@@ -148,7 +148,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		/**
 		 * @param ernst
 		 * @param gedrag
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		lookupLhs(ernst, gedrag) {
 			if (!this.lhsMatrix[ernst]) {
@@ -162,7 +162,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 *
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/changes/vth-module/tasks.md */
+		/** @spec openspec/specs/vth-module/spec.md */
 		async loadLhsMatrix() {
 			if (this.matrixLoaded) {
 				return
@@ -199,7 +199,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param matrix
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async saveLhsMatrix(matrix) {
 			try {
@@ -231,7 +231,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		 */
 		/**
 		 * @param actionData
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async createAction(actionData) {
 			this.loading = true
@@ -268,7 +268,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		/**
 		 * @param actionId
 		 * @param newStatus
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async updateStatus(actionId, newStatus) {
 			this.loading = true
@@ -307,7 +307,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		/**
 		 * @param caseId
 		 * @param action
-		 * @spec openspec/changes/vth-module/tasks.md
+		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		async createBegunstigingTask(caseId, action) {
 			try {

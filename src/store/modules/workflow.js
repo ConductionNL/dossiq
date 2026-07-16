@@ -328,7 +328,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		/**
 		 * @param templateId
 		 * @param statusNodes
-		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-publish-uses-the-canonical-write-path
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-publish-uses-the-canonical-write-path
 		 */
 		async publishVersion(templateId, statusNodes = []) {
 			this.error = null
@@ -952,7 +952,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 */
 		/**
 		 * @param statusNodes
-		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation
 		 */
 		validateWorkflow(statusNodes = []) {
 			return validateWorkflowGraph({
@@ -1295,7 +1295,7 @@ export const useWorkflowStore = defineStore('workflow', {
 		 */
 		/**
 		 * @param statusId
-		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
 		 */
 		removeStatusNode(statusId) {
 			const steps = this.parsedSteps.filter((s) => s.status !== statusId)

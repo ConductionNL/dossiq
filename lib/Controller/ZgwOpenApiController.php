@@ -22,7 +22,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/zgw-openapi-publication/specs/zgw-openapi-publication/spec.md
+ * @spec openspec/specs/zgw-openapi-publication/spec.md
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\IRequest;
 /**
  * Discovery + spec-serving controller for Procest's ZGW OpenAPI documents.
  *
- * @spec openspec/changes/zgw-openapi-publication/specs/zgw-openapi-publication/spec.md
+ * @spec openspec/specs/zgw-openapi-publication/spec.md
  */
 class ZgwOpenApiController extends Controller
 {
@@ -85,7 +85,7 @@ class ZgwOpenApiController extends Controller
      * @PublicPage
      * @CORS
      *
-     * @spec openspec/changes/zgw-openapi-publication/specs/zgw-openapi-publication/spec.md
+     * @spec openspec/specs/zgw-openapi-publication/spec.md
      */
     public function index(): JSONResponse
     {
@@ -117,7 +117,7 @@ class ZgwOpenApiController extends Controller
      * @PublicPage
      * @CORS
      *
-     * @spec openspec/changes/zgw-openapi-publication/specs/zgw-openapi-publication/spec.md
+     * @spec openspec/specs/zgw-openapi-publication/spec.md
      */
     public function spec(string $api): DataDisplayResponse|JSONResponse
     {

@@ -126,8 +126,8 @@ export default {
 		 * outcome. The server fails CLOSED (REQ-PDRD-002) when decidesk is
 		 * unavailable — no local besluit is authored as a fallback.
 		 *
-		 * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
-		 * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+		 * @spec openspec/specs/remaining-decision-delegation/spec.md
+		 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
 		 */
 		async register() {
 			this.errors = {}

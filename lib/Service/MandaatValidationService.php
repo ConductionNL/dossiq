@@ -25,7 +25,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-007
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Mandaatregister authority validator for mandaatbesluiten.
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-007
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 class MandaatValidationService
 {
@@ -66,7 +66,7 @@ class MandaatValidationService
      *
      * @return array<string, mixed> {valid: bool, requiresManualConfirmation: bool, message?: string, registerLink?: string}
      *
-     * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-007
+     * @spec openspec/specs/besluitvorming-workflow/spec.md
      */
     public function validate(string $caseId, string $signingUserId): array
     {

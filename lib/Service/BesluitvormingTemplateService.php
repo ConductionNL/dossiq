@@ -24,7 +24,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-001
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use RuntimeException;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — orchestrates ObjectService + config.
  *
- * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-001
+ * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
 class BesluitvormingTemplateService
 {
@@ -77,7 +77,7 @@ class BesluitvormingTemplateService
      *
      * @return array<string, mixed> Per-template result summary.
      *
-     * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-001
+     * @spec openspec/specs/besluitvorming-workflow/spec.md
      */
     public function activateAll(): array
     {
@@ -110,7 +110,7 @@ class BesluitvormingTemplateService
      *
      * @throws RuntimeException When the slug is unknown or the bundle cannot be read.
      *
-     * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-001
+     * @spec openspec/specs/besluitvorming-workflow/spec.md
      */
     public function activate(string $slug): array
     {

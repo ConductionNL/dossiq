@@ -134,7 +134,7 @@ import { generateUrl } from '@nextcloud/router'
  * button. No per-user SMTP send fields. The password is masked (`***`) on
  * load and only sent when explicitly changed.
  *
- * @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 export default {
 	name: 'EmailSettings',
@@ -165,7 +165,7 @@ export default {
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		encryptionOption: {
 			get() {
 				return this.encryptionOptions.find(o => o.id === this.form.email_imap_encryption)
@@ -175,7 +175,7 @@ export default {
 				this.form.email_imap_encryption = option ? option.id : 'ssl'
 			},
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		passwordPlaceholder() {
 			return this.form.email_imap_password === '***'
 				? t('procest', 'Saved (masked)')
@@ -186,7 +186,7 @@ export default {
 		await this.load()
 	},
 	methods: {
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		async load() {
 			this.loading = true
 			try {
@@ -207,7 +207,7 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		async save() {
 			this.saving = true
 			this.testResult = null
@@ -237,7 +237,7 @@ export default {
 				this.saving = false
 			}
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		async testConnection() {
 			this.testing = true
 			this.testResult = null

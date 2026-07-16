@@ -17,10 +17,10 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-2
- * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-3
- * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-4
- * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md#task-5
+ * @spec openspec/specs/milestone-tracking/spec.md
+ * @spec openspec/specs/milestone-tracking/spec.md
+ * @spec openspec/specs/milestone-tracking/spec.md
+ * @spec openspec/specs/milestone-tracking/spec.md
  */
 
 declare(strict_types=1);

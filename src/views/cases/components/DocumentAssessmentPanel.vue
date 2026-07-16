@@ -166,7 +166,7 @@ export default {
 			}
 			return result
 		},
-		/** @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md */
+		/** @spec openspec/specs/woo-publication-via-opencatalogi/spec.md */
 		showPublicationPanel() {
 			return this.caseId !== '' && this.decisionId !== ''
 		},

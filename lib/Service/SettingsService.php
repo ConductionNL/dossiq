@@ -16,7 +16,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+ * @spec openspec/specs/admin-settings/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Service for managing Procest application configuration and settings.
  *
- * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+ * @spec openspec/specs/admin-settings/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — config bridge mapping ~73 schema slugs to appconfig keys; breadth is data, not branching
  */
@@ -520,7 +520,7 @@ class SettingsService
      *
      * @return bool
      *
-     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+     * @spec openspec/specs/admin-settings/spec.md
      */
     public function isOpenRegisterAvailable(): bool
     {
@@ -772,7 +772,7 @@ class SettingsService
      *
      * @return array
      *
-     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+     * @spec openspec/specs/admin-settings/spec.md
      */
     public function getPublicSettings(): array
     {
@@ -816,7 +816,7 @@ class SettingsService
      *
      * @return string
      *
-     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+     * @spec openspec/specs/admin-settings/spec.md
      */
     public function getConfigValue(string $key, string $default=''): string
     {
@@ -834,7 +834,7 @@ class SettingsService
      *
      * @return string The configured value, or the documented default.
      *
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md
+     * @spec openspec/specs/kcc-werkplek-zaaksysteem-bridge/spec.md
      */
     public function getKccConfigValue(string $key): string
     {
@@ -881,7 +881,7 @@ class SettingsService
      *
      * @return void
      *
-     * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md#task-2
+     * @spec openspec/specs/admin-settings/spec.md
      */
     public function setConfigValue(string $key, string $value): void
     {

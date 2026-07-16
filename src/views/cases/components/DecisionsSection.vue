@@ -164,7 +164,7 @@ export default {
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/roles-decisions/tasks.md */
+		/** @spec openspec/specs/roles-decisions/spec.md */
 		sortedDecisions() {
 			return [...this.decisions].sort((a, b) => {
 				const dateA = a.decisionDate || a.created || ''
@@ -172,7 +172,7 @@ export default {
 				return dateB.localeCompare(dateA) // newest first
 			})
 		},
-		/** @spec openspec/changes/roles-decisions/tasks.md */
+		/** @spec openspec/specs/roles-decisions/spec.md */
 		decisionTypeOptions() {
 			return this.decisionTypes.map(dt => ({
 				value: dt.id,
@@ -184,7 +184,7 @@ export default {
 		await this.loadData()
 	},
 	methods: {
-		/** @spec openspec/changes/roles-decisions/tasks.md */
+		/** @spec openspec/specs/roles-decisions/spec.md */
 		async loadData() {
 			this.loading = true
 			const objectStore = useObjectStore()
@@ -217,7 +217,7 @@ export default {
 
 		/**
 		 * @param dateStr
-		 * @spec openspec/changes/roles-decisions/tasks.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		formatDate(dateStr) {
 			return formatDecisionDate(dateStr)
@@ -225,7 +225,7 @@ export default {
 
 		/**
 		 * @param typeId
-		 * @spec openspec/changes/roles-decisions/tasks.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		getDecisionTypeName(typeId) {
 			const dt = this.decisionTypes.find(t => t.id === typeId)
@@ -234,7 +234,7 @@ export default {
 
 		/**
 		 * @param decision
-		 * @spec openspec/changes/roles-decisions/tasks.md
+		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		editDecision(decision) {
 			if (this.isReadOnly) return
@@ -250,7 +250,7 @@ export default {
 			this.showCreateForm = true
 		},
 
-		/** @spec openspec/changes/roles-decisions/tasks.md */
+		/** @spec openspec/specs/roles-decisions/spec.md */
 		closeForm() {
 			this.showCreateForm = false
 			this.editingDecision = null
@@ -258,7 +258,7 @@ export default {
 			this.formErrors = {}
 		},
 
-		/** @spec openspec/changes/roles-decisions/tasks.md */
+		/** @spec openspec/specs/roles-decisions/spec.md */
 		async saveDecision() {
 			const validation = validateDecision(this.form)
 			if (!validation.valid) {
@@ -294,7 +294,7 @@ export default {
 			await this.loadData()
 		},
 
-		/** @spec openspec/changes/roles-decisions/tasks.md */
+		/** @spec openspec/specs/roles-decisions/spec.md */
 		async deleteDecision() {
 			if (!this.editingDecision) return
 			if (!confirm(t('procest', 'Are you sure you want to delete this decision?'))) return

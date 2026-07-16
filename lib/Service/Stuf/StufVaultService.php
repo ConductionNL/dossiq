@@ -24,7 +24,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
  */
 
 declare(strict_types=1);
@@ -64,7 +64,7 @@ class StufVaultService
      *
      * @return string The secret value (empty if unresolved).
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
      */
     public function resolveSecret(string $reference): string
     {
@@ -96,7 +96,7 @@ class StufVaultService
      *
      * @throws RuntimeException When the reference is empty.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
      */
     public function storeSecret(string $reference, string $secret): void
     {

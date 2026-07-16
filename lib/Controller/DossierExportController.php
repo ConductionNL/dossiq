@@ -47,7 +47,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Controller for the dossier-export endpoint.
  *
- * @spec openspec/changes/bezwaar-beroep-workflow/specs/bezwaar-beroep-workflow/spec.md
+ * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
 class DossierExportController extends Controller
 {
@@ -81,7 +81,7 @@ class DossierExportController extends Controller
      *
      * @NoAdminRequired
      *
-     * @spec openspec/changes/bezwaar-beroep-workflow/specs/bezwaar-beroep-workflow/spec.md
+     * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
      */
     public function export(string $caseId): JSONResponse
     {

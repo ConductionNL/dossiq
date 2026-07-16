@@ -515,7 +515,7 @@ export default {
 		/**
 		 * @param fromStatusId
 		 * @param toStatusId
-		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
 		 */
 		onConnectionKeyboard(fromStatusId, toStatusId) {
 			this.workflowStore.addTransition(fromStatusId, toStatusId)
@@ -533,7 +533,7 @@ export default {
 		 */
 		/**
 		 * @param transitionId
-		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
 		 */
 		onDisconnectionKeyboard(transitionId) {
 			this.workflowStore.removeTransition(transitionId)
@@ -554,7 +554,7 @@ export default {
 		 */
 		/**
 		 * @param statusId
-		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-drag-and-drop-workflow-canvas
 		 */
 		async onDeleteStatusNode(statusId) {
 			const target = this.statusNodes.find((s) => s.id === statusId)
@@ -602,7 +602,7 @@ export default {
 		 */
 		/**
 		 * @param stepId
-		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-step-configuration-panel
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-step-configuration-panel
 		 */
 		onStepDelete(stepId) {
 			this.workflowStore.removeStep(stepId)
@@ -659,7 +659,7 @@ export default {
 		 *
 		 * @return {boolean} True when the graph has no validation errors
 		 */
-		/** @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation */
+		/** @spec openspec/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation */
 		validate() {
 			this.validationErrors = this.workflowStore.validateWorkflow(this.statusNodes)
 			return this.validationErrors.length === 0

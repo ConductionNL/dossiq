@@ -23,7 +23,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-automatic-actions/tasks.md#task-4
+ * @spec openspec/specs/automatic-actions/spec.md
  */
 
 declare(strict_types=1);

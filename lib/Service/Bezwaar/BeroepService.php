@@ -67,7 +67,7 @@ use Throwable;
 /**
  * Beroep service: filing, file-inspection requests, judgment, cascade.
  *
- * @spec openspec/changes/beroep-escalation/specs/beroep-escalation/spec.md
+ * @spec openspec/specs/beroep-escalation/spec.md
  */
 class BeroepService
 {

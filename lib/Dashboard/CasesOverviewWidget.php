@@ -20,8 +20,8 @@
  * @link https://procest.nl
  *
  * @spec openspec/changes/retrofit-2026-05-24-annotate-procest/tasks.md#task-5
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md#task-1
- * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md#task-3
+ * @spec openspec/specs/dashboard/spec.md
+ * @spec openspec/specs/dashboard/spec.md
  */
 
 declare(strict_types=1);

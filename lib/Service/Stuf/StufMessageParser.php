@@ -24,7 +24,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
  */
 
 declare(strict_types=1);
@@ -67,7 +67,7 @@ class StufMessageParser
      *
      * @return array{crossRefnummer:string,zaakIdentificatie:?string,raw:array<string,mixed>}
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
      */
     public function parseBevestiging(string $responseXml): array
     {
@@ -117,7 +117,7 @@ class StufMessageParser
      *
      * @return array The parsed Zaak object (identificatie, omschrijving, startdatum, einddatum, statussen, betrokkenen, ...).
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
      */
     public function parseZaakDetails(string $responseXml): array
     {
@@ -172,7 +172,7 @@ class StufMessageParser
      *
      * @return array{code:string,omschrijving:string,details:string,soort:string}
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
      */
     public function parseError(string $responseXml): array
     {
@@ -202,7 +202,7 @@ class StufMessageParser
      *
      * @return string|null The first matching text node or null.
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
      */
     public function extractNamespaceValue(string $xml, string $xpath, string $namespace=''): ?string
     {

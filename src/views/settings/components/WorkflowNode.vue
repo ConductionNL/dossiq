@@ -162,7 +162,7 @@ export default {
 		 * DUPLICATE_TRANSITION validation rule by simply not offering to
 		 * create one).
 		 */
-		/** @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas */
+		/** @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas */
 		connectableStatuses() {
 			const connectedIds = new Set(this.outgoingTransitions.map((t) => t.toStatus))
 			return this.otherStatuses.filter((s) => !connectedIds.has(s.id))
@@ -177,7 +177,7 @@ export default {
 		 */
 		/**
 		 * @param statusId
-		 * @spec openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
+		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
 		 */
 		targetName(statusId) {
 			return this.otherStatuses.find((s) => s.id === statusId)?.name || statusId

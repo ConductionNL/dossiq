@@ -31,7 +31,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/specs/parafering-via-or-approval/spec.md
+ * @spec openspec/specs/parafering-via-or-approval/spec.md
  */
 
 declare(strict_types=1);
@@ -56,7 +56,7 @@ use Throwable;
  *
  * @implements IEventListener<Event>
  *
- * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/specs/parafering-via-or-approval/spec.md
+ * @spec openspec/specs/parafering-via-or-approval/spec.md
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
@@ -95,7 +95,7 @@ class ApprovalStepNotificationListener implements IEventListener
      *
      * @return void
      *
-     * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/specs/parafering-via-or-approval/spec.md
+     * @spec openspec/specs/parafering-via-or-approval/spec.md
      */
     public function handle(Event $event): void
     {

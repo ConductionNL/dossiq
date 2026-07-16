@@ -156,7 +156,7 @@ export default {
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/woo-case-type/tasks.md */
+		/** @spec openspec/specs/woo-case-type/spec.md */
 		calculatedDeadline() {
 			if (!this.form.ontvangstdatum) {
 				return '---'
@@ -178,7 +178,7 @@ export default {
 		/**
 		 * @param field
 		 * @param value
-		 * @spec openspec/changes/woo-case-type/tasks.md
+		 * @spec openspec/specs/woo-case-type/spec.md
 		 */
 		update(field, value) {
 			this.$emit('update', { field, value })

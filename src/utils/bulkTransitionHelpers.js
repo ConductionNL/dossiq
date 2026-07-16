@@ -8,7 +8,7 @@
  *
  * Selection shape: `{ columnId: string|null, caseIds: Array<string> }`.
  *
- * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
+ * @spec openspec/specs/case-bulk-status-transition/spec.md
  */
 
 /**

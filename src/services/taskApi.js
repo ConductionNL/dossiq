@@ -46,7 +46,7 @@ function mapCalDavPriority(icalPriority) {
  */
 /**
  * @param task
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function normalizeCalDavTask(task) {
 	const due = task.due || null
@@ -106,7 +106,7 @@ export function normalizeCalDavTask(task) {
  * @param registerId
  * @param schemaId
  * @param objectId
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export async function fetchTasksForObject(registerId, schemaId, objectId) {
 	const url = `/apps/openregister/api/objects/${registerId}/${schemaId}/${objectId}/tasks`
@@ -140,7 +140,7 @@ export async function fetchTasksForObject(registerId, schemaId, objectId) {
  */
 /**
  * @param cases
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export async function fetchTasksForCases(cases) {
 	const objectStore = useObjectStore()

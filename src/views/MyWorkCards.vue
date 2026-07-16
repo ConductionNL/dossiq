@@ -93,7 +93,7 @@ export default {
 		/**
 		 * CnIndexPage sortKey/sortOrder for the active sort mode.
 		 *
-		 * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		sortConfig() {
 			return resolveSortConfig(this.sortMode)
@@ -185,7 +185,7 @@ export default {
 		 * caseId → { tier, score, daysUntilDeadline } chip map. Never blocks
 		 * the card list on failure.
 		 *
-		 * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		async fetchWorkQueue() {
 			try {
@@ -200,7 +200,7 @@ export default {
 		 * Fetch the coordinator workload summary. A 403 (non-coordinator) is
 		 * expected and silently swallowed — no error UI, no summary rendered.
 		 *
-		 * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		async fetchWorkload() {
 			try {
@@ -216,7 +216,7 @@ export default {
 		 *
 		 * @param {string} mode 'urgency' or 'newest'.
 		 *
-		 * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+		 * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
 		 */
 		setSortMode(mode) {
 			this.sortMode = mode

@@ -44,7 +44,7 @@ use RuntimeException;
 /**
  * Compiles an ordered, read-only bezwaar/beroep dossier view.
  *
- * @spec openspec/changes/bezwaar-beroep-workflow/specs/bezwaar-beroep-workflow/spec.md
+ * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
 class DossierCompiler
 {
@@ -104,7 +104,7 @@ class DossierCompiler
      * @throws RuntimeException When OpenRegister or the schemas are
      *                          unavailable, or the case cannot be loaded.
      *
-     * @spec openspec/changes/bezwaar-beroep-workflow/specs/bezwaar-beroep-workflow/spec.md
+     * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
      */
     public function compile(string $caseId): array
     {
