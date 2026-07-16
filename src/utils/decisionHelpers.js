@@ -10,7 +10,7 @@
  */
 /**
  * @param decision
- * @spec openspec/changes/roles-decisions/tasks.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export function getDecisionValidity(decision) {
 	const today = new Date()
@@ -88,7 +88,7 @@ export function getDecisionValidity(decision) {
  */
 /**
  * @param dateString
- * @spec openspec/changes/roles-decisions/tasks.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export function formatDecisionDate(dateString) {
 	if (!dateString) return '—'
@@ -104,7 +104,7 @@ export function formatDecisionDate(dateString) {
  */
 /**
  * @param form
- * @spec openspec/changes/roles-decisions/tasks.md
+ * @spec openspec/specs/roles-decisions/spec.md
  */
 export function validateDecision(form) {
 	const errors = {}

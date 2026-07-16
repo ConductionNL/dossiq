@@ -135,7 +135,7 @@ export default {
 		if (!this.isCreate) await this.loadItems()
 	},
 	methods: {
-		/** @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md */
+		/** @spec openspec/specs/result-type-management/spec.md */
 		async loadItems() {
 			this.loading = true
 			this.error = ''
@@ -154,7 +154,7 @@ export default {
 		/**
 		 * @param {string} value Archival action key
 		 * @return {string} Translated label
-		 * @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md
+		 * @spec openspec/specs/result-type-management/spec.md
 		 */
 		archivalActionLabel(value) {
 			if (value === 'bewaren' || value === 'blijvend_bewaren') return t('procest', 'Retain')
@@ -164,7 +164,7 @@ export default {
 		/**
 		 * @param {string} value Archival action key
 		 * @return {string} Badge CSS modifier class
-		 * @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md
+		 * @spec openspec/specs/result-type-management/spec.md
 		 */
 		archivalBadgeClass(value) {
 			if (value === 'vernietigen') return 'sub-entity-row__badge--destroy'
@@ -173,12 +173,12 @@ export default {
 		/**
 		 * @param {string} iso ISO 8601 duration
 		 * @return {string} Human-readable period
-		 * @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md
+		 * @spec openspec/specs/result-type-management/spec.md
 		 */
 		formatPeriod(iso) {
 			return formatDuration(iso)
 		},
-		/** @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md */
+		/** @spec openspec/specs/result-type-management/spec.md */
 		startAdd() {
 			this.editingId = 'new'
 			this.editForm = { name: '', description: '', archivalAction: '', archivalPeriod: '', archivalStatus: '' }
@@ -187,7 +187,7 @@ export default {
 		},
 		/**
 		 * @param item Result type to edit
-		 * @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md
+		 * @spec openspec/specs/result-type-management/spec.md
 		 */
 		startEdit(item) {
 			this.editingId = item.id
@@ -200,7 +200,7 @@ export default {
 			}
 			this.editError = ''
 		},
-		/** @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md */
+		/** @spec openspec/specs/result-type-management/spec.md */
 		cancelEdit() {
 			if (this.editingId === 'new') {
 				this.items = this.items.filter(i => i.id !== 'new')
@@ -208,7 +208,7 @@ export default {
 			this.editingId = null
 			this.editError = ''
 		},
-		/** @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md */
+		/** @spec openspec/specs/result-type-management/spec.md */
 		async saveEdit() {
 			if (!this.editForm.name.trim()) {
 				this.editError = t('procest', 'Name is required')
@@ -242,7 +242,7 @@ export default {
 		},
 		/**
 		 * @param item Result type to delete
-		 * @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md
+		 * @spec openspec/specs/result-type-management/spec.md
 		 */
 		async deleteItem(item) {
 			if (!confirm(t('procest', 'Delete result type "{name}"?', { name: item.name }))) return

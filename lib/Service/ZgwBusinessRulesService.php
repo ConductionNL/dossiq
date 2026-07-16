@@ -25,7 +25,7 @@
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
- * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-2
+ * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 
 declare(strict_types=1);

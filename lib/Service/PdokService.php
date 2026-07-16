@@ -42,7 +42,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/gis-integration/tasks.md
+ * @spec openspec/specs/gis-integration/spec.md
  * @spec openspec/changes/migrate-pdok-to-openconnector/tasks.md
  */
 

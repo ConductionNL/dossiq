@@ -26,7 +26,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
 /**
  * OpenRegister-backed implementation of the archival adapter.
  *
- * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 class OpenRegisterArchivalAdapter implements ArchivalAdapterInterface
 {
@@ -82,7 +82,7 @@ class OpenRegisterArchivalAdapter implements ArchivalAdapterInterface
      *
      * @return array{archiefId: string, vernietigingsdatum: string}
      *
-     * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
+     * @spec openspec/specs/archief-edepot-handover/spec.md
      */
     public function ingest(string $beschikkingId, string $bestandId, array $tmloMetadata): array
     {

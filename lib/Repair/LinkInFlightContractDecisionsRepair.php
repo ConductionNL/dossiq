@@ -24,7 +24,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-007
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use Throwable;
 /**
  * Links in-flight contract/besluitvorming cases forward to decidesk Decisions.
  *
- * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-007
+ * @spec openspec/specs/contract-decision-delegation/spec.md
  */
 class LinkInFlightContractDecisionsRepair implements IRepairStep
 {
@@ -94,7 +94,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep
      *
      * @return void
      *
-     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md#req-pdcd-007
+     * @spec openspec/specs/contract-decision-delegation/spec.md
      */
     public function run(IOutput $output): void
     {

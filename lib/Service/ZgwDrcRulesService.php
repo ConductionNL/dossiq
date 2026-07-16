@@ -57,7 +57,7 @@
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  * @SuppressWarnings(PHPMD.TooManyMethods)
  *
- * @spec openspec/changes/retrofit-2026-05-24-zgw-business-rules-compliance/tasks.md#task-4
+ * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 
 declare(strict_types=1);

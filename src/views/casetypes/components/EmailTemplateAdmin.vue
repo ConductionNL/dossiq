@@ -116,7 +116,7 @@ import { collectUnresolved, renderPreview } from '../../../utils/emailTemplatePr
  * compose/thread/queue components — display, compose and link come from the
  * email leaf + Nextcloud Mail.
  *
- * @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 export default {
 	name: 'EmailTemplateAdmin',
@@ -139,23 +139,23 @@ export default {
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		introText() {
 			return t('procest', 'Per-case-type email templates with placeholder variables. Editing a template creates a new version — old versions are retained. Templates prefill a Nextcloud Mail draft; Procest never sends mail itself.')
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		flatVariableNames() {
 			return Object.values(this.variables).flat()
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		unresolved() {
 			return collectUnresolved(`${this.draft.subject} ${this.draft.body}`, this.flatVariableNames)
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		previewHtml() {
 			return renderPreview(this.draft.body, this.flatVariableNames)
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		saveLabel() {
 			if (this.saving) return t('procest', 'Saving...')
 			return this.draft.id ? t('procest', 'Save as new version') : t('procest', 'Create template')
@@ -172,11 +172,11 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		varToken(name) {
 			return '{{' + name + '}}'
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		groupLabel(group) {
 			const labels = {
 				case: t('procest', 'Case'),
@@ -188,7 +188,7 @@ export default {
 		isSelected(tpl) {
 			return this.draft.id && (tpl.id === this.draft.id)
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		async load() {
 			this.loading = true
 			try {
@@ -213,13 +213,13 @@ export default {
 				this.loading = false
 			}
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		startCreate() {
 			this.draft = { id: null, name: '', subject: '', body: '' }
 			this.editing = true
 			this.activeField = 'body'
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		selectTemplate(tpl) {
 			this.draft = {
 				id: tpl.id || null,
@@ -233,7 +233,7 @@ export default {
 		cancelEdit() {
 			this.editing = false
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		insertVariable(name) {
 			const token = `{{${name}}}`
 			if (this.activeField === 'subject') {
@@ -242,7 +242,7 @@ export default {
 				this.draft.body = `${this.draft.body || ''}${token}`
 			}
 		},
-		/** @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md */
+		/** @spec openspec/specs/case-email-integration/spec.md */
 		async save() {
 			this.saving = true
 			try {

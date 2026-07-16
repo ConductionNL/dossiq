@@ -26,10 +26,10 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-stuf-integration/tasks.md#task-1
- * @spec openspec/changes/retrofit-2026-05-24-stuf-integration/tasks.md#task-2
- * @spec openspec/changes/retrofit-2026-05-24-stuf-integration/tasks.md#task-3
- * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
+ * @spec openspec/specs/stuf-integration/spec.md
+ * @spec openspec/specs/stuf-integration/spec.md
+ * @spec openspec/specs/stuf-integration/spec.md
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
  */
 
 declare(strict_types=1);
@@ -150,7 +150,7 @@ class StufController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
      *
      * @contract exclude SOAP vrijBericht proxy needs a seeded endpoint + vault + live peer; covered by PHPUnit + env-gated live-e2e/Newman.
      */
@@ -203,7 +203,7 @@ class StufController extends Controller
      *
      * @return DataResponse
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
      *
      * @contract exclude WSSE SOAP webhook needs a signed XML body + seeded endpoint/vault; covered by PHPUnit + env-gated live-e2e/Newman.
      */
@@ -267,7 +267,7 @@ class StufController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function endpoints(): JSONResponse
@@ -282,7 +282,7 @@ class StufController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
      */
     #[AuthorizedAdminSetting(Application::APP_ID)]
     public function messages(): JSONResponse

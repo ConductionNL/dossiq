@@ -49,7 +49,7 @@ use Throwable;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/beroep-escalation/specs/beroep-escalation/spec.md
+ * @spec openspec/specs/beroep-escalation/spec.md
  */
 class BeroepEscalationListener implements IEventListener
 {

@@ -29,7 +29,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 
 declare(strict_types=1);
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
  *
  * @template-implements IEventListener<Event>
  *
- * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 class BezwaarLegalHoldListener implements IEventListener
 {
@@ -103,7 +103,7 @@ class BezwaarLegalHoldListener implements IEventListener
      *
      * @return void
      *
-     * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
+     * @spec openspec/specs/archief-edepot-handover/spec.md
      */
     public function handle(Event $event): void
     {

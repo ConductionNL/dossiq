@@ -26,7 +26,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
@@ -50,7 +50,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 class WooPublicationService
 {
@@ -133,7 +133,7 @@ class WooPublicationService
      * @return array<int, array<string, mixed>> Disclosable documents, each carrying the
      *                                           resolved (redacted, where applicable) content.
      *
-     * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+     * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
      */
     public function selectDisclosableDocuments(array $assessments, callable $documentLoader): array
     {
@@ -183,7 +183,7 @@ class WooPublicationService
      *
      * @return array<string, mixed> The publication payload.
      *
-     * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+     * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
      */
     public function buildPayload(array $case, array $decision, array $disclosable): array
     {
@@ -217,7 +217,7 @@ class WooPublicationService
      *
      * @throws RuntimeException When the decision or case cannot be loaded.
      *
-     * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+     * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
      */
     public function publish(string $caseId, string $decisionId): array
     {
@@ -395,7 +395,7 @@ class WooPublicationService
      *
      * @throws RuntimeException When the decision cannot be loaded.
      *
-     * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+     * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
      */
     public function withdraw(string $decisionId): array
     {
@@ -460,7 +460,7 @@ class WooPublicationService
      *
      * @return void
      *
-     * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+     * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
      */
     private function attachDisclosableDocument(
         string $ocRegister,
@@ -505,7 +505,7 @@ class WooPublicationService
      *
      * @return string The publication's URL.
      *
-     * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+     * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
      */
     private function buildPublicationUrl(string $publicationId): string
     {

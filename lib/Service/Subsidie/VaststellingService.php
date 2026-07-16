@@ -160,7 +160,7 @@ class VaststellingService
      *
      * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
      *
-     * @spec openspec/changes/subsidie-settlement-case-costs/specs/subsidie-settlement-case-costs/spec.md
+     * @spec openspec/specs/subsidie-settlement-case-costs/spec.md
      */
     public function finalize(
         string $vaststellingId,

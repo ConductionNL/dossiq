@@ -101,7 +101,7 @@ export default {
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-004 */
+		/** @spec openspec/specs/besluitvorming-workflow/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
@@ -117,7 +117,7 @@ export default {
 		/**
 		 * Load cases that are ready for agendering for the selected gremium.
 		 *
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-004
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async loadReadyItems() {
 			this.loading = true
@@ -174,7 +174,7 @@ export default {
 		/**
 		 * Confirm the agenda — transition cases to Geagendeerd.
 		 *
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-004
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async onConfirm() {
 			if (!this.meetingDate || this.agenda.length === 0) return
@@ -189,7 +189,7 @@ export default {
 		/**
 		 * Generate the ordered agenda document.
 		 *
-		 * @spec openspec/changes/besluitvorming-workflow/specs/besluitvorming-workflow/spec.md#req-bvw-004
+		 * @spec openspec/specs/besluitvorming-workflow/spec.md
 		 */
 		async onGenerate() {
 			try {

@@ -407,7 +407,7 @@ class KpiAggregationService
      *
      * @return array<int, array{type: string, count: int}> Type breakdown
      *
-     * @spec openspec/changes/dashboard/specs/dashboard/spec.md#REQ-DASH-003
+     * @spec openspec/specs/dashboard/spec.md
      */
     private function getTypeBreakdown(): array
     {

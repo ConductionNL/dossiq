@@ -44,7 +44,7 @@ use RuntimeException;
 /**
  * Builds the ordered, numbered export plan for a beroep dossier.
  *
- * @spec openspec/changes/bezwaar-beroep-workflow/specs/bezwaar-beroep-workflow/spec.md
+ * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
 class BeroepDossierExport
 {
@@ -81,7 +81,7 @@ class BeroepDossierExport
      *
      * @throws RuntimeException When the dossier cannot be compiled.
      *
-     * @spec openspec/changes/bezwaar-beroep-workflow/specs/bezwaar-beroep-workflow/spec.md
+     * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
      */
     public function buildPlan(string $caseId): array
     {

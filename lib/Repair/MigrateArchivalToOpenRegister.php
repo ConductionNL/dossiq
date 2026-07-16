@@ -36,7 +36,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Migrates the retired app-local archival state onto OpenRegister.
  *
- * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
+ * @spec openspec/specs/archief-edepot-handover/spec.md
  */
 class MigrateArchivalToOpenRegister implements IRepairStep
 {
@@ -116,7 +116,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep
      *
      * @return string
      *
-     * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
+     * @spec openspec/specs/archief-edepot-handover/spec.md
      */
     public function getName(): string
     {
@@ -130,7 +130,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep
      *
      * @return void
      *
-     * @spec openspec/changes/migrate-archival-to-or/specs/archief-edepot-handover/spec.md
+     * @spec openspec/specs/archief-edepot-handover/spec.md
      */
     public function run(IOutput $output): void
     {

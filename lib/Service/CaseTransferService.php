@@ -19,7 +19,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md#task-2
+ * @spec openspec/specs/case-management/spec.md
  */
 
 declare(strict_types=1);

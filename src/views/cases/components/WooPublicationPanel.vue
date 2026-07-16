@@ -74,7 +74,7 @@ export default {
 		/**
 		 * Publish the WOO decision to OpenCatalogi.
 		 *
-		 * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+		 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 		 */
 		async publish() {
 			this.busy = true
@@ -98,7 +98,7 @@ export default {
 		/**
 		 * Withdraw the WOO publication from OpenCatalogi.
 		 *
-		 * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+		 * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
 		 */
 		async withdraw() {
 			this.busy = true

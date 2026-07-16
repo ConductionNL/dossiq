@@ -19,7 +19,7 @@
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  *
- * @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md#task-3
+ * @spec openspec/specs/zgw-api-mapping/spec.md
  */
 
 declare(strict_types=1);
@@ -144,7 +144,7 @@ class ZgwDocumentService
      *
      * @throws NotFoundException If the file does not exist.
      *
-     * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+     * @spec openspec/specs/libresign-besluit-signing/spec.md
      */
     public function getFileId(string $uuid, string $fileName): int
     {

@@ -54,7 +54,7 @@ use RuntimeException;
 /**
  * BAC service: committee assignment + advice request lifecycle.
  *
- * @spec openspec/changes/bezwaar-advisory-committee/specs/bezwaar-advisory-committee/spec.md
+ * @spec openspec/specs/bezwaar-advisory-committee/spec.md
  */
 class AdvisoryCommitteeService
 {
@@ -227,8 +227,8 @@ class AdvisoryCommitteeService
      * @throws GuardFailedException When the independence check fails
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
+     * @spec openspec/specs/remaining-decision-delegation/spec.md
+     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
      */
     public function transitionAdviceStatus(
         string $requestId,

@@ -57,7 +57,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/woo-case-type/tasks.md#task-5
  * @spec openspec/changes/woo-case-type/tasks.md#task-7
- * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 class WOOAssessmentController extends Controller
 {
@@ -213,7 +213,7 @@ class WOOAssessmentController extends Controller
      *
      * @throws OCSForbiddenException If user is not authenticated or not authorized
      *
-     * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+     * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
      */
     #[NoAdminRequired]
     public function publishDecision(string $id): JSONResponse
@@ -247,7 +247,7 @@ class WOOAssessmentController extends Controller
      *
      * @throws OCSForbiddenException If user is not authenticated or not authorized
      *
-     * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+     * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
      */
     #[NoAdminRequired]
     public function withdrawPublication(string $id): JSONResponse

@@ -89,7 +89,7 @@ import { loadState } from '@nextcloud/initial-state'
 /**
  * Consultation management admin settings tab.
  *
- * @spec openspec/changes/consultation-management/specs/consultation-management/spec.md
+ * @spec openspec/specs/consultation-management/spec.md
  */
 export default {
 	name: 'ConsultationSettingsTab',
@@ -106,13 +106,13 @@ export default {
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/consultation-management/specs/consultation-management/spec.md */
+		/** @spec openspec/specs/consultation-management/spec.md */
 		workflowDocsUrl() {
 			return 'https://docs.procest.nl/n8n-consultation-workflows'
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/consultation-management/specs/consultation-management/spec.md */
+		/** @spec openspec/specs/consultation-management/spec.md */
 		async save() {
 			this.saving = true
 			try {

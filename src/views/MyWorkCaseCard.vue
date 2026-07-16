@@ -37,7 +37,7 @@ import { urgencyChipClass } from '../utils/workQueueHelpers.js'
  * card view does not apply column formatters — see
  * reference_ncvue-manifest-feature-version-gating).
  *
- * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 export default {
 	name: 'MyWorkCaseCard',

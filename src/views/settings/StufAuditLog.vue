@@ -8,7 +8,7 @@
   - fout payload appear in the dialog when present. Rendered as a tab inside
   - AdminRoot's CnSettingsSection, so it carries no NcSettingsSection wrapper.
   -
-  - @spec openspec/changes/procest-stuf-zkn-outbound-gateway/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+  - @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
   -
   - @visual exclude Admin-only read-only audit inspector rendered inside AdminRoot's settings section; it lists StUF SOAP envelope rows fetched from /api/stuf/messages, which only exist after real outbound/inbound traffic against a seeded zaaksysteem. Without that traffic the view is its empty state, so a screenshot baseline would capture nothing meaningful. Covered by the env-gated live-e2e job; the cell formatting (statusClass/pretty/berichtSoortOptions) is unit-testable JS, not a stable pixel surface.
 -->

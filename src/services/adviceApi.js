@@ -123,7 +123,7 @@ export async function dispatchReminder(id) {
  * @param {object} data Advice payload (case, adviseur, type, deadline, ...)
  * @return {Promise<object>} Created record
  * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
- * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
+ * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
 export async function createAdviceWithNotification(data) {
 	const caseId = data.case || data.caseRef || data.zaak

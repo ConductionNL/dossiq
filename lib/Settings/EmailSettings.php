@@ -42,7 +42,7 @@ use OCP\Settings\IDelegatedSettings;
  * controllers that mutate the shared-mailbox configuration, and so the
  * email config keys can be delegated to non-root admins.
  *
- * @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md
+ * @spec openspec/specs/case-email-integration/spec.md
  */
 class EmailSettings implements IDelegatedSettings
 {
@@ -85,7 +85,7 @@ class EmailSettings implements IDelegatedSettings
      *
      * @return TemplateResponse
      *
-     * @spec openspec/changes/case-email-integration/specs/case-email-integration/spec.md
+     * @spec openspec/specs/case-email-integration/spec.md
      */
     public function getForm(): TemplateResponse
     {

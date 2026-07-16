@@ -75,7 +75,7 @@ class MandaatController extends Controller
      * @return JSONResponse Validation result envelope or an error response.
      *
      * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-10
-     * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
+     * @spec openspec/specs/contract-decision-delegation/spec.md
      */
     #[NoAdminRequired]
     public function mandaatCheck(string $id): JSONResponse

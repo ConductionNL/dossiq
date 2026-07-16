@@ -13,7 +13,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/case-list-export-via-or-export-leaf/specs/case-list-export-via-or-export-leaf/spec.md
+ * @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
  */
 import { generateUrl } from '@nextcloud/router'
 
@@ -36,7 +36,7 @@ export const CASE_EXPORT_ENDPOINT = '/apps/openregister/api/objects/procest/case
  * @param {{[key: string]: *}} [query] The current `$route.query` (or `{}` when unavailable).
  * @return {string} The export-leaf URL including the query string.
  *
- * @spec openspec/changes/case-list-export-via-or-export-leaf/specs/case-list-export-via-or-export-leaf/spec.md
+ * @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
  */
 export function buildCaseExportUrl(format, query = {}) {
 	const params = new URLSearchParams()

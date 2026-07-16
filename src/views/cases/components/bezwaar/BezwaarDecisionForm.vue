@@ -251,7 +251,7 @@ export default {
 		 * the decision is submitted to decidesk.
 		 *
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
-		 * @spec openspec/changes/procest-delegate-contract-decision/specs/contract-decision-delegation/spec.md
+		 * @spec openspec/specs/contract-decision-delegation/spec.md
 		 */
 		async save() {
 			if (!this.validate()) return

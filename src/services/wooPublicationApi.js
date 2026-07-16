@@ -6,7 +6,7 @@
  * Wraps the procest /api/cases/{id}/woo/publish and /woo/withdraw endpoints.
  * All HTTP traffic uses @nextcloud/axios for CSRF + auth interop.
  *
- * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -20,7 +20,7 @@ const base = (caseId, path) => generateUrl('/apps/procest/api/cases/' + caseId +
  * @param {string} decisionId The decision UUID.
  * @return {Promise<object>} `{available, reason?, publicationId?, publicationUrl?}`.
  *
- * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 export async function publishWooDecision(caseId, decisionId) {
 	const response = await axios.post(base(caseId, '/publish'), { decisionId })
@@ -34,7 +34,7 @@ export async function publishWooDecision(caseId, decisionId) {
  * @param {string} decisionId The decision UUID.
  * @return {Promise<object>} `{available, reason?}`.
  *
- * @spec openspec/changes/woo-publication-via-opencatalogi/specs/woo-publication-via-opencatalogi/spec.md
+ * @spec openspec/specs/woo-publication-via-opencatalogi/spec.md
  */
 export async function withdrawWooPublication(caseId, decisionId) {
 	const response = await axios.post(base(caseId, '/withdraw'), { decisionId })

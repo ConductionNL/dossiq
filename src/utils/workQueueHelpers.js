@@ -8,7 +8,7 @@
  * Extracted so all three are unit-testable without mounting the Vue
  * component (mirrors src/utils/caseRelationHelpers.js).
  *
- * @spec openspec/changes/werkvoorraad-intelligent-queue/specs/werkvoorraad-intelligent-queue/spec.md
+ * @spec openspec/specs/werkvoorraad-intelligent-queue/spec.md
  */
 
 /**

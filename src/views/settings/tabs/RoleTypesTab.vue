@@ -153,7 +153,7 @@ export default {
 		/**
 		 * @param {string} value Generic role key
 		 * @return {string} Translated label
-		 * @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md
+		 * @spec openspec/specs/result-type-management/spec.md
 		 */
 		genericRoleLabel(value) {
 			return GENERIC_ROLE_LABELS[value] ? t('procest', GENERIC_ROLE_LABELS[value]) : value
@@ -161,13 +161,13 @@ export default {
 		/**
 		 * @param {string} text Description text
 		 * @return {string} Truncated text
-		 * @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md
+		 * @spec openspec/specs/result-type-management/spec.md
 		 */
 		truncate(text) {
 			if (!text) return ''
 			return text.length > 60 ? text.slice(0, 60) + '…' : text
 		},
-		/** @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md */
+		/** @spec openspec/specs/result-type-management/spec.md */
 		async loadItems() {
 			this.loading = true
 			this.error = ''
@@ -183,7 +183,7 @@ export default {
 			}
 			this.loading = false
 		},
-		/** @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md */
+		/** @spec openspec/specs/result-type-management/spec.md */
 		startAdd() {
 			this.editingId = 'new'
 			this.editForm = { name: '', description: '', genericRole: '', ncGroupId: '' }
@@ -192,7 +192,7 @@ export default {
 		},
 		/**
 		 * @param item Role type to edit
-		 * @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md
+		 * @spec openspec/specs/result-type-management/spec.md
 		 */
 		startEdit(item) {
 			this.editingId = item.id
@@ -204,7 +204,7 @@ export default {
 			}
 			this.editError = ''
 		},
-		/** @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md */
+		/** @spec openspec/specs/result-type-management/spec.md */
 		cancelEdit() {
 			if (this.editingId === 'new') this.items = this.items.filter(i => i.id !== 'new')
 			this.editingId = null
@@ -243,7 +243,7 @@ export default {
 		},
 		/**
 		 * @param item Role type to delete
-		 * @spec openspec/changes/case-types-03-result-role-tabs/specs/result-type-management/spec.md
+		 * @spec openspec/specs/result-type-management/spec.md
 		 */
 		async deleteItem(item) {
 			if (!confirm(t('procest', 'Delete role type "{name}"?', { name: item.name }))) return

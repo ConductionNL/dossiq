@@ -22,7 +22,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  *
- * @spec openspec/changes/migrate-parafering-to-or-audit/specs/parafering-audit-via-or/spec.md
+ * @spec openspec/specs/parafering-audit-via-or/spec.md
  *
  * @link https://procest.nl
  */
@@ -73,7 +73,7 @@ class ParaferingAuditListener implements IEventListener
      *
      * @return void
      *
-     * @spec openspec/changes/migrate-parafering-to-or-audit/specs/parafering-audit-via-or/spec.md
+     * @spec openspec/specs/parafering-audit-via-or/spec.md
      */
     public function handle(Event $event): void
     {

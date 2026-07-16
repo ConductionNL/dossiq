@@ -116,7 +116,7 @@ class AiAuditExportController extends Controller
      *
      * @return DataDownloadResponse|JSONResponse
      *
-     * @spec openspec/changes/ai-oversight-log/specs/ai-oversight-log/spec.md
+     * @spec openspec/specs/ai-oversight-log/spec.md
      */
     #[NoAdminRequired]
     public function export(): DataDownloadResponse|JSONResponse

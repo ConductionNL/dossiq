@@ -29,7 +29,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md#task-1
+ * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
 
 declare(strict_types=1);

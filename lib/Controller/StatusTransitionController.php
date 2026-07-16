@@ -276,7 +276,7 @@ class StatusTransitionController extends Controller
      *
      * @NoAdminRequired
 
-     * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
+     * @spec openspec/specs/case-bulk-status-transition/spec.md
      */
     public function bulkPreview(): JSONResponse
     {
@@ -315,7 +315,7 @@ class StatusTransitionController extends Controller
      *
      * @NoAdminRequired
 
-     * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
+     * @spec openspec/specs/case-bulk-status-transition/spec.md
      */
     public function bulkExecute(): JSONResponse
     {

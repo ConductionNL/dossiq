@@ -23,7 +23,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+ * @spec openspec/specs/libresign-besluit-signing/spec.md
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ namespace OCA\Procest\Service\Beschikking;
 /**
  * Maps LibreSign status values onto procest's internal signing vocabulary.
  *
- * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+ * @spec openspec/specs/libresign-besluit-signing/spec.md
  */
 class LibresignStatusMapper
 {
@@ -116,7 +116,7 @@ class LibresignStatusMapper
      *
      * @return string One of PENDING, SIGNED, DECLINED, UNKNOWN.
      *
-     * @spec openspec/changes/libresign-besluit-signing/specs/libresign-besluit-signing/spec.md
+     * @spec openspec/specs/libresign-besluit-signing/spec.md
      */
     public static function map(string $raw): string
     {

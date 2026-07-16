@@ -46,7 +46,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-workflow-definition-model/tasks.md#task-2
+ * @spec openspec/specs/workflow-definition-model/spec.md
  */
 
 declare(strict_types=1);
@@ -61,7 +61,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Lifecycle + consumer service for workflowTemplate objects.
  *
- * @spec openspec/changes/retrofit-2026-05-24-workflow-definition-model/tasks.md#task-2
+ * @spec openspec/specs/workflow-definition-model/spec.md
  */
 class WorkflowDefinitionService
 {
@@ -133,7 +133,7 @@ class WorkflowDefinitionService
      *
      * @return array<string, mixed>|null The definition or null
      *
-     * @spec openspec/changes/retrofit-2026-05-24-workflow-definition-model/tasks.md#task-2
+     * @spec openspec/specs/workflow-definition-model/spec.md
      */
     public function getDefinition(string $id): ?array
     {

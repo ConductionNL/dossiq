@@ -27,7 +27,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md#task-2
+ * @spec openspec/specs/advice-management/spec.md
  */
 
 declare(strict_types=1);
@@ -635,8 +635,8 @@ class AdviceService
      * @throws RuntimeException If OpenRegister is unavailable or decidesk fails closed
      *
      * @spec openspec/changes/vth-module/tasks.md#task-6
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-001-remaining-decisionadvice-flows-are-raised-as-decidesk-decisions
-     * @spec openspec/changes/procest-delegate-remaining-decisions-to-decidesk/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+     * @spec openspec/specs/remaining-decision-delegation/spec.md
+     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
      */
     public function requestAdvice(string $caseId, array $data, string $requestedBy): array
     {

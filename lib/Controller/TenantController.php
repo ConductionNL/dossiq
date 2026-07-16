@@ -22,7 +22,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/retrofit-2026-05-24-multi-tenancy/tasks.md#task-1
+ * @spec openspec/specs/multi-tenancy/spec.md
  */
 
 declare(strict_types=1);

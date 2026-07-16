@@ -12,7 +12,7 @@ import { validateTransition } from './taskLifecycle.js'
  */
 /**
  * @param form
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function validateTaskCreate(form) {
 	const errors = {}
@@ -39,7 +39,7 @@ export function validateTaskCreate(form) {
  */
 /**
  * @param form
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function validateTaskUpdate(form) {
 	const errors = {}
@@ -64,7 +64,7 @@ export function validateTaskUpdate(form) {
 /**
  * @param from
  * @param to
- * @spec openspec/changes/task-management/tasks.md
+ * @spec openspec/specs/task-management/spec.md
  */
 export function validateTaskTransition(from, to) {
 	if (!from || !to) {
