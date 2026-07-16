@@ -19,14 +19,14 @@
 - [x] 3.5 Test: assignee and admin are allowed (no functional regression).
 
 ## 4. Hole 3 — conflict of interest fails closed, hash-only identity
-- [ ] 4.1 New `lib/Service/MedewerkerIdentityResolverInterface.php` (SPDX EUPL-1.2) — `bsnHashFor(string $userId): ?string`; ships dormant/unbound.
-- [ ] 4.2 `ConflictOfInterestService`: stop reading `userBsn` from `$caseProperties`; resolve worker identity via the resolver; compare SHA-256 hashes; applicant-present + worker-unresolvable ⇒ `conflict=true, reason=identiteit_onbepaald`.
-- [ ] 4.3 `MandaatMatrixController::probe()`: strip client-supplied identity keys from `$caseProperties`; repopulate `applicantBsn` server-side from the case object (`initiatorType === 'person'` ⇒ `initiatorSourceId`).
-- [ ] 4.4 `MandaatCheckService`: treat a null `conflictService` as indeterminate (deny), not "skip" (design D5).
-- [ ] 4.5 Tests: BAD path — a genuine conflict is DETECTED (not "no conflict"); an indeterminate identity is BLOCKED (not passed); client-supplied `userBsn` in the body cannot influence the outcome; no raw BSN is logged/returned.
+- [x] 4.1 New `lib/Service/MedewerkerIdentityResolverInterface.php` (SPDX EUPL-1.2) — `bsnHashFor(string $userId): ?string`; ships dormant/unbound.
+- [x] 4.2 `ConflictOfInterestService`: stop reading `userBsn` from `$caseProperties`; resolve worker identity via the resolver; compare SHA-256 hashes; applicant-present + worker-unresolvable ⇒ `conflict=true, reason=identiteit_onbepaald`.
+- [x] 4.3 `MandaatMatrixController::probe()`: strip client-supplied identity keys from `$caseProperties`; repopulate `applicantBsn` server-side from the case object (`initiatorType === 'person'` ⇒ `initiatorSourceId`).
+- [x] 4.4 `MandaatCheckService`: treat a null `conflictService` as indeterminate (deny), not "skip" (design D5).
+- [x] 4.5 Tests: BAD path — a genuine conflict is DETECTED (not "no conflict"); an indeterminate identity is BLOCKED (not passed); client-supplied `userBsn` in the body cannot influence the outcome; no raw BSN is logged/returned.
 
 ## 5. Spec + i18n + quality
-- [ ] 5.1 Spec delta: MODIFY `woo-publication-via-opencatalogi` "Publish action authorization" to drop `(when that group exists)` and require per-case fail-closed authorization.
-- [ ] 5.2 i18n: EN keys + NL translations for any new user-facing authorization/conflict message.
-- [ ] 5.3 `composer check:strict` (PHPCS/PHPMD/Psalm/PHPStan) green; fix any pre-existing issues touched.
-- [ ] 5.4 Full unit suite green; report baseline (1551 tests) + delta with real output.
+- [x] 5.1 Spec delta: MODIFY `woo-publication-via-opencatalogi` "Publish action authorization" to drop `(when that group exists)` and require per-case fail-closed authorization.
+- [x] 5.2 i18n: NOT APPLICABLE — verified no new user-facing string. `identiteit_onbepaald` is a machine-readable reason code matching the existing Dutch-coded convention (`niet_bevoegd`, `plafond_overschreden`, `belangenconflict`); no UI renders `conflictReason`/`reden` (grep of `src/`), and none of the touched files use `IL10N`.
+- [x] 5.3 `composer check:strict` (PHPCS/PHPMD/Psalm/PHPStan) green; fix any pre-existing issues touched.
+- [x] 5.4 Full unit suite green; report baseline (1551 tests) + delta with real output.

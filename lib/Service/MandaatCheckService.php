@@ -43,7 +43,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Mandate authorization engine.
  *
- * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+ * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class MandaatCheckService
 {

@@ -50,7 +50,7 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+ * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class MandaatMatrixController extends Controller
 {
@@ -158,7 +158,7 @@ class MandaatMatrixController extends Controller
      *
      * @return array<string, mixed> The properties without any identity keys.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private function stripClientSuppliedIdentity(array $caseProperties): array
     {
@@ -186,7 +186,7 @@ class MandaatMatrixController extends Controller
      *
      * @return array<string, string> `['applicantBsn' => ...]` or `[]`.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private function resolveApplicantIdentity(string $caseId): array
     {

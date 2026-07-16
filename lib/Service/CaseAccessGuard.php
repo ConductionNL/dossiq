@@ -42,7 +42,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+ * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 
 declare(strict_types=1);
@@ -60,7 +60,7 @@ use Throwable;
 /**
  * Guards mutations of a case against the caller's relationship to that case.
  *
- * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+ * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class CaseAccessGuard
 {
@@ -101,7 +101,7 @@ class CaseAccessGuard
      *
      * @throws OCSForbiddenException When the user may not mutate this case.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function assertCaseMutationAccess(string $caseId, IUser $user): void
     {
@@ -120,7 +120,7 @@ class CaseAccessGuard
      *
      * @return bool True when the user handles the case or is an admin.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function hasCaseMutationAccess(string $caseId, IUser $user): bool
     {
@@ -163,7 +163,7 @@ class CaseAccessGuard
      *
      * @return array<string, mixed>|null The case, or null when unresolvable.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private function loadCase(string $caseId): ?array
     {

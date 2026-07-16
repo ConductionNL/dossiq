@@ -45,5 +45,45 @@ Worktree: /home/rubenlinde/wave2-worktrees/procest-authz
   and `isAuthorized:91` guards `if ($this->conflictService !== null)` — null service = check skipped
   entirely (a second fail-open). No explicit DI registration in Application.php (NC autowires).
 
-## Baseline
-(pending)
+## Additional defects found while verifying (NOT in the audit)
+- **Dead guard targeted the WRONG SCHEMA.** `assertAdviceCallerIsAuthorized` reads `requestedBy`,
+  which does not exist on the live `adviesAanvraag` schema (`case, adviseur, type, onderwerp,
+  deadline, status, adviesDocument, requestedAt, receivedAt, questions`). It exists only on the
+  unused `adviceRequest` schema. Independent proof the guard never executed.
+- **Dead `submitAdvice` writes an invalid status** (`'received'` ∉ `VALID_STATUSES`).
+- **`cancelAdvice:500` is ALSO dead** (zero callers, unrouted) — so BOTH callers of the procest#17
+  guard were dead. The entire guard subsystem was unreachable.
+- **`procest_register.json:4887` `submitAdvice` is a FALSE POSITIVE** — a declarative
+  `x-openregister-lifecycle` transition key on the unrelated `consultation` schema, no guard/class
+  binding. Left untouched.
+- **`MandaatCheckService:91`** `if ($this->conflictService !== null)` — a second latent fail-open
+  (null service = check skipped). Fixed (design D5).
+- **No AdviceService tests existed at all** — which is exactly why procest#17's dead fix went
+  unnoticed. The 6 pre-existing `WOOAssessmentControllerTest` tests only ever stubbed
+  `isAdmin => true`, so the WOO fail-open was never exercised either.
+- **`composer phpstan` ends in `|| echo 'skipping'`** → PHPStan never fails the build. 135
+  pre-existing errors on development. Out of scope; noted.
+
+## Baseline + delta (REAL output, php:8.3-cli container `procest-phpunit-83:local`)
+- Fresh `composer install` in a clean worktree; `vendor/nextcloud/ocp/OCP` resolves (no dangling-
+  symlink trap). Pre-existing composer.json quirk: `config.platform.php = 8.2.22` vs `require
+  php ^8.3` → installed with `--ignore-platform-req=php` (env workaround, not a code change).
+- **BASELINE (origin/development eeba95e63): `Tests: 1551, Assertions: 5210, Skipped: 5` — 0 failures.**
+- **FINAL (branch): `Tests: 1583, Assertions: 5288, Skipped: 5` — 0 failures.**
+- Delta = **+32 tests**, 0 regressions. Baseline test-NAME list captured (1551) for diffing.
+
+## Quality (proven against a pristine origin/development worktree, not asserted)
+- PHPCS (7 changed files): **0 errors, 0 warnings**. Also fixed 3 pre-existing class-level `@spec`
+  warnings encountered (ConflictOfInterestService, MandaatCheckService, MandaatMatrixController).
+- PHPStan: 135 errors on branch vs 135 on pristine — **byte-identical finding sets after
+  normalising line numbers: 0 introduced, 0 fixed.** All pre-existing.
+- PHPMD: **0 introduced**; **3 pre-existing findings REMOVED** (`checkConflict` CC 11→ok,
+  NPath 252→ok, and the deleted dead guard's ElseExpression).
+- Hydra gates (--scope-to-diff): 37/39 PASS. 2 FAIL, both **proven pre-existing**:
+  - gate-46 spec-anchor-existence: 38 unresolved `@spec` — **0 are mine** (all point at archived
+    change dirs: `mandaat-matrix-*`, `woo-case-type`). Repo-wide debt = 2817 on pristine.
+    ⚠️ My own `@spec` tags were retargeted from the change dir to the canonical
+    `openspec/specs/authz-bypass-fixes/spec.md` so they survive archive.
+  - gate-52 orphaned-write-capability: `ConflictOfInterestService::clearConflict` — test-only
+    callers on pristine too; untouched by my diff. Flagged only because my change pulled the file
+    into diff scope. → deferred, issue filed.

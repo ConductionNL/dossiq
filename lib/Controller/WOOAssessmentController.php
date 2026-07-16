@@ -287,7 +287,7 @@ class WOOAssessmentController extends Controller
      *
      * @throws OCSForbiddenException If the user is not authorized
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private function requireCaseMutationAccess(string $caseId, IUser $user): void
     {

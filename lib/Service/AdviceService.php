@@ -47,7 +47,7 @@ use Throwable;
 /**
  * Service for advice request (adviesAanvraag) workflow.
  *
- * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+ * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class AdviceService
 {
@@ -153,7 +153,7 @@ class AdviceService
      *
      * @throws \RuntimeException When the caller is not authorized.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private function assertAdviceTransitionAuthorized(array $advice, string $to): void
     {
@@ -185,7 +185,7 @@ class AdviceService
      *
      * @return bool True when the transition is allowed for this caller.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private function mayTransition(array $advice, string $to, string $uid): bool
     {
@@ -211,7 +211,7 @@ class AdviceService
      *
      * @return bool True when the caller handles the linked case.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private function isHandlerOfLinkedCase(array $advice, string $uid): bool
     {
@@ -265,7 +265,7 @@ class AdviceService
      *
      * @throws \RuntimeException When OpenRegister is unavailable / not configured.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private function applyTransition(string $adviceId, string $to, array $current, array $payload=[]): array
     {
@@ -457,7 +457,7 @@ class AdviceService
      *
      * @return array<string, mixed> Updated advice record
 
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function expireAdvice(string $adviceId): array
     {

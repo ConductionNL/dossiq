@@ -39,7 +39,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Belangenconflict detection.
  *
- * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+ * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class ConflictOfInterestService
 {
@@ -102,7 +102,7 @@ class ConflictOfInterestService
      *
      * @return string The SHA-256 hash.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private static function hashBsn(string $bsn): string
     {
@@ -119,7 +119,7 @@ class ConflictOfInterestService
      *
      * @return string|null The worker's BSN, or null when indeterminate.
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private function resolveMedewerkerBsn(string $userId): ?string
     {
@@ -184,7 +184,7 @@ class ConflictOfInterestService
      *
      * @return array{conflict:bool, reason?:string}
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function checkConflict(string $userId, string $zaakId, array $caseProperties=[]): array
     {
@@ -242,7 +242,7 @@ class ConflictOfInterestService
      *
      * @return array{conflict:bool, reason?:string}
      *
-     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     private function detectRelationConflict(string $userBsn, string $applicantBsn, string $zaakId): array
     {
