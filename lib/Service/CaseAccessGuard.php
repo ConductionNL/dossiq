@@ -59,12 +59,13 @@ use Throwable;
 
 /**
  * Guards mutations of a case against the caller's relationship to that case.
+ *
+ * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
  */
 class CaseAccessGuard
 {
 
     use SearchesObjects;
-
 
     /**
      * Constructor.

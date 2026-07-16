@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Mandate authorization engine.
+ *
+ * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
  */
 class MandaatCheckService
 {
@@ -88,16 +90,30 @@ class MandaatCheckService
     ): array {
         $decisionDate = ($decisionDate ?? new DateTimeImmutable());
 
-        // Optional belangenconflict check (REQ-MANDAAT-006).
-        if ($this->conflictService !== null) {
-            $conflict = $this->conflictService->checkConflict($userId, $caseId, $caseProperties);
-            if (($conflict['conflict'] ?? false) === true) {
-                return [
-                    'authorized'     => false,
-                    'reden'          => self::REDEN_BELANGENCONFLICT,
-                    'conflictReason' => (string) ($conflict['reason'] ?? ''),
-                ];
-            }
+        // Belangenconflict check (REQ-MANDAAT-006). NOT optional at runtime: a
+        // null conflict service used to skip the check entirely, which is the
+        // same fail-open defect class as the check itself returning "no
+        // conflict" unconditionally. An unavailable check is indeterminate, and
+        // indeterminate denies.
+        if ($this->conflictService === null) {
+            $this->logger->warning(
+                'Procest MandaatCheckService: no conflict-of-interest service bound — denying',
+                ['userId' => $userId, 'caseId' => $caseId]
+            );
+            return [
+                'authorized'     => false,
+                'reden'          => self::REDEN_BELANGENCONFLICT,
+                'conflictReason' => ConflictOfInterestService::REASON_IDENTITY_INDETERMINATE,
+            ];
+        }
+
+        $conflict = $this->conflictService->checkConflict($userId, $caseId, $caseProperties);
+        if (($conflict['conflict'] ?? false) === true) {
+            return [
+                'authorized'     => false,
+                'reden'          => self::REDEN_BELANGENCONFLICT,
+                'conflictReason' => (string) ($conflict['reason'] ?? ''),
+            ];
         }
 
         $role = $this->resolveUserRole(userId: $userId, date: $decisionDate);

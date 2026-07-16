@@ -46,6 +46,8 @@ use Throwable;
 
 /**
  * Service for advice request (adviesAanvraag) workflow.
+ *
+ * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
  */
 class AdviceService
 {
@@ -164,31 +166,42 @@ class AdviceService
             return;
         }
 
-        $adviseur = (string) ($advice['adviseur'] ?? '');
+        if ($this->mayTransition(advice: $advice, to: $to, uid: $uid) === true) {
+            return;
+        }
+
+        throw new RuntimeException('Advice request not accessible');
+    }//end assertAdviceTransitionAuthorized()
+
+    /**
+     * Whether a non-admin caller may perform the given advice transition.
+     *
+     * Returns false for `verlopen` (system-only) and for any unknown status —
+     * the default is deny.
+     *
+     * @param array<string, mixed> $advice The current advice record.
+     * @param string               $to     Target status.
+     * @param string               $uid    The caller's user id.
+     *
+     * @return bool True when the transition is allowed for this caller.
+     *
+     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     */
+    private function mayTransition(array $advice, string $to, string $uid): bool
+    {
+        $adviseur   = (string) ($advice['adviseur'] ?? '');
+        $isAdviseur = ($adviseur !== '' && $adviseur === $uid);
 
         if ($to === 'ontvangen') {
-            if ($adviseur !== '' && $adviseur === $uid) {
-                return;
-            }
-
-            throw new RuntimeException('Advice request not accessible');
+            return $isAdviseur;
         }
 
         if ($to === 'aangevraagd') {
-            if ($adviseur !== '' && $adviseur === $uid) {
-                return;
-            }
-
-            if ($this->isHandlerOfLinkedCase(advice: $advice, uid: $uid) === true) {
-                return;
-            }
-
-            throw new RuntimeException('Advice request not accessible');
+            return ($isAdviseur === true || $this->isHandlerOfLinkedCase(advice: $advice, uid: $uid) === true);
         }
 
-        // `verlopen` is system-only; any other status is unknown. Fail closed.
-        throw new RuntimeException('Advice request not accessible');
-    }//end assertAdviceTransitionAuthorized()
+        return false;
+    }//end mayTransition()
 
     /**
      * Whether the given uid is the assignee of the case this advice belongs to.
@@ -568,7 +581,6 @@ class AdviceService
 
         return $user->getUID();
     }//end getUserId()
-
 
     /**
      * Send a Nextcloud notification to a user.

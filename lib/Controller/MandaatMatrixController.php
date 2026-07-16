@@ -35,6 +35,8 @@ use OCA\Procest\Service\MandaatCheckService;
 use OCA\Procest\Service\MandaatEscalatieService;
 use OCA\Procest\Service\MandaatGebruikService;
 use OCA\Procest\Service\MandaatImportService;
+use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -47,9 +49,30 @@ use Throwable;
  * REST surface for the mandaat-matrix backend.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
  */
 class MandaatMatrixController extends Controller
 {
+
+    use SearchesObjects;
+
+
+    /**
+     * Case-property keys that carry identity. They are stripped from
+     * client-supplied input and repopulated server-side — a caller must never be
+     * able to supply (or withhold) the identity its own authorization is
+     * decided on.
+     *
+     * @var array<int, string>
+     */
+    private const CLIENT_SUPPLIED_IDENTITY_KEYS = [
+        'userBsn',
+        'applicantBsn',
+        'userBsnHash',
+        'applicantBsnHash',
+    ];
+
     /**
      * Constructor.
      *
@@ -60,6 +83,7 @@ class MandaatMatrixController extends Controller
      * @param MandaatEscalatieService $escalatie   Escalation service.
      * @param MandaatGebruikService   $gebruik     Audit log service.
      * @param MandaatImportService    $import      Import service.
+     * @param SettingsService         $settings    Settings (OpenRegister access).
      * @param LoggerInterface         $logger      Logger.
      */
     public function __construct(
@@ -70,6 +94,7 @@ class MandaatMatrixController extends Controller
         private readonly MandaatEscalatieService $escalatie,
         private readonly MandaatGebruikService $gebruik,
         private readonly MandaatImportService $import,
+        private readonly SettingsService $settings,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
@@ -113,10 +138,98 @@ class MandaatMatrixController extends Controller
             return $this->badRequest(msg: 'decisionType and caseId are required');
         }
 
+        // $caseProps arrives from the REQUEST BODY. Identity read from the
+        // requester is not identity: previously the belangenconflict check gated
+        // on `caseProperties.userBsn`, so a caller could force "no conflict" just
+        // by omitting it. Strip every identity key the client may have sent and
+        // re-derive the applicant identity server-side from the case object.
+        $caseProps = $this->stripClientSuppliedIdentity(caseProperties: $caseProps);
+        $caseProps = array_merge($caseProps, $this->resolveApplicantIdentity(caseId: $caseId));
+
         $userId = $this->currentUserId();
         $r      = $this->check->isAuthorized($userId, $decisionType, $caseId, $caseProps);
         return new JSONResponse($r);
     }//end probe()
+
+    /**
+     * Remove client-supplied identity keys from case properties.
+     *
+     * @param array<string, mixed> $caseProperties Client-supplied case properties.
+     *
+     * @return array<string, mixed> The properties without any identity keys.
+     *
+     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     */
+    private function stripClientSuppliedIdentity(array $caseProperties): array
+    {
+        foreach (self::CLIENT_SUPPLIED_IDENTITY_KEYS as $key) {
+            unset($caseProperties[$key]);
+        }
+
+        return $caseProperties;
+    }//end stripClientSuppliedIdentity()
+
+    /**
+     * Resolve the applicant's identity server-side from the case object.
+     *
+     * The case's `initiatorSourceId` holds the initiator's identifying number in
+     * its source system; it is a BSN only when `initiatorType` is `person` (for
+     * `company` it is a KvK number and for `contact` a contact URI — neither is
+     * a natural person, so neither can produce a belangenconflict).
+     *
+     * Returns an empty array when the case or the initiator cannot be resolved.
+     * That is not a fail-open: `ConflictOfInterestService` treats an absent
+     * applicant identity as "nobody to conflict with", while an unresolvable
+     * CASE WORKER identity still blocks.
+     *
+     * @param string $caseId The case UUID.
+     *
+     * @return array<string, string> `['applicantBsn' => ...]` or `[]`.
+     *
+     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
+     */
+    private function resolveApplicantIdentity(string $caseId): array
+    {
+        $objectService = $this->settings->getObjectService();
+        if ($objectService === null) {
+            return [];
+        }
+
+        $register   = $this->settings->getConfigValue('register');
+        $caseSchema = $this->settings->getConfigValue('case_schema');
+        if (empty($register) === true || empty($caseSchema) === true) {
+            return [];
+        }
+
+        try {
+            $case = $this->findObjectAsArray(
+                objectService: $objectService,
+                register: $register,
+                schema: $caseSchema,
+                id: $caseId
+            );
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'Procest MandaatMatrixController: could not resolve applicant identity: '.$e->getMessage()
+            );
+            return [];
+        }
+
+        if ($case === null) {
+            return [];
+        }
+
+        if ((string) ($case['initiatorType'] ?? '') !== 'person') {
+            return [];
+        }
+
+        $applicantBsn = (string) ($case['initiatorSourceId'] ?? '');
+        if ($applicantBsn === '') {
+            return [];
+        }
+
+        return ['applicantBsn' => $applicantBsn];
+    }//end resolveApplicantIdentity()
 
     /**
      * Import a CSV of mandaten under a new MandateringsBesluit.
