@@ -23,6 +23,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\WOOAssessmentController;
+use OCA\Procest\Service\CaseAccessGuard;
+use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\WOODeadlineService;
 use OCA\Procest\Service\WOODecisionService;
 use OCA\Procest\Service\WOODocumentAssessmentService;
@@ -89,6 +91,11 @@ class WOOAssessmentControllerTest extends TestCase
     private WOOAssessmentController $controller;
 
     /**
+     * @var CaseAccessGuard
+     */
+    private CaseAccessGuard $caseAccessGuard;
+
+    /**
      * Set up test fixtures.
      *
      * @return void
@@ -104,6 +111,17 @@ class WOOAssessmentControllerTest extends TestCase
         $this->request             = $this->createMock(IRequest::class);
         $this->logger              = $this->createMock(LoggerInterface::class);
 
+        // Per-case authorization moved out of the controller into CaseAccessGuard
+        // (authz-bypass-fixes). Every test in this class signs in as an admin, so
+        // the guard short-circuits on isAdmin() and never reaches OpenRegister —
+        // a bare SettingsService mock is sufficient here. The non-admin BAD paths
+        // are covered by WOOAssessmentControllerAuthorizationTest.
+        $this->caseAccessGuard = new CaseAccessGuard(
+            settingsService: $this->createMock(SettingsService::class),
+            groupManager: $this->groupManager,
+            logger: $this->logger,
+        );
+
         $this->controller = new WOOAssessmentController(
             'procest',
             $this->request,
@@ -112,7 +130,7 @@ class WOOAssessmentControllerTest extends TestCase
             $this->decisionService,
             $this->publicationService,
             $this->userSession,
-            $this->groupManager,
+            $this->caseAccessGuard,
             $this->logger,
         );
     }//end setUp()

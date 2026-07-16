@@ -12,11 +12,11 @@
 - [x] 2.3 Re-run suite; confirm no caller/test regression vs the pristine baseline test-name list.
 
 ## 3. Hole 2 — real per-case WOO guard, fail closed
-- [ ] 3.1 New `lib/Service/CaseAccessGuard.php` (SPDX EUPL-1.2) — `assertCaseMutationAccess(string $caseId, IUser $user): void`; consumes OR `ObjectService` via `SettingsService` + `SearchesObjects` (ADR-022); deny on no-OR / not-found / non-assignee; allow admin + `case.assignee`.
-- [ ] 3.2 `WOOAssessmentController`: inject `CaseAccessGuard`; rewrite `requireCaseMutationAccess()` to delegate to it. Remove the `procest-gebruikers` `groupExists()` short-circuit entirely.
-- [ ] 3.3 Tests: BAD path — an authenticated non-assignee non-admin is REJECTED from **all 5** endpoints (`bulkAssess`, `extendDeadline`, `createDecision`, `publishDecision`, `withdrawPublication`), incl. statutory deadline extension.
-- [ ] 3.4 Test: the **absent-group case does NOT grant access** (no `procest-gebruikers` anywhere ⇒ still rejected) — the exact fail-open being closed.
-- [ ] 3.5 Test: assignee and admin are allowed (no functional regression).
+- [x] 3.1 New `lib/Service/CaseAccessGuard.php` (SPDX EUPL-1.2) — `assertCaseMutationAccess(string $caseId, IUser $user): void`; consumes OR `ObjectService` via `SettingsService` + `SearchesObjects` (ADR-022); deny on no-OR / not-found / non-assignee; allow admin + `case.assignee`.
+- [x] 3.2 `WOOAssessmentController`: inject `CaseAccessGuard`; rewrite `requireCaseMutationAccess()` to delegate to it. Remove the `procest-gebruikers` `groupExists()` short-circuit entirely.
+- [x] 3.3 Tests: BAD path — an authenticated non-assignee non-admin is REJECTED from **all 5** endpoints (`bulkAssess`, `extendDeadline`, `createDecision`, `publishDecision`, `withdrawPublication`), incl. statutory deadline extension.
+- [x] 3.4 Test: the **absent-group case does NOT grant access** (no `procest-gebruikers` anywhere ⇒ still rejected) — the exact fail-open being closed.
+- [x] 3.5 Test: assignee and admin are allowed (no functional regression).
 
 ## 4. Hole 3 — conflict of interest fails closed, hash-only identity
 - [ ] 4.1 New `lib/Service/MedewerkerIdentityResolverInterface.php` (SPDX EUPL-1.2) — `bsnHashFor(string $userId): ?string`; ships dormant/unbound.

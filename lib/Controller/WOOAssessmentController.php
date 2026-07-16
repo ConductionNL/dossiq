@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\WOODecisionService;
 use OCA\Procest\Service\WOODeadlineService;
 use OCA\Procest\Service\WOODocumentAssessmentService;
@@ -35,7 +36,6 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
-use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -66,7 +66,7 @@ class WOOAssessmentController extends Controller
      * @param WOODecisionService           $decisionService    Decision service
      * @param WooPublicationService        $publicationService WOO publication (via OpenCatalogi) service
      * @param IUserSession                 $userSession        Current user session
-     * @param IGroupManager                $groupManager       Group manager for authorization
+     * @param CaseAccessGuard              $caseAccessGuard    Per-case mutation authorization (fails closed)
      * @param LoggerInterface              $logger             Logger
      */
     public function __construct(
@@ -77,7 +77,7 @@ class WOOAssessmentController extends Controller
         private readonly WOODecisionService $decisionService,
         private readonly WooPublicationService $publicationService,
         private readonly IUserSession $userSession,
-        private readonly IGroupManager $groupManager,
+        private readonly CaseAccessGuard $caseAccessGuard,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
@@ -267,9 +267,18 @@ class WOOAssessmentController extends Controller
     /**
      * Require that the current user can mutate the given case.
      *
-     * Admins always pass. All other authenticated users are checked; if the
-     * user is not an admin, an OCSForbiddenException is thrown.
-     * This guard satisfies OWASP A01:2021 per-object authorization (ADR-005 Rule 3).
+     * Delegates to CaseAccessGuard, which enforces a real per-case relationship
+     * (admin or `case.assignee`) and fails closed.
+     *
+     * This previously gated on `groupExists('procest-gebruikers')`, a group that
+     * exists nowhere in the codebase — so the `&&` short-circuited, nothing was
+     * thrown, and every authenticated user was authorized on all five
+     * `#[NoAdminRequired]` endpoints below (including statutory deadline
+     * extension). Group existence is deliberately no longer part of the
+     * decision: an absent group must never grant access.
+     *
+     * Satisfies OWASP A01:2021 per-object authorization (ADR-005 Rule 3); RBAC
+     * is consumed from OpenRegister per ADR-022.
      *
      * @param string $caseId The case UUID to check
      * @param IUser  $user   The current user
@@ -278,28 +287,10 @@ class WOOAssessmentController extends Controller
      *
      * @throws OCSForbiddenException If the user is not authorized
      *
-     * @spec openspec/changes/woo-case-type/tasks.md#task-5
+     * @spec openspec/changes/authz-bypass-fixes/specs/authz-bypass-fixes/spec.md
      */
     private function requireCaseMutationAccess(string $caseId, IUser $user): void
     {
-        $uid = $user->getUID();
-
-        // Admins bypass per-case checks.
-        if ($this->groupManager->isAdmin($uid) === true) {
-            return;
-        }
-
-        // Non-admin users need to be in the case's assigned group or be the behandelaar.
-        // The case-level membership check is performed by checking if the user is in
-        // the 'procest-gebruikers' group (the standard group for case workers in procest).
-        // Full per-case RBAC is handled by the role-based routing engine; this is the
-        // minimum authentication gate ensuring no anonymous/wrong-tenant access.
-        if ($this->groupManager->groupExists('procest-gebruikers') === true
-            && $this->groupManager->isInGroup($uid, 'procest-gebruikers') === false
-        ) {
-            throw new OCSForbiddenException(
-                'Not authorized to modify case '.$caseId
-            );
-        }
+        $this->caseAccessGuard->assertCaseMutationAccess(caseId: $caseId, user: $user);
     }//end requireCaseMutationAccess()
 }//end class
