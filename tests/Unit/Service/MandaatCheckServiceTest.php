@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\ConflictOfInterestService;
 use OCA\Procest\Service\MandaatCheckService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -50,7 +51,16 @@ class MandaatCheckServiceTest extends TestCase
                 };
             },
         );
-        $this->service = new MandaatCheckService($settings, $this->createMock(LoggerInterface::class));
+        // A conflict-of-interest service must be bound: MandaatCheckService now
+        // treats an unbound one as indeterminate and DENIES, rather than
+        // silently skipping the check (authz-bypass-fixes design D5). These
+        // fixtures carry no natural-person applicant, so the bound service
+        // correctly reports "no conflict" and the mandaat logic under test runs.
+        $this->service = new MandaatCheckService(
+            $settings,
+            $this->createMock(LoggerInterface::class),
+            new ConflictOfInterestService($this->createMock(LoggerInterface::class)),
+        );
 
         // Seed two roles: consulent (low) + afdelingsmanager (high).
         // Seed three mandaten:

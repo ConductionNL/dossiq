@@ -46,6 +46,8 @@ use Throwable;
 
 /**
  * Service for advice request (adviesAanvraag) workflow.
+ *
+ * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class AdviceService
 {
@@ -106,6 +108,167 @@ class AdviceService
             throw new RuntimeException('Invalid advice status');
         }
 
+        $current = $this->loadAdvice(adviceId: $adviceId);
+        if ($current === null) {
+            // Collapse not-found and access-denied into one "not accessible"
+            // error so the endpoint cannot be used as an existence oracle for
+            // advice UUIDs (same pattern as docudesk#100 / Wilco #6).
+            throw new RuntimeException('Advice request not accessible');
+        }
+
+        $this->assertAdviceTransitionAuthorized(advice: $current, to: $to);
+
+        return $this->applyTransition(adviceId: $adviceId, to: $to, current: $current, payload: $payload);
+    }//end transitionStatus()
+
+    /**
+     * Authorize an advice status transition against the CALLER's relationship
+     * to the advice request. Fails closed.
+     *
+     * This is the procest#17 / Wilco #6 IDOR guard, ported onto the live path.
+     * It previously existed only on `submitAdvice()`, which had zero callers and
+     * was never routed — so the IDOR it was written to close stayed open on
+     * `transitionStatus()`, the path the UI actually calls
+     * (`POST /api/advice/{id}/transition`, appinfo/routes.php).
+     *
+     * Keyed on the LIVE `adviesAanvraag` schema. The dead guard read a
+     * `requestedBy` field that does not exist there (it belongs to the unused
+     * `adviceRequest` schema); the requester relationship is expressed instead
+     * through `case` -> `case.assignee`.
+     *
+     * Matrix (admins bypass all per-object checks):
+     *   - ontvangen:   the assigned `adviseur` only. This is the open IDOR —
+     *                  previously ANY authenticated user could mark ANY advice
+     *                  request as received.
+     *   - aangevraagd: the handler of the linked case, or the `adviseur`.
+     *   - verlopen:    nobody. Expiry is a system transition owned by
+     *                  AdviceDeadlineJob; it reaches the write through
+     *                  applyTransition() and never through this method.
+     *   - default:     denied (fail closed).
+     *
+     * @param array<string, mixed> $advice The current advice record.
+     * @param string               $to     Target status.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException When the caller is not authorized.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private function assertAdviceTransitionAuthorized(array $advice, string $to): void
+    {
+        $uid = $this->getUserId();
+        if ($uid === '') {
+            throw new RuntimeException('Not authenticated');
+        }
+
+        if ($this->groupManager->isAdmin($uid) === true) {
+            return;
+        }
+
+        if ($this->mayTransition(advice: $advice, to: $to, uid: $uid) === true) {
+            return;
+        }
+
+        throw new RuntimeException('Advice request not accessible');
+    }//end assertAdviceTransitionAuthorized()
+
+    /**
+     * Whether a non-admin caller may perform the given advice transition.
+     *
+     * Returns false for `verlopen` (system-only) and for any unknown status —
+     * the default is deny.
+     *
+     * @param array<string, mixed> $advice The current advice record.
+     * @param string               $to     Target status.
+     * @param string               $uid    The caller's user id.
+     *
+     * @return bool True when the transition is allowed for this caller.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private function mayTransition(array $advice, string $to, string $uid): bool
+    {
+        $adviseur   = (string) ($advice['adviseur'] ?? '');
+        $isAdviseur = ($adviseur !== '' && $adviseur === $uid);
+
+        if ($to === 'ontvangen') {
+            return $isAdviseur;
+        }
+
+        if ($to === 'aangevraagd') {
+            return ($isAdviseur === true || $this->isHandlerOfLinkedCase(advice: $advice, uid: $uid) === true);
+        }
+
+        return false;
+    }//end mayTransition()
+
+    /**
+     * Whether the given uid is the assignee of the case this advice belongs to.
+     *
+     * @param array<string, mixed> $advice The advice record.
+     * @param string               $uid    The caller's user id.
+     *
+     * @return bool True when the caller handles the linked case.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private function isHandlerOfLinkedCase(array $advice, string $uid): bool
+    {
+        $caseId = (string) ($advice['case'] ?? '');
+        if ($caseId === '') {
+            return false;
+        }
+
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            return false;
+        }
+
+        $register   = $this->settingsService->getConfigValue('register');
+        $caseSchema = $this->settingsService->getConfigValue('case_schema');
+        if (empty($register) === true || empty($caseSchema) === true) {
+            return false;
+        }
+
+        $case = $this->findObjectAsArray(
+            objectService: $objectService,
+            register: $register,
+            schema: $caseSchema,
+            id: $caseId
+        );
+
+        if ($case === null) {
+            return false;
+        }
+
+        $assignee = (string) ($case['assignee'] ?? '');
+
+        return ($assignee !== '' && $assignee === $uid);
+    }//end isHandlerOfLinkedCase()
+
+    /**
+     * Apply an advice status transition WITHOUT an authorization check.
+     *
+     * TRUST BOUNDARY: this is the system/cron seam. It must only ever be called
+     * from `transitionStatus()` (which authorizes first) or from a code-driven
+     * background job with no user session (`expireAdvice()`). Never call it with
+     * user-supplied intent that has not been through
+     * `assertAdviceTransitionAuthorized()`.
+     *
+     * @param string               $adviceId The advice UUID.
+     * @param string               $to       Target status.
+     * @param array<string, mixed> $current  The current advice record (pre-update).
+     * @param array<string, mixed> $payload  Extra fields (adviesDocument, etc.).
+     *
+     * @return array<string, mixed> Updated advice record.
+     *
+     * @throws \RuntimeException When OpenRegister is unavailable / not configured.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private function applyTransition(string $adviceId, string $to, array $current, array $payload=[]): array
+    {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
             throw new RuntimeException('OpenRegister is not available');
@@ -116,11 +279,6 @@ class AdviceService
 
         if (empty($register) === true || empty($schema) === true) {
             throw new RuntimeException('Advice schema is not configured');
-        }
-
-        $current = $this->loadAdvice(adviceId: $adviceId);
-        if ($current === null) {
-            throw new RuntimeException('Advice request not found');
         }
 
         $update = ['status' => $to];
@@ -148,7 +306,7 @@ class AdviceService
         $this->fireTransitionNotification(to: $to, current: $current, adviceId: $adviceId);
 
         return $advice;
-    }//end transitionStatus()
+    }//end applyTransition()
 
     /**
      * Dispatch a reminder notification to the adviseur.
@@ -284,19 +442,32 @@ class AdviceService
     /**
      * Mark an advice request as expired (status -> verlopen).
      *
-     * Convenience wrapper used by the deadline cron. Delegates to
-     * transitionStatus() to keep the notification dispatch consistent.
+     * SYSTEM/CRON PATH — called by AdviceDeadlineJob, which runs with NO user
+     * session. It therefore goes straight to applyTransition() and deliberately
+     * bypasses assertAdviceTransitionAuthorized(): that guard requires a session
+     * and would reject the cron with 'Not authenticated', silently breaking
+     * advice expiry. `verlopen` is unreachable over HTTP for the same reason —
+     * the guard denies it for every caller, so expiry stays a system-owned
+     * transition.
+     *
+     * The advice id originates from getOpenAdvice() (code-driven), never from
+     * user-supplied request data.
      *
      * @param string $adviceId The advice UUID
      *
      * @return array<string, mixed> Updated advice record
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function expireAdvice(string $adviceId): array
     {
         try {
-            return $this->transitionStatus(adviceId: $adviceId, to: 'verlopen');
+            $current = $this->loadAdvice(adviceId: $adviceId);
+            if ($current === null) {
+                throw new RuntimeException('Advice request not accessible');
+            }
+
+            return $this->applyTransition(adviceId: $adviceId, to: 'verlopen', current: $current);
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest: failed to expire advice: '.$e->getMessage(),
@@ -410,200 +581,6 @@ class AdviceService
 
         return $user->getUID();
     }//end getUserId()
-
-    /**
-     * Submit advice (mark as received with optional adviesText).
-     *
-     * @param string               $adviceId The advice request UUID
-     * @param array<string, mixed> $payload  {adviesText, adviesDocument}
-     *
-     * @return array<string, mixed> The updated advice request
-     *
-     * @throws \RuntimeException When OpenRegister unavailable or transition invalid.
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-6
-     */
-    public function submitAdvice(string $adviceId, array $payload): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            throw new RuntimeException('Advice schema is not configured');
-        }
-
-        // Wilco #6 / procest#17 IDOR fix (2026-06-06): the caller must be
-        // the assigned `adviseur` (or an admin) — previously any authed
-        // user could submit advice on any UUID, including ones the
-        // adviseur hadn't yet seen. Read the current record and gate
-        // before applying the update.
-        $this->assertAdviceCallerIsAuthorized(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            adviceId: $adviceId,
-            action: 'submit',
-        );
-
-        $update = [
-            'status'     => 'received',
-            'receivedAt' => date('c'),
-        ];
-
-        $adviesText = (string) ($payload['adviesText'] ?? '');
-        if ($adviesText !== '') {
-            $update['adviesText'] = $adviesText;
-        }
-
-        $adviesDocument = (string) ($payload['adviesDocument'] ?? '');
-        if ($adviesDocument !== '') {
-            $update['adviesDocument'] = $adviesDocument;
-        }
-
-        try {
-            // Pre-existing positional-arg drift fixed (CLAUDE.md mandate):
-            // saveObject is (object, register, schema, uuid) — the previous
-            // ($register, $schema, $update, $adviceId) order wrote the wrong
-            // fields. Use named args to match every other call in this service.
-            $result = $objectService->saveObject(
-                object: $update,
-                register: $register,
-                schema: $schema,
-                uuid: (string) $adviceId
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to submit advice: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            throw new RuntimeException('Could not submit advice');
-        }
-
-        return $this->normalizeResult(result: $result);
-    }//end submitAdvice()
-
-    /**
-     * Cancel an advice request.
-     *
-     * @param string $adviceId The advice request UUID
-     *
-     * @return array<string, mixed> The updated advice request
-     *
-     * @throws \RuntimeException When OpenRegister unavailable or advice not found.
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-6
-     */
-    public function cancelAdvice(string $adviceId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            throw new RuntimeException('Advice schema is not configured');
-        }
-
-        // Wilco #6 / procest#17 IDOR fix (2026-06-06): only the requester
-        // (or an admin) may cancel — previously any authed user could
-        // cancel any advice by UUID.
-        $this->assertAdviceCallerIsAuthorized(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            adviceId: $adviceId,
-            action: 'cancel',
-        );
-
-        try {
-            // Pre-existing positional-arg drift fixed (CLAUDE.md mandate):
-            // saveObject is (object, register, schema, uuid).
-            $result = $objectService->saveObject(
-                object: ['status' => 'cancelled'],
-                register: $register,
-                schema: $schema,
-                uuid: (string) $adviceId
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to cancel advice: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            throw new RuntimeException('Could not cancel advice request');
-        }
-
-        return $this->normalizeResult(result: $result);
-    }//end cancelAdvice()
-
-    /**
-     * Authorization gate for advice mutations (Wilco #6 / procest#17 IDOR fix).
-     *
-     * - submit: only the assigned `adviseur` (or an admin) may submit.
-     * - cancel: only the `requestedBy` (or an admin) may cancel.
-     *
-     * The current user is obtained from IUserSession + IGroupManager
-     * (already injected on this service). The advice record is fetched
-     * from OR via the same objectService used by the calling method.
-     *
-     * @param object $objectService The OR object service
-     * @param string $register      The register slug
-     * @param string $schema        The advies_aanvraag schema slug
-     * @param string $adviceId      The advice UUID
-     * @param string $action        Either 'submit' or 'cancel'
-     *
-     * @return void
-     *
-     * @throws RuntimeException When the caller is not authorised, the
-     *                          record is missing, or OR is unavailable.
-     */
-    private function assertAdviceCallerIsAuthorized(
-        object $objectService,
-        string $register,
-        string $schema,
-        string $adviceId,
-        string $action,
-    ): void {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            throw new RuntimeException('Not authenticated');
-        }
-
-        $uid = $user->getUID();
-        if ($this->groupManager->isAdmin($uid) === true) {
-            return;
-        }
-
-        try {
-            $record = $objectService->find($adviceId, $register, $schema);
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest: advice lookup failed during IDOR gate: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            // Collapse not-found and access-denied to the same "not
-            // accessible" error to avoid an existence-probing oracle
-            // (same pattern as docudesk#100 Wilco #6 fix).
-            throw new RuntimeException('Advice request not accessible');
-        }
-
-        $data = $this->normalizeResult(result: $record);
-        if ($action === 'submit') {
-            $field = 'adviseur';
-        } else {
-            $field = 'requestedBy';
-        }
-
-        if (($data[$field] ?? '') !== $uid) {
-            throw new RuntimeException('Advice request not accessible');
-        }
-
-    }//end assertAdviceCallerIsAuthorized()
 
     /**
      * Send a Nextcloud notification to a user.

@@ -38,9 +38,20 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Belangenconflict detection.
+ *
+ * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class ConflictOfInterestService
 {
+
+    /**
+     * Reason returned when the check cannot be performed because the case
+     * worker's identity cannot be resolved.
+     *
+     * This is a CONFLICT (it blocks), not a pass: an unresolvable
+     * conflict-of-interest check must never report "no conflict".
+     */
+    public const REASON_IDENTITY_INDETERMINATE = 'identiteit_onbepaald';
 
     /**
      * Manually-registered conflicts keyed by zaakId.
@@ -60,19 +71,73 @@ class ConflictOfInterestService
     /**
      * Constructor.
      *
-     * @param LoggerInterface                      $logger     Logger.
-     * @param BrpHaalCentraalAdapterInterface|null $brpAdapter Optional BRP Haal
-     *                                                         Centraal adapter
-     *                                                         for relationship
-     *                                                         enrichment.
-     *                                                         Dormant by
-     *                                                         default.
+     * @param LoggerInterface                          $logger           Logger.
+     * @param BrpHaalCentraalAdapterInterface|null     $brpAdapter       Optional BRP Haal
+     *                                                                   Centraal adapter
+     *                                                                   for relationship
+     *                                                                   enrichment.
+     *                                                                   Dormant by
+     *                                                                   default.
+     * @param MedewerkerIdentityResolverInterface|null $identityResolver Optional server-side
+     *                                                                   case-worker identity
+     *                                                                   resolver. Dormant by
+     *                                                                   default; an unbound
+     *                                                                   resolver makes the
+     *                                                                   check indeterminate,
+     *                                                                   which BLOCKS.
      */
     public function __construct(
         private readonly LoggerInterface $logger,
         private readonly ?BrpHaalCentraalAdapterInterface $brpAdapter=null,
+        private readonly ?MedewerkerIdentityResolverInterface $identityResolver=null,
     ) {
     }//end __construct()
+
+    /**
+     * Hash a BSN for comparison / logging.
+     *
+     * AVG art. 9: BSNs are compared and logged as SHA-256 hashes, never raw.
+     *
+     * @param string $bsn The BSN.
+     *
+     * @return string The SHA-256 hash.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private static function hashBsn(string $bsn): string
+    {
+        return hash('sha256', $bsn);
+    }//end hashBsn()
+
+    /**
+     * Resolve the case worker's BSN server-side.
+     *
+     * Returns null when no resolver is bound or the resolver cannot establish
+     * the identity — the caller then fails closed. The value is never logged.
+     *
+     * @param string $userId The Nextcloud user id.
+     *
+     * @return string|null The worker's BSN, or null when indeterminate.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private function resolveMedewerkerBsn(string $userId): ?string
+    {
+        if ($this->identityResolver === null || $userId === '') {
+            return null;
+        }
+
+        try {
+            return $this->identityResolver->bsnFor($userId);
+        } catch (\Throwable $e) {
+            // Never let a resolver failure read as "no conflict".
+            $this->logger->warning(
+                'Medewerker identity resolution failed — treating as indeterminate',
+                ['error' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end resolveMedewerkerBsn()
 
     /**
      * Configure the relationship-lookup callable.
@@ -94,13 +159,32 @@ class ConflictOfInterestService
     /**
      * Check whether the user has a belangenconflict with the case applicant.
      *
+     * FAILS CLOSED. Previously this gated on `$caseProperties['userBsn']`, which
+     * no caller ever populated, so it returned "no conflict" unconditionally on
+     * every live call — the check was decorative. Worse, `$caseProperties` comes
+     * from the request body via `MandaatMatrixController::probe()`, so the
+     * identity it gated on was attacker-controlled.
+     *
+     * Now:
+     *   - `userBsn` in `$caseProperties` is IGNORED. The case worker's identity
+     *     is resolved server-side via MedewerkerIdentityResolverInterface.
+     *   - `applicantBsn` is authoritative only because the controller re-derives
+     *     it server-side from the case object and strips client identity keys.
+     *   - Applicant known + worker unresolvable => INDETERMINATE => conflict,
+     *     never "no conflict".
+     *   - No applicant identity => no conflict (nothing to compare against).
+     *   - BSNs are compared as SHA-256 hashes and never logged (AVG art. 9).
+     *
      * @param string               $userId         User id.
      * @param string               $zaakId         Case id.
-     * @param array<string, mixed> $caseProperties Case properties (must contain applicantBsn + userBsn for auto-detection).
+     * @param array<string, mixed> $caseProperties Case properties. Only
+     *                                             `applicantBsn` is consulted,
+     *                                             and only when the caller has
+     *                                             sourced it server-side.
      *
      * @return array{conflict:bool, reason?:string}
      *
-     * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function checkConflict(string $userId, string $zaakId, array $caseProperties=[]): array
     {
@@ -111,22 +195,66 @@ class ConflictOfInterestService
             return ['conflict' => true, 'reason' => $this->registered[$zaakId]];
         }
 
-        $userBsn      = (string) ($caseProperties['userBsn'] ?? '');
+        // The applicant identity is authoritative ONLY because the caller
+        // (MandaatMatrixController::probe) re-derives it server-side from the
+        // case object and strips any client-supplied identity keys first.
         $applicantBsn = (string) ($caseProperties['applicantBsn'] ?? '');
-        if ($userBsn === '' || $applicantBsn === '') {
+        if ($applicantBsn === '') {
+            // No natural-person applicant on this case: there is nobody to have
+            // a conflict WITH, so "no conflict" is a sound answer rather than a
+            // fail-open.
             return ['conflict' => false];
         }
 
-        if ($userBsn === $applicantBsn) {
+        // The case-worker identity is resolved SERVER-SIDE. It is deliberately
+        // NOT read from $caseProperties: that array originates from the request
+        // body, and an authorization input supplied by the requester is not an
+        // authorization input — a caller would simply omit `userBsn` to force
+        // "no conflict" (the bug this replaces).
+        $userBsn = $this->resolveMedewerkerBsn(userId: $userId);
+        if ($userBsn === null || $userBsn === '') {
+            // INDETERMINATE: the applicant is known but we cannot establish who
+            // the case worker is, so we cannot answer the question. A conflict
+            // check that cannot run MUST NOT report "no conflict" — fail closed.
+            $this->logger->warning(
+                'Belangenconflict check is indeterminate — blocking',
+                ['userId' => $userId, 'zaakId' => $zaakId]
+            );
+            return ['conflict' => true, 'reason' => self::REASON_IDENTITY_INDETERMINATE];
+        }
+
+        // Constant-time comparison of hashes — never of raw BSNs.
+        if (hash_equals(self::hashBsn(bsn: $userBsn), self::hashBsn(bsn: $applicantBsn)) === true) {
             return ['conflict' => true, 'reason' => 'self'];
         }
 
+        return $this->detectRelationConflict(userBsn: $userBsn, applicantBsn: $applicantBsn, zaakId: $zaakId);
+    }//end checkConflict()
+
+    /**
+     * Detect a family/relationship conflict between worker and applicant.
+     *
+     * Both identities are already resolved server-side by the caller.
+     *
+     * @param string $userBsn      The case worker's BSN (in memory only).
+     * @param string $applicantBsn The applicant's BSN (in memory only).
+     * @param string $zaakId       Case id (audit correlation).
+     *
+     * @return array{conflict:bool, reason?:string}
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private function detectRelationConflict(string $userBsn, string $applicantBsn, string $zaakId): array
+    {
         if ($this->relationshipLookup !== null) {
             try {
                 $relation = ($this->relationshipLookup)($userBsn, $applicantBsn);
             } catch (\Throwable $e) {
-                $this->logger->warning('Relationship lookup failed', ['error' => $e->getMessage()]);
-                return ['conflict' => false];
+                // A failed relationship lookup is indeterminate, not "no
+                // conflict": we asked whether a relation exists and got no
+                // answer. Fail closed.
+                $this->logger->warning('Relationship lookup failed — blocking', ['error' => $e->getMessage()]);
+                return ['conflict' => true, 'reason' => self::REASON_IDENTITY_INDETERMINATE];
             }
 
             if (is_string($relation) === true && $relation !== '') {
@@ -143,7 +271,7 @@ class ConflictOfInterestService
         }
 
         return ['conflict' => false];
-    }//end checkConflict()
+    }//end detectRelationConflict()
 
     /**
      * Consult the BRP / Haal Centraal adapter for a relationship label.
