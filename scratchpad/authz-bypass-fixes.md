@@ -87,3 +87,29 @@ Worktree: /home/rubenlinde/wave2-worktrees/procest-authz
   - gate-52 orphaned-write-capability: `ConflictOfInterestService::clearConflict` — test-only
     callers on pristine too; untouched by my diff. Flagged only because my change pulled the file
     into diff scope. → deferred, issue filed.
+
+## Mid-flight: origin/development moved (STALE-BASE GUARD fired)
+`git log HEAD..origin/development` was NOT empty — 6 upstream commits landed (#224 federated case
+collaboration, #225 woo-llm-anonymisation). Merged (never reset). Conflicts in
+`WOOAssessmentController.php` + its test resolved as a UNION (kept upstream's
+`WOOAnonymisationAssistService`, kept my `CaseAccessGuard`, dropped the now-unused `IGroupManager`).
+🔥 **#225 had added TWO MORE `#[NoAdminRequired]` endpoints** — `proposeRedaction:307`,
+`reviewRedactionProposal:353` — both calling `requireCaseMutationAccess` and therefore silently
+inheriting the fail-open. Blast radius on current development = **7 endpoints, not 3**. My merge
+fixes them automatically; test coverage extended to all 7.
+Guard re-run after merge: clean (no unmerged upstream, zero unauthored deletions).
+
+**Baseline recomputed after merge** (origin/development d046091aa): **1632 tests / 5397 assertions /
+0 failures** → branch **1666 / 5492 / 0 failures** = **+34**.
+
+## Outcome
+- PR **#226** "procest: authz-bypass-fixes (apply)" — base `development` (base trap avoided),
+  admin-merged (`{"Do":"merge","force_merge":true}`), **state=closed merged=True**.
+- Live-verified on `origin/development` post-merge: `CaseAccessGuard` present; **zero executable
+  `$this->groupManager` calls remain** in WOOAssessmentController (only an explanatory docblock
+  mentions the old group); `submitAdvice` gone; `assertAdviceTransitionAuthorized` on the live path;
+  canonical spec `Status: done`.
+- Archived → `openspec/changes/archive/2026-07-16-authz-bypass-fixes/`.
+- **#223** updated with per-hole verdicts + takeaway. **#17 reopened** + commented (its fix was
+  never live). Deferred debt filed as **#227** (orphaned clearConflict) and **#228** (2817 broken
+  @spec anchors + phpstan `|| echo` swallowing failures).
