@@ -87,10 +87,9 @@
 					</p>
 				</section>
 			</div>
-		</template>
 
-		<!-- Sub-dialogs -->
-		<BeschikkingDialog v-if="showBeschikkingDialog"
+			<!-- Sub-dialogs -->
+			<BeschikkingDialog v-if="showBeschikkingDialog"
 			:zaak-id="zaakId"
 			@close="showBeschikkingDialog = false"
 			@generated="onBeschikkingGenerated" />
@@ -124,6 +123,7 @@
 				</NcButton>
 			</div>
 		</div>
+		</template>
 	</NcDialog>
 </template>
 
