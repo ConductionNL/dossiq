@@ -26,7 +26,7 @@
 
 <script>
 import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import { summarize } from '../../../services/aiApi.js'
 
 export default {

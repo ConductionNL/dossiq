@@ -67,7 +67,7 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import { stateBadge, isEnableable, canComplete, canTerminate, isMilestoneAchieved } from '../../../utils/cmmnHelpers.js'
 
 export default {

@@ -50,7 +50,7 @@
 
 <script>
 import { NcDialog, NcButton, NcTextField, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import { classifyDocument } from '../../../services/aiApi.js'
 import AiConfidenceBadge from './AiConfidenceBadge.vue'
 

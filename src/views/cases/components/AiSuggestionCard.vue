@@ -44,7 +44,7 @@
 <script>
 import { NcButton, NcTextField, NcLoadingIcon } from '@nextcloud/vue'
 import { CnDetailCard } from '@conduction/nextcloud-vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import AiConfidenceBadge from './AiConfidenceBadge.vue'
 
 export default {

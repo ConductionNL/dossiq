@@ -45,8 +45,8 @@
 </template>
 
 <script>
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import AlertIcon from 'vue-material-design-icons/Alert.vue'
 import { generateUrl } from '@nextcloud/router'
 import { CnMapWidget } from '@conduction/nextcloud-vue'

@@ -89,9 +89,15 @@ webpackConfig.resolve = {
 		...(useLocalLib ? { '@conduction/nextcloud-vue': localLib } : {}),
 		// Deduplicate shared packages so the aliased library source uses
 		// the same instances as the app (prevents dual-Pinia / dual-Vue bugs).
-		'vue$': path.resolve(__dirname, 'node_modules/vue'),
+		// VUE 3 STAGING (ADR-066): route the runtime `vue` import to @vue/compat
+		// (MODE 2) so the un-migrated Vue-2 template syntax stays correct during
+		// the straddle. vue-loader still finds the real compiler via vue/compiler-sfc.
+		'vue$': '@vue/compat',
 		'pinia$': path.resolve(__dirname, 'node_modules/pinia'),
-		'@nextcloud/vue$': path.resolve(__dirname, 'node_modules/@nextcloud/vue'),
+		// v9 is ESM-only: exports maps '.' -> ./dist/index.mjs with no main/module,
+		// so a directory alias can't resolve it. Point at the explicit entry file
+		// (also dedupes the aliased lib worktree's own v9 copy onto this one).
+		'@nextcloud/vue$': path.resolve(__dirname, 'node_modules/@nextcloud/vue/dist/index.mjs'),
 		// @nextcloud/dialogs v6 ships its stylesheet at dist/style.css and exposes it
 		// via the package "exports" map. When the aliased nextcloud-vue source imports
 		// '@nextcloud/dialogs/style.css', this webpack build resolves the raw subpath
@@ -105,6 +111,13 @@ webpackConfig.module = {
 		{
 			test: /\.vue$/,
 			loader: 'vue-loader',
+			options: {
+				compilerOptions: {
+					// VUE 3 STAGING (ADR-066): keep un-migrated Vue-2 templates
+					// (.sync, {{x|f}} filters) semantically correct under Vue 3.
+					compatConfig: { MODE: 2, COMPILER_FILTERS: true },
+				},
+			},
 		},
 		{
 			test: /\.css$/,

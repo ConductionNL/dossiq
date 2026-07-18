@@ -57,7 +57,7 @@
 
 <script>
 import { NcButton, NcTextField, NcLoadingIcon } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import { fetchAssistantAvailability, converse } from '../../../services/assistantApi.js'
 import { makeTranscriptEntry, canSend, assistantErrorMessage } from '../../../utils/assistantHelpers.js'
 

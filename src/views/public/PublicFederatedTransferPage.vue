@@ -58,7 +58,7 @@
 
 <script>
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { publicFederatedTransferEndpoint } from '../../utils/federatedShareHelpers.js'
