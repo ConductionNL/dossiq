@@ -92,8 +92,19 @@ webpackConfig.resolve = {
 		// VUE 3 STAGING (ADR-066): route the runtime `vue` import to @vue/compat
 		// (MODE 2) so the un-migrated Vue-2 template syntax stays correct during
 		// the straddle. vue-loader still finds the real compiler via vue/compiler-sfc.
-		'vue$': '@vue/compat',
+		// MUST be an ABSOLUTE file path, not the bare '@vue/compat': the aliased lib
+		// source (../nextcloud-vue-vue3/src) and procest each have their own
+		// node_modules/@vue/compat, so a bare alias resolves to TWO copies → two
+		// `currentRenderingInstance` module states → CnAppRoot renders with a null
+		// instance (renderSlot/resolveComponent crash). One absolute path = one copy.
+		'vue$': path.resolve(__dirname, 'node_modules/@vue/compat/dist/vue.esm-bundler.js'),
 		'pinia$': path.resolve(__dirname, 'node_modules/pinia'),
+		// Dedupe vue-router to ONE copy (absolute file): the aliased lib worktree
+		// ships its own vue-router (a different MAJOR), so a per-importer resolve
+		// gives @nextcloud/vue's RouterLink a different router instance than
+		// app.use(router) provided → NcAppNavigationItem's <router-link> scoped
+		// slot gets undefined props (href destructure crash). One copy = one router.
+		'vue-router$': path.resolve(__dirname, 'node_modules/vue-router/dist/vue-router.mjs'),
 		// v9 is ESM-only: exports maps '.' -> ./dist/index.mjs with no main/module,
 		// so a directory alias can't resolve it. Point at the explicit entry file
 		// (also dedupes the aliased lib worktree's own v9 copy onto this one).
