@@ -15,7 +15,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 // a compat proxy that drops props — e.g. NcAppNavigationItem's <router-link>
 // v-slot `{ href }` arrives undefined and crashes. .sync/filters compat is a
 // separate flag (COMPONENT_V_MODEL / COMPILER_FILTERS) and stays on.
-configureCompat({ RENDER_FUNCTION: false })
+// COMPONENT_V_MODEL: false — MODE 2 defaults this ON, which rewrites v-model to the
+// Vue-2 value/@input convention. That breaks v9 components built with defineModel()/
+// useModel (NcTextField→NcInputField): they expect modelValue, but compat's v-model
+// shim never sets it → modelValue.value undefined → toString() crash on every input
+// page. Off = v-model uses the Vue-3 modelValue convention. Our own migrated bindings
+// are explicit :model-value now (post task-4.3 codemod), so this only helps.
+configureCompat({ RENDER_FUNCTION: false, COMPONENT_V_MODEL: false })
 import { translate as t, translatePlural as n, loadTranslations } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import {
