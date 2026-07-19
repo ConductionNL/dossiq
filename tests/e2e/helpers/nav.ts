@@ -55,7 +55,11 @@ export async function dismissSupportDialog(page: Page): Promise<void> {
  * case list rather than just toggling the (non-navigating) group header.
  */
 const GROUP_LEAF_ALIAS: Record<string, string> = {
-	Cases: 'All cases',
+	// The current manifest ships "Cases" as a flat, directly-navigating menu
+	// leaf (href=/apps/procest/cases) — the earlier "Cases" GROUP + "All cases"
+	// list-leaf IA was reverted. So navTo(page, 'Cases') must resolve the real
+	// "Cases" link, not an "All cases" alias that no longer exists (which made
+	// the lookup match zero links and silently stay on the Dashboard).
 }
 
 export async function navTo(page: Page, label: string): Promise<void> {
@@ -105,12 +109,16 @@ export async function navToRoute(page: Page, route: string): Promise<void> {
 	// re-run vue-router's guards — `$router.push` is the only reliable
 	// client-side navigation for a route that has no sidebar link.
 	await page.evaluate((r) => {
-		const els = document.querySelectorAll('*')
-		for (const el of els) {
-			// @ts-expect-error Vue 2 attaches the instance as __vue__
-			const vm = el.__vue__
-			if (vm && vm.$router) { vm.$router.push(r); return }
-		}
+		// Vue 3 (ADR-066): the app no longer attaches a per-element `__vue__`
+		// instance (that was Vue 2). procest `createApp(...).mount('#content')`,
+		// so the app object hangs off the mount element as `__vue_app__`, and
+		// `app.use(router)` installs the router on `config.globalProperties.$router`.
+		// (Iterating `__vue__` used to find Nextcloud's OWN Vue-2 chrome router, not
+		// procest's — so client-side pushes silently went nowhere under Vue 3.)
+		const el = document.getElementById('content') as (HTMLElement & { __vue_app__?: any }) | null
+		const app = el && el.__vue_app__
+		const router = app && app.config && app.config.globalProperties && app.config.globalProperties.$router
+		if (router) { router.push(r) }
 	}, route)
 	await page.waitForTimeout(800)
 	await dismissSupportDialog(page)

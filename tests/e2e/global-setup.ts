@@ -113,6 +113,27 @@ async function globalSetup(config: FullConfig): Promise<void> {
 		)
 	}
 
+	// Suppress the procest product walkthrough (ADR-043) for automated runs: on
+	// first visit it mounts a modal spotlight tour (`.cn-walkthrough`) whose full
+	// dim layer intercepts pointer events and blocks every sidebar click. Its
+	// "seen" marker is browser-local (`cn-walkthrough-seen:<appId>` in
+	// localStorage), so a fresh Playwright context always re-triggers it. Seed the
+	// marker into the persisted storageState with a high sentinel version — every
+	// tour step's `sinceVersion` sorts below it, so the tour composes to an empty
+	// step set (see useWalkthrough compareSemver gate) and never shows.
+	try {
+		await page.goto('/apps/procest/', { waitUntil: 'domcontentloaded', timeout: 60_000 })
+		await page.evaluate(() => {
+			try {
+				window.localStorage.setItem('cn-walkthrough-seen:procest', '999.0.0')
+			} catch (e) {
+				// localStorage unavailable — tour dismissal falls back to helper clicks.
+			}
+		})
+	} catch {
+		// App origin unreachable here is non-fatal; specs still run, tours dismiss via helper.
+	}
+
 	await context.storageState({ path: STORAGE_STATE })
 	await browser.close()
 }
