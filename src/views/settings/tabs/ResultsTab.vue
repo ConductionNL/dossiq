@@ -264,7 +264,7 @@ export default {
 			this.editSaving = false
 			if (result) {
 				const idx = this.resultTypes.findIndex(r => r.id === this.editingId)
-				if (idx !== -1) this.$set(this.resultTypes, idx, result)
+				if (idx !== -1) this.resultTypes[idx] = result
 				this.editingId = null
 				this.editForm = {}
 			} else {

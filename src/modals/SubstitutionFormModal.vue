@@ -20,14 +20,14 @@
 			<!-- Absentee (coordinator only; self otherwise) -->
 			<div v-if="allowCoordinator" class="form-group">
 				<NcTextField
-					:value.sync="form.absentee"
+					v-model="form.absentee"
 					:label="t('procest', 'Absent handler (user id)')"
 					:placeholder="t('procest', 'Handler being covered…')" />
 			</div>
 
 			<div class="form-group">
 				<NcTextField
-					:value.sync="form.substitute"
+					v-model="form.substitute"
 					:label="t('procest', 'Substitute (user id)')"
 					:placeholder="t('procest', 'Waarnemer who covers the work…')"
 					:error="!!errors.substitute" />

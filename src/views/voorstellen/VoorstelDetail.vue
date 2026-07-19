@@ -43,7 +43,7 @@
 				v-if="isActiveActor && !isTerminalStatus && currentStepInfo"
 				:voorstel-id="voorstel.id"
 				:step="currentStepInfo"
-				:open.sync="actieDialogOpen"
+				v-model:open="actieDialogOpen"
 				:mandates="mandates"
 				@action-recorded="onActionCompleted" />
 

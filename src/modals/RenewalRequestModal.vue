@@ -15,7 +15,7 @@
   -->
 <template>
 	<NcDialog :name="t('procest', 'Verlengingsverzoek')"
-		:open.sync="open"
+		v-model:open="open"
 		size="small"
 		data-testid="leverancier-renewal-modal"
 		@update:open="onOpenChange">

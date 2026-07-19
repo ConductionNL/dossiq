@@ -20,7 +20,7 @@
 			<label for="kcc_identification_score_threshold">{{ t('procest', 'Identification score threshold (0.6 - 1.0)') }}</label>
 			<NcInputField
 				id="kcc_identification_score_threshold"
-				:value.sync="form.identification_score_threshold"
+				v-model="form.identification_score_threshold"
 				type="number"
 				:disabled="!writable || loading"
 				:placeholder="'0.8'" />
@@ -33,7 +33,7 @@
 			<label for="kcc_sentiment_polling_interval">{{ t('procest', 'Sentiment polling interval (seconds)') }}</label>
 			<NcInputField
 				id="kcc_sentiment_polling_interval"
-				:value.sync="form.sentiment_polling_interval"
+				v-model="form.sentiment_polling_interval"
 				type="number"
 				:disabled="!writable || loading"
 				:placeholder="'5'" />
@@ -43,7 +43,7 @@
 			<label for="kcc_specialist_availability_polling_interval">{{ t('procest', 'Specialist availability polling interval (seconds)') }}</label>
 			<NcInputField
 				id="kcc_specialist_availability_polling_interval"
-				:value.sync="form.specialist_availability_polling_interval"
+				v-model="form.specialist_availability_polling_interval"
 				type="number"
 				:disabled="!writable || loading"
 				:placeholder="'30'" />
@@ -53,7 +53,7 @@
 			<label for="kcc_max_zaken_voorblad">{{ t('procest', 'Max open zaken in voorblad') }}</label>
 			<NcInputField
 				id="kcc_max_zaken_voorblad"
-				:value.sync="form.max_zaken_voorblad"
+				v-model="form.max_zaken_voorblad"
 				type="number"
 				:disabled="!writable || loading"
 				:placeholder="'10'" />
@@ -63,7 +63,7 @@
 			<label for="kcc_max_contactmomenten_history">{{ t('procest', 'Max contactmomenten in history') }}</label>
 			<NcInputField
 				id="kcc_max_contactmomenten_history"
-				:value.sync="form.max_contactmomenten_history"
+				v-model="form.max_contactmomenten_history"
 				type="number"
 				:disabled="!writable || loading"
 				:placeholder="'5'" />
@@ -73,7 +73,7 @@
 			<label for="kcc_belplan_overflow_threshold_wachttijd">{{ t('procest', 'Belplan overflow threshold — wachttijd (seconds)') }}</label>
 			<NcInputField
 				id="kcc_belplan_overflow_threshold_wachttijd"
-				:value.sync="form.belplan_overflow_threshold_wachttijd"
+				v-model="form.belplan_overflow_threshold_wachttijd"
 				type="number"
 				:disabled="!writable || loading"
 				:placeholder="'180'" />
@@ -83,7 +83,7 @@
 			<label for="kcc_belplan_overflow_threshold_wachtrij_lengte">{{ t('procest', 'Belplan overflow threshold — wachtrij lengte') }}</label>
 			<NcInputField
 				id="kcc_belplan_overflow_threshold_wachtrij_lengte"
-				:value.sync="form.belplan_overflow_threshold_wachtrij_lengte"
+				v-model="form.belplan_overflow_threshold_wachtrij_lengte"
 				type="number"
 				:disabled="!writable || loading"
 				:placeholder="'5'" />

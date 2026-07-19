@@ -21,13 +21,13 @@
 			<div class="form-row">
 				<div class="form-group">
 					<NcTextField
-						:value.sync="fromUser"
+						v-model="fromUser"
 						:label="t('procest', 'From handler (user id)')"
 						:placeholder="t('procest', 'Departing handler…')" />
 				</div>
 				<div class="form-group">
 					<NcTextField
-						:value.sync="toUser"
+						v-model="toUser"
 						:label="t('procest', 'To handler (user id)')"
 						:placeholder="t('procest', 'Receiving handler…')" />
 				</div>

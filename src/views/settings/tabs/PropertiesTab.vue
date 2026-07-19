@@ -281,7 +281,7 @@ export default {
 			this.editSaving = false
 			if (result) {
 				const idx = this.propertyDefs.findIndex(p => p.id === this.editingId)
-				if (idx !== -1) this.$set(this.propertyDefs, idx, result)
+				if (idx !== -1) this.propertyDefs[idx] = result
 				this.editingId = null; this.editForm = {}
 			} else {
 				this.editError = this.objectStore.getError('propertyDefinition') || t('procest', 'Failed to save')

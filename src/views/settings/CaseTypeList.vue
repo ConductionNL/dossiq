@@ -148,7 +148,7 @@ export default {
 				'_filters[caseType]': caseTypeId,
 				_limit: 100,
 			})
-			this.$set(this.statusTypeCounts, caseTypeId, (statusTypes || []).length)
+			this.statusTypeCounts[caseTypeId] = (statusTypes || []).length
 			await this.objectStore.fetchCollection('caseType', { _limit: 100 })
 		},
 

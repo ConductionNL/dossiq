@@ -341,20 +341,20 @@ export default {
 				form.append('files', file)
 				form.append('metadata', JSON.stringify(metadata))
 				try {
-					this.$set(this.uploadProgress, index, 0)
+					this.uploadProgress[index] = 0
 					const url = generateUrl(`/apps/procest/api/cases/${encodeURIComponent(this.caseId)}/dossier`)
 					await axios.post(url, form, {
 						headers: { 'Content-Type': 'multipart/form-data' },
 						onUploadProgress: (event) => {
 							if (event.total) {
-								this.$set(this.uploadProgress, index, Math.round((event.loaded / event.total) * 100))
+								this.uploadProgress[index] = Math.round((event.loaded / event.total) * 100)
 							}
 						},
 					})
-					this.$set(this.uploadProgress, index, 100)
+					this.uploadProgress[index] = 100
 					anySuccess = true
 				} catch (error) {
-					this.$set(this.uploadErrors, index, true)
+					this.uploadErrors[index] = true
 				}
 			}
 			this.uploading = false

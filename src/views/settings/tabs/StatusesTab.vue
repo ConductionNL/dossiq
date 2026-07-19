@@ -343,7 +343,7 @@ export default {
 			if (result) {
 				const idx = this.statusTypes.findIndex(st => st.id === this.editingId)
 				if (idx !== -1) {
-					this.$set(this.statusTypes, idx, result)
+					this.statusTypes[idx] = result
 				}
 				this.editingId = null
 				this.editForm = {}

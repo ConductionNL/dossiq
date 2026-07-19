@@ -28,7 +28,7 @@
 
 			<NcTextField
 				class="inzage-export__field"
-				:value.sync="idValue"
+				v-model="idValue"
 				:label="t('procest', 'Subject identifier value')"
 				:placeholder="t('procest', 'e.g. a BSN or contact reference')" />
 

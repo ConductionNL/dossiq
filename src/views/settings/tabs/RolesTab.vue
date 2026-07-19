@@ -221,7 +221,7 @@ export default {
 			this.editSaving = false
 			if (result) {
 				const idx = this.roleTypes.findIndex(r => r.id === this.editingId)
-				if (idx !== -1) this.$set(this.roleTypes, idx, result)
+				if (idx !== -1) this.roleTypes[idx] = result
 				this.editingId = null; this.editForm = {}
 			} else {
 				this.editError = this.objectStore.getError('roleType') || t('procest', 'Failed to save')
