@@ -26,16 +26,16 @@
 						<td>{{ doc.title || doc.name || '---' }}</td>
 						<td>
 							<NcSelect
-								:value="getAssessment(doc.id)"
+								:model-value="getAssessment(doc.id)"
 								:options="assessmentOptions"
 								:input-label="t('procest', 'Assessment')"
 								:disabled="isReadOnly"
-								@input="val => setAssessment(doc.id, val)" />
+								@update:model-value="val => setAssessment(doc.id, val)" />
 						</td>
 						<td>
 							<NcSelect
 								v-if="getAssessment(doc.id) === 'niet_openbaar'"
-								:value="getGrounds(doc.id)"
+								:model-value="getGrounds(doc.id)"
 								:options="weigeringsgronden"
 								:input-label="t('procest', 'Grounds')"
 								:multiple="true"
@@ -43,7 +43,7 @@
 								track-by="code"
 								:disabled="isReadOnly"
 								:placeholder="t('procest', 'Select grounds...')"
-								@input="val => setGrounds(doc.id, val)" />
+								@update:model-value="val => setGrounds(doc.id, val)" />
 							<span v-else>---</span>
 						</td>
 						<td>

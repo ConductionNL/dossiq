@@ -19,8 +19,8 @@
 						<tr>
 							<th>
 								<NcCheckboxRadioSwitch
-									:checked="allSelected"
-									@update:checked="toggleAll" />
+									:model-value="allSelected"
+									@update:model-value="toggleAll" />
 							</th>
 							<th>{{ t('procest', 'Field') }}</th>
 							<th>{{ t('procest', 'Extracted value') }}</th>
@@ -34,14 +34,14 @@
 							:class="{ 'low-confidence': field.confidence < 0.60 }">
 							<td>
 								<NcCheckboxRadioSwitch
-									:checked="selectedFields.includes(field.name)"
-									@update:checked="toggleField(field.name)" />
+									:model-value="selectedFields.includes(field.name)"
+									@update:model-value="toggleField(field.name)" />
 							</td>
 							<td>{{ field.name }}</td>
 							<td>
 								<NcTextField
-									:value="modifiedValues[field.name] || field.value"
-									@update:value="v => modifiedValues[field.name] = v" />
+									:model-value="modifiedValues[field.name] || field.value"
+									@update:model-value="v => modifiedValues[field.name] = v" />
 							</td>
 							<td>
 								<AiConfidenceBadge :confidence="field.confidence" />

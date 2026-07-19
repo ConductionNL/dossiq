@@ -15,46 +15,46 @@
 				<label class="required" for="rol-naam">{{ t('procest', 'Naam') }}</label>
 				<NcTextField
 					id="rol-naam"
-					:value="form.naam"
+					:model-value="form.naam"
 					:error="!!errors.naam"
 					:helper-text="errors.naam"
-					@update:value="v => form.naam = v" />
+					@update:model-value="v => form.naam = v" />
 			</div>
 
 			<div class="form-group">
 				<label for="rol-type">{{ t('procest', 'Type') }}</label>
 				<NcSelect
 					id="rol-type"
-					:value="selectedType"
+					:model-value="selectedType"
 					:options="typeOptions"
 					:input-label="t('procest', 'Type')"
-					@input="v => form.type = v ? v.id : ''" />
+					@update:model-value="v => form.type = v ? v.id : ''" />
 			</div>
 
 			<div class="form-group">
 				<label for="rol-parent">{{ t('procest', 'Parent role') }}</label>
 				<NcSelect
 					id="rol-parent"
-					:value="selectedParent"
+					:model-value="selectedParent"
 					:options="parentOptions"
 					:input-label="t('procest', 'Parent role')"
-					@input="v => form.parentRole = v ? v.id : ''" />
+					@update:model-value="v => form.parentRole = v ? v.id : ''" />
 			</div>
 
 			<div class="form-group">
 				<label for="rol-afdeling">{{ t('procest', 'Afdeling') }}</label>
 				<NcTextField
 					id="rol-afdeling"
-					:value="form.afdeling"
-					@update:value="v => form.afdeling = v" />
+					:model-value="form.afdeling"
+					@update:model-value="v => form.afdeling = v" />
 			</div>
 
 			<div class="form-group">
 				<label for="rol-team">{{ t('procest', 'Team') }}</label>
 				<NcTextField
 					id="rol-team"
-					:value="form.team"
-					@update:value="v => form.team = v" />
+					:model-value="form.team"
+					@update:model-value="v => form.team = v" />
 			</div>
 
 			<div class="form-group">
@@ -62,8 +62,8 @@
 				<NcTextField
 					id="rol-niveau"
 					type="number"
-					:value="String(form.mandaatNiveau)"
-					@update:value="v => form.mandaatNiveau = Number(v) || 0" />
+					:model-value="String(form.mandaatNiveau)"
+					@update:model-value="v => form.mandaatNiveau = Number(v) || 0" />
 			</div>
 		</div>
 

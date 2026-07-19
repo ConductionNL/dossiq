@@ -12,20 +12,20 @@
 				<label class="required" for="aa-person">{{ t('procest', 'Person (UID / email)') }}</label>
 				<NcTextField
 					id="aa-person"
-					:value="form.persoonId"
+					:model-value="form.persoonId"
 					:error="!!errors.persoonId"
 					:helper-text="errors.persoonId"
-					@update:value="v => form.persoonId = v" />
+					@update:model-value="v => form.persoonId = v" />
 			</div>
 
 			<div class="form-group">
 				<label class="required" for="aa-role">{{ t('procest', 'Role') }}</label>
 				<NcSelect
 					id="aa-role"
-					:value="selectedRole"
+					:model-value="selectedRole"
 					:options="roleOptions"
 					:input-label="t('procest', 'Role')"
-					@input="v => form.rolId = v ? v.id : ''" />
+					@update:model-value="v => form.rolId = v ? v.id : ''" />
 				<span v-if="errors.rolId" class="field-error">{{ errors.rolId }}</span>
 			</div>
 
@@ -33,10 +33,10 @@
 				<label for="aa-type">{{ t('procest', 'Type') }}</label>
 				<NcSelect
 					id="aa-type"
-					:value="selectedType"
+					:model-value="selectedType"
 					:options="typeOptions"
 					:input-label="t('procest', 'Type')"
-					@input="v => form.toewijzingType = v ? v.id : ''" />
+					@update:model-value="v => form.toewijzingType = v ? v.id : ''" />
 			</div>
 
 			<div class="form-group">

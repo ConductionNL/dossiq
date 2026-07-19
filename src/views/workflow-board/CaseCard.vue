@@ -30,8 +30,8 @@
 		@keydown.space.prevent="$emit('click', caseItem.id)">
 		<NcCheckboxRadioSwitch
 			class="case-card__select"
-			:checked="selected"
-			@update:checked="$emit('toggle-select', caseItem.id)"
+			:model-value="selected"
+			@update:model-value="$emit('toggle-select', caseItem.id)"
 			@click.native.stop
 			@keydown.native.stop>
 			<span class="hidden-visually">{{ t('procest', 'Select case {identifier}', { identifier: caseItem.identifier || caseItem.id }) }}</span>

@@ -7,10 +7,10 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Titel') }} *</label>
 				<NcTextField
-					:value="form.title"
+					:model-value="form.title"
 					:error="!!errors.title"
 					:placeholder="t('procest', 'Titel van het besluit...')"
-					@update:value="v => { form.title = v; errors.title = '' }" />
+					@update:model-value="v => { form.title = v; errors.title = '' }" />
 				<p v-if="errors.title" class="form-error">
 					{{ errors.title }}
 				</p>
@@ -20,8 +20,8 @@
 				<label>{{ t('procest', 'Ingangsdatum') }}</label>
 				<NcTextField
 					type="date"
-					:value="form.effectiveDate"
-					@update:value="v => form.effectiveDate = v" />
+					:model-value="form.effectiveDate"
+					@update:model-value="v => form.effectiveDate = v" />
 			</div>
 
 			<div class="form-group">
@@ -46,9 +46,9 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Bestuursorgaan') }}</label>
 				<NcTextField
-					:value="form.governingBody"
+					:model-value="form.governingBody"
 					:placeholder="t('procest', 'College van B&W')"
-					@update:value="v => form.governingBody = v" />
+					@update:model-value="v => form.governingBody = v" />
 			</div>
 		</div>
 

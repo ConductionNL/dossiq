@@ -56,9 +56,9 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Title') }} *</label>
 					<NcTextField
-						:value="form.title"
+						:model-value="form.title"
 						:error="!!formErrors.title"
-						@update:value="v => { form.title = v; formErrors.title = '' }" />
+						@update:model-value="v => { form.title = v; formErrors.title = '' }" />
 					<p v-if="formErrors.title" class="form-error">
 						{{ formErrors.title }}
 					</p>
@@ -73,17 +73,17 @@
 					<div class="form-group">
 						<label>{{ t('procest', 'Effective date') }}</label>
 						<NcTextField
-							:value="form.effectiveDate"
+							:model-value="form.effectiveDate"
 							type="date"
-							@update:value="v => form.effectiveDate = v" />
+							@update:model-value="v => form.effectiveDate = v" />
 					</div>
 					<div class="form-group">
 						<label>{{ t('procest', 'Expiry date') }}</label>
 						<NcTextField
-							:value="form.expiryDate"
+							:model-value="form.expiryDate"
 							type="date"
 							:error="!!formErrors.expiryDate"
-							@update:value="v => { form.expiryDate = v; formErrors.expiryDate = '' }" />
+							@update:model-value="v => { form.expiryDate = v; formErrors.expiryDate = '' }" />
 						<p v-if="formErrors.expiryDate" class="form-error">
 							{{ formErrors.expiryDate }}
 						</p>

@@ -47,11 +47,11 @@
 							<div class="sub-entity-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.name"
+										:model-value="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:value="v => editForm.name = v" />
+										@update:model-value="v => editForm.name = v" />
 									<NcSelect
 										v-model="editForm.genericRole"
 										:options="genericRoleOptions"
@@ -61,18 +61,18 @@
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.ncGroupId"
+										:model-value="editForm.ncGroupId"
 										:label="t('procest', 'NC Group ID')"
 										:helper-text="ncGroupHint"
 										class="edit-field edit-field--full"
-										@update:value="v => editForm.ncGroupId = v" />
+										@update:model-value="v => editForm.ncGroupId = v" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.description"
+										:model-value="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field edit-field--full"
-										@update:value="v => editForm.description = v" />
+										@update:model-value="v => editForm.description = v" />
 								</div>
 								<p v-if="editError" class="edit-error">
 									{{ editError }}

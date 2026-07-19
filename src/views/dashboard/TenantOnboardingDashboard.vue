@@ -12,11 +12,11 @@
 			<h2>{{ t('procest', 'Tenant onboarding') }}</h2>
 			<div class="tenant-onboarding__controls">
 				<NcSelect
-					:value="selectedTenant"
+					:model-value="selectedTenant"
 					:options="tenantOptions"
 					:input-label="t('procest', 'Tenant')"
 					:placeholder="t('procest', 'Pick a tenant')"
-					@input="onTenantChange" />
+					@update:model-value="onTenantChange" />
 				<NcButton type="secondary" @click="loadProgress">
 					<template #icon>
 						<Refresh :size="18" />

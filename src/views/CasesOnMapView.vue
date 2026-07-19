@@ -13,7 +13,7 @@
 				:placeholder="t('procest', 'All case types')"
 				:clearable="true"
 				class="cases-on-map__filter"
-				@input="reload" />
+				@update:model-value="reload" />
 
 			<NcSelect
 				v-model="filterStatus"
@@ -22,7 +22,7 @@
 				:placeholder="t('procest', 'All statuses')"
 				:clearable="true"
 				class="cases-on-map__filter"
-				@input="reload" />
+				@update:model-value="reload" />
 
 			<div v-if="degraded" class="cases-on-map__notice">
 				<AlertIcon :size="20" />

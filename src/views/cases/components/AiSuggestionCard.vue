@@ -29,9 +29,9 @@
 
 		<div v-if="showRejectInput" class="ai-suggestion-card__reject">
 			<NcTextField
-				:value="rejectReason"
+				:model-value="rejectReason"
 				:label="t('procest', 'Reason for rejection')"
-				@update:value="v => rejectReason = v" />
+				@update:model-value="v => rejectReason = v" />
 			<NcButton type="error" @click="handleReject">
 				{{ t('procest', 'Confirm rejection') }}
 			</NcButton>

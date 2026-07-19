@@ -41,18 +41,18 @@
 							<div class="property-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.name"
+										:model-value="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:value="v => editForm.name = v" />
+										@update:model-value="v => editForm.name = v" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.definition"
+										:model-value="editForm.definition"
 										:label="t('procest', 'Definition')"
 										class="edit-field"
-										@update:value="v => editForm.definition = v" />
+										@update:model-value="v => editForm.definition = v" />
 								</div>
 								<div class="edit-row">
 									<div class="edit-field">
@@ -76,11 +76,11 @@
 										</select>
 									</div>
 									<NcTextField
-										:value="editForm.maxLength ? String(editForm.maxLength) : ''"
+										:model-value="editForm.maxLength ? String(editForm.maxLength) : ''"
 										:label="t('procest', 'Max length')"
 										type="number"
 										class="edit-field edit-field--small"
-										@update:value="v => editForm.maxLength = parseInt(v, 10) || null" />
+										@update:model-value="v => editForm.maxLength = parseInt(v, 10) || null" />
 								</div>
 								<div class="edit-row">
 									<div class="edit-field">
@@ -121,17 +121,17 @@
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
-								:value="newForm.name"
+								:model-value="newForm.name"
 								:label="t('procest', 'Name *')"
 								class="add-form__field"
-								@update:value="v => newForm.name = v" />
+								@update:model-value="v => newForm.name = v" />
 						</div>
 						<div class="add-form__row">
 							<NcTextField
-								:value="newForm.definition"
+								:model-value="newForm.definition"
 								:label="t('procest', 'Definition')"
 								class="add-form__field"
-								@update:value="v => newForm.definition = v" />
+								@update:model-value="v => newForm.definition = v" />
 						</div>
 						<div class="add-form__row">
 							<div class="add-form__field">
@@ -155,11 +155,11 @@
 								</select>
 							</div>
 							<NcTextField
-								:value="newForm.maxLength ? String(newForm.maxLength) : ''"
+								:model-value="newForm.maxLength ? String(newForm.maxLength) : ''"
 								:label="t('procest', 'Max length')"
 								type="number"
 								class="add-form__field add-form__field--small"
-								@update:value="v => newForm.maxLength = parseInt(v, 10) || null" />
+								@update:model-value="v => newForm.maxLength = parseInt(v, 10) || null" />
 						</div>
 						<div class="add-form__row">
 							<div class="add-form__field">

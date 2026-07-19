@@ -65,8 +65,8 @@
 			<template v-if="hasAdvisoryReport">
 				<div class="form-group">
 					<NcCheckboxRadioSwitch
-						:checked="form.followsAdvice"
-						@update:checked="v => form.followsAdvice = v">
+						:model-value="form.followsAdvice"
+						@update:model-value="v => form.followsAdvice = v">
 						{{ t('procest', 'Decision follows committee advice') }}
 					</NcCheckboxRadioSwitch>
 				</div>
@@ -96,16 +96,16 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Decision Date') }} *</label>
 					<NcTextField
-						:value="form.decisionDate"
+						:model-value="form.decisionDate"
 						type="date"
-						@update:value="v => form.decisionDate = v" />
+						@update:model-value="v => form.decisionDate = v" />
 				</div>
 				<div class="form-group">
 					<label>{{ t('procest', 'Effective Date') }} *</label>
 					<NcTextField
-						:value="form.effectiveDate"
+						:model-value="form.effectiveDate"
 						type="date"
-						@update:value="v => form.effectiveDate = v" />
+						@update:model-value="v => form.effectiveDate = v" />
 				</div>
 			</div>
 

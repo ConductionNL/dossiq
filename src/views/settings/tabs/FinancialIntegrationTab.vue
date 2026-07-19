@@ -14,10 +14,10 @@
 
 		<div class="form-group">
 			<NcPasswordField
-				:value="dwangsomCallbackSecret"
+				:model-value="dwangsomCallbackSecret"
 				:label="t('procest', 'Dwangsom callback secret')"
 				:helper-text="t('procest', 'Shared HMAC-SHA256 signing secret. Provide this value to the ERP/openconnector integrator so it can sign X-Procest-Signature headers.')"
-				@update:value="onSecretInput" />
+				@update:model-value="onSecretInput" />
 		</div>
 
 		<NcButton :disabled="saving" @click="generateSecret">

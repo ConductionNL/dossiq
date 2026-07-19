@@ -58,36 +58,36 @@
 							<div class="status-type-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.name"
+										:model-value="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:value="v => editForm.name = v" />
+										@update:model-value="v => editForm.name = v" />
 									<NcTextField
-										:value="String(editForm.order)"
+										:model-value="String(editForm.order)"
 										:label="t('procest', 'Order')"
 										type="number"
 										class="edit-field edit-field--small"
-										@update:value="v => editForm.order = parseInt(v, 10) || 0" />
+										@update:model-value="v => editForm.order = parseInt(v, 10) || 0" />
 								</div>
 								<div class="edit-row">
 									<NcCheckboxRadioSwitch
-										:checked="editForm.isFinal"
-										@update:checked="v => editForm.isFinal = v">
+										:model-value="editForm.isFinal"
+										@update:model-value="v => editForm.isFinal = v">
 										{{ t('procest', 'Final status') }}
 									</NcCheckboxRadioSwitch>
 									<NcCheckboxRadioSwitch
-										:checked="editForm.notifyInitiator"
-										@update:checked="v => editForm.notifyInitiator = v">
+										:model-value="editForm.notifyInitiator"
+										@update:model-value="v => editForm.notifyInitiator = v">
 										{{ t('procest', 'Notify initiator') }}
 									</NcCheckboxRadioSwitch>
 								</div>
 								<div v-if="editForm.notifyInitiator" class="edit-row">
 									<NcTextField
-										:value="editForm.notificationText"
+										:model-value="editForm.notificationText"
 										:label="t('procest', 'Notification text')"
 										class="edit-field"
-										@update:value="v => editForm.notificationText = v" />
+										@update:model-value="v => editForm.notificationText = v" />
 								</div>
 								<span v-if="editError" class="field-error">{{ editError }}</span>
 								<div class="edit-row edit-row--actions">
@@ -113,35 +113,35 @@
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
-								:value="newForm.name"
+								:model-value="newForm.name"
 								:label="t('procest', 'Name *')"
 								class="add-form__field"
-								@update:value="v => newForm.name = v" />
+								@update:model-value="v => newForm.name = v" />
 							<NcTextField
-								:value="String(newForm.order)"
+								:model-value="String(newForm.order)"
 								:label="t('procest', 'Order *')"
 								type="number"
 								class="add-form__field add-form__field--small"
-								@update:value="v => newForm.order = parseInt(v, 10) || 0" />
+								@update:model-value="v => newForm.order = parseInt(v, 10) || 0" />
 						</div>
 						<div class="add-form__row">
 							<NcCheckboxRadioSwitch
-								:checked="newForm.isFinal"
-								@update:checked="v => newForm.isFinal = v">
+								:model-value="newForm.isFinal"
+								@update:model-value="v => newForm.isFinal = v">
 								{{ t('procest', 'Final status') }}
 							</NcCheckboxRadioSwitch>
 							<NcCheckboxRadioSwitch
-								:checked="newForm.notifyInitiator"
-								@update:checked="v => newForm.notifyInitiator = v">
+								:model-value="newForm.notifyInitiator"
+								@update:model-value="v => newForm.notifyInitiator = v">
 								{{ t('procest', 'Notify initiator') }}
 							</NcCheckboxRadioSwitch>
 						</div>
 						<div v-if="newForm.notifyInitiator" class="add-form__row">
 							<NcTextField
-								:value="newForm.notificationText"
+								:model-value="newForm.notificationText"
 								:label="t('procest', 'Notification text')"
 								class="add-form__field"
-								@update:value="v => newForm.notificationText = v" />
+								@update:model-value="v => newForm.notificationText = v" />
 						</div>
 						<span v-if="addError" class="field-error">{{ addError }}</span>
 						<NcButton type="primary" :disabled="addSaving" @click="addStatusType">

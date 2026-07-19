@@ -3,9 +3,9 @@
 <template>
 	<div class="dossier-document-row">
 		<NcCheckboxRadioSwitch
-			:checked="selected"
+			:model-value="selected"
 			class="dossier-document-row__select"
-			@update:checked="$emit('toggle-select', document)" />
+			@update:model-value="$emit('toggle-select', document)" />
 
 		<img
 			class="dossier-document-row__thumb"

@@ -47,11 +47,11 @@
 							<div class="sub-entity-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.name"
+										:model-value="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:value="v => editForm.name = v" />
+										@update:model-value="v => editForm.name = v" />
 								</div>
 								<div class="edit-row">
 									<NcSelect
@@ -61,22 +61,22 @@
 										:placeholder="t('procest', 'Archive action')"
 										class="edit-field" />
 									<NcTextField
-										:value="editForm.archivalPeriod"
+										:model-value="editForm.archivalPeriod"
 										:label="t('procest', 'Retention period (e.g. P20Y)')"
 										class="edit-field"
-										@update:value="v => editForm.archivalPeriod = v" />
+										@update:model-value="v => editForm.archivalPeriod = v" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.archivalStatus"
+										:model-value="editForm.archivalStatus"
 										:label="t('procest', 'Archival status')"
 										class="edit-field"
-										@update:value="v => editForm.archivalStatus = v" />
+										@update:model-value="v => editForm.archivalStatus = v" />
 									<NcTextField
-										:value="editForm.description"
+										:model-value="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field"
-										@update:value="v => editForm.description = v" />
+										@update:model-value="v => editForm.description = v" />
 								</div>
 								<p v-if="editError" class="edit-error">
 									{{ editError }}

@@ -13,9 +13,9 @@
 			<span class="property-label">{{ t('procest', 'Title') }}</span>
 			<NcTextField
 				v-if="!isReadOnly"
-				:value="form.title"
+				:model-value="form.title"
 				:error="!!validationErrors.title"
-				@update:value="v => { form.title = v; validationErrors.title = '' }" />
+				@update:model-value="v => { form.title = v; validationErrors.title = '' }" />
 			<span v-else class="property-value">{{ caseData.title || '---' }}</span>
 			<p v-if="validationErrors.title" class="form-error">
 				{{ validationErrors.title }}
@@ -58,9 +58,9 @@
 				<span class="property-label">{{ t('procest', 'Handler') }}</span>
 				<NcTextField
 					v-if="!isReadOnly"
-					:value="form.assignee"
+					:model-value="form.assignee"
 					:placeholder="t('procest', 'Assign handler...')"
-					@update:value="v => form.assignee = v" />
+					@update:model-value="v => form.assignee = v" />
 				<span v-else class="property-value">{{ caseData.assignee || '---' }}</span>
 			</div>
 			<div class="property-cell">

@@ -69,7 +69,7 @@
 					label="label"
 					track-by="id"
 					:placeholder="t('procest', 'Select user...')"
-					@input="onReassignSelected" />
+					@update:model-value="onReassignSelected" />
 				<NcButton type="tertiary" @click="cancelReassign">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>

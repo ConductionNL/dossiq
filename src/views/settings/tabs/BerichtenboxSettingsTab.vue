@@ -3,26 +3,26 @@
 		<h2>{{ t('procest', 'Mijn Overheid Berichtenbox') }}</h2>
 
 		<NcCheckboxRadioSwitch
-			:checked="enabled"
-			@update:checked="v => enabled = v">
+			:model-value="enabled"
+			@update:model-value="v => enabled = v">
 			{{ t('procest', 'Enable Berichtenbox integration') }}
 		</NcCheckboxRadioSwitch>
 
 		<template v-if="enabled">
 			<div class="form-group">
-				<NcTextField :value="apiUrl"
+				<NcTextField :model-value="apiUrl"
 					:label="t('procest', 'API Endpoint URL')"
-					@update:value="v => apiUrl = v" />
+					@update:model-value="v => apiUrl = v" />
 			</div>
 			<div class="form-group">
-				<NcTextField :value="oin"
+				<NcTextField :model-value="oin"
 					:label="t('procest', 'OIN (Organisatie-identificatienummer)')"
-					@update:value="v => oin = v" />
+					@update:model-value="v => oin = v" />
 			</div>
 			<div class="form-group">
-				<NcTextField :value="certificatePath"
+				<NcTextField :model-value="certificatePath"
 					:label="t('procest', 'Certificate path')"
-					@update:value="v => certificatePath = v" />
+					@update:model-value="v => certificatePath = v" />
 			</div>
 
 			<NcButton :disabled="testLoading" @click="testConnection">

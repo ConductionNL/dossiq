@@ -23,9 +23,9 @@
 			</div>
 			<div class="ai-assistant-panel__input">
 				<NcTextField
-					:value="question"
+					:model-value="question"
 					:placeholder="t('procest', 'Ask a question about this case...')"
-					@update:value="v => question = v"
+					@update:model-value="v => question = v"
 					@keydown.enter="askQuestion" />
 				<NcButton :disabled="!question || askLoading" @click="askQuestion">
 					{{ t('procest', 'Ask') }}

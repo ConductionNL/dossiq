@@ -10,27 +10,27 @@
 				:aria-label-combobox="t('procest', 'Backend')"
 				label="label"
 				track-by="value"
-				@input="saveBackend" />
+				@update:model-value="saveBackend" />
 		</div>
 
 		<template v-if="backend && backend.value !== 'local'">
 			<div class="form-group">
-				<NcTextField :value="backendUrl"
+				<NcTextField :model-value="backendUrl"
 					:label="t('procest', 'API URL')"
-					@update:value="v => backendUrl = v" />
+					@update:model-value="v => backendUrl = v" />
 			</div>
 			<div class="form-group">
-				<NcPasswordField :value="backendApiKey"
+				<NcPasswordField :model-value="backendApiKey"
 					:label="t('procest', 'API Key')"
-					@update:value="v => backendApiKey = v" />
+					@update:model-value="v => backendApiKey = v" />
 			</div>
 		</template>
 
 		<div class="form-group">
-			<NcTextField :value="reminderDays"
+			<NcTextField :model-value="reminderDays"
 				:label="t('procest', 'Reminder days before appointment')"
 				type="number"
-				@update:value="v => reminderDays = v" />
+				@update:model-value="v => reminderDays = v" />
 		</div>
 	</div>
 </template>

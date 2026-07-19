@@ -42,35 +42,35 @@
 							<div class="sub-entity-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.name"
+										:model-value="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:value="v => editForm.name = v" />
+										@update:model-value="v => editForm.name = v" />
 									<NcTextField
-										:value="editForm.category"
+										:model-value="editForm.category"
 										:label="t('procest', 'Category')"
 										class="edit-field"
-										@update:value="v => editForm.category = v" />
+										@update:model-value="v => editForm.category = v" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.description"
+										:model-value="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field edit-field--full"
-										@update:value="v => editForm.description = v" />
+										@update:model-value="v => editForm.description = v" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.confidentiality"
+										:model-value="editForm.confidentiality"
 										:label="t('procest', 'Confidentiality')"
 										class="edit-field"
-										@update:value="v => editForm.confidentiality = v" />
+										@update:model-value="v => editForm.confidentiality = v" />
 								</div>
 								<div class="edit-row">
 									<NcCheckboxRadioSwitch
-										:checked="editForm.isRequired"
-										@update:checked="v => editForm.isRequired = v">
+										:model-value="editForm.isRequired"
+										@update:model-value="v => editForm.isRequired = v">
 										{{ t('procest', 'Required') }}
 									</NcCheckboxRadioSwitch>
 								</div>

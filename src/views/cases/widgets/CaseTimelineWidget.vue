@@ -9,7 +9,7 @@
 				label="name"
 				track-by="id"
 				:placeholder="t('procest', 'Change status...')"
-				@input="onStatusSelected" />
+				@update:model-value="onStatusSelected" />
 		</div>
 
 		<!-- Result prompt (shown when final status selected) -->
@@ -25,10 +25,10 @@
 			</template>
 			<template v-else>
 				<NcTextField
-					:value="resultText"
+					:model-value="resultText"
 					:label="t('procest', 'Result (required)')"
 					:error="!!resultError"
-					@update:value="v => { resultText = v; resultError = '' }" />
+					@update:model-value="v => { resultText = v; resultError = '' }" />
 			</template>
 			<p v-if="resultError" class="form-error">
 				{{ resultError }}

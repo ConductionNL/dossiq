@@ -34,7 +34,7 @@
 			trailing-button-icon="close"
 			:show-trailing-button="query !== ''"
 			@trailing-button-click="query = ''"
-			@update:value="onQueryChanged" />
+			@update:model-value="onQueryChanged" />
 
 		<NcLoadingIcon v-if="searching" :size="24" />
 
