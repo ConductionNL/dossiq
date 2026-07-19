@@ -92,12 +92,12 @@ webpackConfig.resolve = {
 		// VUE 3 STAGING (ADR-066): route the runtime `vue` import to @vue/compat
 		// (MODE 2) so the un-migrated Vue-2 template syntax stays correct during
 		// the straddle. vue-loader still finds the real compiler via vue/compiler-sfc.
-		// MUST be an ABSOLUTE file path, not the bare '@vue/compat': the aliased lib
-		// source (../nextcloud-vue-vue3/src) and procest each have their own
-		// node_modules/@vue/compat, so a bare alias resolves to TWO copies → two
-		// `currentRenderingInstance` module states → CnAppRoot renders with a null
-		// instance (renderSlot/resolveComponent crash). One absolute path = one copy.
-		'vue$': path.resolve(__dirname, 'node_modules/@vue/compat/dist/vue.esm-bundler.js'),
+		// PURE VUE 3 (ADR-066 task 6.1 — @vue/compat removed): point at the real
+		// Vue 3 runtime, one ABSOLUTE file so procest + the aliased lib source share
+		// one copy (dual-copy = two currentRenderingInstance states → CnAppRoot null
+		// crash). The lib + procest source are now compat-construct-free, so no
+		// @vue/compat runtime/compiler is needed.
+		'vue$': path.resolve(__dirname, 'node_modules/vue/dist/vue.runtime.esm-bundler.js'),
 		'pinia$': path.resolve(__dirname, 'node_modules/pinia'),
 		// Dedupe vue-router to ONE copy (absolute file): the aliased lib worktree
 		// ships its own vue-router (a different MAJOR), so a per-importer resolve
@@ -122,13 +122,6 @@ webpackConfig.module = {
 		{
 			test: /\.vue$/,
 			loader: 'vue-loader',
-			options: {
-				compilerOptions: {
-					// VUE 3 STAGING (ADR-066): keep un-migrated Vue-2 templates
-					// (.sync, {{x|f}} filters) semantically correct under Vue 3.
-					compatConfig: { MODE: 2, COMPILER_FILTERS: true },
-				},
-			},
 		},
 		{
 			test: /\.css$/,

@@ -4,24 +4,11 @@
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
 // (map/Leaflet, manifest validator) triggers lazy-chunk loading.
 import './publicPath.js'
-import { createApp, markRaw, h, configureCompat } from 'vue'
+import { createApp, markRaw, h } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 
-// ADR-066: disable @vue/compat's RENDER_FUNCTION compat GLOBALLY. Every render in
-// this bundle is a compiled Vue-3 render (SFCs via the compat compiler, plus the
-// hand-written Vue-3 root render below) — none use the Vue-2 render-function API.
-// Left on (MODE 2 default), compat wraps even pure-Vue-3 @nextcloud/vue v9
-// components' renders in `compatRender`, routing their scoped-slot access through
-// a compat proxy that drops props — e.g. NcAppNavigationItem's <router-link>
-// v-slot `{ href }` arrives undefined and crashes. .sync/filters compat is a
-// separate flag (COMPONENT_V_MODEL / COMPILER_FILTERS) and stays on.
-// COMPONENT_V_MODEL: false — MODE 2 defaults this ON, which rewrites v-model to the
-// Vue-2 value/@input convention. That breaks v9 components built with defineModel()/
-// useModel (NcTextField→NcInputField): they expect modelValue, but compat's v-model
-// shim never sets it → modelValue.value undefined → toString() crash on every input
-// page. Off = v-model uses the Vue-3 modelValue convention. Our own migrated bindings
-// are explicit :model-value now (post task-4.3 codemod), so this only helps.
-configureCompat({ RENDER_FUNCTION: false, COMPONENT_V_MODEL: false })
+// @vue/compat REMOVED (ADR-066 task 6.1): lib + procest source are compat-
+// construct-free (v-model, no .sync/$set/filters/Vue.extend) — pure Vue 3.
 import { translate as t, translatePlural as n, loadTranslations } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import {

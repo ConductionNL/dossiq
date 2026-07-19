@@ -90,7 +90,6 @@
 <script>
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { showError } from '@nextcloud/dialogs'
-import Vue from 'vue'
 import BoardColumn from './BoardColumn.vue'
 import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
 import { useObjectStore } from '../../store/modules/object.js'
@@ -403,9 +402,9 @@ export default {
 
 			// Optimistic move.
 			const fromList = this.casesByStatus[fromColumn].filter(c => String(c.id) !== String(caseId))
-			Vue.set(this.casesByStatus, fromColumn, fromList)
+			this.casesByStatus[fromColumn] = fromList
 			const movedCase = { ...caseObj, status: targetStatusId }
-			Vue.set(this.casesByStatus, newColumn, [...(this.casesByStatus[newColumn] || []), movedCase])
+			this.casesByStatus[newColumn] = [...(this.casesByStatus[newColumn] || []), movedCase]
 
 			try {
 				const result = await this.objectStore.saveObject('case', movedCase)
@@ -417,8 +416,8 @@ export default {
 				// Revert: pull from the new column, restore in the old one.
 				const revertedNew = (this.casesByStatus[newColumn] || [])
 					.filter(c => String(c.id) !== String(caseId))
-				Vue.set(this.casesByStatus, newColumn, revertedNew)
-				Vue.set(this.casesByStatus, fromColumn, [...this.casesByStatus[fromColumn], caseObj])
+				this.casesByStatus[newColumn] = revertedNew
+				this.casesByStatus[fromColumn] = [...this.casesByStatus[fromColumn], caseObj]
 				showError(this.t('procest', 'Could not move the case. You may not have permission, or the change failed.'))
 			}
 		},
