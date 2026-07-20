@@ -83,16 +83,23 @@ test.describe('Cases — full CRUD with persistence', () => {
 
 		await openCasesList(page)
 
-		// The seeded row's human fields render in the list.
+		// The seeded row's human fields render in the list. procest assigns the
+		// zaaknummer itself (schema `case` x-openregister-processing) and IGNORES
+		// any supplied identifier, so assert the ASSIGNED identifier the create
+		// returned — the seed input never reaches the row.
 		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({ timeout: 15000 })
-		await expect(page.getByText(identifier, { exact: false }).first()).toBeVisible()
+		const assignedIdentifier = String((kase as Record<string, unknown>).identifier ?? identifier)
+		await expect(page.getByText(assignedIdentifier, { exact: false }).first()).toBeVisible()
 	})
 
 	// @e2e openspec/specs/case-management/spec.md#case-detail-page-renders
 	test('opening the row shows the case detail with its values', async ({ page }) => {
 		const title = `${RUN_PREFIX} Detail case`
 		const identifier = `${RUN_PREFIX}-DETAIL`
-		await seedCase(api, token, { title, caseType: caseTypeId, identifier, description: 'Detail-leg description.' })
+		const kase = await seedCase(api, token, { title, caseType: caseTypeId, identifier, description: 'Detail-leg description.' })
+		// procest assigns the zaaknummer and ignores the supplied identifier;
+		// assert the ASSIGNED value the create returned.
+		const assignedIdentifier = String((kase as Record<string, unknown>).identifier ?? identifier)
 
 		await openCasesList(page)
 		await dismissSupportDialog(page)
@@ -103,9 +110,9 @@ test.describe('Cases — full CRUD with persistence', () => {
 		await row.getByText(title, { exact: false }).first().click()
 
 		// CaseDetail (manifest `type:"detail"`) renders the case title + the
-		// detail chrome. Assert the title and identifier surface on the page.
+		// detail chrome. Assert the title and (assigned) identifier surface.
 		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({ timeout: 15000 })
-		await expect(page.getByText(identifier, { exact: false }).first()).toBeVisible()
+		await expect(page.getByText(assignedIdentifier, { exact: false }).first()).toBeVisible()
 	})
 
 	// @e2e openspec/specs/case-management/spec.md#edit-a-case

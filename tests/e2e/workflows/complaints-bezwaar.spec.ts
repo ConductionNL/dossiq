@@ -74,7 +74,13 @@ test.describe('Complaint-family workflow — bezwaren (objections)', () => {
 	 * @param page The page.
 	 */
 	async function openBezwaren(page: Page): Promise<void> {
-		await navTo(page, 'Bezwaren')
+		// The "Bezwaren" sidebar entry was retired in the nav-dedup pass
+		// (menu-layout.json `removals`), but its index page stays routable for
+		// deep-links and e2e. navTo(page,'Bezwaren') therefore matches no nav link
+		// and strands on the Dashboard — reach the list by a BARE deep-link instead
+		// (a /index.php-prefixed one resets the history-mode router to the
+		// Dashboard; the bare path resolves the /bezwaren route directly).
+		await page.goto('/apps/procest/bezwaren')
 		await dismissSupportDialog(page)
 		await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 15000 })
 	}
