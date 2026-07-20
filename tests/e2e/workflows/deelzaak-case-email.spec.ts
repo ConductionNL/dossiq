@@ -193,6 +193,13 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 		await dismissSupportDialog(page)
 		await expect(page.getByText(`${RUN_PREFIX} Email parent`, { exact: false }).first())
 			.toBeVisible({ timeout: 15_000 })
+		// The object sidebar (NcAppSidebar) is collapsed by default on CaseDetail —
+		// a toolbar "Open sidebar" toggle reveals it. Open it before asserting the
+		// hosted tab strip mounts (it is not rendered while the aside is closed).
+		const openSidebar = page.getByRole('button', { name: 'Open sidebar' })
+		if (await openSidebar.isVisible().catch(() => false)) {
+			await openSidebar.click()
+		}
 		// The hosted object sidebar with the manifest tab strip must mount.
 		await expect(page.locator('aside.app-sidebar')).toBeVisible({ timeout: 15_000 })
 		const emailTab = page.locator('[data-testid="cn-object-sidebar-tab-email"]')

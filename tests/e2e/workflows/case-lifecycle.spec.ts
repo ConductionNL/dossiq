@@ -74,7 +74,12 @@ test.describe('Case lifecycle — state machine', () => {
 	 * @param page The page.
 	 */
 	async function openBoard(page: Page): Promise<void> {
-		await navTo(page, 'Workflow Board')
+		// The "Workflow board" leaf was relocated UNDER the "Work queue" group in
+		// the nav-dedup pass (menu-layout.json relocations), so it is no longer a
+		// top-level sidebar link — navTo('Workflow Board') matches nothing and
+		// strands on the Dashboard. Reach it by a bare deep-link (bare paths
+		// resolve; /index.php-prefixed ones reset to the Dashboard).
+		await page.goto('/apps/procest/workflow-board')
 		await dismissSupportDialog(page)
 		await expect(page.getByRole('heading', { name: 'Workflow Board' }).first()).toBeVisible({ timeout: 15000 })
 		// The board fetches statusType + case objects on mount.
