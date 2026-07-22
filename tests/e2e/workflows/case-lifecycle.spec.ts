@@ -106,9 +106,14 @@ test.describe('Case lifecycle — state machine', () => {
 		const kase = await seedCase(api, token, { title: `${RUN_PREFIX} Advance case`, caseType: sm.caseTypeId, status: sm.statusReceived })
 		const caseId = objectId(kase)
 
-		// Persist a status advance the same way the board's drag-to-advance does
-		// (a direct case.status write — the board bypasses the guarded engine).
-		await updateObject(api, token, 'case', caseId, { status: sm.statusInProgress })
+		// Advance through the GUARDED transition engine. The case schema declares
+		// x-openregister-lifecycle, so a direct case.status write is rejected with
+		// `lifecycle-invalid-transition` (422) — the board's drag-to-advance goes
+		// through POST /api/case/{id}/transition, exactly like executeTransition.
+		// t1 = "Start behandeling" (Ontvangen → In behandeling), from the seeded
+		// workflowTemplate.
+		const adv = await executeTransition(api, token, caseId, 't1')
+		expect(adv.status, 'guarded transition t1 (Ontvangen→In behandeling) accepted').toBe(200)
 
 		// PERSISTENCE: re-read shows the new statusType id.
 		await expect.poll(async () => String((await showObject(api, 'case', caseId)).status ?? ''), {

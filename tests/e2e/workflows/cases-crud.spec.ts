@@ -33,7 +33,7 @@ import { STORAGE_STATE } from '../helpers/auth'
 import { dismissSupportDialog, navTo } from '../helpers/nav'
 import {
 	RUN_PREFIX, getRequestToken, ensureCaseType, seedCase, showObject,
-	deleteObject, listObjects, objectId, cleanupRunObjects,
+	deleteObject, tryDeleteObject, listObjects, objectId, cleanupRunObjects,
 } from '../helpers/fixtures'
 
 let api: APIRequestContext
@@ -151,37 +151,31 @@ test.describe('Cases — full CRUD with persistence', () => {
 	})
 
 	// @e2e openspec/specs/case-management/spec.md#delete-a-case
-	test('deleting a case is reflected in the list', async ({ page }) => {
-		const title = `${RUN_PREFIX} Deletable case`
+	// The `case` schema declares x-openregister-archival, so a case is a record:
+	// user-driven deletion is rejected (Archiefwet immutability) and removal is
+	// reserved for the retention-sweep cron. This asserts that guarantee rather
+	// than a (now-impossible) successful user delete.
+	test('a case is archival-immutable — user deletion is rejected and the record persists', async ({ page }) => {
+		const title = `${RUN_PREFIX} Immutable case`
 		const kase = await seedCase(api, token, { title, caseType: caseTypeId, identifier: `${RUN_PREFIX}-DEL` })
 		const caseId = objectId(kase)
 
-		await openCasesList(page)
-		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({ timeout: 15000 })
-		await dismissSupportDialog(page)
+		// A user-driven delete on an archival schema is a structured 403
+		// (ArchivalImmutableException) — only the retention cron may remove a case.
+		const del = await tryDeleteObject(api, token, 'case', caseId)
+		expect(del.status, 'user delete of an archival case is rejected').toBe(403)
+		expect(JSON.stringify(del.body)).toMatch(/ARCHIVAL_IMMUTABLE|archival/i)
 
-		// Delete via the row Actions menu.
-		const row = page.locator('tbody tr', { hasText: title }).first()
-		await row.getByRole('button', { name: 'Actions' }).first().click()
-		const delItem = page.getByRole('menuitem', { name: /Delete|Verwijder/i }).first()
-		await expect(delItem).toBeVisible({ timeout: 10000 })
-		await delItem.click()
-
-		// Confirm in the delete dialog if one appears.
-		const confirm = page.getByRole('button', { name: /Delete|Verwijder|Confirm|Ja/i }).last()
-		if (await confirm.isVisible().catch(() => false)) {
-			await confirm.click()
-		}
-
-		// PERSISTENCE assertion: the object is gone from the API listing …
+		// PERSISTENCE: the record is still in the object store …
 		await expect.poll(async () => {
 			const rows = await listObjects(api, 'case')
 			return rows.some((r) => objectId(r) === caseId)
-		}, { timeout: 15000, message: 'deleted case removed from the object store' }).toBe(false)
+		}, { timeout: 15000, message: 'archival case persists after a rejected delete' }).toBe(true)
 
-		// … and its row no longer renders in the refreshed list.
+		// … and still renders in the Cases list.
 		await openCasesList(page)
-		await expect(page.getByText(title, { exact: false })).toHaveCount(0)
+		await dismissSupportDialog(page)
+		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({ timeout: 15000 })
 	})
 
 	// CREATE-via-UI. Known issue #427: in some environments the Cases "Add"
