@@ -6,9 +6,9 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Subject') }} *</label>
 				<NcTextField
-					:value="form.onderwerp"
+					:model-value="form.onderwerp"
 					:error="!!errors.onderwerp"
-					@update:value="v => { form.onderwerp = v; errors.onderwerp = '' }" />
+					@update:model-value="v => { form.onderwerp = v; errors.onderwerp = '' }" />
 				<p v-if="errors.onderwerp" class="form-error">
 					{{ errors.onderwerp }}
 				</p>
@@ -29,14 +29,14 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Complainant name') }}</label>
 					<NcTextField
-						:value="form.klagerNaam"
-						@update:value="v => form.klagerNaam = v" />
+						:model-value="form.klagerNaam"
+						@update:model-value="v => form.klagerNaam = v" />
 				</div>
 				<div class="form-group">
 					<label>{{ t('procest', 'Email') }}</label>
 					<NcTextField
-						:value="form.klagerEmail"
-						@update:value="v => form.klagerEmail = v" />
+						:model-value="form.klagerEmail"
+						@update:model-value="v => form.klagerEmail = v" />
 				</div>
 			</div>
 

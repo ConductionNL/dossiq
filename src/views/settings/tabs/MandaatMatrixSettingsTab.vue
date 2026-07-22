@@ -10,7 +10,7 @@
 			</label>
 			<NcInputField
 				id="mandaat_decidesk_connection"
-				:value.sync="decideskConnection"
+				v-model="decideskConnection"
 				:disabled="!writable"
 				:placeholder="'decidesk-default'" />
 			<p class="setting-help">
@@ -24,7 +24,7 @@
 			</label>
 			<NcInputField
 				id="mandaat_default_extension_days"
-				:value.sync="defaultExtensionDays"
+				v-model="defaultExtensionDays"
 				type="number"
 				:disabled="!writable"
 				:placeholder="'14'" />
@@ -34,7 +34,7 @@
 		</div>
 
 		<NcCheckboxRadioSwitch
-			:checked.sync="autoFinalizeApproved"
+			v-model="autoFinalizeApproved"
 			:disabled="!writable">
 			{{ t('procest', 'Automatically activate a mandate import after approval') }}
 		</NcCheckboxRadioSwitch>

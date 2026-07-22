@@ -8,7 +8,7 @@
 			<label for="email_imap_host">{{ t('procest', 'IMAP host') }}</label>
 			<NcInputField
 				id="email_imap_host"
-				:value.sync="form.email_imap_host"
+				v-model="form.email_imap_host"
 				:disabled="!writable || loading"
 				:placeholder="'imap.gemeente.nl'" />
 		</div>
@@ -17,7 +17,7 @@
 			<label for="email_imap_port">{{ t('procest', 'IMAP port') }}</label>
 			<NcInputField
 				id="email_imap_port"
-				:value.sync="form.email_imap_port"
+				v-model="form.email_imap_port"
 				type="number"
 				:disabled="!writable || loading"
 				:placeholder="'993'" />
@@ -36,7 +36,7 @@
 			<label for="email_imap_username">{{ t('procest', 'Username') }}</label>
 			<NcInputField
 				id="email_imap_username"
-				:value.sync="form.email_imap_username"
+				v-model="form.email_imap_username"
 				:disabled="!writable || loading"
 				:placeholder="'zaken@gemeente.nl'" />
 		</div>
@@ -45,7 +45,7 @@
 			<label for="email_imap_password">{{ t('procest', 'Password') }}</label>
 			<NcInputField
 				id="email_imap_password"
-				:value.sync="form.email_imap_password"
+				v-model="form.email_imap_password"
 				type="password"
 				:disabled="!writable || loading"
 				:placeholder="passwordPlaceholder" />
@@ -58,7 +58,7 @@
 			<label for="email_imap_folder">{{ t('procest', 'Mailbox folder') }}</label>
 			<NcInputField
 				id="email_imap_folder"
-				:value.sync="form.email_imap_folder"
+				v-model="form.email_imap_folder"
 				:disabled="!writable || loading"
 				:placeholder="'INBOX'" />
 		</div>
@@ -67,7 +67,7 @@
 			<label for="email_transport">{{ t('procest', 'Transport / source mailbox account') }}</label>
 			<NcInputField
 				id="email_transport"
-				:value.sync="form.email_transport"
+				v-model="form.email_transport"
 				:disabled="!writable || loading"
 				:placeholder="t('procest', 'Nextcloud Mail account or functional mailbox id')" />
 			<p class="setting-help">
@@ -79,7 +79,7 @@
 			<label for="email_poll_interval">{{ t('procest', 'Poll interval (seconds)') }}</label>
 			<NcInputField
 				id="email_poll_interval"
-				:value.sync="form.email_poll_interval"
+				v-model="form.email_poll_interval"
 				type="number"
 				:disabled="!writable || loading"
 				:placeholder="'300'" />
@@ -89,7 +89,7 @@
 			<label for="email_poll_batch_size">{{ t('procest', 'Messages per run') }}</label>
 			<NcInputField
 				id="email_poll_batch_size"
-				:value.sync="form.email_poll_batch_size"
+				v-model="form.email_poll_batch_size"
 				type="number"
 				:disabled="!writable || loading"
 				:placeholder="'50'" />

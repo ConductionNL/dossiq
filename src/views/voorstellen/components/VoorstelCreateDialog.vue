@@ -7,10 +7,10 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Onderwerp') }} *</label>
 				<NcTextField
-					:value="form.onderwerp"
+					:model-value="form.onderwerp"
 					:error="!!errors.onderwerp"
 					:placeholder="t('procest', 'Onderwerp van het voorstel...')"
-					@update:value="v => { form.onderwerp = v; errors.onderwerp = '' }" />
+					@update:model-value="v => { form.onderwerp = v; errors.onderwerp = '' }" />
 				<p v-if="errors.onderwerp" class="form-error">
 					{{ errors.onderwerp }}
 				</p>
@@ -34,23 +34,23 @@
 					label="title"
 					track-by="id"
 					:placeholder="t('procest', 'Selecteer zaak...')"
-					@input="onCaseSelected" />
+					@update:model-value="onCaseSelected" />
 			</div>
 
 			<div class="form-group">
 				<label>{{ t('procest', 'Portefeuillehouder') }}</label>
 				<NcTextField
-					:value="form.portefeuillehouder"
+					:model-value="form.portefeuillehouder"
 					:placeholder="t('procest', 'Gebruikers-ID wethouder')"
-					@update:value="v => form.portefeuillehouder = v" />
+					@update:model-value="v => form.portefeuillehouder = v" />
 			</div>
 
 			<div class="form-group">
 				<label>{{ t('procest', 'Afdeling') }}</label>
 				<NcTextField
-					:value="form.afdeling"
+					:model-value="form.afdeling"
 					:placeholder="t('procest', 'Afdeling')"
-					@update:value="v => form.afdeling = v" />
+					@update:model-value="v => form.afdeling = v" />
 			</div>
 		</div>
 

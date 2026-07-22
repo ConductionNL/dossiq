@@ -9,7 +9,7 @@
 			:placeholder="t('procest', 'Change status')"
 			:disabled="saving"
 			class="quick-status__select"
-			@input="onStatusChange" />
+			@update:model-value="onStatusChange" />
 	</div>
 </template>
 

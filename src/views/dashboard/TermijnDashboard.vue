@@ -8,11 +8,11 @@
 			<h2>{{ t('procest', 'Deadline monitoring') }}</h2>
 			<div class="termijn-dashboard__controls">
 				<NcSelect
-					:value="selectedZaaktype"
+					:model-value="selectedZaaktype"
 					:options="zaaktypeOptions"
 					:input-label="t('procest', 'Filter by case type')"
 					:placeholder="t('procest', 'All case types')"
-					@input="onZaaktypeChange" />
+					@update:model-value="onZaaktypeChange" />
 				<NcButton type="secondary" @click="load">
 					<template #icon>
 						<Refresh :size="18" />
@@ -83,10 +83,10 @@
 			<h3>{{ t('procest', 'Quarterly report') }}</h3>
 			<div class="termijn-dashboard__report-controls">
 				<NcTextField
-					:value="quarter"
+					:model-value="quarter"
 					:label="t('procest', 'Quarter (YYYY-Qn)')"
 					:placeholder="t('procest', 'e.g. 2026-Q2')"
-					@update:value="v => quarter = v" />
+					@update:model-value="v => quarter = v" />
 				<NcButton type="primary" @click="loadQuarterly">
 					{{ t('procest', 'Load report') }}
 				</NcButton>
@@ -132,9 +132,9 @@
 			<h3>{{ t('procest', 'Annual dwangsom audit') }}</h3>
 			<div class="termijn-dashboard__report-controls">
 				<NcTextField
-					:value="String(year)"
+					:model-value="String(year)"
 					:label="t('procest', 'Year')"
-					@update:value="v => year = Number(v) || year" />
+					@update:model-value="v => year = Number(v) || year" />
 				<NcButton type="primary" @click="loadAnnual">
 					{{ t('procest', 'Load audit') }}
 				</NcButton>

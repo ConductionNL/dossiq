@@ -30,10 +30,10 @@
 		@keydown.space.prevent="$emit('click', caseItem.id)">
 		<NcCheckboxRadioSwitch
 			class="case-card__select"
-			:checked="selected"
-			@update:checked="$emit('toggle-select', caseItem.id)"
-			@click.native.stop
-			@keydown.native.stop>
+			:model-value="selected"
+			@update:model-value="$emit('toggle-select', caseItem.id)"
+			@click.stop
+			@keydown.stop>
 			<span class="hidden-visually">{{ t('procest', 'Select case {identifier}', { identifier: caseItem.identifier || caseItem.id }) }}</span>
 		</NcCheckboxRadioSwitch>
 		<div class="case-card__header">
@@ -63,8 +63,8 @@
 			v-if="otherColumns.length > 0"
 			class="case-card__move-actions"
 			:inline="0"
-			@click.native.stop
-			@keydown.native.stop>
+			@click.stop
+			@keydown.stop>
 			<template #icon>
 				<ArrowRightBoldCircleOutline :size="18" />
 			</template>

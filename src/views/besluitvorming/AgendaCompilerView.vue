@@ -32,7 +32,7 @@
 						input-id="bvw-gremium"
 						:input-label="t('procest', 'Vergadergremium')"
 						:options="gremiumOptions"
-						@input="loadReadyItems" />
+						@update:model-value="loadReadyItems" />
 					<label for="bvw-date">{{ t('procest', 'Vergaderdatum') }}</label>
 					<input id="bvw-date" v-model="meetingDate" type="date">
 				</div>

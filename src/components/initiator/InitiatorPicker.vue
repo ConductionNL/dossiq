@@ -17,7 +17,7 @@
 		<div class="initiator-picker__tabs" role="tablist">
 			<NcCheckboxRadioSwitch v-for="tab in tabs"
 				:key="tab.id"
-				:checked.sync="activeTab"
+				v-model="activeTab"
 				:value="tab.id"
 				name="initiator-type"
 				type="radio"
@@ -28,13 +28,13 @@
 		</div>
 
 		<NcTextField class="initiator-picker__search"
-			:value.sync="query"
+			v-model="query"
 			:label="t('procest', 'Search initiator')"
 			:placeholder="searchPlaceholder"
 			trailing-button-icon="close"
 			:show-trailing-button="query !== ''"
 			@trailing-button-click="query = ''"
-			@update:value="onQueryChanged" />
+			@update:model-value="onQueryChanged" />
 
 		<NcLoadingIcon v-if="searching" :size="24" />
 

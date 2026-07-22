@@ -84,23 +84,23 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Date and Time') }} *</label>
 					<NcTextField
-						:value="scheduleForm.scheduledDate"
+						:model-value="scheduleForm.scheduledDate"
 						type="datetime-local"
-						@update:value="v => scheduleForm.scheduledDate = v" />
+						@update:model-value="v => scheduleForm.scheduledDate = v" />
 				</div>
 				<div class="form-group">
 					<label>{{ t('procest', 'Location') }}</label>
 					<NcTextField
-						:value="scheduleForm.location"
+						:model-value="scheduleForm.location"
 						:placeholder="t('procest', 'Location or Online')"
-						@update:value="v => scheduleForm.location = v" />
+						@update:model-value="v => scheduleForm.location = v" />
 				</div>
 				<div class="form-group">
 					<label>{{ t('procest', 'Video Call URL') }}</label>
 					<NcTextField
-						:value="scheduleForm.videoCallUrl"
+						:model-value="scheduleForm.videoCallUrl"
 						:placeholder="t('procest', 'https://...')"
-						@update:value="v => scheduleForm.videoCallUrl = v" />
+						@update:model-value="v => scheduleForm.videoCallUrl = v" />
 				</div>
 				<div class="dialog-card__actions">
 					<NcButton @click="showScheduleDialog = false">

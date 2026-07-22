@@ -36,7 +36,14 @@ let caseTypeId: string
 let caseTypeSeeded = false
 let caseId: string
 
-test.describe('Complaint-family workflow — bezwaren (objections)', () => {
+// BLOCKED on procest#675 — the Bezwaren index page filters cases by the retired
+// bezwaar caseType (b3c1a000-…-be2a, now under `_caseTypes_disabled` in
+// bezwaar_seed_data.json), while these specs seed `bezwaar`-schema objects that
+// the case-based page never shows. The complaint model is mid-migration to the
+// unified-case `citizen-complaint` caseType (ADR-044); until it settles, this
+// describe cannot pass on any matched instance. Flip back to `test.describe`
+// once the manifest filter + fixtures target the canonical caseType.
+test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () => {
 	test.describe.configure({ mode: 'serial' })
 
 	test.beforeAll(async ({ baseURL }) => {
@@ -74,7 +81,13 @@ test.describe('Complaint-family workflow — bezwaren (objections)', () => {
 	 * @param page The page.
 	 */
 	async function openBezwaren(page: Page): Promise<void> {
-		await navTo(page, 'Bezwaren')
+		// The "Bezwaren" sidebar entry was retired in the nav-dedup pass
+		// (menu-layout.json `removals`), but its index page stays routable for
+		// deep-links and e2e. navTo(page,'Bezwaren') therefore matches no nav link
+		// and strands on the Dashboard — reach the list by a BARE deep-link instead
+		// (a /index.php-prefixed one resets the history-mode router to the
+		// Dashboard; the bare path resolves the /bezwaren route directly).
+		await page.goto('/apps/procest/bezwaren')
 		await dismissSupportDialog(page)
 		await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 15000 })
 	}

@@ -57,7 +57,7 @@
 							label="title"
 							track-by="id"
 							:placeholder="t('procest', 'Select a sub-case type…')"
-							@input="onCaseTypeSelected" />
+							@update:model-value="onCaseTypeSelected" />
 						<p v-if="errors.caseType" class="form-error" role="alert">
 							{{ errors.caseType }}
 						</p>
@@ -68,10 +68,10 @@
 						<label for="dc-title">{{ t('procest', 'Title') }} *</label>
 						<NcTextField
 							id="dc-title"
-							:value="form.title"
+							:model-value="form.title"
 							:placeholder="t('procest', 'Enter sub-case title…')"
 							:error="!!errors.title"
-							@update:value="v => { form.title = v; errors.title = '' }" />
+							@update:model-value="v => { form.title = v; errors.title = '' }" />
 						<p v-if="errors.title" class="form-error" role="alert">
 							{{ errors.title }}
 						</p>

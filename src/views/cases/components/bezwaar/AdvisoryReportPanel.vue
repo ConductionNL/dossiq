@@ -46,9 +46,9 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Date') }} *</label>
 				<NcTextField
-					:value="form.adviceDate"
+					:model-value="form.adviceDate"
 					type="date"
-					@update:value="v => form.adviceDate = v" />
+					@update:model-value="v => form.adviceDate = v" />
 			</div>
 
 			<div class="form-group">
@@ -77,8 +77,8 @@
 
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
-					:checked="form.deviationFromPrimaryDecision"
-					@update:checked="v => form.deviationFromPrimaryDecision = v">
+					:model-value="form.deviationFromPrimaryDecision"
+					@update:model-value="v => form.deviationFromPrimaryDecision = v">
 					{{ t('procest', 'Committee advises differently from original decision') }}
 				</NcCheckboxRadioSwitch>
 			</div>

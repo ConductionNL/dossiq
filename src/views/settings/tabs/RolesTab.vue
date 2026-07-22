@@ -35,18 +35,18 @@
 							<div class="role-type-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.name"
+										:model-value="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:value="v => editForm.name = v" />
+										@update:model-value="v => editForm.name = v" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.description"
+										:model-value="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field"
-										@update:value="v => editForm.description = v" />
+										@update:model-value="v => editForm.description = v" />
 								</div>
 								<div class="edit-row">
 									<div class="edit-field">
@@ -84,17 +84,17 @@
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
-								:value="newForm.name"
+								:model-value="newForm.name"
 								:label="t('procest', 'Name *')"
 								class="add-form__field"
-								@update:value="v => newForm.name = v" />
+								@update:model-value="v => newForm.name = v" />
 						</div>
 						<div class="add-form__row">
 							<NcTextField
-								:value="newForm.description"
+								:model-value="newForm.description"
 								:label="t('procest', 'Description')"
 								class="add-form__field"
-								@update:value="v => newForm.description = v" />
+								@update:model-value="v => newForm.description = v" />
 						</div>
 						<div class="add-form__row">
 							<div class="add-form__field">
@@ -221,7 +221,7 @@ export default {
 			this.editSaving = false
 			if (result) {
 				const idx = this.roleTypes.findIndex(r => r.id === this.editingId)
-				if (idx !== -1) this.$set(this.roleTypes, idx, result)
+				if (idx !== -1) this.roleTypes[idx] = result
 				this.editingId = null; this.editForm = {}
 			} else {
 				this.editError = this.objectStore.getError('roleType') || t('procest', 'Failed to save')

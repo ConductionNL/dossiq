@@ -133,7 +133,7 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 		 */
 		toggleExpand(id) {
-			this.$set(this.expandedMessages, id, !this.expandedMessages[id])
+			this.expandedMessages[id] = !this.expandedMessages[id]
 		},
 	},
 }

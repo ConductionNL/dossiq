@@ -5,8 +5,8 @@
 		<!-- Global toggle -->
 		<div class="ai-settings-tab__section">
 			<NcCheckboxRadioSwitch
-				:checked="settings.ai_enabled"
-				@update:checked="v => updateSetting('ai_enabled', v)">
+				:model-value="settings.ai_enabled"
+				@update:model-value="v => updateSetting('ai_enabled', v)">
 				{{ t('procest', 'Enable AI-assisted processing') }}
 			</NcCheckboxRadioSwitch>
 		</div>
@@ -19,17 +19,17 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Model type') }}</label>
 					<NcCheckboxRadioSwitch
-						:checked="settings.ai_model_type === 'local'"
+						:model-value="settings.ai_model_type === 'local'"
 						type="radio"
 						name="model_type"
-						@update:checked="() => updateSetting('ai_model_type', 'local')">
+						@update:model-value="() => updateSetting('ai_model_type', 'local')">
 						{{ t('procest', 'Local (Ollama)') }}
 					</NcCheckboxRadioSwitch>
 					<NcCheckboxRadioSwitch
-						:checked="settings.ai_model_type === 'cloud'"
+						:model-value="settings.ai_model_type === 'cloud'"
 						type="radio"
 						name="model_type"
-						@update:checked="() => updateSetting('ai_model_type', 'cloud')">
+						@update:model-value="() => updateSetting('ai_model_type', 'cloud')">
 						{{ t('procest', 'Cloud') }}
 					</NcCheckboxRadioSwitch>
 				</div>
@@ -40,24 +40,24 @@
 
 				<div class="form-group">
 					<NcTextField
-						:value="settings.ai_model_url"
+						:model-value="settings.ai_model_url"
 						:label="t('procest', 'Model endpoint URL')"
-						@update:value="v => updateSetting('ai_model_url', v)" />
+						@update:model-value="v => updateSetting('ai_model_url', v)" />
 				</div>
 
 				<div class="form-group">
 					<NcTextField
-						:value="settings.ai_model_name"
+						:model-value="settings.ai_model_name"
 						:label="t('procest', 'Model name')"
 						:placeholder="'llama3.1'"
-						@update:value="v => updateSetting('ai_model_name', v)" />
+						@update:model-value="v => updateSetting('ai_model_name', v)" />
 				</div>
 
 				<div v-if="settings.ai_model_type === 'cloud'" class="form-group">
 					<NcPasswordField
-						:value="settings.ai_api_key"
+						:model-value="settings.ai_api_key"
 						:label="t('procest', 'API Key')"
-						@update:value="v => updateSetting('ai_api_key', v)" />
+						@update:model-value="v => updateSetting('ai_api_key', v)" />
 				</div>
 			</div>
 
@@ -67,8 +67,8 @@
 				<NcCheckboxRadioSwitch
 					v-for="feature in featureToggles"
 					:key="feature.key"
-					:checked="settings[feature.key]"
-					@update:checked="v => updateSetting(feature.key, v)">
+					:model-value="settings[feature.key]"
+					@update:model-value="v => updateSetting(feature.key, v)">
 					{{ feature.label }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -77,13 +77,13 @@
 			<div class="ai-settings-tab__section">
 				<h3>{{ t('procest', 'Privacy & Compliance') }}</h3>
 				<NcCheckboxRadioSwitch
-					:checked="settings.ai_pii_stripping"
-					@update:checked="v => updateSetting('ai_pii_stripping', v)">
+					:model-value="settings.ai_pii_stripping"
+					@update:model-value="v => updateSetting('ai_pii_stripping', v)">
 					{{ t('procest', 'Strip PII (BSN, financial data) from AI prompts') }}
 				</NcCheckboxRadioSwitch>
 				<NcCheckboxRadioSwitch
-					:checked="settings.ai_dpia_acknowledged"
-					@update:checked="v => updateSetting('ai_dpia_acknowledged', v)">
+					:model-value="settings.ai_dpia_acknowledged"
+					@update:model-value="v => updateSetting('ai_dpia_acknowledged', v)">
 					{{ t('procest', 'DPIA (Data Protection Impact Assessment) has been completed') }}
 				</NcCheckboxRadioSwitch>
 				<NcNoteCard v-if="!settings.ai_dpia_acknowledged" type="warning">

@@ -11,12 +11,12 @@
 				<label class="required" for="td-zaaktype">{{ t('procest', 'Zaaktype') }}</label>
 				<NcSelect
 					id="td-zaaktype"
-					:value="selectedZaaktype"
+					:model-value="selectedZaaktype"
 					:options="zaaktypeOptions"
 					:taggable="true"
 					:input-label="t('procest', 'Zaaktype')"
 					:placeholder="t('procest', 'Select or type a zaaktype slug')"
-					@input="v => form.zaaktype = v ? (v.id || v.label || v) : ''" />
+					@update:model-value="v => form.zaaktype = v ? (v.id || v.label || v) : ''" />
 				<span v-if="errors.zaaktype" class="field-error">{{ errors.zaaktype }}</span>
 			</div>
 
@@ -24,9 +24,9 @@
 				<label class="required" for="td-grondslag">{{ t('procest', 'Wettelijke grondslag') }}</label>
 				<NcTextField
 					id="td-grondslag"
-					:value="form.grondslag"
+					:model-value="form.grondslag"
 					:placeholder="t('procest', 'e.g. AWB art. 4:13 lid 2')"
-					@update:value="v => form.grondslag = v" />
+					@update:model-value="v => form.grondslag = v" />
 				<span v-if="errors.grondslag" class="field-error">{{ errors.grondslag }}</span>
 			</div>
 
@@ -35,8 +35,8 @@
 				<NcTextField
 					id="td-duur"
 					type="number"
-					:value="String(form.duurDagen)"
-					@update:value="v => form.duurDagen = Number(v) || 0" />
+					:model-value="String(form.duurDagen)"
+					@update:model-value="v => form.duurDagen = Number(v) || 0" />
 				<span v-if="errors.duurDagen" class="field-error">{{ errors.duurDagen }}</span>
 			</div>
 
@@ -44,17 +44,17 @@
 				<label for="td-categorie">{{ t('procest', 'Categorie') }}</label>
 				<NcSelect
 					id="td-categorie"
-					:value="selectedCategorie"
+					:model-value="selectedCategorie"
 					:options="categorieOptions"
 					:input-label="t('procest', 'Categorie')"
-					@input="v => form.categorie = v ? v.id : ''" />
+					@update:model-value="v => form.categorie = v ? v.id : ''" />
 			</div>
 
 			<div class="form-group">
 				<label for="td-extendable">{{ t('procest', 'Extension allowed') }}</label>
 				<NcCheckboxRadioSwitch
-					:checked="form.extendable"
-					@update:checked="v => form.extendable = v">
+					:model-value="form.extendable"
+					@update:model-value="v => form.extendable = v">
 					{{ t('procest', 'Tenant may grant an extension on this term') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -64,8 +64,8 @@
 				<NcTextField
 					id="td-ext-dagen"
 					type="number"
-					:value="String(form.maxExtensionDagen)"
-					@update:value="v => form.maxExtensionDagen = Number(v) || 0" />
+					:model-value="String(form.maxExtensionDagen)"
+					@update:model-value="v => form.maxExtensionDagen = Number(v) || 0" />
 			</div>
 
 			<div class="form-group form-group--note">

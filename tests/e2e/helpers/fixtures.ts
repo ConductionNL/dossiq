@@ -171,6 +171,24 @@ export async function deleteObject(
 }
 
 /**
+ * Attempt a delete and RETURN the outcome (status + parsed body) instead of
+ * swallowing it. Used to assert a rejection — e.g. an archival schema
+ * (x-openregister-archival) returns 403 ArchivalImmutableException on a
+ * user-driven delete.
+ * @param api    Authenticated request context.
+ * @param token  CSRF request-token.
+ * @param schema Schema slug.
+ * @param id     Object id/uuid.
+ * @return `{ status, body }` of the DELETE response.
+ */
+export async function tryDeleteObject(api: APIRequestContext, token: string, schema: string, id: string): Promise<{ status: number, body: unknown }> {
+	const res = await api.delete(`${API_BASE}/${REGISTER}/${schema}/${id}`, {
+		headers: writeHeaders(token),
+	})
+	return { status: res.status(), body: await res.json().catch(() => ({})) }
+}
+
+/**
  * Discover an existing caseType to attach seeded cases to. The `case` schema
  * requires `caseType`; a real caseType (with its statusTypes) is needed for
  * the transition engine. If none exists we seed a throwaway one tagged with

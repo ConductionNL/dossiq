@@ -38,7 +38,7 @@
 			<div v-if="editing" class="email-template-admin__editor">
 				<div class="setting-row">
 					<label for="etpl-name">{{ t('procest', 'Name') }}</label>
-					<NcInputField id="etpl-name" :value.sync="draft.name" />
+					<NcInputField id="etpl-name" v-model="draft.name" />
 				</div>
 
 				<div class="setting-row">
@@ -46,7 +46,7 @@
 					<NcInputField
 						id="etpl-subject"
 						ref="subjectField"
-						:value.sync="draft.subject"
+						v-model="draft.subject"
 						@focus="activeField = 'subject'" />
 				</div>
 
@@ -55,7 +55,7 @@
 					<NcTextArea
 						id="etpl-body"
 						ref="bodyField"
-						:value.sync="draft.body"
+						v-model="draft.body"
 						rows="8"
 						@focus="activeField = 'body'" />
 				</div>

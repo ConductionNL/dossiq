@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import { listActions } from '../../../services/parafeerActieApi.js'
 
 const ACTION_LABELS = {

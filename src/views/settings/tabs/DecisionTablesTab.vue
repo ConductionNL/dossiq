@@ -33,23 +33,23 @@
 						<div class="sub-entity-row__edit-form">
 							<div class="edit-row">
 								<NcTextField
-									:value="editForm.name"
+									:model-value="editForm.name"
 									:label="t('procest', 'Name')"
 									:error="!!editError"
 									class="edit-field"
-									@update:value="v => editForm.name = v" />
+									@update:model-value="v => editForm.name = v" />
 								<NcTextField
-									:value="editForm.key"
+									:model-value="editForm.key"
 									:label="t('procest', 'Key (used to invoke the decision)')"
 									class="edit-field"
-									@update:value="v => editForm.key = v" />
+									@update:model-value="v => editForm.key = v" />
 							</div>
 							<div class="edit-row">
 								<NcTextField
-									:value="editForm.description"
+									:model-value="editForm.description"
 									:label="t('procest', 'Description')"
 									class="edit-field edit-field--full"
-									@update:value="v => editForm.description = v" />
+									@update:model-value="v => editForm.description = v" />
 							</div>
 							<div class="edit-row">
 								<NcSelect
@@ -59,19 +59,19 @@
 									:placeholder="t('procest', 'Hit policy')"
 									class="edit-field" />
 								<NcCheckboxRadioSwitch
-									:checked="editForm.enabled"
-									@update:checked="v => editForm.enabled = v">
+									:model-value="editForm.enabled"
+									@update:model-value="v => editForm.enabled = v">
 									{{ t('procest', 'Enabled') }}
 								</NcCheckboxRadioSwitch>
 							</div>
 							<div class="edit-row">
 								<NcTextArea
-									:value="editForm.definitionJson"
+									:model-value="editForm.definitionJson"
 									:label="t('procest', 'Inputs, outputs and rules (JSON)')"
 									:helper-text="t('procest', 'A JSON object with inputs[], outputs[] and rules[]. Each rule row aligns positionally to the inputs and outputs.')"
 									rows="14"
 									class="edit-field edit-field--full decision-tables-tab__json"
-									@update:value="v => editForm.definitionJson = v" />
+									@update:model-value="v => editForm.definitionJson = v" />
 							</div>
 							<NcNoteCard v-if="editError" type="error">
 								{{ editError }}

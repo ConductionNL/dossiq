@@ -15,7 +15,7 @@
   -->
 <template>
 	<NcDialog :name="t('procest', 'Verlengingsverzoek')"
-		:open.sync="open"
+		v-model:open="open"
 		size="small"
 		data-testid="leverancier-renewal-modal"
 		@update:open="onOpenChange">
@@ -73,7 +73,7 @@
 </template>
 
 <script>
-import NcDialog from '@nextcloud/vue/dist/Components/NcDialog.js'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 
 export default {
 	name: 'RenewalRequestModal',

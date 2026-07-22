@@ -38,13 +38,13 @@
 				</label>
 				<div v-if="isDelegating" class="parafeer-action-bar__delegation-fields">
 					<NcTextField
-						:value="delegateFor"
+						:model-value="delegateFor"
 						:placeholder="t('procest', 'Gebruikers-ID van principaal')"
-						@update:value="v => delegateFor = v" />
+						@update:model-value="v => delegateFor = v" />
 					<NcTextField
-						:value="mandateRef"
+						:model-value="mandateRef"
 						:placeholder="t('procest', 'Mandaatreferentie')"
-						@update:value="v => mandateRef = v" />
+						@update:model-value="v => mandateRef = v" />
 				</div>
 			</div>
 		</template>

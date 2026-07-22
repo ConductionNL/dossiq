@@ -38,15 +38,15 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Department / Organization') }} *</label>
 				<NcTextField
-					:value="form.department"
+					:model-value="form.department"
 					:placeholder="t('procest', 'e.g., Brandweer, Welstandscommissie')"
-					@update:value="v => form.department = v" />
+					@update:model-value="v => form.department = v" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Subject') }} *</label>
 				<NcTextField
-					:value="form.subject"
-					@update:value="v => form.subject = v" />
+					:model-value="form.subject"
+					@update:model-value="v => form.subject = v" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Question') }}</label>
@@ -55,9 +55,9 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Deadline') }} *</label>
 				<NcTextField
-					:value="form.deadline"
+					:model-value="form.deadline"
 					type="date"
-					@update:value="v => form.deadline = v" />
+					@update:model-value="v => form.deadline = v" />
 			</div>
 			<div class="advice-request__form-actions">
 				<NcButton @click="showForm = false">

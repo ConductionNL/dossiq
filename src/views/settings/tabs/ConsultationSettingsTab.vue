@@ -10,7 +10,7 @@
 			</label>
 			<NcInputField
 				id="consultation_default_deadline_days"
-				:value.sync="defaultDeadlineDays"
+				v-model="defaultDeadlineDays"
 				type="number"
 				:disabled="!writable"
 				:placeholder="'28'" />
@@ -25,7 +25,7 @@
 			</label>
 			<NcInputField
 				id="consultation_warning_offset_days"
-				:value.sync="warningOffsetDays"
+				v-model="warningOffsetDays"
 				type="number"
 				:disabled="!writable"
 				:placeholder="'5'" />
@@ -40,7 +40,7 @@
 			</label>
 			<NcInputField
 				id="consultation_external_response_url"
-				:value.sync="externalResponseUrl"
+				v-model="externalResponseUrl"
 				:disabled="!writable"
 				:placeholder="'https://procest.example.org/consultation/respond/'" />
 			<p class="setting-help">
@@ -54,7 +54,7 @@
 			</label>
 			<NcInputField
 				id="consultation_bottleneck_threshold"
-				:value.sync="bottleneckThreshold"
+				v-model="bottleneckThreshold"
 				type="number"
 				:disabled="!writable"
 				:placeholder="'0.2'" />

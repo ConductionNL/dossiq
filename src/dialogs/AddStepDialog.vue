@@ -37,14 +37,14 @@
 					:placeholder="t('procest', 'Selecteer actor type')" />
 			</div>
 			<div class="add-step-dialog__field">
-				<NcTextField :value="actor"
+				<NcTextField :model-value="actor"
 					:label="t('procest', 'Actor (UID, groep of rol)')"
 					required
-					@update:value="v => actor = v" />
+					@update:model-value="v => actor = v" />
 			</div>
 			<div class="add-step-dialog__field">
-				<NcCheckboxRadioSwitch :checked="mandatory"
-					@update:checked="v => mandatory = v">
+				<NcCheckboxRadioSwitch :model-value="mandatory"
+					@update:model-value="v => mandatory = v">
 					{{ t('procest', 'Verplichte stap') }}
 				</NcCheckboxRadioSwitch>
 			</div>

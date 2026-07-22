@@ -778,7 +778,8 @@
 						{ "id": "audit", "label": "History", "icon": "History", "widgets": [ { "type": "audit" } ] },
 						{ "id": "version-history", "label": "Version history", "icon": "FileCompare", "component": "VersionHistoryLeafTab" },
 						{ "id": "notes", "label": "Notes", "icon": "NoteTextOutline", "component": "CaseNotesTab" },
-						{ "id": "sharing", "label": "Sharing", "icon": "ShareVariant", "component": "CaseSharingTab" }
+						{ "id": "sharing", "label": "Sharing", "icon": "ShareVariant", "component": "CaseSharingTab" },
+						{ "id": "email", "label": "Email", "icon": "EmailOutline", "component": "CaseEmailTab" }
 					]
 				}
 			},

@@ -13,10 +13,10 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Title') }} *</label>
 					<NcTextField
-						:value="form.title"
+						:model-value="form.title"
 						:placeholder="t('procest', 'Enter task title...')"
 						:error="!!errors.title"
-						@update:value="v => { form.title = v; errors.title = '' }" />
+						@update:model-value="v => { form.title = v; errors.title = '' }" />
 					<p v-if="errors.title" class="form-error">
 						{{ errors.title }}
 					</p>
@@ -45,10 +45,10 @@
 					<div class="form-group">
 						<label>{{ t('procest', 'Due date') }}</label>
 						<NcTextField
-							:value="form.dueDate || ''"
+							:model-value="form.dueDate || ''"
 							type="date"
 							:placeholder="t('procest', 'Select due date')"
-							@update:value="v => form.dueDate = v || null" />
+							@update:model-value="v => form.dueDate = v || null" />
 					</div>
 				</div>
 
@@ -56,9 +56,9 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Assignee') }}</label>
 					<NcTextField
-						:value="form.assignee"
+						:model-value="form.assignee"
 						:placeholder="t('procest', 'Username (optional)')"
-						@update:value="v => form.assignee = v" />
+						@update:model-value="v => form.assignee = v" />
 				</div>
 
 				<!-- Case -->

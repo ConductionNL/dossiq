@@ -28,9 +28,9 @@
 					<template v-if="editing && editingPropId === propDef.id">
 						<div class="property-item__edit">
 							<NcTextField
-								:value="editValue"
+								:model-value="editValue"
 								:placeholder="propDef.definition || t('procest', 'Enter value...')"
-								@update:value="v => editValue = v" />
+								@update:model-value="v => editValue = v" />
 							<div class="property-item__edit-actions">
 								<NcButton type="primary" @click="saveProperty(propDef)">
 									{{ t('procest', 'Save') }}

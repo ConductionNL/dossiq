@@ -13,7 +13,7 @@
 				:placeholder="t('procest', 'All case types')"
 				:clearable="true"
 				class="cases-on-map__filter"
-				@input="reload" />
+				@update:model-value="reload" />
 
 			<NcSelect
 				v-model="filterStatus"
@@ -22,7 +22,7 @@
 				:placeholder="t('procest', 'All statuses')"
 				:clearable="true"
 				class="cases-on-map__filter"
-				@input="reload" />
+				@update:model-value="reload" />
 
 			<div v-if="degraded" class="cases-on-map__notice">
 				<AlertIcon :size="20" />
@@ -45,8 +45,8 @@
 </template>
 
 <script>
-import NcSelect from '@nextcloud/vue/dist/Components/NcSelect.js'
-import NcLoadingIcon from '@nextcloud/vue/dist/Components/NcLoadingIcon.js'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import AlertIcon from 'vue-material-design-icons/Alert.vue'
 import { generateUrl } from '@nextcloud/router'
 import { CnMapWidget } from '@conduction/nextcloud-vue'

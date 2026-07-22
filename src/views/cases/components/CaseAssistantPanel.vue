@@ -36,12 +36,12 @@
 		</div>
 		<div class="case-assistant__composer">
 			<NcTextField
-				:value="draft"
+				:model-value="draft"
 				:label="t('procest', 'Ask the assistant')"
 				:placeholder="t('procest', 'Ask a question about this case…')"
 				:disabled="loading"
 				data-testid="case-assistant-input"
-				@update:value="v => draft = v"
+				@update:model-value="v => draft = v"
 				@keydown.enter.prevent="onSend" />
 			<NcButton
 				type="primary"
@@ -57,7 +57,7 @@
 
 <script>
 import { NcButton, NcTextField, NcLoadingIcon } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import { fetchAssistantAvailability, converse } from '../../../services/assistantApi.js'
 import { makeTranscriptEntry, canSend, assistantErrorMessage } from '../../../utils/assistantHelpers.js'
 

@@ -21,8 +21,8 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Suggested document type') }}</label>
 					<NcTextField
-						:value="modifiedType"
-						@update:value="v => modifiedType = v" />
+						:model-value="modifiedType"
+						@update:model-value="v => modifiedType = v" />
 				</div>
 
 				<div v-if="result.metadata" class="ai-classify-dialog__metadata">
@@ -30,8 +30,8 @@
 					<div v-for="(value, key) in result.metadata" :key="key" class="form-group">
 						<label>{{ key }}</label>
 						<NcTextField
-							:value="modifiedMetadata[key] || value"
-							@update:value="v => modifiedMetadata[key] = v" />
+							:model-value="modifiedMetadata[key] || value"
+							@update:model-value="v => modifiedMetadata[key] = v" />
 					</div>
 				</div>
 
@@ -50,7 +50,7 @@
 
 <script>
 import { NcDialog, NcButton, NcTextField, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import { classifyDocument } from '../../../services/aiApi.js'
 import AiConfidenceBadge from './AiConfidenceBadge.vue'
 

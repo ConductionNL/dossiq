@@ -36,7 +36,7 @@
 				@click="openEdit(decision)">
 				<div class="case-tab__row">
 					<strong class="case-tab__item-title">{{ decision.title || '—' }}</strong>
-					<NcActions :inline="0" @click.native.stop>
+					<NcActions :inline="0" @click.stop>
 						<NcActionButton @click="openEdit(decision)">
 							{{ t('procest', 'Edit') }}
 						</NcActionButton>

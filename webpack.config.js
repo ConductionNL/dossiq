@@ -89,9 +89,26 @@ webpackConfig.resolve = {
 		...(useLocalLib ? { '@conduction/nextcloud-vue': localLib } : {}),
 		// Deduplicate shared packages so the aliased library source uses
 		// the same instances as the app (prevents dual-Pinia / dual-Vue bugs).
-		'vue$': path.resolve(__dirname, 'node_modules/vue'),
+		// VUE 3 STAGING (ADR-066): route the runtime `vue` import to @vue/compat
+		// (MODE 2) so the un-migrated Vue-2 template syntax stays correct during
+		// the straddle. vue-loader still finds the real compiler via vue/compiler-sfc.
+		// PURE VUE 3 (ADR-066 task 6.1 — @vue/compat removed): point at the real
+		// Vue 3 runtime, one ABSOLUTE file so procest + the aliased lib source share
+		// one copy (dual-copy = two currentRenderingInstance states → CnAppRoot null
+		// crash). The lib + procest source are now compat-construct-free, so no
+		// @vue/compat runtime/compiler is needed.
+		'vue$': path.resolve(__dirname, 'node_modules/vue/dist/vue.runtime.esm-bundler.js'),
 		'pinia$': path.resolve(__dirname, 'node_modules/pinia'),
-		'@nextcloud/vue$': path.resolve(__dirname, 'node_modules/@nextcloud/vue'),
+		// Dedupe vue-router to ONE copy (absolute file): the aliased lib worktree
+		// ships its own vue-router (a different MAJOR), so a per-importer resolve
+		// gives @nextcloud/vue's RouterLink a different router instance than
+		// app.use(router) provided → NcAppNavigationItem's <router-link> scoped
+		// slot gets undefined props (href destructure crash). One copy = one router.
+		'vue-router$': path.resolve(__dirname, 'node_modules/vue-router/dist/vue-router.mjs'),
+		// v9 is ESM-only: exports maps '.' -> ./dist/index.mjs with no main/module,
+		// so a directory alias can't resolve it. Point at the explicit entry file
+		// (also dedupes the aliased lib worktree's own v9 copy onto this one).
+		'@nextcloud/vue$': path.resolve(__dirname, 'node_modules/@nextcloud/vue/dist/index.mjs'),
 		// @nextcloud/dialogs v6 ships its stylesheet at dist/style.css and exposes it
 		// via the package "exports" map. When the aliased nextcloud-vue source imports
 		// '@nextcloud/dialogs/style.css', this webpack build resolves the raw subpath

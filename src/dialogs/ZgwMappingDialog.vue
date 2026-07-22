@@ -7,8 +7,8 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Enabled') }}</label>
 				<NcCheckboxRadioSwitch
-					:checked="form.enabled"
-					@update:checked="v => form.enabled = v">
+					:model-value="form.enabled"
+					@update:model-value="v => form.enabled = v">
 					{{ t('procest', 'Enable this mapping') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -16,17 +16,17 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Source Register') }}</label>
 				<NcTextField
-					:value="form.sourceRegister"
+					:model-value="form.sourceRegister"
 					:label="t('procest', 'Register ID')"
-					@update:value="v => form.sourceRegister = v" />
+					@update:model-value="v => form.sourceRegister = v" />
 			</div>
 
 			<div class="form-group">
 				<label>{{ t('procest', 'Source Schema') }}</label>
 				<NcTextField
-					:value="form.sourceSchema"
+					:model-value="form.sourceSchema"
 					:label="t('procest', 'Schema ID')"
-					@update:value="v => form.sourceSchema = v" />
+					@update:model-value="v => form.sourceSchema = v" />
 			</div>
 
 			<div class="form-group">

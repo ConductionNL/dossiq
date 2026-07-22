@@ -14,10 +14,10 @@
 				<label class="required" for="me-num">{{ t('procest', 'Mandaatnummer') }}</label>
 				<NcTextField
 					id="me-num"
-					:value="form.mandaatNummer"
+					:model-value="form.mandaatNummer"
 					:error="!!errors.mandaatNummer"
 					:helper-text="errors.mandaatNummer"
-					@update:value="v => form.mandaatNummer = v" />
+					@update:model-value="v => form.mandaatNummer = v" />
 			</div>
 
 			<div class="form-group">
@@ -34,10 +34,10 @@
 				<label class="required" for="me-type">{{ t('procest', 'Bevoegdheidstype') }}</label>
 				<NcSelect
 					id="me-type"
-					:value="selectedType"
+					:model-value="selectedType"
 					:options="typeOptions"
 					:input-label="t('procest', 'Bevoegdheidstype')"
-					@input="v => form.bevoegdheidType = v ? v.id : ''" />
+					@update:model-value="v => form.bevoegdheidType = v ? v.id : ''" />
 				<span v-if="errors.bevoegdheidType" class="field-error">{{ errors.bevoegdheidType }}</span>
 			</div>
 
@@ -45,10 +45,10 @@
 				<label class="required" for="me-grond">{{ t('procest', 'Wettelijke grondslag') }}</label>
 				<NcTextField
 					id="me-grond"
-					:value="form.wettelijkeGrondslag"
+					:model-value="form.wettelijkeGrondslag"
 					:error="!!errors.wettelijkeGrondslag"
 					:helper-text="errors.wettelijkeGrondslag"
-					@update:value="v => form.wettelijkeGrondslag = v" />
+					@update:model-value="v => form.wettelijkeGrondslag = v" />
 			</div>
 
 			<div class="form-group">
@@ -87,10 +87,10 @@
 				<label for="me-rol">{{ t('procest', 'Toegewezen rol') }}</label>
 				<NcSelect
 					id="me-rol"
-					:value="selectedRole"
+					:model-value="selectedRole"
 					:options="roleOptions"
 					:input-label="t('procest', 'Toegewezen rol')"
-					@input="v => form.toegewezenRol = v ? v.id : ''" />
+					@update:model-value="v => form.toegewezenRol = v ? v.id : ''" />
 			</div>
 
 			<div class="mandaat-editor__actions">

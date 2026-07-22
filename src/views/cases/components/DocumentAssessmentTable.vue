@@ -50,17 +50,17 @@
 						</td>
 						<td>
 							<NcSelect
-								:value="localAssessments[doc.id] && localAssessments[doc.id].classification"
+								:model-value="localAssessments[doc.id] && localAssessments[doc.id].classification"
 								:options="classificationOptions"
 								:input-label="t('procest', 'Assessment')"
 								:disabled="isReadOnly"
 								:placeholder="t('procest', 'Select...')"
-								@input="val => setClassification(doc.id, val)" />
+								@update:model-value="val => setClassification(doc.id, val)" />
 						</td>
 						<td>
 							<NcSelect
 								v-if="requiresGrounds(doc.id)"
-								:value="localAssessments[doc.id] && localAssessments[doc.id].weigeringsgronden"
+								:model-value="localAssessments[doc.id] && localAssessments[doc.id].weigeringsgronden"
 								:options="weigeringsgronden"
 								:input-label="t('procest', 'Grounds')"
 								:multiple="true"
@@ -68,16 +68,16 @@
 								track-by="code"
 								:disabled="isReadOnly"
 								:placeholder="t('procest', 'Select grounds...')"
-								@input="val => setGrounds(doc.id, val)" />
+								@update:model-value="val => setGrounds(doc.id, val)" />
 							<span v-else class="document-assessment-table__na">---</span>
 						</td>
 						<td>
 							<NcTextField
 								v-if="localAssessments[doc.id] && localAssessments[doc.id].classification"
-								:value="localAssessments[doc.id] && localAssessments[doc.id].motivering"
+								:model-value="localAssessments[doc.id] && localAssessments[doc.id].motivering"
 								:disabled="isReadOnly"
 								:placeholder="t('procest', 'Optional motivation...')"
-								@update:value="val => setMotivering(doc.id, val)" />
+								@update:model-value="val => setMotivering(doc.id, val)" />
 						</td>
 						<td>
 							<NcButton
