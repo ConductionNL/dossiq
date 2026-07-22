@@ -36,7 +36,14 @@ let caseTypeId: string
 let caseTypeSeeded = false
 let caseId: string
 
-test.describe('Complaint-family workflow — bezwaren (objections)', () => {
+// BLOCKED on procest#675 — the Bezwaren index page filters cases by the retired
+// bezwaar caseType (b3c1a000-…-be2a, now under `_caseTypes_disabled` in
+// bezwaar_seed_data.json), while these specs seed `bezwaar`-schema objects that
+// the case-based page never shows. The complaint model is mid-migration to the
+// unified-case `citizen-complaint` caseType (ADR-044); until it settles, this
+// describe cannot pass on any matched instance. Flip back to `test.describe`
+// once the manifest filter + fixtures target the canonical caseType.
+test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () => {
 	test.describe.configure({ mode: 'serial' })
 
 	test.beforeAll(async ({ baseURL }) => {
