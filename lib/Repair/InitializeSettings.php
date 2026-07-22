@@ -88,7 +88,15 @@ class InitializeSettings implements IRepairStep
         }
 
         try {
-            $result = $this->settingsService->loadConfiguration(force: true);
+            // NOT forced. `force: true` bypasses OpenRegister's app-level import fast-skip
+            // (which is gated on `$force === false`), so this step re-parsed the register
+            // descriptor + register.d fragments and walked every register/schema on EVERY
+            // upgrade — even when nothing changed. Forcing was never needed here: the version
+            // passed to OR is content-addressed (`+frag.<md5 of the fragments>`), so a content
+            // change already bumps the version and re-imports; OpenRegister#426 additionally
+            // makes the gate content-aware. And the reconcile below runs unconditionally, so
+            // schema config keys are still provisioned when the import is a no-op.
+            $result = $this->settingsService->loadConfiguration();
 
             // Always reconcile EVERY *_schema appconfig key directly from
             // OpenRegister (idempotent). loadConfiguration() only maps schema
