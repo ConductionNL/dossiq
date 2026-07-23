@@ -33,10 +33,10 @@
 					:key="idx"
 					class="consultation-types-tab__row">
 					<NcTextField
-						:value="ct.name"
+						:model-value="ct.name"
 						:label="t('procest', 'Naam')"
 						required
-						@update:value="v => ct.name = v" />
+						@update:model-value="v => ct.name = v" />
 
 					<NcSelect
 						v-model="ct.advisoryBodyId"
@@ -47,14 +47,14 @@
 						:placeholder="t('procest', 'Standaard adviesinstantie')" />
 
 					<NcTextField
-						:value="String(ct.defaultDeadlineWeeks)"
+						:model-value="String(ct.defaultDeadlineWeeks)"
 						:label="t('procest', 'Standaard doorlooptijd (weken)')"
 						type="number"
-						@update:value="v => ct.defaultDeadlineWeeks = parseInt(v) || 4" />
+						@update:model-value="v => ct.defaultDeadlineWeeks = parseInt(v) || 4" />
 
 					<NcCheckboxRadioSwitch
-						:checked="ct.mandatory"
-						@update:checked="v => ct.mandatory = v">
+						:model-value="ct.mandatory"
+						@update:model-value="v => ct.mandatory = v">
 						{{ t('procest', 'Verplicht') }}
 					</NcCheckboxRadioSwitch>
 

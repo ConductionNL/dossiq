@@ -23,9 +23,9 @@
 			</div>
 			<div class="ai-assistant-panel__input">
 				<NcTextField
-					:value="question"
+					:model-value="question"
 					:placeholder="t('procest', 'Ask a question about this case...')"
-					@update:value="v => question = v"
+					@update:model-value="v => question = v"
 					@keydown.enter="askQuestion" />
 				<NcButton :disabled="!question || askLoading" @click="askQuestion">
 					{{ t('procest', 'Ask') }}
@@ -64,7 +64,7 @@
 
 <script>
 import { NcButton, NcTextField, NcLoadingIcon } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import { askQuestion as askApi, suggestNext, summarize } from '../../../services/aiApi.js'
 import AiSuggestionCard from './AiSuggestionCard.vue'
 

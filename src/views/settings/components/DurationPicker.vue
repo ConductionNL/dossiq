@@ -2,11 +2,11 @@
 	<div class="duration-picker">
 		<div class="duration-picker__input-row">
 			<NcTextField
-				:value="daysInput"
+				:model-value="daysInput"
 				:label="t('procest', 'Days')"
 				type="number"
 				class="duration-picker__field"
-				@update:value="onDaysChange" />
+				@update:model-value="onDaysChange" />
 			<span class="duration-picker__iso">
 				{{ displayValue || t('procest', 'Enter days') }}
 			</span>

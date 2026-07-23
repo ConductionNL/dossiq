@@ -66,9 +66,9 @@
 				<label for="acr-toelichting">{{ t('procest', 'Explanation') }}</label>
 				<NcTextField
 					id="acr-toelichting"
-					:value="toelichting"
+					:model-value="toelichting"
 					:placeholder="t('procest', 'Optional clarification…')"
-					@update:value="v => { toelichting = v }" />
+					@update:model-value="v => { toelichting = v }" />
 			</div>
 
 			<p v-if="submitError" class="form-error" role="alert">

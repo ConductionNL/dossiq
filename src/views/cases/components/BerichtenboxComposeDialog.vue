@@ -7,10 +7,10 @@
 		<div class="compose-dialog">
 			<div class="form-group">
 				<NcTextField
-					:value="form.bsn"
+					:model-value="form.bsn"
 					:label="t('procest', 'BSN (burgerservicenummer)')"
 					:error="!!errors.bsn"
-					@update:value="v => form.bsn = v" />
+					@update:model-value="v => form.bsn = v" />
 				<p v-if="errors.bsn" class="form-error">
 					{{ errors.bsn }}
 				</p>
@@ -18,10 +18,10 @@
 
 			<div class="form-group">
 				<NcTextField
-					:value="form.subject"
+					:model-value="form.subject"
 					:label="t('procest', 'Subject')"
 					:error="!!errors.subject"
-					@update:value="v => form.subject = v" />
+					@update:model-value="v => form.subject = v" />
 				<p v-if="errors.subject" class="form-error">
 					{{ errors.subject }}
 				</p>
@@ -70,7 +70,7 @@
 
 <script>
 import { NcDialog, NcButton, NcTextField, NcSelect, NcNoteCard } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import { sendMessage } from '../../../services/berichtenboxApi.js'
 
 export default {

@@ -133,7 +133,7 @@ export default {
 
 				if (statusTypes) {
 					for (const st of statusTypes) {
-						this.$set(this.statusTypeCache, st.id, st)
+						this.statusTypeCache[st.id] = st
 					}
 				}
 

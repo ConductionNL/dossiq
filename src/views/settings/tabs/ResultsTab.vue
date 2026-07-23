@@ -43,44 +43,44 @@
 							<div class="result-type-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.name"
+										:model-value="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:value="v => editForm.name = v" />
+										@update:model-value="v => editForm.name = v" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.description"
+										:model-value="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field"
-										@update:value="v => editForm.description = v" />
+										@update:model-value="v => editForm.description = v" />
 								</div>
 								<div class="edit-row">
 									<div class="edit-field">
 										<label class="field-label">{{ t('procest', 'Archive action') }}</label>
 										<NcCheckboxRadioSwitch
-											:checked="editForm.archivalAction"
+											:model-value="editForm.archivalAction"
 											value="retain"
 											name="edit-archive-action"
 											type="radio"
-											@update:checked="v => editForm.archivalAction = v">
+											@update:model-value="v => editForm.archivalAction = v">
 											{{ t('procest', 'Retain') }}
 										</NcCheckboxRadioSwitch>
 										<NcCheckboxRadioSwitch
-											:checked="editForm.archivalAction"
+											:model-value="editForm.archivalAction"
 											value="destroy"
 											name="edit-archive-action"
 											type="radio"
-											@update:checked="v => editForm.archivalAction = v">
+											@update:model-value="v => editForm.archivalAction = v">
 											{{ t('procest', 'Destroy') }}
 										</NcCheckboxRadioSwitch>
 									</div>
 									<NcTextField
-										:value="editForm.archivalPeriod"
+										:model-value="editForm.archivalPeriod"
 										:label="t('procest', 'Retention period (ISO 8601, e.g. P20Y)')"
 										class="edit-field"
-										@update:value="v => editForm.archivalPeriod = v" />
+										@update:model-value="v => editForm.archivalPeriod = v" />
 								</div>
 								<span v-if="editError" class="field-error">{{ editError }}</span>
 								<div class="edit-row edit-row--actions">
@@ -106,43 +106,43 @@
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
-								:value="newForm.name"
+								:model-value="newForm.name"
 								:label="t('procest', 'Name *')"
 								class="add-form__field"
-								@update:value="v => newForm.name = v" />
+								@update:model-value="v => newForm.name = v" />
 						</div>
 						<div class="add-form__row">
 							<NcTextField
-								:value="newForm.description"
+								:model-value="newForm.description"
 								:label="t('procest', 'Description')"
 								class="add-form__field"
-								@update:value="v => newForm.description = v" />
+								@update:model-value="v => newForm.description = v" />
 						</div>
 						<div class="add-form__row">
 							<div class="add-form__field">
 								<label class="field-label">{{ t('procest', 'Archive action') }}</label>
 								<NcCheckboxRadioSwitch
-									:checked="newForm.archivalAction"
+									:model-value="newForm.archivalAction"
 									value="retain"
 									name="new-archive-action"
 									type="radio"
-									@update:checked="v => newForm.archivalAction = v">
+									@update:model-value="v => newForm.archivalAction = v">
 									{{ t('procest', 'Retain') }}
 								</NcCheckboxRadioSwitch>
 								<NcCheckboxRadioSwitch
-									:checked="newForm.archivalAction"
+									:model-value="newForm.archivalAction"
 									value="destroy"
 									name="new-archive-action"
 									type="radio"
-									@update:checked="v => newForm.archivalAction = v">
+									@update:model-value="v => newForm.archivalAction = v">
 									{{ t('procest', 'Destroy') }}
 								</NcCheckboxRadioSwitch>
 							</div>
 							<NcTextField
-								:value="newForm.archivalPeriod"
+								:model-value="newForm.archivalPeriod"
 								:label="t('procest', 'Retention period (e.g. P20Y)')"
 								class="add-form__field"
-								@update:value="v => newForm.archivalPeriod = v" />
+								@update:model-value="v => newForm.archivalPeriod = v" />
 						</div>
 						<span v-if="addError" class="field-error">{{ addError }}</span>
 						<NcButton type="primary" :disabled="addSaving" @click="addResultType">
@@ -264,7 +264,7 @@ export default {
 			this.editSaving = false
 			if (result) {
 				const idx = this.resultTypes.findIndex(r => r.id === this.editingId)
-				if (idx !== -1) this.$set(this.resultTypes, idx, result)
+				if (idx !== -1) this.resultTypes[idx] = result
 				this.editingId = null
 				this.editForm = {}
 			} else {

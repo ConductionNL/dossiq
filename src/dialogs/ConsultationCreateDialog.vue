@@ -17,19 +17,19 @@
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:value="form.adviesInstantie"
+					:model-value="form.adviesInstantie"
 					:label="t('procest', 'Adviesinstantie')"
 					:placeholder="t('procest', 'bijv. Brandweer, Welstandscommissie')"
 					required
-					@update:value="v => form.adviesInstantie = v" />
+					@update:model-value="v => form.adviesInstantie = v" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:value="form.onderwerp"
+					:model-value="form.onderwerp"
 					:label="t('procest', 'Onderwerp')"
 					required
-					@update:value="v => form.onderwerp = v" />
+					@update:model-value="v => form.onderwerp = v" />
 			</div>
 
 			<div class="consultation-create-dialog__field">

@@ -14,7 +14,7 @@
 				label="name"
 				track-by="id"
 				:placeholder="t('procest', 'Select template or compose ad-hoc...')"
-				@input="onTemplateSelected" />
+				@update:model-value="onTemplateSelected" />
 		</div>
 
 		<!-- Email form -->
@@ -22,17 +22,17 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'To') }} *</label>
 				<NcTextField
-					:value="form.to"
+					:model-value="form.to"
 					type="email"
 					:placeholder="t('procest', 'recipient@example.nl')"
-					@update:value="v => form.to = v" />
+					@update:model-value="v => form.to = v" />
 			</div>
 
 			<div class="form-group">
 				<label>{{ t('procest', 'Subject') }} *</label>
 				<NcTextField
-					:value="form.subject"
-					@update:value="v => form.subject = v" />
+					:model-value="form.subject"
+					@update:model-value="v => form.subject = v" />
 			</div>
 
 			<div class="form-group">

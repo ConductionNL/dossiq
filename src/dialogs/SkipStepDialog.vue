@@ -20,11 +20,11 @@
 			</NcNoteCard>
 
 			<NcTextArea v-else
-				:value="reason"
+				:model-value="reason"
 				:label="t('procest', 'Reden voor overslaan')"
 				:placeholder="t('procest', 'Geef een reden waarom deze stap wordt overgeslagen...')"
 				required
-				@update:value="v => reason = v" />
+				@update:model-value="v => reason = v" />
 
 			<NcNoteCard v-if="error" type="error">
 				{{ error }}

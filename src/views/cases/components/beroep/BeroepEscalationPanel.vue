@@ -18,8 +18,8 @@
 
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
-					:checked="voorzieningRequested"
-					@update:checked="v => voorzieningRequested = v">
+					:model-value="voorzieningRequested"
+					@update:model-value="v => voorzieningRequested = v">
 					{{ t('procest', 'Voorlopige voorziening (interim relief) requested') }}
 				</NcCheckboxRadioSwitch>
 			</div>

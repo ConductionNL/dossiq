@@ -92,6 +92,9 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 		const identifier = `${RUN_PREFIX}-DZP`
 		const parent = await seedCase(api, token, { title, caseType: caseTypeId, identifier, description: 'Parent of a sub-case.' })
 		const parentId = objectId(parent)
+		// procest assigns the zaaknummer itself and ignores the supplied identifier,
+		// so assert the ASSIGNED value the create returned, not the seed input.
+		const assignedIdentifier = String((parent as Record<string, unknown>).identifier ?? identifier)
 
 		await page.goto(`/apps/procest/cases/${parentId}`)
 		await page.waitForLoadState('networkidle').catch(() => {})
@@ -99,7 +102,7 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 
 		// The detail page (history-mode route /cases/:id) mounts + shows the case.
 		await expect(page).toHaveURL(new RegExp(`/cases/${parentId}`), { timeout: 10_000 })
-		await expect(page.getByText(identifier, { exact: false }).first()).toBeVisible({ timeout: 15_000 })
+		await expect(page.getByText(assignedIdentifier, { exact: false }).first()).toBeVisible({ timeout: 15_000 })
 		await expect(page.getByText(title, { exact: false }).first()).toBeVisible()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
@@ -190,6 +193,13 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 		await dismissSupportDialog(page)
 		await expect(page.getByText(`${RUN_PREFIX} Email parent`, { exact: false }).first())
 			.toBeVisible({ timeout: 15_000 })
+		// The object sidebar (NcAppSidebar) is collapsed by default on CaseDetail —
+		// a toolbar "Open sidebar" toggle reveals it. Open it before asserting the
+		// hosted tab strip mounts (it is not rendered while the aside is closed).
+		const openSidebar = page.getByRole('button', { name: 'Open sidebar' })
+		if (await openSidebar.isVisible().catch(() => false)) {
+			await openSidebar.click()
+		}
 		// The hosted object sidebar with the manifest tab strip must mount.
 		await expect(page.locator('aside.app-sidebar')).toBeVisible({ timeout: 15_000 })
 		const emailTab = page.locator('[data-testid="cn-object-sidebar-tab-email"]')

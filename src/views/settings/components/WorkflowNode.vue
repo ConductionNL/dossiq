@@ -40,8 +40,8 @@
 				class="workflow-node__actions"
 				:inline="0"
 				:aria-label="t('procest', 'Actions for status {name}', { name: status.name })"
-				@click.native.stop
-				@keydown.native.stop>
+				@click.stop
+				@keydown.stop>
 				<NcActionButton
 					v-for="target in connectableStatuses"
 					:key="'connect-' + target.id"

@@ -113,12 +113,12 @@ export default {
 				this.cases = Array.isArray(results) ? results : (results?.results || [])
 				this.meetingDate = this.cases[0]?.vergaderdatum || this.id
 				for (const c of this.cases) {
-					this.$set(this.forms, c.id, {
+					this.forms[c.id] = {
 						decisionType: '',
 						stemuitslag: '',
 						attendees: '',
 						explanation: '',
-					})
+					}
 				}
 			} catch (error) {
 				console.error('Failed to load vergadering cases:', error)

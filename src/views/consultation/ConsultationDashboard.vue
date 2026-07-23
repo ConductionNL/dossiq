@@ -21,10 +21,10 @@
 		<!-- Filter bar -->
 		<div class="consultation-dashboard__filters">
 			<NcTextField
-				:value="filters.search"
+				:model-value="filters.search"
 				:label="t('procest', 'Search')"
 				:placeholder="t('procest', 'Zoek op onderwerp, afdeling...')"
-				@update:value="v => filters.search = v" />
+				@update:model-value="v => filters.search = v" />
 
 			<NcSelect
 				v-model="filters.status"

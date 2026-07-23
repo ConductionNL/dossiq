@@ -4,9 +4,11 @@
 // Must stay first: sets __webpack_public_path__ before any dynamic import()
 // (map/Leaflet, manifest validator) triggers lazy-chunk loading.
 import './publicPath.js'
-import Vue, { markRaw } from 'vue'
-import VueRouter from 'vue-router'
-import { PiniaVuePlugin } from 'pinia'
+import { createApp, markRaw, h } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
+
+// @vue/compat REMOVED (ADR-066 task 6.1): lib + procest source are compat-
+// construct-free (v-model, no .sync/$set/filters/Vue.extend) — pure Vue 3.
 import { translate as t, translatePlural as n, loadTranslations } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import {
@@ -41,9 +43,8 @@ import './assets/app.css'
 // BUILT_IN_WIDGETS for the slot CnWidgetGrid path). The built-in reads the
 // detail object context the same way, so detail-page audit trails are unchanged.
 
-Vue.mixin({ methods: { t, n } })
-Vue.use(PiniaVuePlugin)
-Vue.use(VueRouter)
+// Vue 3 (ADR-066): global t/n now install via app.config.globalProperties
+// after createApp (below), not Vue.mixin. pinia + router install via app.use.
 
 // Register library-side icon set + lib translations once at bootstrap.
 registerIcons()
@@ -152,16 +153,16 @@ function routesFromManifest(manifest) {
 		props: page.route.includes(':'),
 	}))
 	// Catch-all redirect to dashboard, preserving prior router behaviour.
-	routes.push({ path: '*', redirect: '/' })
+	// vue-router 4 syntax: the bare '*' catch-all became a named param matcher.
+	routes.push({ path: '/:pathMatch(.*)*', redirect: '/' })
 	return routes
 }
 
 // Routes are built from the built manifest only. The backend delta merely adds
 // menu CHILDREN that point at the existing `Cases` route (via `query.caseType`);
 // it introduces no new pages, so the route table needs no reactive rebuild.
-const router = new VueRouter({
-	mode: 'history',
-	base: generateUrl('/apps/procest'),
+const router = createRouter({
+	history: createWebHistory(generateUrl('/apps/procest')),
 	routes: routesFromManifest(builtManifest),
 })
 
@@ -180,15 +181,12 @@ const registryProp = { ...registry }
 const mapFormattersProp = { ...mapFormatters }
 const formattersProp = { ...formatters }
 
-// Expose the map formatter registry as a Vue global so `CnMapPage`
-// (and any future map-type pages) can resolve named formatters from
-// `config.marker.formatter`. Mirrors the existing customComponents
-// resolution pattern — see customComponents.js for context.
-Vue.prototype.$mapFormatters = mapFormattersProp
-
-new Vue({
-	pinia,
-	router,
+const app = createApp({
+	// This root uses a native Vue-3 render() (h from 'vue'). @vue/compat would
+	// otherwise treat ANY `render` option as the deprecated Vue-2 RENDER_FUNCTION
+	// API and wrap it, which nulls `currentRenderingInstance` for the whole
+	// subtree — breaking renderSlot/resolveComponent in CnAppRoot (ADR-066).
+	compatConfig: { RENDER_FUNCTION: false },
 	// Expose the reactive manifest ref through setup() so the root render tracks
 	// it as a reactive dependency: when useAppManifest resolves the backend
 	// `/api/manifest` delta and reassigns `manifest.value`, the root re-renders
@@ -199,26 +197,36 @@ new Vue({
 	setup() {
 		return { resolvedManifest }
 	},
-	render(h) {
+	render() {
 		return h(App, {
-			props: {
-				// markRaw defensively: the initial value is already raw (see
-				// builtManifest above); if a future backend `/api/manifest`
-				// delta ever reassigns `resolvedManifest.value` to a fresh
-				// (non-raw) merged object, this keeps the render tree from
-				// paying the deep-reactivity walk on the merged result too.
-				// The ref reassignment itself (not deep property tracking)
-				// is what drives the case-type-nav re-render.
-				manifest: markRaw(this.resolvedManifest),
-				customComponents: customComponentsProp,
-				registry: registryProp,
-				pageTypes: pageTypesProp,
-				mapFormatters: mapFormattersProp,
-				formatters: formattersProp,
-			},
+			// markRaw defensively: the initial value is already raw (see
+			// builtManifest above); if a future backend `/api/manifest`
+			// delta ever reassigns `resolvedManifest.value` to a fresh
+			// (non-raw) merged object, this keeps the render tree from
+			// paying the deep-reactivity walk on the merged result too.
+			// The ref reassignment itself (not deep property tracking)
+			// is what drives the case-type-nav re-render.
+			// Vue 3: props pass FLAT (no `props:` wrapper in the data object).
+			manifest: markRaw(this.resolvedManifest),
+			customComponents: customComponentsProp,
+			registry: registryProp,
+			pageTypes: pageTypesProp,
+			mapFormatters: mapFormattersProp,
+			formatters: formattersProp,
 		})
 	},
-}).$mount('#content')
+})
+
+// Vue 3 global install contract (ADR-066 task 4.5): t/n and $mapFormatters move
+// from Vue.mixin / Vue.prototype to app.config.globalProperties. CnMapPage (and
+// future map-type pages) resolve named formatters from `config.marker.formatter`.
+app.config.globalProperties.t = t
+app.config.globalProperties.n = n
+app.config.globalProperties.$mapFormatters = mapFormattersProp
+
+app.use(pinia)
+app.use(router)
+app.mount('#content')
 
 // Register the mobiel-inspectie-offline Service Worker (PWA offline shell).
 // Fire-and-forget: registration failure must never block app boot, and the

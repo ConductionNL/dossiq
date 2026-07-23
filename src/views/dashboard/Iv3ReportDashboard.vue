@@ -13,14 +13,14 @@
 
 		<div class="iv3-report-dashboard__controls">
 			<NcTextField
-				:value="String(year)"
+				:model-value="String(year)"
 				:label="t('procest', 'Year')"
-				@update:value="v => year = Number(v) || year" />
+				@update:model-value="v => year = Number(v) || year" />
 			<NcSelect
-				:value="selectedQuarter"
+				:model-value="selectedQuarter"
 				:options="quarterOptions"
 				:input-label="t('procest', 'Quarter')"
-				@input="v => quarter = v ? v.id : quarter" />
+				@update:model-value="v => quarter = v ? v.id : quarter" />
 			<NcButton type="primary" :disabled="loading" @click="load">
 				<template v-if="loading" #icon>
 					<NcLoadingIcon :size="18" />

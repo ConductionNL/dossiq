@@ -36,12 +36,12 @@
 				required />
 
 			<NcTextField
-				:value.sync="titel"
+				v-model="titel"
 				:label="t('procest', 'Title')"
 				:placeholder="t('procest', 'Document title')" />
 
 			<NcTextArea
-				:value.sync="beschrijving"
+				v-model="beschrijving"
 				:label="t('procest', 'Description')"
 				:placeholder="t('procest', 'Optional description')" />
 

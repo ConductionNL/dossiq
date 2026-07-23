@@ -28,8 +28,8 @@
 						:key="ct.id"
 						class="sub-case-type-row">
 						<NcCheckboxRadioSwitch
-							:checked="selected.includes(ct.id)"
-							@update:checked="toggleSelection(ct.id, $event)">
+							:model-value="selected.includes(ct.id)"
+							@update:model-value="toggleSelection(ct.id, $event)">
 							<span class="sub-case-type-row__title">{{ ct.title || ct.identifier || ct.id }}</span>
 						</NcCheckboxRadioSwitch>
 						<span v-if="ct.identifier" class="sub-case-type-row__identifier">{{ ct.identifier }}</span>

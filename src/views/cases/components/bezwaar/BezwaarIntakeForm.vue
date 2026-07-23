@@ -6,11 +6,11 @@
 		<div class="form-group">
 			<label>{{ t('procest', 'Contested Decision (Bestreden Besluit)') }} *</label>
 			<NcTextField
-				:value="form.contestedDecision"
+				:model-value="form.contestedDecision"
 				:disabled="isReadOnly"
 				:placeholder="t('procest', 'UUID of the contested decision')"
 				:error="!!errors.contestedDecision"
-				@update:value="v => { form.contestedDecision = v; errors.contestedDecision = '' }" />
+				@update:model-value="v => { form.contestedDecision = v; errors.contestedDecision = '' }" />
 			<p v-if="errors.contestedDecision" class="form-error">
 				{{ errors.contestedDecision }}
 			</p>
@@ -44,11 +44,11 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Date Received') }} *</label>
 				<NcTextField
-					:value="form.receivedDate"
+					:model-value="form.receivedDate"
 					:disabled="isReadOnly"
 					type="date"
 					:error="!!errors.receivedDate"
-					@update:value="v => { form.receivedDate = v; errors.receivedDate = ''; checkTimeliness() }" />
+					@update:model-value="v => { form.receivedDate = v; errors.receivedDate = ''; checkTimeliness() }" />
 				<p v-if="errors.receivedDate" class="form-error">
 					{{ errors.receivedDate }}
 				</p>
@@ -92,9 +92,9 @@
 			<!-- Voorlopige Voorziening -->
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
-					:checked="form.proVoorziening"
+					:model-value="form.proVoorziening"
 					:disabled="isReadOnly"
-					@update:checked="v => form.proVoorziening = v">
+					@update:model-value="v => form.proVoorziening = v">
 					{{ t('procest', 'Interim relief (voorlopige voorziening) requested') }}
 				</NcCheckboxRadioSwitch>
 			</div>

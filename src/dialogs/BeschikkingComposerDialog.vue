@@ -17,14 +17,14 @@
 						:placeholder="t('procest', 'Selecteer een sjabloon')" />
 				</div>
 				<div class="beschikking-composer__field">
-					<NcTextField :value="geadresseerdeNaam"
+					<NcTextField :model-value="geadresseerdeNaam"
 						:label="t('procest', 'Geadresseerde')"
-						@update:value="v => geadresseerdeNaam = v" />
+						@update:model-value="v => geadresseerdeNaam = v" />
 				</div>
 				<div class="beschikking-composer__field">
-					<NcTextArea :value="motivering"
+					<NcTextArea :model-value="motivering"
 						:label="t('procest', 'Motivering')"
-						@update:value="v => motivering = v" />
+						@update:model-value="v => motivering = v" />
 				</div>
 				<NcNoteCard v-if="error" type="error">
 					{{ error }}

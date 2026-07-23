@@ -8,10 +8,10 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Requester name') }} *</label>
 				<NcTextField
-					:value="form.verzoekerNaam"
+					:model-value="form.verzoekerNaam"
 					:disabled="isReadOnly"
 					:error="!!errors.verzoekerNaam"
-					@update:value="v => update('verzoekerNaam', v)" />
+					@update:model-value="v => update('verzoekerNaam', v)" />
 				<p v-if="errors.verzoekerNaam" class="form-error">
 					{{ errors.verzoekerNaam }}
 				</p>
@@ -19,11 +19,11 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Requester email') }} *</label>
 				<NcTextField
-					:value="form.verzoekerEmail"
+					:model-value="form.verzoekerEmail"
 					:disabled="isReadOnly"
 					:error="!!errors.verzoekerEmail"
 					type="email"
-					@update:value="v => update('verzoekerEmail', v)" />
+					@update:model-value="v => update('verzoekerEmail', v)" />
 				<p v-if="errors.verzoekerEmail" class="form-error">
 					{{ errors.verzoekerEmail }}
 				</p>
@@ -34,31 +34,31 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Requester type') }}</label>
 				<NcSelect
-					:value="form.verzoekerType"
+					:model-value="form.verzoekerType"
 					:options="requesterTypes"
 					:aria-label-combobox="t('procest', 'Requester type')"
 					:disabled="isReadOnly"
-					@input="v => update('verzoekerType', v)" />
+					@update:model-value="v => update('verzoekerType', v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Desired format') }}</label>
 				<NcSelect
-					:value="form.gewensteVorm"
+					:model-value="form.gewensteVorm"
 					:options="formatOptions"
 					:aria-label-combobox="t('procest', 'Desired format')"
 					:disabled="isReadOnly"
-					@input="v => update('gewensteVorm', v)" />
+					@update:model-value="v => update('gewensteVorm', v)" />
 			</div>
 		</div>
 
 		<div class="form-group">
 			<label>{{ t('procest', 'Subject') }} *</label>
 			<NcTextField
-				:value="form.onderwerp"
+				:model-value="form.onderwerp"
 				:disabled="isReadOnly"
 				:error="!!errors.onderwerp"
 				:placeholder="t('procest', 'Topic of the information request')"
-				@update:value="v => update('onderwerp', v)" />
+				@update:model-value="v => update('onderwerp', v)" />
 			<p v-if="errors.onderwerp" class="form-error">
 				{{ errors.onderwerp }}
 			</p>
@@ -67,39 +67,39 @@
 		<div class="form-group">
 			<label>{{ t('procest', 'Administrative matter') }}</label>
 			<NcTextField
-				:value="form.bestuurlijkeAangelegenheid"
+				:model-value="form.bestuurlijkeAangelegenheid"
 				:disabled="isReadOnly"
 				:placeholder="t('procest', 'Related administrative matter')"
-				@update:value="v => update('bestuurlijkeAangelegenheid', v)" />
+				@update:model-value="v => update('bestuurlijkeAangelegenheid', v)" />
 		</div>
 
 		<div class="form-row">
 			<div class="form-group">
 				<label>{{ t('procest', 'Period from') }}</label>
 				<NcTextField
-					:value="form.periodeVan"
+					:model-value="form.periodeVan"
 					:disabled="isReadOnly"
 					type="date"
-					@update:value="v => update('periodeVan', v)" />
+					@update:model-value="v => update('periodeVan', v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Period to') }}</label>
 				<NcTextField
-					:value="form.periodeTot"
+					:model-value="form.periodeTot"
 					:disabled="isReadOnly"
 					type="date"
-					@update:value="v => update('periodeTot', v)" />
+					@update:model-value="v => update('periodeTot', v)" />
 			</div>
 		</div>
 
 		<div class="form-group">
 			<label>{{ t('procest', 'Receipt date') }} *</label>
 			<NcTextField
-				:value="form.ontvangstdatum"
+				:model-value="form.ontvangstdatum"
 				:disabled="isReadOnly"
 				:error="!!errors.ontvangstdatum"
 				type="date"
-				@update:value="v => update('ontvangstdatum', v)" />
+				@update:model-value="v => update('ontvangstdatum', v)" />
 			<p v-if="errors.ontvangstdatum" class="form-error">
 				{{ errors.ontvangstdatum }}
 			</p>

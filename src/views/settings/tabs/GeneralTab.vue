@@ -4,10 +4,10 @@
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Title') }}</label>
 			<NcTextField
-				:value="form.title"
+				:model-value="form.title"
 				:error="!!errors.title"
 				:helper-text="errors.title"
-				@update:value="v => $emit('update', 'title', v)" />
+				@update:model-value="v => $emit('update', 'title', v)" />
 		</div>
 
 		<!-- Description -->
@@ -23,56 +23,56 @@
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Purpose') }}</label>
 			<NcTextField
-				:value="form.purpose"
+				:model-value="form.purpose"
 				:error="!!errors.purpose"
 				:helper-text="errors.purpose"
-				@update:value="v => $emit('update', 'purpose', v)" />
+				@update:model-value="v => $emit('update', 'purpose', v)" />
 		</div>
 
 		<!-- Trigger -->
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Trigger') }}</label>
 			<NcTextField
-				:value="form.trigger"
+				:model-value="form.trigger"
 				:error="!!errors.trigger"
 				:helper-text="errors.trigger"
-				@update:value="v => $emit('update', 'trigger', v)" />
+				@update:model-value="v => $emit('update', 'trigger', v)" />
 		</div>
 
 		<!-- Subject -->
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Subject') }}</label>
 			<NcTextField
-				:value="form.subject"
+				:model-value="form.subject"
 				:error="!!errors.subject"
 				:helper-text="errors.subject"
-				@update:value="v => $emit('update', 'subject', v)" />
+				@update:model-value="v => $emit('update', 'subject', v)" />
 		</div>
 
 		<!-- Initiator Action -->
 		<div class="form-group">
 			<label>{{ t('procest', 'Initiator action') }}</label>
 			<NcTextField
-				:value="form.initiatorAction"
-				@update:value="v => $emit('update', 'initiatorAction', v)" />
+				:model-value="form.initiatorAction"
+				@update:model-value="v => $emit('update', 'initiatorAction', v)" />
 		</div>
 
 		<!-- Handler Action -->
 		<div class="form-group">
 			<label>{{ t('procest', 'Handler action') }}</label>
 			<NcTextField
-				:value="form.handlerAction"
-				@update:value="v => $emit('update', 'handlerAction', v)" />
+				:model-value="form.handlerAction"
+				@update:model-value="v => $emit('update', 'handlerAction', v)" />
 		</div>
 
 		<!-- Origin -->
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Origin') }}</label>
 			<NcSelect
-				:value="selectedOrigin"
+				:model-value="selectedOrigin"
 				:options="originOptions"
 				:aria-label-combobox="t('procest', 'Origin')"
-				@input="v => $emit('update', 'origin', v ? v.id : '')" />
+				@update:model-value="v => $emit('update', 'origin', v ? v.id : '')" />
 			<span v-if="errors.origin" class="field-error">{{ errors.origin }}</span>
 		</div>
 
@@ -99,8 +99,8 @@
 		<!-- Extension Allowed -->
 		<div class="form-group form-group--inline">
 			<NcCheckboxRadioSwitch
-				:checked="form.extensionAllowed"
-				@update:checked="v => $emit('update', 'extensionAllowed', v)">
+				:model-value="form.extensionAllowed"
+				@update:model-value="v => $emit('update', 'extensionAllowed', v)">
 				{{ t('procest', 'Extension allowed') }}
 			</NcCheckboxRadioSwitch>
 		</div>
@@ -119,10 +119,10 @@
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Confidentiality') }}</label>
 			<NcSelect
-				:value="selectedConfidentiality"
+				:model-value="selectedConfidentiality"
 				:options="confidentialityOptions"
 				:aria-label-combobox="t('procest', 'Confidentiality')"
-				@input="v => $emit('update', 'confidentiality', v ? v.id : '')" />
+				@update:model-value="v => $emit('update', 'confidentiality', v ? v.id : '')" />
 			<span v-if="errors.confidentiality" class="field-error">{{ errors.confidentiality }}</span>
 		</div>
 
@@ -130,12 +130,12 @@
 		<div class="form-group">
 			<label>{{ t('procest', 'IV3 taakveld') }}</label>
 			<NcSelect
-				:value="selectedIv3Taakveld"
+				:model-value="selectedIv3Taakveld"
 				:options="iv3TaakveldOptions"
 				:loading="iv3TaakveldenLoading"
 				:placeholder="t('procest', 'No IV3 classification')"
 				:aria-label-combobox="t('procest', 'IV3 taakveld')"
-				@input="v => $emit('update', 'iv3Taakveld', v ? v.id : '')" />
+				@update:model-value="v => $emit('update', 'iv3Taakveld', v ? v.id : '')" />
 			<p class="general-tab__hint">
 				{{ t('procest', 'Classifies cases of this type for the quarterly IV3 (Informatie voor Derden) cost report to CBS. Leave empty if this case type has no taakveld — such cases are reported as uncategorized.') }}
 			</p>
@@ -144,8 +144,8 @@
 		<!-- Publication Required -->
 		<div class="form-group form-group--inline">
 			<NcCheckboxRadioSwitch
-				:checked="form.publicationRequired"
-				@update:checked="v => $emit('update', 'publicationRequired', v)">
+				:model-value="form.publicationRequired"
+				@update:model-value="v => $emit('update', 'publicationRequired', v)">
 				{{ t('procest', 'Publication required') }}
 			</NcCheckboxRadioSwitch>
 		</div>
@@ -163,27 +163,27 @@
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Responsible unit') }}</label>
 			<NcTextField
-				:value="form.responsibleUnit"
+				:model-value="form.responsibleUnit"
 				:error="!!errors.responsibleUnit"
 				:helper-text="errors.responsibleUnit"
-				@update:value="v => $emit('update', 'responsibleUnit', v)" />
+				@update:model-value="v => $emit('update', 'responsibleUnit', v)" />
 		</div>
 
 		<!-- Reference Process -->
 		<div class="form-group">
 			<label>{{ t('procest', 'Reference process') }}</label>
 			<NcTextField
-				:value="form.referenceProcess"
-				@update:value="v => $emit('update', 'referenceProcess', v)" />
+				:model-value="form.referenceProcess"
+				@update:model-value="v => $emit('update', 'referenceProcess', v)" />
 		</div>
 
 		<!-- Keywords -->
 		<div class="form-group">
 			<label>{{ t('procest', 'Keywords') }}</label>
 			<NcTextField
-				:value="form.keywords"
+				:model-value="form.keywords"
 				:placeholder="t('procest', 'Comma-separated keywords')"
-				@update:value="v => $emit('update', 'keywords', v)" />
+				@update:model-value="v => $emit('update', 'keywords', v)" />
 		</div>
 
 		<!-- Valid From -->

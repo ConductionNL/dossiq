@@ -1,7 +1,7 @@
 <template>
 	<div class="address-search">
 		<NcTextField
-			:value="query"
+			:model-value="query"
 			:label="t('procest', 'Search address...')"
 			:placeholder="t('procest', 'Street, postcode, or city')"
 			trailing-button-icon="close"

@@ -48,7 +48,7 @@
 
 <script>
 import { NcLoadingIcon } from '@nextcloud/vue'
-import { t } from '@nextcloud/l10n'
+import { translate as t } from '@nextcloud/l10n'
 import CmmnPlanItemNode from './CmmnPlanItemNode.vue'
 import { fetchCasePlan, enableDiscretionaryItem, completeTask, terminateTask } from '../../../services/cmmnApi.js'
 import { buildPlanTree } from '../../../utils/cmmnHelpers.js'

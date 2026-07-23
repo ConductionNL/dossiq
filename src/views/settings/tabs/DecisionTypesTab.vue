@@ -47,42 +47,42 @@
 							<div class="sub-entity-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.name"
+										:model-value="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:value="v => editForm.name = v" />
+										@update:model-value="v => editForm.name = v" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.description"
+										:model-value="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field edit-field--full"
-										@update:value="v => editForm.description = v" />
+										@update:model-value="v => editForm.description = v" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:value="editForm.validFrom"
+										:model-value="editForm.validFrom"
 										:label="t('procest', 'Valid from')"
 										type="date"
 										class="edit-field"
-										@update:value="v => editForm.validFrom = v" />
+										@update:model-value="v => editForm.validFrom = v" />
 									<NcTextField
-										:value="editForm.validUntil"
+										:model-value="editForm.validUntil"
 										:label="t('procest', 'Valid until')"
 										type="date"
 										class="edit-field"
-										@update:value="v => editForm.validUntil = v" />
+										@update:model-value="v => editForm.validUntil = v" />
 								</div>
 								<div class="edit-row">
 									<NcCheckboxRadioSwitch
-										:checked="editForm.isDraft"
-										@update:checked="v => editForm.isDraft = v">
+										:model-value="editForm.isDraft"
+										@update:model-value="v => editForm.isDraft = v">
 										{{ t('procest', 'Draft') }}
 									</NcCheckboxRadioSwitch>
 									<NcCheckboxRadioSwitch
-										:checked="editForm.publicationRequired"
-										@update:checked="v => editForm.publicationRequired = v">
+										:model-value="editForm.publicationRequired"
+										@update:model-value="v => editForm.publicationRequired = v">
 										{{ t('procest', 'Publication required') }}
 									</NcCheckboxRadioSwitch>
 								</div>

@@ -10,30 +10,30 @@
 			class="parafeer-stap-editor__row">
 			<span class="parafeer-stap-editor__order">{{ idx + 1 }}</span>
 			<NcSelect
-				:value="step.type"
+				:model-value="step.type"
 				:options="stepTypeOptions"
 				:input-label="t('procest', 'Type')"
 				:placeholder="t('procest', 'Type')"
 				class="parafeer-stap-editor__type"
-				@input="v => updateStep(idx, 'type', v)" />
+				@update:model-value="v => updateStep(idx, 'type', v)" />
 			<NcSelect
-				:value="step.actorType"
+				:model-value="step.actorType"
 				:options="actorTypeOptions"
 				:input-label="t('procest', 'Actor type')"
 				:placeholder="t('procest', 'Actor type')"
 				class="parafeer-stap-editor__actor-type"
-				@input="v => updateStep(idx, 'actorType', v)" />
+				@update:model-value="v => updateStep(idx, 'actorType', v)" />
 			<NcTextField
-				:value="step.actor"
+				:model-value="step.actor"
 				:placeholder="t('procest', 'Actor (UID, groep of rol)')"
 				:label="t('procest', 'Actor')"
 				:label-visible="false"
 				class="parafeer-stap-editor__actor"
-				@update:value="v => updateStep(idx, 'actor', v)" />
+				@update:model-value="v => updateStep(idx, 'actor', v)" />
 			<NcCheckboxRadioSwitch
-				:checked="step.mandatory"
+				:model-value="step.mandatory"
 				class="parafeer-stap-editor__mandatory"
-				@update:checked="v => updateStep(idx, 'mandatory', v)">
+				@update:model-value="v => updateStep(idx, 'mandatory', v)">
 				{{ t('procest', 'Verplicht') }}
 			</NcCheckboxRadioSwitch>
 			<div class="parafeer-stap-editor__actions">

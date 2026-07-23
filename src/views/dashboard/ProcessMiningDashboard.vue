@@ -40,11 +40,11 @@
 						{{ preset.label }}
 					</NcActionButton>
 				</NcActions>
-				<NcSelect :value="caseTypeFilter"
+				<NcSelect :model-value="caseTypeFilter"
 					:options="caseTypeOptions"
 					:input-label="t('procest', 'Filter by case type')"
 					:placeholder="t('procest', 'All case types')"
-					@input="onCaseTypeChange" />
+					@update:model-value="onCaseTypeChange" />
 				<NcButton type="secondary" @click="load">
 					<template #icon>
 						<Refresh :size="18" />
