@@ -2,6 +2,12 @@
 
 All notable changes to Procest are documented in this file.
 
+## [0.3.4] - 2026-07-25
+
+### Changed
+
+- `i18n(schema)`: re-authored 46 Dutch `title` values in `lib/Settings/procest_register.json` (register `0.13.0` → `0.13.1`) to English across the `complaint`/`complaintDisposition`/`hearing` (Awb chapter 9 klacht flow), `bezwaar`/`beroep`/`bacAdviceRequest` (objection/appeal flow), `voorstel`/`parafeerroute`/`parafeeractie`/`paraferingAuditEntry` (B&W sign-off flow), and `caseType`/`documentType`/`decisionType`/`case`/`location` schemas — property titles are now the canonical English source for manifest-driven UI labels, translated back to Dutch via l10n (`Category`/`Handler`/`Participants` already had l10n entries; 39 new EN/NL key pairs added to `l10n/en.json`, `l10n/nl.json`, `l10n/en.js`, `l10n/nl.js`). Property keys, enum values, and descriptions are unchanged — this is a labels-only change.
+
 ## [0.2.39] - 2026-07-06
 
 ### Added
