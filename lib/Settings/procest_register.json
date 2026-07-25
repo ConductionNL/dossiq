@@ -3,7 +3,7 @@
     "info": {
         "title": "Procest Case Management Register",
         "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-        "version": "0.13.0"
+        "version": "0.13.1"
     },
     "x-openregister": {
         "type": "application",
@@ -50,7 +50,7 @@
                         "format": "uuid",
                         "$ref": "catalogus",
                         "description": "Reference to the parent catalogus",
-                        "title": "Catalogus"
+                        "title": "Catalog"
                     },
                     "purpose": {
                         "type": "string",
@@ -242,7 +242,7 @@
                     "iv3Taakveld": {
                         "type": "string",
                         "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
-                        "title": "IV3 taakveld"
+                        "title": "IV3 Task Field"
                     }
                 }
             },
@@ -497,7 +497,7 @@
                         "format": "uuid",
                         "$ref": "catalogus",
                         "description": "Reference to the parent catalogus",
-                        "title": "Catalogus"
+                        "title": "Catalog"
                     },
                     "caseType": {
                         "type": "string",
@@ -588,7 +588,7 @@
                         "format": "uuid",
                         "$ref": "catalogus",
                         "description": "Reference to the parent catalogus",
-                        "title": "Catalogus"
+                        "title": "Catalog"
                     },
                     "caseType": {
                         "type": "string",
@@ -1281,7 +1281,7 @@
                         "format": "uuid",
                         "description": "Reference to the DSO vergunningaanvraag object in OpenRegister",
                         "visible": false,
-                        "title": "Vergunningaanvraag Reference"
+                        "title": "Permit Application Reference"
                     },
                     "procedureType": {
                         "type": "string",
@@ -1297,12 +1297,12 @@
                         "type": "string",
                         "format": "date",
                         "description": "Computed legal deadline (indieningsdatum + procedure working days)",
-                        "title": "Deadline datum"
+                        "title": "Deadline Date"
                     },
                     "bevoegdGezag": {
                         "type": "string",
                         "description": "OIN or organization name of the competent authority",
-                        "title": "Bevoegd gezag",
+                        "title": "Competent Authority",
                         "facetable": true
                     },
                     "samenwerkverzoeken": {
@@ -2709,7 +2709,7 @@
                     "steller": {
                         "type": "string",
                         "description": "Nextcloud user UID who created the voorstel",
-                        "title": "Steller",
+                        "title": "Drafter",
                         "facetable": true
                     },
                     "afdeling": {
@@ -2745,7 +2745,7 @@
                         "$ref": "parafeerroute",
                         "x-relation-filter": {"voorstelType": "@object.type"},
                         "description": "Reference to the parafeerroute being used",
-                        "title": "Parafeerroute"
+                        "title": "Sign-off Route"
                     },
                     "routeSnapshot": {
                         "type": "string",
@@ -2908,7 +2908,7 @@
                             "raadsvoorstel"
                         ],
                         "description": "Voorstel type this route applies to",
-                        "title": "Voorstel Type"
+                        "title": "Proposal Type"
                     },
                     "steps": {
                         "type": "array",
@@ -2995,7 +2995,7 @@
                         "$ref": "voorstel",
                         "onDelete": "CASCADE",
                         "description": "Reference to the voorstel",
-                        "title": "Voorstel"
+                        "title": "Proposal"
                     },
                     "step": {
                         "type": "integer",
@@ -3164,7 +3164,7 @@
                         "$ref": "voorstel",
                         "onDelete": "CASCADE",
                         "description": "Reference to the voorstel that this transition occurred on",
-                        "title": "Voorstel"
+                        "title": "Proposal"
                     },
                     "step": {
                         "type": "string",
@@ -4078,7 +4078,7 @@
                         "$ref": "bezwaar",
                         "onDelete": "CASCADE",
                         "description": "The bezwaar case this decision belongs to",
-                        "title": "Bezwaar"
+                        "title": "Objection"
                     },
                     "dispositionType": {
                         "type": "string",
@@ -4306,7 +4306,7 @@
                         "format": "uuid",
                         "$ref": "bezwaar",
                         "description": "The bezwaar lifecycle record that escalated to beroep — immutable after appellantFilingDate is set",
-                        "title": "Source Bezwaar"
+                        "title": "Source Objection"
                     },
                     "contestedDecision": {
                         "type": "string",
@@ -4444,7 +4444,7 @@
                         "format": "uuid",
                         "$ref": "case",
                         "description": "The reopened bezwaar case created by cascadeAction = reopen_bezwaar",
-                        "title": "Cascade Bezwaar Case"
+                        "title": "Cascade Objection Case"
                     }
                 },
                 "searchable": true
@@ -4698,7 +4698,7 @@
                         "type": "string",
                         "maxLength": 32,
                         "description": "BAG nummeraanduiding identifier (16-digit) — MUST be present when source = bag",
-                        "title": "Nummeraanduiding ID"
+                        "title": "Address Designation ID"
                     },
                     "parcelId": {
                         "type": "string",
@@ -7166,7 +7166,7 @@
                         "$ref": "bezwaar",
                         "onDelete": "CASCADE",
                         "description": "The bezwaar (lifecycle record) being reviewed; the wrapped procest case is resolved via bezwaar.case",
-                        "title": "Bezwaar"
+                        "title": "Objection"
                     },
                     "commissie": {
                         "type": "string",
@@ -7331,7 +7331,7 @@
                         "type": "string",
                         "description": "Auto-generated complaint number in format KL-{year}-{sequence}, e.g. KL-2026-0042",
                         "readOnly": true,
-                        "title": "Klachtnummer"
+                        "title": "Complaint Number"
                     },
                     "klager": {
                         "type": "object",
@@ -7351,15 +7351,15 @@
                             "telefoon": {
                                 "type": "string",
                                 "description": "Phone number",
-                                "title": "Telefoon"
+                                "title": "Phone Number"
                             },
                             "bsn": {
                                 "type": "string",
                                 "description": "BSN (if known; access-controlled)",
-                                "title": "Bsn"
+                                "title": "BSN"
                             }
                         },
-                        "title": "Klager"
+                        "title": "Complainant"
                     },
                     "onderwerp": {
                         "type": "string",
@@ -7390,24 +7390,24 @@
                             "socialmedia"
                         ],
                         "description": "Intake channel through which the complaint was received",
-                        "title": "Ontvangstkanaal"
+                        "title": "Intake Channel"
                     },
                     "categorie": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "complaintCategory",
                         "description": "Reference to the complaint category",
-                        "title": "Categorie"
+                        "title": "Category"
                     },
                     "betrokkenMedewerker": {
                         "type": "string",
                         "description": "Optional reference to the employee the complaint concerns (NC user ID)",
-                        "title": "Betrokken Medewerker"
+                        "title": "Employee Concerned"
                     },
                     "betrokkenAfdeling": {
                         "type": "string",
                         "description": "Optional reference to the department concerned",
-                        "title": "Betrokken Afdeling"
+                        "title": "Department Concerned"
                     },
                     "status": {
                         "type": "string",
@@ -7428,7 +7428,7 @@
                     "behandelaar": {
                         "type": "string",
                         "description": "Assigned complaint handler (NC user ID)",
-                        "title": "Behandelaar"
+                        "title": "Handler"
                     },
                     "prioriteit": {
                         "type": "string",
@@ -7446,31 +7446,31 @@
                         "type": "string",
                         "format": "date",
                         "description": "Awb deadline for acknowledgment (5 working days after receipt)",
-                        "title": "Ontvangstbevestiging Deadline"
+                        "title": "Acknowledgement Deadline"
                     },
                     "afhandelDeadline": {
                         "type": "string",
                         "format": "date",
                         "description": "Awb deadline for resolution (6 weeks after receipt)",
-                        "title": "Afhandel Deadline"
+                        "title": "Handling Deadline"
                     },
                     "verdagingMogelijk": {
                         "type": "boolean",
                         "default": true,
                         "description": "Whether a 4-week extension is still available (Awb; only one extension allowed)",
-                        "title": "Verdaging Mogelijk"
+                        "title": "Extension Possible"
                     },
                     "verdagingJustificatie": {
                         "type": "string",
                         "description": "Written justification for the deadline extension when requested",
-                        "title": "Verdaging Justificatie"
+                        "title": "Extension Justification"
                     },
                     "geescaleerdeZaak": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "case",
                         "description": "Reference to the formal case created when this complaint was escalated",
-                        "title": "Geescaleerde Zaak"
+                        "title": "Escalated Case"
                     },
                     "hoorgespreksWaiver": {
                         "type": "object",
@@ -7489,16 +7489,16 @@
                                     "brief",
                                     "telefoon"
                                 ],
-                                "title": "Methode",
+                                "title": "Method",
                                 "description": "Method by which the waiver was communicated (schriftelijk, mondeling, email)"
                             },
                             "bevestiging": {
                                 "type": "string",
-                                "title": "Bevestiging",
+                                "title": "Confirmation",
                                 "description": "Reference to the waiver confirmation document"
                             }
                         },
-                        "title": "Hoorgespreks Waiver"
+                        "title": "Hearing Waiver"
                     }
                 },
                 "x-openregister-lifecycle": {
@@ -7589,7 +7589,7 @@
                         "items": {
                             "type": "string"
                         },
-                        "title": "Deelnemers"
+                        "title": "Participants"
                     },
                     "aanwezigen": {
                         "type": "array",
@@ -7597,23 +7597,23 @@
                         "items": {
                             "type": "string"
                         },
-                        "title": "Aanwezigen"
+                        "title": "Attendees"
                     },
                     "verslag": {
                         "type": "string",
                         "description": "Summary of the hearing (mandatory after completion)",
-                        "title": "Verslag"
+                        "title": "Minutes"
                     },
                     "conclusie": {
                         "type": "string",
                         "description": "Preliminary conclusion from the hearing",
-                        "title": "Conclusie"
+                        "title": "Conclusion"
                     },
                     "datumAfgerond": {
                         "type": "string",
                         "format": "date",
                         "description": "Actual date the hearing took place",
-                        "title": "Datum Afgerond"
+                        "title": "Completion Date"
                     },
                     "talkRoomUrl": {
                         "type": "string",
@@ -7658,7 +7658,7 @@
                             "niet_ontvankelijk"
                         ],
                         "description": "Judgment on the complaint",
-                        "title": "Oordeel"
+                        "title": "Verdict"
                     },
                     "toelichting": {
                         "type": "string",
@@ -7678,28 +7678,28 @@
                                 },
                                 "verantwoordelijke": {
                                     "type": "string",
-                                    "title": "Verantwoordelijke",
+                                    "title": "Responsible Party",
                                     "description": "Person or department responsible for implementing this measure"
                                 }
                             }
                         },
-                        "title": "Maatregelen"
+                        "title": "Measures"
                     },
                     "afsluitdatum": {
                         "type": "string",
                         "format": "date",
                         "description": "Date of closure",
-                        "title": "Afsluitdatum"
+                        "title": "Closing Date"
                     },
                     "afsluitbrief": {
                         "type": "string",
                         "description": "Reference to the formal response letter document",
-                        "title": "Afsluitbrief"
+                        "title": "Closing Letter"
                     },
                     "goedkeurder": {
                         "type": "string",
                         "description": "Optional coordinator who approved this disposition (NC user ID)",
-                        "title": "Goedkeurder"
+                        "title": "Approver"
                     },
                     "goedkeuringStatus": {
                         "type": "string",
@@ -7709,7 +7709,7 @@
                             "afgekeurd"
                         ],
                         "description": "Approval workflow status when coordinator approval is required",
-                        "title": "Goedkeuring Status"
+                        "title": "Approval Status"
                     }
                 }
             },
