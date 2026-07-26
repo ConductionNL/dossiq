@@ -774,6 +774,12 @@ OC.L10N.register(
     "Closing Letter" : "Closing Letter",
     "Approver" : "Approver",
     "Approval Status" : "Approval Status",
-    "Address Designation ID" : "Address Designation ID"
+    "Address Designation ID" : "Address Designation ID",
+    "Endorsement Route" : "Endorsement Route",
+    "Endorsement Action" : "Endorsement Action",
+    "Endorsement Audit Entry" : "Endorsement Audit Entry",
+    "Objection Decision" : "Objection Decision",
+    "Appeal" : "Appeal",
+    "Objection Advisory Committee" : "Objection Advisory Committee"
 },
 "nplurals=2; plural=(n != 1);");
