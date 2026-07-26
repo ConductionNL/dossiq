@@ -17,11 +17,14 @@
             "caseType": {
                 "slug": "caseType",
                 "icon": "BriefcaseVariantOutline",
-                "version": "1.2.0",
+                "version": "1.3.0",
                 "x-schema-org": "schema:Project",
                 "x-zgw-equivalent": "ZaakType",
                 "title": "Case Type",
                 "description": "Case type definition — defines the blueprint for a category of cases including lifecycle, deadlines, and classification",
+                "configuration": {
+                    "x-openregister-shareable": true
+                },
                 "type": "object",
                 "required": [
                     "title"
