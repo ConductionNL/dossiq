@@ -3,7 +3,7 @@
     "info": {
         "title": "Procest Case Management Register",
         "description": "Register containing all schemas for the Procest case management application. Defines case types, status types, role types, result types, decision types, document types, property definitions, voorstel, parafeerroute, parafeeractie, automaticAction, and their instance counterparts.",
-        "version": "0.13.1"
+        "version": "0.13.2"
     },
     "x-openregister": {
         "type": "application",
@@ -2265,7 +2265,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:DataCatalog",
                 "x-zgw-equivalent": "Catalogus",
-                "title": "Catalogus",
+                "title": "Catalog",
                 "description": "A catalogus groups case types, decision types, and document types",
                 "type": "object",
                 "required": [
@@ -2670,7 +2670,7 @@
                 "icon": "FileDocumentEditOutline",
                 "version": "1.1.0",
                 "x-schema-org": "schema:CreativeWork",
-                "title": "Voorstel",
+                "title": "Proposal",
                 "description": "A B&W voorstel (proposal) for decision-making in a case",
                 "type": "object",
                 "required": [
@@ -2878,7 +2878,7 @@
                 "deprecated": true,
                 "deprecatedSince": "2026-06-14",
                 "x-schema-org": "schema:HowTo",
-                "title": "Parafeerroute",
+                "title": "Endorsement Route",
                 "description": "DEPRECATED (migrate-parafering-to-or-approval-workflow): parafering chain-state is now backed by OpenRegister's approval-workflow (ApprovalChain/ApprovalStep) per ADR-022. Existing rows remain readable until sunset; no new rows are written. A configurable endorsement route defining the sequence of parafering steps for a voorstel.",
                 "type": "object",
                 "required": [
@@ -2979,7 +2979,7 @@
                 "icon": "CheckDecagram",
                 "version": "1.0.0",
                 "x-schema-org": "schema:Action",
-                "title": "Parafeeractie",
+                "title": "Endorsement Action",
                 "description": "An immutable record of a parafering action on a voorstel step",
                 "type": "object",
                 "required": [
@@ -3145,7 +3145,7 @@
                 "deprecated": true,
                 "deprecationNote": "Superseded by OR audit trail via migrate-parafering-to-or-audit (ADR-022, consume-or-audit-trail-fleet-wide). New parafering transitions are recorded through OR's hash-chained audit trail (procest.parafering.* actions, discoverable via GET /api/audit-trails?objectUuid={voorstelId}). No new writes after migration. Sunset: one major procest release after spec acceptance; existing rows remain readable until then.",
                 "x-schema-org": "schema:Action",
-                "title": "Parafering audit entry",
+                "title": "Endorsement Audit Entry",
                 "description": "DEPRECATED (migrate-parafering-to-or-audit): historical append-only audit entries for parafeerroute transitions. New transitions are recorded via OR's native audit trail instead of this schema. Existing rows remain readable for one major release. Originally: regulator-grade entry per transition (started, paraferd, advised, terugsturen, route-changed, completed) with actor, role, timestamp, reason, content snapshot, redacted IP, and SHA-256 tamper-detection hash.",
                 "type": "object",
                 "required": [
@@ -3307,7 +3307,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:LegalCase",
                 "x-zgw-equivalent": "Bezwaarzaak",
-                "title": "Bezwaar",
+                "title": "Objection",
                 "description": "Bezwaar lifecycle entity — captures the AWB objection case state, statutory deadlines, hearing waiver, and dwangsom accrual. Status transitions flow through the status-transition-engine; deadlines are computed declaratively via x-openregister-calculations (ADR-022). NO bespoke deadline service.",
                 "type": "object",
                 "required": [
@@ -4062,7 +4062,7 @@
                 "version": "1.0.0",
                 "x-schema-org": "schema:Action",
                 "x-zgw-equivalent": "BeslissingOpBezwaar",
-                "title": "Bezwaar Decision",
+                "title": "Objection Decision",
                 "description": "Beslissing op bezwaar — canonical decision entity per Awb art. 7:11/7:12 with the 5-value disposition enum, structured rechtsmiddelenclausule, proceskostenvergoeding, and publication flow",
                 "type": "object",
                 "required": [
@@ -4283,7 +4283,7 @@
                 "icon": "ScaleBalance",
                 "version": "1.0.0",
                 "x-schema-org": "schema:LegalAction",
-                "title": "Beroep",
+                "title": "Appeal",
                 "description": "Beroep escalation envelope — the municipality's tracking record around a citizen's appeal of a beslissing op bezwaar at the administrative court (rechtbank, Awb hoofdstuk 8). Procest does NOT run the court process; this schema captures filing window, court reference, chamber, file-inspection requests (Awb 8:42), judgment outcome, and cascade back into the bezwaar workflow. Immutability after appellantFilingDate is enforced by BeroepService; OpenRegister provides the per-save audit trail.",
                 "type": "object",
                 "required": [
@@ -7022,7 +7022,7 @@
                 "icon": "AccountGroupOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:GovernmentOrganization",
-                "title": "Bezwaaradviescommissie",
+                "title": "Objection Advisory Committee",
                 "description": "Independent advisory committee (BAC, VKK or VTH) that reviews objections under Awb Art. 7:13 and issues a written advice to the council. Long-lived configuration entity owned by the council; member independence is enforced per case at advice-request assignment.",
                 "type": "object",
                 "required": [

@@ -2432,7 +2432,13 @@ OC.L10N.register(
         "Closing Letter": "Afsluitbrief",
         "Approver": "Goedkeurder",
         "Approval Status": "Goedkeuringsstatus",
-        "Address Designation ID": "Nummeraanduiding-ID"
+        "Address Designation ID": "Nummeraanduiding-ID",
+        "Endorsement Route": "Parafeerroute",
+        "Endorsement Action": "Parafeeractie",
+        "Endorsement Audit Entry": "Parafering-auditvermelding",
+        "Objection Decision": "Beslissing op bezwaar",
+        "Appeal": "Beroep",
+        "Objection Advisory Committee": "Bezwaaradviescommissie"
     },
     "nplurals=2; plural=(n != 1);"
 )
