@@ -2929,7 +2929,21 @@
         "Beslissingen op bezwaar": "Beslissingen op bezwaar",
         "Overzicht van beslissingen op ingediende bezwaarschriften.": "Overzicht van beslissingen op ingediende bezwaarschriften.",
         "BAC-adviezen": "BAC-adviezen",
-        "Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.": "Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren."
+        "Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.": "Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.",
+        "Awaiting initials": "Awaiting initials",
+        "Awaiting approval": "Awaiting approval",
+        "Approved": "Approved",
+        "Presented": "Presented",
+        "Decided": "Decided",
+        "Management team advice": "Management team advice",
+        "Executive board advice": "Executive board advice",
+        "Council proposal": "Council proposal",
+        "Draft ruling": "Draft ruling",
+        "Approved (mandate)": "Approved (mandate)",
+        "Signed": "Signed",
+        "Receipt confirmation": "Receipt confirmation",
+        "Endorsement": "Endorsement",
+        "Approval": "Approval"
     },
     "plurals": ""
 }

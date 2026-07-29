@@ -172,20 +172,20 @@ import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 
 const STATUS_LABELS = {
-	concept: 'Concept',
-	in_parafering: 'In parafering',
-	ter_accordering: 'Ter accordering',
-	geaccordeerd: 'Geaccordeerd',
-	aangeboden: 'Aangeboden',
-	besloten: 'Besloten',
-	gearchiveerd: 'Gearchiveerd',
-	teruggestuurd: 'Teruggestuurd',
+	concept: 'Draft',
+	in_parafering: 'Awaiting initials',
+	ter_accordering: 'Awaiting approval',
+	geaccordeerd: 'Approved',
+	aangeboden: 'Presented',
+	besloten: 'Decided',
+	gearchiveerd: 'Archived',
+	teruggestuurd: 'Returned',
 }
 
 const TYPE_LABELS = {
-	dt_advies: 'DT-advies',
-	collegeadvies: 'Collegeadvies',
-	raadsvoorstel: 'Raadsvoorstel',
+	dt_advies: 'Management team advice',
+	collegeadvies: 'Executive board advice',
+	raadsvoorstel: 'Council proposal',
 }
 
 export default {
@@ -325,14 +325,14 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatType(type) {
-			return TYPE_LABELS[type] || type || '-'
+			return t('procest', TYPE_LABELS[type] || type || '-')
 		},
 		/**
 		 * @param status
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatStatus(status) {
-			return STATUS_LABELS[status] || status || '-'
+			return t('procest', STATUS_LABELS[status] || status || '-')
 		},
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onActionCompleted() {
