@@ -43,9 +43,9 @@ import { useObjectStore } from '../../../store/modules/object.js'
 import { isActiveActor } from '../../../utils/parafeerEngine.js'
 
 const TYPE_LABELS = {
-	dt_advies: 'DT-advies',
-	collegeadvies: 'Collegeadvies',
-	raadsvoorstel: 'Raadsvoorstel',
+	dt_advies: 'Management team advice',
+	collegeadvies: 'Executive board advice',
+	raadsvoorstel: 'Council proposal',
 }
 
 export default {
@@ -101,7 +101,7 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatType(type) {
-			return TYPE_LABELS[type] || type || '-'
+			return t('procest', TYPE_LABELS[type] || type || '-')
 		},
 		/**
 		 * @param voorstel

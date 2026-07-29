@@ -59,10 +59,10 @@
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 
 const ACTION_LABELS = {
-	parafered: 'Geparafeerd',
-	returned: 'Teruggestuurd',
-	advised: 'Geadviseerd',
-	skipped: 'Overgeslagen',
+	parafered: 'Endorsed',
+	returned: 'Returned',
+	advised: 'Advised',
+	skipped: 'Skipped',
 }
 
 export default {
@@ -87,7 +87,7 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatAction(action) {
-			return ACTION_LABELS[action] || action
+			return t('procest', ACTION_LABELS[action] || action)
 		},
 		/**
 		 * @param actie

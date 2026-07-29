@@ -2929,6 +2929,20 @@
         "Beslissingen op bezwaar": "Beslissingen op bezwaar",
         "Overzicht van beslissingen op ingediende bezwaarschriften.": "Overzicht van beslissingen op ingediende bezwaarschriften.",
         "BAC-adviezen": "BAC-adviezen",
-        "Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.": "Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren."
+        "Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.": "Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.",
+        "Awaiting initials": "In parafering",
+        "Awaiting approval": "Ter accordering",
+        "Approved": "Geaccordeerd",
+        "Presented": "Aangeboden",
+        "Decided": "Besloten",
+        "Management team advice": "DT-advies",
+        "Executive board advice": "Collegeadvies",
+        "Council proposal": "Raadsvoorstel",
+        "Draft ruling": "Ontwerp",
+        "Approved (mandate)": "Akkoord (mandaat)",
+        "Signed": "Ondertekend",
+        "Receipt confirmation": "Ontvangstbevestiging",
+        "Endorsement": "Parafering",
+        "Approval": "Accordering"
     }
 }

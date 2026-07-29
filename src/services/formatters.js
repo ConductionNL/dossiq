@@ -99,20 +99,20 @@ function lookupRelatedName(type, uuid) {
 }
 
 const VOORSTEL_STATUS_LABELS = {
-	concept: 'Concept',
-	in_parafering: 'In parafering',
-	ter_accordering: 'Ter accordering',
-	geaccordeerd: 'Geaccordeerd',
-	aangeboden: 'Aangeboden',
-	besloten: 'Besloten',
-	gearchiveerd: 'Gearchiveerd',
-	teruggestuurd: 'Teruggestuurd',
+	concept: 'Draft',
+	in_parafering: 'Awaiting initials',
+	ter_accordering: 'Awaiting approval',
+	geaccordeerd: 'Approved',
+	aangeboden: 'Presented',
+	besloten: 'Decided',
+	gearchiveerd: 'Archived',
+	teruggestuurd: 'Returned',
 }
 
 const VOORSTEL_TYPE_LABELS = {
-	dt_advies: 'DT-advies',
-	collegeadvies: 'Collegeadvies',
-	raadsvoorstel: 'Raadsvoorstel',
+	dt_advies: 'Management team advice',
+	collegeadvies: 'Executive board advice',
+	raadsvoorstel: 'Council proposal',
 }
 
 /**

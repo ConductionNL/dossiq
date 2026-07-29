@@ -35,9 +35,9 @@ import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
 import CircleOutline from 'vue-material-design-icons/CircleOutline.vue'
 
 const STEP_TYPE_LABELS = {
-	advies: 'Advies',
-	parafering: 'Parafering',
-	accordering: 'Accordering',
+	advies: 'Advice',
+	parafering: 'Endorsement',
+	accordering: 'Approval',
 }
 
 export default {
@@ -82,7 +82,7 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatStepType(type) {
-			return STEP_TYPE_LABELS[type] || type || ''
+			return t('procest', STEP_TYPE_LABELS[type] || type || '')
 		},
 		/**
 		 * @param step
