@@ -36,7 +36,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "CaseDetail",
 						"type": "handler"

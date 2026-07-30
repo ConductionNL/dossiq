@@ -664,7 +664,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "CaseDetail",
 						"type": "handler"
@@ -826,7 +826,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "CaseDetail",
 						"type": "handler"
@@ -1022,7 +1022,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "TaskDetail",
 						"type": "handler"
@@ -1198,7 +1198,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "VoorstelDetail",
 						"type": "handler"
@@ -1256,7 +1256,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "AdviceDetail",
 						"type": "handler"
@@ -1392,7 +1392,7 @@
 					{
 						"id": "provision",
 						"label": "Provision",
-						"icon": "icon-add",
+						"icon": "Plus",
 						"permission": "admin",
 						"handler": "emit",
 						"type": "handler"
@@ -1400,7 +1400,7 @@
 					{
 						"id": "view",
 						"label": "View usage",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"permission": "admin",
 						"handler": "navigate",
 						"route": "TenantDetail",
@@ -1441,7 +1441,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "ParafeerrouteDetail",
 						"type": "handler"
@@ -1492,7 +1492,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "AiOversightDetail",
 						"type": "handler"
@@ -1539,7 +1539,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "WmsLayerDetail",
 						"type": "handler"
@@ -1604,7 +1604,7 @@
 					{
 						"id": "provision",
 						"label": "Provision",
-						"icon": "icon-add",
+						"icon": "Plus",
 						"permission": "admin",
 						"primary": true,
 						"handler": "emit",
@@ -1613,7 +1613,7 @@
 					{
 						"id": "refresh-usage",
 						"label": "Refresh usage",
-						"icon": "icon-history",
+						"icon": "Refresh",
 						"permission": "admin",
 						"handler": "emit",
 						"type": "handler"
@@ -1737,7 +1737,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "PartnerDetail",
 						"type": "handler"
@@ -1876,7 +1876,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "AutomaticActionDetail",
 						"type": "handler"
@@ -1963,7 +1963,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "WorkflowDefinitionDetail",
 						"type": "handler"
@@ -1989,7 +1989,7 @@
 					{
 						"id": "publish",
 						"label": "Publish",
-						"icon": "icon-checkmark",
+						"icon": "CloudUploadOutline",
 						"permission": "admin",
 						"primary": true,
 						"handler": "emit",
@@ -1998,7 +1998,7 @@
 					{
 						"id": "deprecate",
 						"label": "Deprecate",
-						"icon": "icon-close",
+						"icon": "Close",
 						"permission": "admin",
 						"handler": "emit",
 						"type": "handler"
@@ -2006,7 +2006,7 @@
 					{
 						"id": "clone",
 						"label": "Clone",
-						"icon": "icon-add",
+						"icon": "Plus",
 						"permission": "admin",
 						"handler": "emit",
 						"type": "handler"
@@ -2081,7 +2081,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "LhsMatrixDetail",
 						"type": "handler"
@@ -2130,7 +2130,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "LocationDetail",
 						"type": "handler"
@@ -2195,7 +2195,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "LhsRecommendationDetail",
 						"type": "handler"
@@ -2295,7 +2295,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "BezwaarCommitteeDetail",
 						"type": "handler"
@@ -2465,7 +2465,7 @@
 					{
 						"id": "view",
 						"label": "View",
-						"icon": "icon-info",
+						"icon": "EyeOutline",
 						"handler": "navigate",
 						"route": "CaseDetail",
 						"type": "handler"
