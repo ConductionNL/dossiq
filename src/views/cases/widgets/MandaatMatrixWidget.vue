@@ -31,7 +31,7 @@
 					<li v-for="h in roleHolders" :key="h.userId">
 						{{ h.displayName || h.userId }}
 						<span v-if="h.toewijzingType === 'waarnemer'" class="mandaat-widget__waarnemer">
-							({{ t('procest', 'waarnemer') }})
+							({{ t('procest', 'substitute') }})
 						</span>
 					</li>
 				</ul>

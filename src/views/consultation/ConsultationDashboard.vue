@@ -3,7 +3,7 @@
 <template>
 	<div class="consultation-dashboard">
 		<h2 class="consultation-dashboard__title">
-			{{ t('procest', 'Consultaties') }}
+			{{ t('procest', 'Consultations') }}
 		</h2>
 
 		<!-- Summary bar -->
@@ -14,7 +14,7 @@
 			<span
 				v-if="overdueCount > 0"
 				class="consultation-dashboard__summary-item consultation-dashboard__summary-item--overdue">
-				<strong>{{ overdueCount }}</strong> {{ t('procest', 'verlopen') }}
+				<strong>{{ overdueCount }}</strong> {{ t('procest', 'expired') }}
 			</span>
 		</div>
 
@@ -23,7 +23,7 @@
 			<NcTextField
 				:model-value="filters.search"
 				:label="t('procest', 'Search')"
-				:placeholder="t('procest', 'Zoek op onderwerp, afdeling...')"
+				:placeholder="t('procest', 'Search by subject, department...')"
 				@update:model-value="v => filters.search = v" />
 
 			<NcSelect
@@ -43,7 +43,7 @@
 					type="date"
 					class="consultation-dashboard__date-input">
 				<label class="consultation-dashboard__filter-label">
-					{{ t('procest', 'tot') }}
+					{{ t('procest', 'to') }}
 				</label>
 				<input
 					v-model="filters.dateTo"
@@ -68,7 +68,7 @@
 
 		<!-- Empty state -->
 		<div v-else-if="displayItems.length === 0" class="consultation-dashboard__empty">
-			{{ t('procest', 'Geen consultaties gevonden.') }}
+			{{ t('procest', 'No consultations found.') }}
 		</div>
 
 		<!-- Consultation table -->
@@ -76,10 +76,10 @@
 			<table class="consultation-dashboard__table">
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'Nummer') }}</th>
-						<th>{{ t('procest', 'Zaak') }}</th>
+						<th>{{ t('procest', 'Number') }}</th>
+						<th>{{ t('procest', 'Case') }}</th>
 						<th>{{ t('procest', 'Onderwerp') }}</th>
-						<th>{{ t('procest', 'Afdeling') }}</th>
+						<th>{{ t('procest', 'Department') }}</th>
 						<th>{{ t('procest', 'Deadline') }}</th>
 						<th>{{ t('procest', 'Status') }}</th>
 						<th>{{ t('procest', 'Acties') }}</th>
@@ -110,9 +110,9 @@
 							<NcButton
 								v-if="item.status === 'open'"
 								type="secondary"
-								:title="t('procest', 'Consultatie oppakken')"
+								:title="t('procest', 'Take on consultation')"
 								@click="claimConsultation(item)">
-								{{ t('procest', 'Oppakken') }}
+								{{ t('procest', 'Take on') }}
 							</NcButton>
 						</td>
 					</tr>
@@ -150,7 +150,7 @@ export default {
 			statusOptions: [
 				{ label: this.t('procest', 'Open'), value: 'open' },
 				{ label: this.t('procest', 'In behandeling'), value: 'in_behandeling' },
-				{ label: this.t('procest', 'Advies uitgebracht'), value: 'advies_uitgebracht' },
+				{ label: this.t('procest', 'Advice issued'), value: 'advies_uitgebracht' },
 				{ label: this.t('procest', 'Closed'), value: 'afgesloten' },
 			],
 		}
@@ -226,7 +226,7 @@ export default {
 				this.overdueItems = overdueRes.data?.items || overdueRes.data || []
 				this.consultations = allRes.data?.items || allRes.data || []
 			} catch (err) {
-				this.error = this.t('procest', 'Consultaties konden niet worden geladen.')
+				this.error = this.t('procest', 'Consultations could not be loaded.')
 			} finally {
 				this.loading = false
 			}
@@ -256,7 +256,7 @@ export default {
 			const labels = {
 				open: this.t('procest', 'Open'),
 				in_behandeling: this.t('procest', 'In behandeling'),
-				advies_uitgebracht: this.t('procest', 'Advies uitgebracht'),
+				advies_uitgebracht: this.t('procest', 'Advice issued'),
 				afgesloten: this.t('procest', 'Closed'),
 			}
 			return labels[status] || status

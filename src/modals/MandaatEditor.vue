@@ -11,7 +11,7 @@
 			<h2>{{ title }}</h2>
 
 			<div class="form-group">
-				<label class="required" for="me-num">{{ t('procest', 'Mandaatnummer') }}</label>
+				<label class="required" for="me-num">{{ t('procest', 'Mandate number') }}</label>
 				<NcTextField
 					id="me-num"
 					:model-value="form.mandaatNummer"
@@ -21,7 +21,7 @@
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="me-omschr">{{ t('procest', 'Omschrijving') }}</label>
+				<label class="required" for="me-omschr">{{ t('procest', 'Description') }}</label>
 				<textarea
 					id="me-omschr"
 					v-model="form.omschrijving"
@@ -42,7 +42,7 @@
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="me-grond">{{ t('procest', 'Wettelijke grondslag') }}</label>
+				<label class="required" for="me-grond">{{ t('procest', 'Legal basis') }}</label>
 				<NcTextField
 					id="me-grond"
 					:model-value="form.wettelijkeGrondslag"
@@ -52,7 +52,7 @@
 			</div>
 
 			<div class="form-group">
-				<label for="me-voorw">{{ t('procest', 'Voorwaarden (JSON)') }}</label>
+				<label for="me-voorw">{{ t('procest', 'Conditions (JSON)') }}</label>
 				<textarea
 					id="me-voorw"
 					v-model="voorwaardenJson"
@@ -73,7 +73,7 @@
 						@input="form.inWerkingtreding = $event.target.value">
 				</div>
 				<div class="form-group">
-					<label for="me-verval">{{ t('procest', 'Vervaldatum') }}</label>
+					<label for="me-verval">{{ t('procest', 'Expiry date') }}</label>
 					<input
 						id="me-verval"
 						type="date"
@@ -84,12 +84,12 @@
 			</div>
 
 			<div class="form-group">
-				<label for="me-rol">{{ t('procest', 'Toegewezen rol') }}</label>
+				<label for="me-rol">{{ t('procest', 'Assigned role') }}</label>
 				<NcSelect
 					id="me-rol"
 					:model-value="selectedRole"
 					:options="roleOptions"
-					:input-label="t('procest', 'Toegewezen rol')"
+					:input-label="t('procest', 'Assigned role')"
 					@update:model-value="v => form.toegewezenRol = v ? v.id : ''" />
 			</div>
 
@@ -162,9 +162,9 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
-				{ id: 'beslissingsbevoegdheid', label: t('procest', 'Beslissingsbevoegdheid') },
-				{ id: 'ondertekeningsbevoegdheid', label: t('procest', 'Ondertekeningsbevoegdheid') },
-				{ id: 'gemandateerde-bevoegdheid', label: t('procest', 'Gemandateerde bevoegdheid') },
+				{ id: 'beslissingsbevoegdheid', label: t('procest', 'Decision authority') },
+				{ id: 'ondertekeningsbevoegdheid', label: t('procest', 'Signing authority') },
+				{ id: 'gemandateerde-bevoegdheid', label: t('procest', 'Mandated authority') },
 				{ id: 'doormandaat', label: t('procest', 'Doormandaat') },
 			]
 		},

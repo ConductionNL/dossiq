@@ -1,6 +1,6 @@
 <template>
 	<NcDialog
-		:name="t('procest', 'Nieuw B&W-voorstel')"
+		:name="t('procest', 'New B&W proposal')"
 		size="normal"
 		@closing="$emit('close')">
 		<div class="voorstel-create">
@@ -9,7 +9,7 @@
 				<NcTextField
 					:model-value="form.onderwerp"
 					:error="!!errors.onderwerp"
-					:placeholder="t('procest', 'Onderwerp van het voorstel...')"
+					:placeholder="t('procest', 'Subject of the proposal...')"
 					@update:model-value="v => { form.onderwerp = v; errors.onderwerp = '' }" />
 				<p v-if="errors.onderwerp" class="form-error">
 					{{ errors.onderwerp }}
@@ -22,34 +22,34 @@
 					v-model="form.type"
 					:options="typeOptions"
 					:aria-label-combobox="t('procest', 'Type')"
-					:placeholder="t('procest', 'Selecteer type...')" />
+					:placeholder="t('procest', 'Select type...')" />
 			</div>
 
 			<div v-if="!caseId" class="form-group">
-				<label>{{ t('procest', 'Zaak') }} *</label>
+				<label>{{ t('procest', 'Case') }} *</label>
 				<NcSelect
 					v-model="selectedCase"
 					:options="cases"
-					:aria-label-combobox="t('procest', 'Zaak')"
+					:aria-label-combobox="t('procest', 'Case')"
 					label="title"
 					track-by="id"
-					:placeholder="t('procest', 'Selecteer zaak...')"
+					:placeholder="t('procest', 'Select case...')"
 					@update:model-value="onCaseSelected" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Portefeuillehouder') }}</label>
+				<label>{{ t('procest', 'Portfolio holder') }}</label>
 				<NcTextField
 					:model-value="form.portefeuillehouder"
-					:placeholder="t('procest', 'Gebruikers-ID wethouder')"
+					:placeholder="t('procest', 'Alderman user ID')"
 					@update:model-value="v => form.portefeuillehouder = v" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Afdeling') }}</label>
+				<label>{{ t('procest', 'Department') }}</label>
 				<NcTextField
 					:model-value="form.afdeling"
-					:placeholder="t('procest', 'Afdeling')"
+					:placeholder="t('procest', 'Department')"
 					@update:model-value="v => form.afdeling = v" />
 			</div>
 		</div>
@@ -62,7 +62,7 @@
 				<template v-if="saving">
 					<NcLoadingIcon :size="20" />
 				</template>
-				{{ t('procest', 'Aanmaken') }}
+				{{ t('procest', 'Create') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -142,13 +142,13 @@ export default {
 		async create() {
 			this.errors = {}
 			if (!this.form.onderwerp.trim()) {
-				this.errors.onderwerp = t('procest', 'Onderwerp is verplicht')
+				this.errors.onderwerp = t('procest', 'Subject is required')
 				return
 			}
 
 			const caseRef = this.caseId || this.selectedCase?.id
 			if (!caseRef) {
-				this.errors.onderwerp = t('procest', 'Selecteer een zaak')
+				this.errors.onderwerp = t('procest', 'Select a case')
 				return
 			}
 
@@ -190,7 +190,7 @@ export default {
 				this.$emit('created')
 			} catch (error) {
 				console.error('Failed to create voorstel:', error)
-				this.errors.onderwerp = error.message || t('procest', 'Aanmaken mislukt')
+				this.errors.onderwerp = error.message || t('procest', 'Failed to create')
 			} finally {
 				this.saving = false
 			}

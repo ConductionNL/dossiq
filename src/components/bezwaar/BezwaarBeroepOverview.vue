@@ -21,10 +21,10 @@
 	<div class="bezwaar-overview" data-testid="bezwaar-overview">
 		<header class="bezwaar-overview__header">
 			<h2 class="bezwaar-overview__title" data-testid="bezwaar-overview-title">
-				{{ t('procest', 'Bezwaar & Beroep') }}
+				{{ t('procest', 'Objection & Appeal') }}
 			</h2>
 			<p class="bezwaar-overview__hint">
-				{{ t('procest', 'Beheer bezwaren, beroepen, beslissingen en BAC-adviezen vanuit één overzicht.') }}
+				{{ t('procest', 'Manage objections, appeals, decisions and BAC advice from a single overview.') }}
 			</p>
 		</header>
 

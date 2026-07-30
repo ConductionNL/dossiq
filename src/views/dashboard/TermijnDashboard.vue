@@ -103,13 +103,13 @@
 					<thead>
 						<tr>
 							<th>{{ t('procest', 'Zaaktype') }}</th>
-							<th>{{ t('procest', 'Totaal') }}</th>
-							<th>{{ t('procest', 'Binnen termijn') }}</th>
-							<th>{{ t('procest', 'Overschrijdingen') }}</th>
-							<th>{{ t('procest', 'Gem. doorlooptijd') }}</th>
-							<th>{{ t('procest', 'Verlengingen') }}</th>
-							<th>{{ t('procest', 'Ingebrekestellingen') }}</th>
-							<th>{{ t('procest', 'Dwangsom totaal') }}</th>
+							<th>{{ t('procest', 'Total') }}</th>
+							<th>{{ t('procest', 'Within deadline') }}</th>
+							<th>{{ t('procest', 'Overruns') }}</th>
+							<th>{{ t('procest', 'Avg. duration') }}</th>
+							<th>{{ t('procest', 'Extensions') }}</th>
+							<th>{{ t('procest', 'Notices of default') }}</th>
+							<th>{{ t('procest', 'Total penalty payment') }}</th>
 						</tr>
 					</thead>
 					<tbody>

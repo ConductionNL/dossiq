@@ -21,7 +21,7 @@
 					</NcButton>
 					<NcButton type="secondary"
 						@click="showSamenwerkDialog = true">
-						{{ t('procest', 'Samenwerking') }}
+						{{ t('procest', 'Collaboration') }}
 					</NcButton>
 					<NcButton type="secondary"
 						@click="showDoorstuurDialog = true">
@@ -31,7 +31,7 @@
 
 				<!-- Aanvraag section -->
 				<section class="dso-section">
-					<h3>{{ t('procest', 'Aanvraag') }}</h3>
+					<h3>{{ t('procest', 'Application') }}</h3>
 					<dl class="dso-dl">
 						<dt>{{ t('procest', 'Title') }}</dt>
 						<dd>{{ zaak.title || '—' }}</dd>
@@ -41,27 +41,27 @@
 						<dd>{{ zaak.procedureType || '—' }}</dd>
 						<dt>{{ t('procest', 'Deadline') }}</dt>
 						<dd>{{ formatDate(zaak.deadlineDatum) }}</dd>
-						<dt>{{ t('procest', 'Bevoegd gezag') }}</dt>
+						<dt>{{ t('procest', 'Competent Authority') }}</dt>
 						<dd>{{ zaak.bevoegdGezag || '—' }}</dd>
-						<dt>{{ t('procest', 'Vergunningaanvraag ref') }}</dt>
+						<dt>{{ t('procest', 'Permit application ref') }}</dt>
 						<dd>{{ zaak.vergunningaanvraagRef || '—' }}</dd>
 					</dl>
 				</section>
 
 				<!-- Decision section (when verleend/geweigerd) -->
 				<section v-if="zaak.besluitdatum" class="dso-section">
-					<h3>{{ t('procest', 'Besluit') }}</h3>
+					<h3>{{ t('procest', 'Decision') }}</h3>
 					<dl class="dso-dl">
-						<dt>{{ t('procest', 'Besluitdatum') }}</dt>
+						<dt>{{ t('procest', 'Decision date') }}</dt>
 						<dd>{{ formatDate(zaak.besluitdatum) }}</dd>
-						<dt>{{ t('procest', 'Toelichting') }}</dt>
+						<dt>{{ t('procest', 'Explanation') }}</dt>
 						<dd>{{ zaak.dsoToelichting || '—' }}</dd>
 					</dl>
 				</section>
 
 				<!-- Samenwerkverzoeken section -->
 				<section class="dso-section">
-					<h3>{{ t('procest', 'Samenwerkverzoeken') }}</h3>
+					<h3>{{ t('procest', 'Collaboration requests') }}</h3>
 					<p v-if="!zaak.samenwerkverzoeken || zaak.samenwerkverzoeken.length === 0">
 						{{ t('procest', 'No samenwerkverzoeken linked') }}
 					</p>
@@ -109,10 +109,10 @@
 				:input-label="t('procest', 'New status')"
 				input-id="transition-status" />
 			<NcTextField v-model="transitionToelichting"
-				:label="t('procest', 'Toelichting')" />
+				:label="t('procest', 'Explanation')" />
 			<NcTextField v-if="requiresBesluitdatum"
 				v-model="transitionBesluitdatum"
-				:label="t('procest', 'Besluitdatum')"
+				:label="t('procest', 'Decision date')"
 				type="date" />
 			<div class="dso-transition-form__actions">
 				<NcButton type="primary" :disabled="!transitionStatus" @click="executeTransition">
@@ -167,11 +167,11 @@ export default {
 			transitionToelichting: '',
 			transitionBesluitdatum: '',
 			transitionOptions: [
-				{ label: t('procest', 'Ingediend'), value: 'ingediend' },
+				{ label: t('procest', 'Submitted'), value: 'ingediend' },
 				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
-				{ label: t('procest', 'Verleend'), value: 'verleend' },
-				{ label: t('procest', 'Geweigerd'), value: 'geweigerd' },
-				{ label: t('procest', 'Ingetrokken'), value: 'ingetrokken' },
+				{ label: t('procest', 'Granted'), value: 'verleend' },
+				{ label: t('procest', 'Refused'), value: 'geweigerd' },
+				{ label: t('procest', 'Withdrawn'), value: 'ingetrokken' },
 			],
 		}
 	},

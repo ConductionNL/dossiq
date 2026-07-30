@@ -69,11 +69,11 @@ export default {
 			submitting: false,
 			error: null,
 			statusOptions: [
-				{ label: t('procest', 'Ingediend'), value: 'ingediend' },
+				{ label: t('procest', 'Submitted'), value: 'ingediend' },
 				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
-				{ label: t('procest', 'Verleend'), value: 'verleend' },
-				{ label: t('procest', 'Geweigerd'), value: 'geweigerd' },
-				{ label: t('procest', 'Ingetrokken'), value: 'ingetrokken' },
+				{ label: t('procest', 'Granted'), value: 'verleend' },
+				{ label: t('procest', 'Refused'), value: 'geweigerd' },
+				{ label: t('procest', 'Withdrawn'), value: 'ingetrokken' },
 			],
 		}
 	},

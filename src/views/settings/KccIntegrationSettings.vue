@@ -158,7 +158,7 @@ export default {
 			},
 			identificationMethodOptions: [
 				{ id: 'digid', label: 'DigiD' },
-				{ id: 'bsn_questions', label: t('procest', 'Identificatievragen') },
+				{ id: 'bsn_questions', label: t('procest', 'Identification questions') },
 				{ id: 'both', label: t('procest', 'Both') },
 			],
 		}

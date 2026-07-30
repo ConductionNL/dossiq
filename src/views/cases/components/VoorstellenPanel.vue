@@ -4,7 +4,7 @@
 
 		<template v-else>
 			<div v-if="voorstellen.length === 0" class="voorstellen-panel__empty">
-				{{ t('procest', 'Geen voorstellen') }}
+				{{ t('procest', 'No proposals') }}
 			</div>
 
 			<div v-else class="voorstellen-panel__list">
@@ -23,7 +23,7 @@
 					<div class="voorstellen-panel__item-meta">
 						{{ voorstel.steller }}
 						<span v-if="voorstel.currentStep && isActive(voorstel)">
-							— {{ t('procest', 'stap') }} {{ formatStepProgress(voorstel) }}
+							— {{ t('procest', 'step') }} {{ formatStepProgress(voorstel) }}
 						</span>
 					</div>
 				</div>
@@ -33,7 +33,7 @@
 				v-if="!isReadOnly"
 				class="voorstellen-panel__add"
 				@click="showCreate = true">
-				{{ t('procest', 'Nieuw voorstel') }}
+				{{ t('procest', 'New proposal') }}
 			</NcButton>
 		</template>
 

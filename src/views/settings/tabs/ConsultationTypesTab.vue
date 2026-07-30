@@ -3,10 +3,10 @@
 <template>
 	<div class="consultation-types-tab">
 		<h3 class="consultation-types-tab__title">
-			{{ t('procest', 'Adviestypen per zaaktype') }}
+			{{ t('procest', 'Advice types per case type') }}
 		</h3>
 		<p class="consultation-types-tab__description">
-			{{ t('procest', 'Configureer welke consultaties verplicht of optioneel zijn voor elk zaaktype.') }}
+			{{ t('procest', 'Configure which consultations are mandatory or optional for each case type.') }}
 		</p>
 
 		<!-- Zaaktype selector -->
@@ -41,14 +41,14 @@
 					<NcSelect
 						v-model="ct.advisoryBodyId"
 						:options="advisoryBodyOptions"
-						:aria-label-combobox="t('procest', 'Standaard adviesinstantie')"
+						:aria-label-combobox="t('procest', 'Default advisory body')"
 						label="label"
 						:reduce="opt => opt.value"
-						:placeholder="t('procest', 'Standaard adviesinstantie')" />
+						:placeholder="t('procest', 'Default advisory body')" />
 
 					<NcTextField
 						:model-value="String(ct.defaultDeadlineWeeks)"
-						:label="t('procest', 'Standaard doorlooptijd (weken)')"
+						:label="t('procest', 'Default duration (weeks)')"
 						type="number"
 						@update:model-value="v => ct.defaultDeadlineWeeks = parseInt(v) || 4" />
 
@@ -66,7 +66,7 @@
 
 			<div class="consultation-types-tab__actions">
 				<NcButton @click="addType">
-					{{ t('procest', 'Adviestype toevoegen') }}
+					{{ t('procest', 'Add advice type') }}
 				</NcButton>
 				<NcButton
 					type="primary"

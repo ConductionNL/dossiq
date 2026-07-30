@@ -91,7 +91,7 @@ export default {
 		ernstLabels() {
 			return [
 				{ key: 'gering', label: t('procest', 'Minor (gering)') },
-				{ key: 'aanzienlijk', label: t('procest', 'Significant (aanzienlijk)') },
+				{ key: 'aanzienlijk', label: t('procest', 'Significant (substantial)') },
 				{ key: 'ernstig', label: t('procest', 'Serious (ernstig)') },
 			]
 		},

@@ -45,7 +45,7 @@
 					<th>{{ t('procest', 'Sent at') }}</th>
 					<th>{{ t('procest', 'Direction') }}</th>
 					<th>{{ t('procest', 'Message') }}</th>
-					<th>{{ t('procest', 'Functie') }}</th>
+					<th>{{ t('procest', 'Function') }}</th>
 					<th>{{ t('procest', 'Status') }}</th>
 					<th>{{ t('procest', 'HTTP') }}</th>
 					<th>{{ t('procest', 'Duration (ms)') }}</th>

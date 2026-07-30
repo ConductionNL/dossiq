@@ -1,15 +1,15 @@
 <template>
 	<NcDialog
-		:name="t('procest', 'Besluit registreren')"
+		:name="t('procest', 'Register decision')"
 		size="normal"
 		@closing="$emit('close')">
 		<div class="besluit-registration">
 			<div class="form-group">
-				<label>{{ t('procest', 'Titel') }} *</label>
+				<label>{{ t('procest', 'Title') }} *</label>
 				<NcTextField
 					:model-value="form.title"
 					:error="!!errors.title"
-					:placeholder="t('procest', 'Titel van het besluit...')"
+					:placeholder="t('procest', 'Title of the decision...')"
 					@update:model-value="v => { form.title = v; errors.title = '' }" />
 				<p v-if="errors.title" class="form-error">
 					{{ errors.title }}
@@ -17,7 +17,7 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Ingangsdatum') }}</label>
+				<label>{{ t('procest', 'Effective date') }}</label>
 				<NcTextField
 					type="date"
 					:model-value="form.effectiveDate"
@@ -25,26 +25,26 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Besluittype') }}</label>
+				<label>{{ t('procest', 'Decision type') }}</label>
 				<NcSelect
 					v-model="selectedDecisionType"
 					:options="decisionTypes"
-					:aria-label-combobox="t('procest', 'Besluittype')"
+					:aria-label-combobox="t('procest', 'Decision type')"
 					label="name"
 					track-by="id"
-					:placeholder="t('procest', 'Selecteer besluittype...')" />
+					:placeholder="t('procest', 'Select decision type...')" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Toelichting') }}</label>
+				<label>{{ t('procest', 'Explanation') }}</label>
 				<textarea
 					v-model="form.explanation"
-					:placeholder="t('procest', 'Toelichting bij het besluit...')"
+					:placeholder="t('procest', 'Explanation of the decision...')"
 					rows="3" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Bestuursorgaan') }}</label>
+				<label>{{ t('procest', 'Administrative body') }}</label>
 				<NcTextField
 					:model-value="form.governingBody"
 					:placeholder="t('procest', 'College van B&W')"
@@ -60,7 +60,7 @@
 				<template v-if="saving">
 					<NcLoadingIcon :size="20" />
 				</template>
-				{{ t('procest', 'Registreren') }}
+				{{ t('procest', 'Register') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -132,7 +132,7 @@ export default {
 		async register() {
 			this.errors = {}
 			if (!this.form.title.trim()) {
-				this.errors.title = t('procest', 'Titel is verplicht')
+				this.errors.title = t('procest', 'Title is required')
 				return
 			}
 
@@ -160,7 +160,7 @@ export default {
 				this.$emit('registered')
 			} catch (error) {
 				console.error('Failed to register besluit:', error)
-				this.errors.title = error.response?.data?.error || error.message || t('procest', 'Registratie mislukt')
+				this.errors.title = error.response?.data?.error || error.message || t('procest', 'Registration failed')
 			} finally {
 				this.saving = false
 			}

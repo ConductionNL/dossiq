@@ -111,7 +111,7 @@ export default {
 				this.$emit('skipped')
 			} catch (err) {
 				const apiMessage = err?.response?.data?.error
-				this.error = apiMessage || this.t('procest', 'Overslaan mislukt')
+				this.error = apiMessage || this.t('procest', 'Failed to skip')
 				console.error('skipStep failed', err)
 			} finally {
 				this.submitting = false

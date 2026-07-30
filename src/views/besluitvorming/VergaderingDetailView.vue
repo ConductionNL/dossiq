@@ -14,11 +14,11 @@
 				:key="agendaCase.id"
 				:title="(agendaCase.agendanummer || '') + ' ' + (agendaCase.title || '')">
 				<div class="vergadering-detail__form">
-					<label :for="'besluittype-' + agendaCase.id">{{ t('procest', 'Besluittype') }}</label>
+					<label :for="'besluittype-' + agendaCase.id">{{ t('procest', 'Decision type') }}</label>
 					<NcSelect
 						v-model="forms[agendaCase.id].decisionType"
 						:input-id="'besluittype-' + agendaCase.id"
-						:input-label="t('procest', 'Besluittype')"
+						:input-label="t('procest', 'Decision type')"
 						:options="decisionTypes" />
 
 					<label :for="'stem-' + agendaCase.id">{{ t('procest', 'Stemuitslag') }}</label>
@@ -34,7 +34,7 @@
 						v-model="forms[agendaCase.id].attendees"
 						type="text">
 
-					<label :for="'toelichting-' + agendaCase.id">{{ t('procest', 'Toelichting') }}</label>
+					<label :for="'toelichting-' + agendaCase.id">{{ t('procest', 'Explanation') }}</label>
 					<textarea
 						:id="'toelichting-' + agendaCase.id"
 						v-model="forms[agendaCase.id].explanation"

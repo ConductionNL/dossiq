@@ -300,7 +300,7 @@ export default {
 		 */
 		resultLabel(result) {
 			const labels = {
-				conform: t('procest', 'Conform'),
+				conform: t('procest', 'Compliant'),
 				niet_conform: t('procest', 'Non-conform'),
 				deels_conform: t('procest', 'Partially conform'),
 			}

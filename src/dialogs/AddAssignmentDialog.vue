@@ -40,7 +40,7 @@
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="aa-vanaf">{{ t('procest', 'Vanaf') }}</label>
+				<label class="required" for="aa-vanaf">{{ t('procest', 'From') }}</label>
 				<input
 					id="aa-vanaf"
 					type="date"
@@ -50,7 +50,7 @@
 			</div>
 
 			<div class="form-group">
-				<label for="aa-tot">{{ t('procest', 'Tot en met') }}</label>
+				<label for="aa-tot">{{ t('procest', 'Up to and including') }}</label>
 				<input
 					id="aa-tot"
 					type="date"
@@ -98,9 +98,9 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
-				{ id: 'reguliere', label: t('procest', 'Reguliere toewijzing') },
-				{ id: 'waarnemer', label: t('procest', 'Waarnemer') },
-				{ id: 'plaatsvervanger', label: t('procest', 'Plaatsvervanger') },
+				{ id: 'reguliere', label: t('procest', 'Regular assignment') },
+				{ id: 'waarnemer', label: t('procest', 'Substitute') },
+				{ id: 'plaatsvervanger', label: t('procest', 'Deputy') },
 			]
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
