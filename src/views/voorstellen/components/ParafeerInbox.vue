@@ -1,14 +1,14 @@
 <template>
 	<div class="parafeer-inbox">
 		<h3 class="parafeer-inbox__title">
-			{{ t('procest', 'Ter parafering') }}
+			{{ t('procest', 'For endorsement') }}
 			<span v-if="!loading" class="parafeer-inbox__count">({{ pendingVoorstellen.length }})</span>
 		</h3>
 
 		<NcLoadingIcon v-if="loading" :size="20" />
 
 		<div v-else-if="pendingVoorstellen.length === 0" class="parafeer-inbox__empty">
-			{{ t('procest', 'Geen voorstellen ter parafering') }}
+			{{ t('procest', 'No proposals awaiting endorsement') }}
 		</div>
 
 		<div v-else class="parafeer-inbox__list">
@@ -19,16 +19,16 @@
 				<div class="parafeer-inbox__item-info">
 					<strong>{{ voorstel.onderwerp }}</strong>
 					<span class="parafeer-inbox__item-meta">
-						{{ formatType(voorstel.type) }} — {{ t('procest', 'van') }} {{ voorstel.steller }}
-						— {{ t('procest', 'wacht sinds') }} {{ formatDate(voorstel) }}
+						{{ formatType(voorstel.type) }} — {{ t('procest', 'by') }} {{ voorstel.steller }}
+						— {{ t('procest', 'waiting since') }} {{ formatDate(voorstel) }}
 					</span>
 				</div>
 				<div class="parafeer-inbox__item-actions">
 					<NcButton
 						type="primary"
-						:aria-label="t('procest', 'Paraferen')"
+						:aria-label="t('procest', 'Endorse')"
 						@click="$router.push({ name: 'VoorstelDetail', params: { id: voorstel.id } })">
-						{{ t('procest', 'Bekijken') }}
+						{{ t('procest', 'View') }}
 					</NcButton>
 				</div>
 			</div>

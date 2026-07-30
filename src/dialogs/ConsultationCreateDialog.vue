@@ -2,7 +2,7 @@
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
 	<NcDialog v-if="open"
-		:name="t('procest', 'Nieuwe consultatie')"
+		:name="t('procest', 'New consultation')"
 		size="normal"
 		:can-close="!submitting"
 		@closing="onClose">
@@ -10,7 +10,7 @@
 			<!-- Read-only parent case display -->
 			<div class="consultation-create-dialog__field">
 				<label class="consultation-create-dialog__label">
-					{{ t('procest', 'Zaak') }}
+					{{ t('procest', 'Case') }}
 				</label>
 				<span class="consultation-create-dialog__readonly">{{ caseId }}</span>
 			</div>
@@ -18,8 +18,8 @@
 			<div class="consultation-create-dialog__field">
 				<NcTextField
 					:model-value="form.adviesInstantie"
-					:label="t('procest', 'Adviesinstantie')"
-					:placeholder="t('procest', 'bijv. Brandweer, Welstandscommissie')"
+					:label="t('procest', 'Advisory body')"
+					:placeholder="t('procest', 'e.g. Fire brigade, Aesthetics committee')"
 					required
 					@update:model-value="v => form.adviesInstantie = v" />
 			</div>
@@ -34,7 +34,7 @@
 
 			<div class="consultation-create-dialog__field">
 				<label class="consultation-create-dialog__label">
-					{{ t('procest', 'Vraagstelling') }} *
+					{{ t('procest', 'Question') }} *
 				</label>
 				<textarea
 					v-model="form.vraagstelling"
@@ -44,7 +44,7 @@
 
 			<div class="consultation-create-dialog__field">
 				<label class="consultation-create-dialog__label">
-					{{ t('procest', 'Uiterlijke reactiedatum') }} *
+					{{ t('procest', 'Latest response date') }} *
 				</label>
 				<input
 					v-model="form.uiterlijkeReactiedatum"
@@ -55,12 +55,12 @@
 
 			<div class="consultation-create-dialog__field">
 				<label class="consultation-create-dialog__label">
-					{{ t('procest', 'Prioriteit') }}
+					{{ t('procest', 'Priority') }}
 				</label>
 				<NcSelect
 					v-model="form.prioriteit"
 					:options="prioriteitOptions"
-					:aria-label-combobox="t('procest', 'Prioriteit')"
+					:aria-label-combobox="t('procest', 'Priority')"
 					label="label"
 					:reduce="opt => opt.value"
 					:placeholder="t('procest', 'Select priority')" />
@@ -79,7 +79,7 @@
 				type="primary"
 				:disabled="!canSubmit"
 				@click="onSubmit">
-				{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Consultatie aanmaken') }}
+				{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Create consultation') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -124,8 +124,8 @@ export default {
 				prioriteit: 'normaal',
 			},
 			prioriteitOptions: [
-				{ label: this.t('procest', 'Normaal'), value: 'normaal' },
-				{ label: this.t('procest', 'Spoed'), value: 'spoed' },
+				{ label: this.t('procest', 'Normal'), value: 'normaal' },
+				{ label: this.t('procest', 'Urgent'), value: 'spoed' },
 			],
 		}
 	},
@@ -172,19 +172,19 @@ export default {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
 			if (this.form.adviesInstantie.trim() === '') {
-				this.validationError = this.t('procest', 'Adviesinstantie is verplicht.')
+				this.validationError = this.t('procest', 'Advisory body is required.')
 				return false
 			}
 			if (this.form.onderwerp.trim() === '') {
-				this.validationError = this.t('procest', 'Onderwerp is verplicht.')
+				this.validationError = this.t('procest', 'Subject is required.')
 				return false
 			}
 			if (this.form.vraagstelling.trim() === '') {
-				this.validationError = this.t('procest', 'Vraagstelling is verplicht.')
+				this.validationError = this.t('procest', 'Question is required.')
 				return false
 			}
 			if (this.form.uiterlijkeReactiedatum === '') {
-				this.validationError = this.t('procest', 'Uiterlijke reactiedatum is verplicht.')
+				this.validationError = this.t('procest', 'Latest response date is required.')
 				return false
 			}
 			return true

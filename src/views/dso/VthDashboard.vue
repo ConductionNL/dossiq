@@ -30,13 +30,13 @@
 				class="vth-filter" />
 			<NcTextField
 				v-model="filters.gemeenteCode"
-				:label="t('procest', 'Gemeentecode')"
+				:label="t('procest', 'Municipality code')"
 				:placeholder="t('procest', '0363')"
 				class="vth-filter vth-filter--small" />
 			<NcTextField
 				v-model="filters.activiteitgroep"
-				:label="t('procest', 'Activiteitgroep')"
-				:placeholder="t('procest', 'bouwactiviteiten')"
+				:label="t('procest', 'Activity group')"
+				:placeholder="t('procest', 'construction activities')"
 				class="vth-filter" />
 			<NcButton @click="loadCases">
 				{{ t('procest', 'Apply filters') }}
@@ -63,10 +63,10 @@
 				<thead>
 					<tr>
 						<th>{{ t('procest', 'Identifier') }}</th>
-						<th>{{ t('procest', 'Titel') }}</th>
+						<th>{{ t('procest', 'Title') }}</th>
 						<th>{{ t('procest', 'Status') }}</th>
 						<th>{{ t('procest', 'Procedure') }}</th>
-						<th>{{ t('procest', 'Bevoegd gezag') }}</th>
+						<th>{{ t('procest', 'Competent Authority') }}</th>
 						<th>{{ t('procest', 'Deadline') }}</th>
 						<th>{{ t('procest', 'Actions') }}</th>
 					</tr>
@@ -144,15 +144,15 @@ export default {
 				regelkwalificatie: '',
 			},
 			statusOptions: [
-				{ label: t('procest', 'Ingediend'), value: 'ingediend' },
+				{ label: t('procest', 'Submitted'), value: 'ingediend' },
 				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
-				{ label: t('procest', 'Verleend'), value: 'verleend' },
-				{ label: t('procest', 'Geweigerd'), value: 'geweigerd' },
-				{ label: t('procest', 'Ingetrokken'), value: 'ingetrokken' },
+				{ label: t('procest', 'Granted'), value: 'verleend' },
+				{ label: t('procest', 'Refused'), value: 'geweigerd' },
+				{ label: t('procest', 'Withdrawn'), value: 'ingetrokken' },
 			],
 			procedureTypeOptions: [
-				{ label: t('procest', 'Reguliere procedure (8 weken)'), value: 'reguliere' },
-				{ label: t('procest', 'Uitgebreide procedure (26 weken)'), value: 'uitgebreide' },
+				{ label: t('procest', 'Regular procedure (8 weeks)'), value: 'reguliere' },
+				{ label: t('procest', 'Extended procedure (26 weeks)'), value: 'uitgebreide' },
 			],
 		}
 	},
@@ -212,11 +212,11 @@ export default {
 		},
 		getStatusLabel(zaak) {
 			const statusMap = {
-				ingediend: t('procest', 'Ingediend'),
+				ingediend: t('procest', 'Submitted'),
 				in_behandeling: t('procest', 'In behandeling'),
-				verleend: t('procest', 'Verleend'),
-				geweigerd: t('procest', 'Geweigerd'),
-				ingetrokken: t('procest', 'Ingetrokken'),
+				verleend: t('procest', 'Granted'),
+				geweigerd: t('procest', 'Refused'),
+				ingetrokken: t('procest', 'Withdrawn'),
 			}
 			return statusMap[zaak.dsoStatus] || zaak.dsoStatus || '—'
 		},

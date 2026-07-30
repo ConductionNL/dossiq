@@ -3,7 +3,7 @@
 		<NcLoadingIcon v-if="loading" :size="20" />
 
 		<div v-else-if="acties.length === 0" class="audit-trail__empty">
-			{{ t('procest', 'Geen acties geregistreerd') }}
+			{{ t('procest', 'No actions recorded') }}
 		</div>
 
 		<div v-else>
@@ -17,7 +17,7 @@
 						{{ formatAction(actie.action) }}
 					</span>
 					<span class="audit-trail__step">
-						{{ t('procest', 'Stap {n}', { n: actie.step }) }}
+						{{ t('procest', 'Step {n}', { n: actie.step }) }}
 					</span>
 					<span class="audit-trail__timestamp">
 						{{ formatTimestamp(actie) }}
@@ -25,7 +25,7 @@
 				</div>
 				<div class="audit-trail__actor">
 					<template v-if="actie.actorType === 'delegate' && actie.onBehalfOf">
-						{{ t('procest', 'Geparafeerd door {delegate} namens {principal}', {
+						{{ t('procest', 'Endorsed by {delegate} on behalf of {principal}', {
 							delegate: actie.actor,
 							principal: actie.onBehalfOf
 						}) }}
@@ -35,10 +35,10 @@
 					</template>
 				</div>
 				<div v-if="actie.comment" class="audit-trail__comment">
-					<strong>{{ t('procest', 'Opmerking') }}:</strong> {{ actie.comment }}
+					<strong>{{ t('procest', 'Comment') }}:</strong> {{ actie.comment }}
 				</div>
 				<div v-if="actie.advice" class="audit-trail__advice">
-					<strong>{{ t('procest', 'Advies') }}:</strong> {{ actie.advice }}
+					<strong>{{ t('procest', 'Advice') }}:</strong> {{ actie.advice }}
 				</div>
 				<div v-if="actie.mandate" class="audit-trail__mandate">
 					<em>{{ t('procest', 'Mandaat') }}: {{ actie.mandate }}</em>
@@ -49,7 +49,7 @@
 			<NcButton
 				class="audit-trail__export"
 				@click="exportAuditTrail">
-				{{ t('procest', 'Exporteren') }}
+				{{ t('procest', 'Export') }}
 			</NcButton>
 		</div>
 	</div>

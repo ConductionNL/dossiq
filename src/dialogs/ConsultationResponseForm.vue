@@ -2,44 +2,44 @@
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
 	<NcDialog v-if="open"
-		:name="t('procest', 'Advies uitbrengen')"
+		:name="t('procest', 'Issue advice')"
 		size="normal"
 		:can-close="!submitting"
 		@closing="onClose">
 		<div class="consultation-response-form">
 			<div v-if="consultationSubject" class="consultation-response-form__subject">
-				<span class="consultation-response-form__subject-label">{{ t('procest', 'Onderwerp:') }}</span>
+				<span class="consultation-response-form__subject-label">{{ t('procest', 'Subject:') }}</span>
 				{{ consultationSubject }}
 			</div>
 
 			<div class="consultation-response-form__field">
 				<label class="consultation-response-form__label">
-					{{ t('procest', 'Advies') }} *
+					{{ t('procest', 'Advice') }} *
 				</label>
 				<NcSelect
 					v-model="form.advies"
 					:options="adviesOptions"
-					:aria-label-combobox="t('procest', 'Advies')"
+					:aria-label-combobox="t('procest', 'Advice')"
 					label="label"
 					:reduce="opt => opt.value"
-					:placeholder="t('procest', 'Selecteer adviestype')" />
+					:placeholder="t('procest', 'Select advice type')" />
 			</div>
 
 			<div v-if="showToelichting" class="consultation-response-form__field">
 				<label class="consultation-response-form__label">
-					{{ t('procest', 'Toelichting') }} <span v-if="toelichtingRequired">*</span>
+					{{ t('procest', 'Explanation') }} <span v-if="toelichtingRequired">*</span>
 				</label>
 				<textarea
 					v-model="form.toelichting"
 					class="consultation-response-form__textarea"
 					rows="4"
-					:placeholder="t('procest', 'Geef een toelichting op uw advies...')" />
+					:placeholder="t('procest', 'Provide an explanation for your advice...')" />
 			</div>
 
 			<!-- Conditions — only shown for positief_met_voorwaarden -->
 			<div v-if="showVoorwaarden" class="consultation-response-form__field">
 				<label class="consultation-response-form__label">
-					{{ t('procest', 'Voorwaarden') }}
+					{{ t('procest', 'Conditions') }}
 				</label>
 				<div
 					v-for="(voorwaarde, idx) in form.voorwaarden"
@@ -48,31 +48,31 @@
 					<input
 						v-model="voorwaarde.description"
 						class="consultation-response-form__condition-input"
-						:placeholder="t('procest', 'Beschrijving voorwaarde')"
+						:placeholder="t('procest', 'Condition description')"
 						type="text">
 					<NcSelect
 						v-model="voorwaarde.priority"
 						:options="priorityOptions"
-						:aria-label-combobox="t('procest', 'Prioriteit voorwaarde {n}', { n: idx + 1 })"
+						:aria-label-combobox="t('procest', 'Priority condition {n}', { n: idx + 1 })"
 						label="label"
 						:reduce="opt => opt.value"
 						class="consultation-response-form__condition-priority"
-						:placeholder="t('procest', 'Prioriteit')" />
+						:placeholder="t('procest', 'Priority')" />
 					<NcButton
 						type="tertiary"
-						:title="t('procest', 'Verwijder voorwaarde')"
+						:title="t('procest', 'Remove condition')"
 						@click="removeVoorwaarde(idx)">
 						✕
 					</NcButton>
 				</div>
 				<NcButton @click="addVoorwaarde">
-					{{ t('procest', 'Voorwaarde toevoegen') }}
+					{{ t('procest', 'Add condition') }}
 				</NcButton>
 			</div>
 
 			<div class="consultation-response-form__field">
 				<label class="consultation-response-form__label">
-					{{ t('procest', 'Datum advies') }} *
+					{{ t('procest', 'Advice date') }} *
 				</label>
 				<input
 					v-model="form.datum"
@@ -94,7 +94,7 @@
 				type="primary"
 				:disabled="!canSubmit"
 				@click="onSubmit">
-				{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Advies indienen') }}
+				{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Submit advice') }}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -137,15 +137,15 @@ export default {
 				datum: '',
 			},
 			adviesOptions: [
-				{ label: this.t('procest', 'Positief'), value: 'positief' },
-				{ label: this.t('procest', 'Positief met voorwaarden'), value: 'positief_met_voorwaarden' },
-				{ label: this.t('procest', 'Negatief'), value: 'negatief' },
+				{ label: this.t('procest', 'Positive'), value: 'positief' },
+				{ label: this.t('procest', 'Positive with conditions'), value: 'positief_met_voorwaarden' },
+				{ label: this.t('procest', 'Negative'), value: 'negatief' },
 				{ label: this.t('procest', 'Not applicable'), value: 'niet_van_toepassing' },
 			],
 			priorityOptions: [
-				{ label: this.t('procest', 'Hoog'), value: 'hoog' },
-				{ label: this.t('procest', 'Normaal'), value: 'normaal' },
-				{ label: this.t('procest', 'Laag'), value: 'laag' },
+				{ label: this.t('procest', 'High'), value: 'hoog' },
+				{ label: this.t('procest', 'Normal'), value: 'normaal' },
+				{ label: this.t('procest', 'Low'), value: 'laag' },
 			],
 		}
 	},
@@ -208,15 +208,15 @@ export default {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
 			if (!this.form.advies) {
-				this.validationError = this.t('procest', 'Selecteer een adviestype.')
+				this.validationError = this.t('procest', 'Select an advice type.')
 				return false
 			}
 			if (this.toelichtingRequired && this.form.toelichting.trim() === '') {
-				this.validationError = this.t('procest', 'Toelichting is verplicht voor dit adviestype.')
+				this.validationError = this.t('procest', 'Explanation is required for this advice type.')
 				return false
 			}
 			if (!this.form.datum) {
-				this.validationError = this.t('procest', 'Datum is verplicht.')
+				this.validationError = this.t('procest', 'Date is required.')
 				return false
 			}
 			return true

@@ -13,7 +13,7 @@
 			</div>
 			<div class="progress-timeline__content">
 				<div class="progress-timeline__label">
-					{{ step.label || step.actor || t('procest', 'Stap {n}', { n: step.order }) }}
+					{{ step.label || step.actor || t('procest', 'Step {n}', { n: step.order }) }}
 				</div>
 				<div class="progress-timeline__type">
 					{{ formatStepType(step.type) }}
@@ -22,7 +22,7 @@
 					{{ getCompletionInfo(step) }}
 				</div>
 				<div v-else-if="isCurrent(step)" class="progress-timeline__meta progress-timeline__meta--waiting">
-					{{ t('procest', 'Wachtend') }}
+					{{ t('procest', 'Waiting') }}
 				</div>
 			</div>
 		</div>
@@ -94,11 +94,11 @@ export default {
 			const date = actie._self?.created || actie.timestamp
 			const formatted = date ? new Date(date).toLocaleDateString('nl-NL') : ''
 			const action = actie.action === 'parafered'
-				? t('procest', 'Geparafeerd')
+				? t('procest', 'Endorsed')
 				: actie.action === 'advised'
-					? t('procest', 'Geadviseerd')
+					? t('procest', 'Advised')
 					: actie.action === 'skipped'
-						? t('procest', 'Overgeslagen')
+						? t('procest', 'Skipped')
 						: actie.action
 			return `${action} door ${actie.actor} — ${formatted}`
 		},

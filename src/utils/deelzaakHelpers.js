@@ -28,7 +28,7 @@ export function subCaseCountBadge(count) {
 	if (!Number.isFinite(n) || n <= 0) {
 		return ''
 	}
-	return t('procest', '{count} deelzaken', { count: n })
+	return t('procest', '{count} sub-cases', { count: n })
 }
 
 /**

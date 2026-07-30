@@ -1,10 +1,10 @@
 <template>
 	<div>
 		<CnDetailPage
-			:title="voorstel.onderwerp || t('procest', 'Voorstel')"
+			:title="voorstel.onderwerp || t('procest', 'Proposal')"
 			:subtitle="formatType(voorstel.type)"
 			:back-route="{ name: 'Voorstellen' }"
-			:back-label="t('procest', 'Terug naar overzicht')"
+			:back-label="t('procest', 'Back to overview')"
 			:loading="loading"
 			:sidebar="false">
 			<template #header-actions>
@@ -12,12 +12,12 @@
 					v-if="canRegisterBesluit"
 					type="primary"
 					@click="showBesluitDialog = true">
-					{{ t('procest', 'Besluit registreren') }}
+					{{ t('procest', 'Register decision') }}
 				</NcButton>
 			</template>
 
 			<!-- Status & Progress -->
-			<CnDetailCard :title="t('procest', 'Status & Voortgang')">
+			<CnDetailCard :title="t('procest', 'Status & Progress')">
 				<div class="voorstel-detail__status">
 					<span class="voorstel-detail__status-badge" :class="`voorstel-detail__status-badge--${voorstel.status}`">
 						{{ formatStatus(voorstel.status) }}
@@ -79,15 +79,15 @@
 				@close="showAddStepDialog = false" />
 
 			<!-- Resubmit for steller -->
-			<CnDetailCard v-if="voorstel.status === 'teruggestuurd' && isSteller" :title="t('procest', 'Teruggestuurd')">
-				<p>{{ t('procest', 'Dit voorstel is teruggestuurd. Pas het document aan en dien het opnieuw in.') }}</p>
+			<CnDetailCard v-if="voorstel.status === 'teruggestuurd' && isSteller" :title="t('procest', 'Returned')">
+				<p>{{ t('procest', 'This proposal has been returned. Adjust the document and resubmit it.') }}</p>
 				<NcButton type="primary" @click="resubmit">
-					{{ t('procest', 'Opnieuw indienen') }}
+					{{ t('procest', 'Resubmit') }}
 				</NcButton>
 			</CnDetailCard>
 
 			<!-- Voorstel Information -->
-			<CnDetailCard :title="t('procest', 'Voorstel informatie')">
+			<CnDetailCard :title="t('procest', 'Proposal information')">
 				<div class="form-row">
 					<div class="form-group">
 						<label>{{ t('procest', 'Onderwerp') }}</label>
@@ -100,25 +100,25 @@
 				</div>
 				<div class="form-row">
 					<div class="form-group">
-						<label>{{ t('procest', 'Steller') }}</label>
+						<label>{{ t('procest', 'Drafter') }}</label>
 						<span class="form-value">{{ voorstel.steller || '-' }}</span>
 					</div>
 					<div class="form-group">
-						<label>{{ t('procest', 'Afdeling') }}</label>
+						<label>{{ t('procest', 'Department') }}</label>
 						<span class="form-value">{{ voorstel.afdeling || '-' }}</span>
 					</div>
 				</div>
 				<div class="form-row">
 					<div class="form-group">
-						<label>{{ t('procest', 'Portefeuillehouder') }}</label>
+						<label>{{ t('procest', 'Portfolio holder') }}</label>
 						<span class="form-value">{{ voorstel.portefeuillehouder || '-' }}</span>
 					</div>
 					<div class="form-group">
-						<label>{{ t('procest', 'Zaak') }}</label>
+						<label>{{ t('procest', 'Case') }}</label>
 						<router-link
 							v-if="voorstel.case"
 							:to="{ name: 'CaseDetail', params: { id: voorstel.case } }">
-							{{ t('procest', 'Bekijk zaak') }}
+							{{ t('procest', 'View case') }}
 						</router-link>
 						<span v-else class="form-value">-</span>
 					</div>
@@ -128,13 +128,13 @@
 			<!-- Document -->
 			<CnDetailCard :title="t('procest', 'Document & Bijlagen')">
 				<div v-if="voorstel.document" class="voorstel-detail__document">
-					<p>{{ t('procest', 'Voorstel document') }}: {{ voorstel.document }}</p>
+					<p>{{ t('procest', 'Proposal document') }}: {{ voorstel.document }}</p>
 				</div>
 				<div v-else>
-					<p>{{ t('procest', 'Geen document gekoppeld') }}</p>
+					<p>{{ t('procest', 'No document linked') }}</p>
 				</div>
 				<div v-if="voorstel.bijlagen && voorstel.bijlagen.length > 0" class="voorstel-detail__bijlagen">
-					<h4>{{ t('procest', 'Bijlagen') }} ({{ voorstel.bijlagen.length }})</h4>
+					<h4>{{ t('procest', 'Attachments') }} ({{ voorstel.bijlagen.length }})</h4>
 					<ul>
 						<li v-for="(bijlage, idx) in voorstel.bijlagen" :key="idx">
 							{{ bijlage }}
@@ -144,7 +144,7 @@
 			</CnDetailCard>
 
 			<!-- Audit Trail -->
-			<CnDetailCard :title="t('procest', 'Parafeerhistorie')">
+			<CnDetailCard :title="t('procest', 'Endorsement history')">
 				<AuditTrail :acties="acties" :loading="loadingActies" />
 			</CnDetailCard>
 		</CnDetailPage>

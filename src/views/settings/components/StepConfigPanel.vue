@@ -107,14 +107,14 @@
 					type="button"
 					class="step-config-panel__advanced-toggle"
 					@click="advancedOpen = !advancedOpen">
-					<span>{{ t('procest', 'Geavanceerd') }}</span>
+					<span>{{ t('procest', 'Advanced') }}</span>
 					<span class="step-config-panel__advanced-caret">{{ advancedOpen ? '▾' : '▸' }}</span>
 				</button>
 
 				<div
 					v-if="readOnly"
 					class="step-config-panel__advanced-banner">
-					{{ t('procest', 'Gepubliceerde versies zijn niet bewerkbaar — kloon eerst een nieuwe versie.') }}
+					{{ t('procest', 'Published versions are not editable — clone a new version first.') }}
 				</div>
 
 				<div v-if="advancedOpen" class="step-config-panel__advanced-body">
@@ -136,16 +136,16 @@
 								:disabled="readOnly"
 								@change="emitUpdate">
 								<option value="">
-									{{ t('procest', 'Geen SLA') }}
+									{{ t('procest', 'No SLA') }}
 								</option>
 								<option value="hours">
-									{{ t('procest', 'uren') }}
+									{{ t('procest', 'hours') }}
 								</option>
 								<option value="businessDays">
-									{{ t('procest', 'werkdagen') }}
+									{{ t('procest', 'working days') }}
 								</option>
 								<option value="calendarDays">
-									{{ t('procest', 'kalenderdagen') }}
+									{{ t('procest', 'calendar days') }}
 								</option>
 							</select>
 						</div>
@@ -153,7 +153,7 @@
 
 					<!-- Required fields -->
 					<div class="step-config-panel__field">
-						<label>{{ t('procest', 'Verplichte velden bij afronden') }}</label>
+						<label>{{ t('procest', 'Required fields on completion') }}</label>
 						<div
 							v-for="(field, index) in localConfig.requiredFields"
 							:key="`field-${index}`"
@@ -161,7 +161,7 @@
 							<input
 								v-model="localConfig.requiredFields[index]"
 								type="text"
-								:placeholder="t('procest', 'Veldnaam (property path)')"
+								:placeholder="t('procest', 'Field name (property path)')"
 								class="step-config-panel__input"
 								:disabled="readOnly"
 								@input="emitUpdate">
@@ -178,7 +178,7 @@
 							type="secondary"
 							:disabled="readOnly"
 							@click="addRequiredField">
-							{{ t('procest', 'Veld toevoegen') }}
+							{{ t('procest', 'Add field') }}
 						</NcButton>
 					</div>
 
@@ -190,7 +190,7 @@
 								type="checkbox"
 								:disabled="readOnly"
 								@change="onEscalationToggle">
-							{{ t('procest', 'Escalatie inschakelen') }}
+							{{ t('procest', 'Enable escalation') }}
 						</label>
 						<div v-if="escalationEnabled" class="step-config-panel__escalation">
 							<select
@@ -219,24 +219,24 @@
 									:disabled="readOnly"
 									@change="emitUpdate">
 									<option value="hours">
-										{{ t('procest', 'uren') }}
+										{{ t('procest', 'hours') }}
 									</option>
 									<option value="businessDays">
-										{{ t('procest', 'werkdagen') }}
+										{{ t('procest', 'working days') }}
 									</option>
 								</select>
 							</div>
 							<input
 								v-model="localConfig.escalationRule.notifyRole"
 								type="text"
-								:placeholder="t('procest', 'Waarschuw rol (UUID)')"
+								:placeholder="t('procest', 'Warn role (UUID)')"
 								class="step-config-panel__input"
 								:disabled="readOnly"
 								@input="emitUpdate">
 							<input
 								v-model="localConfig.escalationRule.escalateToRole"
 								type="text"
-								:placeholder="t('procest', 'Escaleer naar rol (UUID)')"
+								:placeholder="t('procest', 'Escalate to role (UUID)')"
 								class="step-config-panel__input"
 								:disabled="readOnly"
 								@input="emitUpdate">
@@ -246,7 +246,7 @@
 									type="checkbox"
 									:disabled="readOnly"
 									@change="emitUpdate">
-								{{ t('procest', 'Maak ook een incident aan') }}
+								{{ t('procest', 'Also create an incident') }}
 							</label>
 						</div>
 					</div>

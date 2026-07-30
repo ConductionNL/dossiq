@@ -33,8 +33,8 @@
 					<th>{{ t('procest', 'Person') }}</th>
 					<th>{{ t('procest', 'Role') }}</th>
 					<th>{{ t('procest', 'Type') }}</th>
-					<th>{{ t('procest', 'Vanaf') }}</th>
-					<th>{{ t('procest', 'Tot en met') }}</th>
+					<th>{{ t('procest', 'From') }}</th>
+					<th>{{ t('procest', 'Up to and including') }}</th>
 					<th>{{ t('procest', 'Acties') }}</th>
 				</tr>
 			</thead>

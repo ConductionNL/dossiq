@@ -37,7 +37,7 @@
 					<th>{{ t('procest', 'Naam') }}</th>
 					<th>{{ t('procest', 'Status') }}</th>
 					<th>{{ t('procest', 'In werkingtreding') }}</th>
-					<th>{{ t('procest', 'Vervaldatum') }}</th>
+					<th>{{ t('procest', 'Expiry date') }}</th>
 					<th>{{ t('procest', 'Acties') }}</th>
 				</tr>
 			</thead>

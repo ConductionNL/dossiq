@@ -83,7 +83,7 @@
 			<ul v-else>
 				<li v-for="(a, idx) in actions" :key="idx">
 					{{ a.timestamp }} — {{ a.caseTitle || a.caseId }} — {{ a.action }}
-					({{ t('procest', 'namens {who}', { who: a.actedOnBehalfOf }) }})
+					({{ t('procest', 'on behalf of {who}', { who: a.actedOnBehalfOf }) }})
 				</li>
 			</ul>
 		</div>

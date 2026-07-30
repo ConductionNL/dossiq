@@ -190,7 +190,7 @@ export default {
 		ernstOptions() {
 			return [
 				{ value: 'gering', label: t('procest', 'Minor (gering)') },
-				{ value: 'aanzienlijk', label: t('procest', 'Significant (aanzienlijk)') },
+				{ value: 'aanzienlijk', label: t('procest', 'Significant (substantial)') },
 				{ value: 'ernstig', label: t('procest', 'Serious (ernstig)') },
 			]
 		},

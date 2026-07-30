@@ -95,9 +95,9 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		tabOptions() {
 			return [
-				{ id: 'besluiten', label: t('procest', 'Besluiten') },
-				{ id: 'rollen', label: t('procest', 'Rollen') },
-				{ id: 'toewijzingen', label: t('procest', 'Toewijzingen') },
+				{ id: 'besluiten', label: t('procest', 'Decisions') },
+				{ id: 'rollen', label: t('procest', 'Roles') },
+				{ id: 'toewijzingen', label: t('procest', 'Assignments') },
 				{ id: 'import', label: t('procest', 'Import') },
 			]
 		},

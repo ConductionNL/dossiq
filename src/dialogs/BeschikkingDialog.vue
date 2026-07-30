@@ -17,11 +17,11 @@
 					<div class="beschikking-dialog__outcome-buttons">
 						<NcButton :type="outcome === 'verleend' ? 'primary' : 'secondary'"
 							@click="outcome = 'verleend'">
-							✓ {{ t('procest', 'Verleend') }}
+							✓ {{ t('procest', 'Granted') }}
 						</NcButton>
 						<NcButton :type="outcome === 'geweigerd' ? 'error' : 'secondary'"
 							@click="outcome = 'geweigerd'">
-							✗ {{ t('procest', 'Geweigerd') }}
+							✗ {{ t('procest', 'Refused') }}
 						</NcButton>
 					</div>
 				</div>

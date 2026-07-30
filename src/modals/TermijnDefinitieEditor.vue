@@ -21,7 +21,7 @@
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="td-grondslag">{{ t('procest', 'Wettelijke grondslag') }}</label>
+				<label class="required" for="td-grondslag">{{ t('procest', 'Legal basis') }}</label>
 				<NcTextField
 					id="td-grondslag"
 					:model-value="form.grondslag"
@@ -41,12 +41,12 @@
 			</div>
 
 			<div class="form-group">
-				<label for="td-categorie">{{ t('procest', 'Categorie') }}</label>
+				<label for="td-categorie">{{ t('procest', 'Category') }}</label>
 				<NcSelect
 					id="td-categorie"
 					:model-value="selectedCategorie"
 					:options="categorieOptions"
-					:input-label="t('procest', 'Categorie')"
+					:input-label="t('procest', 'Category')"
 					@update:model-value="v => form.categorie = v ? v.id : ''" />
 			</div>
 
@@ -154,10 +154,10 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		categorieOptions() {
 			return [
-				{ id: 'beslis', label: t('procest', 'Beslistermijn') },
-				{ id: 'herstel', label: t('procest', 'Hersteltermijn') },
-				{ id: 'bezwaar', label: t('procest', 'Bezwaartermijn') },
-				{ id: 'beroep', label: t('procest', 'Beroepstermijn') },
+				{ id: 'beslis', label: t('procest', 'Decision deadline') },
+				{ id: 'herstel', label: t('procest', 'Remediation period') },
+				{ id: 'bezwaar', label: t('procest', 'Objection period') },
+				{ id: 'beroep', label: t('procest', 'Appeal period') },
 			]
 		},
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */

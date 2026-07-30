@@ -3,18 +3,18 @@
 		<!-- Advisory step: Adviseren -->
 		<template v-if="isAdvisoryStep">
 			<div class="form-group">
-				<label>{{ t('procest', 'Advies') }}</label>
+				<label>{{ t('procest', 'Advice') }}</label>
 				<textarea
 					v-model="adviceText"
-					:placeholder="t('procest', 'Geef uw advies...')"
+					:placeholder="t('procest', 'Provide your advice...')"
 					rows="3" />
 			</div>
 			<div class="parafeer-action-bar__actions">
 				<NcButton type="primary" :disabled="acting" @click="doAdviseren">
-					{{ t('procest', 'Adviseren') }}
+					{{ t('procest', 'Advise') }}
 				</NcButton>
 				<NcButton type="error" :disabled="acting" @click="showReturnForm = true">
-					{{ t('procest', 'Terugsturen') }}
+					{{ t('procest', 'Return') }}
 				</NcButton>
 			</div>
 		</template>
@@ -23,10 +23,10 @@
 		<template v-else>
 			<div class="parafeer-action-bar__actions">
 				<NcButton type="primary" :disabled="acting" @click="doParaferen">
-					{{ t('procest', 'Paraferen') }}
+					{{ t('procest', 'Endorse') }}
 				</NcButton>
 				<NcButton type="error" :disabled="acting" @click="showReturnForm = true">
-					{{ t('procest', 'Terugsturen') }}
+					{{ t('procest', 'Return') }}
 				</NcButton>
 			</div>
 
@@ -34,16 +34,16 @@
 			<div v-if="!showReturnForm" class="parafeer-action-bar__delegation">
 				<label>
 					<input v-model="isDelegating" type="checkbox">
-					{{ t('procest', 'Paraferen namens iemand anders') }}
+					{{ t('procest', 'Endorse on behalf of someone else') }}
 				</label>
 				<div v-if="isDelegating" class="parafeer-action-bar__delegation-fields">
 					<NcTextField
 						:model-value="delegateFor"
-						:placeholder="t('procest', 'Gebruikers-ID van principaal')"
+						:placeholder="t('procest', 'User ID of principal')"
 						@update:model-value="v => delegateFor = v" />
 					<NcTextField
 						:model-value="mandateRef"
-						:placeholder="t('procest', 'Mandaatreferentie')"
+						:placeholder="t('procest', 'Mandate reference')"
 						@update:model-value="v => mandateRef = v" />
 				</div>
 			</div>
@@ -52,10 +52,10 @@
 		<!-- Return form (shared) -->
 		<div v-if="showReturnForm" class="parafeer-action-bar__return-form">
 			<div class="form-group">
-				<label>{{ t('procest', 'Reden van terugsturen') }} *</label>
+				<label>{{ t('procest', 'Reason for returning') }} *</label>
 				<textarea
 					v-model="returnComment"
-					:placeholder="t('procest', 'Geef de reden waarom het voorstel wordt teruggestuurd...')"
+					:placeholder="t('procest', 'Provide the reason why the proposal is being returned...')"
 					rows="3" />
 				<p v-if="returnError" class="form-error">
 					{{ returnError }}
@@ -63,7 +63,7 @@
 			</div>
 			<div class="parafeer-action-bar__actions">
 				<NcButton type="error" :disabled="acting" @click="doTerugsturen">
-					{{ t('procest', 'Terugsturen') }}
+					{{ t('procest', 'Return') }}
 				</NcButton>
 				<NcButton @click="showReturnForm = false">
 					{{ t('procest', 'Annuleren') }}
@@ -119,7 +119,7 @@ export default {
 		},
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		actionTitle() {
-			const label = this.currentStepInfo?.label || t('procest', 'Uw actie')
+			const label = this.currentStepInfo?.label || t('procest', 'Your action')
 			return `${label} — ${this.formatStepType(this.currentStepInfo?.type)}`
 		},
 	},
@@ -201,7 +201,7 @@ export default {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async doTerugsturen() {
 			if (!this.returnComment.trim()) {
-				this.returnError = t('procest', 'Reden is verplicht bij terugsturen')
+				this.returnError = t('procest', 'Reason is required when returning')
 				return
 			}
 			this.returnError = ''

@@ -14,19 +14,19 @@
   - @spec openspec/changes/leverancier-zaakportaal-10-contract-frontend/tasks.md
   -->
 <template>
-	<NcDialog :name="t('procest', 'Verlengingsverzoek')"
+	<NcDialog :name="t('procest', 'Extension request')"
 		v-model:open="open"
 		size="small"
 		data-testid="leverancier-renewal-modal"
 		@update:open="onOpenChange">
 		<form class="lz-renewal-form" @submit.prevent="onSubmit">
 			<p class="lz-renewal-intro">
-				{{ t('procest', 'Vraag een verlenging van dit contract aan. De gemeente neemt binnen 14 werkdagen contact op.') }}
+				{{ t('procest', 'Request an extension of this contract. The municipality will contact you within 14 working days.') }}
 			</p>
 
 			<div class="lz-form-group">
 				<label class="required" for="lz-renewal-duration">
-					{{ t('procest', 'Gewenste verlengingsperiode (maanden)') }}
+					{{ t('procest', 'Desired extension period (months)') }}
 				</label>
 				<input id="lz-renewal-duration"
 					v-model.number="form.durationMonths"
@@ -43,7 +43,7 @@
 
 			<div class="lz-form-group">
 				<label for="lz-renewal-reason">
-					{{ t('procest', 'Motivatie') }}
+					{{ t('procest', 'Motivation') }}
 				</label>
 				<textarea id="lz-renewal-reason"
 					v-model="form.reason"
@@ -106,7 +106,7 @@ export default {
 		validate() {
 			this.errors = { durationMonths: '' }
 			if (!this.form.durationMonths || this.form.durationMonths < 1 || this.form.durationMonths > 60) {
-				this.errors.durationMonths = this.t('procest', 'Periode moet tussen 1 en 60 maanden liggen.')
+				this.errors.durationMonths = this.t('procest', 'Period must be between 1 and 60 months.')
 				return false
 			}
 			return true

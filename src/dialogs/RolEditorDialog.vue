@@ -42,7 +42,7 @@
 			</div>
 
 			<div class="form-group">
-				<label for="rol-afdeling">{{ t('procest', 'Afdeling') }}</label>
+				<label for="rol-afdeling">{{ t('procest', 'Department') }}</label>
 				<NcTextField
 					id="rol-afdeling"
 					:model-value="form.afdeling"
@@ -111,11 +111,11 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
-				{ id: 'bestuurder', label: t('procest', 'Bestuurder') },
+				{ id: 'bestuurder', label: t('procest', 'Director') },
 				{ id: 'manager', label: t('procest', 'Manager') },
-				{ id: 'teamleider', label: t('procest', 'Teamleider') },
-				{ id: 'medewerker', label: t('procest', 'Medewerker') },
-				{ id: 'waarnemer', label: t('procest', 'Waarnemer') },
+				{ id: 'teamleider', label: t('procest', 'Team leader') },
+				{ id: 'medewerker', label: t('procest', 'Employee') },
+				{ id: 'waarnemer', label: t('procest', 'Substitute') },
 			]
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
