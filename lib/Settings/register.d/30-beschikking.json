@@ -205,7 +205,7 @@
       },
       "stateMachineLog": {
         "slug": "stateMachineLog",
-        "icon": "HistoryOutline",
+        "icon": "History",
         "version": "1.0.0",
         "x-schema-org": "schema:Action",
         "title": "State Machine Log",
@@ -248,7 +248,7 @@
       },
       "bezwaarTrigger": {
         "slug": "bezwaarTrigger",
-        "icon": "AlarmOutline",
+        "icon": "Alarm",
         "version": "1.0.0",
         "x-schema-org": "schema:Schedule",
         "title": "Bezwaar Trigger",

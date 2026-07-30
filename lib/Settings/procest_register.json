@@ -3945,7 +3945,7 @@
             },
             "appealDecision": {
                 "slug": "appealDecision",
-                "icon": "GavelOutline",
+                "icon": "Gavel",
                 "version": "1.0.0",
                 "x-schema-org": "schema:LegalForceStatus",
                 "x-zgw-equivalent": "BeslissingOpBezwaar",
@@ -4058,7 +4058,7 @@
             },
             "bezwaarDecision": {
                 "slug": "bezwaarDecision",
-                "icon": "GavelOutline",
+                "icon": "Gavel",
                 "version": "1.0.0",
                 "x-schema-org": "schema:Action",
                 "x-zgw-equivalent": "BeslissingOpBezwaar",
@@ -7543,7 +7543,7 @@
             },
             "hearing": {
                 "slug": "hearing",
-                "icon": "AccountVoiceOutline",
+                "icon": "AccountVoice",
                 "version": "1.0.0",
                 "title": "Hearing",
                 "description": "Hoorgesprek (hearing) linked to a complaint — captures scheduling, participants, outcome, and video/calendar integration.",
@@ -7971,7 +7971,7 @@
             },
             "tenantMandate": {
                 "slug": "tenantMandate",
-                "icon": "FileSignOutline",
+                "icon": "FileSign",
                 "version": "1.0.0",
                 "title": "Tenant Mandate",
                 "description": "Signed mandate authorising a tenant to act on behalf of the issuing authority — backs ketenmachtiging (chain-mandate) flows.",

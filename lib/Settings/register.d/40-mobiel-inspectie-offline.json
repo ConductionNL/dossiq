@@ -242,7 +242,7 @@
       },
       "syncQueue": {
         "slug": "syncQueue",
-        "icon": "SyncOutline",
+        "icon": "Sync",
         "version": "1.0.0",
         "x-schema-org": "schema:Action",
         "title": "Sync Queue Operation",

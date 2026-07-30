@@ -21,7 +21,7 @@
 		{
 			"id": "BesluitvormingAgenda",
 			"label": "Agenda",
-			"icon": "icon-calendar-dark",
+			"icon": "CalendarTextOutline",
 			"route": "AgendaCompiler",
 			"order": 72,
 			"requiresRole": ["Behandelaar", "Agendabeheerder", "Griffier"]
