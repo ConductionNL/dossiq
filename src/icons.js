@@ -66,6 +66,8 @@ import ClipboardPulseOutline from 'vue-material-design-icons/ClipboardPulseOutli
 import ClipboardSearchOutline from 'vue-material-design-icons/ClipboardSearchOutline.vue'
 import ClipboardTextOutline from 'vue-material-design-icons/ClipboardTextOutline.vue'
 import ClockAlertOutline from 'vue-material-design-icons/ClockAlertOutline.vue'
+import Close from 'vue-material-design-icons/Close.vue'
+import CloudUploadOutline from 'vue-material-design-icons/CloudUploadOutline.vue'
 import Cog from 'vue-material-design-icons/Cog.vue'
 import CogOutline from 'vue-material-design-icons/CogOutline.vue'
 import CommentOutline from 'vue-material-design-icons/CommentOutline.vue'
@@ -79,6 +81,7 @@ import Earth from 'vue-material-design-icons/Earth.vue'
 import EmailAlert from 'vue-material-design-icons/EmailAlert.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import EmoticonSad from 'vue-material-design-icons/EmoticonSad.vue'
+import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 import Factory from 'vue-material-design-icons/Factory.vue'
 import FileAlertOutline from 'vue-material-design-icons/FileAlertOutline.vue'
 import FileCertificateOutline from 'vue-material-design-icons/FileCertificateOutline.vue'
@@ -136,6 +139,7 @@ import PhoneReturn from 'vue-material-design-icons/PhoneReturn.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
 import Receipt from 'vue-material-design-icons/Receipt.vue'
+import Refresh from 'vue-material-design-icons/Refresh.vue'
 import RobotOutline from 'vue-material-design-icons/RobotOutline.vue'
 import RoutesClock from 'vue-material-design-icons/RoutesClock.vue'
 import ScaleBalance from 'vue-material-design-icons/ScaleBalance.vue'
@@ -218,6 +222,8 @@ export default {
 	ClipboardSearchOutline,
 	ClipboardTextOutline,
 	ClockAlertOutline,
+	Close,
+	CloudUploadOutline,
 	Cog,
 	CogOutline,
 	CommentOutline,
@@ -231,6 +237,7 @@ export default {
 	EmailAlert,
 	EmailOutline,
 	EmoticonSad,
+	EyeOutline,
 	Factory,
 	FileAlertOutline,
 	FileCertificateOutline,
@@ -288,6 +295,7 @@ export default {
 	Plus,
 	ProgressClock,
 	Receipt,
+	Refresh,
 	RobotOutline,
 	RoutesClock,
 	ScaleBalance,
