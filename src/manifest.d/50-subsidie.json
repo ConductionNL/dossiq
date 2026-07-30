@@ -14,7 +14,7 @@
 		{
 			"id": "Subsidieregelingen",
 			"label": "Subsidy schemes",
-			"icon": "icon-settings",
+			"icon": "HandHeartOutline",
 			"route": "Subsidieregelingen",
 			"order": 96
 		}

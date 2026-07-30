@@ -92,7 +92,7 @@
       },
       "besluitinformatieobject": {
         "slug": "besluitinformatieobject",
-        "icon": "GavelOutline",
+        "icon": "Gavel",
         "version": "1.0.0",
         "title": "Besluitinformatieobject",
         "description": "ZGW DRC join between a besluit (decision) and an informatieobject.",

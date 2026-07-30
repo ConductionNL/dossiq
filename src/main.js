@@ -27,6 +27,7 @@ import bundledManifest from './manifest.json'
 import menuLayout from './menu-layout.json'
 import customComponents from './customComponents.js'
 import registry from './registry.js'
+import appIcons from './icons.js'
 import mapFormatters from './services/mapFormatters.js'
 import formatters from './services/formatters.js'
 
@@ -47,7 +48,7 @@ import './assets/app.css'
 // after createApp (below), not Vue.mixin. pinia + router install via app.use.
 
 // Register library-side icon set + lib translations once at bootstrap.
-registerIcons()
+registerIcons(appIcons)
 try {
 	registerTranslations()
 } catch (e) {

@@ -39,108 +39,108 @@
 		{
 			"id": "Dashboard",
 			"label": "Dashboard",
-			"icon": "icon-category-dashboard",
+			"icon": "ViewDashboardOutline",
 			"route": "Dashboard",
 			"order": 10
 		},
 		{
 			"id": "MyWork",
 			"label": "My work",
-			"icon": "icon-checkmark",
+			"icon": "ClipboardAccountOutline",
 			"route": "MyWork",
 			"order": 20
 		},
 		{
 			"id": "WorkGroup",
 			"label": "Work queue",
-			"icon": "icon-toggle",
+			"icon": "ClipboardAccountOutline",
 			"order": 20
 		},
 		{
 			"id": "Cases",
 			"label": "Cases",
-			"icon": "icon-folder",
+			"icon": "FolderAccountOutline",
 			"route": "Cases",
 			"order": 30
 		},
 		{
 			"id": "WorkflowBoard",
 			"label": "Workflow board",
-			"icon": "icon-category-workflow",
+			"icon": "ViewColumnOutline",
 			"route": "WorkflowBoard",
 			"order": 35
 		},
 		{
 			"id": "Bezwaren",
 			"label": "Objections",
-			"icon": "icon-toggle-filelist",
+			"icon": "FileAlertOutline",
 			"route": "Bezwaren",
 			"order": 45
 		},
 		{
 			"id": "Beroepen",
 			"label": "Appeals",
-			"icon": "icon-toggle-filelist",
+			"icon": "ScaleBalance",
 			"route": "Beroepen",
 			"order": 46
 		},
 		{
 			"id": "AnalyticsGroup",
 			"label": "Reports",
-			"icon": "icon-category-monitoring",
+			"icon": "ChartBoxOutline",
 			"order": 55
 		},
 		{
 			"id": "Analytics",
 			"label": "Processing time",
-			"icon": "icon-category-monitoring",
+			"icon": "ChartLine",
 			"route": "Doorlooptijd",
 			"order": 55
 		},
 		{
 			"id": "ProcessMiningDashboardMenu",
 			"label": "Process mining",
-			"icon": "icon-category-monitoring",
+			"icon": "ChartSankey",
 			"route": "ProcessMiningDashboard",
 			"order": 56
 		},
 		{
 			"id": "CaseMap",
 			"label": "Map",
-			"icon": "icon-address",
+			"icon": "MapOutline",
 			"route": "CaseMap",
 			"order": 60
 		},
 		{
 			"id": "BesluitvormingGroup",
 			"label": "Decision-making",
-			"icon": "icon-comment",
+			"icon": "Gavel",
 			"order": 70
 		},
 		{
 			"id": "Voorstellen",
 			"label": "Proposals",
-			"icon": "icon-comment",
+			"icon": "CommentOutline",
 			"route": "Voorstellen",
 			"order": 70
 		},
 		{
 			"id": "Advice",
 			"label": "Advice",
-			"icon": "icon-comment",
+			"icon": "CommentOutline",
 			"route": "Advice",
 			"order": 75
 		},
 		{
 			"id": "SettingsGroup",
 			"label": "Settings",
-			"icon": "icon-settings",
+			"icon": "CogOutline",
 			"order": 200
 		},
 		{
 			"id": "Documentation",
 			"label": "Documentation",
-			"icon": "icon-info",
+			"icon": "BookOpenVariantOutline",
 			"href": "https://procest.conduction.nl",
 			"section": "footer",
 			"order": 90
@@ -148,7 +148,7 @@
 		{
 			"id": "CaseTypesMenu",
 			"label": "Case types",
-			"icon": "icon-category-customization",
+			"icon": "FolderCogOutline",
 			"route": "Settings",
 			"section": "settings",
 			"order": 95
@@ -156,7 +156,7 @@
 		{
 			"id": "PartnersMenu",
 			"label": "Partner organisations",
-			"icon": "icon-group",
+			"icon": "OfficeBuildingOutline",
 			"route": "Partners",
 			"section": "settings",
 			"order": 97
@@ -164,7 +164,7 @@
 		{
 			"id": "TenantsMenu",
 			"label": "Organisations",
-			"icon": "icon-group",
+			"icon": "OfficeBuildingOutline",
 			"route": "Tenants",
 			"section": "settings",
 			"order": 98,
@@ -173,7 +173,7 @@
 		{
 			"id": "ParafeerroutesMenu",
 			"label": "Approval routes",
-			"icon": "icon-category-workflow",
+			"icon": "SitemapOutline",
 			"route": "Parafeerroutes",
 			"section": "settings",
 			"order": 96
@@ -181,7 +181,7 @@
 		{
 			"id": "AiOversightMenu",
 			"label": "AI oversight",
-			"icon": "icon-category-monitoring",
+			"icon": "ChartLine",
 			"route": "AiOversight",
 			"section": "settings",
 			"order": 96
@@ -189,7 +189,7 @@
 		{
 			"id": "WmsLayersMenu",
 			"label": "Map layers",
-			"icon": "icon-category-files",
+			"icon": "LayersOutline",
 			"route": "WmsLayers",
 			"section": "settings",
 			"order": 97,
@@ -198,7 +198,7 @@
 		{
 			"id": "WorkflowDefinitionsMenu",
 			"label": "Workflow definitions",
-			"icon": "icon-category-workflow",
+			"icon": "SitemapOutline",
 			"route": "WorkflowDefinitions",
 			"section": "settings",
 			"order": 97
@@ -206,7 +206,7 @@
 		{
 			"id": "AutomaticActionsMenu",
 			"label": "Automatic actions",
-			"icon": "icon-category-workflow",
+			"icon": "Sitemap",
 			"route": "AutomaticActions",
 			"section": "settings",
 			"order": 96
@@ -214,7 +214,7 @@
 		{
 			"id": "LhsMatricesMenu",
 			"label": "Enforcement strategy",
-			"icon": "icon-category-customization",
+			"icon": "Tune",
 			"route": "LhsMatrices",
 			"section": "settings",
 			"order": 96,
@@ -223,7 +223,7 @@
 		{
 			"id": "LhsRecommendationsMenu",
 			"label": "LHS recommendations",
-			"icon": "icon-comment",
+			"icon": "CommentOutline",
 			"route": "LhsRecommendations",
 			"section": "settings",
 			"order": 97
@@ -231,7 +231,7 @@
 		{
 			"id": "LocationsMenu",
 			"label": "Case locations",
-			"icon": "icon-address",
+			"icon": "MapMarkerOutline",
 			"route": "Locations",
 			"section": "settings",
 			"order": 98,
@@ -240,28 +240,28 @@
 		{
 			"id": "BezwaarCommitteesMenu",
 			"label": "Objection advisory committees",
-			"icon": "icon-group",
+			"icon": "FileAlertOutline",
 			"route": "BezwaarCommittees",
 			"order": 49
 		},
 		{
 			"id": "TermijnDashboardMenu",
 			"label": "Deadline monitoring",
-			"icon": "icon-history",
+			"icon": "ClockAlertOutline",
 			"route": "TermijnDashboard",
 			"order": 71
 		},
 		{
 			"id": "Iv3ReportDashboardMenu",
 			"label": "IV3 cost report",
-			"icon": "icon-category-monitoring",
+			"icon": "ChartBoxOutline",
 			"route": "Iv3ReportDashboard",
 			"order": 72
 		},
 		{
 			"id": "TenantOnboardingMenu",
 			"label": "Organisation onboarding",
-			"icon": "icon-user",
+			"icon": "AccountPlusOutline",
 			"route": "TenantOnboardingDashboard",
 			"section": "settings",
 			"order": 92
@@ -269,7 +269,7 @@
 		{
 			"id": "SubstitutionMenu",
 			"label": "Substitution",
-			"icon": "icon-user",
+			"icon": "AccountSwitchOutline",
 			"route": "SubstitutionSettings",
 			"section": "settings",
 			"order": 93
@@ -277,7 +277,7 @@
 		{
 			"id": "SubstitutionAdminMenu",
 			"label": "Substitutions & reassignment",
-			"icon": "icon-group",
+			"icon": "AccountSwitchOutline",
 			"route": "SubstitutionAdmin",
 			"section": "settings",
 			"order": 94,
@@ -286,7 +286,7 @@
 		{
 			"id": "VerwerkingenOverviewMenu",
 			"label": "Processing activities (AVG)",
-			"icon": "icon-password",
+			"icon": "ShieldLockOutline",
 			"route": "VerwerkingenOverview",
 			"section": "settings",
 			"order": 95,
@@ -295,7 +295,7 @@
 		{
 			"id": "SettingsMenu",
 			"label": "Settings",
-			"icon": "icon-settings",
+			"icon": "CogOutline",
 			"route": "Settings",
 			"section": "settings",
 			"order": 99
@@ -303,7 +303,7 @@
 		{
 			"id": "FeaturesRoadmapMenu",
 			"label": "Features & roadmap",
-			"icon": "icon-toggle",
+			"icon": "MapMarkerPath",
 			"route": "FeaturesRoadmap",
 			"section": "footer",
 			"order": 100
