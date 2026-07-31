@@ -75,6 +75,7 @@ use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Security\IContentSecurityPolicyManager;
 
 /**
@@ -596,18 +597,26 @@ class Application extends App implements IBootstrap
      * degrades to the plain global registration it replaced, which is exactly
      * the behaviour every listener had before.
      *
-     * @param IRegistrationContext $context   Registration context.
-     * @param string               $event     OpenRegister event class name.
-     * @param string               $listener  Listener class name.
-     * @param array<int,string>    $registers Register slugs the listener reacts to.
-     * @param array<int,string>    $schemas   Schema slugs the listener reacts to.
+     * This MUST be called from boot(), never from register(). Nextcloud enables
+     * each app's autoloader immediately before calling THAT app's own
+     * register(), so from register() the `class_exists()` guard below is
+     * boot-order dependent: OpenRegister's classes are only autoloadable to apps
+     * that happen to register after it, and every earlier app silently took the
+     * unfiltered fallback branch. boot() runs only after every app's register()
+     * has completed, so the guard resolves regardless of this app's position.
+     *
+     * @param IEventDispatcher  $dispatcher The live event dispatcher.
+     * @param string            $event      OpenRegister event class name.
+     * @param string            $listener   Listener class name.
+     * @param array<int,string> $registers  Register slugs the listener reacts to.
+     * @param array<int,string> $schemas    Schema slugs the listener reacts to.
      *
      * @return void
      *
      * @spec openspec/specs/bezwaar-lifecycle/spec.md
      */
     private function registerFilteredObjectListener(
-        IRegistrationContext $context,
+        IEventDispatcher $dispatcher,
         string $event,
         string $listener,
         array $registers,
@@ -615,8 +624,8 @@ class Application extends App implements IBootstrap
     ): void {
         $subscription = '\\OCA\\OpenRegister\\Event\\ObjectEventSubscription';
         if (class_exists($subscription) === true) {
-            $subscription::register(
-                context: $context,
+            $subscription::subscribe(
+                dispatcher: $dispatcher,
                 event: $event,
                 listener: $listener,
                 registers: $registers,
@@ -625,12 +634,25 @@ class Application extends App implements IBootstrap
             return;
         }
 
-        $context->registerEventListener(event: $event, listener: $listener);
+        // Loud on purpose. This fallback is correct but UNFILTERED, and while it
+        // was silent it was indistinguishable from a working narrowing.
+        \OCP\Server::get(\Psr\Log\LoggerInterface::class)->warning(
+            'OpenRegister ObjectEventSubscription unavailable: '.$listener
+            .' fell back to an UNFILTERED registration for '.$event
+            .' and will be invoked on every object write instance-wide.',
+            ['app' => self::APP_ID]
+        );
+
+        $dispatcher->addServiceListener($event, $listener);
 
     }//end registerFilteredObjectListener()
 
     /**
-     * Register bezwaar-lifecycle and parafering-audit event listeners.
+     * Register the unnarrowed bezwaar and parafering-audit event listeners.
+     *
+     * The bezwaar listeners that DO declare a register/schema interest are
+     * subscribed from boot() instead — see {@see self::subscribeBezwaarListeners()}
+     * for why that split exists.
      *
      * @param IRegistrationContext $context The registration context
      *
@@ -638,47 +660,6 @@ class Application extends App implements IBootstrap
      */
     private function registerBezwaarListeners(IRegistrationContext $context): void
     {
-        // Bezwaar-lifecycle observer — routes bezwaar/hearing/advice/decision
-        // events onto the status-transition-engine without duplicating
-        // transition logic. See ADR-022 + REQ-BL-8.
-        //
-        // Declares its register/schema interest at REGISTRATION time instead of
-        // re-deriving it inside every handler call. Registered globally this
-        // listener was invoked on every object write on the instance — a
-        // larpingapp character create reached `handle()` and bailed at the
-        // `in_array($schemaSlug, RELEVANT_SCHEMAS)` guard.
-        $this->registerFilteredObjectListener(
-            context: $context,
-            event: ObjectCreatedEvent::class,
-            listener: BezwaarLifecycleListener::class,
-            registers: ['procest'],
-            schemas: ['bezwaar', 'objection', 'hearingSession', 'advisoryReport', 'decision']
-        );
-        $this->registerFilteredObjectListener(
-            context: $context,
-            event: ObjectUpdatedEvent::class,
-            listener: BezwaarLifecycleListener::class,
-            registers: ['procest'],
-            schemas: ['bezwaar', 'objection', 'hearingSession', 'advisoryReport', 'decision']
-        );
-
-        // Bezwaar/beroep legal hold: when an Awb proceeding (objection) is
-        // registered the linked case gets an OpenRegister legal hold; when the
-        // proceeding reaches its final outcome (bezwaarDecision / appealDecision)
-        // the hold is released. Hold storage + enforcement are OpenRegister's
-        // (ADR-022 / migrate-archival-to-or) — this replaces the retired
-        // ArchivalTriggerService `opgeschort-juridische-procedure` status.
-        // Same registration-time narrowing as the lifecycle observer above; the
-        // slug list is the union of PROCEEDING_OPENED_SCHEMAS and
-        // PROCEEDING_CLOSED_SCHEMAS on the listener.
-        $this->registerFilteredObjectListener(
-            context: $context,
-            event: ObjectCreatedEvent::class,
-            listener: BezwaarLegalHoldListener::class,
-            registers: ['procest'],
-            schemas: ['objection', 'bezwaar', 'bezwaarDecision', 'appealDecision']
-        );
-
         // Parafering audit trail: one listener emits an OR audit-trail entry
         // (hash-chained, natively immutable) for every parafeerroute transition.
         // Per ADR-022 + consume-or-audit-trail-fleet-wide (migrate-parafering-to-or-audit),
@@ -729,6 +710,65 @@ class Application extends App implements IBootstrap
             listener: BezwaarDecisionListener::class
         );
     }//end registerBezwaarListeners()
+
+    /**
+     * Subscribe the bezwaar listeners that declare a register/schema interest.
+     *
+     * Split out of {@see self::registerBezwaarListeners()} and driven from
+     * boot() rather than register(): the OpenRegister `ObjectEventSubscription`
+     * guard is only resolvable once every app's register() has run. The plain,
+     * deliberately unnarrowed registrations stay where they were.
+     *
+     * @param IEventDispatcher $dispatcher The live event dispatcher.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/bezwaar-lifecycle/spec.md
+     */
+    private function subscribeBezwaarListeners(IEventDispatcher $dispatcher): void
+    {
+        // Bezwaar-lifecycle observer — routes bezwaar/hearing/advice/decision
+        // events onto the status-transition-engine without duplicating
+        // transition logic. See ADR-022 + REQ-BL-8.
+        //
+        // Declares its register/schema interest up front instead of re-deriving
+        // it inside every handler call. Registered globally this listener was
+        // invoked on every object write on the instance — a larpingapp character
+        // create reached `handle()` and bailed at the
+        // `in_array($schemaSlug, RELEVANT_SCHEMAS)` guard.
+        $this->registerFilteredObjectListener(
+            dispatcher: $dispatcher,
+            event: ObjectCreatedEvent::class,
+            listener: BezwaarLifecycleListener::class,
+            registers: ['procest'],
+            schemas: ['bezwaar', 'objection', 'hearingSession', 'advisoryReport', 'decision']
+        );
+        $this->registerFilteredObjectListener(
+            dispatcher: $dispatcher,
+            event: ObjectUpdatedEvent::class,
+            listener: BezwaarLifecycleListener::class,
+            registers: ['procest'],
+            schemas: ['bezwaar', 'objection', 'hearingSession', 'advisoryReport', 'decision']
+        );
+
+        // Bezwaar/beroep legal hold: when an Awb proceeding (objection) is
+        // registered the linked case gets an OpenRegister legal hold; when the
+        // proceeding reaches its final outcome (bezwaarDecision / appealDecision)
+        // the hold is released. Hold storage + enforcement are OpenRegister's
+        // (ADR-022 / migrate-archival-to-or) — this replaces the retired
+        // ArchivalTriggerService `opgeschort-juridische-procedure` status.
+        // Same narrowing as the lifecycle observer above; the slug list is the
+        // union of PROCEEDING_OPENED_SCHEMAS and PROCEEDING_CLOSED_SCHEMAS on
+        // the listener.
+        $this->registerFilteredObjectListener(
+            dispatcher: $dispatcher,
+            event: ObjectCreatedEvent::class,
+            listener: BezwaarLegalHoldListener::class,
+            registers: ['procest'],
+            schemas: ['objection', 'bezwaar', 'bezwaarDecision', 'appealDecision']
+        );
+
+    }//end subscribeBezwaarListeners()
 
     /**
      * Register termijnbewaking (AWB deadline engine) listeners.
@@ -791,13 +831,16 @@ class Application extends App implements IBootstrap
      *
      * @return void
      *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     *
      * @spec openspec/specs/beschikking-generatie/spec.md
      */
     public function boot(IBootContext $context): void
     {
-        $this->relaxCspForMapTiles(server: $context->getServerContainer());
+        $container  = $context->getServerContainer();
+        $dispatcher = $container->get(IEventDispatcher::class);
+
+        $this->subscribeBezwaarListeners(dispatcher: $dispatcher);
+
+        $this->relaxCspForMapTiles(server: $container);
     }//end boot()
 
     /**
