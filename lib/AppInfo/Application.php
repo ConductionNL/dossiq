@@ -587,6 +587,49 @@ class Application extends App implements IBootstrap
     }//end register()
 
     /**
+     * Register an object-lifecycle listener that declares its interest up front.
+     *
+     * OpenRegister's `ObjectEventSubscription` records the register/schema slugs
+     * a listener reacts to and routes dispatches through a single shared proxy,
+     * so an uninterested listener is neither constructed nor invoked. When
+     * OpenRegister is absent — procest carries no hard dependency on it — this
+     * degrades to the plain global registration it replaced, which is exactly
+     * the behaviour every listener had before.
+     *
+     * @param IRegistrationContext $context   Registration context.
+     * @param string               $event     OpenRegister event class name.
+     * @param string               $listener  Listener class name.
+     * @param array<int,string>    $registers Register slugs the listener reacts to.
+     * @param array<int,string>    $schemas   Schema slugs the listener reacts to.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/bezwaar-lifecycle/spec.md
+     */
+    private function registerFilteredObjectListener(
+        IRegistrationContext $context,
+        string $event,
+        string $listener,
+        array $registers,
+        array $schemas
+    ): void {
+        $subscription = '\\OCA\\OpenRegister\\Event\\ObjectEventSubscription';
+        if (class_exists($subscription) === true) {
+            $subscription::register(
+                context: $context,
+                event: $event,
+                listener: $listener,
+                registers: $registers,
+                schemas: $schemas
+            );
+            return;
+        }
+
+        $context->registerEventListener(event: $event, listener: $listener);
+
+    }//end registerFilteredObjectListener()
+
+    /**
      * Register bezwaar-lifecycle and parafering-audit event listeners.
      *
      * @param IRegistrationContext $context The registration context
@@ -598,13 +641,25 @@ class Application extends App implements IBootstrap
         // Bezwaar-lifecycle observer — routes bezwaar/hearing/advice/decision
         // events onto the status-transition-engine without duplicating
         // transition logic. See ADR-022 + REQ-BL-8.
-        $context->registerEventListener(
+        //
+        // Declares its register/schema interest at REGISTRATION time instead of
+        // re-deriving it inside every handler call. Registered globally this
+        // listener was invoked on every object write on the instance — a
+        // larpingapp character create reached `handle()` and bailed at the
+        // `in_array($schemaSlug, RELEVANT_SCHEMAS)` guard.
+        $this->registerFilteredObjectListener(
+            context: $context,
             event: ObjectCreatedEvent::class,
-            listener: BezwaarLifecycleListener::class
+            listener: BezwaarLifecycleListener::class,
+            registers: ['procest'],
+            schemas: ['bezwaar', 'objection', 'hearingSession', 'advisoryReport', 'decision']
         );
-        $context->registerEventListener(
+        $this->registerFilteredObjectListener(
+            context: $context,
             event: ObjectUpdatedEvent::class,
-            listener: BezwaarLifecycleListener::class
+            listener: BezwaarLifecycleListener::class,
+            registers: ['procest'],
+            schemas: ['bezwaar', 'objection', 'hearingSession', 'advisoryReport', 'decision']
         );
 
         // Bezwaar/beroep legal hold: when an Awb proceeding (objection) is
@@ -613,9 +668,15 @@ class Application extends App implements IBootstrap
         // the hold is released. Hold storage + enforcement are OpenRegister's
         // (ADR-022 / migrate-archival-to-or) — this replaces the retired
         // ArchivalTriggerService `opgeschort-juridische-procedure` status.
-        $context->registerEventListener(
+        // Same registration-time narrowing as the lifecycle observer above; the
+        // slug list is the union of PROCEEDING_OPENED_SCHEMAS and
+        // PROCEEDING_CLOSED_SCHEMAS on the listener.
+        $this->registerFilteredObjectListener(
+            context: $context,
             event: ObjectCreatedEvent::class,
-            listener: BezwaarLegalHoldListener::class
+            listener: BezwaarLegalHoldListener::class,
+            registers: ['procest'],
+            schemas: ['objection', 'bezwaar', 'bezwaarDecision', 'appealDecision']
         );
 
         // Parafering audit trail: one listener emits an OR audit-trail entry
