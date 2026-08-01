@@ -90,39 +90,39 @@
 
 			<!-- Sub-dialogs -->
 			<BeschikkingDialog v-if="showBeschikkingDialog"
-			:zaak-id="zaakId"
-			@close="showBeschikkingDialog = false"
-			@generated="onBeschikkingGenerated" />
-		<SamenwerkverzoekDialog v-if="showSamenwerkDialog"
-			:zaak-id="zaakId"
-			@close="showSamenwerkDialog = false"
-			@initiated="onSamenwerkInitiated" />
-		<DoorstuurDialog v-if="showDoorstuurDialog"
-			:zaak-id="zaakId"
-			@close="showDoorstuurDialog = false" />
+				:zaak-id="zaakId"
+				@close="showBeschikkingDialog = false"
+				@generated="onBeschikkingGenerated" />
+			<SamenwerkverzoekDialog v-if="showSamenwerkDialog"
+				:zaak-id="zaakId"
+				@close="showSamenwerkDialog = false"
+				@initiated="onSamenwerkInitiated" />
+			<DoorstuurDialog v-if="showDoorstuurDialog"
+				:zaak-id="zaakId"
+				@close="showDoorstuurDialog = false" />
 
-		<!-- Inline transition form -->
-		<div v-if="showTransitionDialog" class="dso-transition-form">
-			<h3>{{ t('procest', 'Transition status') }}</h3>
-			<NcSelect v-model="transitionStatus"
-				:options="transitionOptions"
-				:input-label="t('procest', 'New status')"
-				input-id="transition-status" />
-			<NcTextField v-model="transitionToelichting"
-				:label="t('procest', 'Explanation')" />
-			<NcTextField v-if="requiresBesluitdatum"
-				v-model="transitionBesluitdatum"
-				:label="t('procest', 'Decision date')"
-				type="date" />
-			<div class="dso-transition-form__actions">
-				<NcButton type="primary" :disabled="!transitionStatus" @click="executeTransition">
-					{{ t('procest', 'Confirm') }}
-				</NcButton>
-				<NcButton type="tertiary" @click="showTransitionDialog = false">
-					{{ t('procest', 'Cancel') }}
-				</NcButton>
+			<!-- Inline transition form -->
+			<div v-if="showTransitionDialog" class="dso-transition-form">
+				<h3>{{ t('procest', 'Transition status') }}</h3>
+				<NcSelect v-model="transitionStatus"
+					:options="transitionOptions"
+					:input-label="t('procest', 'New status')"
+					input-id="transition-status" />
+				<NcTextField v-model="transitionToelichting"
+					:label="t('procest', 'Explanation')" />
+				<NcTextField v-if="requiresBesluitdatum"
+					v-model="transitionBesluitdatum"
+					:label="t('procest', 'Decision date')"
+					type="date" />
+				<div class="dso-transition-form__actions">
+					<NcButton type="primary" :disabled="!transitionStatus" @click="executeTransition">
+						{{ t('procest', 'Confirm') }}
+					</NcButton>
+					<NcButton type="tertiary" @click="showTransitionDialog = false">
+						{{ t('procest', 'Cancel') }}
+					</NcButton>
+				</div>
 			</div>
-		</div>
 		</template>
 	</NcDialog>
 </template>
