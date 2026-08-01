@@ -216,12 +216,12 @@ export default {
 					})
 					if (response.ok) {
 						const data = await response.json()
-						role['_displayName'] = data?.ocs?.data?.displayname || uid
+						role._displayName = data?.ocs?.data?.displayname || uid
 					} else {
-						role['_displayName'] = uid
+						role._displayName = uid
 					}
 				} catch {
-					role['_displayName'] = uid
+					role._displayName = uid
 				}
 			}
 		},
