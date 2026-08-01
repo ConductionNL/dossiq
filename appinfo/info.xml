@@ -117,6 +117,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
     </repair-steps>
 
     <commands>
+        <command>OCA\Procest\Command\BackfillLegalHoldsCommand</command>
         <command>OCA\Procest\Command\MigrateTenantsCommand</command>
         <command>OCA\Procest\Command\SeedBezwaarBeroepCommand</command>
     </commands>
