@@ -50,10 +50,10 @@ class NotesController extends Controller
     /**
      * Constructor.
      *
-     * @param IRequest                    $request                     The HTTP request
-     * @param MentionNotificationService  $mentionNotificationService  The mention notification service
-     * @param IUserSession                $userSession                 The user session
-     * @param LoggerInterface             $logger                      The logger
+     * @param IRequest                   $request                    The HTTP request
+     * @param MentionNotificationService $mentionNotificationService The mention notification service
+     * @param IUserSession               $userSession                The user session
+     * @param LoggerInterface            $logger                     The logger
      */
     public function __construct(
         IRequest $request,
@@ -91,14 +91,15 @@ class NotesController extends Controller
 
         $data = $this->readJsonBody();
 
-        $objectId          = (string) ($data['objectId'] ?? '');
-        $register          = (string) ($data['register'] ?? '');
-        $schema             = (string) ($data['schema'] ?? '');
-        $noteId             = (string) ($data['noteId'] ?? '');
+        $objectId = (string) ($data['objectId'] ?? '');
+        $register = (string) ($data['register'] ?? '');
+        $schema   = (string) ($data['schema'] ?? '');
+        $noteId   = (string) ($data['noteId'] ?? '');
         $mentionedUserIdsRaw = $data['mentionedUserIds'] ?? [];
-        $mentionedUserIds   = is_array($mentionedUserIdsRaw) === true
-            ? array_values(array_filter(array_map('strval', $mentionedUserIdsRaw)))
-            : [];
+        $mentionedUserIds    = [];
+        if (is_array($mentionedUserIdsRaw) === true) {
+            $mentionedUserIds = array_values(array_filter(array_map('strval', $mentionedUserIdsRaw)));
+        }
 
         if ($objectId === '' || $mentionedUserIds === []) {
             return new JSONResponse(

@@ -83,12 +83,17 @@ class MentionNotificationService
                 continue;
             }
 
+            $objectType = 'note';
+            if ($schema !== '') {
+                $objectType = $schema;
+            }
+
             try {
                 $notification = $this->notificationManager->createNotification();
                 $notification->setApp(Application::APP_ID)
                     ->setUser($mentionedUserId)
                     ->setDateTime(new \DateTime())
-                    ->setObject($schema !== '' ? $schema : 'note', $objectId)
+                    ->setObject($objectType, $objectId)
                     ->setSubject(
                             'note_mention',
                             [
