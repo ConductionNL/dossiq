@@ -39,6 +39,7 @@ namespace OCA\Procest\Listener;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\ObjectSchemaSlugResolver;
 use OCA\Procest\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -69,11 +70,13 @@ class BezwaarLifecycleListener implements IEventListener
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings service
-     * @param LoggerInterface $logger          Logger
+     * @param SettingsService          $settingsService Settings service
+     * @param ObjectSchemaSlugResolver $slugResolver    Schema id-to-slug resolver
+     * @param LoggerInterface          $logger          Logger
      */
     public function __construct(
         private SettingsService $settingsService,
+        private ObjectSchemaSlugResolver $slugResolver,
         private LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -158,32 +161,20 @@ class BezwaarLifecycleListener implements IEventListener
     /**
      * Resolve the schema slug for an OR object payload.
      *
+     * The payload carries the schema as an ID (`@self.schema` is
+     * `ObjectEntity::$schema`, written as `(string) $schemaId`), and no
+     * `schemaSlug` key exists on `@self`. Reading those keys directly — as this
+     * method used to — yielded an id or an empty string, so the strict
+     * `in_array()` against {@see self::RELEVANT_SCHEMAS} never matched and this
+     * listener's body had never run. Resolution goes through the shared
+     * {@see ObjectSchemaSlugResolver} so every listener uses one lookup.
+     *
      * @param array<string, mixed> $payload Object payload
      *
      * @return string
      */
     private function resolveSchemaSlug(array $payload): string
     {
-        // Common shapes: explicit slug, or numeric schema id requiring lookup.
-        if (isset($payload['@self']) === true && is_array($payload['@self']) === true) {
-            $self = $payload['@self'];
-            if (isset($self['schemaSlug']) === true) {
-                return (string) $self['schemaSlug'];
-            }
-
-            if (isset($self['schema']) === true && is_string($self['schema']) === true) {
-                return $self['schema'];
-            }
-        }
-
-        if (isset($payload['_schemaSlug']) === true) {
-            return (string) $payload['_schemaSlug'];
-        }
-
-        if (isset($payload['schemaSlug']) === true) {
-            return (string) $payload['schemaSlug'];
-        }
-
-        return '';
+        return $this->slugResolver->resolveFromPayload(payload: $payload);
     }//end resolveSchemaSlug()
 }//end class
