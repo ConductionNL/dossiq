@@ -61,12 +61,12 @@ class ProcessMiningController extends Controller
     /**
      * Constructor.
      *
-     * @param string                $appName              Nextcloud app id.
-     * @param IRequest              $request              Incoming request.
-     * @param IUserSession          $userSession          Current user session.
-     * @param IGroupManager         $groupManager          Group manager (for RBAC check).
+     * @param string               $appName              Nextcloud app id.
+     * @param IRequest             $request              Incoming request.
+     * @param IUserSession         $userSession          Current user session.
+     * @param IGroupManager        $groupManager         Group manager (for RBAC check).
      * @param ProcessMiningService $processMiningService Report aggregation service.
-     * @param LoggerInterface       $logger               PSR-3 logger.
+     * @param LoggerInterface      $logger               PSR-3 logger.
      */
     public function __construct(
         string $appName,
@@ -100,11 +100,11 @@ class ProcessMiningController extends Controller
         $to       = $this->request->getParam('to');
         $caseType = $this->request->getParam('caseType');
 
-        if ($from !== null && (is_string($from) === false || $this->isValidDate($from) === false)) {
+        if ($from !== null && (is_string($from) === false || $this->isValidDate(value: $from) === false)) {
             return new JSONResponse(['message' => 'from must be a Y-m-d date'], Http::STATUS_BAD_REQUEST);
         }
 
-        if ($to !== null && (is_string($to) === false || $this->isValidDate($to) === false)) {
+        if ($to !== null && (is_string($to) === false || $this->isValidDate(value: $to) === false)) {
             return new JSONResponse(['message' => 'to must be a Y-m-d date'], Http::STATUS_BAD_REQUEST);
         }
 

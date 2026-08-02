@@ -76,6 +76,13 @@ class MentionNotificationService
     ): int {
         $notified = 0;
 
+        // The notification object type falls back to a literal 'note' when the caller
+        // did not supply a schema slug.
+        $objectType = 'note';
+        if ($schema !== '') {
+            $objectType = $schema;
+        }
+
         foreach (array_unique($mentionedUserIds) as $mentionedUserId) {
             // Never notify authors about their own mentions (e.g. self-mention,
             // or a duplicate @mention of the same user typed twice).
@@ -88,7 +95,7 @@ class MentionNotificationService
                 $notification->setApp(Application::APP_ID)
                     ->setUser($mentionedUserId)
                     ->setDateTime(new \DateTime())
-                    ->setObject($schema !== '' ? $schema : 'note', $objectId)
+                    ->setObject($objectType, $objectId)
                     ->setSubject(
                             'note_mention',
                             [
