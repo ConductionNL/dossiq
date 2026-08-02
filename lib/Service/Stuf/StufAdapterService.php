@@ -147,7 +147,7 @@ class StufAdapterService
         return [
             'success'           => $result['success'],
             'referentienummer'  => $referentienummer,
-            'stufMessageId'     => (string) ($result['messageId'] ?? ($msg['id'] ?? '')),
+            'stufMessageId'     => $result['messageId'],
             'zaakIdentificatie' => $zaakIdentificatie,
             'mappingId'         => ($mapping['id'] ?? null),
             'fout'              => ($result['fout'] ?? null),
@@ -220,8 +220,8 @@ class StufAdapterService
         return [
             'success'          => $result['success'],
             'referentienummer' => $referentienummer,
-            'stufMessageId'    => (string) ($result['messageId'] ?? ($msg['id'] ?? '')),
-            'fout'             => ($result['fout'] ?? null),
+            'stufMessageId'    => $result['messageId'],
+            'fout'             => $result['fout'],
         ];
     }//end actualiseerZaak()
 
@@ -266,7 +266,7 @@ class StufAdapterService
             $this->messageHandler->transitionStatus(
                 msg: $msg,
                 newStatus: 'fout',
-                extras: ['fout' => $response['fout'], 'duurMs' => ($response['durationMs'] ?? 0)]
+                extras: ['fout' => $response['fout'], 'duurMs' => $response['durationMs']]
             );
             $this->needsInput->dispatch(
                 type: 'stuf_timeout',
@@ -284,10 +284,10 @@ class StufAdapterService
             msg: $msg,
             newStatus: $detailStatus,
             extras: [
-                'httpStatus'          => ($response['httpStatus'] ?? 0),
-                'duurMs'              => ($response['durationMs'] ?? 0),
-                'responseEnvelopeXml' => ($response['responseXml'] ?? ''),
-                'fout'                => ($response['fout'] ?? null),
+                'httpStatus'          => $response['httpStatus'],
+                'duurMs'              => $response['durationMs'],
+                'responseEnvelopeXml' => $response['responseXml'],
+                'fout'                => $response['fout'],
             ]
         );
 
@@ -295,7 +295,7 @@ class StufAdapterService
             return null;
         }
 
-        return $this->parser->parseZaakDetails(responseXml: (string) ($response['responseXml'] ?? ''));
+        return $this->parser->parseZaakDetails(responseXml: $response['responseXml']);
     }//end geefZaakDetails()
 
     /**
@@ -345,8 +345,8 @@ class StufAdapterService
         return [
             'success'          => $result['success'],
             'referentienummer' => $referentienummer,
-            'stufMessageId'    => (string) ($result['messageId'] ?? ($msg['id'] ?? '')),
-            'fout'             => ($result['fout'] ?? null),
+            'stufMessageId'    => $result['messageId'],
+            'fout'             => $result['fout'],
         ];
     }//end vrijBericht()
 
@@ -378,7 +378,7 @@ class StufAdapterService
             timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
         );
 
-        $bv = $this->parser->parseBevestiging(responseXml: (string) ($response['responseXml'] ?? ''));
+        $bv = $this->parser->parseBevestiging(responseXml: $response['responseXml']);
 
         $vrijStatus = 'fout';
         if ($response['httpStatus'] >= 200 && $response['httpStatus'] < 300) {
@@ -389,9 +389,9 @@ class StufAdapterService
             msg: $msg,
             newStatus: $vrijStatus,
             extras: [
-                'httpStatus'          => ($response['httpStatus'] ?? 0),
-                'duurMs'              => ($response['durationMs'] ?? 0),
-                'responseEnvelopeXml' => ($response['responseXml'] ?? ''),
+                'httpStatus'          => $response['httpStatus'],
+                'duurMs'              => $response['durationMs'],
+                'responseEnvelopeXml' => $response['responseXml'],
                 'zaakIdentificatie'   => ($bv['zaakIdentificatie'] ?? ''),
             ]
         );
@@ -520,10 +520,10 @@ class StufAdapterService
         if ($fout === null && $body !== '') {
             $parsed = $this->parser->parseError(responseXml: $body);
             $fout   = [
-                'code'         => ($parsed['code'] ?? ''),
-                'omschrijving' => ($parsed['omschrijving'] ?? ''),
-                'details'      => ($parsed['details'] ?? ''),
-                'soort'        => ($parsed['soort'] ?? 'permanent'),
+                'code'         => $parsed['code'],
+                'omschrijving' => $parsed['omschrijving'],
+                'details'      => $parsed['details'],
+                'soort'        => $parsed['soort'],
             ];
         }
 

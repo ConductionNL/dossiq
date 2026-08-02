@@ -106,7 +106,7 @@ class DecisionConcludedListener implements IEventListener
                 return;
             }
 
-            $status = strtolower((string) $event->getStatus());
+            $status = strtolower($this->readString(event: $event, getter: 'getStatus'));
             if (in_array($status, self::TERMINAL_STATUSES, true) === false) {
                 // Non-terminal (e.g. pending): nothing to materialise yet.
                 return;
@@ -117,11 +117,11 @@ class DecisionConcludedListener implements IEventListener
                 return;
             }
 
-            $decisionId  = (string) $event->getDecisionId();
-            $register    = (string) ($event->getSubjectRegister() ?? '');
-            $schema      = (string) ($event->getSubjectSchema() ?? '');
-            $subjectId   = (string) ($event->getSubjectId() ?? '');
-            $externalRef = (string) $event->getExternalReference();
+            $decisionId  = $this->readString(event: $event, getter: 'getDecisionId');
+            $register    = $this->readString(event: $event, getter: 'getSubjectRegister');
+            $schema      = $this->readString(event: $event, getter: 'getSubjectSchema');
+            $subjectId   = $this->readString(event: $event, getter: 'getSubjectId');
+            $externalRef = $this->readString(event: $event, getter: 'getExternalReference');
 
             // Locate the procest domain record carrying this decisionRef so we
             // can resolve the owning case and any existing besluitRef. Fall back
@@ -201,7 +201,7 @@ class DecisionConcludedListener implements IEventListener
         }
 
         if (is_array($record) === true) {
-            $caseId    = (string) ($record['case'] ?? $record['caseRef'] ?? $externalRef ?? $subjectId);
+            $caseId    = (string) ($record['case'] ?? $record['caseRef'] ?? $externalRef);
             $besluitId = (string) ($record['besluitRef'] ?? '');
             return [$caseId, $besluitId];
         }
@@ -217,19 +217,43 @@ class DecisionConcludedListener implements IEventListener
     }//end resolveCaseAndBesluit()
 
     /**
+     * Read a duck-typed getter off the decidesk event as a string.
+     *
+     * The event is typed as the base Event class because the concrete
+     * OCA\Decidesk\Event\DecisionConcludedEvent is an optional runtime
+     * dependency that is absent from this app's autoload graph. Every read goes
+     * through this helper so a non-conforming dispatch degrades to an empty
+     * string instead of raising an Error.
+     *
+     * @param Event  $event  The decidesk DecisionConcludedEvent.
+     * @param string $getter The zero-argument getter to invoke.
+     *
+     * @return string The stringified getter result, or '' when absent/null.
+     */
+    private function readString(Event $event, string $getter): string
+    {
+        if (method_exists($event, $getter) === false) {
+            return '';
+        }
+
+        $value = $event->$getter();
+        if ($value === null || is_scalar($value) === false) {
+            return '';
+        }
+
+        return (string) $value;
+    }//end readString()
+
+    /**
      * Project the decidesk event getters into the materialiser's outcome shape.
      *
      * The $event parameter is typed as the base Event class because the concrete
-     * OCA\Decidesk\Event\DecisionConcludedEvent is an optional runtime dependency.
-     * All calls on $event here are guarded at the call-site (callers check
-     * method_exists) or use duck-typing that is safe at runtime. Psalm cannot
-     * infer the concrete type, so we suppress UndefinedMethod for this method.
+     * OCA\Decidesk\Event\DecisionConcludedEvent is an optional runtime dependency,
+     * so every getter is read through the duck-typed {@see readString()} helper.
      *
      * @param Event $event The decidesk DecisionConcludedEvent.
      *
      * @return array<string,mixed> Normalised projection: status, outcome, decidedAt, signer, method, signers, signingReference.
-     *
-     * @psalm-suppress UndefinedMethod
      */
     private function projectOutcome(Event $event): array
     {
@@ -254,19 +278,19 @@ class DecisionConcludedListener implements IEventListener
 
         // The decision method is recorded as "signature" when the outcome was
         // signed, otherwise the decisionType carries the method provenance.
-        $method = (string) $event->getDecisionType();
-        if ($event->isSigned() === true) {
+        $method = $this->readString(event: $event, getter: 'getDecisionType');
+        if (method_exists($event, 'isSigned') === true && $event->isSigned() === true) {
             $method = 'signature';
         }
 
         return [
-            'status'           => (string) $event->getStatus(),
-            'outcome'          => (string) $event->getOutcome(),
-            'decidedAt'        => (string) ($event->getDecidedAt() ?? ''),
+            'status'           => $this->readString(event: $event, getter: 'getStatus'),
+            'outcome'          => $this->readString(event: $event, getter: 'getOutcome'),
+            'decidedAt'        => $this->readString(event: $event, getter: 'getDecidedAt'),
             'signer'           => $signer,
             'method'           => $method,
             'signers'          => $signers,
-            'signingReference' => (string) ($event->getSigningReference() ?? ''),
+            'signingReference' => $this->readString(event: $event, getter: 'getSigningReference'),
         ];
     }//end projectOutcome()
 }//end class

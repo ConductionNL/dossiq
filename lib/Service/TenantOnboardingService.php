@@ -151,12 +151,9 @@ class TenantOnboardingService
             }
         }
 
-        $total = max(count(self::STEPS), count($rows));
-        if ($total === 0) {
-            $fraction = 0.0;
-        } else {
-            $fraction = ($completed / $total);
-        }
+        // STEPS is non-empty, so $total is always >= 1 and the division is safe.
+        $total    = max(count(self::STEPS), count($rows));
+        $fraction = ($completed / $total);
 
         return [
             'steps'     => array_values($rows),
@@ -356,8 +353,10 @@ class TenantOnboardingService
      */
     private function getObjectService()
     {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+        // IAppManager::getInstalledApps() declares its array return in PHPDoc
+        // only, so normalise defensively before the membership test.
+        $installed = (array) $this->appManager->getInstalledApps();
+        if (in_array('openregister', $installed, true) === false) {
             return null;
         }
 

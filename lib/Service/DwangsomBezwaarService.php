@@ -112,11 +112,7 @@ class DwangsomBezwaarService
             $uitbetalingen = [];
         }
 
-        foreach ((array) $uitbetalingen as $u) {
-            if (is_array($u) === false) {
-                continue;
-            }
-
+        foreach ($uitbetalingen as $u) {
             $u['status'] = 'on-hold-bezwaar';
             try {
                 $objectService->saveObject($register, $uSchema, $u);
@@ -201,11 +197,7 @@ class DwangsomBezwaarService
             $uitbetalingen = [];
         }
 
-        foreach ((array) $uitbetalingen as $u) {
-            if (is_array($u) === false) {
-                continue;
-            }
-
+        foreach ($uitbetalingen as $u) {
             $u['bedrag'] = $newBedragCents;
             $u['status'] = 'voorbereid';
             try {

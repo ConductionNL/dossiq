@@ -209,15 +209,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep
                         continue;
                     }
 
-                    if (is_array($objects) === false) {
-                        continue;
-                    }
-
                     foreach ($objects as $obj) {
-                        if (is_array($obj) === false) {
-                            continue;
-                        }
-
                         $objUuid     = (string) ($obj['uuid'] ?? ($obj['id'] ?? ''));
                         $decisionRef = (string) ($obj['decisionRef'] ?? '');
                         $besluitRef  = (string) ($obj['besluitRef'] ?? '');

@@ -183,11 +183,7 @@ class TermijnReportingService
         $totaal     = 0;
         $warnings   = [];
 
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $betaal = (string) ($row['werkelijkeBetaaldatum'] ?? '');
             if (str_starts_with($betaal, $jaarPrefix) === false) {
                 continue;
@@ -368,11 +364,7 @@ class TermijnReportingService
         }
 
         $out = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $start = substr((string) ($row['startDatum'] ?? ''), 0, 10);
             if ($start === '' || ($start >= $from && $start <= $until) === false) {
                 continue;

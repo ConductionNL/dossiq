@@ -376,11 +376,7 @@ class VthSeedDataRepairStep implements IRepairStep
         }
 
         $slugs = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $slug = (string) ($row['slug'] ?? '');
             if ($slug !== '') {
                 $slugs[] = $slug;
