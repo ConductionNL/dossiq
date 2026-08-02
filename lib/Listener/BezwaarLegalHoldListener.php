@@ -165,6 +165,18 @@ class BezwaarLegalHoldListener implements IEventListener
         $legalHoldService = $this->resolveOr(fqn: self::LEGAL_HOLD_SERVICE);
         $caseObject       = $this->resolveCaseObject(caseId: $caseId);
         if ($legalHoldService === null || $caseObject === null) {
+            // This early return used to be completely silent, which is how a dead
+            // compliance control went unnoticed: no hold, no error, no log line.
+            $this->logger->warning(
+                'Procest legal-hold: NOT applied, collaborator or case unresolved',
+                [
+                    'app'            => Application::APP_ID,
+                    'caseId'         => $caseId,
+                    'place'          => $place,
+                    'haveService'    => ($legalHoldService !== null),
+                    'haveCaseObject' => ($caseObject !== null),
+                ]
+            );
             return;
         }
 
@@ -203,15 +215,35 @@ class BezwaarLegalHoldListener implements IEventListener
         }
 
         try {
-            $caseObject = $objectMapper->findByUuid($caseId);
+            // MagicMapper has no findByUuid(); calling it raised a fatal Error that
+            // the \Throwable catch below swallowed on EVERY invocation, so no Awb
+            // legal hold was ever placed. RBAC and multitenancy are disabled because
+            // this runs inside an event handler where there is no session user or
+            // active organisation to filter by — an organisation-scoped read would
+            // find nothing and silently reopen the same hole.
+            $caseObject = $objectMapper->find(
+                identifier: $caseId,
+                _rbac: false,
+                _multitenancy: false
+            );
             if (is_object($caseObject) === true) {
                 return $caseObject;
             }
 
             return null;
         } catch (\Throwable $e) {
+            // A legal hold is an archiving-law control: failing to resolve the case
+            // means the hold is NOT applied, so it must never be silent again.
+            $this->logger->warning(
+                'Procest legal-hold: could not resolve case object',
+                [
+                    'app'    => Application::APP_ID,
+                    'caseId' => $caseId,
+                    'error'  => $e->getMessage(),
+                ]
+            );
             return null;
-        }
+        }//end try
     }//end resolveCaseObject()
 
     /**
@@ -280,7 +312,12 @@ class BezwaarLegalHoldListener implements IEventListener
         }
 
         try {
-            $objection = $objectMapper->findByUuid($bezwaarId);
+            // See resolveCaseObject(): findByUuid() does not exist on MagicMapper.
+            $objection = $objectMapper->find(
+                identifier: $bezwaarId,
+                _rbac: false,
+                _multitenancy: false
+            );
             if ($objection === null || method_exists($objection, 'getObject') === false) {
                 return '';
             }
@@ -292,8 +329,16 @@ class BezwaarLegalHoldListener implements IEventListener
 
             return (string) ($data['case'] ?? '');
         } catch (\Throwable $e) {
+            $this->logger->warning(
+                'Procest legal-hold: could not resolve objection for case linkage',
+                [
+                    'app'       => Application::APP_ID,
+                    'bezwaarId' => $bezwaarId,
+                    'error'     => $e->getMessage(),
+                ]
+            );
             return '';
-        }
+        }//end try
     }//end caseIdOfObjection()
 
     /**
