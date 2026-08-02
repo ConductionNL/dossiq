@@ -35,16 +35,24 @@
  */
 
 import { describe, it, expect, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { h } from 'vue'
+import { mount, flushPromises } from '@vue/test-utils'
 
+// VUE 3 NOTE — these stubs used to be written as `render(h) { ... }` /
+// `render: (h) => h(...)`. Vue 2 passed the `createElement` factory as the
+// render function's first argument; Vue 3 passes NO such argument and
+// exposes `h` as a module-level import from `vue`, so every one of these
+// stubs threw `h is not a function` at mount time. The second argument is
+// also flat now: Vue 2's nested `{ attrs: { ... } }` data object became a
+// flat props/attrs object in Vue 3.
 vi.mock('../../src/views/settings/components/WorkflowNode.vue', () => ({
 	default: {
 		name: 'WorkflowNode',
 		props: ['status', 'steps', 'position', 'selected', 'otherStatuses', 'outgoingTransitions'],
-		render(h) {
+		render() {
 			return h('div', {
 				class: 'workflow-node-stub',
-				attrs: { 'data-status-id': this.status.id },
+				'data-status-id': this.status.id,
 			}, this.status.name)
 		},
 	},
@@ -53,24 +61,24 @@ vi.mock('../../src/views/settings/components/WorkflowTransitionArrow.vue', () =>
 	default: {
 		name: 'WorkflowTransitionArrow',
 		props: ['transition', 'fromPos', 'toPos', 'selected'],
-		render: (h) => h('g', { class: 'workflow-transition-arrow-stub' }),
+		render: () => h('g', { class: 'workflow-transition-arrow-stub' }),
 	},
 }))
 vi.mock('../../src/views/settings/components/WorkflowPalette.vue', () => ({
-	default: { name: 'WorkflowPalette', render: (h) => h('div', { class: 'workflow-palette-stub' }) },
+	default: { name: 'WorkflowPalette', render: () => h('div', { class: 'workflow-palette-stub' }) },
 }))
 vi.mock('../../src/views/settings/components/StepConfigPanel.vue', () => ({
 	default: {
 		name: 'StepConfigPanel',
 		props: ['step', 'roleTypes', 'readOnly'],
-		render: (h) => h('div', { class: 'step-config-panel-stub' }),
+		render: () => h('div', { class: 'step-config-panel-stub' }),
 	},
 }))
 vi.mock('../../src/views/settings/components/TransitionConfigPanel.vue', () => ({
 	default: {
 		name: 'TransitionConfigPanel',
 		props: ['transition', 'roleTypes', 'documentTypes'],
-		render: (h) => h('div', { class: 'transition-config-panel-stub' }),
+		render: () => h('div', { class: 'transition-config-panel-stub' }),
 	},
 }))
 
@@ -81,6 +89,43 @@ vi.mock('../../src/views/settings/components/TransitionConfigPanel.vue', () => (
 const { default: WorkflowEditor } = await import('../../src/views/settings/WorkflowEditor.vue')
 const { default: WorkflowValidationBanner } = await import('../../src/views/settings/components/WorkflowValidationBanner.vue')
 const { validateWorkflowGraph } = await import('../../src/utils/workflowGraphValidation.js')
+
+/**
+ * Mount `WorkflowEditor` with its `workflowStore`/`objectStore` computed
+ * properties replaced by the supplied mocks.
+ *
+ * This used to be expressed as a top-level `computed:` MOUNTING OPTION
+ * (`mount(C, { propsData, computed: { ... } })`), the VTU v1 spelling.
+ *
+ * MEASURED, so the next reader does not have to re-derive it: `computed:`
+ * (and `stubs:`, `mocks:`, `propsData:`) as top-level mount options DO
+ * still work under @vue/test-utils 2.4.11 — a probe mounting a component
+ * with `computed: { label: () => 'OVERRIDDEN' }` renders "OVERRIDDEN".
+ * They are legacy compatibility shims, not part of v2's documented
+ * mounting API (which is `props` / `attrs` / `slots` / `global` /
+ * `shallow` / `attachTo`). So this refactor did NOT fix a broken mount —
+ * the three tests here were failing on `h is not a function`, not on
+ * dropped mocks.
+ *
+ * It is kept because overriding on the component definition is explicit
+ * about what is being replaced, does not depend on an undocumented shim,
+ * and removes the same six lines from three call sites.
+ *
+ * @param {object} workflowStore Mock workflow store.
+ * @param {object} objectStore Mock object store.
+ * @param {object} props Props to pass to the component.
+ * @return {object} The mounted wrapper.
+ */
+function mountEditor(workflowStore, objectStore, props) {
+	return mount({
+		...WorkflowEditor,
+		computed: {
+			...WorkflowEditor.computed,
+			workflowStore: () => workflowStore,
+			objectStore: () => objectStore,
+		},
+	}, { props })
+}
 
 /**
  * Build a minimal mock workflow store exposing exactly what
@@ -135,18 +180,18 @@ describe('WorkflowEditor.vue — renders a loaded definition', () => {
 		})
 		const workflowStore = buildMockWorkflowStore()
 
-		const wrapper = mount(WorkflowEditor, {
-			propsData: { caseTypeId: 'ct-1', templateId: 'tpl-1' },
-			computed: {
-				workflowStore: () => workflowStore,
-				objectStore: () => objectStore,
-			},
-		})
+		const wrapper = mountEditor(workflowStore, objectStore, { caseTypeId: 'ct-1', templateId: 'tpl-1' })
 
 		// mounted() -> loadData() is async; flush it.
-		await wrapper.vm.$nextTick()
-		await wrapper.vm.$nextTick()
-		await wrapper.vm.$nextTick()
+		//
+		// This used to be a fixed number of `await $nextTick()` calls. That is
+		// a Vue-2-era idiom that happens to drain a specific number of
+		// microtasks; under Vue 3 the awaited promise chain in `loadData()` is
+		// a different length and the count no longer lines up — `statusNodes`
+		// was still `[]` when the assertions ran. `flushPromises()` drains the
+		// whole pending microtask queue AND the scheduler flush, so it does not
+		// depend on the internal await count at all.
+		await flushPromises()
 
 		expect(wrapper.vm.statusNodes).toHaveLength(2)
 		const nodeEls = wrapper.findAll('.workflow-node-stub')
@@ -169,16 +214,9 @@ describe('WorkflowEditor.vue — blocks save/publish on an invalid graph', () =>
 		})
 		const workflowStore = buildMockWorkflowStore()
 
-		const wrapper = mount(WorkflowEditor, {
-			propsData: { caseTypeId: 'ct-1', templateId: null },
-			computed: {
-				workflowStore: () => workflowStore,
-				objectStore: () => objectStore,
-			},
-		})
+		const wrapper = mountEditor(workflowStore, objectStore, { caseTypeId: 'ct-1', templateId: null })
 
-		await wrapper.vm.$nextTick()
-		await wrapper.vm.$nextTick()
+		await flushPromises()
 
 		expect(wrapper.vm.statusNodes).toHaveLength(2)
 
@@ -213,18 +251,19 @@ describe('WorkflowEditor.vue — blocks save/publish on an invalid graph', () =>
 			})),
 		})
 
-		const wrapper = mount(WorkflowEditor, {
-			propsData: { caseTypeId: 'ct-1', templateId: null },
-			computed: {
-				workflowStore: () => workflowStore,
-				objectStore: () => objectStore,
-			},
-		})
+		const wrapper = mountEditor(workflowStore, objectStore, { caseTypeId: 'ct-1', templateId: null })
 
-		await wrapper.vm.$nextTick()
-		await wrapper.vm.$nextTick()
+		await flushPromises()
+
+		// Guard against a VACUOUS pass: with the old fixed `$nextTick()` count
+		// `loadData()` had not resolved, so `statusNodes` was still `[]` — and
+		// `validate()` returned true for an EMPTY graph, not for the
+		// well-formed two-node graph this test claims to exercise. Assert the
+		// graph is actually loaded before asserting it validates.
+		expect(wrapper.vm.statusNodes).toHaveLength(2)
 
 		expect(wrapper.vm.validate()).toBe(true)
+		expect(workflowStore.validateWorkflow).toHaveBeenCalledWith(statusNodes)
 		expect(wrapper.vm.validationErrors).toEqual([])
 	})
 })
@@ -232,7 +271,7 @@ describe('WorkflowEditor.vue — blocks save/publish on an invalid graph', () =>
 describe('WorkflowValidationBanner.vue — renders the blocking issues', () => {
 	it('renders the per-issue message text for each validation error', () => {
 		const wrapper = mount(WorkflowValidationBanner, {
-			propsData: {
+			props: {
 				errors: [
 					{ type: 'error', code: 'NO_FINAL_STATUS', message: 'Workflow has no final status defined' },
 					{ type: 'warning', code: 'ORPHAN_NODE', message: 'Status "Losstaand" has no transitions' },
@@ -246,7 +285,7 @@ describe('WorkflowValidationBanner.vue — renders the blocking issues', () => {
 	})
 
 	it('renders nothing when there are no errors', () => {
-		const wrapper = mount(WorkflowValidationBanner, { propsData: { errors: [] } })
+		const wrapper = mount(WorkflowValidationBanner, { props: { errors: [] } })
 		expect(wrapper.find('.workflow-validation').exists()).toBe(false)
 	})
 })

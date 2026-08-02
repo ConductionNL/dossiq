@@ -12,23 +12,32 @@
  * `node`.
  *
  * A small number of component smoke tests (workflow editor: renders a
- * definition, blocks save on invalid) need a real DOM + Vue 2 SFC
+ * definition, blocks save on invalid) need a real DOM + Vue 3 SFC
  * compilation. Rather than switching every test to the heavier jsdom
  * environment, those spec files opt in per-file via a
  * `// @vitest-environment jsdom` pragma comment (Vitest reads this from the
- * file itself) — see `tests/vitest/workflowEditorSmoke.spec.js`. The Vue 2
- * SFC plugin + a CSS-noop plugin (recipe mirrors launchpad/vitest.config.js,
- * the sibling app that already solved `.vue` + `@nextcloud/vue` CSS
- * side-effect imports under Vitest) are registered unconditionally — they
- * are inert for the node-environment tests, which never import a `.vue`
- * file.
+ * file itself) — see `tests/vitest/workflowEditorSmoke.spec.js`. The Vue 3
+ * SFC plugin (`@vitejs/plugin-vue`) + a CSS-noop plugin (recipe mirrors
+ * openbuild/vitest.config.js, the sibling app that already solved `.vue` +
+ * `@nextcloud/vue` CSS side-effect imports under Vitest on Vue 3) are
+ * registered unconditionally — they are inert for the node-environment
+ * tests, which never import a `.vue` file.
+ *
+ * NOTE(vue3): this file used to register `@vitejs/plugin-vue2`, and
+ * `tests/vitest/setup.js` used to call `Vue.mixin()` on a DEFAULT import
+ * from `vue`. `vue@3` publishes no default export, so that threw
+ * `Cannot read properties of undefined (reading 'mixin')` in the setup
+ * file — which Vitest runs before EVERY spec — and all 32 spec files
+ * errored during collection with `Tests: no tests`. The whole suite had
+ * been dead since the Vue 3 migration and nothing noticed, because no
+ * app's JS unit suite had ever been wired into CI.
  *
  * `@nextcloud/l10n` is aliased to a deterministic stub (English source string
  * + {placeholder} substitution) so translated output is assertable.
  */
 
 const path = require('path')
-const vue2 = require('@vitejs/plugin-vue2')
+const vue = require('@vitejs/plugin-vue')
 
 /**
  * Side-effect imports of `*.css` from `@nextcloud/vue` (and friends) crash
@@ -58,7 +67,7 @@ const cssNoop = {
 module.exports = {
 	plugins: [
 		cssNoop,
-		vue2.default ? vue2.default() : vue2(),
+		vue.default ? vue.default() : vue(),
 	],
 	test: {
 		environment: 'node',
