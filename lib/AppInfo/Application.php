@@ -765,7 +765,7 @@ class Application extends App implements IBootstrap
             event: ObjectCreatedEvent::class,
             listener: BezwaarLegalHoldListener::class,
             registers: ['procest'],
-            schemas: ['objection', 'bezwaar', 'bezwaarDecision', 'appealDecision']
+            schemas: ['objection', 'bezwaar', 'beroep', 'bezwaarDecision', 'appealDecision']
         );
 
     }//end subscribeBezwaarListeners()

@@ -71,9 +71,16 @@ class BezwaarLegalHoldListener implements IEventListener
     /**
      * Schemas whose creation opens an Awb proceeding (places a hold).
      *
+     * `beroep` (appeal, Awb hoofdstuk 8) opens a proceeding exactly as
+     * `bezwaar`/`objection` do, and its terminal artefact `appealDecision` is
+     * already listed in {@see PROCEEDING_CLOSED_SCHEMAS}. It was missing here,
+     * so a case under appeal was never held and stayed destruction-eligible
+     * while the appeal was still running — the release side was wired up and
+     * the place side was not.
+     *
      * @var array<int, string>
      */
-    private const PROCEEDING_OPENED_SCHEMAS = ['objection', 'bezwaar'];
+    private const PROCEEDING_OPENED_SCHEMAS = ['objection', 'bezwaar', 'beroep'];
 
     /**
      * Schemas whose creation ends an Awb proceeding (releases a hold).
