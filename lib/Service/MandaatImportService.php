@@ -159,7 +159,7 @@ class MandaatImportService
             $changed       = false;
             $changedFields = [];
             foreach (['omschrijving', 'gemandateerdeRol', 'wettelijkeGrondslag'] as $f) {
-                if ((string) ($existing[$f] ?? '') !== (string) ($payload[$f] ?? '')) {
+                if ((string) ($existing[$f] ?? '') !== (string) $payload[$f]) {
                     $changed         = true;
                     $changedFields[] = $f;
                 }

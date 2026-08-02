@@ -73,8 +73,8 @@ class MandaatEscalatieService
             'decisionType'    => $decisionType,
             'initiatorId'     => $initiatorId,
             'escalatieReden'  => $escalatieReden,
-            'targetMandaatId' => (string) ($path['mandaatId'] ?? ''),
-            'targetUserId'    => (string) ($path['userId'] ?? ''),
+            'targetMandaatId' => $path['mandaatId'],
+            'targetUserId'    => $path['userId'],
             'status'          => 'open',
             'createdAt'       => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
         ];

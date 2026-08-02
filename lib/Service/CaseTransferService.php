@@ -287,6 +287,10 @@ class CaseTransferService
         $caseId = (string) ($transferData['caseId'] ?? '');
         $now    = (new \DateTime())->format('c');
 
+        // Read the existing custody chain before the status writes below, which
+        // is also where the pre-existing trail must be preserved from.
+        $auditTrail = (array) ($transferData['custodyAuditTrail'] ?? []);
+
         $transferData['status']      = $targetStatus;
         $transferData['completedAt'] = $now;
         if ($targetStatus === 'rejected') {
@@ -299,7 +303,6 @@ class CaseTransferService
             $actorType = 'local';
         }
 
-        $auditTrail   = (array) ($transferData['custodyAuditTrail'] ?? []);
         $auditTrail[] = [
             'event'     => $targetStatus,
             'actor'     => ($remoteCloudId ?? ''),

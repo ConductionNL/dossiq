@@ -91,7 +91,7 @@ class QuotaEnforcementMiddleware extends Middleware
             );
         }
 
-        if (($decision['soft'] ?? false) === true) {
+        if ($decision['soft'] === true) {
             $this->logger->info(
                 'Procest quota soft-limit hit',
                 ['tenantId' => $tenantId, 'quotaType' => $quotaType]

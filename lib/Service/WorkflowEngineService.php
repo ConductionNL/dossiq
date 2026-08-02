@@ -107,7 +107,7 @@ class WorkflowEngineService
      * @param string      $caseId The case id.
      * @param string|null $userId Optional user id; defaults to the current user.
      *
-     * @return array<int, array<string, mixed>> The transitions list.
+     * @return array{transitions: array<int, array<string, mixed>>, current: array<string, mixed>} The transitions envelope.
      *
      * @spec openspec/changes/workflow-engine-enhancement/tasks.md#W-3
      */
@@ -140,7 +140,7 @@ class WorkflowEngineService
 
         $unmet = [];
         foreach ($results as $r) {
-            $passed = (bool) ($r['passed'] ?? ($r['result']['passed'] ?? false));
+            $passed = (bool) $r['passed'];
             if ($passed === false) {
                 $unmet[] = $r;
             }

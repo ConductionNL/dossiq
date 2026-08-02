@@ -115,7 +115,7 @@ class MandateValidationMiddleware extends Middleware
 
         if ($decision['allowed'] === false) {
             throw new MandateDeniedException(
-                (string) ($decision['reason'] ?? 'Mandate denied'),
+                (string) $decision['reason'],
                 403
             );
         }
@@ -181,8 +181,8 @@ class MandateValidationMiddleware extends Middleware
                 'tenantId' => $tenantId,
                 'userId'   => $userId,
                 'action'   => $action,
-                'allowed'  => (bool) ($decision['allowed'] ?? false),
-                'reason'   => (string) ($decision['reason'] ?? ''),
+                'allowed'  => (bool) $decision['allowed'],
+                'reason'   => (string) $decision['reason'],
             ]
         );
     }//end logDecision()

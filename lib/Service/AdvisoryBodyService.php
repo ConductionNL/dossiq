@@ -84,11 +84,7 @@ class AdvisoryBodyService
             filters: array_merge($filters, ['_limit' => 200]),
         );
 
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
+        return $results;
     }//end findAll()
 
     /**
