@@ -170,7 +170,7 @@ class TenantSaasService
             'kvkNumber'     => $kvkNumber,
             'status'        => 'onboarding',
             'tier'          => $tier,
-            'isolationMode' => (self::TIER_ISOLATION[$tier] ?? 'schema'),
+            'isolationMode' => self::TIER_ISOLATION[$tier],
             'dataResidency' => 'nl',
             'createdAt'     => (new \DateTimeImmutable('now'))->format(DATE_ATOM),
         ];

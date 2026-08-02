@@ -94,7 +94,7 @@ class StufMessageParser
 
         $this->logger->debug(
             message: 'StUF parseBevestiging: crossRef={cross}, zaakId={zaak}',
-            context: ['cross' => $crossRef, 'zaak' => ($zaakId ?? '')]
+            context: ['cross' => $crossRef, 'zaak' => $zaakId]
         );
 
         if ($zaakId === '') {
