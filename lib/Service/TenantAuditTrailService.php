@@ -180,8 +180,10 @@ class TenantAuditTrailService
      */
     private function getAuditTrailMapper(): mixed
     {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+        // IAppManager::getInstalledApps() declares its array return in PHPDoc
+        // only, so normalise defensively before the membership test.
+        $installed = (array) $this->appManager->getInstalledApps();
+        if (in_array('openregister', $installed, true) === false) {
             return null;
         }
 

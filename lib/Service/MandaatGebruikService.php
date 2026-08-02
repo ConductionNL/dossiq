@@ -175,11 +175,7 @@ class MandaatGebruikService
         }
 
         $out = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $when = substr((string) ($row['tijdstip'] ?? ''), 0, 10);
             if ($from !== null && $when < $from->format('Y-m-d')) {
                 continue;

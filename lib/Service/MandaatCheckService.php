@@ -196,11 +196,7 @@ class MandaatCheckService
         }
 
         $out = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $vf = (string) ($row['validFrom'] ?? '1970-01-01');
             $vu = (string) ($row['validUntil'] ?? '');
             if ($vf > $dateStr) {
@@ -307,11 +303,7 @@ class MandaatCheckService
 
         $dateStr = $date->format('Y-m-d');
         $active  = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $vf = (string) ($row['validFrom'] ?? '1970-01-01');
             $vu = (string) ($row['validUntil'] ?? '');
             if ($vf > $dateStr) {

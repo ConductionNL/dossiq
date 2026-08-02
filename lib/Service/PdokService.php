@@ -199,7 +199,7 @@ class PdokService
         }
 
         $route = $this->urlGenerator->linkToRoute('openconnector.pdok.parcel');
-        if ($route === '' || $route === null) {
+        if ($route === '') {
             $route = self::SHIM_BASE_PATH.'/parcel';
         }
 

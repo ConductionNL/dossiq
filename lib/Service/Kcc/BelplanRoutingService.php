@@ -65,10 +65,6 @@ class BelplanRoutingService
         $normalised = $this->normalisePhone(phoneNumber: $phoneNumber);
 
         foreach ($belplannen as $bp) {
-            if (is_array($bp) === false) {
-                continue;
-            }
-
             if (($bp['isActive'] ?? true) === false) {
                 continue;
             }
@@ -256,10 +252,6 @@ class BelplanRoutingService
         $candidates = [];
         $needle     = mb_strtolower($vaardigheid);
         foreach ($pool as $sp) {
-            if (is_array($sp) === false) {
-                continue;
-            }
-
             $skills = $sp['expertises'] ?? ($sp['vaardigheden'] ?? []);
             if (is_array($skills) === false) {
                 continue;

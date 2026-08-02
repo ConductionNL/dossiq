@@ -229,10 +229,6 @@ class InformatieobjectAccessGuard
 
         $allowed = [];
         foreach ($informatieobjecten as $record) {
-            if (is_array($record) === false) {
-                continue;
-            }
-
             $docOrdinal = $this->ordinalOf(level: (string) ($record['vertrouwelijkheidaanduiding'] ?? ''));
             if ($userOrdinal >= $docOrdinal) {
                 $allowed[] = $record;

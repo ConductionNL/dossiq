@@ -234,10 +234,6 @@ class WorkQueueService
     {
         $counts = [];
         foreach ($cases as $case) {
-            if (is_array($case) === false) {
-                continue;
-            }
-
             $endDate = (string) ($case['endDate'] ?? '');
             if ($endDate !== '') {
                 // Closed case — not part of the open workload.
@@ -346,10 +342,6 @@ class WorkQueueService
 
         $items = [];
         foreach ($cases as $case) {
-            if (is_array($case) === false) {
-                continue;
-            }
-
             $endDate = (string) ($case['endDate'] ?? '');
             if ($endDate !== '') {
                 // Closed case — not part of the open queue.
@@ -409,10 +401,6 @@ class WorkQueueService
 
         $items = [];
         foreach ($tasks as $task) {
-            if (is_array($task) === false) {
-                continue;
-            }
-
             $status = (string) ($task['status'] ?? '');
             if (in_array($status, self::TASK_TERMINAL_STATUSES, true) === true) {
                 continue;
@@ -504,10 +492,6 @@ class WorkQueueService
 
         $nearest = null;
         foreach ($instances as $instance) {
-            if (is_array($instance) === false) {
-                continue;
-            }
-
             $date = (string) ($instance['einddatumActueel'] ?? '');
             if ($date === '' || ($nearest !== null && $date >= $nearest)) {
                 continue;
