@@ -94,15 +94,22 @@ const { validateWorkflowGraph } = await import('../../src/utils/workflowGraphVal
  * Mount `WorkflowEditor` with its `workflowStore`/`objectStore` computed
  * properties replaced by the supplied mocks.
  *
- * VUE 3 / VTU 2 NOTE — this used to be expressed as a top-level `computed:`
- * MOUNTING OPTION (`mount(C, { propsData, computed: { ... } })`). VTU v1
- * accepted `computed` (and `methods`) as mount-time overrides; **VTU v2
- * removed both**, and — critically — it does not error on an unknown
- * mounting option, it silently ignores it. Left as-is, the real
- * `workflowStore()` computed would have run against a non-existent Pinia
- * instance instead of these mocks. Overriding on the component definition
- * itself is the v2-supported equivalent and is explicit about what is
- * being replaced.
+ * This used to be expressed as a top-level `computed:` MOUNTING OPTION
+ * (`mount(C, { propsData, computed: { ... } })`), the VTU v1 spelling.
+ *
+ * MEASURED, so the next reader does not have to re-derive it: `computed:`
+ * (and `stubs:`, `mocks:`, `propsData:`) as top-level mount options DO
+ * still work under @vue/test-utils 2.4.11 — a probe mounting a component
+ * with `computed: { label: () => 'OVERRIDDEN' }` renders "OVERRIDDEN".
+ * They are legacy compatibility shims, not part of v2's documented
+ * mounting API (which is `props` / `attrs` / `slots` / `global` /
+ * `shallow` / `attachTo`). So this refactor did NOT fix a broken mount —
+ * the three tests here were failing on `h is not a function`, not on
+ * dropped mocks.
+ *
+ * It is kept because overriding on the component definition is explicit
+ * about what is being replaced, does not depend on an undocumented shim,
+ * and removes the same six lines from three call sites.
  *
  * @param {object} workflowStore Mock workflow store.
  * @param {object} objectStore Mock object store.
