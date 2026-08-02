@@ -34,7 +34,7 @@
 		"extends @nextcloud/browserslist-config"
 	],
 	"dependencies": {
-		"@conduction/nextcloud-vue": "2.1.0-vue3.13",
+		"@conduction/nextcloud-vue": "2.1.0-vue3.16",
 		"@nextcloud/auth": "^2.6.0",
 		"@nextcloud/axios": "~2.5.2",
 		"@nextcloud/capabilities": "^1.2.1",
@@ -103,6 +103,7 @@
 		"stylelint": "^15.11.0",
 		"stylelint-config-recommended-scss": "^13.1.0",
 		"stylelint-config-recommended-vue": "^1.6.1",
+		"terser-webpack-plugin": "^5.6.1",
 		"typescript": "^5.9.3",
 		"vitest": "^1.6.1",
 		"vue-loader": "^17.4.2",
