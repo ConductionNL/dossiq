@@ -12,6 +12,15 @@
  * string + {placeholder} substitution), so the asserted output is the
  * interpolated English source.
  *
+ * NOTE: these assertions used to read "N deelzaken". Commit cf3ee93b9
+ * ("i18n(l10n): author Dutch-source UI literals in English + NL l10n")
+ * correctly re-authored the source literal as `'{count} sub-cases'` and put
+ * the Dutch in `l10n/nl.json` — but this spec was never updated, because
+ * the whole Vitest suite had been un-runnable (and un-run in CI) since the
+ * Vue 3 migration. The English source is what the stub returns and what
+ * these tests are documented to assert, so the expectations are corrected
+ * here rather than the (correct) production literal being reverted.
+ *
  * @spec openspec/changes/deelzaak-support/tasks.md#T10
  * @spec openspec/changes/deelzaak-support/tasks.md#T11
  */
@@ -25,10 +34,10 @@ import {
 } from '../../src/utils/deelzaakHelpers.js'
 
 describe('subCaseCountBadge', () => {
-	it('renders "N deelzaken" for a positive count', () => {
-		expect(subCaseCountBadge(2)).toBe('2 deelzaken')
-		expect(subCaseCountBadge(1)).toBe('1 deelzaken')
-		expect(subCaseCountBadge(25)).toBe('25 deelzaken')
+	it('renders "N sub-cases" for a positive count', () => {
+		expect(subCaseCountBadge(2)).toBe('2 sub-cases')
+		expect(subCaseCountBadge(1)).toBe('1 sub-cases')
+		expect(subCaseCountBadge(25)).toBe('25 sub-cases')
 	})
 
 	it('renders no badge (empty string) for zero or negative counts', () => {
@@ -44,7 +53,7 @@ describe('subCaseCountBadge', () => {
 	})
 
 	it('coerces numeric strings', () => {
-		expect(subCaseCountBadge('3')).toBe('3 deelzaken')
+		expect(subCaseCountBadge('3')).toBe('3 sub-cases')
 	})
 })
 
