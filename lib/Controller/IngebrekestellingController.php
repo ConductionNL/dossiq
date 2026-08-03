@@ -89,7 +89,8 @@ class IngebrekestellingController extends Controller
      */
     public function register(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -140,7 +141,8 @@ class IngebrekestellingController extends Controller
      */
     public function show(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 

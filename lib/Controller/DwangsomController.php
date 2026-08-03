@@ -95,7 +95,8 @@ class DwangsomController extends Controller
      */
     public function show(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -132,7 +133,8 @@ class DwangsomController extends Controller
      */
     public function beschikking(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -157,7 +159,8 @@ class DwangsomController extends Controller
      */
     public function bezwaar(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -186,7 +189,8 @@ class DwangsomController extends Controller
      */
     public function bezwaarHeroverweging(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
