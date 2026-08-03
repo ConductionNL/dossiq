@@ -189,6 +189,9 @@ class PdokService
      * @param array<string,mixed> $criteria Search criteria.
      *
      * @return array<int, array<string,mixed>> Matching parcels (may be empty).
+     *
+     * @spec exclude phpstan dead-code cleanup only — dropped an always-false `$route === null`
+     *       branch on a `string`-typed value; no behavioural or contractual change.
      */
     public function searchParcel(array $criteria): array
     {
