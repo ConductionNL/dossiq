@@ -83,38 +83,15 @@ class RoleGuard implements GuardEvaluatorInterface
         }
 
         // 1. Direct role assignment on case.roles[].
-        $caseRoles = $case['roles'] ?? ($case['participants'] ?? []);
-        if (is_array($caseRoles) === true) {
-            foreach ($caseRoles as $entry) {
-                if (is_array($entry) === false) {
-                    continue;
-                }
-
-                $entryUser = (string) ($entry['userId'] ?? ($entry['user'] ?? ''));
-                $entryRole = (string) ($entry['role'] ?? ($entry['roleType'] ?? ''));
-                if ($entryUser === $userId && in_array($entryRole, $allowed, true) === true) {
-                    return new GuardResult(passed: true, details: ['matchedRole' => $entryRole]);
-                }
-            }
+        $directRole = $this->matchCaseRole(case: $case, userId: $userId, allowed: $allowed);
+        if ($directRole !== null) {
+            return new GuardResult(passed: true, details: ['matchedRole' => $directRole]);
         }
 
         // 2. Fallback: Nextcloud group membership.
-        try {
-            $user = $this->userManager->get($userId);
-            if ($user !== null) {
-                foreach ($allowed as $role) {
-                    $groupId = strtolower((string) $role);
-                    if ($groupId === '') {
-                        continue;
-                    }
-
-                    if ($this->groupManager->isInGroup($userId, $groupId) === true) {
-                        return new GuardResult(passed: true, details: ['matchedRole' => $role, 'via' => 'group']);
-                    }
-                }
-            }
-        } catch (\Throwable $e) {
-            $this->logger->error('RoleGuard: group lookup failed', ['exception' => $e->getMessage()]);
+        $groupRole = $this->matchGroupRole(userId: $userId, allowed: $allowed);
+        if ($groupRole !== null) {
+            return new GuardResult(passed: true, details: ['matchedRole' => $groupRole, 'via' => 'group']);
         }
 
         // Role mismatch — silent so the UI hides the transition entirely.
@@ -124,4 +101,75 @@ class RoleGuard implements GuardEvaluatorInterface
             details: ['silent' => true, 'allowedRoles' => array_values($allowed)],
         );
     }//end evaluate()
+
+    /**
+     * Find an allowed role assigned to the user directly on the case.
+     *
+     * @param array<string, mixed> $case    Case object
+     * @param string               $userId  Current user UID
+     * @param array<int, mixed>    $allowed Allowed role identifiers
+     *
+     * @return string|null The matched role, or null when no entry matches
+     */
+    private function matchCaseRole(array $case, string $userId, array $allowed): ?string
+    {
+        $caseRoles = $case['roles'] ?? ($case['participants'] ?? []);
+        if (is_array($caseRoles) === false) {
+            return null;
+        }
+
+        foreach ($caseRoles as $entry) {
+            if (is_array($entry) === false) {
+                continue;
+            }
+
+            $entryUser = (string) ($entry['userId'] ?? ($entry['user'] ?? ''));
+            if ($entryUser !== $userId) {
+                continue;
+            }
+
+            $entryRole = (string) ($entry['role'] ?? ($entry['roleType'] ?? ''));
+            if (in_array($entryRole, $allowed, true) === true) {
+                return $entryRole;
+            }
+        }//end foreach
+
+        return null;
+    }//end matchCaseRole()
+
+    /**
+     * Find an allowed role the user holds through Nextcloud group membership.
+     *
+     * A lookup failure is logged and treated as "no match" so the guard stays
+     * closed rather than throwing out of the transition.
+     *
+     * @param string            $userId  Current user UID
+     * @param array<int, mixed> $allowed Allowed role identifiers
+     *
+     * @return string|null The matched role, or null when no group matches
+     */
+    private function matchGroupRole(string $userId, array $allowed): ?string
+    {
+        try {
+            $user = $this->userManager->get($userId);
+            if ($user === null) {
+                return null;
+            }
+
+            foreach ($allowed as $role) {
+                $groupId = strtolower((string) $role);
+                if ($groupId === '') {
+                    continue;
+                }
+
+                if ($this->groupManager->isInGroup($userId, $groupId) === true) {
+                    return (string) $role;
+                }
+            }//end foreach
+        } catch (\Throwable $e) {
+            $this->logger->error('RoleGuard: group lookup failed', ['exception' => $e->getMessage()]);
+        }//end try
+
+        return null;
+    }//end matchGroupRole()
 }//end class
