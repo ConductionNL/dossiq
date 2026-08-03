@@ -47,6 +47,7 @@ use OCA\Procest\Service\Stuf\StufRegisterAccess;
 use OCA\Procest\Service\Stuf\StufVaultService;
 use OCA\Procest\Service\StufFieldMappingService;
 use OCA\Procest\Service\StufMessageBuilder;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -154,7 +155,7 @@ class StufController extends Controller
      *
      * @contract exclude SOAP vrijBericht proxy needs a seeded endpoint + vault + live peer; covered by PHPUnit + env-gated live-e2e/Newman.
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function outbound(): JSONResponse
     {
         $endpointId  = (string) $this->request->getParam(key: 'endpointId', default: '');
@@ -269,7 +270,7 @@ class StufController extends Controller
      *
      * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function endpoints(): JSONResponse
     {
         $items = $this->register->findAll(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: [], limit: 500);
@@ -284,7 +285,7 @@ class StufController extends Controller
      *
      * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function messages(): JSONResponse
     {
         $endpointId   = (string) $this->request->getParam(key: 'endpointId', default: '');

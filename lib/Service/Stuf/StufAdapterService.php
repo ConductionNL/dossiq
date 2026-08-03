@@ -55,16 +55,15 @@ class StufAdapterService
     /**
      * Constructor.
      *
-     * @param StufMessageBuilder      $builder        The envelope builder (inbound + outbound).
-     * @param StufHttpClient          $httpClient     The HTTP transport.
-     * @param StufMessageHandler      $messageHandler The audit log handler.
-     * @param StufMessageParser       $parser         The response parser.
-     * @param CircuitBreakerService   $circuitBreaker The circuit breaker.
-     * @param ContactBetrokkeneMapper $contactMapper  The contact mapper.
-     * @param StufRegisterAccess      $register       The register access helper.
-     * @param NeedsInputDispatcher    $needsInput     The needs-input dispatcher.
-     * @param IJobList                $jobList        The background job list (for retry scheduling).
-     * @param LoggerInterface         $logger         The logger.
+     * @param StufMessageBuilder    $builder        The envelope builder (inbound + outbound).
+     * @param StufHttpClient        $httpClient     The HTTP transport.
+     * @param StufMessageHandler    $messageHandler The audit log handler.
+     * @param StufMessageParser     $parser         The response parser.
+     * @param CircuitBreakerService $circuitBreaker The circuit breaker.
+     * @param StufRegisterAccess    $register       The register access helper.
+     * @param NeedsInputDispatcher  $needsInput     The needs-input dispatcher.
+     * @param IJobList              $jobList        The background job list (for retry scheduling).
+     * @param LoggerInterface       $logger         The logger.
      */
     public function __construct(
         private StufMessageBuilder $builder,
@@ -72,7 +71,6 @@ class StufAdapterService
         private StufMessageHandler $messageHandler,
         private StufMessageParser $parser,
         private CircuitBreakerService $circuitBreaker,
-        private ContactBetrokkeneMapper $contactMapper,
         private StufRegisterAccess $register,
         private NeedsInputDispatcher $needsInput,
         private IJobList $jobList,
