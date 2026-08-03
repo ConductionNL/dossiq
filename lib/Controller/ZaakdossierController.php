@@ -466,6 +466,11 @@ class ZaakdossierController extends Controller
      * @NoAdminRequired
      *
      * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $register, $schema and $fileId are
+     * URL segments of the route
+     * `/api/objects/{register}/{schema}/{objectId}/files/{fileId}/download` and are bound
+     * positionally by the dispatcher; they cannot be dropped without changing the route.
      */
     public function downloadFile(string $register, string $schema, string $objectId, int $fileId): DataDownloadResponse | JSONResponse
     {

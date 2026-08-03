@@ -163,6 +163,12 @@ class EmailController extends Controller
      * @return JSONResponse Resolved template preview
      *
      * @NoAdminRequired
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $caseId is a URL segment of the
+     * route `/api/email/{caseId}/preview` and is bound positionally by the dispatcher.
+     * It is not read yet because the case-data lookup is still a stub (see the
+     * `// Would load from case.` marker below); the parameter cannot be dropped
+     * without changing the route.
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */

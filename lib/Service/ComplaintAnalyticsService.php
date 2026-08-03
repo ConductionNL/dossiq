@@ -280,7 +280,6 @@ class ComplaintAnalyticsService
 
             // Anonymize: only include count, categories, and periods — not the employee ID.
             $categories = array_unique(array_column($employeeDetails[$employee], 'categorie'));
-            $periods    = array_column($employeeDetails[$employee], 'ontvangstdatum');
 
             $alerts[] = [
                 'count'      => $count,
@@ -314,7 +313,6 @@ class ComplaintAnalyticsService
         $total          = count($complaints);
         $resolved       = 0;
         $withinDeadline = 0;
-        $oordelen       = [];
 
         foreach ($complaints as $complaint) {
             $status = $complaint['status'] ?? '';
