@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\BackgroundJob;
 
+use DateTime;
 use OCA\Procest\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -83,7 +84,7 @@ class AppointmentReminderJob extends TimedJob
                 return;
             }
 
-            $tomorrow = (new \DateTime('+1 day'))->format('Y-m-d');
+            $tomorrow = (new DateTime('+1 day'))->format('Y-m-d');
 
             $appointments = $objectService->findAll(
                 ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'status' => 'scheduled']],

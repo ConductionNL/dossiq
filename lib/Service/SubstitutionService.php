@@ -40,6 +40,7 @@ use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Resolves vervanging/waarneming substitutions and the workload they route.
@@ -627,7 +628,7 @@ class SubstitutionService
         $schema        = (string) $this->settingsService->getConfigValue('substitution_schema');
 
         if ($strict === true && ($objectService === null || $register === '' || $schema === '')) {
-            throw new \RuntimeException('OpenRegister is not available or the substitution schema is not configured');
+            throw new RuntimeException('OpenRegister is not available or the substitution schema is not configured');
         }
 
         return [$objectService, $register, $schema];

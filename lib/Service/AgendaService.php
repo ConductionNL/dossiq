@@ -32,8 +32,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -95,7 +97,7 @@ class AgendaService
 
         $itemId = (string) ($patch['itemId'] ?? '');
         if ($itemId === '') {
-            throw new \InvalidArgumentException('itemId is required');
+            throw new InvalidArgumentException('itemId is required');
         }
 
         $items = $this->extractItems(case: $case);
@@ -109,7 +111,7 @@ class AgendaService
         }
 
         if ($found === false) {
-            throw new \RuntimeException('Agenda item not found: '.$itemId);
+            throw new RuntimeException('Agenda item not found: '.$itemId);
         }
 
         return $this->persistItems(case: $case, items: $items);
@@ -128,7 +130,7 @@ class AgendaService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -145,11 +147,11 @@ class AgendaService
                 'AgendaService::loadCase failed',
                 ['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
             );
-            throw new \RuntimeException('Case not found: '.$caseId);
+            throw new RuntimeException('Case not found: '.$caseId);
         }
 
         if ($obj === null) {
-            throw new \RuntimeException('Case not found: '.$caseId);
+            throw new RuntimeException('Case not found: '.$caseId);
         }
 
         // The OR object may return either a hydrated DTO or array; normalise to array.
@@ -209,7 +211,7 @@ class AgendaService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');

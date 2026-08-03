@@ -26,6 +26,7 @@ namespace OCA\Procest\Service;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for hearing (hoorgesprek) management within the complaint workflow.
@@ -64,23 +65,23 @@ class HearingService
     public function scheduleHearing(string $complaintId, array $data): array
     {
         if (empty($data['datum']) === true) {
-            throw new \RuntimeException('Hearing datum is required');
+            throw new RuntimeException('Hearing datum is required');
         }
 
         if (empty($data['type']) === true) {
-            throw new \RuntimeException('Hearing type is required');
+            throw new RuntimeException('Hearing type is required');
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('hearing_schema');
 
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Hearing schema not configured');
+            throw new RuntimeException('Hearing schema not configured');
         }
 
         $data['complaint'] = $complaintId;
@@ -188,12 +189,12 @@ class HearingService
     public function recordOutcome(string $id, array $outcome): array
     {
         if (empty($outcome['verslag']) === true) {
-            throw new \RuntimeException('Verslag is required to record a hearing outcome');
+            throw new RuntimeException('Verslag is required to record a hearing outcome');
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');

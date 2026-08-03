@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateInterval;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\Service\Support\SearchesObjects;
@@ -456,7 +457,7 @@ class DoorlooptijdService
 
         try {
             $start = new DateTimeImmutable($startDate);
-            return $start->add(new \DateInterval($processingDeadline))->format('Y-m-d');
+            return $start->add(new DateInterval($processingDeadline))->format('Y-m-d');
         } catch (\Throwable $e) {
             $this->logger->debug(
                 'Could not derive deadline from processingDeadline',

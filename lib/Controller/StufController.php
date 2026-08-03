@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use DOMDocument;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Stuf\CircuitBreakerService;
 use OCA\Procest\Service\Stuf\CircuitOpenException;
@@ -334,7 +335,7 @@ class StufController extends Controller
         }
 
         // Parse the XML with XXE/DTD protections.
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         libxml_use_internal_errors(true);
         // LIBXML_NONET: prohibits network access from within XML (XXE via HTTP/FTP).
         // LIBXML_DTDLOAD: disabled intentionally (we do NOT load external DTDs).

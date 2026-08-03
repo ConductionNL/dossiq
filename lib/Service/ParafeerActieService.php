@@ -29,6 +29,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Event\ParafeerTransitionEvent;
 use OCA\Procest\Service\Support\SearchesObjects;
@@ -40,6 +42,7 @@ use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Records parafeeractie objects and orchestrates step advancement.
@@ -224,7 +227,7 @@ class ParafeerActieService
             [$register, $voorstelSchema, $actieSchema] = $this->resolveSchemas();
             $objectService = $this->settingsService->getObjectService();
             if ($objectService === null) {
-                throw new \RuntimeException('OpenRegister is not available');
+                throw new RuntimeException('OpenRegister is not available');
             }
 
             $voorstel = $this->findVoorstel(
@@ -270,7 +273,7 @@ class ParafeerActieService
                 step: $step,
             );
 
-            $timestamp = (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM);
+            $timestamp = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
 
             $actorType = 'user';
             if ($onBehalfOf !== null) {
@@ -408,7 +411,7 @@ class ParafeerActieService
                 'ParafeerActieService::recordAction failed',
                 ['voorstel' => $voorstelId, 'exception' => $e->getMessage()]
             );
-            throw new \RuntimeException('Operation failed');
+            throw new RuntimeException('Operation failed');
         }//end try
     }//end recordAction()
 
@@ -646,7 +649,7 @@ class ParafeerActieService
         $actieSchema    = $this->settingsService->getConfigValue('parafeeractie_schema');
 
         if (empty($register) === true || empty($voorstelSchema) === true || empty($actieSchema) === true) {
-            throw new \RuntimeException('Procest register/schemas not configured');
+            throw new RuntimeException('Procest register/schemas not configured');
         }
 
         return [(string) $register, (string) $voorstelSchema, (string) $actieSchema];

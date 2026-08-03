@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Middleware;
 
+use DateTimeImmutable;
 use OCA\Procest\Service\TenantContext;
 use OCA\Procest\Service\TenantJwtService;
 use OCP\AppFramework\Http\JSONResponse;
@@ -166,7 +167,7 @@ class TenantClaimValidationMiddleware extends Middleware
             'Procest SECURITY: cross-tenant JWT claim mismatch',
             [
                 'ip'                => $this->request->getRemoteAddress(),
-                'timestamp'         => (new \DateTimeImmutable('now'))->format(DATE_ATOM),
+                'timestamp'         => (new DateTimeImmutable('now'))->format(DATE_ATOM),
                 'attemptedTenantId' => $attempted,
                 'requestedTenantId' => $requested,
                 'user'              => (string) ($claims['sub'] ?? ''),

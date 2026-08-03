@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -122,7 +123,7 @@ class CaseTransferService
             }
         }
 
-        $now = (new \DateTime())->format('c');
+        $now = (new DateTime())->format('c');
 
         $transferData = [
             'caseId'             => $caseId,
@@ -285,7 +286,7 @@ class CaseTransferService
         }
 
         $caseId = (string) ($transferData['caseId'] ?? '');
-        $now    = (new \DateTime())->format('c');
+        $now    = (new DateTime())->format('c');
 
         // Read the existing custody chain before the status writes below, which
         // is also where the pre-existing trail must be preserved from.

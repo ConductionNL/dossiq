@@ -33,6 +33,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\OpenRegister\Db\Organisation;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -228,7 +229,7 @@ class TenantMigrationService
      */
     private function buildOrganisation(array $row, string $slug, string $tenantUuid): object
     {
-        $organisation = new \OCA\OpenRegister\Db\Organisation();
+        $organisation = new Organisation();
 
         // Preserve the tenant UUID so stored `_tenantId` references keep resolving.
         if ($tenantUuid !== '') {

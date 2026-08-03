@@ -31,9 +31,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DomainException;
+use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service orchestrating the ZGW DRC zaakdossier.
@@ -96,16 +99,16 @@ class ZaakdossierService
         [$objectService, $register] = $this->requireRegister();
 
         if (trim($caseId) === '') {
-            throw new \RuntimeException('caseId is required');
+            throw new RuntimeException('caseId is required');
         }
 
         if (trim($fileName) === '') {
-            throw new \RuntimeException('bestandsnaam is required');
+            throw new RuntimeException('bestandsnaam is required');
         }
 
         $type = (string) ($metadata['informatieobjecttype'] ?? '');
         if ($type === '') {
-            throw new \RuntimeException('informatieobjecttype is required');
+            throw new RuntimeException('informatieobjecttype is required');
         }
 
         $defaultClassification = $this->resolveDefaultClassification(type: $type);
@@ -114,7 +117,7 @@ class ZaakdossierService
             $classification = $defaultClassification;
         } else if ($this->accessGuard->isClassificationAllowed($defaultClassification, $classification) === false) {
             // REQ-ZAK-003d: a user may only override to a MORE restrictive level.
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Classification may not be less restrictive than the document type default'
             );
         }
@@ -267,7 +270,7 @@ class ZaakdossierService
     public function transitionStatus(string $infoObjectId, string $newStatus): array
     {
         if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
-            throw new \InvalidArgumentException('Invalid status: '.$newStatus);
+            throw new InvalidArgumentException('Invalid status: '.$newStatus);
         }
 
         [$objectService, $register] = $this->requireRegister();
@@ -281,12 +284,12 @@ class ZaakdossierService
         );
 
         if ($current === null) {
-            throw new \RuntimeException('Informatieobject not found: '.$infoObjectId);
+            throw new RuntimeException('Informatieobject not found: '.$infoObjectId);
         }
 
         $currentStatus = (string) ($current['status'] ?? 'concept');
         if ($this->isTransitionAllowed(from: $currentStatus, to: $newStatus) === false) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Invalid status transition from '.$currentStatus.' to '.$newStatus
             );
         }
@@ -476,11 +479,11 @@ class ZaakdossierService
         );
 
         if ($current === null) {
-            throw new \RuntimeException('Informatieobject not found: '.$infoObjectId);
+            throw new RuntimeException('Informatieobject not found: '.$infoObjectId);
         }
 
         if ((string) ($current['status'] ?? '') === 'definitief') {
-            throw new \DomainException('Definitieve documenten kunnen niet worden gewijzigd');
+            throw new DomainException('Definitieve documenten kunnen niet worden gewijzigd');
         }
 
         $allowed    = ['titel', 'beschrijving', 'informatieobjecttype', 'vertrouwelijkheidaanduiding'];
@@ -604,12 +607,12 @@ class ZaakdossierService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         if ($register === '') {
-            throw new \RuntimeException('Dossier register not configured');
+            throw new RuntimeException('Dossier register not configured');
         }
 
         return [$objectService, $register];

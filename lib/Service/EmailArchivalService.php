@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use InvalidArgumentException;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -76,7 +77,7 @@ class EmailArchivalService
     public function archiveLinkedEmail(string $caseId, array $metadata): array
     {
         if ($caseId === '') {
-            throw new \InvalidArgumentException('caseId is required');
+            throw new InvalidArgumentException('caseId is required');
         }
 
         $size = (int) ($metadata['sizeBytes'] ?? 0);

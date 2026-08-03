@@ -34,6 +34,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Http\RangeStreamResponse;
 use OCA\Procest\Service\InformatieobjectAccessGuard;
 use OCA\Procest\Service\ZaakdossierService;
 use OCA\Procest\Service\ZgwDocumentService;
@@ -47,6 +48,7 @@ use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Controller for the ZGW DRC zaakdossier.
@@ -149,7 +151,7 @@ class ZaakdossierController extends Controller
             $tmpName = (string) ($file['tmp_name'] ?? '');
             try {
                 if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {
-                    throw new \RuntimeException('Executable files are not permitted: '.$name);
+                    throw new RuntimeException('Executable files are not permitted: '.$name);
                 }
 
                 $content = '';
@@ -514,7 +516,7 @@ class ZaakdossierController extends Controller
         $rangeHeader = (string) $this->request->getHeader('Range');
         $mime        = (string) ($doc['formaat'] ?? 'application/octet-stream');
 
-        return new \OCA\Procest\Http\RangeStreamResponse(
+        return new RangeStreamResponse(
             content: $content,
             fileName: $fileName,
             contentType: $mime,
