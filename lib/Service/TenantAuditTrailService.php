@@ -205,8 +205,8 @@ class TenantAuditTrailService
     private function resolveTenantEntity(string $tenantId): mixed
     {
         try {
-            $os = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-            return $os->find($tenantId, register: self::REGISTER, schema: self::SCHEMA_TENANT);
+            $objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+            return $objectService->find($tenantId, register: self::REGISTER, schema: self::SCHEMA_TENANT);
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest AUDIT: could not resolve tenant ObjectEntity',

@@ -145,8 +145,8 @@ class TenantAuthenticationService
      */
     public function loadActiveMatrix(string $tenantId): ?array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return null;
         }
 
@@ -155,7 +155,7 @@ class TenantAuthenticationService
             // named-argument form threw "Unknown named parameter $register" and
             // was swallowed by the catch below. Register/schema live inside
             // `filters`; limit/offset are top-level config keys.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register'  => TenantSaasService::REGISTER,
@@ -224,15 +224,15 @@ class TenantAuthenticationService
      */
     public function resolveUserRole(string $tenantId, string $userId): ?string
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return null;
         }
 
         try {
             // ObjectService::findAll() takes a single $config array — see the note
             // above; register/schema live inside `filters`.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register'  => TenantSaasService::REGISTER,

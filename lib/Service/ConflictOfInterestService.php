@@ -145,15 +145,15 @@ class ConflictOfInterestService
      * The callable signature is `(userBsn, applicantBsn): string|null`
      * returning a relationship label (e.g. "spouse", "parent") or null.
      *
-     * @param callable $cb Lookup callable.
+     * @param callable $lookup Lookup callable.
      *
      * @return void
      *
      * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
      */
-    public function setRelationshipLookup(callable $cb): void
+    public function setRelationshipLookup(callable $lookup): void
     {
-        $this->relationshipLookup = $cb;
+        $this->relationshipLookup = $lookup;
     }//end setRelationshipLookup()
 
     /**

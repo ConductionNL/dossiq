@@ -162,8 +162,8 @@ class TenantMiddleware extends Middleware
             // Surface OR-Organisation status block to the caller.
             $message = $exception->getMessage();
             $status  = 'inactive';
-            if (preg_match('/Organisation is (\\w+)/', $message, $m) === 1) {
-                $status = $m[1];
+            if (preg_match('/Organisation is (\\w+)/', $message, $matches) === 1) {
+                $status = $matches[1];
             }
 
             return new JSONResponse(

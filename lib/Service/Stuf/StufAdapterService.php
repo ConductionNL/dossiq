@@ -376,7 +376,7 @@ class StufAdapterService
             timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
         );
 
-        $bv = $this->parser->parseBevestiging(responseXml: $response['responseXml']);
+        $bevestiging = $this->parser->parseBevestiging(responseXml: $response['responseXml']);
 
         $vrijStatus = 'fout';
         if ($response['httpStatus'] >= 200 && $response['httpStatus'] < 300) {
@@ -390,11 +390,11 @@ class StufAdapterService
                 'httpStatus'          => $response['httpStatus'],
                 'duurMs'              => $response['durationMs'],
                 'responseEnvelopeXml' => $response['responseXml'],
-                'zaakIdentificatie'   => ($bv['zaakIdentificatie'] ?? ''),
+                'zaakIdentificatie'   => ($bevestiging['zaakIdentificatie'] ?? ''),
             ]
         );
 
-        return (string) ($bv['zaakIdentificatie'] ?? '');
+        return (string) ($bevestiging['zaakIdentificatie'] ?? '');
     }//end genereerZaakIdentificatie()
 
     /**
@@ -494,14 +494,14 @@ class StufAdapterService
         $transport  = ($response['fout'] ?? null);
 
         if ($httpStatus >= 200 && $httpStatus < 300) {
-            $bv     = $this->parser->parseBevestiging(responseXml: $body);
-            $extras = [
+            $bevestiging = $this->parser->parseBevestiging(responseXml: $body);
+            $extras      = [
                 'httpStatus'          => $httpStatus,
                 'duurMs'              => $duration,
                 'responseEnvelopeXml' => $body,
             ];
-            if (($bv['zaakIdentificatie'] ?? null) !== null) {
-                $extras['zaakIdentificatie'] = $bv['zaakIdentificatie'];
+            if (($bevestiging['zaakIdentificatie'] ?? null) !== null) {
+                $extras['zaakIdentificatie'] = $bevestiging['zaakIdentificatie'];
             }
 
             $this->messageHandler->transitionStatus(msg: $message, newStatus: 'bevestigd', extras: $extras);
@@ -509,7 +509,7 @@ class StufAdapterService
             return [
                 'success'           => true,
                 'messageId'         => $messageId,
-                'zaakIdentificatie' => ($bv['zaakIdentificatie'] ?? null),
+                'zaakIdentificatie' => ($bevestiging['zaakIdentificatie'] ?? null),
                 'fout'              => null,
             ];
         }

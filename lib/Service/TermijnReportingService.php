@@ -321,12 +321,12 @@ class TermijnReportingService
      */
     private function resolveQuarter(string $periode): array
     {
-        if (preg_match('/^(\d{4})-Q([1-4])$/', $periode, $m) !== 1) {
+        if (preg_match('/^(\d{4})-Q([1-4])$/', $periode, $matches) !== 1) {
             throw new RuntimeException('Invalid periode (expected YYYY-Qn): '.$periode);
         }
 
-        $year    = (int) $m[1];
-        $quarter = (int) $m[2];
+        $year    = (int) $matches[1];
+        $quarter = (int) $matches[2];
         $startM  = (($quarter - 1) * 3) + 1;
         $endM    = $startM + 2;
         $from    = sprintf('%04d-%02d-01', $year, $startM);

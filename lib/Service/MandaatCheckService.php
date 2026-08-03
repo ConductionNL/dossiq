@@ -127,7 +127,7 @@ class MandaatCheckService
         $relevant = array_values(
                 array_filter(
             $mandaten,
-            static fn (array $m): bool => (string) ($m['gemandateerdeRol'] ?? '') === (string) $role['rolId']
+            static fn (array $row): bool => (string) ($row['gemandateerdeRol'] ?? '') === (string) $role['rolId']
         )
                 );
 
@@ -197,13 +197,13 @@ class MandaatCheckService
 
         $out = [];
         foreach ($rows as $row) {
-            $vf = (string) ($row['validFrom'] ?? '1970-01-01');
-            $vu = (string) ($row['validUntil'] ?? '');
-            if ($vf > $dateStr) {
+            $validFrom  = (string) ($row['validFrom'] ?? '1970-01-01');
+            $validUntil = (string) ($row['validUntil'] ?? '');
+            if ($validFrom > $dateStr) {
                 continue;
             }
 
-            if ($vu !== '' && $vu < $dateStr) {
+            if ($validUntil !== '' && $validUntil < $dateStr) {
                 continue;
             }
 
@@ -304,13 +304,13 @@ class MandaatCheckService
         $dateStr = $date->format('Y-m-d');
         $active  = [];
         foreach ($rows as $row) {
-            $vf = (string) ($row['validFrom'] ?? '1970-01-01');
-            $vu = (string) ($row['validUntil'] ?? '');
-            if ($vf > $dateStr) {
+            $validFrom  = (string) ($row['validFrom'] ?? '1970-01-01');
+            $validUntil = (string) ($row['validUntil'] ?? '');
+            if ($validFrom > $dateStr) {
                 continue;
             }
 
-            if ($vu !== '' && $vu < $dateStr) {
+            if ($validUntil !== '' && $validUntil < $dateStr) {
                 continue;
             }
 

@@ -135,7 +135,7 @@ class StatusTransitionService
                 continue;
             }
 
-            $failed = array_values(array_filter($eval, static fn(array $g): bool => $g['passed'] === false));
+            $failed = array_values(array_filter($eval, static fn(array $guard): bool => $guard['passed'] === false));
 
             $result['transitions'][] = [
                 'id'           => (string) ($transition['id'] ?? ''),
@@ -204,7 +204,7 @@ class StatusTransitionService
         // Defence in depth — re-evaluate guards on the server side.
         $guards = $this->extractGuards(transition: $transition);
         $eval   = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
-        $failed = array_values(array_filter($eval, static fn(array $g): bool => $g['passed'] === false));
+        $failed = array_values(array_filter($eval, static fn(array $guard): bool => $guard['passed'] === false));
         // @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
         if (count($failed) > 0) {
             $this->logger->info('StatusTransitionService: guards failed', ['caseId' => $caseId, 'transitionId' => $transitionId]);
