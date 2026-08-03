@@ -12,9 +12,13 @@
  */
 
 import { test, expect, request } from '@playwright/test'
+import { BASE_URL } from '../base-url'
 
 const APP_URL = '/apps/procest'
-const BASE = process.env.NEXTCLOUD_URL || 'http://localhost:8080'
+// Single source of truth — see tests/e2e/base-url.ts. The old
+// `process.env.NEXTCLOUD_URL || 'http://localhost:8080'` silently targeted the
+// SHARED dev container off CI.
+const BASE = BASE_URL
 
 test.describe('AVG verwerkingenlogging spec coverage', () => {
 

@@ -10,6 +10,7 @@
  */
 
 import { test, expect, request } from '@playwright/test'
+import { BASE_URL } from '../base-url'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/procest'
 
@@ -29,7 +30,10 @@ test.describe('Admin Settings spec coverage', () => {
 		// Test unauthenticated access: create a fresh request context with no cookies.
 		// Must pass storageState: undefined to avoid inheriting the admin session.
 		const ctx = await request.newContext({
-			baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
+			// Single source of truth — see tests/e2e/base-url.ts. The old
+			// `process.env.NEXTCLOUD_URL || 'http://localhost:8080'` silently
+			// targeted the SHARED dev container off CI.
+			baseURL: BASE_URL,
 			storageState: undefined,
 		})
 		const res = await ctx.get(ADMIN_SETTINGS_URL, { maxRedirects: 0 })
