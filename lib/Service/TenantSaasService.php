@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -172,7 +173,7 @@ class TenantSaasService
             'tier'          => $tier,
             'isolationMode' => self::TIER_ISOLATION[$tier],
             'dataResidency' => 'nl',
-            'createdAt'     => (new \DateTimeImmutable('now'))->format(DATE_ATOM),
+            'createdAt'     => (new DateTimeImmutable('now'))->format(DATE_ATOM),
         ];
 
         $saved    = $this->saveTenant(tenant: $tenant, uuid: null);
@@ -283,11 +284,11 @@ class TenantSaasService
 
         $row['status'] = $newStatus;
         if ($newStatus === 'active' && empty($row['activatedAt']) === true) {
-            $row['activatedAt'] = (new \DateTimeImmutable('now'))->format(DATE_ATOM);
+            $row['activatedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
         }
 
         if ($newStatus === 'terminated' && empty($row['terminatedAt']) === true) {
-            $row['terminatedAt'] = (new \DateTimeImmutable('now'))->format(DATE_ATOM);
+            $row['terminatedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
         }
 
         $saved = $this->saveTenant(tenant: $row, uuid: $tenantId);

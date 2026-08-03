@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\BerichtenboxAdapter;
 
+use DateTime;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -79,7 +80,7 @@ class MockAdapter implements BerichtenboxAdapterInterface
         return [
             'messageId' => $messageId,
             'status'    => 'sent',
-            'sentAt'    => (new \DateTime())->format('c'),
+            'sentAt'    => (new DateTime())->format('c'),
         ];
     }//end sendMessage()
 
@@ -97,7 +98,7 @@ class MockAdapter implements BerichtenboxAdapterInterface
         // Simulate: messages are "read" after they've existed for a while.
         return [
             'read'   => true,
-            'readAt' => (new \DateTime('-1 hour'))->format('c'),
+            'readAt' => (new DateTime('-1 hour'))->format('c'),
         ];
     }//end getReadStatus()
 }//end class

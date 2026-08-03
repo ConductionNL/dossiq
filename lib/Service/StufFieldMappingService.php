@@ -25,6 +25,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -239,7 +240,7 @@ class StufFieldMappingService
      */
     public function isoToStufDate(string $isoDate): string
     {
-        $dt = new \DateTimeImmutable($isoDate);
+        $dt = new DateTimeImmutable($isoDate);
         return $dt->format(self::STUF_DATE_FORMAT);
     }//end isoToStufDate()
 
@@ -256,7 +257,7 @@ class StufFieldMappingService
      */
     public function isoToStufDateTime(string $isoDateTime): string
     {
-        $dt = new \DateTimeImmutable($isoDateTime);
+        $dt = new DateTimeImmutable($isoDateTime);
         return $dt->format(self::STUF_DATETIME_FORMAT);
     }//end isoToStufDateTime()
 

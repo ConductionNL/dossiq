@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -527,7 +528,7 @@ class CaseSharingService
 
         $shareData['status']    = 'revoked';
         $shareData['revokedBy'] = $userId;
-        $shareData['revokedAt'] = (new \DateTime())->format('c');
+        $shareData['revokedAt'] = (new DateTime())->format('c');
 
         $result = $objectService->saveObject(object: $shareData, register: (int) $register, schema: (int) $shareSchema);
 
@@ -760,7 +761,7 @@ class CaseSharingService
 
         $shareData['status']    = 'revoked';
         $shareData['revokedBy'] = $userId;
-        $shareData['revokedAt'] = (new \DateTime())->format('c');
+        $shareData['revokedAt'] = (new DateTime())->format('c');
 
         $result = $objectService->saveObject(object: $shareData, register: (int) $register, schema: (int) $shareSchema);
 

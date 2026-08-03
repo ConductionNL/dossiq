@@ -34,12 +34,14 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Previews and executes bulk reassignment of a handler's open workload.
@@ -328,7 +330,7 @@ class CaseReassignmentService
             $notification = $this->notificationManager->createNotification();
             $notification->setApp(Application::APP_ID)
                 ->setUser($toUser)
-                ->setDateTime(new \DateTime())
+                ->setDateTime(new DateTime())
                 ->setObject('reassignment', $batchId)
                 ->setSubject(
                     'cases_reassigned',
@@ -401,7 +403,7 @@ class CaseReassignmentService
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
         if ($objectService === null || $register === '') {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         return [$objectService, $register];

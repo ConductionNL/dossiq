@@ -26,10 +26,14 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
+use DateTimeImmutable;
+use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for WOO-mandated deadline calculation and tracking.
@@ -97,7 +101,7 @@ class WOODeadlineService
     {
         $receipt = \DateTimeImmutable::createFromFormat('Y-m-d', $ontvangstdatum);
         if ($receipt === false) {
-            throw new \InvalidArgumentException('Invalid ontvangstdatum: '.$ontvangstdatum);
+            throw new InvalidArgumentException('Invalid ontvangstdatum: '.$ontvangstdatum);
         }
 
         $deadline = $receipt->modify('+'.self::INITIAL_PERIOD_DAYS.' days');
@@ -127,19 +131,19 @@ class WOODeadlineService
     public function extendDeadline(string $caseId, string $reason): array
     {
         if (trim($reason) === '') {
-            throw new \InvalidArgumentException('A reason is required for deadline extension');
+            throw new InvalidArgumentException('A reason is required for deadline extension');
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register   = $this->settingsService->getConfigValue('register');
         $caseSchema = $this->settingsService->getConfigValue('case_schema');
 
         if (empty($register) === true || empty($caseSchema) === true) {
-            throw new \RuntimeException('Case schema not configured');
+            throw new RuntimeException('Case schema not configured');
         }
 
         $case = $this->findObjectAsArray(
@@ -149,14 +153,14 @@ class WOODeadlineService
             id: $caseId
         );
         if ($case === null) {
-            throw new \RuntimeException('Case not found: '.$caseId);
+            throw new RuntimeException('Case not found: '.$caseId);
         }
 
         $caseData = (array) $case;
 
         $extensionCount = (int) ($caseData[self::EXTENSION_COUNT_KEY] ?? 0);
         if ($extensionCount >= 1) {
-            throw new \InvalidArgumentException('Only one deadline extension is allowed per WOO Art. 4.4');
+            throw new InvalidArgumentException('Only one deadline extension is allowed per WOO Art. 4.4');
         }
 
         $currentDeadline = $caseData['expectedResolution'] ?? null;
@@ -164,7 +168,7 @@ class WOODeadlineService
             // Derive from ontvangstdatum if not set.
             $ontvangstdatum = $caseData['ontvangstdatum'] ?? null;
             if (empty($ontvangstdatum) === true) {
-                throw new \RuntimeException('Case has no ontvangstdatum to calculate deadline from');
+                throw new RuntimeException('Case has no ontvangstdatum to calculate deadline from');
             }
 
             $calculated      = $this->calculate(ontvangstdatum: $ontvangstdatum);
@@ -243,7 +247,7 @@ class WOODeadlineService
             return ['warned' => false, 'reason' => 'No deadline set'];
         }
 
-        $today    = new \DateTimeImmutable('today');
+        $today    = new DateTimeImmutable('today');
         $deadline = \DateTimeImmutable::createFromFormat('Y-m-d', $deadlineStr);
         if ($deadline === false) {
             return ['warned' => false, 'reason' => 'Invalid deadline format'];
@@ -302,7 +306,7 @@ class WOODeadlineService
             $notification = $this->notificationManager->createNotification();
             $notification->setApp(Application::APP_ID)
                 ->setUser($userId)
-                ->setDateTime(new \DateTime())
+                ->setDateTime(new DateTime())
                 ->setObject('woo_deadline', $caseId)
                 ->setSubject(
                     $subject,

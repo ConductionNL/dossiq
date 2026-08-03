@@ -27,10 +27,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for assembling the formal WOO besluit.
@@ -86,7 +88,7 @@ class WOODecisionService
         // Guard: all documents must be assessed before a besluit can be created.
         $outstanding = $this->documentAssessmentService->getOutstanding(caseId: $caseId);
         if ($outstanding['count'] > 0) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Cannot create besluit: '.$outstanding['count'].' document(s) still need assessment. '
                 .'Document IDs: '.implode(', ', $outstanding['documents'])
             );
@@ -94,7 +96,7 @@ class WOODecisionService
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register         = $this->settingsService->getConfigValue('register');
@@ -102,7 +104,7 @@ class WOODecisionService
         $assessmentSchema = $this->settingsService->getConfigValue('woo_assessment_schema');
 
         if (empty($register) === true || empty($decisionSchema) === true) {
-            throw new \RuntimeException('Decision schema not configured');
+            throw new RuntimeException('Decision schema not configured');
         }
 
         // Collect all assessments for the case.

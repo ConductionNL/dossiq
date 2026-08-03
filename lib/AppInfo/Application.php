@@ -30,6 +30,19 @@ use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
+use OCA\Procest\Controller\DashboardController;
+use OCA\Procest\Controller\SettingsController;
+use OCA\Procest\Repair\InitializeSettings;
+use OCA\Procest\Sections\SettingsSection;
+use OCA\Procest\Service\Auth\SimulatorDigidSamlAdapter;
+use OCA\Procest\Service\Auth\SimulatorEHerkenningSamlAdapter;
+use OCA\Procest\Service\External\Bag\BagApiAdapter;
+use OCA\Procest\Service\External\Brk\BrkApiAdapter;
+use OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter;
+use OCA\Procest\Service\External\Kvk\KvkApiAdapter;
+use OCA\Procest\Service\External\Woz\WozApiAdapter;
+use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Settings\AdminSettings;
 use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Procest\Service\Beschikking\LibresignApiClient;
 use OCA\Procest\Service\Beschikking\LibresignSigningAdapter;
@@ -149,21 +162,21 @@ class Application extends App implements IBootstrap
         // with an explicit factory that constructs the REAL procest class —
         // overriding the Bootstrap generic factory for the same key.
         $context->registerService(
-            \OCA\Procest\Controller\DashboardController::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Controller\DashboardController {
-                return new \OCA\Procest\Controller\DashboardController(
+            DashboardController::class,
+            static function (\Psr\Container\ContainerInterface $c): DashboardController {
+                return new DashboardController(
                     request: $c->get('OCP\\IRequest')
                 );
             }
         );
         $context->registerService(
-            \OCA\Procest\Controller\SettingsController::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Controller\SettingsController {
-                return new \OCA\Procest\Controller\SettingsController(
+            SettingsController::class,
+            static function (\Psr\Container\ContainerInterface $c): SettingsController {
+                return new SettingsController(
                     request: $c->get('OCP\\IRequest'),
                     container: $c,
                     appManager: $c->get('OCP\\App\\IAppManager'),
-                    settingsService: $c->get(\OCA\Procest\Service\SettingsService::class),
+                    settingsService: $c->get(SettingsService::class),
                     groupManager: $c->get('OCP\\IGroupManager'),
                     userSession: $c->get('OCP\\IUserSession'),
                     l10n: $c->get('OCP\\IL10N')
@@ -171,9 +184,9 @@ class Application extends App implements IBootstrap
             }
         );
         $context->registerService(
-            \OCA\Procest\Service\SettingsService::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\SettingsService {
-                return new \OCA\Procest\Service\SettingsService(
+            SettingsService::class,
+            static function (\Psr\Container\ContainerInterface $c): SettingsService {
+                return new SettingsService(
                     appConfig: $c->get('OCP\\IAppConfig'),
                     appManager: $c->get('OCP\\App\\IAppManager'),
                     container: $c,
@@ -182,27 +195,27 @@ class Application extends App implements IBootstrap
             }
         );
         $context->registerService(
-            \OCA\Procest\Repair\InitializeSettings::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Repair\InitializeSettings {
-                return new \OCA\Procest\Repair\InitializeSettings(
-                    settingsService: $c->get(\OCA\Procest\Service\SettingsService::class),
+            InitializeSettings::class,
+            static function (\Psr\Container\ContainerInterface $c): InitializeSettings {
+                return new InitializeSettings(
+                    settingsService: $c->get(SettingsService::class),
                     logger: $c->get('Psr\\Log\\LoggerInterface')
                 );
             }
         );
         $context->registerService(
-            \OCA\Procest\Settings\AdminSettings::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Settings\AdminSettings {
-                return new \OCA\Procest\Settings\AdminSettings(
+            AdminSettings::class,
+            static function (\Psr\Container\ContainerInterface $c): AdminSettings {
+                return new AdminSettings(
                     appManager: $c->get('OCP\\App\\IAppManager'),
                     initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState')
                 );
             }
         );
         $context->registerService(
-            \OCA\Procest\Sections\SettingsSection::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Sections\SettingsSection {
-                return new \OCA\Procest\Sections\SettingsSection(
+            SettingsSection::class,
+            static function (\Psr\Container\ContainerInterface $c): SettingsSection {
+                return new SettingsSection(
                     l: $c->get('OCP\\IL10N'),
                     urlGenerator: $c->get('OCP\\IURLGenerator')
                 );
@@ -394,7 +407,7 @@ class Application extends App implements IBootstrap
                 $mode = $c->get(\OCA\Procest\Service\External\IntegrationMode::class)
                     ->resolve('digid', [\OCA\Procest\Service\External\IntegrationMode::SIMULATOR]);
                 if ($mode === \OCA\Procest\Service\External\IntegrationMode::SIMULATOR) {
-                    return new \OCA\Procest\Service\Auth\SimulatorDigidSamlAdapter();
+                    return new SimulatorDigidSamlAdapter();
                 }
 
                 return $c->get(\OCA\Procest\Service\Auth\LogDigidSamlAdapter::class);
@@ -406,7 +419,7 @@ class Application extends App implements IBootstrap
                 $mode = $c->get(\OCA\Procest\Service\External\IntegrationMode::class)
                     ->resolve('digid', [\OCA\Procest\Service\External\IntegrationMode::SIMULATOR]);
                 if ($mode === \OCA\Procest\Service\External\IntegrationMode::SIMULATOR) {
-                    return new \OCA\Procest\Service\Auth\SimulatorEHerkenningSamlAdapter();
+                    return new SimulatorEHerkenningSamlAdapter();
                 }
 
                 return $c->get(\OCA\Procest\Service\Auth\LogEHerkenningSamlAdapter::class);
@@ -451,7 +464,7 @@ class Application extends App implements IBootstrap
                         ]
                         );
                 if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
-                    return new \OCA\Procest\Service\External\Kvk\KvkApiAdapter(
+                    return new KvkApiAdapter(
                         clientService: $c->get('OCP\\Http\\Client\\IClientService'),
                         mode: $modeService,
                         logger: $c->get('Psr\\Log\\LoggerInterface'),
@@ -473,7 +486,7 @@ class Application extends App implements IBootstrap
                         ]
                         );
                 if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
-                    return new \OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter(
+                    return new HaalCentraalBrpAdapter(
                         clientService: $c->get('OCP\\Http\\Client\\IClientService'),
                         mode: $modeService,
                         logger: $c->get('Psr\\Log\\LoggerInterface'),
@@ -502,7 +515,7 @@ class Application extends App implements IBootstrap
                         ]
                         );
                 if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
-                    return new \OCA\Procest\Service\External\Bag\BagApiAdapter(
+                    return new BagApiAdapter(
                         clientService: $c->get('OCP\\Http\\Client\\IClientService'),
                         mode: $modeService,
                         mapper: $c->get(\OCA\Procest\Service\External\Bag\BagResponseMapper::class),
@@ -531,7 +544,7 @@ class Application extends App implements IBootstrap
                         ]
                         );
                 if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
-                    return new \OCA\Procest\Service\External\Brk\BrkApiAdapter(
+                    return new BrkApiAdapter(
                         clientService: $c->get('OCP\\Http\\Client\\IClientService'),
                         mode: $modeService,
                         mapper: $c->get(\OCA\Procest\Service\External\Brk\BrkResponseMapper::class),
@@ -561,7 +574,7 @@ class Application extends App implements IBootstrap
                         ]
                         );
                 if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
-                    return new \OCA\Procest\Service\External\Woz\WozApiAdapter(
+                    return new WozApiAdapter(
                         clientService: $c->get('OCP\\Http\\Client\\IClientService'),
                         mode: $modeService,
                         mapper: $c->get(\OCA\Procest\Service\External\Woz\WozResponseMapper::class),

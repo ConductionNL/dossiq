@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
 use OCA\Procest\AppInfo\Application;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
@@ -94,7 +95,7 @@ class MentionNotificationService
                 $notification = $this->notificationManager->createNotification();
                 $notification->setApp(Application::APP_ID)
                     ->setUser($mentionedUserId)
-                    ->setDateTime(new \DateTime())
+                    ->setDateTime(new DateTime())
                     ->setObject($objectType, $objectId)
                     ->setSubject(
                             'note_mention',

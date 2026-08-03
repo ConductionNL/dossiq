@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -80,7 +81,7 @@ class CaseCollaborationService
                 'actorType' => 'local',
                 'cloudId'   => '',
                 'message'   => $message,
-                'createdAt' => (new \DateTime())->format('c'),
+                'createdAt' => (new DateTime())->format('c'),
             ],
         );
     }//end postLocalActivity()
@@ -113,7 +114,7 @@ class CaseCollaborationService
                 'actorType' => 'remote',
                 'cloudId'   => $resolved['sharedWith'],
                 'message'   => $message,
-                'createdAt' => (new \DateTime())->format('c'),
+                'createdAt' => (new DateTime())->format('c'),
             ],
         );
     }//end postRemoteActivity()

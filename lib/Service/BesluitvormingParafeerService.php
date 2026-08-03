@@ -26,6 +26,7 @@ namespace OCA\Procest\Service;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Orchestrates the parafering chain for besluitvorming voorstellen.
@@ -68,14 +69,14 @@ class BesluitvormingParafeerService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register       = $this->settingsService->getConfigValue('register');
         $voorstelSchema = $this->settingsService->getConfigValue('voorstel_schema');
 
         if (empty($register) === true || empty($voorstelSchema) === true) {
-            throw new \RuntimeException('Procest register or voorstel_schema not configured');
+            throw new RuntimeException('Procest register or voorstel_schema not configured');
         }
 
         // Load the voorstel.
@@ -87,7 +88,7 @@ class BesluitvormingParafeerService
         );
 
         if (empty($voorstelResults) === true) {
-            throw new \RuntimeException('Voorstel not found: '.$voorstelId);
+            throw new RuntimeException('Voorstel not found: '.$voorstelId);
         }
 
         $voorstel = $this->toArray(value: $voorstelResults[0]);
@@ -148,7 +149,7 @@ class BesluitvormingParafeerService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register       = $this->settingsService->getConfigValue('register');
@@ -156,7 +157,7 @@ class BesluitvormingParafeerService
         $actieSchema    = $this->settingsService->getConfigValue('parafeeractie_schema');
 
         if (empty($register) === true || empty($voorstelSchema) === true) {
-            throw new \RuntimeException('Procest register or voorstel_schema not configured');
+            throw new RuntimeException('Procest register or voorstel_schema not configured');
         }
 
         // Load voorstel.
@@ -168,7 +169,7 @@ class BesluitvormingParafeerService
         );
 
         if (empty($voorstelResults) === true) {
-            throw new \RuntimeException('Voorstel not found: '.$voorstelId);
+            throw new RuntimeException('Voorstel not found: '.$voorstelId);
         }
 
         $voorstel = $this->toArray(value: $voorstelResults[0]);

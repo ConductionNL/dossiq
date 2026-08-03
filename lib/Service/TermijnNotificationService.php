@@ -30,6 +30,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use InvalidArgumentException;
 use OCA\Procest\BackgroundJob\TermijnNotificationDispatchJob;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
@@ -89,7 +90,7 @@ class TermijnNotificationService
         }
 
         if (in_array($type, self::TEMPLATES, true) === false) {
-            throw new \InvalidArgumentException('Unknown template: '.$type);
+            throw new InvalidArgumentException('Unknown template: '.$type);
         }
 
         $this->jobList->add(
@@ -127,7 +128,7 @@ class TermijnNotificationService
         array $context=[]
     ): array {
         if (in_array($type, self::TEMPLATES, true) === false) {
-            throw new \InvalidArgumentException('Unknown template: '.$type);
+            throw new InvalidArgumentException('Unknown template: '.$type);
         }
 
         $instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
