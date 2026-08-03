@@ -43,7 +43,6 @@ namespace OCA\Procest\Service;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Procest\Service\Support\SearchesObjects;
-use Psr\Log\LoggerInterface;
 
 /**
  * Computes process-mining bottleneck metrics from recorded status history.
@@ -57,11 +56,9 @@ class ProcessMiningService
      * Constructor.
      *
      * @param SettingsService $settingsService Shared settings/OR resolver.
-     * @param LoggerInterface $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
 

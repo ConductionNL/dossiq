@@ -85,11 +85,11 @@ class TermijnbewakingEndToEndTest extends TestCase
 
         $logger = $this->createMock(LoggerInterface::class);
         $this->termijnService = new TermijnService($settings, $logger);
-        $this->pauseService   = new TermijnPauseService($this->termijnService, $logger);
-        $this->extService     = new TermijnExtensionService($this->termijnService, $logger);
+        $this->pauseService   = new TermijnPauseService($this->termijnService);
+        $this->extService     = new TermijnExtensionService($this->termijnService);
         $this->ingService     = new IngebrekestellingService($settings, $this->termijnService, $logger);
         $this->calcService    = new DwangsomCalculationService($settings, $logger);
-        $this->uitService     = new DwangsomUitbetalingService($settings, $logger);
+        $this->uitService     = new DwangsomUitbetalingService($settings);
         $this->bezService     = new DwangsomBezwaarService($settings, $this->termijnService, $logger);
         $this->notifService   = new TermijnNotificationService(
             $this->termijnService,
