@@ -112,6 +112,10 @@ class TenantOnboardingService
      * @param string $tenantId Tenant UUID.
      *
      * @return array{steps: array<int, array<string, mixed>>, completed: int, total: int, fraction: float}
+     *
+     * @spec exclude phpstan dead-code cleanup only — removed an unreachable `$total === 0`
+     *       branch (self::STEPS is non-empty, so max() is always >= 1) and normalised an
+     *       IAppManager return; no behavioural or contractual change.
      */
     public function getProgress(string $tenantId): array
     {

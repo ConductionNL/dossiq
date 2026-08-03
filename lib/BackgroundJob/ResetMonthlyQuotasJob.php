@@ -70,6 +70,9 @@ class ResetMonthlyQuotasJob extends TimedJob
      * @param mixed $argument Job argument (unused).
      *
      * @return void
+     *
+     * @spec exclude phpstan dead-code cleanup only — normalised the IAppManager return and
+     *       dropped the resulting always-false `is_array()` guard; no behavioural change.
      */
     protected function run($argument): void
     {
