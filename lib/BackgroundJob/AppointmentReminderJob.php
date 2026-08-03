@@ -64,6 +64,9 @@ class AppointmentReminderJob extends TimedJob
      * @param mixed $argument The job argument.
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $argument is fixed by
+     * OCP\BackgroundJob\TimedJob::run(); this job takes no arguments.
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */

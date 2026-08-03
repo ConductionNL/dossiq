@@ -1350,7 +1350,7 @@ class SettingsService
         }
 
         $expected = 0;
-        foreach ($array as $key => $unused) {
+        foreach (array_keys($array) as $key) {
             if ($key !== $expected) {
                 return false;
             }

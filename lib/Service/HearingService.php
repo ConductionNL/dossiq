@@ -288,12 +288,6 @@ class HearingService
 
         $datum   = $data['datum'] ?? '';
         $locatie = $data['locatie'] ?? '';
-        $talkUrl = $data['talkRoomUrl'] ?? '';
-
-        $description = 'Hoorgesprek klacht';
-        if (empty($talkUrl) === false) {
-            $description .= "\nVideo link: ".$talkUrl;
-        }
 
         // Calendar integration — log attempt; actual calendar write is
         // delegated to NC Calendar IManager search/find calendars per participant.

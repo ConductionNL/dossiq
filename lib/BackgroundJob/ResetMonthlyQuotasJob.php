@@ -71,6 +71,9 @@ class ResetMonthlyQuotasJob extends TimedJob
      *
      * @return void
      *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $argument is fixed by
+     * OCP\BackgroundJob\TimedJob::run(); this job takes no arguments.
+     *
      * @spec exclude phpstan dead-code cleanup only — normalised the IAppManager return and
      *       dropped the resulting always-false `is_array()` guard; no behavioural change.
      */

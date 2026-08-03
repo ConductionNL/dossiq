@@ -95,6 +95,10 @@ class TenantClaimValidationMiddleware extends Middleware
      * @return void
      *
      * @throws TenantClaimMismatchException When the JWT tenant_id does not match the request tenant.
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::beforeController(); this middleware
+     * validates the bound tenant claim instead.
      */
     public function beforeController($controller, $methodName): void
     {
@@ -139,6 +143,10 @@ class TenantClaimValidationMiddleware extends Middleware
      * @return \OCP\AppFramework\Http\Response
      *
      * @throws \Exception When the exception is not ours.
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::afterException(); only $exception is
+     * inspected.
      */
     public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response
     {

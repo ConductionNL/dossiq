@@ -90,7 +90,6 @@ class DsoIntakeService
         $bouwkosten    = $dsoMessage['bouwkosten'] ?? 0;
         $procedureType = $dsoMessage['procedureType'] ?? 'regulier';
         $dsoZaaknummer = $dsoMessage['zaaknummer'] ?? '';
-        $bijlagen      = $dsoMessage['bijlagen'] ?? [];
 
         // Build activity description.
         $activityNames = array_map(
