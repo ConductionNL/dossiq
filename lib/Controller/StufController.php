@@ -320,6 +320,43 @@ class StufController extends Controller
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_REQUEST_ENTITY_TOO_LARGE);
         }
 
+        $parsed = $this->parseSoapDocument(rawBody: $rawBody, service: $service);
+        if ($parsed instanceof DataDisplayResponse) {
+            return $parsed;
+        }
+
+        $messageElement = $this->extractStufMessageElement(dom: $parsed);
+        if ($messageElement instanceof DataDisplayResponse) {
+            return $messageElement;
+        }
+
+        // Dispatch based on message type.
+        $messageType = $messageElement->localName;
+
+        $this->logger->info(
+            'Received StUF message: {type} at {service}',
+            ['type' => $messageType, 'service' => $service]
+        );
+
+        return match ($messageType) {
+            'zakLk01' => $this->handleZakLk01(message: $messageElement),
+            'zakLv01' => $this->handleZakLv01(message: $messageElement),
+            'npsLv01' => $this->handleNpsLv01(message: $messageElement),
+            'edcLk01' => $this->handleEdcLk01(message: $messageElement),
+            default => $this->handleUnknownMessage(messageType: $messageType),
+        };
+    }//end handleSoapMessage()
+
+    /**
+     * Parse an inbound SOAP envelope with XXE/DTD protections.
+     *
+     * @param string $rawBody The raw request body.
+     * @param string $service The service type ('zaken' or 'personen').
+     *
+     * @return DOMDocument|DataDisplayResponse The parsed document, or a SOAP fault response.
+     */
+    private function parseSoapDocument(string $rawBody, string $service): DOMDocument|DataDisplayResponse
+    {
         // Parse the XML with XXE/DTD protections.
         $dom = new DOMDocument();
         libxml_use_internal_errors(true);
@@ -336,6 +373,18 @@ class StufController extends Controller
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
+        return $dom;
+    }//end parseSoapDocument()
+
+    /**
+     * Locate the StUF message element inside a parsed SOAP envelope.
+     *
+     * @param DOMDocument $dom The parsed SOAP envelope.
+     *
+     * @return \DOMElement|DataDisplayResponse The StUF message element, or a SOAP fault response.
+     */
+    private function extractStufMessageElement(DOMDocument $dom): \DOMElement|DataDisplayResponse
+    {
         // Extract the SOAP Body content.
         $bodyElements = $dom->getElementsByTagNameNS(
             StufMessageBuilder::NS_SOAP,
@@ -367,22 +416,8 @@ class StufController extends Controller
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
-        // Dispatch based on message type.
-        $messageType = $messageElement->localName;
-
-        $this->logger->info(
-            'Received StUF message: {type} at {service}',
-            ['type' => $messageType, 'service' => $service]
-        );
-
-        return match ($messageType) {
-            'zakLk01' => $this->handleZakLk01(message: $messageElement),
-            'zakLv01' => $this->handleZakLv01(message: $messageElement),
-            'npsLv01' => $this->handleNpsLv01(message: $messageElement),
-            'edcLk01' => $this->handleEdcLk01(message: $messageElement),
-            default => $this->handleUnknownMessage(messageType: $messageType),
-        };
-    }//end handleSoapMessage()
+        return $messageElement;
+    }//end extractStufMessageElement()
 
     /**
      * Handle zakLk01 (case create/update) message.

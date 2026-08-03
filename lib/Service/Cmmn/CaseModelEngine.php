@@ -657,33 +657,24 @@ class CaseModelEngine
             throw new RuntimeException('cmmn_not_configured');
         }
 
-        try {
-            $case = $this->toArray(value: $objectService->find($caseId, register: $register, schema: $caseSchema));
-        } catch (Throwable $e) {
-            $this->logger->error('CaseModelEngine: loadCase failed', ['exception' => $e->getMessage(), 'caseId' => $caseId]);
-            throw new RuntimeException('case_not_found');
-        }
-
-        if ($case === []) {
-            throw new RuntimeException('case_not_found');
-        }
+        $case = $this->getCaseObject(
+            objectService: $objectService,
+            register: $register,
+            caseSchema: $caseSchema,
+            caseId: $caseId
+        );
 
         $caseTypeId = (string) ($case['caseType'] ?? '');
         if ($caseTypeId === '') {
             throw new RuntimeException('case_type_not_configured');
         }
 
-        try {
-            $caseType = $this->toArray(value: $objectService->find($caseTypeId, register: $register, schema: $caseTypeSchema));
-        } catch (Throwable $e) {
-            $this->logger->error('CaseModelEngine: loadCaseType failed', ['exception' => $e->getMessage(), 'caseTypeId' => $caseTypeId]);
-            throw new RuntimeException('case_type_not_found');
-        }
-
-        $handlingModel = (string) ($caseType['handlingModel'] ?? 'bpmn');
-        if ($handlingModel !== 'cmmn') {
-            throw new RuntimeException('case_not_cmmn_managed');
-        }
+        $caseType = $this->getCmmnCaseType(
+            objectService: $objectService,
+            register: $register,
+            caseTypeSchema: $caseTypeSchema,
+            caseTypeId: $caseTypeId
+        );
 
         $itemsById = $this->loadItemsById(caseTypeId: $caseTypeId);
         $state     = $this->decodeState(case: $case);
@@ -698,6 +689,63 @@ class CaseModelEngine
             'caseSchema'    => $caseSchema,
         ];
     }//end loadContext()
+
+    /**
+     * Load the case object from OpenRegister.
+     *
+     * @param object $objectService The OpenRegister object service.
+     * @param string $register      The register slug.
+     * @param string $caseSchema    The case schema slug.
+     * @param string $caseId        Case UUID.
+     *
+     * @return array<string, mixed> The case object.
+     *
+     * @throws RuntimeException When the case cannot be loaded or is empty.
+     */
+    private function getCaseObject(object $objectService, string $register, string $caseSchema, string $caseId): array
+    {
+        try {
+            $case = $this->toArray(value: $objectService->find($caseId, register: $register, schema: $caseSchema));
+        } catch (Throwable $e) {
+            $this->logger->error('CaseModelEngine: loadCase failed', ['exception' => $e->getMessage(), 'caseId' => $caseId]);
+            throw new RuntimeException('case_not_found');
+        }
+
+        if ($case === []) {
+            throw new RuntimeException('case_not_found');
+        }
+
+        return $case;
+    }//end getCaseObject()
+
+    /**
+     * Load the caseType object and assert it is CMMN-managed.
+     *
+     * @param object $objectService  The OpenRegister object service.
+     * @param string $register       The register slug.
+     * @param string $caseTypeSchema The caseType schema slug.
+     * @param string $caseTypeId     The caseType UUID.
+     *
+     * @return array<string, mixed> The caseType object.
+     *
+     * @throws RuntimeException When the caseType cannot be loaded or is not CMMN-managed.
+     */
+    private function getCmmnCaseType(object $objectService, string $register, string $caseTypeSchema, string $caseTypeId): array
+    {
+        try {
+            $caseType = $this->toArray(value: $objectService->find($caseTypeId, register: $register, schema: $caseTypeSchema));
+        } catch (Throwable $e) {
+            $this->logger->error('CaseModelEngine: loadCaseType failed', ['exception' => $e->getMessage(), 'caseTypeId' => $caseTypeId]);
+            throw new RuntimeException('case_type_not_found');
+        }
+
+        $handlingModel = (string) ($caseType['handlingModel'] ?? 'bpmn');
+        if ($handlingModel !== 'cmmn') {
+            throw new RuntimeException('case_not_cmmn_managed');
+        }
+
+        return $caseType;
+    }//end getCmmnCaseType()
 
     /**
      * Load and validate the active caseModel's plan items for a caseType.
