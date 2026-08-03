@@ -111,7 +111,8 @@ class TermijnController extends Controller
      */
     public function create(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -143,7 +144,8 @@ class TermijnController extends Controller
      */
     public function show(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -168,7 +170,8 @@ class TermijnController extends Controller
      */
     public function pauze(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -198,7 +201,8 @@ class TermijnController extends Controller
      */
     public function hervat(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -231,7 +235,8 @@ class TermijnController extends Controller
      */
     public function verleng(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -262,7 +267,8 @@ class TermijnController extends Controller
      */
     public function voltooi(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
