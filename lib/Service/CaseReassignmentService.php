@@ -105,49 +105,87 @@ class CaseReassignmentService
                 schema: $caseSchema,
                 filters: ['assignee' => $fromUser]
             );
-            foreach ($caseResults as $case) {
-                if (in_array((string) ($case['status'] ?? ''), $finalIds, true) === true) {
-                    continue;
-                }
 
-                if ($caseType !== '' && (string) ($case['caseType'] ?? '') !== $caseType) {
-                    continue;
-                }
-
-                $cases[] = $case;
-            }
+            $cases = $this->filterOpenCases(caseResults: $caseResults, finalIds: $finalIds, caseType: $caseType);
         }
 
         $tasks = [];
         if ($taskSchema !== '') {
-            $caseIds = [];
-            foreach ($cases as $c) {
-                $caseIds[(string) ($c['id'] ?? ($c['uuid'] ?? ''))] = true;
-            }
-
             $taskResults = $this->searchObjectsAsArrays(
                 objectService: $objectService,
                 register: $register,
                 schema: $taskSchema,
                 filters: ['assignee' => $fromUser]
             );
-            foreach ($taskResults as $task) {
-                if (in_array((string) ($task['status'] ?? ''), ['completed', 'terminated', 'disabled'], true) === true) {
-                    continue;
-                }
 
-                // When narrowed by caseType, only tasks belonging to a previewed
-                // case are in scope.
-                if ($caseType !== '' && isset($caseIds[(string) ($task['case'] ?? '')]) === false) {
-                    continue;
-                }
-
-                $tasks[] = $task;
-            }
-        }//end if
+            $tasks = $this->filterOpenTasks(taskResults: $taskResults, cases: $cases, caseType: $caseType);
+        }
 
         return ['cases' => $cases, 'tasks' => $tasks];
     }//end preview()
+
+    /**
+     * Keep only the non-final cases, optionally narrowed to one case type.
+     *
+     * @param array<int, array<string, mixed>> $caseResults The raw case search results.
+     * @param array<int, string>               $finalIds    Status ids marking a case as closed/archived.
+     * @param string                           $caseType    Optional caseType uuid to narrow by ('' = all).
+     *
+     * @return array<int, array<string, mixed>> The open cases, in search order.
+     */
+    private function filterOpenCases(array $caseResults, array $finalIds, string $caseType): array
+    {
+        $cases = [];
+
+        foreach ($caseResults as $case) {
+            if (in_array((string) ($case['status'] ?? ''), $finalIds, true) === true) {
+                continue;
+            }
+
+            if ($caseType !== '' && (string) ($case['caseType'] ?? '') !== $caseType) {
+                continue;
+            }
+
+            $cases[] = $case;
+        }
+
+        return $cases;
+    }//end filterOpenCases()
+
+    /**
+     * Keep only the open tasks, optionally narrowed to the previewed cases.
+     *
+     * @param array<int, array<string, mixed>> $taskResults The raw task search results.
+     * @param array<int, array<string, mixed>> $cases       The previewed cases the tasks may belong to.
+     * @param string                           $caseType    Optional caseType uuid to narrow by ('' = all).
+     *
+     * @return array<int, array<string, mixed>> The open tasks, in search order.
+     */
+    private function filterOpenTasks(array $taskResults, array $cases, string $caseType): array
+    {
+        $caseIds = [];
+        foreach ($cases as $c) {
+            $caseIds[(string) ($c['id'] ?? ($c['uuid'] ?? ''))] = true;
+        }
+
+        $tasks = [];
+
+        foreach ($taskResults as $task) {
+            if (in_array((string) ($task['status'] ?? ''), ['completed', 'terminated', 'disabled'], true) === true) {
+                continue;
+            }
+
+            // When narrowed by caseType, only tasks belonging to a previewed
+            // case are in scope.
+            if ($caseType !== '' && isset($caseIds[(string) ($task['case'] ?? '')]) === false) {
+                continue;
+            }
+
+            $tasks[] = $task;
+        }
+
+        return $tasks;
+    }//end filterOpenTasks()
 
     /**
      * Execute a bulk reassignment from one handler to another.
@@ -275,16 +313,7 @@ class CaseReassignmentService
 
             // Append a batch audit entry onto the activity log when present
             // (cases carry an activity property; tasks may not).
-            $activity = [];
-            $raw      = ($item['activity'] ?? null);
-            if (is_array($raw) === true) {
-                $activity = $raw;
-            } else if (is_string($raw) === true && $raw !== '') {
-                $decoded = json_decode($raw, true);
-                if (is_array($decoded) === true) {
-                    $activity = $decoded;
-                }
-            }
+            $activity = $this->extractActivityLog(item: $item);
 
             $activity[] = [
                 'type'           => 'reassignment',
@@ -308,6 +337,33 @@ class CaseReassignmentService
             return false;
         }//end try
     }//end reassignItem()
+
+    /**
+     * Read an item's existing activity log, accepting both the array and the
+     * JSON-string storage shapes and falling back to an empty log.
+     *
+     * @param array<string, mixed> $item The object payload.
+     *
+     * @return array<int, mixed> The decoded activity log.
+     */
+    private function extractActivityLog(array $item): array
+    {
+        $raw = ($item['activity'] ?? null);
+        if (is_array($raw) === true) {
+            return $raw;
+        }
+
+        if (is_string($raw) === true) {
+            // An empty string decodes to null, so it falls through to the
+            // empty log below without a separate guard.
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded) === true) {
+                return $decoded;
+            }
+        }
+
+        return [];
+    }//end extractActivityLog()
 
     /**
      * Send a single digest notification to the receiving handler.
@@ -364,7 +420,7 @@ class CaseReassignmentService
         $ids = [];
         foreach ($rows as $row) {
             $isFinal = ($row['isFinal'] ?? false);
-            if ($isFinal === true || $isFinal === 'true' || $isFinal === 1) {
+            if (in_array($isFinal, [true, 'true', 1], true) === true) {
                 $ids[] = (string) ($row['id'] ?? ($row['uuid'] ?? ''));
             }
         }

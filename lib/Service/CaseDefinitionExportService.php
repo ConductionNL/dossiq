@@ -125,6 +125,36 @@ class CaseDefinitionExportService
             throw new RuntimeException('Failed to create temporary file for export');
         }
 
+        $this->writeArchive(
+            tempPath: $tempPath,
+            caseTypeId: $caseTypeId,
+            manifest: $manifest,
+            components: $components
+        );
+
+        $slug    = $manifest['caseType']['slug'] ?? 'unknown';
+        $version = $manifest['version'] ?? '1.0';
+
+        return [
+            'path'     => $tempPath,
+            'filename' => "case-definition-{$slug}-v{$version}.zip",
+        ];
+    }//end exportCaseDefinition()
+
+    /**
+     * Write the manifest and the selected components into the export archive.
+     *
+     * @param string               $tempPath   Path of the temporary ZIP file to write.
+     * @param string               $caseTypeId The case type ID being exported.
+     * @param array<string, mixed> $manifest   The manifest to store as manifest.json.
+     * @param string[]             $components The components to include.
+     *
+     * @return void
+     *
+     * @throws \RuntimeException If the ZIP archive cannot be created.
+     */
+    private function writeArchive(string $tempPath, string $caseTypeId, array $manifest, array $components): void
+    {
         $zip    = new ZipArchive();
         $result = $zip->open($tempPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         if ($result !== true) {
@@ -142,13 +172,7 @@ class CaseDefinitionExportService
             }
 
             if ($component === 'workflows' && is_array($data) === true) {
-                foreach ($data as $workflowName => $workflowData) {
-                    $zip->addFromString(
-                        'workflows/'.$workflowName.'.json',
-                        json_encode($workflowData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                    );
-                }
-
+                $this->addWorkflowEntries(zip: $zip, workflows: $data);
                 continue;
             }
 
@@ -159,15 +183,25 @@ class CaseDefinitionExportService
         }//end foreach
 
         $zip->close();
+    }//end writeArchive()
 
-        $slug    = $manifest['caseType']['slug'] ?? 'unknown';
-        $version = $manifest['version'] ?? '1.0';
-
-        return [
-            'path'     => $tempPath,
-            'filename' => "case-definition-{$slug}-v{$version}.zip",
-        ];
-    }//end exportCaseDefinition()
+    /**
+     * Add one JSON entry per workflow under the archive's workflows/ directory.
+     *
+     * @param ZipArchive           $zip       The opened ZIP archive.
+     * @param array<string, mixed> $workflows The workflow data keyed by workflow name.
+     *
+     * @return void
+     */
+    private function addWorkflowEntries(ZipArchive $zip, array $workflows): void
+    {
+        foreach ($workflows as $workflowName => $workflowData) {
+            $zip->addFromString(
+                'workflows/'.$workflowName.'.json',
+                json_encode($workflowData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+            );
+        }
+    }//end addWorkflowEntries()
 
     /**
      * Build the manifest for a case definition export.

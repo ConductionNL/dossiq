@@ -97,6 +97,60 @@ class PublicationService
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_schema');
 
+        $case = $this->loadCase(
+            objectService: $objectService,
+            caseId: $caseId,
+            register: $register,
+            schema: $schema
+        );
+
+        $publications = $this->extractPublications(case: $case);
+
+        $publishedAt = (string) ($payload['publishedAt'] ?? date(format: 'c'));
+        $notes       = null;
+        if (isset($payload['notes']) === true) {
+            $notes = (string) $payload['notes'];
+        }
+
+        // Upsert by channel — same channel publishing twice updates the timestamp.
+        $publications = $this->upsertPublication(
+            publications: $publications,
+            channel: $channel,
+            publishedAt: $publishedAt,
+            notes: $notes
+        );
+
+        $case['publications'] = $publications;
+        $case['publishedAt']  = $publishedAt;
+
+        $objectService->saveObject(
+            object: $case,
+            register: $register,
+            schema: $schema,
+        );
+
+        return [
+            'caseId'       => $caseId,
+            'channel'      => $channel,
+            'publishedAt'  => $publishedAt,
+            'publications' => $publications,
+        ];
+    }//end publish()
+
+    /**
+     * Load a case from OpenRegister and normalise it to its array form.
+     *
+     * @param object $objectService The OpenRegister ObjectService.
+     * @param string $caseId        The case id.
+     * @param mixed  $register      The configured register id.
+     * @param mixed  $schema        The configured case schema id.
+     *
+     * @return array<string, mixed> The case data.
+     *
+     * @throws \RuntimeException When the case cannot be loaded or does not exist.
+     */
+    private function loadCase(object $objectService, string $caseId, mixed $register, mixed $schema): array
+    {
         try {
             $obj = $objectService->find(id: $caseId, register: $register, schema: $schema);
         } catch (Throwable $e) {
@@ -117,15 +171,22 @@ class PublicationService
             $case = $obj->jsonSerialize();
         }
 
-        $publications = $this->extractPublications(case: $case);
+        return $case;
+    }//end loadCase()
 
-        $publishedAt = (string) ($payload['publishedAt'] ?? date(format: 'c'));
-        $notes       = null;
-        if (isset($payload['notes']) === true) {
-            $notes = (string) $payload['notes'];
-        }
-
-        // Upsert by channel — same channel publishing twice updates the timestamp.
+    /**
+     * Upsert a publication record by channel — an existing record for the same
+     * channel has its timestamp and notes replaced rather than being duplicated.
+     *
+     * @param array<int, array<string, mixed>> $publications The existing publications list.
+     * @param string                           $channel      The publication channel.
+     * @param string                           $publishedAt  The publication timestamp.
+     * @param string|null                      $notes        Optional publication notes.
+     *
+     * @return array<int, array<string, mixed>> The updated publications list.
+     */
+    private function upsertPublication(array $publications, string $channel, string $publishedAt, ?string $notes): array
+    {
         $upserted = false;
         foreach ($publications as $i => $pub) {
             if ((string) ($pub['channel'] ?? '') === $channel) {
@@ -147,22 +208,8 @@ class PublicationService
             ];
         }
 
-        $case['publications'] = $publications;
-        $case['publishedAt']  = $publishedAt;
-
-        $objectService->saveObject(
-            object: $case,
-            register: $register,
-            schema: $schema,
-        );
-
-        return [
-            'caseId'       => $caseId,
-            'channel'      => $channel,
-            'publishedAt'  => $publishedAt,
-            'publications' => $publications,
-        ];
-    }//end publish()
+        return $publications;
+    }//end upsertPublication()
 
     /**
      * Pull the existing publications list from a case.
