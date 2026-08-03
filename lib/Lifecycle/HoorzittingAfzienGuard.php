@@ -43,6 +43,12 @@ class HoorzittingAfzienGuard implements LifecycleGuardInterface
     /**
      * Authorise (or deny) the transition.
      *
+     * StaticAccess is suppressed below rather than decomposed: OpenRegister's
+     * GuardResult is an immutable value object whose constructor is private,
+     * so allow()/deny() are its only construction path. A local factory
+     * collaborator would have to make the very same static call, which would
+     * move the finding instead of removing it.
+     *
      * @param array<string, mixed> $object The loaded bezwaar payload at its current state.
      * @param string               $action The transition action being applied.
      * @param string               $userId The uid of the caller.
@@ -50,6 +56,7 @@ class HoorzittingAfzienGuard implements LifecycleGuardInterface
      * @return GuardResult Allow when hearingWaived is true, deny otherwise.
      *
      * @SuppressWarnings(PHPMD.UnusedFormalParameter) $action/$userId are mandated by the interface; this guard reads only the payload.
+     * @SuppressWarnings(PHPMD.StaticAccess)          GuardResult has a private constructor upstream; see the note above.
      *
      * @spec openspec/changes/migrate-status-engine-to-or-lifecycle/tasks.md#P-3.2
      */

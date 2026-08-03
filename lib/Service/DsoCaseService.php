@@ -284,7 +284,7 @@ class DsoCaseService
         }
 
         $event = new VergunningStatusChangedEvent(
-            vergunningaanvraagRef: $aanvraagRef,
+            aanvraagRef: $aanvraagRef,
             oldStatus: $oldStatus,
             newStatus: $newStatus,
             besluitdatum: $besluitdatum,

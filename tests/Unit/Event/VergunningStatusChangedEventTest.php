@@ -43,7 +43,7 @@ class VergunningStatusChangedEventTest extends TestCase
     public function testEventExtendsOcpEvent(): void
     {
         $event = new VergunningStatusChangedEvent(
-            vergunningaanvraagRef: 'ref-001',
+            aanvraagRef: 'ref-001',
             oldStatus: 'ingediend',
             newStatus: 'in_behandeling',
             besluitdatum: null,
@@ -64,7 +64,7 @@ class VergunningStatusChangedEventTest extends TestCase
     public function testGettersReturnConstructorValues(): void
     {
         $event = new VergunningStatusChangedEvent(
-            vergunningaanvraagRef: 'aanvraag-abc-123',
+            aanvraagRef: 'aanvraag-abc-123',
             oldStatus: 'ingediend',
             newStatus: 'verleend',
             besluitdatum: '2026-06-01',
@@ -92,7 +92,7 @@ class VergunningStatusChangedEventTest extends TestCase
     public function testNullableFieldsAcceptNull(): void
     {
         $event = new VergunningStatusChangedEvent(
-            vergunningaanvraagRef: 'ref-002',
+            aanvraagRef: 'ref-002',
             oldStatus: 'in_behandeling',
             newStatus: 'geweigerd',
             besluitdatum: null,

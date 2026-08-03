@@ -337,7 +337,7 @@ class DsoController extends Controller
 
             $samenwerkverzoek = $this->samenwerkService->initiateSamenwerking(
                 zaakId: $caseId,
-                aangezochtBevoegdGezag: $bevoegdGezag,
+                aangezochtGezag: $bevoegdGezag,
                 rationale: $rationale
             );
 

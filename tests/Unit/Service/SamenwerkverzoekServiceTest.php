@@ -202,7 +202,7 @@ class SamenwerkverzoekServiceTest extends TestCase
 
         $result = $this->service->initiateSamenwerking(
             zaakId: 'zaak-uuid-1',
-            aangezochtBevoegdGezag: 'gemeente-haarlem',
+            aangezochtGezag: 'gemeente-haarlem',
             rationale: 'Bevoegdheidsgrens.'
         );
 
