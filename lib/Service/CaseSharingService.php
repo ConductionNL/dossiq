@@ -734,8 +734,13 @@ class CaseSharingService
             return ['error' => 'Federated share not found'];
         }
 
-        $shareData = $shareObj;
-        if (is_array($shareObj) === false) {
+        // NOTE: kept as if/else deliberately. Hoisting the default assignment
+        // lets PHPStan narrow $shareData to the empty-array shape of
+        // ObjectService::find()'s array branch, which then reports the
+        // 'caseId'/'remoteCloudId' reads below as non-existent offsets.
+        if (is_array($shareObj) === true) {
+            $shareData = $shareObj;
+        } else {
             $shareData = $shareObj->jsonSerialize();
         }
 

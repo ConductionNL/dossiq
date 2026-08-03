@@ -147,9 +147,9 @@ class ZgwZrcRulesService extends ZgwRulesBase
                             register: $register,
                             schema: $schema
                         );
-                        if (is_array($zaaktype) === true) {
-                            $ztData = $zaaktype;
-                        } else {
+
+                        $ztData = $zaaktype;
+                        if (is_array($zaaktype) === false) {
                             $ztData = $zaaktype->jsonSerialize();
                         }
 
@@ -1157,9 +1157,8 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $maxVolgnummer     = -1;
             $maxStatustypeUuid = null;
             foreach (($result['results'] ?? []) as $obj) {
-                if (is_array($obj) === true) {
-                    $data = $obj;
-                } else {
+                $data = $obj;
+                if (is_array($obj) === false) {
                     $data = $obj->jsonSerialize();
                 }
 
@@ -1274,10 +1273,10 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if (isset($body['zaak']) === true) {
             $existingZaak = $existingObject['case'] ?? ($existingObject['zaak'] ?? '');
             $newZaakUuid  = $this->extractUuid(url: $body['zaak']);
+
+            $existZaakId = $existingZaak;
             if (is_string($existingZaak) === true) {
                 $existZaakId = $this->extractUuid(url: $existingZaak);
-            } else {
-                $existZaakId = $existingZaak;
             }
 
             if ($existZaakId !== null && $newZaakUuid !== null && $newZaakUuid !== $existZaakId) {
@@ -1289,10 +1288,10 @@ class ZgwZrcRulesService extends ZgwRulesBase
         if (isset($body['informatieobject']) === true) {
             $existingIo = $existingObject['document'] ?? ($existingObject['informatieobject'] ?? '');
             $newIoUuid  = $this->extractUuid(url: $body['informatieobject']);
+
+            $existIoId = $existingIo;
             if (is_string($existingIo) === true) {
                 $existIoId = $this->extractUuid(url: $existingIo);
-            } else {
-                $existIoId = $existingIo;
             }
 
             if ($existIoId !== null && $newIoUuid !== null && $newIoUuid !== $existIoId) {

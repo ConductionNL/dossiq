@@ -74,17 +74,15 @@ class ProcessMiningService
      */
     public function getReport(array $params): array
     {
-        $to = $this->parseDate(value: ($params['to'] ?? null), fallback: new DateTimeImmutable('today'));
+        $to   = $this->parseDate(value: ($params['to'] ?? null), fallback: new DateTimeImmutable('today'));
+        $from = $to->sub(new DateInterval('P12M'));
         if (isset($params['from']) === true && is_string($params['from']) === true && $params['from'] !== '') {
             $from = $this->parseDate(value: $params['from'], fallback: $to->sub(new DateInterval('P12M')));
-        } else {
-            $from = $to->sub(new DateInterval('P12M'));
         }
 
+        $caseTypeFilter = null;
         if (isset($params['caseType']) === true && is_string($params['caseType']) === true && $params['caseType'] !== '') {
             $caseTypeFilter = $params['caseType'];
-        } else {
-            $caseTypeFilter = null;
         }
 
         $cases       = $this->loadCases(caseTypeFilter: $caseTypeFilter);
@@ -214,10 +212,9 @@ class ProcessMiningService
                     continue;
                 }
 
+                $exitedAt = ($closedAt ?? $now);
                 if (($i + 1) < $count) {
                     $exitedAt = $this->extractTimestamp(record: $records[$i + 1]);
-                } else {
-                    $exitedAt = ($closedAt ?? $now);
                 }
 
                 if ($exitedAt === null) {
@@ -381,9 +378,8 @@ class ProcessMiningService
             static fn (array $left, array $right): int => ($right['count'] <=> $left['count'])
         );
 
-        if ($totalCount === 0) {
-            $reworkPercent = 0.0;
-        } else {
+        $reworkPercent = 0.0;
+        if ($totalCount !== 0) {
             $reworkPercent = round((($reworkSum / $totalCount) * 100), 1);
         }
 
