@@ -214,45 +214,12 @@ class WOODeadlineService
      */
     public function checkAndWarn(string $caseId, string $behandelaar): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return ['warned' => false, 'reason' => 'OpenRegister unavailable'];
+        $resolved = $this->resolveWarningDeadline(caseId: $caseId);
+        if ($resolved['deadline'] === null) {
+            return ['warned' => false, 'reason' => $resolved['reason']];
         }
 
-        $register   = $this->settingsService->getConfigValue('register');
-        $caseSchema = $this->settingsService->getConfigValue('case_schema');
-
-        if (empty($register) === true || empty($caseSchema) === true) {
-            return ['warned' => false, 'reason' => 'Case schema not configured'];
-        }
-
-        $case = $this->findObjectAsArray(
-            objectService: $objectService,
-            register: $register,
-            schema: $caseSchema,
-            id: $caseId
-        );
-        if ($case === null) {
-            return ['warned' => false, 'reason' => 'Case not found'];
-        }
-
-        $caseData = (array) $case;
-
-        $deadlineStr = $caseData['expectedResolution'] ?? null;
-        if (empty($deadlineStr) === true) {
-            return ['warned' => false, 'reason' => 'No deadline set'];
-        }
-
-        $today    = new DateTimeImmutable('today');
-        $deadline = $this->parseIsoDate(value: (string) $deadlineStr);
-        if ($deadline === null) {
-            return ['warned' => false, 'reason' => 'Invalid deadline format'];
-        }
-
-        $daysRemaining = (int) $today->diff($deadline)->days;
-        if ($today > $deadline) {
-            $daysRemaining = -$daysRemaining;
-        }
+        $daysRemaining = $this->signedDaysUntil(deadline: $resolved['deadline']);
 
         $isOverdue = ($daysRemaining < 0);
         $warned    = false;
@@ -274,6 +241,70 @@ class WOODeadlineService
             'warned'        => $warned,
         ];
     }//end checkAndWarn()
+
+    /**
+     * Load the case and resolve the deadline that the warning check operates on.
+     *
+     * @param string $caseId The case UUID
+     *
+     * @return array{deadline: \DateTimeImmutable|null, reason: string} The parsed deadline, or null with the blocking reason
+     */
+    private function resolveWarningDeadline(string $caseId): array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            return ['deadline' => null, 'reason' => 'OpenRegister unavailable'];
+        }
+
+        $register   = $this->settingsService->getConfigValue('register');
+        $caseSchema = $this->settingsService->getConfigValue('case_schema');
+
+        if (empty($register) === true || empty($caseSchema) === true) {
+            return ['deadline' => null, 'reason' => 'Case schema not configured'];
+        }
+
+        $case = $this->findObjectAsArray(
+            objectService: $objectService,
+            register: $register,
+            schema: $caseSchema,
+            id: $caseId
+        );
+        if ($case === null) {
+            return ['deadline' => null, 'reason' => 'Case not found'];
+        }
+
+        $caseData = (array) $case;
+
+        $deadlineStr = $caseData['expectedResolution'] ?? null;
+        if (empty($deadlineStr) === true) {
+            return ['deadline' => null, 'reason' => 'No deadline set'];
+        }
+
+        $deadline = $this->parseIsoDate(value: (string) $deadlineStr);
+        if ($deadline === null) {
+            return ['deadline' => null, 'reason' => 'Invalid deadline format'];
+        }
+
+        return ['deadline' => $deadline, 'reason' => ''];
+    }//end resolveWarningDeadline()
+
+    /**
+     * Count the days between today and a deadline, negative once the deadline has passed.
+     *
+     * @param DateTimeImmutable $deadline The deadline to measure against
+     *
+     * @return int Days remaining, negative when overdue
+     */
+    private function signedDaysUntil(DateTimeImmutable $deadline): int
+    {
+        $today         = new DateTimeImmutable('today');
+        $daysRemaining = (int) $today->diff($deadline)->days;
+        if ($today > $deadline) {
+            return -$daysRemaining;
+        }
+
+        return $daysRemaining;
+    }//end signedDaysUntil()
 
     /**
      * Send a deadline notification to the behandelaar.

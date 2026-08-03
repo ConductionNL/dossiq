@@ -26,6 +26,8 @@ namespace OCA\Procest\Tests\Unit\Service;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Substitution\SubstitutedWorkResolver;
+use OCA\Procest\Service\Substitution\SubstitutionValidator;
 use OCA\Procest\Service\SubstitutionService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -113,7 +115,12 @@ class SubstitutionServiceTest extends TestCase
             }
         );
 
-        return new SubstitutionService($this->settingsService, $this->logger);
+        return new SubstitutionService(
+            $this->settingsService,
+            $this->logger,
+            new SubstitutionValidator($this->settingsService),
+            new SubstitutedWorkResolver($this->settingsService)
+        );
     }//end makeService()
 
     /**

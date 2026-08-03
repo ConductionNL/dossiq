@@ -335,40 +335,63 @@ class MilestoneService
         $stalled = [];
 
         foreach ($cases as $case) {
-            $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-            $status = strtolower((string) ($case['status'] ?? ''));
-            if ($caseId === '' || $this->isClosedStatus(status: $status) === true) {
-                continue;
-            }
-
-            $caseTypeId = (string) ($case['caseType'] ?? '');
-            if ($caseTypeId === '') {
-                continue;
-            }
-
-            $startDate = $this->parseCaseStart(case: $case);
-            if ($startDate === null) {
-                continue;
-            }
-
-            $stall = $this->evaluateStall(
-                caseId: $caseId,
-                caseTypeId: $caseTypeId,
-                startDate: $startDate,
-                today: $today,
-                thresholdDays: $thresholdDays,
-            );
-
+            $stall = $this->getStallRow(case: $case, today: $today, thresholdDays: $thresholdDays);
             if ($stall !== null) {
-                $stall['caseTitle'] = (string) ($case['title'] ?? '');
-                $stall['caseType']  = $caseTypeId;
-                $stall['assignee']  = (string) ($case['assignee'] ?? '');
-                $stalled[]          = $stall;
+                $stalled[] = $stall;
             }
         }//end foreach
 
         return $stalled;
     }//end findStalledCases()
+
+    /**
+     * Build the stall report row for a single case, or null when it is not stalled.
+     *
+     * Cases without an id, closed cases, cases without a case type and cases
+     * without a parsable start date are skipped (null).
+     *
+     * @param array<string, mixed> $case          The case object.
+     * @param \DateTimeImmutable   $today         Today (date only).
+     * @param int                  $thresholdDays Grace days past the deadline.
+     *
+     * @return array<string, mixed>|null Stall row, or null when on track or skipped.
+     */
+    private function getStallRow(array $case, \DateTimeImmutable $today, int $thresholdDays): ?array
+    {
+        $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
+        $status = strtolower((string) ($case['status'] ?? ''));
+        if ($caseId === '' || $this->isClosedStatus(status: $status) === true) {
+            return null;
+        }
+
+        $caseTypeId = (string) ($case['caseType'] ?? '');
+        if ($caseTypeId === '') {
+            return null;
+        }
+
+        $startDate = $this->parseCaseStart(case: $case);
+        if ($startDate === null) {
+            return null;
+        }
+
+        $stall = $this->evaluateStall(
+            caseId: $caseId,
+            caseTypeId: $caseTypeId,
+            startDate: $startDate,
+            today: $today,
+            thresholdDays: $thresholdDays,
+        );
+
+        if ($stall === null) {
+            return null;
+        }
+
+        $stall['caseTitle'] = (string) ($case['title'] ?? '');
+        $stall['caseType']  = $caseTypeId;
+        $stall['assignee']  = (string) ($case['assignee'] ?? '');
+
+        return $stall;
+    }//end getStallRow()
 
     /**
      * Evaluate whether a single case has stalled on its earliest unreached

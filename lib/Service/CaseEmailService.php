@@ -35,6 +35,7 @@ use OCP\Files\NotFoundException;
 use OCP\IAppConfig;
 use OCP\IUserSession;
 use OCP\Mail\IMailer;
+use OCP\Mail\IMessage;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -105,17 +106,7 @@ class CaseEmailService
     ): array {
         // H6 / C4: Fail loudly if from-address is not configured — never fall back to
         // the reserved example.nl domain which would cause bounces and expose config errors.
-        $fromAddress = $this->appConfig->getValueString(
-            Application::APP_ID,
-            'email_from_address',
-            '',
-        );
-        if ($fromAddress === '' || str_ends_with($fromAddress, '@example.nl') === true) {
-            throw new RuntimeException(
-                'E-mail afzenderadres is niet geconfigureerd. '
-                .'Stel email_from_address in via de beheerdersinstellingen.'
-            );
-        }
+        $fromAddress = $this->resolveFromAddress();
 
         $fromName = $this->appConfig->getValueString(
             Application::APP_ID,
@@ -133,20 +124,7 @@ class CaseEmailService
 
         // H4: Validate the recipient against the case's registered contact emails.
         // This prevents open-relay abuse where any email address could be supplied.
-        if ($to === '' || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
-            throw new RuntimeException('Ongeldig e-mailadres opgegeven.');
-        }
-
-        $allowedEmails = $this->getCaseContactEmails(caseData: $caseData);
-        if (count($allowedEmails) > 0) {
-            if (in_array(strtolower($to), $allowedEmails, true) === false) {
-                $this->logger->warning(
-                    'Blocked email to non-case-contact address',
-                    ['app' => Application::APP_ID, 'to' => $to, 'caseId' => $caseId]
-                );
-                throw new RuntimeException('Ontvanger is geen geregistreerd contact bij deze zaak.');
-            }
-        }
+        $this->assertRecipientAllowed(recipient: $to, caseData: $caseData, caseId: $caseId);
 
         $message = $this->mailer->createMessage();
         $message->setFrom([$fromAddress => $fromName]);
@@ -157,6 +135,101 @@ class CaseEmailService
 
         // H5: Resolve attachments via IUserFolder to restrict file access to the
         // calling user's own files and prevent path traversal outside their folder.
+        $this->attachUserFiles(message: $message, attachments: $attachments, caseId: $caseId);
+
+        $this->dispatchMessage(message: $message, caseId: $caseId);
+
+        // Record the sent email as a case document.
+        $messageId = $this->recordSentEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
+
+        $this->logger->info(
+            'Email sent for case {caseId}',
+            ['app' => Application::APP_ID, 'caseId' => $caseId],
+        );
+
+        return [
+            'messageId' => $messageId,
+            'to'        => $to,
+            'subject'   => $subject,
+            'sentAt'    => date('Y-m-d\TH:i:s'),
+        ];
+    }//end sendEmail()
+
+    /**
+     * Resolve the configured envelope from-address.
+     *
+     * H6 / C4: fails loudly when the address is unset or still points at the
+     * reserved example.nl domain, rather than silently sending mail that bounces.
+     *
+     * @return string The configured from-address
+     *
+     * @throws \RuntimeException If no usable from-address is configured
+     */
+    private function resolveFromAddress(): string
+    {
+        $fromAddress = $this->appConfig->getValueString(
+            Application::APP_ID,
+            'email_from_address',
+            '',
+        );
+        if ($fromAddress === '' || str_ends_with($fromAddress, '@example.nl') === true) {
+            throw new RuntimeException(
+                'E-mail afzenderadres is niet geconfigureerd. '
+                .'Stel email_from_address in via de beheerdersinstellingen.'
+            );
+        }
+
+        return $fromAddress;
+    }//end resolveFromAddress()
+
+    /**
+     * Assert that a recipient address is well-formed and registered on the case.
+     *
+     * H4: prevents open-relay abuse where any address could be supplied. When the
+     * case registers no contacts at all the address list is empty and no
+     * restriction applies.
+     *
+     * @param string               $recipient The recipient email address
+     * @param array<string, mixed> $caseData  The case data array
+     * @param string               $caseId    The case UUID (logging context)
+     *
+     * @return void
+     *
+     * @throws \RuntimeException If the address is invalid or not a case contact
+     */
+    private function assertRecipientAllowed(string $recipient, array $caseData, string $caseId): void
+    {
+        if ($recipient === '' || filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
+            throw new RuntimeException('Ongeldig e-mailadres opgegeven.');
+        }
+
+        $allowedEmails = $this->getCaseContactEmails(caseData: $caseData);
+        if (count($allowedEmails) > 0) {
+            if (in_array(strtolower($recipient), $allowedEmails, true) === false) {
+                $this->logger->warning(
+                    'Blocked email to non-case-contact address',
+                    ['app' => Application::APP_ID, 'to' => $recipient, 'caseId' => $caseId]
+                );
+                throw new RuntimeException('Ontvanger is geen geregistreerd contact bij deze zaak.');
+            }
+        }
+    }//end assertRecipientAllowed()
+
+    /**
+     * Attach the requested files to a message, resolved from the caller's own folder.
+     *
+     * H5: resolving via the user folder restricts file access to the calling
+     * user's own files and prevents path traversal outside that folder. A file
+     * that cannot be resolved or attached is logged and skipped.
+     *
+     * @param IMessage      $message     The message under construction
+     * @param array<string> $attachments File references to attach
+     * @param string        $caseId      The case UUID (logging context)
+     *
+     * @return void
+     */
+    private function attachUserFiles(IMessage $message, array $attachments, string $caseId): void
+    {
         $currentUser = $this->userSession->getUser();
         if ($currentUser !== null && count($attachments) > 0) {
             $userFolder = $this->rootFolder->getUserFolder($currentUser->getUID());
@@ -180,12 +253,27 @@ class CaseEmailService
                 }//end try
             }//end foreach
         }//end if
+    }//end attachUserFiles()
 
+    /**
+     * Hand a fully-built message to the mailer.
+     *
+     * M4: the full exception is logged server-side while the caller receives a
+     * generic message, so internal mail-server details (hostnames, credentials)
+     * are never leaked.
+     *
+     * @param IMessage $message The message to send
+     * @param string   $caseId  The case UUID (logging context)
+     *
+     * @return void
+     *
+     * @throws \RuntimeException If the mailer rejects the message
+     */
+    private function dispatchMessage(IMessage $message, string $caseId): void
+    {
         try {
             $this->mailer->send($message);
         } catch (\Exception $e) {
-            // M4: Log full exception server-side; throw a generic message so internal
-            // mail-server errors (hostnames, credentials, etc.) are not leaked to callers.
             $this->logger->error(
                 'Failed to send email for case {caseId}: {error}',
                 [
@@ -197,22 +285,7 @@ class CaseEmailService
             );
             throw new RuntimeException('email_send_failed');
         }
-
-        // Record the sent email as a case document.
-        $messageId = $this->recordSentEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
-
-        $this->logger->info(
-            'Email sent for case {caseId}',
-            ['app' => Application::APP_ID, 'caseId' => $caseId],
-        );
-
-        return [
-            'messageId' => $messageId,
-            'to'        => $to,
-            'subject'   => $subject,
-            'sentAt'    => date('Y-m-d\TH:i:s'),
-        ];
-    }//end sendEmail()
+    }//end dispatchMessage()
 
     /**
      * Send an email using a template.
@@ -471,24 +544,58 @@ class CaseEmailService
      */
     private function getCaseContactEmails(array $caseData): array
     {
+        $emails = array_merge(
+            $this->collectPrimaryContactEmails(caseData: $caseData),
+            $this->collectContactListEmails(caseData: $caseData),
+        );
+
+        return array_unique($emails);
+    }//end getCaseContactEmails()
+
+    /**
+     * Collect the single-valued contact addresses on a case.
+     *
+     * Covers the top-level `email` field and the `initiator` contact object, in
+     * that order.
+     *
+     * @param array<string, mixed> $caseData The case data array
+     *
+     * @return array<string> Lowercase email addresses
+     */
+    private function collectPrimaryContactEmails(array $caseData): array
+    {
         $emails = [];
 
         // Top-level email field.
-        $topEmail = strtolower(trim((string) ($caseData['email'] ?? '')));
-        if ($topEmail !== '' && filter_var($topEmail, FILTER_VALIDATE_EMAIL) !== false) {
+        $topEmail = $this->normalizeContactEmail(value: (string) ($caseData['email'] ?? ''));
+        if ($topEmail !== null) {
             $emails[] = $topEmail;
         }
 
         // Initiator field (single contact object or email string).
-        $initiator = $caseData['initiator'] ?? null;
+        $initiator = ($caseData['initiator'] ?? null);
         if (is_array($initiator) === true) {
-            $addr = strtolower(trim((string) ($initiator['email'] ?? '')));
-            if ($addr !== '' && filter_var($addr, FILTER_VALIDATE_EMAIL) !== false) {
+            $addr = $this->normalizeContactEmail(value: (string) ($initiator['email'] ?? ''));
+            if ($addr !== null) {
                 $emails[] = $addr;
             }
         }
 
-        // Betrokkenen / contacts arrays.
+        return $emails;
+    }//end collectPrimaryContactEmails()
+
+    /**
+     * Collect the addresses held in a case's contact collections.
+     *
+     * Covers `betrokkenen` and `contacts`, in that order; each entry may carry
+     * either an `email` or an `emailadres` key.
+     *
+     * @param array<string, mixed> $caseData The case data array
+     *
+     * @return array<string> Lowercase email addresses
+     */
+    private function collectContactListEmails(array $caseData): array
+    {
         $contactArrays = [];
         if (is_array($caseData['betrokkenen'] ?? null) === true) {
             $contactArrays[] = $caseData['betrokkenen'];
@@ -498,21 +605,41 @@ class CaseEmailService
             $contactArrays[] = $caseData['contacts'];
         }
 
+        $emails = [];
         foreach ($contactArrays as $contacts) {
             foreach ($contacts as $contact) {
                 if (is_array($contact) === false) {
                     continue;
                 }
 
-                $addr = strtolower(trim((string) ($contact['email'] ?? ($contact['emailadres'] ?? ''))));
-                if ($addr !== '' && filter_var($addr, FILTER_VALIDATE_EMAIL) !== false) {
+                $addr = $this->normalizeContactEmail(
+                    value: (string) ($contact['email'] ?? ($contact['emailadres'] ?? ''))
+                );
+                if ($addr !== null) {
                     $emails[] = $addr;
                 }
             }
         }
 
-        return array_unique($emails);
-    }//end getCaseContactEmails()
+        return $emails;
+    }//end collectContactListEmails()
+
+    /**
+     * Normalise a raw contact value to a lowercase, validated email address.
+     *
+     * @param string $value The raw contact value
+     *
+     * @return string|null The lowercase address, or null when absent/invalid
+     */
+    private function normalizeContactEmail(string $value): ?string
+    {
+        $addr = strtolower(trim($value));
+        if ($addr === '' || filter_var($addr, FILTER_VALIDATE_EMAIL) === false) {
+            return null;
+        }
+
+        return $addr;
+    }//end normalizeContactEmail()
 
     /**
      * Load an email template.

@@ -119,16 +119,13 @@ class CaseRelationService
         string $aardRelatie,
         ?string $toelichting=null
     ): array {
-        if (in_array($aardRelatie, self::RELATION_TYPES, true) === false) {
-            return ['ok' => false, 'reason' => 'invalid_aard_relatie'];
-        }
-
-        if ($caseId === '' || $targetId === '') {
-            return ['ok' => false, 'reason' => 'missing_case_id'];
-        }
-
-        if ($caseId === $targetId) {
-            return ['ok' => false, 'reason' => 'self_relation'];
+        $rejection = $this->rejectInvalidRelationInput(
+            caseId: $caseId,
+            targetId: $targetId,
+            aardRelatie: $aardRelatie
+        );
+        if ($rejection !== null) {
+            return $rejection;
         }
 
         // OR-RBAC read access to BOTH cases (fail closed on either miss).
@@ -153,29 +150,100 @@ class CaseRelationService
             return ['ok' => false, 'reason' => 'duplicate'];
         }
 
-        $entry = ['caseId' => $targetId, 'aardRelatie' => $aardRelatie];
-        if ($toelichting !== null && $toelichting !== '') {
-            $entry['toelichting'] = $toelichting;
-        }
-
-        $originRelations[] = $entry;
+        $originRelations[] = $this->buildRelationEntry(
+            caseId: $targetId,
+            aardRelatie: $aardRelatie,
+            toelichting: $toelichting
+        );
         $this->persistRelations(case: $origin, relations: $originRelations);
 
         // Symmetric counterpart — same type names the link, the UI renders
         // direction-aware labels.
-        $targetRelations = $this->decodeRelations(case: $target);
-        if ($this->hasPair(relations: $targetRelations, caseId: $caseId, aardRelatie: $aardRelatie) === false) {
-            $inverse = ['caseId' => $caseId, 'aardRelatie' => $aardRelatie];
-            if ($toelichting !== null && $toelichting !== '') {
-                $inverse['toelichting'] = $toelichting;
-            }
-
-            $targetRelations[] = $inverse;
-            $this->persistRelations(case: $target, relations: $targetRelations);
-        }
+        $this->addInverseRelation(
+            target: $target,
+            caseId: $caseId,
+            aardRelatie: $aardRelatie,
+            toelichting: $toelichting
+        );
 
         return ['ok' => true];
     }//end addRelation()
+
+    /**
+     * Reject a relation request whose inputs cannot form a valid peer relation.
+     *
+     * Returns the failure array to hand straight back to the caller, or null
+     * when the inputs pass every input-only guard.
+     *
+     * @param string $caseId      Origin case UUID.
+     * @param string $targetId    Target case UUID.
+     * @param string $aardRelatie Relation type.
+     *
+     * @return array{ok: bool, reason?: string}|null
+     */
+    private function rejectInvalidRelationInput(string $caseId, string $targetId, string $aardRelatie): ?array
+    {
+        if (in_array($aardRelatie, self::RELATION_TYPES, true) === false) {
+            return ['ok' => false, 'reason' => 'invalid_aard_relatie'];
+        }
+
+        if ($caseId === '' || $targetId === '') {
+            return ['ok' => false, 'reason' => 'missing_case_id'];
+        }
+
+        if ($caseId === $targetId) {
+            return ['ok' => false, 'reason' => 'self_relation'];
+        }
+
+        return null;
+    }//end rejectInvalidRelationInput()
+
+    /**
+     * Build a single relation entry, carrying the optional clarification.
+     *
+     * @param string      $caseId      Referenced case UUID.
+     * @param string      $aardRelatie Relation type.
+     * @param string|null $toelichting Optional free-text clarification.
+     *
+     * @return array<string, string>
+     */
+    private function buildRelationEntry(string $caseId, string $aardRelatie, ?string $toelichting): array
+    {
+        $entry = ['caseId' => $caseId, 'aardRelatie' => $aardRelatie];
+        if ($toelichting !== null && $toelichting !== '') {
+            $entry['toelichting'] = $toelichting;
+        }
+
+        return $entry;
+    }//end buildRelationEntry()
+
+    /**
+     * Persist the symmetric counterpart entry on the target case, unless it is
+     * already present.
+     *
+     * @param array<string, mixed> $target      Target case object.
+     * @param string               $caseId      Origin case UUID (the entry's reference).
+     * @param string               $aardRelatie Relation type.
+     * @param string|null          $toelichting Optional free-text clarification.
+     *
+     * @return void
+     */
+    private function addInverseRelation(
+        array $target,
+        string $caseId,
+        string $aardRelatie,
+        ?string $toelichting
+    ): void {
+        $targetRelations = $this->decodeRelations(case: $target);
+        if ($this->hasPair(relations: $targetRelations, caseId: $caseId, aardRelatie: $aardRelatie) === false) {
+            $targetRelations[] = $this->buildRelationEntry(
+                caseId: $caseId,
+                aardRelatie: $aardRelatie,
+                toelichting: $toelichting
+            );
+            $this->persistRelations(case: $target, relations: $targetRelations);
+        }
+    }//end addInverseRelation()
 
     /**
      * Remove a typed peer relation from BOTH cases.
@@ -385,6 +453,33 @@ class CaseRelationService
      */
     private function decodeRelations(array $case): array
     {
+        $entries = [];
+        foreach ($this->rawRelationList(case: $case) as $item) {
+            if (is_array($item) === false) {
+                continue;
+            }
+
+            $entry = $this->decodeRelationEntry(item: $item);
+            if ($entry === null) {
+                continue;
+            }
+
+            $entries[] = $entry;
+        }//end foreach
+
+        return $entries;
+    }//end decodeRelations()
+
+    /**
+     * Read the raw `relatedCases` payload as a list, accepting either the
+     * JSON-encoded string shape or an already-decoded array.
+     *
+     * @param array<string, mixed> $case Case object.
+     *
+     * @return array<mixed> The raw relation list, or [] when unusable.
+     */
+    private function rawRelationList(array $case): array
+    {
         $raw  = ($case['relatedCases'] ?? null);
         $list = [];
         if (is_array($raw) === true) {
@@ -398,30 +493,33 @@ class CaseRelationService
             }
         }
 
-        $entries = [];
-        foreach ($list as $item) {
-            if (is_array($item) === false) {
-                continue;
-            }
+        return $list;
+    }//end rawRelationList()
 
-            $targetId = (string) ($item['caseId'] ?? '');
-            if ($targetId === '') {
-                continue;
-            }
+    /**
+     * Normalise one raw relation item into a relation entry.
+     *
+     * @param array<string, mixed> $item Raw relation item.
+     *
+     * @return array<string, string>|null The entry, or null when it names no case.
+     */
+    private function decodeRelationEntry(array $item): ?array
+    {
+        $targetId = (string) ($item['caseId'] ?? '');
+        if ($targetId === '') {
+            return null;
+        }
 
-            $entry = [
-                'caseId'      => $targetId,
-                'aardRelatie' => (string) ($item['aardRelatie'] ?? ''),
-            ];
-            if (isset($item['toelichting']) === true && (string) $item['toelichting'] !== '') {
-                $entry['toelichting'] = (string) $item['toelichting'];
-            }
+        $entry = [
+            'caseId'      => $targetId,
+            'aardRelatie' => (string) ($item['aardRelatie'] ?? ''),
+        ];
+        if (isset($item['toelichting']) === true && (string) $item['toelichting'] !== '') {
+            $entry['toelichting'] = (string) $item['toelichting'];
+        }
 
-            $entries[] = $entry;
-        }//end foreach
-
-        return $entries;
-    }//end decodeRelations()
+        return $entry;
+    }//end decodeRelationEntry()
 
     /**
      * Whether a `{caseId, aardRelatie}` pair already exists in a relation list.
@@ -504,20 +602,32 @@ class CaseRelationService
             return null;
         }
 
-        if ($obj === null) {
+        return $this->normalizeCaseObject(object: $obj);
+    }//end fetchCase()
+
+    /**
+     * Normalise an OpenRegister lookup result to a plain case array.
+     *
+     * @param mixed $object The value returned by the ObjectService.
+     *
+     * @return array<string, mixed>|null The case as an array, or null when unusable.
+     */
+    private function normalizeCaseObject(mixed $object): ?array
+    {
+        if ($object === null) {
             return null;
         }
 
-        if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
-            $obj = $obj->jsonSerialize();
+        if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
+            $object = $object->jsonSerialize();
         }
 
-        if (is_array($obj) === true) {
-            return $obj;
+        if (is_array($object) === true) {
+            return $object;
         }
 
         return null;
-    }//end fetchCase()
+    }//end normalizeCaseObject()
 
     /**
      * Persist a relation list back onto a case, JSON-encoding the field

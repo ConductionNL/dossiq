@@ -123,10 +123,7 @@ class CaseSharingService
                 return false;
             }
 
-            $caseData = $caseObj;
-            if (is_array($caseObj) === false) {
-                $caseData = $caseObj->jsonSerialize();
-            }
+            $caseData = $this->normalizeToArray(value: $caseObj);
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'CaseSharingService: canUserAccessCase load failed',
@@ -135,46 +132,99 @@ class CaseSharingService
             return true;
         }
 
+        // Direct assignee field, then the assignees array.
+        if ($this->isCaseAssignee(caseData: $caseData, userId: $userId) === true) {
+            return true;
+        }
+
+        // Check existing caseShares: if this user created any share for this case they
+        // already had access at that time.
+        if ($this->hasCreatedShareForCase(
+            objectService: $objectService,
+            caseId: $caseId,
+            userId: $userId,
+            register: (int) $register
+        ) === true
+        ) {
+            return true;
+        }
+
+        return false;
+    }//end canUserAccessCase()
+
+    /**
+     * Whether a case names the given user as assignee.
+     *
+     * Accepts both the single-valued `assignee` field and membership of the
+     * `assignees` array; either one grants access.
+     *
+     * @param array<string, mixed> $caseData The case data
+     * @param string               $userId   The caller's user ID
+     *
+     * @return bool True when the user is an assignee of the case
+     */
+    private function isCaseAssignee(array $caseData, string $userId): bool
+    {
         // Direct assignee field (single user ID string).
         if (isset($caseData['assignee']) === true && (string) $caseData['assignee'] === $userId) {
             return true;
         }
 
         // Assignees array.
-        $assignees = $caseData['assignees'] ?? [];
+        $assignees = ($caseData['assignees'] ?? []);
         if (is_array($assignees) === true && in_array($userId, $assignees, true) === true) {
             return true;
         }
 
-        // Check existing caseShares: if this user created any share for this case they
-        // already had access at that time.
+        return false;
+    }//end isCaseAssignee()
+
+    /**
+     * Whether the given user created any caseShare for the given case.
+     *
+     * A user who once minted a share for the case already had access at that
+     * time, so the share record is treated as standing evidence of access.
+     * A failed lookup is logged and treated as "no share found" (deny), never
+     * as a grant.
+     *
+     * @param object $objectService The OpenRegister ObjectService
+     * @param string $caseId        The case UUID
+     * @param string $userId        The caller's user ID
+     * @param int    $register      The configured register id
+     *
+     * @return bool True when a share created by this user exists
+     */
+    private function hasCreatedShareForCase(
+        object $objectService,
+        string $caseId,
+        string $userId,
+        int $register,
+    ): bool {
         $shareSchema = $this->settingsService->getConfigValue('case_share_schema');
-        if (empty($shareSchema) === false) {
-            try {
-                $shares = $objectService->findAll(
-                    ['filters' => ['register' => (int) $register, 'schema' => (int) $shareSchema, 'caseId' => $caseId]],
-                );
+        if (empty($shareSchema) === true) {
+            return false;
+        }
 
-                foreach ($shares as $share) {
-                    $shareData = $share;
-                    if (is_array($share) === false) {
-                        $shareData = $share->jsonSerialize();
-                    }
+        try {
+            $shares = $objectService->findAll(
+                ['filters' => ['register' => $register, 'schema' => (int) $shareSchema, 'caseId' => $caseId]],
+            );
 
-                    if (isset($shareData['createdBy']) === true && (string) $shareData['createdBy'] === $userId) {
-                        return true;
-                    }
+            foreach ($shares as $share) {
+                $shareData = $this->normalizeToArray(value: $share);
+                if (isset($shareData['createdBy']) === true && (string) $shareData['createdBy'] === $userId) {
+                    return true;
                 }
-            } catch (\Throwable $e) {
-                $this->logger->debug(
-                    'CaseSharingService: share lookup in canUserAccessCase failed',
-                    ['caseId' => $caseId, 'exception' => $e->getMessage()]
-                );
-            }//end try
-        }//end if
+            }
+        } catch (\Throwable $e) {
+            $this->logger->debug(
+                'CaseSharingService: share lookup in canUserAccessCase failed',
+                ['caseId' => $caseId, 'exception' => $e->getMessage()]
+            );
+        }//end try
 
         return false;
-    }//end canUserAccessCase()
+    }//end hasCreatedShareForCase()
 
     /**
      * Resolve OpenRegister's CaseTokenService — the public "track your
@@ -585,57 +635,36 @@ class CaseSharingService
 
         $invalidFields = array_diff($sharedFields, self::FEDERATION_ALLOWED_FIELDS);
         if (count($invalidFields) > 0) {
-            return [
-                'error' => 'Field(s) not shareable across a federation boundary: '.implode(', ', $invalidFields),
-            ];
+            return ['error' => 'Field(s) not shareable across a federation boundary: '.implode(', ', $invalidFields)];
         }
 
         $register    = $this->settingsService->getConfigValue('register');
         $caseSchema  = $this->settingsService->getConfigValue('case_schema');
         $shareSchema = $this->settingsService->getConfigValue('case_federated_share_schema');
 
-        if (empty($register) === true || empty($caseSchema) === true || empty($shareSchema) === true) {
+        if ($this->isFederatedShareConfigured(register: $register, caseSchema: $caseSchema, shareSchema: $shareSchema) === false) {
             return ['error' => 'Federated case sharing is not configured'];
         }
 
-        try {
-            $caseObj = $objectService->find($caseId, register: (int) $register, schema: (int) $caseSchema);
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'CaseSharingService: createFederatedShare case load failed',
-                ['caseId' => $caseId, 'exception' => $e->getMessage()]
-            );
+        $caseData = $this->loadCaseForFederatedShare(
+            objectService: $objectService,
+            caseId: $caseId,
+            register: (int) $register,
+            caseSchema: (int) $caseSchema
+        );
+        if ($caseData === null) {
             return ['error' => 'Case not found'];
         }
 
-        if ($caseObj === null) {
-            return ['error' => 'Case not found'];
-        }
-
-        $caseData = $caseObj;
-        if (is_array($caseObj) === false) {
-            $caseData = $caseObj->jsonSerialize();
-        }
-
-        // Build the redacted snapshot — allow-listed fields present on the
-        // case only. @self/relations are excluded by construction: they are
-        // never in FEDERATION_ALLOWED_FIELDS, so they can never appear here
-        // even if requested.
-        $fieldSnapshot = [];
-        foreach ($sharedFields as $field) {
-            if (array_key_exists($field, $caseData) === true) {
-                $fieldSnapshot[$field] = $caseData[$field];
-            }
-        }
+        // Build the redacted snapshot — allow-listed fields present on the case only.
+        $fieldSnapshot = $this->buildFieldSnapshot(caseData: $caseData, sharedFields: $sharedFields);
 
         // Only document references already attached to the case may cross.
         $caseDocuments    = (array) ($caseData['documents'] ?? []);
         $validDocuments   = array_values(array_intersect($sharedDocuments, $caseDocuments));
         $invalidDocuments = array_diff($sharedDocuments, $caseDocuments);
         if (count($invalidDocuments) > 0) {
-            return [
-                'error' => 'Document(s) not attached to this case: '.implode(', ', $invalidDocuments),
-            ];
+            return ['error' => 'Document(s) not attached to this case: '.implode(', ', $invalidDocuments)];
         }
 
         $shareData = [
@@ -650,40 +679,26 @@ class CaseSharingService
         ];
 
         $result     = $objectService->saveObject(object: $shareData, register: (int) $register, schema: (int) $shareSchema);
-        $resultData = $result;
-        if (is_array($result) === false) {
-            $resultData = $result->jsonSerialize();
-        }
+        $resultData = $this->normalizeToArray(value: $result);
 
         $shareUuid = (string) ($resultData['id'] ?? $resultData['uuid'] ?? '');
 
-        try {
-            $federatedShare = $federationService->createOutgoingShare(
-                params: [
-                    'scope'       => 'object',
-                    'register'    => (string) $register,
-                    'schema'      => (string) $shareSchema,
-                    'objectUri'   => $shareUuid,
-                    'sharedWith'  => $remoteCloudId,
-                    // Always 'read' — the case-summary share never grants
-                    // the remote org write access to the case.
-                    'permissions' => 'read',
-                ]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'CaseSharingService: OR createOutgoingShare failed',
-                ['caseId' => $caseId, 'exception' => $e->getMessage()]
-            );
+        $federatedShare = $this->mintOutgoingShare(
+            federationService: $federationService,
+            caseId: $caseId,
+            shareUuid: $shareUuid,
+            remoteCloudId: $remoteCloudId,
+            register: (string) $register,
+            shareSchema: (string) $shareSchema
+        );
+        if ($federatedShare === null) {
             return ['error' => 'Could not mint the federated share token'];
         }
 
         $resultData['federationShareId'] = $federatedShare->getId();
         $resultData['status']            = 'active';
-        $resultData = $objectService->saveObject(object: $resultData, register: (int) $register, schema: (int) $shareSchema);
-        if (is_array($resultData) === false) {
-            $resultData = $resultData->jsonSerialize();
-        }
+        $activated  = $objectService->saveObject(object: $resultData, register: (int) $register, schema: (int) $shareSchema);
+        $resultData = $this->normalizeToArray(value: $activated);
 
         $this->auditTrailService->emit(
             [
@@ -701,6 +716,127 @@ class CaseSharingService
 
         return $resultData;
     }//end createFederatedShare()
+
+    /**
+     * Whether every configuration value a federated share needs is present.
+     *
+     * @param string $register    The configured register id
+     * @param string $caseSchema  The configured case schema id
+     * @param string $shareSchema The configured federated-share schema id
+     *
+     * @return bool True when all three are configured
+     */
+    private function isFederatedShareConfigured(string $register, string $caseSchema, string $shareSchema): bool
+    {
+        return (empty($register) === false && empty($caseSchema) === false && empty($shareSchema) === false);
+    }//end isFederatedShareConfigured()
+
+    /**
+     * Load the case a federated share is being built from.
+     *
+     * Returns null both when the case cannot be loaded and when it does not
+     * exist — the caller reports 'Case not found' either way; the load failure
+     * is additionally logged here.
+     *
+     * @param object $objectService The OpenRegister ObjectService
+     * @param string $caseId        The UUID of the case to share
+     * @param int    $register      The configured register id
+     * @param int    $caseSchema    The configured case schema id
+     *
+     * @return array<string, mixed>|null The case data, or null when unavailable
+     */
+    private function loadCaseForFederatedShare(
+        object $objectService,
+        string $caseId,
+        int $register,
+        int $caseSchema,
+    ): ?array {
+        try {
+            $caseObj = $objectService->find($caseId, register: $register, schema: $caseSchema);
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'CaseSharingService: createFederatedShare case load failed',
+                ['caseId' => $caseId, 'exception' => $e->getMessage()]
+            );
+            return null;
+        }
+
+        if ($caseObj === null) {
+            return null;
+        }
+
+        return $this->normalizeToArray(value: $caseObj);
+    }//end loadCaseForFederatedShare()
+
+    /**
+     * Project the requested fields that are actually present on the case.
+     *
+     * The caller has already rejected any field outside
+     * {@see FEDERATION_ALLOWED_FIELDS}, so this only drops fields the case does
+     * not carry.
+     *
+     * @param array<string, mixed> $caseData     The case data
+     * @param array<string>        $sharedFields Requested case field names
+     *
+     * @return array<string, mixed> The redacted snapshot
+     */
+    private function buildFieldSnapshot(array $caseData, array $sharedFields): array
+    {
+        $fieldSnapshot = [];
+        foreach ($sharedFields as $field) {
+            if (array_key_exists($field, $caseData) === true) {
+                $fieldSnapshot[$field] = $caseData[$field];
+            }
+        }
+
+        return $fieldSnapshot;
+    }//end buildFieldSnapshot()
+
+    /**
+     * Mint the outgoing OCM share for a persisted snapshot through the OR leaf.
+     *
+     * The grant is always 'read' — the case-summary share never gives the
+     * remote org write access to the case. Returns null (and logs) when the
+     * leaf refuses, so the caller can fail closed.
+     *
+     * @param object $federationService The OR FederationShareService
+     * @param string $caseId            The UUID of the case being shared (logging context)
+     * @param string $shareUuid         The UUID of the persisted snapshot object
+     * @param string $remoteCloudId     The federated target (slug@host)
+     * @param string $register          The configured register id
+     * @param string $shareSchema       The configured federated-share schema id
+     *
+     * @return object|null The minted OR federated share, or null on failure
+     */
+    private function mintOutgoingShare(
+        object $federationService,
+        string $caseId,
+        string $shareUuid,
+        string $remoteCloudId,
+        string $register,
+        string $shareSchema,
+    ): ?object {
+        try {
+            return $federationService->createOutgoingShare(
+                params: [
+                    'scope'       => 'object',
+                    'register'    => $register,
+                    'schema'      => $shareSchema,
+                    'objectUri'   => $shareUuid,
+                    'sharedWith'  => $remoteCloudId,
+                    // Always 'read' — the case-summary share never grants
+                    // the remote org write access to the case.
+                    'permissions' => 'read',
+                ]
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'CaseSharingService: OR createOutgoingShare failed',
+                ['caseId' => $caseId, 'exception' => $e->getMessage()]
+            );
+            return null;
+        }
+    }//end mintOutgoingShare()
 
     /**
      * Revoke a federated case share. Sets the OR `FederatedShare.status` to

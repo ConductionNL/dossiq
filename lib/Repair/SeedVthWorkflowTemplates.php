@@ -200,33 +200,13 @@ class SeedVthWorkflowTemplates implements IRepairStep
      */
     private function processCatalogFile(string $file, IOutput $output): string
     {
-        $raw = file_get_contents($file);
-        if ($raw === false) {
-            $this->logger->error(
-                'Procest: VTH workflow template — unable to read catalog file',
-                ['app' => Application::APP_ID, 'file' => basename($file)]
-            );
-            return 'failed';
-        }
-
-        $data = json_decode($raw, true);
-        if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
-            $this->logger->error(
-                'Procest: VTH workflow template — invalid JSON in catalog file',
-                ['app' => Application::APP_ID, 'file' => basename($file)]
-            );
+        $data = $this->loadCatalogEntry(file: $file);
+        if ($data === null) {
             return 'failed';
         }
 
         $slug  = (string) ($data['slug'] ?? '');
         $title = (string) ($data['title'] ?? '');
-        if ($slug === '' || $title === '') {
-            $this->logger->warning(
-                'Procest: VTH workflow template — missing slug or title',
-                ['app' => Application::APP_ID, 'file' => basename($file)]
-            );
-            return 'failed';
-        }
 
         // Cross-link entries (e.g. bezwaar) do not create a new
         // workflowTemplate; they only document VTH-specific guards that
@@ -246,14 +226,104 @@ class SeedVthWorkflowTemplates implements IRepairStep
             return 'crossLink';
         }
 
-        // Resolve caseType slug → UUID (soft-fail).
+        // Resolve caseType slug → UUID and the statusType map (soft-fail).
+        $context = $this->resolveTemplateContext(
+            data: $data,
+            slug: $slug,
+            title: $title,
+            output: $output,
+        );
+        if ($context === null) {
+            return 'skipped';
+        }
+
+        // Resolve steps and transitions. On any unresolved status, skip
+        // the entire template (no partial seed).
+        $graph = $this->resolveWorkflowGraph(
+            data: $data,
+            slug: $slug,
+            statusMap: (array) $context['statusMap'],
+        );
+        if ($graph === null) {
+            return 'skipped';
+        }
+
+        return $this->createAndPublishTemplate(
+            data: $data,
+            slug: $slug,
+            title: $title,
+            caseTypeId: (string) $context['caseTypeId'],
+            graph: $graph,
+            output: $output,
+        );
+    }//end processCatalogFile()
+
+    /**
+     * Read and validate one catalog file, returning its decoded entry.
+     *
+     * Returns null on any condition that makes the file unusable (unreadable,
+     * invalid JSON, or missing slug/title) — the caller reports those as failed.
+     *
+     * @param string $file Absolute path to the JSON catalog file
+     *
+     * @return array<string, mixed>|null The decoded catalog entry, or null when unusable
+     */
+    private function loadCatalogEntry(string $file): ?array
+    {
+        $raw = file_get_contents($file);
+        if ($raw === false) {
+            $this->logger->error(
+                'Procest: VTH workflow template — unable to read catalog file',
+                ['app' => Application::APP_ID, 'file' => basename($file)]
+            );
+            return null;
+        }
+
+        $data = json_decode($raw, true);
+        if (json_last_error() !== JSON_ERROR_NONE || is_array($data) === false) {
+            $this->logger->error(
+                'Procest: VTH workflow template — invalid JSON in catalog file',
+                ['app' => Application::APP_ID, 'file' => basename($file)]
+            );
+            return null;
+        }
+
+        $slug  = (string) ($data['slug'] ?? '');
+        $title = (string) ($data['title'] ?? '');
+        if ($slug === '' || $title === '') {
+            $this->logger->warning(
+                'Procest: VTH workflow template — missing slug or title',
+                ['app' => Application::APP_ID, 'file' => basename($file)]
+            );
+            return null;
+        }
+
+        return $data;
+    }//end loadCatalogEntry()
+
+    /**
+     * Resolve the caseType UUID and statusType map a template needs, applying
+     * the idempotency check.
+     *
+     * Returns null for every soft-fail precondition — the caller reports those
+     * as skipped.
+     *
+     * @param array<string, mixed> $data   The decoded catalog entry
+     * @param string               $slug   The template slug
+     * @param string               $title  The template title
+     * @param IOutput              $output The output interface
+     *
+     * @return array<string, mixed>|null {caseTypeId, statusMap}, or null when the template must be skipped
+     */
+    private function resolveTemplateContext(array $data, string $slug, string $title, IOutput $output): ?array
+    {
         $caseTypeSlug = (string) ($data['caseTypeSlug'] ?? '');
         if ($caseTypeSlug === '') {
             $this->logger->warning(
                 'Procest: VTH workflow template — missing caseTypeSlug',
                 ['app' => Application::APP_ID, 'slug' => $slug]
             );
-            return 'skipped';
+            return null;
         }
 
         $caseTypeId = $this->resolveCaseTypeId(slug: $caseTypeSlug);
@@ -273,7 +343,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
                 'VTH catalog: caseType "'.$caseTypeSlug.'" not found for template "'
                 .$slug.'" — skipping (run base-register-seed-data first).'
             );
-            return 'skipped';
+            return null;
         }
 
         // Idempotency: skip if a workflow template with the same title +
@@ -287,7 +357,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
                     'caseType' => $caseTypeId,
                 ]
             );
-            return 'skipped';
+            return null;
         }
 
         // Build the name → UUID map for statusTypes belonging to this caseType.
@@ -301,11 +371,29 @@ class SeedVthWorkflowTemplates implements IRepairStep
                     'caseType' => $caseTypeId,
                 ]
             );
-            return 'skipped';
+            return null;
         }
 
-        // Resolve steps and transitions. On any unresolved status, skip
-        // the entire template (no partial seed).
+        return [
+            'caseTypeId' => $caseTypeId,
+            'statusMap'  => $statusMap,
+        ];
+    }//end resolveTemplateContext()
+
+    /**
+     * Resolve the steps[] and transitions[] blocks against the status map.
+     *
+     * Returns null when any status name does not resolve — the caller reports
+     * that as skipped (no partial seed).
+     *
+     * @param array<string, mixed>  $data      The decoded catalog entry
+     * @param string                $slug      The template slug
+     * @param array<string, string> $statusMap Status name → UUID map
+     *
+     * @return array<string, mixed>|null {steps, transitions}, or null when unresolved
+     */
+    private function resolveWorkflowGraph(array $data, string $slug, array $statusMap): ?array
+    {
         $resolvedSteps = $this->resolveSteps(
             slug: $slug,
             rawSteps: ($data['steps'] ?? []),
@@ -316,7 +404,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
                 'Procest: VTH workflow template — unresolved status in steps, skipping',
                 ['app' => Application::APP_ID, 'slug' => $slug]
             );
-            return 'skipped';
+            return null;
         }
 
         $resolvedTransitions = $this->resolveTransitions(
@@ -329,9 +417,35 @@ class SeedVthWorkflowTemplates implements IRepairStep
                 'Procest: VTH workflow template — unresolved status in transitions, skipping',
                 ['app' => Application::APP_ID, 'slug' => $slug]
             );
-            return 'skipped';
+            return null;
         }
 
+        return [
+            'steps'       => $resolvedSteps,
+            'transitions' => $resolvedTransitions,
+        ];
+    }//end resolveWorkflowGraph()
+
+    /**
+     * Create the draft via the lifecycle service and publish it.
+     *
+     * @param array<string, mixed> $data       The decoded catalog entry
+     * @param string               $slug       The template slug
+     * @param string               $title      The template title
+     * @param string               $caseTypeId The resolved caseType UUID
+     * @param array<string, mixed> $graph      The resolved {steps, transitions}
+     * @param IOutput              $output     The output interface
+     *
+     * @return string One of seeded|failed
+     */
+    private function createAndPublishTemplate(
+        array $data,
+        string $slug,
+        string $title,
+        string $caseTypeId,
+        array $graph,
+        IOutput $output
+    ): string {
         // Create draft via the lifecycle service.
         $draft = $this->definitionService->createDraft(
             payload: [
@@ -339,8 +453,8 @@ class SeedVthWorkflowTemplates implements IRepairStep
                 'description' => (string) ($data['description'] ?? ''),
                 'caseType'    => $caseTypeId,
                 'version'     => (int) ($data['version'] ?? 1),
-                'steps'       => $resolvedSteps,
-                'transitions' => $resolvedTransitions,
+                'steps'       => $graph['steps'],
+                'transitions' => $graph['transitions'],
             ]
         );
 
@@ -366,7 +480,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
 
         $output->info('VTH catalog: seeded "'.$title.'" v'.(int) ($data['version'] ?? 1).'.');
         return 'seeded';
-    }//end processCatalogFile()
+    }//end createAndPublishTemplate()
 
     /**
      * Resolve a caseType by its slug — uses the `identifier` field on the
@@ -510,13 +624,25 @@ class SeedVthWorkflowTemplates implements IRepairStep
             return [];
         }
 
-        $map      = [];
         $rowsList = [];
         if (is_array($rows) === true) {
             $rowsList = $rows;
         }
 
-        foreach ($rowsList as $row) {
+        return $this->mapStatusTypeRows(rows: $rowsList);
+    }//end buildStatusMap()
+
+    /**
+     * Reduce statusType rows to a name → UUID map, dropping unusable rows.
+     *
+     * @param array<int, mixed> $rows The raw statusType rows
+     *
+     * @return array<string, string> Map of statusType name to UUID
+     */
+    private function mapStatusTypeRows(array $rows): array
+    {
+        $map = [];
+        foreach ($rows as $row) {
             $normalized = $this->normalizeRow(row: $row);
             if ($normalized === null) {
                 continue;
@@ -530,7 +656,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
         }
 
         return $map;
-    }//end buildStatusMap()
+    }//end mapStatusTypeRows()
 
     /**
      * Resolve the steps[] block against the status name → UUID map.

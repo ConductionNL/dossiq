@@ -100,6 +100,35 @@ class ProcessMiningController extends Controller
         $to       = $this->request->getParam('to');
         $caseType = $this->request->getParam('caseType');
 
+        $invalid = $this->validateFilters(from: $from, to: $to, caseType: $caseType);
+        if ($invalid !== null) {
+            return $invalid;
+        }
+
+        $params = $this->buildFilters(from: $from, to: $to, caseType: $caseType);
+
+        try {
+            return new JSONResponse($this->processMiningService->getReport(params: $params));
+        } catch (Throwable $e) {
+            $this->logger->error('Procest: process-mining report generation failed', ['exception' => $e->getMessage()]);
+            return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+    }//end report()
+
+    /**
+     * Validate the optional report filter parameters.
+     *
+     * Each filter may be absent (null); when present it must carry the right
+     * shape — `from`/`to` a calendar-valid `Y-m-d` string, `caseType` a string.
+     *
+     * @param mixed $from     Raw `from` request parameter.
+     * @param mixed $to       Raw `to` request parameter.
+     * @param mixed $caseType Raw `caseType` request parameter.
+     *
+     * @return JSONResponse|null A 400 response for the first offending filter, or null when all are acceptable.
+     */
+    private function validateFilters(mixed $from, mixed $to, mixed $caseType): ?JSONResponse
+    {
         if ($from !== null && (is_string($from) === false || $this->isValidDate(value: $from) === false)) {
             return new JSONResponse(['message' => 'from must be a Y-m-d date'], Http::STATUS_BAD_REQUEST);
         }
@@ -112,6 +141,23 @@ class ProcessMiningController extends Controller
             return new JSONResponse(['message' => 'caseType must be a string'], Http::STATUS_BAD_REQUEST);
         }
 
+        return null;
+    }//end validateFilters()
+
+    /**
+     * Assemble the service filter map from the validated request parameters.
+     *
+     * Absent and empty-string filters are omitted so the service sees only the
+     * filters the caller actually supplied.
+     *
+     * @param mixed $from     Validated `from` request parameter.
+     * @param mixed $to       Validated `to` request parameter.
+     * @param mixed $caseType Validated `caseType` request parameter.
+     *
+     * @return array<string, string> The filter map passed to the report service.
+     */
+    private function buildFilters(mixed $from, mixed $to, mixed $caseType): array
+    {
         $params = [];
         if (is_string($from) === true && $from !== '') {
             $params['from'] = $from;
@@ -125,13 +171,8 @@ class ProcessMiningController extends Controller
             $params['caseType'] = $caseType;
         }
 
-        try {
-            return new JSONResponse($this->processMiningService->getReport(params: $params));
-        } catch (Throwable $e) {
-            $this->logger->error('Procest: process-mining report generation failed', ['exception' => $e->getMessage()]);
-            return new JSONResponse(['message' => 'Report generation failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
-        }
-    }//end report()
+        return $params;
+    }//end buildFilters()
 
     /**
      * Authentication + RBAC guard for {@see self::report()}.

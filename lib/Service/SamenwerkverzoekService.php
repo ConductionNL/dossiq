@@ -71,9 +71,9 @@ class SamenwerkverzoekService
      * Creates a samenwerkverzoek object with status 'aangevraagd' and
      * dispatches a SamenwerkverzoekInitiated event for downstream listeners.
      *
-     * @param string $zaakId                 The UUID of the zaak
-     * @param string $aangezochtBevoegdGezag The requested authority identifier
-     * @param string $rationale              The reason for requesting cooperation
+     * @param string $zaakId          The UUID of the zaak
+     * @param string $aangezochtGezag The requested authority identifier
+     * @param string $rationale       The reason for requesting cooperation
      *
      * @return array<string,mixed> The created samenwerkverzoek object
      *
@@ -83,7 +83,7 @@ class SamenwerkverzoekService
      */
     public function initiateSamenwerking(
         string $zaakId,
-        string $aangezochtBevoegdGezag,
+        string $aangezochtGezag,
         string $rationale,
     ): array {
         $objectService = $this->getObjectService();
@@ -121,7 +121,7 @@ class SamenwerkverzoekService
         $samenwerkverzoek = [
             'zaakId'                 => $zaakId,
             'vergunningaanvraagRef'  => $aanvraagRef,
-            'aangezochtBevoegdGezag' => $aangezochtBevoegdGezag,
+            'aangezochtBevoegdGezag' => $aangezochtGezag,
             'rationale'              => $rationale,
             'status'                 => 'aangevraagd',
             'aangevraagdOp'          => date('c'),
@@ -138,7 +138,7 @@ class SamenwerkverzoekService
             arguments: [
                 'zaakId'                 => $zaakId,
                 'vergunningaanvraagRef'  => $aanvraagRef,
-                'aangezochtBevoegdGezag' => $aangezochtBevoegdGezag,
+                'aangezochtBevoegdGezag' => $aangezochtGezag,
             ]
         );
         $this->eventDispatcher->dispatch(
@@ -151,7 +151,7 @@ class SamenwerkverzoekService
             [
                 'app'                    => Application::APP_ID,
                 'zaakId'                 => $zaakId,
-                'aangezochtBevoegdGezag' => $aangezochtBevoegdGezag,
+                'aangezochtBevoegdGezag' => $aangezochtGezag,
             ]
         );
 

@@ -70,6 +70,34 @@ class TermijnReportingService
         $bounds = $this->resolveQuarter(periode: $periode);
         $rows   = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
 
+        $byType = $this->aggregateByType(rows: $rows, afdeling: $afdeling);
+
+        // Reduce per-type aggregates.
+        $perType = $this->reducePerType(byType: $byType);
+
+        return [
+            'periode'  => $periode,
+            'afdeling' => $afdeling,
+            'from'     => $bounds['from'],
+            'until'    => $bounds['until'],
+            'perType'  => $perType,
+            'metadata' => [
+                'generatedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+                'rowsScanned' => count($rows),
+            ],
+        ];
+    }//end generateQuarterlyReport()
+
+    /**
+     * Bucket instance rows per zaaktype, skipping rows outside the department filter.
+     *
+     * @param array<int, array<string, mixed>> $rows     Instance rows.
+     * @param string|null                      $afdeling Optional department filter.
+     *
+     * @return array<string, array<string, mixed>> Raw per-zaaktype tallies.
+     */
+    private function aggregateByType(array $rows, ?string $afdeling): array
+    {
         $byType = [];
         foreach ($rows as $row) {
             $type = (string) ($row['zaaktype'] ?? 'onbekend');
@@ -87,30 +115,54 @@ class TermijnReportingService
                 'dwangsomTotalCents'  => 0,
             ];
 
-            $byType[$type]['totaal']++;
-            $status = (string) ($row['status'] ?? '');
-            if ($status === 'voltooid') {
-                $byType[$type]['binnenTermijn']++;
-            }
+            $this->accumulateRow(row: $row, bucket: $byType[$type]);
+        }
 
-            if ($status === 'overschreden') {
-                $byType[$type]['overschrijdingen']++;
-            }
+        return $byType;
+    }//end aggregateByType()
 
-            if ((int) ($row['aantalVerlengingen'] ?? 0) > 0) {
-                $byType[$type]['verlengingen']++;
-            }
+    /**
+     * Fold a single instance row into its zaaktype bucket.
+     *
+     * @param array<string, mixed> $row    Instance row.
+     * @param array<string, mixed> $bucket Bucket for the row's zaaktype (by reference).
+     *
+     * @return void
+     */
+    private function accumulateRow(array $row, array &$bucket): void
+    {
+        $bucket['totaal']++;
+        $status = (string) ($row['status'] ?? '');
+        if ($status === 'voltooid') {
+            $bucket['binnenTermijn']++;
+        }
 
-            $start = (string) ($row['startDatum'] ?? '');
-            $eind  = (string) ($row['einddatumActueel'] ?? '');
-            if ($start !== '' && $eind !== '') {
-                $startD = new DateTimeImmutable(substr($start, 0, 10));
-                $eindD  = new DateTimeImmutable($eind);
-                $byType[$type]['doorlooptijdenDagen'][] = (int) $startD->diff($eindD)->days;
-            }
-        }//end foreach
+        if ($status === 'overschreden') {
+            $bucket['overschrijdingen']++;
+        }
 
-        // Reduce per-type aggregates.
+        if ((int) ($row['aantalVerlengingen'] ?? 0) > 0) {
+            $bucket['verlengingen']++;
+        }
+
+        $start = (string) ($row['startDatum'] ?? '');
+        $eind  = (string) ($row['einddatumActueel'] ?? '');
+        if ($start !== '' && $eind !== '') {
+            $startD = new DateTimeImmutable(substr($start, 0, 10));
+            $eindD  = new DateTimeImmutable($eind);
+            $bucket['doorlooptijdenDagen'][] = (int) $startD->diff($eindD)->days;
+        }
+    }//end accumulateRow()
+
+    /**
+     * Reduce the raw per-zaaktype tallies into the reported percentages and averages.
+     *
+     * @param array<string, array<string, mixed>> $byType Raw per-zaaktype tallies.
+     *
+     * @return array<string, array<string, mixed>> Reported per-zaaktype aggregates.
+     */
+    private function reducePerType(array $byType): array
+    {
         $perType = [];
         foreach ($byType as $type => $b) {
             // $byType entries are only created when a row is counted, so
@@ -136,18 +188,8 @@ class TermijnReportingService
             ];
         }//end foreach
 
-        return [
-            'periode'  => $periode,
-            'afdeling' => $afdeling,
-            'from'     => $bounds['from'],
-            'until'    => $bounds['until'],
-            'perType'  => $perType,
-            'metadata' => [
-                'generatedAt' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-                'rowsScanned' => count($rows),
-            ],
-        ];
-    }//end generateQuarterlyReport()
+        return $perType;
+    }//end reducePerType()
 
     /**
      * Generate an annual dwangsom audit report.
@@ -223,11 +265,49 @@ class TermijnReportingService
     {
         $rows = $this->listInstances(from: '1970-01-01', until: '2999-12-31');
 
+        $dwTotal = 0;
+        $totals  = $this->collectKpiTotals(rows: $rows, filters: $filters);
+
+        $total     = $totals['total'];
+        $within    = $totals['within'];
+        $overrun   = $totals['overrun'];
+        $durations = $totals['durations'];
+
+        $withinTermijnPercent = 0.0;
+        if ($total > 0) {
+            $withinTermijnPercent = round(($within / $total) * 100, 1);
+        }
+
+        $aantalDuraties  = count($durations);
+        $avgDurationDays = 0.0;
+        if ($aantalDuraties > 0) {
+            $avgDurationDays = round(array_sum($durations) / $aantalDuraties, 1);
+        }
+
+        return [
+            'totalZaken'           => $total,
+            'withinTermijnPercent' => $withinTermijnPercent,
+            'avgDurationDays'      => $avgDurationDays,
+            'overrunCount'         => $overrun,
+            'dwangsomTotalCents'   => $dwTotal,
+            'lastUpdated'          => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+        ];
+    }//end getTermijnKpi()
+
+    /**
+     * Tally the dashboard KPI counters over the instance rows.
+     *
+     * @param array<int, array<string, mixed>> $rows    Instance rows.
+     * @param array<string, mixed>             $filters Optional filters (afdeling, zaaktype).
+     *
+     * @return array{total:int,within:int,overrun:int,durations:array<int,int>} Counters plus the collected doorlooptijden.
+     */
+    private function collectKpiTotals(array $rows, array $filters): array
+    {
         $total     = 0;
         $within    = 0;
         $overrun   = 0;
         $durations = [];
-        $dwTotal   = 0;
         foreach ($rows as $row) {
             if (isset($filters['zaaktype']) === true && (string) ($row['zaaktype'] ?? '') !== $filters['zaaktype']) {
                 continue;
@@ -250,26 +330,13 @@ class TermijnReportingService
             }
         }//end foreach
 
-        $withinTermijnPercent = 0.0;
-        if ($total > 0) {
-            $withinTermijnPercent = round(($within / $total) * 100, 1);
-        }
-
-        $aantalDuraties  = count($durations);
-        $avgDurationDays = 0.0;
-        if ($aantalDuraties > 0) {
-            $avgDurationDays = round(array_sum($durations) / $aantalDuraties, 1);
-        }
-
         return [
-            'totalZaken'           => $total,
-            'withinTermijnPercent' => $withinTermijnPercent,
-            'avgDurationDays'      => $avgDurationDays,
-            'overrunCount'         => $overrun,
-            'dwangsomTotalCents'   => $dwTotal,
-            'lastUpdated'          => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+            'total'     => $total,
+            'within'    => $within,
+            'overrun'   => $overrun,
+            'durations' => $durations,
         ];
-    }//end getTermijnKpi()
+    }//end collectKpiTotals()
 
     /**
      * Generate a CSV for a quarterly report.

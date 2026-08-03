@@ -126,9 +126,41 @@ class IngebrekestellingService
         }
 
         // First valid notice: link it and start a DwangsomBerekening.
+        $row['dwangsomBerekening'] = $this->startDwangsomBerekening(
+            termijnInstanceId: $termijnInstanceId,
+            instance: $instance,
+            ingebrekestellingId: (string) $row['id'],
+            ontvangstDatum: $ontvangstDatum,
+            kanaal: $kanaal,
+            documentLink: $documentLink,
+        );
+
+        return $row;
+    }//end registerIngebrekestelling()
+
+    /**
+     * Link the first valid notice to its instance and open the DwangsomBerekening.
+     *
+     * @param string               $termijnInstanceId   TermijnInstance id.
+     * @param array<string, mixed> $instance            TermijnInstance row.
+     * @param string               $ingebrekestellingId Id of the saved ingebrekestelling.
+     * @param DateTimeImmutable    $ontvangstDatum      Receipt date.
+     * @param string               $kanaal              Receipt channel.
+     * @param string               $documentLink        Document link.
+     *
+     * @return array<string, mixed> The created DwangsomBerekening row.
+     */
+    private function startDwangsomBerekening(
+        string $termijnInstanceId,
+        array $instance,
+        string $ingebrekestellingId,
+        DateTimeImmutable $ontvangstDatum,
+        string $kanaal,
+        string $documentLink
+    ): array {
         $this->termijnService->updateTermijnInstance(
             $termijnInstanceId,
-            ['relevantIngbrekes' => (string) $row['id']]
+            ['relevantIngbrekes' => $ingebrekestellingId]
         );
 
         $regime  = $this->resolveRegime(instance: $instance);
@@ -140,20 +172,20 @@ class IngebrekestellingService
         }
 
         $berekening = $this->saveSchema(
-                schemaConfigKey: 'dwangsom_berekening_schema',
-                object: [
-                    'ingebrekestelling' => (string) $row['id'],
-                    'termijnInstance'   => $termijnInstanceId,
-                    'startDatum'        => $startAt,
-                    'huidigeDag'        => 0,
-                    'dagtarief'         => 0,
-                    'cumulatievBedrag'  => 0,
-                    'plafondBerekend'   => (int) $regime['plafond'],
-                    'plafondBereikt'    => false,
-                    'status'            => 'lopend',
-                    'regime'            => $regimeLabel,
-                ]
-                );
+            schemaConfigKey: 'dwangsom_berekening_schema',
+            object: [
+                'ingebrekestelling' => $ingebrekestellingId,
+                'termijnInstance'   => $termijnInstanceId,
+                'startDatum'        => $startAt,
+                'huidigeDag'        => 0,
+                'dagtarief'         => 0,
+                'cumulatievBedrag'  => 0,
+                'plafondBerekend'   => (int) $regime['plafond'],
+                'plafondBereikt'    => false,
+                'status'            => 'lopend',
+                'regime'            => $regimeLabel,
+            ]
+        );
 
         $this->termijnService->recordEvent(
             termijnInstanceId: $termijnInstanceId,
@@ -174,10 +206,8 @@ class IngebrekestellingService
             tijdstip: $ontvangstDatum,
         );
 
-        $row['dwangsomBerekening'] = $berekening;
-
-        return $row;
-    }//end registerIngebrekestelling()
+        return $berekening;
+    }//end startDwangsomBerekening()
 
     /**
      * Resolve the dwangsom regime (AWB-default or custom from definition).

@@ -907,6 +907,20 @@ class AiService
             throw new RuntimeException('AI model returned HTTP '.$httpCode);
         }
 
+        return $this->decodeAiModelResponse(response: $response);
+    }//end callAiModel()
+
+    /**
+     * Decode the raw AI model HTTP body into the suggestion array.
+     *
+     * @param string $response The raw response body returned by the model
+     *
+     * @return array The parsed model response
+     *
+     * @throws \RuntimeException If the response body is not valid JSON
+     */
+    private function decodeAiModelResponse(string $response): array
+    {
         $decoded = json_decode($response, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new RuntimeException('AI model returned invalid JSON');
@@ -922,7 +936,7 @@ class AiService
         }
 
         return $parsed;
-    }//end callAiModel()
+    }//end decodeAiModelResponse()
 
     /**
      * Record an audit entry for a case-assistant-via-hermiq conversational
@@ -1121,29 +1135,61 @@ class AiService
         }//end if
 
         if ($modelType === 'local') {
-            // Local models: only http/https to localhost or 127.0.0.1.
-            if (in_array($scheme, ['http', 'https'], true) === false) {
-                return false;
-            }//end if
-
-            if ($host !== 'localhost' && $host !== '127.0.0.1' && $host !== '::1') {
-                // Allow named docker service hostnames (e.g. 'ollama') for local deployments
-                // but still block known public metadata endpoints and RFC1918 IPs.
-                $ipAddress = gethostbyname($host);
-                if ($ipAddress !== $host
-                    && $this->ipInCidr(ipAddress: $ipAddress, cidr: '169.254.0.0/16') === true
-                ) {
-                    $this->logger->warning(
-                        'AI SSRF: local model URL resolves to cloud metadata range',
-                        ['host' => $host, 'ip' => $ipAddress]
-                    );
-                    return false;
-                }//end if
-            }//end if
-
-            return true;
+            return $this->isSafeLocalAiUrl(scheme: $scheme, host: $host);
         }//end if
 
+        return $this->isSafeCloudAiUrl(scheme: $scheme, host: $host);
+    }//end isSafeAiUrl()
+
+    /**
+     * Validate a local-model URL (SSRF guard).
+     *
+     * Only http/https to localhost or 127.0.0.1; named docker service hostnames
+     * are allowed but must not resolve into the cloud metadata range.
+     *
+     * @param string $scheme The lower-cased URL scheme
+     * @param string $host   The lower-cased URL host
+     *
+     * @return bool True if the URL passes the SSRF check
+     */
+    private function isSafeLocalAiUrl(string $scheme, string $host): bool
+    {
+        // Local models: only http/https to localhost or 127.0.0.1.
+        if (in_array($scheme, ['http', 'https'], true) === false) {
+            return false;
+        }//end if
+
+        if ($host !== 'localhost' && $host !== '127.0.0.1' && $host !== '::1') {
+            // Allow named docker service hostnames (e.g. 'ollama') for local deployments
+            // but still block known public metadata endpoints and RFC1918 IPs.
+            $ipAddress = gethostbyname($host);
+            if ($ipAddress !== $host
+                && $this->ipInCidr(ipAddress: $ipAddress, cidr: '169.254.0.0/16') === true
+            ) {
+                $this->logger->warning(
+                    'AI SSRF: local model URL resolves to cloud metadata range',
+                    ['host' => $host, 'ip' => $ipAddress]
+                );
+                return false;
+            }//end if
+        }//end if
+
+        return true;
+    }//end isSafeLocalAiUrl()
+
+    /**
+     * Validate a cloud-model URL (SSRF guard).
+     *
+     * Https only, and the host must resolve to a public (non-RFC1918,
+     * non-loopback) address.
+     *
+     * @param string $scheme The lower-cased URL scheme
+     * @param string $host   The lower-cased URL host
+     *
+     * @return bool True if the URL passes the SSRF check
+     */
+    private function isSafeCloudAiUrl(string $scheme, string $host): bool
+    {
         // Cloud models: https only, must resolve to a public (non-RFC1918) address.
         if ($scheme !== 'https') {
             $this->logger->warning(
@@ -1184,7 +1230,7 @@ class AiService
         }
 
         return true;
-    }//end isSafeAiUrl()
+    }//end isSafeCloudAiUrl()
 
     /**
      * Check if an IP address falls within a CIDR range (IPv4 and IPv6).
@@ -1200,49 +1246,75 @@ class AiService
         $isIpv6Ip   = str_contains($ipAddress, ':');
 
         if ($isIpv6Cidr === true && $isIpv6Ip === true) {
-            [$network, $prefix] = explode('/', $cidr);
-            $prefixLen          = (int) $prefix;
-            $networkBin         = inet_pton($network);
-            $inputBin           = inet_pton($ipAddress);
-            if ($networkBin === false || $inputBin === false) {
-                return false;
-            }//end if
-
-            $fullBytes  = intdiv($prefixLen, 8);
-            $remainBits = $prefixLen % 8;
-            for ($i = 0; $i < $fullBytes; $i++) {
-                if ($networkBin[$i] !== $inputBin[$i]) {
-                    return false;
-                }//end if
-            }
-
-            if ($remainBits > 0 && $fullBytes < 16) {
-                $mask = (0xFF << (8 - $remainBits)) & 0xFF;
-                if ((ord($networkBin[$fullBytes]) & $mask) !== (ord($inputBin[$fullBytes]) & $mask)) {
-                    return false;
-                }//end if
-            }//end if
-
-            return true;
+            return $this->isIpv6InCidr(ipAddress: $ipAddress, cidr: $cidr);
         }//end if
 
         if ($isIpv6Cidr === false && $isIpv6Ip === false) {
-            [$network, $prefix] = explode('/', $cidr);
-            $prefixLen          = (int) $prefix;
-            $networkLong        = ip2long($network);
-            $ipLong = ip2long($ipAddress);
-            if ($networkLong === false || $ipLong === false) {
-                return false;
-            }//end if
-
-            $mask = 0;
-            if ($prefixLen !== 0) {
-                $mask = ~0 << (32 - $prefixLen);
-            }//end if
-
-            return ($ipLong & $mask) === ($networkLong & $mask);
+            return $this->isIpv4InCidr(ipAddress: $ipAddress, cidr: $cidr);
         }//end if
 
         return false;
     }//end ipInCidr()
+
+    /**
+     * Check if an IPv6 address falls within an IPv6 CIDR range.
+     *
+     * @param string $ipAddress The IPv6 address to test
+     * @param string $cidr      The IPv6 CIDR block (e.g. 'fc00::/7')
+     *
+     * @return bool True if the IP is within the range
+     */
+    private function isIpv6InCidr(string $ipAddress, string $cidr): bool
+    {
+        [$network, $prefix] = explode('/', $cidr);
+        $prefixLen          = (int) $prefix;
+        $networkBin         = inet_pton($network);
+        $inputBin           = inet_pton($ipAddress);
+        if ($networkBin === false || $inputBin === false) {
+            return false;
+        }//end if
+
+        $fullBytes  = intdiv($prefixLen, 8);
+        $remainBits = $prefixLen % 8;
+        for ($i = 0; $i < $fullBytes; $i++) {
+            if ($networkBin[$i] !== $inputBin[$i]) {
+                return false;
+            }//end if
+        }
+
+        if ($remainBits > 0 && $fullBytes < 16) {
+            $mask = (0xFF << (8 - $remainBits)) & 0xFF;
+            if ((ord($networkBin[$fullBytes]) & $mask) !== (ord($inputBin[$fullBytes]) & $mask)) {
+                return false;
+            }//end if
+        }//end if
+
+        return true;
+    }//end isIpv6InCidr()
+
+    /**
+     * Check if an IPv4 address falls within an IPv4 CIDR range.
+     *
+     * @param string $ipAddress The IPv4 address to test
+     * @param string $cidr      The IPv4 CIDR block (e.g. '10.0.0.0/8')
+     *
+     * @return bool True if the IP is within the range
+     */
+    private function isIpv4InCidr(string $ipAddress, string $cidr): bool
+    {
+        [$network, $prefix] = explode('/', $cidr);
+        $prefixLen          = (int) $prefix;
+        $networkLong        = ip2long($network);
+        $ipLong = ip2long($ipAddress);
+        if ($networkLong === false || $ipLong === false) {
+            return false;
+        }//end if
+
+        $mask = 0;
+        if ($prefixLen !== 0) {
+            $mask = ~0 << (32 - $prefixLen);
+        }//end if
+
+        return ($ipLong & $mask) === ($networkLong & $mask);
+    }//end isIpv4InCidr()
 }//end class

@@ -121,6 +121,39 @@ class Application extends App implements IBootstrap
      */
     public function register(IRegistrationContext $context): void
     {
+        $this->registerAppHostEngine(context: $context);
+        $this->registerBespokeServices(context: $context);
+        $this->registerObjectListeners(context: $context);
+
+        $this->registerBezwaarListeners(context: $context);
+        $this->registerTermijnListeners(context: $context);
+        $this->registerDecisionListeners(context: $context);
+
+        $this->registerSaasStack(context: $context);
+        $this->registerBeschikkingAdapters(context: $context);
+        $this->registerAuthAdapters(context: $context);
+        $this->registerExternalRegisterAdapters(context: $context);
+    }//end register()
+
+    /**
+     * Register the OpenRegister AppHost engine (ADR-040).
+     *
+     * StaticAccess is suppressed rather than decomposed: `Bootstrap::register()`
+     * IS OpenRegister's published AppHost entry point. It is a stateless
+     * registration façade with no instance to inject, and wrapping it in a local
+     * collaborator would have to make the very same static call — moving the
+     * finding instead of removing it.
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     *
+     * @SuppressWarnings(PHPMD.StaticAccess) Bootstrap::register() is OpenRegister's published AppHost entry point; see the note above.
+     *
+     * @spec openspec/specs/beschikking-generatie/spec.md
+     */
+    private function registerAppHostEngine(IRegistrationContext $context): void
+    {
         // OpenRegister AppHost engine (ADR-040). Aliases the mechanical
         // plumbing classes to the shared generics and registers the
         // manifest-driven deep-link listener + the observability (health /
@@ -155,7 +188,19 @@ class Application extends App implements IBootstrap
                 'mcpProvider'      => ProcestToolProvider::class,
             ]
         );
+    }//end registerAppHostEngine()
 
+    /**
+     * Re-register the procest-bespoke plumbing the AppHost engine aliased to generics.
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     *
+     * @spec openspec/specs/beschikking-generatie/spec.md
+     */
+    private function registerBespokeServices(IRegistrationContext $context): void
+    {
         // Re-assert the procest-bespoke plumbing classes the engine just
         // registered to generics. A concrete-to-self alias
         // (registerServiceAlias(X, X)) infinitely recurses on NC's container
@@ -222,7 +267,21 @@ class Application extends App implements IBootstrap
                 );
             }
         );
+    }//end registerBespokeServices()
 
+    /**
+     * Register the notifier plus the object-lifecycle listeners that are not
+     * scoped to a single subsystem (KPI cache, role routing, DSO intake, BAG
+     * location validation).
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     *
+     * @spec openspec/specs/beschikking-generatie/spec.md
+     */
+    private function registerObjectListeners(IRegistrationContext $context): void
+    {
         // Note @mention notifications (nc-vue #207, ncvue-w2-leaves-adoption):
         // MentionNotificationService raises `note_mention` notifications;
         // this Notifier renders them for the bell menu.
@@ -274,16 +333,25 @@ class Application extends App implements IBootstrap
             listener: LocationBagValidationListener::class
         );
 
-        $this->registerBezwaarListeners(context: $context);
-        $this->registerTermijnListeners(context: $context);
-        $this->registerDecisionListeners(context: $context);
-
         // DSO Omgevingsloket: create Procest zaak when a vergunningaanvraag is written.
         $context->registerEventListener(
             event: ObjectCreatedEvent::class,
             listener: VergunningaanvraagCreatedListener::class
         );
+    }//end registerObjectListeners()
 
+    /**
+     * Register the SaaS middleware chain and the two services it factories from
+     * app config (tenant JWT signing, Shillinq invoicing).
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     *
+     * @spec openspec/specs/beschikking-generatie/spec.md
+     */
+    private function registerSaasStack(IRegistrationContext $context): void
+    {
         $context->registerMiddleware(class: ZgwAuthMiddleware::class);
         $context->registerMiddleware(class: TenantMiddleware::class);
         // SaaS chain (member 04): resolve tenant binding then set Postgres
@@ -336,7 +404,20 @@ class Application extends App implements IBootstrap
                     );
                 }
                 );
+    }//end registerSaasStack()
 
+    /**
+     * Register the beschikking cross-app integration adapters (template render,
+     * digital signing, archival ingest).
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     *
+     * @spec openspec/specs/beschikking-generatie/spec.md
+     */
+    private function registerBeschikkingAdapters(IRegistrationContext $context): void
+    {
         // Background jobs are declared in appinfo/info.xml under
         // <background-jobs>; Nextcloud auto-registers them with the IJobList.
         // IRegistrationContext has no registerJob() method.
@@ -391,7 +472,19 @@ class Application extends App implements IBootstrap
         // schema; this adapter records the archival marker + Archiefwet
         // vernietigingsdatum. The former app-local MockArchivalAdapter is retired.
         $context->registerServiceAlias(ArchivalAdapterInterface::class, OpenRegisterArchivalAdapter::class);
+    }//end registerBeschikkingAdapters()
 
+    /**
+     * Register the external auth-broker adapters (DigiD / eHerkenning).
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     *
+     * @spec openspec/specs/beschikking-generatie/spec.md
+     */
+    private function registerAuthAdapters(IRegistrationContext $context): void
+    {
         // External auth-broker adapters (lib/Service/Auth/), selected by the
         // `integration.digid.mode` config tier (external-integrations-test-environments).
         // DEFAULT `log` = the dormant Log* implementations which throw + log
@@ -426,7 +519,20 @@ class Application extends App implements IBootstrap
                 return $c->get(\OCA\Procest\Service\Auth\LogEHerkenningSamlAdapter::class);
             }
         );
+    }//end registerAuthAdapters()
 
+    /**
+     * Register the wave-4 external base-register ports (KvK, BRP, BAG, BRK, WOZ)
+     * plus the dormant external-ZGW / ZTC client aliases.
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     *
+     * @spec openspec/specs/beschikking-generatie/spec.md
+     */
+    private function registerExternalRegisterAdapters(IRegistrationContext $context): void
+    {
         // Wave-4 external-API ports (low-volume families). All dormant
         // log-only by default; flip the matching openconnector
         // source-slug feature flag and override the alias in a
@@ -453,6 +559,22 @@ class Application extends App implements IBootstrap
         // (test tier = api.kvk.nl/test, public key). BRP `mock`/`test` binds
         // the HaalCentraalBrpAdapter (mock = ghcr.io/brp-api/personen-mock
         // offline; test = proefomgeving once the X-API-KEY is granted).
+        $this->registerKvkBrpAdapters(context: $context);
+        $this->registerGeoRegisterAdapters(context: $context);
+        $this->registerExternalZgwAdapters(context: $context);
+    }//end registerExternalRegisterAdapters()
+
+    /**
+     * Register the KvK Handelsregister and BRP / Haal Centraal ports.
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     *
+     * @spec openspec/specs/beschikking-generatie/spec.md
+     */
+    private function registerKvkBrpAdapters(IRegistrationContext $context): void
+    {
         $context->registerService(
             \OCA\Procest\Service\External\Kvk\KvkHandelsregisterAdapterInterface::class,
             static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\External\Kvk\KvkHandelsregisterAdapterInterface {
@@ -497,6 +619,19 @@ class Application extends App implements IBootstrap
                 return $c->get(\OCA\Procest\Service\External\Brp\LogBrpHaalCentraalAdapter::class);
             }
         );
+    }//end registerKvkBrpAdapters()
+
+    /**
+     * Register the geo/property base-register ports (BAG, BRK, WOZ).
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     *
+     * @spec openspec/specs/beschikking-generatie/spec.md
+     */
+    private function registerGeoRegisterAdapters(IRegistrationContext $context): void
+    {
         // BAG (Basisregistratie Adressen en Gebouwen) — authoritative address +
         // pand/verblijfsobject lookup (bag-register-adapter). Selected by
         // `integration.bag.mode` (external-integrations-test-environments config-tier
@@ -586,6 +721,19 @@ class Application extends App implements IBootstrap
                 return $c->get(\OCA\Procest\Service\External\Woz\LogWozAdapter::class);
             }
         );
+    }//end registerGeoRegisterAdapters()
+
+    /**
+     * Register the dormant external-ZGW and ZTC / Catalogi-API client aliases.
+     *
+     * @param IRegistrationContext $context The registration context
+     *
+     * @return void
+     *
+     * @spec openspec/specs/beschikking-generatie/spec.md
+     */
+    private function registerExternalZgwAdapters(IRegistrationContext $context): void
+    {
         // TMLO metadata building + e-Depot submission adapter seams retired
         // (migrate-archival-to-or, ADR-022): OpenRegister's TmloService builds
         // TMLO/MDTO metadata from schema config and its Edepot/Transport seam owns
@@ -598,7 +746,7 @@ class Application extends App implements IBootstrap
             \OCA\Procest\Service\External\Ztc\ZtcCatalogiAdapterInterface::class,
             \OCA\Procest\Service\External\Ztc\LogZtcCatalogiAdapter::class
         );
-    }//end register()
+    }//end registerExternalZgwAdapters()
 
     /**
      * Register an object-lifecycle listener that declares its interest up front.

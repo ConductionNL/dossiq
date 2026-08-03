@@ -255,48 +255,24 @@ class WOODocumentAssessmentService
         }
 
         // Collect all documents for this case.
-        $allDocs = [];
-        if (empty($docSchema) === false) {
-            $docs = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $docSchema,
-                filters: ['case' => $caseId, '_limit' => 500],
-            );
-
-            if (is_array($docs) === true) {
-                foreach ($docs as $doc) {
-                    $docId = $doc['id'] ?? $doc['uuid'] ?? null;
-                    if ($docId !== null) {
-                        $allDocs[$docId] = true;
-                    }
-                }
-            }
-        }
+        $allDocs = $this->collectCaseDocumentIds(
+            objectService: $objectService,
+            register: $register,
+            docSchema: $docSchema,
+            caseId: $caseId,
+        );
 
         if (empty($allDocs) === true) {
             return ['count' => 0, 'documents' => []];
         }
 
         // Collect all assessed document IDs.
-        $assessedDocIds = [];
-        if (empty($assessmentSchema) === false) {
-            $assessed = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $assessmentSchema,
-                filters: ['caseRef' => $caseId, '_limit' => 500],
-            );
-
-            if (is_array($assessed) === true) {
-                foreach ($assessed as $item) {
-                    $docRef = $item['documentRef'] ?? null;
-                    if ($docRef !== null) {
-                        $assessedDocIds[$docRef] = true;
-                    }
-                }
-            }
-        }
+        $assessedDocIds = $this->collectAssessedDocumentIds(
+            objectService: $objectService,
+            register: $register,
+            assessmentSchema: $assessmentSchema,
+            caseId: $caseId,
+        );
 
         $outstanding = array_keys(array_diff_key($allDocs, $assessedDocIds));
 
@@ -305,6 +281,78 @@ class WOODocumentAssessmentService
             'documents' => $outstanding,
         ];
     }//end getOutstanding()
+
+    /**
+     * Collect the identifiers of every document attached to a case.
+     *
+     * @param object $objectService OpenRegister object service
+     * @param mixed  $register      Configured register identifier
+     * @param mixed  $docSchema     Configured document schema identifier
+     * @param string $caseId        The case UUID
+     *
+     * @return array<string, bool> Document identifiers as keys, empty when the schema is not configured
+     */
+    private function collectCaseDocumentIds(object $objectService, mixed $register, mixed $docSchema, string $caseId): array
+    {
+        if (empty($docSchema) === true) {
+            return [];
+        }
+
+        $docs = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $docSchema,
+            filters: ['case' => $caseId, '_limit' => 500],
+        );
+
+        $allDocs = [];
+        if (is_array($docs) === true) {
+            foreach ($docs as $doc) {
+                $docId = $doc['id'] ?? $doc['uuid'] ?? null;
+                if ($docId !== null) {
+                    $allDocs[$docId] = true;
+                }
+            }
+        }
+
+        return $allDocs;
+    }//end collectCaseDocumentIds()
+
+    /**
+     * Collect the identifiers of every document of a case that already carries an assessment.
+     *
+     * @param object $objectService    OpenRegister object service
+     * @param mixed  $register         Configured register identifier
+     * @param mixed  $assessmentSchema Configured assessment schema identifier
+     * @param string $caseId           The case UUID
+     *
+     * @return array<string, bool> Assessed document identifiers as keys, empty when the schema is not configured
+     */
+    private function collectAssessedDocumentIds(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array
+    {
+        if (empty($assessmentSchema) === true) {
+            return [];
+        }
+
+        $assessed = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $assessmentSchema,
+            filters: ['caseRef' => $caseId, '_limit' => 500],
+        );
+
+        $assessedDocIds = [];
+        if (is_array($assessed) === true) {
+            foreach ($assessed as $item) {
+                $docRef = $item['documentRef'] ?? null;
+                if ($docRef !== null) {
+                    $assessedDocIds[$docRef] = true;
+                }
+            }
+        }
+
+        return $assessedDocIds;
+    }//end collectAssessedDocumentIds()
 
     /**
      * Check whether all documents in a case have been assessed.

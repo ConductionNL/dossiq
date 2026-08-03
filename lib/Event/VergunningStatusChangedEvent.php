@@ -35,17 +35,17 @@ class VergunningStatusChangedEvent extends Event
     /**
      * Constructor.
      *
-     * @param string      $vergunningaanvraagRef The vergunningaanvraag UUID reference
-     * @param string      $oldStatus             The previous status value
-     * @param string      $newStatus             The new status value
-     * @param string|null $besluitdatum          Optional decision date (ISO 8601)
-     * @param string|null $toelichting           Optional explanation text
-     * @param string      $userId                The Nextcloud user UID who triggered the transition
+     * @param string      $aanvraagRef  The vergunningaanvraag UUID reference
+     * @param string      $oldStatus    The previous status value
+     * @param string      $newStatus    The new status value
+     * @param string|null $besluitdatum Optional decision date (ISO 8601)
+     * @param string|null $toelichting  Optional explanation text
+     * @param string      $userId       The Nextcloud user UID who triggered the transition
      *
      * @spec openspec/changes/dso-omgevingsloket/tasks.md#T01
      */
     public function __construct(
-        private readonly string $vergunningaanvraagRef,
+        private readonly string $aanvraagRef,
         private readonly string $oldStatus,
         private readonly string $newStatus,
         private readonly ?string $besluitdatum,
@@ -64,7 +64,7 @@ class VergunningStatusChangedEvent extends Event
      */
     public function getVergunningaanvraagRef(): string
     {
-        return $this->vergunningaanvraagRef;
+        return $this->aanvraagRef;
     }//end getVergunningaanvraagRef()
 
     /**
