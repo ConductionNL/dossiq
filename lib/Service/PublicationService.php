@@ -30,8 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -84,12 +86,12 @@ class PublicationService
     {
         $channel = (string) ($payload['channel'] ?? 'website');
         if (in_array($channel, self::CHANNELS, true) === false) {
-            throw new \InvalidArgumentException('Invalid publication channel: '.$channel);
+            throw new InvalidArgumentException('Invalid publication channel: '.$channel);
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -102,11 +104,11 @@ class PublicationService
                 'PublicationService::publish find failed',
                 ['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
             );
-            throw new \RuntimeException('Case not found: '.$caseId);
+            throw new RuntimeException('Case not found: '.$caseId);
         }
 
         if ($obj === null) {
-            throw new \RuntimeException('Case not found: '.$caseId);
+            throw new RuntimeException('Case not found: '.$caseId);
         }
 
         if (is_array($obj) === true) {

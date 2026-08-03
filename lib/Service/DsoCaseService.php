@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
+use Exception;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Event\VergunningStatusChangedEvent;
 use OCA\Procest\Service\Support\SearchesObjects;
@@ -32,6 +34,7 @@ use OCP\IAppConfig;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for DSO Omgevingsloket case management.
@@ -125,7 +128,7 @@ class DsoCaseService
         );
 
         if ($vergunningaanvraag === null) {
-            throw new \RuntimeException('Vergunningaanvraag not found: '.$vergunningaanvraagId);
+            throw new RuntimeException('Vergunningaanvraag not found: '.$vergunningaanvraagId);
         }
 
         $activiteiten  = $vergunningaanvraag['activiteiten'] ?? [];
@@ -232,7 +235,7 @@ class DsoCaseService
         );
 
         if ($zaak === null) {
-            throw new \RuntimeException('Zaak not found: '.$zaakId);
+            throw new RuntimeException('Zaak not found: '.$zaakId);
         }
 
         $zaak = $this->normalizeToArray(value: $zaak);
@@ -316,7 +319,7 @@ class DsoCaseService
             $workingDaysTarget = 40;
         }
 
-        $current     = new \DateTimeImmutable($indieningsdatum);
+        $current     = new DateTimeImmutable($indieningsdatum);
         $workingDays = 0;
 
         while ($workingDays < $workingDaysTarget) {
@@ -366,7 +369,7 @@ class DsoCaseService
             );
         }
 
-        throw new \Exception('Not authorized');
+        throw new Exception('Not authorized');
     }//end authorizeZaakMutation()
 
     /**
@@ -381,7 +384,7 @@ class DsoCaseService
         try {
             return $this->container->get('OCA\OpenRegister\Service\ObjectService');
         } catch (\Throwable $e) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'OpenRegister ObjectService not available: '.$e->getMessage(),
                 0,
                 $e
@@ -480,7 +483,7 @@ class DsoCaseService
         $easterTs   = easter_date($year);
         $easterDay  = (int) date('j', $easterTs);
         $easterMon  = (int) date('n', $easterTs);
-        $easterDate = (new \DateTimeImmutable())->setDate($year, $easterMon, $easterDay);
+        $easterDate = (new DateTimeImmutable())->setDate($year, $easterMon, $easterDay);
 
         foreach (self::EASTER_OFFSETS as $offset) {
             $holiday = $easterDate->modify('+'.$offset.' days');

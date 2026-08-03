@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use DOMDocument;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Stuf\CircuitBreakerService;
 use OCA\Procest\Service\Stuf\CircuitOpenException;
@@ -334,7 +335,7 @@ class StufController extends Controller
         }
 
         // Parse the XML with XXE/DTD protections.
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         libxml_use_internal_errors(true);
         // LIBXML_NONET: prohibits network access from within XML (XXE via HTTP/FTP).
         // LIBXML_DTDLOAD: disabled intentionally (we do NOT load external DTDs).
@@ -645,6 +646,9 @@ class StufController extends Controller
      * @param string $envelopeXml The inbound envelope.
      *
      * @return array|null The endpoint or null.
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function resolveInboundEndpoint(string $envelopeXml): ?array
     {
@@ -676,6 +680,9 @@ class StufController extends Controller
      * @param array  $endpoint    The endpoint.
      *
      * @return bool
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function verifyWsse(string $envelopeXml, array $endpoint): bool
     {
@@ -708,6 +715,9 @@ class StufController extends Controller
      * @param string $envelopeXml The envelope.
      *
      * @return string
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function detectBerichtSoort(string $envelopeXml): string
     {
@@ -740,6 +750,9 @@ class StufController extends Controller
      * @param string $envelopeXml The envelope.
      *
      * @return string
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function extractCrossRefnummer(string $envelopeXml): string
     {
@@ -760,6 +773,9 @@ class StufController extends Controller
      * @param string $envelopeXml The envelope.
      *
      * @return string
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function extractFunctie(string $envelopeXml): string
     {

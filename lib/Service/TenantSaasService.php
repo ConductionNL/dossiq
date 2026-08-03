@@ -32,6 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\App\IAppManager;
@@ -172,7 +173,7 @@ class TenantSaasService
             'tier'          => $tier,
             'isolationMode' => self::TIER_ISOLATION[$tier],
             'dataResidency' => 'nl',
-            'createdAt'     => (new \DateTimeImmutable('now'))->format(DATE_ATOM),
+            'createdAt'     => (new DateTimeImmutable('now'))->format(DATE_ATOM),
         ];
 
         $saved    = $this->saveTenant(tenant: $tenant, uuid: null);
@@ -190,13 +191,13 @@ class TenantSaasService
      */
     public function getById(string $tenantId): ?array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return null;
         }
 
         try {
-            $row = $this->findObjectAsArray(objectService: $os, register: self::REGISTER, schema: self::SCHEMA_TENANT, id: $tenantId);
+            $row = $this->findObjectAsArray(objectService: $objectService, register: self::REGISTER, schema: self::SCHEMA_TENANT, id: $tenantId);
             if (is_array($row) === true) {
                 return $row;
             }
@@ -219,8 +220,8 @@ class TenantSaasService
      */
     public function listActive(?string $statusFilter=null, int $limit=100, int $offset=0): array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return [];
         }
 
@@ -234,7 +235,7 @@ class TenantSaasService
             // named-argument form threw "Unknown named parameter $register" and
             // was swallowed by the catch below. Register/schema are read from
             // inside `filters`; limit/offset are top-level config keys.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => array_merge(
                         [
@@ -283,11 +284,11 @@ class TenantSaasService
 
         $row['status'] = $newStatus;
         if ($newStatus === 'active' && empty($row['activatedAt']) === true) {
-            $row['activatedAt'] = (new \DateTimeImmutable('now'))->format(DATE_ATOM);
+            $row['activatedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
         }
 
         if ($newStatus === 'terminated' && empty($row['terminatedAt']) === true) {
-            $row['terminatedAt'] = (new \DateTimeImmutable('now'))->format(DATE_ATOM);
+            $row['terminatedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
         }
 
         $saved = $this->saveTenant(tenant: $row, uuid: $tenantId);
@@ -311,13 +312,13 @@ class TenantSaasService
      */
     public function delete(string $tenantId): bool
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return false;
         }
 
         try {
-            $os->deleteObject(register: self::REGISTER, schema: self::SCHEMA_TENANT, id: $tenantId);
+            $objectService->deleteObject(register: self::REGISTER, schema: self::SCHEMA_TENANT, id: $tenantId);
             return true;
         } catch (Throwable $e) {
             $this->logger->error('Procest: TenantSaasService::delete failed', ['tenantId' => $tenantId, 'exception' => $e->getMessage()]);
@@ -397,15 +398,15 @@ class TenantSaasService
      */
     public function slugExists(string $slug): bool
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return false;
         }
 
         try {
             // ObjectService::findAll() takes a single $config array — see the
             // note in listActive(); register/schema live inside `filters`.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register' => self::REGISTER,
@@ -437,13 +438,13 @@ class TenantSaasService
      */
     protected function saveTenant(array $tenant, ?string $uuid): array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             throw new RuntimeException('OpenRegister is not available');
         }
 
         try {
-            $row = $os->saveObject(
+            $row = $objectService->saveObject(
                 object: $tenant,
                 register: self::REGISTER,
                 schema: self::SCHEMA_TENANT,

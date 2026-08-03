@@ -126,7 +126,8 @@ class MandaatMatrixController extends Controller
      */
     public function probe(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -242,7 +243,8 @@ class MandaatMatrixController extends Controller
      */
     public function importPreview(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -276,7 +278,8 @@ class MandaatMatrixController extends Controller
      */
     public function importApprove(string $importId): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -323,7 +326,8 @@ class MandaatMatrixController extends Controller
      */
     public function escalateReject(string $id): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -354,7 +358,8 @@ class MandaatMatrixController extends Controller
      */
     public function auditTrail(string $caseId): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -374,7 +379,8 @@ class MandaatMatrixController extends Controller
      */
     public function applicable(string $caseId): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 

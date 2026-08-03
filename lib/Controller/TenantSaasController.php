@@ -206,8 +206,8 @@ class TenantSaasController extends Controller
             );
         }
 
-        $ok = $this->tenantSaasService->delete($tenantId);
-        if ($ok === false) {
+        $deleted = $this->tenantSaasService->delete($tenantId);
+        if ($deleted === false) {
             return new JSONResponse(['success' => false, 'error' => 'Failed to delete tenant'], Http::STATUS_INTERNAL_SERVER_ERROR);
         }
 

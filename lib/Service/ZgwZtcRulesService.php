@@ -641,10 +641,10 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         // Ztc-008: procestermijn required only for termijn.
         $procestermijn = $archief['procestermijn'] ?? null;
+
+        $ptValue = '';
         if (is_string($procestermijn) === true) {
             $ptValue = $procestermijn;
-        } else {
-            $ptValue = '';
         }
 
         $errors = array_merge(
@@ -1022,7 +1022,9 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         if (count($statusTypes) === 0) {
             $errors[] = "At least one status type must be defined before publishing";
-        } else {
+        }
+
+        if (count($statusTypes) > 0) {
             $hasFinal = false;
             foreach ($statusTypes as $row) {
                 if (is_array($row) === true && (bool) ($row['isFinal'] ?? false) === true) {
@@ -1047,10 +1049,9 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $caseTypes = [];
         }
 
+        $caseType = [];
         if (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) {
             $caseType = $caseTypes[0];
-        } else {
-            $caseType = [];
         }
 
         $validFrom = (string) ($caseType['validFrom'] ?? '');
@@ -1128,9 +1129,10 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $caseStatus = (string) ($case['status'] ?? '');
             if ($caseStatus !== '' && in_array($caseStatus, $finalSlugs, true) === true) {
                 $closedCount++;
-            } else {
-                $activeCount++;
+                continue;
             }
+
+            $activeCount++;
         }
 
         if ($activeCount > 0) {

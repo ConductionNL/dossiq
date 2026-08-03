@@ -316,7 +316,11 @@ class VTHTemplateService
      */
     private function loadFile(string $path): ?array
     {
-        $raw = @file_get_contents($path);
+        if (is_file($path) === false || is_readable($path) === false) {
+            return null;
+        }
+
+        $raw = file_get_contents($path);
         if ($raw === false) {
             return null;
         }

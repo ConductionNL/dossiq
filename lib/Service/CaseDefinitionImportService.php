@@ -31,6 +31,7 @@ namespace OCA\Procest\Service;
 use OCA\Procest\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
+use ZipArchive;
 
 /**
  * Service for importing case type definitions from ZIP archives.
@@ -85,8 +86,8 @@ class CaseDefinitionImportService
         ];
 
         // Open the ZIP.
-        $zip        = new \ZipArchive();
-        $openResult = $zip->open($zipPath, \ZipArchive::RDONLY);
+        $zip        = new ZipArchive();
+        $openResult = $zip->open($zipPath, ZipArchive::RDONLY);
         if ($openResult !== true) {
             $result['valid']    = false;
             $result['errors'][] = 'Failed to open ZIP archive: error code '.$openResult;
@@ -238,8 +239,8 @@ class CaseDefinitionImportService
         $components = $manifest['components'] ?? [];
         $results    = [];
 
-        $zip = new \ZipArchive();
-        $zip->open($zipPath, \ZipArchive::RDONLY);
+        $zip = new ZipArchive();
+        $zip->open($zipPath, ZipArchive::RDONLY);
 
         foreach ($components as $component) {
             try {

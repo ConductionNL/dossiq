@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
 use OCA\Procest\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Procest\Service\BerichtenboxAdapter\MockAdapter;
 use OCP\App\IAppManager;
@@ -115,7 +116,7 @@ class BerichtenboxService
             'attachmentFileId'  => $attachmentFileId,
             'externalMessageId' => $result['messageId'] ?? null,
             'status'            => $result['status'] ?? 'sent',
-            'sentAt'            => $result['sentAt'] ?? (new \DateTime())->format('c'),
+            'sentAt'            => $result['sentAt'] ?? (new DateTime())->format('c'),
         ];
 
         $saved = $objectService->saveObject(
@@ -222,15 +223,15 @@ class BerichtenboxService
         if (($status['read'] ?? false) === true) {
             $data['status']       = 'read';
             $data['readAt']       = $status['readAt'];
-            $data['readPolledAt'] = (new \DateTime())->format('c');
+            $data['readPolledAt'] = (new DateTime())->format('c');
             $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
         } else {
-            $data['readPolledAt'] = (new \DateTime())->format('c');
+            $data['readPolledAt'] = (new DateTime())->format('c');
 
             // Check if unread for > 7 days.
             if (empty($data['sentAt']) === false) {
-                $sentAt = new \DateTime($data['sentAt']);
-                $diff   = (new \DateTime())->diff($sentAt)->days;
+                $sentAt = new DateTime($data['sentAt']);
+                $diff   = (new DateTime())->diff($sentAt)->days;
                 if ($diff >= 7 && $data['status'] !== 'unread_flagged') {
                     $data['status'] = 'unread_flagged';
                 }

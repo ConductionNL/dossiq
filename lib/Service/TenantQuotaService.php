@@ -103,15 +103,15 @@ class TenantQuotaService
             throw new InvalidArgumentException('Unknown tier: '.$tier);
         }
 
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return [];
         }
 
         $rows = [];
         foreach (self::TIER_DEFAULTS[$tier] as $quotaType => $cfg) {
             try {
-                $row = $os->saveObject(
+                $row = $objectService->saveObject(
                     object: [
                         'tenantRef'               => $tenantId,
                         'quotaType'               => $quotaType,
@@ -146,8 +146,8 @@ class TenantQuotaService
      */
     public function getQuota(string $tenantId, string $quotaType): ?array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return null;
         }
 
@@ -156,7 +156,7 @@ class TenantQuotaService
             // named-argument form threw "Unknown named parameter $register" and
             // was swallowed by the catch below. Register/schema live inside
             // `filters`; limit/offset are top-level config keys.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register'  => TenantSaasService::REGISTER,
@@ -321,8 +321,8 @@ class TenantQuotaService
      */
     private function persistQuota(array $quota): void
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return;
         }
 
@@ -334,7 +334,7 @@ class TenantQuotaService
                 $uuidArg = null;
             }
 
-            $os->saveObject(
+            $objectService->saveObject(
                 object: $quota,
                 register: TenantSaasService::REGISTER,
                 schema: 'tenantQuota',

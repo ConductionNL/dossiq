@@ -41,6 +41,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Stuf;
 
+use DateTime;
 use OCA\Procest\AppInfo\Application;
 use OCP\IGroupManager;
 use OCP\Notification\IManager as INotificationManager;
@@ -111,7 +112,7 @@ class NeedsInputDispatcher
             $notification = $this->notificationManager->createNotification();
             $notification->setApp(app: Application::APP_ID)
                 ->setUser(user: $user->getUID())
-                ->setDateTime(dateTime: new \DateTime())
+                ->setDateTime(dateTime: new DateTime())
                 ->setObject(type: 'stuf_needs_input', id: ($context['endpointId'] ?? $type))
                 ->setSubject(subject: $type, parameters: ['endpointId' => (string) ($context['endpointId'] ?? '')])
                 ->setMessage(message: 'procest_stuf_needs_input', parameters: $context);

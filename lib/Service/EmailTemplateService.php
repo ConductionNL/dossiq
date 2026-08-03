@@ -31,6 +31,7 @@ namespace OCA\Procest\Service;
 
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * CRUD + prefill for emailTemplate records.
@@ -122,7 +123,7 @@ class EmailTemplateService
     {
         $existing = $this->loadTemplate(templateId: $templateId);
         if ($existing === null) {
-            throw new \RuntimeException('Template not found');
+            throw new RuntimeException('Template not found');
         }
 
         $currentVersion = (int) ($existing['version'] ?? 1);
@@ -251,16 +252,16 @@ class EmailTemplateService
     {
         $template = $this->loadTemplate(templateId: $templateId);
         if ($template === null) {
-            throw new \RuntimeException('Template not found');
+            throw new RuntimeException('Template not found');
         }
 
         $case = $this->loadCase(caseId: $caseId);
         if ($case === null) {
-            throw new \RuntimeException('Case not found');
+            throw new RuntimeException('Case not found');
         }
 
         if (($case['_isFinal'] ?? false) === true) {
-            throw new \RuntimeException('Case is in a final state — drafting is disabled');
+            throw new RuntimeException('Case is in a final state — drafting is disabled');
         }
 
         $vars       = $this->buildVariableMap(case: $case);
@@ -390,13 +391,13 @@ class EmailTemplateService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('ObjectService unavailable');
+            throw new RuntimeException('ObjectService unavailable');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('email_template_schema');
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('emailTemplate schema is not configured');
+            throw new RuntimeException('emailTemplate schema is not configured');
         }
 
         $saved = $objectService->saveObject(

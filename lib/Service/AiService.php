@@ -36,6 +36,7 @@ use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\IAppConfig;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for AI-assisted case processing.
@@ -833,7 +834,7 @@ class AiService
         );
 
         if (empty($modelUrl) === true) {
-            throw new \RuntimeException('AI model URL is not configured');
+            throw new RuntimeException('AI model URL is not configured');
         }
 
         $modelName = $this->appConfig->getValueString(
@@ -862,7 +863,7 @@ class AiService
 
         // SSRF guard: validate the configured model URL before making outbound requests.
         if ($this->isSafeAiUrl(url: $modelUrl, modelType: $modelType) === false) {
-            throw new \RuntimeException('AI model URL failed SSRF security check');
+            throw new RuntimeException('AI model URL failed SSRF security check');
         }
 
         $ch = curl_init($endpoint);
@@ -897,16 +898,16 @@ class AiService
         curl_close($ch);
 
         if ($response === false || empty($error) === false) {
-            throw new \RuntimeException('AI model connection failed: '.$error);
+            throw new RuntimeException('AI model connection failed: '.$error);
         }
 
         if ($httpCode < 200 || $httpCode >= 300) {
-            throw new \RuntimeException('AI model returned HTTP '.$httpCode);
+            throw new RuntimeException('AI model returned HTTP '.$httpCode);
         }
 
         $decoded = json_decode($response, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \RuntimeException('AI model returned invalid JSON');
+            throw new RuntimeException('AI model returned invalid JSON');
         }
 
         // Parse the response text as JSON (we requested JSON format).

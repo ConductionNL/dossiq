@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
+use ReflectionClass;
 use RuntimeException;
 
 /**
@@ -159,7 +160,7 @@ class TermijnExtensionService
         // is the data we actually need.
         $svcDef = null;
         try {
-            $reflection = new \ReflectionClass($this->termijnService);
+            $reflection = new ReflectionClass($this->termijnService);
             if ($reflection->hasProperty('definitieCache') === true) {
                 $prop  = $reflection->getProperty('definitieCache');
                 $cache = $prop->getValue($this->termijnService);

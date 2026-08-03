@@ -333,6 +333,9 @@ class PdokLocatieserverService
      * @throws \RuntimeException When the upstream returns non-2xx or the
      *                           network call fails. The exception code carries
      *                           the HTTP status (or 0 for network failures).
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function callDirect(string $url): string
     {
@@ -474,8 +477,8 @@ class PdokLocatieserverService
         $now      = time();
         $failures = array_filter(
                 array: $failures,
-                callback: static function (int $ts) use ($now): bool {
-                    return ($now - $ts) <= self::OUTAGE_WINDOW;
+                callback: static function (int $failedAt) use ($now): bool {
+                    return ($now - $failedAt) <= self::OUTAGE_WINDOW;
                 }
                 );
 

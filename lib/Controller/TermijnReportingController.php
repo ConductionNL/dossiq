@@ -89,7 +89,8 @@ class TermijnReportingController extends Controller
      */
     public function dashboard(): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -116,7 +117,8 @@ class TermijnReportingController extends Controller
      */
     public function kwartaalrapport(string $periode='', ?string $afdeling=null): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 
@@ -149,7 +151,8 @@ class TermijnReportingController extends Controller
      */
     public function jaarrekening(int $jaar=0): JSONResponse
     {
-        if (($denied = $this->ensureAuthenticated()) !== null) {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
             return $denied;
         }
 

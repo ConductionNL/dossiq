@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -122,9 +123,8 @@ class CaseSharingService
                 return false;
             }
 
-            if (is_array($caseObj) === true) {
-                $caseData = $caseObj;
-            } else {
+            $caseData = $caseObj;
+            if (is_array($caseObj) === false) {
                 $caseData = $caseObj->jsonSerialize();
             }
         } catch (\Throwable $e) {
@@ -156,9 +156,8 @@ class CaseSharingService
                 );
 
                 foreach ($shares as $share) {
-                    if (is_array($share) === true) {
-                        $shareData = $share;
-                    } else {
+                    $shareData = $share;
+                    if (is_array($share) === false) {
                         $shareData = $share->jsonSerialize();
                     }
 
@@ -470,9 +469,8 @@ class CaseSharingService
                 return null;
             }
 
-            if (is_array($shareObj) === true) {
-                $shareData = $shareObj;
-            } else {
+            $shareData = $shareObj;
+            if (is_array($shareObj) === false) {
                 $shareData = $shareObj->jsonSerialize();
             }
 
@@ -519,15 +517,14 @@ class CaseSharingService
             return ['error' => 'Share not found'];
         }
 
-        if (is_array($shareObj) === true) {
-            $shareData = $shareObj;
-        } else {
+        $shareData = $shareObj;
+        if (is_array($shareObj) === false) {
             $shareData = $shareObj->jsonSerialize();
         }
 
         $shareData['status']    = 'revoked';
         $shareData['revokedBy'] = $userId;
-        $shareData['revokedAt'] = (new \DateTime())->format('c');
+        $shareData['revokedAt'] = (new DateTime())->format('c');
 
         $result = $objectService->saveObject(object: $shareData, register: (int) $register, schema: (int) $shareSchema);
 
@@ -615,9 +612,8 @@ class CaseSharingService
             return ['error' => 'Case not found'];
         }
 
-        if (is_array($caseObj) === true) {
-            $caseData = $caseObj;
-        } else {
+        $caseData = $caseObj;
+        if (is_array($caseObj) === false) {
             $caseData = $caseObj->jsonSerialize();
         }
 
@@ -653,10 +649,9 @@ class CaseSharingService
             'createdBy'       => $createdBy,
         ];
 
-        $result = $objectService->saveObject(object: $shareData, register: (int) $register, schema: (int) $shareSchema);
-        if (is_array($result) === true) {
-            $resultData = $result;
-        } else {
+        $result     = $objectService->saveObject(object: $shareData, register: (int) $register, schema: (int) $shareSchema);
+        $resultData = $result;
+        if (is_array($result) === false) {
             $resultData = $result->jsonSerialize();
         }
 
@@ -739,6 +734,10 @@ class CaseSharingService
             return ['error' => 'Federated share not found'];
         }
 
+        // NOTE: kept as if/else deliberately. Hoisting the default assignment
+        // lets PHPStan narrow $shareData to the empty-array shape of
+        // ObjectService::find()'s array branch, which then reports the
+        // 'caseId'/'remoteCloudId' reads below as non-existent offsets.
         if (is_array($shareObj) === true) {
             $shareData = $shareObj;
         } else {
@@ -760,7 +759,7 @@ class CaseSharingService
 
         $shareData['status']    = 'revoked';
         $shareData['revokedBy'] = $userId;
-        $shareData['revokedAt'] = (new \DateTime())->format('c');
+        $shareData['revokedAt'] = (new DateTime())->format('c');
 
         $result = $objectService->saveObject(object: $shareData, register: (int) $register, schema: (int) $shareSchema);
 
@@ -811,9 +810,8 @@ class CaseSharingService
                 return null;
             }
 
-            if (is_array($shareObj) === true) {
-                $shareData = $shareObj;
-            } else {
+            $shareData = $shareObj;
+            if (is_array($shareObj) === false) {
                 $shareData = $shareObj->jsonSerialize();
             }
 

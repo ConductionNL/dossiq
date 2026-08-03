@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\BackgroundJob;
 
+use DateTime;
 use OCA\Procest\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -108,7 +109,7 @@ class ShareMaintenanceJob extends TimedJob
                 ['filters' => ['register' => (int) $register, 'schema' => (int) $schema]],
             );
 
-            $reminderDate = new \DateTime('+'.self::REMINDER_DAYS.' days');
+            $reminderDate = new DateTime('+'.self::REMINDER_DAYS.' days');
 
             foreach ($shares as $share) {
                 if (is_object($share) === true) {
@@ -124,8 +125,8 @@ class ShareMaintenanceJob extends TimedJob
 
                 // Check if share expires within reminder window.
                 if (empty($shareData['expiresAt']) === false) {
-                    $expiresAt = new \DateTime($shareData['expiresAt']);
-                    if ($expiresAt <= $reminderDate && $expiresAt > new \DateTime()) {
+                    $expiresAt = new DateTime($shareData['expiresAt']);
+                    if ($expiresAt <= $reminderDate && $expiresAt > new DateTime()) {
                         $this->logger->info(
                             'Procest: Share expiring soon',
                             [

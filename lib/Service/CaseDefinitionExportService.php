@@ -28,9 +28,14 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
+use DateTimeInterface;
+use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use ZipArchive;
 
 /**
  * Service for exporting case type definitions as portable ZIP archives.
@@ -98,7 +103,7 @@ class CaseDefinitionExportService
         // Validate requested components.
         $invalidComponents = array_diff($components, self::COMPONENTS);
         if (empty($invalidComponents) === false) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'Invalid export components: '.implode(', ', $invalidComponents)
             );
         }
@@ -117,13 +122,13 @@ class CaseDefinitionExportService
         // Create temporary ZIP file.
         $tempPath = tempnam(sys_get_temp_dir(), 'procest_export_');
         if ($tempPath === false) {
-            throw new \RuntimeException('Failed to create temporary file for export');
+            throw new RuntimeException('Failed to create temporary file for export');
         }
 
-        $zip    = new \ZipArchive();
-        $result = $zip->open($tempPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip    = new ZipArchive();
+        $result = $zip->open($tempPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
         if ($result !== true) {
-            throw new \RuntimeException('Failed to create ZIP archive: error code '.$result);
+            throw new RuntimeException('Failed to create ZIP archive: error code '.$result);
         }
 
         // Add manifest.
@@ -196,7 +201,7 @@ class CaseDefinitionExportService
         return [
             'version'            => $newVersion,
             'previousVersion'    => $previousVersionValue,
-            'exportDate'         => (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM),
+            'exportDate'         => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
             'sourceEnvironment'  => $this->appConfig->getValueString(
                 Application::APP_ID,
                 'environment_name',

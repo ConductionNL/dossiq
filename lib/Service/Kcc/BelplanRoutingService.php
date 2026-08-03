@@ -201,15 +201,15 @@ class BelplanRoutingService
         usort(
             $available,
             static function (array $a, array $b): int {
-                $qa = (int) ($a['huidigeWachtrijLengte'] ?? 0);
-                $qb = (int) ($b['huidigeWachtrijLengte'] ?? 0);
-                if ($qa !== $qb) {
-                    return $qa <=> $qb;
+                $queueA = (int) ($a['huidigeWachtrijLengte'] ?? 0);
+                $queueB = (int) ($b['huidigeWachtrijLengte'] ?? 0);
+                if ($queueA !== $queueB) {
+                    return $queueA <=> $queueB;
                 }
 
-                $ta = (int) ($a['gemiddeldeBehandelduur'] ?? 0);
-                $tb = (int) ($b['gemiddeldeBehandelduur'] ?? 0);
-                return $ta <=> $tb;
+                $durationA = (int) ($a['gemiddeldeBehandelduur'] ?? 0);
+                $durationB = (int) ($b['gemiddeldeBehandelduur'] ?? 0);
+                return $durationA <=> $durationB;
             }
         );
 
@@ -279,9 +279,9 @@ class BelplanRoutingService
     {
         $min = PHP_INT_MAX;
         foreach ($pool as $sp) {
-            $q = (int) ($sp['huidigeWachtrijLengte'] ?? 0);
-            if ($q < $min) {
-                $min = $q;
+            $queue = (int) ($sp['huidigeWachtrijLengte'] ?? 0);
+            if ($queue < $min) {
+                $min = $queue;
             }
         }
 

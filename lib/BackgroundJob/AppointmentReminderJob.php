@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\BackgroundJob;
 
+use DateTime;
 use OCA\Procest\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -63,6 +64,9 @@ class AppointmentReminderJob extends TimedJob
      * @param mixed $argument The job argument.
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $argument is fixed by
+     * OCP\BackgroundJob\TimedJob::run(); this job takes no arguments.
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
@@ -83,7 +87,7 @@ class AppointmentReminderJob extends TimedJob
                 return;
             }
 
-            $tomorrow = (new \DateTime('+1 day'))->format('Y-m-d');
+            $tomorrow = (new DateTime('+1 day'))->format('Y-m-d');
 
             $appointments = $objectService->findAll(
                 ['filters' => ['register' => (int) $register, 'schema' => (int) $schema, 'status' => 'scheduled']],

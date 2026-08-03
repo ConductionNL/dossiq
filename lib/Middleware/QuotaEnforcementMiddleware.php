@@ -59,6 +59,10 @@ class QuotaEnforcementMiddleware extends Middleware
      * @param string                       $methodName Method name.
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::beforeController(); this middleware
+     * dispatches on the request URI instead.
      */
     public function beforeController($controller, $methodName): void
     {
@@ -109,6 +113,10 @@ class QuotaEnforcementMiddleware extends Middleware
      * @return \OCP\AppFramework\Http\Response
      *
      * @throws \Exception
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::afterException(); only $exception is
+     * inspected.
      */
     public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response
     {
