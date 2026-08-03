@@ -111,6 +111,25 @@ class WOODeadlineCheckJob extends TimedJob
             ],
         );
 
+        $warned = $this->warnDueCases(cases: $cases);
+
+        if ($warned > 0) {
+            $this->logger->info(
+                'WOODeadlineCheckJob: sent '.$warned.' deadline warning(s)',
+                ['app' => Application::APP_ID],
+            );
+        }
+    }//end run()
+
+    /**
+     * Emit a T-7 deadline warning for every case that still needs one.
+     *
+     * @param array<int, array<string, mixed>> $cases The active WOO cases
+     *
+     * @return int The number of warnings sent
+     */
+    private function warnDueCases(array $cases): int
+    {
         $warned = 0;
         foreach ($cases as $case) {
             $caseId      = $case['id'] ?? $case['uuid'] ?? null;
@@ -130,11 +149,6 @@ class WOODeadlineCheckJob extends TimedJob
             }
         }//end foreach
 
-        if ($warned > 0) {
-            $this->logger->info(
-                'WOODeadlineCheckJob: sent '.$warned.' deadline warning(s)',
-                ['app' => Application::APP_ID],
-            );
-        }
-    }//end run()
+        return $warned;
+    }//end warnDueCases()
 }//end class

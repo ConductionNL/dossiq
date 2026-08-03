@@ -324,12 +324,9 @@ class BackfillLegalHoldsCommand extends Command
 
             foreach ($proceedings as $proceeding) {
                 $uuid = (string) $proceeding['uuid'];
-                if ($uuid !== '' && in_array($uuid, $closed, true) === true) {
-                    $closedHit++;
-                }
-
-                if ($uuid !== '' && in_array($uuid, $closed, true) === true) {
+                if ($this->isConcludedProceeding(uuid: $uuid, closed: $closed) === true) {
                     // Terminal decision exists: this proceeding is concluded.
+                    $closedHit++;
                     continue;
                 }
 
@@ -361,6 +358,19 @@ class BackfillLegalHoldsCommand extends Command
 
         return $candidates;
     }//end collectCandidates()
+
+    /**
+     * Test whether a proceeding is already concluded, i.e. a terminal decision references it.
+     *
+     * @param string             $uuid   The proceeding UUID.
+     * @param array<int, string> $closed The proceeding UUIDs that carry a terminal decision.
+     *
+     * @return bool True when the proceeding is concluded.
+     */
+    private function isConcludedProceeding(string $uuid, array $closed): bool
+    {
+        return ($uuid !== '' && in_array($uuid, $closed, true) === true);
+    }//end isConcludedProceeding()
 
     /**
      * List the proceeding UUIDs that already carry a terminal decision.
@@ -453,37 +463,9 @@ class BackfillLegalHoldsCommand extends Command
      */
     private function normaliseRow(mixed $row): array
     {
-        $data = [];
-        $uuid = '';
-
         if (is_object($row) === true) {
-            foreach (['getUuid', 'getId'] as $getter) {
-                if ($uuid === '' && method_exists($row, $getter) === true) {
-                    $uuid = (string) ($row->$getter() ?? '');
-                }
-            }
-
-            if (method_exists($row, 'getObject') === true && is_array($row->getObject()) === true) {
-                $data = $row->getObject();
-            }
-
-            // Fall back to jsonSerialize(), the shape the rest of OpenRegister
-            // renders to, so a future return-shape change cannot silently empty
-            // the uuid again — an empty uuid here disables the closed-proceeding
-            // filter without any visible error, which is exactly what happened
-            // during development of this command.
-            if ($uuid === '' && method_exists($row, 'jsonSerialize') === true) {
-                $serialised = $row->jsonSerialize();
-                if (is_array($serialised) === true) {
-                    $uuid = $this->uuidFromArray(row: $serialised);
-                    if ($data === []) {
-                        $data = $serialised;
-                    }
-                }
-            }//end if
-
-            return ['uuid' => $uuid, 'data' => $data];
-        }//end if
+            return $this->normaliseObjectRow(row: $row);
+        }
 
         if (is_array($row) === true) {
             return ['uuid' => $this->uuidFromArray(row: $row), 'data' => $row];
@@ -491,6 +473,59 @@ class BackfillLegalHoldsCommand extends Command
 
         return ['uuid' => '', 'data' => []];
     }//end normaliseRow()
+
+    /**
+     * Normalise an ObjectEntity-shaped findAll() row into a uuid + payload pair.
+     *
+     * @param object $row One findAll() result row.
+     *
+     * @return array{uuid: string, data: array<string, mixed>} Normalised row.
+     */
+    private function normaliseObjectRow(object $row): array
+    {
+        $uuid = $this->uuidFromObject(row: $row);
+        $data = [];
+
+        if (method_exists($row, 'getObject') === true && is_array($row->getObject()) === true) {
+            $data = $row->getObject();
+        }
+
+        // Fall back to jsonSerialize(), the shape the rest of OpenRegister
+        // renders to, so a future return-shape change cannot silently empty
+        // the uuid again — an empty uuid here disables the closed-proceeding
+        // filter without any visible error, which is exactly what happened
+        // during development of this command.
+        if ($uuid === '' && method_exists($row, 'jsonSerialize') === true) {
+            $serialised = $row->jsonSerialize();
+            if (is_array($serialised) === true) {
+                $uuid = $this->uuidFromArray(row: $serialised);
+                if ($data === []) {
+                    $data = $serialised;
+                }
+            }
+        }//end if
+
+        return ['uuid' => $uuid, 'data' => $data];
+    }//end normaliseObjectRow()
+
+    /**
+     * Read an object uuid off an ObjectEntity, trying getUuid() then getId().
+     *
+     * @param object $row One findAll() result row.
+     *
+     * @return string The uuid, or '' when neither getter yields one.
+     */
+    private function uuidFromObject(object $row): string
+    {
+        $uuid = '';
+        foreach (['getUuid', 'getId'] as $getter) {
+            if ($uuid === '' && method_exists($row, $getter) === true) {
+                $uuid = (string) ($row->$getter() ?? '');
+            }
+        }
+
+        return $uuid;
+    }//end uuidFromObject()
 
     /**
      * Read an object uuid out of a rendered object array, whatever its shape.

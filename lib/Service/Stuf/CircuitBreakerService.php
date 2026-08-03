@@ -192,12 +192,13 @@ class CircuitBreakerService
             default: 0
         );
 
+        $state = 'ok';
+        if ($failureCount > 0) {
+            $state = 'degraded';
+        }
+
         if ($openedAt > 0 && (time() - $openedAt) < self::COOLDOWN_SECONDS) {
             $state = 'circuit_open';
-        } else if ($failureCount > 0) {
-            $state = 'degraded';
-        } else {
-            $state = 'ok';
         }
 
         return ['state' => $state, 'failureCount' => $failureCount, 'openedAt' => $openedAt];

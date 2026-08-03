@@ -318,11 +318,10 @@ class SubstitutionController extends Controller
             return $guard;
         }
 
-        $user = $this->userSession->getUser();
+        $user    = $this->userSession->getUser();
+        $actorId = '';
         if ($user !== null) {
             $actorId = $user->getUID();
-        } else {
-            $actorId = '';
         }
 
         try {

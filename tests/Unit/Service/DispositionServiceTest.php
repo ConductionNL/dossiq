@@ -178,10 +178,9 @@ class DispositionServiceTest extends TestCase
                 }
             );
 
-        $result = $this->service->submitDisposition(
+        $result = $this->service->submitDispositionForApproval(
             'complaint-uuid',
-            ['oordeel' => 'ongegrond', 'afsluitdatum' => '2026-04-01'],
-            true
+            ['oordeel' => 'ongegrond', 'afsluitdatum' => '2026-04-01']
         );
 
         $this->assertSame('wacht_op_goedkeuring', $result['goedkeuringStatus']);

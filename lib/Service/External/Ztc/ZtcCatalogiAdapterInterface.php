@@ -78,18 +78,18 @@ interface ZtcCatalogiAdapterInterface
      * Resolve a `zaaktypeIdentificatie` to a canonical Catalogi-API
      * URL on the named receiver.
      *
-     * @param string              $zaaktypeIdentificatie The receiver-side
-     *                                                   identifier (e.g.
-     *                                                   `ZAAK-2026-WOO`).
-     * @param string              $receiverSourceSlug    Which openconnector
-     *                                                   Source row to use
-     *                                                   for the lookup.
-     * @param array<string,mixed> $context               Optional context —
-     *                                                   correlationId.
+     * @param string              $zaaktypeId         The receiver-side
+     *                                                zaaktypeIdentificatie
+     *                                                (e.g. `ZAAK-2026-WOO`).
+     * @param string              $receiverSourceSlug Which openconnector
+     *                                                Source row to use
+     *                                                for the lookup.
+     * @param array<string,mixed> $context            Optional context —
+     *                                                correlationId.
      *
      * @return ZtcResult The lookup outcome (status + canonical URL).
      */
-    public function resolveZaakType(string $zaaktypeIdentificatie, string $receiverSourceSlug, array $context=[]): ZtcResult;
+    public function resolveZaakType(string $zaaktypeId, string $receiverSourceSlug, array $context=[]): ZtcResult;
 
     /**
      * Import a `ZaakType` envelope from a neighbouring Catalogi-API

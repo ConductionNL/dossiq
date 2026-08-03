@@ -110,9 +110,9 @@ class SamenwerkverzoekService
             throw new RuntimeException('Zaak not found: '.$zaakId);
         }
 
-        $vergunningaanvraagRef = (string) ($zaak['vergunningaanvraagRef'] ?? '');
+        $aanvraagRef = (string) ($zaak['vergunningaanvraagRef'] ?? '');
 
-        $samenwerkverzoekSchema = $this->appConfig->getValueString(
+        $verzoekSchema = $this->appConfig->getValueString(
             app: Application::APP_ID,
             key: 'dso_samenwerkverzoek_schema',
             default: 'samenwerkverzoek'
@@ -120,7 +120,7 @@ class SamenwerkverzoekService
 
         $samenwerkverzoek = [
             'zaakId'                 => $zaakId,
-            'vergunningaanvraagRef'  => $vergunningaanvraagRef,
+            'vergunningaanvraagRef'  => $aanvraagRef,
             'aangezochtBevoegdGezag' => $aangezochtBevoegdGezag,
             'rationale'              => $rationale,
             'status'                 => 'aangevraagd',
@@ -129,7 +129,7 @@ class SamenwerkverzoekService
 
         $created = $objectService->saveObject(
             register: $register,
-            schema: $samenwerkverzoekSchema,
+            schema: $verzoekSchema,
             object: $samenwerkverzoek
         );
 
@@ -137,7 +137,7 @@ class SamenwerkverzoekService
             subject: $created,
             arguments: [
                 'zaakId'                 => $zaakId,
-                'vergunningaanvraagRef'  => $vergunningaanvraagRef,
+                'vergunningaanvraagRef'  => $aanvraagRef,
                 'aangezochtBevoegdGezag' => $aangezochtBevoegdGezag,
             ]
         );
@@ -178,12 +178,12 @@ class SamenwerkverzoekService
     {
         $objectService = $this->getObjectService();
 
-        $register = $this->appConfig->getValueString(
+        $register      = $this->appConfig->getValueString(
             app: Application::APP_ID,
             key: 'register',
             default: ''
         );
-        $samenwerkverzoekSchema = $this->appConfig->getValueString(
+        $verzoekSchema = $this->appConfig->getValueString(
             app: Application::APP_ID,
             key: 'dso_samenwerkverzoek_schema',
             default: 'samenwerkverzoek'
@@ -192,7 +192,7 @@ class SamenwerkverzoekService
         $verzoek = $this->findObjectAsArray(
             objectService: $objectService,
             register: $register,
-            schema: $samenwerkverzoekSchema,
+            schema: $verzoekSchema,
             id: $samenwerkId
         );
 
@@ -207,10 +207,9 @@ class SamenwerkverzoekService
             );
         }
 
+        $verzoek['status'] = 'geweigerd';
         if ($accept === true) {
             $verzoek['status'] = 'geaccepteerd';
-        } else {
-            $verzoek['status'] = 'geweigerd';
         }
 
         $verzoek['advies']       = $advies;
@@ -218,7 +217,7 @@ class SamenwerkverzoekService
 
         $updated = $objectService->saveObject(
             register: $register,
-            schema: $samenwerkverzoekSchema,
+            schema: $verzoekSchema,
             object: $verzoek
         );
 

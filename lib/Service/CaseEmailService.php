@@ -52,6 +52,16 @@ class CaseEmailService
     private const CASE_NUMBER_PATTERN = '/\[ZAAK-(\d{4}-\d{4,})\]/';
 
     /**
+     * Substitution mode that HTML-escapes every resolved value.
+     */
+    private const ESCAPE_HTML = 'html';
+
+    /**
+     * Substitution mode that writes resolved values through verbatim.
+     */
+    private const ESCAPE_NONE = 'none';
+
+    /**
      * Constructor.
      *
      * @param SettingsService $settingsService Settings service
@@ -238,30 +248,71 @@ class CaseEmailService
     }//end sendFromTemplate()
 
     /**
-     * Resolve template variables in a string.
+     * Resolve template variables in a string, HTML-escaping every value.
      *
      * Variables use {{variableName}} syntax.
      *
-     * @param string               $template   The template string
-     * @param array<string, mixed> $data       Available data for resolution
-     * @param bool                 $htmlEscape Whether to HTML-escape substituted values (default: true)
+     * H6 XSS: case data containing HTML/JS (e.g. from citizen-submitted forms)
+     * must not execute in an email client, so this is the default surface.
+     *
+     * @param string               $template The template string
+     * @param array<string, mixed> $data     Available data for resolution
      *
      * @return string The resolved string
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    public function resolveVariables(string $template, array $data, bool $htmlEscape=true): string
+    public function resolveVariables(string $template, array $data): string
     {
-        // H6 XSS: HTML-escape all substituted values by default so case data
-        // containing HTML/JS (e.g. from citizen-submitted forms) cannot execute
-        // in email clients. Pass $htmlEscape=false only for plain-text contexts.
+        return $this->substituteVariables(
+            template: $template,
+            data: $data,
+            escaping: self::ESCAPE_HTML
+        );
+    }//end resolveVariables()
+
+    /**
+     * Resolve template variables in a string without escaping the values.
+     *
+     * Only for plain-text contexts, where HTML escaping would corrupt the
+     * rendered output and where no HTML parser ever sees the result.
+     *
+     * @param string               $template The template string
+     * @param array<string, mixed> $data     Available data for resolution
+     *
+     * @return string The resolved string
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    public function resolveVariablesRaw(string $template, array $data): string
+    {
+        return $this->substituteVariables(
+            template: $template,
+            data: $data,
+            escaping: self::ESCAPE_NONE
+        );
+    }//end resolveVariablesRaw()
+
+    /**
+     * Shared {{variable}} substitution for both escaping modes.
+     *
+     * @param string               $template The template string
+     * @param array<string, mixed> $data     Available data for resolution
+     * @param string               $escaping One of self::ESCAPE_HTML or self::ESCAPE_NONE
+     *
+     * @return string The resolved string
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    private function substituteVariables(string $template, array $data, string $escaping): string
+    {
         return preg_replace_callback(
             '/\{\{(\w+)\}\}/',
-            static function (array $matches) use ($data, $htmlEscape): string {
+            static function (array $matches) use ($data, $escaping): string {
                 $key = $matches[1];
                 if (isset($data[$key]) === true && is_scalar($data[$key]) === true) {
                     $value = (string) $data[$key];
-                    if ($htmlEscape === true) {
+                    if ($escaping === self::ESCAPE_HTML) {
                         return htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     }
 
@@ -273,7 +324,7 @@ class CaseEmailService
             },
             $template,
         ) ?? $template;
-    }//end resolveVariables()
+    }//end substituteVariables()
 
     /**
      * Find unresolved variables in a template string.

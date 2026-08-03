@@ -64,6 +64,15 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep
     ];
 
     /**
+     * Per-case outcomes reported by linkCase(); each value doubles as the
+     * tally key in the run() counter map.
+     */
+    private const RESULT_LINKED  = 'linked';
+    private const RESULT_SKIPPED = 'skipped';
+    private const RESULT_ERROR   = 'errors';
+    private const RESULT_NONE    = 'none';
+
+    /**
      * Constructor.
      *
      * @param ContractDecisionDelegationService $delegationService Decision delegation service.
@@ -106,16 +115,19 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep
             return;
         }
 
-        $linked  = 0;
-        $skipped = 0;
-        $errors  = 0;
+        $counts = [
+            self::RESULT_LINKED  => 0,
+            self::RESULT_SKIPPED => 0,
+            self::RESULT_ERROR   => 0,
+            self::RESULT_NONE    => 0,
+        ];
 
         // This repair step runs without a Nextcloud user session — anonymous
         // callers are fail-closed by OpenRegister RBAC (#1955) on every
         // boot, so the list/save calls below run inside runAsSystem().
         $this->runAsSystemIfAvailable(
             objectService: $objectService,
-            operation: function () use ($objectService, $output, &$linked, &$skipped, &$errors): void {
+            operation: function () use ($objectService, $output, &$counts): void {
                 foreach (self::CONTRACT_DECISION_CASE_TYPES as $caseTypeSlug) {
                     try {
                         // ObjectService::findAll() takes a single $config array — the
@@ -142,69 +154,14 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep
                     }//end try
 
                     foreach ($cases as $case) {
-                        $caseUuid    = (string) ($case['uuid'] ?? $case['id'] ?? '');
-                        $besluitRef  = (string) ($case['besluitRef'] ?? '');
-                        $decisionRef = (string) ($case['decisionRef'] ?? '');
-                        $status      = (string) ($case['status'] ?? '');
-                        $isClosed    = in_array($status, ['closed', 'afgehandeld', 'gearchiveerd', 'afgesloten'], true);
+                        $outcome = $this->linkCase(
+                            objectService: $objectService,
+                            case: $case,
+                            caseTypeSlug: $caseTypeSlug,
+                            output: $output,
+                        );
 
-                        if ($caseUuid === '') {
-                            continue;
-                        }
-
-                        // REQ-PDCD-007: if a Besluit is already recorded, keep it as
-                        // the authoritative historical record — no link needed.
-                        if ($besluitRef !== '') {
-                            $skipped++;
-                            continue;
-                        }
-
-                        // Already linked to a decidesk Decision.
-                        if ($decisionRef !== '') {
-                            $skipped++;
-                            continue;
-                        }
-
-                        // Skip closed cases without a Besluit — they are historical,
-                        // do not create dangling Decisions in decidesk.
-                        if ($isClosed === true) {
-                            $skipped++;
-                            continue;
-                        }
-
-                        // Open case with no decision yet — link forward to decidesk.
-                        try {
-                            $newDecisionRef = $this->delegationService->raiseContractDecision(
-                                caseRef: $caseUuid,
-                                contractRef: (string) ($case['contractRef'] ?? ''),
-                                decisionType: $this->mapCaseTypeToDecisionType(caseTypeSlug: $caseTypeSlug),
-                                subject: [
-                                    'subjectRegister' => TenantSaasService::REGISTER,
-                                    'subjectSchema'   => 'case',
-                                    'subjectId'       => $caseUuid,
-                                    'subjectLabel'    => (string) ($case['title'] ?? $caseTypeSlug),
-                                ],
-                                mandateContext: [],
-                            );
-
-                            // Persist the decisionRef on the case (does not alter the case outcome).
-                            $objectService->saveObject(
-                                object: array_merge($case, ['decisionRef' => $newDecisionRef]),
-                                register: TenantSaasService::REGISTER,
-                                schema: 'case',
-                                uuid: $caseUuid,
-                            );
-                            $linked++;
-                            $output->info('Linked case '.$caseUuid.' → decidesk Decision '.$newDecisionRef);
-                        } catch (RuntimeException $e) {
-                            // Decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.
-                            $output->warning('Could not link case '.$caseUuid.': '.$e->getMessage().' — skipping.');
-                            $this->logger->warning(
-                                'LinkInFlightContractDecisionsRepair: could not link case',
-                                ['caseUuid' => $caseUuid, 'error' => $e->getMessage()]
-                            );
-                            $errors++;
-                        }//end try
+                        $counts[$outcome]++;
                     }//end foreach
                 }//end foreach
             }
@@ -213,12 +170,91 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep
         $output->info(
             sprintf(
                 'Contract decision link complete: %d linked, %d skipped (already decided/historical), %d errors (leaf unavailable).',
-                $linked,
-                $skipped,
-                $errors
+                $counts[self::RESULT_LINKED],
+                $counts[self::RESULT_SKIPPED],
+                $counts[self::RESULT_ERROR]
             )
         );
     }//end run()
+
+    /**
+     * Link a single in-flight case forward to a decidesk Decision.
+     *
+     * @param object               $objectService The OpenRegister ObjectService.
+     * @param array<string, mixed> $case          The case row.
+     * @param string               $caseTypeSlug  The procest case type slug.
+     * @param IOutput              $output        The migration output interface.
+     *
+     * @return string One of the self::RESULT_* constants.
+     */
+    private function linkCase(
+        object $objectService,
+        array $case,
+        string $caseTypeSlug,
+        IOutput $output
+    ): string {
+        $caseUuid    = (string) ($case['uuid'] ?? $case['id'] ?? '');
+        $besluitRef  = (string) ($case['besluitRef'] ?? '');
+        $decisionRef = (string) ($case['decisionRef'] ?? '');
+        $status      = (string) ($case['status'] ?? '');
+        $isClosed    = in_array($status, ['closed', 'afgehandeld', 'gearchiveerd', 'afgesloten'], true);
+
+        if ($caseUuid === '') {
+            return self::RESULT_NONE;
+        }
+
+        // REQ-PDCD-007: if a Besluit is already recorded, keep it as
+        // the authoritative historical record — no link needed.
+        if ($besluitRef !== '') {
+            return self::RESULT_SKIPPED;
+        }
+
+        // Already linked to a decidesk Decision.
+        if ($decisionRef !== '') {
+            return self::RESULT_SKIPPED;
+        }
+
+        // Skip closed cases without a Besluit — they are historical,
+        // do not create dangling Decisions in decidesk.
+        if ($isClosed === true) {
+            return self::RESULT_SKIPPED;
+        }
+
+        // Open case with no decision yet — link forward to decidesk.
+        try {
+            $newDecisionRef = $this->delegationService->raiseContractDecision(
+                caseRef: $caseUuid,
+                contractRef: (string) ($case['contractRef'] ?? ''),
+                decisionType: $this->mapCaseTypeToDecisionType(caseTypeSlug: $caseTypeSlug),
+                subject: [
+                    'subjectRegister' => TenantSaasService::REGISTER,
+                    'subjectSchema'   => 'case',
+                    'subjectId'       => $caseUuid,
+                    'subjectLabel'    => (string) ($case['title'] ?? $caseTypeSlug),
+                ],
+                mandateContext: [],
+            );
+
+            // Persist the decisionRef on the case (does not alter the case outcome).
+            $objectService->saveObject(
+                object: array_merge($case, ['decisionRef' => $newDecisionRef]),
+                register: TenantSaasService::REGISTER,
+                schema: 'case',
+                uuid: $caseUuid,
+            );
+            $output->info('Linked case '.$caseUuid.' → decidesk Decision '.$newDecisionRef);
+        } catch (RuntimeException $e) {
+            // Decidesk leaf unavailable — warn + skip this case; do NOT fail the migration.
+            $output->warning('Could not link case '.$caseUuid.': '.$e->getMessage().' — skipping.');
+            $this->logger->warning(
+                'LinkInFlightContractDecisionsRepair: could not link case',
+                ['caseUuid' => $caseUuid, 'error' => $e->getMessage()]
+            );
+            return self::RESULT_ERROR;
+        }//end try
+
+        return self::RESULT_LINKED;
+    }//end linkCase()
 
     /**
      * Map a procest case type slug to a decidesk decisionType.

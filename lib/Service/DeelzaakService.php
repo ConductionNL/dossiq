@@ -105,13 +105,7 @@ class DeelzaakService
      */
     public function getSubCaseCounts(array $parentUuids): array
     {
-        $counts = [];
-        foreach ($parentUuids as $uuid) {
-            if (is_string($uuid) === true && $uuid !== '') {
-                $counts[$uuid] = 0;
-            }
-        }
-
+        $counts = $this->initialiseCountBuckets(parentUuids: $parentUuids);
         if ($counts === []) {
             return [];
         }
@@ -150,6 +144,25 @@ class DeelzaakService
 
         return $counts;
     }//end getSubCaseCounts()
+
+    /**
+     * Seed a zero count for every usable parent UUID, dropping non-string and empty entries.
+     *
+     * @param array<int, string> $parentUuids Parent case UUIDs to count.
+     *
+     * @return array<string, int> Zero-valued buckets, keyed by parent UUID.
+     */
+    private function initialiseCountBuckets(array $parentUuids): array
+    {
+        $counts = [];
+        foreach ($parentUuids as $uuid) {
+            if (is_string($uuid) === true && $uuid !== '') {
+                $counts[$uuid] = 0;
+            }
+        }
+
+        return $counts;
+    }//end initialiseCountBuckets()
 
     /**
      * Fetch the PARENT of a sub-case, by dereferencing the child's
@@ -253,6 +266,18 @@ class DeelzaakService
             return null;
         }
 
+        return $this->caseObjectToArray(obj: $obj);
+    }//end fetchCaseById()
+
+    /**
+     * Normalise an OpenRegister lookup result to an associative array.
+     *
+     * @param mixed $obj The raw lookup result.
+     *
+     * @return array<string, mixed>|null The case as an array, or null when it cannot be coerced.
+     */
+    private function caseObjectToArray(mixed $obj): ?array
+    {
         if ($obj === null) {
             return null;
         }
@@ -266,7 +291,7 @@ class DeelzaakService
         }
 
         return null;
-    }//end fetchCaseById()
+    }//end caseObjectToArray()
 
     /**
      * Validate that creating a sub-case is allowed.

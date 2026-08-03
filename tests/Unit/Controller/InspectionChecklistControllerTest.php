@@ -88,7 +88,7 @@ class InspectionChecklistControllerTest extends TestCase
         $this->controller = new InspectionChecklistController(
             appName: 'procest',
             request: $this->request,
-            inspectionChecklistService: $this->inspectionChecklistService,
+            checklistService: $this->inspectionChecklistService,
             userSession: $this->userSession,
             groupManager: $this->groupManager,
             logger: $this->logger,

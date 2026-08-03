@@ -183,26 +183,61 @@ class TemplateLibraryService
             throw new RuntimeException('Procest register not configured');
         }
 
+        // Create the case type.
+        $caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
+        $caseTypeData   = $template['caseType'] ?? [];
+        $caseType       = $objectService->saveObject(
+            object: $caseTypeData,
+            register: $register,
+            schema: $caseTypeSchema,
+        );
+        $caseTypeId     = $caseType->getUuid();
+
+        $created = $this->createTemplateEntities(
+            objectService: $objectService,
+            register: $register,
+            template: $template,
+            caseTypeId: $caseTypeId,
+        );
+
         $result = [
             'templateId' => $templateId,
-            'caseType'   => null,
+            'caseType'   => $caseTypeId,
+            'statuses'   => $created['statuses'],
+            'properties' => $created['properties'],
+            'documents'  => $created['documents'],
+            'decisions'  => $created['decisions'],
+            'roles'      => $created['roles'],
+        ];
+
+        $this->logger->info(
+            'Template activated: '.$templateId.' -> caseType '.$caseTypeId,
+            ['app' => Application::APP_ID]
+        );
+
+        return $result;
+    }//end activateTemplate()
+
+    /**
+     * Create every entity a template declares alongside its case type, each linked to the
+     * freshly-created caseType id.
+     *
+     * @param object               $objectService The OpenRegister object service
+     * @param string               $register      The Procest register slug
+     * @param array<string, mixed> $template      The loaded template definition
+     * @param string               $caseTypeId    UUID of the caseType just created
+     *
+     * @return array<string, array<int, string>> The created object ids, keyed by collection.
+     */
+    private function createTemplateEntities(object $objectService, string $register, array $template, string $caseTypeId): array
+    {
+        $created = [
             'statuses'   => [],
             'properties' => [],
             'documents'  => [],
             'decisions'  => [],
             'roles'      => [],
         ];
-
-        // Create the case type.
-        $caseTypeSchema     = $this->settingsService->getConfigValue('case_type_schema');
-        $caseTypeData       = $template['caseType'] ?? [];
-        $caseType           = $objectService->saveObject(
-            object: $caseTypeData,
-            register: $register,
-            schema: $caseTypeSchema,
-        );
-        $caseTypeId         = $caseType->getUuid();
-        $result['caseType'] = $caseTypeId;
 
         // Create status types.
         $statusTypeSchema = $this->settingsService->getConfigValue('status_type_schema');
@@ -213,7 +248,7 @@ class TemplateLibraryService
                 register: $register,
                 schema: $statusTypeSchema,
             );
-            $result['statuses'][] = $status->getUuid();
+            $created['statuses'][] = $status->getUuid();
         }
 
         // Create property definitions.
@@ -225,7 +260,7 @@ class TemplateLibraryService
                 register: $register,
                 schema: $propertySchema,
             );
-            $result['properties'][] = $prop->getUuid();
+            $created['properties'][] = $prop->getUuid();
         }
 
         // Create document types.
@@ -237,7 +272,7 @@ class TemplateLibraryService
                 register: $register,
                 schema: $docTypeSchema,
             );
-            $result['documents'][] = $doc->getUuid();
+            $created['documents'][] = $doc->getUuid();
         }
 
         // Create decision types.
@@ -249,7 +284,7 @@ class TemplateLibraryService
                 register: $register,
                 schema: $decisionTypeSchema,
             );
-            $result['decisions'][] = $dec->getUuid();
+            $created['decisions'][] = $dec->getUuid();
         }
 
         // Create role types.
@@ -261,14 +296,9 @@ class TemplateLibraryService
                 register: $register,
                 schema: $roleTypeSchema,
             );
-            $result['roles'][] = $role->getUuid();
+            $created['roles'][] = $role->getUuid();
         }
 
-        $this->logger->info(
-            'Template activated: '.$templateId.' -> caseType '.$caseTypeId,
-            ['app' => Application::APP_ID]
-        );
-
-        return $result;
-    }//end activateTemplate()
+        return $created;
+    }//end createTemplateEntities()
 }//end class

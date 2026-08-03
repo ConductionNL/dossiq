@@ -206,12 +206,11 @@ class TermijnController extends Controller
             return $denied;
         }
 
-        $body = $this->jsonBody();
-        $when = (string) ($body['aanvullingDatum'] ?? '');
+        $body     = $this->jsonBody();
+        $when     = (string) ($body['aanvullingDatum'] ?? '');
+        $resumeAt = null;
         if ($when !== '') {
             $resumeAt = new DateTimeImmutable($when);
-        } else {
-            $resumeAt = null;
         }
 
         try {
@@ -244,10 +243,20 @@ class TermijnController extends Controller
         $motivering   = (string) ($body['motivering'] ?? '');
         $newEinddatum = (string) ($body['newEinddatum'] ?? '');
         $documentLink = (string) ($body['documentLink'] ?? '');
-        $supervisorOverride = (bool) ($body['supervisorOverride'] ?? false);
+        $isSupervisor = (bool) ($body['supervisorOverride'] ?? false);
 
         try {
-            $row = $this->extension->requestExtension($id, $motivering, $newEinddatum, $documentLink, $supervisorOverride);
+            if ($isSupervisor === true) {
+                $row = $this->extension->requestSupervisorExtension(
+                    $id,
+                    $motivering,
+                    $newEinddatum,
+                    $documentLink
+                );
+                return new JSONResponse($row);
+            }
+
+            $row = $this->extension->requestExtension($id, $motivering, $newEinddatum, $documentLink);
             return new JSONResponse($row);
         } catch (Throwable $e) {
             return $this->error(e: $e, log: 'Verleng failed');
@@ -275,10 +284,9 @@ class TermijnController extends Controller
         $body         = $this->jsonBody();
         $when         = (string) ($body['voltooiDatum'] ?? '');
         $documentLink = (string) ($body['documentLink'] ?? '');
+        $completedAt  = null;
         if ($when !== '') {
             $completedAt = new DateTimeImmutable($when);
-        } else {
-            $completedAt = null;
         }
 
         try {

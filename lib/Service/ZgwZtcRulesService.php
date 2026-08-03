@@ -1024,35 +1024,16 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $errors[] = "At least one status type must be defined before publishing";
         }
 
-        if (count($statusTypes) > 0) {
-            $hasFinal = false;
-            foreach ($statusTypes as $row) {
-                if (is_array($row) === true && (bool) ($row['isFinal'] ?? false) === true) {
-                    $hasFinal = true;
-                    break;
-                }
-            }
-
-            if ($hasFinal === false) {
-                $errors[] = "At least one status type must be marked as final";
-            }
+        if (count($statusTypes) > 0 && $this->hasFinalStatusType(statusTypes: $statusTypes) === false) {
+            $errors[] = "At least one status type must be marked as final";
         }
 
-        try {
-            $caseTypes = $this->searchObjectsAsArrays(
-                objectService: $this->objectService,
-                register: $register,
-                schema: $caseSchema,
-                filters: ['id' => $caseTypeId],
-            );
-        } catch (\Throwable $e) {
-            $caseTypes = [];
-        }
-
-        $caseType = [];
-        if (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) {
-            $caseType = $caseTypes[0];
-        }
+        $caseType = $this->loadCaseTypeRow(
+            objectService: $this->objectService,
+            register: $register,
+            schema: $caseSchema,
+            caseTypeId: $caseTypeId,
+        );
 
         $validFrom = (string) ($caseType['validFrom'] ?? '');
         if ($validFrom === '') {
@@ -1061,6 +1042,54 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         return $errors;
     }//end validatePublish()
+
+    /**
+     * Test whether any of the supplied statusType rows is marked final.
+     *
+     * @param array<int, mixed> $statusTypes The statusType rows for a case type.
+     *
+     * @return bool True when at least one row carries isFinal.
+     */
+    private function hasFinalStatusType(array $statusTypes): bool
+    {
+        foreach ($statusTypes as $row) {
+            if (is_array($row) === true && (bool) ($row['isFinal'] ?? false) === true) {
+                return true;
+            }
+        }
+
+        return false;
+    }//end hasFinalStatusType()
+
+    /**
+     * Load the caseType row itself, returning an empty array when it cannot be read.
+     *
+     * @param object $objectService The OpenRegister object service.
+     * @param string $register      Register slug.
+     * @param string $schema        Case type schema slug.
+     * @param string $caseTypeId    Case type id.
+     *
+     * @return array<string, mixed> The case type row, or an empty array.
+     */
+    private function loadCaseTypeRow(object $objectService, string $register, string $schema, string $caseTypeId): array
+    {
+        try {
+            $caseTypes = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['id' => $caseTypeId],
+            );
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        if (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) {
+            return $caseTypes[0];
+        }
+
+        return [];
+    }//end loadCaseTypeRow()
 
     /**
      * Validate a caseType can be safely deleted (no active cases).
@@ -1104,36 +1133,15 @@ class ZgwZtcRulesService extends ZgwRulesBase
             return $default;
         }
 
-        $statusSchema = (string) $this->settingsService->getConfigValue(key: 'status_type_schema');
-        try {
-            $finalStatusTypes = $this->searchObjectsAsArrays(
-                objectService: $this->objectService,
-                register: $register,
-                schema: $statusSchema,
-                filters: ['caseType' => $caseTypeId, 'isFinal' => true],
-            );
-        } catch (\Throwable $e) {
-            $finalStatusTypes = [];
-        }
+        $finalSlugs = $this->loadFinalStatusSlugs(
+            objectService: $this->objectService,
+            register: $register,
+            caseTypeId: $caseTypeId,
+        );
 
-        $finalSlugs = [];
-        foreach ($finalStatusTypes as $row) {
-            if (is_array($row) === true && isset($row['id']) === true) {
-                $finalSlugs[] = (string) $row['id'];
-            }
-        }
-
-        $activeCount = 0;
-        $closedCount = 0;
-        foreach ($cases as $case) {
-            $caseStatus = (string) ($case['status'] ?? '');
-            if ($caseStatus !== '' && in_array($caseStatus, $finalSlugs, true) === true) {
-                $closedCount++;
-                continue;
-            }
-
-            $activeCount++;
-        }
+        $tally       = $this->tallyCaseClosure(cases: $cases, finalSlugs: $finalSlugs);
+        $activeCount = $tally['active'];
+        $closedCount = $tally['closed'];
 
         if ($activeCount > 0) {
             return [
@@ -1150,4 +1158,63 @@ class ZgwZtcRulesService extends ZgwRulesBase
             'message'              => "Deleting will affect $closedCount closed case(s). Confirm to proceed.",
         ];
     }//end validateDeletion()
+
+    /**
+     * Load the ids of the final statusTypes of a case type, or an empty list when unreadable.
+     *
+     * @param object $objectService The OpenRegister object service.
+     * @param string $register      Register slug.
+     * @param string $caseTypeId    Case type id.
+     *
+     * @return array<int, string> The final statusType ids.
+     */
+    private function loadFinalStatusSlugs(object $objectService, string $register, string $caseTypeId): array
+    {
+        $statusSchema = (string) $this->settingsService->getConfigValue(key: 'status_type_schema');
+        try {
+            $finalStatusTypes = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $statusSchema,
+                filters: ['caseType' => $caseTypeId, 'isFinal' => true],
+            );
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $finalSlugs = [];
+        foreach ($finalStatusTypes as $row) {
+            if (is_array($row) === true && isset($row['id']) === true) {
+                $finalSlugs[] = (string) $row['id'];
+            }
+        }
+
+        return $finalSlugs;
+    }//end loadFinalStatusSlugs()
+
+    /**
+     * Split a case type's cases into closed (their status is one of the final statusTypes) and
+     * active (everything else, including cases with no status at all).
+     *
+     * @param array<int, mixed>  $cases      The cases that use the case type.
+     * @param array<int, string> $finalSlugs The final statusType ids.
+     *
+     * @return array{active: int, closed: int} The tallies.
+     */
+    private function tallyCaseClosure(array $cases, array $finalSlugs): array
+    {
+        $activeCount = 0;
+        $closedCount = 0;
+        foreach ($cases as $case) {
+            $caseStatus = (string) ($case['status'] ?? '');
+            if ($caseStatus !== '' && in_array($caseStatus, $finalSlugs, true) === true) {
+                $closedCount++;
+                continue;
+            }
+
+            $activeCount++;
+        }
+
+        return ['active' => $activeCount, 'closed' => $closedCount];
+    }//end tallyCaseClosure()
 }//end class

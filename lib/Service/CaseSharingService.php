@@ -64,11 +64,11 @@ class CaseSharingService
     /**
      * Constructor for the CaseSharingService.
      *
-     * @param SettingsService         $settingsService         The settings service
-     * @param IAppManager             $appManager              The app manager
-     * @param ContainerInterface      $container               The DI container
-     * @param LoggerInterface         $logger                  The logger
-     * @param TenantAuditTrailService $tenantAuditTrailService Audit-trail emitter for cross-org actions
+     * @param SettingsService         $settingsService   The settings service
+     * @param IAppManager             $appManager        The app manager
+     * @param ContainerInterface      $container         The DI container
+     * @param LoggerInterface         $logger            The logger
+     * @param TenantAuditTrailService $auditTrailService Audit-trail emitter for cross-org actions
      *
      * @return void
      */
@@ -77,7 +77,7 @@ class CaseSharingService
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
-        private TenantAuditTrailService $tenantAuditTrailService,
+        private TenantAuditTrailService $auditTrailService,
     ) {
     }//end __construct()
 
@@ -577,9 +577,9 @@ class CaseSharingService
         string $permissionLevel,
         string $createdBy,
     ): array {
-        $federationShareService = $this->getFederationShareService();
-        $objectService          = $this->getObjectService();
-        if ($federationShareService === null || $objectService === null) {
+        $federationService = $this->getFederationShareService();
+        $objectService     = $this->getObjectService();
+        if ($federationService === null || $objectService === null) {
             return ['error' => 'Federated case sharing requires the OpenRegister federation leaf'];
         }
 
@@ -658,7 +658,7 @@ class CaseSharingService
         $shareUuid = (string) ($resultData['id'] ?? $resultData['uuid'] ?? '');
 
         try {
-            $federatedShare = $federationShareService->createOutgoingShare(
+            $federatedShare = $federationService->createOutgoingShare(
                 params: [
                     'scope'       => 'object',
                     'register'    => (string) $register,
@@ -685,7 +685,7 @@ class CaseSharingService
             $resultData = $resultData->jsonSerialize();
         }
 
-        $this->tenantAuditTrailService->emit(
+        $this->auditTrailService->emit(
             [
                 'action'   => 'federated_case_share_created',
                 'actor'    => $createdBy,
@@ -717,9 +717,9 @@ class CaseSharingService
      */
     public function revokeFederatedShare(string $shareId, string $userId): array
     {
-        $federationShareService = $this->getFederationShareService();
-        $objectService          = $this->getObjectService();
-        if ($federationShareService === null || $objectService === null) {
+        $federationService = $this->getFederationShareService();
+        $objectService     = $this->getObjectService();
+        if ($federationService === null || $objectService === null) {
             return ['error' => 'Federated case sharing requires the OpenRegister federation leaf'];
         }
 
@@ -734,20 +734,16 @@ class CaseSharingService
             return ['error' => 'Federated share not found'];
         }
 
-        // NOTE: kept as if/else deliberately. Hoisting the default assignment
-        // lets PHPStan narrow $shareData to the empty-array shape of
-        // ObjectService::find()'s array branch, which then reports the
-        // 'caseId'/'remoteCloudId' reads below as non-existent offsets.
-        if (is_array($shareObj) === true) {
-            $shareData = $shareObj;
-        } else {
-            $shareData = $shareObj->jsonSerialize();
-        }
+        // NOTE: normalised through a helper deliberately. Hoisting a default
+        // assignment inline lets PHPStan narrow $shareData to the empty-array
+        // shape of ObjectService::find()'s array branch, which then reports
+        // the 'caseId'/'remoteCloudId' reads below as non-existent offsets.
+        $shareData = $this->normalizeToArray(value: $shareObj);
 
         $federationShareId = $shareData['federationShareId'] ?? null;
         if ($federationShareId !== null) {
             try {
-                $federationShareService->setStatus(id: (int) $federationShareId, status: 'revoked');
+                $federationService->setStatus(id: (int) $federationShareId, status: 'revoked');
             } catch (\Throwable $e) {
                 $this->logger->error(
                     'CaseSharingService: OR federated-share revoke failed',
@@ -763,7 +759,7 @@ class CaseSharingService
 
         $result = $objectService->saveObject(object: $shareData, register: (int) $register, schema: (int) $shareSchema);
 
-        $this->tenantAuditTrailService->emit(
+        $this->auditTrailService->emit(
             [
                 'action'   => 'federated_case_share_revoked',
                 'actor'    => $userId,
@@ -858,6 +854,26 @@ class CaseSharingService
             return null;
         }
     }//end getFederationShareService()
+
+    /**
+     * Normalize an OpenRegister return value (array or ObjectEntity) to an array.
+     *
+     * @param mixed $value The value returned by the ObjectService
+     *
+     * @return array<string, mixed> The value as a plain array
+     */
+    private function normalizeToArray(mixed $value): array
+    {
+        if (is_array($value) === true) {
+            return $value;
+        }
+
+        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+            return (array) $value->jsonSerialize();
+        }
+
+        return [];
+    }//end normalizeToArray()
 
     /**
      * Resolve the ObjectService from the DI container.

@@ -152,7 +152,8 @@ class AdvisoryCommitteeService
             key: 'bezwaaradviescommissie_schema'
         );
 
-        if ($register === '' || $requestSchema === '' || $committeeSchema === '') {
+        $required = [$register, $requestSchema, $committeeSchema];
+        if (in_array('', $required, true) === true) {
             throw new RuntimeException(
                 'BAC schemas are not configured'
             );
@@ -254,128 +255,43 @@ class AdvisoryCommitteeService
             throw new RuntimeException('Advice request not found');
         }
 
-        $from    = (string) ($current['status'] ?? 'assigned');
-        $allowed = self::ALLOWED_TRANSITIONS[$from] ?? [];
-
-        if (in_array($newStatus, $allowed, true) === false) {
-            throw new RuntimeException(
-                'Transition from '.$from.' to '.$newStatus.' is not permitted'
-            );
-        }
+        $from = (string) ($current['status'] ?? 'assigned');
+        $this->assertTransitionAllowed(from: $from, newStatus: $newStatus);
 
         // Guard: assigned → in-deliberation requires panel and
         // independence (REQ-BAC-2).
         if ($from === 'assigned' && $newStatus === 'in-deliberation') {
-            $panel = (array) ($current['panel'] ?? []);
-            if ($panel === []) {
-                throw new RuntimeException(
-                    'Panel must be set before deliberation can start'
-                );
-            }
-
-            $independence = $this->checkPanelIndependence(
-                bezwaarId: (string) ($current['bezwaar'] ?? ''),
-                panel: $panel,
+            $this->guardDeliberationStart(
+                objectService: $objectService,
+                current: $current,
+                requestId: $requestId,
+                register: $register,
+                requestSchema: $requestSchema,
             );
-
-            if ($independence['ok'] === false) {
-                // Persist the failure to the audit trail before raising.
-                $audit = $this->appendAudit(
-                    existing: (array) ($current['auditTrail'] ?? []),
-                    event: 'independence-check-failed',
-                    payload: [
-                        'conflictingMember' => $independence['member'],
-                        'reason'            => $independence['reason'],
-                    ],
-                );
-                try {
-                    $objectService->saveObject(
-                        object: ['auditTrail' => $audit],
-                        register: $register,
-                        schema: $requestSchema,
-                        uuid: (string) $requestId
-                    );
-                } catch (\Throwable $auditError) {
-                    $this->logger->error(
-                        'Procest BAC: failed to write audit on '
-                        .'independence failure: '
-                        .$auditError->getMessage()
-                    );
-                }
-
-                throw new GuardFailedException(
-                    failedGuards: [],
-                    message: 'Panel member conflict (Awb Art. 7:13 lid 3): '
-                    .$independence['reason']
-                );
-            }//end if
-        }//end if
+        }
 
         // Guard: in-deliberation → advice-issued requires the structured
         // advice content (REQ-BAC-4).
         $adviceDecisionRef = '';
         if ($from === 'in-deliberation' && $newStatus === 'advice-issued') {
-            $merged = array_merge($current, $payload);
-            foreach (self::REQUIRED_ADVICE_FIELDS as $field) {
-                $value = $merged[$field] ?? null;
-                if ($value === null || $value === '' || $value === []) {
-                    throw new RuntimeException(
-                        'Advice cannot be issued: missing required field '
-                        .$field
-                    );
-                }
-            }
-
-            // REQ-PDRD-001 / REQ-PDRD-002: the BAC advice is *made* in decidesk.
-            // After the procest domain guards (panel-independence above,
-            // required-fields here) pass, raise a decidesk `advice` Decision
-            // and persist its ref. Fail CLOSED — never author the advice
-            // outcome locally as a fallback.
-            try {
-                $adviceDecisionRef = $this->adviceDelegation->raiseAdviceDecision(
-                    subjectSchema: 'bacAdviceRequest',
-                    subjectId: (string) $requestId,
-                    payload: [
-                        'subjectRegister'   => $register,
-                        'externalReference' => (string) ($current['bezwaar'] ?? $requestId),
-                        'subjectLabel'      => (string) ($merged['conclusion'] ?? 'BAC-advies'),
-                        'adviceType'        => (string) ($merged['recommendation'] ?? ''),
-                        'question'          => (string) ($merged['conclusion'] ?? ''),
-                    ],
-                );
-            } catch (RuntimeException $e) {
-                $this->logger->error(
-                    'Procest BAC: decidesk advice Decision raise failed — failing closed: '
-                    .$e->getMessage()
-                );
-                throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
-            }
-        }//end if
+            $adviceDecisionRef = $this->issueAdviceDecision(
+                current: $current,
+                payload: $payload,
+                requestId: $requestId,
+                register: $register,
+            );
+        }
 
         $userId = $this->resolveUserId();
 
         // Compose the update.
-        $update           = $payload;
-        $update['status'] = $newStatus;
-        if ($adviceDecisionRef !== '') {
-            $update['decisionRef'] = $adviceDecisionRef;
-        }
-
-        if ($newStatus === 'advice-issued' || $newStatus === 'niet-ontvankelijk') {
-            $update['adviceIssuedAt'] = (new DateTimeImmutable())
-                ->format(DateTimeInterface::ATOM);
-            $auditEvent           = 'advice-signed-by-chair';
-            $auditPayload         = [
-                'chair'             => $userId,
-                'signatureEvidence' => $update['signatureEvidence'] ?? ($current['signatureEvidence'] ?? null),
-                'conclusion'        => $update['conclusion'] ?? ($current['conclusion'] ?? null),
-            ];
-            $update['auditTrail'] = $this->appendAudit(
-                existing: (array) ($current['auditTrail'] ?? []),
-                event: $auditEvent,
-                payload: $auditPayload,
-            );
-        }
+        $update = $this->buildTransitionUpdate(
+            payload: $payload,
+            current: $current,
+            newStatus: $newStatus,
+            adviceDecisionRef: $adviceDecisionRef,
+            userId: $userId,
+        );
 
         try {
             return $objectService->saveObject(
@@ -491,6 +407,199 @@ class AdvisoryCommitteeService
     }//end recordCouncilDeviation()
 
     /**
+     * Assert that the requested advice-status transition is permitted by the
+     * one-way lifecycle (REQ-BAC-3).
+     *
+     * @param string $from      Current advice-request status
+     * @param string $newStatus Requested target status
+     *
+     * @return void
+     *
+     * @throws RuntimeException When the transition is not permitted
+     */
+    private function assertTransitionAllowed(string $from, string $newStatus): void
+    {
+        $allowed = self::ALLOWED_TRANSITIONS[$from] ?? [];
+
+        if (in_array($newStatus, $allowed, true) === false) {
+            throw new RuntimeException(
+                'Transition from '.$from.' to '.$newStatus.' is not permitted'
+            );
+        }
+    }//end assertTransitionAllowed()
+
+    /**
+     * Guard the assigned → in-deliberation transition (REQ-BAC-2): a panel
+     * must be set and every member must be independent. An independence
+     * failure is appended to the audit trail before the guard raises.
+     *
+     * @param object               $objectService OpenRegister object service
+     * @param array<string, mixed> $current       Current advice-request record
+     * @param string               $requestId     Advice request UUID
+     * @param string               $register      Register identifier
+     * @param string               $requestSchema Advice-request schema identifier
+     *
+     * @return void
+     *
+     * @throws RuntimeException     When no panel has been set
+     * @throws GuardFailedException When a panel member is not independent
+     */
+    private function guardDeliberationStart(
+        object $objectService,
+        array $current,
+        string $requestId,
+        string $register,
+        string $requestSchema
+    ): void {
+        $panel = (array) ($current['panel'] ?? []);
+        if ($panel === []) {
+            throw new RuntimeException(
+                'Panel must be set before deliberation can start'
+            );
+        }
+
+        $independence = $this->checkPanelIndependence(
+            bezwaarId: (string) ($current['bezwaar'] ?? ''),
+            panel: $panel,
+        );
+
+        if ($independence['ok'] !== false) {
+            return;
+        }
+
+        // Persist the failure to the audit trail before raising.
+        $audit = $this->appendAudit(
+            existing: (array) ($current['auditTrail'] ?? []),
+            event: 'independence-check-failed',
+            payload: [
+                'conflictingMember' => $independence['member'],
+                'reason'            => $independence['reason'],
+            ],
+        );
+
+        try {
+            $objectService->saveObject(
+                object: ['auditTrail' => $audit],
+                register: $register,
+                schema: $requestSchema,
+                uuid: (string) $requestId
+            );
+        } catch (\Throwable $auditError) {
+            $this->logger->error(
+                'Procest BAC: failed to write audit on '
+                .'independence failure: '
+                .$auditError->getMessage()
+            );
+        }
+
+        throw new GuardFailedException(
+            failedGuards: [],
+            message: 'Panel member conflict (Awb Art. 7:13 lid 3): '
+            .$independence['reason']
+        );
+    }//end guardDeliberationStart()
+
+    /**
+     * Validate the structured advice content (REQ-BAC-4) and raise the
+     * decidesk `advice` Decision (REQ-PDRD-001 / REQ-PDRD-002).
+     *
+     * The BAC advice is *made* in decidesk; this fails CLOSED and never
+     * authors the advice outcome locally as a fallback.
+     *
+     * @param array<string, mixed> $current   Current advice-request record
+     * @param array<string, mixed> $payload   Caller-supplied patch
+     * @param string               $requestId Advice request UUID
+     * @param string               $register  Register identifier
+     *
+     * @return string The decidesk Decision reference
+     *
+     * @throws RuntimeException When a required advice field is missing or the
+     *                          decision service is unavailable
+     */
+    private function issueAdviceDecision(
+        array $current,
+        array $payload,
+        string $requestId,
+        string $register
+    ): string {
+        $merged = array_merge($current, $payload);
+        foreach (self::REQUIRED_ADVICE_FIELDS as $field) {
+            $value = $merged[$field] ?? null;
+            if (in_array($value, [null, '', []], true) === true) {
+                throw new RuntimeException(
+                    'Advice cannot be issued: missing required field '
+                    .$field
+                );
+            }
+        }
+
+        try {
+            return $this->adviceDelegation->raiseAdviceDecision(
+                subjectSchema: 'bacAdviceRequest',
+                subjectId: (string) $requestId,
+                payload: [
+                    'subjectRegister'   => $register,
+                    'externalReference' => (string) ($current['bezwaar'] ?? $requestId),
+                    'subjectLabel'      => (string) ($merged['conclusion'] ?? 'BAC-advies'),
+                    'adviceType'        => (string) ($merged['recommendation'] ?? ''),
+                    'question'          => (string) ($merged['conclusion'] ?? ''),
+                ],
+            );
+        } catch (RuntimeException $e) {
+            $this->logger->error(
+                'Procest BAC: decidesk advice Decision raise failed — failing closed: '
+                .$e->getMessage()
+            );
+            throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
+        }//end try
+    }//end issueAdviceDecision()
+
+    /**
+     * Compose the advice-request patch for a lifecycle transition, stamping
+     * the issue timestamp and chair-signature audit entry on terminal states.
+     *
+     * @param array<string, mixed> $payload           Caller-supplied patch
+     * @param array<string, mixed> $current           Current advice-request record
+     * @param string               $newStatus         Target status
+     * @param string               $adviceDecisionRef decidesk Decision reference, or ''
+     * @param string               $userId            Acting user UID
+     *
+     * @return array<string, mixed> The patch to persist
+     */
+    private function buildTransitionUpdate(
+        array $payload,
+        array $current,
+        string $newStatus,
+        string $adviceDecisionRef,
+        string $userId
+    ): array {
+        $update           = $payload;
+        $update['status'] = $newStatus;
+        if ($adviceDecisionRef !== '') {
+            $update['decisionRef'] = $adviceDecisionRef;
+        }
+
+        $terminal = ['advice-issued', 'niet-ontvankelijk'];
+        if (in_array($newStatus, $terminal, true) === false) {
+            return $update;
+        }
+
+        $update['adviceIssuedAt'] = (new DateTimeImmutable())
+            ->format(DateTimeInterface::ATOM);
+        $update['auditTrail']     = $this->appendAudit(
+            existing: (array) ($current['auditTrail'] ?? []),
+            event: 'advice-signed-by-chair',
+            payload: [
+                'chair'             => $userId,
+                'signatureEvidence' => $update['signatureEvidence'] ?? ($current['signatureEvidence'] ?? null),
+                'conclusion'        => $update['conclusion'] ?? ($current['conclusion'] ?? null),
+            ],
+        );
+
+        return $update;
+    }//end buildTransitionUpdate()
+
+    /**
      * Member-independence check per Awb Art. 7:13(3).
      *
      * Compares each panel member UID against the `createdBy` (steller) of
@@ -508,13 +617,19 @@ class AdvisoryCommitteeService
         string $bezwaarId,
         array $panel
     ): array {
+        $clear = [
+            'ok'     => true,
+            'member' => null,
+            'reason' => null,
+        ];
+
         if ($bezwaarId === '' || $panel === []) {
-            return ['ok' => true, 'member' => null, 'reason' => null];
+            return $clear;
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            return ['ok' => true, 'member' => null, 'reason' => null];
+            return $clear;
         }
 
         $register        = $this->settingsService->getConfigValue(key: 'register');
@@ -528,69 +643,39 @@ class AdvisoryCommitteeService
             key: 'decision_schema'
         );
 
-        if ($objectionSchema === '' || $decisionSchema === '') {
+        if (in_array('', [$objectionSchema, $decisionSchema], true) === true) {
             // Unable to resolve; do not block the transition, but log.
             $this->logger->info(
                 'Procest BAC: objection/decision schemas not configured; '
                 .'skipping independence check'
             );
-            return ['ok' => true, 'member' => null, 'reason' => null];
+            return $clear;
         }
 
         try {
-            // Resolve the underlying procest case via the bezwaar entity
-            // when the bezwaar_schema is registered. When unavailable
-            // (e.g. legacy callers passing a case UUID directly), fall back
-            // to treating the input as the case id.
-            $caseId = $bezwaarId;
-            if ($bezwaarSchema !== '') {
-                $bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
-                if (is_array($bezwaar) === true) {
-                    $caseId = (string) ($bezwaar['case'] ?? $bezwaarId);
-                }
-            }
-
-            $objections = $this->searchObjectsAsArrays(
+            $steller = $this->resolveContestedDecisionAuthor(
                 objectService: $objectService,
+                bezwaarId: $bezwaarId,
                 register: $register,
-                schema: $objectionSchema,
-                filters: ['case' => $caseId]
-            );
-            $objection  = null;
-            if (is_array($objections) === true && $objections !== []) {
-                $objection = $objections[0];
-            }
-
-            if (is_array($objection) === false) {
-                return ['ok' => true, 'member' => null, 'reason' => null];
-            }
-
-            $contestedId = (string) ($objection['contestedDecision'] ?? '');
-            if ($contestedId === '') {
-                return ['ok' => true, 'member' => null, 'reason' => null];
-            }
-
-            $decision = $objectService->find($contestedId, register: $register, schema: $decisionSchema);
-            if (is_array($decision) === false) {
-                return ['ok' => true, 'member' => null, 'reason' => null];
-            }
-
-            $steller = (string) (
-                $decision['@self']['owner'] ?? ($decision['createdBy'] ?? ($decision['steller'] ?? ''))
+                bezwaarSchema: $bezwaarSchema,
+                objectionSchema: $objectionSchema,
+                decisionSchema: $decisionSchema,
             );
             if ($steller === '') {
-                return ['ok' => true, 'member' => null, 'reason' => null];
+                return $clear;
             }
 
-            foreach ($panel as $memberUid) {
-                if ((string) $memberUid === $steller) {
-                    return [
-                        'ok'     => false,
-                        'member' => (string) $memberUid,
-                        'reason' => 'Lid was betrokken bij het bestreden '
-                                    .'besluit (Awb Art. 7:13 lid 3)',
-                    ];
-                }
+            $conflicting = $this->findConflictingPanelMember(
+                panel: $panel,
+                steller: $steller,
+            );
+            if ($conflicting !== null) {
+                return [
+                    'ok'     => false,
+                    'member' => $conflicting,
+                    'reason' => 'Lid was betrokken bij het bestreden '
+                                .'besluit (Awb Art. 7:13 lid 3)',
+                ];
             }
         } catch (\Throwable $e) {
             $this->logger->error(
@@ -599,8 +684,95 @@ class AdvisoryCommitteeService
             // Fail-open here is intentional: do not block on infra issues.
         }//end try
 
-        return ['ok' => true, 'member' => null, 'reason' => null];
+        return $clear;
     }//end checkPanelIndependence()
+
+    /**
+     * Resolve the steller (author) of the primair besluit contested by the
+     * objection filed on the bezwaar's underlying procest case.
+     *
+     * Resolution chain: bezwaar (lifecycle) → bezwaar.case (procest case) →
+     * objection (filed on that case) → objection.contestedDecision →
+     * decision owner / createdBy / steller.
+     *
+     * @param object $objectService   OpenRegister object service
+     * @param string $bezwaarId       The bezwaar (lifecycle) UUID
+     * @param string $register        Register identifier
+     * @param string $bezwaarSchema   Bezwaar schema identifier, may be ''
+     * @param string $objectionSchema Objection schema identifier
+     * @param string $decisionSchema  Decision schema identifier
+     *
+     * @return string The steller UID, or '' when it cannot be resolved
+     */
+    private function resolveContestedDecisionAuthor(
+        object $objectService,
+        string $bezwaarId,
+        string $register,
+        string $bezwaarSchema,
+        string $objectionSchema,
+        string $decisionSchema
+    ): string {
+        // Resolve the underlying procest case via the bezwaar entity
+        // when the bezwaar_schema is registered. When unavailable
+        // (e.g. legacy callers passing a case UUID directly), fall back
+        // to treating the input as the case id.
+        $caseId = $bezwaarId;
+        if ($bezwaarSchema !== '') {
+            $bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
+            if (is_array($bezwaar) === true) {
+                $caseId = (string) ($bezwaar['case'] ?? $bezwaarId);
+            }
+        }
+
+        $objections = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $objectionSchema,
+            filters: ['case' => $caseId]
+        );
+        $objection  = null;
+        if (is_array($objections) === true && $objections !== []) {
+            $objection = $objections[0];
+        }
+
+        if (is_array($objection) === false) {
+            return '';
+        }
+
+        $contestedId = (string) ($objection['contestedDecision'] ?? '');
+        if ($contestedId === '') {
+            return '';
+        }
+
+        $decision = $objectService->find($contestedId, register: $register, schema: $decisionSchema);
+        if (is_array($decision) === false) {
+            return '';
+        }
+
+        return (string) (
+            $decision['@self']['owner'] ?? ($decision['createdBy'] ?? ($decision['steller'] ?? ''))
+        );
+    }//end resolveContestedDecisionAuthor()
+
+    /**
+     * Find the first panel member that is not independent from the steller.
+     *
+     * @param array<string> $panel   Panel member UIDs
+     * @param string        $steller UID of the contested decision's author
+     *
+     * @return string|null The conflicting member UID, or null when the panel
+     *                     is independent
+     */
+    private function findConflictingPanelMember(array $panel, string $steller): ?string
+    {
+        foreach ($panel as $memberUid) {
+            if ((string) $memberUid === $steller) {
+                return (string) $memberUid;
+            }
+        }
+
+        return null;
+    }//end findConflictingPanelMember()
 
     /**
      * Append an entry to the bac_audit_trail array.

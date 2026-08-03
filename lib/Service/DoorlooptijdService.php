@@ -110,6 +110,26 @@ class DoorlooptijdService
      */
     public function computeKpi(array $cases, int $atRiskDays): array
     {
+        $bands = $this->countOpenBands(cases: $cases, atRiskDays: $atRiskDays);
+
+        return [
+            'open'          => $bands['open'],
+            'atRisk'        => $bands['atRisk'],
+            'overdue'       => $bands['overdue'],
+            'onTimePercent' => $this->computeOnTimePercent(cases: $cases),
+        ];
+    }//end computeKpi()
+
+    /**
+     * Count open cases split over the on-time / at-risk / overdue bands.
+     *
+     * @param array<int, array<string, mixed>> $cases      Enriched cases.
+     * @param int                              $atRiskDays Threshold for at-risk band.
+     *
+     * @return array{open: int, atRisk: int, overdue: int}
+     */
+    private function countOpenBands(array $cases, int $atRiskDays): array
+    {
         $open    = 0;
         $atRisk  = 0;
         $overdue = 0;
@@ -131,6 +151,22 @@ class DoorlooptijdService
             }
         }//end foreach
 
+        return [
+            'open'    => $open,
+            'atRisk'  => $atRisk,
+            'overdue' => $overdue,
+        ];
+    }//end countOpenBands()
+
+    /**
+     * Percentage of cases closed in the last 12 months that met their deadline.
+     *
+     * @param array<int, array<string, mixed>> $cases Enriched cases.
+     *
+     * @return int The on-time percentage; 100 when nothing closed in window.
+     */
+    private function computeOnTimePercent(array $cases): int
+    {
         // Closed cases in the last 12 months.
         $cutoff       = (new DateTimeImmutable('-12 months'))->format('Y-m-d');
         $closedOnTime = 0;
@@ -156,19 +192,13 @@ class DoorlooptijdService
             $closedLate++;
         }//end foreach
 
-        $totalClosed   = ($closedOnTime + $closedLate);
-        $onTimePercent = 100;
-        if ($totalClosed !== 0) {
-            $onTimePercent = (int) round(($closedOnTime / $totalClosed) * 100);
+        $totalClosed = ($closedOnTime + $closedLate);
+        if ($totalClosed === 0) {
+            return 100;
         }
 
-        return [
-            'open'          => $open,
-            'atRisk'        => $atRisk,
-            'overdue'       => $overdue,
-            'onTimePercent' => $onTimePercent,
-        ];
-    }//end computeKpi()
+        return (int) round(($closedOnTime / $totalClosed) * 100);
+    }//end computeOnTimePercent()
 
     /**
      * Monthly on-time / late counts over the requested period.
@@ -240,24 +270,7 @@ class DoorlooptijdService
      */
     public function computeCaseTypeBreakdown(array $cases, array $caseTypes): array
     {
-        $accum = [];
-        foreach ($cases as $caseData) {
-            if ($caseData['_isOpen'] === true || $caseData['_throughputDays'] === null) {
-                continue;
-            }
-
-            $caseTypeId = (string) ($caseData['caseType'] ?? '');
-            if ($caseTypeId === '') {
-                continue;
-            }
-
-            if (isset($accum[$caseTypeId]) === false) {
-                $accum[$caseTypeId] = ['sum' => 0, 'count' => 0];
-            }
-
-            $accum[$caseTypeId]['sum'] += $caseData['_throughputDays'];
-            $accum[$caseTypeId]['count']++;
-        }
+        $accum = $this->accumulateThroughputByCaseType(cases: $cases);
 
         $caseTypeIndex = [];
         foreach ($caseTypes as $caseType) {
@@ -289,6 +302,37 @@ class DoorlooptijdService
 
         return $out;
     }//end computeCaseTypeBreakdown()
+
+    /**
+     * Sum and count closed-case throughput days per case-type id.
+     *
+     * @param array<int, array<string, mixed>> $cases Enriched cases.
+     *
+     * @return array<string, array{sum: int, count: int}>
+     */
+    private function accumulateThroughputByCaseType(array $cases): array
+    {
+        $accum = [];
+        foreach ($cases as $caseData) {
+            if ($caseData['_isOpen'] === true || $caseData['_throughputDays'] === null) {
+                continue;
+            }
+
+            $caseTypeId = (string) ($caseData['caseType'] ?? '');
+            if ($caseTypeId === '') {
+                continue;
+            }
+
+            if (isset($accum[$caseTypeId]) === false) {
+                $accum[$caseTypeId] = ['sum' => 0, 'count' => 0];
+            }
+
+            $accum[$caseTypeId]['sum'] += $caseData['_throughputDays'];
+            $accum[$caseTypeId]['count']++;
+        }//end foreach
+
+        return $accum;
+    }//end accumulateThroughputByCaseType()
 
     /**
      * Build the sortable list of open cases with RAG status.
@@ -353,6 +397,29 @@ class DoorlooptijdService
     public function enrichCases(array $cases, array $caseTypes): array
     {
         $today         = new DateTimeImmutable('today');
+        $caseTypeByKey = $this->indexCaseTypesByKey(caseTypes: $caseTypes);
+
+        $enriched = [];
+        foreach ($cases as $caseData) {
+            $enriched[] = $this->enrichCase(
+                caseData: $caseData,
+                caseTypeByKey: $caseTypeByKey,
+                today: $today,
+            );
+        }
+
+        return $enriched;
+    }//end enrichCases()
+
+    /**
+     * Index case-types by both their id and their slug.
+     *
+     * @param array<int, array<string, mixed>> $caseTypes Raw case-types.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function indexCaseTypesByKey(array $caseTypes): array
+    {
         $caseTypeByKey = [];
         foreach ($caseTypes as $caseType) {
             $id   = (string) ($caseType['id'] ?? '');
@@ -364,57 +431,109 @@ class DoorlooptijdService
             if ($slug !== '') {
                 $caseTypeByKey[$slug] = $caseType;
             }
-        }
-
-        $enriched = [];
-        foreach ($cases as $caseData) {
-            $endDate   = $this->normaliseDate(value: $caseData['endDate'] ?? null);
-            $startDate = $this->normaliseDate(value: $caseData['startDate'] ?? null);
-            $isOpen    = ($endDate === null);
-
-            $caseType      = null;
-            $caseTypeTitle = '';
-            $caseTypeKey   = (string) ($caseData['caseType'] ?? '');
-            if ($caseTypeKey !== '' && isset($caseTypeByKey[$caseTypeKey]) === true) {
-                $caseType      = $caseTypeByKey[$caseTypeKey];
-                $caseTypeTitle = (string) ($caseType['title'] ?? '');
-            }
-
-            $deadline = $this->normaliseDate(value: $caseData['deadline'] ?? null);
-            if ($deadline === null && $startDate !== null && $caseType !== null) {
-                $deadline = $this->deriveDeadline(
-                    startDate: $startDate,
-                    processingDeadline: (string) ($caseType['processingDeadline'] ?? '')
-                );
-            }
-
-            $daysRemaining  = null;
-            $throughputDays = null;
-            if ($isOpen === true && $deadline !== null) {
-                $deadlineDate  = new DateTimeImmutable($deadline);
-                $daysRemaining = (int) $today->diff($deadlineDate)->format('%R%a');
-            }
-
-            if ($isOpen === false && $startDate !== null && $endDate !== null) {
-                $throughputDays = (int) (new DateTimeImmutable($startDate))
-                    ->diff(new DateTimeImmutable($endDate))->format('%R%a');
-                if ($throughputDays < 0) {
-                    $throughputDays = 0;
-                }
-            }
-
-            $caseData['_isOpen']         = $isOpen;
-            $caseData['_startDate']      = $startDate;
-            $caseData['_endDate']        = $endDate;
-            $caseData['_deadline']       = $deadline;
-            $caseData['_daysRemaining']  = $daysRemaining;
-            $caseData['_throughputDays'] = $throughputDays;
-            $caseData['_caseTypeTitle']  = $caseTypeTitle;
-            $enriched[] = $caseData;
         }//end foreach
 
-        return $enriched;
-    }//end enrichCases()
+        return $caseTypeByKey;
+    }//end indexCaseTypesByKey()
+
+    /**
+     * Add the derived `_`-prefixed fields to a single raw case.
+     *
+     * @param array<string, mixed>                $caseData      Raw case.
+     * @param array<string, array<string, mixed>> $caseTypeByKey Case-types by id and slug.
+     * @param DateTimeImmutable                   $today         Reference date for the countdown.
+     *
+     * @return array<string, mixed> The enriched case.
+     */
+    private function enrichCase(array $caseData, array $caseTypeByKey, DateTimeImmutable $today): array
+    {
+        $endDate   = $this->normaliseDate(value: $caseData['endDate'] ?? null);
+        $startDate = $this->normaliseDate(value: $caseData['startDate'] ?? null);
+        $isOpen    = ($endDate === null);
+
+        $caseType      = null;
+        $caseTypeTitle = '';
+        $caseTypeKey   = (string) ($caseData['caseType'] ?? '');
+        if ($caseTypeKey !== '' && isset($caseTypeByKey[$caseTypeKey]) === true) {
+            $caseType      = $caseTypeByKey[$caseTypeKey];
+            $caseTypeTitle = (string) ($caseType['title'] ?? '');
+        }
+
+        $deadline = $this->resolveCaseDeadline(
+            rawDeadline: $caseData['deadline'] ?? null,
+            startDate: $startDate,
+            caseType: $caseType,
+        );
+
+        $daysRemaining = null;
+        if ($isOpen === true && $deadline !== null) {
+            $deadlineDate  = new DateTimeImmutable($deadline);
+            $daysRemaining = (int) $today->diff($deadlineDate)->format('%R%a');
+        }
+
+        $throughputDays = $this->computeThroughputDays(
+            isOpen: $isOpen,
+            startDate: $startDate,
+            endDate: $endDate,
+        );
+
+        $caseData['_isOpen']         = $isOpen;
+        $caseData['_startDate']      = $startDate;
+        $caseData['_endDate']        = $endDate;
+        $caseData['_deadline']       = $deadline;
+        $caseData['_daysRemaining']  = $daysRemaining;
+        $caseData['_throughputDays'] = $throughputDays;
+        $caseData['_caseTypeTitle']  = $caseTypeTitle;
+
+        return $caseData;
+    }//end enrichCase()
+
+    /**
+     * Resolve a case deadline, deriving it from the case-type when the case
+     * itself carries none.
+     *
+     * @param mixed                     $rawDeadline Raw deadline value on the case.
+     * @param string|null               $startDate   Normalised start date.
+     * @param array<string, mixed>|null $caseType    Resolved case-type, if any.
+     *
+     * @return string|null The `Y-m-d` deadline, or null when unresolvable.
+     */
+    private function resolveCaseDeadline(mixed $rawDeadline, ?string $startDate, ?array $caseType): ?string
+    {
+        $deadline = $this->normaliseDate(value: $rawDeadline);
+        if ($deadline === null && $startDate !== null && $caseType !== null) {
+            $deadline = $this->deriveDeadline(
+                startDate: $startDate,
+                processingDeadline: (string) ($caseType['processingDeadline'] ?? '')
+            );
+        }
+
+        return $deadline;
+    }//end resolveCaseDeadline()
+
+    /**
+     * Throughput days for a closed case, floored at zero.
+     *
+     * @param bool        $isOpen    Whether the case is still open.
+     * @param string|null $startDate Normalised start date.
+     * @param string|null $endDate   Normalised end date.
+     *
+     * @return int|null Days between start and end, or null when not closed.
+     */
+    private function computeThroughputDays(bool $isOpen, ?string $startDate, ?string $endDate): ?int
+    {
+        if ($isOpen === true || $startDate === null || $endDate === null) {
+            return null;
+        }
+
+        $throughputDays = (int) (new DateTimeImmutable($startDate))
+            ->diff(new DateTimeImmutable($endDate))->format('%R%a');
+        if ($throughputDays < 0) {
+            return 0;
+        }
+
+        return $throughputDays;
+    }//end computeThroughputDays()
 
     /**
      * Translate a period string into a month count (`12m` → 12, `6m` → 6).

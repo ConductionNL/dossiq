@@ -170,11 +170,10 @@ class TenantService
         }
 
         try {
-            $org = $mapper->findByUuid($tenantId);
+            $org      = $mapper->findByUuid($tenantId);
+            $adminUid = 'admin';
             if ($this->groupManager->isAdmin($org->getOwner() ?? '') === true) {
                 $adminUid = $org->getOwner();
-            } else {
-                $adminUid = 'admin';
             }
 
             $org = $lifecycleService->provision($org, (string) $adminUid);

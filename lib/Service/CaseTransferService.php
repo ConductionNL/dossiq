@@ -44,11 +44,11 @@ class CaseTransferService
     /**
      * Constructor for the CaseTransferService.
      *
-     * @param SettingsService         $settingsService         The settings service
-     * @param IAppManager             $appManager              The app manager
-     * @param ContainerInterface      $container               The DI container
-     * @param LoggerInterface         $logger                  The logger
-     * @param TenantAuditTrailService $tenantAuditTrailService Audit-trail emitter for custody-change actions
+     * @param SettingsService         $settingsService The settings service
+     * @param IAppManager             $appManager      The app manager
+     * @param ContainerInterface      $container       The DI container
+     * @param LoggerInterface         $logger          The logger
+     * @param TenantAuditTrailService $auditTrail      Audit-trail emitter for custody-change actions
      *
      * @return void
      */
@@ -57,7 +57,7 @@ class CaseTransferService
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
-        private TenantAuditTrailService $tenantAuditTrailService,
+        private TenantAuditTrailService $auditTrail,
     ) {
     }//end __construct()
 
@@ -105,8 +105,8 @@ class CaseTransferService
 
         $idempotencyKey = null;
         if ($remoteCloudId !== null && $remoteCloudId !== '') {
-            $federationShareService = $this->getFederationShareService();
-            if ($federationShareService === null) {
+            $shareService = $this->getFederationShareService();
+            if ($shareService === null) {
                 return ['error' => 'Federated case transfer requires the OpenRegister federation leaf'];
             }
 
@@ -170,7 +170,7 @@ class CaseTransferService
             $resultData = $result->jsonSerialize();
         }
 
-        $this->tenantAuditTrailService->emit(
+        $this->auditTrail->emit(
             [
                 'action'   => 'case_transfer_initiated',
                 'actor'    => $initiatedBy,
@@ -317,7 +317,7 @@ class CaseTransferService
             schema: (int) $schema,
         );
 
-        $this->tenantAuditTrailService->emit(
+        $this->auditTrail->emit(
             [
                 'action'   => 'case_transfer_'.$targetStatus,
                 'actor'    => ($remoteCloudId ?? 'local'),
@@ -494,13 +494,13 @@ class CaseTransferService
      */
     private function mintFederatedTransferShare(string $transferUuid, string $remoteCloudId, string $register, string $schema): ?object
     {
-        $federationShareService = $this->getFederationShareService();
-        if ($federationShareService === null) {
+        $shareService = $this->getFederationShareService();
+        if ($shareService === null) {
             return null;
         }
 
         try {
-            return $federationShareService->createOutgoingShare(
+            return $shareService->createOutgoingShare(
                 params: [
                     'scope'       => 'object',
                     'register'    => $register,

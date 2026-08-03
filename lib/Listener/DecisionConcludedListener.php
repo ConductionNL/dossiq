@@ -268,12 +268,14 @@ class DecisionConcludedListener implements IEventListener
         // First signer (if any) is recorded as the mandaathouder on the Besluit.
         $signer = '';
         if ($signers !== []) {
+            // A signer entry is either a record or a bare user id; normalise
+            // the bare form to the record shape so one read covers both.
             $first = reset($signers);
-            if (is_array($first) === true) {
-                $signer = (string) ($first['id'] ?? $first['name'] ?? '');
-            } else {
-                $signer = (string) $first;
+            if (is_array($first) === false) {
+                $first = ['id' => (string) $first];
             }
+
+            $signer = (string) ($first['id'] ?? $first['name'] ?? '');
         }
 
         // The decision method is recorded as "signature" when the outcome was

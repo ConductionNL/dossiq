@@ -202,7 +202,7 @@ class CaseCollaborationServiceTest extends TestCase
             appManager: $appManager,
             container: $container,
             logger: $this->createMock(LoggerInterface::class),
-            tenantAuditTrailService: $this->createMock(TenantAuditTrailService::class),
+            tenantAuditTrail: $this->createMock(TenantAuditTrailService::class),
         );
 
         // The caseFederatedShare this activity stream is scoped to.
@@ -349,7 +349,7 @@ class CaseCollaborationServiceTest extends TestCase
             appManager: $appManager,
             container: $this->createMock(ContainerInterface::class),
             logger: $this->createMock(LoggerInterface::class),
-            tenantAuditTrailService: $this->createMock(TenantAuditTrailService::class),
+            tenantAuditTrail: $this->createMock(TenantAuditTrailService::class),
         );
 
         $result = $service->postLocalActivity('share-1', 'alice', 'hello');

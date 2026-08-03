@@ -87,7 +87,7 @@ class VergaderingDeadlineJobTest extends TestCase
 
         $this->job = new VergaderingDeadlineJob(
             time: $this->timeFactory,
-            vergaderingCaseService: $this->vergaderingCaseService,
+            vergaderingCases: $this->vergaderingCaseService,
             appManager: $this->appManager,
             logger: $this->logger,
         );

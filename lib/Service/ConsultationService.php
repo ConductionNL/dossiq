@@ -149,10 +149,9 @@ class ConsultationService
 
         $consultation = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
+        $consultationId = ($data['id'] ?? '');
         if (is_object($consultation) === true) {
             $consultationId = $consultation->getUuid();
-        } else {
-            $consultationId = ($data['id'] ?? '');
         }
 
         // REQ-PDRD-001 / REQ-PDRD-002: a consultatie is an advice request that

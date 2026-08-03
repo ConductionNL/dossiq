@@ -172,12 +172,11 @@ class LibresignApiClient
         }
 
         try {
-            $client = $this->clientService->newClient();
-            if ($method === 'POST') {
-                $response = $client->post($url, $options);
-            } else {
-                $response = $client->get($url, $options);
-            }
+            $client   = $this->clientService->newClient();
+            $response = match ($method) {
+                'POST'  => $client->post($url, $options),
+                default => $client->get($url, $options),
+            };
 
             $decoded = json_decode((string) $response->getBody(), true);
             if (is_array($decoded) === false) {

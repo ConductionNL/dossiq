@@ -53,19 +53,19 @@ class InspectionChecklistController extends Controller
     /**
      * Constructor.
      *
-     * @param string                     $appName                    The app name
-     * @param IRequest                   $request                    The request
-     * @param InspectionChecklistService $inspectionChecklistService Checklist service
-     * @param IUserSession               $userSession                User session
-     * @param IGroupManager              $groupManager               Group manager
-     * @param LoggerInterface            $logger                     Logger
+     * @param string                     $appName          The app name
+     * @param IRequest                   $request          The request
+     * @param InspectionChecklistService $checklistService Checklist service
+     * @param IUserSession               $userSession      User session
+     * @param IGroupManager              $groupManager     Group manager
+     * @param LoggerInterface            $logger           Logger
      *
      * @spec openspec/changes/vth-module/tasks.md#task-4
      */
     public function __construct(
         string $appName,
         IRequest $request,
-        private readonly InspectionChecklistService $inspectionChecklistService,
+        private readonly InspectionChecklistService $checklistService,
         private readonly IUserSession $userSession,
         private readonly IGroupManager $groupManager,
         private readonly LoggerInterface $logger,
@@ -86,7 +86,7 @@ class InspectionChecklistController extends Controller
     public function index(): JSONResponse
     {
         $caseTypeRef = $this->request->getParam(key: 'caseTypeRef');
-        $checklists  = $this->inspectionChecklistService->listChecklists(caseTypeRef: $caseTypeRef);
+        $checklists  = $this->checklistService->listChecklists(caseTypeRef: $caseTypeRef);
         return new JSONResponse(data: $checklists, statusCode: Http::STATUS_OK);
     }//end index()
 
@@ -106,7 +106,7 @@ class InspectionChecklistController extends Controller
         unset($data['_route']);
 
         try {
-            $result = $this->inspectionChecklistService->createChecklist(data: $data);
+            $result = $this->checklistService->createChecklist(data: $data);
             return new JSONResponse(data: $result, statusCode: Http::STATUS_CREATED);
         } catch (Throwable $e) {
             $this->logger->error(
@@ -138,7 +138,7 @@ class InspectionChecklistController extends Controller
         unset($data['_route'], $data['id']);
 
         try {
-            $result = $this->inspectionChecklistService->updateChecklist(id: $id, data: $data);
+            $result = $this->checklistService->updateChecklist(id: $id, data: $data);
             return new JSONResponse(data: $result, statusCode: Http::STATUS_OK);
         } catch (Throwable $e) {
             $this->logger->error(
@@ -166,7 +166,7 @@ class InspectionChecklistController extends Controller
     #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function destroy(string $id): JSONResponse
     {
-        $success = $this->inspectionChecklistService->deleteChecklist(id: $id);
+        $success = $this->checklistService->deleteChecklist(id: $id);
         if ($success === true) {
             return new JSONResponse(data: ['message' => 'Deleted'], statusCode: Http::STATUS_OK);
         }
@@ -214,7 +214,7 @@ class InspectionChecklistController extends Controller
         }
 
         try {
-            $result = $this->inspectionChecklistService->submitResult(
+            $result = $this->checklistService->submitResult(
                 caseId: $id,
                 checklistId: $checklistId,
                 resultData: $params,
@@ -257,7 +257,7 @@ class InspectionChecklistController extends Controller
             throw new OCSForbiddenException('Not authenticated');
         }
 
-        $results = $this->inspectionChecklistService->getResultsForCase(caseId: $id);
+        $results = $this->checklistService->getResultsForCase(caseId: $id);
         return new JSONResponse(data: $results, statusCode: Http::STATUS_OK);
     }//end getResults()
 }//end class

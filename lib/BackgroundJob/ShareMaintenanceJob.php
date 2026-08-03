@@ -112,10 +112,9 @@ class ShareMaintenanceJob extends TimedJob
             $reminderDate = new DateTime('+'.self::REMINDER_DAYS.' days');
 
             foreach ($shares as $share) {
+                $shareData = $share;
                 if (is_object($share) === true) {
                     $shareData = $share->jsonSerialize();
-                } else {
-                    $shareData = $share;
                 }
 
                 // Skip revoked shares.

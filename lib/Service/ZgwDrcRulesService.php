@@ -362,9 +362,8 @@ class ZgwDrcRulesService extends ZgwRulesBase
 
             $ids = [];
             foreach (($result['results'] ?? []) as $obj) {
-                if (is_array($obj) === true) {
-                    $data = $obj;
-                } else {
+                $data = $obj;
+                if (is_array($obj) === false) {
                     $data = $obj->jsonSerialize();
                 }
 
@@ -533,10 +532,9 @@ class ZgwDrcRulesService extends ZgwRulesBase
             $total  = $result['total'] ?? count($result['results'] ?? []);
 
             if ($total === 0) {
+                $detail = 'Er bestaat geen BesluitInformatieObject in de Besluiten API voor deze combinatie.';
                 if ($objectType === 'zaak') {
                     $detail = 'Er bestaat geen ZaakInformatieObject in de Zaken API voor deze combinatie.';
-                } else {
-                    $detail = 'Er bestaat geen BesluitInformatieObject in de Besluiten API voor deze combinatie.';
                 }
 
                 return $this->error(

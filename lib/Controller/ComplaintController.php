@@ -50,15 +50,15 @@ class ComplaintController extends Controller
     /**
      * Constructor.
      *
-     * @param string                    $appName                   App name
-     * @param IRequest                  $request                   Request
-     * @param ComplaintService          $complaintService          Complaint service
-     * @param HearingService            $hearingService            Hearing service
-     * @param DispositionService        $dispositionService        Disposition service
-     * @param ComplaintAnalyticsService $complaintAnalyticsService Analytics service
-     * @param SettingsService           $settingsService           Settings service
-     * @param IUserSession              $userSession               User session
-     * @param IGroupManager             $groupManager              Group manager (admin checks)
+     * @param string                    $appName            App name
+     * @param IRequest                  $request            Request
+     * @param ComplaintService          $complaintService   Complaint service
+     * @param HearingService            $hearingService     Hearing service
+     * @param DispositionService        $dispositionService Disposition service
+     * @param ComplaintAnalyticsService $analyticsService   Analytics service
+     * @param SettingsService           $settingsService    Settings service
+     * @param IUserSession              $userSession        User session
+     * @param IGroupManager             $groupManager       Group manager (admin checks)
      */
     public function __construct(
         string $appName,
@@ -66,7 +66,7 @@ class ComplaintController extends Controller
         private readonly ComplaintService $complaintService,
         private readonly HearingService $hearingService,
         private readonly DispositionService $dispositionService,
-        private readonly ComplaintAnalyticsService $complaintAnalyticsService,
+        private readonly ComplaintAnalyticsService $analyticsService,
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
         private readonly IGroupManager $groupManager,
@@ -477,11 +477,14 @@ class ComplaintController extends Controller
             $data            = $this->parseBody();
             $approvalSetting = $this->settingsService->getConfigValue('complaint_require_approval');
             $requireApproval = in_array(strtolower($approvalSetting), ['1', 'true', 'yes'], true);
-            $disposition     = $this->dispositionService->submitDisposition($id, $data, $requireApproval);
 
-            if ($requireApproval === false) {
-                $this->complaintService->transitionStatus($id, 'afgehandeld');
+            if ($requireApproval === true) {
+                $disposition = $this->dispositionService->submitDispositionForApproval($id, $data);
+                return new JSONResponse($disposition, Http::STATUS_CREATED);
             }
+
+            $disposition = $this->dispositionService->submitDisposition($id, $data);
+            $this->complaintService->transitionStatus($id, 'afgehandeld');
 
             return new JSONResponse($disposition, Http::STATUS_CREATED);
         } catch (\RuntimeException $e) {
@@ -578,24 +581,24 @@ class ComplaintController extends Controller
         $dateFrom = $this->request->getParam('dateFrom') ?? date('Y-01-01');
         $dateTo   = $this->request->getParam('dateTo') ?? date('Y-m-d');
 
-        $byCategorie    = $this->complaintAnalyticsService->getFrequencyByDimension(
+        $byCategorie    = $this->analyticsService->getFrequencyByDimension(
             dimension: 'categorie',
             dateFrom: $dateFrom,
             dateTo: $dateTo,
         );
-        $byAfdeling     = $this->complaintAnalyticsService->getFrequencyByDimension(
+        $byAfdeling     = $this->analyticsService->getFrequencyByDimension(
             dimension: 'betrokkenAfdeling',
             dateFrom: $dateFrom,
             dateTo: $dateTo,
         );
-        $byKanaal       = $this->complaintAnalyticsService->getFrequencyByDimension(
+        $byKanaal       = $this->analyticsService->getFrequencyByDimension(
             dimension: 'ontvangstkanaal',
             dateFrom: $dateFrom,
             dateTo: $dateTo,
         );
-        $monthlyTrend   = $this->complaintAnalyticsService->getMonthlyTrend(dateFrom: $dateFrom, dateTo: $dateTo);
-        $avgResolution  = $this->complaintAnalyticsService->getAverageResolutionTime(dateFrom: $dateFrom, dateTo: $dateTo);
-        $employeeAlerts = $this->complaintAnalyticsService->checkEmployeeThresholdAlerts();
+        $monthlyTrend   = $this->analyticsService->getMonthlyTrend(dateFrom: $dateFrom, dateTo: $dateTo);
+        $avgResolution  = $this->analyticsService->getAverageResolutionTime(dateFrom: $dateFrom, dateTo: $dateTo);
+        $employeeAlerts = $this->analyticsService->checkEmployeeThresholdAlerts();
 
         return new JSONResponse(
                 [
@@ -627,7 +630,7 @@ class ComplaintController extends Controller
         $dateFrom = $this->request->getParam('dateFrom') ?? date('Y-m-01');
         $dateTo   = $this->request->getParam('dateTo') ?? date('Y-m-d');
 
-        $kpi = $this->complaintAnalyticsService->getKpiSummary($dateFrom, $dateTo);
+        $kpi = $this->analyticsService->getKpiSummary($dateFrom, $dateTo);
         return new JSONResponse($kpi);
     }//end kpi()
 

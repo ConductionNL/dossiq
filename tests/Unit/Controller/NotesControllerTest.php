@@ -82,7 +82,7 @@ class NotesControllerTest extends TestCase
 
         $this->controller = new NotesController(
             request: $this->request,
-            mentionNotificationService: $this->service,
+            mentionSvc: $this->service,
             userSession: $this->userSession,
             logger: $this->logger,
         );
