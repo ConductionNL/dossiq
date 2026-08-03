@@ -189,6 +189,43 @@ class DecisionService
             );
         }
 
+        $this->assertDraftable(payload: $payload);
+
+        $record = array_merge(
+            $payload,
+            [
+                'bezwaar' => $bezwaarId,
+                'status'  => 'draft',
+            ]
+        );
+        // The publishedAt and notifiedRecipients fields are owned by publish().
+        unset($record['publishedAt'], $record['notifiedRecipients']);
+
+        try {
+            return $objectService->saveObject(
+                object: $record,
+                register: $register,
+                schema: $decisionSchema
+            );
+        } catch (Throwable $e) {
+            $this->logger->error(
+                'Procest bezwaar-decision: failed to draft: '.$e->getMessage()
+            );
+            throw new RuntimeException('Could not draft bezwaarDecision');
+        }
+    }//end draft()
+
+    /**
+     * Assert the draft-time Awb guards on a bezwaarDecision payload.
+     *
+     * @param array<string, mixed> $payload Decision properties.
+     *
+     * @return void
+     *
+     * @throws RuntimeException When the payload is invalid at draft time.
+     */
+    private function assertDraftable(array $payload): void
+    {
         $disposition = (string) ($payload['dispositionType'] ?? '');
         if (in_array($disposition, self::VALID_DISPOSITIONS, true) === false) {
             throw new RuntimeException(
@@ -214,30 +251,7 @@ class DecisionService
                 .'gegrond_herroepen or gegrond_wijzigen'
             );
         }
-
-        $record = array_merge(
-            $payload,
-            [
-                'bezwaar' => $bezwaarId,
-                'status'  => 'draft',
-            ]
-        );
-        // The publishedAt and notifiedRecipients fields are owned by publish().
-        unset($record['publishedAt'], $record['notifiedRecipients']);
-
-        try {
-            return $objectService->saveObject(
-                object: $record,
-                register: $register,
-                schema: $decisionSchema
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest bezwaar-decision: failed to draft: '.$e->getMessage()
-            );
-            throw new RuntimeException('Could not draft bezwaarDecision');
-        }
-    }//end draft()
+    }//end assertDraftable()
 
     /**
      * Publish a draft bezwaarDecision by delegating the *deciding* to decidesk.

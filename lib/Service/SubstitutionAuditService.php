@@ -85,7 +85,8 @@ class SubstitutionAuditService
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
         $caseSchema    = (string) $this->settingsService->getConfigValue('case_schema');
-        if ($objectService === null || $register === '' || $caseSchema === '' || $caseId === '' || $actorId === '') {
+        $hasBlank      = in_array('', [$register, $caseSchema, $caseId, $actorId], true);
+        if ($objectService === null || $hasBlank === true) {
             return null;
         }
 
@@ -161,7 +162,8 @@ class SubstitutionAuditService
         $register      = (string) $this->settingsService->getConfigValue('register');
         $subSchema     = (string) $this->settingsService->getConfigValue('substitution_schema');
         $caseSchema    = (string) $this->settingsService->getConfigValue('case_schema');
-        if ($objectService === null || $register === '' || $subSchema === '' || $caseSchema === '') {
+        $hasBlank      = in_array('', [$register, $subSchema, $caseSchema], true);
+        if ($objectService === null || $hasBlank === true) {
             return [];
         }
 
@@ -184,20 +186,13 @@ class SubstitutionAuditService
 
         $actions = [];
         foreach ($cases as $case) {
-            $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-            foreach ($this->decodeActivity(raw: ($case['activity'] ?? null)) as $entry) {
-                if (is_array($entry) === false) {
-                    continue;
-                }
-
-                if ((string) ($entry['substitutionId'] ?? '') !== $substitutionId) {
-                    continue;
-                }
-
-                $entry['caseId']    = $caseId;
-                $entry['caseTitle'] = (string) ($case['title'] ?? '');
-                $actions[]          = $entry;
-            }
+            $actions = array_merge(
+                $actions,
+                $this->collectSubstitutionEntries(
+                    caseData: $case,
+                    substitutionId: $substitutionId
+                )
+            );
         }//end foreach
 
         usort(
@@ -209,6 +204,35 @@ class SubstitutionAuditService
 
         return $actions;
     }//end getActionsForSubstitution()
+
+    /**
+     * Collect the activity entries on a case that carry a substitution id.
+     *
+     * @param array<string, mixed> $caseData       The case record.
+     * @param string               $substitutionId The substitution UUID.
+     *
+     * @return array<int, array<string, mixed>> The matching, case-tagged entries.
+     */
+    private function collectSubstitutionEntries(array $caseData, string $substitutionId): array
+    {
+        $caseId  = (string) ($caseData['id'] ?? ($caseData['uuid'] ?? ''));
+        $entries = [];
+        foreach ($this->decodeActivity(raw: ($caseData['activity'] ?? null)) as $entry) {
+            if (is_array($entry) === false) {
+                continue;
+            }
+
+            if ((string) ($entry['substitutionId'] ?? '') !== $substitutionId) {
+                continue;
+            }
+
+            $entry['caseId']    = $caseId;
+            $entry['caseTitle'] = (string) ($caseData['title'] ?? '');
+            $entries[]          = $entry;
+        }//end foreach
+
+        return $entries;
+    }//end collectSubstitutionEntries()
 
     /**
      * Decode the case activity JSON string into an array of entries.

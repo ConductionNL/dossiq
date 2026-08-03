@@ -220,25 +220,26 @@ class BerichtenboxService
         $adapter = $this->getAdapter();
         $status  = $adapter->getReadStatus($data['externalMessageId']);
 
+        $data['readPolledAt'] = (new DateTime())->format('c');
+
         if (($status['read'] ?? false) === true) {
-            $data['status']       = 'read';
-            $data['readAt']       = $status['readAt'];
-            $data['readPolledAt'] = (new DateTime())->format('c');
+            $data['status'] = 'read';
+            $data['readAt'] = $status['readAt'];
             $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
-        } else {
-            $data['readPolledAt'] = (new DateTime())->format('c');
 
-            // Check if unread for > 7 days.
-            if (empty($data['sentAt']) === false) {
-                $sentAt = new DateTime($data['sentAt']);
-                $diff   = (new DateTime())->diff($sentAt)->days;
-                if ($diff >= 7 && $data['status'] !== 'unread_flagged') {
-                    $data['status'] = 'unread_flagged';
-                }
-            }
-
-            $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
+            return $data;
         }
+
+        // Check if unread for > 7 days.
+        if (empty($data['sentAt']) === false) {
+            $sentAt = new DateTime($data['sentAt']);
+            $diff   = (new DateTime())->diff($sentAt)->days;
+            if ($diff >= 7 && $data['status'] !== 'unread_flagged') {
+                $data['status'] = 'unread_flagged';
+            }
+        }
+
+        $objectService->saveObject(object: $data, register: (int) $register, schema: (int) $schema);
 
         return $data;
     }//end pollReadStatus()

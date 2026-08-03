@@ -122,14 +122,13 @@ class DeelzaakController extends Controller
         }
 
         $raw = $this->request->getParam('ids', '');
+        $ids = [];
         if (is_array($raw) === true) {
             $ids = $raw;
-        } else {
-            if ($raw === '') {
-                $ids = [];
-            } else {
-                $ids = explode(',', (string) $raw);
-            }
+        }
+
+        if (is_array($raw) === false && $raw !== '') {
+            $ids = explode(',', (string) $raw);
         }
 
         $ids = array_values(array_filter(array_map('trim', $ids), static fn ($value): bool => $value !== ''));

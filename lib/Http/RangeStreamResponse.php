@@ -121,6 +121,13 @@ class RangeStreamResponse extends Response
             return null;
         }
 
+        // Explicit "bytes=start-[end]" range; an absent end means "until EOF".
+        $start = (int) $startRaw;
+        $end   = ($total - 1);
+        if ($endRaw !== '') {
+            $end = (int) $endRaw;
+        }
+
         if ($startRaw === '') {
             // Suffix range: last N bytes.
             $suffix = (int) $endRaw;
@@ -130,13 +137,6 @@ class RangeStreamResponse extends Response
 
             $start = max(0, ($total - $suffix));
             $end   = ($total - 1);
-        } else {
-            $start = (int) $startRaw;
-            if ($endRaw === '') {
-                $end = ($total - 1);
-            } else {
-                $end = (int) $endRaw;
-            }
         }
 
         if ($start > $end || $start >= $total) {

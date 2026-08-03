@@ -111,87 +111,22 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         $statusSchema   = $this->settingsService->getConfigValue('status_type_schema');
         $templateSchema = $this->settingsService->getConfigValue('workflow_template_schema');
 
-        if ($register === ''
-            || $caseTypeSchema === ''
-            || $statusSchema === ''
-            || $templateSchema === ''
-        ) {
+        $missingConfig = in_array('', [$register, $caseTypeSchema, $statusSchema, $templateSchema], true);
+        if ($missingConfig === true) {
             $output->warning('Bezwaar workflow seed: required schema config missing — skipping.');
             return;
         }
 
         // Locate the bezwaar caseType.
-        try {
-            $caseTypes = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $caseTypeSchema,
-                filters: ['identifier' => 'bezwaar', '_limit' => 5],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: bezwaar workflow seed — failed to list caseTypes',
-                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-            );
-            $output->warning('Could not list caseTypes — skipping bezwaar workflow seed.');
-            return;
-        }
+        $caseTypeId = $this->resolveSeedableCaseTypeId(
+            objectService: $objectService,
+            register: $register,
+            caseTypeSchema: $caseTypeSchema,
+            output: $output,
+        );
 
-        if ($caseTypes === []) {
-            $output->info('Bezwaar caseType not present yet — skipping workflow seed.');
-            return;
-        }
-
-        $caseType = $this->normalize(object: $caseTypes[0]);
-        if ($caseType === null) {
-            return;
-        }
-
-        $caseTypeId = (string) ($caseType['id'] ?? '');
         if ($caseTypeId === '') {
             return;
-        }
-
-        // Idempotent guard.
-        $existingVersions = $this->workflowService->listVersions($caseTypeId);
-        if ($existingVersions !== []) {
-            $output->info('Bezwaar workflow definition already present — skipping seed.');
-            return;
-        }
-
-        // Pull statusType rows for the bezwaar caseType.
-        try {
-            $statusRows = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $statusSchema,
-                filters: ['caseType' => $caseTypeId, '_limit' => 50],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: bezwaar workflow seed — failed to list statusTypes',
-                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-            );
-            return;
-        }
-
-        if ($statusRows === []) {
-            $output->info('Bezwaar statusTypes missing — skipping workflow seed.');
-            return;
-        }
-
-        $statusByName = [];
-        foreach ($statusRows as $raw) {
-            $row = $this->normalize(object: $raw);
-            if ($row === null) {
-                continue;
-            }
-
-            $name = (string) ($row['name'] ?? '');
-            $id   = (string) ($row['id'] ?? '');
-            if ($name !== '' && $id !== '') {
-                $statusByName[$name] = $row;
-            }
         }
 
         $required = [
@@ -207,11 +142,17 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
             'Ingetrokken',
         ];
 
-        foreach ($required as $name) {
-            if (isset($statusByName[$name]) === false) {
-                $output->warning('Bezwaar workflow seed: missing statusType "'.$name.'" — skipping seed.');
-                return;
-            }
+        $statusByName = $this->resolveStatusIndex(
+            objectService: $objectService,
+            register: $register,
+            statusSchema: $statusSchema,
+            caseTypeId: $caseTypeId,
+            required: $required,
+            output: $output,
+        );
+
+        if ($statusByName === null) {
+            return;
         }
 
         $steps       = $this->buildSteps(statusByName: $statusByName, ordered: $required);
@@ -234,6 +175,162 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
             'nodePositions'   => '',
         ];
 
+        $this->persistTemplate(
+            objectService: $objectService,
+            register: $register,
+            caseTypeSchema: $caseTypeSchema,
+            templateSchema: $templateSchema,
+            caseTypeId: $caseTypeId,
+            template: $template,
+            output: $output,
+        );
+    }//end run()
+
+    /**
+     * Locate the bezwaar caseType that still needs a workflow definition.
+     *
+     * @param object  $objectService  Resolved OR ObjectService
+     * @param string  $register       The register id
+     * @param string  $caseTypeSchema The caseType schema id
+     * @param IOutput $output         Repair output channel
+     *
+     * @return string The caseType UUID, or an empty string when not seedable
+     */
+    private function resolveSeedableCaseTypeId(
+        object $objectService,
+        string $register,
+        string $caseTypeSchema,
+        IOutput $output
+    ): string {
+        try {
+            $caseTypes = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $caseTypeSchema,
+                filters: ['identifier' => 'bezwaar', '_limit' => 5],
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: bezwaar workflow seed — failed to list caseTypes',
+                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+            );
+            $output->warning('Could not list caseTypes — skipping bezwaar workflow seed.');
+            return '';
+        }
+
+        if ($caseTypes === []) {
+            $output->info('Bezwaar caseType not present yet — skipping workflow seed.');
+            return '';
+        }
+
+        $caseType = $this->normalize(object: $caseTypes[0]);
+        if ($caseType === null) {
+            return '';
+        }
+
+        $caseTypeId = (string) ($caseType['id'] ?? '');
+        if ($caseTypeId === '') {
+            return '';
+        }
+
+        // Idempotent guard.
+        $existingVersions = $this->workflowService->listVersions($caseTypeId);
+        if ($existingVersions !== []) {
+            $output->info('Bezwaar workflow definition already present — skipping seed.');
+            return '';
+        }
+
+        return $caseTypeId;
+    }//end resolveSeedableCaseTypeId()
+
+    /**
+     * Load the caseType's statusType rows and index them by name, asserting
+     * that every required status is present.
+     *
+     * @param object             $objectService Resolved OR ObjectService
+     * @param string             $register      The register id
+     * @param string             $statusSchema  The statusType schema id
+     * @param string             $caseTypeId    The bezwaar caseType UUID
+     * @param array<int, string> $required      Status names the workflow needs
+     * @param IOutput            $output        Repair output channel
+     *
+     * @return array<string, array<string, mixed>>|null Indexed rows, or null when not seedable
+     */
+    private function resolveStatusIndex(
+        object $objectService,
+        string $register,
+        string $statusSchema,
+        string $caseTypeId,
+        array $required,
+        IOutput $output
+    ): ?array {
+        // Pull statusType rows for the bezwaar caseType.
+        try {
+            $statusRows = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $statusSchema,
+                filters: ['caseType' => $caseTypeId, '_limit' => 50],
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: bezwaar workflow seed — failed to list statusTypes',
+                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+            );
+            return null;
+        }
+
+        if ($statusRows === []) {
+            $output->info('Bezwaar statusTypes missing — skipping workflow seed.');
+            return null;
+        }
+
+        $statusByName = [];
+        foreach ($statusRows as $raw) {
+            $row = $this->normalize(object: $raw);
+            if ($row === null) {
+                continue;
+            }
+
+            $name = (string) ($row['name'] ?? '');
+            $id   = (string) ($row['id'] ?? '');
+            if ($name !== '' && $id !== '') {
+                $statusByName[$name] = $row;
+            }
+        }
+
+        foreach ($required as $name) {
+            if (isset($statusByName[$name]) === false) {
+                $output->warning('Bezwaar workflow seed: missing statusType "'.$name.'" — skipping seed.');
+                return null;
+            }
+        }
+
+        return $statusByName;
+    }//end resolveStatusIndex()
+
+    /**
+     * Save the workflowTemplate and pin the caseType to it.
+     *
+     * @param object               $objectService  Resolved OR ObjectService
+     * @param string               $register       The register id
+     * @param string               $caseTypeSchema The caseType schema id
+     * @param string               $templateSchema The workflowTemplate schema id
+     * @param string               $caseTypeId     The bezwaar caseType UUID
+     * @param array<string, mixed> $template       The workflowTemplate payload
+     * @param IOutput              $output         Repair output channel
+     *
+     * @return void
+     */
+    private function persistTemplate(
+        object $objectService,
+        string $register,
+        string $caseTypeSchema,
+        string $templateSchema,
+        string $caseTypeId,
+        array $template,
+        IOutput $output
+    ): void {
         try {
             $created = $objectService->saveObject(
                 object: $template,
@@ -269,7 +366,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep
         }
 
         $output->info('Seeded canonical bezwaar workflow definition.');
-    }//end run()
+    }//end persistTemplate()
 
     /**
      * Build step records from statusType rows.

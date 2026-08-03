@@ -38,6 +38,7 @@ use DateTime;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Support\ReassignmentBatch;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
@@ -89,10 +90,9 @@ class CaseReassignmentService
         [$objectService, $register] = $this->context();
         $caseSchema = (string) $this->settingsService->getConfigValue('case_schema');
         $taskSchema = (string) $this->settingsService->getConfigValue('task_schema');
+        $caseType   = '';
         if (isset($filter['caseType']) === true) {
             $caseType = (string) $filter['caseType'];
-        } else {
-            $caseType = '';
         }
 
         $finalIds = $this->finalStatusIds(objectService: $objectService, register: $register);
@@ -188,6 +188,14 @@ class CaseReassignmentService
         $batchId = $this->generateBatchId();
         $now     = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
 
+        $batch = new ReassignmentBatch(
+            fromUser: $fromUser,
+            toUser: $toUser,
+            actorId: $actorId,
+            batchId: $batchId,
+            now: $now
+        );
+
         $results   = [];
         $succeeded = 0;
 
@@ -199,11 +207,7 @@ class CaseReassignmentService
                 schema: $caseSchema,
                 id: $id,
                 item: $case,
-                fromUser: $fromUser,
-                toUser: $toUser,
-                actorId: $actorId,
-                batchId: $batchId,
-                now: $now
+                batch: $batch
             );
             $results[] = ['type' => 'case', 'id' => $id, 'title' => (string) ($case['title'] ?? ''), 'success' => $success];
             if ($success === true) {
@@ -219,11 +223,7 @@ class CaseReassignmentService
                 schema: $taskSchema,
                 id: $id,
                 item: $task,
-                fromUser: $fromUser,
-                toUser: $toUser,
-                actorId: $actorId,
-                batchId: $batchId,
-                now: $now
+                batch: $batch
             );
             $results[] = ['type' => 'task', 'id' => $id, 'title' => (string) ($task['title'] ?? ''), 'success' => $success];
             if ($success === true) {
@@ -254,11 +254,7 @@ class CaseReassignmentService
      * @param string               $schema        Schema id (case or task).
      * @param string               $id            Object id.
      * @param array<string, mixed> $item          The object payload.
-     * @param string               $fromUser      Previous handler.
-     * @param string               $toUser        New handler.
-     * @param string               $actorId       Acting coordinator.
-     * @param string               $batchId       Shared batch id.
-     * @param string               $now           ISO timestamp.
+     * @param ReassignmentBatch    $batch         The shared batch header.
      *
      * @return bool Whether the item was reassigned.
      */
@@ -268,18 +264,14 @@ class CaseReassignmentService
         string $schema,
         string $id,
         array $item,
-        string $fromUser,
-        string $toUser,
-        string $actorId,
-        string $batchId,
-        string $now
+        ReassignmentBatch $batch
     ): bool {
         if ($id === '' || $schema === '') {
             return false;
         }
 
         try {
-            $item['assignee'] = $toUser;
+            $item['assignee'] = $batch->toUser;
 
             // Append a batch audit entry onto the activity log when present
             // (cases carry an activity property; tasks may not).
@@ -296,11 +288,11 @@ class CaseReassignmentService
 
             $activity[] = [
                 'type'           => 'reassignment',
-                'reassignedFrom' => $fromUser,
-                'reassignedTo'   => $toUser,
-                'reassignedBy'   => $actorId,
-                'batchId'        => $batchId,
-                'timestamp'      => $now,
+                'reassignedFrom' => $batch->fromUser,
+                'reassignedTo'   => $batch->toUser,
+                'reassignedBy'   => $batch->actorId,
+                'batchId'        => $batch->batchId,
+                'timestamp'      => $batch->now,
             ];
             if (array_key_exists('activity', $item) === true || $schema === (string) $this->settingsService->getConfigValue('case_schema')) {
                 $item['activity'] = json_encode($activity);
@@ -309,7 +301,10 @@ class CaseReassignmentService
             $objectService->updateObject($register, $schema, $id, $item);
             return true;
         } catch (\Throwable $e) {
-            $this->logger->warning('Reassignment item failed', ['id' => $id, 'batchId' => $batchId, 'error' => $e->getMessage()]);
+            $this->logger->warning(
+                'Reassignment item failed',
+                ['id' => $id, 'batchId' => $batch->batchId, 'error' => $e->getMessage()]
+            );
             return false;
         }//end try
     }//end reassignItem()

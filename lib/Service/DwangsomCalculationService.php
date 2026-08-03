@@ -144,10 +144,9 @@ class DwangsomCalculationService
         $regime     = (string) ($row['regime'] ?? 'awb-default');
 
         $nextDay = ($currentDay + 1);
+        $tariff  = $this->dailyTariffAwb(dayNumber: $nextDay);
         if ($regime === 'afwijkend') {
             $tariff = $this->resolveCustomDailyTariff(berekening: $row);
-        } else {
-            $tariff = $this->dailyTariffAwb(dayNumber: $nextDay);
         }
 
         $newCumul   = ($cumulative + $tariff);

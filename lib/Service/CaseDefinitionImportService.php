@@ -127,8 +127,8 @@ class CaseDefinitionImportService
         $result['manifest'] = $manifest;
 
         // Validate manifest structure.
-        $requiredManifestFields = ['version', 'exportDate', 'caseType', 'components'];
-        foreach ($requiredManifestFields as $field) {
+        $requiredFields = ['version', 'exportDate', 'caseType', 'components'];
+        foreach ($requiredFields as $field) {
             if (isset($manifest[$field]) === false) {
                 $result['valid']    = false;
                 $result['errors'][] = "Missing required manifest field: {$field}";
@@ -152,13 +152,15 @@ class CaseDefinitionImportService
                 if ($hasWorkflows === false) {
                     $result['warnings'][] = 'Component "workflows" declared but no workflow files found';
                 }
-            } else {
-                $componentFile = $component.'.json';
-                if ($zip->locateName($componentFile) === false) {
-                    $result['valid']    = false;
-                    $result['errors'][] = "Component '{$component}' declared in manifest but file '{$componentFile}' not found";
-                }
-            }//end if
+
+                continue;
+            }
+
+            $componentFile = $component.'.json';
+            if ($zip->locateName($componentFile) === false) {
+                $result['valid']    = false;
+                $result['errors'][] = "Component '{$component}' declared in manifest but file '{$componentFile}' not found";
+            }
         }//end foreach
 
         // Validate component JSON.
@@ -189,10 +191,9 @@ class CaseDefinitionImportService
 
         $zip->close();
 
+        $validLabel = 'false';
         if ($result['valid'] === true) {
             $validLabel = 'true';
-        } else {
-            $validLabel = 'false';
         }
 
         $this->logger->info(
@@ -264,12 +265,11 @@ class CaseDefinitionImportService
 
         $allSuccess = in_array('error', array_column($results, 'status'), true) === false;
 
+        $successLabel = 'false';
+        $message      = 'Import completed with errors';
         if ($allSuccess === true) {
             $successLabel = 'true';
             $message      = 'Import completed successfully';
-        } else {
-            $successLabel = 'false';
-            $message      = 'Import completed with errors';
         }
 
         $this->logger->info(

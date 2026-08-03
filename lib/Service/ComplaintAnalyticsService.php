@@ -197,12 +197,11 @@ class ComplaintAnalyticsService
     {
         [$currentFrom, $currentTo] = $this->getQuarterRange(year: $year, quarter: $quarter);
 
+        $prevYear    = $year;
+        $prevQuarter = ($quarter - 1);
         if ($quarter === 1) {
-            $prevYear    = $year - 1;
+            $prevYear    = ($year - 1);
             $prevQuarter = 4;
-        } else {
-            $prevYear    = $year;
-            $prevQuarter = $quarter - 1;
         }
 
         [$prevFrom, $prevTo] = $this->getQuarterRange(year: $prevYear, quarter: $prevQuarter);

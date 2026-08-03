@@ -94,10 +94,9 @@ class AppointmentReminderJob extends TimedJob
             );
 
             foreach ($appointments as $apt) {
+                $data = $apt;
                 if (is_object($apt) === true) {
                     $data = $apt->jsonSerialize();
-                } else {
-                    $data = $apt;
                 }
 
                 $aptDate = substr($data['dateTime'] ?? '', 0, 10);

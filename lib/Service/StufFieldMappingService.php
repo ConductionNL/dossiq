@@ -209,17 +209,25 @@ class StufFieldMappingService
      */
     public function stufDateToIso(string $stufDate): ?string
     {
+        // `YYYYMMDD` and `YYYYMMDDHHMMSS` are both ISO-8601 *basic* forms that
+        // the DateTimeImmutable constructor parses natively; unlike
+        // createFromFormat() it rejects out-of-range components (e.g. month 13)
+        // instead of silently rolling them over, which matches this method's
+        // documented "null if invalid" contract.
+        $outputFormat = null;
         if (strlen($stufDate) === 8) {
-            $parsed = \DateTimeImmutable::createFromFormat(self::STUF_DATE_FORMAT, $stufDate);
-            if ($parsed !== false) {
-                return $parsed->format('Y-m-d');
-            }
+            $outputFormat = 'Y-m-d';
         }
 
         if (strlen($stufDate) === 14) {
-            $parsed = \DateTimeImmutable::createFromFormat(self::STUF_DATETIME_FORMAT, $stufDate);
-            if ($parsed !== false) {
-                return $parsed->format(\DateTimeInterface::ATOM);
+            $outputFormat = \DateTimeInterface::ATOM;
+        }
+
+        if ($outputFormat !== null) {
+            try {
+                return (new DateTimeImmutable($stufDate))->format($outputFormat);
+            } catch (\Exception $e) {
+                $this->logger->debug('StUF date rejected by DateTimeImmutable: {msg}', ['msg' => $e->getMessage()]);
             }
         }
 

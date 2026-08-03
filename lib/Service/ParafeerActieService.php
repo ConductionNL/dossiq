@@ -124,16 +124,16 @@ class ParafeerActieService
     /**
      * Constructor.
      *
-     * @param SettingsService               $settingsService               The settings service (provides ObjectService access).
-     * @param ParaferingNotificationService $paraferingNotificationService The Nextcloud notification service.
-     * @param IRootFolder                   $rootFolder                    The Nextcloud root folder (for PDF signing).
-     * @param LoggerInterface               $logger                        The logger.
-     * @param IEventDispatcher              $eventDispatcher               The event dispatcher (parafering transition events).
-     * @param ParaferingApprovalBridge      $approvalBridge                Bridge to OpenRegister approval-workflow (ADR-022).
+     * @param SettingsService               $settingsService     The settings service (provides ObjectService access).
+     * @param ParaferingNotificationService $notificationService The Nextcloud notification service.
+     * @param IRootFolder                   $rootFolder          The Nextcloud root folder (for PDF signing).
+     * @param LoggerInterface               $logger              The logger.
+     * @param IEventDispatcher              $eventDispatcher     The event dispatcher (parafering transition events).
+     * @param ParaferingApprovalBridge      $approvalBridge      Bridge to OpenRegister approval-workflow (ADR-022).
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly ParaferingNotificationService $paraferingNotificationService,
+        private readonly ParaferingNotificationService $notificationService,
         private readonly IRootFolder $rootFolder,
         private readonly LoggerInterface $logger,
         private readonly IEventDispatcher $eventDispatcher,
@@ -368,9 +368,9 @@ class ParafeerActieService
             );
 
             // PDF signature on completed accordering step (only when document attached).
-            $isAccorderingComplete = ($step['type'] ?? null) === self::STEP_TYPE_ACCORDERING
+            $accorderingDone = ($step['type'] ?? null) === self::STEP_TYPE_ACCORDERING
                 && $action === self::ACTION_ACCORDED;
-            if ($isAccorderingComplete === true && empty($voorstel['document']) === false) {
+            if ($accorderingDone === true && empty($voorstel['document']) === false) {
                 $this->applyPdfSignature(
                     voorstelId: $voorstelId,
                     fileId: (string) $voorstel['document'],
@@ -381,9 +381,9 @@ class ParafeerActieService
             }
 
             // Notify steller on full accordering.
-            if ($isAccorderingComplete === true && empty($voorstel['steller']) === false) {
+            if ($accorderingDone === true && empty($voorstel['steller']) === false) {
                 try {
-                    $this->paraferingNotificationService->notifyVoorstelReturned(
+                    $this->notificationService->notifyVoorstelReturned(
                         (string) $voorstel['steller'],
                         (string) ($voorstel['onderwerp'] ?? ''),
                         $voorstelId,
@@ -703,10 +703,9 @@ class ParafeerActieService
             throw new OCSBadRequestException('Voorstel has no route snapshot');
         }
 
+        $decoded = $snapshotRaw;
         if (is_string($snapshotRaw) === true) {
             $decoded = json_decode($snapshotRaw, true);
-        } else {
-            $decoded = $snapshotRaw;
         }
 
         if (is_array($decoded) === false) {
@@ -837,7 +836,7 @@ class ParafeerActieService
         $steller = (string) ($voorstel['steller'] ?? '');
         if ($steller !== '') {
             try {
-                $this->paraferingNotificationService->notifyVoorstelReturned(
+                $this->notificationService->notifyVoorstelReturned(
                     $steller,
                     (string) ($voorstel['onderwerp'] ?? ''),
                     $voorstelId,
@@ -872,10 +871,9 @@ class ParafeerActieService
         string $voorstelId
     ): array {
         $snapshotRaw = $voorstel['routeSnapshot'] ?? null;
+        $steps       = $snapshotRaw;
         if (is_string($snapshotRaw) === true) {
             $steps = json_decode($snapshotRaw, true);
-        } else {
-            $steps = $snapshotRaw;
         }
 
         if (is_array($steps) === false) {
@@ -897,9 +895,8 @@ class ParafeerActieService
             }
         }
 
-        if ($nextStep === null) {
-            $updateData = ['status' => self::STATUS_GEACCORDEERD];
-        } else {
+        $updateData = ['status' => self::STATUS_GEACCORDEERD];
+        if ($nextStep !== null) {
             $status = self::STATUS_IN_PARAFERING;
             if ($nextStepType === self::STEP_TYPE_ACCORDERING) {
                 $status = self::STATUS_TER_ACCORDERING;

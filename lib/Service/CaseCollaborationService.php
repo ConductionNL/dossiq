@@ -42,11 +42,11 @@ class CaseCollaborationService
     /**
      * Constructor.
      *
-     * @param SettingsService         $settingsService         The settings service
-     * @param IAppManager             $appManager              The app manager
-     * @param ContainerInterface      $container               The DI container
-     * @param LoggerInterface         $logger                  The logger
-     * @param TenantAuditTrailService $tenantAuditTrailService Audit-trail emitter
+     * @param SettingsService         $settingsService  The settings service
+     * @param IAppManager             $appManager       The app manager
+     * @param ContainerInterface      $container        The DI container
+     * @param LoggerInterface         $logger           The logger
+     * @param TenantAuditTrailService $tenantAuditTrail Audit-trail emitter
      *
      * @return void
      */
@@ -55,7 +55,7 @@ class CaseCollaborationService
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
-        private TenantAuditTrailService $tenantAuditTrailService,
+        private TenantAuditTrailService $tenantAuditTrail,
     ) {
     }//end __construct()
 
@@ -218,7 +218,7 @@ class CaseCollaborationService
             $resultData = $result->jsonSerialize();
         }
 
-        $this->tenantAuditTrailService->emit(
+        $this->tenantAuditTrail->emit(
             [
                 'action'   => 'federated_case_activity_posted',
                 'actor'    => $entry['actor'],

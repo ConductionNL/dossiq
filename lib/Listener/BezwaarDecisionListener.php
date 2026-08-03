@@ -166,7 +166,19 @@ class BezwaarDecisionListener implements IEventListener
             return false;
         }
 
-        foreach ($all as $decision) {
+        return $this->containsDecidedDecision(decisions: $all);
+    }//end hasPublishedDecision()
+
+    /**
+     * Scan bezwaarDecision rows for one that counts as decided.
+     *
+     * @param array<int, mixed> $decisions The bezwaarDecision rows.
+     *
+     * @return bool
+     */
+    private function containsDecidedDecision(array $decisions): bool
+    {
+        foreach ($decisions as $decision) {
             if (is_array($decision) === false) {
                 continue;
             }
@@ -179,7 +191,7 @@ class BezwaarDecisionListener implements IEventListener
         }
 
         return false;
-    }//end hasPublishedDecision()
+    }//end containsDecidedDecision()
 
     /**
      * Revert the bezwaar's status by reading the previous status from

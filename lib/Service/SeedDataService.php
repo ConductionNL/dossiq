@@ -331,10 +331,9 @@ class SeedDataService
             $transition['id'] = $this->generateUUID();
 
             // Handle wildcard "*" for "any active status".
+            $transition['fromStatus'] = ($statusNameMap[$fromName] ?? '');
             if ($fromName === '*') {
                 $transition['fromStatus'] = '*';
-            } else {
-                $transition['fromStatus'] = ($statusNameMap[$fromName] ?? '');
             }
 
             $transition['toStatus'] = ($statusNameMap[$toName] ?? '');

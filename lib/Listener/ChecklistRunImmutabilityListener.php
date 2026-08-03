@@ -86,30 +86,7 @@ class ChecklistRunImmutabilityListener implements IEventListener
         }
 
         try {
-            $new = $this->extractObject(event: $event, method: 'getNewObject');
-            if ($new === null) {
-                return;
-            }
-
-            if ($this->isChecklistRunSchema(object: $new) === false) {
-                return;
-            }
-
-            $old = $this->extractObject(event: $event, method: 'getOldObject');
-            if ($old === null) {
-                return;
-            }
-
-            $oldStatus = (string) ($old['status'] ?? '');
-            $newStatus = (string) ($new['status'] ?? '');
-
-            // Allow first-time transition to ingediend.
-            if (in_array($oldStatus, self::FROZEN_STATUSES, true) === false) {
-                return;
-            }
-
-            // Same frozen status: any change to other fields is rejected.
-            if ($oldStatus === $newStatus && $this->isMaterialChange(old: $old, new: $new) === false) {
+            if ($this->isFrozenRunMutation(event: $event) === false) {
                 return;
             }
 
@@ -123,6 +100,45 @@ class ChecklistRunImmutabilityListener implements IEventListener
             );
         }//end try
     }//end handle()
+
+    /**
+     * Whether the update mutates a checklist run that is already frozen.
+     *
+     * @param Event $event The dispatched update event
+     *
+     * @return bool True when the mutation must be rejected.
+     */
+    private function isFrozenRunMutation(Event $event): bool
+    {
+        $new = $this->extractObject(event: $event, method: 'getNewObject');
+        if ($new === null) {
+            return false;
+        }
+
+        if ($this->isChecklistRunSchema(object: $new) === false) {
+            return false;
+        }
+
+        $old = $this->extractObject(event: $event, method: 'getOldObject');
+        if ($old === null) {
+            return false;
+        }
+
+        $oldStatus = (string) ($old['status'] ?? '');
+        $newStatus = (string) ($new['status'] ?? '');
+
+        // Allow first-time transition to ingediend.
+        if (in_array($oldStatus, self::FROZEN_STATUSES, true) === false) {
+            return false;
+        }
+
+        // Same frozen status: any change to other fields is rejected.
+        if ($oldStatus === $newStatus && $this->isMaterialChange(old: $old, new: $new) === false) {
+            return false;
+        }
+
+        return true;
+    }//end isFrozenRunMutation()
 
     /**
      * Whether the supplied object belongs to the inspectionChecklistRun schema.
