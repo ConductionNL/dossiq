@@ -190,19 +190,7 @@ class TermijnDailyScanService
 
         // Pause-expiry detection.
         if ($status === 'gepauzeerd') {
-            $pauseEnd = (string) ($row['pauzeDeadline'] ?? '');
-            if ($pauseEnd !== '' && $pauseEnd < $now->format('Y-m-d')) {
-                $counts['pauseExpired']++;
-                $this->termijnService->recordEvent(
-                    termijnInstanceId: $rowId,
-                    type: 'pauze-verlopen',
-                    grondslag: 'AWB 4:5',
-                    motivering: 'Pauzetermijn verlopen zonder aanvulling',
-                    dagenImpact: 0,
-                    tijdstip: $now,
-                );
-            }
-
+            $this->handlePauseExpiry(row: $row, rowId: $rowId, now: $now, counts: $counts);
             return;
         }
 
@@ -211,39 +199,111 @@ class TermijnDailyScanService
             return;
         }
 
-        $deadlineDate = new DateTimeImmutable($deadline);
-        $today        = new DateTimeImmutable($now->format('Y-m-d'));
-        $diff         = (int) $today->diff($deadlineDate)->days;
-        $daysLeft     = $diff;
-        if ($today > $deadlineDate) {
-            $daysLeft = (-1 * $diff);
-        }
+        $daysLeft = $this->calculateDaysLeft(deadline: $deadline, now: $now);
 
         // Overschrijding.
         if ($daysLeft <= 0 && $status !== 'overschreden') {
-            $counts['overschreden']++;
-            $this->termijnService->updateTermijnInstance($rowId, ['status' => 'overschreden']);
-            $this->termijnService->recordEvent(
-                termijnInstanceId: $rowId,
-                type: 'overschreden',
-                grondslag: 'AWB 4:13',
-                motivering: 'Termijn overschreden zonder beschikking',
-                dagenImpact: 0,
-                tijdstip: $now,
-            );
+            $this->recordOverschrijding(rowId: $rowId, now: $now, counts: $counts);
             $row['status'] = 'overschreden';
         }
 
         // Threshold escalation.
-        $bucket = $this->escalationService->bucketFor($daysLeft);
-        if ($bucket !== null) {
-            // Re-read instance to pick up the just-updated status/notificatiesVerstuurd.
-            $latest = $this->termijnService->getTermijnInstance($rowId);
-            if ($latest !== null) {
-                if ($this->escalationService->notifyThreshold($latest, $bucket) === true) {
-                    $counts['escalated']++;
-                }
-            }
-        }
+        $this->escalateThreshold(rowId: $rowId, daysLeft: $daysLeft, counts: $counts);
     }//end processInstance()
+
+    /**
+     * Emit a `pauze-verlopen` event when a paused instance ran past its pause deadline.
+     *
+     * @param array<string, mixed> $row    Instance row.
+     * @param string               $rowId  Instance identifier.
+     * @param DateTimeImmutable    $now    Now.
+     * @param array<string, int>   $counts Running counts (by reference).
+     *
+     * @return void
+     */
+    private function handlePauseExpiry(array $row, string $rowId, DateTimeImmutable $now, array &$counts): void
+    {
+        $pauseEnd = (string) ($row['pauzeDeadline'] ?? '');
+        if ($pauseEnd !== '' && $pauseEnd < $now->format('Y-m-d')) {
+            $counts['pauseExpired']++;
+            $this->termijnService->recordEvent(
+                termijnInstanceId: $rowId,
+                type: 'pauze-verlopen',
+                grondslag: 'AWB 4:5',
+                motivering: 'Pauzetermijn verlopen zonder aanvulling',
+                dagenImpact: 0,
+                tijdstip: $now,
+            );
+        }
+    }//end handlePauseExpiry()
+
+    /**
+     * Compute the signed number of days left until a deadline.
+     *
+     * @param string            $deadline Deadline date string.
+     * @param DateTimeImmutable $now      Now.
+     *
+     * @return int Positive when the deadline lies ahead, negative when it has passed.
+     */
+    private function calculateDaysLeft(string $deadline, DateTimeImmutable $now): int
+    {
+        $deadlineDate = new DateTimeImmutable($deadline);
+        $today        = new DateTimeImmutable($now->format('Y-m-d'));
+        $diff         = (int) $today->diff($deadlineDate)->days;
+        if ($today > $deadlineDate) {
+            return (-1 * $diff);
+        }
+
+        return $diff;
+    }//end calculateDaysLeft()
+
+    /**
+     * Flip an instance to `overschreden` and record the accompanying event.
+     *
+     * @param string             $rowId  Instance identifier.
+     * @param DateTimeImmutable  $now    Now.
+     * @param array<string, int> $counts Running counts (by reference).
+     *
+     * @return void
+     */
+    private function recordOverschrijding(string $rowId, DateTimeImmutable $now, array &$counts): void
+    {
+        $counts['overschreden']++;
+        $this->termijnService->updateTermijnInstance($rowId, ['status' => 'overschreden']);
+        $this->termijnService->recordEvent(
+            termijnInstanceId: $rowId,
+            type: 'overschreden',
+            grondslag: 'AWB 4:13',
+            motivering: 'Termijn overschreden zonder beschikking',
+            dagenImpact: 0,
+            tijdstip: $now,
+        );
+    }//end recordOverschrijding()
+
+    /**
+     * Dispatch threshold escalation for an instance when its days-left falls in a bucket.
+     *
+     * @param string             $rowId    Instance identifier.
+     * @param int                $daysLeft Signed days left until the deadline.
+     * @param array<string, int> $counts   Running counts (by reference).
+     *
+     * @return void
+     */
+    private function escalateThreshold(string $rowId, int $daysLeft, array &$counts): void
+    {
+        $bucket = $this->escalationService->bucketFor($daysLeft);
+        if ($bucket === null) {
+            return;
+        }
+
+        // Re-read instance to pick up the just-updated status/notificatiesVerstuurd.
+        $latest = $this->termijnService->getTermijnInstance($rowId);
+        if ($latest === null) {
+            return;
+        }
+
+        if ($this->escalationService->notifyThreshold($latest, $bucket) === true) {
+            $counts['escalated']++;
+        }
+    }//end escalateThreshold()
 }//end class

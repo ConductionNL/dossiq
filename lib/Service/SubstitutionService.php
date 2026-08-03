@@ -37,7 +37,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
-use InvalidArgumentException;
+use OCA\Procest\Service\Substitution\SubstitutedWorkResolver;
+use OCA\Procest\Service\Substitution\SubstitutionValidator;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -61,14 +62,18 @@ class SubstitutionService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService The settings/config + ObjectService bridge.
-     * @param LoggerInterface $logger          The logger.
+     * @param SettingsService         $settingsService The settings/config + ObjectService bridge.
+     * @param LoggerInterface         $logger          The logger.
+     * @param SubstitutionValidator   $validator       Create-input validation + overlap detection.
+     * @param SubstitutedWorkResolver $workResolver    Resolver for the work a substitution routes.
      *
      * @return void
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
+        private readonly SubstitutionValidator $validator,
+        private readonly SubstitutedWorkResolver $workResolver,
     ) {
     }//end __construct()
 
@@ -110,43 +115,17 @@ class SubstitutionService
         $absentee   = trim($absentee);
         $substitute = trim($substitute);
 
-        if ($absentee === '' || $substitute === '') {
-            throw new InvalidArgumentException('Both absentee and substitute are required');
-        }
+        [$start, $end] = $this->validator->validateCreate(
+            absentee: $absentee,
+            substitute: $substitute,
+            startDate: $startDate,
+            endDate: $endDate,
+            scope: $scope,
+            scopeRefs: $scopeRefs,
+            reason: $reason
+        );
 
-        if ($absentee === $substitute) {
-            throw new InvalidArgumentException('A handler cannot be their own waarnemer (self-substitution is not allowed)');
-        }
-
-        if (in_array($scope, ['all', 'caseTypes', 'cases'], true) === false) {
-            throw new InvalidArgumentException('Invalid scope; expected all, caseTypes or cases');
-        }
-
-        if (in_array($reason, ['verlof', 'ziekte', 'anders'], true) === false) {
-            throw new InvalidArgumentException('Invalid reason; expected verlof, ziekte or anders');
-        }
-
-        $start = $this->parseDate(value: $startDate);
-        $end   = $this->parseDate(value: $endDate);
-        if ($start === null) {
-            throw new InvalidArgumentException('A valid startDate (YYYY-MM-DD) is required');
-        }
-
-        if ($end === null) {
-            throw new InvalidArgumentException(
-                'A valid endDate (YYYY-MM-DD) is required; open-ended absences must be re-issued or converted to a bulk reassignment'
-            );
-        }
-
-        if ($end < $start) {
-            throw new InvalidArgumentException('endDate must not be before startDate');
-        }
-
-        if (($scope === 'caseTypes' || $scope === 'cases') && count($scopeRefs) === 0) {
-            throw new InvalidArgumentException('scopeRefs is required when scope is caseTypes or cases');
-        }
-
-        $this->assertNoOverlappingFullScope(
+        $this->validator->assertNoOverlappingFullScope(
             absentee: $absentee,
             scope: $scope,
             start: $start,
@@ -252,43 +231,78 @@ class SubstitutionService
 
         $active = [];
         foreach ($rows as $row) {
-            $status = (string) ($row['status'] ?? '');
-            if ($status === 'revoked') {
-                continue;
+            $isActive = $this->isRowActiveOn(
+                row: $row,
+                refDay: $refDay,
+                objectService: $objectService,
+                register: $register,
+                schema: $schema
+            );
+            if ($isActive === true) {
+                $active[] = $row;
             }
-
-            $start = (string) ($row['startDate'] ?? '');
-            $end   = (string) ($row['endDate'] ?? '');
-
-            // Lazy expiry: past endDate -> ended, excluded.
-            if ($end !== '' && $refDay > $end) {
-                if ($status === 'active') {
-                    $this->markEnded(
-                        objectService: $objectService,
-                        register: $register,
-                        schema: $schema,
-                        row: $row
-                    );
-                }
-
-                continue;
-            }
-
-            if ($status !== 'active') {
-                continue;
-            }
-
-            if ($start !== '' && $refDay < $start) {
-                continue;
-            }
-
-            $active[] = $row;
-        }//end foreach
+        }
 
         $this->activeCache[$cacheKey] = $active;
 
         return $active;
     }//end getActiveSubstitutionsFor()
+
+    /**
+     * Whether one substitution row is active on the reference day.
+     *
+     * Applies the lazy-expiry side effect: a row whose endDate has passed while
+     * still marked `active` is best-effort persisted as `ended` and excluded.
+     *
+     * @param array<string, mixed> $row           The substitution row.
+     * @param string               $refDay        Reference day (Y-m-d).
+     * @param object               $objectService The ObjectService.
+     * @param string               $register      Register id.
+     * @param string               $schema        Substitution schema id.
+     *
+     * @return bool True when the row is active on the reference day.
+     *
+     * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+     */
+    private function isRowActiveOn(
+        array $row,
+        string $refDay,
+        object $objectService,
+        string $register,
+        string $schema
+    ): bool {
+        $status = (string) ($row['status'] ?? '');
+        if ($status === 'revoked') {
+            return false;
+        }
+
+        $start = (string) ($row['startDate'] ?? '');
+        $end   = (string) ($row['endDate'] ?? '');
+
+        // Lazy expiry: past endDate -> ended, excluded.
+        if ($end !== '' && $refDay > $end) {
+            if ($status === 'active') {
+                $this->markEnded(
+                    objectService: $objectService,
+                    register: $register,
+                    schema: $schema,
+                    row: $row
+                );
+            }
+
+            return false;
+        }
+
+        if ($status !== 'active') {
+            return false;
+        }
+
+        if ($start !== '' && $refDay < $start) {
+            return false;
+        }
+
+        return true;
+    }//end isRowActiveOn()
 
     /**
      * Resolve the substituted open cases and tasks routed to a waarnemer.
@@ -309,92 +323,9 @@ class SubstitutionService
      */
     public function getSubstitutedWorkFor(string $userId, ?DateTimeImmutable $date=null): array
     {
-        $result = ['cases' => [], 'tasks' => []];
-        $subs   = $this->getActiveSubstitutionsFor(userId: $userId, date: $date);
-        if (count($subs) === 0) {
-            return $result;
-        }
-
-        [$objectService, $register] = $this->resolveContext();
-        if ($objectService === null) {
-            return $result;
-        }
-
-        $caseSchema = (string) $this->settingsService->getConfigValue('case_schema');
-        $taskSchema = (string) $this->settingsService->getConfigValue('task_schema');
-        $finalIds   = $this->finalStatusIds(objectService: $objectService, register: $register);
-
-        $seenCases = [];
-        $seenTasks = [];
-
-        foreach ($subs as $sub) {
-            $absentee  = (string) ($sub['absentee'] ?? '');
-            $subId     = (string) ($sub['id'] ?? ($sub['uuid'] ?? ''));
-            $scope     = (string) ($sub['scope'] ?? 'all');
-            $scopeRefs = array_map('strval', (array) ($sub['scopeRefs'] ?? []));
-            if ($absentee === '') {
-                continue;
-            }
-
-            // Cases the absentee handles.
-            if ($caseSchema !== '') {
-                $cases = $this->searchObjectsAsArrays(
-                    objectService: $objectService,
-                    register: $register,
-                    schema: $caseSchema,
-                    filters: ['assignee' => $absentee]
-                );
-                foreach ($cases as $case) {
-                    if ($this->caseInScope(case: $case, scope: $scope, scopeRefs: $scopeRefs) === false) {
-                        continue;
-                    }
-
-                    if (in_array((string) ($case['status'] ?? ''), $finalIds, true) === true) {
-                        continue;
-                    }
-
-                    $id = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-                    if ($id === '' || isset($seenCases[$id]) === true) {
-                        continue;
-                    }
-
-                    $seenCases[$id]       = true;
-                    $case['_substituted'] = ['absentee' => $absentee, 'substitutionId' => $subId];
-                    $result['cases'][]    = $case;
-                }//end foreach
-            }//end if
-
-            // Tasks the absentee is assigned (open = not completed/terminated).
-            if ($taskSchema !== '') {
-                $tasks = $this->searchObjectsAsArrays(
-                    objectService: $objectService,
-                    register: $register,
-                    schema: $taskSchema,
-                    filters: ['assignee' => $absentee]
-                );
-                foreach ($tasks as $task) {
-                    $tStatus = (string) ($task['status'] ?? '');
-                    if (in_array($tStatus, ['completed', 'terminated', 'disabled'], true) === true) {
-                        continue;
-                    }
-
-                    if ($scope === 'cases' && in_array((string) ($task['case'] ?? ''), $scopeRefs, true) === false) {
-                        continue;
-                    }
-
-                    $id = (string) ($task['id'] ?? ($task['uuid'] ?? ''));
-                    if ($id === '' || isset($seenTasks[$id]) === true) {
-                        continue;
-                    }
-
-                    $seenTasks[$id]       = true;
-                    $task['_substituted'] = ['absentee' => $absentee, 'substitutionId' => $subId];
-                    $result['tasks'][]    = $task;
-                }//end foreach
-            }//end if
-        }//end foreach
-
-        return $result;
+        return $this->workResolver->resolve(
+            subs: $this->getActiveSubstitutionsFor(userId: $userId, date: $date)
+        );
     }//end getSubstitutedWorkFor()
 
     /**
@@ -434,103 +365,13 @@ class SubstitutionService
             $scope     = (string) ($sub['scope'] ?? 'all');
             $scopeRefs = array_map('strval', (array) ($sub['scopeRefs'] ?? []));
             $probe     = ['caseType' => $caseType, 'id' => $caseId];
-            if ($this->caseInScope(case: $probe, scope: $scope, scopeRefs: $scopeRefs) === true) {
+            if ($this->workResolver->caseInScope(case: $probe, scope: $scope, scopeRefs: $scopeRefs) === true) {
                 return $sub;
             }
         }
 
         return null;
     }//end resolveActingCapacity()
-
-    /**
-     * Whether a case falls within a substitution scope.
-     *
-     * @param array<string, mixed> $case      The case object.
-     * @param string               $scope     all|caseTypes|cases.
-     * @param array<int, string>   $scopeRefs The narrowed refs.
-     *
-     * @return bool
-     *
-     * @spec openspec/specs/handler-vervanging-waarneming/spec.md
-     */
-    private function caseInScope(array $case, string $scope, array $scopeRefs): bool
-    {
-        if ($scope === 'all') {
-            return true;
-        }
-
-        if ($scope === 'caseTypes') {
-            return in_array((string) ($case['caseType'] ?? ''), $scopeRefs, true);
-        }
-
-        if ($scope === 'cases') {
-            $id = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-            return in_array($id, $scopeRefs, true);
-        }
-
-        return false;
-    }//end caseInScope()
-
-    /**
-     * Reject a new substitution that overlaps an existing active full-scope one.
-     *
-     * Only `all`+`all` overlaps for the same absentee and period are rejected;
-     * disjoint scopes are allowed to coexist.
-     *
-     * @param string            $absentee The covered handler.
-     * @param string            $scope    The new substitution scope.
-     * @param DateTimeImmutable $start    New start.
-     * @param DateTimeImmutable $end      New end.
-     *
-     * @return void
-     *
-     * @throws InvalidArgumentException When a conflicting full-scope substitution exists.
-     *
-     * @spec openspec/specs/handler-vervanging-waarneming/spec.md
-     */
-    private function assertNoOverlappingFullScope(string $absentee, string $scope, DateTimeImmutable $start, DateTimeImmutable $end): void
-    {
-        if ($scope !== 'all') {
-            return;
-        }
-
-        [$objectService, $register, $schema] = $this->resolveContext();
-        if ($objectService === null) {
-            return;
-        }
-
-        $rows = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['absentee' => $absentee]
-        );
-
-        foreach ($rows as $row) {
-            if ((string) ($row['status'] ?? '') !== 'active') {
-                continue;
-            }
-
-            if ((string) ($row['scope'] ?? '') !== 'all') {
-                continue;
-            }
-
-            $existingStart = $this->parseDate(value: (string) ($row['startDate'] ?? ''));
-            $existingEnd   = $this->parseDate(value: (string) ($row['endDate'] ?? ''));
-            if ($existingStart === null || $existingEnd === null) {
-                continue;
-            }
-
-            // Overlap when neither range is entirely before the other.
-            if ($start <= $existingEnd && $existingStart <= $end) {
-                $conflictId = (string) ($row['id'] ?? ($row['uuid'] ?? '?'));
-                throw new InvalidArgumentException(
-                    'An active full-scope substitution already covers this handler for an '
-                    .'overlapping period (conflicting substitution: '.$conflictId.')'
-                );
-            }
-        }//end foreach
-    }//end assertNoOverlappingFullScope()
 
     /**
      * Best-effort lazy persistence of the `ended` status.
@@ -556,63 +397,6 @@ class SubstitutionService
             $this->logger->warning('Substitution lazy-ended persistence failed', ['id' => $id, 'error' => $e->getMessage()]);
         }
     }//end markEnded()
-
-    /**
-     * Resolve the set of final statusType ids (closed/archived cases).
-     *
-     * @param object $objectService The ObjectService.
-     * @param string $register      Register id.
-     *
-     * @return array<int, string>
-     */
-    private function finalStatusIds(object $objectService, string $register): array
-    {
-        $statusTypeSchema = (string) $this->settingsService->getConfigValue('status_type_schema');
-        if ($statusTypeSchema === '') {
-            return [];
-        }
-
-        try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $statusTypeSchema);
-        } catch (\Throwable $e) {
-            return [];
-        }
-
-        $ids = [];
-        foreach ($rows as $row) {
-            $isFinal = ($row['isFinal'] ?? false);
-            if ($isFinal === true || $isFinal === 'true' || $isFinal === 1) {
-                $ids[] = (string) ($row['id'] ?? ($row['uuid'] ?? ''));
-            }
-        }
-
-        return array_values(array_filter($ids));
-    }//end finalStatusIds()
-
-    /**
-     * Parse a YYYY-MM-DD date string into an immutable date (midnight).
-     *
-     * @param string $value The date string.
-     *
-     * @return DateTimeImmutable|null
-     */
-    private function parseDate(string $value): ?DateTimeImmutable
-    {
-        // An empty/garbage value simply fails the pattern, so no separate
-        // empty check is needed. checkdate() then rejects out-of-range
-        // components, which is what makes the constructor call below safe
-        // (it can no longer throw) — a plain `new` keeps this free of a
-        // static factory call.
-        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})/', trim($value), $parts) !== 1) {
-            return null;
-        }
-
-        if (checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1]) === false) {
-            return null;
-        }
-
-        return new DateTimeImmutable($parts[0].' 00:00:00');
-    }//end parseDate()
 
     /**
      * Resolve the ObjectService + register + substitution schema context,

@@ -106,7 +106,46 @@ class RangeStreamResponse extends Response
      */
     private function parseRange(string $rangeHeader, int $total): ?array
     {
-        if ($rangeHeader === '' || $total === 0) {
+        if ($total === 0) {
+            return null;
+        }
+
+        $parts = $this->matchRangeHeader(rangeHeader: $rangeHeader);
+        if ($parts === null) {
+            return null;
+        }
+
+        [$startRaw, $endRaw] = $parts;
+
+        $bounds = $this->resolveBounds(startRaw: $startRaw, endRaw: $endRaw, total: $total);
+        if ($bounds === null) {
+            return null;
+        }
+
+        [$start, $end] = $bounds;
+
+        if ($start > $end || $start >= $total) {
+            return null;
+        }
+
+        $end = min($end, ($total - 1));
+
+        return [$start, $end];
+    }//end parseRange()
+
+    /**
+     * Match the raw `Range` header against the single-range byte syntax.
+     *
+     * Returns null when no range is requested, the header does not match the
+     * `bytes=start-end` grammar, or both bounds are absent (`bytes=-`).
+     *
+     * @param string $rangeHeader The raw Range header.
+     *
+     * @return array{0:string,1:string}|null The raw [start, end] capture pair, or null.
+     */
+    private function matchRangeHeader(string $rangeHeader): ?array
+    {
+        if ($rangeHeader === '') {
             return null;
         }
 
@@ -121,13 +160,23 @@ class RangeStreamResponse extends Response
             return null;
         }
 
-        // Explicit "bytes=start-[end]" range; an absent end means "until EOF".
-        $start = (int) $startRaw;
-        $end   = ($total - 1);
-        if ($endRaw !== '') {
-            $end = (int) $endRaw;
-        }
+        return [$startRaw, $endRaw];
+    }//end matchRangeHeader()
 
+    /**
+     * Resolve the raw capture pair into unclamped [start, end] byte offsets.
+     *
+     * An absent end means "until EOF"; an absent start makes it a suffix range
+     * ("the last N bytes"), which is unsatisfiable when N is not positive.
+     *
+     * @param string $startRaw The raw start capture (may be empty).
+     * @param string $endRaw   The raw end capture (may be empty).
+     * @param int    $total    The total content length.
+     *
+     * @return array{0:int,1:int}|null The [start, end] pair, or null when unsatisfiable.
+     */
+    private function resolveBounds(string $startRaw, string $endRaw, int $total): ?array
+    {
         if ($startRaw === '') {
             // Suffix range: last N bytes.
             $suffix = (int) $endRaw;
@@ -135,16 +184,15 @@ class RangeStreamResponse extends Response
                 return null;
             }
 
-            $start = max(0, ($total - $suffix));
-            $end   = ($total - 1);
+            return [max(0, ($total - $suffix)), ($total - 1)];
         }
 
-        if ($start > $end || $start >= $total) {
-            return null;
+        // Explicit "bytes=start-[end]" range; an absent end means "until EOF".
+        $end = ($total - 1);
+        if ($endRaw !== '') {
+            $end = (int) $endRaw;
         }
 
-        $end = min($end, ($total - 1));
-
-        return [$start, $end];
-    }//end parseRange()
+        return [(int) $startRaw, $end];
+    }//end resolveBounds()
 }//end class

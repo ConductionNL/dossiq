@@ -86,13 +86,7 @@ class WOODecisionService
     public function assembleDecision(string $caseId, array $decisionData=[]): array
     {
         // Guard: all documents must be assessed before a besluit can be created.
-        $outstanding = $this->assessmentService->getOutstanding(caseId: $caseId);
-        if ($outstanding['count'] > 0) {
-            throw new InvalidArgumentException(
-                'Cannot create besluit: '.$outstanding['count'].' document(s) still need assessment. '
-                .'Document IDs: '.implode(', ', $outstanding['documents'])
-            );
-        }
+        $this->assertAllDocumentsAssessed(caseId: $caseId);
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
@@ -108,46 +102,19 @@ class WOODecisionService
         }
 
         // Collect all assessments for the case.
-        $assessments = [];
-        if (empty($assessmentSchema) === false) {
-            $result = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $assessmentSchema,
-                filters: ['caseRef' => $caseId, '_limit' => 500],
-            );
-
-            if (is_array($result) === true) {
-                $assessments = $result;
-            }
-        }
+        $assessments = $this->collectAssessments(
+            objectService: $objectService,
+            register: $register,
+            assessmentSchema: $assessmentSchema,
+            caseId: $caseId,
+        );
 
         // Summarise assessments by classification.
-        $summary = [
-            'openbaar'       => 0,
-            'deels_openbaar' => 0,
-            'niet_openbaar'  => 0,
-        ];
+        $summarised        = $this->summariseAssessments(assessments: $assessments);
+        $summary           = $summarised['summary'];
+        $weigeringsgronden = $summarised['weigeringsgronden'];
 
-        $weigeringsgronden = [];
-        foreach ($assessments as $assessment) {
-            $classification = $assessment['classification'] ?? null;
-            if ($classification !== null && isset($summary[$classification]) === true) {
-                $summary[$classification]++;
-            }
-
-            foreach (($assessment['weigeringsgronden'] ?? []) as $code) {
-                if (in_array($code, $weigeringsgronden, true) === false) {
-                    $weigeringsgronden[] = $code;
-                }
-            }
-        }
-
-        $user   = $this->userSession->getUser();
-        $userId = 'system';
-        if ($user !== null) {
-            $userId = $user->getUID();
-        }
+        $userId = $this->resolveDecidedBy();
 
         $besluitData = array_merge(
             [
@@ -178,4 +145,104 @@ class WOODecisionService
             'assessmentCount'   => count($assessments),
         ];
     }//end assembleDecision()
+
+    /**
+     * Guard that every document of a case carries an assessment.
+     *
+     * @param string $caseId The case UUID
+     *
+     * @return void
+     *
+     * @throws \InvalidArgumentException If any document has not been assessed
+     */
+    private function assertAllDocumentsAssessed(string $caseId): void
+    {
+        $outstanding = $this->assessmentService->getOutstanding(caseId: $caseId);
+        if ($outstanding['count'] > 0) {
+            throw new InvalidArgumentException(
+                'Cannot create besluit: '.$outstanding['count'].' document(s) still need assessment. '
+                .'Document IDs: '.implode(', ', $outstanding['documents'])
+            );
+        }
+    }//end assertAllDocumentsAssessed()
+
+    /**
+     * Fetch all assessment objects belonging to a case.
+     *
+     * @param object $objectService    OpenRegister object service
+     * @param mixed  $register         Configured register identifier
+     * @param mixed  $assessmentSchema Configured assessment schema identifier
+     * @param string $caseId           The case UUID
+     *
+     * @return array<int, array<string, mixed>> Assessment rows, empty when the schema is not configured
+     */
+    private function collectAssessments(object $objectService, mixed $register, mixed $assessmentSchema, string $caseId): array
+    {
+        if (empty($assessmentSchema) === true) {
+            return [];
+        }
+
+        $result = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $assessmentSchema,
+            filters: ['caseRef' => $caseId, '_limit' => 500],
+        );
+
+        if (is_array($result) === false) {
+            return [];
+        }
+
+        return $result;
+    }//end collectAssessments()
+
+    /**
+     * Tally assessments by classification and collect the distinct weigeringsgronden.
+     *
+     * @param array<int, array<string, mixed>> $assessments Assessment rows
+     *
+     * @return array{summary: array<string, int>, weigeringsgronden: array<int, mixed>} Counts per classification plus distinct grounds
+     */
+    private function summariseAssessments(array $assessments): array
+    {
+        $summary = [
+            'openbaar'       => 0,
+            'deels_openbaar' => 0,
+            'niet_openbaar'  => 0,
+        ];
+
+        $weigeringsgronden = [];
+        foreach ($assessments as $assessment) {
+            $classification = $assessment['classification'] ?? null;
+            if ($classification !== null && isset($summary[$classification]) === true) {
+                $summary[$classification]++;
+            }
+
+            foreach (($assessment['weigeringsgronden'] ?? []) as $code) {
+                if (in_array($code, $weigeringsgronden, true) === false) {
+                    $weigeringsgronden[] = $code;
+                }
+            }
+        }
+
+        return [
+            'summary'           => $summary,
+            'weigeringsgronden' => $weigeringsgronden,
+        ];
+    }//end summariseAssessments()
+
+    /**
+     * Resolve the user id credited with the besluit.
+     *
+     * @return string The current user id, or `system` when there is no session user
+     */
+    private function resolveDecidedBy(): string
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return 'system';
+        }
+
+        return $user->getUID();
+    }//end resolveDecidedBy()
 }//end class

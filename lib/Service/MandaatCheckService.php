@@ -197,32 +197,70 @@ class MandaatCheckService
 
         $out = [];
         foreach ($rows as $row) {
-            $validFrom  = (string) ($row['validFrom'] ?? '1970-01-01');
-            $validUntil = (string) ($row['validUntil'] ?? '');
-            if ($validFrom > $dateStr) {
+            if ($this->isRowTemporallyValid(row: $row, dateStr: $dateStr) === false) {
                 continue;
             }
 
-            if ($validUntil !== '' && $validUntil < $dateStr) {
-                continue;
-            }
-
-            $voorw    = (array) ($row['voorwaarden'] ?? []);
-            $decTypes = (array) ($voorw['decisionTypes'] ?? []);
-            if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
-                continue;
-            }
-
-            $caseTypes = (array) ($voorw['caseTypes'] ?? []);
-            if ($caseType !== '' && count($caseTypes) > 0 && in_array($caseType, $caseTypes, true) === false) {
+            if ($this->matchesTypeVoorwaarden(row: $row, decisionType: $decisionType, caseType: $caseType) === false) {
                 continue;
             }
 
             $out[] = $row;
-        }//end foreach
+        }
 
         return $out;
     }//end getApplicableMandaten()
+
+    /**
+     * Check whether a row's validFrom/validUntil window covers the given date.
+     *
+     * @param array<string, mixed> $row     Row carrying validFrom/validUntil.
+     * @param string               $dateStr Date in Y-m-d form.
+     *
+     * @return bool True when the row is temporally valid on that date.
+     */
+    private function isRowTemporallyValid(array $row, string $dateStr): bool
+    {
+        $validFrom  = (string) ($row['validFrom'] ?? '1970-01-01');
+        $validUntil = (string) ($row['validUntil'] ?? '');
+        if ($validFrom > $dateStr) {
+            return false;
+        }
+
+        if ($validUntil !== '' && $validUntil < $dateStr) {
+            return false;
+        }
+
+        return true;
+    }//end isRowTemporallyValid()
+
+    /**
+     * Check a mandaat's decisionTypes/caseTypes voorwaarden against the request.
+     *
+     * An empty list means "no restriction"; an empty case type skips the
+     * case-type filter entirely.
+     *
+     * @param array<string, mixed> $row          Mandaat row.
+     * @param string               $decisionType Decision type slug.
+     * @param string               $caseType     Case type slug (may be empty).
+     *
+     * @return bool True when the mandaat applies to the pair.
+     */
+    private function matchesTypeVoorwaarden(array $row, string $decisionType, string $caseType): bool
+    {
+        $voorw    = (array) ($row['voorwaarden'] ?? []);
+        $decTypes = (array) ($voorw['decisionTypes'] ?? []);
+        if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
+            return false;
+        }
+
+        $caseTypes = (array) ($voorw['caseTypes'] ?? []);
+        if ($caseType !== '' && count($caseTypes) > 0 && in_array($caseType, $caseTypes, true) === false) {
+            return false;
+        }
+
+        return true;
+    }//end matchesTypeVoorwaarden()
 
     /**
      * Applicable mandates for the given user (filtered to their active role).
@@ -304,13 +342,7 @@ class MandaatCheckService
         $dateStr = $date->format('Y-m-d');
         $active  = [];
         foreach ($rows as $row) {
-            $validFrom  = (string) ($row['validFrom'] ?? '1970-01-01');
-            $validUntil = (string) ($row['validUntil'] ?? '');
-            if ($validFrom > $dateStr) {
-                continue;
-            }
-
-            if ($validUntil !== '' && $validUntil < $dateStr) {
+            if ($this->isRowTemporallyValid(row: $row, dateStr: $dateStr) === false) {
                 continue;
             }
 
@@ -344,40 +376,72 @@ class MandaatCheckService
      */
     public function evaluateConditions(array $mandaat, array $caseProperties): array
     {
-        $voorw  = (array) ($mandaat['voorwaarden'] ?? []);
-        $failed = [];
-        $reden  = '';
+        $voorw   = (array) ($mandaat['voorwaarden'] ?? []);
+        $failed  = [];
+        $redenen = [];
 
         // Plafond check (cents).
-        if (isset($voorw['plafondCents']) === true && isset($caseProperties['bedragCents']) === true) {
-            $plafond = (int) $voorw['plafondCents'];
-            $bedrag  = (int) $caseProperties['bedragCents'];
-            if ($bedrag > $plafond) {
-                $failed[] = 'plafond';
-                $reden    = self::REDEN_PLAFOND_OVERSCHREDEN;
-            }
+        if ($this->plafondExceeded(voorwaarden: $voorw, caseProperties: $caseProperties) === true) {
+            $failed[]  = 'plafond';
+            $redenen[] = self::REDEN_PLAFOND_OVERSCHREDEN;
         }
 
         // Subdelegation check.
-        if (isset($caseProperties['subdelegatieRequested']) === true && $caseProperties['subdelegatieRequested'] === true) {
-            $allowed = (bool) ($voorw['subdelegatie'] ?? false);
-            if ($allowed === false) {
-                $failed[] = 'subdelegatie';
-                if ($reden === '') {
-                    $reden = self::REDEN_SUBDELEGATIE_NIET_TOEGESTAAN;
-                }
-            }
+        if ($this->subdelegatieDenied(voorwaarden: $voorw, caseProperties: $caseProperties) === true) {
+            $failed[]  = 'subdelegatie';
+            $redenen[] = self::REDEN_SUBDELEGATIE_NIET_TOEGESTAAN;
         }
 
-        if (count($failed) > 0) {
-            $effectiveReden = self::REDEN_NIET_BEVOEGD;
-            if ($reden !== '') {
-                $effectiveReden = $reden;
-            }
-
-            return ['passed' => false, 'reden' => $effectiveReden, 'failedConditions' => $failed];
+        if (count($failed) === 0) {
+            return ['passed' => true, 'reden' => '', 'failedConditions' => []];
         }
 
-        return ['passed' => true, 'reden' => '', 'failedConditions' => []];
+        // The most-specific failure wins; plafond is evaluated first and so
+        // takes precedence over subdelegatie.
+        $effectiveReden = ($redenen[0] ?? self::REDEN_NIET_BEVOEGD);
+
+        return ['passed' => false, 'reden' => $effectiveReden, 'failedConditions' => $failed];
     }//end evaluateConditions()
+
+    /**
+     * Check whether the case amount exceeds the mandaat plafond.
+     *
+     * Both the plafond and the case amount must be present; when either is
+     * absent the plafond is not applicable and the check passes.
+     *
+     * @param array<string, mixed> $voorwaarden    Mandaat voorwaarden.
+     * @param array<string, mixed> $caseProperties Case properties.
+     *
+     * @return bool True when the plafond is exceeded.
+     */
+    private function plafondExceeded(array $voorwaarden, array $caseProperties): bool
+    {
+        if (isset($voorwaarden['plafondCents'], $caseProperties['bedragCents']) === false) {
+            return false;
+        }
+
+        $plafond = (int) $voorwaarden['plafondCents'];
+        $bedrag  = (int) $caseProperties['bedragCents'];
+
+        return ($bedrag > $plafond);
+    }//end plafondExceeded()
+
+    /**
+     * Check whether a requested subdelegation is denied by the voorwaarden.
+     *
+     * Only evaluated when the case explicitly requests subdelegation.
+     *
+     * @param array<string, mixed> $voorwaarden    Mandaat voorwaarden.
+     * @param array<string, mixed> $caseProperties Case properties.
+     *
+     * @return bool True when subdelegation was requested but is not allowed.
+     */
+    private function subdelegatieDenied(array $voorwaarden, array $caseProperties): bool
+    {
+        if (($caseProperties['subdelegatieRequested'] ?? false) !== true) {
+            return false;
+        }
+
+        return ((bool) ($voorwaarden['subdelegatie'] ?? false) === false);
+    }//end subdelegatieDenied()
 }//end class

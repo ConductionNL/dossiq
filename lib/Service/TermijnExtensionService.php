@@ -150,38 +150,18 @@ class TermijnExtensionService
         string $documentLink,
         string $mode
     ): array {
-        if (trim($motivering) === '') {
-            throw new RuntimeException('Motivering is required for AWB 4:14 verlenging');
-        }
-
-        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $newEinddatum) !== 1) {
-            throw new RuntimeException('newEinddatum must be in YYYY-MM-DD format');
-        }
+        $this->assertExtensionInput(motivering: $motivering, newEinddatum: $newEinddatum);
 
         $instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
         if ($instance === null) {
             throw new RuntimeException('TermijnInstance not found: '.$termijnInstanceId);
         }
 
-        $current = (string) ($instance['einddatumActueel'] ?? '');
-        if ($current !== '' && $newEinddatum <= $current) {
-            throw new RuntimeException('newEinddatum must be later than current einddatumActueel');
-        }
+        $this->assertExtensionPermitted(instance: $instance, newEinddatum: $newEinddatum, mode: $mode);
 
-        $consumed = (int) ($instance['aantalVerlengingen'] ?? 0);
-        $maxExt   = $this->resolveMaxExtensions(instance: $instance);
-        if ($mode !== self::MODE_SUPERVISOR && $consumed >= $maxExt) {
-            throw new RuntimeException('AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt ('.$maxExt.')');
-        }
-
-        $currentInput = 'now';
-        if ($current !== '') {
-            $currentInput = $current;
-        }
-
-        $currentDate = new DateTimeImmutable($currentInput);
-        $newDate     = new DateTimeImmutable($newEinddatum);
-        $dagenImpact = (int) $currentDate->diff($newDate)->days;
+        $current     = (string) ($instance['einddatumActueel'] ?? '');
+        $consumed    = (int) ($instance['aantalVerlengingen'] ?? 0);
+        $dagenImpact = $this->calculateDagenImpact(current: $current, newEinddatum: $newEinddatum);
 
         $updated = $this->termijnService->updateTermijnInstance(
             $termijnInstanceId,
@@ -192,25 +172,109 @@ class TermijnExtensionService
             ]
         );
 
-        $grondslag = 'AWB 4:14 lid 1';
-        $actor     = 'system';
-        if ($mode === self::MODE_SUPERVISOR) {
-            $grondslag = 'AWB 4:14 lid 3 (supervisor)';
-            $actor     = 'supervisor';
-        }
+        $context = $this->resolveExtensionContext(mode: $mode);
 
         $this->termijnService->recordEvent(
             termijnInstanceId: $termijnInstanceId,
             type: 'verleng',
-            grondslag: $grondslag,
+            grondslag: $context['grondslag'],
             motivering: $motivering,
             dagenImpact: $dagenImpact,
             documentLink: $documentLink,
-            actor: $actor,
+            actor: $context['actor'],
         );
 
         return $updated ?? $instance;
     }//end applyExtension()
+
+    /**
+     * Validate the raw verlenging input before any lookup is performed.
+     *
+     * @param string $motivering   Non-empty reason.
+     * @param string $newEinddatum New deadline (YYYY-MM-DD).
+     *
+     * @return void
+     *
+     * @throws RuntimeException When the motivering is empty or the date is malformed.
+     */
+    private function assertExtensionInput(string $motivering, string $newEinddatum): void
+    {
+        if (trim($motivering) === '') {
+            throw new RuntimeException('Motivering is required for AWB 4:14 verlenging');
+        }
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $newEinddatum) !== 1) {
+            throw new RuntimeException('newEinddatum must be in YYYY-MM-DD format');
+        }
+    }//end assertExtensionInput()
+
+    /**
+     * Validate the verlenging against the instance state and the AWB 4:14 ceiling.
+     *
+     * @param array<string, mixed> $instance     Instance row.
+     * @param string               $newEinddatum New deadline (YYYY-MM-DD).
+     * @param string               $mode         One of self::MODE_STANDARD or self::MODE_SUPERVISOR.
+     *
+     * @return void
+     *
+     * @throws RuntimeException When the deadline does not move forward or the ceiling is exhausted.
+     */
+    private function assertExtensionPermitted(array $instance, string $newEinddatum, string $mode): void
+    {
+        $current = (string) ($instance['einddatumActueel'] ?? '');
+        if ($current !== '' && $newEinddatum <= $current) {
+            throw new RuntimeException('newEinddatum must be later than current einddatumActueel');
+        }
+
+        $consumed = (int) ($instance['aantalVerlengingen'] ?? 0);
+        $maxExt   = $this->resolveMaxExtensions(instance: $instance);
+        if ($mode !== self::MODE_SUPERVISOR && $consumed >= $maxExt) {
+            throw new RuntimeException('AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt ('.$maxExt.')');
+        }
+    }//end assertExtensionPermitted()
+
+    /**
+     * Compute the number of days the deadline moves by.
+     *
+     * @param string $current      Current einddatumActueel, empty when unset.
+     * @param string $newEinddatum New deadline (YYYY-MM-DD).
+     *
+     * @return int Absolute number of days between the current and the new deadline.
+     */
+    private function calculateDagenImpact(string $current, string $newEinddatum): int
+    {
+        $currentInput = 'now';
+        if ($current !== '') {
+            $currentInput = $current;
+        }
+
+        $currentDate = new DateTimeImmutable($currentInput);
+        $newDate     = new DateTimeImmutable($newEinddatum);
+
+        return (int) $currentDate->diff($newDate)->days;
+    }//end calculateDagenImpact()
+
+    /**
+     * Resolve the grondslag and actor recorded with the verlenging event.
+     *
+     * @param string $mode One of self::MODE_STANDARD or self::MODE_SUPERVISOR.
+     *
+     * @return array{grondslag: string, actor: string} Event grondslag and actor for the mode.
+     */
+    private function resolveExtensionContext(string $mode): array
+    {
+        if ($mode === self::MODE_SUPERVISOR) {
+            return [
+                'grondslag' => 'AWB 4:14 lid 3 (supervisor)',
+                'actor'     => 'supervisor',
+            ];
+        }
+
+        return [
+            'grondslag' => 'AWB 4:14 lid 1',
+            'actor'     => 'system',
+        ];
+    }//end resolveExtensionContext()
 
     /**
      * Resolve the maximum number of extensions allowed for this instance.
