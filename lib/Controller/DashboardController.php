@@ -83,7 +83,7 @@ class DashboardController extends GenericDashboardController
     #[PublicPage]
     public function serviceWorker(): DataDownloadResponse
     {
-        $body   = (string) @file_get_contents(self::PUBLIC_DIR.'/service-worker.js');
+        $body   = $this->readPublicAsset(name: 'service-worker.js');
         $status = Http::STATUS_OK;
         if ($body === '') {
             $status = Http::STATUS_NOT_FOUND;
@@ -105,7 +105,7 @@ class DashboardController extends GenericDashboardController
     #[PublicPage]
     public function webManifest(): DataDownloadResponse
     {
-        $body   = (string) @file_get_contents(self::PUBLIC_DIR.'/manifest.webmanifest');
+        $body   = $this->readPublicAsset(name: 'manifest.webmanifest');
         $status = Http::STATUS_OK;
         if ($body === '') {
             $status = Http::STATUS_NOT_FOUND;
@@ -113,4 +113,25 @@ class DashboardController extends GenericDashboardController
 
         return new DataDownloadResponse($body, 'manifest.webmanifest', 'application/manifest+json', $status);
     }//end webManifest()
+
+    /**
+     * Read a static asset shipped under the app's public directory.
+     *
+     * Returns an empty string when the asset is absent or unreadable; callers
+     * translate that into a 404. Guarding with is_file()/is_readable() keeps
+     * the missing-asset path free of PHP warnings without an `@` operator.
+     *
+     * @param string $name Bare file name inside the public directory.
+     *
+     * @return string The asset contents, or '' when it cannot be read.
+     */
+    private function readPublicAsset(string $name): string
+    {
+        $path = self::PUBLIC_DIR.'/'.$name;
+        if (is_file($path) === false || is_readable($path) === false) {
+            return '';
+        }
+
+        return (string) file_get_contents($path);
+    }//end readPublicAsset()
 }//end class
