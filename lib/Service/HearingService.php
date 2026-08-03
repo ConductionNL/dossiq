@@ -289,12 +289,21 @@ class HearingService
         $datum   = $data['datum'] ?? '';
         $locatie = $data['locatie'] ?? '';
 
+        // `is_callable()` rather than `method_exists()`: ObjectEntity exposes
+        // getUuid() through OCP\AppFramework\Db\Entity::__call(), which
+        // method_exists() cannot see, so it reports false for every live
+        // object and would leave this log field permanently empty.
+        $hearingId = '';
+        if (is_object($hearing) === true && is_callable([$hearing, 'getUuid']) === true) {
+            $hearingId = (string) call_user_func([$hearing, 'getUuid']);
+        }
+
         // Calendar integration — log attempt; actual calendar write is
         // delegated to NC Calendar IManager search/find calendars per participant.
         $this->logger->info(
             'Calendar invitations queued for hearing on '.$datum.' at '.$locatie
             .' for '.count($participants).' participants',
-            ['app' => Application::APP_ID],
+            ['app' => Application::APP_ID, 'hearingId' => $hearingId],
         );
     }//end sendCalendarInvitations()
 }//end class

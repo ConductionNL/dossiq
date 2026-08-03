@@ -346,6 +346,7 @@ class CaseEmailService
                 $messageId = $this->recordReceivedEmail(
                     caseId: $caseId,
                     from: $from,
+                    recipient: $to,
                     subject: $subject,
                     body: $body,
                     inReplyTo: $inReplyTo,
@@ -584,6 +585,7 @@ class CaseEmailService
      *
      * @param string $caseId    Case UUID
      * @param string $from      Sender
+     * @param string $recipient Recipient (the mailbox the message arrived on)
      * @param string $subject   Subject
      * @param string $body      Body
      * @param string $inReplyTo Threading header
@@ -593,6 +595,7 @@ class CaseEmailService
     private function recordReceivedEmail(
         string $caseId,
         string $from,
+        string $recipient,
         string $subject,
         string $body,
         string $inReplyTo,
@@ -613,7 +616,7 @@ class CaseEmailService
                         'case'       => $caseId,
                         'direction'  => 'inbound',
                         'from'       => $from,
-                        'to'         => '',
+                        'to'         => $recipient,
                         'subject'    => $subject,
                         'body'       => $body,
                         'messageId'  => $messageId,

@@ -423,7 +423,12 @@ class BackfillLegalHoldsCommand extends Command
                 return [];
             }
 
-            return array_map([$this, 'normaliseRow'], $objects);
+            return array_map(
+                function (mixed $row): array {
+                    return $this->normaliseRow(row: $row);
+                },
+                $objects
+            );
         } catch (\Throwable $e) {
             // Never swallow silently: a scan that fails and a schema that is
             // genuinely empty are indistinguishable in the result, and that

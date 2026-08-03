@@ -170,9 +170,9 @@ class MapTileServiceTest extends TestCase
             'https://example.com/15/16805/10758.png',
             $this->service->urlFor(
                 template: 'https://example.com/{z}/{x}/{y}.png',
-                z: 15,
-                x: 16805,
-                y: 10758
+                zoom: 15,
+                tileX: 16805,
+                tileY: 10758
             )
         );
     }//end testUrlForSubstitutesTokens()

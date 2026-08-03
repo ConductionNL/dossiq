@@ -32,6 +32,7 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\EmailTemplateService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Support\SuppressesWarnings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -44,6 +45,8 @@ use OCP\IUserSession;
  */
 class EmailTemplateController extends Controller
 {
+
+    use SuppressesWarnings;
 
     /**
      * IMAP/poller config keys handled here.
@@ -303,7 +306,11 @@ class EmailTemplateController extends Controller
         // prefer that, but never throw on missing extensions.
         $errno  = 0;
         $errstr = '';
-        $handle = @fsockopen($host, $port, $errno, $errstr, 5);
+        $handle = $this->withoutWarnings(
+            operation: static function () use ($host, $port, &$errno, &$errstr): mixed {
+                return fsockopen($host, $port, $errno, $errstr, 5);
+            }
+        );
         if ($handle === false) {
             return new JSONResponse(['ok' => false, 'error' => 'connection_failed', 'detail' => $errstr]);
         }

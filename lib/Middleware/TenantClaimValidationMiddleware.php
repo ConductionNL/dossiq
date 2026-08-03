@@ -190,8 +190,8 @@ class TenantClaimValidationMiddleware extends Middleware
      */
     private function bumpFailureCounter(): void
     {
-        $ip  = (string) $this->request->getRemoteAddress();
-        $key = 'fail:'.$ip;
+        $ipAddress = (string) $this->request->getRemoteAddress();
+        $key       = 'fail:'.$ipAddress;
         try {
             $count = (int) $this->cache->get($key);
             $count++;
@@ -199,7 +199,7 @@ class TenantClaimValidationMiddleware extends Middleware
             if ($count >= self::FAIL_THRESHOLD) {
                 $this->logger->alert(
                     'Procest SECURITY: cross-tenant JWT threshold breached',
-                    ['ip' => $ip, 'count' => $count]
+                    ['ip' => $ipAddress, 'count' => $count]
                 );
             }
         } catch (Throwable $e) {

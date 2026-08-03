@@ -525,11 +525,7 @@ class BrcController extends ZgwController
             $outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
             $mapped          = [];
             foreach ($objects as $object) {
-                if (is_array($object) === true) {
-                    $objectData = $object;
-                } else {
-                    $objectData = $object->jsonSerialize();
-                }
+                $objectData = $this->objectToArray(row: $object);
 
                 $mapped[] = $this->zgwService->applyOutboundMapping(
                     objectData: $objectData,
@@ -614,16 +610,12 @@ class BrcController extends ZgwController
                 );
             }
 
-            $object = $objectService->saveObject(
+            $object     = $objectService->saveObject(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
                 object: $englishData
             );
-            if (is_array($object) === true) {
-                $objectData = $object;
-            } else {
-                $objectData = $object->jsonSerialize();
-            }
+            $objectData = $this->objectToArray(row: $object);
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
@@ -730,11 +722,7 @@ class BrcController extends ZgwController
             $result = $objectService->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $oio) {
-                if (is_array($oio) === true) {
-                    $oioData = $oio;
-                } else {
-                    $oioData = $oio->jsonSerialize();
-                }
+                $oioData = $this->objectToArray(row: $oio);
 
                 $oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
                 if ($oioUuid !== '') {
@@ -774,16 +762,12 @@ class BrcController extends ZgwController
 
         try {
             // Read the BIO to get besluit URL before deletion.
-            $bioObj = $objectService->find(
+            $bioObj  = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($bioObj) === true) {
-                $bioData = $bioObj;
-            } else {
-                $bioData = $bioObj->jsonSerialize();
-            }
+            $bioData = $this->objectToArray(row: $bioObj);
 
             // Build the besluit URL from the stored decision UUID.
             $decisionUuid = $bioData['decision'] ?? '';
@@ -859,11 +843,7 @@ class BrcController extends ZgwController
             $result = $objectService->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $oio) {
-                if (is_array($oio) === true) {
-                    $oioData = $oio;
-                } else {
-                    $oioData = $oio->jsonSerialize();
-                }
+                $oioData = $this->objectToArray(row: $oio);
 
                 $oioUuid = $oioData['id'] ?? ($oioData['@self']['id'] ?? '');
                 if ($oioUuid !== '') {
@@ -905,16 +885,12 @@ class BrcController extends ZgwController
 
         try {
             // Validate the besluit exists (will throw if not found).
-            $existingObj = $objectService->find(
+            $existingObj  = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existingObj) === true) {
-                $existingData = $existingObj;
-            } else {
-                $existingData = $existingObj->jsonSerialize();
-            }
+            $existingData = $this->objectToArray(row: $existingObj);
 
             // Run destroy business rules.
             $ruleResult = $this->zgwService->getBusinessRulesService()->validate(

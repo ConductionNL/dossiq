@@ -147,12 +147,8 @@ class ZaakdossierService
             ],
         ];
 
-        $saved = $objectService->saveObject(object: $informatieobject, register: $register, schema: $infoSchema);
-        if (is_object($saved) === true) {
-            $infoId = $saved->getUuid();
-        } else {
-            $infoId = (string) ($informatieobject['id'] ?? '');
-        }
+        $saved  = $objectService->saveObject(object: $informatieobject, register: $register, schema: $infoSchema);
+        $infoId = $this->resolveSavedUuid(saved: $saved);
 
         // Persist the binary content under the informatieobject UUID folder.
         $this->documentService->storeRaw(uuid: $infoId, fileName: $fileName, content: $content);
@@ -306,10 +302,13 @@ class ZaakdossierService
             ['app' => Application::APP_ID],
         );
 
+        // Carry `vergrendeldOp` through only when the transition set it to a
+        // non-null value. Kept as an isset() test rather than
+        // array_intersect_key(), which would also carry an explicitly-null
+        // value through and write a null back over the stored field.
+        $vergrendeldOp = [];
         if (isset($updateData['vergrendeldOp']) === true) {
             $vergrendeldOp = ['vergrendeldOp' => $updateData['vergrendeldOp']];
-        } else {
-            $vergrendeldOp = [];
         }
 
         return array_merge(
@@ -581,12 +580,8 @@ class ZaakdossierService
             'registratiedatum'    => date('Y-m-d\TH:i:s\Z'),
         ];
 
-        $saved = $objectService->saveObject(object: $join, register: $register, schema: $joinSchema);
-        if (is_object($saved) === true) {
-            $joinId = $saved->getUuid();
-        } else {
-            $joinId = '';
-        }
+        $saved  = $objectService->saveObject(object: $join, register: $register, schema: $joinSchema);
+        $joinId = $this->resolveSavedUuid(saved: $saved);
 
         return [
             'id'               => $joinId,
@@ -617,4 +612,35 @@ class ZaakdossierService
 
         return [$objectService, $register];
     }//end requireRegister()
+
+    /**
+     * Read the UUID out of whatever `ObjectService::saveObject()` returned.
+     *
+     * OpenRegister returns an ObjectEntity when the register is live and a
+     * plain array in the array-mode/test paths, so both shapes are handled.
+     * The UUID MUST come from the SAVED result — the input payload never
+     * carries an `id`, so reading it back from the payload always yielded ''.
+     *
+     * `is_callable()` rather than `method_exists()`: ObjectEntity declares
+     * `uuid` as a protected property and exposes `getUuid()` only through
+     * `OCP\AppFramework\Db\Entity::__call()`. `method_exists()` does not see
+     * magic methods and would report false for every live object, silently
+     * dropping this to the array branch and returning ''. `is_callable()`
+     * accounts for `__call()`, and `call_user_func()` keeps the invocation
+     * resolvable for static analysis.
+     *
+     * @param mixed $saved The saveObject() return value.
+     *
+     * @return string The saved object UUID, or '' when it cannot be resolved.
+     */
+    private function resolveSavedUuid(mixed $saved): string
+    {
+        if (is_object($saved) === true && is_callable([$saved, 'getUuid']) === true) {
+            return (string) call_user_func([$saved, 'getUuid']);
+        }
+
+        $row  = (array) $saved;
+        $self = (array) ($row['@self'] ?? []);
+        return (string) ($row['id'] ?? ($self['id'] ?? ''));
+    }//end resolveSavedUuid()
 }//end class

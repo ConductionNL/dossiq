@@ -27,6 +27,7 @@ namespace OCA\Procest\Service;
 use DateTime;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use OCA\Procest\Support\SuppressesWarnings;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -36,6 +37,8 @@ use Psr\Log\LoggerInterface;
  */
 class NotificatieService
 {
+
+    use SuppressesWarnings;
 
     /**
      * RFC1918 + loopback + link-local CIDR blocks to deny (SSRF protection).
@@ -292,26 +295,30 @@ class NotificatieService
         }
 
         // DNS pin: resolve all A/AAAA records and block private ranges.
-        $records = @dns_get_record($host, DNS_A | DNS_AAAA);
+        $records = $this->withoutWarnings(
+            operation: static function () use ($host): mixed {
+                return dns_get_record($host, (DNS_A | DNS_AAAA));
+            }
+        );
         if ($records === false || count($records) === 0) {
             $this->logger->warning(
                 'NRC callback SSRF: DNS resolution returned no records',
-                ['host' => $host]
+                ['host' => $host, 'detail' => $this->lastSuppressedWarning()]
             );
             return false;
         }
 
         foreach ($records as $record) {
-            $ip = $record['ip'] ?? ($record['ipv6'] ?? null);
-            if ($ip === null) {
+            $ipAddress = $record['ip'] ?? ($record['ipv6'] ?? null);
+            if ($ipAddress === null) {
                 continue;
             }
 
             foreach (self::BLOCKED_CIDRS as $cidr) {
-                if ($this->ipInCidr(ip: $ip, cidr: $cidr) === true) {
+                if ($this->ipInCidr(ipAddress: $ipAddress, cidr: $cidr) === true) {
                     $this->logger->warning(
                         'NRC callback SSRF: host resolves to private/loopback address',
-                        ['host' => $host, 'ip' => $ip, 'cidr' => $cidr]
+                        ['host' => $host, 'ip' => $ipAddress, 'cidr' => $cidr]
                     );
                     return false;
                 }//end if
@@ -324,21 +331,21 @@ class NotificatieService
     /**
      * Check if an IP address falls within a CIDR range (IPv4 and IPv6).
      *
-     * @param string $ip   The IP address to test
-     * @param string $cidr The CIDR block (e.g. '10.0.0.0/8')
+     * @param string $ipAddress The IP address to test
+     * @param string $cidr      The CIDR block (e.g. '10.0.0.0/8')
      *
      * @return bool True if the IP is within the range
      */
-    private function ipInCidr(string $ip, string $cidr): bool
+    private function ipInCidr(string $ipAddress, string $cidr): bool
     {
         $isIpv6Cidr = str_contains($cidr, ':');
-        $isIpv6Ip   = str_contains($ip, ':');
+        $isIpv6Ip   = str_contains($ipAddress, ':');
 
         if ($isIpv6Cidr === true && $isIpv6Ip === true) {
             [$network, $prefix] = explode('/', $cidr);
             $prefixLen          = (int) $prefix;
             $networkBin         = inet_pton($network);
-            $inputBin           = inet_pton($ip);
+            $inputBin           = inet_pton($ipAddress);
             if ($networkBin === false || $inputBin === false) {
                 return false;
             }//end if
@@ -365,7 +372,7 @@ class NotificatieService
             [$network, $prefix] = explode('/', $cidr);
             $prefixLen          = (int) $prefix;
             $networkLong        = ip2long($network);
-            $ipLong = ip2long($ip);
+            $ipLong = ip2long($ipAddress);
             if ($networkLong === false || $ipLong === false) {
                 return false;
             }//end if

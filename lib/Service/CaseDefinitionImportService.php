@@ -302,7 +302,7 @@ class CaseDefinitionImportService
         string $strategy,
     ): array {
         if ($component === 'workflows') {
-            return $this->importWorkflows(zip: $zip, strategy: $strategy);
+            return $this->importWorkflows(zip: $zip);
         }
 
         $content = $zip->getFromName($component.'.json');
@@ -340,14 +340,15 @@ class CaseDefinitionImportService
     /**
      * Import workflow files from the ZIP archive.
      *
-     * @param \ZipArchive $zip      The opened ZIP archive.
-     * @param string      $strategy The conflict resolution strategy (reserved for future use).
+     * Workflow files are enumerated and counted only; there is no conflict to
+     * resolve on this path, so — unlike the other components — it takes no
+     * conflict-resolution strategy.
      *
-     * @psalm-suppress UnusedParam
+     * @param \ZipArchive $zip The opened ZIP archive.
      *
      * @return array{status: string, message: string}
      */
-    private function importWorkflows(\ZipArchive $zip, string $strategy): array
+    private function importWorkflows(\ZipArchive $zip): array
     {
         $workflowCount = 0;
 

@@ -61,12 +61,10 @@ class CaseRelationService
      * Constructor.
      *
      * @param SettingsService $settingsService Shared OR/settings resolver.
-     * @param DeelzaakService $deelzaakService Hierarchy service (overlap guard).
      * @param LoggerInterface $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly DeelzaakService $deelzaakService,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
