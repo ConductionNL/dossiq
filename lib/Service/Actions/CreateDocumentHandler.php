@@ -98,16 +98,16 @@ class CreateDocumentHandler implements ActionHandlerInterface
             ];
 
             if (($transitionContext['dryRun'] ?? false) === true) {
-                return ActionResult::success($preview);
+                return new ActionResult(succeeded: true, data: $preview);
             }
 
             if ($templateSlug === '') {
-                return ActionResult::failure('missing_template_slug', $preview);
+                return new ActionResult(succeeded: false, error: 'missing_template_slug', data: $preview);
             }
 
             $documentService = $this->resolveDocumentService();
             if ($documentService === null) {
-                return ActionResult::failure('document_service_unavailable', $preview);
+                return new ActionResult(succeeded: false, error: 'document_service_unavailable', data: $preview);
             }
 
             // The document service is owned by status-transition-engine's
@@ -125,7 +125,7 @@ class CreateDocumentHandler implements ActionHandlerInterface
             }
 
             $preview['documentId'] = $documentId;
-            return ActionResult::success($preview);
+            return new ActionResult(succeeded: true, data: $preview);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'CreateDocumentHandler: failed to render document',
@@ -135,7 +135,7 @@ class CreateDocumentHandler implements ActionHandlerInterface
                     'exception' => $e->getMessage(),
                 ]
             );
-            return ActionResult::failure('document_create_failed');
+            return new ActionResult(succeeded: false, error: 'document_create_failed');
         }//end try
     }//end handle()
 

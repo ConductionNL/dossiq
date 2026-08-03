@@ -113,7 +113,8 @@ class MandaatEscalatieService
         $register      = (string) $this->settingsService->getConfigValue('register');
         $mSchema       = (string) $this->settingsService->getConfigValue('mandaat_schema');
         $assignSchema  = (string) $this->settingsService->getConfigValue('medewerker_rol_toewijzing_schema');
-        if ($objectService === null || $register === '' || $mSchema === '' || $assignSchema === '') {
+        $hasBlank      = in_array('', [$register, $mSchema, $assignSchema], true);
+        if ($objectService === null || $hasBlank === true) {
             return ['mandaatId' => '', 'userId' => ''];
         }
 
@@ -128,21 +129,9 @@ class MandaatEscalatieService
             return ['mandaatId' => '', 'userId' => ''];
         }
 
-        $matching = [];
-        foreach ($mandaten as $m) {
-            $decTypes = (array) (($m['voorwaarden'] ?? [])['decisionTypes'] ?? []);
-            if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
-                continue;
-            }
-
-            $matching[] = $m;
-        }
-
-        // Sort by plafondCents descending (null/missing → 0).
-        usort(
-            $matching,
-            static fn (array $a, array $b): int =>
-                ((int) (($b['voorwaarden'] ?? [])['plafondCents'] ?? 0)) <=> ((int) (($a['voorwaarden'] ?? [])['plafondCents'] ?? 0))
+        $matching = $this->rankMandatenForDecisionType(
+            mandaten: $mandaten,
+            decisionType: $decisionType,
         );
 
         foreach ($matching as $m) {
@@ -195,6 +184,36 @@ class MandaatEscalatieService
 
         return ['mandaatId' => '', 'userId' => ''];
     }//end resolveEscalatiePath()
+
+    /**
+     * Keep the mandaten that apply to a decision type, highest plafond first.
+     *
+     * @param array<int, array<string, mixed>> $mandaten     Active mandaat rows.
+     * @param string                           $decisionType Decision type.
+     *
+     * @return array<int, array<string, mixed>> The applicable mandaten, ranked.
+     */
+    private function rankMandatenForDecisionType(array $mandaten, string $decisionType): array
+    {
+        $matching = [];
+        foreach ($mandaten as $m) {
+            $decTypes = (array) (($m['voorwaarden'] ?? [])['decisionTypes'] ?? []);
+            if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
+                continue;
+            }
+
+            $matching[] = $m;
+        }//end foreach
+
+        // Sort by plafondCents descending (null/missing → 0).
+        usort(
+            $matching,
+            static fn (array $a, array $b): int =>
+                ((int) (($b['voorwaarden'] ?? [])['plafondCents'] ?? 0)) <=> ((int) (($a['voorwaarden'] ?? [])['plafondCents'] ?? 0))
+        );
+
+        return $matching;
+    }//end rankMandatenForDecisionType()
 
     /**
      * Approve an open escalation.

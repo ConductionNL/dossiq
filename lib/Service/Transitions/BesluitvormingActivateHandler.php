@@ -77,18 +77,18 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface
         try {
             $voorstelId = $this->resolveVoorstelId(case: $case);
             if ($voorstelId === '') {
-                return ActionResult::failure(error: 'no_active_voorstel');
+                return new ActionResult(succeeded: false, error: 'no_active_voorstel');
             }
 
             $this->parafeerService->activate($voorstelId);
 
-            return ActionResult::success(data: ['voorstel' => $voorstelId]);
+            return new ActionResult(succeeded: true, data: ['voorstel' => $voorstelId]);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'BesluitvormingActivateHandler failed',
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
-            return ActionResult::failure(error: 'besluitvorming_activate_failed');
+            return new ActionResult(succeeded: false, error: 'besluitvorming_activate_failed');
         }//end try
     }//end handle()
 
@@ -127,20 +127,7 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface
                 ],
             );
 
-            if (is_array($results) === true && isset($results['results']) === true) {
-                $results = $results['results'];
-            }
-
-            if (is_array($results) === true && count($results) > 0) {
-                $first = $results[0];
-                if (is_object($first) === true && method_exists($first, 'jsonSerialize') === true) {
-                    $first = $first->jsonSerialize();
-                }
-
-                if (is_array($first) === true) {
-                    return (string) ($first['id'] ?? $first['uuid'] ?? '');
-                }
-            }
+            return $this->firstResultId(results: $results);
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'BesluitvormingActivateHandler could not resolve voorstel',
@@ -150,4 +137,36 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface
 
         return '';
     }//end resolveVoorstelId()
+
+    /**
+     * Read the identifier off the first entry of an ObjectService result set.
+     *
+     * Tolerates both the bare list and the `{results: []}` envelope, and both
+     * array and JsonSerializable entries.
+     *
+     * @param mixed $results Raw ObjectService::findAll() return value.
+     *
+     * @return string The identifier, or empty string when none can be read.
+     */
+    private function firstResultId(mixed $results): string
+    {
+        if (is_array($results) === true && isset($results['results']) === true) {
+            $results = $results['results'];
+        }
+
+        if (is_array($results) === false || count($results) === 0) {
+            return '';
+        }
+
+        $first = $results[0];
+        if (is_object($first) === true && method_exists($first, 'jsonSerialize') === true) {
+            $first = $first->jsonSerialize();
+        }
+
+        if (is_array($first) === false) {
+            return '';
+        }
+
+        return (string) ($first['id'] ?? $first['uuid'] ?? '');
+    }//end firstResultId()
 }//end class

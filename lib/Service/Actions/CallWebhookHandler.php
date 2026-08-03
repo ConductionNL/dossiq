@@ -98,11 +98,11 @@ class CallWebhookHandler implements ActionHandlerInterface
             ];
 
             if (($transitionContext['dryRun'] ?? false) === true) {
-                return ActionResult::success($preview);
+                return new ActionResult(succeeded: true, data: $preview);
             }
 
             if ($url === '') {
-                return ActionResult::failure('missing_webhook_url', $preview);
+                return new ActionResult(succeeded: false, error: 'missing_webhook_url', data: $preview);
             }
 
             $client = $this->clientService->newClient();
@@ -126,20 +126,20 @@ class CallWebhookHandler implements ActionHandlerInterface
                         'exception' => $e->getMessage(),
                     ]
                 );
-                return ActionResult::failure($errorCode, $preview);
+                return new ActionResult(succeeded: false, error: $errorCode, data: $preview);
             }//end try
 
             $statusCode = (int) $response->getStatusCode();
             if ($statusCode >= 500) {
-                return ActionResult::failure('webhook_http_5xx', $preview);
+                return new ActionResult(succeeded: false, error: 'webhook_http_5xx', data: $preview);
             }
 
             if ($statusCode >= 400) {
-                return ActionResult::failure('webhook_http_4xx', $preview);
+                return new ActionResult(succeeded: false, error: 'webhook_http_4xx', data: $preview);
             }
 
             $preview['statusCode'] = $statusCode;
-            return ActionResult::success($preview);
+            return new ActionResult(succeeded: true, data: $preview);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'CallWebhookHandler: unexpected failure',
@@ -149,7 +149,7 @@ class CallWebhookHandler implements ActionHandlerInterface
                     'exception' => $e->getMessage(),
                 ]
             );
-            return ActionResult::failure('webhook_dispatch_failed');
+            return new ActionResult(succeeded: false, error: 'webhook_dispatch_failed');
         }//end try
     }//end handle()
 

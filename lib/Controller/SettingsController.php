@@ -132,11 +132,10 @@ class SettingsController extends Controller
         $user    = $this->userSession->getUser();
         $isAdmin = $user !== null && $this->groupManager->isAdmin($user->getUID());
 
-        if ($isAdmin === true) {
-            $config = $this->settingsService->getSettings();
-        } else {
-            $config = $this->settingsService->getPublicSettings();
-        }//end if
+        $config = match ($isAdmin) {
+            true    => $this->settingsService->getSettings(),
+            default => $this->settingsService->getPublicSettings(),
+        };
 
         $libresignAvailable = $this->appManager->isEnabledForUser('libresign');
         $libresignHint      = null;

@@ -137,22 +137,26 @@ class CaseDefinitionExportService
         // Add selected components.
         foreach ($components as $component) {
             $data = $this->exportComponent(caseTypeId: $caseTypeId, component: $component);
-            if ($data !== null) {
-                if ($component === 'workflows' && is_array($data) === true) {
-                    foreach ($data as $workflowName => $workflowData) {
-                        $zip->addFromString(
-                            'workflows/'.$workflowName.'.json',
-                            json_encode($workflowData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                        );
-                    }
-                } else {
+            if ($data === null) {
+                continue;
+            }
+
+            if ($component === 'workflows' && is_array($data) === true) {
+                foreach ($data as $workflowName => $workflowData) {
                     $zip->addFromString(
-                        $component.'.json',
-                        json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+                        'workflows/'.$workflowName.'.json',
+                        json_encode($workflowData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
                     );
                 }
+
+                continue;
             }
-        }
+
+            $zip->addFromString(
+                $component.'.json',
+                json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+            );
+        }//end foreach
 
         $zip->close();
 
@@ -192,10 +196,9 @@ class CaseDefinitionExportService
 
         $excludedComponents = array_values(array_diff(self::COMPONENTS, $components));
 
+        $previousVersionValue = null;
         if ($previousVersion !== '0.0') {
             $previousVersionValue = $previousVersion;
-        } else {
-            $previousVersionValue = null;
         }
 
         return [

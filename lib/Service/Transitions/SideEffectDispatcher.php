@@ -84,8 +84,8 @@ class SideEffectDispatcher
             }
 
             $result = $handler->handle(actionConfig: $action, case: $case, transitionContext: $transitionContext);
-            $entry  = ['type' => $type, 'ok' => $result->ok];
-            if ($result->ok === false) {
+            $entry  = ['type' => $type, 'ok' => $result->succeeded];
+            if ($result->succeeded === false) {
                 $entry['error'] = (string) ($result->error ?? 'action_failed');
             }
 

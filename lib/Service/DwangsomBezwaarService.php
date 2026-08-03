@@ -79,9 +79,12 @@ class DwangsomBezwaarService
         $register      = (string) $this->settingsService->getConfigValue('register');
         $bSchema       = (string) $this->settingsService->getConfigValue('dwangsom_berekening_schema');
         $uSchema       = (string) $this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
-        if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
-            throw new RuntimeException('Dwangsom services not configured');
-        }
+        $objectService = $this->requireDwangsomObjectService(
+            objectService: $objectService,
+            register: $register,
+            bSchema: $bSchema,
+            uSchema: $uSchema,
+        );
 
         try {
             $berekening = $objectService->find($berekeningId, register: $register, schema: $bSchema);
@@ -101,16 +104,12 @@ class DwangsomBezwaarService
         }
 
         // Move all linked uitbetalingen to on-hold-bezwaar.
-        try {
-            $uitbetalingen = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $uSchema,
-                filters: ['dwangsomBerekening' => $berekeningId]
-            );
-        } catch (\Throwable $e) {
-            $uitbetalingen = [];
-        }
+        $uitbetalingen = $this->findUitbetalingen(
+            objectService: $objectService,
+            register: $register,
+            uSchema: $uSchema,
+            berekeningId: $berekeningId,
+        );
 
         foreach ($uitbetalingen as $u) {
             $u['status'] = 'on-hold-bezwaar';
@@ -164,9 +163,12 @@ class DwangsomBezwaarService
         $register      = (string) $this->settingsService->getConfigValue('register');
         $bSchema       = (string) $this->settingsService->getConfigValue('dwangsom_berekening_schema');
         $uSchema       = (string) $this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
-        if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
-            throw new RuntimeException('Dwangsom services not configured');
-        }
+        $objectService = $this->requireDwangsomObjectService(
+            objectService: $objectService,
+            register: $register,
+            bSchema: $bSchema,
+            uSchema: $uSchema,
+        );
 
         try {
             $berekening = $objectService->find($berekeningId, register: $register, schema: $bSchema);
@@ -186,16 +188,12 @@ class DwangsomBezwaarService
             throw new RuntimeException('DwangsomBerekening persist failed: '.$e->getMessage());
         }
 
-        try {
-            $uitbetalingen = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $uSchema,
-                filters: ['dwangsomBerekening' => $berekeningId]
-            );
-        } catch (\Throwable $e) {
-            $uitbetalingen = [];
-        }
+        $uitbetalingen = $this->findUitbetalingen(
+            objectService: $objectService,
+            register: $register,
+            uSchema: $uSchema,
+            berekeningId: $berekeningId,
+        );
 
         foreach ($uitbetalingen as $u) {
             $u['bedrag'] = $newBedragCents;
@@ -225,4 +223,59 @@ class DwangsomBezwaarService
 
         return [];
     }//end resolveBezwaar()
+
+    /**
+     * Assert the dwangsom register/schemas are configured and OpenRegister is
+     * available, narrowing the object service to a non-null value.
+     *
+     * @param object|null $objectService Resolved OpenRegister object service.
+     * @param string      $register      Register identifier.
+     * @param string      $bSchema       DwangsomBerekening schema identifier.
+     * @param string      $uSchema       DwangsomUitbetaling schema identifier.
+     *
+     * @return object The available object service.
+     *
+     * @throws RuntimeException When any part of the configuration is missing.
+     */
+    private function requireDwangsomObjectService(
+        ?object $objectService,
+        string $register,
+        string $bSchema,
+        string $uSchema
+    ): object {
+        if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
+            throw new RuntimeException('Dwangsom services not configured');
+        }
+
+        return $objectService;
+    }//end requireDwangsomObjectService()
+
+    /**
+     * Load the uitbetalingen linked to a berekening, tolerating lookup failures.
+     *
+     * @param object $objectService OpenRegister object service.
+     * @param string $register      Register identifier.
+     * @param string $uSchema       DwangsomUitbetaling schema identifier.
+     * @param string $berekeningId  DwangsomBerekening id.
+     *
+     * @return array<int, array<string, mixed>> The linked uitbetalingen.
+     */
+    private function findUitbetalingen(
+        object $objectService,
+        string $register,
+        string $uSchema,
+        string $berekeningId
+    ): array {
+        try {
+            return $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $uSchema,
+                filters: ['dwangsomBerekening' => $berekeningId]
+            );
+        } catch (\Throwable $e) {
+            // Lookup failures must not block the bezwaar transition.
+            return [];
+        }
+    }//end findUitbetalingen()
 }//end class

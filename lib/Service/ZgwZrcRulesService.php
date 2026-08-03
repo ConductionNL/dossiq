@@ -80,23 +80,15 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-
      * @spec openspec/specs/status-transition-engine/spec.md
      */
     public function rulesZakenCreate(array $body): array
     {
         // Zrc-001: Validate zaaktype URL.
         $zaaktypeUrl = $body['zaaktype'] ?? '';
-        if (empty($zaaktypeUrl) === false && $this->objectService !== null) {
-            $error = $this->validateTypeUrl(
-                typeUrl: $zaaktypeUrl,
-                fieldName: 'zaaktype',
-                schemaKey: 'case_type_schema'
-            );
-            if ($error !== null) {
-                return $error;
-            }
+        $error       = $this->validateZaaktypeReference(zaaktypeUrl: $zaaktypeUrl);
+        if ($error !== null) {
+            return $error;
         }
 
         // Zrc-002: Check unique identificatie + bronorganisatie.
@@ -135,36 +127,102 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         // Auto-assign handler from zaaktype defaultAssignee if no handler set.
-        if (empty($body['assignee']) === true && empty($zaaktypeUrl) === false && $this->objectService !== null) {
-            $extractedUuid = $this->extractUuid(url: $zaaktypeUrl);
-            if ($extractedUuid !== null) {
-                $register = $this->mappingConfig['sourceRegister'] ?? '';
-                $schema   = $this->settingsService->getConfigValue(key: 'case_type_schema');
-                if (empty($register) === false && empty($schema) === false) {
-                    try {
-                        $zaaktype = $this->objectService->find(
-                            id: $extractedUuid,
-                            register: $register,
-                            schema: $schema
-                        );
-
-                        $ztData = $zaaktype;
-                        if (is_array($zaaktype) === false) {
-                            $ztData = $zaaktype->jsonSerialize();
-                        }
-
-                        if (empty($ztData['defaultAssignee']) === false) {
-                            $body['assignee'] = $ztData['defaultAssignee'];
-                        }
-                    } catch (\Throwable $e) {
-                        // Zaaktype not found; skip auto-assignment.
-                    }
-                }
-            }//end if
-        }//end if
+        $body = $this->applyDefaultAssignee(body: $body, zaaktypeUrl: $zaaktypeUrl);
 
         return $this->validateZaakFields(result: $this->isValid(body: $body), existingObject: null, isPatch: false);
     }//end rulesZakenCreate()
+
+    /**
+     * Validate the zaaktype reference on a create body (zrc-001).
+     *
+     * Returns null when there is nothing to validate — no zaaktype was supplied, or OpenRegister
+     * is unavailable — which is exactly what the inline guard did.
+     *
+     * @param mixed $zaaktypeUrl The `zaaktype` value from the request body
+     *
+     * @return array|null The validation error, or null when the reference is acceptable
+     */
+    private function validateZaaktypeReference(mixed $zaaktypeUrl): ?array
+    {
+        if (empty($zaaktypeUrl) === true || $this->objectService === null) {
+            return null;
+        }
+
+        return $this->validateTypeUrl(
+            typeUrl: $zaaktypeUrl,
+            fieldName: 'zaaktype',
+            schemaKey: 'case_type_schema'
+        );
+    }//end validateZaaktypeReference()
+
+    /**
+     * Stamp the zaaktype's `defaultAssignee` on a zaak that carries no handler yet.
+     *
+     * @param array $body        The ZGW request body
+     * @param mixed $zaaktypeUrl The `zaaktype` value from the request body
+     *
+     * @return array The body, with `assignee` filled in when one could be resolved
+     */
+    private function applyDefaultAssignee(array $body, mixed $zaaktypeUrl): array
+    {
+        if (empty($body['assignee']) === false || empty($zaaktypeUrl) === true || $this->objectService === null) {
+            return $body;
+        }
+
+        $assignee = $this->zaaktypeDefaultAssignee(objectService: $this->objectService, zaaktypeUrl: $zaaktypeUrl);
+        if ($assignee !== null) {
+            $body['assignee'] = $assignee;
+        }
+
+        return $body;
+    }//end applyDefaultAssignee()
+
+    /**
+     * Read the `defaultAssignee` off the zaaktype a zaak points at.
+     *
+     * Returns null whenever the zaaktype cannot be resolved or declares no default — a lookup
+     * failure is swallowed, exactly as the inline block did.
+     *
+     * @param object $objectService The OpenRegister ObjectService
+     * @param mixed  $zaaktypeUrl   The `zaaktype` value from the request body
+     *
+     * @return mixed The default assignee, or null when there is none
+     */
+    private function zaaktypeDefaultAssignee(object $objectService, mixed $zaaktypeUrl): mixed
+    {
+        $extractedUuid = $this->extractUuid(url: $zaaktypeUrl);
+        if ($extractedUuid === null) {
+            return null;
+        }
+
+        $register = $this->mappingConfig['sourceRegister'] ?? '';
+        $schema   = $this->settingsService->getConfigValue(key: 'case_type_schema');
+        if (empty($register) === true || empty($schema) === true) {
+            return null;
+        }
+
+        try {
+            $zaaktype = $objectService->find(
+                id: $extractedUuid,
+                register: $register,
+                schema: $schema
+            );
+
+            $ztData = $zaaktype;
+            if (is_array($zaaktype) === false) {
+                $ztData = $zaaktype->jsonSerialize();
+            }
+
+            if (empty($ztData['defaultAssignee']) === false) {
+                return $ztData['defaultAssignee'];
+            }
+        } catch (\Throwable $e) {
+            // Zaaktype not found; skip auto-assignment.
+            return null;
+        }//end try
+
+        return null;
+    }//end zaaktypeDefaultAssignee()
 
     /**
      * Rules for updating a zaak (PUT /zaken/v1/zaken/{uuid}).
@@ -1118,8 +1176,6 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-
      * @spec openspec/specs/status-transition-engine/spec.md
      */
     public function detectEindstatus(string $statustypeUuid, string $zaaktypeUuid): bool
@@ -1140,6 +1196,27 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         // Fallback: find the statustype with the highest volgnummer for this zaaktype.
+        return $this->isHighestVolgnummerStatustype(
+            objectService: $this->objectService,
+            statustypeUuid: $statustypeUuid,
+            zaaktypeUuid: $zaaktypeUuid
+        );
+    }//end detectEindstatus()
+
+    /**
+     * Test whether a statustype carries the highest `volgnummer` of its zaaktype (zrc-007a).
+     *
+     * Returns false when the register/schema are unconfigured or the lookup fails — a failure is
+     * logged and never raised, exactly as the inline block did.
+     *
+     * @param object $objectService  The OpenRegister ObjectService
+     * @param string $statustypeUuid The statustype UUID to check
+     * @param string $zaaktypeUuid   The zaaktype UUID to fetch all statustypes for
+     *
+     * @return bool True if this statustype has the highest volgnummer
+     */
+    private function isHighestVolgnummerStatustype(object $objectService, string $statustypeUuid, string $zaaktypeUuid): bool
+    {
         $register         = $this->mappingConfig['sourceRegister'] ?? '';
         $statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
         if (empty($register) === true || empty($statusTypeSchema) === true) {
@@ -1147,12 +1224,12 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         try {
-            $query  = $this->objectService->buildSearchQuery(
+            $query  = $objectService->buildSearchQuery(
                 requestParams: ['caseType' => $zaaktypeUuid, '_limit' => 1000],
                 register: $register,
                 schema: $statusTypeSchema
             );
-            $result = $this->objectService->searchObjectsPaginated(query: $query);
+            $result = $objectService->searchObjectsPaginated(query: $query);
 
             $maxVolgnummer     = -1;
             $maxStatustypeUuid = null;
@@ -1175,7 +1252,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $this->logger->warning('detectEindstatus failed: '.$e->getMessage());
             return false;
         }//end try
-    }//end detectEindstatus()
+    }//end isHighestVolgnummerStatustype()
 
     /**
      * Filter a list of zaken by consumer's authorization scope (zrc-006).

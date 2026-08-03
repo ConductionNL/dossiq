@@ -162,14 +162,13 @@ class ZrcController extends ZgwController
 
         // Zrc-006c / M3: Check write scope for all create operations.
         // Zaken require zaken.aanmaken; all other sub-resources require zaken.bijwerken.
+        $requiredScope = 'zaken.bijwerken';
         if ($resource === 'zaken') {
-            if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.aanmaken') === false) {
-                return $this->permissionDeniedResponse();
-            }
-        } else {
-            if ($this->zgwService->consumerHasScope($this->request, 'zrc', 'zaken.bijwerken') === false) {
-                return $this->permissionDeniedResponse();
-            }
+            $requiredScope = 'zaken.aanmaken';
+        }
+
+        if ($this->zgwService->consumerHasScope($this->request, 'zrc', $requiredScope) === false) {
+            return $this->permissionDeniedResponse();
         }
 
         if ($this->zgwService->getObjectService() === null) {
@@ -897,11 +896,10 @@ class ZrcController extends ZgwController
                     continue;
                 }
 
-                $maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
+                $maxVa    = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
+                $maxLevel = 99;
                 if ($maxVa !== null) {
                     $maxLevel = self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99;
-                } else {
-                    $maxLevel = 99;
                 }
 
                 if ($zaakLevel <= $maxLevel) {
@@ -974,11 +972,10 @@ class ZrcController extends ZgwController
             $zaakLevel = self::VERTROUWELIJKHEID_LEVELS[$zaakVa] ?? 1;
 
             foreach ($lezenAuths as $auth) {
-                $maxVa = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
+                $maxVa    = $auth['maxVertrouwelijkheidaanduiding'] ?? ($auth['max_vertrouwelijkheidaanduiding'] ?? null);
+                $maxLevel = 99;
                 if ($maxVa !== null) {
                     $maxLevel = self::VERTROUWELIJKHEID_LEVELS[$maxVa] ?? 99;
-                } else {
-                    $maxLevel = 99;
                 }
 
                 if ($zaakLevel <= $maxLevel) {
@@ -1065,10 +1062,9 @@ class ZrcController extends ZgwController
                     $segments      = array_filter(explode('/', trim($path, '/')));
                     $last          = end($segments);
                     $looksLikeUuid = preg_match('/[0-9a-f]{4,}-/i', (string) $last) === 1;
+                    $code          = 'invalid-resource';
                     if ($looksLikeUuid === true) {
                         $code = 'bad-url';
-                    } else {
-                        $code = 'invalid-resource';
                     }
 
                     return new JSONResponse(
@@ -2425,14 +2421,15 @@ class ZrcController extends ZgwController
      */
     private function buildRelevanteAndereZaken(array $zaakData): array
     {
-        $uuid = (string) ($zaakData['uuid'] ?? ($zaakData['identificatie'] ?? ''));
-        if ($uuid !== '' && preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $uuid, $matches) === 1) {
-            $uuid = $matches[1];
-        } else {
-            // Fall back to extracting the UUID from the self URL.
-            $selfUrl = (string) ($zaakData['url'] ?? '');
-            if (preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $selfUrl, $urlMatches) === 1) {
-                $uuid = $urlMatches[1];
+        $uuid    = (string) ($zaakData['uuid'] ?? ($zaakData['identificatie'] ?? ''));
+        $pattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
+
+        // Prefer a UUID embedded in the id field, else fall back to the self URL.
+        // When neither yields one the original id is kept verbatim.
+        foreach ([$uuid, (string) ($zaakData['url'] ?? '')] as $candidate) {
+            if ($candidate !== '' && preg_match($pattern, $candidate, $matches) === 1) {
+                $uuid = $matches[1];
+                break;
             }
         }
 

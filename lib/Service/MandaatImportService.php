@@ -113,11 +113,10 @@ class MandaatImportService
         );
 
         // Find the prior besluit version (by besluitNummer) for diff.
-        $prior = $this->findPriorBesluit(besluitNummer: $besluitNummer);
+        $prior         = $this->findPriorBesluit(besluitNummer: $besluitNummer);
+        $priorMandaten = [];
         if ($prior !== null) {
             $priorMandaten = $this->findMandatenForBesluit(besluitId: (string) ($prior['id'] ?? ''));
-        } else {
-            $priorMandaten = [];
         }
 
         // Create one mandaat per CSV row.
@@ -173,11 +172,16 @@ class MandaatImportService
 
             if ($changed === true) {
                 $changedCount++;
-                $diff[] = ['mandaatNummer' => (string) $row['mandaatNummer'], 'change' => 'CHANGED', 'fields' => $changedFields];
-            } else {
-                $unchangedCount++;
-                $diff[] = ['mandaatNummer' => (string) $row['mandaatNummer'], 'change' => 'UNCHANGED'];
+                $diff[] = [
+                    'mandaatNummer' => (string) $row['mandaatNummer'],
+                    'change'        => 'CHANGED',
+                    'fields'        => $changedFields,
+                ];
+                continue;
             }
+
+            $unchangedCount++;
+            $diff[] = ['mandaatNummer' => (string) $row['mandaatNummer'], 'change' => 'UNCHANGED'];
         }//end foreach
 
         // REMOVED = in prior, not in new.

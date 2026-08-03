@@ -184,24 +184,39 @@ class ActionRegistry
             return null;
         }
 
-        // Normalise `config`: stored as JSON string in OpenRegister; the
-        // dispatcher expects a decoded array. Tolerate already-decoded
-        // configs for forward compat.
-        $config = ($action['config'] ?? null);
-        if (is_string($config) === true && $config !== '') {
-            $decoded = json_decode($config, true);
-            if (is_array($decoded) === true) {
-                $action['config'] = $decoded;
-            }
-        }
-
-        if (isset($action['config']) === false || is_array($action['config']) === false) {
-            $action['config'] = [];
-        }
+        $action['config'] = $this->normaliseConfig(action: $action);
 
         $this->cache[$cacheKey] = $action;
         return $action;
     }//end resolve()
+
+    /**
+     * Normalise a stored `config` value to a decoded array.
+     *
+     * OpenRegister stores the config as a JSON string; the dispatcher expects
+     * a decoded array. Already-decoded configs are passed through for forward
+     * compatibility, and anything unreadable degrades to an empty array.
+     *
+     * @param array $action The stored action carrying the raw `config` value.
+     *
+     * @return array The decoded config, or an empty array.
+     */
+    private function normaliseConfig(array $action): array
+    {
+        $config = ($action['config'] ?? null);
+        if (is_string($config) === true && $config !== '') {
+            $decoded = json_decode($config, true);
+            if (is_array($decoded) === true) {
+                return $decoded;
+            }
+        }
+
+        if (is_array($config) === false) {
+            return [];
+        }
+
+        return $config;
+    }//end normaliseConfig()
 
     /**
      * List all actions for a tenant (used by admin UI and dry-run preview).

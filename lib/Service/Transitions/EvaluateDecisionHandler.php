@@ -82,12 +82,12 @@ class EvaluateDecisionHandler implements ActionHandlerInterface
         try {
             $decisionKey = trim((string) ($actionConfig['decisionKey'] ?? ''));
             if ($decisionKey === '') {
-                return ActionResult::failure(error: 'evaluate_decision_missing_key');
+                return new ActionResult(succeeded: false, error: 'evaluate_decision_missing_key');
             }
 
             $table = $this->tableService->findByKey(key: $decisionKey);
             if ($table === null) {
-                return ActionResult::failure(error: 'decision_not_found');
+                return new ActionResult(succeeded: false, error: 'decision_not_found');
             }
 
             $inputMapping = [];
@@ -109,12 +109,13 @@ class EvaluateDecisionHandler implements ActionHandlerInterface
                     'EvaluateDecisionHandler: evaluation failed',
                     ['errorCode' => $e->getErrorCode(), 'details' => $e->getDetails(), 'decisionKey' => $decisionKey],
                 );
-                return ActionResult::failure(error: $e->getErrorCode());
+                return new ActionResult(succeeded: false, error: $e->getErrorCode());
             }
 
             $this->writeOutputs(table: $table, case: $case, outputs: $result['outputs'], outputMapping: $outputMapping);
 
-            return ActionResult::success(
+            return new ActionResult(
+                succeeded: true,
                 data: [
                     'decisionKey'    => $decisionKey,
                     'outputs'        => $result['outputs'],
@@ -126,7 +127,7 @@ class EvaluateDecisionHandler implements ActionHandlerInterface
                 'EvaluateDecisionHandler failed',
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
-            return ActionResult::failure(error: 'evaluate_decision_failed');
+            return new ActionResult(succeeded: false, error: 'evaluate_decision_failed');
         }//end try
     }//end handle()
 

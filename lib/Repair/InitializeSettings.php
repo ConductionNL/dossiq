@@ -116,9 +116,9 @@ class InitializeSettings implements IRepairStep
             // does not reliably round-trip these schema-level annotation blocks
             // on an already-imported instance, which would silently disable
             // auto-deadline / auto-identifier / initial-status on create.
-            $declarativeReconciled = $this->settingsService->reconcileSchemaDeclarativeConfig();
+            $reconciledCount = $this->settingsService->reconcileSchemaDeclarativeConfig();
             $output->info(
-                'Procest declarative schema configuration reconciled ('.$declarativeReconciled.' written)'
+                'Procest declarative schema configuration reconciled ('.$reconciledCount.' written)'
             );
 
             if ($result['success'] === true) {

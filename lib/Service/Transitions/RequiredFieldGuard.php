@@ -49,17 +49,18 @@ class RequiredFieldGuard implements GuardEvaluatorInterface
     {
         $field = (string) ($guardConfig['field'] ?? '');
         if ($field === '') {
-            return GuardResult::fail(message: 'Required-field guard missing field');
+            return new GuardResult(passed: false, failureMessage: 'Required-field guard missing field');
         }
 
         $value = $case[$field] ?? null;
         if ($value === null || $value === '' || (is_array($value) === true && count($value) === 0)) {
-            return GuardResult::fail(
-                message: sprintf('Vereist veld ontbreekt: %s', $field),
+            return new GuardResult(
+                passed: false,
+                failureMessage: sprintf('Vereist veld ontbreekt: %s', $field),
                 details: ['field' => $field],
             );
         }
 
-        return GuardResult::pass(details: ['field' => $field]);
+        return new GuardResult(passed: true, details: ['field' => $field]);
     }//end evaluate()
 }//end class

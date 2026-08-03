@@ -147,14 +147,15 @@ class TenantBillingService
 
         $payload  = $this->shillinq->buildInvoicePayload(tenantId: $tenantId, month: $month, events: $unbilled);
         $exportRc = $this->shillinq->exportInvoice(payload: $payload);
-        if ($exportRc['success'] === true) {
-            $invoiceRef           = (string) ($exportRc['invoiceRef'] ?? '');
-            $result['exported']   = true;
-            $result['invoiceRef'] = $invoiceRef;
-            $this->markExported(events: $unbilled, invoiceRef: $invoiceRef);
-        } else {
+        if ($exportRc['success'] !== true) {
             $result['error'] = (string) ($exportRc['lastError'] ?? 'export failed');
+            return $result;
         }
+
+        $invoiceRef           = (string) ($exportRc['invoiceRef'] ?? '');
+        $result['exported']   = true;
+        $result['invoiceRef'] = $invoiceRef;
+        $this->markExported(events: $unbilled, invoiceRef: $invoiceRef);
 
         return $result;
     }//end runInvoicing()
@@ -280,11 +281,10 @@ class TenantBillingService
 
             $event['invoiceRef'] = $invoiceRef;
             try {
-                $uuid = (string) ($event['uuid'] ?? $event['id'] ?? '');
+                $uuid    = (string) ($event['uuid'] ?? $event['id'] ?? '');
+                $uuidArg = null;
                 if ($uuid !== '') {
                     $uuidArg = $uuid;
-                } else {
-                    $uuidArg = null;
                 }
 
                 $objectService->saveObject(

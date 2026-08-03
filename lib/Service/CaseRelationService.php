@@ -385,17 +385,17 @@ class CaseRelationService
      */
     private function decodeRelations(array $case): array
     {
-        $raw = ($case['relatedCases'] ?? null);
+        $raw  = ($case['relatedCases'] ?? null);
+        $list = [];
         if (is_array($raw) === true) {
             $list = $raw;
-        } else if (is_string($raw) === true && $raw !== '') {
+        }
+
+        if (is_string($raw) === true && $raw !== '') {
             $decoded = json_decode($raw, true);
-            $list    = [];
             if (is_array($decoded) === true) {
                 $list = $decoded;
             }
-        } else {
-            return [];
         }
 
         $entries = [];

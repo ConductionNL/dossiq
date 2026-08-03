@@ -63,13 +63,13 @@ class CreateTaskHandler implements ActionHandlerInterface
         try {
             $objectService = $this->settingsService->getObjectService();
             if ($objectService === null) {
-                return ActionResult::failure(error: 'storage_unavailable');
+                return new ActionResult(succeeded: false, error: 'storage_unavailable');
             }
 
             $register   = $this->settingsService->getConfigValue(key: 'register');
             $taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
             if ($register === '' || $taskSchema === '') {
-                return ActionResult::failure(error: 'task_schema_not_configured');
+                return new ActionResult(succeeded: false, error: 'task_schema_not_configured');
             }
 
             $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
@@ -86,13 +86,13 @@ class CreateTaskHandler implements ActionHandlerInterface
                 $taskId = (string) ($created['id'] ?? '');
             }
 
-            return ActionResult::success(data: ['taskId' => $taskId]);
+            return new ActionResult(succeeded: true, data: ['taskId' => $taskId]);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'CreateTaskHandler failed',
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
-            return ActionResult::failure(error: 'create_task_failed');
+            return new ActionResult(succeeded: false, error: 'create_task_failed');
         }//end try
     }//end handle()
 }//end class

@@ -213,11 +213,10 @@ class TenantOnboardingService
             $task['completedBy'] = $completedBy;
             $task['completedAt'] = (new DateTimeImmutable('now'))->format(DATE_ATOM);
 
-            $uuid = (string) ($task['uuid'] ?? $task['id'] ?? '');
+            $uuid    = (string) ($task['uuid'] ?? $task['id'] ?? '');
+            $uuidArg = null;
             if ($uuid !== '') {
                 $uuidArg = $uuid;
-            } else {
-                $uuidArg = null;
             }
 
             $row = $objectService->saveObject(

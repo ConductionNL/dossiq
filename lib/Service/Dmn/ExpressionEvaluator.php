@@ -77,15 +77,15 @@ class ExpressionEvaluator
      * @SuppressWarnings(PHPMD.CyclomaticComplexity) — one dispatch per grammar form; splitting hides the grammar
      * @SuppressWarnings(PHPMD.NPathComplexity)      — same: the branches are a flat form-dispatch, not nested logic
      */
-    public static function matches(string $expression, mixed $value, string $type): bool
+    public function matches(string $expression, mixed $value, string $type): bool
     {
         $trimmed = trim($expression);
 
         // Explicit quoted literal — bypasses the wildcard shortcut so a rule
         // author can match the literal string "-" by writing `"-"`.
         if (strlen($trimmed) >= 2 && $trimmed[0] === '"' && str_ends_with($trimmed, '"') === true) {
-            $literal = self::unquote(raw: $trimmed);
-            return self::equals(left: $value, right: self::coerce(value: $literal, type: $type), type: $type);
+            $literal = $this->unquote(raw: $trimmed);
+            return $this->equals(left: $value, right: $this->coerce(value: $literal, type: $type), type: $type);
         }
 
         if ($trimmed === '' || $trimmed === '-') {
@@ -93,9 +93,9 @@ class ExpressionEvaluator
         }
 
         if (preg_match('/^in\s*\((.*)\)$/is', $trimmed, $setMatch) === 1) {
-            $members = self::parseSetMembers(inner: $setMatch[1]);
+            $members = $this->parseSetMembers(inner: $setMatch[1]);
             foreach ($members as $member) {
-                if (self::equals(left: $value, right: self::coerce(value: $member, type: $type), type: $type) === true) {
+                if ($this->equals(left: $value, right: $this->coerce(value: $member, type: $type), type: $type) === true) {
                     return true;
                 }
             }
@@ -104,24 +104,24 @@ class ExpressionEvaluator
         }
 
         if (preg_match('/^([\[(])\s*(.*?)\s*\.\.\s*(.*?)\s*([\])])$/s', $trimmed, $rangeMatch) === 1) {
-            return self::matchesRange(match: $rangeMatch, value: $value, type: $type);
+            return $this->matchesRange(match: $rangeMatch, value: $value, type: $type);
         }
 
         // Two-character operators BEFORE single-character ones (`<=` before `<`).
         foreach (['<=', '>=', '!='] as $operator) {
             if (str_starts_with($trimmed, $operator) === true) {
-                return self::matchesComparison(operator: $operator, remainder: substr($trimmed, 2), value: $value, type: $type);
+                return $this->matchesComparison(operator: $operator, remainder: substr($trimmed, 2), value: $value, type: $type);
             }
         }
 
         foreach (['<', '>', '='] as $operator) {
             if (str_starts_with($trimmed, $operator) === true) {
-                return self::matchesComparison(operator: $operator, remainder: substr($trimmed, 1), value: $value, type: $type);
+                return $this->matchesComparison(operator: $operator, remainder: substr($trimmed, 1), value: $value, type: $type);
             }
         }
 
         // Bare literal — plain equality.
-        return self::equals(left: $value, right: self::coerce(value: $trimmed, type: $type), type: $type);
+        return $this->equals(left: $value, right: $this->coerce(value: $trimmed, type: $type), type: $type);
     }//end matches()
 
     /**
@@ -136,13 +136,13 @@ class ExpressionEvaluator
      *
      * @spec openspec/specs/dmn-decision-tables/spec.md
      */
-    public static function coerce(mixed $value, string $type): string|float|bool|int
+    public function coerce(mixed $value, string $type): string|float|bool|int
     {
         return match ($type) {
-            'string' => self::coerceString(value: $value),
-            'number' => self::coerceNumber(value: $value),
-            'boolean' => self::coerceBoolean(value: $value),
-            'date' => self::coerceDate(value: $value),
+            'string' => $this->coerceString(value: $value),
+            'number' => $this->coerceNumber(value: $value),
+            'boolean' => $this->coerceBoolean(value: $value),
+            'date' => $this->coerceDate(value: $value),
             default => throw new DecisionEvaluationException(errorCode: 'type_mismatch', details: ['reason' => 'unsupported_type', 'type' => $type]),
         };
     }//end coerce()
@@ -156,7 +156,7 @@ class ExpressionEvaluator
      *
      * @throws DecisionEvaluationException `type_mismatch` for non-scalar input.
      */
-    private static function coerceString(mixed $value): string
+    private function coerceString(mixed $value): string
     {
         if (is_scalar($value) === false) {
             throw new DecisionEvaluationException(errorCode: 'type_mismatch', details: ['expected' => 'string']);
@@ -174,7 +174,7 @@ class ExpressionEvaluator
      *
      * @throws DecisionEvaluationException `type_mismatch` for non-numeric input.
      */
-    private static function coerceNumber(mixed $value): float
+    private function coerceNumber(mixed $value): float
     {
         if (is_int($value) === true || is_float($value) === true) {
             return (float) $value;
@@ -196,7 +196,7 @@ class ExpressionEvaluator
      *
      * @throws DecisionEvaluationException `type_mismatch` for unrecognised input.
      */
-    private static function coerceBoolean(mixed $value): bool
+    private function coerceBoolean(mixed $value): bool
     {
         if (is_bool($value) === true) {
             return $value;
@@ -229,7 +229,7 @@ class ExpressionEvaluator
      *
      * @throws DecisionEvaluationException `type_mismatch` for unparsable input.
      */
-    private static function coerceDate(mixed $value): int
+    private function coerceDate(mixed $value): int
     {
         if ($value instanceof \DateTimeInterface) {
             return $value->getTimestamp();
@@ -257,15 +257,15 @@ class ExpressionEvaluator
      *
      * @throws DecisionEvaluationException `invalid_expression` on a missing bound, `type_mismatch` on an unparsable bound.
      */
-    private static function matchesRange(array $match, mixed $value, string $type): bool
+    private function matchesRange(array $match, mixed $value, string $type): bool
     {
         [, $open, $lowRaw, $highRaw, $close] = $match;
         if ($lowRaw === '' || $highRaw === '') {
             throw new DecisionEvaluationException(errorCode: 'invalid_expression', details: ['reason' => 'missing_range_bound']);
         }
 
-        $low  = self::coerce(value: $lowRaw, type: $type);
-        $high = self::coerce(value: $highRaw, type: $type);
+        $low  = $this->coerce(value: $lowRaw, type: $type);
+        $high = $this->coerce(value: $highRaw, type: $type);
 
         $lowOk = ($value > $low);
         if ($open === '[') {
@@ -292,7 +292,7 @@ class ExpressionEvaluator
      *
      * @throws DecisionEvaluationException `invalid_expression` when the operand is empty, `type_mismatch` when it cannot be coerced.
      */
-    private static function matchesComparison(string $operator, string $remainder, mixed $value, string $type): bool
+    private function matchesComparison(string $operator, string $remainder, mixed $value, string $type): bool
     {
         $operand = trim($remainder);
         if ($operand === '') {
@@ -300,18 +300,18 @@ class ExpressionEvaluator
         }
 
         if (strlen($operand) >= 2 && $operand[0] === '"' && str_ends_with($operand, '"') === true) {
-            $operand = self::unquote(raw: $operand);
+            $operand = $this->unquote(raw: $operand);
         }
 
-        $coerced = self::coerce(value: $operand, type: $type);
+        $coerced = $this->coerce(value: $operand, type: $type);
 
         return match ($operator) {
             '<' => ($value < $coerced),
             '<=' => ($value <= $coerced),
             '>' => ($value > $coerced),
             '>=' => ($value >= $coerced),
-            '=' => self::equals(left: $value, right: $coerced, type: $type),
-            '!=' => (self::equals(left: $value, right: $coerced, type: $type) === false),
+            '=' => $this->equals(left: $value, right: $coerced, type: $type),
+            '!=' => ($this->equals(left: $value, right: $coerced, type: $type) === false),
             default => throw new DecisionEvaluationException(
                 errorCode: 'invalid_expression',
                 details: ['reason' => 'unknown_operator', 'operator' => $operator],
@@ -328,7 +328,7 @@ class ExpressionEvaluator
      *
      * @return bool
      */
-    private static function equals(mixed $left, mixed $right, string $type): bool
+    private function equals(mixed $left, mixed $right, string $type): bool
     {
         if ($type === 'number' || $type === 'date') {
             return (abs(((float) $left) - ((float) $right)) < 1.0e-9);
@@ -345,7 +345,7 @@ class ExpressionEvaluator
      *
      * @return array<int, string> Raw (still-quoted) member strings.
      */
-    private static function parseSetMembers(string $inner): array
+    private function parseSetMembers(string $inner): array
     {
         $members  = [];
         $buffer   = '';
@@ -374,9 +374,9 @@ class ExpressionEvaluator
         }
 
         return array_map(
-            static function (string $member): string {
+            function (string $member): string {
                 if (strlen($member) >= 2 && $member[0] === '"' && str_ends_with($member, '"') === true) {
-                    return self::unquote(raw: $member);
+                    return $this->unquote(raw: $member);
                 }
 
                 return $member;
@@ -392,7 +392,7 @@ class ExpressionEvaluator
      *
      * @return string
      */
-    private static function unquote(string $raw): string
+    private function unquote(string $raw): string
     {
         $inner = substr($raw, 1, -1);
         return str_replace('\\"', '"', $inner);

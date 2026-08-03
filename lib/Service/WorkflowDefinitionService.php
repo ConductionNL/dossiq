@@ -234,20 +234,7 @@ class WorkflowDefinitionService
             return null;
         }
 
-        if ($this->statusOf(row: $current) !== self::STATUS_DRAFT) {
-            $this->logger->warning(
-                'Procest: publish() — definition is not a draft',
-                ['app' => Application::APP_ID, 'id' => $id]
-            );
-            return null;
-        }
-
-        $caseTypeId = (string) ($current['caseType'] ?? '');
-        if ($caseTypeId === '' || $this->transitionsReferenceForeignStatuses(definition: $current) === true) {
-            $this->logger->warning(
-                'Procest: publish() — referential integrity failure',
-                ['app' => Application::APP_ID, 'id' => $id]
-            );
+        if ($this->isPublishableDraft(current: $current, id: $id) === false) {
             return null;
         }
 
@@ -260,9 +247,11 @@ class WorkflowDefinitionService
         $schema      = $this->settingsService->getConfigValue('workflow_template_schema');
         $caseTypeSch = $this->settingsService->getConfigValue('case_type_schema');
 
-        if ($register === '' || $schema === '' || $caseTypeSch === '') {
+        if (in_array('', [$register, $schema, $caseTypeSch], true) === true) {
             return null;
         }
+
+        $caseTypeId = (string) ($current['caseType'] ?? '');
 
         // Resolve each transition's assignee role to its NC group id(s) and
         // freeze the result into the transition `authorization` list (OR PR
@@ -273,25 +262,15 @@ class WorkflowDefinitionService
         // (`roleType.ncGroupId` null) gets no authorization entry and stays
         // open to all authenticated users — matching the pre-migration default.
         $authoredTransitions = $this->authorizeTransitions(definition: $current);
-        $previousActive      = $this->getActiveDefinitionFor(caseTypeId: $caseTypeId);
-        if ($previousActive !== null && (string) ($previousActive['id'] ?? '') !== $id) {
-            try {
-                $objectService->saveObject(
-                    object: [
-                        'lifecycleStatus' => self::STATUS_DEPRECATED,
-                        'isActive'        => false,
-                    ],
-                    register: $register,
-                    schema: $schema,
-                    uuid: (string) $previousActive['id'],
-                );
-            } catch (\Throwable $e) {
-                $this->logger->error(
-                    'Procest: failed to deprecate previous active definition',
-                    ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-                );
-                return null;
-            }
+        $deprecated          = $this->deprecatePreviousActive(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            caseTypeId: $caseTypeId,
+            id: $id,
+        );
+        if ($deprecated === false) {
+            return null;
         }
 
         // Flip target to published+active, writing back the authorization-
@@ -351,22 +330,7 @@ class WorkflowDefinitionService
             return null;
         }
 
-        if ($this->statusOf(row: $current) !== self::STATUS_PUBLISHED) {
-            $this->logger->warning(
-                'Procest: deprecate() — definition is not published',
-                ['app' => Application::APP_ID, 'id' => $id]
-            );
-            return null;
-        }
-
-        $caseTypeId = (string) ($current['caseType'] ?? '');
-        if ($caseTypeId !== '' && $this->isLastPublishedForCaseType(id: $id, caseTypeId: $caseTypeId) === true
-            && $this->hasOpenCasesFor(caseTypeId: $caseTypeId) === true
-        ) {
-            $this->logger->warning(
-                'Procest: deprecate() — last published definition with open cases',
-                ['app' => Application::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
-            );
+        if ($this->isDeprecatable(current: $current, id: $id) === false) {
             return null;
         }
 
@@ -511,18 +475,8 @@ class WorkflowDefinitionService
             $version = $this->nextVersionFor(caseTypeId: $caseTypeId);
         }
 
-        $steps       = $payload['steps'] ?? [];
-        $transitions = $payload['transitions'] ?? [];
-
-        $stepsValue = json_encode($steps);
-        if (is_string($steps) === true) {
-            $stepsValue = $steps;
-        }
-
-        $transitionsValue = json_encode($transitions);
-        if (is_string($transitions) === true) {
-            $transitionsValue = $transitions;
-        }
+        $stepsValue       = $this->encodeJsonProperty(value: ($payload['steps'] ?? []));
+        $transitionsValue = $this->encodeJsonProperty(value: ($payload['transitions'] ?? []));
 
         $draft = [
             'title'           => (string) $payload['title'],
@@ -824,6 +778,127 @@ class WorkflowDefinitionService
 
         return $ids;
     }//end collectStatusTypeIdsFor()
+
+    /**
+     * Internal — assert a published row may be deprecated: it MUST be published, and MUST NOT be the
+     * last published version of a caseType that still has open cases. Logs the refusal reason.
+     *
+     * @param array<string, mixed> $current The definition row to check.
+     * @param string               $id      The definition UUID.
+     *
+     * @return bool True when the row may be deprecated.
+     */
+    private function isDeprecatable(array $current, string $id): bool
+    {
+        if ($this->statusOf(row: $current) !== self::STATUS_PUBLISHED) {
+            $this->logger->warning(
+                'Procest: deprecate() — definition is not published',
+                ['app' => Application::APP_ID, 'id' => $id]
+            );
+            return false;
+        }
+
+        $caseTypeId = (string) ($current['caseType'] ?? '');
+        if ($caseTypeId !== '' && $this->isLastPublishedForCaseType(id: $id, caseTypeId: $caseTypeId) === true
+            && $this->hasOpenCasesFor(caseTypeId: $caseTypeId) === true
+        ) {
+            $this->logger->warning(
+                'Procest: deprecate() — last published definition with open cases',
+                ['app' => Application::APP_ID, 'id' => $id, 'caseType' => $caseTypeId]
+            );
+            return false;
+        }
+
+        return true;
+    }//end isDeprecatable()
+
+    /**
+     * Internal — coerce a draft payload property to the JSON string the workflowTemplate schema
+     * stores. Values that are already strings are passed through untouched.
+     *
+     * @param mixed $value The raw payload property value.
+     *
+     * @return string|false The JSON string, or false when encoding fails.
+     */
+    private function encodeJsonProperty(mixed $value): string|false
+    {
+        if (is_string($value) === true) {
+            return $value;
+        }
+
+        return json_encode($value);
+    }//end encodeJsonProperty()
+
+    /**
+     * Internal — assert a row may be published: it MUST be a draft, carry a caseType reference, and
+     * only reference statuses owned by that caseType. Logs the refusal reason.
+     *
+     * @param array<string, mixed> $current The definition row to check.
+     * @param string               $id      The definition UUID (for logging).
+     *
+     * @return bool True when the row may be published.
+     */
+    private function isPublishableDraft(array $current, string $id): bool
+    {
+        if ($this->statusOf(row: $current) !== self::STATUS_DRAFT) {
+            $this->logger->warning(
+                'Procest: publish() — definition is not a draft',
+                ['app' => Application::APP_ID, 'id' => $id]
+            );
+            return false;
+        }
+
+        $caseTypeId = (string) ($current['caseType'] ?? '');
+        if ($caseTypeId === '' || $this->transitionsReferenceForeignStatuses(definition: $current) === true) {
+            $this->logger->warning(
+                'Procest: publish() — referential integrity failure',
+                ['app' => Application::APP_ID, 'id' => $id]
+            );
+            return false;
+        }
+
+        return true;
+    }//end isPublishableDraft()
+
+    /**
+     * Internal — move the currently active definition of a caseType to deprecated+inactive, unless
+     * it is the row being published itself.
+     *
+     * @param object $objectService The OpenRegister ObjectService instance.
+     * @param string $register      The register id.
+     * @param string $schema        The workflowTemplate schema id.
+     * @param string $caseTypeId    The caseType UUID.
+     * @param string $id            The definition UUID being published.
+     *
+     * @return bool True when nothing had to change or the write succeeded.
+     */
+    private function deprecatePreviousActive(object $objectService, string $register, string $schema, string $caseTypeId, string $id): bool
+    {
+        $previousActive = $this->getActiveDefinitionFor(caseTypeId: $caseTypeId);
+        if ($previousActive === null || (string) ($previousActive['id'] ?? '') === $id) {
+            return true;
+        }
+
+        try {
+            $objectService->saveObject(
+                object: [
+                    'lifecycleStatus' => self::STATUS_DEPRECATED,
+                    'isActive'        => false,
+                ],
+                register: $register,
+                schema: $schema,
+                uuid: (string) $previousActive['id'],
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: failed to deprecate previous active definition',
+                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+            );
+            return false;
+        }
+
+        return true;
+    }//end deprecatePreviousActive()
 
     /**
      * Build the saveObject payload that flips a draft to published+active,

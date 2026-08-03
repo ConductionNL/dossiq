@@ -165,6 +165,22 @@ class MandaatGebruikService
             return $rows;
         }
 
+        return $this->filterByDateRange(rows: $rows, from: $from, until: $until);
+    }//end getDecisionByMandaat()
+
+    /**
+     * Keep only the rows whose `tijdstip` day falls inside the supplied (inclusive) bounds.
+     *
+     * A null bound is not applied, so a row is dropped only by a bound that is actually set.
+     *
+     * @param array<int, array<string, mixed>> $rows  The mandate-usage rows.
+     * @param DateTimeImmutable|null           $from  From (inclusive).
+     * @param DateTimeImmutable|null           $until Until (inclusive).
+     *
+     * @return array<int, array<string, mixed>> The rows within the range.
+     */
+    private function filterByDateRange(array $rows, ?DateTimeImmutable $from, ?DateTimeImmutable $until): array
+    {
         $out = [];
         foreach ($rows as $row) {
             $when = substr((string) ($row['tijdstip'] ?? ''), 0, 10);
@@ -180,5 +196,5 @@ class MandaatGebruikService
         }
 
         return $out;
-    }//end getDecisionByMandaat()
+    }//end filterByDateRange()
 }//end class

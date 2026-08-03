@@ -74,16 +74,14 @@ class ProcessMiningService
      */
     public function getReport(array $params): array
     {
-        $to   = $this->parseDate(value: ($params['to'] ?? null), fallback: new DateTimeImmutable('today'));
-        $from = $to->sub(new DateInterval('P12M'));
-        if (isset($params['from']) === true && is_string($params['from']) === true && $params['from'] !== '') {
-            $from = $this->parseDate(value: $params['from'], fallback: $to->sub(new DateInterval('P12M')));
+        $to        = $this->parseDate(value: ($params['to'] ?? null), fallback: new DateTimeImmutable('today'));
+        $from      = $to->sub(new DateInterval('P12M'));
+        $fromParam = $this->nonEmptyStringParam(params: $params, key: 'from');
+        if ($fromParam !== null) {
+            $from = $this->parseDate(value: $fromParam, fallback: $to->sub(new DateInterval('P12M')));
         }
 
-        $caseTypeFilter = null;
-        if (isset($params['caseType']) === true && is_string($params['caseType']) === true && $params['caseType'] !== '') {
-            $caseTypeFilter = $params['caseType'];
-        }
+        $caseTypeFilter = $this->nonEmptyStringParam(params: $params, key: 'caseType');
 
         $cases       = $this->loadCases(caseTypeFilter: $caseTypeFilter);
         $caseTypes   = $this->loadCaseTypes();
@@ -185,8 +183,7 @@ class ProcessMiningService
 
         $intervals = [];
         foreach ($recordsByCase as $caseId => $records) {
-            $count = count($records);
-            if ($count === 0) {
+            if (count($records) === 0) {
                 continue;
             }
 
@@ -197,45 +194,86 @@ class ProcessMiningService
                 $closedAt = $this->parseDate(value: $endDate, fallback: $now);
             }
 
-            for ($i = 0; $i < $count; $i++) {
-                $statusId = (string) ($records[$i]['statusType'] ?? '');
-                if ($statusId === '') {
-                    continue;
-                }
-
-                $enteredAt = $this->extractTimestamp(record: $records[$i]);
-                if ($enteredAt === null) {
-                    continue;
-                }
-
-                if ($enteredAt < $windowStart || $enteredAt > $windowEnd) {
-                    continue;
-                }
-
-                $exitedAt = ($closedAt ?? $now);
-                if (($i + 1) < $count) {
-                    $exitedAt = $this->extractTimestamp(record: $records[$i + 1]);
-                }
-
-                if ($exitedAt === null) {
-                    $exitedAt = $enteredAt;
-                }
-
-                $hours = (($exitedAt->getTimestamp() - $enteredAt->getTimestamp()) / 3600.0);
-                if ($hours < 0.0) {
-                    $hours = 0.0;
-                }
-
-                $intervals[] = [
-                    'caseId'   => (string) $caseId,
-                    'statusId' => $statusId,
-                    'hours'    => $hours,
-                ];
-            }//end for
+            $intervals = array_merge(
+                $intervals,
+                $this->dwellIntervalsForCase(
+                    records: $records,
+                    caseId: (string) $caseId,
+                    closedAt: $closedAt,
+                    now: $now,
+                    windowStart: $windowStart,
+                    windowEnd: $windowEnd,
+                )
+            );
         }//end foreach
 
         return $intervals;
     }//end computeDwellIntervals()
+
+    /**
+     * Build the dwell-time intervals for a single case's chronologically sorted statusRecords.
+     *
+     * Only visits ENTERED within `[windowStart, windowEnd]` are returned; the exit boundary of the
+     * final visit is the case's close moment when it has one, and `$now` otherwise.
+     *
+     * @param array<int, array<string, mixed>> $records     Chronologically sorted statusRecords for one case.
+     * @param string                           $caseId      The case id.
+     * @param DateTimeImmutable|null           $closedAt    The case's close moment, or null when still open.
+     * @param DateTimeImmutable                $now         "Now", for the still-open current status.
+     * @param DateTimeImmutable                $windowStart Inclusive window start.
+     * @param DateTimeImmutable                $windowEnd   Inclusive window end.
+     *
+     * @return array<int, array{caseId: string, statusId: string, hours: float}>
+     */
+    private function dwellIntervalsForCase(
+        array $records,
+        string $caseId,
+        ?DateTimeImmutable $closedAt,
+        DateTimeImmutable $now,
+        DateTimeImmutable $windowStart,
+        DateTimeImmutable $windowEnd,
+    ): array {
+        $count     = count($records);
+        $intervals = [];
+
+        for ($i = 0; $i < $count; $i++) {
+            $statusId = (string) ($records[$i]['statusType'] ?? '');
+            if ($statusId === '') {
+                continue;
+            }
+
+            $enteredAt = $this->extractTimestamp(record: $records[$i]);
+            if ($enteredAt === null) {
+                continue;
+            }
+
+            if ($enteredAt < $windowStart || $enteredAt > $windowEnd) {
+                continue;
+            }
+
+            $exitedAt = ($closedAt ?? $now);
+            if (($i + 1) < $count) {
+                $exitedAt = $this->extractTimestamp(record: $records[$i + 1]);
+            }
+
+            if ($exitedAt === null) {
+                $exitedAt = $enteredAt;
+            }
+
+            $hours = (($exitedAt->getTimestamp() - $enteredAt->getTimestamp()) / 3600.0);
+            if ($hours < 0.0) {
+                $hours = 0.0;
+            }
+
+            $intervals[] = [
+                'caseId'   => $caseId,
+                'statusId' => $statusId,
+                'hours'    => $hours,
+            ];
+        }//end for
+
+        return $intervals;
+    }//end dwellIntervalsForCase()
 
     /**
      * Aggregate dwell-time intervals per status into median/p90/mean stats.
@@ -439,15 +477,8 @@ class ProcessMiningService
      */
     public function computeThroughputTrend(array $cases, DateTimeImmutable $from, DateTimeImmutable $to): array
     {
-        $buckets = [];
-
         // Seed every ISO week in range so gaps render as zero, not "missing".
-        $cursor = $from->modify('monday this week');
-        $end    = $to;
-        while ($cursor <= $end) {
-            $buckets[$cursor->format('o-\WW')] = 0;
-            $cursor = $cursor->modify('+1 week');
-        }
+        $buckets = $this->seedWeekBuckets(from: $from, to: $to);
 
         foreach ($cases as $caseData) {
             $endDate = ($caseData['endDate'] ?? null);
@@ -478,6 +509,45 @@ class ProcessMiningService
 
         return $out;
     }//end computeThroughputTrend()
+
+    /**
+     * Seed a zero-valued bucket for every ISO week that starts within `[from, to]`.
+     *
+     * @param DateTimeImmutable $from Inclusive period start.
+     * @param DateTimeImmutable $to   Inclusive period end.
+     *
+     * @return array<string, int> Zero-valued buckets, keyed by ISO week ("o-\WW").
+     */
+    private function seedWeekBuckets(DateTimeImmutable $from, DateTimeImmutable $to): array
+    {
+        $buckets = [];
+        $cursor  = $from->modify('monday this week');
+        while ($cursor <= $to) {
+            $buckets[$cursor->format('o-\WW')] = 0;
+            $cursor = $cursor->modify('+1 week');
+        }
+
+        return $buckets;
+    }//end seedWeekBuckets()
+
+    /**
+     * Read a query parameter that MUST be a non-empty string, or null when it is absent, not a
+     * string, or empty.
+     *
+     * @param array<string, mixed> $params The query parameters.
+     * @param string               $key    The parameter name.
+     *
+     * @return string|null The parameter value, or null.
+     */
+    private function nonEmptyStringParam(array $params, string $key): ?string
+    {
+        $value = ($params[$key] ?? null);
+        if (is_string($value) === false || $value === '') {
+            return null;
+        }
+
+        return $value;
+    }//end nonEmptyStringParam()
 
     /**
      * Group cases by their caseType, resolving the display title.

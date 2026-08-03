@@ -177,9 +177,8 @@ class NotificatieService
         $client        = new Client(['timeout' => 10]);
 
         foreach ($subscriptions as $subscription) {
-            if (is_array($subscription) === true) {
-                $subData = $subscription;
-            } else {
+            $subData = $subscription;
+            if (is_array($subscription) === false) {
                 $subData = $subscription->jsonSerialize();
             }
 
@@ -377,9 +376,8 @@ class NotificatieService
                 return false;
             }//end if
 
-            if ($prefixLen === 0) {
-                $mask = 0;
-            } else {
+            $mask = 0;
+            if ($prefixLen > 0) {
                 $mask = ~0 << (32 - $prefixLen);
             }//end if
 
