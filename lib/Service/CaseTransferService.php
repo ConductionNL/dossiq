@@ -268,10 +268,9 @@ class CaseTransferService
             return ['error' => 'Transfer not found'];
         }
 
+        $transferData = (array) $transfer;
         if (is_object($transfer) === true) {
             $transferData = $transfer->jsonSerialize();
-        } else {
-            $transferData = (array) $transfer;
         }
 
         $currentStatus = (string) ($transferData['status'] ?? '');
@@ -298,10 +297,9 @@ class CaseTransferService
             $transferData['rejectionReason'] = $rejectionReason;
         }
 
+        $actorType = 'local';
         if ($remoteCloudId !== null) {
             $actorType = 'remote';
-        } else {
-            $actorType = 'local';
         }
 
         $auditTrail[] = [
@@ -374,10 +372,9 @@ class CaseTransferService
                 return null;
             }
 
+            $transferData = (array) $transfer;
             if (is_object($transfer) === true) {
                 $transferData = $transfer->jsonSerialize();
-            } else {
-                $transferData = (array) $transfer;
             }
 
             if (isset($transferData['caseId']) === true) {
@@ -467,9 +464,8 @@ class CaseTransferService
         }
 
         foreach ((array) $matches as $match) {
-            if (is_array($match) === true) {
-                $matchData = $match;
-            } else {
+            $matchData = $match;
+            if (is_array($match) === false) {
                 $matchData = $match->jsonSerialize();
             }
 

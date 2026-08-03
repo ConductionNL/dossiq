@@ -189,9 +189,8 @@ class CaseCollaborationService
             return ['error' => 'Federated share not found'];
         }
 
-        if (is_array($shareObj) === true) {
-            $shareData = $shareObj;
-        } else {
+        $shareData = $shareObj;
+        if (is_array($shareObj) === false) {
             $shareData = $shareObj->jsonSerialize();
         }
 
@@ -213,10 +212,9 @@ class CaseCollaborationService
         $activity['entries']        = $entries;
         $activity['lastActivityAt'] = $entry['createdAt'];
 
-        $result = $objectService->saveObject(object: $activity, register: (int) $register, schema: (int) $activitySchema);
-        if (is_array($result) === true) {
-            $resultData = $result;
-        } else {
+        $result     = $objectService->saveObject(object: $activity, register: (int) $register, schema: (int) $activitySchema);
+        $resultData = $result;
+        if (is_array($result) === false) {
             $resultData = $result->jsonSerialize();
         }
 

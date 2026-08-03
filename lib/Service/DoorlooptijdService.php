@@ -66,22 +66,19 @@ class DoorlooptijdService
      */
     public function getMetrics(array $params): array
     {
+        $caseTypeFilter = null;
         if (isset($params['caseType']) === true && is_string($params['caseType']) === true) {
             $caseTypeFilter = $params['caseType'];
-        } else {
-            $caseTypeFilter = null;
         }
 
+        $period = '12m';
         if (isset($params['period']) === true && is_string($params['period']) === true) {
             $period = $params['period'];
-        } else {
-            $period = '12m';
         }
 
+        $atRiskDays = 5;
         if (isset($params['atRiskDays']) === true) {
             $atRiskDays = (int) $params['atRiskDays'];
-        } else {
-            $atRiskDays = 5;
         }
 
         if ($atRiskDays < 0) {
@@ -153,15 +150,15 @@ class DoorlooptijdService
 
             if ($caseData['_endDate'] <= $caseData['_deadline']) {
                 $closedOnTime++;
-            } else {
-                $closedLate++;
+                continue;
             }
+
+            $closedLate++;
         }//end foreach
 
-        $totalClosed = ($closedOnTime + $closedLate);
-        if ($totalClosed === 0) {
-            $onTimePercent = 100;
-        } else {
+        $totalClosed   = ($closedOnTime + $closedLate);
+        $onTimePercent = 100;
+        if ($totalClosed !== 0) {
             $onTimePercent = (int) round(($closedOnTime / $totalClosed) * 100);
         }
 
@@ -206,17 +203,17 @@ class DoorlooptijdService
 
             if ($caseData['_endDate'] <= $caseData['_deadline']) {
                 $buckets[$month]['onTime']++;
-            } else {
-                $buckets[$month]['late']++;
+                continue;
             }
+
+            $buckets[$month]['late']++;
         }//end foreach
 
         $out = [];
         foreach ($buckets as $month => $counts) {
-            $total = ($counts['onTime'] + $counts['late']);
-            if ($total === 0) {
-                $percent = 100;
-            } else {
+            $total   = ($counts['onTime'] + $counts['late']);
+            $percent = 100;
+            if ($total !== 0) {
                 $percent = (int) round(($counts['onTime'] / $total) * 100);
             }
 
@@ -272,10 +269,9 @@ class DoorlooptijdService
 
         $out = [];
         foreach ($accum as $caseTypeId => $stats) {
+            $title = $caseTypeId;
             if (isset($caseTypeIndex[$caseTypeId]['title']) === true) {
                 $title = (string) $caseTypeIndex[$caseTypeId]['title'];
-            } else {
-                $title = $caseTypeId;
             }
 
             $out[] = [
