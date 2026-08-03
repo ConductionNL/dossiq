@@ -477,8 +477,8 @@ class PdokLocatieserverService
         $now      = time();
         $failures = array_filter(
                 array: $failures,
-                callback: static function (int $ts) use ($now): bool {
-                    return ($now - $ts) <= self::OUTAGE_WINDOW;
+                callback: static function (int $failedAt) use ($now): bool {
+                    return ($now - $failedAt) <= self::OUTAGE_WINDOW;
                 }
                 );
 

@@ -193,7 +193,7 @@ class CaseReassignmentService
 
         foreach ($preview['cases'] as $case) {
             $id        = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-            $ok        = $this->reassignItem(
+            $success   = $this->reassignItem(
                 objectService: $objectService,
                 register: $register,
                 schema: $caseSchema,
@@ -205,15 +205,15 @@ class CaseReassignmentService
                 batchId: $batchId,
                 now: $now
             );
-            $results[] = ['type' => 'case', 'id' => $id, 'title' => (string) ($case['title'] ?? ''), 'success' => $ok];
-            if ($ok === true) {
+            $results[] = ['type' => 'case', 'id' => $id, 'title' => (string) ($case['title'] ?? ''), 'success' => $success];
+            if ($success === true) {
                 $succeeded += 1;
             }
         }
 
         foreach ($preview['tasks'] as $task) {
             $id        = (string) ($task['id'] ?? ($task['uuid'] ?? ''));
-            $ok        = $this->reassignItem(
+            $success   = $this->reassignItem(
                 objectService: $objectService,
                 register: $register,
                 schema: $taskSchema,
@@ -225,8 +225,8 @@ class CaseReassignmentService
                 batchId: $batchId,
                 now: $now
             );
-            $results[] = ['type' => 'task', 'id' => $id, 'title' => (string) ($task['title'] ?? ''), 'success' => $ok];
-            if ($ok === true) {
+            $results[] = ['type' => 'task', 'id' => $id, 'title' => (string) ($task['title'] ?? ''), 'success' => $success];
+            if ($success === true) {
                 $succeeded += 1;
             }
         }

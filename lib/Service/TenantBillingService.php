@@ -179,8 +179,8 @@ class TenantBillingService
             throw new InvalidArgumentException('Unknown billing event type: '.$eventType);
         }
 
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return null;
         }
 
@@ -195,7 +195,7 @@ class TenantBillingService
         ];
 
         try {
-            return $os->saveObject(
+            return $objectService->saveObject(
                 object: $event,
                 register: TenantSaasService::REGISTER,
                 schema: 'tenantBillingEvent',
@@ -266,8 +266,8 @@ class TenantBillingService
      */
     public function markExported(array $events, string $invoiceRef): int
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return 0;
         }
 
@@ -287,7 +287,7 @@ class TenantBillingService
                     $uuidArg = null;
                 }
 
-                $os->saveObject(
+                $objectService->saveObject(
                     object: $event,
                     register: TenantSaasService::REGISTER,
                     schema: 'tenantBillingEvent',
@@ -312,8 +312,8 @@ class TenantBillingService
      */
     public function fetchEventsForMonth(string $tenantId, string $month): array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return [];
         }
 
@@ -322,7 +322,7 @@ class TenantBillingService
             // named-argument form threw "Unknown named parameter $register" and
             // was swallowed by the catch below. Register/schema live inside
             // `filters`; limit/offset are top-level config keys.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register'  => TenantSaasService::REGISTER,

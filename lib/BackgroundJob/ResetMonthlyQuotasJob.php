@@ -87,7 +87,7 @@ class ResetMonthlyQuotasJob extends TimedJob
         }
 
         try {
-            $os = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+            $objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
         } catch (Throwable $e) {
             $this->logger->info('Procest: ResetMonthlyQuotasJob — OR ObjectService unavailable');
             return;
@@ -99,7 +99,7 @@ class ResetMonthlyQuotasJob extends TimedJob
             // "Unknown named parameter $register" and was swallowed by the catch
             // below, so this job never reset a single quota. Register/schema are
             // read from inside `filters`; limit/offset are top-level config keys.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register' => TenantSaasService::REGISTER,

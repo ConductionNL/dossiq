@@ -350,7 +350,7 @@ class OriDataQualityCheck extends TimedJob
         }
 
         $warningCount = count(
-            array_filter(array: $issues, callback: static fn($i) => ($i['severity'] ?? '') === 'warning')
+            array_filter(array: $issues, callback: static fn($issue) => ($issue['severity'] ?? '') === 'warning')
         );
 
         $log = [

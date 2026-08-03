@@ -308,8 +308,8 @@ class PdokService
         // generic error.
         $status = 0;
         $msg    = $error->getMessage();
-        if (preg_match('/\b(?:HTTP|status)\s*([0-9]{3})\b/i', $msg, $m) === 1) {
-            $status = (int) $m[1];
+        if (preg_match('/\b(?:HTTP|status)\s*([0-9]{3})\b/i', $msg, $matches) === 1) {
+            $status = (int) $matches[1];
         }
 
         $effectiveKey = match ($status) {

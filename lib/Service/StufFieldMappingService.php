@@ -210,16 +210,16 @@ class StufFieldMappingService
     public function stufDateToIso(string $stufDate): ?string
     {
         if (strlen($stufDate) === 8) {
-            $dt = \DateTimeImmutable::createFromFormat(self::STUF_DATE_FORMAT, $stufDate);
-            if ($dt !== false) {
-                return $dt->format('Y-m-d');
+            $parsed = \DateTimeImmutable::createFromFormat(self::STUF_DATE_FORMAT, $stufDate);
+            if ($parsed !== false) {
+                return $parsed->format('Y-m-d');
             }
         }
 
         if (strlen($stufDate) === 14) {
-            $dt = \DateTimeImmutable::createFromFormat(self::STUF_DATETIME_FORMAT, $stufDate);
-            if ($dt !== false) {
-                return $dt->format(\DateTimeInterface::ATOM);
+            $parsed = \DateTimeImmutable::createFromFormat(self::STUF_DATETIME_FORMAT, $stufDate);
+            if ($parsed !== false) {
+                return $parsed->format(\DateTimeInterface::ATOM);
             }
         }
 
@@ -240,8 +240,8 @@ class StufFieldMappingService
      */
     public function isoToStufDate(string $isoDate): string
     {
-        $dt = new DateTimeImmutable($isoDate);
-        return $dt->format(self::STUF_DATE_FORMAT);
+        $parsed = new DateTimeImmutable($isoDate);
+        return $parsed->format(self::STUF_DATE_FORMAT);
     }//end isoToStufDate()
 
     /**
@@ -257,8 +257,8 @@ class StufFieldMappingService
      */
     public function isoToStufDateTime(string $isoDateTime): string
     {
-        $dt = new DateTimeImmutable($isoDateTime);
-        return $dt->format(self::STUF_DATETIME_FORMAT);
+        $parsed = new DateTimeImmutable($isoDateTime);
+        return $parsed->format(self::STUF_DATETIME_FORMAT);
     }//end isoToStufDateTime()
 
     /**
