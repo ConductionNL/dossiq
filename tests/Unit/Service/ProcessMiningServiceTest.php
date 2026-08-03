@@ -64,7 +64,7 @@ class ProcessMiningServiceTest extends TestCase
             },
         );
 
-        $this->service = new ProcessMiningService($settings, $this->createMock(LoggerInterface::class));
+        $this->service = new ProcessMiningService($settings);
     }//end setUp()
 
     /**

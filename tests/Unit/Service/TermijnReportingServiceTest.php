@@ -51,7 +51,7 @@ class TermijnReportingServiceTest extends TestCase
             },
         );
 
-        $this->service = new TermijnReportingService($settings, $this->createMock(LoggerInterface::class));
+        $this->service = new TermijnReportingService($settings);
 
         // Seed 5 instances spread across Q2-2026 for one zaaktype.
         for ($i = 1; $i <= 5; $i++) {
