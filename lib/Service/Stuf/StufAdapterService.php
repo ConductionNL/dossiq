@@ -663,6 +663,9 @@ class StufAdapterService
      * @param string $envelope The envelope XML.
      *
      * @return string The referentienummer (empty if not present).
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function extractReferentienummer(string $envelope): string
     {

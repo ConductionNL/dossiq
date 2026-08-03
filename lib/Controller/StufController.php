@@ -646,6 +646,9 @@ class StufController extends Controller
      * @param string $envelopeXml The inbound envelope.
      *
      * @return array|null The endpoint or null.
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function resolveInboundEndpoint(string $envelopeXml): ?array
     {
@@ -677,6 +680,9 @@ class StufController extends Controller
      * @param array  $endpoint    The endpoint.
      *
      * @return bool
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function verifyWsse(string $envelopeXml, array $endpoint): bool
     {
@@ -709,6 +715,9 @@ class StufController extends Controller
      * @param string $envelopeXml The envelope.
      *
      * @return string
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function detectBerichtSoort(string $envelopeXml): string
     {
@@ -741,6 +750,9 @@ class StufController extends Controller
      * @param string $envelopeXml The envelope.
      *
      * @return string
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function extractCrossRefnummer(string $envelopeXml): string
     {
@@ -761,6 +773,9 @@ class StufController extends Controller
      * @param string $envelopeXml The envelope.
      *
      * @return string
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function extractFunctie(string $envelopeXml): string
     {
