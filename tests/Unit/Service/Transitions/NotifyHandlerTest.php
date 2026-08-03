@@ -53,7 +53,7 @@ class NotifyHandlerTest extends TestCase
             transitionContext: ['transitionLabel' => 'Done'],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
         self::assertTrue($result->data['skipped']);
     }//end testSucceedsButSkipsWhenNotifyUserMethodMissing()
 
@@ -74,7 +74,7 @@ class NotifyHandlerTest extends TestCase
             transitionContext: ['transitionLabel' => 'Approved'],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
     }//end testFallsBackToCaseAssigneeWhenUserIdMissing()
 
     /**
@@ -93,7 +93,7 @@ class NotifyHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
         self::assertTrue($result->data['skipped']);
     }//end testReturnsSkippedWhenNoRecipientAndNoAssignee()
 }//end class

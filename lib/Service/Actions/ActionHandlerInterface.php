@@ -38,7 +38,7 @@ namespace OCA\Procest\Service\Actions;
  *    `createDocument`, `notifyRole`, `callWebhook`, `mergeTemplate`,
  *    `scheduleReminder`).
  *  - Catch `\Throwable` inside {@see handle()}, log via LoggerInterface, and
- *    return {@see ActionResult::failure()} with a static error code. Handlers
+ *    return `new ActionResult(succeeded: false, error: ...)` with a static error code. Handlers
  *    MUST NEVER bubble exceptions or include `$e->getMessage()` in
  *    ActionResult.error.
  *  - Honour `$transitionContext['dryRun'] === true`: compute the projected

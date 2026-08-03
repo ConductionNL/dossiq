@@ -66,18 +66,18 @@ class ChecklistGuard implements GuardEvaluatorInterface
     {
         $taskId = (string) ($guardConfig['taskId'] ?? '');
         if ($taskId === '') {
-            return GuardResult::fail(message: 'Checklist guard missing taskId');
+            return new GuardResult(passed: false, failureMessage: 'Checklist guard missing taskId');
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            return GuardResult::fail(message: 'Opslag niet beschikbaar');
+            return new GuardResult(passed: false, failureMessage: 'Opslag niet beschikbaar');
         }
 
         $register   = $this->settingsService->getConfigValue(key: 'register');
         $taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
         if ($register === '' || $taskSchema === '') {
-            return GuardResult::fail(message: 'Taak-register niet geconfigureerd');
+            return new GuardResult(passed: false, failureMessage: 'Taak-register niet geconfigureerd');
         }
 
         try {
@@ -85,7 +85,7 @@ class ChecklistGuard implements GuardEvaluatorInterface
             $task = $this->toArray(value: $task);
         } catch (\Throwable $e) {
             $this->logger->error('ChecklistGuard: task load failed', ['exception' => $e->getMessage()]);
-            return GuardResult::fail(message: 'Gekoppelde taak niet gevonden');
+            return new GuardResult(passed: false, failureMessage: 'Gekoppelde taak niet gevonden');
         }
 
         $items = $task['checklist'] ?? ($task['items'] ?? []);
@@ -114,12 +114,13 @@ class ChecklistGuard implements GuardEvaluatorInterface
         }
 
         if (count($missing) === 0) {
-            return GuardResult::pass();
+            return new GuardResult(passed: true);
         }
 
         $first = $missing[0];
-        return GuardResult::fail(
-            message: sprintf("%d checklistitem niet afgevinkt: '%s'", count($missing), $first),
+        return new GuardResult(
+            passed: false,
+            failureMessage: sprintf("%d checklistitem niet afgevinkt: '%s'", count($missing), $first),
             details: ['missing' => $missing],
         );
     }//end evaluate()

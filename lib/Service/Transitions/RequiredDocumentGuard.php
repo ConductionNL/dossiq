@@ -51,7 +51,7 @@ class RequiredDocumentGuard implements GuardEvaluatorInterface
     {
         $required = (string) ($guardConfig['documentType'] ?? '');
         if ($required === '') {
-            return GuardResult::fail(message: 'Required-document guard missing documentType');
+            return new GuardResult(passed: false, failureMessage: 'Required-document guard missing documentType');
         }
 
         $candidates = [];
@@ -69,12 +69,13 @@ class RequiredDocumentGuard implements GuardEvaluatorInterface
 
             $type = (string) ($doc['documentType'] ?? ($doc['type'] ?? ''));
             if ($type === $required) {
-                return GuardResult::pass(details: ['documentType' => $required]);
+                return new GuardResult(passed: true, details: ['documentType' => $required]);
             }
         }
 
-        return GuardResult::fail(
-            message: sprintf('Vereist document ontbreekt: %s', $required),
+        return new GuardResult(
+            passed: false,
+            failureMessage: sprintf('Vereist document ontbreekt: %s', $required),
             details: ['documentType' => $required],
         );
     }//end evaluate()

@@ -5,7 +5,7 @@
  *
  * Verifies the sendEmail action handler envelope shape under success,
  * missing-recipient, and notification-service-method-missing paths. The
- * handler must never throw — failures become ActionResult::failure.
+ * handler must never throw — failures become a failed ActionResult.
  *
  * @category Tests
  * @package  OCA\Procest\Tests\Unit\Service\Transitions
@@ -52,7 +52,7 @@ class SendEmailHandlerTest extends TestCase
             transitionContext: ['transitionLabel' => 'Approve'],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('send_email_missing_recipient', $result->error);
     }//end testFailsWhenRecipientMissing()
 
@@ -75,7 +75,7 @@ class SendEmailHandlerTest extends TestCase
             transitionContext: ['transitionLabel' => 'Decided'],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
         self::assertSame('user@example.com', $result->data['to']);
         self::assertTrue($result->data['skipped']);
     }//end testSucceedsWhenNotificatieServiceLacksSendEmailMethod()
@@ -100,6 +100,6 @@ class SendEmailHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
     }//end testHandleNeverPropagatesExceptions()
 }//end class

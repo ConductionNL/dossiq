@@ -75,11 +75,11 @@ class RoleGuard implements GuardEvaluatorInterface
         $allowed = $guardConfig['allowedRoles'] ?? [];
         if (is_array($allowed) === false || count($allowed) === 0) {
             // No restriction means everyone passes.
-            return GuardResult::pass();
+            return new GuardResult(passed: true);
         }
 
         if ($userId === '') {
-            return GuardResult::fail(message: 'Niet ingelogd', details: ['silent' => true]);
+            return new GuardResult(passed: false, failureMessage: 'Niet ingelogd', details: ['silent' => true]);
         }
 
         // 1. Direct role assignment on case.roles[].
@@ -93,7 +93,7 @@ class RoleGuard implements GuardEvaluatorInterface
                 $entryUser = (string) ($entry['userId'] ?? ($entry['user'] ?? ''));
                 $entryRole = (string) ($entry['role'] ?? ($entry['roleType'] ?? ''));
                 if ($entryUser === $userId && in_array($entryRole, $allowed, true) === true) {
-                    return GuardResult::pass(details: ['matchedRole' => $entryRole]);
+                    return new GuardResult(passed: true, details: ['matchedRole' => $entryRole]);
                 }
             }
         }
@@ -109,7 +109,7 @@ class RoleGuard implements GuardEvaluatorInterface
                     }
 
                     if ($this->groupManager->isInGroup($userId, $groupId) === true) {
-                        return GuardResult::pass(details: ['matchedRole' => $role, 'via' => 'group']);
+                        return new GuardResult(passed: true, details: ['matchedRole' => $role, 'via' => 'group']);
                     }
                 }
             }
@@ -118,8 +118,9 @@ class RoleGuard implements GuardEvaluatorInterface
         }
 
         // Role mismatch — silent so the UI hides the transition entirely.
-        return GuardResult::fail(
-            message: 'Onvoldoende rechten',
+        return new GuardResult(
+            passed: false,
+            failureMessage: 'Onvoldoende rechten',
             details: ['silent' => true, 'allowedRoles' => array_values($allowed)],
         );
     }//end evaluate()

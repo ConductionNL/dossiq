@@ -81,7 +81,7 @@ class EvaluateDecisionHandlerTest extends TestCase
 
         $result = $handler->handle(actionConfig: ['type' => 'evaluateDecision'], case: [], transitionContext: []);
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('evaluate_decision_missing_key', $result->error);
     }//end testFailsWhenDecisionKeyMissing()
 
@@ -106,7 +106,7 @@ class EvaluateDecisionHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('decision_not_found', $result->error);
     }//end testFailsWhenDecisionNotFound()
 
@@ -174,7 +174,7 @@ class EvaluateDecisionHandlerTest extends TestCase
             transitionContext: ['toStatus' => 'beoordeeld'],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
         self::assertSame(['eligible' => true, 'tier' => 'gold'], $result->data['outputs']);
 
         // The persisted case (via ObjectService::saveObject) carries the
@@ -239,7 +239,7 @@ class EvaluateDecisionHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
         self::assertSame(true, $recorded['eligible']);
         self::assertSame('gold', $recorded['tier']);
     }//end testSameNameDefaultMappingWhenNoMappingConfigured()
@@ -278,7 +278,7 @@ class EvaluateDecisionHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('no_rule_matched', $result->error);
     }//end testEvaluationFailureDoesNotWriteCase()
 }//end class

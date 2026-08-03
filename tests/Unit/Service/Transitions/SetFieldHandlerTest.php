@@ -53,7 +53,7 @@ class SetFieldHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('set_field_missing_field', $result->error);
     }//end testFailsWhenFieldMissing()
 
@@ -73,7 +73,7 @@ class SetFieldHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('storage_unavailable', $result->error);
     }//end testFailsWhenObjectServiceUnavailable()
 
@@ -118,7 +118,7 @@ class SetFieldHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
         self::assertSame('resultaat', $result->data['field']);
         self::assertSame('toegewezen', $recorded['resultaat']);
     }//end testWritesFieldOnCase()
@@ -164,7 +164,7 @@ class SetFieldHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
         // ISO-8601 ATOM format: YYYY-MM-DDTHH:MM:SS+ZZ:ZZ.
         self::assertMatchesRegularExpression(
             '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+\-]\d{2}:\d{2}$/',
@@ -203,7 +203,7 @@ class SetFieldHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('set_field_failed', $result->error);
     }//end testCatchesExceptionFromObjectService()
 }//end class

@@ -64,7 +64,7 @@ class WebhookHandler implements ActionHandlerInterface
         try {
             $url = (string) ($actionConfig['url'] ?? '');
             if ($url === '' || (str_starts_with($url, 'http://') === false && str_starts_with($url, 'https://') === false)) {
-                return ActionResult::failure(error: 'webhook_invalid_url');
+                return new ActionResult(succeeded: false, error: 'webhook_invalid_url');
             }
 
             $client  = $this->clientService->newClient();
@@ -87,16 +87,16 @@ class WebhookHandler implements ActionHandlerInterface
 
             $status = (int) $response->getStatusCode();
             if ($status >= 200 && $status < 300) {
-                return ActionResult::success(data: ['status' => $status]);
+                return new ActionResult(succeeded: true, data: ['status' => $status]);
             }
 
-            return ActionResult::failure(error: 'webhook_non_2xx', data: ['status' => $status]);
+            return new ActionResult(succeeded: false, error: 'webhook_non_2xx', data: ['status' => $status]);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'WebhookHandler failed',
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
-            return ActionResult::failure(error: 'webhook_failed');
+            return new ActionResult(succeeded: false, error: 'webhook_failed');
         }//end try
     }//end handle()
 }//end class

@@ -77,18 +77,18 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface
         try {
             $voorstelId = $this->resolveVoorstelId(case: $case);
             if ($voorstelId === '') {
-                return ActionResult::failure(error: 'no_active_voorstel');
+                return new ActionResult(succeeded: false, error: 'no_active_voorstel');
             }
 
             $this->parafeerService->activate($voorstelId);
 
-            return ActionResult::success(data: ['voorstel' => $voorstelId]);
+            return new ActionResult(succeeded: true, data: ['voorstel' => $voorstelId]);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'BesluitvormingActivateHandler failed',
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
-            return ActionResult::failure(error: 'besluitvorming_activate_failed');
+            return new ActionResult(succeeded: false, error: 'besluitvorming_activate_failed');
         }//end try
     }//end handle()
 

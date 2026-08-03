@@ -94,16 +94,16 @@ class NotifyRoleHandler implements ActionHandlerInterface
             ];
 
             if (($transitionContext['dryRun'] ?? false) === true) {
-                return ActionResult::success($preview);
+                return new ActionResult(succeeded: true, data: $preview);
             }
 
             if ($roleSlug === '' || $recipients === []) {
-                return ActionResult::failure('no_recipients', $preview);
+                return new ActionResult(succeeded: false, error: 'no_recipients', data: $preview);
             }
 
             $notificatie = $this->resolveNotificatieService();
             if ($notificatie === null) {
-                return ActionResult::failure('notificatie_unavailable', $preview);
+                return new ActionResult(succeeded: false, error: 'notificatie_unavailable', data: $preview);
             }
 
             foreach ($recipients as $userId) {
@@ -113,7 +113,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
                 }
             }
 
-            return ActionResult::success($preview);
+            return new ActionResult(succeeded: true, data: $preview);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'NotifyRoleHandler: failed to dispatch notification',
@@ -123,7 +123,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
                     'exception' => $e->getMessage(),
                 ]
             );
-            return ActionResult::failure('notify_role_failed');
+            return new ActionResult(succeeded: false, error: 'notify_role_failed');
         }//end try
     }//end handle()
 

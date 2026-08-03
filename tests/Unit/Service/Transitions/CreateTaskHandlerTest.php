@@ -52,7 +52,7 @@ class CreateTaskHandlerTest extends TestCase
             transitionContext: ['transitionLabel' => 'Approve'],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('storage_unavailable', $result->error);
     }//end testFailsWhenObjectServiceUnavailable()
 
@@ -84,7 +84,7 @@ class CreateTaskHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('task_schema_not_configured', $result->error);
     }//end testFailsWhenTaskSchemaNotConfigured()
 
@@ -130,7 +130,7 @@ class CreateTaskHandlerTest extends TestCase
             transitionContext: ['transitionLabel' => 'In Review'],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
         self::assertSame('task-uuid', $result->data['taskId']);
         self::assertSame('Review docs', $recorded['object']['title']);
         self::assertSame('case-9', $recorded['object']['case']);
@@ -171,7 +171,7 @@ class CreateTaskHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('create_task_failed', $result->error);
     }//end testCatchesExceptionFromObjectService()
 }//end class
