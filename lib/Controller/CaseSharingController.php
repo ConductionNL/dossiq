@@ -54,11 +54,11 @@ class CaseSharingController extends Controller
     /**
      * Constructor for the CaseSharingController.
      *
-     * @param IRequest                 $request                  The request object
-     * @param CaseSharingService       $caseSharingService       The sharing service
-     * @param CaseTransferService      $caseTransferService      The transfer service
-     * @param CaseCollaborationService $caseCollaborationService The federated activity service
-     * @param IUserSession             $userSession              The user session
+     * @param IRequest                 $request             The request object
+     * @param CaseSharingService       $caseSharingService  The sharing service
+     * @param CaseTransferService      $caseTransferService The transfer service
+     * @param CaseCollaborationService $collabService       The federated activity service
+     * @param IUserSession             $userSession         The user session
      *
      * @return void
      */
@@ -66,7 +66,7 @@ class CaseSharingController extends Controller
         IRequest $request,
         private CaseSharingService $caseSharingService,
         private CaseTransferService $caseTransferService,
-        private CaseCollaborationService $caseCollaborationService,
+        private CaseCollaborationService $collabService,
         private IUserSession $userSession,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
@@ -116,28 +116,37 @@ class CaseSharingController extends Controller
                 );
             }
 
-            $share = $this->caseSharingService->createPartnerShare(
+            $partnerShare = $this->caseSharingService->createPartnerShare(
                 $caseId,
                 $partnerId,
                 $permissionLevel,
                 $user->getUID(),
             );
-        } else {
-            // Public "track your case" token link — minted through the OR
-            // shares integration leaf (ADR-022). The leaf owns token
-            // generation, expiry and the RBAC-respecting public resolve
-            // path; procest no longer stores a token, password or
-            // field-exclusion list. The C2 owner/handler guard above is the
-            // authz scope for minting a public surface (ADR-005).
-            $expiresAt = $this->request->getParam('expiresAt');
 
-            $share = $this->caseSharingService->createTokenShare(
-                $caseId,
-                $label,
-                $user->getUID(),
-                $expiresAt,
-            );
+            if (isset($partnerShare['error']) === true) {
+                return new JSONResponse(
+                    ['success' => false, 'error' => $partnerShare['error']],
+                    Http::STATUS_BAD_GATEWAY
+                );
+            }
+
+            return new JSONResponse(['success' => true, 'share' => $partnerShare]);
         }//end if
+
+        // Public "track your case" token link — minted through the OR
+        // shares integration leaf (ADR-022). The leaf owns token
+        // generation, expiry and the RBAC-respecting public resolve
+        // path; procest no longer stores a token, password or
+        // field-exclusion list. The C2 owner/handler guard above is the
+        // authz scope for minting a public surface (ADR-005).
+        $expiresAt = $this->request->getParam('expiresAt');
+
+        $share = $this->caseSharingService->createTokenShare(
+            $caseId,
+            $label,
+            $user->getUID(),
+            $expiresAt,
+        );
 
         if (isset($share['error']) === true) {
             return new JSONResponse(['success' => false, 'error' => $share['error']], Http::STATUS_BAD_GATEWAY);
@@ -299,12 +308,16 @@ class CaseSharingController extends Controller
 
         $action = $this->request->getParam('action');
 
-        if ($action === 'accept') {
-            $result = $this->caseTransferService->acceptTransfer($transferId);
-        } else if ($action === 'reject') {
-            $reason = $this->request->getParam('reason', '');
-            $result = $this->caseTransferService->rejectTransfer($transferId, $reason);
-        } else {
+        $result = match ($action) {
+            'accept' => $this->caseTransferService->acceptTransfer($transferId),
+            'reject' => $this->caseTransferService->rejectTransfer(
+                $transferId,
+                $this->request->getParam('reason', '')
+            ),
+            default => null,
+        };
+
+        if ($result === null) {
             return new JSONResponse(
                 ['success' => false, 'error' => 'Action must be accept or reject'],
                 400
@@ -426,12 +439,17 @@ class CaseSharingController extends Controller
 
         $action = $this->request->getParam('action');
 
-        if ($action === 'accept') {
-            $result = $this->caseTransferService->acceptTransfer($transferId, $verified['sharedWith']);
-        } else if ($action === 'reject') {
-            $reason = $this->request->getParam('reason', '');
-            $result = $this->caseTransferService->rejectTransfer($transferId, $reason, $verified['sharedWith']);
-        } else {
+        $result = match ($action) {
+            'accept' => $this->caseTransferService->acceptTransfer($transferId, $verified['sharedWith']),
+            'reject' => $this->caseTransferService->rejectTransfer(
+                $transferId,
+                $this->request->getParam('reason', ''),
+                $verified['sharedWith']
+            ),
+            default => null,
+        };
+
+        if ($result === null) {
             return new JSONResponse(['success' => false, 'error' => 'Action must be accept or reject'], 400);
         }
 
@@ -474,7 +492,7 @@ class CaseSharingController extends Controller
             return new JSONResponse(['success' => false, 'error' => 'message is required'], 400);
         }
 
-        $result = $this->caseCollaborationService->postLocalActivity($federatedShareId, $user->getUID(), $message);
+        $result = $this->collabService->postLocalActivity($federatedShareId, $user->getUID(), $message);
         if (isset($result['error']) === true) {
             return new JSONResponse(['success' => false, 'error' => $result['error']], Http::STATUS_BAD_GATEWAY);
         }
@@ -508,7 +526,7 @@ class CaseSharingController extends Controller
             );
         }
 
-        $entries = $this->caseCollaborationService->listActivity($federatedShareId);
+        $entries = $this->collabService->listActivity($federatedShareId);
         return new JSONResponse(['success' => true, 'entries' => $entries]);
     }//end listActivity()
 
@@ -533,7 +551,7 @@ class CaseSharingController extends Controller
             return new JSONResponse(['success' => false, 'error' => 'message is required'], 400);
         }
 
-        $result = $this->caseCollaborationService->postRemoteActivity($shareToken, $federatedShareId, $message);
+        $result = $this->collabService->postRemoteActivity($shareToken, $federatedShareId, $message);
         if (isset($result['error']) === true) {
             return new JSONResponse(['success' => false, 'error' => $result['error']], Http::STATUS_FORBIDDEN);
         }
@@ -556,7 +574,7 @@ class CaseSharingController extends Controller
     #[NoCSRFRequired]
     public function listRemoteActivity(string $shareToken, string $federatedShareId): JSONResponse
     {
-        $result = $this->caseCollaborationService->listRemoteActivity($shareToken, $federatedShareId);
+        $result = $this->collabService->listRemoteActivity($shareToken, $federatedShareId);
         if (isset($result['error']) === true) {
             return new JSONResponse(['success' => false, 'error' => $result['error']], Http::STATUS_FORBIDDEN);
         }

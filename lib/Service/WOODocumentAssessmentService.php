@@ -121,11 +121,10 @@ class WOODocumentAssessmentService
             throw new RuntimeException('WOO assessment schema not configured');
         }
 
-        $user = $this->userSession->getUser();
+        $userId = 'system';
+        $user   = $this->userSession->getUser();
         if ($user !== null) {
             $userId = $user->getUID();
-        } else {
-            $userId = 'system';
         }
 
         $saved  = [];
@@ -158,22 +157,21 @@ class WOODocumentAssessmentService
             );
 
             if (is_array($existing) === true && count($existing) > 0) {
-                $existingId  = $existing[0]['id'] ?? $existing[0]['uuid'] ?? null;
-                $savedObject = $objectService->saveObject(
+                $existingId = $existing[0]['id'] ?? $existing[0]['uuid'] ?? null;
+                $saved[]    = $objectService->saveObject(
                     object: $assessment,
                     register: $register,
                     schema: $assessmentSchema,
                     uuid: (string) $existingId,
                 );
-            } else {
-                $savedObject = $objectService->saveObject(
-                    object: $assessment,
-                    register: $register,
-                    schema: $assessmentSchema,
-                );
+                continue;
             }
 
-            $saved[] = $savedObject;
+            $saved[] = $objectService->saveObject(
+                object: $assessment,
+                register: $register,
+                schema: $assessmentSchema,
+            );
         }//end foreach
 
         $outstanding = $this->getOutstanding(caseId: $caseId);
@@ -218,12 +216,13 @@ class WOODocumentAssessmentService
             if (empty($grounds) === true) {
                 $errors['weigeringsgronden'] = 'At least one weigeringsgrond is required for '
                     .$classification.' (WOO Art. 5.1/5.2)';
-            } else {
-                foreach ($grounds as $code) {
-                    if (in_array($code, self::VALID_WEIGERINGSGRONDEN, true) === false) {
-                        $errors['weigeringsgronden'] = 'Invalid weigeringsgrond code: '.$code;
-                        break;
-                    }
+                return $errors;
+            }
+
+            foreach ($grounds as $code) {
+                if (in_array($code, self::VALID_WEIGERINGSGRONDEN, true) === false) {
+                    $errors['weigeringsgronden'] = 'Invalid weigeringsgrond code: '.$code;
+                    break;
                 }
             }
         }

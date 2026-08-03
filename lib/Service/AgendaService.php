@@ -178,10 +178,9 @@ class AgendaService
         $items = $case['agendaItems'] ?? [];
         if (is_string($items) === true) {
             $decoded = json_decode((string) $items, associative: true);
+            $items   = [];
             if (is_array($decoded) === true) {
                 $items = $decoded;
-            } else {
-                $items = [];
             }
         }
 

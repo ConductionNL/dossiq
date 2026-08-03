@@ -70,13 +70,9 @@ class LeastLoadedStrategy implements RoutingStrategyInterface
             return [];
         }
 
-        $counts = [];
-        $raw    = $case['openTaskCountsByParticipant'] ?? [];
-        if (is_array($raw) === true) {
-            foreach ($raw as $key => $value) {
-                $counts[(string) $key] = (int) $value;
-            }
-        }
+        $counts = $this->normaliseOpenTaskCounts(
+            raw: ($case['openTaskCountsByParticipant'] ?? [])
+        );
 
         $bestParticipant = null;
         $bestCount       = null;
@@ -103,4 +99,25 @@ class LeastLoadedStrategy implements RoutingStrategyInterface
 
         return [$bestParticipant];
     }//end resolve()
+
+    /**
+     * Normalise the raw open-task tally to a participant => count map.
+     *
+     * @param mixed $raw The raw `openTaskCountsByParticipant` value
+     *
+     * @return array<string, int>
+     */
+    private function normaliseOpenTaskCounts(mixed $raw): array
+    {
+        $counts = [];
+        if (is_array($raw) === false) {
+            return $counts;
+        }
+
+        foreach ($raw as $key => $value) {
+            $counts[(string) $key] = (int) $value;
+        }
+
+        return $counts;
+    }//end normaliseOpenTaskCounts()
 }//end class

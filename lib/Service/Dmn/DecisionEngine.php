@@ -46,6 +46,22 @@ class DecisionEngine
     private const IMPLEMENTED_HIT_POLICIES = ['UNIQUE', 'FIRST', 'COLLECT'];
 
     /**
+     * Constructor.
+     *
+     * The evaluator is a pure, stateless collaborator; the default keeps the
+     * engine directly constructible (`new DecisionEngine()`) while the
+     * Nextcloud container autowires the concrete class when resolved via DI.
+     *
+     * @param ExpressionEvaluator $evaluator The rule-cell expression evaluator.
+     *
+     * @return void
+     */
+    public function __construct(
+        private readonly ExpressionEvaluator $evaluator=new ExpressionEvaluator(),
+    ) {
+    }//end __construct()
+
+    /**
      * Evaluate a decision table.
      *
      * @param array<string, mixed> $decisionTable The decision table definition
@@ -123,7 +139,7 @@ class DecisionEngine
                 throw new DecisionEvaluationException(errorCode: 'missing_input', details: ['name' => $name]);
             }
 
-            $coerced[$name] = ExpressionEvaluator::coerce(value: $inputs[$name], type: $declared['type']);
+            $coerced[$name] = $this->evaluator->coerce(value: $inputs[$name], type: $declared['type']);
         }
 
         return $coerced;
@@ -153,7 +169,7 @@ class DecisionEngine
             $value      = $coercedInputs[$declared['name']];
 
             try {
-                if (ExpressionEvaluator::matches(expression: $expression, value: $value, type: $declared['type']) === false) {
+                if ($this->evaluator->matches(expression: $expression, value: $value, type: $declared['type']) === false) {
                     return false;
                 }
             } catch (DecisionEvaluationException $e) {

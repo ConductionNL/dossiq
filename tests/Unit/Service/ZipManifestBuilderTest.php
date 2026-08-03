@@ -182,7 +182,7 @@ class ZipManifestBuilderTest extends TestCase
         $path             = (string) tempnam(sys_get_temp_dir(), 'ziptest-');
         $this->tmpPaths[] = $path;
 
-        $result = $this->builder->buildZip($path, $this->internUser(), $docs, true);
+        $result = $this->builder->buildZip($path, $this->internUser(), $docs, ZipManifestBuilder::LAYOUT_PER_TYPE);
 
         $this->assertSame(2, $result['included']);
         $this->assertSame(0, $result['excluded']);
@@ -220,7 +220,7 @@ class ZipManifestBuilderTest extends TestCase
         $this->tmpPaths[] = $path;
 
         // intern clearance: only the openbaar document is included.
-        $result = $this->builder->buildZip($path, $this->internUser(), $docs, false);
+        $result = $this->builder->buildZip($path, $this->internUser(), $docs, ZipManifestBuilder::LAYOUT_FLAT);
 
         $this->assertSame(1, $result['included']);
         $this->assertSame(2, $result['excluded']);
@@ -260,7 +260,7 @@ class ZipManifestBuilderTest extends TestCase
         $path             = (string) tempnam(sys_get_temp_dir(), 'ziptest-');
         $this->tmpPaths[] = $path;
 
-        $this->builder->buildZip($path, $this->internUser(), $docs, true);
+        $this->builder->buildZip($path, $this->internUser(), $docs, ZipManifestBuilder::LAYOUT_PER_TYPE);
 
         $zip = new \ZipArchive();
         $zip->open($path);

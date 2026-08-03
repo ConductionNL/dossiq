@@ -212,12 +212,14 @@ class BesluitvormingTemplateService
             'parafeerroute'       => 0,
         ];
 
-        $statusTypesData   = (array) ($caseTypeData['statusTypes'] ?? []);
-        $roleTypesData     = (array) ($caseTypeData['roleTypes'] ?? []);
-        $propertyDefsData  = (array) ($caseTypeData['propertyDefinitions'] ?? []);
-        $documentTypesData = (array) ($caseTypeData['documentTypes'] ?? []);
-        $resultTypesData   = (array) ($caseTypeData['resultTypes'] ?? []);
-        $workflowData      = ($caseTypeData['workflowTemplate'] ?? null);
+        $childData    = [
+            'statusTypes'         => (array) ($caseTypeData['statusTypes'] ?? []),
+            'roleTypes'           => (array) ($caseTypeData['roleTypes'] ?? []),
+            'propertyDefinitions' => (array) ($caseTypeData['propertyDefinitions'] ?? []),
+            'documentTypes'       => (array) ($caseTypeData['documentTypes'] ?? []),
+            'resultTypes'         => (array) ($caseTypeData['resultTypes'] ?? []),
+        ];
+        $workflowData = ($caseTypeData['workflowTemplate'] ?? null);
 
         unset(
             $caseTypeData['statusTypes'],
@@ -241,91 +243,161 @@ class BesluitvormingTemplateService
         $caseTypeId = $this->getObjectId(object: $caseType);
         $counts['caseType']++;
 
-        $statusNameToId = $this->seedChildren(
+        $nameMaps = $this->seedCaseTypeChildren(
             objectService: $objectService,
             register: $register,
-            schema: $schemas['statusType'],
-            records: $statusTypesData,
+            schemas: $schemas,
+            childData: $childData,
             caseTypeId: $caseTypeId,
             counts: $counts,
-            countKey: 'statusTypes',
         );
 
-        $roleNameToId = $this->seedChildren(
+        $this->seedWorkflowTemplate(
             objectService: $objectService,
             register: $register,
-            schema: $schemas['roleType'],
-            records: $roleTypesData,
+            schemas: $schemas,
+            workflowData: $workflowData,
+            nameMaps: $nameMaps,
             caseTypeId: $caseTypeId,
             counts: $counts,
-            countKey: 'roleTypes',
         );
 
-        $this->seedChildren(
+        $this->seedParafeerroute(
             objectService: $objectService,
             register: $register,
-            schema: $schemas['propertyDefinition'],
-            records: $propertyDefsData,
+            schemas: $schemas,
+            parafeerroute: $parafeerroute,
             caseTypeId: $caseTypeId,
             counts: $counts,
-            countKey: 'propertyDefinitions',
         );
-
-        $this->seedChildren(
-            objectService: $objectService,
-            register: $register,
-            schema: $schemas['documentType'],
-            records: $documentTypesData,
-            caseTypeId: $caseTypeId,
-            counts: $counts,
-            countKey: 'documentTypes',
-        );
-
-        $this->seedChildren(
-            objectService: $objectService,
-            register: $register,
-            schema: $schemas['resultType'],
-            records: $resultTypesData,
-            caseTypeId: $caseTypeId,
-            counts: $counts,
-            countKey: 'resultTypes',
-        );
-
-        if (is_array($workflowData) === true && $schemas['workflowTemplate'] !== '') {
-            $resolved = $this->resolveWorkflowReferences(
-                workflowData: $workflowData,
-                statusNameMap: $statusNameToId,
-                roleNameMap: $roleNameToId,
-                caseTypeId: $caseTypeId,
-            );
-            $created  = $this->createObject(
-                objectService: $objectService,
-                register: $register,
-                schema: $schemas['workflowTemplate'],
-                data: $resolved,
-            );
-            if ($created !== null) {
-                $counts['workflowTemplate']++;
-            }
-        }
-
-        if (empty($parafeerroute) === false && $schemas['parafeerroute'] !== '') {
-            $parafeerroute['caseType'] = $caseTypeId;
-            $createdRoute = $this->createObject(
-                objectService: $objectService,
-                register: $register,
-                schema: $schemas['parafeerroute'],
-                data: $parafeerroute,
-            );
-            if ($createdRoute !== null) {
-                $counts['parafeerroute']++;
-            }
-        }
 
         $this->logger->info('Procest: besluitvorming template activated', $counts);
 
         return $counts;
     }//end seedBundle()
+
+    /**
+     * Seed the five child collections of a caseType.
+     *
+     * @param object                           $objectService The OpenRegister ObjectService.
+     * @param string                           $register      The register slug.
+     * @param array<string, string>            $schemas       Map of schema-key => schema id.
+     * @param array<string, array<int, mixed>> $childData     Child payloads keyed by collection.
+     * @param string                           $caseTypeId    The parent caseType id.
+     * @param array<string, mixed>             $counts        Counts accumulator (by reference).
+     *
+     * @return array<string, array<string, string>> Name => id maps per collection.
+     */
+    private function seedCaseTypeChildren(
+        object $objectService,
+        string $register,
+        array $schemas,
+        array $childData,
+        string $caseTypeId,
+        array &$counts,
+    ): array {
+        $nameMaps    = [];
+        $collections = [
+            'statusTypes'         => 'statusType',
+            'roleTypes'           => 'roleType',
+            'propertyDefinitions' => 'propertyDefinition',
+            'documentTypes'       => 'documentType',
+            'resultTypes'         => 'resultType',
+        ];
+
+        foreach ($collections as $countKey => $schemaKey) {
+            $nameMaps[$countKey] = $this->seedChildren(
+                objectService: $objectService,
+                register: $register,
+                schema: $schemas[$schemaKey],
+                records: $childData[$countKey],
+                caseTypeId: $caseTypeId,
+                counts: $counts,
+                countKey: $countKey,
+            );
+        }//end foreach
+
+        return $nameMaps;
+    }//end seedCaseTypeChildren()
+
+    /**
+     * Seed the workflow template, resolving its name references first.
+     *
+     * @param object                               $objectService The OpenRegister ObjectService.
+     * @param string                               $register      The register slug.
+     * @param array<string, string>                $schemas       Map of schema-key => schema id.
+     * @param mixed                                $workflowData  The raw workflow payload, if any.
+     * @param array<string, array<string, string>> $nameMaps      Name => id maps per collection.
+     * @param string                               $caseTypeId    The owning caseType id.
+     * @param array<string, mixed>                 $counts        Counts accumulator (by reference).
+     *
+     * @return void
+     */
+    private function seedWorkflowTemplate(
+        object $objectService,
+        string $register,
+        array $schemas,
+        mixed $workflowData,
+        array $nameMaps,
+        string $caseTypeId,
+        array &$counts,
+    ): void {
+        if (is_array($workflowData) === false || $schemas['workflowTemplate'] === '') {
+            return;
+        }
+
+        $resolved = $this->resolveWorkflowReferences(
+            workflowData: $workflowData,
+            statusNameMap: $nameMaps['statusTypes'],
+            roleNameMap: $nameMaps['roleTypes'],
+            caseTypeId: $caseTypeId,
+        );
+        $created  = $this->createObject(
+            objectService: $objectService,
+            register: $register,
+            schema: $schemas['workflowTemplate'],
+            data: $resolved,
+        );
+        if ($created !== null) {
+            $counts['workflowTemplate']++;
+        }
+    }//end seedWorkflowTemplate()
+
+    /**
+     * Seed the default parafeerroute for a caseType.
+     *
+     * @param object                $objectService The OpenRegister ObjectService.
+     * @param string                $register      The register slug.
+     * @param array<string, string> $schemas       Map of schema-key => schema id.
+     * @param array<string, mixed>  $parafeerroute The default parafeerroute payload.
+     * @param string                $caseTypeId    The owning caseType id.
+     * @param array<string, mixed>  $counts        Counts accumulator (by reference).
+     *
+     * @return void
+     */
+    private function seedParafeerroute(
+        object $objectService,
+        string $register,
+        array $schemas,
+        array $parafeerroute,
+        string $caseTypeId,
+        array &$counts,
+    ): void {
+        if (empty($parafeerroute) === true || $schemas['parafeerroute'] === '') {
+            return;
+        }
+
+        $parafeerroute['caseType'] = $caseTypeId;
+        $createdRoute = $this->createObject(
+            objectService: $objectService,
+            register: $register,
+            schema: $schemas['parafeerroute'],
+            data: $parafeerroute,
+        );
+        if ($createdRoute !== null) {
+            $counts['parafeerroute']++;
+        }
+    }//end seedParafeerroute()
 
     /**
      * Seed a list of child records linked to a caseType, returning a name->id map.
@@ -401,8 +473,36 @@ class BesluitvormingTemplateService
     ): array {
         $workflowData['caseType'] = $caseTypeId;
 
+        $workflowData['steps'] = json_encode(
+            $this->resolveWorkflowSteps(
+                steps: (array) ($workflowData['steps'] ?? []),
+                statusNameMap: $statusNameMap,
+            )
+        );
+
+        $workflowData['transitions'] = json_encode(
+            $this->resolveWorkflowTransitions(
+                transitions: (array) ($workflowData['transitions'] ?? []),
+                statusNameMap: $statusNameMap,
+                roleNameMap: $roleNameMap,
+            )
+        );
+
+        return $workflowData;
+    }//end resolveWorkflowReferences()
+
+    /**
+     * Resolve the statusName reference on every workflow step.
+     *
+     * @param array<int, mixed>     $steps         The raw workflow steps.
+     * @param array<string, string> $statusNameMap Map of statusType name => id.
+     *
+     * @return array<int, array<string, mixed>> The resolved steps.
+     */
+    private function resolveWorkflowSteps(array $steps, array $statusNameMap): array
+    {
         $resolvedSteps = [];
-        foreach ((array) ($workflowData['steps'] ?? []) as $step) {
+        foreach ($steps as $step) {
             if (is_array($step) === false) {
                 continue;
             }
@@ -412,12 +512,27 @@ class BesluitvormingTemplateService
             $step['id']      = $this->generateUUID();
             $step['status']  = ($statusNameMap[$statusName] ?? '');
             $resolvedSteps[] = $step;
-        }
+        }//end foreach
 
-        $workflowData['steps'] = json_encode($resolvedSteps);
+        return $resolvedSteps;
+    }//end resolveWorkflowSteps()
 
+    /**
+     * Resolve the status and role references on every workflow transition.
+     *
+     * @param array<int, mixed>     $transitions   The raw workflow transitions.
+     * @param array<string, string> $statusNameMap Map of statusType name => id.
+     * @param array<string, string> $roleNameMap   Map of roleType name => id.
+     *
+     * @return array<int, array<string, mixed>> The resolved transitions.
+     */
+    private function resolveWorkflowTransitions(
+        array $transitions,
+        array $statusNameMap,
+        array $roleNameMap
+    ): array {
         $resolvedTransitions = [];
-        foreach ((array) ($workflowData['transitions'] ?? []) as $transition) {
+        foreach ($transitions as $transition) {
             if (is_array($transition) === false) {
                 continue;
             }
@@ -433,27 +548,41 @@ class BesluitvormingTemplateService
             }
 
             $transition['toStatus'] = ($statusNameMap[$toName] ?? '');
+            $transition['guards']   = $this->resolveTransitionGuards(
+                guards: (array) ($transition['guards'] ?? []),
+                roleNameMap: $roleNameMap,
+            );
 
-            $resolvedGuards = [];
-            foreach ((array) ($transition['guards'] ?? []) as $guard) {
-                if (is_array($guard) === true
-                    && ($guard['type'] ?? '') === 'roleGuard'
-                    && isset($guard['config']['roleName']) === true
-                ) {
-                    $guard['config']['roleId'] = ($roleNameMap[$guard['config']['roleName']] ?? '');
-                }
-
-                $resolvedGuards[] = $guard;
-            }
-
-            $transition['guards']  = $resolvedGuards;
             $resolvedTransitions[] = $transition;
         }//end foreach
 
-        $workflowData['transitions'] = json_encode($resolvedTransitions);
+        return $resolvedTransitions;
+    }//end resolveWorkflowTransitions()
 
-        return $workflowData;
-    }//end resolveWorkflowReferences()
+    /**
+     * Resolve the roleName reference on every roleGuard of a transition.
+     *
+     * @param array<int, mixed>     $guards      The raw transition guards.
+     * @param array<string, string> $roleNameMap Map of roleType name => id.
+     *
+     * @return array<int, mixed> The resolved guards.
+     */
+    private function resolveTransitionGuards(array $guards, array $roleNameMap): array
+    {
+        $resolvedGuards = [];
+        foreach ($guards as $guard) {
+            if (is_array($guard) === true
+                && ($guard['type'] ?? '') === 'roleGuard'
+                && isset($guard['config']['roleName']) === true
+            ) {
+                $guard['config']['roleId'] = ($roleNameMap[$guard['config']['roleName']] ?? '');
+            }
+
+            $resolvedGuards[] = $guard;
+        }//end foreach
+
+        return $resolvedGuards;
+    }//end resolveTransitionGuards()
 
     /**
      * Load and decode a template JSON bundle.

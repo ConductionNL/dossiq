@@ -83,17 +83,7 @@ class StufHttpClient
         $url = (string) ($endpoint['endpointUrl'] ?? '');
         if (str_starts_with(haystack: $url, needle: 'https://') === false) {
             $this->logger->error(message: 'StUF endpoint URL is not HTTPS', context: ['endpoint' => ($endpoint['id'] ?? '')]);
-            return [
-                'httpStatus'  => 0,
-                'responseXml' => '',
-                'durationMs'  => 0,
-                'fout'        => [
-                    'code'         => 'TRANSPORT_NON_HTTPS',
-                    'omschrijving' => 'Endpoint URL is not HTTPS',
-                    'details'      => '',
-                    'soort'        => 'permanent',
-                ],
-            ];
+            return $this->permanentFailure(code: 'TRANSPORT_NON_HTTPS', omschrijving: 'Endpoint URL is not HTTPS');
         }
 
         $tlsCertPath = null;
@@ -106,17 +96,10 @@ class StufHttpClient
                     message: 'StUF mTLS client cert load failed',
                     context: ['endpoint' => ($endpoint['id'] ?? ''), 'error' => $e->getMessage()]
                 );
-                return [
-                    'httpStatus'  => 0,
-                    'responseXml' => '',
-                    'durationMs'  => 0,
-                    'fout'        => [
-                        'code'         => 'TLS_CERT_LOAD_FAILED',
-                        'omschrijving' => 'mTLS client certificate could not be loaded',
-                        'details'      => '',
-                        'soort'        => 'permanent',
-                    ],
-                ];
+                return $this->permanentFailure(
+                    code: 'TLS_CERT_LOAD_FAILED',
+                    omschrijving: 'mTLS client certificate could not be loaded'
+                );
             }
         }//end if
 
@@ -175,6 +158,29 @@ class StufHttpClient
             ];
         }//end try
     }//end send()
+
+    /**
+     * Build the result envelope for a permanent, pre-flight transport refusal.
+     *
+     * @param string $code         The StUF fout code.
+     * @param string $omschrijving The human-readable refusal reason.
+     *
+     * @return array{httpStatus:int,responseXml:string,durationMs:int,fout:array<string,string>} The refusal envelope.
+     */
+    private function permanentFailure(string $code, string $omschrijving): array
+    {
+        return [
+            'httpStatus'  => 0,
+            'responseXml' => '',
+            'durationMs'  => 0,
+            'fout'        => [
+                'code'         => $code,
+                'omschrijving' => $omschrijving,
+                'details'      => '',
+                'soort'        => 'permanent',
+            ],
+        ];
+    }//end permanentFailure()
 
     /**
      * Materialise the mTLS client certificate to a temp file readable by cURL.

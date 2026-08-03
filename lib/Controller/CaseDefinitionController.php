@@ -200,10 +200,9 @@ class CaseDefinitionController extends Controller
                 $strategy
             );
 
+            $statusCode = Http::STATUS_UNPROCESSABLE_ENTITY;
             if ($result['success'] === true) {
                 $statusCode = Http::STATUS_OK;
-            } else {
-                $statusCode = Http::STATUS_UNPROCESSABLE_ENTITY;
             }
 
             return new JSONResponse($result, $statusCode);

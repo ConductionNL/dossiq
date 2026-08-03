@@ -195,12 +195,13 @@ class VTHTemplateService
             );
         }
 
+        $caseTypeId = '';
+        if (is_array($caseTypeObj) === true) {
+            $caseTypeId = $caseTypeObj['id'] ?? '';
+        }
+
         if (is_object($caseTypeObj) === true) {
             $caseTypeId = $caseTypeObj->getUuid();
-        } else if (is_array($caseTypeObj) === true) {
-            $caseTypeId = $caseTypeObj['id'] ?? '';
-        } else {
-            $caseTypeId = '';
         }
 
         $counts = ['statusTypes' => 0, 'roleTypes' => 0, 'documentTypes' => 0, 'propertyDefinitions' => 0];

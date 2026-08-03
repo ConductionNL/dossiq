@@ -181,35 +181,16 @@ class StatusTransitionService
             throw new RuntimeException('transition_not_found');
         }
 
-        $currentId  = (string) ($case['status'] ?? '');
-        $fromStatus = (string) ($transition['fromStatus'] ?? '');
-        if ($fromStatus !== '' && $fromStatus !== $currentId) {
-            throw new RuntimeException('transition_from_status_mismatch');
-        }
+        $currentId = (string) ($case['status'] ?? '');
 
-        // OR-RBAC role-routing gate (ADR-022). At publish time
-        // WorkflowDefinitionService resolves each transition's assignee role
-        // to its `roleType.ncGroupId` and freezes the literal group id(s) on
-        // the transition `authorization` list — the same OR PR #153 gate
-        // format OR enforces declaratively on schemas that carry an
-        // x-openregister-lifecycle. `case.status` is a per-caseType dynamic
-        // state machine with no static lifecycle table, so OR cannot enforce
-        // it on saveObject; this engine therefore enforces the SAME group
-        // model here using OR's single trusted membership check (IGroupManager),
-        // not a bespoke role-resolution scheme. An empty/absent list = open.
-        if ($this->isTransitionGroupAuthorized(transition: $transition, userId: $userId) === false) {
-            throw new RuntimeException('transition_unauthorized');
-        }
-
-        // Defence in depth — re-evaluate guards on the server side.
-        $guards = $this->extractGuards(transition: $transition);
-        $eval   = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
-        $failed = array_values(array_filter($eval, static fn(array $guard): bool => $guard['passed'] === false));
-        // @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
-        if (count($failed) > 0) {
-            $this->logger->info('StatusTransitionService: guards failed', ['caseId' => $caseId, 'transitionId' => $transitionId]);
-            throw new GuardFailedException(failedGuards: $failed);
-        }
+        $eval = $this->assertTransitionAllowed(
+            case: $case,
+            transition: $transition,
+            caseId: $caseId,
+            transitionId: $transitionId,
+            currentId: $currentId,
+            userId: $userId,
+        );
 
         $toStatus = (string) ($transition['toStatus'] ?? '');
         if ($toStatus === '') {
@@ -219,20 +200,11 @@ class StatusTransitionService
         // H2: Optimistic concurrency guard — re-load the case immediately before writing
         // and abort if its status changed since we read it (concurrent transition executed
         // between our guard evaluation and our save).
-        $caseAtSave = $this->loadCase(caseId: $caseId);
-        if ($caseAtSave === null) {
-            throw new RuntimeException('case_not_found');
-        }
-
-        $versionAtSave = (int) (($caseAtSave['@self']['version'] ?? ($caseAtSave['version'] ?? 0)));
-        if ($versionAtSave !== $readVersion) {
-            throw new RuntimeException('transition_conflict');
-        }
-
-        $statusAtSave = (string) ($caseAtSave['status'] ?? '');
-        if ($statusAtSave !== $currentId) {
-            throw new RuntimeException('transition_conflict');
-        }
+        $caseAtSave = $this->assertNoConcurrentChange(
+            caseId: $caseId,
+            readVersion: $readVersion,
+            currentId: $currentId,
+        );
 
         // Status mutation BEFORE side-effects per REQ-STE-5-002.
         // Include @self.version so the store can detect a concurrent modification.
@@ -272,17 +244,11 @@ class StatusTransitionService
         $dispatched = $this->sideEffectDispatcher->dispatch(actions: $actions, case: $case, transitionContext: $context);
 
         // Update the statusRecord with the actual dispatched-action results.
-        if ($statusRecordId !== '') {
-            $record['dispatchedActions'] = $dispatched;
-            try {
-                $record = $this->updateStatusRecord(record: $record);
-            } catch (\Throwable $e) {
-                $this->logger->error(
-                    'StatusTransitionService: dispatchedActions persist failed',
-                    ['exception' => $e->getMessage(), 'statusRecord' => $statusRecordId],
-                );
-            }
-        }
+        $record = $this->persistDispatchedActions(
+            record: $record,
+            dispatched: $dispatched,
+            statusRecordId: $statusRecordId,
+        );
 
         return [
             'status'            => 'ok',
@@ -291,6 +257,127 @@ class StatusTransitionService
             'version'           => $savedVersion,
         ];
     }//end execute()
+
+    /**
+     * Re-evaluate every server-side precondition for a transition.
+     *
+     * @param array<string, mixed> $case         The loaded case
+     * @param array<string, mixed> $transition   The transition definition
+     * @param string               $caseId       Case UUID (for logging)
+     * @param string               $transitionId Transition id (for logging)
+     * @param string               $currentId    The case's current statusType UUID
+     * @param string               $userId       The acting user UID
+     *
+     * @return array<int, array<string, mixed>> The guard evaluation results
+     *
+     * @throws GuardFailedException When server-side re-evaluation fails any guard
+     * @throws RuntimeException     When the from-status or group authorization gate rejects
+     */
+    private function assertTransitionAllowed(
+        array $case,
+        array $transition,
+        string $caseId,
+        string $transitionId,
+        string $currentId,
+        string $userId
+    ): array {
+        $fromStatus = (string) ($transition['fromStatus'] ?? '');
+        if ($fromStatus !== '' && $fromStatus !== $currentId) {
+            throw new RuntimeException('transition_from_status_mismatch');
+        }
+
+        // OR-RBAC role-routing gate (ADR-022). At publish time
+        // WorkflowDefinitionService resolves each transition's assignee role
+        // to its `roleType.ncGroupId` and freezes the literal group id(s) on
+        // the transition `authorization` list — the same OR PR #153 gate
+        // format OR enforces declaratively on schemas that carry an
+        // x-openregister-lifecycle. `case.status` is a per-caseType dynamic
+        // state machine with no static lifecycle table, so OR cannot enforce
+        // it on saveObject; this engine therefore enforces the SAME group
+        // model here using OR's single trusted membership check (IGroupManager),
+        // not a bespoke role-resolution scheme. An empty/absent list = open.
+        if ($this->isTransitionGroupAuthorized(transition: $transition, userId: $userId) === false) {
+            throw new RuntimeException('transition_unauthorized');
+        }
+
+        // Defence in depth — re-evaluate guards on the server side.
+        $guards = $this->extractGuards(transition: $transition);
+        $eval   = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
+        $failed = array_values(array_filter($eval, static fn(array $guard): bool => $guard['passed'] === false));
+        // @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
+        if (count($failed) > 0) {
+            $this->logger->info('StatusTransitionService: guards failed', ['caseId' => $caseId, 'transitionId' => $transitionId]);
+            throw new GuardFailedException(failedGuards: $failed);
+        }
+
+        return $eval;
+    }//end assertTransitionAllowed()
+
+    /**
+     * Re-load the case immediately before writing and abort when another
+     * transition landed in the meantime (H2 optimistic concurrency guard).
+     *
+     * @param string $caseId      Case UUID
+     * @param int    $readVersion The @self.version captured at read time
+     * @param string $currentId   The statusType UUID observed at read time
+     *
+     * @return array<string, mixed> The freshly loaded case
+     *
+     * @throws RuntimeException When the case vanished or was concurrently changed
+     */
+    private function assertNoConcurrentChange(
+        string $caseId,
+        int $readVersion,
+        string $currentId
+    ): array {
+        $caseAtSave = $this->loadCase(caseId: $caseId);
+        if ($caseAtSave === null) {
+            throw new RuntimeException('case_not_found');
+        }
+
+        $versionAtSave = (int) (($caseAtSave['@self']['version'] ?? ($caseAtSave['version'] ?? 0)));
+        if ($versionAtSave !== $readVersion) {
+            throw new RuntimeException('transition_conflict');
+        }
+
+        $statusAtSave = (string) ($caseAtSave['status'] ?? '');
+        if ($statusAtSave !== $currentId) {
+            throw new RuntimeException('transition_conflict');
+        }
+
+        return $caseAtSave;
+    }//end assertNoConcurrentChange()
+
+    /**
+     * Persist the dispatched-action results onto the statusRecord.
+     *
+     * @param array<string, mixed>             $record         The statusRecord
+     * @param array<int, array<string, mixed>> $dispatched     Dispatch results
+     * @param string                           $statusRecordId The statusRecord UUID
+     *
+     * @return array<string, mixed> The (possibly updated) statusRecord
+     */
+    private function persistDispatchedActions(
+        array $record,
+        array $dispatched,
+        string $statusRecordId
+    ): array {
+        if ($statusRecordId === '') {
+            return $record;
+        }
+
+        $record['dispatchedActions'] = $dispatched;
+        try {
+            return $this->updateStatusRecord(record: $record);
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'StatusTransitionService: dispatchedActions persist failed',
+                ['exception' => $e->getMessage(), 'statusRecord' => $statusRecordId],
+            );
+        }
+
+        return $record;
+    }//end persistDispatchedActions()
 
     /**
      * Execute an admin-only free-form transition for caseTypes without an active workflow template.
@@ -659,7 +746,8 @@ class StatusTransitionService
 
         $register       = $this->settingsService->getConfigValue(key: 'register');
         $caseTypeSchema = $this->settingsService->getConfigValue(key: 'case_type_schema');
-        if ($register === '' || $caseTypeSchema === '' || $caseTypeId === '' || $statusTypeId === '') {
+        $unconfigured   = in_array('', [$register, $caseTypeSchema, $caseTypeId, $statusTypeId], true);
+        if ($unconfigured === true) {
             throw new RuntimeException('case_type_not_configured');
         }
 

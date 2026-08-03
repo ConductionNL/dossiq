@@ -317,14 +317,29 @@ class ChecklistService
      *
      * @throws RuntimeException On validation failure with the spec error codes.
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — branches cover all response types
-
      * @spec openspec/specs/inspection-checklists/spec.md
      */
     public function validateResponse(array $item, array $payload): void
     {
         $type = (string) ($item['responseType'] ?? '');
 
+        $this->assertValueMatchesType(type: $type, item: $item, payload: $payload);
+        $this->assertPhotoRules(type: $type, item: $item, payload: $payload);
+    }//end validateResponse()
+
+    /**
+     * Assert the submitted value satisfies the constraints its response type declares (REQ-IC-3).
+     *
+     * @param string               $type    Frozen item response type
+     * @param array<string, mixed> $item    Frozen item definition
+     * @param array<string, mixed> $payload Submitted response payload
+     *
+     * @return void
+     *
+     * @throws RuntimeException On validation failure with the spec error codes.
+     */
+    private function assertValueMatchesType(string $type, array $item, array $payload): void
+    {
         if ($type === 'ja_nee_nvt') {
             $value = (string) ($payload['value'] ?? '');
             if (in_array($value, ['ja', 'nee', 'nvt'], true) === false) {
@@ -332,30 +347,15 @@ class ChecklistService
             }
         }
 
-        if ($type === 'getal' || $type === 'meting') {
-            $range = $item['numericRange'] ?? null;
-            if (is_array($range) === true && array_key_exists('numericValue', $payload) === true) {
-                $val = (float) $payload['numericValue'];
-                $min = null;
-                if (array_key_exists('min', $range) === true) {
-                    $min = (float) $range['min'];
-                }
-
-                $max = null;
-                if (array_key_exists('max', $range) === true) {
-                    $max = (float) $range['max'];
-                }
-
-                if (($min !== null && $val < $min) || ($max !== null && $val > $max)) {
-                    throw new RuntimeException('OUT_OF_RANGE');
-                }
-            }//end if
-        }//end if
+        if (in_array($type, ['getal', 'meting'], true) === true) {
+            if ($this->isNumericOutOfRange(item: $item, data: $payload) === true) {
+                throw new RuntimeException('OUT_OF_RANGE');
+            }
+        }
 
         if ($type === 'meerkeuze') {
-            $choices = $item['choices'] ?? [];
-            $choice  = (string) ($payload['choice'] ?? ($payload['value'] ?? ''));
-            if (is_array($choices) === true && in_array($choice, $choices, true) === false) {
+            $choice = (string) ($payload['choice'] ?? ($payload['value'] ?? ''));
+            if ($this->hasInvalidChoice(item: $item, choice: $choice) === true) {
                 throw new RuntimeException('INVALID_CHOICE');
             }
         }
@@ -366,25 +366,91 @@ class ChecklistService
                 throw new RuntimeException('TEXT_TOO_LONG');
             }
         }
+    }//end assertValueMatchesType()
 
+    /**
+     * Assert the photo obligations hold: a `foto` item needs at least one photo, and the item's
+     * `fotoRequired` gate ('altijd' / 'bij_nee') is honoured (REQ-IC-3).
+     *
+     * @param string               $type    Frozen item response type
+     * @param array<string, mixed> $item    Frozen item definition
+     * @param array<string, mixed> $payload Submitted response payload
+     *
+     * @return void
+     *
+     * @throws RuntimeException PHOTO_REQUIRED when a mandated photo is missing.
+     */
+    private function assertPhotoRules(string $type, array $item, array $payload): void
+    {
         if ($type === 'foto') {
             if ($this->photoCount(response: $payload) < 1) {
                 throw new RuntimeException('PHOTO_REQUIRED');
             }
         }
 
+        if ($this->photoCount(response: $payload) >= 1) {
+            return;
+        }
+
         $fotoGate = (string) ($item['fotoRequired'] ?? 'nooit');
-        $hasPhoto = $this->photoCount(response: $payload) >= 1;
         $value    = (string) ($payload['value'] ?? '');
 
-        if ($fotoGate === 'altijd' && $hasPhoto === false) {
+        if ($fotoGate === 'altijd') {
             throw new RuntimeException('PHOTO_REQUIRED');
         }
 
-        if ($fotoGate === 'bij_nee' && $value === 'nee' && $hasPhoto === false) {
+        if ($fotoGate === 'bij_nee' && $value === 'nee') {
             throw new RuntimeException('PHOTO_REQUIRED');
         }
-    }//end validateResponse()
+    }//end assertPhotoRules()
+
+    /**
+     * Test whether a numeric response falls outside the item's declared `numericRange`.
+     *
+     * Returns false when the item declares no usable range or the payload carries no numeric
+     * value — an absent range is not a violation.
+     *
+     * @param array<string, mixed> $item Frozen item definition
+     * @param array<string, mixed> $data Submitted response payload
+     *
+     * @return bool True when the numeric value is out of range.
+     */
+    private function isNumericOutOfRange(array $item, array $data): bool
+    {
+        $range = $item['numericRange'] ?? null;
+        if (is_array($range) === false || array_key_exists('numericValue', $data) === false) {
+            return false;
+        }
+
+        $val = (float) $data['numericValue'];
+        $min = null;
+        if (array_key_exists('min', $range) === true) {
+            $min = (float) $range['min'];
+        }
+
+        $max = null;
+        if (array_key_exists('max', $range) === true) {
+            $max = (float) $range['max'];
+        }
+
+        return (($min !== null && $val < $min) || ($max !== null && $val > $max));
+    }//end isNumericOutOfRange()
+
+    /**
+     * Test whether a multiple-choice answer is absent from the item's declared `choices`.
+     *
+     * Returns false when the item declares no usable choice list.
+     *
+     * @param array<string, mixed> $item   Frozen item definition
+     * @param string               $choice The submitted choice
+     *
+     * @return bool True when the choice is not one of the declared options.
+     */
+    private function hasInvalidChoice(array $item, string $choice): bool
+    {
+        $choices = $item['choices'] ?? [];
+        return (is_array($choices) === true && in_array($choice, $choices, true) === false);
+    }//end hasInvalidChoice()
 
     /**
      * Count the photos attached to a checklist response.
@@ -477,43 +543,21 @@ class ChecklistService
                 continue;
             }
 
-            $itemId  = (string) ($response['itemId'] ?? '');
-            $item    = $items[$itemId] ?? null;
-            $verdict = $this->classifyResponse(response: $response, item: $item);
-            if ($verdict !== 'fail' || $item === null) {
+            $itemId     = (string) ($response['itemId'] ?? '');
+            $item       = $items[$itemId] ?? null;
+            $actionType = $this->resolveFollowUpType(response: $response, item: $item);
+            if ($actionType === null || $item === null) {
                 continue;
             }
 
-            $action = $item['failureAction'] ?? null;
-            if (is_array($action) === false) {
-                continue;
-            }
-
-            $actionType = (string) ($action['type'] ?? self::FOLLOWUP_GEEN);
-            if ($actionType === self::FOLLOWUP_GEEN || $actionType === '') {
-                continue;
-            }
-
-            $deadlineDays = (int) ($action['deadlineDays'] ?? 0);
-            $deadline     = null;
-            if ($deadlineDays > 0) {
-                $deadline = (new DateTimeImmutable($submittedAt))
-                    ->modify('+'.$deadlineDays.' days')
-                    ->format(DateTimeInterface::ATOM);
-            }
-
-            $task = [
-                'case'         => $caseId,
-                'title'        => $this->describeFollowUp(type: $actionType, item: $item),
-                'description'  => 'Follow-up automatically created from inspection checklist run',
-                'sourceRun'    => $runId,
-                'sourceItem'   => $itemId,
-                'followUpType' => $actionType,
-            ];
-
-            if ($deadline !== null) {
-                $task['deadline'] = $deadline;
-            }
+            $task = $this->buildFollowUpTask(
+                item: $item,
+                itemId: $itemId,
+                actionType: $actionType,
+                caseId: $caseId,
+                runId: $runId,
+                submittedAt: $submittedAt,
+            );
 
             if ($actionType === self::FOLLOWUP_HANDHAVINGSTAAK) {
                 $this->createHandhavingsactie(
@@ -525,24 +569,109 @@ class ChecklistService
                 );
             }
 
-            if ($taskSchema !== '') {
-                try {
-                    $persisted = $this->toArray(value: $objectService->saveObject(object: $task, register: $register, schema: $taskSchema));
-                    $created[] = $persisted;
-                } catch (Throwable $e) {
-                    $this->logger->debug(
-                        'Procest: follow-up task save failed: '.$e->getMessage(),
-                    );
-                }
-            }
-
-            if ($taskSchema === '') {
-                $created[] = $task;
+            $persisted = $this->persistFollowUpTask(
+                objectService: $objectService,
+                register: $register,
+                schema: $taskSchema,
+                task: $task,
+            );
+            if ($persisted !== null) {
+                $created[] = $persisted;
             }
         }//end foreach
 
         return $created;
     }//end dispatchFollowUps()
+
+    /**
+     * Resolve the follow-up action type a failed response demands, or null when the response does
+     * not fail, carries no item, or declares no actionable failureAction (REQ-IC-7).
+     *
+     * @param array<string, mixed>      $response Submitted response
+     * @param array<string, mixed>|null $item     Frozen item definition
+     *
+     * @return string|null The follow-up type, or null when nothing is due.
+     */
+    private function resolveFollowUpType(array $response, ?array $item): ?string
+    {
+        $verdict = $this->classifyResponse(response: $response, item: $item);
+        if ($verdict !== 'fail' || $item === null) {
+            return null;
+        }
+
+        $action = $item['failureAction'] ?? null;
+        if (is_array($action) === false) {
+            return null;
+        }
+
+        $actionType = (string) ($action['type'] ?? self::FOLLOWUP_GEEN);
+        if ($actionType === self::FOLLOWUP_GEEN || $actionType === '') {
+            return null;
+        }
+
+        return $actionType;
+    }//end resolveFollowUpType()
+
+    /**
+     * Build the follow-up task payload for one failed item, stamping the deadline derived from the
+     * item's `failureAction.deadlineDays` when it declares one.
+     *
+     * @param array<string, mixed> $item        Frozen item definition
+     * @param string               $itemId      Source item id
+     * @param string               $actionType  Resolved follow-up type
+     * @param string               $caseId      Parent case UUID
+     * @param string               $runId       Source run UUID
+     * @param string               $submittedAt Run submission timestamp (ATOM)
+     *
+     * @return array<string, mixed> The task payload.
+     */
+    private function buildFollowUpTask(array $item, string $itemId, string $actionType, string $caseId, string $runId, string $submittedAt): array
+    {
+        $task = [
+            'case'         => $caseId,
+            'title'        => $this->describeFollowUp(type: $actionType, item: $item),
+            'description'  => 'Follow-up automatically created from inspection checklist run',
+            'sourceRun'    => $runId,
+            'sourceItem'   => $itemId,
+            'followUpType' => $actionType,
+        ];
+
+        $deadlineDays = (int) (($item['failureAction']['deadlineDays']) ?? 0);
+        if ($deadlineDays > 0) {
+            $task['deadline'] = (new DateTimeImmutable($submittedAt))
+                ->modify('+'.$deadlineDays.' days')
+                ->format(DateTimeInterface::ATOM);
+        }
+
+        return $task;
+    }//end buildFollowUpTask()
+
+    /**
+     * Persist a follow-up task, returning the row to record in the created list. Returns the
+     * unsaved payload when no task schema is configured, and null when the save failed.
+     *
+     * @param object               $objectService OpenRegister object service handle
+     * @param string               $register      Procest register slug
+     * @param string               $schema        Task schema slug ('' when unconfigured)
+     * @param array<string, mixed> $task          The task payload
+     *
+     * @return array<string, mixed>|null The row to record, or null when the save failed.
+     */
+    private function persistFollowUpTask(object $objectService, string $register, string $schema, array $task): ?array
+    {
+        if ($schema === '') {
+            return $task;
+        }
+
+        try {
+            return $this->toArray(value: $objectService->saveObject(object: $task, register: $register, schema: $schema));
+        } catch (Throwable $e) {
+            $this->logger->debug(
+                'Procest: follow-up task save failed: '.$e->getMessage(),
+            );
+            return null;
+        }
+    }//end persistFollowUpTask()
 
     /**
      * Hand off to the enforcement-lhs recommendation surface.
@@ -626,61 +755,63 @@ class ChecklistService
         $value = (string) ($response['value'] ?? '');
 
         if ($type === 'ja_nee_nvt') {
-            if ($value === 'nvt') {
-                return 'skip';
-            }
-
-            if ($value === 'nee') {
-                return 'fail';
-            }
-
-            return 'pass';
+            return $this->classifyJaNeeNvt(value: $value);
         }
 
-        if ($type === 'getal' || $type === 'meting') {
-            $range = $item['numericRange'] ?? null;
-            if (is_array($range) === false || array_key_exists('numericValue', $response) === false) {
-                return 'pass';
-            }
-
-            $val = (float) $response['numericValue'];
-            $min = null;
-            if (array_key_exists('min', $range) === true) {
-                $min = (float) $range['min'];
-            }
-
-            $max = null;
-            if (array_key_exists('max', $range) === true) {
-                $max = (float) $range['max'];
-            }
-
-            if (($min !== null && $val < $min) || ($max !== null && $val > $max)) {
-                return 'fail';
-            }
-
-            return 'pass';
-        }//end if
-
-        if ($type === 'meerkeuze') {
-            $choices = $item['choices'] ?? [];
-            $choice  = (string) ($response['choice'] ?? $value);
-            if (is_array($choices) === true && in_array($choice, $choices, true) === false) {
-                return 'fail';
-            }
-
-            return 'pass';
-        }
-
-        if ($type === 'foto') {
-            if ($this->photoCount(response: $response) < 1) {
-                return 'fail';
-            }
-
-            return 'pass';
+        if ($this->hasFailingValue(type: $type, item: $item, response: $response, value: $value) === true) {
+            return 'fail';
         }
 
         return 'pass';
     }//end classifyResponse()
+
+    /**
+     * Classify a ja/nee/nvt answer: 'nvt' skips, 'nee' fails, anything else passes.
+     *
+     * @param string $value The submitted value
+     *
+     * @return string
+     */
+    private function classifyJaNeeNvt(string $value): string
+    {
+        if ($value === 'nvt') {
+            return 'skip';
+        }
+
+        if ($value === 'nee') {
+            return 'fail';
+        }
+
+        return 'pass';
+    }//end classifyJaNeeNvt()
+
+    /**
+     * Test whether a response violates the constraint its response type declares. Response types
+     * without a constraint (and `ja_nee_nvt`, which the caller classifies separately) never fail.
+     *
+     * @param string               $type     Frozen item response type
+     * @param array<string, mixed> $item     Frozen item definition
+     * @param array<string, mixed> $response Submitted response
+     * @param string               $value    The submitted plain value
+     *
+     * @return bool True when the response fails its item constraint.
+     */
+    private function hasFailingValue(string $type, array $item, array $response, string $value): bool
+    {
+        if (in_array($type, ['getal', 'meting'], true) === true) {
+            return $this->isNumericOutOfRange(item: $item, data: $response);
+        }
+
+        if ($type === 'meerkeuze') {
+            return $this->hasInvalidChoice(item: $item, choice: (string) ($response['choice'] ?? $value));
+        }
+
+        if ($type === 'foto') {
+            return ($this->photoCount(response: $response) < 1);
+        }
+
+        return false;
+    }//end hasFailingValue()
 
     /**
      * Pick the highest-priority follow-up type across failed items.

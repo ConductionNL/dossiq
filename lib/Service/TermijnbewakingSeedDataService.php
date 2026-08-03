@@ -83,7 +83,39 @@ class TermijnbewakingSeedDataService
         }
 
         $existingIds = $this->existingDefinitionIds(objectService: $objectService, register: $register, schema: $schema);
-        $counts      = ['definities' => 0, 'skipped' => 0];
+
+        $counts = $this->insertDefinitions(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            data: $data,
+            existingIds: $existingIds,
+        );
+
+        $this->logger->info('Procest termijnbewaking: seed complete', $counts);
+
+        return array_merge(['success' => true], $counts);
+    }//end seed()
+
+    /**
+     * Persist the seed rows that are not present yet.
+     *
+     * @param object               $objectService OpenRegister ObjectService.
+     * @param string               $register      Register id.
+     * @param string               $schema        Schema id.
+     * @param array<string, mixed> $data          The decoded seed file.
+     * @param array<int, string>   $existingIds   Already-seeded definition ids.
+     *
+     * @return array<string, int> Per-kind counts.
+     */
+    private function insertDefinitions(
+        object $objectService,
+        string $register,
+        string $schema,
+        array $data,
+        array $existingIds
+    ): array {
+        $counts = ['definities' => 0, 'skipped' => 0];
 
         foreach (($data['termijnDefinities'] ?? []) as $row) {
             $rowId = (string) ($row['id'] ?? '');
@@ -103,10 +135,8 @@ class TermijnbewakingSeedDataService
             }
         }
 
-        $this->logger->info('Procest termijnbewaking: seed complete', $counts);
-
-        return array_merge(['success' => true], $counts);
-    }//end seed()
+        return $counts;
+    }//end insertDefinitions()
 
     /**
      * Collect existing TermijnDefinitie ids for idempotent skip-detection.

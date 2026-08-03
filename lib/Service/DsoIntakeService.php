@@ -132,10 +132,9 @@ class DsoIntakeService
 
         // Store DSO-specific properties.
         $propertySchema = $this->settingsService->getConfigValue('case_property_schema');
+        $locatieValue   = $locatie;
         if (is_array($locatie) === true) {
             $locatieValue = json_encode($locatie);
-        } else {
-            $locatieValue = $locatie;
         }
 
         $properties = [
@@ -232,11 +231,14 @@ class DsoIntakeService
             $description .= ' (DSO: '.$dsoZaaknummer.')';
         }
 
+        // Cast only after the array case has been JSON-encoded, so an array
+        // value never reaches the string cast (which would warn).
+        $locatieRaw = $locatie;
         if (is_array($locatie) === true) {
-            $locatieStr = json_encode($locatie);
-        } else {
-            $locatieStr = (string) $locatie;
+            $locatieRaw = json_encode($locatie);
         }
+
+        $locatieStr = (string) $locatieRaw;
 
         return [
             'title'         => $title,

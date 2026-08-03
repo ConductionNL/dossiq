@@ -41,16 +41,16 @@ class VergaderingDeadlineJob extends TimedJob
     /**
      * Constructor for VergaderingDeadlineJob.
      *
-     * @param ITimeFactory           $time                   The time factory
-     * @param VergaderingCaseService $vergaderingCaseService The vergadering case service
-     * @param IAppManager            $appManager             The app manager
-     * @param LoggerInterface        $logger                 The logger
+     * @param ITimeFactory           $time             The time factory
+     * @param VergaderingCaseService $vergaderingCases The vergadering case service
+     * @param IAppManager            $appManager       The app manager
+     * @param LoggerInterface        $logger           The logger
      *
      * @return void
      */
     public function __construct(
         ITimeFactory $time,
-        private readonly VergaderingCaseService $vergaderingCaseService,
+        private readonly VergaderingCaseService $vergaderingCases,
         private readonly IAppManager $appManager,
         private readonly LoggerInterface $logger,
     ) {
@@ -77,7 +77,7 @@ class VergaderingDeadlineJob extends TimedJob
             return;
         }
 
-        $advanced = $this->vergaderingCaseService->checkDeadlines();
+        $advanced = $this->vergaderingCases->checkDeadlines();
 
         if ($advanced > 0) {
             $this->logger->info(

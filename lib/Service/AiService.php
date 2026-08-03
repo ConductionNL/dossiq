@@ -1235,9 +1235,8 @@ class AiService
                 return false;
             }//end if
 
-            if ($prefixLen === 0) {
-                $mask = 0;
-            } else {
+            $mask = 0;
+            if ($prefixLen !== 0) {
                 $mask = ~0 << (32 - $prefixLen);
             }//end if
 

@@ -153,10 +153,9 @@ class SubstitutionService
             end: $end
         );
 
+        $createdByValue = $absentee;
         if ($createdBy !== '') {
             $createdByValue = $createdBy;
-        } else {
-            $createdByValue = $absentee;
         }
 
         $row = [
@@ -172,7 +171,7 @@ class SubstitutionService
             'createdBy'  => $createdByValue,
         ];
 
-        [$objectService, $register, $schema] = $this->context();
+        [$objectService, $register, $schema] = $this->requireContext();
         $saved = $objectService->saveObject($register, $schema, $row);
         $this->activeCache = [];
 
@@ -194,7 +193,7 @@ class SubstitutionService
      */
     public function revoke(string $id): ?array
     {
-        [$objectService, $register, $schema] = $this->context();
+        [$objectService, $register, $schema] = $this->requireContext();
         $existing = $this->findObjectAsArray(objectService: $objectService, register: $register, schema: $schema, id: $id);
         if ($existing === null) {
             return null;
@@ -239,7 +238,7 @@ class SubstitutionService
             return $this->activeCache[$cacheKey];
         }
 
-        [$objectService, $register, $schema] = $this->context(strict: false);
+        [$objectService, $register, $schema] = $this->resolveContext();
         if ($objectService === null) {
             return [];
         }
@@ -316,7 +315,7 @@ class SubstitutionService
             return $result;
         }
 
-        [$objectService, $register] = $this->context(strict: false);
+        [$objectService, $register] = $this->resolveContext();
         if ($objectService === null) {
             return $result;
         }
@@ -495,7 +494,7 @@ class SubstitutionService
             return;
         }
 
-        [$objectService, $register, $schema] = $this->context(strict: false);
+        [$objectService, $register, $schema] = $this->resolveContext();
         if ($objectService === null) {
             return;
         }
@@ -599,38 +598,51 @@ class SubstitutionService
      */
     private function parseDate(string $value): ?DateTimeImmutable
     {
-        $value = trim($value);
-        if ($value === '') {
+        // An empty/garbage value simply fails the pattern, so no separate
+        // empty check is needed. checkdate() then rejects out-of-range
+        // components, which is what makes the constructor call below safe
+        // (it can no longer throw) — a plain `new` keeps this free of a
+        // static factory call.
+        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})/', trim($value), $parts) !== 1) {
             return null;
         }
 
-        $date = DateTimeImmutable::createFromFormat('!Y-m-d', substr($value, 0, 10));
-        if ($date === false) {
+        if (checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1]) === false) {
             return null;
         }
 
-        return $date;
+        return new DateTimeImmutable($parts[0].' 00:00:00');
     }//end parseDate()
 
     /**
-     * Resolve the ObjectService + register + substitution schema context.
-     *
-     * @param bool $strict When true, throw if any piece is missing.
+     * Resolve the ObjectService + register + substitution schema context,
+     * tolerating a missing/unconfigured OpenRegister (the caller decides).
      *
      * @return array{0: object|null, 1: string, 2: string}
-     *
-     * @throws \RuntimeException When strict and OpenRegister is unavailable.
      */
-    private function context(bool $strict=true): array
+    private function resolveContext(): array
     {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
         $schema        = (string) $this->settingsService->getConfigValue('substitution_schema');
 
-        if ($strict === true && ($objectService === null || $register === '' || $schema === '')) {
+        return [$objectService, $register, $schema];
+    }//end resolveContext()
+
+    /**
+     * Resolve the context, insisting every piece is present.
+     *
+     * @return array{0: object, 1: string, 2: string}
+     *
+     * @throws RuntimeException When OpenRegister or the substitution schema is unavailable.
+     */
+    private function requireContext(): array
+    {
+        [$objectService, $register, $schema] = $this->resolveContext();
+        if ($objectService === null || $register === '' || $schema === '') {
             throw new RuntimeException('OpenRegister is not available or the substitution schema is not configured');
         }
 
         return [$objectService, $register, $schema];
-    }//end context()
+    }//end requireContext()
 }//end class

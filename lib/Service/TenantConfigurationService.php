@@ -384,11 +384,10 @@ class TenantConfigurationService
         $current = ($this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId]);
         $next    = array_merge($current, $delta);
         try {
-            $uuid = (string) ($current['uuid'] ?? $current['id'] ?? '');
+            $uuidArg = null;
+            $uuid    = (string) ($current['uuid'] ?? $current['id'] ?? '');
             if ($uuid !== '') {
                 $uuidArg = $uuid;
-            } else {
-                $uuidArg = null;
             }
 
             return $objectService->saveObject(

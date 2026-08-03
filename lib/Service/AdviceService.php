@@ -669,6 +669,59 @@ class AdviceService
             $adviceId = (string) ($saved['id'] ?? ($saved['uuid'] ?? ''));
         }
 
+        $this->delegateAdviceDecision(
+            objectService: $objectService,
+            register: $register,
+            caseId: $caseId,
+            adviceId: $adviceId,
+            data: $data,
+            payload: $payload,
+            saved: $saved,
+        );
+
+        $this->notifyAdviseur(
+            caseId: $caseId,
+            payload: $payload,
+            saved: $saved,
+        );
+
+        $this->logger->info(
+            'Advice request created for case '.$caseId.' by '.$requestedBy,
+            ['app' => Application::APP_ID]
+        );
+
+        if (is_array($saved) === true) {
+            return $saved;
+        }
+
+        return [];
+    }//end requestAdvice()
+
+    /**
+     * Raise the decidesk `advice` Decision for a new advice request and
+     * persist its reference on the saved adviceRequest.
+     *
+     * @param object               $objectService The OpenRegister ObjectService
+     * @param string               $register      The register id
+     * @param string               $caseId        UUID of the case
+     * @param string               $adviceId      UUID of the saved adviceRequest
+     * @param array<string, mixed> $data          Advice request data
+     * @param array<string, mixed> $payload       The persisted adviceRequest payload
+     * @param mixed                $saved         The saveObject() result
+     *
+     * @return void
+     *
+     * @throws RuntimeException If decidesk fails closed
+     */
+    private function delegateAdviceDecision(
+        object $objectService,
+        string $register,
+        string $caseId,
+        string $adviceId,
+        array $data,
+        array $payload,
+        mixed $saved
+    ): void {
         // REQ-PDRD-001 / REQ-PDRD-002: the advice is *made* in decidesk. Raise a
         // decidesk `advice` Decision for this request and persist its ref. Fail
         // CLOSED — never author an advice outcome locally as a fallback.
@@ -711,31 +764,34 @@ class AdviceService
             // REQ-PDRD-002: fail closed; surface the error.
             throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
         }//end try
+    }//end delegateAdviceDecision()
 
+    /**
+     * Notify the adviseur that an advice request was created.
+     *
+     * @param string               $caseId  UUID of the case
+     * @param array<string, mixed> $payload The persisted adviceRequest payload
+     * @param mixed                $saved   The saveObject() result
+     *
+     * @return void
+     */
+    private function notifyAdviseur(string $caseId, array $payload, mixed $saved): void
+    {
         $adviseur = $payload['adviseur'];
-        if ($adviseur !== '') {
-            $notificationObjectId = $caseId;
-            if (is_array($saved) === true) {
-                $notificationObjectId = $saved['id'] ?? $caseId;
-            }
-
-            $this->sendUserNotification(
-                userId: $adviseur,
-                objectId: $notificationObjectId,
-                subject: 'advice_requested',
-                message: 'Adviesaanvraag voor zaak '.$caseId
-            );
+        if ($adviseur === '') {
+            return;
         }
 
-        $this->logger->info(
-            'Advice request created for case '.$caseId.' by '.$requestedBy,
-            ['app' => Application::APP_ID]
-        );
-
+        $notificationObjectId = $caseId;
         if (is_array($saved) === true) {
-            return $saved;
+            $notificationObjectId = $saved['id'] ?? $caseId;
         }
 
-        return [];
-    }//end requestAdvice()
+        $this->sendUserNotification(
+            userId: $adviseur,
+            objectId: $notificationObjectId,
+            subject: 'advice_requested',
+            message: 'Adviesaanvraag voor zaak '.$caseId
+        );
+    }//end notifyAdviseur()
 }//end class

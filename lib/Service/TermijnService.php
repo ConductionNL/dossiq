@@ -274,14 +274,7 @@ class TermijnService
         }
 
         $today  = (new DateTimeImmutable())->format('Y-m-d');
-        $active = [];
-        foreach ($rows as $row) {
-            $validFrom  = (string) ($row['validFrom'] ?? '1970-01-01');
-            $validUntil = (string) ($row['validUntil'] ?? '');
-            if ($validFrom <= $today && ($validUntil === '' || $validUntil >= $today)) {
-                $active[] = $row;
-            }
-        }
+        $active = $this->filterActiveDefinities(rows: $rows, today: $today);
 
         if (count($active) === 0) {
             return null;
@@ -296,6 +289,28 @@ class TermijnService
         $this->definitieCache[$zaaktype] = $active[0];
         return $active[0];
     }//end getTermijnDefinitie()
+
+    /**
+     * Keep the TermijnDefinitie rows whose validity window covers today.
+     *
+     * @param array<int, array<string, mixed>> $rows  Candidate definitions.
+     * @param string                           $today Today's date as `Y-m-d`.
+     *
+     * @return array<int, array<string, mixed>> The definitions valid today.
+     */
+    private function filterActiveDefinities(array $rows, string $today): array
+    {
+        $active = [];
+        foreach ($rows as $row) {
+            $validFrom  = (string) ($row['validFrom'] ?? '1970-01-01');
+            $validUntil = (string) ($row['validUntil'] ?? '');
+            if ($validFrom <= $today && ($validUntil === '' || $validUntil >= $today)) {
+                $active[] = $row;
+            }
+        }//end foreach
+
+        return $active;
+    }//end filterActiveDefinities()
 
     /**
      * Mark a TermijnInstance as completed.

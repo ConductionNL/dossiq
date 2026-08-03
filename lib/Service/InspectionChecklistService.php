@@ -345,31 +345,57 @@ class InspectionChecklistService
                 continue;
             }
 
-            try {
-                $item = $objectService->find(
-                    $itemRef,
-                    register: $register,
-                    schema: 'checklistItem'
-                );
-
-                // The find() call may return an OpenRegister entity or an
-                // array; normalise to an array so fotoRequired is readable.
-                if (is_object($item) === true) {
-                    $item = get_object_vars(object: $item);
-                }
-
-                if (is_array($item) === true && ($item['fotoRequired'] ?? false) === true) {
-                    throw new RuntimeException(
-                        'Photo required for non-conformant checklist item '.$itemRef
-                    );
-                }
-            } catch (RuntimeException $e) {
-                throw $e;
-            } catch (Throwable) {
-                // Item lookup failed — allow submission rather than blocking.
-            }//end try
+            $this->assertItemPhotoRequirement(
+                objectService: $objectService,
+                register: $register,
+                itemRef: $itemRef
+            );
         }//end foreach
     }//end validatePhotoRequirements()
+
+    /**
+     * Raise when the referenced checklistItem demands a photo.
+     *
+     * A failed item lookup is tolerated — submission is allowed rather than
+     * blocked on an infrastructure error.
+     *
+     * @param object $objectService OpenRegister object service
+     * @param string $register      Register slug
+     * @param mixed  $itemRef       Reference to the checklistItem
+     *
+     * @return void
+     *
+     * @throws RuntimeException If a required photo is missing
+     */
+    private function assertItemPhotoRequirement(
+        object $objectService,
+        string $register,
+        mixed $itemRef
+    ): void {
+        try {
+            $item = $objectService->find(
+                $itemRef,
+                register: $register,
+                schema: 'checklistItem'
+            );
+
+            // The find() call may return an OpenRegister entity or an
+            // array; normalise to an array so fotoRequired is readable.
+            if (is_object($item) === true) {
+                $item = get_object_vars(object: $item);
+            }
+
+            if (is_array($item) === true && ($item['fotoRequired'] ?? false) === true) {
+                throw new RuntimeException(
+                    'Photo required for non-conformant checklist item '.$itemRef
+                );
+            }
+        } catch (RuntimeException $e) {
+            throw $e;
+        } catch (Throwable) {
+            // Item lookup failed — allow submission rather than blocking.
+        }//end try
+    }//end assertItemPhotoRequirement()
 
     /**
      * Calculate the overall result based on answer values.

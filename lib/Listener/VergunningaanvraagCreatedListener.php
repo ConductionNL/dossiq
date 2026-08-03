@@ -88,16 +88,8 @@ class VergunningaanvraagCreatedListener implements IEventListener
             return;
         }
 
-        // OpenRegister's ObjectCreatedEvent::getObject() returns an ObjectEntity
-        // (JsonSerializable). Normalise it to the array shape the schema/id
-        // resolution below expects. A bare array is also accepted for resilience
-        // against alternate event shapes / test doubles.
-        $object = $event->getObject();
-        if ($object instanceof \JsonSerializable === true) {
-            $object = $object->jsonSerialize();
-        }
-
-        if (is_array($object) === false) {
+        $object = $this->normaliseEventObject(event: $event);
+        if ($object === null) {
             return;
         }
 
@@ -155,6 +147,33 @@ class VergunningaanvraagCreatedListener implements IEventListener
             );
         }
     }//end handle()
+
+    /**
+     * Normalise the event payload to the array shape the schema/id resolution
+     * expects.
+     *
+     * OpenRegister's ObjectCreatedEvent::getObject() returns an ObjectEntity
+     * (JsonSerializable). A bare array is also accepted for resilience against
+     * alternate event shapes / test doubles.
+     *
+     * @param ObjectCreatedEvent $event The dispatched creation event
+     *
+     * @return array<string, mixed>|null The object array, or null when the
+     *                                   payload is not array-shaped
+     */
+    private function normaliseEventObject(ObjectCreatedEvent $event): ?array
+    {
+        $object = $event->getObject();
+        if ($object instanceof \JsonSerializable === true) {
+            $object = $object->jsonSerialize();
+        }
+
+        if (is_array($object) === false) {
+            return null;
+        }
+
+        return $object;
+    }//end normaliseEventObject()
 
     /**
      * Resolve the schema identifier from an OR object payload.

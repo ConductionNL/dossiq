@@ -33,9 +33,6 @@
  * @spec openspec/specs/cmmn-adaptive-case/spec.md
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — one cohesive state-machine engine by design
- * @SuppressWarnings(PHPMD.StaticAccess)             — PlanItemTransitions/SentryEvaluator are deliberately
- *   pure, stateless, static helper classes (no DI, no side effects); calling them statically
- *   is the intended design, not a coupling smell.
  */
 
 declare(strict_types=1);
@@ -72,14 +69,18 @@ class CaseModelEngine
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Bridge to OpenRegister + config.
-     * @param CaseModelLoader $modelLoader     Active-caseModel-by-caseType loader.
-     * @param LoggerInterface $logger          Logger.
+     * @param SettingsService     $settingsService Bridge to OpenRegister + config.
+     * @param CaseModelLoader     $modelLoader     Active-caseModel-by-caseType loader.
+     * @param LoggerInterface     $logger          Logger.
+     * @param PlanItemTransitions $transitions     Legal plan-item transition table.
+     * @param SentryEvaluator     $sentries        Pure sentry-firing evaluator.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly CaseModelLoader $modelLoader,
         private readonly LoggerInterface $logger,
+        private readonly PlanItemTransitions $transitions,
+        private readonly SentryEvaluator $sentries,
     ) {
     }//end __construct()
 
@@ -135,7 +136,7 @@ class CaseModelEngine
             throw new RuntimeException('plan_item_not_found');
         }
 
-        $current = $ctx['state']['planItemStates'][$itemId] ?? PlanItemTransitions::initialState();
+        $current = $ctx['state']['planItemStates'][$itemId] ?? $this->transitions->initialState();
         if (($item['discretionary'] ?? false) !== true) {
             // A mandatory item is never manually enabled — even though
             // enabled→active is a legal edge in the table (it is how the
@@ -311,7 +312,7 @@ class CaseModelEngine
             throw new RuntimeException('not_a_human_task');
         }
 
-        $current = $ctx['state']['planItemStates'][$itemId] ?? PlanItemTransitions::initialState();
+        $current = $ctx['state']['planItemStates'][$itemId] ?? $this->transitions->initialState();
         $this->transition(item: $item, from: $current, to: $to, itemsById: $ctx['itemsById'], state: $ctx['state']);
         $this->cascade(itemsById: $ctx['itemsById'], state: $ctx['state'], touchedKeys: [], changedKeys: []);
         $this->persist(ctx: $ctx);
@@ -375,8 +376,8 @@ class CaseModelEngine
         ];
 
         foreach ($itemsById as $id => $item) {
-            $current = $state['planItemStates'][$id] ?? PlanItemTransitions::initialState();
-            if (PlanItemTransitions::isTerminal(state: $current) === true) {
+            $current = $state['planItemStates'][$id] ?? $this->transitions->initialState();
+            if ($this->transitions->isTerminal(state: $current) === true) {
                 continue;
             }
 
@@ -386,7 +387,7 @@ class CaseModelEngine
 
             $exitCriteria = $item['exitCriteria'] ?? [];
             if (is_array($exitCriteria) === true && count($exitCriteria) > 0
-                && SentryEvaluator::anyFires(sentries: $exitCriteria, context: $context) === true
+                && $this->sentries->anyFires(sentries: $exitCriteria, context: $context) === true
             ) {
                 $this->transition(item: $item, from: $current, to: PlanItemTransitions::STATE_TERMINATED, itemsById: $itemsById, state: $state);
                 $changed = true;
@@ -396,7 +397,7 @@ class CaseModelEngine
             if ($current === PlanItemTransitions::STATE_AVAILABLE) {
                 $entryCriteria = $item['entryCriteria'] ?? [];
                 $hasNoCriteria = (is_array($entryCriteria) === false || count($entryCriteria) === 0);
-                $satisfied     = $hasNoCriteria || SentryEvaluator::anyFires(sentries: $entryCriteria, context: $context);
+                $satisfied     = $hasNoCriteria || $this->sentries->anyFires(sentries: $entryCriteria, context: $context);
 
                 if ($satisfied === true) {
                     $this->advanceFromAvailable(item: $item, current: $current, itemsById: $itemsById, state: $state);
@@ -465,7 +466,7 @@ class CaseModelEngine
             return true;
         }
 
-        return ($state['planItemStates'][$parentId] ?? PlanItemTransitions::initialState()) === PlanItemTransitions::STATE_ACTIVE;
+        return ($state['planItemStates'][$parentId] ?? $this->transitions->initialState()) === PlanItemTransitions::STATE_ACTIVE;
     }//end isParentActive()
 
     /**
@@ -494,8 +495,8 @@ class CaseModelEngine
             }
 
             $mandatoryFound = true;
-            $childState     = $state['planItemStates'][$id] ?? PlanItemTransitions::initialState();
-            if (PlanItemTransitions::isTerminal(state: $childState) === false) {
+            $childState     = $state['planItemStates'][$id] ?? $this->transitions->initialState();
+            if ($this->transitions->isTerminal(state: $childState) === false) {
                 return false;
             }
         }
@@ -521,7 +522,7 @@ class CaseModelEngine
      */
     private function transition(array $item, string $from, string $to, array &$itemsById, array &$state): void
     {
-        PlanItemTransitions::assertLegal(itemId: (string) $item['id'], itemType: (string) $item['type'], fromState: $from, toState: $to);
+        $this->transitions->assertLegal(itemId: (string) $item['id'], itemType: (string) $item['type'], fromState: $from, toState: $to);
 
         $state['planItemStates'][$item['id']] = $to;
         $this->appendEvent(state: $state, itemId: (string) $item['id'], itemType: (string) $item['type'], from: $from, to: $to);
@@ -560,7 +561,7 @@ class CaseModelEngine
                 continue;
             }
 
-            $current = $state['planItemStates'][$id] ?? PlanItemTransitions::initialState();
+            $current = $state['planItemStates'][$id] ?? $this->transitions->initialState();
             if ($current === PlanItemTransitions::STATE_AVAILABLE || $current === PlanItemTransitions::STATE_ENABLED) {
                 $this->transition(item: $item, from: $current, to: PlanItemTransitions::STATE_DISABLED, itemsById: $itemsById, state: $state);
             }
@@ -585,8 +586,8 @@ class CaseModelEngine
                 continue;
             }
 
-            $current = $state['planItemStates'][$id] ?? PlanItemTransitions::initialState();
-            if (PlanItemTransitions::isTerminal(state: $current) === true) {
+            $current = $state['planItemStates'][$id] ?? $this->transitions->initialState();
+            if ($this->transitions->isTerminal(state: $current) === true) {
                 continue;
             }
 
@@ -844,7 +845,7 @@ class CaseModelEngine
         foreach ($itemsById as $id => $item) {
             unset($item);
             if (isset($state['planItemStates'][$id]) === false) {
-                $state['planItemStates'][$id] = PlanItemTransitions::initialState();
+                $state['planItemStates'][$id] = $this->transitions->initialState();
                 $changed = true;
             }
         }
@@ -884,7 +885,7 @@ class CaseModelEngine
                 'name'          => $item['name'],
                 'discretionary' => $item['discretionary'],
                 'parentId'      => $item['parentId'],
-                'state'         => $ctx['state']['planItemStates'][$id] ?? PlanItemTransitions::initialState(),
+                'state'         => $ctx['state']['planItemStates'][$id] ?? $this->transitions->initialState(),
             ];
         }
 
@@ -911,7 +912,7 @@ class CaseModelEngine
                 continue;
             }
 
-            $current = $ctx['state']['planItemStates'][$id] ?? PlanItemTransitions::initialState();
+            $current = $ctx['state']['planItemStates'][$id] ?? $this->transitions->initialState();
             if ($current !== PlanItemTransitions::STATE_ENABLED) {
                 continue;
             }

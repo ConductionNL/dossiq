@@ -214,10 +214,9 @@ class TermijnDailyScanService
         $deadlineDate = new DateTimeImmutable($deadline);
         $today        = new DateTimeImmutable($now->format('Y-m-d'));
         $diff         = (int) $today->diff($deadlineDate)->days;
+        $daysLeft     = $diff;
         if ($today > $deadlineDate) {
             $daysLeft = (-1 * $diff);
-        } else {
-            $daysLeft = $diff;
         }
 
         // Overschrijding.

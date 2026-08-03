@@ -147,37 +147,56 @@ class ZaakdossierController extends Controller
 
         $results = [];
         foreach ($files as $file) {
-            $name    = (string) ($file['name'] ?? '');
-            $tmpName = (string) ($file['tmp_name'] ?? '');
-            try {
-                if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {
-                    throw new RuntimeException('Executable files are not permitted: '.$name);
-                }
-
-                $content = '';
-                if ($tmpName !== '') {
-                    $content = (string) file_get_contents($tmpName);
-                }
-
-                $meta = $metadata;
-                if (isset($file['type']) === true && $file['type'] !== '') {
-                    $meta['formaat'] = $file['type'];
-                }
-
-                $created   = $this->dossierService->uploadDocument(
-                    caseId: $caseId,
-                    fileName: $name,
-                    content: $content,
-                    metadata: $meta,
-                );
-                $results[] = ['name' => $name, 'success' => true, 'informatieobject' => $created];
-            } catch (\Throwable $e) {
-                $results[] = ['name' => $name, 'success' => false, 'error' => $e->getMessage()];
-            }//end try
-        }//end foreach
+            $results[] = $this->uploadOneDocument(
+                caseId: $caseId,
+                file: $file,
+                metadata: $metadata,
+            );
+        }
 
         return new JSONResponse(['results' => $results], Http::STATUS_CREATED);
     }//end uploadDocument()
+
+    /**
+     * Upload a single multipart file into a case dossier.
+     *
+     * @param string               $caseId   The case (zaak) UUID.
+     * @param array<string, mixed> $file     One normalised uploaded-file entry.
+     * @param array<string, mixed> $metadata The shared document metadata.
+     *
+     * @return array<string, mixed> The per-file result entry.
+     */
+    private function uploadOneDocument(string $caseId, array $file, array $metadata): array
+    {
+        $name    = (string) ($file['name'] ?? '');
+        $tmpName = (string) ($file['tmp_name'] ?? '');
+        try {
+            if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {
+                throw new RuntimeException('Executable files are not permitted: '.$name);
+            }
+
+            $content = '';
+            if ($tmpName !== '') {
+                $content = (string) file_get_contents($tmpName);
+            }
+
+            $meta = $metadata;
+            if (isset($file['type']) === true && $file['type'] !== '') {
+                $meta['formaat'] = $file['type'];
+            }
+
+            $created = $this->dossierService->uploadDocument(
+                caseId: $caseId,
+                fileName: $name,
+                content: $content,
+                metadata: $meta,
+            );
+
+            return ['name' => $name, 'success' => true, 'informatieobject' => $created];
+        } catch (\Throwable $e) {
+            return ['name' => $name, 'success' => false, 'error' => $e->getMessage()];
+        }//end try
+    }//end uploadOneDocument()
 
     /**
      * Link an existing informatieobject to a case.
@@ -438,7 +457,7 @@ class ZaakdossierController extends Controller
                 targetPath: $tmpPath,
                 user: $user,
                 documents: $documents,
-                subfolderPerType: $this->subfolderPerTypeEnabled(),
+                layout: $this->dossierZipLayout(),
             );
             $data = (string) file_get_contents($tmpPath);
         } catch (\Throwable $e) {
@@ -612,14 +631,18 @@ class ZaakdossierController extends Controller
     }//end guardReadable()
 
     /**
-     * Whether ZIP exports should be organised into per-type sub-folders.
+     * Resolve the requested dossier ZIP layout from the request.
      *
-     * @return bool
+     * @return string ZipManifestBuilder::LAYOUT_PER_TYPE or ::LAYOUT_FLAT.
      */
-    private function subfolderPerTypeEnabled(): bool
+    private function dossierZipLayout(): string
     {
-        return $this->request->getParam('subfolderPerType', '1') !== '0';
-    }//end subfolderPerTypeEnabled()
+        if ($this->request->getParam('subfolderPerType', '1') === '0') {
+            return ZipManifestBuilder::LAYOUT_FLAT;
+        }
+
+        return ZipManifestBuilder::LAYOUT_PER_TYPE;
+    }//end dossierZipLayout()
 
     /**
      * Decode the shared metadata JSON body into an array.

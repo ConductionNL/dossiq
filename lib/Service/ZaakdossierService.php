@@ -111,11 +111,11 @@ class ZaakdossierService
             throw new RuntimeException('informatieobjecttype is required');
         }
 
-        $defaultClassification = $this->resolveDefaultClassification(type: $type);
-        $classification        = (string) ($metadata['vertrouwelijkheidaanduiding'] ?? '');
+        $defaultClass   = $this->resolveDefaultClassification(type: $type);
+        $classification = (string) ($metadata['vertrouwelijkheidaanduiding'] ?? '');
         if ($classification === '') {
-            $classification = $defaultClassification;
-        } else if ($this->accessGuard->isClassificationAllowed($defaultClassification, $classification) === false) {
+            $classification = $defaultClass;
+        } else if ($this->accessGuard->isClassificationAllowed($defaultClass, $classification) === false) {
             // REQ-ZAK-003d: a user may only override to a MORE restrictive level.
             throw new InvalidArgumentException(
                 'Classification may not be less restrictive than the document type default'

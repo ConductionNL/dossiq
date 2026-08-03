@@ -109,7 +109,7 @@ class LhsController extends Controller
         $ernst     = (string) $this->request->getParam('ernst', '');
         $gedrag    = (string) $this->request->getParam('gedrag', '');
         $actorType = (string) $this->request->getParam('actorType', '');
-        if ($caseId === '' || $ernst === '' || $gedrag === '' || $actorType === '') {
+        if (in_array('', [$caseId, $ernst, $gedrag, $actorType], true) === true) {
             return new JSONResponse(
                 ['error' => 'caseId, ernst, gedrag en actorType zijn verplicht'],
                 Http::STATUS_BAD_REQUEST,
@@ -185,7 +185,8 @@ class LhsController extends Controller
         $recommendation = $this->request->getParam('recommendation');
         $intervention   = (string) $this->request->getParam('intervention', '');
         $justification  = (string) $this->request->getParam('justification', '');
-        if (is_array($recommendation) === false || $intervention === '' || $justification === '') {
+        $hasBlank       = in_array('', [$intervention, $justification], true);
+        if (is_array($recommendation) === false || $hasBlank === true) {
             return new JSONResponse(
                 ['error' => 'recommendation, intervention en justification zijn verplicht'],
                 Http::STATUS_BAD_REQUEST,

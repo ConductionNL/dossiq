@@ -164,15 +164,11 @@ class HearingService
             today: $now,
         );
 
-        $available = $now->setTime(0, 0, 0);
-        if (isset($payload['inspectionAvailableFrom']) === true) {
-            $available = $this->parseDate(value: (string) $payload['inspectionAvailableFrom']);
-        }
-
-        if ($available > $deadline) {
-            // Per design.md: inspectionAvailableFrom must be ≤ inspectionDeadline.
-            $available = $deadline;
-        }
+        $available = $this->resolveAvailableFrom(
+            payload: $payload,
+            deadline: $deadline,
+            now: $now,
+        );
 
         $record = array_merge(
             [
@@ -359,23 +355,9 @@ class HearingService
 
         foreach ($entries as $entry) {
             if ($isFrozen === true) {
-                $hasReason = isset($entry['correctionReason'])
-                    && trim((string) $entry['correctionReason']) !== '';
-                if ($hasReason === false) {
-                    throw new RuntimeException(
-                        'Aanwezigheidscorrectie vereist toelichting in audit trail'
-                    );
-                }
-
-                $audit = $this->appendAudit(
-                    existing: $audit,
-                    event: 'attendance-late-correction',
-                    tag: self::TAG_VERSLAG,
-                    payload: [
-                        'invitee'          => (string) ($entry['invitee'] ?? ''),
-                        'present'          => (bool) ($entry['present'] ?? false),
-                        'correctionReason' => (string) $entry['correctionReason'],
-                    ],
+                $audit = $this->appendLateCorrectionAudit(
+                    audit: $audit,
+                    entry: $entry,
                 );
             }
 
@@ -454,67 +436,21 @@ class HearingService
         $audit = (array) ($current['auditTrail'] ?? []);
 
         // Audio recording handling: gated by explicit consent.
-        if (isset($payload['audioRecording']) === true
-            && (string) $payload['audioRecording'] !== ''
-        ) {
-            $consent = (string) (
-                $payload['recordingConsent'] ?? ($current['recordingConsent'] ?? 'not_requested')
-            );
-            if ($consent !== 'granted') {
-                $audit = $this->appendAudit(
-                    existing: $audit,
-                    event: 'audio-upload-denied',
-                    tag: self::TAG_RECORDING_CONSENT,
-                    payload: [
-                        'consent' => $consent,
-                    ],
-                );
+        $audit = $this->guardRecordingConsent(
+            objectService: $objectService,
+            sessionId: $sessionId,
+            payload: $payload,
+            current: $current,
+            audit: $audit,
+            register: $register,
+            schema: $schema,
+        );
 
-                try {
-                    $objectService->saveObject(
-                        object: ['auditTrail' => $audit],
-                        register: $register,
-                        schema: $schema,
-                        uuid: (string) $sessionId
-                    );
-                } catch (\Throwable $auditError) {
-                    $this->logger->error(
-                        'Procest hearing: failed to log audio-denial: '
-                        .$auditError->getMessage()
-                    );
-                }
-
-                throw new RuntimeException(
-                    'Bezwaarmaker heeft geen toestemming gegeven voor audio-opname'
-                );
-            }//end if
-        }//end if
-
-        $minutesSummary = null;
-        if ($summary !== '') {
-            $minutesSummary = $summary;
-        }
-
-        $minutesDocument = null;
-        if ($document !== '') {
-            $minutesDocument = $document;
-        }
-
-        $update = [
-            'minutesSummary'  => $minutesSummary,
-            'minutesDocument' => $minutesDocument,
-            'status'          => 'uitgevoerd',
-        ];
-
-        if (isset($payload['audioRecording']) === true
-            && (string) $payload['audioRecording'] !== ''
-        ) {
-            $update['audioRecording'] = (string) $payload['audioRecording'];
-        }
-
-        if (isset($payload['recordingConsent']) === true) {
-            $update['recordingConsent'] = (string) $payload['recordingConsent'];
-        }
+        $update = $this->buildMinutesUpdate(
+            payload: $payload,
+            summary: $summary,
+            document: $document,
+        );
 
         $update['auditTrail'] = $this->appendAudit(
             existing: $audit,
@@ -715,6 +651,178 @@ class HearingService
             '-'.self::INSPECTION_FLOOR_DAYS.' days'
         );
     }//end computeInspectionDeadline()
+
+    /**
+     * Resolve the inspectionAvailableFrom date, clamped to the
+     * inspection deadline (design.md: available ≤ deadline).
+     *
+     * @param array<string, mixed> $payload  Optional schedule extras
+     * @param \DateTimeImmutable   $deadline Computed inspection deadline
+     * @param \DateTimeImmutable   $now      Current date-time
+     *
+     * @return \DateTimeImmutable
+     */
+    private function resolveAvailableFrom(
+        array $payload,
+        \DateTimeImmutable $deadline,
+        \DateTimeImmutable $now
+    ): \DateTimeImmutable {
+        $available = $now->setTime(0, 0, 0);
+        if (isset($payload['inspectionAvailableFrom']) === true) {
+            $available = $this->parseDate(value: (string) $payload['inspectionAvailableFrom']);
+        }
+
+        if ($available > $deadline) {
+            // Per design.md: inspectionAvailableFrom must be ≤ inspectionDeadline.
+            return $deadline;
+        }
+
+        return $available;
+    }//end resolveAvailableFrom()
+
+    /**
+     * Append an awb-art-7:7 audit entry for an attendance correction
+     * made after the grace window closed.
+     *
+     * @param array<int, array<string, mixed>> $audit Existing audit entries
+     * @param array<string, mixed>             $entry The attendance entry
+     *
+     * @return array<int, array<string, mixed>>
+     *
+     * @throws RuntimeException When the late correction lacks a reason.
+     */
+    private function appendLateCorrectionAudit(
+        array $audit,
+        array $entry
+    ): array {
+        $hasReason = isset($entry['correctionReason'])
+            && trim((string) $entry['correctionReason']) !== '';
+        if ($hasReason === false) {
+            throw new RuntimeException(
+                'Aanwezigheidscorrectie vereist toelichting in audit trail'
+            );
+        }
+
+        return $this->appendAudit(
+            existing: $audit,
+            event: 'attendance-late-correction',
+            tag: self::TAG_VERSLAG,
+            payload: [
+                'invitee'          => (string) ($entry['invitee'] ?? ''),
+                'present'          => (bool) ($entry['present'] ?? false),
+                'correctionReason' => (string) $entry['correctionReason'],
+            ],
+        );
+    }//end appendLateCorrectionAudit()
+
+    /**
+     * Guard the audio-recording upload behind explicit consent, logging
+     * a denial to the session audit trail when consent is absent.
+     *
+     * @param object               $objectService Resolved OR ObjectService
+     * @param string               $sessionId     UUID of the hearingSession
+     * @param array<string, mixed> $payload       Minutes payload
+     * @param array<string, mixed> $current       Current hearingSession record
+     * @param array<int, mixed>    $audit         Existing audit entries
+     * @param string               $register      The register id
+     * @param string               $schema        The hearingSession schema id
+     *
+     * @return array<int, mixed> The (unchanged) audit entries
+     *
+     * @throws RuntimeException When consent for the recording is absent.
+     */
+    private function guardRecordingConsent(
+        object $objectService,
+        string $sessionId,
+        array $payload,
+        array $current,
+        array $audit,
+        string $register,
+        string $schema
+    ): array {
+        $hasAudio = isset($payload['audioRecording']) === true
+            && (string) $payload['audioRecording'] !== '';
+        if ($hasAudio === false) {
+            return $audit;
+        }
+
+        $consent = (string) (
+            $payload['recordingConsent'] ?? ($current['recordingConsent'] ?? 'not_requested')
+        );
+        if ($consent === 'granted') {
+            return $audit;
+        }
+
+        $audit = $this->appendAudit(
+            existing: $audit,
+            event: 'audio-upload-denied',
+            tag: self::TAG_RECORDING_CONSENT,
+            payload: [
+                'consent' => $consent,
+            ],
+        );
+
+        try {
+            $objectService->saveObject(
+                object: ['auditTrail' => $audit],
+                register: $register,
+                schema: $schema,
+                uuid: (string) $sessionId
+            );
+        } catch (\Throwable $auditError) {
+            $this->logger->error(
+                'Procest hearing: failed to log audio-denial: '
+                .$auditError->getMessage()
+            );
+        }
+
+        throw new RuntimeException(
+            'Bezwaarmaker heeft geen toestemming gegeven voor audio-opname'
+        );
+    }//end guardRecordingConsent()
+
+    /**
+     * Build the hearingSession update payload for a minutes submission.
+     *
+     * @param array<string, mixed> $payload  Minutes payload
+     * @param string               $summary  Resolved minutes summary
+     * @param string               $document Resolved minutes document id
+     *
+     * @return array<string, mixed>
+     */
+    private function buildMinutesUpdate(
+        array $payload,
+        string $summary,
+        string $document
+    ): array {
+        $minutesSummary = null;
+        if ($summary !== '') {
+            $minutesSummary = $summary;
+        }
+
+        $minutesDocument = null;
+        if ($document !== '') {
+            $minutesDocument = $document;
+        }
+
+        $update = [
+            'minutesSummary'  => $minutesSummary,
+            'minutesDocument' => $minutesDocument,
+            'status'          => 'uitgevoerd',
+        ];
+
+        if (isset($payload['audioRecording']) === true
+            && (string) $payload['audioRecording'] !== ''
+        ) {
+            $update['audioRecording'] = (string) $payload['audioRecording'];
+        }
+
+        if (isset($payload['recordingConsent']) === true) {
+            $update['recordingConsent'] = (string) $payload['recordingConsent'];
+        }
+
+        return $update;
+    }//end buildMinutesUpdate()
 
     /**
      * Block scheduling/rescheduling that would violate the 7-day

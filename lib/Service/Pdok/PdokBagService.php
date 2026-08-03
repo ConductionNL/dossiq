@@ -217,29 +217,13 @@ class PdokBagService
 
         $features = ($decoded['features'] ?? []);
         if (is_array(value: $features) === false || empty($features) === true) {
-            $this->cache->set(
-                $cacheKey,
-                [],
-                (int) $this->appConfig->getValueString(
-                    Application::APP_ID,
-                    'pdok_cache_lookup_ttl_seconds',
-                    (string) self::DEFAULT_TTL
-                ),
-            );
+            $this->cache->set($cacheKey, [], $this->lookupCacheTtl());
             return [];
         }
 
         $normalised = $this->normaliseFeature(feature: $features[0]);
 
-        $this->cache->set(
-            $cacheKey,
-            $normalised,
-            (int) $this->appConfig->getValueString(
-                Application::APP_ID,
-                'pdok_cache_lookup_ttl_seconds',
-                (string) self::DEFAULT_TTL
-            ),
-        );
+        $this->cache->set($cacheKey, $normalised, $this->lookupCacheTtl());
 
         $elapsedMs = (int) ((microtime(as_float: true) - $started) * 1000);
         $this->logger->info(
@@ -254,6 +238,20 @@ class PdokBagService
 
         return $normalised;
     }//end fetch()
+
+    /**
+     * Resolve the configured TTL, in seconds, for a cached BAG lookup.
+     *
+     * @return int The cache TTL in seconds.
+     */
+    private function lookupCacheTtl(): int
+    {
+        return (int) $this->appConfig->getValueString(
+            Application::APP_ID,
+            'pdok_cache_lookup_ttl_seconds',
+            (string) self::DEFAULT_TTL
+        );
+    }//end lookupCacheTtl()
 
     /**
      * Build the OGC Filter XML for a single property equality predicate.

@@ -388,6 +388,37 @@ final class StepConfigValidator
             );
         }
 
+        $errors = array_merge($errors, self::validateEscalationTiming(rule: $rule, path: $path));
+        $errors = array_merge($errors, self::validatePreBreachOffset(rule: $rule, sla: $sla, path: $path));
+        $errors = array_merge(
+            $errors,
+            self::validateEscalationRoles(rule: $rule, roleTypes: $roleTypes, path: $path)
+        );
+
+        $openIncident = ($rule['openIncident'] ?? null);
+        if ($openIncident !== null && is_bool($openIncident) === false) {
+            $errors[] = self::error(
+                path: $path.'.openIncident',
+                code: 'malformed_open_incident',
+                message: 'escalationRule.openIncident must be a boolean'
+            );
+        }
+
+        return $errors;
+    }//end validateEscalationRule()
+
+    /**
+     * Validate the trigger / offset / offsetUnit triplet of an escalationRule.
+     *
+     * @param array<string, mixed> $rule The escalationRule object.
+     * @param string               $path The path prefix for any error.
+     *
+     * @return array<int, array{path: string, code: string, message: string}>
+     */
+    private static function validateEscalationTiming(array $rule, string $path): array
+    {
+        $errors = [];
+
         $trigger = ($rule['trigger'] ?? null);
         if (is_string($trigger) === false || in_array($trigger, self::TRIGGERS, true) === false) {
             $errors[] = self::error(
@@ -417,22 +448,55 @@ final class StepConfigValidator
             );
         }
 
-        // Rule 7: preBreach offset cannot exceed sla.value.
+        return $errors;
+    }//end validateEscalationTiming()
+
+    /**
+     * Rule 7: a preBreach offset cannot exceed sla.value.
+     *
+     * @param array<string, mixed> $rule The escalationRule object.
+     * @param mixed                $sla  The raw sla value.
+     * @param string               $path The path prefix for any error.
+     *
+     * @return array<int, array{path: string, code: string, message: string}>
+     */
+    private static function validatePreBreachOffset(array $rule, mixed $sla, string $path): array
+    {
+        $trigger = ($rule['trigger'] ?? null);
+        $offset  = ($rule['offset'] ?? null);
+
         if ($trigger === 'preBreach'
             && is_int($offset) === true
             && is_array($sla) === true
             && is_int(($sla['value'] ?? null)) === true
             && $offset > $sla['value']
         ) {
-            $errors[] = self::error(
-                path: $path.'.offset',
-                code: 'offset_exceeds_sla',
-                message: 'escalationRule.offset must not exceed sla.value when trigger is preBreach'
-            );
+            return [
+                self::error(
+                    path: $path.'.offset',
+                    code: 'offset_exceeds_sla',
+                    message: 'escalationRule.offset must not exceed sla.value when trigger is preBreach'
+                ),
+            ];
         }
 
-        // Rule 5: notifyRole + escalateToRole must resolve when roleTypes provided.
+        return [];
+    }//end validatePreBreachOffset()
+
+    /**
+     * Rule 5: notifyRole + escalateToRole must resolve when roleTypes provided.
+     *
+     * @param array<string, mixed> $rule      The escalationRule object.
+     * @param array<string, mixed> $roleTypes Map of role name/uuid to definition.
+     * @param string               $path      The path prefix for any error.
+     *
+     * @return array<int, array{path: string, code: string, message: string}>
+     */
+    private static function validateEscalationRoles(array $rule, array $roleTypes, string $path): array
+    {
+        $errors     = [];
         $checkRoles = ($roleTypes !== []);
+
         foreach (['notifyRole', 'escalateToRole'] as $roleKey) {
             $role = ($rule[$roleKey] ?? null);
             if ($role === null) {
@@ -457,15 +521,6 @@ final class StepConfigValidator
             }
         }//end foreach
 
-        $openIncident = ($rule['openIncident'] ?? null);
-        if ($openIncident !== null && is_bool($openIncident) === false) {
-            $errors[] = self::error(
-                path: $path.'.openIncident',
-                code: 'malformed_open_incident',
-                message: 'escalationRule.openIncident must be a boolean'
-            );
-        }
-
         return $errors;
-    }//end validateEscalationRule()
+    }//end validateEscalationRoles()
 }//end class

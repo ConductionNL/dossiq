@@ -55,6 +55,16 @@ class ZipManifestBuilder
     ];
 
     /**
+     * Archive layout: one sub-folder per informatieobjecttype.
+     */
+    public const LAYOUT_PER_TYPE = 'per-type';
+
+    /**
+     * Archive layout: every document at the archive root.
+     */
+    public const LAYOUT_FLAT = 'flat';
+
+    /**
      * Constructor.
      *
      * @param ZgwDocumentService          $documentService Binary file storage service.
@@ -124,13 +134,14 @@ class ZipManifestBuilder
      * Build a ZIP archive at the given path for the supplied documents.
      *
      * Documents above the caller's clearance are excluded before any file is
-     * read. The archive contains one sub-folder per informatieobjecttype (when
-     * $subfolderPerType is true) plus a `manifest.csv` at the root.
+     * read. Under self::LAYOUT_PER_TYPE the archive contains one sub-folder per
+     * informatieobjecttype; under self::LAYOUT_FLAT every document sits at the
+     * root. A `manifest.csv` is always written at the root.
      *
-     * @param string                           $targetPath       Filesystem path to write the ZIP to.
-     * @param IUser|null                       $user             The caller (for clearance filtering).
-     * @param array<int, array<string, mixed>> $documents        Candidate documents.
-     * @param bool                             $subfolderPerType Organise into per-type sub-folders.
+     * @param string                           $targetPath Filesystem path to write the ZIP to.
+     * @param IUser|null                       $user       The caller (for clearance filtering).
+     * @param array<int, array<string, mixed>> $documents  Candidate documents.
+     * @param string                           $layout     self::LAYOUT_PER_TYPE or self::LAYOUT_FLAT.
      *
      * @return array<string, mixed> Result with `path`, `included` count and `excluded` count.
      *
@@ -138,7 +149,7 @@ class ZipManifestBuilder
      *
      * @spec openspec/changes/document-zaakdossier/tasks.md#T04
      */
-    public function buildZip(string $targetPath, ?IUser $user, array $documents, bool $subfolderPerType=true): array
+    public function buildZip(string $targetPath, ?IUser $user, array $documents, string $layout=self::LAYOUT_PER_TYPE): array
     {
         $candidateCount = count($documents);
         $included       = $this->filterByClearance(user: $user, documents: $documents);
@@ -163,7 +174,7 @@ class ZipManifestBuilder
             $entryName = $this->buildEntryName(
                 doc: $doc,
                 fileName: $fileName,
-                subfolderPerType: $subfolderPerType,
+                layout: $layout,
                 usedNames: $usedNames,
             );
 
@@ -191,62 +202,74 @@ class ZipManifestBuilder
     /**
      * Compute the unique in-archive entry name for a document.
      *
-     * @param array<string, mixed> $doc              The document record.
-     * @param string               $fileName         The base filename.
-     * @param bool                 $subfolderPerType Whether to prefix with the type folder.
-     * @param array<string, int>   $usedNames        Reference of already-used names for de-duplication.
+     * @param array<string, mixed> $doc       The document record.
+     * @param string               $fileName  The base filename.
+     * @param string               $layout    self::LAYOUT_PER_TYPE or self::LAYOUT_FLAT.
+     * @param array<string, int>   $usedNames Reference of already-used names for de-duplication.
      *
      * @return string The unique entry name.
      */
-    private function buildEntryName(array $doc, string $fileName, bool $subfolderPerType, array &$usedNames): string
+    private function buildEntryName(array $doc, string $fileName, string $layout, array &$usedNames): string
     {
         $prefix = '';
-        if ($subfolderPerType === true) {
+        if ($layout === self::LAYOUT_PER_TYPE) {
             $type   = (string) ($doc['informatieobjecttype'] ?? 'onbekend');
-            $prefix = $this->sanitizeSegment(segment: $type).'/';
+            $prefix = $this->sanitizeFolderName(name: $type).'/';
         }
 
-        $entry = $prefix.$this->sanitizeSegment(segment: $fileName, keepDots: true);
+        $entry = $prefix.$this->sanitizeFileName(name: $fileName);
 
-        if (isset($usedNames[$entry]) === true) {
-            $usedNames[$entry]++;
-            $dot = strrpos($fileName, '.');
-            if ($dot === false) {
-                $base      = $fileName;
-                $extension = '';
-            } else {
-                $base      = substr($fileName, 0, $dot);
-                $extension = substr($fileName, $dot);
-            }
-
-            $entry = $prefix.$this->sanitizeSegment(segment: $base, keepDots: true).'_'.$usedNames[$entry].$extension;
-        } else {
+        if (isset($usedNames[$entry]) === false) {
             $usedNames[$entry] = 0;
+            return $entry;
         }
 
-        return $entry;
+        $usedNames[$entry]++;
+
+        $base      = $fileName;
+        $extension = '';
+        $dot       = strrpos($fileName, '.');
+        if ($dot !== false) {
+            $base      = substr($fileName, 0, $dot);
+            $extension = substr($fileName, $dot);
+        }
+
+        return $prefix.$this->sanitizeFileName(name: $base).'_'.$usedNames[$entry].$extension;
     }//end buildEntryName()
 
     /**
-     * Sanitise a path segment for safe inclusion in a ZIP entry name.
+     * Sanitise a folder segment for safe inclusion in a ZIP entry name.
      *
-     * @param string $segment  The raw segment.
-     * @param bool   $keepDots Whether to preserve dots (for filenames with extensions).
+     * A folder segment carries no extension, so dots are flattened before the
+     * shared filename rules are applied — that also collapses `.` and `..`
+     * traversal segments into harmless underscores.
      *
-     * @return string The sanitised segment.
+     * @param string $name The raw folder name.
+     *
+     * @return string The sanitised folder name.
      */
-    private function sanitizeSegment(string $segment, bool $keepDots=false): string
+    private function sanitizeFolderName(string $name): string
     {
-        $segment = str_replace(['/', '\\', "\0"], '_', $segment);
-        $segment = trim($segment);
-        if ($keepDots === false) {
-            $segment = str_replace('.', '_', $segment);
-        }
+        return $this->sanitizeFileName(name: str_replace('.', '_', $name));
+    }//end sanitizeFolderName()
 
-        if ($segment === '' || $segment === '.' || $segment === '..') {
+    /**
+     * Sanitise a filename for safe inclusion in a ZIP entry name.
+     *
+     * Dots are preserved so the extension survives; separators and NUL bytes
+     * are flattened so the entry can never escape the archive root.
+     *
+     * @param string $name The raw filename.
+     *
+     * @return string The sanitised filename.
+     */
+    private function sanitizeFileName(string $name): string
+    {
+        $clean = trim(str_replace(['/', '\\', "\0"], '_', $name));
+        if ($clean === '' || $clean === '.' || $clean === '..') {
             return 'onbekend';
         }
 
-        return $segment;
-    }//end sanitizeSegment()
+        return $clean;
+    }//end sanitizeFileName()
 }//end class
