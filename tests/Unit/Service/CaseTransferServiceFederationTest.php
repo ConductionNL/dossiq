@@ -284,7 +284,7 @@ class CaseTransferServiceFederationTest extends TestCase
             appManager: $appManager,
             container: $container,
             logger: $this->createMock(LoggerInterface::class),
-            tenantAuditTrailService: $this->createMock(TenantAuditTrailService::class),
+            auditTrail: $this->createMock(TenantAuditTrailService::class),
         );
     }//end setUp()
 
@@ -514,7 +514,7 @@ class CaseTransferServiceFederationTest extends TestCase
             appManager: $appManager,
             container: $container,
             logger: $this->createMock(LoggerInterface::class),
-            tenantAuditTrailService: $this->createMock(TenantAuditTrailService::class),
+            auditTrail: $this->createMock(TenantAuditTrailService::class),
         );
 
         $result = $service->initiateTransfer('case-1', 'org-a', 'org-b', 'reason', '2026-08-01', 'alice', 'partner@remote.example');

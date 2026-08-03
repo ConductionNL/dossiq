@@ -65,10 +65,9 @@ class StufRetryJob extends Job
      */
     protected function run(mixed $argument): void
     {
+        $payload = [];
         if (is_array(value: $argument) === true) {
             $payload = $argument;
-        } else {
-            $payload = [];
         }
 
         $stufMessageId = (string) ($payload['stufMessageId'] ?? '');

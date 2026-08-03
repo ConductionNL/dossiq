@@ -165,10 +165,12 @@ class TranscriptionService
                 $evidence['transcriptionNote']   = 'Auto-transcription failed after '
                     .self::MAX_RETRIES
                     .' attempts; manual transcription required.';
-            } else {
-                $evidence['transcriptionStatus']    = self::STATUS_QUEUED;
-                $evidence['transcriptionLastError'] = $e->getMessage();
+
+                return $this->persist(evidence: $evidence);
             }
+
+            $evidence['transcriptionStatus']    = self::STATUS_QUEUED;
+            $evidence['transcriptionLastError'] = $e->getMessage();
 
             return $this->persist(evidence: $evidence);
         }//end try

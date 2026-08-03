@@ -114,7 +114,7 @@ class DsoCaseService
     {
         $objectService = $this->getObjectService();
 
-        $vergunningaanvraagSchema = $this->appConfig->getValueString(
+        $aanvraagSchema = $this->appConfig->getValueString(
             app: Application::APP_ID,
             key: 'dso_vergunningaanvraag_schema',
             default: ''
@@ -123,7 +123,7 @@ class DsoCaseService
         $vergunningaanvraag = $this->findObjectAsArray(
             objectService: $objectService,
             register: 'dso',
-            schema: $vergunningaanvraagSchema,
+            schema: $aanvraagSchema,
             id: $vergunningaanvraagId
         );
 
@@ -240,8 +240,8 @@ class DsoCaseService
 
         $zaak = $this->normalizeToArray(value: $zaak);
 
-        $oldStatus = (string) ($zaak['status'] ?? '');
-        $vergunningaanvraagRef = (string) ($zaak['vergunningaanvraagRef'] ?? '');
+        $oldStatus   = (string) ($zaak['status'] ?? '');
+        $aanvraagRef = (string) ($zaak['vergunningaanvraagRef'] ?? '');
 
         $zaak['status'] = $newStatus;
         if ($besluitdatum !== null) {
@@ -274,17 +274,17 @@ class DsoCaseService
         );
 
         // Update the linked vergunningaanvraag status when possible.
-        if ($vergunningaanvraagRef !== '') {
+        if ($aanvraagRef !== '') {
             $this->syncVergunningaanvraagStatus(
                 objectService: $objectService,
-                vergunningaanvraagRef: $vergunningaanvraagRef,
+                aanvraagRef: $aanvraagRef,
                 newStatus: $newStatus,
                 besluitdatum: $besluitdatum
             );
         }
 
         $event = new VergunningStatusChangedEvent(
-            vergunningaanvraagRef: $vergunningaanvraagRef,
+            vergunningaanvraagRef: $aanvraagRef,
             oldStatus: $oldStatus,
             newStatus: $newStatus,
             besluitdatum: $besluitdatum,
@@ -313,10 +313,9 @@ class DsoCaseService
      */
     public function computeDeadline(string $indieningsdatum, string $procedureType): string
     {
+        $workingDaysTarget = 40;
         if ($procedureType === 'uitgebreide') {
             $workingDaysTarget = 130;
-        } else {
-            $workingDaysTarget = 40;
         }
 
         $current     = new DateTimeImmutable($indieningsdatum);
@@ -500,35 +499,35 @@ class DsoCaseService
      *
      * Best-effort: errors are logged but do not propagate to the caller.
      *
-     * @param object      $objectService         The ObjectService instance
-     * @param string      $vergunningaanvraagRef The vergunningaanvraag UUID
-     * @param string      $newStatus             The new status to set
-     * @param string|null $besluitdatum          Optional decision date
+     * @param object      $objectService The ObjectService instance
+     * @param string      $aanvraagRef   The vergunningaanvraag UUID
+     * @param string      $newStatus     The new status to set
+     * @param string|null $besluitdatum  Optional decision date
      *
      * @return void
      */
     private function syncVergunningaanvraagStatus(
         object $objectService,
-        string $vergunningaanvraagRef,
+        string $aanvraagRef,
         string $newStatus,
         ?string $besluitdatum,
     ): void {
         try {
-            $vergunningaanvraagSchema = $this->appConfig->getValueString(
+            $aanvraagSchema = $this->appConfig->getValueString(
                 app: Application::APP_ID,
                 key: 'dso_vergunningaanvraag_schema',
                 default: ''
             );
 
-            if ($vergunningaanvraagSchema === '') {
+            if ($aanvraagSchema === '') {
                 return;
             }
 
             $aanvraag = $this->findObjectAsArray(
                 objectService: $objectService,
                 register: 'dso',
-                schema: $vergunningaanvraagSchema,
-                id: $vergunningaanvraagRef
+                schema: $aanvraagSchema,
+                id: $aanvraagRef
             );
 
             if ($aanvraag === null) {
@@ -542,7 +541,7 @@ class DsoCaseService
 
             $objectService->saveObject(
                 register: 'dso',
-                schema: $vergunningaanvraagSchema,
+                schema: $aanvraagSchema,
                 object: $aanvraag
             );
         } catch (\Throwable $e) {
@@ -550,7 +549,7 @@ class DsoCaseService
                 'Procest DsoCaseService: could not sync vergunningaanvraag status: '.$e->getMessage(),
                 [
                     'app'                   => Application::APP_ID,
-                    'vergunningaanvraagRef' => $vergunningaanvraagRef,
+                    'vergunningaanvraagRef' => $aanvraagRef,
                 ]
             );
         }//end try

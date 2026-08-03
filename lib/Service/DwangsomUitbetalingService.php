@@ -139,10 +139,10 @@ class DwangsomUitbetalingService
     /**
      * Handle an ERP callback updating the uitbetaling state.
      *
-     * @param string                 $referentie            Payment reference.
-     * @param string                 $status                New status (betaald/afgewezen/in-behandeling).
-     * @param DateTimeImmutable|null $werkelijkeBetaaldatum Actual payment date.
-     * @param string                 $betalingsreferentie   ERP/bank reference.
+     * @param string                 $referentie          Payment reference.
+     * @param string                 $status              New status (betaald/afgewezen/in-behandeling).
+     * @param DateTimeImmutable|null $betaaldatum         Actual payment date.
+     * @param string                 $betalingsreferentie ERP/bank reference.
      *
      * @return array<string, mixed>
      *
@@ -153,7 +153,7 @@ class DwangsomUitbetalingService
     public function handleCallback(
         string $referentie,
         string $status,
-        ?DateTimeImmutable $werkelijkeBetaaldatum,
+        ?DateTimeImmutable $betaaldatum,
         string $betalingsreferentie=''
     ): array {
         $objectService = $this->settingsService->getObjectService();
@@ -174,10 +174,9 @@ class DwangsomUitbetalingService
             throw new RuntimeException('DwangsomUitbetaling lookup failed: '.$e->getMessage());
         }
 
+        $row = null;
         if (is_array($rows) === true && count($rows) > 0) {
             $row = $rows[0];
-        } else {
-            $row = null;
         }
 
         if (is_array($row) === false) {
@@ -189,8 +188,8 @@ class DwangsomUitbetalingService
             $row['betalingsreferentie'] = $betalingsreferentie;
         }
 
-        if ($werkelijkeBetaaldatum !== null) {
-            $row['werkelijkeBetaaldatum'] = $werkelijkeBetaaldatum->format('Y-m-d');
+        if ($betaaldatum !== null) {
+            $row['werkelijkeBetaaldatum'] = $betaaldatum->format('Y-m-d');
         }
 
         try {
@@ -226,9 +225,10 @@ class DwangsomUitbetalingService
         foreach (str_split($rearranged) as $ch) {
             if (ctype_alpha($ch) === true) {
                 $expanded .= (string) (ord($ch) - 55);
-            } else {
-                $expanded .= $ch;
+                continue;
             }
+
+            $expanded .= $ch;
         }
 
         // Mod-97 over a string (PHP int can't hold this directly).

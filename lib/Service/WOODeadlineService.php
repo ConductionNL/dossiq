@@ -99,11 +99,7 @@ class WOODeadlineService
      */
     public function calculate(string $ontvangstdatum): array
     {
-        $receipt = \DateTimeImmutable::createFromFormat('Y-m-d', $ontvangstdatum);
-        if ($receipt === false) {
-            throw new InvalidArgumentException('Invalid ontvangstdatum: '.$ontvangstdatum);
-        }
-
+        $receipt  = $this->requireIsoDate(value: $ontvangstdatum, label: 'ontvangstdatum');
         $deadline = $receipt->modify('+'.self::INITIAL_PERIOD_DAYS.' days');
 
         return [
@@ -175,7 +171,7 @@ class WOODeadlineService
             $currentDeadline = $calculated['expectedResolution'];
         }
 
-        $deadline    = \DateTimeImmutable::createFromFormat('Y-m-d', $currentDeadline);
+        $deadline    = $this->requireIsoDate(value: (string) $currentDeadline, label: 'expectedResolution');
         $newDeadline = $deadline->modify('+'.self::EXTENSION_PERIOD_DAYS.' days');
 
         $updateData = array_merge(
@@ -248,8 +244,8 @@ class WOODeadlineService
         }
 
         $today    = new DateTimeImmutable('today');
-        $deadline = \DateTimeImmutable::createFromFormat('Y-m-d', $deadlineStr);
-        if ($deadline === false) {
+        $deadline = $this->parseIsoDate(value: (string) $deadlineStr);
+        if ($deadline === null) {
             return ['warned' => false, 'reason' => 'Invalid deadline format'];
         }
 
@@ -321,4 +317,54 @@ class WOODeadlineService
             );
         }//end try
     }//end sendDeadlineNotification()
+
+    /**
+     * Parse an ISO 8601 calendar date (Y-m-d) into an immutable date at midnight.
+     *
+     * Constructing the value directly (rather than through a static factory)
+     * keeps the parse honest: an unparseable value yields null instead of a
+     * boolean sentinel, and the resulting instant is midnight rather than the
+     * current wall-clock time, so day arithmetic is whole-day exact. A trailing
+     * time component is accepted and discarded — deadlines are calendar dates.
+     *
+     * @param string $value The date string to parse (e.g. '2026-05-01')
+     *
+     * @return \DateTimeImmutable|null The parsed date, or null when unparseable
+     *
+     * @spec openspec/changes/woo-case-type/tasks.md#task-4
+     */
+    private function parseIsoDate(string $value): ?DateTimeImmutable
+    {
+        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})/', $value, $parts) !== 1) {
+            return null;
+        }
+
+        try {
+            return new DateTimeImmutable($parts[1].'-'.$parts[2].'-'.$parts[3].' 00:00:00');
+        } catch (\Exception $e) {
+            return null;
+        }
+    }//end parseIsoDate()
+
+    /**
+     * Parse an ISO 8601 calendar date, rejecting an unparseable value.
+     *
+     * @param string $value The date string to parse (e.g. '2026-05-01')
+     * @param string $label The field name to name in the rejection message
+     *
+     * @return \DateTimeImmutable The parsed date at midnight
+     *
+     * @throws \InvalidArgumentException If the value is not a Y-m-d date
+     *
+     * @spec openspec/changes/woo-case-type/tasks.md#task-4
+     */
+    private function requireIsoDate(string $value, string $label): DateTimeImmutable
+    {
+        $parsed = $this->parseIsoDate(value: $value);
+        if ($parsed === null) {
+            throw new InvalidArgumentException('Invalid '.$label.': '.$value);
+        }
+
+        return $parsed;
+    }//end requireIsoDate()
 }//end class

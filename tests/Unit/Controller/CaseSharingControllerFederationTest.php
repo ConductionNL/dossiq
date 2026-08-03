@@ -71,7 +71,7 @@ class CaseSharingControllerFederationTest extends TestCase
             request: $this->request,
             caseSharingService: $this->sharingService,
             caseTransferService: $this->transferService,
-            caseCollaborationService: $this->collaborationService,
+            collabService: $this->collaborationService,
             userSession: $this->userSession,
         );
     }//end setUp()

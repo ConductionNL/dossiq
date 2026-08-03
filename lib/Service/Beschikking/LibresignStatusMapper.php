@@ -118,7 +118,7 @@ class LibresignStatusMapper
      *
      * @spec openspec/specs/libresign-besluit-signing/spec.md
      */
-    public static function map(string $raw): string
+    public function map(string $raw): string
     {
         $normalised = strtolower(trim($raw));
 

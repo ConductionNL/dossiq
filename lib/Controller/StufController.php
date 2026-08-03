@@ -38,15 +38,10 @@ namespace OCA\Procest\Controller;
 
 use DOMDocument;
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Stuf\CircuitBreakerService;
 use OCA\Procest\Service\Stuf\CircuitOpenException;
-use OCA\Procest\Service\Stuf\StufAdapterService;
 use OCA\Procest\Service\Stuf\StufException;
-use OCA\Procest\Service\Stuf\StufMessageHandler;
-use OCA\Procest\Service\Stuf\StufMessageParser;
 use OCA\Procest\Service\Stuf\StufRegisterAccess;
-use OCA\Procest\Service\Stuf\StufVaultService;
-use OCA\Procest\Service\StufFieldMappingService;
+use OCA\Procest\Service\Stuf\StufServices;
 use OCA\Procest\Service\StufMessageBuilder;
 use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -83,30 +78,16 @@ class StufController extends Controller
     /**
      * Constructor.
      *
-     * @param string                  $appName        The app name.
-     * @param IRequest                $request        The request object.
-     * @param StufFieldMappingService $mappingService The field mapping service.
-     * @param StufMessageBuilder      $messageBuilder The message builder service.
-     * @param StufAdapterService      $adapter        The outbound adapter.
-     * @param StufRegisterAccess      $register       The register access helper.
-     * @param StufMessageHandler      $messageHandler The audit log handler.
-     * @param StufMessageParser       $parser         The message parser.
-     * @param StufVaultService        $vault          The vault adapter.
-     * @param CircuitBreakerService   $circuitBreaker The circuit breaker.
-     * @param IL10N                   $l10n           The localization service.
-     * @param LoggerInterface         $logger         The logger.
+     * @param string          $appName The app name.
+     * @param IRequest        $request The request object.
+     * @param StufServices    $stuf    The bundled StUF collaborators.
+     * @param IL10N           $l10n    The localization service.
+     * @param LoggerInterface $logger  The logger.
      */
     public function __construct(
         string $appName,
         IRequest $request,
-        private readonly StufFieldMappingService $mappingService,
-        private readonly StufMessageBuilder $messageBuilder,
-        private readonly StufAdapterService $adapter,
-        private readonly StufRegisterAccess $register,
-        private readonly StufMessageHandler $messageHandler,
-        private readonly StufMessageParser $parser,
-        private readonly StufVaultService $vault,
-        private readonly CircuitBreakerService $circuitBreaker,
+        private readonly StufServices $stuf,
         private readonly IL10N $l10n,
         private readonly LoggerInterface $logger,
     ) {
@@ -167,7 +148,7 @@ class StufController extends Controller
             return new JSONResponse(['error' => $this->l10n->t('endpointId and berichtNaam are required')], Http::STATUS_BAD_REQUEST);
         }
 
-        $endpoint = $this->register->findOne(
+        $endpoint = $this->stuf->register->findOne(
             schema: StufRegisterAccess::SCHEMA_ENDPOINT,
             filters: ['id' => $endpointId]
         );
@@ -176,7 +157,7 @@ class StufController extends Controller
         }
 
         try {
-            $result = $this->adapter->vrijBericht(name: $berichtNaam, payload: $payload, endpoint: $endpoint);
+            $result = $this->stuf->adapter->vrijBericht(name: $berichtNaam, payload: $payload, endpoint: $endpoint);
             return new JSONResponse($result);
         } catch (CircuitOpenException $e) {
             return new JSONResponse(
@@ -236,9 +217,9 @@ class StufController extends Controller
         $berichtSoort = $this->detectBerichtSoort(envelopeXml: $rawXml);
         $crossRef     = $this->extractCrossRefnummer(envelopeXml: $rawXml);
         $functie      = $this->extractFunctie(envelopeXml: $rawXml);
-        $zaakId       = ($this->parser->parseBevestiging(responseXml: $rawXml)['zaakIdentificatie'] ?? null);
+        $zaakId       = ($this->stuf->parser->parseBevestiging(responseXml: $rawXml)['zaakIdentificatie'] ?? null);
 
-        $this->messageHandler->logInbound(
+        $this->stuf->messageHandler->logInbound(
             endpoint: $endpoint,
             responseXml: $rawXml,
             berichtSoort: $berichtSoort,
@@ -248,9 +229,9 @@ class StufController extends Controller
         );
 
         if ($berichtSoort === 'Bv01' && $crossRef !== '') {
-            $outbound = $this->messageHandler->findOutboundByReferentienummer(referentienummer: $crossRef);
+            $outbound = $this->stuf->messageHandler->findOutboundByReferentienummer(referentienummer: $crossRef);
             if ($outbound !== null) {
-                $this->messageHandler->transitionStatus(
+                $this->stuf->messageHandler->transitionStatus(
                     msg: $outbound,
                     newStatus: 'bevestigd',
                     extras: [
@@ -274,7 +255,7 @@ class StufController extends Controller
     #[AuthorizedAdminSetting(AdminSettings::class)]
     public function endpoints(): JSONResponse
     {
-        $items = $this->register->findAll(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: [], limit: 500);
+        $items = $this->stuf->register->findAll(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: [], limit: 500);
         $items = array_map(
             callback: function (array $endpoint): array {
                 return $this->enrichEndpointWithHealth(endpoint: $endpoint);
@@ -313,7 +294,7 @@ class StufController extends Controller
             $filters['status'] = $status;
         }
 
-        $items = $this->register->findAll(schema: StufRegisterAccess::SCHEMA_MESSAGE, filters: $filters, limit: $limit);
+        $items = $this->stuf->register->findAll(schema: StufRegisterAccess::SCHEMA_MESSAGE, filters: $filters, limit: $limit);
         return new JSONResponse(['items' => $items, 'total' => count(value: $items), 'limit' => $limit]);
     }//end messages()
 
@@ -329,13 +310,13 @@ class StufController extends Controller
         $rawBody = file_get_contents('php://input');
 
         if ($rawBody === false || $rawBody === '') {
-            $response = $this->messageBuilder->buildSoapFault('Leeg bericht ontvangen');
+            $response = $this->stuf->messageBuilder->buildSoapFault('Leeg bericht ontvangen');
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
         // Enforce size limit to mitigate XML bomb / DoS.
         if (strlen($rawBody) > 2097152) {
-            $response = $this->messageBuilder->buildSoapFault('Bericht te groot');
+            $response = $this->stuf->messageBuilder->buildSoapFault('Bericht te groot');
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_REQUEST_ENTITY_TOO_LARGE);
         }
 
@@ -351,7 +332,7 @@ class StufController extends Controller
 
         if ($parseResult === false || empty($errors) === false) {
             $this->logger->warning('Invalid XML received at StUF endpoint: {service}', ['service' => $service]);
-            $response = $this->messageBuilder->buildSoapFault('Ongeldig XML bericht');
+            $response = $this->stuf->messageBuilder->buildSoapFault('Ongeldig XML bericht');
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
@@ -362,13 +343,13 @@ class StufController extends Controller
         );
 
         if ($bodyElements->length === 0) {
-            $response = $this->messageBuilder->buildSoapFault('Geen SOAP Body gevonden');
+            $response = $this->stuf->messageBuilder->buildSoapFault('Geen SOAP Body gevonden');
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
         $body = $bodyElements->item(0);
         if ($body === null || $body->hasChildNodes() === false) {
-            $response = $this->messageBuilder->buildSoapFault('Lege SOAP Body');
+            $response = $this->stuf->messageBuilder->buildSoapFault('Lege SOAP Body');
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
@@ -382,7 +363,7 @@ class StufController extends Controller
         }
 
         if ($messageElement === null) {
-            $response = $this->messageBuilder->buildSoapFault('Geen StUF bericht element gevonden');
+            $response = $this->stuf->messageBuilder->buildSoapFault('Geen StUF bericht element gevonden');
             return $this->soapResponse(xml: $response, statusCode: Http::STATUS_BAD_REQUEST);
         }
 
@@ -415,7 +396,7 @@ class StufController extends Controller
         // Extract mutatiesoort.
         $objectElements = $message->getElementsByTagName('object');
         if ($objectElements->length === 0) {
-            $response = $this->messageBuilder->buildFo01(
+            $response = $this->stuf->messageBuilder->buildFo01(
                 'StUF055',
                 'Geen object element in zakLk01',
                 'server',
@@ -444,7 +425,7 @@ class StufController extends Controller
                 );
 
         // Map to internal properties.
-        $internalData = $this->mappingService->mapZknToInternal($stufFields);
+        $internalData = $this->stuf->mappingService->mapZknToInternal($stufFields);
 
         $this->logger->info(
             'Processed zakLk01 mutatiesoort={mutatiesoort}, identifier={id}',
@@ -459,7 +440,7 @@ class StufController extends Controller
 
         // In a full implementation, create/update OpenRegister objects here.
         // For now, return a Bv01 confirmation.
-        $response = $this->messageBuilder->buildBv01(
+        $response = $this->stuf->messageBuilder->buildBv01(
             self::DEFAULT_ZENDER,
             [],
             $crossRef
@@ -502,11 +483,11 @@ class StufController extends Controller
         // For now, return an empty zakLa01 response.
         $body  = '<zkn:zakLa01 xmlns:zkn="'.StufMessageBuilder::NS_ZKN.'" '
             .'xmlns:stuf="'.StufMessageBuilder::NS_STUF.'">';
-        $body .= $this->messageBuilder->buildStuurgegevens(self::DEFAULT_ZENDER, []);
+        $body .= $this->stuf->messageBuilder->buildStuurgegevens(self::DEFAULT_ZENDER, []);
         $body .= '<zkn:antwoord/>';
         $body .= '</zkn:zakLa01>';
 
-        $response = $this->messageBuilder->buildSoapEnvelope($body);
+        $response = $this->stuf->messageBuilder->buildSoapEnvelope($body);
 
         return $this->soapResponse(xml: $response);
     }//end handleZakLv01()
@@ -543,11 +524,11 @@ class StufController extends Controller
         // For now, return an empty npsLa01 response.
         $body  = '<bg:npsLa01 xmlns:bg="'.StufMessageBuilder::NS_BG.'" '
             .'xmlns:stuf="'.StufMessageBuilder::NS_STUF.'">';
-        $body .= $this->messageBuilder->buildStuurgegevens(self::DEFAULT_ZENDER, []);
+        $body .= $this->stuf->messageBuilder->buildStuurgegevens(self::DEFAULT_ZENDER, []);
         $body .= '<bg:antwoord/>';
         $body .= '</bg:npsLa01>';
 
-        $response = $this->messageBuilder->buildSoapEnvelope($body);
+        $response = $this->stuf->messageBuilder->buildSoapEnvelope($body);
 
         return $this->soapResponse(xml: $response);
     }//end handleNpsLv01()
@@ -565,7 +546,7 @@ class StufController extends Controller
 
         $crossRef = $this->extractStuurgegevensReferentienummer(message: $message);
 
-        $response = $this->messageBuilder->buildBv01(
+        $response = $this->stuf->messageBuilder->buildBv01(
             self::DEFAULT_ZENDER,
             [],
             $crossRef
@@ -585,7 +566,7 @@ class StufController extends Controller
     {
         $this->logger->warning('Unknown StUF message type: {type}', ['type' => $messageType]);
 
-        $response = $this->messageBuilder->buildFo01(
+        $response = $this->stuf->messageBuilder->buildFo01(
             'StUF001',
             'Onbekend berichttype',
             'server',
@@ -660,7 +641,7 @@ class StufController extends Controller
         $zenderPattern = '#<stuf:zender>.*?<stuf:applicatie>([^<]+)</stuf:applicatie>.*?</stuf:zender>#s';
         if (preg_match(pattern: $zenderPattern, subject: $envelopeXml, matches: $matches) === 1) {
             $applicatie = trim(string: $matches[1]);
-            $endpoint   = $this->register->findOne(
+            $endpoint   = $this->stuf->register->findOne(
                 schema: StufRegisterAccess::SCHEMA_ENDPOINT,
                 filters: ['ontvangerApplicatie' => $applicatie]
             );
@@ -672,7 +653,7 @@ class StufController extends Controller
         // Fallback: header X-Procest-Endpoint-Id (used by callers we control).
         $headerId = (string) $this->request->getHeader(name: 'x-procest-endpoint-id');
         if ($headerId !== '') {
-            return $this->register->findOne(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: ['id' => $headerId]);
+            return $this->stuf->register->findOne(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: ['id' => $headerId]);
         }
 
         return null;
@@ -694,7 +675,7 @@ class StufController extends Controller
         $auth         = ($endpoint['authenticatie'] ?? []);
         $expectedUser = (string) ($auth['gebruikersnaam'] ?? '');
         $expectedPasswordRef = (string) ($auth['wachtwoordKluisRef'] ?? '');
-        $expectedPassword    = $this->vault->resolveSecret(reference: $expectedPasswordRef);
+        $expectedPassword    = $this->stuf->vault->resolveSecret(reference: $expectedPasswordRef);
 
         if ($expectedUser === '' || $expectedPassword === '') {
             return false;
@@ -800,8 +781,8 @@ class StufController extends Controller
      */
     private function enrichEndpointWithHealth(array $endpoint): array
     {
-        $snapshot = $this->circuitBreaker->snapshot(endpointId: (string) ($endpoint['id'] ?? ''));
-        $recent   = $this->register->findAll(
+        $snapshot = $this->stuf->circuitBreaker->snapshot(endpointId: (string) ($endpoint['id'] ?? ''));
+        $recent   = $this->stuf->register->findAll(
             schema: StufRegisterAccess::SCHEMA_MESSAGE,
             filters: ['endpointId' => (string) ($endpoint['id'] ?? '')],
             limit: 5

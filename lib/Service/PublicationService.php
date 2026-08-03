@@ -111,21 +111,18 @@ class PublicationService
             throw new RuntimeException('Case not found: '.$caseId);
         }
 
-        if (is_array($obj) === true) {
-            $case = $obj;
-        } else if (method_exists($obj, 'jsonSerialize') === true) {
+        // An array casts to itself, so the cast doubles as the plain-object fallback.
+        $case = (array) $obj;
+        if (is_array($obj) === false && method_exists($obj, 'jsonSerialize') === true) {
             $case = $obj->jsonSerialize();
-        } else {
-            $case = (array) $obj;
         }
 
         $publications = $this->extractPublications(case: $case);
 
         $publishedAt = (string) ($payload['publishedAt'] ?? date(format: 'c'));
+        $notes       = null;
         if (isset($payload['notes']) === true) {
             $notes = (string) $payload['notes'];
-        } else {
-            $notes = null;
         }
 
         // Upsert by channel — same channel publishing twice updates the timestamp.
@@ -179,10 +176,9 @@ class PublicationService
         $pubs = $case['publications'] ?? [];
         if (is_string($pubs) === true) {
             $decoded = json_decode((string) $pubs, associative: true);
+            $pubs    = [];
             if (is_array($decoded) === true) {
                 $pubs = $decoded;
-            } else {
-                $pubs = [];
             }
         }
 

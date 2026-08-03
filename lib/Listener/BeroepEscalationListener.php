@@ -112,57 +112,7 @@ class BeroepEscalationListener implements IEventListener
         }
 
         try {
-            $object = $this->extractObject(event: $event);
-            if ($object === null) {
-                return;
-            }
-
-            if ($this->isBeroepSchema(object: $object) === false) {
-                return;
-            }
-
-            $sourceBezwaarId = (string) ($object['sourceBezwaar'] ?? '');
-            if ($sourceBezwaarId === '') {
-                return;
-            }
-
-            $objectService = $this->settingsService->getObjectService();
-            if ($objectService === null) {
-                return;
-            }
-
-            $register      = $this->settingsService->getConfigValue(
-                key: 'register'
-            );
-            $bezwaarSchema = $this->settingsService->getConfigValue(
-                key: 'bezwaar_schema'
-            );
-            if ($register === '' || $bezwaarSchema === '') {
-                return;
-            }
-
-            $bezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
-            if (is_array($bezwaar) === false) {
-                return;
-            }
-
-            $dwingend = $this->shouldFlagDwingend(
-                beroep: $object,
-                bezwaar: $bezwaar,
-            );
-
-            // No-op when the derived marker already matches.
-            $current = (bool) ($bezwaar['dwingendStatus'] ?? false);
-            if ($current === $dwingend) {
-                return;
-            }
-
-            $objectService->saveObject(
-                object: ['dwingendStatus' => $dwingend],
-                register: $register,
-                schema: $bezwaarSchema,
-                uuid: (string) $sourceBezwaarId
-            );
+            $this->deriveDwingendStatus(event: $event);
         } catch (Throwable $e) {
             $this->logger->debug(
                 'Procest beroep: dwingendStatus derivation swallowed '
@@ -170,6 +120,69 @@ class BeroepEscalationListener implements IEventListener
             );
         }//end try
     }//end handle()
+
+    /**
+     * Re-derive `dwingendStatus` on the source bezwaar of the beroep the event carries, writing it
+     * back only when the derived marker differs from the stored one.
+     *
+     * @param Event $event The dispatched event
+     *
+     * @return void
+     */
+    private function deriveDwingendStatus(Event $event): void
+    {
+        $object = $this->extractObject(event: $event);
+        if ($object === null) {
+            return;
+        }
+
+        if ($this->isBeroepSchema(object: $object) === false) {
+            return;
+        }
+
+        $sourceBezwaarId = (string) ($object['sourceBezwaar'] ?? '');
+        if ($sourceBezwaarId === '') {
+            return;
+        }
+
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            return;
+        }
+
+        $register      = $this->settingsService->getConfigValue(
+            key: 'register'
+        );
+        $bezwaarSchema = $this->settingsService->getConfigValue(
+            key: 'bezwaar_schema'
+        );
+        if ($register === '' || $bezwaarSchema === '') {
+            return;
+        }
+
+        $bezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
+        if (is_array($bezwaar) === false) {
+            return;
+        }
+
+        $dwingend = $this->shouldFlagDwingend(
+            beroep: $object,
+            bezwaar: $bezwaar,
+        );
+
+        // No-op when the derived marker already matches.
+        $current = (bool) ($bezwaar['dwingendStatus'] ?? false);
+        if ($current === $dwingend) {
+            return;
+        }
+
+        $objectService->saveObject(
+            object: ['dwingendStatus' => $dwingend],
+            register: $register,
+            schema: $bezwaarSchema,
+            uuid: (string) $sourceBezwaarId
+        );
+    }//end deriveDwingendStatus()
 
     /**
      * Decide whether the source bezwaar should carry dwingendStatus = true.

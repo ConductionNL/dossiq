@@ -54,14 +54,14 @@ class WOODecisionService
     /**
      * Constructor.
      *
-     * @param SettingsService              $settingsService           Settings service
-     * @param WOODocumentAssessmentService $documentAssessmentService Document assessment service
-     * @param IUserSession                 $userSession               Current user session
-     * @param LoggerInterface              $logger                    Logger
+     * @param SettingsService              $settingsService   Settings service
+     * @param WOODocumentAssessmentService $assessmentService Document assessment service
+     * @param IUserSession                 $userSession       Current user session
+     * @param LoggerInterface              $logger            Logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly WOODocumentAssessmentService $documentAssessmentService,
+        private readonly WOODocumentAssessmentService $assessmentService,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
@@ -86,7 +86,7 @@ class WOODecisionService
     public function assembleDecision(string $caseId, array $decisionData=[]): array
     {
         // Guard: all documents must be assessed before a besluit can be created.
-        $outstanding = $this->documentAssessmentService->getOutstanding(caseId: $caseId);
+        $outstanding = $this->assessmentService->getOutstanding(caseId: $caseId);
         if ($outstanding['count'] > 0) {
             throw new InvalidArgumentException(
                 'Cannot create besluit: '.$outstanding['count'].' document(s) still need assessment. '
@@ -143,11 +143,10 @@ class WOODecisionService
             }
         }
 
-        $user = $this->userSession->getUser();
+        $user   = $this->userSession->getUser();
+        $userId = 'system';
         if ($user !== null) {
             $userId = $user->getUID();
-        } else {
-            $userId = 'system';
         }
 
         $besluitData = array_merge(

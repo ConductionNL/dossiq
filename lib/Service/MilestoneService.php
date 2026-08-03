@@ -121,16 +121,12 @@ class MilestoneService
             $record    = $recordMap[$defId] ?? null;
             $isReached = $record !== null;
 
+            $reachedAt = null;
+            $reachedBy = null;
             if ($isReached === true) {
                 $reached++;
-            }
-
-            if ($isReached === true) {
                 $reachedAt = $record['reachedAt'] ?? null;
                 $reachedBy = $record['reachedBy'] ?? null;
-            } else {
-                $reachedAt = null;
-                $reachedBy = null;
             }
 
             $milestones[] = [
@@ -159,10 +155,10 @@ class MilestoneService
     /**
      * Mark a milestone as reached for a case.
      *
-     * @param string $caseId                The case UUID
-     * @param string $milestoneDefinitionId The milestone definition UUID
-     * @param string $userId                The user marking the milestone
-     * @param string $trigger               How it was triggered (manual, workflow, auto)
+     * @param string $caseId       The case UUID
+     * @param string $definitionId The milestone definition UUID
+     * @param string $userId       The user marking the milestone
+     * @param string $trigger      How it was triggered (manual, workflow, auto)
      *
      * @return array<string, mixed> The created milestone record
      *
@@ -172,7 +168,7 @@ class MilestoneService
      */
     public function markMilestone(
         string $caseId,
-        string $milestoneDefinitionId,
+        string $definitionId,
         string $userId,
         string $trigger='manual',
     ): array {
@@ -190,7 +186,7 @@ class MilestoneService
 
         $recordData = [
             'case'                => $caseId,
-            'milestoneDefinition' => $milestoneDefinitionId,
+            'milestoneDefinition' => $definitionId,
             'reachedAt'           => date('Y-m-d\TH:i:s'),
             'reachedBy'           => $userId,
             'trigger'             => $trigger,
@@ -199,7 +195,7 @@ class MilestoneService
         $record = $objectService->saveObject(object: $recordData, register: $register, schema: $schema);
 
         $this->logger->info(
-            'Milestone marked: '.$milestoneDefinitionId.' on case '.$caseId,
+            'Milestone marked: '.$definitionId.' on case '.$caseId,
             ['app' => Application::APP_ID],
         );
 
@@ -213,10 +209,10 @@ class MilestoneService
     /**
      * Reverse a milestone (with reason for audit trail).
      *
-     * @param string $caseId                The case UUID
-     * @param string $milestoneDefinitionId The milestone definition UUID
-     * @param string $userId                The user reversing
-     * @param string $reason                Reason for reversal
+     * @param string $caseId       The case UUID
+     * @param string $definitionId The milestone definition UUID
+     * @param string $userId       The user reversing
+     * @param string $reason       Reason for reversal
      *
      * @return bool True if reversed
      *
@@ -226,7 +222,7 @@ class MilestoneService
      */
     public function reverseMilestone(
         string $caseId,
-        string $milestoneDefinitionId,
+        string $definitionId,
         string $userId,
         string $reason,
     ): bool {
@@ -244,7 +240,7 @@ class MilestoneService
             schema: $schema,
             filters: [
                 'case'                => $caseId,
-                'milestoneDefinition' => $milestoneDefinitionId,
+                'milestoneDefinition' => $definitionId,
             ],
         );
 
@@ -261,7 +257,7 @@ class MilestoneService
         }
 
         $this->logger->info(
-            'Milestone reversed: '.$milestoneDefinitionId.' on case '.$caseId
+            'Milestone reversed: '.$definitionId.' on case '.$caseId
             .' by '.$userId.' reason: '.$reason,
             ['app' => Application::APP_ID],
         );

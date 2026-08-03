@@ -222,7 +222,7 @@ class CaseEmailServiceTest extends TestCase
     }//end testResolveVariablesEscapesHtml()
 
     /**
-     * H6 XSS: resolveVariables with htmlEscape=false passes through raw values.
+     * H6 XSS: resolveVariablesRaw passes through raw values.
      *
      * @return void
      */
@@ -231,7 +231,7 @@ class CaseEmailServiceTest extends TestCase
         $template = 'Beste {{naam}}';
         $data     = ['naam' => 'Jan & Piet'];
 
-        $result = $this->service->resolveVariables($template, $data, false);
+        $result = $this->service->resolveVariablesRaw($template, $data);
 
         $this->assertSame('Beste Jan & Piet', $result);
 

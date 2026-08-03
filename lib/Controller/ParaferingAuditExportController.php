@@ -94,21 +94,8 @@ class ParaferingAuditExportController extends Controller
                 );
             }
 
-            $uid     = $user->getUID();
-            $allowed = false;
-            foreach (self::ALLOWED_GROUPS as $group) {
-                if ($this->groupManager->isInGroup($uid, $group) === true) {
-                    $allowed = true;
-                    break;
-                }
-            }
-
-            // Also allow Nextcloud admins (defensive default).
-            if ($allowed === false && $this->groupManager->isAdmin($uid) === true) {
-                $allowed = true;
-            }
-
-            if ($allowed === false) {
+            $uid = $user->getUID();
+            if ($this->isAuditorAuthorized(uid: $uid) === false) {
                 return new JSONResponse(
                     ['message' => 'Audit export requires auditor role'],
                     Http::STATUS_FORBIDDEN,
@@ -156,6 +143,61 @@ class ParaferingAuditExportController extends Controller
     }//end export()
 
     /**
+     * Determine whether a user may export audit trails.
+     *
+     * @param string $uid The acting user UID
+     *
+     * @return bool
+     */
+    private function isAuditorAuthorized(string $uid): bool
+    {
+        foreach (self::ALLOWED_GROUPS as $group) {
+            if ($this->groupManager->isInGroup($uid, $group) === true) {
+                return true;
+            }
+        }
+
+        // Also allow Nextcloud admins (defensive default).
+        return $this->groupManager->isAdmin($uid) === true;
+    }//end isAuditorAuthorized()
+
+    /**
+     * Coerce an OpenRegister result value into an associative array.
+     *
+     * @param mixed $value Result value from ObjectService
+     *
+     * @return array<string, mixed>
+     */
+    private function coerceToArray(mixed $value): array
+    {
+        if (is_array($value) === true) {
+            return $value;
+        }
+
+        if (is_object($value) === false) {
+            return [];
+        }
+
+        if (method_exists($value, 'jsonSerialize') === true) {
+            $serialized = $value->jsonSerialize();
+            if (is_array($serialized) === true) {
+                return $serialized;
+            }
+
+            return [];
+        }
+
+        if (method_exists($value, 'toArray') === true) {
+            $arr = $value->toArray();
+            if (is_array($arr) === true) {
+                return $arr;
+            }
+        }
+
+        return [];
+    }//end coerceToArray()
+
+    /**
      * Resolve the voorstel onderwerp (or null when not found).
      *
      * @param string $voorstelId The voorstel UUID/slug
@@ -181,22 +223,7 @@ class ParaferingAuditExportController extends Controller
                 return null;
             }
 
-            $array = [];
-            if (is_array($voorstel) === true) {
-                $array = $voorstel;
-            } else if (is_object($voorstel) === true) {
-                if (method_exists($voorstel, 'jsonSerialize') === true) {
-                    $serialized = $voorstel->jsonSerialize();
-                    if (is_array($serialized) === true) {
-                        $array = $serialized;
-                    }
-                } else if (method_exists($voorstel, 'toArray') === true) {
-                    $arr = $voorstel->toArray();
-                    if (is_array($arr) === true) {
-                        $array = $arr;
-                    }
-                }
-            }
+            $array = $this->coerceToArray(value: $voorstel);
 
             return (string) ($array['onderwerp'] ?? '');
         } catch (Throwable $e) {

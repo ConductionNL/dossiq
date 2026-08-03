@@ -422,32 +422,19 @@ class BeroepService
             // bezwaar. The engine owns the transition + guards; this
             // service only triggers it and links the resulting case back
             // to the beroep.
-            $sourceBezwaarId = (string) ($current['sourceBezwaar'] ?? '');
-            if ($sourceBezwaarId !== '' && $bezwaarSchema !== '') {
-                $sourceBezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
-                if (is_array($sourceBezwaar) === true) {
-                    $sourceCaseId = (string) ($sourceBezwaar['case'] ?? '');
-                    if ($sourceCaseId !== '') {
-                        try {
-                            $this->transitions->execute(
-                                caseId: $sourceCaseId,
-                                transitionId: 'beroep-reopen',
-                                comment: 'Reopened via beroep '.$beroepId,
-                            );
-                            // Link the (newly reopened) bezwaar case back
-                            // to the beroep. The engine returns the
-                            // updated case; we surface the link on the
-                            // beroep record.
-                            $patch['cascadeBezwaarCase'] = $sourceCaseId;
-                        } catch (Throwable $e) {
-                            $this->logger->warning(
-                                'Procest beroep: reopen transition failed: '
-                                .$e->getMessage()
-                            );
-                        }
-                    }
-                }//end if
-            }//end if
+            $reopenedCaseId = $this->reopenSourceBezwaarCase(
+                objectService: $objectService,
+                register: $register,
+                bezwaarSchema: $bezwaarSchema,
+                current: $current,
+                beroepId: $beroepId,
+            );
+            if ($reopenedCaseId !== null) {
+                // Link the (newly reopened) bezwaar case back to the beroep.
+                // The engine returns the updated case; we surface the link on
+                // the beroep record.
+                $patch['cascadeBezwaarCase'] = $reopenedCaseId;
+            }
         }//end if
 
         if ($action === 'new_primary_decision') {
@@ -475,6 +462,60 @@ class BeroepService
             throw new RuntimeException('Could not persist cascade');
         }
     }//end executeCascade()
+
+    /**
+     * Ask the status-transition-engine to re-open the bezwaar case behind a beroep.
+     *
+     * Returns the re-opened case UUID when the transition ran, and null when there is nothing to
+     * re-open (no source bezwaar, no bezwaar schema, missing source, no case) or the transition
+     * failed — a failure is logged, never raised, exactly as before.
+     *
+     * @param object               $objectService The OpenRegister object service
+     * @param string               $register      The register slug
+     * @param string               $bezwaarSchema The bezwaar schema slug
+     * @param array<string, mixed> $current       The beroep record
+     * @param string               $beroepId      UUID of the beroep
+     *
+     * @return string|null The re-opened bezwaar case UUID, or null.
+     */
+    private function reopenSourceBezwaarCase(
+        object $objectService,
+        string $register,
+        string $bezwaarSchema,
+        array $current,
+        string $beroepId,
+    ): ?string {
+        $sourceBezwaarId = (string) ($current['sourceBezwaar'] ?? '');
+        if ($sourceBezwaarId === '' || $bezwaarSchema === '') {
+            return null;
+        }
+
+        $sourceBezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
+        if (is_array($sourceBezwaar) === false) {
+            return null;
+        }
+
+        $sourceCaseId = (string) ($sourceBezwaar['case'] ?? '');
+        if ($sourceCaseId === '') {
+            return null;
+        }
+
+        try {
+            $this->transitions->execute(
+                caseId: $sourceCaseId,
+                transitionId: 'beroep-reopen',
+                comment: 'Reopened via beroep '.$beroepId,
+            );
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'Procest beroep: reopen transition failed: '
+                .$e->getMessage()
+            );
+            return null;
+        }
+
+        return $sourceCaseId;
+    }//end reopenSourceBezwaarCase()
 
     /**
      * Compute the 6-week filing deadline (Awb 6:7, 6:8).

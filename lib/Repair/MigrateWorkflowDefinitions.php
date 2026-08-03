@@ -46,6 +46,13 @@ class MigrateWorkflowDefinitions implements IRepairStep
     use SearchesObjects;
 
     /**
+     * Per-caseType migration outcomes reported by migrateCaseType().
+     */
+    private const OUTCOME_MIGRATED = 'migrated';
+    private const OUTCOME_SKIPPED  = 'skipped';
+    private const OUTCOME_NONE     = 'none';
+
+    /**
      * Constructor.
      *
      * @param SettingsService           $settingsService The settings service
@@ -97,11 +104,8 @@ class MigrateWorkflowDefinitions implements IRepairStep
         $templateSchema = $this->settingsService->getConfigValue('workflow_template_schema');
         $caseSchema     = $this->settingsService->getConfigValue('case_schema');
 
-        if ($register === ''
-            || $caseTypeSchema === ''
-            || $statusSchema === ''
-            || $templateSchema === ''
-        ) {
+        $missing = in_array('', [$register, $caseTypeSchema, $statusSchema, $templateSchema], true);
+        if ($missing === true) {
             $output->warning('Workflow backfill: required schema configuration missing — skipping.');
             return;
         }
@@ -145,87 +149,23 @@ class MigrateWorkflowDefinitions implements IRepairStep
                 }
 
                 foreach ($caseTypes as $caseType) {
-                    $row = $this->normalize(row: $caseType);
-                    if ($row === null) {
-                        continue;
-                    }
-
-                    $caseTypeId = (string) ($row['id'] ?? '');
-                    if ($caseTypeId === '') {
-                        continue;
-                    }
-
-                    if ((string) ($row['workflowDefinition'] ?? '') !== '') {
-                        $skipped++;
-                        continue;
-                    }
-
-                    // Already has at least one workflowTemplate? Skip — admin
-                    // will set the pin via the UI.
-                    $existing = $this->workflowService->listVersions($caseTypeId);
-                    if ($existing !== []) {
-                        $skipped++;
-                        continue;
-                    }
-
-                    $template = $this->buildTemplateFor(
-                        caseTypeId: $caseTypeId,
-                        caseType: $row,
+                    $outcome = $this->migrateCaseType(
+                        caseType: $caseType,
                         objectService: $objectService,
                         register: $register,
+                        caseTypeSchema: $caseTypeSchema,
                         statusSchema: $statusSchema,
+                        templateSchema: $templateSchema,
+                        caseSchema: $caseSchema,
                     );
 
-                    if ($template === null) {
-                        continue;
+                    if ($outcome === self::OUTCOME_SKIPPED) {
+                        $skipped++;
                     }
 
-                    try {
-                        $created = $objectService->saveObject(
-                            object: $template,
-                            register: $register,
-                            schema: $templateSchema,
-                        );
-                    } catch (\Throwable $e) {
-                        $this->logger->error(
-                            'Procest: workflow backfill failed to save template',
-                            ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-                        );
-                        continue;
+                    if ($outcome === self::OUTCOME_MIGRATED) {
+                        $migrated++;
                     }
-
-                    $createdNormalized = $this->normalize(row: $created);
-                    $newId = (string) ($createdNormalized['id'] ?? '');
-
-                    // Pin the caseType to the new template.
-                    if ($newId !== '') {
-                        try {
-                            $objectService->saveObject(
-                                object: ['workflowDefinition' => $newId],
-                                register: $register,
-                                schema: $caseTypeSchema,
-                                uuid: (string) $caseTypeId,
-                            );
-                        } catch (\Throwable $e) {
-                            $this->logger->error(
-                                'Procest: workflow backfill failed to pin caseType',
-                                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-                            );
-                        }
-
-                        // Pin existing open cases to workflowVersion = 1.
-                        if ($caseSchema !== '') {
-                            $this->pinOpenCases(
-                                objectService: $objectService,
-                                register: $register,
-                                caseSchema: $caseSchema,
-                                caseTypeId: $caseTypeId,
-                                templateId: $newId,
-                            );
-                        }
-                    }//end if
-
-                    $migrated++;
                 }//end foreach
             }
         );
@@ -234,6 +174,141 @@ class MigrateWorkflowDefinitions implements IRepairStep
             'Workflow backfill complete — migrated '.$migrated.', skipped '.$skipped.'.'
         );
     }//end run()
+
+    /**
+     * Migrate a single caseType row into a seeded workflowTemplate.
+     *
+     * @param mixed  $caseType       Raw caseType row from ObjectService
+     * @param object $objectService  Resolved OR ObjectService
+     * @param string $register       The register id
+     * @param string $caseTypeSchema The caseType schema id
+     * @param string $statusSchema   The statusType schema id
+     * @param string $templateSchema The workflowTemplate schema id
+     * @param string $caseSchema     The case schema id (may be empty)
+     *
+     * @return string One of the self::OUTCOME_* constants
+     */
+    private function migrateCaseType(
+        mixed $caseType,
+        object $objectService,
+        string $register,
+        string $caseTypeSchema,
+        string $statusSchema,
+        string $templateSchema,
+        string $caseSchema,
+    ): string {
+        $row = $this->normalize(row: $caseType);
+        if ($row === null) {
+            return self::OUTCOME_NONE;
+        }
+
+        $caseTypeId = (string) ($row['id'] ?? '');
+        if ($caseTypeId === '') {
+            return self::OUTCOME_NONE;
+        }
+
+        if ((string) ($row['workflowDefinition'] ?? '') !== '') {
+            return self::OUTCOME_SKIPPED;
+        }
+
+        // Already has at least one workflowTemplate? Skip — admin
+        // will set the pin via the UI.
+        $existing = $this->workflowService->listVersions($caseTypeId);
+        if ($existing !== []) {
+            return self::OUTCOME_SKIPPED;
+        }
+
+        $template = $this->buildTemplateFor(
+            caseTypeId: $caseTypeId,
+            caseType: $row,
+            objectService: $objectService,
+            register: $register,
+            statusSchema: $statusSchema,
+        );
+
+        if ($template === null) {
+            return self::OUTCOME_NONE;
+        }
+
+        try {
+            $created = $objectService->saveObject(
+                object: $template,
+                register: $register,
+                schema: $templateSchema,
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: workflow backfill failed to save template',
+                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+            );
+            return self::OUTCOME_NONE;
+        }
+
+        $createdNormalized = $this->normalize(row: $created);
+        $newId = (string) ($createdNormalized['id'] ?? '');
+
+        // Pin the caseType to the new template.
+        if ($newId !== '') {
+            $this->pinCaseType(
+                objectService: $objectService,
+                register: $register,
+                caseTypeSchema: $caseTypeSchema,
+                caseSchema: $caseSchema,
+                caseTypeId: $caseTypeId,
+                templateId: $newId,
+            );
+        }
+
+        return self::OUTCOME_MIGRATED;
+    }//end migrateCaseType()
+
+    /**
+     * Pin a caseType — and its open cases — to a freshly created template.
+     *
+     * @param object $objectService  Resolved OR ObjectService
+     * @param string $register       The register id
+     * @param string $caseTypeSchema The caseType schema id
+     * @param string $caseSchema     The case schema id (may be empty)
+     * @param string $caseTypeId     The caseType UUID
+     * @param string $templateId     The new template UUID
+     *
+     * @return void
+     */
+    private function pinCaseType(
+        object $objectService,
+        string $register,
+        string $caseTypeSchema,
+        string $caseSchema,
+        string $caseTypeId,
+        string $templateId,
+    ): void {
+        try {
+            $objectService->saveObject(
+                object: ['workflowDefinition' => $templateId],
+                register: $register,
+                schema: $caseTypeSchema,
+                uuid: $caseTypeId,
+            );
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'Procest: workflow backfill failed to pin caseType',
+                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+            );
+        }
+
+        // Pin existing open cases to workflowVersion = 1.
+        if ($caseSchema === '') {
+            return;
+        }
+
+        $this->pinOpenCases(
+            objectService: $objectService,
+            register: $register,
+            caseSchema: $caseSchema,
+            caseTypeId: $caseTypeId,
+            templateId: $templateId,
+        );
+    }//end pinCaseType()
 
     /**
      * Build a workflowTemplate payload from a caseType's statusType
@@ -292,41 +367,8 @@ class MigrateWorkflowDefinitions implements IRepairStep
             },
         );
 
-        $steps = [];
-        foreach ($statuses as $status) {
-            if ((bool) ($status['isFinal'] ?? false) === true) {
-                continue;
-            }
-
-            $steps[] = [
-                'id'               => $this->uuid(),
-                'title'            => (string) ($status['name'] ?? 'Stap'),
-                'description'      => (string) ($status['description'] ?? ''),
-                'status'           => (string) ($status['id'] ?? ''),
-                'order'            => (int) ($status['order'] ?? 0),
-                'assigneeRole'     => '',
-                'isRequired'       => false,
-                'checklist'        => [],
-                'automaticActions' => [],
-            ];
-        }
-
-        $transitions = [];
-        $count       = count($statuses);
-        for ($i = 0; $i < ($count - 1); $i++) {
-            $from = $statuses[$i];
-            $to   = $statuses[($i + 1)];
-
-            $transitions[] = [
-                'id'               => $this->uuid(),
-                'fromStatus'       => (string) ($from['id'] ?? ''),
-                'toStatus'         => (string) ($to['id'] ?? ''),
-                'label'            => (string) ($to['name'] ?? 'Door'),
-                'guards'           => [],
-                'automaticActions' => [],
-                'allowedRoles'     => [],
-            ];
-        }
+        $steps       = $this->buildSteps(statuses: $statuses);
+        $transitions = $this->buildTransitions(statuses: $statuses);
 
         $title = trim((string) ($caseType['title'] ?? 'Workflow'));
         if ($title === '') {
@@ -346,6 +388,66 @@ class MigrateWorkflowDefinitions implements IRepairStep
             'nodePositions'   => '',
         ];
     }//end buildTemplateFor()
+
+    /**
+     * Build the embedded step list from ordered statusType rows.
+     *
+     * @param array<int, array<string, mixed>> $statuses Ordered statusType rows
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildSteps(array $statuses): array
+    {
+        $steps = [];
+        foreach ($statuses as $status) {
+            if ((bool) ($status['isFinal'] ?? false) === true) {
+                continue;
+            }
+
+            $steps[] = [
+                'id'               => $this->uuid(),
+                'title'            => (string) ($status['name'] ?? 'Stap'),
+                'description'      => (string) ($status['description'] ?? ''),
+                'status'           => (string) ($status['id'] ?? ''),
+                'order'            => (int) ($status['order'] ?? 0),
+                'assigneeRole'     => '',
+                'isRequired'       => false,
+                'checklist'        => [],
+                'automaticActions' => [],
+            ];
+        }
+
+        return $steps;
+    }//end buildSteps()
+
+    /**
+     * Build the embedded transition list from ordered statusType rows.
+     *
+     * @param array<int, array<string, mixed>> $statuses Ordered statusType rows
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildTransitions(array $statuses): array
+    {
+        $transitions = [];
+        $count       = count($statuses);
+        for ($i = 0; $i < ($count - 1); $i++) {
+            $from = $statuses[$i];
+            $to   = $statuses[($i + 1)];
+
+            $transitions[] = [
+                'id'               => $this->uuid(),
+                'fromStatus'       => (string) ($from['id'] ?? ''),
+                'toStatus'         => (string) ($to['id'] ?? ''),
+                'label'            => (string) ($to['name'] ?? 'Door'),
+                'guards'           => [],
+                'automaticActions' => [],
+                'allowedRoles'     => [],
+            ];
+        }
+
+        return $transitions;
+    }//end buildTransitions()
 
     /**
      * Pin every open case of a caseType to workflowVersion 1 and bind it

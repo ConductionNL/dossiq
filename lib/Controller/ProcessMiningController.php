@@ -178,13 +178,20 @@ class ProcessMiningController extends Controller
     /**
      * Validate a `Y-m-d` date string.
      *
+     * Accepts only a zero-padded calendar date: the shape is checked first,
+     * then the calendar validity (so `2026-02-30` is rejected rather than
+     * silently rolled over to March).
+     *
      * @param string $value Candidate date string.
      *
      * @return bool
      */
     private function isValidDate(string $value): bool
     {
-        $date = \DateTimeImmutable::createFromFormat('Y-m-d', $value);
-        return ($date !== false && $date->format('Y-m-d') === $value);
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $value, $parts) !== 1) {
+            return false;
+        }
+
+        return checkdate((int) $parts[2], (int) $parts[3], (int) $parts[1]);
     }//end isValidDate()
 }//end class

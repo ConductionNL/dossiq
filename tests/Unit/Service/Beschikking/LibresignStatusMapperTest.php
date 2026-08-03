@@ -75,7 +75,7 @@ class LibresignStatusMapperTest extends TestCase
      */
     public function testMapsKnownStatusValues(string $raw, string $expected): void
     {
-        $this->assertSame($expected, LibresignStatusMapper::map($raw));
+        $this->assertSame($expected, (new LibresignStatusMapper())->map($raw));
     }//end testMapsKnownStatusValues()
 
     /**
@@ -85,7 +85,7 @@ class LibresignStatusMapperTest extends TestCase
      */
     public function testUnrecognisedValueMapsToUnknown(): void
     {
-        $this->assertSame(LibresignStatusMapper::UNKNOWN, LibresignStatusMapper::map('something-new'));
+        $this->assertSame(LibresignStatusMapper::UNKNOWN, (new LibresignStatusMapper())->map('something-new'));
     }//end testUnrecognisedValueMapsToUnknown()
 
     /**
@@ -95,6 +95,6 @@ class LibresignStatusMapperTest extends TestCase
      */
     public function testEmptyValueMapsToUnknown(): void
     {
-        $this->assertSame(LibresignStatusMapper::UNKNOWN, LibresignStatusMapper::map(''));
+        $this->assertSame(LibresignStatusMapper::UNKNOWN, (new LibresignStatusMapper())->map(''));
     }//end testEmptyValueMapsToUnknown()
 }//end class

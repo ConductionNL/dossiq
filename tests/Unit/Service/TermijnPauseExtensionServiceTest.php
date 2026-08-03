@@ -179,12 +179,11 @@ class TermijnPauseExtensionServiceTest extends TestCase
         $id       = (string) $instance['id'];
 
         $this->extService->requestExtension($id, 'eerste', '2026-08-31');
-        $second = $this->extService->requestExtension(
+        $second = $this->extService->requestSupervisorExtension(
             $id,
             'tweede; supervisor goedgekeurd',
             '2026-09-30',
-            'doc:second',
-            true
+            'doc:second'
         );
         self::assertSame(2, $second['aantalVerlengingen']);
     }

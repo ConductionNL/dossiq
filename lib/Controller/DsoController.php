@@ -188,16 +188,14 @@ class DsoController extends Controller
         $body      = $this->readJsonBody();
         $newStatus = (string) ($body['newStatus'] ?? '');
 
+        $besluitdatum = null;
         if (isset($body['besluitdatum']) === true) {
             $besluitdatum = (string) $body['besluitdatum'];
-        } else {
-            $besluitdatum = null;
         }
 
+        $toelichting = null;
         if (isset($body['toelichting']) === true) {
             $toelichting = (string) $body['toelichting'];
-        } else {
-            $toelichting = null;
         }
 
         if ($newStatus === '') {
@@ -318,11 +316,11 @@ class DsoController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $body = $this->readJsonBody();
-        $aangezochtBevoegdGezag = (string) ($body['aangezochtBevoegdGezag'] ?? '');
-        $rationale = (string) ($body['rationale'] ?? '');
+        $body         = $this->readJsonBody();
+        $bevoegdGezag = (string) ($body['aangezochtBevoegdGezag'] ?? '');
+        $rationale    = (string) ($body['rationale'] ?? '');
 
-        if ($aangezochtBevoegdGezag === '') {
+        if ($bevoegdGezag === '') {
             return new JSONResponse(
                 ['error' => 'aangezochtBevoegdGezag is required'],
                 Http::STATUS_BAD_REQUEST
@@ -339,7 +337,7 @@ class DsoController extends Controller
 
             $samenwerkverzoek = $this->samenwerkService->initiateSamenwerking(
                 zaakId: $caseId,
-                aangezochtBevoegdGezag: $aangezochtBevoegdGezag,
+                aangezochtBevoegdGezag: $bevoegdGezag,
                 rationale: $rationale
             );
 
@@ -572,17 +570,17 @@ class DsoController extends Controller
                 return null;
             }
 
-            $register = $this->resolveConfigValue(key: 'register');
-            $samenwerkverzoekSchema = $this->resolveConfigValue(key: 'dso_samenwerkverzoek_schema');
+            $register        = $this->resolveConfigValue(key: 'register');
+            $samenwerkSchema = $this->resolveConfigValue(key: 'dso_samenwerkverzoek_schema');
 
-            if ($register === '' || $samenwerkverzoekSchema === '') {
-                $samenwerkverzoekSchema = 'samenwerkverzoek';
+            if ($register === '' || $samenwerkSchema === '') {
+                $samenwerkSchema = 'samenwerkverzoek';
             }
 
             return $this->findObjectAsArray(
                 objectService: $objectService,
                 register: $register,
-                schema: $samenwerkverzoekSchema,
+                schema: $samenwerkSchema,
                 id: $samenwerkId
             );
         } catch (\Throwable $e) {

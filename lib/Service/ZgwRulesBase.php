@@ -609,45 +609,71 @@ abstract class ZgwRulesBase
         $isIpv6Ip   = str_contains($ipAddress, ':');
 
         if ($isIpv6Cidr === true && $isIpv6Ip === true) {
-            [$network, $prefix] = explode('/', $cidr);
-            $prefixLen          = (int) $prefix;
-            $networkBin         = inet_pton($network);
-            $ipBin = inet_pton($ipAddress);
-            if ($networkBin === false || $ipBin === false) {
-                return false;
-            }
-
-            $bytes  = (int) ceil($prefixLen / 8);
-            $mask   = str_repeat("\xff", intdiv($prefixLen, 8));
-            $remain = $prefixLen % 8;
-            if ($remain > 0) {
-                $mask .= chr(0xff & (0xff << (8 - $remain)));
-            }
-
-            $mask = str_pad($mask, 16, "\x00");
-            return (substr($ipBin, 0, $bytes) & $mask) === (substr($networkBin, 0, $bytes) & $mask);
+            return $this->ipv6InCidr(ipAddress: $ipAddress, cidr: $cidr);
         }
 
         if ($isIpv6Cidr === false && $isIpv6Ip === false) {
-            [$network, $prefix] = explode('/', $cidr);
-            $prefixLen          = (int) $prefix;
-            $mask = 0;
-            if ($prefixLen !== 0) {
-                $mask = (~0 << (32 - $prefixLen));
-            }
-
-            $networkLong = ip2long($network);
-            $ipLong      = ip2long($ipAddress);
-            if ($networkLong === false || $ipLong === false) {
-                return false;
-            }
-
-            return ($ipLong & $mask) === ($networkLong & $mask);
+            return $this->ipv4InCidr(ipAddress: $ipAddress, cidr: $cidr);
         }
 
         // Mixed IPv4/IPv6 — not in range.
         return false;
     }//end ipInCidr()
+
+    /**
+     * Check if an IPv6 address falls within an IPv6 CIDR range.
+     *
+     * @param string $ipAddress The IPv6 address to test
+     * @param string $cidr      The IPv6 CIDR block (e.g. 'fc00::/7')
+     *
+     * @return bool True if the IP is within the range
+     */
+    private function ipv6InCidr(string $ipAddress, string $cidr): bool
+    {
+        [$network, $prefix] = explode('/', $cidr);
+        $prefixLen          = (int) $prefix;
+        $networkBin         = inet_pton($network);
+        $ipBin = inet_pton($ipAddress);
+        if ($networkBin === false || $ipBin === false) {
+            return false;
+        }
+
+        $bytes  = (int) ceil($prefixLen / 8);
+        $mask   = str_repeat("\xff", intdiv($prefixLen, 8));
+        $remain = $prefixLen % 8;
+        if ($remain > 0) {
+            $mask .= chr(0xff & (0xff << (8 - $remain)));
+        }
+
+        $mask = str_pad($mask, 16, "\x00");
+        return (substr($ipBin, 0, $bytes) & $mask) === (substr($networkBin, 0, $bytes) & $mask);
+    }//end ipv6InCidr()
+
+    /**
+     * Check if an IPv4 address falls within an IPv4 CIDR range.
+     *
+     * @param string $ipAddress The IPv4 address to test
+     * @param string $cidr      The IPv4 CIDR block (e.g. '10.0.0.0/8')
+     *
+     * @return bool True if the IP is within the range
+     */
+    private function ipv4InCidr(string $ipAddress, string $cidr): bool
+    {
+        [$network, $prefix] = explode('/', $cidr);
+        $prefixLen          = (int) $prefix;
+        $mask = 0;
+        if ($prefixLen !== 0) {
+            $mask = (~0 << (32 - $prefixLen));
+        }
+
+        $networkLong = ip2long($network);
+        $ipLong      = ip2long($ipAddress);
+        if ($networkLong === false || $ipLong === false) {
+            return false;
+        }
+
+        return ($ipLong & $mask) === ($networkLong & $mask);
+    }//end ipv4InCidr()
 
     /**
      * Generate a unique identificatie string.

@@ -63,10 +63,10 @@ final class SentryEvaluator
      *
      * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-003
      */
-    public static function anyFires(array $sentries, array $context): bool
+    public function anyFires(array $sentries, array $context): bool
     {
         foreach ($sentries as $sentry) {
-            if (is_array($sentry) === true && self::fires(sentry: $sentry, context: $context) === true) {
+            if (is_array($sentry) === true && $this->fires(sentry: $sentry, context: $context) === true) {
                 return true;
             }
         }
@@ -90,16 +90,16 @@ final class SentryEvaluator
      *
      * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-003
      */
-    public static function fires(array $sentry, array $context): bool
+    public function fires(array $sentry, array $context): bool
     {
         $onPart = $sentry['onPart'] ?? null;
         $ifPart = $sentry['ifPart'] ?? null;
 
-        if (is_array($onPart) === true && $onPart !== [] && self::onPartSatisfied(onPart: $onPart, context: $context) === false) {
+        if (is_array($onPart) === true && $onPart !== [] && $this->onPartSatisfied(onPart: $onPart, context: $context) === false) {
             return false;
         }
 
-        if (is_array($ifPart) === true && $ifPart !== [] && self::ifPartSatisfied(ifPart: $ifPart, context: $context) === false) {
+        if (is_array($ifPart) === true && $ifPart !== [] && $this->ifPartSatisfied(ifPart: $ifPart, context: $context) === false) {
             return false;
         }
 
@@ -114,7 +114,7 @@ final class SentryEvaluator
      *
      * @return bool
      */
-    private static function onPartSatisfied(array $onPart, array $context): bool
+    private function onPartSatisfied(array $onPart, array $context): bool
     {
         $planItemId = $onPart['planItem'] ?? null;
         if (is_string($planItemId) === true && $planItemId !== '') {
@@ -155,7 +155,7 @@ final class SentryEvaluator
      *
      * @return bool
      */
-    private static function ifPartSatisfied(array $ifPart, array $context): bool
+    private function ifPartSatisfied(array $ifPart, array $context): bool
     {
         $field = (string) ($ifPart['field'] ?? '');
         if ($field === '') {
@@ -168,7 +168,7 @@ final class SentryEvaluator
         $expected = ($ifPart['value'] ?? null);
         $actual   = (($context['caseFile'] ?? [])[$field] ?? null);
 
-        return self::compare(operator: $operator, actual: $actual, expected: $expected);
+        return $this->compare(operator: $operator, actual: $actual, expected: $expected);
     }//end ifPartSatisfied()
 
     /**
@@ -180,8 +180,12 @@ final class SentryEvaluator
      *
      * @return bool
      */
-    private static function compare(string $operator, mixed $actual, mixed $expected): bool
+    private function compare(string $operator, mixed $actual, mixed $expected): bool
     {
+        if (in_array($operator, ['gt', 'gte', 'lt', 'lte'], true) === true) {
+            return $this->compareNumeric(operator: $operator, actual: $actual, expected: $expected);
+        }
+
         // The eq/neq operators use loose comparison deliberately: case-file
         // values may be bool/string/int depending on the caseFileItem's
         // declared type, and a sentry author should not have to match PHP's
@@ -189,10 +193,6 @@ final class SentryEvaluator
         return match ($operator) {
             'eq'     => $actual == $expected,
             'neq'    => $actual != $expected,
-            'gt'     => is_numeric($actual) === true && is_numeric($expected) === true && $actual > $expected,
-            'gte'    => is_numeric($actual) === true && is_numeric($expected) === true && $actual >= $expected,
-            'lt'     => is_numeric($actual) === true && is_numeric($expected) === true && $actual < $expected,
-            'lte'    => is_numeric($actual) === true && is_numeric($expected) === true && $actual <= $expected,
             'in'     => is_array($expected) === true && in_array($actual, $expected, true),
             'notIn'  => is_array($expected) === true && in_array($actual, $expected, true) === false,
             'truthy' => (bool) $actual === true,
@@ -200,4 +200,29 @@ final class SentryEvaluator
             default  => false,
         };
     }//end compare()
+
+    /**
+     * Compare two values with a numeric operator, requiring both sides to be
+     * numeric (a non-numeric operand always fails the comparison).
+     *
+     * @param string $operator One of gt|gte|lt|lte.
+     * @param mixed  $actual   Current case-file value.
+     * @param mixed  $expected Sentry-configured comparison value.
+     *
+     * @return bool
+     */
+    private function compareNumeric(string $operator, mixed $actual, mixed $expected): bool
+    {
+        if (is_numeric($actual) === false || is_numeric($expected) === false) {
+            return false;
+        }
+
+        return match ($operator) {
+            'gt'    => $actual > $expected,
+            'gte'   => $actual >= $expected,
+            'lt'    => $actual < $expected,
+            'lte'   => $actual <= $expected,
+            default => false,
+        };
+    }//end compareNumeric()
 }//end class

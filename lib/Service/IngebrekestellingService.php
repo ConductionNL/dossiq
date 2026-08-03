@@ -98,10 +98,9 @@ class IngebrekestellingService
             'documentLink'    => $documentLink,
         ];
 
+        $row['geldigheidStatus'] = 'premaat';
         if ($isValid === true) {
             $row['geldigheidStatus'] = 'geldig';
-        } else {
-            $row['geldigheidStatus'] = 'premaat';
         }
 
         $saved     = $this->saveSchema(schemaConfigKey: 'ingebrekestelling_schema', object: $row);
@@ -135,10 +134,9 @@ class IngebrekestellingService
         $regime  = $this->resolveRegime(instance: $instance);
         $startAt = $ontvangstDatum->modify('+'.((int) $regime['grace']).' days')->format('Y-m-d');
 
+        $regimeLabel = 'awb-default';
         if ($regime['custom'] === true) {
             $regimeLabel = 'afwijkend';
-        } else {
-            $regimeLabel = 'awb-default';
         }
 
         $berekening = $this->saveSchema(

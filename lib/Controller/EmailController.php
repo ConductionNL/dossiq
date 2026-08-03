@@ -73,19 +73,7 @@ class EmailController extends Controller
         }
 
         try {
-            // OCP\IRequest::getContent() is protected on the concrete OC
-            // request; read raw payload from php://input instead.
-            $content = (string) file_get_contents('php://input');
-            if ($content === '') {
-                $content = '{}';
-            }
-
-            $decoded = json_decode($content, true);
-            if (is_array($decoded) === true) {
-                $data = $decoded;
-            } else {
-                $data = [];
-            }
+            $data = $this->readJsonBody();
 
             $result = $this->emailService->sendEmail(
                 $caseId,
@@ -125,19 +113,7 @@ class EmailController extends Controller
         }
 
         try {
-            // OCP\IRequest::getContent() is protected on the concrete OC
-            // request; read raw payload from php://input instead.
-            $content = (string) file_get_contents('php://input');
-            if ($content === '') {
-                $content = '{}';
-            }
-
-            $decoded = json_decode($content, true);
-            if (is_array($decoded) === true) {
-                $data = $decoded;
-            } else {
-                $data = [];
-            }
+            $data = $this->readJsonBody();
 
             $result = $this->emailService->sendFromTemplate(
                 $caseId,
@@ -178,20 +154,7 @@ class EmailController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        // OCP\IRequest::getContent() is protected on the concrete OC
-        // request; read raw payload from php://input instead.
-        $content = (string) file_get_contents('php://input');
-        if ($content === '') {
-            $content = '{}';
-        }
-
-        $decoded = json_decode($content, true);
-        if (is_array($decoded) === true) {
-            $data = $decoded;
-        } else {
-            $data = [];
-        }
-
+        $data     = $this->readJsonBody();
         $template = $data['body'] ?? '';
         $caseData = [];
         // Would load from case.
@@ -226,4 +189,27 @@ class EmailController extends Controller
         $templates = $this->emailService->getTemplatesForCaseType($caseTypeId);
         return new JSONResponse(['results' => $templates]);
     }//end templates()
+
+    /**
+     * Read and decode the JSON request body.
+     *
+     * OCP\IRequest::getContent() is protected on the concrete OC request, so
+     * the raw payload is read from php://input instead.
+     *
+     * @return array<string, mixed> The decoded body, or an empty array when absent/invalid
+     */
+    private function readJsonBody(): array
+    {
+        $content = (string) file_get_contents('php://input');
+        if ($content === '') {
+            return [];
+        }
+
+        $decoded = json_decode($content, true);
+        if (is_array($decoded) === false) {
+            return [];
+        }
+
+        return $decoded;
+    }//end readJsonBody()
 }//end class
