@@ -445,10 +445,15 @@ class ZaakdossierController extends Controller
             $this->logger->error('Procest dossier ZIP build failed: '.$e->getMessage());
             return new JSONResponse(['error' => 'ZIP export failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
         } finally {
-            if (is_file($tmpPath) === true) {
-                @unlink($tmpPath);
+            // A temp file we cannot remove is a real (if minor) problem — say
+            // so rather than hiding the failure behind an `@`.
+            if (is_file($tmpPath) === true && unlink($tmpPath) === false) {
+                $this->logger->warning(
+                    'Procest dossier: temporary ZIP could not be removed',
+                    ['path' => $tmpPath]
+                );
             }
-        }
+        }//end try
 
         return new DataDownloadResponse($data, 'dossier-'.$caseId.'.zip', 'application/zip');
     }//end downloadZip()

@@ -130,7 +130,7 @@ class StufFieldMappingService
             $this->customMappings['zkn'] ?? []
         );
 
-        return $this->applyMappings(data: $stufData, mappings: $mappings, direction: 'toInternal');
+        return $this->applyMappings(data: $stufData, mappings: $mappings);
     }//end mapZknToInternal()
 
     /**
@@ -172,7 +172,7 @@ class StufFieldMappingService
             $this->customMappings['bg'] ?? []
         );
 
-        return $this->applyMappings(data: $stufData, mappings: $mappings, direction: 'toInternal');
+        return $this->applyMappings(data: $stufData, mappings: $mappings);
     }//end mapBgToInternal()
 
     /**
@@ -337,15 +337,16 @@ class StufFieldMappingService
     /**
      * Apply mappings to convert StUF data to internal format.
      *
-     * @param array<string, string>                                          $data      The source data.
-     * @param array<string, array{property: string, transform: string|null}> $mappings  The field mappings.
-     * @param string                                                         $direction The direction ('toInternal'; bi-directional reserved).
+     * This is the StUF-to-internal direction; the reverse direction is written
+     * by {@see StufFieldMappingService::getDefaultMappings()} consumers and does
+     * not route through here, so no direction argument is taken.
      *
-     * @psalm-suppress UnusedParam
+     * @param array<string, string>                                          $data     The source data.
+     * @param array<string, array{property: string, transform: string|null}> $mappings The field mappings.
      *
      * @return array<string, mixed> The mapped data.
      */
-    private function applyMappings(array $data, array $mappings, string $direction): array
+    private function applyMappings(array $data, array $mappings): array
     {
         $result = [];
 

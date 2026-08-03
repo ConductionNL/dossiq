@@ -127,6 +127,13 @@ class MandaatController extends Controller
     private function authorizeMandaatAccess(string $caseId, ?IUser $user): void
     {
         if ($user === null) {
+            // Log the denial with the case it targeted — an anonymous probe of
+            // the mandate surface is exactly what an audit needs to see, and
+            // without the case id the alert is not actionable.
+            $this->logger->warning(
+                'MandaatController: unauthenticated mandaat check denied',
+                ['caseId' => $caseId]
+            );
             throw new OCSForbiddenException('Not authenticated');
         }
     }//end authorizeMandaatAccess()

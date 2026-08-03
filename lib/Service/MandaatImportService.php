@@ -288,8 +288,9 @@ class MandaatImportService
             throw new RuntimeException('Missing required CSV columns: '.implode(', ', $missing));
         }
 
-        $rows = [];
-        for ($i = 1; $i < count($lines); $i++) {
+        $rows      = [];
+        $lineCount = count($lines);
+        for ($i = 1; $i < $lineCount; $i++) {
             $line = trim((string) $lines[$i]);
             if ($line === '') {
                 continue;

@@ -99,8 +99,9 @@ class MandaatEscalatieService
      * when none is found.
      *
      * @param string $decisionType   Decision type.
-     * @param string $escalatieReden Reason (currently unused — surface for
-     *                               future reason-specific routing).
+     * @param string $escalatieReden Reason, carried into the unresolved-path
+     *                               warning so a dead-ended escalation is
+     *                               traceable.
      *
      * @return array{mandaatId:string, userId:string}
      *
@@ -183,6 +184,14 @@ class MandaatEscalatieService
                 }
             }
         }//end foreach
+
+        // No higher mandate holder exists for this decision type — surface it
+        // with the reason so an escalation that silently lands nowhere is
+        // traceable in the log rather than only visible as an empty target.
+        $this->logger->warning(
+            'Mandaat escalation path unresolved',
+            ['decisionType' => $decisionType, 'reden' => $escalatieReden]
+        );
 
         return ['mandaatId' => '', 'userId' => ''];
     }//end resolveEscalatiePath()

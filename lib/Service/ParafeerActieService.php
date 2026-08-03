@@ -270,7 +270,6 @@ class ParafeerActieService
                 action: $action,
                 comment: $comment,
                 advice: $advice,
-                step: $step,
             );
 
             $timestamp = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
@@ -781,18 +780,19 @@ class ParafeerActieService
     /**
      * Validate required fields per action.
      *
-     * @param string               $action  The action.
-     * @param string               $comment The comment (may be empty).
-     * @param string               $advice  The advice (may be empty).
-     * @param array<string, mixed> $step    The current step (reserved for future validation rules).
+     * Step-type-specific rules live in
+     * {@see self::validateActionForStepType()}; this check is purely about the
+     * mandatory free-text fields, so it takes no step.
      *
-     * @psalm-suppress UnusedParam
+     * @param string $action  The action.
+     * @param string $comment The comment (may be empty).
+     * @param string $advice  The advice (may be empty).
      *
      * @return void
      *
      * @throws OCSBadRequestException When mandatory comment/advice is missing.
      */
-    private function validateRequiredFields(string $action, string $comment, string $advice, array $step): void
+    private function validateRequiredFields(string $action, string $comment, string $advice): void
     {
         if ($action === self::ACTION_RETURNED && $comment === '') {
             throw new OCSBadRequestException('Return reason is required');

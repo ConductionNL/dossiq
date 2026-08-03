@@ -35,6 +35,7 @@ namespace OCA\Procest\Service\Pdok;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Support\SuppressesWarnings;
 use OCP\IAppConfig;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -48,6 +49,8 @@ use Throwable;
  */
 class PdokBagService
 {
+
+    use SuppressesWarnings;
 
     /**
      * Default endpoint when `pdok_bag_endpoint` is empty.
@@ -294,14 +297,50 @@ class PdokBagService
         ];
         $context       = stream_context_create(options: $streamOptions);
 
-        $body = @file_get_contents(filename: $url, use_include_path: false, context: $context);
+        // Deliberately fopen() + stream_get_meta_data() rather than
+        // file_get_contents(): the HTTP stream wrapper publishes
+        // $http_response_header only into the scope that actually made the
+        // call, which here is the closure, so that magic variable is
+        // unreachable from this method. The wrapper_data key carries the
+        // identical response header lines and travels back with the return
+        // value.
+        $response = $this->withoutWarnings(
+            operation: static function () use ($url, $context): array {
+                $handle = fopen(filename: $url, mode: 'rb', use_include_path: false, context: $context);
+                if ($handle === false) {
+                    return [
+                        'body'    => false,
+                        'headers' => [],
+                    ];
+                }
+
+                $metaData = stream_get_meta_data($handle);
+                $headers  = ($metaData['wrapper_data'] ?? []);
+                if (is_array($headers) === false) {
+                    $headers = [];
+                }
+
+                $body = stream_get_contents($handle);
+                fclose($handle);
+
+                return [
+                    'body'    => $body,
+                    'headers' => $headers,
+                ];
+            }
+        );
+
+        $body = $response['body'];
         if ($body === false) {
+            $this->logger->warning(
+                'PDOK BAG WFS request failed',
+                ['detail' => $this->lastSuppressedWarning()]
+            );
             throw new RuntimeException('Network error contacting PDOK BAG WFS', 0);
         }
 
         $statusCode = 0;
-        // $http_response_header is populated by the HTTP wrapper.
-        foreach ($http_response_header as $header) {
+        foreach ($response['headers'] as $header) {
             if (preg_match(pattern: '#^HTTP/\S+\s+(\d{3})#', subject: $header, matches: $matches) === 1) {
                 $statusCode = (int) $matches[1];
             }

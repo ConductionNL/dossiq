@@ -27,7 +27,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\CaseRelationService;
-use OCA\Procest\Service\DeelzaakService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -145,7 +144,6 @@ class CaseRelationServiceTest extends TestCase
 
         return new CaseRelationService(
             settingsService: $this->settingsService,
-            deelzaakService: $this->createMock(DeelzaakService::class),
             logger: $this->logger,
         );
     }//end makeService()

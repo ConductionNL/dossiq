@@ -282,6 +282,18 @@ class ConsultationService
             throw new RuntimeException('Invalid status: '.$newStatus);
         }
 
+        // Transition validation against the declared status graph. Only a
+        // recognised current status constrains the move; a consultation whose
+        // stored status is absent or unknown may be set to any valid status so
+        // the graph never wedges an object that predates it.
+        $consultation = $this->getConsultation(consultationId: $consultationId);
+        $current      = (string) ($consultation['status'] ?? '');
+        if (array_key_exists($current, self::STATUS_TRANSITIONS) === true
+            && in_array($newStatus, self::STATUS_TRANSITIONS[$current], true) === false
+        ) {
+            throw new RuntimeException('Invalid status transition: '.$current.' -> '.$newStatus);
+        }
+
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
             throw new RuntimeException('OpenRegister is not available');

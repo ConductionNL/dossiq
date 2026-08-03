@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Support\NormalisesObjectRows;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -40,6 +41,8 @@ use OCP\AppFramework\Http\JSONResponse;
  */
 abstract class ZgwController extends Controller
 {
+    use NormalisesObjectRows;
+
     /**
      * Build a standardised 403 response for missing ZGW scopes.
      *

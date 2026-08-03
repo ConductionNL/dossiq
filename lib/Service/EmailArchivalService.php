@@ -343,11 +343,7 @@ class EmailArchivalService
             }
 
             if (method_exists($objectService, 'logEvent') === true) {
-                $objectService->logEvent(
-                    subject: $caseId,
-                    type: $eventType,
-                    payload: $payload,
-                );
+                $objectService->logEvent($caseId, $eventType, $payload);
                 return;
             }
 

@@ -275,7 +275,12 @@ class StufController extends Controller
     public function endpoints(): JSONResponse
     {
         $items = $this->register->findAll(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: [], limit: 500);
-        $items = array_map(callback: [$this, 'enrichEndpointWithHealth'], array: $items);
+        $items = array_map(
+            callback: function (array $endpoint): array {
+                return $this->enrichEndpointWithHealth(endpoint: $endpoint);
+            },
+            array: $items
+        );
         return new JSONResponse(['items' => $items, 'total' => count(value: $items)]);
     }//end endpoints()
 

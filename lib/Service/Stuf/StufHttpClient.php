@@ -205,8 +205,13 @@ class StufHttpClient
         chmod(filename: $tmpPath, permissions: 0o600);
         register_shutdown_function(
                 callback: static function () use ($tmpPath): void {
+                    // Shutdown-time cleanup of the materialised client cert.
+                    // clearstatcache() makes the existence check reflect what
+                    // happened during the request, so the unlink is not racing
+                    // a stale stat cache and does not need an `@`.
+                    clearstatcache(clear_realpath_cache: true, filename: $tmpPath);
                     if (file_exists(filename: $tmpPath) === true) {
-                        @unlink(filename: $tmpPath);
+                        unlink(filename: $tmpPath);
                     }
                 }
                 );
