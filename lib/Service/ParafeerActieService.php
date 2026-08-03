@@ -33,6 +33,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Event\ParafeerTransitionEvent;
+use OCA\Procest\Service\Parafeer\ParaferingActionMapper;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\AppFramework\OCS\OCSForbiddenException;
@@ -130,6 +131,7 @@ class ParafeerActieService
      * @param LoggerInterface               $logger              The logger.
      * @param IEventDispatcher              $eventDispatcher     The event dispatcher (parafering transition events).
      * @param ParaferingApprovalBridge      $approvalBridge      Bridge to OpenRegister approval-workflow (ADR-022).
+     * @param ParaferingActionMapper        $actionMapper        Pure shaping of action input, payload and route steps.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -138,6 +140,7 @@ class ParafeerActieService
         private readonly LoggerInterface $logger,
         private readonly IEventDispatcher $eventDispatcher,
         private readonly ParaferingApprovalBridge $approvalBridge,
+        private readonly ParaferingActionMapper $actionMapper,
     ) {
     }//end __construct()
 
@@ -224,184 +227,11 @@ class ParafeerActieService
     public function recordAction(string $voorstelId, array $data, IUser $currentUser): array
     {
         try {
-            [$register, $voorstelSchema, $actieSchema] = $this->resolveSchemas();
-            $objectService = $this->settingsService->getObjectService();
-            if ($objectService === null) {
-                throw new RuntimeException('OpenRegister is not available');
-            }
-
-            $voorstel = $this->findVoorstel(
-                objectService: $objectService,
-                register: $register,
-                schema: $voorstelSchema,
+            return $this->performRecordAction(
                 voorstelId: $voorstelId,
-            );
-            $step     = $this->resolveCurrentStep(voorstel: $voorstel);
-
-            $action  = (string) ($data['action'] ?? '');
-            $comment = '';
-            if (isset($data['comment']) === true) {
-                $comment = trim((string) $data['comment']);
-            }
-
-            $advice = '';
-            if (isset($data['advice']) === true) {
-                $advice = trim((string) $data['advice']);
-            }
-
-            $onBehalfOf = null;
-            if (isset($data['onBehalfOf']) === true && $data['onBehalfOf'] !== '') {
-                $onBehalfOf = (string) $data['onBehalfOf'];
-            }
-
-            $mandate = null;
-            if (isset($data['mandate']) === true && $data['mandate'] !== '') {
-                $mandate = (string) $data['mandate'];
-            }
-
-            $this->authorize(
-                step: $step,
-                currentUser: $currentUser,
-                onBehalfOf: $onBehalfOf,
-                mandate: $mandate,
-            );
-            $this->validateActionForStepType(step: $step, action: $action);
-            $this->validateRequiredFields(
-                action: $action,
-                comment: $comment,
-                advice: $advice,
-            );
-
-            $timestamp = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-
-            $actorType = 'user';
-            if ($onBehalfOf !== null) {
-                $actorType = 'delegate';
-            }
-
-            $actieData = [
-                'voorstel'  => $voorstelId,
-                'step'      => (int) ($step['order'] ?? ($voorstel['currentStep'] ?? 0)),
-                'actor'     => $currentUser->getUID(),
-                'actorType' => $actorType,
-                'action'    => $action,
-            ];
-
-            if ($onBehalfOf !== null) {
-                $actieData['onBehalfOf'] = $onBehalfOf;
-            }
-
-            if ($mandate !== null) {
-                $actieData['mandate'] = $mandate;
-            }
-
-            if ($comment !== '') {
-                $actieData['comment'] = $comment;
-            }
-
-            if ($advice !== '') {
-                $actieData['advice'] = $advice;
-            }
-
-            // Persist the parafeeractie.
-            $savedActie = $objectService->saveObject(object: $actieData, register: $register, schema: $actieSchema);
-
-            // Per ADR-022: delegate the step transition to OpenRegister's
-            // approval-workflow when this voorstel is backed by an OR
-            // ApprovalChain. OpenRegister enforces the step role, advances the
-            // next step, records the decision, and dispatches the approval
-            // events that ParaferingNotificationService observes. The legacy
-            // in-array currentStep/status update below remains the
-            // consumer-facing projection during the migration window.
-            $this->delegateToApprovalWorkflow(
-                voorstel: $voorstel,
-                voorstelId: $voorstelId,
-                action: $action,
-                comment: $comment,
-                advice: $advice,
-                onBehalfOf: $onBehalfOf,
-                mandate: $mandate,
+                data: $data,
                 currentUser: $currentUser,
             );
-
-            // Emit the parafering transition event for the audit listener.
-            [$transitionType, $actorRoleForAudit] = $this->transitionForAction(action: $action);
-            $dispatchReason = null;
-            if ($action === self::ACTION_RETURNED || $action === self::ACTION_SKIPPED) {
-                $dispatchReason = $comment;
-            }
-
-            $this->dispatchTransition(
-                voorstelId: $voorstelId,
-                action: $transitionType,
-                step: (string) ((int) ($step['order'] ?? ($voorstel['currentStep'] ?? 0))),
-                actor: $currentUser->getUID(),
-                actorRole: $actorRoleForAudit,
-                reason: $dispatchReason,
-            );
-
-            // Handle terugsturen: set voorstel status + notify steller, no route advance.
-            if ($action === self::ACTION_RETURNED) {
-                $this->handleReturn(
-                    objectService: $objectService,
-                    register: $register,
-                    voorstelSchema: $voorstelSchema,
-                    voorstel: $voorstel,
-                    voorstelId: $voorstelId,
-                    currentUser: $currentUser,
-                    reason: $comment,
-                );
-
-                return [
-                    'parafeeractie' => $this->toArray(value: $savedActie),
-                    'voorstel'      => ['id' => $voorstelId, 'status' => self::STATUS_TERUGGESTUURD],
-                ];
-            }
-
-            // Advance the route on success.
-            $updatedVoorstel = $this->advanceVoorstel(
-                objectService: $objectService,
-                register: $register,
-                voorstelSchema: $voorstelSchema,
-                voorstel: $voorstel,
-                voorstelId: $voorstelId,
-            );
-
-            // PDF signature on completed accordering step (only when document attached).
-            $accorderingDone = ($step['type'] ?? null) === self::STEP_TYPE_ACCORDERING
-                && $action === self::ACTION_ACCORDED;
-            if ($accorderingDone === true && empty($voorstel['document']) === false) {
-                $this->applyPdfSignature(
-                    voorstelId: $voorstelId,
-                    fileId: (string) $voorstel['document'],
-                    actor: $currentUser,
-                    step: (int) ($step['order'] ?? 0),
-                    timestamp: $timestamp,
-                );
-            }
-
-            // Notify steller on full accordering.
-            if ($accorderingDone === true && empty($voorstel['steller']) === false) {
-                try {
-                    $this->notificationService->notifyVoorstelReturned(
-                        (string) $voorstel['steller'],
-                        (string) ($voorstel['onderwerp'] ?? ''),
-                        $voorstelId,
-                        $currentUser->getDisplayName(),
-                        'Voorstel volledig geaccordeerd'
-                    );
-                } catch (\Throwable $e) {
-                    $this->logger->warning(
-                        'Failed to send accordering notification to steller',
-                        ['voorstel' => $voorstelId, 'exception' => $e->getMessage()]
-                    );
-                }
-            }
-
-            return [
-                'parafeeractie' => $this->toArray(value: $savedActie),
-                'voorstel'      => $this->toArray(value: $updatedVoorstel),
-            ];
         } catch (OCSForbiddenException | OCSBadRequestException $e) {
             // Re-throw intentional exceptions for the controller to map to HTTP codes.
             throw $e;
@@ -413,6 +243,227 @@ class ParafeerActieService
             throw new RuntimeException('Operation failed');
         }//end try
     }//end recordAction()
+
+    /**
+     * Run the parafering action pipeline: validate, persist, propagate, advance.
+     *
+     * @param string               $voorstelId  The voorstel UUID.
+     * @param array<string, mixed> $data        Request payload (action, comment, advice, onBehalfOf, mandate).
+     * @param IUser                $currentUser The authenticated user from IUserSession.
+     *
+     * @return array<string, mixed> Result envelope with parafeeractie and updated voorstel.
+     *
+     * @throws OCSForbiddenException  When the current user is not authorized for this step.
+     * @throws OCSBadRequestException When request data is invalid (e.g. missing reason on returned).
+     */
+    private function performRecordAction(string $voorstelId, array $data, IUser $currentUser): array
+    {
+        [$register, $voorstelSchema, $actieSchema] = $this->resolveSchemas();
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            throw new RuntimeException('OpenRegister is not available');
+        }
+
+        $voorstel = $this->findVoorstel(
+            objectService: $objectService,
+            register: $register,
+            schema: $voorstelSchema,
+            voorstelId: $voorstelId,
+        );
+        $step     = $this->resolveCurrentStep(voorstel: $voorstel);
+
+        $input   = $this->actionMapper->parseActionInput(data: $data);
+        $action  = (string) $input['action'];
+        $comment = (string) $input['comment'];
+
+        $this->authorize(
+            step: $step,
+            currentUser: $currentUser,
+            onBehalfOf: $input['onBehalfOf'],
+            mandate: $input['mandate'],
+        );
+        $this->validateActionForStepType(step: $step, action: $action);
+        $this->validateRequiredFields(
+            action: $action,
+            comment: $comment,
+            advice: (string) $input['advice'],
+        );
+
+        $timestamp = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        $stepOrder = (int) ($step['order'] ?? ($voorstel['currentStep'] ?? 0));
+
+        $actieData = $this->actionMapper->buildActieData(
+            voorstelId: $voorstelId,
+            stepOrder: $stepOrder,
+            actor: $currentUser->getUID(),
+            input: $input,
+        );
+
+        // Persist the parafeeractie.
+        $savedActie = $objectService->saveObject(object: $actieData, register: $register, schema: $actieSchema);
+
+        $this->propagateDecision(
+            voorstel: $voorstel,
+            voorstelId: $voorstelId,
+            input: $input,
+            stepOrder: $stepOrder,
+            currentUser: $currentUser,
+        );
+
+        // Handle terugsturen: set voorstel status + notify steller, no route advance.
+        if ($action === self::ACTION_RETURNED) {
+            $this->handleReturn(
+                objectService: $objectService,
+                register: $register,
+                voorstelSchema: $voorstelSchema,
+                voorstel: $voorstel,
+                voorstelId: $voorstelId,
+                currentUser: $currentUser,
+                reason: $comment,
+            );
+
+            return [
+                'parafeeractie' => $this->toArray(value: $savedActie),
+                'voorstel'      => ['id' => $voorstelId, 'status' => self::STATUS_TERUGGESTUURD],
+            ];
+        }
+
+        // Advance the route on success.
+        $updatedVoorstel = $this->advanceVoorstel(
+            objectService: $objectService,
+            register: $register,
+            voorstelSchema: $voorstelSchema,
+            voorstel: $voorstel,
+            voorstelId: $voorstelId,
+        );
+
+        $this->applyAccorderingEffects(
+            step: $step,
+            action: $action,
+            voorstel: $voorstel,
+            voorstelId: $voorstelId,
+            currentUser: $currentUser,
+            timestamp: $timestamp,
+        );
+
+        return [
+            'parafeeractie' => $this->toArray(value: $savedActie),
+            'voorstel'      => $this->toArray(value: $updatedVoorstel),
+        ];
+    }//end performRecordAction()
+
+    /**
+     * Propagate the step decision to OpenRegister and emit the audit transition.
+     *
+     * @param array<string, mixed> $voorstel    The voorstel array (provides approvalChainUuid).
+     * @param string               $voorstelId  The voorstel UUID.
+     * @param array<string, mixed> $input       The parsed action inputs.
+     * @param int                  $stepOrder   The step order this action applies to.
+     * @param IUser                $currentUser The authenticated user from IUserSession.
+     *
+     * @return void
+     */
+    private function propagateDecision(
+        array $voorstel,
+        string $voorstelId,
+        array $input,
+        int $stepOrder,
+        IUser $currentUser,
+    ): void {
+        $action  = (string) $input['action'];
+        $comment = (string) $input['comment'];
+
+        // Per ADR-022: delegate the step transition to OpenRegister's
+        // approval-workflow when this voorstel is backed by an OR
+        // ApprovalChain. OpenRegister enforces the step role, advances the
+        // next step, records the decision, and dispatches the approval
+        // events that ParaferingNotificationService observes. The legacy
+        // in-array currentStep/status update below remains the
+        // consumer-facing projection during the migration window.
+        $this->delegateToApprovalWorkflow(
+            voorstel: $voorstel,
+            voorstelId: $voorstelId,
+            action: $action,
+            comment: $comment,
+            advice: (string) $input['advice'],
+            onBehalfOf: $input['onBehalfOf'],
+            mandate: $input['mandate'],
+            currentUser: $currentUser,
+        );
+
+        // Emit the parafering transition event for the audit listener.
+        [$transitionType, $actorRoleForAudit] = $this->transitionForAction(action: $action);
+        $dispatchReason = null;
+        if ($action === self::ACTION_RETURNED || $action === self::ACTION_SKIPPED) {
+            $dispatchReason = $comment;
+        }
+
+        $this->dispatchTransition(
+            voorstelId: $voorstelId,
+            action: $transitionType,
+            step: (string) $stepOrder,
+            actor: $currentUser->getUID(),
+            actorRole: $actorRoleForAudit,
+            reason: $dispatchReason,
+        );
+    }//end propagateDecision()
+
+    /**
+     * Apply the side effects of a completed accordering step: PDF signature and
+     * steller notification. A no-op for any other step type or action.
+     *
+     * @param array<string, mixed> $step        The current route step.
+     * @param string               $action      The recorded action.
+     * @param array<string, mixed> $voorstel    The voorstel array (current state).
+     * @param string               $voorstelId  The voorstel UUID.
+     * @param IUser                $currentUser The authenticated user from IUserSession.
+     * @param string               $timestamp   The ATOM timestamp of this action.
+     *
+     * @return void
+     */
+    private function applyAccorderingEffects(
+        array $step,
+        string $action,
+        array $voorstel,
+        string $voorstelId,
+        IUser $currentUser,
+        string $timestamp,
+    ): void {
+        $accorderingDone = ($step['type'] ?? null) === self::STEP_TYPE_ACCORDERING
+            && $action === self::ACTION_ACCORDED;
+        if ($accorderingDone === false) {
+            return;
+        }
+
+        // PDF signature on completed accordering step (only when document attached).
+        if (empty($voorstel['document']) === false) {
+            $this->applyPdfSignature(
+                voorstelId: $voorstelId,
+                fileId: (string) $voorstel['document'],
+                actor: $currentUser,
+                step: (int) ($step['order'] ?? 0),
+                timestamp: $timestamp,
+            );
+        }
+
+        // Notify steller on full accordering.
+        if (empty($voorstel['steller']) === false) {
+            try {
+                $this->notificationService->notifyVoorstelReturned(
+                    (string) $voorstel['steller'],
+                    (string) ($voorstel['onderwerp'] ?? ''),
+                    $voorstelId,
+                    $currentUser->getDisplayName(),
+                    'Voorstel volledig geaccordeerd'
+                );
+            } catch (\Throwable $e) {
+                $this->logger->warning(
+                    'Failed to send accordering notification to steller',
+                    ['voorstel' => $voorstelId, 'exception' => $e->getMessage()]
+                );
+            }
+        }
+    }//end applyAccorderingEffects()
 
     /**
      * Delegate a parafering step decision to OpenRegister's approval-workflow.
@@ -870,40 +921,21 @@ class ParafeerActieService
         array $voorstel,
         string $voorstelId
     ): array {
-        $snapshotRaw = $voorstel['routeSnapshot'] ?? null;
-        $steps       = $snapshotRaw;
-        if (is_string($snapshotRaw) === true) {
-            $steps = json_decode($snapshotRaw, true);
-        }
-
-        if (is_array($steps) === false) {
-            $steps = [];
-        }
-
-        $currentStep  = (int) ($voorstel['currentStep'] ?? 0);
-        $nextStep     = null;
-        $nextStepType = null;
-        foreach ($steps as $step) {
-            if (is_array($step) === false) {
-                continue;
-            }
-
-            $order = (int) ($step['order'] ?? 0);
-            if ($order > $currentStep && ($nextStep === null || $order < $nextStep)) {
-                $nextStep     = $order;
-                $nextStepType = (string) ($step['type'] ?? '');
-            }
-        }
+        $currentStep = (int) ($voorstel['currentStep'] ?? 0);
+        $next        = $this->actionMapper->findNextRouteStep(
+            snapshotRaw: ($voorstel['routeSnapshot'] ?? null),
+            currentStep: $currentStep,
+        );
 
         $updateData = ['status' => self::STATUS_GEACCORDEERD];
-        if ($nextStep !== null) {
+        if ($next !== null) {
             $status = self::STATUS_IN_PARAFERING;
-            if ($nextStepType === self::STEP_TYPE_ACCORDERING) {
+            if ($next['type'] === self::STEP_TYPE_ACCORDERING) {
                 $status = self::STATUS_TER_ACCORDERING;
             }
 
             $updateData = [
-                'currentStep' => $nextStep,
+                'currentStep' => $next['order'],
                 'status'      => $status,
             ];
         }

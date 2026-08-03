@@ -182,18 +182,15 @@ class WOODecisionService
             return [];
         }
 
-        $result = $this->searchObjectsAsArrays(
+        // The is_array() guard the inline version carried here is dead code:
+        // searchObjectsAsArrays() is declared `: array`. Dropped rather than
+        // inverted, because phpstan rejects it in either direction.
+        return $this->searchObjectsAsArrays(
             objectService: $objectService,
             register: $register,
             schema: $assessmentSchema,
             filters: ['caseRef' => $caseId, '_limit' => 500],
         );
-
-        if (is_array($result) === false) {
-            return [];
-        }
-
-        return $result;
     }//end collectAssessments()
 
     /**

@@ -120,21 +120,7 @@ class ConsultationService
         }
 
         // Validate required fields.
-        if (empty($data['parentZaak']) === true) {
-            throw new RuntimeException('parentZaak is required');
-        }
-
-        if (empty($data['adviesInstantie']) === true) {
-            throw new RuntimeException('adviesInstantie is required');
-        }
-
-        if (empty($data['vraagstelling']) === true) {
-            throw new RuntimeException('vraagstelling is required');
-        }
-
-        if (empty($data['uiterlijkeReactiedatum']) === true) {
-            throw new RuntimeException('uiterlijkeReactiedatum is required');
-        }
+        $this->assertRequiredConsultationFields(data: $data);
 
         // Generate unique consultation number.
         $data['consultationNumber'] = $this->generateConsultationNumber(
@@ -158,34 +144,13 @@ class ConsultationService
         // is *decided* in decidesk. Raise a decidesk `advice` Decision and
         // persist its ref. Fail CLOSED — never author the consultation advice
         // outcome locally as a fallback.
-        try {
-            $decisionRef = $this->adviceDelegation->raiseAdviceDecision(
-                subjectSchema: 'consultation',
-                subjectId: (string) $consultationId,
-                payload: [
-                    'subjectRegister'   => $register,
-                    'externalReference' => (string) $data['parentZaak'],
-                    'subjectLabel'      => (string) $data['consultationNumber'],
-                    'question'          => (string) $data['vraagstelling'],
-                ],
-            );
-
-            if ((string) $consultationId !== '') {
-                $objectService->saveObject(
-                    object: ['decisionRef' => $decisionRef],
-                    register: $register,
-                    schema: $schema,
-                    uuid: (string) $consultationId,
-                );
-            }
-        } catch (\RuntimeException $e) {
-            $this->logger->error(
-                'Procest: createConsultation: decidesk advice Decision raise failed — failing closed: '.$e->getMessage(),
-                ['app' => Application::APP_ID],
-            );
-            // REQ-PDRD-002: fail closed; surface the error.
-            throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
-        }//end try
+        $decisionRef = $this->raiseAndPersistAdviceDecision(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            consultationId: (string) $consultationId,
+            data: $data,
+        );
 
         $this->logger->info(
             'Consultation created: '.$consultationId
@@ -613,6 +578,88 @@ class ConsultationService
             'extensionApproved'      => true,
         ];
     }//end approveExtension()
+
+    /**
+     * Assert that every field required to create a consultation is present.
+     *
+     * @param array<string, mixed> $data Consultation data to validate
+     *
+     * @return void
+     *
+     * @throws \RuntimeException If any required field is missing or empty
+     */
+    private function assertRequiredConsultationFields(array $data): void
+    {
+        if (empty($data['parentZaak']) === true) {
+            throw new RuntimeException('parentZaak is required');
+        }
+
+        if (empty($data['adviesInstantie']) === true) {
+            throw new RuntimeException('adviesInstantie is required');
+        }
+
+        if (empty($data['vraagstelling']) === true) {
+            throw new RuntimeException('vraagstelling is required');
+        }
+
+        if (empty($data['uiterlijkeReactiedatum']) === true) {
+            throw new RuntimeException('uiterlijkeReactiedatum is required');
+        }
+    }//end assertRequiredConsultationFields()
+
+    /**
+     * Raise the decidesk advice Decision for a consultation and persist its ref.
+     *
+     * Fails CLOSED — never authors the consultation advice outcome locally.
+     *
+     * @param object               $objectService  The OpenRegister object service
+     * @param string               $register       The register slug
+     * @param string               $schema         The schema slug
+     * @param string               $consultationId The freshly created consultation UUID
+     * @param array<string, mixed> $data           Consultation data used to build the decision payload
+     *
+     * @return string The decidesk decision reference
+     *
+     * @throws \RuntimeException If decidesk is unavailable (REQ-PDRD-002)
+     */
+    private function raiseAndPersistAdviceDecision(
+        object $objectService,
+        string $register,
+        string $schema,
+        string $consultationId,
+        array $data,
+    ): string {
+        try {
+            $decisionRef = $this->adviceDelegation->raiseAdviceDecision(
+                subjectSchema: 'consultation',
+                subjectId: $consultationId,
+                payload: [
+                    'subjectRegister'   => $register,
+                    'externalReference' => (string) $data['parentZaak'],
+                    'subjectLabel'      => (string) $data['consultationNumber'],
+                    'question'          => (string) $data['vraagstelling'],
+                ],
+            );
+
+            if ($consultationId !== '') {
+                $objectService->saveObject(
+                    object: ['decisionRef' => $decisionRef],
+                    register: $register,
+                    schema: $schema,
+                    uuid: $consultationId,
+                );
+            }
+        } catch (\RuntimeException $e) {
+            $this->logger->error(
+                'Procest: createConsultation: decidesk advice Decision raise failed — failing closed: '.$e->getMessage(),
+                ['app' => Application::APP_ID],
+            );
+            // REQ-PDRD-002: fail closed; surface the error.
+            throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
+        }//end try
+
+        return $decisionRef;
+    }//end raiseAndPersistAdviceDecision()
 
     /**
      * Generate a unique consultation number in ADV-{year}-{seq} format.

@@ -96,8 +96,8 @@ class SubstitutionService
      *
      * @return array<string, mixed> The created substitution object.
      *
-     * @throws InvalidArgumentException On any validation failure.
-     * @throws \RuntimeException        When OpenRegister is unavailable.
+     * @throws \InvalidArgumentException On any validation failure.
+     * @throws \RuntimeException         When OpenRegister is unavailable.
      *
      * @spec openspec/specs/handler-vervanging-waarneming/spec.md
      */

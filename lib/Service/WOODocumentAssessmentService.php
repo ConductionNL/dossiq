@@ -305,15 +305,13 @@ class WOODocumentAssessmentService
             filters: ['case' => $caseId, '_limit' => 500],
         );
 
-        if (is_array($docs) === false) {
-            return [];
-        }
-
         $allDocs = [];
-        foreach ($docs as $doc) {
-            $docId = $doc['id'] ?? $doc['uuid'] ?? null;
-            if ($docId !== null) {
-                $allDocs[$docId] = true;
+        if (is_array($docs) === true) {
+            foreach ($docs as $doc) {
+                $docId = $doc['id'] ?? $doc['uuid'] ?? null;
+                if ($docId !== null) {
+                    $allDocs[$docId] = true;
+                }
             }
         }
 
@@ -343,15 +341,13 @@ class WOODocumentAssessmentService
             filters: ['caseRef' => $caseId, '_limit' => 500],
         );
 
-        if (is_array($assessed) === false) {
-            return [];
-        }
-
         $assessedDocIds = [];
-        foreach ($assessed as $item) {
-            $docRef = $item['documentRef'] ?? null;
-            if ($docRef !== null) {
-                $assessedDocIds[$docRef] = true;
+        if (is_array($assessed) === true) {
+            foreach ($assessed as $item) {
+                $docRef = $item['documentRef'] ?? null;
+                if ($docRef !== null) {
+                    $assessedDocIds[$docRef] = true;
+                }
             }
         }
 

@@ -125,26 +125,17 @@ class CaseTransferService
 
         $now = (new DateTime())->format('c');
 
-        $transferData = [
-            'caseId'             => $caseId,
-            'sourceOrganization' => $sourceOrganization,
-            'targetOrganization' => $targetOrganization,
-            'reason'             => $reason,
-            'requestedDate'      => $requestedDate,
-            'status'             => 'pending',
-            'initiatedBy'        => $initiatedBy,
-            'remoteCloudId'      => $remoteCloudId,
-            'idempotencyKey'     => $idempotencyKey,
-            'custodyAuditTrail'  => [
-                [
-                    'event'     => 'initiated',
-                    'actor'     => $initiatedBy,
-                    'actorType' => 'local',
-                    'cloudId'   => '',
-                    'timestamp' => $now,
-                ],
-            ],
-        ];
+        $transferData = $this->buildInitialTransferData(
+            caseId: $caseId,
+            sourceOrganization: $sourceOrganization,
+            targetOrganization: $targetOrganization,
+            reason: $reason,
+            requestedDate: $requestedDate,
+            initiatedBy: $initiatedBy,
+            remoteCloudId: $remoteCloudId,
+            idempotencyKey: $idempotencyKey,
+            now: $now,
+        );
 
         $result     = $objectService->saveObject(
             object: $transferData,
@@ -170,6 +161,84 @@ class CaseTransferService
             $resultData = $result->jsonSerialize();
         }
 
+        $this->recordTransferInitiated(
+            result: $result,
+            caseId: $caseId,
+            targetOrganization: $targetOrganization,
+            initiatedBy: $initiatedBy,
+            remoteCloudId: $remoteCloudId,
+        );
+
+        return $resultData;
+    }//end initiateTransfer()
+
+    /**
+     * Build the initial (pending) transfer object payload with its first
+     * custody-audit entry.
+     *
+     * @param string      $caseId             The UUID of the case to transfer
+     * @param string      $sourceOrganization The source organization identifier
+     * @param string      $targetOrganization The UUID of the target partner organization
+     * @param string      $reason             The reason for transfer
+     * @param string      $requestedDate      The requested transfer date (ISO 8601)
+     * @param string      $initiatedBy        User ID of the initiator (custody audit trail)
+     * @param string|null $remoteCloudId      The federated target (slug@host), or null for a local-only transfer
+     * @param string|null $idempotencyKey     The federated idempotency key, or null for a local-only transfer
+     * @param string      $now                The ISO 8601 timestamp used for the custody entry
+     *
+     * @return array The transfer object payload ready to be saved
+     */
+    private function buildInitialTransferData(
+        string $caseId,
+        string $sourceOrganization,
+        string $targetOrganization,
+        string $reason,
+        string $requestedDate,
+        string $initiatedBy,
+        ?string $remoteCloudId,
+        ?string $idempotencyKey,
+        string $now,
+    ): array {
+        return [
+            'caseId'             => $caseId,
+            'sourceOrganization' => $sourceOrganization,
+            'targetOrganization' => $targetOrganization,
+            'reason'             => $reason,
+            'requestedDate'      => $requestedDate,
+            'status'             => 'pending',
+            'initiatedBy'        => $initiatedBy,
+            'remoteCloudId'      => $remoteCloudId,
+            'idempotencyKey'     => $idempotencyKey,
+            'custodyAuditTrail'  => [
+                [
+                    'event'     => 'initiated',
+                    'actor'     => $initiatedBy,
+                    'actorType' => 'local',
+                    'cloudId'   => '',
+                    'timestamp' => $now,
+                ],
+            ],
+        ];
+    }//end buildInitialTransferData()
+
+    /**
+     * Emit the tenant audit event and log line for a freshly initiated transfer.
+     *
+     * @param object      $result             The saved transfer object
+     * @param string      $caseId             The UUID of the transferred case
+     * @param string      $targetOrganization The UUID of the target partner organization
+     * @param string      $initiatedBy        User ID of the initiator
+     * @param string|null $remoteCloudId      The federated target (slug@host), or null for a local-only transfer
+     *
+     * @return void
+     */
+    private function recordTransferInitiated(
+        object $result,
+        string $caseId,
+        string $targetOrganization,
+        string $initiatedBy,
+        ?string $remoteCloudId,
+    ): void {
         $this->auditTrail->emit(
             [
                 'action'   => 'case_transfer_initiated',
@@ -188,9 +257,7 @@ class CaseTransferService
                 'federated'  => ($remoteCloudId !== null),
             ]
         );
-
-        return $resultData;
-    }//end initiateTransfer()
+    }//end recordTransferInitiated()
 
     /**
      * Accept a pending case transfer request. Idempotent when called again
@@ -290,26 +357,17 @@ class CaseTransferService
         // Read the existing custody chain before the status writes below, which
         // is also where the pre-existing trail must be preserved from.
         $auditTrail = (array) ($transferData['custodyAuditTrail'] ?? []);
+        $actorType  = $this->resolveCustodyActorType(remoteCloudId: $remoteCloudId);
 
-        $transferData['status']      = $targetStatus;
-        $transferData['completedAt'] = $now;
-        if ($targetStatus === 'rejected') {
-            $transferData['rejectionReason'] = $rejectionReason;
-        }
-
-        $actorType = 'local';
-        if ($remoteCloudId !== null) {
-            $actorType = 'remote';
-        }
-
-        $auditTrail[] = [
-            'event'     => $targetStatus,
-            'actor'     => ($remoteCloudId ?? ''),
-            'actorType' => $actorType,
-            'cloudId'   => ($remoteCloudId ?? ''),
-            'timestamp' => $now,
-        ];
-        $transferData['custodyAuditTrail'] = $auditTrail;
+        $transferData = $this->applyTransferCompletion(
+            transferData: $transferData,
+            auditTrail: $auditTrail,
+            targetStatus: $targetStatus,
+            rejectionReason: $rejectionReason,
+            actorType: $actorType,
+            remoteCloudId: $remoteCloudId,
+            now: $now,
+        );
 
         $result = $objectService->saveObject(
             object: $transferData,
@@ -342,6 +400,63 @@ class CaseTransferService
 
         return $result->jsonSerialize();
     }//end completeTransfer()
+
+    /**
+     * Resolve the custody-audit actor type for a completion event.
+     *
+     * @param string|null $remoteCloudId Set when the call was authenticated via a federated token
+     *
+     * @return string 'remote' for a federated call, 'local' otherwise
+     */
+    private function resolveCustodyActorType(?string $remoteCloudId): string
+    {
+        if ($remoteCloudId !== null) {
+            return 'remote';
+        }
+
+        return 'local';
+    }//end resolveCustodyActorType()
+
+    /**
+     * Apply the completion status, optional rejection reason and custody entry
+     * to a transfer payload.
+     *
+     * @param array       $transferData    The transfer payload being completed
+     * @param array       $auditTrail      The pre-existing custody chain, read before the status writes
+     * @param string      $targetStatus    'accepted' or 'rejected'
+     * @param string      $rejectionReason Reason text (rejected only)
+     * @param string      $actorType       'local' or 'remote'
+     * @param string|null $remoteCloudId   Set for a federated (remote-authenticated) call
+     * @param string      $now             The ISO 8601 completion timestamp
+     *
+     * @return array The completed transfer payload
+     */
+    private function applyTransferCompletion(
+        array $transferData,
+        array $auditTrail,
+        string $targetStatus,
+        string $rejectionReason,
+        string $actorType,
+        ?string $remoteCloudId,
+        string $now,
+    ): array {
+        $transferData['status']      = $targetStatus;
+        $transferData['completedAt'] = $now;
+        if ($targetStatus === 'rejected') {
+            $transferData['rejectionReason'] = $rejectionReason;
+        }
+
+        $auditTrail[] = [
+            'event'     => $targetStatus,
+            'actor'     => ($remoteCloudId ?? ''),
+            'actorType' => $actorType,
+            'cloudId'   => ($remoteCloudId ?? ''),
+            'timestamp' => $now,
+        ];
+        $transferData['custodyAuditTrail'] = $auditTrail;
+
+        return $transferData;
+    }//end applyTransferCompletion()
 
     /**
      * Look up the caseId for a given transfer UUID (for the controller's

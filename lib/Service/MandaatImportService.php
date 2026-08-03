@@ -86,20 +86,7 @@ class MandaatImportService
         }
 
         // Resolve rol-name → rolId.
-        $roleIndex = $this->loadRoleIndex();
-        $resolved  = [];
-        foreach ($rows as $idx => $row) {
-            $rolNaam = (string) ($row['rolNaam'] ?? '');
-            if ($rolNaam === '') {
-                throw new RuntimeException('Row '.($idx + 1).' missing rolNaam');
-            }
-
-            if (isset($roleIndex[$rolNaam]) === false) {
-                throw new RuntimeException('Unknown OrganisatieRol "'.$rolNaam.'" at row '.($idx + 1));
-            }
-
-            $resolved[] = $row + ['gemandateerdeRol' => $roleIndex[$rolNaam]];
-        }
+        $resolved = $this->resolveRolReferences(rows: $rows);
 
         // Create the besluit (concept).
         $besluit = $this->save(
@@ -125,29 +112,14 @@ class MandaatImportService
         $unchangedCount = 0;
         $diff           = [];
         foreach ($resolved as $row) {
-            $payload = [
-                'mandaatNummer'       => (string) $row['mandaatNummer'],
-                'mandateringsBesluit' => (string) $besluit['id'],
-                'omschrijving'        => (string) ($row['omschrijving'] ?? ''),
-                'gemandateerdeRol'    => (string) $row['gemandateerdeRol'],
-                'wettelijkeGrondslag' => (string) ($row['wettelijkeGrondslag'] ?? ''),
-                'voorwaarden'         => [
-                    'plafondCents'  => (int) ($row['plafondCents'] ?? 0),
-                    'subdelegatie'  => $this->parseBool(value: (string) ($row['subdelegatie'] ?? 'false')),
-                    'decisionTypes' => $this->parseList(value: (string) ($row['decisionTypes'] ?? '')),
-                ],
-                'status'              => 'concept',
-            ];
+            $payload = $this->buildMandaatPayload(row: $row, besluitId: (string) $besluit['id']);
 
             $this->save(schemaConfigKey: 'mandaat_schema', object: $payload);
 
-            $existing = null;
-            foreach ($priorMandaten as $pm) {
-                if ((string) ($pm['mandaatNummer'] ?? '') === (string) $row['mandaatNummer']) {
-                    $existing = $pm;
-                    break;
-                }
-            }
+            $existing = $this->findPriorMandaat(
+                priorMandaten: $priorMandaten,
+                mandaatNummer: (string) $row['mandaatNummer']
+            );
 
             if ($existing === null) {
                 $newCount++;
@@ -155,22 +127,9 @@ class MandaatImportService
                 continue;
             }
 
-            $changed       = false;
-            $changedFields = [];
-            foreach (['omschrijving', 'gemandateerdeRol', 'wettelijkeGrondslag'] as $f) {
-                if ((string) ($existing[$f] ?? '') !== (string) $payload[$f]) {
-                    $changed         = true;
-                    $changedFields[] = $f;
-                }
-            }
+            $changedFields = $this->collectChangedFields(existing: $existing, payload: $payload);
 
-            $exPlafond = (int) (($existing['voorwaarden'] ?? [])['plafondCents'] ?? 0);
-            if ($exPlafond !== (int) $payload['voorwaarden']['plafondCents']) {
-                $changed         = true;
-                $changedFields[] = 'plafondCents';
-            }
-
-            if ($changed === true) {
+            if (count($changedFields) > 0) {
                 $changedCount++;
                 $diff[] = [
                     'mandaatNummer' => (string) $row['mandaatNummer'],
@@ -185,15 +144,9 @@ class MandaatImportService
         }//end foreach
 
         // REMOVED = in prior, not in new.
-        $newNumbers   = array_map(static fn (array $r): string => (string) ($r['mandaatNummer'] ?? ''), $resolved);
-        $removedCount = 0;
-        foreach ($priorMandaten as $pm) {
-            $num = (string) ($pm['mandaatNummer'] ?? '');
-            if ($num !== '' && in_array($num, $newNumbers, true) === false) {
-                $removedCount++;
-                $diff[] = ['mandaatNummer' => $num, 'change' => 'REMOVED'];
-            }
-        }
+        $removed      = $this->collectRemovedMandaten(priorMandaten: $priorMandaten, resolved: $resolved);
+        $removedCount = count($removed);
+        $diff         = array_merge($diff, $removed);
 
         return [
             'mandateringsBesluitId' => (string) $besluit['id'],
@@ -207,6 +160,127 @@ class MandaatImportService
     }//end importFromCsv()
 
     /**
+     * Resolve every CSV row's rolNaam to a gemandateerdeRol id.
+     *
+     * @param array<int, array<string, string>> $rows Parsed CSV data rows.
+     *
+     * @return array<int, array<string, mixed>> Rows enriched with gemandateerdeRol.
+     *
+     * @throws RuntimeException When a row has no rolNaam or names an unknown OrganisatieRol.
+     */
+    private function resolveRolReferences(array $rows): array
+    {
+        $roleIndex = $this->loadRoleIndex();
+        $resolved  = [];
+        foreach ($rows as $idx => $row) {
+            $rolNaam = (string) ($row['rolNaam'] ?? '');
+            if ($rolNaam === '') {
+                throw new RuntimeException('Row '.($idx + 1).' missing rolNaam');
+            }
+
+            if (isset($roleIndex[$rolNaam]) === false) {
+                throw new RuntimeException('Unknown OrganisatieRol "'.$rolNaam.'" at row '.($idx + 1));
+            }
+
+            $resolved[] = $row + ['gemandateerdeRol' => $roleIndex[$rolNaam]];
+        }
+
+        return $resolved;
+    }//end resolveRolReferences()
+
+    /**
+     * Build the concept mandaat payload for a single resolved CSV row.
+     *
+     * @param array<string, mixed> $row       A resolved CSV row.
+     * @param string               $besluitId The owning MandateringsBesluit id.
+     *
+     * @return array<string, mixed> The mandaat object payload.
+     */
+    private function buildMandaatPayload(array $row, string $besluitId): array
+    {
+        return [
+            'mandaatNummer'       => (string) $row['mandaatNummer'],
+            'mandateringsBesluit' => $besluitId,
+            'omschrijving'        => (string) ($row['omschrijving'] ?? ''),
+            'gemandateerdeRol'    => (string) $row['gemandateerdeRol'],
+            'wettelijkeGrondslag' => (string) ($row['wettelijkeGrondslag'] ?? ''),
+            'voorwaarden'         => [
+                'plafondCents'  => (int) ($row['plafondCents'] ?? 0),
+                'subdelegatie'  => $this->parseBool(value: (string) ($row['subdelegatie'] ?? 'false')),
+                'decisionTypes' => $this->parseList(value: (string) ($row['decisionTypes'] ?? '')),
+            ],
+            'status'              => 'concept',
+        ];
+    }//end buildMandaatPayload()
+
+    /**
+     * Find the prior-version mandaat carrying a given mandaatNummer.
+     *
+     * @param array<int, array<string, mixed>> $priorMandaten Mandaten of the prior besluit version.
+     * @param string                           $mandaatNummer The mandaat number to look for.
+     *
+     * @return array<string, mixed>|null The matching prior mandaat, or null when it is new.
+     */
+    private function findPriorMandaat(array $priorMandaten, string $mandaatNummer): ?array
+    {
+        foreach ($priorMandaten as $pm) {
+            if ((string) ($pm['mandaatNummer'] ?? '') === $mandaatNummer) {
+                return $pm;
+            }
+        }
+
+        return null;
+    }//end findPriorMandaat()
+
+    /**
+     * Collect the field names that differ between a prior mandaat and its new payload.
+     *
+     * @param array<string, mixed> $existing The prior-version mandaat.
+     * @param array<string, mixed> $payload  The freshly built mandaat payload.
+     *
+     * @return array<int, string> Changed field names; empty when unchanged.
+     */
+    private function collectChangedFields(array $existing, array $payload): array
+    {
+        $changedFields = [];
+        foreach (['omschrijving', 'gemandateerdeRol', 'wettelijkeGrondslag'] as $f) {
+            if ((string) ($existing[$f] ?? '') !== (string) $payload[$f]) {
+                $changedFields[] = $f;
+            }
+        }
+
+        $exPlafond = (int) (($existing['voorwaarden'] ?? [])['plafondCents'] ?? 0);
+        if ($exPlafond !== (int) $payload['voorwaarden']['plafondCents']) {
+            $changedFields[] = 'plafondCents';
+        }
+
+        return $changedFields;
+    }//end collectChangedFields()
+
+    /**
+     * Build the REMOVED diff entries — mandaten present in the prior besluit but
+     * absent from the new import.
+     *
+     * @param array<int, array<string, mixed>> $priorMandaten Mandaten of the prior besluit version.
+     * @param array<int, array<string, mixed>> $resolved      The resolved CSV rows of the new import.
+     *
+     * @return array<int, array<string, string>> REMOVED diff entries.
+     */
+    private function collectRemovedMandaten(array $priorMandaten, array $resolved): array
+    {
+        $newNumbers = array_map(static fn (array $r): string => (string) ($r['mandaatNummer'] ?? ''), $resolved);
+        $removed    = [];
+        foreach ($priorMandaten as $pm) {
+            $num = (string) ($pm['mandaatNummer'] ?? '');
+            if ($num !== '' && in_array($num, $newNumbers, true) === false) {
+                $removed[] = ['mandaatNummer' => $num, 'change' => 'REMOVED'];
+            }
+        }
+
+        return $removed;
+    }//end collectRemovedMandaten()
+
+    /**
      * Approve a concept besluit: flip besluit → vastgesteld + every mandaat → active,
      * and mark the prior besluit (if any) → vervallen.
      *
@@ -218,13 +292,11 @@ class MandaatImportService
      */
     public function approveImport(string $besluitId): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $bSchema       = (string) $this->settingsService->getConfigValue('mandaterings_besluit_schema');
-        $mSchema       = (string) $this->settingsService->getConfigValue('mandaat_schema');
-        if ($objectService === null || $register === '' || $bSchema === '' || $mSchema === '') {
-            throw new RuntimeException('Mandaat services not configured');
-        }
+        $context       = $this->resolveApprovalContext();
+        $objectService = $context['objectService'];
+        $register      = $context['register'];
+        $bSchema       = $context['bSchema'];
+        $mSchema       = $context['mSchema'];
 
         $besluit = $objectService->find($besluitId, register: $register, schema: $bSchema);
         if (is_array($besluit) === false) {
@@ -241,6 +313,68 @@ class MandaatImportService
         $besluit = $objectService->saveObject($register, $bSchema, $besluit);
 
         // Flip mandaten to active.
+        $this->activateMandatenForBesluit(
+            objectService: $objectService,
+            register: $register,
+            mSchema: $mSchema,
+            besluitId: $besluitId,
+            now: $now
+        );
+
+        // Expire prior besluit.
+        $prior = $this->findPriorBesluit(besluitNummer: (string) $besluit['besluitNummer'], excludeId: $besluitId);
+        if ($prior !== null) {
+            $prior['status']      = 'vervallen';
+            $prior['vervalDatum'] = $now;
+            $objectService->saveObject($register, $bSchema, $prior);
+        }
+
+        return $besluit;
+    }//end approveImport()
+
+    /**
+     * Resolve the object service, register and schemas needed to approve an import.
+     *
+     * @return array<string, mixed> {objectService, register, bSchema, mSchema}
+     *
+     * @throws RuntimeException When the mandaat services are not configured.
+     */
+    private function resolveApprovalContext(): array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        $register      = (string) $this->settingsService->getConfigValue('register');
+        $bSchema       = (string) $this->settingsService->getConfigValue('mandaterings_besluit_schema');
+        $mSchema       = (string) $this->settingsService->getConfigValue('mandaat_schema');
+        if ($objectService === null || $register === '' || $bSchema === '' || $mSchema === '') {
+            throw new RuntimeException('Mandaat services not configured');
+        }
+
+        return [
+            'objectService' => $objectService,
+            'register'      => $register,
+            'bSchema'       => $bSchema,
+            'mSchema'       => $mSchema,
+        ];
+    }//end resolveApprovalContext()
+
+    /**
+     * Flip every mandaat of a besluit to active, defaulting a missing validFrom.
+     *
+     * @param object $objectService The OpenRegister object service.
+     * @param string $register      The register id.
+     * @param string $mSchema       The mandaat schema id.
+     * @param string $besluitId     The owning MandateringsBesluit id.
+     * @param string $now           The activation date (Y-m-d).
+     *
+     * @return void
+     */
+    private function activateMandatenForBesluit(
+        object $objectService,
+        string $register,
+        string $mSchema,
+        string $besluitId,
+        string $now
+    ): void {
         try {
             $mandaten = $this->searchObjectsAsArrays(
                 objectService: $objectService,
@@ -260,17 +394,7 @@ class MandaatImportService
 
             $objectService->saveObject($register, $mSchema, $m);
         }
-
-        // Expire prior besluit.
-        $prior = $this->findPriorBesluit(besluitNummer: (string) $besluit['besluitNummer'], excludeId: $besluitId);
-        if ($prior !== null) {
-            $prior['status']      = 'vervallen';
-            $prior['vervalDatum'] = $now;
-            $objectService->saveObject($register, $bSchema, $prior);
-        }
-
-        return $besluit;
-    }//end approveImport()
+    }//end activateMandatenForBesluit()
 
     /**
      * Parse RFC-4180-ish CSV with first row = header.
