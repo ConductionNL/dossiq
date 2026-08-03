@@ -254,10 +254,6 @@ class ParaferingApprovalBridge
         $mapped = [];
         $order  = 1;
         foreach ($steps as $step) {
-            if (is_array($step) === false) {
-                continue;
-            }
-
             if (($step['skipped'] ?? false) === true) {
                 continue;
             }

@@ -64,8 +64,8 @@ class TermijnPauseExtensionServiceTest extends TestCase
 
         $logger = $this->createMock(LoggerInterface::class);
         $this->termijnService = new TermijnService($settings, $logger);
-        $this->pauseService   = new TermijnPauseService($this->termijnService, $logger);
-        $this->extService     = new TermijnExtensionService($this->termijnService, $logger);
+        $this->pauseService   = new TermijnPauseService($this->termijnService);
+        $this->extService     = new TermijnExtensionService($this->termijnService);
 
         // Seed an Omgevingsvergunning definition (max 1 extension).
         $this->objects->saveObject('procest', 'termijnDefinitie', [

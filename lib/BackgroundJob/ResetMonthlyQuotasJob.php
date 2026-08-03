@@ -70,11 +70,16 @@ class ResetMonthlyQuotasJob extends TimedJob
      * @param mixed $argument Job argument (unused).
      *
      * @return void
+     *
+     * @spec exclude phpstan dead-code cleanup only — normalised the IAppManager return and
+     *       dropped the resulting always-false `is_array()` guard; no behavioural change.
      */
     protected function run($argument): void
     {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+        // IAppManager::getInstalledApps() declares its array return in PHPDoc
+        // only, so normalise defensively before the membership test.
+        $installed = (array) $this->appManager->getInstalledApps();
+        if (in_array('openregister', $installed, true) === false) {
             return;
         }
 

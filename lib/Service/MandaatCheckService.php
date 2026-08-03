@@ -77,7 +77,7 @@ class MandaatCheckService
      * @param array<string, mixed>   $caseProperties Case properties for condition matching.
      * @param DateTimeImmutable|null $decisionDate   Optional override (defaults to now).
      *
-     * @return array{authorized:bool, mandaatId?:string, reden?:string, failedConditions?:array<int,string>}
+     * @return array{authorized:bool, mandaatId?:string, reden?:string|null, conflictReason?:string, failedConditions?:array<int,string>}
      *
      * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
      */
@@ -108,7 +108,7 @@ class MandaatCheckService
         }
 
         $conflict = $this->conflictService->checkConflict($userId, $caseId, $caseProperties);
-        if (($conflict['conflict'] ?? false) === true) {
+        if ($conflict['conflict'] === true) {
             return [
                 'authorized'     => false,
                 'reden'          => self::REDEN_BELANGENCONFLICT,
@@ -196,11 +196,7 @@ class MandaatCheckService
         }
 
         $out = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $vf = (string) ($row['validFrom'] ?? '1970-01-01');
             $vu = (string) ($row['validUntil'] ?? '');
             if ($vf > $dateStr) {
@@ -307,11 +303,7 @@ class MandaatCheckService
 
         $dateStr = $date->format('Y-m-d');
         $active  = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $vf = (string) ($row['validFrom'] ?? '1970-01-01');
             $vu = (string) ($row['validUntil'] ?? '');
             if ($vf > $dateStr) {

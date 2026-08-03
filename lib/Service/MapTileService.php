@@ -292,7 +292,7 @@ class MapTileService
         }
 
         foreach ($zoomLevels as $z) {
-            if (is_int($z) === false || $z < 0 || $z > self::MAX_ZOOM) {
+            if ($z < 0 || $z > self::MAX_ZOOM) {
                 throw new \InvalidArgumentException(
                     sprintf('zoom %s out of range [0, %d]', (string) $z, self::MAX_ZOOM)
                 );

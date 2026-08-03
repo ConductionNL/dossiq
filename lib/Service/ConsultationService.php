@@ -164,9 +164,9 @@ class ConsultationService
                 subjectId: (string) $consultationId,
                 payload: [
                     'subjectRegister'   => $register,
-                    'externalReference' => (string) ($data['parentZaak'] ?? ''),
-                    'subjectLabel'      => (string) ($data['consultationNumber'] ?? 'Consultatie'),
-                    'question'          => (string) ($data['vraagstelling'] ?? ''),
+                    'externalReference' => (string) $data['parentZaak'],
+                    'subjectLabel'      => (string) $data['consultationNumber'],
+                    'question'          => (string) $data['vraagstelling'],
                 ],
             );
 

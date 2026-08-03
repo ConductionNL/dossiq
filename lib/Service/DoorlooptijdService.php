@@ -271,10 +271,6 @@ class DoorlooptijdService
 
         $out = [];
         foreach ($accum as $caseTypeId => $stats) {
-            if ($stats['count'] === 0) {
-                continue;
-            }
-
             if (isset($caseTypeIndex[$caseTypeId]['title']) === true) {
                 $title = (string) $caseTypeIndex[$caseTypeId]['title'];
             } else {

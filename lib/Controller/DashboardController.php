@@ -83,15 +83,14 @@ class DashboardController extends GenericDashboardController
     #[PublicPage]
     public function serviceWorker(): DataDownloadResponse
     {
-        $body     = (string) @file_get_contents(self::PUBLIC_DIR.'/service-worker.js');
-        $response = new DataDownloadResponse($body, 'service-worker.js', 'application/javascript');
-        $response->addHeader('Service-Worker-Allowed', '/');
+        $body   = (string) @file_get_contents(self::PUBLIC_DIR.'/service-worker.js');
         $status = Http::STATUS_OK;
         if ($body === '') {
             $status = Http::STATUS_NOT_FOUND;
         }
 
-        $response->setStatus($status);
+        $response = new DataDownloadResponse($body, 'service-worker.js', 'application/javascript', $status);
+        $response->addHeader('Service-Worker-Allowed', '/');
         return $response;
     }//end serviceWorker()
 
@@ -106,14 +105,12 @@ class DashboardController extends GenericDashboardController
     #[PublicPage]
     public function webManifest(): DataDownloadResponse
     {
-        $body     = (string) @file_get_contents(self::PUBLIC_DIR.'/manifest.webmanifest');
-        $response = new DataDownloadResponse($body, 'manifest.webmanifest', 'application/manifest+json');
-        $status   = Http::STATUS_OK;
+        $body   = (string) @file_get_contents(self::PUBLIC_DIR.'/manifest.webmanifest');
+        $status = Http::STATUS_OK;
         if ($body === '') {
             $status = Http::STATUS_NOT_FOUND;
         }
 
-        $response->setStatus($status);
-        return $response;
+        return new DataDownloadResponse($body, 'manifest.webmanifest', 'application/manifest+json', $status);
     }//end webManifest()
 }//end class

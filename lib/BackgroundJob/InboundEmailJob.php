@@ -293,10 +293,13 @@ class InboundEmailJob extends TimedJob
             }
 
             if (method_exists($objectService, 'searchObjectsBySlug') === true) {
+                // Positional: the narrowed duck-typed object has no parameter
+                // names for static analysis. Order matches OpenRegister's
+                // searchObjectsBySlug(registerSlug, schemaSlug, filters).
                 $rows = $objectService->searchObjectsBySlug(
-                    registerSlug: (string) $register,
-                    schemaSlug: (string) $schema,
-                    filters: ['mailMessageId' => $messageId, '_limit' => 1]
+                    (string) $register,
+                    (string) $schema,
+                    ['mailMessageId' => $messageId, '_limit' => 1]
                 );
                 return (is_array($rows) === true && $rows !== []);
             }

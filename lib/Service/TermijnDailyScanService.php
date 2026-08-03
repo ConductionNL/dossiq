@@ -103,11 +103,7 @@ class TermijnDailyScanService
             return $counts;
         }
 
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $counts['scanned']++;
             try {
                 $this->processInstance(row: $row, now: $now, counts: $counts);
@@ -157,11 +153,7 @@ class TermijnDailyScanService
         }
 
         $accrued = 0;
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $id = (string) ($row['id'] ?? '');
             if ($id === '') {
                 continue;

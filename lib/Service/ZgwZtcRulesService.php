@@ -1125,10 +1125,6 @@ class ZgwZtcRulesService extends ZgwRulesBase
         $activeCount = 0;
         $closedCount = 0;
         foreach ($cases as $case) {
-            if (is_array($case) === false) {
-                continue;
-            }
-
             $caseStatus = (string) ($case['status'] ?? '');
             if ($caseStatus !== '' && in_array($caseStatus, $finalSlugs, true) === true) {
                 $closedCount++;

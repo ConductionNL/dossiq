@@ -112,6 +112,10 @@ class TenantOnboardingService
      * @param string $tenantId Tenant UUID.
      *
      * @return array{steps: array<int, array<string, mixed>>, completed: int, total: int, fraction: float}
+     *
+     * @spec exclude phpstan dead-code cleanup only — removed an unreachable `$total === 0`
+     *       branch (self::STEPS is non-empty, so max() is always >= 1) and normalised an
+     *       IAppManager return; no behavioural or contractual change.
      */
     public function getProgress(string $tenantId): array
     {
@@ -151,12 +155,9 @@ class TenantOnboardingService
             }
         }
 
-        $total = max(count(self::STEPS), count($rows));
-        if ($total === 0) {
-            $fraction = 0.0;
-        } else {
-            $fraction = ($completed / $total);
-        }
+        // STEPS is non-empty, so $total is always >= 1 and the division is safe.
+        $total    = max(count(self::STEPS), count($rows));
+        $fraction = ($completed / $total);
 
         return [
             'steps'     => array_values($rows),
@@ -356,8 +357,10 @@ class TenantOnboardingService
      */
     private function getObjectService()
     {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+        // IAppManager::getInstalledApps() declares its array return in PHPDoc
+        // only, so normalise defensively before the membership test.
+        $installed = (array) $this->appManager->getInstalledApps();
+        if (in_array('openregister', $installed, true) === false) {
             return null;
         }
 

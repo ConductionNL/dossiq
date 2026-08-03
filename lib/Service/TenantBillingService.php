@@ -147,7 +147,7 @@ class TenantBillingService
 
         $payload  = $this->shillinq->buildInvoicePayload(tenantId: $tenantId, month: $month, events: $unbilled);
         $exportRc = $this->shillinq->exportInvoice(payload: $payload);
-        if (($exportRc['success'] ?? false) === true) {
+        if ($exportRc['success'] === true) {
             $invoiceRef           = (string) ($exportRc['invoiceRef'] ?? '');
             $result['exported']   = true;
             $result['invoiceRef'] = $invoiceRef;
@@ -351,8 +351,10 @@ class TenantBillingService
      */
     private function getObjectService()
     {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+        // IAppManager::getInstalledApps() declares its array return in PHPDoc
+        // only, so normalise defensively before the membership test.
+        $installed = (array) $this->appManager->getInstalledApps();
+        if (in_array('openregister', $installed, true) === false) {
             return null;
         }
 
