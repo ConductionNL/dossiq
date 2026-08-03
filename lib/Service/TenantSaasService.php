@@ -123,7 +123,11 @@ class TenantSaasService
     private function auditMutation(string $action, string $tenantId, string $resource): void
     {
         $user  = $this->userSession->getUser();
-        $actor = ($user === null) ? 'system' : $user->getUID();
+        $actor = 'system';
+        if ($user !== null) {
+            $actor = $user->getUID();
+        }
+
         $this->audit->emit(
             [
                 'action'   => $action,

@@ -123,7 +123,7 @@ class Notifier implements INotifier
      * The `note_mention` wording.
      *
      * @param array<string,mixed> $subjectRaw The stored subject parameters
-     *   (`actorDisplayName`, `register`, `schema`, `objectId`, `noteId`).
+     *                                        (`actorDisplayName`, `register`, `schema`, `objectId`, `noteId`).
      * @param \OCP\IL10N          $l          The recipient-language localisation.
      *
      * @return array{0:string,1:string} The [subject, message] pair.
