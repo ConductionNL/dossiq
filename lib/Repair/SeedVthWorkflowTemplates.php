@@ -72,15 +72,15 @@ class SeedVthWorkflowTemplates implements IRepairStep
     /**
      * Constructor for SeedVthWorkflowTemplates.
      *
-     * @param SettingsService           $settingsService           Settings service for OR access
-     * @param WorkflowDefinitionService $workflowDefinitionService Workflow lifecycle service
-     * @param LoggerInterface           $logger                    Logger
+     * @param SettingsService           $settingsService   Settings service for OR access
+     * @param WorkflowDefinitionService $definitionService Workflow lifecycle service
+     * @param LoggerInterface           $logger            Logger
      *
      * @return void
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly WorkflowDefinitionService $workflowDefinitionService,
+        private readonly WorkflowDefinitionService $definitionService,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -170,10 +170,15 @@ class SeedVthWorkflowTemplates implements IRepairStep
             }//end foreach
         };
 
+        // Seeding runs with system privileges when OpenRegister exposes
+        // runAsSystem(); without an ObjectService there is nothing to elevate,
+        // so the closure is invoked directly.
+        if ($objectService === null) {
+            $runner();
+        }
+
         if ($objectService !== null) {
             $this->runAsSystemIfAvailable(objectService: $objectService, operation: $runner);
-        } else {
-            $runner();
         }
 
         $output->info(
@@ -328,7 +333,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
         }
 
         // Create draft via the lifecycle service.
-        $draft = $this->workflowDefinitionService->createDraft(
+        $draft = $this->definitionService->createDraft(
             payload: [
                 'title'       => $title,
                 'description' => (string) ($data['description'] ?? ''),
@@ -350,7 +355,7 @@ class SeedVthWorkflowTemplates implements IRepairStep
         // Publish — flips to lifecycleStatus=published, isActive=true and
         // pins caseType.workflowDefinition only when no previous definition
         // was pinned (handled inside publish()).
-        $published = $this->workflowDefinitionService->publish(id: (string) $draft['id']);
+        $published = $this->definitionService->publish(id: (string) $draft['id']);
         if ($published === null) {
             $this->logger->error(
                 'Procest: VTH workflow template — publish returned null',

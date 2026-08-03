@@ -102,87 +102,38 @@ class ZgwBusinessRulesService
 
         // ---- ZTC cross-cutting concerns (concept protection) ----
         if ($zgwApi === 'catalogi') {
-            // Default concept=true for new concept resources.
-            if ($action === 'create') {
-                $body = $this->ztcRules->defaultConcept($body, $resource);
-            }
-
-            // Preserve concept on update/patch (only changeable via /publish).
-            if ($action === 'update' || $action === 'patch') {
-                $body = $this->ztcRules->preserveConcept($body, $resource, $existingObject);
-            }
-
-            // Ztc-009/ztc-010: Protect published types from modification.
-            $conceptCheck = $this->ztcRules->checkConceptProtection(
-                $resource,
-                $action,
-                $body,
-                $existingObject,
-                $parentZaaktypeDraft
+            $conceptCheck = $this->applyCatalogiConceptRules(
+                resource: $resource,
+                action: $action,
+                body: $body,
+                existingObject: $existingObject,
+                parentZaaktypeDraft: $parentZaaktypeDraft
             );
             if ($conceptCheck !== null) {
                 return $conceptCheck;
             }
 
-            // CT-02b — publish guard: when a caseType transitions from draft to
-            // published (isDraft toggled false), require status types + final
-            // status + validFrom before allowing the save.
-            if ($resource === 'zaaktypen'
-                && ($action === 'update' || $action === 'patch')
-                && isset($body['isDraft']) === true
-                && (bool) $body['isDraft'] === false
-                && is_array($existingObject) === true
-                && (bool) ($existingObject['isDraft'] ?? false) === true
-            ) {
-                $register   = (string) ($mappingConfig['sourceRegister'] ?? '');
-                $caseTypeId = (string) ($existingObject['id'] ?? '');
-                if ($register !== '' && $caseTypeId !== '') {
-                    $publishErrors = $this->ztcRules->validatePublish($register, $caseTypeId);
-                    if (count($publishErrors) > 0) {
-                        return [
-                            'valid'        => false,
-                            'status'       => 422,
-                            'detail'       => implode('; ', $publishErrors),
-                            'code'         => 'publish_validation_failed',
-                            'enrichedBody' => $body,
-                        ];
-                    }
-                }
+            $publishGuard = $this->guardZaaktypePublish(
+                resource: $resource,
+                action: $action,
+                body: $body,
+                existingObject: $existingObject,
+                mappingConfig: $mappingConfig
+            );
+            if ($publishGuard !== null) {
+                return $publishGuard;
             }
 
-            // CT-01d — destroy guard: block deletion of a caseType that still
-            // has active (non-final) cases. Allow closed-only with the caller's
-            // explicit confirmation flag.
-            if ($resource === 'zaaktypen'
-                && $action === 'destroy'
-                && is_array($existingObject) === true
-            ) {
-                $register   = (string) ($mappingConfig['sourceRegister'] ?? '');
-                $caseTypeId = (string) ($existingObject['id'] ?? '');
-                $confirmed  = (bool) ($body['_confirm'] ?? false);
-                if ($register !== '' && $caseTypeId !== '') {
-                    $delGuard = $this->ztcRules->validateDeletion($register, $caseTypeId);
-                    if ($delGuard['blocked'] === true) {
-                        return [
-                            'valid'        => false,
-                            'status'       => 409,
-                            'detail'       => (string) $delGuard['message'],
-                            'code'         => 'destroy_blocked_active_cases',
-                            'enrichedBody' => $body,
-                        ];
-                    }
-
-                    if ($delGuard['requiresConfirmation'] === true && $confirmed === false) {
-                        return [
-                            'valid'        => false,
-                            'status'       => 409,
-                            'detail'       => (string) $delGuard['message'],
-                            'code'         => 'destroy_requires_confirmation',
-                            'enrichedBody' => $body,
-                        ];
-                    }
-                }//end if
-            }//end if
+            $destroyGuard = $this->guardZaaktypeDestroy(
+                resource: $resource,
+                action: $action,
+                body: $body,
+                existingObject: $existingObject,
+                mappingConfig: $mappingConfig
+            );
+            if ($destroyGuard !== null) {
+                return $destroyGuard;
+            }
         }//end if
 
         // ---- ZRC cross-cutting concern: closed zaak protection (zrc-007) ----
@@ -212,6 +163,153 @@ class ZgwBusinessRulesService
             existingObject: $existingObject
         );
     }//end validate()
+
+    /**
+     * Apply the ZTC concept defaults/preservation and the ztc-009/ztc-010
+     * published-type protection.
+     *
+     * @param string     $resource            The ZGW resource name
+     * @param string     $action              The action
+     * @param array      $body                The request body, enriched in place
+     * @param array|null $existingObject      The existing object data
+     * @param bool|null  $parentZaaktypeDraft Whether the parent zaaktype isDraft
+     *
+     * @return array|null The guard response, or null when the request may proceed
+     */
+    private function applyCatalogiConceptRules(
+        string $resource,
+        string $action,
+        array &$body,
+        ?array $existingObject,
+        ?bool $parentZaaktypeDraft
+    ): ?array {
+        // Default concept=true for new concept resources.
+        if ($action === 'create') {
+            $body = $this->ztcRules->defaultConcept($body, $resource);
+        }
+
+        // Preserve concept on update/patch (only changeable via /publish).
+        if (in_array($action, ['update', 'patch'], true) === true) {
+            $body = $this->ztcRules->preserveConcept($body, $resource, $existingObject);
+        }
+
+        // Ztc-009/ztc-010: Protect published types from modification.
+        return $this->ztcRules->checkConceptProtection(
+            $resource,
+            $action,
+            $body,
+            $existingObject,
+            $parentZaaktypeDraft
+        );
+    }//end applyCatalogiConceptRules()
+
+    /**
+     * CT-02b — publish guard: when a caseType transitions from draft to
+     * published (isDraft toggled false), require status types + final status
+     * + validFrom before allowing the save.
+     *
+     * @param string     $resource       The ZGW resource name
+     * @param string     $action         The action
+     * @param array      $body           The request body
+     * @param array|null $existingObject The existing object data
+     * @param array|null $mappingConfig  The mapping config
+     *
+     * @return array|null The guard response, or null when the save may proceed
+     */
+    private function guardZaaktypePublish(
+        string $resource,
+        string $action,
+        array $body,
+        ?array $existingObject,
+        ?array $mappingConfig
+    ): ?array {
+        if ($resource !== 'zaaktypen'
+            || in_array($action, ['update', 'patch'], true) === false
+            || isset($body['isDraft']) === false
+            || (bool) $body['isDraft'] !== false
+            || is_array($existingObject) === false
+            || (bool) ($existingObject['isDraft'] ?? false) !== true
+        ) {
+            return null;
+        }
+
+        $register   = (string) ($mappingConfig['sourceRegister'] ?? '');
+        $caseTypeId = (string) ($existingObject['id'] ?? '');
+        if (in_array('', [$register, $caseTypeId], true) === true) {
+            return null;
+        }
+
+        $publishErrors = $this->ztcRules->validatePublish($register, $caseTypeId);
+        if (count($publishErrors) === 0) {
+            return null;
+        }
+
+        return [
+            'valid'        => false,
+            'status'       => 422,
+            'detail'       => implode('; ', $publishErrors),
+            'code'         => 'publish_validation_failed',
+            'enrichedBody' => $body,
+        ];
+    }//end guardZaaktypePublish()
+
+    /**
+     * CT-01d — destroy guard: block deletion of a caseType that still has
+     * active (non-final) cases. Allow closed-only with the caller's explicit
+     * confirmation flag.
+     *
+     * @param string     $resource       The ZGW resource name
+     * @param string     $action         The action
+     * @param array      $body           The request body
+     * @param array|null $existingObject The existing object data
+     * @param array|null $mappingConfig  The mapping config
+     *
+     * @return array|null The guard response, or null when the delete may proceed
+     */
+    private function guardZaaktypeDestroy(
+        string $resource,
+        string $action,
+        array $body,
+        ?array $existingObject,
+        ?array $mappingConfig
+    ): ?array {
+        if ($resource !== 'zaaktypen'
+            || $action !== 'destroy'
+            || is_array($existingObject) === false
+        ) {
+            return null;
+        }
+
+        $register   = (string) ($mappingConfig['sourceRegister'] ?? '');
+        $caseTypeId = (string) ($existingObject['id'] ?? '');
+        $confirmed  = (bool) ($body['_confirm'] ?? false);
+        if (in_array('', [$register, $caseTypeId], true) === true) {
+            return null;
+        }
+
+        $delGuard = $this->ztcRules->validateDeletion($register, $caseTypeId);
+        if ($delGuard['blocked'] === true) {
+            return [
+                'valid'        => false,
+                'status'       => 409,
+                'detail'       => (string) $delGuard['message'],
+                'code'         => 'destroy_blocked_active_cases',
+                'enrichedBody' => $body,
+            ];
+        }
+
+        if ($delGuard['requiresConfirmation'] === true && $confirmed === false) {
+            return [
+                'valid'        => false,
+                'status'       => 409,
+                'detail'       => (string) $delGuard['message'],
+                'code'         => 'destroy_requires_confirmation',
+                'enrichedBody' => $body,
+            ];
+        }
+
+        return null;
+    }//end guardZaaktypeDestroy()
 
     /**
      * Dispatch to the appropriate per-register rule service.

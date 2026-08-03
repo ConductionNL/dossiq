@@ -199,7 +199,7 @@ class CaseSharingServiceFederationTest extends TestCase
             appManager: $appManager,
             container: $this->container,
             logger: $this->createMock(LoggerInterface::class),
-            tenantAuditTrailService: $this->audit,
+            auditTrailService: $this->audit,
         );
 
         $this->objects->objects['case-1'] = [
@@ -346,7 +346,7 @@ class CaseSharingServiceFederationTest extends TestCase
             appManager: $appManager,
             container: $container,
             logger: $this->createMock(LoggerInterface::class),
-            tenantAuditTrailService: $this->createMock(TenantAuditTrailService::class),
+            auditTrailService: $this->createMock(TenantAuditTrailService::class),
         );
 
         $result = $service->createFederatedShare('case-1', 'partner@remote.example', ['title'], [], 'bekijken', 'alice');
@@ -384,7 +384,7 @@ class CaseSharingServiceFederationTest extends TestCase
             appManager: $appManager,
             container: $this->createMock(ContainerInterface::class),
             logger: $this->createMock(LoggerInterface::class),
-            tenantAuditTrailService: $this->createMock(TenantAuditTrailService::class),
+            auditTrailService: $this->createMock(TenantAuditTrailService::class),
         );
 
         $result = $service->revokeFederatedShare('anything', 'bob');

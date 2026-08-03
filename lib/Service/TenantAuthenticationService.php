@@ -174,22 +174,44 @@ class TenantAuthenticationService
             return null;
         }
 
-        $now    = time();
-        $active = null;
-        foreach ($rows as $row) {
-            $from = strtotime((string) ($row['effectiveFrom'] ?? '1970-01-01'));
-            $to   = strtotime((string) ($row['effectiveTo'] ?? '2099-12-31'));
-            if ($from !== false && $to !== false && $from <= $now && $now <= $to) {
-                $active = $row;
-                break;
-            }
-        }
-
+        $active = $this->findActiveMandateRow(rows: $rows);
         if ($active === null) {
             return null;
         }
 
-        $matrixField = ($active['matrix'] ?? null);
+        return $this->normaliseMatrix(matrixField: ($active['matrix'] ?? null));
+    }//end loadActiveMatrix()
+
+    /**
+     * Pick the mandate row whose effective window contains "now".
+     *
+     * @param array<int, mixed> $rows The tenantMandate rows.
+     *
+     * @return mixed The active row, or null when none applies.
+     */
+    private function findActiveMandateRow(array $rows): mixed
+    {
+        $now = time();
+        foreach ($rows as $row) {
+            $from = strtotime((string) ($row['effectiveFrom'] ?? '1970-01-01'));
+            $to   = strtotime((string) ($row['effectiveTo'] ?? '2099-12-31'));
+            if ($from !== false && $to !== false && $from <= $now && $now <= $to) {
+                return $row;
+            }
+        }
+
+        return null;
+    }//end findActiveMandateRow()
+
+    /**
+     * Normalise the `matrix` field of an active mandate row.
+     *
+     * @param mixed $matrixField The raw matrix value.
+     *
+     * @return array<string, array<string, bool>> The resolved matrix.
+     */
+    private function normaliseMatrix(mixed $matrixField): array
+    {
         if (is_array($matrixField) === true) {
             return $matrixField;
         }
@@ -210,7 +232,7 @@ class TenantAuthenticationService
             'case_handler' => ['create' => true, 'edit' => true, 'status_update' => true],
             'viewer'       => [],
         ];
-    }//end loadActiveMatrix()
+    }//end normaliseMatrix()
 
     /**
      * Resolve the role for a user inside a tenant.

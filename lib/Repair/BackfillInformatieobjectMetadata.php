@@ -118,42 +118,75 @@ class BackfillInformatieobjectMetadata implements IRepairStep
                 continue;
             }
 
-            foreach ($node->getDirectoryListing() as $fileNode) {
-                if ($fileNode instanceof File === false) {
-                    continue;
-                }
-
-                $fileName = $fileNode->getName();
-                if (str_starts_with($fileName, '_part_') === true) {
-                    continue;
-                }
-
-                if (in_array($fileName, $existing, true) === true) {
-                    $skipped++;
-                    continue;
-                }
-
-                try {
-                    $this->backfillFile(
-                        objectService: $objectService,
-                        register: $register,
-                        schema: $infoSchema,
-                        folderUuid: $node->getName(),
-                        file: $fileNode,
-                    );
-                    $existing[] = $fileName;
-                    $created++;
-                } catch (\Throwable $e) {
-                    $this->logger->warning(
-                        'Procest backfill: failed for '.$fileName.': '.$e->getMessage(),
-                        ['app' => Application::APP_ID],
-                    );
-                }
-            }//end foreach
+            $result   = $this->backfillFolderNode(
+                objectService: $objectService,
+                register: $register,
+                schema: $infoSchema,
+                node: $node,
+                existing: $existing,
+            );
+            $created += $result['created'];
+            $skipped += $result['skipped'];
+            $existing = $result['existing'];
         }//end foreach
 
         $output->info('Procest backfill: created '.$created.' informatieobject(en), skipped '.$skipped.' existing.');
     }//end run()
+
+    /**
+     * Back-fill every not-yet-registered file inside one case folder.
+     *
+     * Files whose name is already registered are counted as skipped; `_part_` upload fragments are
+     * ignored entirely. A per-file failure is logged and does not abort the folder.
+     *
+     * @param object             $objectService The OpenRegister object service.
+     * @param string             $register      The register slug.
+     * @param string             $schema        The informatieobject schema slug.
+     * @param Folder             $node          The case folder to walk.
+     * @param array<int, string> $existing      Filenames already registered.
+     *
+     * @return array{created: int, skipped: int, existing: array<int, string>} Counts plus the grown filename list.
+     */
+    private function backfillFolderNode(object $objectService, string $register, string $schema, Folder $node, array $existing): array
+    {
+        $created = 0;
+        $skipped = 0;
+
+        foreach ($node->getDirectoryListing() as $fileNode) {
+            if ($fileNode instanceof File === false) {
+                continue;
+            }
+
+            $fileName = $fileNode->getName();
+            if (str_starts_with($fileName, '_part_') === true) {
+                continue;
+            }
+
+            if (in_array($fileName, $existing, true) === true) {
+                $skipped++;
+                continue;
+            }
+
+            try {
+                $this->backfillFile(
+                    objectService: $objectService,
+                    register: $register,
+                    schema: $schema,
+                    folderUuid: $node->getName(),
+                    file: $fileNode,
+                );
+                $existing[] = $fileName;
+                $created++;
+            } catch (\Throwable $e) {
+                $this->logger->warning(
+                    'Procest backfill: failed for '.$fileName.': '.$e->getMessage(),
+                    ['app' => Application::APP_ID],
+                );
+            }
+        }//end foreach
+
+        return ['created' => $created, 'skipped' => $skipped, 'existing' => $existing];
+    }//end backfillFolderNode()
 
     /**
      * Create an informatieobject (+ join when possible) for one existing file.

@@ -52,20 +52,18 @@ class LogZtcCatalogiAdapter implements ZtcCatalogiAdapterInterface
     /**
      * Log the resolve intent + synthesise a LOOKUP_DEFERRED result.
      *
-     * @param string              $zaaktypeIdentificatie Receiver-side
-     *                                                   identifier.
-     * @param string              $receiverSourceSlug    openconnector
-     *                                                   Source slug.
-     * @param array<string,mixed> $context               Lookup context.
+     * @param string              $zaaktypeId         Receiver-side identifier.
+     * @param string              $receiverSourceSlug openconnector Source slug.
+     * @param array<string,mixed> $context            Lookup context.
      *
      * @return ZtcResult The dispatch outcome.
      */
-    public function resolveZaakType(string $zaaktypeIdentificatie, string $receiverSourceSlug, array $context=[]): ZtcResult
+    public function resolveZaakType(string $zaaktypeId, string $receiverSourceSlug, array $context=[]): ZtcResult
     {
         $this->logger->info(
             'Procest ZTC resolveZaakType deferred (no outbound connector bound)',
             [
-                'zaaktypeIdentificatie' => $zaaktypeIdentificatie,
+                'zaaktypeIdentificatie' => $zaaktypeId,
                 'receiverSourceSlug'    => $receiverSourceSlug,
                 'context'               => $context,
             ]

@@ -93,7 +93,7 @@ class BezwaarTermijnJob extends TimedJob
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('bezwaar_trigger_schema');
-        if ($register === '' || $schema === '') {
+        if (in_array('', [$register, $schema], true) === true) {
             return;
         }
 
@@ -113,29 +113,15 @@ class BezwaarTermijnJob extends TimedJob
         $archived = 0;
 
         foreach ((array) $triggers as $trigger) {
-            $arr           = $this->toArray(value: $trigger);
-            $archiefDatum  = (string) ($arr['archiefDatum'] ?? '');
-            $bezwaar       = ($arr['bezwaarOntvangen'] ?? false) === true;
-            $beschikkingId = (string) ($arr['beschikkingId'] ?? '');
-
-            if ($beschikkingId === '' || $archiefDatum === '' || $archiefDatum > $today) {
-                continue;
-            }
-
-            if ($bezwaar === true) {
-                $this->deactivateTrigger(objectService: $objectService, register: $register, schema: $schema, trigger: $arr);
-                continue;
-            }
-
-            try {
-                $this->beschikkingService->archive($beschikkingId);
-                $this->deactivateTrigger(objectService: $objectService, register: $register, schema: $schema, trigger: $arr);
+            $wasArchived = $this->processTrigger(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                trigger: $trigger,
+                today: $today,
+            );
+            if ($wasArchived === true) {
                 $archived++;
-            } catch (\Throwable $e) {
-                $this->logger->error(
-                    'BezwaarTermijnJob: archival failed',
-                    ['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
-                );
             }
         }//end foreach
 
@@ -146,6 +132,53 @@ class BezwaarTermijnJob extends TimedJob
             );
         }
     }//end run()
+
+    /**
+     * Process a single bezwaarTrigger: archive the beschikking when its
+     * bezwaartermijn has lapsed without a bezwaar, otherwise deactivate.
+     *
+     * @param object $objectService The OpenRegister object service.
+     * @param string $register      The register id.
+     * @param string $schema        The bezwaarTrigger schema id.
+     * @param mixed  $trigger       The raw trigger entity or array.
+     * @param string $today         Today's date as `Y-m-d`.
+     *
+     * @return bool True when a beschikking was archived.
+     */
+    private function processTrigger(
+        object $objectService,
+        string $register,
+        string $schema,
+        mixed $trigger,
+        string $today
+    ): bool {
+        $arr           = $this->toArray(value: $trigger);
+        $archiefDatum  = (string) ($arr['archiefDatum'] ?? '');
+        $bezwaar       = ($arr['bezwaarOntvangen'] ?? false) === true;
+        $beschikkingId = (string) ($arr['beschikkingId'] ?? '');
+
+        if ($beschikkingId === '' || $archiefDatum === '' || $archiefDatum > $today) {
+            return false;
+        }
+
+        if ($bezwaar === true) {
+            $this->deactivateTrigger(objectService: $objectService, register: $register, schema: $schema, trigger: $arr);
+            return false;
+        }
+
+        try {
+            $this->beschikkingService->archive($beschikkingId);
+            $this->deactivateTrigger(objectService: $objectService, register: $register, schema: $schema, trigger: $arr);
+            return true;
+        } catch (\Throwable $e) {
+            $this->logger->error(
+                'BezwaarTermijnJob: archival failed',
+                ['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
+            );
+        }//end try
+
+        return false;
+    }//end processTrigger()
 
     /**
      * Deactivate a trigger so it is not processed again (idempotency).

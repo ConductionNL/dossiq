@@ -37,6 +37,24 @@ final class PlanItemTransitionsTest extends TestCase
 {
 
     /**
+     * The transition table under test.
+     *
+     * @var PlanItemTransitions
+     */
+    private PlanItemTransitions $table;
+
+    /**
+     * Build the (stateless) transition table for each test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->table = new PlanItemTransitions();
+    }//end setUp()
+
+    /**
      * Every legal transition for stage/humanTask succeeds.
      *
      * @return void
@@ -57,11 +75,11 @@ final class PlanItemTransitionsTest extends TestCase
         foreach ([PlanItemTransitions::TYPE_STAGE, PlanItemTransitions::TYPE_HUMAN_TASK] as $type) {
             foreach ($legal as [$from, $to]) {
                 self::assertTrue(
-                    PlanItemTransitions::isLegal(itemType: $type, fromState: $from, toState: $to),
+                    $this->table->isLegal(itemType: $type, fromState: $from, toState: $to),
                     "expected {$type} {$from}->{$to} to be legal",
                 );
                 // Must not throw.
-                PlanItemTransitions::assertLegal(itemId: 'x', itemType: $type, fromState: $from, toState: $to);
+                $this->table->assertLegal(itemId: 'x', itemType: $type, fromState: $from, toState: $to);
             }
         }
 
@@ -75,12 +93,12 @@ final class PlanItemTransitionsTest extends TestCase
      */
     public function testLegalMilestoneTransitionsSucceed(): void
     {
-        PlanItemTransitions::assertLegal(itemId: 'm1', itemType: PlanItemTransitions::TYPE_MILESTONE, fromState: 'available', toState: 'completed');
-        PlanItemTransitions::assertLegal(itemId: 'm1', itemType: PlanItemTransitions::TYPE_MILESTONE, fromState: 'available', toState: 'terminated');
+        $this->table->assertLegal(itemId: 'm1', itemType: PlanItemTransitions::TYPE_MILESTONE, fromState: 'available', toState: 'completed');
+        $this->table->assertLegal(itemId: 'm1', itemType: PlanItemTransitions::TYPE_MILESTONE, fromState: 'available', toState: 'terminated');
 
-        self::assertFalse(PlanItemTransitions::isLegal(itemType: PlanItemTransitions::TYPE_MILESTONE, fromState: 'available', toState: 'enabled'));
-        self::assertFalse(PlanItemTransitions::isLegal(itemType: PlanItemTransitions::TYPE_MILESTONE, fromState: 'available', toState: 'active'));
-        self::assertFalse(PlanItemTransitions::isLegal(itemType: PlanItemTransitions::TYPE_MILESTONE, fromState: 'enabled', toState: 'completed'));
+        self::assertFalse($this->table->isLegal(itemType: PlanItemTransitions::TYPE_MILESTONE, fromState: 'available', toState: 'enabled'));
+        self::assertFalse($this->table->isLegal(itemType: PlanItemTransitions::TYPE_MILESTONE, fromState: 'available', toState: 'active'));
+        self::assertFalse($this->table->isLegal(itemType: PlanItemTransitions::TYPE_MILESTONE, fromState: 'enabled', toState: 'completed'));
     }//end testLegalMilestoneTransitionsSucceed()
 
     /**
@@ -97,7 +115,7 @@ final class PlanItemTransitionsTest extends TestCase
             foreach ($terminals as $from) {
                 foreach ($targets as $to) {
                     self::assertFalse(
-                        PlanItemTransitions::isLegal(itemType: $type, fromState: $from, toState: $to),
+                        $this->table->isLegal(itemType: $type, fromState: $from, toState: $to),
                         "expected {$type} {$from}->{$to} to be illegal (terminal source)",
                     );
                 }
@@ -113,7 +131,7 @@ final class PlanItemTransitionsTest extends TestCase
     public function testSameStateTransitionIsIllegal(): void
     {
         $this->expectException(IllegalPlanItemTransitionException::class);
-        PlanItemTransitions::assertLegal(itemId: 't1', itemType: PlanItemTransitions::TYPE_HUMAN_TASK, fromState: 'enabled', toState: 'enabled');
+        $this->table->assertLegal(itemId: 't1', itemType: PlanItemTransitions::TYPE_HUMAN_TASK, fromState: 'enabled', toState: 'enabled');
     }//end testSameStateTransitionIsIllegal()
 
     /**
@@ -124,7 +142,7 @@ final class PlanItemTransitionsTest extends TestCase
     public function testIllegalTransitionCarriesContext(): void
     {
         try {
-            PlanItemTransitions::assertLegal(itemId: 'task-1', itemType: PlanItemTransitions::TYPE_HUMAN_TASK, fromState: 'completed', toState: 'active');
+            $this->table->assertLegal(itemId: 'task-1', itemType: PlanItemTransitions::TYPE_HUMAN_TASK, fromState: 'completed', toState: 'active');
             self::fail('expected IllegalPlanItemTransitionException');
         } catch (IllegalPlanItemTransitionException $e) {
             self::assertSame('task-1', $e->getItemId());
@@ -141,12 +159,12 @@ final class PlanItemTransitionsTest extends TestCase
      */
     public function testInitialStateAndTerminalHelpers(): void
     {
-        self::assertSame('available', PlanItemTransitions::initialState());
-        self::assertTrue(PlanItemTransitions::isTerminal(state: 'completed'));
-        self::assertTrue(PlanItemTransitions::isTerminal(state: 'terminated'));
-        self::assertTrue(PlanItemTransitions::isTerminal(state: 'disabled'));
-        self::assertFalse(PlanItemTransitions::isTerminal(state: 'available'));
-        self::assertFalse(PlanItemTransitions::isTerminal(state: 'enabled'));
-        self::assertFalse(PlanItemTransitions::isTerminal(state: 'active'));
+        self::assertSame('available', $this->table->initialState());
+        self::assertTrue($this->table->isTerminal(state: 'completed'));
+        self::assertTrue($this->table->isTerminal(state: 'terminated'));
+        self::assertTrue($this->table->isTerminal(state: 'disabled'));
+        self::assertFalse($this->table->isTerminal(state: 'available'));
+        self::assertFalse($this->table->isTerminal(state: 'enabled'));
+        self::assertFalse($this->table->isTerminal(state: 'active'));
     }//end testInitialStateAndTerminalHelpers()
 }//end class

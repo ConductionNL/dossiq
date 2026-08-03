@@ -71,7 +71,7 @@ class MandaatValidationService
     public function validate(string $caseId, string $signingUserId): array
     {
         $endpoint = $this->settingsService->getConfigValue(key: 'mandaatregister_endpoint');
-        if ($endpoint === '' || (str_starts_with($endpoint, 'https://') === false && str_starts_with($endpoint, 'http://') === false)) {
+        if ($this->isEndpointUsable(endpoint: $endpoint) === false) {
             // No register configured: require manual confirmation, do not pass silently.
             return [
                 'valid'                      => false,
@@ -124,6 +124,23 @@ class MandaatValidationService
     }//end validate()
 
     /**
+     * Decide whether the configured mandaatregister endpoint is usable.
+     *
+     * @param string $endpoint The configured endpoint.
+     *
+     * @return bool
+     */
+    private function isEndpointUsable(string $endpoint): bool
+    {
+        if ($endpoint === '') {
+            return false;
+        }
+
+        return str_starts_with($endpoint, 'https://') === true
+            || str_starts_with($endpoint, 'http://') === true;
+    }//end isEndpointUsable()
+
+    /**
      * Build the "unreachable" result that requires manual confirmation.
      *
      * @param string $status The failing status / error code.
@@ -168,24 +185,40 @@ class MandaatValidationService
                 ],
             );
 
-            if (is_array($results) === true && isset($results['results']) === true) {
-                $results = $results['results'];
-            }
-
-            if (is_array($results) === true && count($results) > 0) {
-                $first = $results[0];
-                if (is_object($first) === true && method_exists($first, 'jsonSerialize') === true) {
-                    $first = $first->jsonSerialize();
-                }
-
-                if (is_array($first) === true) {
-                    return (string) ($first['value'] ?? '');
-                }
-            }
+            return $this->extractPropertyValue(results: $results);
         } catch (\Throwable $e) {
             $this->logger->debug('Procest: could not resolve mandaatCategorie', ['exception' => $e->getMessage()]);
         }//end try
 
         return '';
     }//end resolveMandaatCategory()
+
+    /**
+     * Pull the `value` off the first caseProperty row of a search result.
+     *
+     * @param mixed $results The raw findAll() result.
+     *
+     * @return string The property value (empty when unresolvable).
+     */
+    private function extractPropertyValue(mixed $results): string
+    {
+        if (is_array($results) === true && isset($results['results']) === true) {
+            $results = $results['results'];
+        }
+
+        if (is_array($results) === false || count($results) === 0) {
+            return '';
+        }
+
+        $first = $results[0];
+        if (is_object($first) === true && method_exists($first, 'jsonSerialize') === true) {
+            $first = $first->jsonSerialize();
+        }
+
+        if (is_array($first) === true) {
+            return (string) ($first['value'] ?? '');
+        }
+
+        return '';
+    }//end extractPropertyValue()
 }//end class

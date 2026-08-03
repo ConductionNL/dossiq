@@ -80,14 +80,16 @@ class LibresignSigningAdapter implements SigningAdapterInterface
     /**
      * Constructor.
      *
-     * @param LibresignApiClient $apiClient       The thin LibreSign HTTP client.
-     * @param IAppManager        $appManager      Feature-gate: is LibreSign enabled.
-     * @param IAppConfig         $appConfig       App config (poll attempts/interval, service auth).
-     * @param IUserManager       $userManager     Resolves the signer's NC account.
-     * @param IRootFolder        $rootFolder      Reads the LibreSign-produced signed file by id.
-     * @param ZgwDocumentService $documentService The EXISTING binary document storage service.
-     * @param LoggerInterface    $logger          Structured logger.
-     * @param callable|null      $sleeper         Optional injectable `function(int $s): void` (tests pass a no-op).
+     * @param LibresignApiClient    $apiClient       The thin LibreSign HTTP client.
+     * @param IAppManager           $appManager      Feature-gate: is LibreSign enabled.
+     * @param IAppConfig            $appConfig       App config (poll attempts/interval, service auth).
+     * @param IUserManager          $userManager     Resolves the signer's NC account.
+     * @param IRootFolder           $rootFolder      Reads the LibreSign-produced signed file by id.
+     * @param ZgwDocumentService    $documentService The EXISTING binary document storage service.
+     * @param LoggerInterface       $logger          Structured logger.
+     * @param LibresignStatusMapper $statusMapper    Maps LibreSign status values onto the internal vocabulary
+     *                                               (stateless; defaults to a fresh instance).
+     * @param callable|null         $sleeper         Optional injectable `function(int $s): void` (tests pass a no-op).
      */
     public function __construct(
         private readonly LibresignApiClient $apiClient,
@@ -97,6 +99,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface
         private readonly IRootFolder $rootFolder,
         private readonly ZgwDocumentService $documentService,
         private readonly LoggerInterface $logger,
+        private readonly LibresignStatusMapper $statusMapper=new LibresignStatusMapper(),
         ?callable $sleeper=null,
     ) {
         $this->sleeper = ($sleeper ?? static function (int $seconds): void {
@@ -154,7 +157,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface
         for ($attempt = 0; $attempt < $attempts; $attempt++) {
             $status = $this->apiClient->getStatus($uuid);
             $raw    = (string) ($status['statusText'] ?? ($status['status'] ?? ''));
-            $mapped = LibresignStatusMapper::map($raw);
+            $mapped = $this->statusMapper->map($raw);
 
             if ($mapped === LibresignStatusMapper::UNKNOWN) {
                 $this->logger->warning(
@@ -201,7 +204,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface
         try {
             $status = $this->apiClient->getStatus($validatieRapportId);
             $raw    = (string) ($status['statusText'] ?? ($status['status'] ?? ''));
-            $mapped = LibresignStatusMapper::map($raw);
+            $mapped = $this->statusMapper->map($raw);
 
             return [
                 'validatieRapportId' => $validatieRapportId,

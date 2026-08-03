@@ -48,14 +48,14 @@ class BesluitvormingController extends Controller
     /**
      * Constructor.
      *
-     * @param IRequest               $request                The request.
-     * @param TemplateLibraryService $templateLibraryService Template-bundle service.
-     * @param IUserSession           $userSession            User session for guard.
-     * @param LoggerInterface        $logger                 Logger.
+     * @param IRequest               $request         The request.
+     * @param TemplateLibraryService $templateLibrary Template-bundle service.
+     * @param IUserSession           $userSession     User session for guard.
+     * @param LoggerInterface        $logger          Logger.
      */
     public function __construct(
         IRequest $request,
-        private readonly TemplateLibraryService $templateLibraryService,
+        private readonly TemplateLibraryService $templateLibrary,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
@@ -92,7 +92,7 @@ class BesluitvormingController extends Controller
         }
 
         try {
-            $result = $this->templateLibraryService->activateTemplate(templateId: $slug);
+            $result = $this->templateLibrary->activateTemplate(templateId: $slug);
         } catch (Throwable $e) {
             $this->logger->error(
                 'BesluitvormingController::activateTemplate failed: '.$e->getMessage(),

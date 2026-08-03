@@ -97,9 +97,8 @@ class StufMessageParser
             context: ['cross' => $crossRef, 'zaak' => $zaakId]
         );
 
-        if ($zaakId === '') {
-            $zaakIdentificatie = null;
-        } else {
+        $zaakIdentificatie = null;
+        if ($zaakId !== '') {
             $zaakIdentificatie = $zaakId;
         }
 

@@ -122,9 +122,9 @@ class AuditTrailService
 
         $retentionUntil = $this->computeRetentionUntil(completedEntry: $completed);
 
-        $selectielijstCategory = 'Algemene administratieve correspondentie — bewaartermijn 7 jaar';
+        $selectielijst = 'Algemene administratieve correspondentie — bewaartermijn 7 jaar';
         if ($completed !== null) {
-            $selectielijstCategory = 'Bestuurlijke besluitvorming — bewaartermijn 20 jaar';
+            $selectielijst = 'Bestuurlijke besluitvorming — bewaartermijn 20 jaar';
         }
 
         return [
@@ -136,7 +136,7 @@ class AuditTrailService
                 'voorstel'              => $voorstelId,
                 'voorstelOnderwerp'     => $voorstelOnderwerp,
                 'retentionUntil'        => $retentionUntil,
-                'selectielijstCategory' => $selectielijstCategory,
+                'selectielijstCategory' => $selectielijst,
                 'exportedBy'            => $exportedBy,
                 'entryCount'            => count($entries),
             ],

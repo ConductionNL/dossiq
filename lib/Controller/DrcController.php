@@ -835,10 +835,9 @@ class DrcController extends ZgwController
                 'geforceerd-bijwerken'
             );
             if ($hasForceScope === false) {
+                $detail = $this->l10n->t('Lock ID does not match and forced unlocking is not allowed.');
                 if ($lockId === '') {
                     $detail = $this->l10n->t('Forced unlocking is not allowed without the correct scope.');
-                } else {
-                    $detail = $this->l10n->t('Lock ID does not match and forced unlocking is not allowed.');
                 }
 
                 return new JSONResponse(
@@ -1657,10 +1656,9 @@ class DrcController extends ZgwController
                 return $lockError;
             }
 
+            $action = 'update';
             if ($partial === true) {
                 $action = 'partial_update';
-            } else {
-                $action = 'update';
             }
 
             $ruleResult = $this->zgwService->getBusinessRulesService()->validate(
@@ -1833,12 +1831,11 @@ class DrcController extends ZgwController
         if ($providedLockId === '') {
             // PUT (full update): lock is a required field (drc-009d).
             // PATCH (partial): lock is missing for lock enforcement (drc-009e).
+            $errorName = 'nonFieldErrors';
+            $errorCode = 'missing-lock-id';
             if ($partial === false) {
                 $errorName = 'lock';
                 $errorCode = 'required';
-            } else {
-                $errorName = 'nonFieldErrors';
-                $errorCode = 'missing-lock-id';
             }
 
             return new JSONResponse(

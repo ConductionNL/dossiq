@@ -49,7 +49,7 @@ class MandaatControllerTest extends TestCase
      *
      * @var MandaatValidationService|\PHPUnit\Framework\MockObject\MockObject
      */
-    private MandaatValidationService $mandaatValidationService;
+    private MandaatValidationService $mandaatValidator;
 
     /**
      * The mocked user session.
@@ -80,10 +80,10 @@ class MandaatControllerTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->request                  = $this->createMock(IRequest::class);
-        $this->mandaatValidationService = $this->createMock(MandaatValidationService::class);
-        $this->userSession              = $this->createMock(IUserSession::class);
-        $this->logger                   = $this->createMock(LoggerInterface::class);
+        $this->request          = $this->createMock(IRequest::class);
+        $this->mandaatValidator = $this->createMock(MandaatValidationService::class);
+        $this->userSession      = $this->createMock(IUserSession::class);
+        $this->logger           = $this->createMock(LoggerInterface::class);
 
         $user = $this->createMock(IUser::class);
         $this->userSession->method('getUser')->willReturn($user);
@@ -91,7 +91,7 @@ class MandaatControllerTest extends TestCase
         $this->controller = new MandaatController(
             appName: 'procest',
             request: $this->request,
-            mandaatValidationService: $this->mandaatValidationService,
+            mandaatValidator: $this->mandaatValidator,
             userSession: $this->userSession,
             logger: $this->logger,
         );
@@ -111,7 +111,7 @@ class MandaatControllerTest extends TestCase
             ->with('signingUserId', '')
             ->willReturn('user-1');
 
-        $this->mandaatValidationService
+        $this->mandaatValidator
             ->expects($this->once())
             ->method('validate')
             ->willReturn(['valid' => true, 'requiresManualConfirmation' => false, 'message' => 'OK.']);
@@ -157,7 +157,7 @@ class MandaatControllerTest extends TestCase
         $controller = new MandaatController(
             appName: 'procest',
             request: $this->request,
-            mandaatValidationService: $this->mandaatValidationService,
+            mandaatValidator: $this->mandaatValidator,
             userSession: $unauthSession,
             logger: $this->logger,
         );

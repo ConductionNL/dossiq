@@ -370,10 +370,9 @@ class MandaatCheckService
         }
 
         if (count($failed) > 0) {
+            $effectiveReden = self::REDEN_NIET_BEVOEGD;
             if ($reden !== '') {
                 $effectiveReden = $reden;
-            } else {
-                $effectiveReden = self::REDEN_NIET_BEVOEGD;
             }
 
             return ['passed' => false, 'reden' => $effectiveReden, 'failedConditions' => $failed];

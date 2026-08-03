@@ -118,11 +118,11 @@ class TermijnReportingService
             $totaal    = $b['totaal'];
             $binnenPct = round(($b['binnenTermijn'] / $totaal) * 100, 1);
 
+            $avgDur = 0.0;
+
             $aantalDoorlooptijden = count($b['doorlooptijdenDagen']);
             if ($aantalDoorlooptijden > 0) {
                 $avgDur = round(array_sum($b['doorlooptijdenDagen']) / $aantalDoorlooptijden, 1);
-            } else {
-                $avgDur = 0.0;
             }
 
             $perType[$type] = [
@@ -250,17 +250,15 @@ class TermijnReportingService
             }
         }//end foreach
 
+        $withinTermijnPercent = 0.0;
         if ($total > 0) {
             $withinTermijnPercent = round(($within / $total) * 100, 1);
-        } else {
-            $withinTermijnPercent = 0.0;
         }
 
-        $aantalDuraties = count($durations);
+        $aantalDuraties  = count($durations);
+        $avgDurationDays = 0.0;
         if ($aantalDuraties > 0) {
             $avgDurationDays = round(array_sum($durations) / $aantalDuraties, 1);
-        } else {
-            $avgDurationDays = 0.0;
         }
 
         return [

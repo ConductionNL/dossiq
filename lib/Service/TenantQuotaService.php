@@ -205,10 +205,9 @@ class TenantQuotaService
         $hardHit   = $next > $limitInt;
 
         if ($hardHit === false) {
+            $reason = 'within_limit';
             if ($softHit === true) {
                 $reason = 'soft_limit';
-            } else {
-                $reason = 'within_limit';
             }
 
             return ['decision' => self::DECISION_ALLOW, 'soft' => $softHit, 'reason' => $reason];
@@ -327,11 +326,10 @@ class TenantQuotaService
         }
 
         try {
-            $uuid = (string) ($quota['uuid'] ?? $quota['id'] ?? '');
+            $uuid    = (string) ($quota['uuid'] ?? $quota['id'] ?? '');
+            $uuidArg = null;
             if ($uuid !== '') {
                 $uuidArg = $uuid;
-            } else {
-                $uuidArg = null;
             }
 
             $objectService->saveObject(
