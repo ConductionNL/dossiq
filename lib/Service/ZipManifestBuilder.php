@@ -33,6 +33,8 @@ namespace OCA\Procest\Service;
 
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use ZipArchive;
 
 /**
  * Builds a manifest-bearing, type-foldered ZIP export of a dossier.
@@ -142,9 +144,9 @@ class ZipManifestBuilder
         $included       = $this->filterByClearance(user: $user, documents: $documents);
         $excluded       = ($candidateCount - count($included));
 
-        $zip = new \ZipArchive();
-        if ($zip->open($targetPath, (\ZipArchive::CREATE | \ZipArchive::OVERWRITE)) !== true) {
-            throw new \RuntimeException('Could not create ZIP archive at '.$targetPath);
+        $zip = new ZipArchive();
+        if ($zip->open($targetPath, (ZipArchive::CREATE | ZipArchive::OVERWRITE)) !== true) {
+            throw new RuntimeException('Could not create ZIP archive at '.$targetPath);
         }
 
         // Manifest.csv at the archive root.

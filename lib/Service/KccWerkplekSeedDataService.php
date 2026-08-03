@@ -195,12 +195,10 @@ class KccWerkplekSeedDataService
         }
 
         $ids = [];
-        foreach ((array) $rows as $row) {
+        foreach ($rows as $row) {
             $rowId = '';
-            if (is_array($row) === true && isset($row['id']) === true) {
+            if (isset($row['id']) === true) {
                 $rowId = (string) $row['id'];
-            } else if (is_object($row) === true && isset($row->id) === true) {
-                $rowId = (string) $row->id;
             }
 
             if ($rowId !== '') {

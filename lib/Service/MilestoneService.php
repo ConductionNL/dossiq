@@ -27,9 +27,11 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for milestone tracking and progress calculation.
@@ -66,7 +68,7 @@ class MilestoneService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -176,14 +178,14 @@ class MilestoneService
     ): array {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('milestone_record_schema');
 
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Milestone record schema not configured');
+            throw new RuntimeException('Milestone record schema not configured');
         }
 
         $recordData = [
@@ -230,7 +232,7 @@ class MilestoneService
     ): bool {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -333,7 +335,7 @@ class MilestoneService
             filters: ['_limit' => 1000],
         );
 
-        $today   = new \DateTimeImmutable('today');
+        $today   = new DateTimeImmutable('today');
         $stalled = [];
 
         foreach ($cases as $case) {
@@ -454,7 +456,7 @@ class MilestoneService
         }
 
         try {
-            return new \DateTimeImmutable(substr($raw, 0, 10));
+            return new DateTimeImmutable(substr($raw, 0, 10));
         } catch (\Throwable $e) {
             return null;
         }

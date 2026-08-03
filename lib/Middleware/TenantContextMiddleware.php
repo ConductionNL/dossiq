@@ -90,6 +90,10 @@ class TenantContextMiddleware extends Middleware
      * @param string                       $methodName Method name.
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $methodName is fixed by
+     * OCP\AppFramework\Middleware::beforeController(); tenant resolution keys off
+     * the controller class and the request, not the action name.
      */
     public function beforeController($controller, $methodName): void
     {
@@ -137,6 +141,10 @@ class TenantContextMiddleware extends Middleware
      * @return \OCP\AppFramework\Http\Response
      *
      * @throws \Exception
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::afterException(); this hook only
+     * re-throws.
      */
     public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response
     {

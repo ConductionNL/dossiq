@@ -73,8 +73,8 @@ class MandaatEscalatieService
             'decisionType'    => $decisionType,
             'initiatorId'     => $initiatorId,
             'escalatieReden'  => $escalatieReden,
-            'targetMandaatId' => (string) ($path['mandaatId'] ?? ''),
-            'targetUserId'    => (string) ($path['userId'] ?? ''),
+            'targetMandaatId' => $path['mandaatId'],
+            'targetUserId'    => $path['userId'],
             'status'          => 'open',
             'createdAt'       => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
         ];
@@ -128,11 +128,7 @@ class MandaatEscalatieService
         }
 
         $matching = [];
-        foreach ((array) $mandaten as $m) {
-            if (is_array($m) === false) {
-                continue;
-            }
-
+        foreach ($mandaten as $m) {
             $decTypes = (array) (($m['voorwaarden'] ?? [])['decisionTypes'] ?? []);
             if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
                 continue;
@@ -180,11 +176,7 @@ class MandaatEscalatieService
                 }
             );
 
-            foreach ((array) $assigns as $a) {
-                if (is_array($a) === false) {
-                    continue;
-                }
-
+            foreach ($assigns as $a) {
                 $userId = (string) ($a['userId'] ?? '');
                 if ($userId !== '') {
                     return ['mandaatId' => (string) ($m['id'] ?? ''), 'userId' => $userId];
@@ -287,11 +279,7 @@ class MandaatEscalatieService
         }
 
         $count = 0;
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $row['targetUserId'] = $newUserId;
             try {
                 $objectService->saveObject($register, $schema, $row);

@@ -30,8 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -74,6 +76,7 @@ class PublicationService
      *
      * @return array<string, mixed> The publication record + updated case ref.
      *
+     * @throws \InvalidArgumentException When the requested publication channel is not supported.
      * @throws \RuntimeException When OR is unavailable or the case can't be loaded.
      *
      * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-7
@@ -83,12 +86,12 @@ class PublicationService
     {
         $channel = (string) ($payload['channel'] ?? 'website');
         if (in_array($channel, self::CHANNELS, true) === false) {
-            throw new \InvalidArgumentException('Invalid publication channel: '.$channel);
+            throw new InvalidArgumentException('Invalid publication channel: '.$channel);
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -101,11 +104,11 @@ class PublicationService
                 'PublicationService::publish find failed',
                 ['app' => Application::APP_ID, 'caseId' => $caseId, 'error' => $e->getMessage()]
             );
-            throw new \RuntimeException('Case not found: '.$caseId);
+            throw new RuntimeException('Case not found: '.$caseId);
         }
 
         if ($obj === null) {
-            throw new \RuntimeException('Case not found: '.$caseId);
+            throw new RuntimeException('Case not found: '.$caseId);
         }
 
         if (is_array($obj) === true) {

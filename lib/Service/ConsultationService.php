@@ -29,6 +29,7 @@ namespace OCA\Procest\Service;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for consultation (adviesaanvraag) management.
@@ -108,31 +109,31 @@ class ConsultationService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('consultation_schema');
 
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Consultation schema not configured');
+            throw new RuntimeException('Consultation schema not configured');
         }
 
         // Validate required fields.
         if (empty($data['parentZaak']) === true) {
-            throw new \RuntimeException('parentZaak is required');
+            throw new RuntimeException('parentZaak is required');
         }
 
         if (empty($data['adviesInstantie']) === true) {
-            throw new \RuntimeException('adviesInstantie is required');
+            throw new RuntimeException('adviesInstantie is required');
         }
 
         if (empty($data['vraagstelling']) === true) {
-            throw new \RuntimeException('vraagstelling is required');
+            throw new RuntimeException('vraagstelling is required');
         }
 
         if (empty($data['uiterlijkeReactiedatum']) === true) {
-            throw new \RuntimeException('uiterlijkeReactiedatum is required');
+            throw new RuntimeException('uiterlijkeReactiedatum is required');
         }
 
         // Generate unique consultation number.
@@ -164,9 +165,9 @@ class ConsultationService
                 subjectId: (string) $consultationId,
                 payload: [
                     'subjectRegister'   => $register,
-                    'externalReference' => (string) ($data['parentZaak'] ?? ''),
-                    'subjectLabel'      => (string) ($data['consultationNumber'] ?? 'Consultatie'),
-                    'question'          => (string) ($data['vraagstelling'] ?? ''),
+                    'externalReference' => (string) $data['parentZaak'],
+                    'subjectLabel'      => (string) $data['consultationNumber'],
+                    'question'          => (string) $data['vraagstelling'],
                 ],
             );
 
@@ -184,7 +185,7 @@ class ConsultationService
                 ['app' => Application::APP_ID],
             );
             // REQ-PDRD-002: fail closed; surface the error.
-            throw new \RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
+            throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
         }//end try
 
         $this->logger->info(
@@ -278,12 +279,12 @@ class ConsultationService
     public function updateStatus(string $consultationId, string $newStatus): array
     {
         if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
-            throw new \RuntimeException('Invalid status: '.$newStatus);
+            throw new RuntimeException('Invalid status: '.$newStatus);
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -323,12 +324,12 @@ class ConsultationService
     {
         $advies = $response['advies'] ?? '';
         if (in_array($advies, self::VALID_RESPONSES, true) === false) {
-            throw new \RuntimeException('Invalid advice type: '.$advies);
+            throw new RuntimeException('Invalid advice type: '.$advies);
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -374,14 +375,14 @@ class ConsultationService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('consultation_schema');
 
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Consultation schema not configured');
+            throw new RuntimeException('Consultation schema not configured');
         }
 
         $objectService->deleteObject(uuid: (string) $consultationId, register: $register, schema: $schema);
@@ -531,7 +532,7 @@ class ConsultationService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -572,12 +573,12 @@ class ConsultationService
     public function approveExtension(string $consultationId, string $newDeadline): array
     {
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $newDeadline) !== 1) {
-            throw new \RuntimeException('Invalid date format; expected Y-m-d');
+            throw new RuntimeException('Invalid date format; expected Y-m-d');
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');

@@ -2526,13 +2526,13 @@ class ZrcController extends ZgwController
     private function buildRelevanteAndereZaken(array $zaakData): array
     {
         $uuid = (string) ($zaakData['uuid'] ?? ($zaakData['identificatie'] ?? ''));
-        if ($uuid !== '' && preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $uuid, $m) === 1) {
-            $uuid = $m[1];
+        if ($uuid !== '' && preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $uuid, $matches) === 1) {
+            $uuid = $matches[1];
         } else {
             // Fall back to extracting the UUID from the self URL.
             $selfUrl = (string) ($zaakData['url'] ?? '');
-            if (preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $selfUrl, $m2) === 1) {
-                $uuid = $m2[1];
+            if (preg_match('/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i', $selfUrl, $urlMatches) === 1) {
+                $uuid = $urlMatches[1];
             }
         }
 
@@ -2645,8 +2645,8 @@ class ZrcController extends ZgwController
 
             // Resolve the URL to a local case UUID.
             $targetUuid = '';
-            if (preg_match($uuidPattern, $url, $m) === 1) {
-                $targetUuid = $m[1];
+            if (preg_match($uuidPattern, $url, $matches) === 1) {
+                $targetUuid = $matches[1];
             }
 
             $result = null;

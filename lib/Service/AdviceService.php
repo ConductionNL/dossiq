@@ -686,7 +686,7 @@ class AdviceService
                     'externalReference' => $caseId,
                     'subjectLabel'      => (string) ($data['vraag'] ?? 'Adviesaanvraag'),
                     'question'          => (string) ($data['vraag'] ?? ''),
-                    'adviseur'          => (string) ($payload['adviseur'] ?? ''),
+                    'adviseur'          => (string) $payload['adviseur'],
                 ],
             );
 

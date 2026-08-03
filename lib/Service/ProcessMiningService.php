@@ -43,7 +43,6 @@ namespace OCA\Procest\Service;
 use DateInterval;
 use DateTimeImmutable;
 use OCA\Procest\Service\Support\SearchesObjects;
-use Psr\Log\LoggerInterface;
 
 /**
  * Computes process-mining bottleneck metrics from recorded status history.
@@ -57,11 +56,9 @@ class ProcessMiningService
      * Constructor.
      *
      * @param SettingsService $settingsService Shared settings/OR resolver.
-     * @param LoggerInterface $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
 
@@ -77,23 +74,21 @@ class ProcessMiningService
      */
     public function getReport(array $params): array
     {
-        $to = $this->parseDate(value: ($params['to'] ?? null), fallback: new DateTimeImmutable('today'));
+        $to   = $this->parseDate(value: ($params['to'] ?? null), fallback: new DateTimeImmutable('today'));
+        $from = $to->sub(new DateInterval('P12M'));
         if (isset($params['from']) === true && is_string($params['from']) === true && $params['from'] !== '') {
             $from = $this->parseDate(value: $params['from'], fallback: $to->sub(new DateInterval('P12M')));
-        } else {
-            $from = $to->sub(new DateInterval('P12M'));
         }
 
+        $caseTypeFilter = null;
         if (isset($params['caseType']) === true && is_string($params['caseType']) === true && $params['caseType'] !== '') {
             $caseTypeFilter = $params['caseType'];
-        } else {
-            $caseTypeFilter = null;
         }
 
-        $cases      = $this->loadCases(caseTypeFilter: $caseTypeFilter);
-        $caseTypes  = $this->loadCaseTypes();
+        $cases       = $this->loadCases(caseTypeFilter: $caseTypeFilter);
+        $caseTypes   = $this->loadCaseTypes();
         $statusTypes = $this->loadStatusTypes();
-        $records    = $this->loadStatusRecords();
+        $records     = $this->loadStatusRecords();
 
         $casesById = [];
         foreach ($cases as $caseData) {
@@ -130,14 +125,14 @@ class ProcessMiningService
             $transitions = $this->computeTransitionMatrix(recordsByCase: $recordsForThisGroup, statusTypeIndex: $statusTypeIndex);
 
             $caseTypeReports[] = [
-                'id'                => $caseTypeId,
-                'title'             => $group['title'],
-                'caseVolume'        => count($group['cases']),
-                'dwellTime'         => $dwellStats,
-                'bottlenecks'       => $bottlenecks,
-                'transitionMatrix'  => $transitions['matrix'],
-                'reworkPercent'     => $transitions['reworkPercent'],
-                'transitionCount'   => $transitions['totalCount'],
+                'id'               => $caseTypeId,
+                'title'            => $group['title'],
+                'caseVolume'       => count($group['cases']),
+                'dwellTime'        => $dwellStats,
+                'bottlenecks'      => $bottlenecks,
+                'transitionMatrix' => $transitions['matrix'],
+                'reworkPercent'    => $transitions['reworkPercent'],
+                'transitionCount'  => $transitions['totalCount'],
             ];
         }//end foreach
 
@@ -169,10 +164,10 @@ class ProcessMiningService
      *    are returned — the exit boundary may fall outside the window.
      *
      * @param array<string, array<int, array<string, mixed>>> $recordsByCase Chronologically sorted statusRecords, keyed by case id.
-     * @param array<string, array<string, mixed>>              $casesById     Case rows, keyed by id.
-     * @param DateTimeImmutable                                $now           "Now", for open cases' current status.
-     * @param DateTimeImmutable                                $periodFrom    Inclusive period start.
-     * @param DateTimeImmutable                                $periodTo      Inclusive period end.
+     * @param array<string, array<string, mixed>>             $casesById     Case rows, keyed by id.
+     * @param DateTimeImmutable                               $now           "Now", for open cases' current status.
+     * @param DateTimeImmutable                               $periodFrom    Inclusive period start.
+     * @param DateTimeImmutable                               $periodTo      Inclusive period end.
      *
      * @return array<int, array{caseId: string, statusId: string, hours: float}>
      *
@@ -195,9 +190,9 @@ class ProcessMiningService
                 continue;
             }
 
-            $case      = ($casesById[$caseId] ?? []);
-            $endDate   = ($case['endDate'] ?? null);
-            $closedAt  = null;
+            $case     = ($casesById[$caseId] ?? []);
+            $endDate  = ($case['endDate'] ?? null);
+            $closedAt = null;
             if (is_string($endDate) === true && $endDate !== '') {
                 $closedAt = $this->parseDate(value: $endDate, fallback: $now);
             }
@@ -217,10 +212,9 @@ class ProcessMiningService
                     continue;
                 }
 
+                $exitedAt = ($closedAt ?? $now);
                 if (($i + 1) < $count) {
                     $exitedAt = $this->extractTimestamp(record: $records[$i + 1]);
-                } else {
-                    $exitedAt = ($closedAt ?? $now);
                 }
 
                 if ($exitedAt === null) {
@@ -285,7 +279,12 @@ class ProcessMiningService
      * Rank statuses by bottleneck severity: median dwell time x visit volume.
      * Highest score first.
      *
-     * @param array<int, array{statusId: string, statusName: string, visitCount: int, medianHours: float, p90Hours: float, meanHours: float}> $dwellStats Per-status dwell stats.
+     * Each `$dwellStats` row is the shape {@see self::aggregateDwellStats()}
+     * returns: statusId, statusName, visitCount, medianHours, p90Hours,
+     * meanHours. Spelled as a loose shape here only to keep the tag on one
+     * line — PHPCS's PEAR sniff cannot parse a wrapped `@param`.
+     *
+     * @param array<int, array<string, mixed>> $dwellStats Per-status dwell stats.
      *
      * @return array<int, array{statusId: string, statusName: string, visitCount: int, medianHours: float, score: float}>
      *
@@ -318,9 +317,10 @@ class ProcessMiningService
      * earlier in its own history.
      *
      * @param array<string, array<int, array<string, mixed>>> $recordsByCase   Chronologically sorted statusRecords, keyed by case id.
-     * @param array<string, array<string, mixed>>              $statusTypeIndex StatusType rows, keyed by id.
+     * @param array<string, array<string, mixed>>             $statusTypeIndex StatusType rows, keyed by id.
      *
-     * @return array{matrix: array<int, array{from: string, fromName: string, to: string, toName: string, count: int, reworkCount: int}>, reworkPercent: float, totalCount: int}
+     * @return array{matrix: array<int, array{from: string, fromName: string, to: string,
+     *                toName: string, count: int, reworkCount: int}>, reworkPercent: float, totalCount: int}
      *
      * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T01
      */
@@ -369,9 +369,8 @@ class ProcessMiningService
             static fn (array $left, array $right): int => ($right['count'] <=> $left['count'])
         );
 
-        if ($totalCount === 0) {
-            $reworkPercent = 0.0;
-        } else {
+        $reworkPercent = 0.0;
+        if ($totalCount !== 0) {
             $reworkPercent = round((($reworkSum / $totalCount) * 100), 1);
         }
 
@@ -414,13 +413,13 @@ class ProcessMiningService
                 continue;
             }
 
-            $isRework = isset($visited[$to]);
+            $isRework      = isset($visited[$to]);
             $transitions[] = [
                 'from'     => $from,
                 'to'       => $to,
                 'isRework' => $isRework,
             ];
-            $visited[$to] = true;
+            $visited[$to]  = true;
         }
 
         return $transitions;
@@ -431,8 +430,8 @@ class ProcessMiningService
      * within `[from, to]`.
      *
      * @param array<string, array<string, mixed>> $cases Case rows, keyed by id.
-     * @param DateTimeImmutable                    $from  Inclusive period start.
-     * @param DateTimeImmutable                    $to    Inclusive period end.
+     * @param DateTimeImmutable                   $from  Inclusive period start.
+     * @param DateTimeImmutable                   $to    Inclusive period end.
      *
      * @return array<int, array{week: string, count: int}>
      *
@@ -447,7 +446,7 @@ class ProcessMiningService
         $end    = $to;
         while ($cursor <= $end) {
             $buckets[$cursor->format('o-\WW')] = 0;
-            $cursor                            = $cursor->modify('+1 week');
+            $cursor = $cursor->modify('+1 week');
         }
 
         foreach ($cases as $caseData) {
@@ -518,7 +517,7 @@ class ProcessMiningService
      * restricted to the given set of case ids.
      *
      * @param array<int, array<string, mixed>> $records Raw statusRecord rows.
-     * @param array<int, string>                $caseIds Case ids in scope.
+     * @param array<int, string>               $caseIds Case ids in scope.
      *
      * @return array<string, array<int, array<string, mixed>>>
      */
@@ -575,7 +574,7 @@ class ProcessMiningService
     /**
      * Resolve a statusType id to its human-readable label.
      *
-     * @param string                               $statusId        StatusType UUID.
+     * @param string                              $statusId        StatusType UUID.
      * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
      *
      * @return string
@@ -646,7 +645,7 @@ class ProcessMiningService
      * Percentile of a pre-sorted numeric list (nearest-rank method).
      *
      * @param array<int, float> $sorted     Ascending-sorted values.
-     * @param float              $percentile Percentile in [0, 100].
+     * @param float             $percentile Percentile in [0, 100].
      *
      * @return float
      */
@@ -670,7 +669,7 @@ class ProcessMiningService
     /**
      * Parse a date/datetime string; return `$fallback` on empty/invalid input.
      *
-     * @param mixed                   $value    Raw date value.
+     * @param mixed                  $value    Raw date value.
      * @param DateTimeImmutable|null $fallback Value to return when parsing fails.
      *
      * @return DateTimeImmutable|null

@@ -34,6 +34,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -95,12 +96,12 @@ class TranscriptionService
     public function queue(array $evidence): array
     {
         if (($evidence['type'] ?? null) !== 'voice_memo') {
-            throw new \InvalidArgumentException('Only voice_memo evidence can be queued for transcription');
+            throw new InvalidArgumentException('Only voice_memo evidence can be queued for transcription');
         }
 
         $durationSec = (int) ($evidence['durationSeconds'] ?? 0);
         if ($durationSec > self::MAX_DURATION_SECONDS) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf(
                     'Voice memo too long: %ds > max %ds',
                     $durationSec,

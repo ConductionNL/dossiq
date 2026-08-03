@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
 use OCA\Procest\AppInfo\Application;
 use OCP\Notification\IManager;
 use Psr\Log\LoggerInterface;
@@ -68,7 +69,7 @@ class ParaferingNotificationService
             $notification = $this->notificationManager->createNotification();
             $notification->setApp(Application::APP_ID)
                 ->setUser($actorUserId)
-                ->setDateTime(new \DateTime())
+                ->setDateTime(new DateTime())
                 ->setObject('voorstel', $voorstelId)
                 ->setSubject(
                         'parafering_step_activated',
@@ -115,7 +116,7 @@ class ParaferingNotificationService
             $notification = $this->notificationManager->createNotification();
             $notification->setApp(Application::APP_ID)
                 ->setUser($stellerUserId)
-                ->setDateTime(new \DateTime())
+                ->setDateTime(new DateTime())
                 ->setObject('voorstel', $voorstelId)
                 ->setSubject(
                         'voorstel_returned',
@@ -161,7 +162,7 @@ class ParaferingNotificationService
             $notification = $this->notificationManager->createNotification();
             $notification->setApp(Application::APP_ID)
                 ->setUser($actorUserId)
-                ->setDateTime(new \DateTime())
+                ->setDateTime(new DateTime())
                 ->setObject('voorstel', $voorstelId)
                 ->setSubject(
                         'parafering_reminder',

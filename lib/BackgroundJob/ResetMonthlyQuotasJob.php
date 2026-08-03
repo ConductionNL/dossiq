@@ -70,16 +70,24 @@ class ResetMonthlyQuotasJob extends TimedJob
      * @param mixed $argument Job argument (unused).
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $argument is fixed by
+     * OCP\BackgroundJob\TimedJob::run(); this job takes no arguments.
+     *
+     * @spec exclude phpstan dead-code cleanup only — normalised the IAppManager return and
+     *       dropped the resulting always-false `is_array()` guard; no behavioural change.
      */
     protected function run($argument): void
     {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+        // IAppManager::getInstalledApps() declares its array return in PHPDoc
+        // only, so normalise defensively before the membership test.
+        $installed = (array) $this->appManager->getInstalledApps();
+        if (in_array('openregister', $installed, true) === false) {
             return;
         }
 
         try {
-            $os = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+            $objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
         } catch (Throwable $e) {
             $this->logger->info('Procest: ResetMonthlyQuotasJob — OR ObjectService unavailable');
             return;
@@ -91,7 +99,7 @@ class ResetMonthlyQuotasJob extends TimedJob
             // "Unknown named parameter $register" and was swallowed by the catch
             // below, so this job never reset a single quota. Register/schema are
             // read from inside `filters`; limit/offset are top-level config keys.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register' => TenantSaasService::REGISTER,

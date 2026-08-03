@@ -53,7 +53,7 @@ class DwangsomUitbetalingServiceTest extends TestCase
             },
         );
 
-        $this->service = new DwangsomUitbetalingService($settings, $this->createMock(LoggerInterface::class));
+        $this->service = new DwangsomUitbetalingService($settings);
 
         // Seed a stopped berekening.
         $this->objects->saveObject('procest', 'dwangsomBerekening', [

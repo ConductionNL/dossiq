@@ -159,7 +159,7 @@ class MandaatImportService
             $changed       = false;
             $changedFields = [];
             foreach (['omschrijving', 'gemandateerdeRol', 'wettelijkeGrondslag'] as $f) {
-                if ((string) ($existing[$f] ?? '') !== (string) ($payload[$f] ?? '')) {
+                if ((string) ($existing[$f] ?? '') !== (string) $payload[$f]) {
                     $changed         = true;
                     $changedFields[] = $f;
                 }
@@ -248,11 +248,7 @@ class MandaatImportService
             $mandaten = [];
         }
 
-        foreach ((array) $mandaten as $m) {
-            if (is_array($m) === false) {
-                continue;
-            }
-
+        foreach ($mandaten as $m) {
             $m['status'] = 'active';
             if (isset($m['validFrom']) === false || $m['validFrom'] === '') {
                 $m['validFrom'] = $now;
@@ -286,11 +282,7 @@ class MandaatImportService
             return [];
         }
 
-        $header = str_getcsv($lines[0]);
-        if (is_array($header) === false) {
-            return [];
-        }
-
+        $header  = str_getcsv($lines[0]);
         $missing = array_diff(self::REQUIRED_COLUMNS, $header);
         if (count($missing) > 0) {
             throw new RuntimeException('Missing required CSV columns: '.implode(', ', $missing));
@@ -304,10 +296,6 @@ class MandaatImportService
             }
 
             $values = str_getcsv($line);
-            if (is_array($values) === false) {
-                continue;
-            }
-
             $rows[] = array_combine($header, array_pad($values, count($header), ''));
         }
 
@@ -335,11 +323,7 @@ class MandaatImportService
         }
 
         $out = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $rolNaam = (string) ($row['rolNaam'] ?? '');
             if ($rolNaam !== '') {
                 $out[$rolNaam] = (string) ($row['id'] ?? '');
@@ -377,11 +361,7 @@ class MandaatImportService
             return null;
         }
 
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             if ($excludeId !== null && (string) ($row['id'] ?? '') === $excludeId) {
                 continue;
             }

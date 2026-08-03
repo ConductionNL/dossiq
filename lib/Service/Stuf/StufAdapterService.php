@@ -55,16 +55,15 @@ class StufAdapterService
     /**
      * Constructor.
      *
-     * @param StufMessageBuilder      $builder        The envelope builder (inbound + outbound).
-     * @param StufHttpClient          $httpClient     The HTTP transport.
-     * @param StufMessageHandler      $messageHandler The audit log handler.
-     * @param StufMessageParser       $parser         The response parser.
-     * @param CircuitBreakerService   $circuitBreaker The circuit breaker.
-     * @param ContactBetrokkeneMapper $contactMapper  The contact mapper.
-     * @param StufRegisterAccess      $register       The register access helper.
-     * @param NeedsInputDispatcher    $needsInput     The needs-input dispatcher.
-     * @param IJobList                $jobList        The background job list (for retry scheduling).
-     * @param LoggerInterface         $logger         The logger.
+     * @param StufMessageBuilder    $builder        The envelope builder (inbound + outbound).
+     * @param StufHttpClient        $httpClient     The HTTP transport.
+     * @param StufMessageHandler    $messageHandler The audit log handler.
+     * @param StufMessageParser     $parser         The response parser.
+     * @param CircuitBreakerService $circuitBreaker The circuit breaker.
+     * @param StufRegisterAccess    $register       The register access helper.
+     * @param NeedsInputDispatcher  $needsInput     The needs-input dispatcher.
+     * @param IJobList              $jobList        The background job list (for retry scheduling).
+     * @param LoggerInterface       $logger         The logger.
      */
     public function __construct(
         private StufMessageBuilder $builder,
@@ -72,7 +71,6 @@ class StufAdapterService
         private StufMessageHandler $messageHandler,
         private StufMessageParser $parser,
         private CircuitBreakerService $circuitBreaker,
-        private ContactBetrokkeneMapper $contactMapper,
         private StufRegisterAccess $register,
         private NeedsInputDispatcher $needsInput,
         private IJobList $jobList,
@@ -147,7 +145,7 @@ class StufAdapterService
         return [
             'success'           => $result['success'],
             'referentienummer'  => $referentienummer,
-            'stufMessageId'     => (string) ($result['messageId'] ?? ($msg['id'] ?? '')),
+            'stufMessageId'     => $result['messageId'],
             'zaakIdentificatie' => $zaakIdentificatie,
             'mappingId'         => ($mapping['id'] ?? null),
             'fout'              => ($result['fout'] ?? null),
@@ -220,8 +218,8 @@ class StufAdapterService
         return [
             'success'          => $result['success'],
             'referentienummer' => $referentienummer,
-            'stufMessageId'    => (string) ($result['messageId'] ?? ($msg['id'] ?? '')),
-            'fout'             => ($result['fout'] ?? null),
+            'stufMessageId'    => $result['messageId'],
+            'fout'             => $result['fout'],
         ];
     }//end actualiseerZaak()
 
@@ -266,7 +264,7 @@ class StufAdapterService
             $this->messageHandler->transitionStatus(
                 msg: $msg,
                 newStatus: 'fout',
-                extras: ['fout' => $response['fout'], 'duurMs' => ($response['durationMs'] ?? 0)]
+                extras: ['fout' => $response['fout'], 'duurMs' => $response['durationMs']]
             );
             $this->needsInput->dispatch(
                 type: 'stuf_timeout',
@@ -284,10 +282,10 @@ class StufAdapterService
             msg: $msg,
             newStatus: $detailStatus,
             extras: [
-                'httpStatus'          => ($response['httpStatus'] ?? 0),
-                'duurMs'              => ($response['durationMs'] ?? 0),
-                'responseEnvelopeXml' => ($response['responseXml'] ?? ''),
-                'fout'                => ($response['fout'] ?? null),
+                'httpStatus'          => $response['httpStatus'],
+                'duurMs'              => $response['durationMs'],
+                'responseEnvelopeXml' => $response['responseXml'],
+                'fout'                => $response['fout'],
             ]
         );
 
@@ -295,7 +293,7 @@ class StufAdapterService
             return null;
         }
 
-        return $this->parser->parseZaakDetails(responseXml: (string) ($response['responseXml'] ?? ''));
+        return $this->parser->parseZaakDetails(responseXml: $response['responseXml']);
     }//end geefZaakDetails()
 
     /**
@@ -345,8 +343,8 @@ class StufAdapterService
         return [
             'success'          => $result['success'],
             'referentienummer' => $referentienummer,
-            'stufMessageId'    => (string) ($result['messageId'] ?? ($msg['id'] ?? '')),
-            'fout'             => ($result['fout'] ?? null),
+            'stufMessageId'    => $result['messageId'],
+            'fout'             => $result['fout'],
         ];
     }//end vrijBericht()
 
@@ -378,7 +376,7 @@ class StufAdapterService
             timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
         );
 
-        $bv = $this->parser->parseBevestiging(responseXml: (string) ($response['responseXml'] ?? ''));
+        $bevestiging = $this->parser->parseBevestiging(responseXml: $response['responseXml']);
 
         $vrijStatus = 'fout';
         if ($response['httpStatus'] >= 200 && $response['httpStatus'] < 300) {
@@ -389,14 +387,14 @@ class StufAdapterService
             msg: $msg,
             newStatus: $vrijStatus,
             extras: [
-                'httpStatus'          => ($response['httpStatus'] ?? 0),
-                'duurMs'              => ($response['durationMs'] ?? 0),
-                'responseEnvelopeXml' => ($response['responseXml'] ?? ''),
-                'zaakIdentificatie'   => ($bv['zaakIdentificatie'] ?? ''),
+                'httpStatus'          => $response['httpStatus'],
+                'duurMs'              => $response['durationMs'],
+                'responseEnvelopeXml' => $response['responseXml'],
+                'zaakIdentificatie'   => ($bevestiging['zaakIdentificatie'] ?? ''),
             ]
         );
 
-        return (string) ($bv['zaakIdentificatie'] ?? '');
+        return (string) ($bevestiging['zaakIdentificatie'] ?? '');
     }//end genereerZaakIdentificatie()
 
     /**
@@ -496,14 +494,14 @@ class StufAdapterService
         $transport  = ($response['fout'] ?? null);
 
         if ($httpStatus >= 200 && $httpStatus < 300) {
-            $bv     = $this->parser->parseBevestiging(responseXml: $body);
-            $extras = [
+            $bevestiging = $this->parser->parseBevestiging(responseXml: $body);
+            $extras      = [
                 'httpStatus'          => $httpStatus,
                 'duurMs'              => $duration,
                 'responseEnvelopeXml' => $body,
             ];
-            if (($bv['zaakIdentificatie'] ?? null) !== null) {
-                $extras['zaakIdentificatie'] = $bv['zaakIdentificatie'];
+            if (($bevestiging['zaakIdentificatie'] ?? null) !== null) {
+                $extras['zaakIdentificatie'] = $bevestiging['zaakIdentificatie'];
             }
 
             $this->messageHandler->transitionStatus(msg: $message, newStatus: 'bevestigd', extras: $extras);
@@ -511,7 +509,7 @@ class StufAdapterService
             return [
                 'success'           => true,
                 'messageId'         => $messageId,
-                'zaakIdentificatie' => ($bv['zaakIdentificatie'] ?? null),
+                'zaakIdentificatie' => ($bevestiging['zaakIdentificatie'] ?? null),
                 'fout'              => null,
             ];
         }
@@ -520,10 +518,10 @@ class StufAdapterService
         if ($fout === null && $body !== '') {
             $parsed = $this->parser->parseError(responseXml: $body);
             $fout   = [
-                'code'         => ($parsed['code'] ?? ''),
-                'omschrijving' => ($parsed['omschrijving'] ?? ''),
-                'details'      => ($parsed['details'] ?? ''),
-                'soort'        => ($parsed['soort'] ?? 'permanent'),
+                'code'         => $parsed['code'],
+                'omschrijving' => $parsed['omschrijving'],
+                'details'      => $parsed['details'],
+                'soort'        => $parsed['soort'],
             ];
         }
 
@@ -665,6 +663,9 @@ class StufAdapterService
      * @param string $envelope The envelope XML.
      *
      * @return string The referentienummer (empty if not present).
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function extractReferentienummer(string $envelope): string
     {

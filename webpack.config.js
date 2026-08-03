@@ -150,8 +150,14 @@ webpackConfig.plugins = [
 ]
 
 // Force @nextcloud/dialogs to resolve from this app's node_modules,
-// preventing the nextcloud-vue submodule's nested deps (Vue 3) from leaking in.
-webpackConfig.resolve.alias['@nextcloud/dialogs'] = path.resolve(__dirname, 'node_modules/@nextcloud/dialogs')
+// preventing the nextcloud-vue submodule's nested deps from leaking in.
+//
+// v7 IS ESM-ONLY: its exports map declares only '.' -> ./dist/index.mjs with no
+// `main`/`module` fallback, so a DIRECTORY alias no longer resolves (webpack
+// applies an exports map to a PACKAGE REQUEST, never to an absolutised path —
+// the aliased directory has nothing to resolve against). Use an exact-match `$`
+// alias onto the explicit entry FILE, exactly as `@nextcloud/vue$` does.
+webpackConfig.resolve.alias['@nextcloud/dialogs$'] = path.resolve(__dirname, 'node_modules/@nextcloud/dialogs/dist/index.mjs')
 
 // @nextcloud/axios is pinned to ~2.5.2 (via package.json overrides) which still
 // declares both `import` and `require` exports conditions, so the package can

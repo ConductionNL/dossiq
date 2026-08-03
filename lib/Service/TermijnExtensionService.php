@@ -31,7 +31,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
-use Psr\Log\LoggerInterface;
+use ReflectionClass;
 use RuntimeException;
 
 /**
@@ -42,12 +42,10 @@ class TermijnExtensionService
     /**
      * Constructor.
      *
-     * @param TermijnService  $termijnService TermijnService.
-     * @param LoggerInterface $logger         Logger.
+     * @param TermijnService $termijnService TermijnService.
      */
     public function __construct(
         private readonly TermijnService $termijnService,
-        private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
 
@@ -162,7 +160,7 @@ class TermijnExtensionService
         // is the data we actually need.
         $svcDef = null;
         try {
-            $reflection = new \ReflectionClass($this->termijnService);
+            $reflection = new ReflectionClass($this->termijnService);
             if ($reflection->hasProperty('definitieCache') === true) {
                 $prop  = $reflection->getProperty('definitieCache');
                 $cache = $prop->getValue($this->termijnService);

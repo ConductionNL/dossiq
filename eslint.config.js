@@ -33,6 +33,15 @@ module.exports = defineConfig([{
 		'jsdoc/check-tag-names': ['warn', { definedTags: ['spec'] }],
 		'jsdoc/require-jsdoc': 'off',
 		'vue/first-attribute-linebreak': 'off',
+		// Vue 3 (ADR-066): the shared @nextcloud eslint preset is still
+		// Vue-2-oriented and enables `vue/no-v-model-argument`, which forbids
+		// `v-model:<arg>`. Under Vue 3 an argument is the ONLY way to bind a
+		// non-default model — `@nextcloud/vue` v9's NcDialog declares its model
+		// as `defineModel('open')` (emits `update:open`), so `v-model:open` is
+		// the required syntax, not a violation. The Vue-2 rule is therefore
+		// incorrect for this app and is disabled. Mirrors decidesk's
+		// `vue/no-v-for-template-key` exemption.
+		'vue/no-v-model-argument': 'off',
 		'vue/enforce-style-attribute': ['error', { allow: ['scoped'] }],
 		'@typescript-eslint/no-explicit-any': 'off',
 		'n/no-missing-import': 'off',

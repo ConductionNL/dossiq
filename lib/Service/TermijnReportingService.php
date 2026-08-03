@@ -36,7 +36,6 @@ namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
 use OCA\Procest\Service\Support\SearchesObjects;
-use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
@@ -50,11 +49,9 @@ class TermijnReportingService
      * Constructor.
      *
      * @param SettingsService $settingsService Settings.
-     * @param LoggerInterface $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
 
@@ -116,12 +113,10 @@ class TermijnReportingService
         // Reduce per-type aggregates.
         $perType = [];
         foreach ($byType as $type => $b) {
-            $totaal = $b['totaal'];
-            if ($totaal > 0) {
-                $binnenPct = round(($b['binnenTermijn'] / $totaal) * 100, 1);
-            } else {
-                $binnenPct = 0.0;
-            }
+            // $byType entries are only created when a row is counted, so
+            // 'totaal' is always >= 1 here.
+            $totaal    = $b['totaal'];
+            $binnenPct = round(($b['binnenTermijn'] / $totaal) * 100, 1);
 
             $aantalDoorlooptijden = count($b['doorlooptijdenDagen']);
             if ($aantalDoorlooptijden > 0) {
@@ -183,11 +178,7 @@ class TermijnReportingService
         $totaal     = 0;
         $warnings   = [];
 
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $betaal = (string) ($row['werkelijkeBetaaldatum'] ?? '');
             if (str_starts_with($betaal, $jaarPrefix) === false) {
                 continue;
@@ -330,12 +321,12 @@ class TermijnReportingService
      */
     private function resolveQuarter(string $periode): array
     {
-        if (preg_match('/^(\d{4})-Q([1-4])$/', $periode, $m) !== 1) {
+        if (preg_match('/^(\d{4})-Q([1-4])$/', $periode, $matches) !== 1) {
             throw new RuntimeException('Invalid periode (expected YYYY-Qn): '.$periode);
         }
 
-        $year    = (int) $m[1];
-        $quarter = (int) $m[2];
+        $year    = (int) $matches[1];
+        $quarter = (int) $matches[2];
         $startM  = (($quarter - 1) * 3) + 1;
         $endM    = $startM + 2;
         $from    = sprintf('%04d-%02d-01', $year, $startM);
@@ -368,11 +359,7 @@ class TermijnReportingService
         }
 
         $out = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $start = substr((string) ($row['startDatum'] ?? ''), 0, 10);
             if ($start === '' || ($start >= $from && $start <= $until) === false) {
                 continue;

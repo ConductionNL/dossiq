@@ -24,6 +24,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use Exception;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\EventDispatcher\GenericEvent;
@@ -32,6 +33,7 @@ use OCP\IAppConfig;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for samenwerkverzoek lifecycle management.
@@ -105,7 +107,7 @@ class SamenwerkverzoekService
         );
 
         if ($zaak === null) {
-            throw new \RuntimeException('Zaak not found: '.$zaakId);
+            throw new RuntimeException('Zaak not found: '.$zaakId);
         }
 
         $vergunningaanvraagRef = (string) ($zaak['vergunningaanvraagRef'] ?? '');
@@ -195,12 +197,12 @@ class SamenwerkverzoekService
         );
 
         if ($verzoek === null) {
-            throw new \RuntimeException('Samenwerkverzoek not found: '.$samenwerkId);
+            throw new RuntimeException('Samenwerkverzoek not found: '.$samenwerkId);
         }
 
         $currentStatus = (string) ($verzoek['status'] ?? '');
         if ($currentStatus !== 'aangevraagd') {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Samenwerkverzoek is not in aangevraagd status; current status: '.$currentStatus
             );
         }
@@ -263,7 +265,7 @@ class SamenwerkverzoekService
             );
         }
 
-        throw new \Exception('Not authorized');
+        throw new Exception('Not authorized');
     }//end authorizeSamenwerkMutation()
 
     /**
@@ -278,7 +280,7 @@ class SamenwerkverzoekService
         try {
             return $this->container->get('OCA\OpenRegister\Service\ObjectService');
         } catch (\Throwable $e) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'OpenRegister ObjectService not available: '.$e->getMessage(),
                 0,
                 $e

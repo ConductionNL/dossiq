@@ -67,6 +67,10 @@ class TenantIsolationMiddleware extends Middleware
      * @param string                       $methodName Method name.
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::beforeController(); the search_path is
+     * derived from the bound tenant context.
      */
     public function beforeController($controller, $methodName): void
     {
@@ -92,6 +96,10 @@ class TenantIsolationMiddleware extends Middleware
      * @param \OCP\AppFramework\Http\Response $response   Response.
      *
      * @return \OCP\AppFramework\Http\Response
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::afterController(); the reset is
+     * unconditional.
      */
     public function afterController($controller, $methodName, \OCP\AppFramework\Http\Response $response): \OCP\AppFramework\Http\Response
     {
@@ -109,6 +117,10 @@ class TenantIsolationMiddleware extends Middleware
      * @return \OCP\AppFramework\Http\Response
      *
      * @throws \Exception
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::afterException(); the reset is
+     * unconditional.
      */
     public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response
     {

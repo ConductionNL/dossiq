@@ -36,6 +36,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use DOMDocument;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Stuf\CircuitBreakerService;
 use OCA\Procest\Service\Stuf\CircuitOpenException;
@@ -47,6 +48,7 @@ use OCA\Procest\Service\Stuf\StufRegisterAccess;
 use OCA\Procest\Service\Stuf\StufVaultService;
 use OCA\Procest\Service\StufFieldMappingService;
 use OCA\Procest\Service\StufMessageBuilder;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
@@ -154,7 +156,7 @@ class StufController extends Controller
      *
      * @contract exclude SOAP vrijBericht proxy needs a seeded endpoint + vault + live peer; covered by PHPUnit + env-gated live-e2e/Newman.
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function outbound(): JSONResponse
     {
         $endpointId  = (string) $this->request->getParam(key: 'endpointId', default: '');
@@ -269,7 +271,7 @@ class StufController extends Controller
      *
      * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function endpoints(): JSONResponse
     {
         $items = $this->register->findAll(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: [], limit: 500);
@@ -284,7 +286,7 @@ class StufController extends Controller
      *
      * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
      */
-    #[AuthorizedAdminSetting(Application::APP_ID)]
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function messages(): JSONResponse
     {
         $endpointId   = (string) $this->request->getParam(key: 'endpointId', default: '');
@@ -333,7 +335,7 @@ class StufController extends Controller
         }
 
         // Parse the XML with XXE/DTD protections.
-        $dom = new \DOMDocument();
+        $dom = new DOMDocument();
         libxml_use_internal_errors(true);
         // LIBXML_NONET: prohibits network access from within XML (XXE via HTTP/FTP).
         // LIBXML_DTDLOAD: disabled intentionally (we do NOT load external DTDs).
@@ -644,6 +646,9 @@ class StufController extends Controller
      * @param string $envelopeXml The inbound envelope.
      *
      * @return array|null The endpoint or null.
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function resolveInboundEndpoint(string $envelopeXml): ?array
     {
@@ -675,6 +680,9 @@ class StufController extends Controller
      * @param array  $endpoint    The endpoint.
      *
      * @return bool
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function verifyWsse(string $envelopeXml, array $endpoint): bool
     {
@@ -707,6 +715,9 @@ class StufController extends Controller
      * @param string $envelopeXml The envelope.
      *
      * @return string
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function detectBerichtSoort(string $envelopeXml): string
     {
@@ -739,6 +750,9 @@ class StufController extends Controller
      * @param string $envelopeXml The envelope.
      *
      * @return string
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function extractCrossRefnummer(string $envelopeXml): string
     {
@@ -759,6 +773,9 @@ class StufController extends Controller
      * @param string $envelopeXml The envelope.
      *
      * @return string
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function extractFunctie(string $envelopeXml): string
     {

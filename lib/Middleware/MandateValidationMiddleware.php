@@ -84,6 +84,10 @@ class MandateValidationMiddleware extends Middleware
      * @return void
      *
      * @throws MandateDeniedException When the action is denied.
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::beforeController(); this middleware
+     * dispatches on the request URI instead.
      */
     public function beforeController($controller, $methodName): void
     {
@@ -115,7 +119,7 @@ class MandateValidationMiddleware extends Middleware
 
         if ($decision['allowed'] === false) {
             throw new MandateDeniedException(
-                (string) ($decision['reason'] ?? 'Mandate denied'),
+                (string) $decision['reason'],
                 403
             );
         }
@@ -131,6 +135,10 @@ class MandateValidationMiddleware extends Middleware
      * @return \OCP\AppFramework\Http\Response
      *
      * @throws \Exception When not owned by this middleware.
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::afterException(); only $exception is
+     * inspected.
      */
     public function afterException($controller, $methodName, \Exception $exception): \OCP\AppFramework\Http\Response
     {
@@ -181,8 +189,8 @@ class MandateValidationMiddleware extends Middleware
                 'tenantId' => $tenantId,
                 'userId'   => $userId,
                 'action'   => $action,
-                'allowed'  => (bool) ($decision['allowed'] ?? false),
-                'reason'   => (string) ($decision['reason'] ?? ''),
+                'allowed'  => (bool) $decision['allowed'],
+                'reason'   => (string) $decision['reason'],
             ]
         );
     }//end logDecision()

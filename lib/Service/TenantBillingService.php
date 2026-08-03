@@ -147,7 +147,7 @@ class TenantBillingService
 
         $payload  = $this->shillinq->buildInvoicePayload(tenantId: $tenantId, month: $month, events: $unbilled);
         $exportRc = $this->shillinq->exportInvoice(payload: $payload);
-        if (($exportRc['success'] ?? false) === true) {
+        if ($exportRc['success'] === true) {
             $invoiceRef           = (string) ($exportRc['invoiceRef'] ?? '');
             $result['exported']   = true;
             $result['invoiceRef'] = $invoiceRef;
@@ -179,8 +179,8 @@ class TenantBillingService
             throw new InvalidArgumentException('Unknown billing event type: '.$eventType);
         }
 
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return null;
         }
 
@@ -195,7 +195,7 @@ class TenantBillingService
         ];
 
         try {
-            return $os->saveObject(
+            return $objectService->saveObject(
                 object: $event,
                 register: TenantSaasService::REGISTER,
                 schema: 'tenantBillingEvent',
@@ -266,8 +266,8 @@ class TenantBillingService
      */
     public function markExported(array $events, string $invoiceRef): int
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return 0;
         }
 
@@ -287,7 +287,7 @@ class TenantBillingService
                     $uuidArg = null;
                 }
 
-                $os->saveObject(
+                $objectService->saveObject(
                     object: $event,
                     register: TenantSaasService::REGISTER,
                     schema: 'tenantBillingEvent',
@@ -312,8 +312,8 @@ class TenantBillingService
      */
     public function fetchEventsForMonth(string $tenantId, string $month): array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return [];
         }
 
@@ -322,7 +322,7 @@ class TenantBillingService
             // named-argument form threw "Unknown named parameter $register" and
             // was swallowed by the catch below. Register/schema live inside
             // `filters`; limit/offset are top-level config keys.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register'  => TenantSaasService::REGISTER,
@@ -351,8 +351,10 @@ class TenantBillingService
      */
     private function getObjectService()
     {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+        // IAppManager::getInstalledApps() declares its array return in PHPDoc
+        // only, so normalise defensively before the membership test.
+        $installed = (array) $this->appManager->getInstalledApps();
+        if (in_array('openregister', $installed, true) === false) {
             return null;
         }
 

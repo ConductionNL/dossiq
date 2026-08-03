@@ -26,6 +26,7 @@ namespace OCA\Procest\Service;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for complaint disposition (oordeel) management.
@@ -85,14 +86,14 @@ class DispositionService
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('complaint_disposition_schema');
 
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Complaint disposition schema not configured');
+            throw new RuntimeException('Complaint disposition schema not configured');
         }
 
         $data['complaint']    = $complaintId;
@@ -132,7 +133,7 @@ class DispositionService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -173,7 +174,7 @@ class DispositionService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -281,11 +282,11 @@ class DispositionService
     {
         $oordeel = $data['oordeel'] ?? '';
         if (in_array($oordeel, self::VALID_OORDELEN, true) === false) {
-            throw new \RuntimeException('Invalid oordeel: '.$oordeel.'. Must be one of: '.implode(', ', self::VALID_OORDELEN));
+            throw new RuntimeException('Invalid oordeel: '.$oordeel.'. Must be one of: '.implode(', ', self::VALID_OORDELEN));
         }
 
         if (in_array($oordeel, self::REQUIRES_TOELICHTING, true) === true && empty($data['toelichting']) === true) {
-            throw new \RuntimeException('Toelichting is required for oordeel: '.$oordeel);
+            throw new RuntimeException('Toelichting is required for oordeel: '.$oordeel);
         }
     }//end validateDisposition()
 }//end class

@@ -31,7 +31,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
-use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
@@ -42,12 +41,10 @@ class TermijnPauseService
     /**
      * Constructor.
      *
-     * @param TermijnService  $termijnService TermijnService.
-     * @param LoggerInterface $logger         Logger.
+     * @param TermijnService $termijnService TermijnService.
      */
     public function __construct(
         private readonly TermijnService $termijnService,
-        private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
 

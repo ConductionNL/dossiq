@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -166,8 +167,8 @@ class ComplaintAnalyticsService
                 continue;
             }
 
-            $start = new \DateTimeImmutable($ontvangst);
-            $end   = new \DateTimeImmutable($afhandelDeadline);
+            $start = new DateTimeImmutable($ontvangst);
+            $end   = new DateTimeImmutable($afhandelDeadline);
             $days  = (int) $start->diff($end)->days;
 
             $totals[$categorie] = ($totals[$categorie] ?? 0) + $days;
@@ -251,7 +252,7 @@ class ComplaintAnalyticsService
      */
     public function checkEmployeeThresholdAlerts(): array
     {
-        $sixMonthsAgo = (new \DateTimeImmutable('today'))->modify('-6 months')->format('Y-m-d');
+        $sixMonthsAgo = (new DateTimeImmutable('today'))->modify('-6 months')->format('Y-m-d');
         $today        = date('Y-m-d');
 
         $complaints      = $this->fetchComplaintsInRange(dateFrom: $sixMonthsAgo, dateTo: $today);
@@ -279,7 +280,6 @@ class ComplaintAnalyticsService
 
             // Anonymize: only include count, categories, and periods — not the employee ID.
             $categories = array_unique(array_column($employeeDetails[$employee], 'categorie'));
-            $periods    = array_column($employeeDetails[$employee], 'ontvangstdatum');
 
             $alerts[] = [
                 'count'      => $count,
@@ -313,7 +313,6 @@ class ComplaintAnalyticsService
         $total          = count($complaints);
         $resolved       = 0;
         $withinDeadline = 0;
-        $oordelen       = [];
 
         foreach ($complaints as $complaint) {
             $status = $complaint['status'] ?? '';

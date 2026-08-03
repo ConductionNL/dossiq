@@ -44,6 +44,7 @@ namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use DOMDocument;
 use OCA\Procest\Service\Stuf\PayloadTooLargeException;
 use OCA\Procest\Service\Stuf\StufVaultService;
 use OCA\Procest\Service\Stuf\VrijBerichtNotRegisteredException;
@@ -136,7 +137,7 @@ class StufMessageBuilder
      */
     public function buildSoapEnvelope(string $bodyXml): string
     {
-        $dom = new \DOMDocument('1.0', 'UTF-8');
+        $dom = new DOMDocument('1.0', 'UTF-8');
         $dom->formatOutput = true;
 
         $envelope = $dom->createElementNS(self::NS_SOAP, 'soap:Envelope');
@@ -154,7 +155,7 @@ class StufMessageBuilder
 
         // M1: Load the caller-supplied body XML with LIBXML_NONET to prevent
         // XXE / SSRF attacks via external entity references in the XML payload.
-        $bodyDoc = new \DOMDocument();
+        $bodyDoc = new DOMDocument();
         // phpcs:ignore -- libxml_use_internal_errors suppresses parse errors intentionally.
         libxml_use_internal_errors(true);
         if ($bodyDoc->loadXML($bodyXml, LIBXML_NONET) === true) {
@@ -191,7 +192,7 @@ class StufMessageBuilder
         ?string $referentienummer=null,
     ): string {
         $refNr    = $referentienummer ?? $this->generateUuid();
-        $tijdstip = (new \DateTimeImmutable())->format('YmdHis');
+        $tijdstip = (new DateTimeImmutable())->format('YmdHis');
 
         $xml  = '<stuf:stuurgegevens>';
         $xml .= '<stuf:berichtcode>Lk01</stuf:berichtcode>';
@@ -228,7 +229,7 @@ class StufMessageBuilder
         array $ontvanger,
         string $crossRef,
     ): string {
-        $tijdstip = (new \DateTimeImmutable())->format('YmdHis');
+        $tijdstip = (new DateTimeImmutable())->format('YmdHis');
 
         $body  = '<stuf:Bv01Bericht xmlns:stuf="'.self::NS_STUF.'">';
         $body .= '<stuf:stuurgegevens>';
@@ -272,7 +273,7 @@ class StufMessageBuilder
         array $zender,
         array $ontvanger,
     ): string {
-        $tijdstip = (new \DateTimeImmutable())->format('YmdHis');
+        $tijdstip = (new DateTimeImmutable())->format('YmdHis');
 
         $body  = '<stuf:Fo01Bericht xmlns:stuf="'.self::NS_STUF.'">';
         $body .= '<stuf:stuurgegevens>';
@@ -311,7 +312,7 @@ class StufMessageBuilder
      */
     public function buildSoapFault(string $faultString): string
     {
-        $dom = new \DOMDocument('1.0', 'UTF-8');
+        $dom = new DOMDocument('1.0', 'UTF-8');
         $dom->formatOutput = true;
 
         $envelope = $dom->createElementNS(self::NS_SOAP, 'soap:Envelope');

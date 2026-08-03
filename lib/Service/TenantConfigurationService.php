@@ -105,8 +105,8 @@ class TenantConfigurationService
      */
     public function getConfig(string $tenantId): ?array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return null;
         }
 
@@ -115,7 +115,7 @@ class TenantConfigurationService
             // named-argument form threw "Unknown named parameter $register" and
             // was swallowed by the catch below. Register/schema live inside
             // `filters`; limit/offset are top-level config keys.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register'  => TenantSaasService::REGISTER,
@@ -223,10 +223,10 @@ class TenantConfigurationService
         }
 
         if (isset($branding['fontFamily']) === true) {
-            $ff = (string) $branding['fontFamily'];
+            $fontFamily = (string) $branding['fontFamily'];
             // Drop quotes and dangerous chars.
-            $ff = preg_replace('/[^a-zA-Z0-9_\\- ,]/', '', $ff) ?? '';
-            $tokens['--procest-font-family'] = $ff;
+            $fontFamily = preg_replace('/[^a-zA-Z0-9_\\- ,]/', '', $fontFamily) ?? '';
+            $tokens['--procest-font-family'] = $fontFamily;
         }
 
         return $tokens;
@@ -376,8 +376,8 @@ class TenantConfigurationService
      */
     private function mergeConfig(string $tenantId, array $delta): array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return ['tenantRef' => $tenantId] + $delta;
         }
 
@@ -391,7 +391,7 @@ class TenantConfigurationService
                 $uuidArg = null;
             }
 
-            return $os->saveObject(
+            return $objectService->saveObject(
                 object: $next,
                 register: TenantSaasService::REGISTER,
                 schema: 'tenantConfiguration',
@@ -410,8 +410,10 @@ class TenantConfigurationService
      */
     private function getObjectService()
     {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+        // IAppManager::getInstalledApps() declares its array return in PHPDoc
+        // only, so normalise defensively before the membership test.
+        $installed = (array) $this->appManager->getInstalledApps();
+        if (in_array('openregister', $installed, true) === false) {
             return null;
         }
 

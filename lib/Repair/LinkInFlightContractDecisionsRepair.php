@@ -141,15 +141,7 @@ class LinkInFlightContractDecisionsRepair implements IRepairStep
                         continue;
                     }//end try
 
-                    if (is_array($cases) === false) {
-                        continue;
-                    }
-
                     foreach ($cases as $case) {
-                        if (is_array($case) === false) {
-                            continue;
-                        }
-
                         $caseUuid    = (string) ($case['uuid'] ?? $case['id'] ?? '');
                         $besluitRef  = (string) ($case['besluitRef'] ?? '');
                         $decisionRef = (string) ($case['decisionRef'] ?? '');

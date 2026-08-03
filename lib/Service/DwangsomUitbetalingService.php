@@ -34,7 +34,6 @@ namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
 use OCA\Procest\Service\Support\SearchesObjects;
-use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
@@ -54,11 +53,9 @@ class DwangsomUitbetalingService
      * Constructor.
      *
      * @param SettingsService $settingsService Settings service.
-     * @param LoggerInterface $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
 

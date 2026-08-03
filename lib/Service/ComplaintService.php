@@ -23,9 +23,11 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for complaint (klacht) management per Awb chapter 9.
@@ -120,14 +122,14 @@ class ComplaintService
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('complaint_schema');
 
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Complaint schema not configured');
+            throw new RuntimeException('Complaint schema not configured');
         }
 
         $ontvangstdatum = $data['ontvangstdatum'];
@@ -236,7 +238,7 @@ class ComplaintService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
@@ -267,18 +269,18 @@ class ComplaintService
     {
         $complaint = $this->getComplaint(id: $id);
         if ($complaint === null) {
-            throw new \RuntimeException('Complaint not found: '.$id);
+            throw new RuntimeException('Complaint not found: '.$id);
         }
 
         if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
-            throw new \RuntimeException('Unknown complaint status: '.$newStatus);
+            throw new RuntimeException('Unknown complaint status: '.$newStatus);
         }
 
         $currentStatus = $complaint['status'] ?? 'ontvangen';
         $allowed       = self::TRANSITIONS[$currentStatus] ?? [];
 
         if (in_array($newStatus, $allowed, true) === false) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'Transition from '.$currentStatus.' to '.$newStatus.' is not allowed'
             );
         }
@@ -302,15 +304,15 @@ class ComplaintService
     {
         $complaint = $this->getComplaint(id: $id);
         if ($complaint === null) {
-            throw new \RuntimeException('Complaint not found: '.$id);
+            throw new RuntimeException('Complaint not found: '.$id);
         }
 
         if (($complaint['verdagingMogelijk'] ?? false) === false) {
-            throw new \RuntimeException('Verdaging is not available — already used or not applicable');
+            throw new RuntimeException('Verdaging is not available — already used or not applicable');
         }
 
         if (empty($justificatie) === true) {
-            throw new \RuntimeException('Justificatie is required for verdaging per Awb chapter 9');
+            throw new RuntimeException('Justificatie is required for verdaging per Awb chapter 9');
         }
 
         $currentDeadline = $complaint['afhandelDeadline'] ?? date('Y-m-d');
@@ -346,7 +348,7 @@ class ComplaintService
     {
         $complaint = $this->getComplaint(id: $complaintId);
         if ($complaint === null) {
-            throw new \RuntimeException('Complaint not found: '.$complaintId);
+            throw new RuntimeException('Complaint not found: '.$complaintId);
         }
 
         return $this->updateComplaint(id: $complaintId, data: ['geescaleerdeZaak' => $caseId]);
@@ -365,7 +367,7 @@ class ComplaintService
     {
         $activeStatuses = ['ontvangen', 'ontvangst_bevestigd', 'in_behandeling', 'hoorgesprek_gepland', 'hoorgesprek_afgerond'];
         $all            = $this->listComplaints(filters: ['status' => $activeStatuses]);
-        $today          = new \DateTimeImmutable('today');
+        $today          = new DateTimeImmutable('today');
         $overdue        = [];
         $warning        = [];
 
@@ -375,7 +377,7 @@ class ComplaintService
                 continue;
             }
 
-            $deadlineDate = new \DateTimeImmutable($deadline);
+            $deadlineDate = new DateTimeImmutable($deadline);
             $diff         = (int) $today->diff($deadlineDate)->days;
             $isPast       = $today > $deadlineDate;
 
@@ -401,7 +403,7 @@ class ComplaintService
      */
     public function addWorkingDays(string $startDate, int $days): string
     {
-        $date  = new \DateTimeImmutable($startDate);
+        $date  = new DateTimeImmutable($startDate);
         $added = 0;
 
         while ($added < $days) {
@@ -426,7 +428,7 @@ class ComplaintService
      */
     public function addCalendarWeeks(string $startDate, int $weeks): string
     {
-        $date = new \DateTimeImmutable($startDate);
+        $date = new DateTimeImmutable($startDate);
         $date = $date->modify('+'.$weeks.' weeks');
         return $date->format('Y-m-d');
     }//end addCalendarWeeks()
@@ -457,7 +459,7 @@ class ComplaintService
 
         // Skip Easter-derived holidays (Good Friday, Easter Monday, Ascension, Whit Monday).
         $year          = (int) $date->format('Y');
-        $easter        = new \DateTimeImmutable(date('Y-m-d', easter_date($year)));
+        $easter        = new DateTimeImmutable(date('Y-m-d', easter_date($year)));
         $easterDerived = [
             $easter->modify('-2 days')->format('Y-m-d'),
             $easter->modify('+1 day')->format('Y-m-d'),
@@ -533,7 +535,7 @@ class ComplaintService
         }
 
         if (empty($missing) === false) {
-            throw new \RuntimeException('Required fields missing: '.implode(', ', $missing));
+            throw new RuntimeException('Required fields missing: '.implode(', ', $missing));
         }
     }//end validateRequired()
 }//end class

@@ -36,6 +36,7 @@ use OCP\IAppConfig;
 use OCP\IUserSession;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for case-integrated email functionality.
@@ -100,7 +101,7 @@ class CaseEmailService
             '',
         );
         if ($fromAddress === '' || str_ends_with($fromAddress, '@example.nl') === true) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 'E-mail afzenderadres is niet geconfigureerd. '
                 .'Stel email_from_address in via de beheerdersinstellingen.'
             );
@@ -117,13 +118,13 @@ class CaseEmailService
         // returns null — we treat that as 403.
         $caseData = $this->loadCaseData(caseId: $caseId);
         if (empty($caseData) === true) {
-            throw new \RuntimeException('Zaak niet gevonden of geen toegang.');
+            throw new RuntimeException('Zaak niet gevonden of geen toegang.');
         }
 
         // H4: Validate the recipient against the case's registered contact emails.
         // This prevents open-relay abuse where any email address could be supplied.
         if ($to === '' || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
-            throw new \RuntimeException('Ongeldig e-mailadres opgegeven.');
+            throw new RuntimeException('Ongeldig e-mailadres opgegeven.');
         }
 
         $allowedEmails = $this->getCaseContactEmails(caseData: $caseData);
@@ -133,7 +134,7 @@ class CaseEmailService
                     'Blocked email to non-case-contact address',
                     ['app' => Application::APP_ID, 'to' => $to, 'caseId' => $caseId]
                 );
-                throw new \RuntimeException('Ontvanger is geen geregistreerd contact bij deze zaak.');
+                throw new RuntimeException('Ontvanger is geen geregistreerd contact bij deze zaak.');
             }
         }
 
@@ -184,7 +185,7 @@ class CaseEmailService
                     'exception' => $e,
                 ],
             );
-            throw new \RuntimeException('email_send_failed');
+            throw new RuntimeException('email_send_failed');
         }
 
         // Record the sent email as a case document.
@@ -223,7 +224,7 @@ class CaseEmailService
     ): array {
         $template = $this->loadTemplate(templateId: $templateId);
         if ($template === null) {
-            throw new \RuntimeException('Email template not found');
+            throw new RuntimeException('Email template not found');
         }
 
         // Load case data for variable resolution.

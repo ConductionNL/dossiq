@@ -28,6 +28,7 @@ namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for DSO/Omgevingsloket intake processing.
@@ -74,12 +75,12 @@ class DsoIntakeService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         if (empty($register) === true) {
-            throw new \RuntimeException('Procest register not configured');
+            throw new RuntimeException('Procest register not configured');
         }
 
         // Extract fields from DSO message.
@@ -89,7 +90,6 @@ class DsoIntakeService
         $bouwkosten    = $dsoMessage['bouwkosten'] ?? 0;
         $procedureType = $dsoMessage['procedureType'] ?? 'regulier';
         $dsoZaaknummer = $dsoMessage['zaaknummer'] ?? '';
-        $bijlagen      = $dsoMessage['bijlagen'] ?? [];
 
         // Build activity description.
         $activityNames = array_map(
@@ -270,12 +270,12 @@ class DsoIntakeService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         if (empty($register) === true) {
-            throw new \RuntimeException('Procest register not configured');
+            throw new RuntimeException('Procest register not configured');
         }
 
         $caseSchema = $this->settingsService->getConfigValue('case_schema');

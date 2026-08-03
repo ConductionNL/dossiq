@@ -30,7 +30,6 @@ namespace OCA\Procest\Service\Stuf;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use Psr\Log\LoggerInterface;
 
 /**
  * Persists and updates StufMessage audit rows.
@@ -41,11 +40,9 @@ class StufMessageHandler
      * Constructor.
      *
      * @param StufRegisterAccess $register The register access helper.
-     * @param LoggerInterface    $logger   The logger.
      */
     public function __construct(
         private StufRegisterAccess $register,
-        private LoggerInterface $logger,
     ) {
     }//end __construct()
 

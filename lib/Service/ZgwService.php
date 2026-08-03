@@ -312,10 +312,9 @@ class ZgwService
                     $value = end($parts);
                 }
 
+                $filterKey = $field;
                 if ($operator !== null) {
                     $filterKey = $field.'.'.$operator;
-                } else {
-                    $filterKey = $field;
                 }
 
                 $filters[$filterKey] = $value;
@@ -925,9 +924,8 @@ class ZgwService
             $outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
             $mapped          = [];
             foreach ($objects as $object) {
-                if (is_array($object) === true) {
-                    $objectData = $object;
-                } else {
+                $objectData = $object;
+                if (is_array($object) === false) {
                     $objectData = $object->jsonSerialize();
                 }
 
@@ -1049,9 +1047,8 @@ class ZgwService
                 object: $englishData
             );
 
-            if (is_array($object) === true) {
-                $objectData = $object;
-            } else {
+            $objectData = $object;
+            if (is_array($object) === false) {
                 $objectData = $object->jsonSerialize();
             }
 
@@ -1124,9 +1121,9 @@ class ZgwService
 
             $baseUrl         = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
             $outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
-            if (is_array($object) === true) {
-                $objectData = $object;
-            } else {
+
+            $objectData = $object;
+            if (is_array($object) === false) {
                 $objectData = $object->jsonSerialize();
             }
 
@@ -1196,10 +1193,10 @@ class ZgwService
 
         try {
             $body = $this->getRequestBody(request: $request);
+
+            $action = 'update';
             if ($partial === true) {
                 $action = 'patch';
-            } else {
-                $action = 'update';
             }
 
             $existingObj = $this->objectService->find(
@@ -1207,9 +1204,9 @@ class ZgwService
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existingObj) === true) {
-                $existingData = $existingObj;
-            } else {
+
+            $existingData = $existingObj;
+            if (is_array($existingObj) === false) {
                 $existingData = $existingObj->jsonSerialize();
             }
 
@@ -1341,9 +1338,9 @@ class ZgwService
 
             $baseUrl         = $this->buildBaseUrl(request: $request, zgwApi: $zgwApi, resource: $resource);
             $outboundMapping = $this->createOutboundMapping(mappingConfig: $mappingConfig);
-            if (is_array($object) === true) {
-                $objectData = $object;
-            } else {
+
+            $objectData = $object;
+            if (is_array($object) === false) {
                 $objectData = $object->jsonSerialize();
             }
 
@@ -1415,9 +1412,9 @@ class ZgwService
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existingObj) === true) {
-                $existingData = $existingObj;
-            } else {
+
+            $existingData = $existingObj;
+            if (is_array($existingObj) === false) {
                 $existingData = $existingObj->jsonSerialize();
             }
 
@@ -1558,9 +1555,8 @@ class ZgwService
             try {
                 $logs = $this->objectService->getLogs($uuid, [], false, false);
                 foreach ($logs as $log) {
-                    if (is_array($log) === true) {
-                        $logData = $log;
-                    } else {
+                    $logData = $log;
+                    if (is_array($log) === false) {
                         $logData = $log->jsonSerialize();
                     }
 
@@ -1610,9 +1606,8 @@ class ZgwService
         string $resourceUrl,
         string $resource
     ): array {
-        if (is_array($log) === true) {
-            $logData = $log;
-        } else {
+        $logData = $log;
+        if (is_array($log) === false) {
             $logData = $log->jsonSerialize();
         }
 
@@ -1721,9 +1716,8 @@ class ZgwService
                 return null;
             }
 
-            if (is_array($zaak) === true) {
-                $zaakData = $zaak;
-            } else {
+            $zaakData = $zaak;
+            if (is_array($zaak) === false) {
                 $zaakData = $zaak->jsonSerialize();
             }
 
@@ -1809,9 +1803,8 @@ class ZgwService
                 return null;
             }
 
-            if (is_array($zaak) === true) {
-                $zaakData = $zaak;
-            } else {
+            $zaakData = $zaak;
+            if (is_array($zaak) === false) {
                 $zaakData = $zaak->jsonSerialize();
             }
 
@@ -1886,9 +1879,8 @@ class ZgwService
                 return null;
             }
 
-            if (is_array($zaaktype) === true) {
-                $ztData = $zaaktype;
-            } else {
+            $ztData = $zaaktype;
+            if (is_array($zaaktype) === false) {
                 $ztData = $zaaktype->jsonSerialize();
             }
 
@@ -1969,9 +1961,8 @@ class ZgwService
                 return null;
             }
 
-            if (is_array($zaaktype) === true) {
-                $ztData = $zaaktype;
-            } else {
+            $ztData = $zaaktype;
+            if (is_array($zaaktype) === false) {
                 $ztData = $zaaktype->jsonSerialize();
             }
 

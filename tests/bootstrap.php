@@ -92,6 +92,28 @@ if (function_exists('easter_date') === false) {
     }//end easter_date()
 }//end if
 
+// Load the OC-internal and Doctrine stubs FIRST — before the OCP pre-load and
+// before any OCP autoloader is registered.
+//
+// These used to be required at the BOTTOM of this file, which made them useless
+// to the two consumers that actually need them:
+//
+//   1. The multi-pass OCP classmap pre-load below filters the Nextcloud
+//      classmap down to `OCP\` / `NCU\` entries only, so it never loads
+//      `OC\Hooks\Emitter`. `OCP\Files\IRootFolder extends Folder, Emitter`, so
+//      IRootFolder failed to declare on every one of the 10 passes and ended up
+//      cached nowhere — producing "Class or interface OCP\Files\IRootFolder
+//      does not exist" for every test that mocks it.
+//   2. `OCP\DB\QueryBuilder\IQueryBuilder` evaluates class constants that
+//      reference `Doctrine\DBAL\ParameterType` at parse time, so the Doctrine
+//      placeholders must likewise already be in the class table.
+//
+// Every declaration in both files is class_exists()/interface_exists()-guarded,
+// so loading them this early is a no-op when a real Nextcloud runtime later
+// supplies the genuine classes.
+require_once __DIR__.'/Unit/Stubs/DoctrineStubs.php';
+require_once __DIR__.'/Unit/Stubs/OcInternalStubs.php';
+
 // Pre-load ALL OCP\ / NCU\ classes from the real Nextcloud lib/public tree
 // BEFORE lib/base.php runs. This ensures every OCP interface/class is already
 // in PHP's class cache before any installed-app vendor autoloader (e.g.
@@ -196,7 +218,16 @@ if (defined('OC_CONSOLE') === false) {
 // When a real Nextcloud is present (base.php was loaded above), the NC classmap
 // loader already owns the OCP\ namespace, so we skip the stub registration to
 // avoid overriding real OCP classes with an older stub version.
-$ncBaseLoaded = file_exists(__DIR__.'/../../../lib/base.php');
+//
+// This must test whether Nextcloud ACTUALLY BOOTSTRAPPED, not whether its
+// `lib/base.php` merely exists on disk. In the standard `apps-extra/` checkout
+// layout that file always exists, so the previous `file_exists()` check
+// unconditionally suppressed the fallback registration — including in the
+// common case where base.php was never loaded at all because phpunit.xml
+// defines OC_CONSOLE (see the guard above), leaving the OCP\ namespace with no
+// autoloader whatsoever. `\OC_App` is declared by base.php and by nothing else,
+// so its presence is a true "NC runtime is live" signal.
+$ncBaseLoaded = class_exists('\OC_App', false);
 if ($ncBaseLoaded === false) {
     $loaders = spl_autoload_functions();
     foreach ($loaders as $loader) {
@@ -208,19 +239,9 @@ if ($ncBaseLoaded === false) {
     }
 }
 
-// Load Doctrine DBAL and OC internal stubs so that PHPUnit can mock
-// OCP\IDBConnection and OCP\DB\QueryBuilder\IQueryBuilder, which reference
-// Doctrine types not present in this repository's vendor directory. Every
-// declaration here is guarded by class_exists()/interface_exists(), so this is
-// a no-op when a real Nextcloud (loaded above) already provides the classes.
-require_once __DIR__.'/Unit/Stubs/DoctrineStubs.php';
-
-// OC\Hooks\Emitter + OC\User\NoUserException stubs — OCP\Files\IRootFolder
-// extends these OC-internal types, but they are not shipped in nextcloud/ocp.
-// Without these stubs PHPUnit cannot mock IRootFolder in tests.
-// Must be loaded BEFORE the real Nextcloud base.php (which self-skips via
-// interface_exists guards when a real Nextcloud runtime is present).
-require_once __DIR__.'/Unit/Stubs/OcInternalStubs.php';
+// (DoctrineStubs.php and OcInternalStubs.php are loaded near the top of this
+// file — they must precede the OCP pre-load, not follow it. See the comment
+// above the pre-load block.)
 
 // Shared in-memory ObjectService fake. Lives in tests/Unit/Fixtures/ so
 // every termijnbewaking + archief-edepot unit test file can resolve

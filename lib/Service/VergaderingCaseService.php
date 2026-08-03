@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
@@ -116,7 +117,7 @@ class VergaderingCaseService
 
         if (empty($startDatum) === false) {
             try {
-                $start    = new \DateTimeImmutable(datetime: $startDatum);
+                $start    = new DateTimeImmutable(datetime: $startDatum);
                 $deadline = $start->modify('-'.self::AGENDA_DEADLINE_DAYS.' days')->format('Y-m-d');
             } catch (\Exception $e) {
                 $this->logger->warning(
@@ -244,7 +245,7 @@ class VergaderingCaseService
             return 0;
         }
 
-        $today    = (new \DateTimeImmutable('today'))->format('Y-m-d');
+        $today    = (new DateTimeImmutable('today'))->format('Y-m-d');
         $advanced = 0;
 
         try {

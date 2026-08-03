@@ -79,6 +79,10 @@ class TenantMiddleware extends Middleware
      * @param string                       $methodName The method name
      *
      * @return void
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $methodName is fixed by
+     * OCP\AppFramework\Middleware::beforeController(); the tenant check keys off
+     * the controller class and the request, not the action name.
      */
     public function beforeController($controller, $methodName): void
     {
@@ -140,6 +144,10 @@ class TenantMiddleware extends Middleware
      * @return JSONResponse The error response
      *
      * @throws \Exception Re-throws if not a tenant exception
+     *
+     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $controller and $methodName are
+     * fixed by OCP\AppFramework\Middleware::afterException(); only $exception is
+     * inspected.
      */
     public function afterException($controller, $methodName, \Exception $exception): JSONResponse
     {
@@ -154,8 +162,8 @@ class TenantMiddleware extends Middleware
             // Surface OR-Organisation status block to the caller.
             $message = $exception->getMessage();
             $status  = 'inactive';
-            if (preg_match('/Organisation is (\\w+)/', $message, $m) === 1) {
-                $status = $m[1];
+            if (preg_match('/Organisation is (\\w+)/', $message, $matches) === 1) {
+                $status = $matches[1];
             }
 
             return new JSONResponse(

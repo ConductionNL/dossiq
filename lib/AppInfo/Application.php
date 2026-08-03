@@ -30,6 +30,19 @@ use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
+use OCA\Procest\Controller\DashboardController;
+use OCA\Procest\Controller\SettingsController;
+use OCA\Procest\Repair\InitializeSettings;
+use OCA\Procest\Sections\SettingsSection;
+use OCA\Procest\Service\Auth\SimulatorDigidSamlAdapter;
+use OCA\Procest\Service\Auth\SimulatorEHerkenningSamlAdapter;
+use OCA\Procest\Service\External\Bag\BagApiAdapter;
+use OCA\Procest\Service\External\Brk\BrkApiAdapter;
+use OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter;
+use OCA\Procest\Service\External\Kvk\KvkApiAdapter;
+use OCA\Procest\Service\External\Woz\WozApiAdapter;
+use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Settings\AdminSettings;
 use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
 use OCA\Procest\Service\Beschikking\LibresignApiClient;
 use OCA\Procest\Service\Beschikking\LibresignSigningAdapter;
@@ -75,6 +88,7 @@ use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\AppFramework\Http\ContentSecurityPolicy;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Security\IContentSecurityPolicyManager;
 
 /**
@@ -149,21 +163,21 @@ class Application extends App implements IBootstrap
         // with an explicit factory that constructs the REAL procest class —
         // overriding the Bootstrap generic factory for the same key.
         $context->registerService(
-            \OCA\Procest\Controller\DashboardController::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Controller\DashboardController {
-                return new \OCA\Procest\Controller\DashboardController(
+            DashboardController::class,
+            static function (\Psr\Container\ContainerInterface $c): DashboardController {
+                return new DashboardController(
                     request: $c->get('OCP\\IRequest')
                 );
             }
         );
         $context->registerService(
-            \OCA\Procest\Controller\SettingsController::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Controller\SettingsController {
-                return new \OCA\Procest\Controller\SettingsController(
+            SettingsController::class,
+            static function (\Psr\Container\ContainerInterface $c): SettingsController {
+                return new SettingsController(
                     request: $c->get('OCP\\IRequest'),
                     container: $c,
                     appManager: $c->get('OCP\\App\\IAppManager'),
-                    settingsService: $c->get(\OCA\Procest\Service\SettingsService::class),
+                    settingsService: $c->get(SettingsService::class),
                     groupManager: $c->get('OCP\\IGroupManager'),
                     userSession: $c->get('OCP\\IUserSession'),
                     l10n: $c->get('OCP\\IL10N')
@@ -171,9 +185,9 @@ class Application extends App implements IBootstrap
             }
         );
         $context->registerService(
-            \OCA\Procest\Service\SettingsService::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Service\SettingsService {
-                return new \OCA\Procest\Service\SettingsService(
+            SettingsService::class,
+            static function (\Psr\Container\ContainerInterface $c): SettingsService {
+                return new SettingsService(
                     appConfig: $c->get('OCP\\IAppConfig'),
                     appManager: $c->get('OCP\\App\\IAppManager'),
                     container: $c,
@@ -182,27 +196,27 @@ class Application extends App implements IBootstrap
             }
         );
         $context->registerService(
-            \OCA\Procest\Repair\InitializeSettings::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Repair\InitializeSettings {
-                return new \OCA\Procest\Repair\InitializeSettings(
-                    settingsService: $c->get(\OCA\Procest\Service\SettingsService::class),
+            InitializeSettings::class,
+            static function (\Psr\Container\ContainerInterface $c): InitializeSettings {
+                return new InitializeSettings(
+                    settingsService: $c->get(SettingsService::class),
                     logger: $c->get('Psr\\Log\\LoggerInterface')
                 );
             }
         );
         $context->registerService(
-            \OCA\Procest\Settings\AdminSettings::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Settings\AdminSettings {
-                return new \OCA\Procest\Settings\AdminSettings(
+            AdminSettings::class,
+            static function (\Psr\Container\ContainerInterface $c): AdminSettings {
+                return new AdminSettings(
                     appManager: $c->get('OCP\\App\\IAppManager'),
                     initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState')
                 );
             }
         );
         $context->registerService(
-            \OCA\Procest\Sections\SettingsSection::class,
-            static function (\Psr\Container\ContainerInterface $c): \OCA\Procest\Sections\SettingsSection {
-                return new \OCA\Procest\Sections\SettingsSection(
+            SettingsSection::class,
+            static function (\Psr\Container\ContainerInterface $c): SettingsSection {
+                return new SettingsSection(
                     l: $c->get('OCP\\IL10N'),
                     urlGenerator: $c->get('OCP\\IURLGenerator')
                 );
@@ -394,7 +408,7 @@ class Application extends App implements IBootstrap
                 $mode = $c->get(\OCA\Procest\Service\External\IntegrationMode::class)
                     ->resolve('digid', [\OCA\Procest\Service\External\IntegrationMode::SIMULATOR]);
                 if ($mode === \OCA\Procest\Service\External\IntegrationMode::SIMULATOR) {
-                    return new \OCA\Procest\Service\Auth\SimulatorDigidSamlAdapter();
+                    return new SimulatorDigidSamlAdapter();
                 }
 
                 return $c->get(\OCA\Procest\Service\Auth\LogDigidSamlAdapter::class);
@@ -406,7 +420,7 @@ class Application extends App implements IBootstrap
                 $mode = $c->get(\OCA\Procest\Service\External\IntegrationMode::class)
                     ->resolve('digid', [\OCA\Procest\Service\External\IntegrationMode::SIMULATOR]);
                 if ($mode === \OCA\Procest\Service\External\IntegrationMode::SIMULATOR) {
-                    return new \OCA\Procest\Service\Auth\SimulatorEHerkenningSamlAdapter();
+                    return new SimulatorEHerkenningSamlAdapter();
                 }
 
                 return $c->get(\OCA\Procest\Service\Auth\LogEHerkenningSamlAdapter::class);
@@ -451,7 +465,7 @@ class Application extends App implements IBootstrap
                         ]
                         );
                 if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
-                    return new \OCA\Procest\Service\External\Kvk\KvkApiAdapter(
+                    return new KvkApiAdapter(
                         clientService: $c->get('OCP\\Http\\Client\\IClientService'),
                         mode: $modeService,
                         logger: $c->get('Psr\\Log\\LoggerInterface'),
@@ -473,7 +487,7 @@ class Application extends App implements IBootstrap
                         ]
                         );
                 if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
-                    return new \OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter(
+                    return new HaalCentraalBrpAdapter(
                         clientService: $c->get('OCP\\Http\\Client\\IClientService'),
                         mode: $modeService,
                         logger: $c->get('Psr\\Log\\LoggerInterface'),
@@ -502,7 +516,7 @@ class Application extends App implements IBootstrap
                         ]
                         );
                 if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
-                    return new \OCA\Procest\Service\External\Bag\BagApiAdapter(
+                    return new BagApiAdapter(
                         clientService: $c->get('OCP\\Http\\Client\\IClientService'),
                         mode: $modeService,
                         mapper: $c->get(\OCA\Procest\Service\External\Bag\BagResponseMapper::class),
@@ -531,7 +545,7 @@ class Application extends App implements IBootstrap
                         ]
                         );
                 if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
-                    return new \OCA\Procest\Service\External\Brk\BrkApiAdapter(
+                    return new BrkApiAdapter(
                         clientService: $c->get('OCP\\Http\\Client\\IClientService'),
                         mode: $modeService,
                         mapper: $c->get(\OCA\Procest\Service\External\Brk\BrkResponseMapper::class),
@@ -561,7 +575,7 @@ class Application extends App implements IBootstrap
                         ]
                         );
                 if ($mode !== \OCA\Procest\Service\External\IntegrationMode::LOG) {
-                    return new \OCA\Procest\Service\External\Woz\WozApiAdapter(
+                    return new WozApiAdapter(
                         clientService: $c->get('OCP\\Http\\Client\\IClientService'),
                         mode: $modeService,
                         mapper: $c->get(\OCA\Procest\Service\External\Woz\WozResponseMapper::class),
@@ -587,7 +601,71 @@ class Application extends App implements IBootstrap
     }//end register()
 
     /**
-     * Register bezwaar-lifecycle and parafering-audit event listeners.
+     * Register an object-lifecycle listener that declares its interest up front.
+     *
+     * OpenRegister's `ObjectEventSubscription` records the register/schema slugs
+     * a listener reacts to and routes dispatches through a single shared proxy,
+     * so an uninterested listener is neither constructed nor invoked. When
+     * OpenRegister is absent — procest carries no hard dependency on it — this
+     * degrades to the plain global registration it replaced, which is exactly
+     * the behaviour every listener had before.
+     *
+     * This MUST be called from boot(), never from register(). Nextcloud enables
+     * each app's autoloader immediately before calling THAT app's own
+     * register(), so from register() the `class_exists()` guard below is
+     * boot-order dependent: OpenRegister's classes are only autoloadable to apps
+     * that happen to register after it, and every earlier app silently took the
+     * unfiltered fallback branch. boot() runs only after every app's register()
+     * has completed, so the guard resolves regardless of this app's position.
+     *
+     * @param IEventDispatcher  $dispatcher The live event dispatcher.
+     * @param string            $event      OpenRegister event class name.
+     * @param string            $listener   Listener class name.
+     * @param array<int,string> $registers  Register slugs the listener reacts to.
+     * @param array<int,string> $schemas    Schema slugs the listener reacts to.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/bezwaar-lifecycle/spec.md
+     */
+    private function registerFilteredObjectListener(
+        IEventDispatcher $dispatcher,
+        string $event,
+        string $listener,
+        array $registers,
+        array $schemas
+    ): void {
+        $subscription = '\\OCA\\OpenRegister\\Event\\ObjectEventSubscription';
+        if (class_exists($subscription) === true) {
+            $subscription::subscribe(
+                dispatcher: $dispatcher,
+                event: $event,
+                listener: $listener,
+                registers: $registers,
+                schemas: $schemas
+            );
+            return;
+        }
+
+        // Loud on purpose. This fallback is correct but UNFILTERED, and while it
+        // was silent it was indistinguishable from a working narrowing.
+        \OCP\Server::get(\Psr\Log\LoggerInterface::class)->warning(
+            'OpenRegister ObjectEventSubscription unavailable: '.$listener
+            .' fell back to an UNFILTERED registration for '.$event
+            .' and will be invoked on every object write instance-wide.',
+            ['app' => self::APP_ID]
+        );
+
+        $dispatcher->addServiceListener($event, $listener);
+
+    }//end registerFilteredObjectListener()
+
+    /**
+     * Register the unnarrowed bezwaar and parafering-audit event listeners.
+     *
+     * The bezwaar listeners that DO declare a register/schema interest are
+     * subscribed from boot() instead — see {@see self::subscribeBezwaarListeners()}
+     * for why that split exists.
      *
      * @param IRegistrationContext $context The registration context
      *
@@ -595,29 +673,6 @@ class Application extends App implements IBootstrap
      */
     private function registerBezwaarListeners(IRegistrationContext $context): void
     {
-        // Bezwaar-lifecycle observer — routes bezwaar/hearing/advice/decision
-        // events onto the status-transition-engine without duplicating
-        // transition logic. See ADR-022 + REQ-BL-8.
-        $context->registerEventListener(
-            event: ObjectCreatedEvent::class,
-            listener: BezwaarLifecycleListener::class
-        );
-        $context->registerEventListener(
-            event: ObjectUpdatedEvent::class,
-            listener: BezwaarLifecycleListener::class
-        );
-
-        // Bezwaar/beroep legal hold: when an Awb proceeding (objection) is
-        // registered the linked case gets an OpenRegister legal hold; when the
-        // proceeding reaches its final outcome (bezwaarDecision / appealDecision)
-        // the hold is released. Hold storage + enforcement are OpenRegister's
-        // (ADR-022 / migrate-archival-to-or) — this replaces the retired
-        // ArchivalTriggerService `opgeschort-juridische-procedure` status.
-        $context->registerEventListener(
-            event: ObjectCreatedEvent::class,
-            listener: BezwaarLegalHoldListener::class
-        );
-
         // Parafering audit trail: one listener emits an OR audit-trail entry
         // (hash-chained, natively immutable) for every parafeerroute transition.
         // Per ADR-022 + consume-or-audit-trail-fleet-wide (migrate-parafering-to-or-audit),
@@ -668,6 +723,65 @@ class Application extends App implements IBootstrap
             listener: BezwaarDecisionListener::class
         );
     }//end registerBezwaarListeners()
+
+    /**
+     * Subscribe the bezwaar listeners that declare a register/schema interest.
+     *
+     * Split out of {@see self::registerBezwaarListeners()} and driven from
+     * boot() rather than register(): the OpenRegister `ObjectEventSubscription`
+     * guard is only resolvable once every app's register() has run. The plain,
+     * deliberately unnarrowed registrations stay where they were.
+     *
+     * @param IEventDispatcher $dispatcher The live event dispatcher.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/bezwaar-lifecycle/spec.md
+     */
+    private function subscribeBezwaarListeners(IEventDispatcher $dispatcher): void
+    {
+        // Bezwaar-lifecycle observer — routes bezwaar/hearing/advice/decision
+        // events onto the status-transition-engine without duplicating
+        // transition logic. See ADR-022 + REQ-BL-8.
+        //
+        // Declares its register/schema interest up front instead of re-deriving
+        // it inside every handler call. Registered globally this listener was
+        // invoked on every object write on the instance — a larpingapp character
+        // create reached `handle()` and bailed at the
+        // `in_array($schemaSlug, RELEVANT_SCHEMAS)` guard.
+        $this->registerFilteredObjectListener(
+            dispatcher: $dispatcher,
+            event: ObjectCreatedEvent::class,
+            listener: BezwaarLifecycleListener::class,
+            registers: ['procest'],
+            schemas: ['bezwaar', 'objection', 'hearingSession', 'advisoryReport', 'decision']
+        );
+        $this->registerFilteredObjectListener(
+            dispatcher: $dispatcher,
+            event: ObjectUpdatedEvent::class,
+            listener: BezwaarLifecycleListener::class,
+            registers: ['procest'],
+            schemas: ['bezwaar', 'objection', 'hearingSession', 'advisoryReport', 'decision']
+        );
+
+        // Bezwaar/beroep legal hold: when an Awb proceeding (objection) is
+        // registered the linked case gets an OpenRegister legal hold; when the
+        // proceeding reaches its final outcome (bezwaarDecision / appealDecision)
+        // the hold is released. Hold storage + enforcement are OpenRegister's
+        // (ADR-022 / migrate-archival-to-or) — this replaces the retired
+        // ArchivalTriggerService `opgeschort-juridische-procedure` status.
+        // Same narrowing as the lifecycle observer above; the slug list is the
+        // union of PROCEEDING_OPENED_SCHEMAS and PROCEEDING_CLOSED_SCHEMAS on
+        // the listener.
+        $this->registerFilteredObjectListener(
+            dispatcher: $dispatcher,
+            event: ObjectCreatedEvent::class,
+            listener: BezwaarLegalHoldListener::class,
+            registers: ['procest'],
+            schemas: ['objection', 'bezwaar', 'beroep', 'bezwaarDecision', 'appealDecision']
+        );
+
+    }//end subscribeBezwaarListeners()
 
     /**
      * Register termijnbewaking (AWB deadline engine) listeners.
@@ -730,13 +844,16 @@ class Application extends App implements IBootstrap
      *
      * @return void
      *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     *
      * @spec openspec/specs/beschikking-generatie/spec.md
      */
     public function boot(IBootContext $context): void
     {
-        $this->relaxCspForMapTiles(server: $context->getServerContainer());
+        $container  = $context->getServerContainer();
+        $dispatcher = $container->get(IEventDispatcher::class);
+
+        $this->subscribeBezwaarListeners(dispatcher: $dispatcher);
+
+        $this->relaxCspForMapTiles(server: $container);
     }//end boot()
 
     /**

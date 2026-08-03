@@ -194,10 +194,6 @@ class TermijnService
             return null;
         }
 
-        if (is_array($rows) === false) {
-            $rows = [];
-        }
-
         if (count($rows) === 0) {
             return null;
         }
@@ -279,11 +275,7 @@ class TermijnService
 
         $today  = (new DateTimeImmutable())->format('Y-m-d');
         $active = [];
-        foreach ((array) $rows as $row) {
-            if (is_array($row) === false) {
-                continue;
-            }
-
+        foreach ($rows as $row) {
             $validFrom  = (string) ($row['validFrom'] ?? '1970-01-01');
             $validUntil = (string) ($row['validUntil'] ?? '');
             if ($validFrom <= $today && ($validUntil === '' || $validUntil >= $today)) {

@@ -39,6 +39,7 @@ namespace OCA\Procest\Service\Stuf;
 
 use OCP\Http\Client\IClientService;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Sends StUF SOAP envelopes over HTTPS with WSSE+mTLS auth.
@@ -192,12 +193,12 @@ class StufHttpClient
     {
         $pem = $this->vault->resolveSecret(reference: $reference);
         if ($pem === '') {
-            throw new \RuntimeException(message: 'TLS cert vault reference resolves to empty contents');
+            throw new RuntimeException(message: 'TLS cert vault reference resolves to empty contents');
         }
 
         $tmpPath = tempnam(directory: sys_get_temp_dir(), prefix: 'stuf-mtls-');
         if ($tmpPath === false) {
-            throw new \RuntimeException(message: 'Cannot create temp file for mTLS cert');
+            throw new RuntimeException(message: 'Cannot create temp file for mTLS cert');
         }
 
         file_put_contents(filename: $tmpPath, data: $pem);

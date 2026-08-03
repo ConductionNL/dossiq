@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
+use OCA\Procest\Service\ObjectSchemaSlugResolver;
 use OCA\Procest\Service\TermijnService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
@@ -46,11 +47,13 @@ class TermijnCaseCreatedListener implements IEventListener
     /**
      * Constructor.
      *
-     * @param TermijnService  $termijnService TermijnService.
-     * @param LoggerInterface $logger         Logger.
+     * @param TermijnService           $termijnService TermijnService.
+     * @param ObjectSchemaSlugResolver $slugResolver   Schema id-to-slug resolver.
+     * @param LoggerInterface          $logger         Logger.
      */
     public function __construct(
         private readonly TermijnService $termijnService,
+        private readonly ObjectSchemaSlugResolver $slugResolver,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -126,31 +129,20 @@ class TermijnCaseCreatedListener implements IEventListener
     /**
      * Resolve the schema slug.
      *
+     * The payload carries the schema as an ID (`@self.schema` is
+     * `ObjectEntity::$schema`, written as `(string) $schemaId`), and `@self`
+     * has no `schemaSlug` key. Reading those keys directly — as this method
+     * used to — returned an id or an empty string, so the `!== 'case'` guard in
+     * {@see self::handle()} always short-circuited and no AWB TermijnInstance
+     * has ever been bound to a case. Resolution goes through the shared
+     * {@see ObjectSchemaSlugResolver}.
+     *
      * @param array<string, mixed> $payload Payload.
      *
      * @return string
      */
     private function resolveSchemaSlug(array $payload): string
     {
-        if (isset($payload['@self']) === true && is_array($payload['@self']) === true) {
-            $self = $payload['@self'];
-            if (isset($self['schemaSlug']) === true) {
-                return (string) $self['schemaSlug'];
-            }
-
-            if (isset($self['schema']) === true && is_string($self['schema']) === true) {
-                return $self['schema'];
-            }
-        }
-
-        if (isset($payload['_schemaSlug']) === true) {
-            return (string) $payload['_schemaSlug'];
-        }
-
-        if (isset($payload['schemaSlug']) === true) {
-            return (string) $payload['schemaSlug'];
-        }
-
-        return '';
+        return $this->slugResolver->resolveFromPayload(payload: $payload);
     }//end resolveSchemaSlug()
 }//end class

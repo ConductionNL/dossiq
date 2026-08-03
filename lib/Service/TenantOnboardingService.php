@@ -77,8 +77,8 @@ class TenantOnboardingService
      */
     public function createOnboarding(string $tenantId): array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             $this->logger->info('Procest: createOnboarding skipped — OR unavailable');
             return [];
         }
@@ -86,7 +86,7 @@ class TenantOnboardingService
         $created = [];
         foreach (self::STEPS as $step) {
             try {
-                $row = $os->saveObject(
+                $row = $objectService->saveObject(
                     object: ['tenantRef' => $tenantId, 'step' => $step, 'status' => 'pending'],
                     register: TenantSaasService::REGISTER,
                     schema: 'tenantOnboardingTask',
@@ -112,11 +112,15 @@ class TenantOnboardingService
      * @param string $tenantId Tenant UUID.
      *
      * @return array{steps: array<int, array<string, mixed>>, completed: int, total: int, fraction: float}
+     *
+     * @spec exclude phpstan dead-code cleanup only — removed an unreachable `$total === 0`
+     *       branch (self::STEPS is non-empty, so max() is always >= 1) and normalised an
+     *       IAppManager return; no behavioural or contractual change.
      */
     public function getProgress(string $tenantId): array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return ['steps' => [], 'completed' => 0, 'total' => count(self::STEPS), 'fraction' => 0.0];
         }
 
@@ -125,7 +129,7 @@ class TenantOnboardingService
             // named-argument form threw "Unknown named parameter $register" and
             // was swallowed by the catch below. Register/schema are read from
             // inside `filters`.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register'  => TenantSaasService::REGISTER,
@@ -151,12 +155,9 @@ class TenantOnboardingService
             }
         }
 
-        $total = max(count(self::STEPS), count($rows));
-        if ($total === 0) {
-            $fraction = 0.0;
-        } else {
-            $fraction = ($completed / $total);
-        }
+        // STEPS is non-empty, so $total is always >= 1 and the division is safe.
+        $total    = max(count(self::STEPS), count($rows));
+        $fraction = ($completed / $total);
 
         return [
             'steps'     => array_values($rows),
@@ -183,15 +184,15 @@ class TenantOnboardingService
             throw new InvalidArgumentException('Unknown onboarding step: '.$step);
         }
 
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return null;
         }
 
         try {
             // ObjectService::findAll() takes a single $config array — see the
             // note in getProgress(); register/schema live inside `filters`.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => [
                         'register'  => TenantSaasService::REGISTER,
@@ -219,7 +220,7 @@ class TenantOnboardingService
                 $uuidArg = null;
             }
 
-            $row = $os->saveObject(
+            $row = $objectService->saveObject(
                 object: $task,
                 register: TenantSaasService::REGISTER,
                 schema: 'tenantOnboardingTask',
@@ -247,22 +248,22 @@ class TenantOnboardingService
      */
     public function validateGoLive(string $tenantId): array
     {
-        $os = $this->getObjectService();
-        if ($os === null) {
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
             return ['ready' => false, 'missing' => ['openregister_unavailable']];
         }
 
         $missing = [];
-        if ($this->countSchemaRows(os: $os, schema: 'caseType', filters: ['tenantRef' => $tenantId]) === 0) {
+        if ($this->countSchemaRows(objectService: $objectService, schema: 'caseType', filters: ['tenantRef' => $tenantId]) === 0) {
             $missing[] = 'zaaktype';
         }
 
-        if ($this->countSchemaRows(os: $os, schema: 'tenantMandate', filters: ['tenantRef' => $tenantId]) === 0) {
+        if ($this->countSchemaRows(objectService: $objectService, schema: 'tenantMandate', filters: ['tenantRef' => $tenantId]) === 0) {
             $missing[] = 'mandate';
         }
 
         if ($this->countSchemaRows(
-            os: $os,
+            objectService: $objectService,
             schema: 'tenantUser',
             filters: ['tenantRef' => $tenantId, 'role' => 'tenant_admin']
         ) === 0
@@ -315,18 +316,18 @@ class TenantOnboardingService
     /**
      * Count rows in a schema with a filter.
      *
-     * @param mixed               $os      Object service.
-     * @param string              $schema  Schema slug.
-     * @param array<string,mixed> $filters Filters.
+     * @param mixed               $objectService Object service.
+     * @param string              $schema        Schema slug.
+     * @param array<string,mixed> $filters       Filters.
      *
      * @return int
      */
-    private function countSchemaRows($os, string $schema, array $filters): int
+    private function countSchemaRows($objectService, string $schema, array $filters): int
     {
         try {
             // ObjectService::findAll() takes a single $config array — see the
             // note in getProgress(); register/schema live inside `filters`.
-            $rows = $os->findAll(
+            $rows = $objectService->findAll(
                 [
                     'filters' => array_merge(
                         [
@@ -356,8 +357,10 @@ class TenantOnboardingService
      */
     private function getObjectService()
     {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+        // IAppManager::getInstalledApps() declares its array return in PHPDoc
+        // only, so normalise defensively before the membership test.
+        $installed = (array) $this->appManager->getInstalledApps();
+        if (in_array('openregister', $installed, true) === false) {
             return null;
         }
 

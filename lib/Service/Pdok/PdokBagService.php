@@ -278,6 +278,9 @@ class PdokBagService
      * @return string Raw response body.
      *
      * @throws \RuntimeException On non-2xx or network failure.
+     *
+     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
+     * out-parameter, which PHPMD does not model.
      */
     private function callDirect(string $url): string
     {

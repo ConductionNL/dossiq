@@ -33,6 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use InvalidArgumentException;
+
 /**
  * Stateless tile-list manifest builder for offline PWA pre-caching.
  */
@@ -97,7 +99,7 @@ class MapTileService
                 );
                 $tiles[]     = $tile;
                 if (count($tiles) > self::MAX_TILES) {
-                    throw new \InvalidArgumentException(
+                    throw new InvalidArgumentException(
                         sprintf(
                             'Tile manifest would exceed %d tiles; narrow bbox or zoom range.',
                             self::MAX_TILES
@@ -259,20 +261,20 @@ class MapTileService
     {
         foreach (['minLat', 'minLon', 'maxLat', 'maxLon'] as $key) {
             if (isset($bbox[$key]) === false || is_numeric($bbox[$key]) === false) {
-                throw new \InvalidArgumentException('bbox.'.$key.' is required and numeric');
+                throw new InvalidArgumentException('bbox.'.$key.' is required and numeric');
             }
         }
 
         if ($bbox['minLat'] < -85.0511 || $bbox['maxLat'] > 85.0511) {
-            throw new \InvalidArgumentException('latitudes out of Web-Mercator range');
+            throw new InvalidArgumentException('latitudes out of Web-Mercator range');
         }
 
         if ($bbox['minLat'] >= $bbox['maxLat']) {
-            throw new \InvalidArgumentException('minLat must be < maxLat');
+            throw new InvalidArgumentException('minLat must be < maxLat');
         }
 
         if ($bbox['minLon'] >= $bbox['maxLon']) {
-            throw new \InvalidArgumentException('minLon must be < maxLon');
+            throw new InvalidArgumentException('minLon must be < maxLon');
         }
     }//end assertBbox()
 
@@ -288,12 +290,12 @@ class MapTileService
     private function assertZoomLevels(array $zoomLevels): void
     {
         if (count($zoomLevels) === 0) {
-            throw new \InvalidArgumentException('zoomLevels must not be empty');
+            throw new InvalidArgumentException('zoomLevels must not be empty');
         }
 
         foreach ($zoomLevels as $z) {
-            if (is_int($z) === false || $z < 0 || $z > self::MAX_ZOOM) {
-                throw new \InvalidArgumentException(
+            if ($z < 0 || $z > self::MAX_ZOOM) {
+                throw new InvalidArgumentException(
                     sprintf('zoom %s out of range [0, %d]', (string) $z, self::MAX_ZOOM)
                 );
             }

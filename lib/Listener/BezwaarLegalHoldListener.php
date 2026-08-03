@@ -38,6 +38,7 @@ namespace OCA\Procest\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\ObjectSchemaSlugResolver;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Container\ContainerInterface;
@@ -70,9 +71,16 @@ class BezwaarLegalHoldListener implements IEventListener
     /**
      * Schemas whose creation opens an Awb proceeding (places a hold).
      *
+     * `beroep` (appeal, Awb hoofdstuk 8) opens a proceeding exactly as
+     * `bezwaar`/`objection` do, and its terminal artefact `appealDecision` is
+     * already listed in {@see PROCEEDING_CLOSED_SCHEMAS}. It was missing here,
+     * so a case under appeal was never held and stayed destruction-eligible
+     * while the appeal was still running — the release side was wired up and
+     * the place side was not.
+     *
      * @var array<int, string>
      */
-    private const PROCEEDING_OPENED_SCHEMAS = ['objection', 'bezwaar'];
+    private const PROCEEDING_OPENED_SCHEMAS = ['objection', 'bezwaar', 'beroep'];
 
     /**
      * Schemas whose creation ends an Awb proceeding (releases a hold).
@@ -87,11 +95,13 @@ class BezwaarLegalHoldListener implements IEventListener
     /**
      * Constructor.
      *
-     * @param ContainerInterface $container The DI container (OR services resolved lazily).
-     * @param LoggerInterface    $logger    Logger.
+     * @param ContainerInterface       $container    The DI container (OR services resolved lazily).
+     * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+     * @param LoggerInterface          $logger       Logger.
      */
     public function __construct(
         private readonly ContainerInterface $container,
+        private readonly ObjectSchemaSlugResolver $slugResolver,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -162,6 +172,18 @@ class BezwaarLegalHoldListener implements IEventListener
         $legalHoldService = $this->resolveOr(fqn: self::LEGAL_HOLD_SERVICE);
         $caseObject       = $this->resolveCaseObject(caseId: $caseId);
         if ($legalHoldService === null || $caseObject === null) {
+            // This early return used to be completely silent, which is how a dead
+            // compliance control went unnoticed: no hold, no error, no log line.
+            $this->logger->warning(
+                'Procest legal-hold: NOT applied, collaborator or case unresolved',
+                [
+                    'app'            => Application::APP_ID,
+                    'caseId'         => $caseId,
+                    'place'          => $place,
+                    'haveService'    => ($legalHoldService !== null),
+                    'haveCaseObject' => ($caseObject !== null),
+                ]
+            );
             return;
         }
 
@@ -200,15 +222,35 @@ class BezwaarLegalHoldListener implements IEventListener
         }
 
         try {
-            $caseObject = $objectMapper->findByUuid($caseId);
+            // MagicMapper has no findByUuid(); calling it raised a fatal Error that
+            // the \Throwable catch below swallowed on EVERY invocation, so no Awb
+            // legal hold was ever placed. RBAC and multitenancy are disabled because
+            // this runs inside an event handler where there is no session user or
+            // active organisation to filter by — an organisation-scoped read would
+            // find nothing and silently reopen the same hole.
+            $caseObject = $objectMapper->find(
+                identifier: $caseId,
+                _rbac: false,
+                _multitenancy: false
+            );
             if (is_object($caseObject) === true) {
                 return $caseObject;
             }
 
             return null;
         } catch (\Throwable $e) {
+            // A legal hold is an archiving-law control: failing to resolve the case
+            // means the hold is NOT applied, so it must never be silent again.
+            $this->logger->warning(
+                'Procest legal-hold: could not resolve case object',
+                [
+                    'app'    => Application::APP_ID,
+                    'caseId' => $caseId,
+                    'error'  => $e->getMessage(),
+                ]
+            );
             return null;
-        }
+        }//end try
     }//end resolveCaseObject()
 
     /**
@@ -277,7 +319,12 @@ class BezwaarLegalHoldListener implements IEventListener
         }
 
         try {
-            $objection = $objectMapper->findByUuid($bezwaarId);
+            // See resolveCaseObject(): findByUuid() does not exist on MagicMapper.
+            $objection = $objectMapper->find(
+                identifier: $bezwaarId,
+                _rbac: false,
+                _multitenancy: false
+            );
             if ($objection === null || method_exists($objection, 'getObject') === false) {
                 return '';
             }
@@ -289,8 +336,16 @@ class BezwaarLegalHoldListener implements IEventListener
 
             return (string) ($data['case'] ?? '');
         } catch (\Throwable $e) {
+            $this->logger->warning(
+                'Procest legal-hold: could not resolve objection for case linkage',
+                [
+                    'app'       => Application::APP_ID,
+                    'bezwaarId' => $bezwaarId,
+                    'error'     => $e->getMessage(),
+                ]
+            );
             return '';
-        }
+        }//end try
     }//end caseIdOfObjection()
 
     /**
@@ -325,31 +380,19 @@ class BezwaarLegalHoldListener implements IEventListener
     /**
      * Resolve the schema slug for an OR object payload.
      *
+     * The payload carries the schema as an ID (`@self.schema` is
+     * `ObjectEntity::$schema`, written as `(string) $schemaId`), and `@self`
+     * has no `schemaSlug` key. Reading those keys directly — as this method
+     * used to — returned an id or an empty string, so the strict `in_array()`
+     * checks below never matched and no Awb legal hold has ever been placed.
+     * Resolution goes through the shared {@see ObjectSchemaSlugResolver}.
+     *
      * @param array<string, mixed> $payload Object payload.
      *
      * @return string
      */
     private function resolveSchemaSlug(array $payload): string
     {
-        if (isset($payload['@self']) === true && is_array($payload['@self']) === true) {
-            $self = $payload['@self'];
-            if (isset($self['schemaSlug']) === true) {
-                return (string) $self['schemaSlug'];
-            }
-
-            if (isset($self['schema']) === true && is_string($self['schema']) === true) {
-                return $self['schema'];
-            }
-        }
-
-        if (isset($payload['_schemaSlug']) === true) {
-            return (string) $payload['_schemaSlug'];
-        }
-
-        if (isset($payload['schemaSlug']) === true) {
-            return (string) $payload['schemaSlug'];
-        }
-
-        return '';
+        return $this->slugResolver->resolveFromPayload(payload: $payload);
     }//end resolveSchemaSlug()
 }//end class

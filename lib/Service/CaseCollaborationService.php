@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use DateTime;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -80,7 +81,7 @@ class CaseCollaborationService
                 'actorType' => 'local',
                 'cloudId'   => '',
                 'message'   => $message,
-                'createdAt' => (new \DateTime())->format('c'),
+                'createdAt' => (new DateTime())->format('c'),
             ],
         );
     }//end postLocalActivity()
@@ -113,7 +114,7 @@ class CaseCollaborationService
                 'actorType' => 'remote',
                 'cloudId'   => $resolved['sharedWith'],
                 'message'   => $message,
-                'createdAt' => (new \DateTime())->format('c'),
+                'createdAt' => (new DateTime())->format('c'),
             ],
         );
     }//end postRemoteActivity()
@@ -188,9 +189,8 @@ class CaseCollaborationService
             return ['error' => 'Federated share not found'];
         }
 
-        if (is_array($shareObj) === true) {
-            $shareData = $shareObj;
-        } else {
+        $shareData = $shareObj;
+        if (is_array($shareObj) === false) {
             $shareData = $shareObj->jsonSerialize();
         }
 
@@ -212,10 +212,9 @@ class CaseCollaborationService
         $activity['entries']        = $entries;
         $activity['lastActivityAt'] = $entry['createdAt'];
 
-        $result = $objectService->saveObject(object: $activity, register: (int) $register, schema: (int) $activitySchema);
-        if (is_array($result) === true) {
-            $resultData = $result;
-        } else {
+        $result     = $objectService->saveObject(object: $activity, register: (int) $register, schema: (int) $activitySchema);
+        $resultData = $result;
+        if (is_array($result) === false) {
             $resultData = $result->jsonSerialize();
         }
 

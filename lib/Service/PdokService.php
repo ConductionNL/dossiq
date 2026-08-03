@@ -189,6 +189,9 @@ class PdokService
      * @param array<string,mixed> $criteria Search criteria.
      *
      * @return array<int, array<string,mixed>> Matching parcels (may be empty).
+     *
+     * @spec exclude phpstan dead-code cleanup only — dropped an always-false `$route === null`
+     *       branch on a `string`-typed value; no behavioural or contractual change.
      */
     public function searchParcel(array $criteria): array
     {
@@ -199,7 +202,7 @@ class PdokService
         }
 
         $route = $this->urlGenerator->linkToRoute('openconnector.pdok.parcel');
-        if ($route === '' || $route === null) {
+        if ($route === '') {
             $route = self::SHIM_BASE_PATH.'/parcel';
         }
 
@@ -305,8 +308,8 @@ class PdokService
         // generic error.
         $status = 0;
         $msg    = $error->getMessage();
-        if (preg_match('/\b(?:HTTP|status)\s*([0-9]{3})\b/i', $msg, $m) === 1) {
-            $status = (int) $m[1];
+        if (preg_match('/\b(?:HTTP|status)\s*([0-9]{3})\b/i', $msg, $matches) === 1) {
+            $status = (int) $matches[1];
         }
 
         $effectiveKey = match ($status) {

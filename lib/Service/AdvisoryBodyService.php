@@ -30,6 +30,7 @@ namespace OCA\Procest\Service;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for advisory body registry management.
@@ -84,11 +85,7 @@ class AdvisoryBodyService
             filters: array_merge($filters, ['_limit' => 200]),
         );
 
-        if (is_array($results) === true) {
-            return $results;
-        }
-
-        return [];
+        return $results;
     }//end findAll()
 
     /**
@@ -147,14 +144,14 @@ class AdvisoryBodyService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('advisory_body_schema');
 
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Advisory body schema not configured');
+            throw new RuntimeException('Advisory body schema not configured');
         }
 
         if ($id !== '') {
@@ -198,14 +195,14 @@ class AdvisoryBodyService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('advisory_body_schema');
 
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Advisory body schema not configured');
+            throw new RuntimeException('Advisory body schema not configured');
         }
 
         $objectService->deleteObject($register, $schema, $id);
@@ -282,14 +279,14 @@ class AdvisoryBodyService
     {
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('consultation_schema');
 
         if (empty($register) === true || empty($schema) === true) {
-            throw new \RuntimeException('Consultation schema not configured');
+            throw new RuntimeException('Consultation schema not configured');
         }
 
         $token = bin2hex(random_bytes(32));

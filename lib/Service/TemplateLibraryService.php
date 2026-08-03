@@ -29,6 +29,7 @@ namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Service for loading and activating zaaktype templates.
@@ -169,17 +170,17 @@ class TemplateLibraryService
     {
         $template = $this->loadTemplate(templateId: $templateId);
         if ($template === null) {
-            throw new \RuntimeException('Template not found: '.$templateId);
+            throw new RuntimeException('Template not found: '.$templateId);
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            throw new \RuntimeException('OpenRegister is not available');
+            throw new RuntimeException('OpenRegister is not available');
         }
 
         $register = $this->settingsService->getConfigValue('register');
         if (empty($register) === true) {
-            throw new \RuntimeException('Procest register not configured');
+            throw new RuntimeException('Procest register not configured');
         }
 
         $result = [

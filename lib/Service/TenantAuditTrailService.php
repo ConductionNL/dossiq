@@ -180,8 +180,10 @@ class TenantAuditTrailService
      */
     private function getAuditTrailMapper(): mixed
     {
-        $installed = $this->appManager->getInstalledApps();
-        if (is_array($installed) === false || in_array('openregister', $installed, true) === false) {
+        // IAppManager::getInstalledApps() declares its array return in PHPDoc
+        // only, so normalise defensively before the membership test.
+        $installed = (array) $this->appManager->getInstalledApps();
+        if (in_array('openregister', $installed, true) === false) {
             return null;
         }
 
@@ -203,8 +205,8 @@ class TenantAuditTrailService
     private function resolveTenantEntity(string $tenantId): mixed
     {
         try {
-            $os = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-            return $os->find($tenantId, register: self::REGISTER, schema: self::SCHEMA_TENANT);
+            $objectService = $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+            return $objectService->find($tenantId, register: self::REGISTER, schema: self::SCHEMA_TENANT);
         } catch (Throwable $e) {
             $this->logger->error(
                 'Procest AUDIT: could not resolve tenant ObjectEntity',
@@ -279,7 +281,9 @@ class TenantAuditTrailService
             [
                 'key'         => 'audit_logged_mutations',
                 'description' => 'Mandate decisions, tenant provisioning, and tenant status changes each write a hash-chained OpenRegister audit row',
-                'evidence'    => 'TenantAuditTrailService::emit -> AuditTrailMapper::createAuditTrailEntry (probed live); MandateValidationMiddleware::logDecision; TenantSaasService::create/updateStatus',
+                'evidence'    => 'TenantAuditTrailService::emit -> AuditTrailMapper::createAuditTrailEntry '
+                    .'(probed live); MandateValidationMiddleware::logDecision; '
+                    .'TenantSaasService::create/updateStatus',
                 'status'      => $auditStatus,
             ],
             [

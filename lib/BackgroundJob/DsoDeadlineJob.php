@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\BackgroundJob;
 
+use DateTime;
+use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Utility\ITimeFactory;
@@ -179,8 +181,8 @@ class DsoDeadlineJob extends TimedJob
      */
     private function getRemainingWorkingDays(string $deadlineDatum): int
     {
-        $today    = new \DateTimeImmutable('today');
-        $deadline = new \DateTimeImmutable(substr($deadlineDatum, 0, 10));
+        $today    = new DateTimeImmutable('today');
+        $deadline = new DateTimeImmutable(substr($deadlineDatum, 0, 10));
 
         if ($deadline <= $today) {
             // Count working days in the past (return negative).
@@ -338,7 +340,7 @@ class DsoDeadlineJob extends TimedJob
             $notification->setUser(user: $assignee);
             $notification->setSubject(subject: $subject, parameters: ['zaakId' => $zaakId]);
             $notification->setObject(type: 'case', id: $zaakId);
-            $notification->setDateTime(dateTime: new \DateTime());
+            $notification->setDateTime(dateTime: new DateTime());
             $this->notificationManager->notify(notification: $notification);
         } catch (\Throwable $e) {
             $this->logger->warning(
