@@ -341,9 +341,8 @@ abstract class ZgwRulesBase
             );
         }
 
-        if (is_array($typeObject) === true) {
-            $typeData = $typeObject;
-        } else {
+        $typeData = $typeObject;
+        if (is_array($typeObject) === false) {
             $typeData = $typeObject->jsonSerialize();
         }
 
@@ -626,9 +625,8 @@ abstract class ZgwRulesBase
         if ($isIpv6Cidr === false && $isIpv6Ip === false) {
             [$network, $prefix] = explode('/', $cidr);
             $prefixLen          = (int) $prefix;
-            if ($prefixLen === 0) {
-                $mask = 0;
-            } else {
+            $mask = 0;
+            if ($prefixLen !== 0) {
                 $mask = (~0 << (32 - $prefixLen));
             }
 
@@ -693,10 +691,9 @@ abstract class ZgwRulesBase
                 return null;
             }
 
-            $obj = $results[0];
-            if (is_array($obj) === true) {
-                $data = $obj;
-            } else {
+            $obj  = $results[0];
+            $data = $obj;
+            if (is_array($obj) === false) {
                 $data = $obj->jsonSerialize();
             }
 
@@ -738,9 +735,8 @@ abstract class ZgwRulesBase
 
             $ids = [];
             foreach (($result['results'] ?? []) as $obj) {
-                if (is_array($obj) === true) {
-                    $data = $obj;
-                } else {
+                $data = $obj;
+                if (is_array($obj) === false) {
                     $data = $obj->jsonSerialize();
                 }
 
@@ -859,9 +855,8 @@ abstract class ZgwRulesBase
             // count it as a match (conservative: assume coercion happened).
             $matchCount = 0;
             foreach (($result['results'] ?? []) as $obj) {
-                if (is_array($obj) === true) {
-                    $data = $obj;
-                } else {
+                $data = $obj;
+                if (is_array($obj) === false) {
                     $data = $obj->jsonSerialize();
                 }
 
