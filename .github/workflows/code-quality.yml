@@ -117,13 +117,13 @@ jobs:
       # cwd for this step is the Nextcloud server root.
       playwright-seed-command: 'bash apps/procest/tests/e2e/ci-seed.sh'
 
-      # ── Integration tests ────────────────────────────────────────────────
-      # Was explicitly `false`. `newman-collection-path` already points at
-      # `data`, which ships four collections (ZGW OAS tests, ZGW business rules,
-      # procest-leges, procest-zaakportaal) that had never executed in CI. The
-      # path is correct as configured — the run step `cd`s there and globs
-      # `*.postman_collection.json` flat, and all four sit at that level.
-      enable-newman: true
+      # Integration Tests (Newman) stays OFF here, deliberately. The
+      # `enable-newman: false` further up is not a default nobody chose: it
+      # records that the ZGW compliance collections fail at 95%+ because the ZGW
+      # API implementation is still in progress. Four collections are committed
+      # under `data/` and would all meet that same known cause — a guaranteed
+      # red that teaches nothing the comment does not already say. Flipped back
+      # on in the commit that gets the core CRUD assertions passing.
 
       # ── Frontend Check legs ──────────────────────────────────────────────
       # `frontend-checks` defaults to `[]`, and an empty list means the shared
