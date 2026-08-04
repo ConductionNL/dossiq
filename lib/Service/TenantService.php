@@ -59,15 +59,13 @@ class TenantService
     /**
      * Constructor for the TenantService.
      *
-     * @param SettingsService    $settingsService Settings service.
-     * @param IAppManager        $appManager      The app manager.
-     * @param IGroupManager      $groupManager    The Nextcloud group manager.
-     * @param IUserManager       $userManager     The Nextcloud user manager.
-     * @param ContainerInterface $container       The DI container (graceful OR resolution).
-     * @param LoggerInterface    $logger          The logger.
+     * @param IAppManager        $appManager   The app manager.
+     * @param IGroupManager      $groupManager The Nextcloud group manager.
+     * @param IUserManager       $userManager  The Nextcloud user manager.
+     * @param ContainerInterface $container    The DI container (graceful OR resolution).
+     * @param LoggerInterface    $logger       The logger.
      */
     public function __construct(
-        private SettingsService $settingsService,
         private IAppManager $appManager,
         private IGroupManager $groupManager,
         private IUserManager $userManager,

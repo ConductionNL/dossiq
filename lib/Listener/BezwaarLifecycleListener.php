@@ -40,7 +40,6 @@ use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\ObjectSchemaSlugResolver;
-use OCA\Procest\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -70,12 +69,10 @@ class BezwaarLifecycleListener implements IEventListener
     /**
      * Constructor.
      *
-     * @param SettingsService          $settingsService Settings service
-     * @param ObjectSchemaSlugResolver $slugResolver    Schema id-to-slug resolver
-     * @param LoggerInterface          $logger          Logger
+     * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver
+     * @param LoggerInterface          $logger       Logger
      */
     public function __construct(
-        private SettingsService $settingsService,
         private ObjectSchemaSlugResolver $slugResolver,
         private LoggerInterface $logger,
     ) {
