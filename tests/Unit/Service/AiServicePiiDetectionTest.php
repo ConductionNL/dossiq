@@ -26,6 +26,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Ai\AiAuditLog;
+use OCA\Procest\Service\Ai\AiEndpointGuard;
+use OCA\Procest\Service\Ai\AiPiiRedactor;
+use OCA\Procest\Service\Ai\AiPromptFactory;
 use OCA\Procest\Service\AiService;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -44,10 +48,18 @@ class AiServicePiiDetectionTest extends TestCase
      */
     private function service(): AiService
     {
+        $appConfig = $this->createMock(IAppConfig::class);
+        $logger    = $this->createMock(LoggerInterface::class);
+
+        // Real AiPiiRedactor, not a mock: this suite asserts the actual pattern
+        // set and offsets, so a stubbed redactor would assert nothing.
         return new AiService(
-            $this->createMock(IAppConfig::class),
-            $this->createMock(ContainerInterface::class),
-            $this->createMock(LoggerInterface::class),
+            appConfig: $appConfig,
+            prompts: new AiPromptFactory(),
+            pii: new AiPiiRedactor(),
+            endpointGuard: new AiEndpointGuard($logger),
+            audit: new AiAuditLog($appConfig, $this->createMock(ContainerInterface::class), $logger),
+            logger: $logger,
         );
     }//end service()
 

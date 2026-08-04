@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service\Stuf;
 
 use OCA\Procest\Service\Stuf\PayloadTooLargeException;
+use OCA\Procest\Service\Stuf\StufResponseBuilder;
 use OCA\Procest\Service\Stuf\StufVaultService;
 use OCA\Procest\Service\Stuf\VrijBerichtNotRegisteredException;
 use OCA\Procest\Service\Stuf\ZaaktypeNotMappedException;
@@ -242,18 +243,53 @@ class StufMessageBuilderOutboundTest extends TestCase
     }//end testDu01GenereerZaakIdEnvelope()
 
     /**
-     * Inbound builder behaviour is preserved alongside the outbound methods.
+     * Inbound builder behaviour is preserved after the split: the responses
+     * procest returns as a StUF receiver now come from StufResponseBuilder,
+     * and must be byte-compatible with what StufMessageBuilder used to emit.
      *
      * @return void
      */
     public function testInboundBuildersStillWork(): void
     {
-        $bv01 = $this->builder->buildBv01(['organisatie' => 'Procest', 'applicatie' => 'Procest'], [], 'REF-123');
+        $responses = new StufResponseBuilder();
+
+        $bv01 = $responses->buildBv01(['organisatie' => 'Procest', 'applicatie' => 'Procest'], [], 'REF-123');
         $this->assertStringContainsString('Bv01', $bv01);
         $this->assertStringContainsString('REF-123', $bv01);
+        $this->assertStringContainsString('<stuf:organisatie>Procest</stuf:organisatie>', $bv01);
+        $this->assertStringContainsString('<stuf:crossRefnummer>REF-123</stuf:crossRefnummer>', $bv01);
 
-        $fault = $this->builder->buildSoapFault('boom');
+        $fault = $responses->buildSoapFault('boom');
         $this->assertStringContainsString('soap:Fault', $fault);
         $this->assertStringContainsString('boom', $fault);
+
+        $fo01 = $responses->buildFo01('StUF055', 'kapot', 'server', ['organisatie' => 'Procest'], []);
+        $this->assertStringContainsString('<stuf:code>StUF055</stuf:code>', $fo01);
+        $this->assertStringContainsString('<stuf:plek>server</stuf:plek>', $fo01);
+        $this->assertStringContainsString('<stuf:omschrijving>kapot</stuf:omschrijving>', $fo01);
+
+        $stuurgegevens = $responses->buildStuurgegevens(['applicatie' => 'Procest'], [], 'REF-9');
+        $this->assertStringContainsString('<stuf:berichtcode>Lk01</stuf:berichtcode>', $stuurgegevens);
+        $this->assertStringContainsString('<stuf:referentienummer>REF-9</stuf:referentienummer>', $stuurgegevens);
     }//end testInboundBuildersStillWork()
+
+    /**
+     * The inbound builders must NOT have been left behind on StufMessageBuilder:
+     * a duplicate would let the two directions drift apart silently.
+     *
+     * @return void
+     */
+    public function testInboundBuildersAreNoLongerOnTheOutboundBuilder(): void
+    {
+        foreach (['buildBv01', 'buildFo01', 'buildSoapFault', 'buildSoapEnvelope', 'buildStuurgegevens'] as $method) {
+            $this->assertFalse(
+                condition: method_exists(StufMessageBuilder::class, $method),
+                message: 'StufMessageBuilder still exposes the inbound builder "'.$method.'".'
+            );
+            $this->assertTrue(
+                condition: method_exists(StufResponseBuilder::class, $method),
+                message: 'StufResponseBuilder is missing the inbound builder "'.$method.'".'
+            );
+        }
+    }//end testInboundBuildersAreNoLongerOnTheOutboundBuilder()
 }//end class

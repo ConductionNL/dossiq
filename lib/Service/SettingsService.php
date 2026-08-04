@@ -27,6 +27,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Settings\RegisterFragmentMerger;
+use OCA\Procest\Service\Settings\SchemaAnnotationReconciler;
+use OCA\Procest\Service\Settings\SchemaKeyReconciler;
+use OCA\Procest\Service\Settings\SchemaSlugMap;
 use OCP\IAppConfig;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
@@ -36,8 +40,6 @@ use Psr\Log\LoggerInterface;
  * Service for managing Procest application configuration and settings.
  *
  * @spec openspec/specs/admin-settings/spec.md
- *
- * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) — config bridge mapping ~73 schema slugs to appconfig keys; breadth is data, not branching
  */
 class SettingsService
 {
@@ -300,161 +302,6 @@ class SettingsService
     ];
 
     /**
-     * Mapping of schema slugs (from procest_register.json) to app config keys.
-     */
-    private const SLUG_TO_CONFIG_KEY = [
-        'catalogus'                    => 'catalogus_schema',
-        'case'                         => 'case_schema',
-        'task'                         => 'task_schema',
-        'status'                       => 'status_schema',
-        'statusRecord'                 => 'status_record_schema',
-        'role'                         => 'role_schema',
-        'result'                       => 'result_schema',
-        'decision'                     => 'decision_schema',
-        'caseType'                     => 'case_type_schema',
-        'statusType'                   => 'status_type_schema',
-        'resultType'                   => 'result_type_schema',
-        'roleType'                     => 'role_type_schema',
-        'propertyDefinition'           => 'property_definition_schema',
-        'documentType'                 => 'document_type_schema',
-        'decisionType'                 => 'decision_type_schema',
-        'zaaktypeInformatieobjecttype' => 'zaaktype_informatieobjecttype_schema',
-        'caseProperty'                 => 'case_property_schema',
-        'caseDocument'                 => 'case_document_schema',
-        'caseObject'                   => 'case_object_schema',
-        'customerContact'              => 'customer_contact_schema',
-        'decisionDocument'             => 'decision_document_schema',
-        'dispatch'                     => 'dispatch_schema',
-        'document'                     => 'document_schema',
-        'documentLink'                 => 'document_link_schema',
-        'usageRights'                  => 'usage_rights_schema',
-        'kanaal'                       => 'kanaal_schema',
-        'abonnement'                   => 'abonnement_schema',
-        'inspectieChecklist'           => 'inspectie_checklist_schema',
-        'inspectieRapport'             => 'inspectie_rapport_schema',
-        'inspection'                   => 'inspection_schema',
-        'inspectionChecklistTemplate'  => 'inspection_checklist_template_schema',
-        'inspectionChecklistRun'       => 'inspection_checklist_run_schema',
-        'handhavingsactie'             => 'handhavingsactie_schema',
-        'adviesAanvraag'               => 'advies_aanvraag_schema',
-        'mapLayer'                     => 'map_layer_schema',
-        'wmsLayer'                     => 'wms_layer_schema',
-        'workflowTemplate'             => 'workflow_template_schema',
-        'objection'                    => 'objection_schema',
-        'hearingSession'               => 'hearing_session_schema',
-        'advisoryReport'               => 'advisory_report_schema',
-        'appealDecision'               => 'appeal_decision_schema',
-        'voorstel'                     => 'voorstel_schema',
-        'parafeerroute'                => 'parafeerroute_schema',
-        'parafeeractie'                => 'parafeeractie_schema',
-        'paraferingAuditEntry'         => 'parafering_audit_entry_schema',
-        'tenant'                       => 'tenant_schema',
-        'aiAuditEntry'                 => 'ai_audit_entry_schema',
-        'appointment'                  => 'appointment_schema',
-        'appointmentProduct'           => 'appointment_product_schema',
-        'appointmentLocation'          => 'appointment_location_schema',
-        'caseShare'                    => 'case_share_schema',
-        'partnerOrganization'          => 'partner_organization_schema',
-        'sharePermissionLevel'         => 'share_permission_level_schema',
-        'casetransfer'                 => 'case_transfer_schema',
-        'caseFederatedShare'           => 'case_federated_share_schema',
-        'caseFederatedActivity'        => 'case_federated_activity_schema',
-        'automaticAction'              => 'automatic_action_schema',
-        'lhsMatrix'                    => 'lhs_matrix_schema',
-        'lhsRecommendation'            => 'lhs_recommendation_schema',
-        'location'                     => 'location_schema',
-        'bezwaar'                      => 'bezwaar_schema',
-        'bezwaaradviescommissie'       => 'bezwaaradviescommissie_schema',
-        'bacAdviceRequest'             => 'bac_advice_request_schema',
-        'beroep'                       => 'beroep_schema',
-        'bezwaarDecision'              => 'bezwaar_decision_schema',
-        'routingRule'                  => 'routing_rule_schema',
-        'kccAgent'                     => 'kcc_agent_schema',
-        'decisionTable'                => 'decision_table_schema',
-        'callbackRequest'              => 'callback_request_schema',
-        'subsidieRegeling'             => 'subsidie_regeling_schema',
-        'subsidieAanvraag'             => 'subsidie_aanvraag_schema',
-        'subsidieBeoordeling'          => 'subsidie_beoordeling_schema',
-        'subsidieBeschikking'          => 'subsidie_beschikking_schema',
-        'subsidieUitvoering'           => 'subsidie_uitvoering_schema',
-        'tussenrapportage'             => 'tussenrapportage_schema',
-        'subsidieVaststelling'         => 'subsidie_vaststelling_schema',
-        'terugvordering'               => 'terugvordering_schema',
-        'bewijsstuk'                   => 'bewijsstuk_schema',
-        // KCC-werkplek bridge schemas (kcc-werkplek-zaaksysteem-bridge).
-        'contactmoment'                => 'contactmoment_schema',
-        'kccQuickAction'               => 'kcc_quick_action_schema',
-        'belplan'                      => 'belplan_schema',
-        'specialistBeschikbaarheid'    => 'specialist_beschikbaarheid_schema',
-        'doorverbinding'               => 'doorverbinding_schema',
-        'klantSentiment'               => 'klant_sentiment_schema',
-        // Complaint management (klachtafhandeling) — Awb chapter 9.
-        'complaint'                    => 'complaint_schema',
-        'hearing'                      => 'hearing_schema',
-        'complaintDisposition'         => 'complaint_disposition_schema',
-        'complaintCategory'            => 'complaint_category_schema',
-        // Zaakportaal "Mijn gemeente" citizen portal (zaakportaal-mijngemeente).
-        'portaalBericht'               => 'portaal_bericht_schema',
-        'portaalVerzoek'               => 'portaal_verzoek_schema',
-        'portaalNotificatieVoorkeur'   => 'portaal_notificatie_voorkeur_schema',
-        // Termijnbewaking + dwangsom (AWB 4:13/4:14/4:17).
-        'termijnDefinitie'             => 'termijn_definitie_schema',
-        'termijnInstance'              => 'termijn_instance_schema',
-        'termijnGebeurtenis'           => 'termijn_gebeurtenis_schema',
-        'ingebrekestelling'            => 'ingebrekestelling_schema',
-        'dwangsomBerekening'           => 'dwangsom_berekening_schema',
-        'dwangsomUitbetaling'          => 'dwangsom_uitbetaling_schema',
-        // Mandaat-matrix authorization engine.
-        'mandateringsBesluit'          => 'mandaterings_besluit_schema',
-        'mandaat'                      => 'mandaat_schema',
-        'organisatieRol'               => 'organisatie_rol_schema',
-        'medewerkerRolToewijzing'      => 'medewerker_rol_toewijzing_schema',
-        'mandaatGebruik'               => 'mandaat_gebruik_schema',
-        'mandaatEscalatie'             => 'mandaat_escalatie_schema',
-        'substitution'                 => 'substitution_schema',
-        // Archief / e-Depot SIP handover engine.
-        'bewaarTermijnRegel'           => 'bewaar_termijn_regel_schema',
-        'overdrachtTrigger'            => 'overdracht_trigger_schema',
-        'sipBundel'                    => 'sip_bundel_schema',
-        'overdrachtTransactie'         => 'overdracht_transactie_schema',
-        'archiefBewijs'                => 'archief_bewijs_schema',
-        'overdrachtAuditLog'           => 'overdracht_audit_log_schema',
-        // Case-email integration (case-email-integration spec).
-        'emailTemplate'                => 'email_template_schema',
-        // Consultation management (consultation-management spec).
-        'consultation'                 => 'consultation_schema',
-        'adviceResponse'               => 'advice_response_schema',
-        'advisoryBody'                 => 'advisory_body_schema',
-        // Milestone tracking (milestone-tracking spec).
-        'milestoneDefinition'          => 'milestone_definition_schema',
-        'milestoneRecord'              => 'milestone_record_schema',
-        // ZGW DRC case dossier (document-zaakdossier spec).
-        'informatieobject'             => 'dossier_informatieobject_schema',
-        'zaakinformatieobject'         => 'dossier_zaakinformatieobject_schema',
-        'besluitinformatieobject'      => 'dossier_besluitinformatieobject_schema',
-        'informatieobjecttype'         => 'dossier_informatieobjecttype_schema',
-        // CMMN adaptive case-plan definitions (cmmn-adaptive-case spec).
-        'caseModel'                    => 'case_model_schema',
-    ];
-
-    /**
-     * Declarative `x-openregister-*` annotation blocks (declared inside a
-     * schema's `configuration` in procest_register.json) that Procest
-     * reconciles directly onto the live OpenRegister schema configuration.
-     *
-     * OpenRegister's app-config import does not reliably round-trip these
-     * schema-level annotation blocks on an already-imported instance, so
-     * {@see self::reconcileSchemaDeclarativeConfig()} merges them back in.
-     */
-    private const SCHEMA_ANNOTATION_KEYS = [
-        'x-openregister-calculations',
-        'x-openregister-references',
-        'x-openregister-lifecycle',
-        'x-openregister-aggregations',
-        'x-openregister-object-source',
-    ];
-
-    /**
      * Default values for KCC-werkplek bridge behaviour settings.
      *
      * Used by getKccConfigValue() so that an unset app-config key resolves to
@@ -492,7 +339,34 @@ class SettingsService
     private const OPENREGISTER_APP_ID = 'openregister';
 
     /**
+     * The ADR-037 register-fragment merger.
+     *
+     * @var RegisterFragmentMerger
+     */
+    private RegisterFragmentMerger $fragments;
+
+    /**
+     * Reconciles `*_schema` appconfig keys against live OpenRegister schema ids.
+     *
+     * @var SchemaKeyReconciler
+     */
+    private SchemaKeyReconciler $schemaKeys;
+
+    /**
+     * Reconciles declarative `x-openregister-*` blocks onto live schemas.
+     *
+     * @var SchemaAnnotationReconciler
+     */
+    private SchemaAnnotationReconciler $schemaAnnotations;
+
+    /**
      * Constructor for the SettingsService.
+     *
+     * The three collaborators are constructed here rather than injected so the
+     * container-facing signature stays `(appConfig, appManager, container,
+     * logger)` — the shape the bespoke factory in
+     * {@see \OCA\Procest\AppInfo\Registrar\BespokeServiceRegistrar} and ~180
+     * injection sites already use.
      *
      * @param IAppConfig         $appConfig  The app configuration service
      * @param IAppManager        $appManager The app manager service
@@ -507,6 +381,17 @@ class SettingsService
         private ContainerInterface $container,
         private LoggerInterface $logger,
     ) {
+        $this->fragments         = new RegisterFragmentMerger();
+        $this->schemaKeys        = new SchemaKeyReconciler(
+            appConfig: $appConfig,
+            container: $container,
+            logger: $logger
+        );
+        $this->schemaAnnotations = new SchemaAnnotationReconciler(
+            container: $container,
+            fragments: $this->fragments,
+            logger: $logger
+        );
     }//end __construct()
 
     /**
@@ -694,7 +579,7 @@ class SettingsService
         // concurrent same-app builds add registers/schemas via isolated
         // fragment files instead of all editing procest_register.json and
         // conflicting. Fragments are applied in sorted filename order.
-        [$configData, $fragmentHash] = self::mergeRegisterFragments(
+        [$configData, $fragmentHash] = $this->fragments->merge(
             base: $configData,
             fragmentDir: __DIR__.'/../Settings/register.d'
         );
@@ -716,7 +601,7 @@ class SettingsService
                 force: $force,
             );
 
-            $configuredCount = $this->autoConfigureAfterImport(importResult: $importResult);
+            $configuredCount = $this->schemaKeys->autoConfigureAfterImport(importResult: $importResult);
             $this->reconcileSchemaConfig();
 
             $this->logger->info(
@@ -914,31 +799,7 @@ class SettingsService
             return 0;
         }
 
-        try {
-            $schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: Could not access OpenRegister SchemaMapper for reconcile',
-                ['exception' => $e->getMessage()]
-            );
-            return 0;
-        }
-
-        $written = 0;
-        foreach (self::SLUG_TO_CONFIG_KEY as $slug => $configKey) {
-            $written += $this->reconcileSingleSchemaKey(
-                schemaMapper: $schemaMapper,
-                slug: (string) $slug,
-                configKey: $configKey
-            );
-        }
-
-        $this->logger->info(
-            'Procest: Reconciled schema config keys from OpenRegister',
-            ['written' => $written]
-        );
-
-        return $written;
+        return $this->schemaKeys->reconcile();
     }//end reconcileSchemaConfig()
 
     /**
@@ -954,12 +815,13 @@ class SettingsService
      * those blocks from `Schema::getConfiguration()`, so a dropped block silently
      * disables auto-deadline / auto-identifier / initial-status on create.
      *
-     * This method closes that gap declaratively: for every schema defined in the
-     * (fragment-merged) register JSON it reads the annotation keys listed in
-     * {@see self::SCHEMA_ANNOTATION_KEYS} and writes them onto the live schema's
-     * configuration via the SchemaMapper, MERGING (never replacing) so existing
-     * keys such as `objectNameField` are preserved. Fully idempotent: a schema
-     * whose live configuration already matches is left untouched.
+     * The reconcile itself lives in {@see SchemaAnnotationReconciler}: for every
+     * schema defined in the (fragment-merged) register JSON it reads the
+     * annotation keys listed in {@see SchemaSlugMap::SCHEMA_ANNOTATION_KEYS} and
+     * writes them onto the live schema's configuration via the SchemaMapper,
+     * MERGING (never replacing) so existing keys such as `objectNameField` are
+     * preserved. Fully idempotent: a schema whose live configuration already
+     * matches is left untouched.
      *
      * @return int The number of schemas whose configuration was (re)written.
      *
@@ -971,427 +833,6 @@ class SettingsService
             return 0;
         }
 
-        try {
-            $schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: Could not access OpenRegister SchemaMapper for declarative reconcile',
-                ['exception' => $e->getMessage()]
-            );
-            return 0;
-        }
-
-        $schemas = $this->loadDeclarativeRegisterSchemas();
-        if ($schemas === null) {
-            return 0;
-        }
-
-        $written = 0;
-        foreach ($schemas as $key => $schemaDef) {
-            $written += $this->reconcileSchemaAnnotationBlocks(
-                schemaMapper: $schemaMapper,
-                key: $key,
-                schemaDef: $schemaDef
-            );
-        }//end foreach
-
-        $this->logger->info(
-            'Procest: Reconciled declarative schema configuration from register JSON',
-            ['written' => $written]
-        );
-
-        return $written;
+        return $this->schemaAnnotations->reconcile();
     }//end reconcileSchemaDeclarativeConfig()
-
-    /**
-     * Load the fragment-merged schema definitions from the register JSON.
-     *
-     * @return array<array-key, mixed>|null The schema definitions, or null when
-     *                                      the register JSON is missing or invalid.
-     */
-    private function loadDeclarativeRegisterSchemas(): ?array
-    {
-        $configPath = __DIR__.'/../Settings/procest_register.json';
-        if (file_exists($configPath) === false) {
-            return null;
-        }
-
-        $configData = json_decode((string) file_get_contents($configPath), true);
-        if (json_last_error() !== JSON_ERROR_NONE || is_array($configData) === false) {
-            return null;
-        }
-
-        // Fold modular register fragments on top so a schema's annotation
-        // blocks declared in a register.d fragment are reconciled too.
-        [$configData] = self::mergeRegisterFragments(
-            base: $configData,
-            fragmentDir: __DIR__.'/../Settings/register.d'
-        );
-
-        $schemas = ($configData['components']['schemas'] ?? []);
-        if (is_array($schemas) === false) {
-            return null;
-        }
-
-        return $schemas;
-    }//end loadDeclarativeRegisterSchemas()
-
-    /**
-     * Reconcile the declarative annotation blocks of one schema definition.
-     *
-     * @param object     $schemaMapper The OpenRegister SchemaMapper.
-     * @param int|string $key          The schema key in the register JSON.
-     * @param mixed      $schemaDef    The raw schema definition.
-     *
-     * @return int 1 when the configuration was (re)written, 0 otherwise.
-     */
-    private function reconcileSchemaAnnotationBlocks(object $schemaMapper, int|string $key, mixed $schemaDef): int
-    {
-        if (is_array($schemaDef) === false) {
-            return 0;
-        }
-
-        $fallbackSlug = '';
-        if (is_string($key) === true) {
-            $fallbackSlug = $key;
-        }
-
-        $slug        = ($schemaDef['slug'] ?? $fallbackSlug);
-        $declaredCfg = ($schemaDef['configuration'] ?? []);
-        if ($slug === '' || is_array($declaredCfg) === false) {
-            return 0;
-        }
-
-        // Collect only the declarative annotation blocks we own.
-        $annotations = [];
-        foreach (self::SCHEMA_ANNOTATION_KEYS as $annotationKey) {
-            if (array_key_exists($annotationKey, $declaredCfg) === true) {
-                $annotations[$annotationKey] = $declaredCfg[$annotationKey];
-            }
-        }
-
-        if ($annotations === []) {
-            return 0;
-        }
-
-        return $this->reconcileSingleSchemaDeclarativeConfig(
-            schemaMapper: $schemaMapper,
-            slug: (string) $slug,
-            annotations: $annotations
-        );
-    }//end reconcileSchemaAnnotationBlocks()
-
-    /**
-     * Merge one schema's declarative annotation blocks onto its live
-     * OpenRegister configuration. Idempotent — returns 0 when the live
-     * configuration already carries identical blocks.
-     *
-     * @param object               $schemaMapper The OpenRegister SchemaMapper.
-     * @param string               $slug         The schema slug (e.g. 'case').
-     * @param array<string, mixed> $annotations  The annotation blocks to merge.
-     *
-     * @return int 1 when the configuration was (re)written, 0 otherwise.
-     *
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    private function reconcileSingleSchemaDeclarativeConfig(
-        object $schemaMapper,
-        string $slug,
-        array $annotations
-    ): int {
-        try {
-            // Find by slug with signature find($id, $_extend, $_rbac, $_multitenancy):
-            // bypass RBAC + tenancy — the repair runs in a system context with no
-            // active organisation.
-            $schema = $schemaMapper->find($slug, [], false, false);
-        } catch (\Throwable $e) {
-            // Slug not present in this OpenRegister instance — skip it.
-            return 0;
-        }
-
-        $current = ($schema->getConfiguration() ?? []);
-        if (is_array($current) === false) {
-            $current = [];
-        }
-
-        $merged  = $current;
-        $changed = false;
-        foreach ($annotations as $annotationKey => $annotationValue) {
-            if (($current[$annotationKey] ?? null) !== $annotationValue) {
-                $merged[$annotationKey] = $annotationValue;
-                $changed = true;
-            }
-        }
-
-        if ($changed === false) {
-            return 0;
-        }
-
-        try {
-            $schema->setConfiguration($merged);
-            $schemaMapper->update($schema);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: Failed to reconcile declarative configuration for schema '.$slug,
-                ['exception' => $e->getMessage()]
-            );
-            return 0;
-        }
-
-        return 1;
-    }//end reconcileSingleSchemaDeclarativeConfig()
-
-    /**
-     * Resolve one schema slug to its live ID and persist its appconfig key.
-     *
-     * Idempotent: returns 0 (and writes nothing) when the slug does not resolve
-     * or the key already holds the correct ID; returns 1 when it (re)writes.
-     *
-     * @param object $schemaMapper The OpenRegister SchemaMapper.
-     * @param string $slug         The schema slug (e.g. 'caseType').
-     * @param string $configKey    The Procest appconfig key to write.
-     *
-     * @return int 1 when the key was (re)written, 0 otherwise.
-     *
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    private function reconcileSingleSchemaKey(object $schemaMapper, string $slug, string $configKey): int
-    {
-        try {
-            // Slug-aware lookup with RBAC + multi-tenancy disabled: the repair
-            // step runs in a system context that has no active organisation,
-            // and the schema set is app-owned config, not tenant data.
-            // Signature is find($id, $_extend, $_rbac, $_multitenancy).
-            $schema   = $schemaMapper->find($slug, [], false, false);
-            $schemaId = (string) $schema->getId();
-        } catch (\Throwable $e) {
-            // Slug not present in this OpenRegister instance — skip it.
-            return 0;
-        }
-
-        if ($schemaId === '') {
-            return 0;
-        }
-
-        $current = $this->appConfig->getValueString(Application::APP_ID, $configKey, '');
-        if ($current === $schemaId) {
-            return 0;
-        }
-
-        $this->appConfig->setValueString(Application::APP_ID, $configKey, $schemaId);
-
-        // Keep the stable workflow_definition_schema alias in sync.
-        if ($slug === 'workflowTemplate') {
-            $this->appConfig->setValueString(
-                Application::APP_ID,
-                'workflow_definition_schema',
-                $schemaId
-            );
-        }
-
-        return 1;
-    }//end reconcileSingleSchemaKey()
-
-    /**
-     * Auto-configure schema and register IDs from the import result.
-     *
-     * Extracts schema entities from the ConfigurationService import result,
-     * maps their slugs to app config keys, and persists the IDs.
-     *
-     * @param array $importResult The result from ConfigurationService::importFromApp()
-     *
-     * @return int The number of schemas successfully configured
-     */
-    private function autoConfigureAfterImport(array $importResult): int
-    {
-        $configuredCount = 0;
-
-        // Configure register ID from imported registers.
-        $registers = ($importResult['registers'] ?? []);
-        foreach ($registers as $register) {
-            if (is_object($register) === false) {
-                continue;
-            }
-
-            $registerId = (string) $register->getId();
-            $this->appConfig->setValueString(
-                Application::APP_ID,
-                'register',
-                $registerId
-            );
-            $this->logger->info(
-                'Procest: Auto-configured register ID',
-                ['registerId' => $registerId]
-            );
-            break;
-        }
-
-        // Configure schema IDs from imported schemas.
-        $schemas = ($importResult['schemas'] ?? []);
-        foreach ($schemas as $schema) {
-            if (is_object($schema) === false) {
-                continue;
-            }
-
-            $slug = $schema->getSlug();
-            if (isset(self::SLUG_TO_CONFIG_KEY[$slug]) === false) {
-                continue;
-            }
-
-            $configKey = self::SLUG_TO_CONFIG_KEY[$slug];
-            $schemaId  = (string) $schema->getId();
-
-            $this->appConfig->setValueString(
-                Application::APP_ID,
-                $configKey,
-                $schemaId
-            );
-
-            // Mirror the workflowTemplate schema id under the stable
-            // workflow_definition_schema alias so consumer specs
-            // (status-transition-engine, role-based-step-routing) can
-            // resolve it without depending on the legacy slug.
-            if ($slug === 'workflowTemplate') {
-                $this->appConfig->setValueString(
-                    Application::APP_ID,
-                    'workflow_definition_schema',
-                    $schemaId
-                );
-            }
-
-            $this->logger->debug(
-                'Procest: Auto-configured schema',
-                [
-                    'slug'      => $slug,
-                    'configKey' => $configKey,
-                    'schemaId'  => $schemaId,
-                ]
-            );
-
-            $configuredCount++;
-        }//end foreach
-
-        $this->logger->info(
-            'Procest: Auto-configuration complete',
-            ['configuredSchemas' => $configuredCount]
-        );
-
-        return $configuredCount;
-    }//end autoConfigureAfterImport()
-
-    /**
-     * Merge modular register fragments (ADR-037) onto a base configuration.
-     *
-     * Reads every `*.json` file in the given fragment directory in sorted
-     * filename order and deep-merges each onto the base configuration. The
-     * `README.md` (and any non-JSON files) are ignored. Returns the merged
-     * configuration plus a short stable hash that fingerprints the applied
-     * fragment set (filename + content), so callers can fold it into the
-     * import version to force re-import when fragments change.
-     *
-     * @param array  $base        The parsed monolith configuration.
-     * @param string $fragmentDir Absolute path to the register.d directory.
-     *
-     * @return array{0: array<string,mixed>, 1: string} The merged config and the fragment hash ('' when no fragments).
-     */
-    private static function mergeRegisterFragments(array $base, string $fragmentDir): array
-    {
-        if (is_dir($fragmentDir) === false) {
-            return [$base, ''];
-        }
-
-        $files = glob($fragmentDir.'/*.json');
-        if ($files === false || empty($files) === true) {
-            return [$base, ''];
-        }
-
-        sort($files);
-
-        $merged          = $base;
-        $hashAccumulator = '';
-
-        foreach ($files as $file) {
-            $content = file_get_contents($file);
-            if ($content === false) {
-                continue;
-            }
-
-            $fragment = json_decode($content, true);
-            if (json_last_error() !== JSON_ERROR_NONE || is_array($fragment) === false) {
-                continue;
-            }
-
-            $merged           = self::deepMergeConfig(base: $merged, override: $fragment);
-            $hashAccumulator .= basename($file).':'.$content."\n";
-        }//end foreach
-
-        if ($hashAccumulator === '') {
-            return [$merged, ''];
-        }
-
-        return [$merged, substr(hash('sha256', $hashAccumulator), 0, 12)];
-    }//end mergeRegisterFragments()
-
-    /**
-     * Recursively deep-merge an override array onto a base array (ADR-037).
-     *
-     * Associative arrays (OpenAPI objects like `components.schemas`, `paths`)
-     * are merged key-by-key, recursing on shared keys; list arrays (numeric,
-     * sequential keys) are concatenated; scalar values from the override
-     * overwrite the base. Disjoint fragments therefore union cleanly without
-     * collision.
-     *
-     * @param array<int|string,mixed> $base     The base array.
-     * @param array<int|string,mixed> $override The override array.
-     *
-     * @return array<int|string,mixed> The merged result.
-     */
-    private static function deepMergeConfig(array $base, array $override): array
-    {
-        foreach ($override as $key => $value) {
-            if (is_array($value) === true
-                && isset($base[$key]) === true
-                && is_array($base[$key]) === true
-            ) {
-                if (self::isList(array: $value) === true && self::isList(array: $base[$key]) === true) {
-                    $base[$key] = array_merge($base[$key], $value);
-                    continue;
-                }
-
-                $base[$key] = self::deepMergeConfig(base: $base[$key], override: $value);
-                continue;
-            }
-
-            $base[$key] = $value;
-        }//end foreach
-
-        return $base;
-    }//end deepMergeConfig()
-
-    /**
-     * Determine whether an array is a sequential list (vs. an associative map).
-     *
-     * Backport of `array_is_list()` for portability across PHP runtimes.
-     *
-     * @param array<int|string,mixed> $array The array to inspect.
-     *
-     * @return bool True when the array has sequential integer keys from zero.
-     */
-    private static function isList(array $array): bool
-    {
-        if (function_exists('array_is_list') === true) {
-            return array_is_list($array);
-        }
-
-        $expected = 0;
-        foreach (array_keys($array) as $key) {
-            if ($key !== $expected) {
-                return false;
-            }
-
-            $expected++;
-        }
-
-        return true;
-    }//end isList()
 }//end class
