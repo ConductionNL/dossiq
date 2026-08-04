@@ -586,18 +586,11 @@ class SettingsService
 
         $configVersion = ($configData['info']['version'] ?? '0.0.0');
 
-        // The fragment hash is deliberately NOT folded into the version.
-        //
-        // It used to be, so that adding or changing a fragment forced a
-        // re-import. But OpenRegister gates with version_compare, which treats
-        // `+…` as further version parts and compares them LEXICALLY rather than
-        // as semver build metadata — so whether the gate fired depended on how
-        // two md5 hashes happened to sort. Unchanged content re-imported about
-        // half the time; a real change was skipped the other half.
-        //
-        // OpenRegister now hashes the merged configuration itself and skips on
-        // hash equality, which detects a changed fragment from the data. The
-        // version stays a version.
+        // $fragmentHash is deliberately NOT folded into the version: OpenRegister
+        // gates with version_compare, which compares `+frag.<md5>` LEXICALLY
+        // rather than as semver build metadata, so the gate fired on how two
+        // hashes sorted. It now hashes the merged config itself and skips on
+        // hash equality (openregister#2325). See that PR for the measurements.
 
         try {
             $importResult = $configurationService->importFromApp(
