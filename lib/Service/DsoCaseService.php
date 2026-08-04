@@ -27,9 +27,8 @@ namespace OCA\Procest\Service;
 use DateTimeImmutable;
 use Exception;
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Event\VergunningStatusChangedEvent;
+use OCA\Procest\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Procest\Service\Support\SearchesObjects;
-use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
 use OCP\IUser;
 use Psr\Container\ContainerInterface;
@@ -82,15 +81,15 @@ class DsoCaseService
     /**
      * Constructor.
      *
-     * @param IAppConfig         $appConfig       The application config service
-     * @param ContainerInterface $container       The DI container (ObjectService resolved lazily)
-     * @param IEventDispatcher   $eventDispatcher The event dispatcher
-     * @param LoggerInterface    $logger          The logger
+     * @param IAppConfig              $appConfig The application config service
+     * @param ContainerInterface      $container The DI container (ObjectService resolved lazily)
+     * @param DsoStatusChangeNotifier $notifier  Emits the VergunningStatusChanged domain event
+     * @param LoggerInterface         $logger    The logger
      */
     public function __construct(
         private readonly IAppConfig $appConfig,
         private readonly ContainerInterface $container,
-        private readonly IEventDispatcher $eventDispatcher,
+        private readonly DsoStatusChangeNotifier $notifier,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -283,7 +282,7 @@ class DsoCaseService
             );
         }
 
-        $event = new VergunningStatusChangedEvent(
+        $this->notifier->dispatchStatusChanged(
             aanvraagRef: $aanvraagRef,
             oldStatus: $oldStatus,
             newStatus: $newStatus,
@@ -291,7 +290,6 @@ class DsoCaseService
             toelichting: $toelichting,
             userId: $userId,
         );
-        $this->eventDispatcher->dispatchTyped(event: $event);
 
         return $updatedZaak;
     }//end transitionStatus()

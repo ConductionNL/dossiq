@@ -35,11 +35,16 @@ use DomainException;
 use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Procest\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * Service orchestrating the ZGW DRC zaakdossier.
+ *
+ * The per-document status state machine is owned by
+ * {@see InformatieobjectStatusLifecycle}; this service orchestrates the
+ * dossier around it.
  */
 class ZaakdossierService
 {
@@ -47,34 +52,38 @@ class ZaakdossierService
 
     /**
      * Valid informatieobject statuses.
+     *
+     * Canonically owned by {@see InformatieobjectStatusLifecycle}; aliased here
+     * so existing callers of `ZaakdossierService::VALID_STATUSES` keep working.
+     *
+     * @var string[]
      */
-    public const VALID_STATUSES = [
-        'concept',
-        'definitief',
-        'gearchiveerd',
-    ];
+    public const VALID_STATUSES = InformatieobjectStatusLifecycle::VALID_STATUSES;
 
     /**
      * Allowed forward-only status transitions (from => [allowed-to, ...]).
+     *
+     * Canonically owned by {@see InformatieobjectStatusLifecycle}; aliased here
+     * for backwards compatibility.
+     *
+     * @var array<string, string[]>
      */
-    public const STATUS_TRANSITIONS = [
-        'concept'      => ['definitief'],
-        'definitief'   => ['gearchiveerd'],
-        'gearchiveerd' => [],
-    ];
+    public const STATUS_TRANSITIONS = InformatieobjectStatusLifecycle::STATUS_TRANSITIONS;
 
     /**
      * Constructor.
      *
-     * @param SettingsService             $settingsService Settings service (config + ObjectService).
-     * @param ZgwDocumentService          $documentService Binary file storage service.
-     * @param InformatieobjectAccessGuard $accessGuard     Classification access guard.
-     * @param LoggerInterface             $logger          Logger.
+     * @param SettingsService                 $settingsService Settings service (config + ObjectService).
+     * @param ZgwDocumentService              $documentService Binary file storage service.
+     * @param InformatieobjectAccessGuard     $accessGuard     Classification access guard.
+     * @param InformatieobjectStatusLifecycle $statusLifecycle Per-document status state machine.
+     * @param LoggerInterface                 $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly ZgwDocumentService $documentService,
         private readonly InformatieobjectAccessGuard $accessGuard,
+        private readonly InformatieobjectStatusLifecycle $statusLifecycle,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -265,56 +274,7 @@ class ZaakdossierService
      */
     public function transitionStatus(string $infoObjectId, string $newStatus): array
     {
-        if (in_array($newStatus, self::VALID_STATUSES, true) === false) {
-            throw new InvalidArgumentException('Invalid status: '.$newStatus);
-        }
-
-        [$objectService, $register] = $this->requireRegister();
-        $infoSchema = $this->settingsService->getConfigValue('dossier_informatieobject_schema');
-
-        $current = $this->findObjectAsArray(
-            objectService: $objectService,
-            register: $register,
-            schema: $infoSchema,
-            id: $infoObjectId,
-        );
-
-        if ($current === null) {
-            throw new RuntimeException('Informatieobject not found: '.$infoObjectId);
-        }
-
-        $currentStatus = (string) ($current['status'] ?? 'concept');
-        if ($this->isTransitionAllowed(from: $currentStatus, to: $newStatus) === false) {
-            throw new InvalidArgumentException(
-                'Invalid status transition from '.$currentStatus.' to '.$newStatus
-            );
-        }
-
-        $updateData = ['status' => $newStatus];
-        if ($newStatus === 'definitief') {
-            $updateData['vergrendeldOp'] = date('Y-m-d\TH:i:s');
-        }
-
-        $objectService->saveObject(object: $updateData, register: $register, schema: $infoSchema, uuid: $infoObjectId);
-
-        $this->logger->info(
-            'Procest dossier: informatieobject '.$infoObjectId.' transitioned '.$currentStatus.' -> '.$newStatus,
-            ['app' => Application::APP_ID],
-        );
-
-        // Carry `vergrendeldOp` through only when the transition set it to a
-        // non-null value. Kept as an isset() test rather than
-        // array_intersect_key(), which would also carry an explicitly-null
-        // value through and write a null back over the stored field.
-        $vergrendeldOp = [];
-        if (isset($updateData['vergrendeldOp']) === true) {
-            $vergrendeldOp = ['vergrendeldOp' => $updateData['vergrendeldOp']];
-        }
-
-        return array_merge(
-            ['id' => $infoObjectId, 'status' => $newStatus],
-            $vergrendeldOp,
-        );
+        return $this->statusLifecycle->transition(infoObjectId: $infoObjectId, newStatus: $newStatus);
     }//end transitionStatus()
 
     /**
@@ -329,12 +289,7 @@ class ZaakdossierService
      */
     public function isTransitionAllowed(string $from, string $to): bool
     {
-        if ($from === $to) {
-            return false;
-        }
-
-        $allowed = (self::STATUS_TRANSITIONS[$from] ?? []);
-        return in_array($to, $allowed, true);
+        return $this->statusLifecycle->isTransitionAllowed(from: $from, to: $to);
     }//end isTransitionAllowed()
 
     /**
@@ -436,18 +391,7 @@ class ZaakdossierService
      */
     public function bulkTransitionStatus(array $infoObjectIds, string $newStatus): array
     {
-        $results = [];
-        foreach ($infoObjectIds as $id) {
-            $id = (string) $id;
-            try {
-                $this->transitionStatus(infoObjectId: $id, newStatus: $newStatus);
-                $results[] = ['id' => $id, 'success' => true];
-            } catch (\Throwable $e) {
-                $results[] = ['id' => $id, 'success' => false, 'error' => $e->getMessage()];
-            }
-        }
-
-        return $results;
+        return $this->statusLifecycle->transitionMany(infoObjectIds: $infoObjectIds, newStatus: $newStatus);
     }//end bulkTransitionStatus()
 
     /**

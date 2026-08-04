@@ -27,14 +27,19 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Milestone\MilestoneRepository;
+use OCA\Procest\Service\Milestone\StalledCaseDetector;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * Service for milestone tracking and progress calculation.
+ *
+ * Reads go through {@see MilestoneRepository} and the stalled-case report is
+ * owned by {@see StalledCaseDetector}; what stays here is milestone mutation
+ * (mark/reverse) and per-case progress.
  */
 class MilestoneService
 {
@@ -44,11 +49,15 @@ class MilestoneService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings service
-     * @param LoggerInterface $logger          Logger
+     * @param SettingsService     $settingsService Settings service
+     * @param MilestoneRepository $repository      Milestone definitions/records reader
+     * @param StalledCaseDetector $stalledDetector Stalled-case report
+     * @param LoggerInterface     $logger          Logger
      */
     public function __construct(
         private readonly SettingsService $settingsService,
+        private readonly MilestoneRepository $repository,
+        private readonly StalledCaseDetector $stalledDetector,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -66,24 +75,7 @@ class MilestoneService
      */
     public function getMilestones(string $caseTypeId): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('milestone_definition_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['caseType' => $caseTypeId, '_limit' => 100],
-        );
+        return $this->repository->findDefinitions(caseTypeId: $caseTypeId);
     }//end getMilestones()
 
     /**
@@ -108,7 +100,7 @@ class MilestoneService
             ];
         }
 
-        $records   = $this->getMilestoneRecords(caseId: $caseId);
+        $records   = $this->repository->findRecords(caseId: $caseId);
         $recordMap = [];
         foreach ($records as $record) {
             $recordMap[$record['milestoneDefinition'] ?? ''] = $record;
@@ -313,249 +305,6 @@ class MilestoneService
      */
     public function findStalledCases(int $thresholdDays=0): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register   = $this->settingsService->getConfigValue('register');
-        $caseSchema = $this->settingsService->getConfigValue('case_schema');
-        if ($register === '' || $caseSchema === '') {
-            return [];
-        }
-
-        $cases = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $caseSchema,
-            filters: ['_limit' => 1000],
-        );
-
-        $today   = new DateTimeImmutable('today');
-        $stalled = [];
-
-        foreach ($cases as $case) {
-            $stall = $this->getStallRow(case: $case, today: $today, thresholdDays: $thresholdDays);
-            if ($stall !== null) {
-                $stalled[] = $stall;
-            }
-        }//end foreach
-
-        return $stalled;
+        return $this->stalledDetector->findStalledCases(thresholdDays: $thresholdDays);
     }//end findStalledCases()
-
-    /**
-     * Build the stall report row for a single case, or null when it is not stalled.
-     *
-     * Cases without an id, closed cases, cases without a case type and cases
-     * without a parsable start date are skipped (null).
-     *
-     * @param array<string, mixed> $case          The case object.
-     * @param \DateTimeImmutable   $today         Today (date only).
-     * @param int                  $thresholdDays Grace days past the deadline.
-     *
-     * @return array<string, mixed>|null Stall row, or null when on track or skipped.
-     */
-    private function getStallRow(array $case, \DateTimeImmutable $today, int $thresholdDays): ?array
-    {
-        $caseId = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-        $status = strtolower((string) ($case['status'] ?? ''));
-        if ($caseId === '' || $this->isClosedStatus(status: $status) === true) {
-            return null;
-        }
-
-        $caseTypeId = (string) ($case['caseType'] ?? '');
-        if ($caseTypeId === '') {
-            return null;
-        }
-
-        $startDate = $this->parseCaseStart(case: $case);
-        if ($startDate === null) {
-            return null;
-        }
-
-        $stall = $this->evaluateStall(
-            caseId: $caseId,
-            caseTypeId: $caseTypeId,
-            startDate: $startDate,
-            today: $today,
-            thresholdDays: $thresholdDays,
-        );
-
-        if ($stall === null) {
-            return null;
-        }
-
-        $stall['caseTitle'] = (string) ($case['title'] ?? '');
-        $stall['caseType']  = $caseTypeId;
-        $stall['assignee']  = (string) ($case['assignee'] ?? '');
-
-        return $stall;
-    }//end getStallRow()
-
-    /**
-     * Evaluate whether a single case has stalled on its earliest unreached
-     * milestone and, if so, build the report row.
-     *
-     * @param string             $caseId        The case UUID.
-     * @param string             $caseTypeId    The case type UUID.
-     * @param \DateTimeImmutable $startDate     The case start date.
-     * @param \DateTimeImmutable $today         Today (date only).
-     * @param int                $thresholdDays Grace days past the deadline.
-     *
-     * @return array<string, mixed>|null Stall row, or null when on track.
-     */
-    private function evaluateStall(
-        string $caseId,
-        string $caseTypeId,
-        \DateTimeImmutable $startDate,
-        \DateTimeImmutable $today,
-        int $thresholdDays,
-    ): ?array {
-        $definitions = $this->getMilestones(caseTypeId: $caseTypeId);
-        if (count($definitions) === 0) {
-            return null;
-        }
-
-        // Order definitions by their numeric `order`.
-        usort(
-            $definitions,
-            static fn(array $a, array $b): int => ((int) ($a['order'] ?? 0) <=> (int) ($b['order'] ?? 0))
-        );
-
-        $records   = $this->getMilestoneRecords(caseId: $caseId);
-        $reachedBy = [];
-        foreach ($records as $record) {
-            if ((bool) ($record['reached'] ?? true) === true) {
-                $reachedBy[(string) ($record['milestoneDefinition'] ?? '')] = true;
-            }
-        }
-
-        foreach ($definitions as $def) {
-            $defId = (string) ($def['id'] ?? ($def['uuid'] ?? ''));
-            if (isset($reachedBy[$defId]) === true) {
-                continue;
-            }
-
-            // First unreached milestone — this is what the case waits on.
-            $expectedDays = (int) ($def['expectedDurationWorkingDays'] ?? 0);
-            $deadline     = $this->addWorkingDays(start: $startDate, workingDays: $expectedDays);
-            $daysOverdue  = (int) $deadline->diff($today)->format('%r%a');
-
-            if ($daysOverdue > $thresholdDays) {
-                return [
-                    'caseId'              => $caseId,
-                    'milestoneIdentifier' => (string) ($def['identifier'] ?? ''),
-                    'milestoneLabel'      => (string) ($def['label'] ?? ($def['name'] ?? '')),
-                    'deadline'            => $deadline->format('Y-m-d'),
-                    'daysOverdue'         => $daysOverdue,
-                ];
-            }
-
-            // Earliest unreached milestone is within deadline -> on track.
-            return null;
-        }//end foreach
-
-        // All milestones reached -> case complete, not stalled.
-        return null;
-    }//end evaluateStall()
-
-    /**
-     * Parse a case's start date into a date-only immutable value.
-     *
-     * @param array<string, mixed> $case The case object.
-     *
-     * @return \DateTimeImmutable|null The start date, or null when absent/invalid.
-     */
-    private function parseCaseStart(array $case): ?\DateTimeImmutable
-    {
-        $raw = (string) ($case['startDate'] ?? ($case['created'] ?? ''));
-        if ($raw === '') {
-            return null;
-        }
-
-        try {
-            return new DateTimeImmutable(substr($raw, 0, 10));
-        } catch (\Throwable $e) {
-            return null;
-        }
-    }//end parseCaseStart()
-
-    /**
-     * Determine whether a (lower-cased) case status represents a closed case.
-     *
-     * @param string $status Lower-cased status string.
-     *
-     * @return bool True when the case is closed and should be skipped.
-     */
-    private function isClosedStatus(string $status): bool
-    {
-        foreach (['afgesloten', 'afgehandeld', 'geweigerd', 'ingetrokken', 'gearchiveerd'] as $needle) {
-            if (str_contains($status, $needle) === true) {
-                return true;
-            }
-        }
-
-        return false;
-    }//end isClosedStatus()
-
-    /**
-     * Add a number of working days (Mon-Fri) to a start date.
-     *
-     * Weekends are skipped. Dutch public holidays are not subtracted here; the
-     * milestone layer's deadlines are advisory (per the proposal's out-of-scope
-     * note on contractual SLA enforcement).
-     *
-     * @param \DateTimeImmutable $start       The start date.
-     * @param int                $workingDays Working days to add (>= 0).
-     *
-     * @return \DateTimeImmutable The resulting deadline date.
-     */
-    private function addWorkingDays(\DateTimeImmutable $start, int $workingDays): \DateTimeImmutable
-    {
-        if ($workingDays <= 0) {
-            return $start;
-        }
-
-        $date  = $start;
-        $added = 0;
-        while ($added < $workingDays) {
-            $date = $date->modify('+1 day');
-            $dow  = (int) $date->format('N');
-            if ($dow < 6) {
-                $added++;
-            }
-        }
-
-        return $date;
-    }//end addWorkingDays()
-
-    /**
-     * Get milestone records for a case.
-     *
-     * @param string $caseId The case UUID
-     *
-     * @return array<int, array<string, mixed>> Milestone records
-     */
-    private function getMilestoneRecords(string $caseId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('milestone_record_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['case' => $caseId, '_limit' => 100],
-        );
-    }//end getMilestoneRecords()
 }//end class

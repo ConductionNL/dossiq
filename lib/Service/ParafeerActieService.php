@@ -33,7 +33,10 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Event\ParafeerTransitionEvent;
+use OCA\Procest\Service\Parafeer\ParafeerStepGuard;
+use OCA\Procest\Service\Parafeer\ParafeerVoorstelRepository;
 use OCA\Procest\Service\Parafeer\ParaferingActionMapper;
+use OCA\Procest\Service\Support\ObjectArrayNormalizer;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use OCP\AppFramework\OCS\OCSForbiddenException;
@@ -55,7 +58,8 @@ use RuntimeException;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — pre-existing; still 21 after the step-guard,
+ *   voorstel-repository and array-normalisation seams were extracted.
  */
 class ParafeerActieService
 {
@@ -64,43 +68,61 @@ class ParafeerActieService
 
     /**
      * Action: actor advised on an advies step.
+     *
+     * Canonically owned by {@see ParafeerStepGuard}, which enforces it.
+     *
+     * @var string
      */
-    public const ACTION_ADVISED = 'advised';
+    public const ACTION_ADVISED = ParafeerStepGuard::ACTION_ADVISED;
 
     /**
      * Action: actor parafered a parafering step.
+     *
+     * @var string
      */
-    public const ACTION_PARAFERED = 'parafered';
+    public const ACTION_PARAFERED = ParafeerStepGuard::ACTION_PARAFERED;
 
     /**
      * Action: actor accorded an accordering step.
+     *
+     * @var string
      */
-    public const ACTION_ACCORDED = 'accorded';
+    public const ACTION_ACCORDED = ParafeerStepGuard::ACTION_ACCORDED;
 
     /**
      * Action: actor returned the voorstel to the steller.
+     *
+     * @var string
      */
-    public const ACTION_RETURNED = 'returned';
+    public const ACTION_RETURNED = ParafeerStepGuard::ACTION_RETURNED;
 
     /**
      * Action: step was skipped.
+     *
+     * @var string
      */
     public const ACTION_SKIPPED = 'skipped';
 
     /**
      * Step type: advies.
+     *
+     * @var string
      */
-    public const STEP_TYPE_ADVIES = 'advies';
+    public const STEP_TYPE_ADVIES = ParafeerStepGuard::STEP_TYPE_ADVIES;
 
     /**
      * Step type: parafering.
+     *
+     * @var string
      */
-    public const STEP_TYPE_PARAFERING = 'parafering';
+    public const STEP_TYPE_PARAFERING = ParafeerStepGuard::STEP_TYPE_PARAFERING;
 
     /**
      * Step type: accordering.
+     *
+     * @var string
      */
-    public const STEP_TYPE_ACCORDERING = 'accordering';
+    public const STEP_TYPE_ACCORDERING = ParafeerStepGuard::STEP_TYPE_ACCORDERING;
 
     /**
      * Voorstel status: in_parafering (active route).
@@ -125,22 +147,26 @@ class ParafeerActieService
     /**
      * Constructor.
      *
-     * @param SettingsService               $settingsService     The settings service (provides ObjectService access).
      * @param ParaferingNotificationService $notificationService The Nextcloud notification service.
      * @param IRootFolder                   $rootFolder          The Nextcloud root folder (for PDF signing).
      * @param LoggerInterface               $logger              The logger.
      * @param IEventDispatcher              $eventDispatcher     The event dispatcher (parafering transition events).
      * @param ParaferingApprovalBridge      $approvalBridge      Bridge to OpenRegister approval-workflow (ADR-022).
      * @param ParaferingActionMapper        $actionMapper        Pure shaping of action input, payload and route steps.
+     * @param ParafeerStepGuard             $stepGuard           Current-step resolution + fail-closed authorisation.
+     * @param ParafeerVoorstelRepository    $voorstelRepository  Register/schema resolution + voorstel loads.
+     * @param ObjectArrayNormalizer         $normalizer          Collapses OpenRegister's array-or-entity shape.
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
         private readonly ParaferingNotificationService $notificationService,
         private readonly IRootFolder $rootFolder,
         private readonly LoggerInterface $logger,
         private readonly IEventDispatcher $eventDispatcher,
         private readonly ParaferingApprovalBridge $approvalBridge,
         private readonly ParaferingActionMapper $actionMapper,
+        private readonly ParafeerStepGuard $stepGuard,
+        private readonly ParafeerVoorstelRepository $voorstelRepository,
+        private readonly ObjectArrayNormalizer $normalizer,
     ) {
     }//end __construct()
 
@@ -258,32 +284,29 @@ class ParafeerActieService
      */
     private function performRecordAction(string $voorstelId, array $data, IUser $currentUser): array
     {
-        [$register, $voorstelSchema, $actieSchema] = $this->resolveSchemas();
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
+        [$register, $voorstelSchema, $actieSchema] = $this->voorstelRepository->resolveSchemas();
+        $objectService = $this->voorstelRepository->requireObjectService();
 
-        $voorstel = $this->findVoorstel(
+        $voorstel = $this->voorstelRepository->findVoorstel(
             objectService: $objectService,
             register: $register,
             schema: $voorstelSchema,
             voorstelId: $voorstelId,
         );
-        $step     = $this->resolveCurrentStep(voorstel: $voorstel);
+        $step     = $this->stepGuard->resolveCurrentStep(voorstel: $voorstel);
 
         $input   = $this->actionMapper->parseActionInput(data: $data);
         $action  = (string) $input['action'];
         $comment = (string) $input['comment'];
 
-        $this->authorize(
+        $this->stepGuard->authorize(
             step: $step,
             currentUser: $currentUser,
             onBehalfOf: $input['onBehalfOf'],
             mandate: $input['mandate'],
         );
-        $this->validateActionForStepType(step: $step, action: $action);
-        $this->validateRequiredFields(
+        $this->stepGuard->validateActionForStepType(step: $step, action: $action);
+        $this->stepGuard->validateRequiredFields(
             action: $action,
             comment: $comment,
             advice: (string) $input['advice'],
@@ -323,7 +346,7 @@ class ParafeerActieService
             );
 
             return [
-                'parafeeractie' => $this->toArray(value: $savedActie),
+                'parafeeractie' => $this->normalizer->toArray(value: $savedActie),
                 'voorstel'      => ['id' => $voorstelId, 'status' => self::STATUS_TERUGGESTUURD],
             ];
         }
@@ -347,8 +370,8 @@ class ParafeerActieService
         );
 
         return [
-            'parafeeractie' => $this->toArray(value: $savedActie),
-            'voorstel'      => $this->toArray(value: $updatedVoorstel),
+            'parafeeractie' => $this->normalizer->toArray(value: $savedActie),
+            'voorstel'      => $this->normalizer->toArray(value: $updatedVoorstel),
         ];
     }//end performRecordAction()
 
@@ -566,8 +589,8 @@ class ParafeerActieService
     public function listActions(string $voorstelId): array
     {
         try {
-            [$register, , $actieSchema] = $this->resolveSchemas();
-            $objectService = $this->settingsService->getObjectService();
+            [$register, , $actieSchema] = $this->voorstelRepository->resolveSchemas();
+            $objectService = $this->voorstelRepository->objectServiceOrNull();
             if ($objectService === null) {
                 return [];
             }
@@ -582,7 +605,7 @@ class ParafeerActieService
             $rows = [];
             if (is_array($results) === true) {
                 foreach ($results as $row) {
-                    $rows[] = $this->toArray(value: $row);
+                    $rows[] = $this->normalizer->toArray(value: $row);
                 }
             }
 
@@ -686,174 +709,6 @@ class ParafeerActieService
     }//end applyPdfSignature()
 
     /**
-     * Resolve the OpenRegister register and schemas from settings.
-     *
-     * @return array{0: string, 1: string, 2: string} [register, voorstelSchema, parafeeractieSchema]
-     *
-     * @throws \RuntimeException When register/schemas are not configured.
-     */
-    private function resolveSchemas(): array
-    {
-        $register       = $this->settingsService->getConfigValue('register');
-        $voorstelSchema = $this->settingsService->getConfigValue('voorstel_schema');
-        $actieSchema    = $this->settingsService->getConfigValue('parafeeractie_schema');
-
-        if (empty($register) === true || empty($voorstelSchema) === true || empty($actieSchema) === true) {
-            throw new RuntimeException('Procest register/schemas not configured');
-        }
-
-        return [(string) $register, (string) $voorstelSchema, (string) $actieSchema];
-    }//end resolveSchemas()
-
-    /**
-     * Fetch a voorstel by UUID.
-     *
-     * @param object $objectService The OpenRegister ObjectService.
-     * @param string $register      The register identifier.
-     * @param string $schema        The voorstel schema identifier.
-     * @param string $voorstelId    The voorstel UUID.
-     *
-     * @return array<string, mixed>
-     *
-     * @throws OCSBadRequestException When the voorstel cannot be located.
-     */
-    private function findVoorstel(object $objectService, string $register, string $schema, string $voorstelId): array
-    {
-        try {
-            $voorstel = $objectService->find($voorstelId, register: $register, schema: $schema);
-        } catch (\Throwable $e) {
-            throw new OCSBadRequestException('Voorstel not found');
-        }
-
-        $array = $this->toArray(value: $voorstel);
-        if (empty($array) === true) {
-            throw new OCSBadRequestException('Voorstel not found');
-        }
-
-        return $array;
-    }//end findVoorstel()
-
-    /**
-     * Resolve the current step from the route snapshot.
-     *
-     * @param array<string, mixed> $voorstel The voorstel array.
-     *
-     * @return array<string, mixed> The current step (order, type, actor, label).
-     *
-     * @throws OCSBadRequestException When no current step is set or route snapshot missing.
-     */
-    private function resolveCurrentStep(array $voorstel): array
-    {
-        $currentStep = (int) ($voorstel['currentStep'] ?? 0);
-        if ($currentStep < 1) {
-            throw new OCSBadRequestException('Voorstel has no active step');
-        }
-
-        $snapshotRaw = $voorstel['routeSnapshot'] ?? null;
-        if ($snapshotRaw === null) {
-            throw new OCSBadRequestException('Voorstel has no route snapshot');
-        }
-
-        $decoded = $snapshotRaw;
-        if (is_string($snapshotRaw) === true) {
-            $decoded = json_decode($snapshotRaw, true);
-        }
-
-        if (is_array($decoded) === false) {
-            throw new OCSBadRequestException('Invalid route snapshot');
-        }
-
-        foreach ($decoded as $step) {
-            if (is_array($step) === true && (int) ($step['order'] ?? 0) === $currentStep) {
-                return $step;
-            }
-        }
-
-        throw new OCSBadRequestException('Current step not found in route snapshot');
-    }//end resolveCurrentStep()
-
-    /**
-     * Authorize the current user against the step actor (or valid delegate).
-     *
-     * @param array<string, mixed> $step        The current step.
-     * @param IUser                $currentUser The authenticated user.
-     * @param string|null          $onBehalfOf  The principal UID when acting as delegate.
-     * @param string|null          $mandate     The mandate reference.
-     *
-     * @return void
-     *
-     * @throws OCSForbiddenException When the current user is not the step actor and no valid delegate is configured.
-     */
-    private function authorize(array $step, IUser $currentUser, ?string $onBehalfOf, ?string $mandate): void
-    {
-        $stepActor = (string) ($step['actor'] ?? '');
-        $userUid   = $currentUser->getUID();
-
-        if ($stepActor === $userUid) {
-            return;
-        }
-
-        if ($onBehalfOf !== null && $onBehalfOf === $stepActor && $mandate !== null && $mandate !== '') {
-            // Mandate-based delegate authorization. The mandate registry check is the
-            // responsibility of the frontend "Namens" selector (which only exposes
-            // configured mandates) and the future MandaatService — see roadmap.
-            return;
-        }
-
-        throw new OCSForbiddenException('Not authorized for this parafering step');
-    }//end authorize()
-
-    /**
-     * Validate that the action is allowed for the given step type.
-     *
-     * @param array<string, mixed> $step   The current step (must include 'type').
-     * @param string               $action The proposed action.
-     *
-     * @return void
-     *
-     * @throws OCSBadRequestException When the action is invalid for the step type.
-     */
-    private function validateActionForStepType(array $step, string $action): void
-    {
-        $stepType = (string) ($step['type'] ?? '');
-        $allowed  = [
-            self::STEP_TYPE_ADVIES      => [self::ACTION_ADVISED, self::ACTION_RETURNED],
-            self::STEP_TYPE_PARAFERING  => [self::ACTION_PARAFERED, self::ACTION_RETURNED],
-            self::STEP_TYPE_ACCORDERING => [self::ACTION_ACCORDED, self::ACTION_RETURNED],
-        ];
-
-        if (isset($allowed[$stepType]) === false || in_array($action, $allowed[$stepType], true) === false) {
-            throw new OCSBadRequestException('Invalid action for this step type');
-        }
-    }//end validateActionForStepType()
-
-    /**
-     * Validate required fields per action.
-     *
-     * Step-type-specific rules live in
-     * {@see self::validateActionForStepType()}; this check is purely about the
-     * mandatory free-text fields, so it takes no step.
-     *
-     * @param string $action  The action.
-     * @param string $comment The comment (may be empty).
-     * @param string $advice  The advice (may be empty).
-     *
-     * @return void
-     *
-     * @throws OCSBadRequestException When mandatory comment/advice is missing.
-     */
-    private function validateRequiredFields(string $action, string $comment, string $advice): void
-    {
-        if ($action === self::ACTION_RETURNED && $comment === '') {
-            throw new OCSBadRequestException('Return reason is required');
-        }
-
-        if ($action === self::ACTION_ADVISED && $advice === '') {
-            throw new OCSBadRequestException('Advice text is required for advies steps');
-        }
-    }//end validateRequiredFields()
-
-    /**
      * Handle a "returned" action: update voorstel status and notify steller.
      *
      * @param object               $objectService  The OpenRegister ObjectService.
@@ -942,41 +797,6 @@ class ParafeerActieService
 
         $updated = $objectService->saveObject(object: $updateData, register: $register, schema: $voorstelSchema, uuid: (string) $voorstelId);
 
-        return $this->toArray(value: $updated);
+        return $this->normalizer->toArray(value: $updated);
     }//end advanceVoorstel()
-
-    /**
-     * Normalize an OpenRegister return value to an array.
-     *
-     * ObjectService can return either an array (older API) or an object exposing
-     * a jsonSerialize/toArray method (newer API). This helper collapses both.
-     *
-     * @param mixed $value The value to normalize.
-     *
-     * @return array<string, mixed>
-     */
-    private function toArray($value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
-
-        if (is_object($value) === true) {
-            if (method_exists($value, 'jsonSerialize') === true) {
-                $serialized = $value->jsonSerialize();
-                if (is_array($serialized) === true) {
-                    return $serialized;
-                }
-            }
-
-            if (method_exists($value, 'toArray') === true) {
-                $converted = $value->toArray();
-                if (is_array($converted) === true) {
-                    return $converted;
-                }
-            }
-        }
-
-        return [];
-    }//end toArray()
 }//end class

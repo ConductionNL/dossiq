@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Milestone\MilestoneRepository;
+use OCA\Procest\Service\Milestone\StalledCaseDetector;
 use OCA\Procest\Service\MilestoneService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -32,6 +34,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for MilestoneService::findStalledCases().
  *
  * @covers \OCA\Procest\Service\MilestoneService
+ * @covers \OCA\Procest\Service\Milestone\StalledCaseDetector
+ * @covers \OCA\Procest\Service\Milestone\MilestoneRepository
  */
 class MilestoneServiceStalledTest extends TestCase
 {
@@ -62,6 +66,32 @@ class MilestoneServiceStalledTest extends TestCase
         $this->logger          = $this->createMock(LoggerInterface::class);
 
     }//end setUp()
+
+
+    /**
+     * Build the service under test with REAL collaborators.
+     *
+     * The repository and the stalled-case detector are deliberately real, not
+     * mocks: these tests assert the production stall arithmetic, so a mocked
+     * detector would only ever replay its own canned answer.
+     *
+     * @return MilestoneService The service wired over the mocked settings service.
+     */
+    private function buildService(): MilestoneService
+    {
+        $repository = new MilestoneRepository(settingsService: $this->settingsService);
+
+        return new MilestoneService(
+            settingsService: $this->settingsService,
+            repository: $repository,
+            stalledDetector: new StalledCaseDetector(
+                settingsService: $this->settingsService,
+                repository: $repository,
+            ),
+            logger: $this->logger,
+        );
+
+    }//end buildService()
 
 
     /**
@@ -180,7 +210,7 @@ class MilestoneServiceStalledTest extends TestCase
         );
 
         $this->wireSettings($objectService);
-        $service = new MilestoneService($this->settingsService, $this->logger);
+        $service = $this->buildService();
 
         $stalled = $service->findStalledCases(thresholdDays: 0);
 
@@ -229,7 +259,7 @@ class MilestoneServiceStalledTest extends TestCase
         );
 
         $this->wireSettings($objectService);
-        $service = new MilestoneService($this->settingsService, $this->logger);
+        $service = $this->buildService();
 
         $this->assertCount(0, $service->findStalledCases(thresholdDays: 0));
 
@@ -271,7 +301,7 @@ class MilestoneServiceStalledTest extends TestCase
         );
 
         $this->wireSettings($objectService);
-        $service = new MilestoneService($this->settingsService, $this->logger);
+        $service = $this->buildService();
 
         $this->assertCount(0, $service->findStalledCases(thresholdDays: 0));
 
@@ -322,7 +352,7 @@ class MilestoneServiceStalledTest extends TestCase
         );
 
         $this->wireSettings($objectService);
-        $service = new MilestoneService($this->settingsService, $this->logger);
+        $service = $this->buildService();
 
         $this->assertCount(0, $service->findStalledCases(thresholdDays: 0));
 
