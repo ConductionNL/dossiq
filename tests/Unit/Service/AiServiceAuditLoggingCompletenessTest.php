@@ -92,6 +92,7 @@ class StubbedAiService extends AiService
  *
  * @uses \OCA\Procest\Service\Ai\AiAuditLog
  * @uses \OCA\Procest\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Procest\Service\Ai\AiModelIdentity
  * @uses \OCA\Procest\Service\Ai\AiPromptFactory
  */
 class AiServiceAuditLoggingCompletenessTest extends TestCase
