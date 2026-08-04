@@ -3,22 +3,22 @@
 /**
  * Procest StUF Message Builder
  *
- * Service for constructing StUF SOAP envelopes with proper namespace handling,
- * stuurgegevens population, and noValue attribute support.
+ * Service for constructing the OUTBOUND StUF-ZKN kennisgevingen and vragen
+ * procest sends toward a legacy zaaksysteem: buildLk01CreeerZaak /
+ * buildLk02ActualiseerZaak / buildLv01GeefDetails / buildDu01GenereerZaakId /
+ * buildDu01VrijBericht — string-concatenated, `zkn:`-namespaced StUF 0310
+ * envelopes wrapped with a WSSE UsernameToken header. The WSSE password is
+ * resolved from the vault at send time and is never logged or persisted.
+ * Folded in from the pipelinq StufEnvelopeBuilder during the StUF-ZKN
+ * outbound-gateway migration.
  *
- * This builder owns BOTH directions of StUF-ZKN/BG:
- *   - INBOUND responses (server-side receiver): buildSoapEnvelope / buildBv01 /
- *     buildFo01 / buildSoapFault / buildStuurgegevens — DOMDocument-based,
- *     `stuf:`-prefixed, XXE-safe. These are unchanged from procest's inbound
- *     handlers.
- *   - OUTBOUND kennisgevingen / vragen (client toward a legacy zaaksysteem):
- *     buildLk01CreeerZaak / buildLk02ActualiseerZaak / buildLv01GeefDetails /
- *     buildDu01GenereerZaakId / buildDu01VrijBericht — string-concatenated,
- *     `zkn:`-namespaced StUF 0310 envelopes wrapped with a WSSE UsernameToken
- *     header. The WSSE password is resolved from the vault at send time and is
- *     never logged or persisted. Folded in from the pipelinq StufEnvelopeBuilder
- *     during the StUF-ZKN outbound-gateway migration (one builder, two
- *     directions).
+ * The INBOUND direction — the responses procest returns as a StUF receiver —
+ * lives in {@see \OCA\Procest\Service\Stuf\StufResponseBuilder}. One builder
+ * owning both directions exposed fourteen public methods with two disjoint
+ * caller sets and two different XML styles.
+ *
+ * The StUF namespace constants stay here: they are the canonical home that
+ * StufMessageParser, StufResponseBuilder and StufController all read from.
  *
  * @category Service
  * @package  OCA\Procest\Service
@@ -44,7 +44,6 @@ namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use DOMDocument;
 use OCA\Procest\Service\Stuf\PayloadTooLargeException;
 use OCA\Procest\Service\Stuf\StufVaultService;
 use OCA\Procest\Service\Stuf\VrijBerichtNotRegisteredException;
@@ -52,11 +51,9 @@ use OCA\Procest\Service\Stuf\ZaaktypeNotMappedException;
 use Psr\Log\LoggerInterface;
 
 /**
- * Service for constructing StUF SOAP XML messages (inbound responses + outbound requests).
+ * Service for constructing the outbound StUF-ZKN request envelopes.
  *
  * @psalm-suppress UnusedClass
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class StufMessageBuilder
 {
@@ -123,221 +120,6 @@ class StufMessageBuilder
         private readonly StufVaultService $vault,
     ) {
     }//end __construct()
-
-    /**
-     * Build a complete SOAP envelope wrapping a StUF message body (inbound responses).
-     *
-     * @param string $bodyXml The StUF message body XML (without SOAP wrapper).
-     *
-     * @return string The complete SOAP envelope XML.
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function buildSoapEnvelope(string $bodyXml): string
-    {
-        $dom = new DOMDocument('1.0', 'UTF-8');
-        $dom->formatOutput = true;
-
-        $envelope = $dom->createElementNS(self::NS_SOAP, 'soap:Envelope');
-        $envelope->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:stuf', self::NS_STUF);
-        $envelope->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:zkn', self::NS_ZKN);
-        $envelope->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:bg', self::NS_BG);
-        $envelope->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xsi', self::NS_XSI);
-        $dom->appendChild($envelope);
-
-        $header = $dom->createElementNS(self::NS_SOAP, 'soap:Header');
-        $envelope->appendChild($header);
-
-        $body = $dom->createElementNS(self::NS_SOAP, 'soap:Body');
-        $envelope->appendChild($body);
-
-        // M1: Load the caller-supplied body XML with LIBXML_NONET to prevent
-        // XXE / SSRF attacks via external entity references in the XML payload.
-        $bodyDoc = new DOMDocument();
-        // phpcs:ignore -- libxml_use_internal_errors suppresses parse errors intentionally.
-        libxml_use_internal_errors(true);
-        if ($bodyDoc->loadXML($bodyXml, LIBXML_NONET) === true) {
-            $imported = $dom->importNode($bodyDoc->documentElement, true);
-            $body->appendChild($imported);
-        }
-
-        libxml_clear_errors();
-
-        $saved = $dom->saveXML();
-        if ($saved === false) {
-            return '';
-        }
-
-        return $saved;
-    }//end buildSoapEnvelope()
-
-    /**
-     * Build stuurgegevens XML element (inbound responses).
-     *
-     * @param array<string, string> $zender           Sender info (organisatie, applicatie).
-     * @param array<string, string> $ontvanger        Receiver info (organisatie, applicatie).
-     * @param string|null           $referentienummer Reference number (auto-generated if null).
-     *
-     * @return string The stuurgegevens XML fragment.
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function buildStuurgegevens(
-        array $zender,
-        array $ontvanger,
-        ?string $referentienummer=null,
-    ): string {
-        $refNr    = $referentienummer ?? $this->generateUuid();
-        $tijdstip = (new DateTimeImmutable())->format('YmdHis');
-
-        $xml  = '<stuf:stuurgegevens>';
-        $xml .= '<stuf:berichtcode>Lk01</stuf:berichtcode>';
-        $xml .= '<stuf:zender>';
-        $xml .= '<stuf:organisatie>'.htmlspecialchars($zender['organisatie'] ?? '').'</stuf:organisatie>';
-        $xml .= '<stuf:applicatie>'.htmlspecialchars($zender['applicatie'] ?? '').'</stuf:applicatie>';
-        $xml .= '</stuf:zender>';
-        $xml .= '<stuf:ontvanger>';
-        $xml .= '<stuf:organisatie>'.htmlspecialchars($ontvanger['organisatie'] ?? '').'</stuf:organisatie>';
-        $xml .= '<stuf:applicatie>'.htmlspecialchars($ontvanger['applicatie'] ?? '').'</stuf:applicatie>';
-        $xml .= '</stuf:ontvanger>';
-        $xml .= '<stuf:referentienummer>'.htmlspecialchars($refNr).'</stuf:referentienummer>';
-        $xml .= '<stuf:tijdstipBericht>'.$tijdstip.'</stuf:tijdstipBericht>';
-        $xml .= '</stuf:stuurgegevens>';
-
-        return $xml;
-    }//end buildStuurgegevens()
-
-    /**
-     * Build a StUF Bv01 (bevestigingsbericht) response.
-     *
-     * @param array<string, string> $zender    Sender info.
-     * @param array<string, string> $ontvanger Receiver info.
-     * @param string                $crossRef  Cross-reference to original message.
-     *
-     * @return string The complete SOAP Bv01 response.
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function buildBv01(
-        array $zender,
-        array $ontvanger,
-        string $crossRef,
-    ): string {
-        $tijdstip = (new DateTimeImmutable())->format('YmdHis');
-
-        $body  = '<stuf:Bv01Bericht xmlns:stuf="'.self::NS_STUF.'">';
-        $body .= '<stuf:stuurgegevens>';
-        $body .= '<stuf:berichtcode>Bv01</stuf:berichtcode>';
-        $body .= '<stuf:zender>';
-        $body .= '<stuf:organisatie>'.htmlspecialchars($zender['organisatie'] ?? '').'</stuf:organisatie>';
-        $body .= '<stuf:applicatie>'.htmlspecialchars($zender['applicatie'] ?? '').'</stuf:applicatie>';
-        $body .= '</stuf:zender>';
-        $body .= '<stuf:ontvanger>';
-        $body .= '<stuf:organisatie>'.htmlspecialchars($ontvanger['organisatie'] ?? '').'</stuf:organisatie>';
-        $body .= '<stuf:applicatie>'.htmlspecialchars($ontvanger['applicatie'] ?? '').'</stuf:applicatie>';
-        $body .= '</stuf:ontvanger>';
-        $body .= '<stuf:referentienummer>'.htmlspecialchars($this->generateUuid()).'</stuf:referentienummer>';
-        $body .= '<stuf:tijdstipBericht>'.$tijdstip.'</stuf:tijdstipBericht>';
-        $body .= '<stuf:crossRefnummer>'.htmlspecialchars($crossRef).'</stuf:crossRefnummer>';
-        $body .= '</stuf:stuurgegevens>';
-        $body .= '</stuf:Bv01Bericht>';
-
-        return $this->buildSoapEnvelope(bodyXml: $body);
-    }//end buildBv01()
-
-    /**
-     * Build a StUF Fo01 (foutbericht) fault response.
-     *
-     * @param string                $foutcode         The fault code (e.g., StUF058).
-     * @param string                $foutbeschrijving The fault description.
-     * @param string                $plek             Where the fault occurred (client/server).
-     * @param array<string, string> $zender           Sender info.
-     * @param array<string, string> $ontvanger        Receiver info.
-     *
-     * @return string The complete SOAP Fo01 response.
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function buildFo01(
-        string $foutcode,
-        string $foutbeschrijving,
-        string $plek,
-        array $zender,
-        array $ontvanger,
-    ): string {
-        $tijdstip = (new DateTimeImmutable())->format('YmdHis');
-
-        $body  = '<stuf:Fo01Bericht xmlns:stuf="'.self::NS_STUF.'">';
-        $body .= '<stuf:stuurgegevens>';
-        $body .= '<stuf:berichtcode>Fo01</stuf:berichtcode>';
-        $body .= '<stuf:zender>';
-        $body .= '<stuf:organisatie>'.htmlspecialchars($zender['organisatie'] ?? '').'</stuf:organisatie>';
-        $body .= '<stuf:applicatie>'.htmlspecialchars($zender['applicatie'] ?? '').'</stuf:applicatie>';
-        $body .= '</stuf:zender>';
-        $body .= '<stuf:ontvanger>';
-        $body .= '<stuf:organisatie>'.htmlspecialchars($ontvanger['organisatie'] ?? '').'</stuf:organisatie>';
-        $body .= '<stuf:applicatie>'.htmlspecialchars($ontvanger['applicatie'] ?? '').'</stuf:applicatie>';
-        $body .= '</stuf:ontvanger>';
-        $body .= '<stuf:referentienummer>'.htmlspecialchars($this->generateUuid()).'</stuf:referentienummer>';
-        $body .= '<stuf:tijdstipBericht>'.$tijdstip.'</stuf:tijdstipBericht>';
-        $body .= '</stuf:stuurgegevens>';
-        $body .= '<stuf:body>';
-        $body .= '<stuf:code>'.htmlspecialchars($foutcode).'</stuf:code>';
-        $body .= '<stuf:plek>'.htmlspecialchars($plek).'</stuf:plek>';
-        $body .= '<stuf:omschrijving>'.htmlspecialchars($foutbeschrijving).'</stuf:omschrijving>';
-        $body .= '</stuf:body>';
-        $body .= '</stuf:Fo01Bericht>';
-
-        return $this->buildSoapEnvelope(bodyXml: $body);
-    }//end buildFo01()
-
-    /**
-     * Build a SOAP Fault response for invalid XML.
-     *
-     * @param string $faultString The fault description.
-     *
-     * @return string The SOAP Fault XML.
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function buildSoapFault(string $faultString): string
-    {
-        $dom = new DOMDocument('1.0', 'UTF-8');
-        $dom->formatOutput = true;
-
-        $envelope = $dom->createElementNS(self::NS_SOAP, 'soap:Envelope');
-        $dom->appendChild($envelope);
-
-        $body = $dom->createElementNS(self::NS_SOAP, 'soap:Body');
-        $envelope->appendChild($body);
-
-        $fault = $dom->createElementNS(self::NS_SOAP, 'soap:Fault');
-        $body->appendChild($fault);
-
-        $faultcode = $dom->createElement('faultcode', 'Client');
-        $fault->appendChild($faultcode);
-
-        $faultstringEl = $dom->createElement('faultstring');
-        $faultstringEl->appendChild($dom->createTextNode($faultString));
-        $fault->appendChild($faultstringEl);
-
-        $saved = $dom->saveXML();
-        if ($saved === false) {
-            return '';
-        }
-
-        return $saved;
-    }//end buildSoapFault()
 
     /**
      * Build an Lk01 creeerZaak envelope from a case and the target endpoint (outbound).
@@ -818,24 +600,4 @@ class StufMessageBuilder
     {
         return htmlspecialchars(string: $value, flags: (ENT_XML1 | ENT_QUOTES), encoding: 'UTF-8');
     }//end escape()
-
-    /**
-     * Generate a UUID.
-     *
-     * @return string A UUID v4.
-     */
-    private function generateUuid(): string
-    {
-        return sprintf(
-            '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0x0fff) | 0x4000,
-            mt_rand(0, 0x3fff) | 0x8000,
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff),
-            mt_rand(0, 0xffff)
-        );
-    }//end generateUuid()
 }//end class
