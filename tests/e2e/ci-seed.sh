@@ -347,3 +347,25 @@ if [ "${GITHUB_ACTIONS:-}" = "true" ] || [ "${CI:-}" = "true" ]; then
 fi
 
 echo "[ci-seed] done."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ⚠️ THROWAWAY NEGATIVE CONTROL — NOT FOR development ⚠️
+#
+# This block exists on the `feature/e2e-truncation-control-procest` branch ONLY.
+# It proves the green run on `development` is a real green and not a job that
+# cannot report a failure.
+#
+# TRUNCATE, do not delete. `tests/e2e/global-setup.ts#ensureBundleBuilt()` does
+# `if (fs.existsSync(BUNDLE_PATH)) return` and otherwise re-runs `npm run build`
+# — so a DELETED bundle is silently rebuilt and the "control" runs against a
+# perfectly good SPA and comes back green. `fs.existsSync()` returns true for a
+# zero-byte file, so truncation slips past that guard and the Vue app genuinely
+# cannot mount.
+#
+# Placed AFTER the bundle gate above on purpose: the gate first proves a real
+# multi-MB JavaScript bundle WAS being served, and only then do we destroy it.
+# That ordering is what makes the following failures attributable to the missing
+# SPA rather than to a build that never happened.
+echo "[ci-seed] ⚠️ NEGATIVE CONTROL: truncating ${APP_DIR}/js/procest-main.js"
+: > "${APP_DIR}/js/procest-main.js"
+ls -l "${APP_DIR}/js/procest-main.js"
