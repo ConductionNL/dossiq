@@ -74,12 +74,24 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 	test('procest exposes no processing-log endpoints of its own', async ({ page }) => {
 		// The procest route table must not answer AVG log paths — the VNG
 		// Logging Verwerkingen API is OpenRegister's (OR-PA-9).
-		// MUST use the /index.php prefix. Without it the request never reaches
-		// Nextcloud's router — it is served the app shell HTML with status 200,
-		// which made this assertion fail while looking like procest DID expose
-		// the endpoint. (Had the expectation been inverted it would have
-		// "passed" while proving nothing at all.)
+		// A STATUS CODE CANNOT PROVE THIS. procest registers an SPA catch-all
+		// (`/{path}` -> dashboard#catchAll, from Routes::standard()), so every
+		// unmatched path under /apps/procest returns the app shell with HTTP
+		// 200 — this assertion expected 404/405 and could never pass. Note the
+		// trap: simply widening the expectation to include 200 would make it
+		// green while proving nothing, because 200 is exactly what the
+		// catch-all returns for a route that does NOT exist.
+		//
+		// What actually distinguishes "no API endpoint here" is the RESPONSE
+		// BODY: an AVG log endpoint would answer JSON, whereas the catch-all
+		// serves the HTML shell.
 		const res = await page.request.get(`/index.php${APP_URL}/api/avg/verwerkingen`, { maxRedirects: 0 })
-		expect([404, 405]).toContain(res.status())
+		const contentType = res.headers()['content-type'] ?? ''
+		expect(
+			contentType.includes('application/json'),
+			`procest answered ${APP_URL}/api/avg/verwerkingen with ${res.status()} ${contentType} — `
+			+ 'an AVG processing-log endpoint appears to exist in procest, but the VNG Logging '
+			+ "Verwerkingen API is OpenRegister's (OR-PA-9).",
+		).toBe(false)
 	})
 })
