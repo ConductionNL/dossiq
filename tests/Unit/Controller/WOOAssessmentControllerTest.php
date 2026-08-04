@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for WOOAssessmentController.
  *
  * @covers \OCA\Procest\Controller\WOOAssessmentController
+ *
+ * @uses \OCA\Procest\Service\CaseAccessGuard
  */
 class WOOAssessmentControllerTest extends TestCase
 {

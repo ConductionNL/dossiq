@@ -33,6 +33,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\CreateTaskHandler
+ *
+ * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
 class CreateTaskHandlerTest extends TestCase
 {

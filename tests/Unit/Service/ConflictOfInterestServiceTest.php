@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\ConflictOfInterestService
+ *
+ * @uses \OCA\Procest\Service\External\Brp\BrpLookupResult
  */
 class ConflictOfInterestServiceTest extends TestCase
 {

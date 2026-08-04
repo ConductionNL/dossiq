@@ -32,6 +32,8 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\NotifyHandler
+ *
+ * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
 class NotifyHandlerTest extends TestCase
 {

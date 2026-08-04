@@ -101,6 +101,8 @@ interface DossierObjectServiceStub
  * Unit tests for ZaakdossierService.
  *
  * @covers \OCA\Procest\Service\ZaakdossierService
+ *
+ * @uses \OCA\Procest\Service\InformatieobjectAccessGuard
  */
 class ZaakdossierServiceTest extends TestCase
 {

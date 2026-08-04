@@ -39,6 +39,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for ZipManifestBuilder.
  *
  * @covers \OCA\Procest\Service\ZipManifestBuilder
+ *
+ * @uses \OCA\Procest\Service\InformatieobjectAccessGuard
  */
 class ZipManifestBuilderTest extends TestCase
 {

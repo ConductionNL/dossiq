@@ -34,6 +34,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\TermijnNotificationService
+ *
+ * @uses \OCA\Procest\Service\BerichtenboxRoutingService
+ * @uses \OCA\Procest\Service\TermijnService
  */
 class TermijnNotificationServiceTest extends TestCase
 {

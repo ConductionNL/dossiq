@@ -48,6 +48,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\Beschikking\LibresignSigningAdapter
+ *
+ * @uses \OCA\Procest\Service\Beschikking\LibresignStatusMapper
  */
 class LibresignSigningAdapterTest extends TestCase
 {

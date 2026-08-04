@@ -38,6 +38,8 @@ use RuntimeException;
  *
  * @covers \OCA\Procest\Service\BulkStatusTransitionService
  *
+ * @uses \OCA\Procest\Service\Transitions\GuardFailedException
+ *
  * @spec openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
  */
 final class BulkStatusTransitionServiceTest extends TestCase

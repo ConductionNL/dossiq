@@ -36,6 +36,8 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\RoleGuard
+ *
+ * @uses \OCA\Procest\Service\Transitions\GuardResult
  */
 class RoleGuardTest extends TestCase
 {

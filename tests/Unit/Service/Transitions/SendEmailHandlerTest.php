@@ -33,6 +33,8 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\SendEmailHandler
+ *
+ * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
 class SendEmailHandlerTest extends TestCase
 {

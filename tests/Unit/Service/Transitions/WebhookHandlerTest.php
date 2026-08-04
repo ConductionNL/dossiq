@@ -36,6 +36,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\WebhookHandler
+ *
+ * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
 class WebhookHandlerTest extends TestCase
 {
