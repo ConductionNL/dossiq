@@ -77,6 +77,17 @@ class AppHostRegistrar
      * collaborator would have to make the very same static call — moving the
      * finding instead of removing it.
      *
+     * ⚠️ The call is behind a `class_exists()` guard. This runs inside procest's
+     * `Application::register()`, which Nextcloud executes on EVERY request, so
+     * an unguarded static call to a class in another app fatals the whole
+     * instance-wide request — not merely this app's AppHost features. Procest
+     * does not declare `<app>openregister</app>`, so an admin can create exactly
+     * that configuration. `Bootstrap::class` on the imported name is resolved by
+     * the compiler to a plain string and never autoloads, so the guard itself is
+     * safe. When openregister is absent the engine registrations are simply
+     * skipped: procest still boots and still routes, and the AppHost-backed
+     * endpoints degrade individually. See decidesk#377 / #388.
+     *
      * @param IRegistrationContext $context The registration context.
      *
      * @return void
@@ -87,6 +98,12 @@ class AppHostRegistrar
      */
     public function register(IRegistrationContext $context): void
     {
+        if (class_exists(Bootstrap::class) === false) {
+            // OpenRegister is absent or disabled. Skip the engine registration
+            // rather than fatalling every request; see the note above.
+            return;
+        }
+
         Bootstrap::register(
             $context,
             Application::APP_ID,
