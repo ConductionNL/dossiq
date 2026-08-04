@@ -61,6 +61,10 @@ interface AiAuditObjectServiceStub
  * Unit tests for AiService::listAuditEntries().
  *
  * @covers \OCA\Procest\Service\AiService
+ *
+ * @uses \OCA\Procest\Service\Ai\AiAuditLog
+ * @uses \OCA\Procest\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Procest\Service\Support\SearchesObjects
  */
 class AiServiceAuditListTest extends TestCase
 {

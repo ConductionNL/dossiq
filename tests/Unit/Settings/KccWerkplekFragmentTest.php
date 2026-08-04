@@ -37,6 +37,8 @@ use ReflectionMethod;
  * Unit tests for the 40-kcc-werkplek.json register fragment.
  *
  * @covers \OCA\Procest\Service\SettingsService
+ *
+ * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
  */
 class KccWerkplekFragmentTest extends TestCase
 {

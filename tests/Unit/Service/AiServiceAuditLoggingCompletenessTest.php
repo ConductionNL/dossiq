@@ -88,6 +88,10 @@ class StubbedAiService extends AiService
  * Unit tests proving suggestion-time audit logging completeness.
  *
  * @covers \OCA\Procest\Service\AiService
+ *
+ * @uses \OCA\Procest\Service\Ai\AiAuditLog
+ * @uses \OCA\Procest\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Procest\Service\Ai\AiPromptFactory
  */
 class AiServiceAuditLoggingCompletenessTest extends TestCase
 {

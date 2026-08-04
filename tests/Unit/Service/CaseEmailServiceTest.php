@@ -43,6 +43,9 @@ use Psr\Log\LoggerInterface;
  * Covers C4 (IDOR + file-disclosure), H6 (XSS + reserved-domain), L1 (log-injection).
  *
  * @covers \OCA\Procest\Service\CaseEmailService
+ *
+ * @uses \OCA\Procest\Service\Email\CaseEmailAttachmentResolver
+ * @uses \OCA\Procest\Service\Email\CaseEmailRepository
  */
 class CaseEmailServiceTest extends TestCase
 {

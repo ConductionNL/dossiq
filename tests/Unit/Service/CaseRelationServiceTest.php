@@ -38,6 +38,10 @@ use Psr\Log\LoggerInterface;
  * Unit tests for CaseRelationService.
  *
  * @covers \OCA\Procest\Service\CaseRelationService
+ *
+ * @uses \OCA\Procest\Service\Relation\CaseHierarchyOverlapGuard
+ * @uses \OCA\Procest\Service\Relation\CaseRelationCodec
+ * @uses \OCA\Procest\Service\Relation\CaseRelationStore
  */
 class CaseRelationServiceTest extends TestCase
 {

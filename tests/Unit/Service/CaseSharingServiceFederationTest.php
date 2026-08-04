@@ -149,6 +149,11 @@ final class CsfFakeFederatedShare
 
 /**
  * @covers \OCA\Procest\Service\CaseSharingService
+ *
+ * @uses \OCA\Procest\Service\Sharing\CaseAccessPolicy
+ * @uses \OCA\Procest\Service\Sharing\CaseTokenShareService
+ * @uses \OCA\Procest\Service\Sharing\FederatedCaseShareService
+ * @uses \OCA\Procest\Service\Sharing\OpenRegisterSharingGateway
  */
 class CaseSharingServiceFederationTest extends TestCase
 {

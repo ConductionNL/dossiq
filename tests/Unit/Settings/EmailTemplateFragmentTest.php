@@ -43,6 +43,8 @@ use ReflectionMethod;
  * @covers \OCA\Procest\Service\SettingsService
  * @covers \OCA\Procest\Settings\EmailSettings
  *
+ * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
+ *
  * @spec openspec/changes/case-email-integration/tasks.md#T03
  * @spec openspec/changes/case-email-integration/tasks.md#T10
  */
