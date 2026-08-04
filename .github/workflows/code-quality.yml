@@ -116,3 +116,34 @@ jobs:
       #
       # cwd for this step is the Nextcloud server root.
       playwright-seed-command: 'bash apps/procest/tests/e2e/ci-seed.sh'
+
+      # ── Integration tests ────────────────────────────────────────────────
+      # Was explicitly `false`. `newman-collection-path` already points at
+      # `data`, which ships four collections (ZGW OAS tests, ZGW business rules,
+      # procest-leges, procest-zaakportaal) that had never executed in CI. The
+      # path is correct as configured — the run step `cd`s there and globs
+      # `*.postman_collection.json` flat, and all four sit at that level.
+      enable-newman: true
+
+      # ── Frontend Check legs ──────────────────────────────────────────────
+      # `frontend-checks` defaults to `[]`, and an empty list means the shared
+      # workflow emits NO "Frontend Check" job at all — so these three
+      # validators ran nowhere while the run still looked complete.
+      # Measured on this tree before enabling: `test:l10n` PASSES;
+      # `check:manifest` FAILS on three counts — `pages[4]` and `pages[5]`
+      # (`type=custom requires component field`) and `pages[52].type: "roadmap"
+      # not in v1.2 enum`. `check:vue3-compile` could not be measured locally
+      # (it needs `@vue/compiler-sfc`, which only exists after the leg's own
+      # `npm ci`), so CI is the first place it gets a real verdict.
+      # `test` / `test:unit` are NOT listed: "Frontend Tests (unit)" runs them.
+      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n"]'
+
+      # ── Hydra mechanical gates ───────────────────────────────────────────
+      # `enable-hydra-gates` defaults to FALSE, so this tier has never executed
+      # here — the job reported `skipped`, which the Quality Report renders
+      # identically to a pass. Pinned to v1.0.1 so a change to the gate package
+      # cannot move this repo's verdict without a commit here.
+      # `enable-axe` deliberately NOT set: a vanilla Nextcloud 34 already carries
+      # serious/critical violations from core's own UI.
+      enable-hydra-gates: true
+      hydra-gates-ref: v1.0.1
