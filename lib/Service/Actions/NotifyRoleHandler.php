@@ -94,16 +94,16 @@ class NotifyRoleHandler implements ActionHandlerInterface
             ];
 
             if (($transitionContext['dryRun'] ?? false) === true) {
-                return ActionResult::success($preview);
+                return new ActionResult(succeeded: true, data: $preview);
             }
 
             if ($roleSlug === '' || $recipients === []) {
-                return ActionResult::failure('no_recipients', $preview);
+                return new ActionResult(succeeded: false, error: 'no_recipients', data: $preview);
             }
 
             $notificatie = $this->resolveNotificatieService();
             if ($notificatie === null) {
-                return ActionResult::failure('notificatie_unavailable', $preview);
+                return new ActionResult(succeeded: false, error: 'notificatie_unavailable', data: $preview);
             }
 
             foreach ($recipients as $userId) {
@@ -113,7 +113,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
                 }
             }
 
-            return ActionResult::success($preview);
+            return new ActionResult(succeeded: true, data: $preview);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'NotifyRoleHandler: failed to dispatch notification',
@@ -123,7 +123,7 @@ class NotifyRoleHandler implements ActionHandlerInterface
                     'exception' => $e->getMessage(),
                 ]
             );
-            return ActionResult::failure('notify_role_failed');
+            return new ActionResult(succeeded: false, error: 'notify_role_failed');
         }//end try
     }//end handle()
 
@@ -145,38 +145,47 @@ class NotifyRoleHandler implements ActionHandlerInterface
             return [];
         }
 
-        $single = ($case[$roleSlug] ?? null);
-        if (is_string($single) === true && $single !== '') {
-            return [$single];
+        $singleId = $this->memberId(member: ($case[$roleSlug] ?? null));
+        if ($singleId !== '') {
+            return [$singleId];
         }
 
-        if (is_array($single) === true) {
-            $id = (string) ($single['id'] ?? ($single['userId'] ?? ''));
-            if ($id !== '') {
-                return [$id];
+        $multi = ($case[$roleSlug.'Members'] ?? null);
+        if (is_array($multi) === false) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($multi as $member) {
+            $memberId = $this->memberId(member: $member);
+            if ($memberId !== '') {
+                $out[] = $memberId;
             }
         }
 
-        $multiKey = $roleSlug.'Members';
-        $multi    = ($case[$multiKey] ?? null);
-        if (is_array($multi) === true) {
-            $out = [];
-            foreach ($multi as $member) {
-                if (is_string($member) === true && $member !== '') {
-                    $out[] = $member;
-                } else if (is_array($member) === true) {
-                    $id = (string) ($member['id'] ?? ($member['userId'] ?? ''));
-                    if ($id !== '') {
-                        $out[] = $id;
-                    }
-                }
-            }
-
-            return $out;
-        }
-
-        return [];
+        return $out;
     }//end resolveRoleMembers()
+
+    /**
+     * Read a user identifier off a role member, which may be a bare uid
+     * string or an object with an `id` / `userId` key.
+     *
+     * @param mixed $member A single role member entry.
+     *
+     * @return string The user identifier, or empty string when unreadable.
+     */
+    private function memberId(mixed $member): string
+    {
+        if (is_string($member) === true) {
+            return $member;
+        }
+
+        if (is_array($member) === false) {
+            return '';
+        }
+
+        return (string) ($member['id'] ?? ($member['userId'] ?? ''));
+    }//end memberId()
 
     /**
      * Resolve NotificatieService lazily.

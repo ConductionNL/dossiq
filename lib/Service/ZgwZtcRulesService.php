@@ -21,12 +21,19 @@
  *
  * - ztc-001: Valideren selectielijstProcestype op zaaktype
  * - ztc-002: Valideren selectielijstklasse + resultaattypeomschrijving (enrichment)
+ *            — in ZgwZtcResultaattypeRules
  * - ztc-003: Valideren afleidingswijze vs selectielijstklasse.procestermijn
+ *            — in BrondatumArchiefValidator
  * - ztc-004: Valideren datumkenmerk vereist/verboden op basis van afleidingswijze
+ *            — in BrondatumArchiefValidator
  * - ztc-005: Valideren einddatumBekend verboden voor afgehandeld/termijn
+ *            — in BrondatumArchiefValidator
  * - ztc-006: Valideren objecttype vereist/verboden op basis van afleidingswijze
+ *            — in BrondatumArchiefValidator
  * - ztc-007: Valideren registratie vereist voor ander_datumkenmerk
+ *            — in BrondatumArchiefValidator
  * - ztc-008: Valideren procestermijn vereist voor termijn afleidingswijze
+ *            — in BrondatumArchiefValidator
  * - ztc-009: Concept/gepubliceerd bescherming: types met concept=false mogen niet
  *            gewijzigd of verwijderd worden (behalve eindeGeldigheid via PATCH)
  * - ztc-010: Sub-resources van gepubliceerde zaaktypen mogen niet gewijzigd worden
@@ -57,37 +64,6 @@ namespace OCA\Procest\Service;
  */
 class ZgwZtcRulesService extends ZgwRulesBase
 {
-    /**
-     * Afleidingswijze values that REQUIRE datumkenmerk (ztc-004).
-     *
-     * @var array<string>
-     */
-    private const AFLEIDINGSWIJZE_REQUIRES_DATUMKENMERK = [
-        'eigenschap',
-        'zaakobject',
-        'ander_datumkenmerk',
-    ];
-
-    /**
-     * Afleidingswijze values that REQUIRE objecttype (ztc-006).
-     *
-     * @var array<string>
-     */
-    private const AFLEIDINGSWIJZE_REQUIRES_OBJECTTYPE = [
-        'zaakobject',
-        'ander_datumkenmerk',
-    ];
-
-    /**
-     * Afleidingswijze values that FORBID einddatumBekend=true (ztc-005).
-     *
-     * @var array<string>
-     */
-    private const AFLEIDINGSWIJZE_FORBIDS_EINDDATUM_BEKEND = [
-        'afgehandeld',
-        'termijn',
-    ];
-
     /**
      * ZTC resources that are subject to concept/published protection.
      *
@@ -427,93 +403,6 @@ class ZgwZtcRulesService extends ZgwRulesBase
     }//end rulesZaaktypeinformatieobjecttypenCreate()
 
     /**
-     * Rules for creating a resultaattype (POST /catalogi/v1/resultaattypen).
-     *
-     * Implements:
-     * - ztc-002: Validate and fetch selectielijstklasse + resultaattypeomschrijving.
-     *   Enrich with omschrijvingGeneriek, archiefnominatie, archiefactietermijn.
-     *
-     * - ztc-003: Validate afleidingswijze vs selectielijstklasse.procestermijn.
-     *   procestermijn=nihil only afgehandeld; procestermijn=bestaansduur_procesobject only termijn.
-     * - ztc-004: datumkenmerk required for eigenschap/zaakobject/ander_datumkenmerk, forbidden otherwise.
-     * - ztc-005: einddatumBekend must be false for afgehandeld/termijn.
-     * - ztc-006: objecttype required for zaakobject/ander_datumkenmerk, forbidden otherwise.
-     * - ztc-007: registratie required only for ander_datumkenmerk.
-     * - ztc-008: procestermijn required only for termijn afleidingswijze.
-     *
-     * @param array $body The ZGW request body
-     *
-     * @return array The validation result
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function rulesResultaattypenCreate(array $body): array
-    {
-        $errors = [];
-
-        // Ztc-002: Validate and fetch external URLs for enrichment.
-        $selectieUrl       = $body['selectielijstklasse'] ?? '';
-        $selectielijstData = null;
-        if (empty($selectieUrl) === false) {
-            $selectielijstData = $this->fetchExternalUrl(url: $selectieUrl);
-            if ($selectielijstData === null) {
-                $errors[] = $this->fieldError(
-                    fieldName: 'selectielijstklasse',
-                    code: 'invalid',
-                    reason: 'De selectielijstklasse URL is ongeldig of niet bereikbaar.'
-                );
-            }
-        }
-
-        $rtoUrl = $body['resultaattypeomschrijving'] ?? '';
-        if (is_array($rtoUrl) === true) {
-            $rtoUrl = $rtoUrl[0] ?? '';
-        }
-
-        $rtoData = null;
-        if (empty($rtoUrl) === false) {
-            $rtoData = $this->fetchExternalUrl(url: $rtoUrl);
-            if ($rtoData === null) {
-                $errors[] = $this->fieldError(
-                    fieldName: 'resultaattypeomschrijving',
-                    code: 'invalid',
-                    reason: 'De resultaattypeomschrijving URL is ongeldig of niet bereikbaar.'
-                );
-            }
-        }
-
-        if (empty($errors) === false) {
-            return $this->error(status: 400, detail: $errors[0]['reason'], invalidParams: $errors);
-        }
-
-        // Ztc-002b/f/g: Enrich body with derived fields from external data.
-        $body = $this->enrichResultaattype(body: $body, selectielijstData: $selectielijstData, rtoData: $rtoData);
-
-        // Ztc-002e: Validate selectielijstklasse procesType matches zaaktype selectielijstProcestype.
-        if ($selectielijstData !== null) {
-            $procestypeError = $this->validateProcestypeMatch(body: $body, selectielijstData: $selectielijstData);
-            if ($procestypeError !== null) {
-                return $procestypeError;
-            }
-        }
-
-        // Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
-        $archief = $body['brondatumArchiefprocedure'] ?? null;
-        if ($archief !== null) {
-            $errors = $this->validateBrondatumArchief(archief: $archief, selectielijstData: $selectielijstData);
-        }
-
-        if (empty($errors) === false) {
-            return $this->error(status: 400, detail: $errors[0]['reason'], invalidParams: $errors);
-        }
-
-        return $this->isValid(body: $body);
-    }//end rulesResultaattypenCreate()
-
-    /**
      * Check if a direct concept resource is published (ztc-009).
      *
      * Published types (concept=false) cannot be modified or deleted,
@@ -578,267 +467,6 @@ class ZgwZtcRulesService extends ZgwRulesBase
             default   => 'aan te passen',
         };
     }//end actionLabel()
-
-    /**
-     * Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
-     *
-     * @param array      $archief           The brondatumArchiefprocedure data
-     * @param array|null $selectielijstData The fetched selectielijstklasse data
-     *
-     * @return array<array{name: string, code: string, reason: string}> Validation errors
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     */
-    private function validateBrondatumArchief(array $archief, ?array $selectielijstData): array
-    {
-        $afleidingswijze = $archief['afleidingswijze'] ?? '';
-        $errors          = [];
-
-        // Ztc-004: datumkenmerk required/forbidden.
-        $errors = array_merge(
-            $errors,
-            $this->validateFieldPresence(
-                afleidingswijze: $afleidingswijze,
-                fieldName: 'brondatumArchiefprocedure.datumkenmerk',
-                fieldValue: ($archief['datumkenmerk'] ?? ''),
-                requiredFor: self::AFLEIDINGSWIJZE_REQUIRES_DATUMKENMERK
-            )
-        );
-
-        // Ztc-005: einddatumBekend must be false for afgehandeld/termijn.
-        $einddatumBekend = $archief['einddatumBekend'] ?? false;
-        if (($einddatumBekend === true || $einddatumBekend === 'true')
-            && in_array($afleidingswijze, self::AFLEIDINGSWIJZE_FORBIDS_EINDDATUM_BEKEND, true) === true
-        ) {
-            $errors[] = $this->fieldError(
-                fieldName: 'brondatumArchiefprocedure.einddatumBekend',
-                code: 'must-be-empty',
-                reason: "einddatumBekend moet false zijn voor afleidingswijze \"{$afleidingswijze}\"."
-            );
-        }
-
-        // Ztc-006: objecttype required/forbidden.
-        $errors = array_merge(
-            $errors,
-            $this->validateFieldPresence(
-                afleidingswijze: $afleidingswijze,
-                fieldName: 'brondatumArchiefprocedure.objecttype',
-                fieldValue: ($archief['objecttype'] ?? ''),
-                requiredFor: self::AFLEIDINGSWIJZE_REQUIRES_OBJECTTYPE
-            )
-        );
-
-        // Ztc-007: registratie required only for ander_datumkenmerk.
-        $errors = array_merge(
-            $errors,
-            $this->validateFieldPresence(
-                afleidingswijze: $afleidingswijze,
-                fieldName: 'brondatumArchiefprocedure.registratie',
-                fieldValue: ($archief['registratie'] ?? ''),
-                requiredFor: ['ander_datumkenmerk']
-            )
-        );
-
-        // Ztc-008: procestermijn required only for termijn.
-        $procestermijn = $archief['procestermijn'] ?? null;
-
-        $ptValue = '';
-        if (is_string($procestermijn) === true) {
-            $ptValue = $procestermijn;
-        }
-
-        $errors = array_merge(
-            $errors,
-            $this->validateFieldPresence(
-                afleidingswijze: $afleidingswijze,
-                fieldName: 'brondatumArchiefprocedure.procestermijn',
-                fieldValue: $ptValue,
-                requiredFor: ['termijn']
-            )
-        );
-
-        // Ztc-003: Validate afleidingswijze against selectielijstklasse.procestermijn.
-        if ($selectielijstData !== null) {
-            $slProcestermijn = $selectielijstData['procestermijn'] ?? null;
-            $ptCheck         = $this->checkProcestermijnCompatibility(
-                afleidingswijze: $afleidingswijze,
-                procestermijn: $slProcestermijn
-            );
-            if ($ptCheck !== null) {
-                $errors[] = $ptCheck;
-            }
-        }
-
-        return $errors;
-    }//end validateBrondatumArchief()
-
-    /**
-     * Enrich a resultaattype body with derived fields from external APIs (ztc-002b/f/g).
-     *
-     * - ztc-002b: Derive omschrijvingGeneriek from resultaattypeomschrijving.omschrijving
-     * - ztc-002f: Derive archiefnominatie from selectielijstklasse.waardering
-     * - ztc-002g: Derive archiefactietermijn from selectielijstklasse.bewaartermijn
-     *
-     * @param array      $body              The request body
-     * @param array|null $selectielijstData The fetched selectielijstklasse data
-     * @param array|null $rtoData           The fetched resultaattypeomschrijving data
-     *
-     * @return array The enriched body
-     */
-    private function enrichResultaattype(array $body, ?array $selectielijstData, ?array $rtoData): array
-    {
-        if ($rtoData !== null && empty($body['omschrijvingGeneriek']) === true) {
-            $body['omschrijvingGeneriek'] = $rtoData['omschrijving'] ?? '';
-        }
-
-        if ($selectielijstData !== null && empty($body['archiefnominatie']) === true) {
-            $waardering = $selectielijstData['waardering'] ?? null;
-            if ($waardering !== null) {
-                $body['archiefnominatie'] = $waardering;
-            }
-        }
-
-        if ($selectielijstData !== null && empty($body['archiefactietermijn']) === true) {
-            $bewaartermijn = $selectielijstData['bewaartermijn'] ?? null;
-            if ($bewaartermijn !== null) {
-                $body['archiefactietermijn'] = $bewaartermijn;
-            }
-        }
-
-        return $body;
-    }//end enrichResultaattype()
-
-    /**
-     * Validate selectielijstklasse procesType matches zaaktype selectielijstProcestype (ztc-002e).
-     *
-     * @param array $body              The request body (with zaaktype URL)
-     * @param array $selectielijstData The fetched selectielijstklasse data
-     *
-     * @return array|null Validation error result, or null if valid
-     */
-    private function validateProcestypeMatch(array $body, array $selectielijstData): ?array
-    {
-        $zaaktypeUrl = $body['zaaktype'] ?? '';
-        if (empty($zaaktypeUrl) === true || $this->objectService === null) {
-            return null;
-        }
-
-        $zaaktypeUuid = $this->extractUuid(url: $zaaktypeUrl);
-        if ($zaaktypeUuid === null) {
-            return null;
-        }
-
-        $ztData = $this->findBySchemaKey(uuid: $zaaktypeUuid, schemaKey: 'case_type_schema');
-        if ($ztData === null) {
-            return null;
-        }
-
-        $zaaktypeProcestype = $ztData['selectionListProcessType'] ?? '';
-        $selectieProcestype = $selectielijstData['procesType'] ?? '';
-
-        if (empty($zaaktypeProcestype) === true || empty($selectieProcestype) === true) {
-            return null;
-        }
-
-        if ($zaaktypeProcestype !== $selectieProcestype) {
-            $detail = 'Het procestype van de selectielijstklasse komt niet overeen met het procestype van het zaaktype.';
-            return $this->error(
-                status: 400,
-                detail: $detail,
-                invalidParams: [
-                    $this->fieldError(fieldName: 'nonFieldErrors', code: 'procestype-mismatch', reason: $detail),
-                ]
-            );
-        }
-
-        return null;
-    }//end validateProcestypeMatch()
-
-    /**
-     * Validate field presence based on afleidingswijze (required vs forbidden).
-     *
-     * @param string        $afleidingswijze The afleidingswijze value
-     * @param string        $fieldName       The full field path for error reporting
-     * @param string        $fieldValue      The field value
-     * @param array<string> $requiredFor     Afleidingswijze values that require this field
-     *
-     * @return array<array{name: string, code: string, reason: string}> Validation errors
-     */
-    private function validateFieldPresence(
-        string $afleidingswijze,
-        string $fieldName,
-        string $fieldValue,
-        array $requiredFor
-    ): array {
-        $hasValue = ($fieldValue !== '' && $fieldValue !== null);
-
-        $isRequired = in_array($afleidingswijze, $requiredFor, true);
-
-        if ($isRequired === true && $hasValue === false) {
-            return [
-                $this->fieldError(
-                    fieldName: $fieldName,
-                    code: 'required',
-                    reason: "{$fieldName} is vereist voor afleidingswijze \"{$afleidingswijze}\"."
-                ),
-            ];
-        }
-
-        if ($isRequired === false && $hasValue === true) {
-            return [
-                $this->fieldError(
-                    fieldName: $fieldName,
-                    code: 'must-be-empty',
-                    reason: "{$fieldName} mag niet ingevuld zijn voor afleidingswijze \"{$afleidingswijze}\"."
-                ),
-            ];
-        }
-
-        return [];
-    }//end validateFieldPresence()
-
-    /**
-     * Check afleidingswijze compatibility with selectielijstklasse.procestermijn (ztc-003).
-     *
-     * @param string      $afleidingswijze The afleidingswijze value
-     * @param string|null $procestermijn   The selectielijstklasse procestermijn value
-     *
-     * @return array|null Field error array, or null if compatible
-     */
-    private function checkProcestermijnCompatibility(
-        string $afleidingswijze,
-        ?string $procestermijn
-    ): ?array {
-        if ($procestermijn === 'nihil' && $afleidingswijze !== 'afgehandeld') {
-            return $this->fieldError(
-                fieldName: 'nonFieldErrors',
-                code: 'invalid-afleidingswijze-for-procestermijn',
-                reason: "Afleidingswijze \"{$afleidingswijze}\" is niet geldig".' bij selectielijstklasse met procestermijn "nihil".'
-            );
-        }
-
-        if ($procestermijn === 'bestaansduur_procesobject' && $afleidingswijze !== 'termijn') {
-            $reason = "Afleidingswijze \"{$afleidingswijze}\" is niet geldig"
-                .' bij selectielijstklasse met procestermijn "bestaansduur_procesobject".';
-            return $this->fieldError(
-                fieldName: 'nonFieldErrors',
-                code: 'invalid-afleidingswijze-for-procestermijn',
-                reason: $reason
-            );
-        }
-
-        if (($procestermijn === '' || $procestermijn === null) && $afleidingswijze === 'termijn') {
-            $reason = 'brondatumArchiefprocedure.procestermijn is vereist voor'
-                .' afleidingswijze "termijn" maar selectielijstklasse heeft geen procestermijn.';
-            return $this->fieldError(
-                fieldName: 'brondatumArchiefprocedure.procestermijn',
-                code: 'required',
-                reason: $reason
-            );
-        }
-
-        return null;
-    }//end checkProcestermijnCompatibility()
 
     /**
      * Resolve non-URL references in a type array field to actual object UUIDs.
@@ -1024,35 +652,16 @@ class ZgwZtcRulesService extends ZgwRulesBase
             $errors[] = "At least one status type must be defined before publishing";
         }
 
-        if (count($statusTypes) > 0) {
-            $hasFinal = false;
-            foreach ($statusTypes as $row) {
-                if (is_array($row) === true && (bool) ($row['isFinal'] ?? false) === true) {
-                    $hasFinal = true;
-                    break;
-                }
-            }
-
-            if ($hasFinal === false) {
-                $errors[] = "At least one status type must be marked as final";
-            }
+        if (count($statusTypes) > 0 && $this->hasFinalStatusType(statusTypes: $statusTypes) === false) {
+            $errors[] = "At least one status type must be marked as final";
         }
 
-        try {
-            $caseTypes = $this->searchObjectsAsArrays(
-                objectService: $this->objectService,
-                register: $register,
-                schema: $caseSchema,
-                filters: ['id' => $caseTypeId],
-            );
-        } catch (\Throwable $e) {
-            $caseTypes = [];
-        }
-
-        $caseType = [];
-        if (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) {
-            $caseType = $caseTypes[0];
-        }
+        $caseType = $this->loadCaseTypeRow(
+            objectService: $this->objectService,
+            register: $register,
+            schema: $caseSchema,
+            caseTypeId: $caseTypeId,
+        );
 
         $validFrom = (string) ($caseType['validFrom'] ?? '');
         if ($validFrom === '') {
@@ -1061,6 +670,54 @@ class ZgwZtcRulesService extends ZgwRulesBase
 
         return $errors;
     }//end validatePublish()
+
+    /**
+     * Test whether any of the supplied statusType rows is marked final.
+     *
+     * @param array<int, mixed> $statusTypes The statusType rows for a case type.
+     *
+     * @return bool True when at least one row carries isFinal.
+     */
+    private function hasFinalStatusType(array $statusTypes): bool
+    {
+        foreach ($statusTypes as $row) {
+            if (is_array($row) === true && (bool) ($row['isFinal'] ?? false) === true) {
+                return true;
+            }
+        }
+
+        return false;
+    }//end hasFinalStatusType()
+
+    /**
+     * Load the caseType row itself, returning an empty array when it cannot be read.
+     *
+     * @param object $objectService The OpenRegister object service.
+     * @param string $register      Register slug.
+     * @param string $schema        Case type schema slug.
+     * @param string $caseTypeId    Case type id.
+     *
+     * @return array<string, mixed> The case type row, or an empty array.
+     */
+    private function loadCaseTypeRow(object $objectService, string $register, string $schema, string $caseTypeId): array
+    {
+        try {
+            $caseTypes = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                filters: ['id' => $caseTypeId],
+            );
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        if (count($caseTypes) > 0 && is_array($caseTypes[0]) === true) {
+            return $caseTypes[0];
+        }
+
+        return [];
+    }//end loadCaseTypeRow()
 
     /**
      * Validate a caseType can be safely deleted (no active cases).
@@ -1104,36 +761,15 @@ class ZgwZtcRulesService extends ZgwRulesBase
             return $default;
         }
 
-        $statusSchema = (string) $this->settingsService->getConfigValue(key: 'status_type_schema');
-        try {
-            $finalStatusTypes = $this->searchObjectsAsArrays(
-                objectService: $this->objectService,
-                register: $register,
-                schema: $statusSchema,
-                filters: ['caseType' => $caseTypeId, 'isFinal' => true],
-            );
-        } catch (\Throwable $e) {
-            $finalStatusTypes = [];
-        }
+        $finalSlugs = $this->loadFinalStatusSlugs(
+            objectService: $this->objectService,
+            register: $register,
+            caseTypeId: $caseTypeId,
+        );
 
-        $finalSlugs = [];
-        foreach ($finalStatusTypes as $row) {
-            if (is_array($row) === true && isset($row['id']) === true) {
-                $finalSlugs[] = (string) $row['id'];
-            }
-        }
-
-        $activeCount = 0;
-        $closedCount = 0;
-        foreach ($cases as $case) {
-            $caseStatus = (string) ($case['status'] ?? '');
-            if ($caseStatus !== '' && in_array($caseStatus, $finalSlugs, true) === true) {
-                $closedCount++;
-                continue;
-            }
-
-            $activeCount++;
-        }
+        $tally       = $this->tallyCaseClosure(cases: $cases, finalSlugs: $finalSlugs);
+        $activeCount = $tally['active'];
+        $closedCount = $tally['closed'];
 
         if ($activeCount > 0) {
             return [
@@ -1150,4 +786,63 @@ class ZgwZtcRulesService extends ZgwRulesBase
             'message'              => "Deleting will affect $closedCount closed case(s). Confirm to proceed.",
         ];
     }//end validateDeletion()
+
+    /**
+     * Load the ids of the final statusTypes of a case type, or an empty list when unreadable.
+     *
+     * @param object $objectService The OpenRegister object service.
+     * @param string $register      Register slug.
+     * @param string $caseTypeId    Case type id.
+     *
+     * @return array<int, string> The final statusType ids.
+     */
+    private function loadFinalStatusSlugs(object $objectService, string $register, string $caseTypeId): array
+    {
+        $statusSchema = (string) $this->settingsService->getConfigValue(key: 'status_type_schema');
+        try {
+            $finalStatusTypes = $this->searchObjectsAsArrays(
+                objectService: $objectService,
+                register: $register,
+                schema: $statusSchema,
+                filters: ['caseType' => $caseTypeId, 'isFinal' => true],
+            );
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $finalSlugs = [];
+        foreach ($finalStatusTypes as $row) {
+            if (is_array($row) === true && isset($row['id']) === true) {
+                $finalSlugs[] = (string) $row['id'];
+            }
+        }
+
+        return $finalSlugs;
+    }//end loadFinalStatusSlugs()
+
+    /**
+     * Split a case type's cases into closed (their status is one of the final statusTypes) and
+     * active (everything else, including cases with no status at all).
+     *
+     * @param array<int, mixed>  $cases      The cases that use the case type.
+     * @param array<int, string> $finalSlugs The final statusType ids.
+     *
+     * @return array{active: int, closed: int} The tallies.
+     */
+    private function tallyCaseClosure(array $cases, array $finalSlugs): array
+    {
+        $activeCount = 0;
+        $closedCount = 0;
+        foreach ($cases as $case) {
+            $caseStatus = (string) ($case['status'] ?? '');
+            if ($caseStatus !== '' && in_array($caseStatus, $finalSlugs, true) === true) {
+                $closedCount++;
+                continue;
+            }
+
+            $activeCount++;
+        }
+
+        return ['active' => $activeCount, 'closed' => $closedCount];
+    }//end tallyCaseClosure()
 }//end class

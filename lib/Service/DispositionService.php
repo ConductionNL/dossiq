@@ -56,6 +56,16 @@ class DispositionService
     private const REQUIRES_TOELICHTING = ['gegrond', 'deels_gegrond'];
 
     /**
+     * Approval mode: the disposition is final on submission.
+     */
+    private const APPROVAL_NOT_REQUIRED = 'not_required';
+
+    /**
+     * Approval mode: the disposition waits for a coordinator to approve it.
+     */
+    private const APPROVAL_REQUIRED = 'required';
+
+    /**
      * Constructor.
      *
      * @param SettingsService $settingsService Settings service
@@ -68,11 +78,10 @@ class DispositionService
     }//end __construct()
 
     /**
-     * Submit a disposition for a complaint.
+     * Submit a disposition for a complaint as final — no coordinator approval.
      *
-     * @param string               $complaintId     Complaint UUID
-     * @param array<string, mixed> $data            Disposition data
-     * @param bool                 $requireApproval Whether coordinator approval is required
+     * @param string               $complaintId Complaint UUID
+     * @param array<string, mixed> $data        Disposition data
      *
      * @return array<string, mixed> Created disposition
      *
@@ -80,7 +89,53 @@ class DispositionService
      *
      * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
      */
-    public function submitDisposition(string $complaintId, array $data, bool $requireApproval=false): array
+    public function submitDisposition(string $complaintId, array $data): array
+    {
+        return $this->createDisposition(
+            complaintId: $complaintId,
+            data: $data,
+            approval: self::APPROVAL_NOT_REQUIRED
+        );
+    }//end submitDisposition()
+
+    /**
+     * Submit a disposition that must first be approved by a coordinator.
+     *
+     * The created disposition carries goedkeuringStatus 'wacht_op_goedkeuring'
+     * until {@see self::approveDisposition()} clears it.
+     *
+     * @param string               $complaintId Complaint UUID
+     * @param array<string, mixed> $data        Disposition data
+     *
+     * @return array<string, mixed> Created disposition
+     *
+     * @throws \RuntimeException If validation fails or OpenRegister unavailable
+     *
+     * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+     */
+    public function submitDispositionForApproval(string $complaintId, array $data): array
+    {
+        return $this->createDisposition(
+            complaintId: $complaintId,
+            data: $data,
+            approval: self::APPROVAL_REQUIRED
+        );
+    }//end submitDispositionForApproval()
+
+    /**
+     * Shared disposition-creation implementation for both approval modes.
+     *
+     * @param string               $complaintId Complaint UUID
+     * @param array<string, mixed> $data        Disposition data
+     * @param string               $approval    One of self::APPROVAL_REQUIRED or self::APPROVAL_NOT_REQUIRED
+     *
+     * @return array<string, mixed> Created disposition
+     *
+     * @throws \RuntimeException If validation fails or OpenRegister unavailable
+     *
+     * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
+     */
+    private function createDisposition(string $complaintId, array $data, string $approval): array
     {
         $this->validateDisposition(data: $data);
 
@@ -99,7 +154,7 @@ class DispositionService
         $data['complaint']    = $complaintId;
         $data['afsluitdatum'] = $data['afsluitdatum'] ?? date('Y-m-d');
 
-        if ($requireApproval === true) {
+        if ($approval === self::APPROVAL_REQUIRED) {
             $data['goedkeuringStatus'] = 'wacht_op_goedkeuring';
         }
 
@@ -115,7 +170,7 @@ class DispositionService
         }
 
         return array_merge($data, ['id' => $disposition->getUuid()]);
-    }//end submitDisposition()
+    }//end createDisposition()
 
     /**
      * Approve a disposition that was awaiting coordinator approval.

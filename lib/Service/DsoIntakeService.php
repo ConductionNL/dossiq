@@ -92,16 +92,7 @@ class DsoIntakeService
         $dsoZaaknummer = $dsoMessage['zaaknummer'] ?? '';
 
         // Build activity description.
-        $activityNames = array_map(
-            static function ($act) {
-                if (is_array($act) === true) {
-                    return $act['naam'] ?? '';
-                }
-
-                return (string) $act;
-            },
-            $activiteiten,
-        );
+        $activityNames = $this->extractActivityNames(activiteiten: $activiteiten);
         $activityStr   = implode(', ', array_filter($activityNames));
 
         // Determine processing deadline.
@@ -132,36 +123,25 @@ class DsoIntakeService
 
         // Store DSO-specific properties.
         $propertySchema = $this->settingsService->getConfigValue('case_property_schema');
+        $locatieValue   = $locatie;
         if (is_array($locatie) === true) {
             $locatieValue = json_encode($locatie);
-        } else {
-            $locatieValue = $locatie;
         }
 
-        $properties = [
-            'dsoZaaknummer' => $dsoZaaknummer,
-            'activiteiten'  => $activityStr,
-            'locatie'       => $locatieValue,
-            'bouwkosten'    => (string) $bouwkosten,
-            'procedureType' => $procedureType,
-            'aanvragerNaam' => $aanvrager['naam'] ?? '',
-        ];
-
-        foreach ($properties as $name => $value) {
-            if ($value === '') {
-                continue;
-            }
-
-            $objectService->saveObject(
-                object: [
-                    'case'  => $caseId,
-                    'name'  => $name,
-                    'value' => $value,
-                ],
-                register: $register,
-                schema: $propertySchema
-            );
-        }
+        $this->storeCaseProperties(
+            objectService: $objectService,
+            register: $register,
+            schema: $propertySchema,
+            caseId: $caseId,
+            properties: [
+                'dsoZaaknummer' => $dsoZaaknummer,
+                'activiteiten'  => $activityStr,
+                'locatie'       => $locatieValue,
+                'bouwkosten'    => (string) $bouwkosten,
+                'procedureType' => $procedureType,
+                'aanvragerNaam' => $aanvrager['naam'] ?? '',
+            ],
+        );
 
         $this->logger->info(
             'DSO intake processed: case '.$caseId.' (DSO: '.$dsoZaaknummer.')',
@@ -176,6 +156,66 @@ class DsoIntakeService
             'deadline'      => $deadline,
         ];
     }//end processAanvraag()
+
+    /**
+     * Reduce the DSO activiteiten list to a flat list of activity names.
+     *
+     * A structured activity contributes its `naam`; a scalar one is used as-is.
+     *
+     * @param mixed $activiteiten The raw activiteiten entry from the DSO payload
+     *
+     * @return array<int|string, mixed> The activity names, in payload order
+     */
+    private function extractActivityNames(mixed $activiteiten): array
+    {
+        return array_map(
+            static function ($act) {
+                if (is_array($act) === true) {
+                    return $act['naam'] ?? '';
+                }
+
+                return (string) $act;
+            },
+            $activiteiten,
+        );
+    }//end extractActivityNames()
+
+    /**
+     * Persist the DSO-specific case properties as case property objects.
+     *
+     * Properties with an empty value are skipped rather than written as blanks.
+     *
+     * @param object               $objectService The OpenRegister object service
+     * @param string               $register      Register slug
+     * @param string               $schema        Case property schema slug
+     * @param string               $caseId        UUID of the case the properties belong to
+     * @param array<string, mixed> $properties    Property name to value map
+     *
+     * @return void
+     */
+    private function storeCaseProperties(
+        object $objectService,
+        string $register,
+        string $schema,
+        string $caseId,
+        array $properties
+    ): void {
+        foreach ($properties as $name => $value) {
+            if ($value === '') {
+                continue;
+            }
+
+            $objectService->saveObject(
+                object: [
+                    'case'  => $caseId,
+                    'name'  => $name,
+                    'value' => $value,
+                ],
+                register: $register,
+                schema: $schema
+            );
+        }
+    }//end storeCaseProperties()
 
     /**
      * Get the processing deadline duration for a procedure type.
@@ -208,16 +248,7 @@ class DsoIntakeService
         $dsoZaaknummer = $dsoMessage['zaaknummer'] ?? '';
         $bijlagen      = $dsoMessage['bijlagen'] ?? [];
 
-        $activityNames = array_map(
-            static function ($act) {
-                if (is_array($act) === true) {
-                    return $act['naam'] ?? '';
-                }
-
-                return (string) $act;
-            },
-            $activiteiten,
-        );
+        $activityNames = $this->extractActivityNames(activiteiten: $activiteiten);
         $activityStr   = implode(', ', array_filter($activityNames));
 
         $deadline = self::DEADLINE_DURATIONS[$procedureType] ?? self::DEADLINE_DURATIONS['regulier'];
@@ -232,11 +263,14 @@ class DsoIntakeService
             $description .= ' (DSO: '.$dsoZaaknummer.')';
         }
 
+        // Cast only after the array case has been JSON-encoded, so an array
+        // value never reaches the string cast (which would warn).
+        $locatieRaw = $locatie;
         if (is_array($locatie) === true) {
-            $locatieStr = json_encode($locatie);
-        } else {
-            $locatieStr = (string) $locatie;
+            $locatieRaw = json_encode($locatie);
         }
+
+        $locatieStr = (string) $locatieRaw;
 
         return [
             'title'         => $title,

@@ -102,23 +102,23 @@ class SendEmailHandler implements ActionHandlerInterface
             ];
 
             if (($transitionContext['dryRun'] ?? false) === true) {
-                return ActionResult::success($preview);
+                return new ActionResult(succeeded: true, data: $preview);
             }
 
             if ($recipient === '') {
-                return ActionResult::failure('missing_recipient', $preview);
+                return new ActionResult(succeeded: false, error: 'missing_recipient', data: $preview);
             }
 
             $notificatie = $this->resolveNotificatieService();
             if ($notificatie === null) {
-                return ActionResult::failure('notificatie_unavailable', $preview);
+                return new ActionResult(succeeded: false, error: 'notificatie_unavailable', data: $preview);
             }
 
             // @phpstan-ignore-next-line — NotificatieService::sendEmail is
             // resolved lazily; signature is owned by the service itself.
             $notificatie->sendEmail($recipient, $subject, $body);
 
-            return ActionResult::success($preview);
+            return new ActionResult(succeeded: true, data: $preview);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'SendEmailHandler: failed to dispatch email',
@@ -128,7 +128,7 @@ class SendEmailHandler implements ActionHandlerInterface
                     'exception' => $e->getMessage(),
                 ]
             );
-            return ActionResult::failure('email_dispatch_failed');
+            return new ActionResult(succeeded: false, error: 'email_dispatch_failed');
         }//end try
     }//end handle()
 

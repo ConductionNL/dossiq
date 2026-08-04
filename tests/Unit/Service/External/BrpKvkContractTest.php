@@ -41,6 +41,10 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Service\External\Brp\HaalCentraalBrpAdapter
  * @covers \OCA\Procest\Service\External\Kvk\KvkApiAdapter
+ *
+ * @uses \OCA\Procest\Service\External\Brp\BrpLookupResult
+ * @uses \OCA\Procest\Service\External\IntegrationMode
+ * @uses \OCA\Procest\Service\External\Kvk\KvkLookupResult
  */
 class BrpKvkContractTest extends TestCase
 {

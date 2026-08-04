@@ -27,7 +27,9 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\CaseRelationService;
-use OCA\Procest\Service\DeelzaakService;
+use OCA\Procest\Service\Relation\CaseHierarchyOverlapGuard;
+use OCA\Procest\Service\Relation\CaseRelationCodec;
+use OCA\Procest\Service\Relation\CaseRelationStore;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -36,6 +38,10 @@ use Psr\Log\LoggerInterface;
  * Unit tests for CaseRelationService.
  *
  * @covers \OCA\Procest\Service\CaseRelationService
+ *
+ * @uses \OCA\Procest\Service\Relation\CaseHierarchyOverlapGuard
+ * @uses \OCA\Procest\Service\Relation\CaseRelationCodec
+ * @uses \OCA\Procest\Service\Relation\CaseRelationStore
  */
 class CaseRelationServiceTest extends TestCase
 {
@@ -143,10 +149,14 @@ class CaseRelationServiceTest extends TestCase
         $objectService = $this->makeObjectService($store);
         $this->settingsService->method('getObjectService')->willReturn($objectService);
 
+        // The store, codec and hierarchy guard are real collaborators, not
+        // mocks: every assertion below is about behaviour they inherited
+        // verbatim from CaseRelationService, and the store is still driven
+        // entirely by the mocked SettingsService above.
         return new CaseRelationService(
-            settingsService: $this->settingsService,
-            deelzaakService: $this->createMock(DeelzaakService::class),
-            logger: $this->logger,
+            store: new CaseRelationStore($this->settingsService, $this->logger),
+            codec: new CaseRelationCodec(),
+            hierarchyGuard: new CaseHierarchyOverlapGuard(),
         );
     }//end makeService()
 

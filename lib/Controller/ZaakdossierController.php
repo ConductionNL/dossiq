@@ -3,14 +3,18 @@
 /**
  * Procest Zaakdossier Controller
  *
- * Authenticated REST API for the ZGW DRC case dossier: list/upload documents,
- * link/unlink existing informatieobjecten, update metadata, transition status
- * (single + bulk), export a ZIP with manifest, download a single file, and a
- * ZGW DRC-compatible streaming download endpoint with HTTP Range support.
+ * Authenticated JSON REST API for the ZGW DRC case dossier: list/upload
+ * documents, link/unlink existing informatieobjecten, update metadata and
+ * transition status (single + bulk).
  *
- * Every read/download endpoint enforces {@see InformatieobjectAccessGuard} so
- * confidentiality (`vertrouwelijkheidaanduiding`) is gated server-side and
- * per-object — never relying on the UI alone (OWASP A01:2021, ADR-005 Rule 3).
+ * The binary surface — ZIP export, single-file download and the ZGW DRC
+ * streaming endpoint — lives on {@see ZaakdossierDownloadController}. Upload
+ * decoding and screening is delegated to {@see DossierUploadHandler} (ADR-022).
+ *
+ * Every read endpoint enforces {@see InformatieobjectReader}, which wraps
+ * InformatieobjectAccessGuard, so confidentiality
+ * (`vertrouwelijkheidaanduiding`) is gated server-side and per-object — never
+ * relying on the UI alone (OWASP A01:2021, ADR-005 Rule 3).
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -25,30 +29,21 @@
  *
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Http\RangeStreamResponse;
-use OCA\Procest\Service\InformatieobjectAccessGuard;
+use OCA\Procest\Service\Zaakdossier\DossierUploadHandler;
+use OCA\Procest\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Procest\Service\ZaakdossierService;
-use OCA\Procest\Service\ZgwDocumentService;
-use OCA\Procest\Service\ZipManifestBuilder;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\Files\NotPermittedException;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Controller for the ZGW DRC zaakdossier.
@@ -58,24 +53,20 @@ class ZaakdossierController extends Controller
     /**
      * Constructor.
      *
-     * @param string                      $appName         The app name.
-     * @param IRequest                    $request         The request.
-     * @param ZaakdossierService          $dossierService  The dossier orchestrator.
-     * @param InformatieobjectAccessGuard $accessGuard     The confidentiality guard.
-     * @param ZipManifestBuilder          $zipBuilder      The ZIP export builder.
-     * @param ZgwDocumentService          $documentService The binary storage service.
-     * @param IUserSession                $userSession     The user session.
-     * @param LoggerInterface             $logger          The logger.
+     * @param string                 $appName        The app name.
+     * @param IRequest               $request        The request.
+     * @param ZaakdossierService     $dossierService The dossier orchestrator.
+     * @param InformatieobjectReader $reader         The clearance-gated document reader.
+     * @param DossierUploadHandler   $uploadHandler  The upload decoding/screening collaborator.
+     * @param IUserSession           $userSession    The user session.
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ZaakdossierService $dossierService,
-        private readonly InformatieobjectAccessGuard $accessGuard,
-        private readonly ZipManifestBuilder $zipBuilder,
-        private readonly ZgwDocumentService $documentService,
+        private readonly InformatieobjectReader $reader,
+        private readonly DossierUploadHandler $uploadHandler,
         private readonly IUserSession $userSession,
-        private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -104,7 +95,7 @@ class ZaakdossierController extends Controller
             return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
         }
 
-        $filtered = $this->accessGuard->filterDossierForUser(
+        $filtered = $this->reader->filterForUser(
             user: $user,
             informatieobjecten: ($dossier['informatieobjecten'] ?? []),
         );
@@ -135,46 +126,24 @@ class ZaakdossierController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $metadata = $this->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));
+        $metadata = $this->uploadHandler->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));
         if (($metadata['auteur'] ?? '') === '') {
             $metadata['auteur'] = $user->getDisplayName();
         }
 
-        $files = $this->normaliseUploadedFiles(uploaded: $this->request->getUploadedFile('files'));
+        $files = $this->uploadHandler->normaliseUploadedFiles(uploaded: $this->request->getUploadedFile('files'));
         if (empty($files) === true) {
             return new JSONResponse(['error' => 'No files uploaded'], Http::STATUS_BAD_REQUEST);
         }
 
         $results = [];
         foreach ($files as $file) {
-            $name    = (string) ($file['name'] ?? '');
-            $tmpName = (string) ($file['tmp_name'] ?? '');
-            try {
-                if ($this->isExecutable(name: $name, tmpName: $tmpName) === true) {
-                    throw new RuntimeException('Executable files are not permitted: '.$name);
-                }
-
-                $content = '';
-                if ($tmpName !== '') {
-                    $content = (string) file_get_contents($tmpName);
-                }
-
-                $meta = $metadata;
-                if (isset($file['type']) === true && $file['type'] !== '') {
-                    $meta['formaat'] = $file['type'];
-                }
-
-                $created   = $this->dossierService->uploadDocument(
-                    caseId: $caseId,
-                    fileName: $name,
-                    content: $content,
-                    metadata: $meta,
-                );
-                $results[] = ['name' => $name, 'success' => true, 'informatieobject' => $created];
-            } catch (\Throwable $e) {
-                $results[] = ['name' => $name, 'success' => false, 'error' => $e->getMessage()];
-            }//end try
-        }//end foreach
+            $results[] = $this->uploadHandler->uploadOne(
+                caseId: $caseId,
+                file: $file,
+                metadata: $metadata,
+            );
+        }
 
         return new JSONResponse(['results' => $results], Http::STATUS_CREATED);
     }//end uploadDocument()
@@ -198,7 +167,7 @@ class ZaakdossierController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $authError = $this->guardReadable(user: $user, infoObjectId: $infoObjectId);
+        $authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
         if ($authError !== null) {
             return $authError;
         }
@@ -231,7 +200,7 @@ class ZaakdossierController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $authError = $this->guardReadable(user: $user, infoObjectId: $infoObjectId);
+        $authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
         if ($authError !== null) {
             return $authError;
         }
@@ -263,7 +232,7 @@ class ZaakdossierController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $authError = $this->guardReadable(user: $user, infoObjectId: $infoObjectId);
+        $authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
         if ($authError !== null) {
             return $authError;
         }
@@ -305,7 +274,7 @@ class ZaakdossierController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $authError = $this->guardReadable(user: $user, infoObjectId: $infoObjectId);
+        $authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
         if ($authError !== null) {
             return $authError;
         }
@@ -343,13 +312,11 @@ class ZaakdossierController extends Controller
         $newStatus = (string) $this->request->getParam('status', '');
 
         // Per-object clearance gate before any mutation.
-        foreach ($ids as $id) {
-            if ($this->guardReadable(user: $user, infoObjectId: (string) $id) !== null) {
-                return new JSONResponse(
-                    ['error' => 'Insufficient clearance for one or more selected documents'],
-                    Http::STATUS_FORBIDDEN,
-                );
-            }
+        if ($this->allReadable(user: $user, ids: $ids) === false) {
+            return new JSONResponse(
+                ['error' => 'Insufficient clearance for one or more selected documents'],
+                Http::STATUS_FORBIDDEN,
+            );
         }
 
         $results = $this->dossierService->bulkTransitionStatus(infoObjectIds: $ids, newStatus: $newStatus);
@@ -378,344 +345,55 @@ class ZaakdossierController extends Controller
 
         $results = [];
         foreach ($ids as $id) {
-            $id = (string) $id;
-            if ($this->guardReadable(user: $user, infoObjectId: $id) !== null) {
-                $results[] = ['id' => $id, 'success' => false, 'error' => 'Insufficient clearance'];
-                continue;
-            }
-
-            try {
-                $this->dossierService->updateMetadata(infoObjectId: $id, metadata: $metadata);
-                $results[] = ['id' => $id, 'success' => true];
-            } catch (\Throwable $e) {
-                $results[] = ['id' => $id, 'success' => false, 'error' => $e->getMessage()];
-            }
+            $results[] = $this->updateOneMetadata(user: $user, id: (string) $id, metadata: $metadata);
         }
 
         return new JSONResponse(['results' => $results]);
     }//end bulkUpdateMetadata()
 
     /**
-     * Export a case dossier as a ZIP with manifest, clearance-filtered.
+     * Update one informatieobject's metadata inside a bulk run.
      *
-     * @param string $caseId The case UUID.
+     * @param IUser                $user     The requesting user.
+     * @param string               $id       The informatieobject UUID.
+     * @param array<string, mixed> $metadata The metadata to apply.
      *
-     * @return DataDownloadResponse|JSONResponse The ZIP download or an error status.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     */
-    public function downloadZip(string $caseId): DataDownloadResponse | JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        try {
-            $dossier = $this->dossierService->getDossierForCase(caseId: $caseId);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
-        }
-
-        $documents = ($dossier['informatieobjecten'] ?? []);
-
-        // Allow restricting to a selected subset of ids.
-        $selectedIds = (array) $this->request->getParam('ids', []);
-        if (empty($selectedIds) === false) {
-            $documents = array_values(
-                    array_filter(
-                $documents,
-                static fn(array $doc) => in_array((string) ($doc['id'] ?? ''), array_map('strval', $selectedIds), true),
-            )
-                    );
-        }
-
-        $tmpPath = (string) tempnam(sys_get_temp_dir(), 'procest-dossier-');
-        try {
-            $this->zipBuilder->buildZip(
-                targetPath: $tmpPath,
-                user: $user,
-                documents: $documents,
-                subfolderPerType: $this->subfolderPerTypeEnabled(),
-            );
-            $data = (string) file_get_contents($tmpPath);
-        } catch (\Throwable $e) {
-            $this->logger->error('Procest dossier ZIP build failed: '.$e->getMessage());
-            return new JSONResponse(['error' => 'ZIP export failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
-        } finally {
-            if (is_file($tmpPath) === true) {
-                @unlink($tmpPath);
-            }
-        }
-
-        return new DataDownloadResponse($data, 'dossier-'.$caseId.'.zip', 'application/zip');
-    }//end downloadZip()
-
-    /**
-     * Download a single dossier file, gated by clearance.
-     *
-     * @param string $register The register slug (kept for ZGW DRC path parity).
-     * @param string $schema   The schema slug (kept for ZGW DRC path parity).
-     * @param string $objectId The informatieobject UUID.
-     * @param int    $fileId   The Nextcloud file id (kept for ZGW DRC path parity).
-     *
-     * @return DataDownloadResponse|JSONResponse The file download or an error status.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter) $register, $schema and $fileId are
-     * URL segments of the route
-     * `/api/objects/{register}/{schema}/{objectId}/files/{fileId}/download` and are bound
-     * positionally by the dispatcher; they cannot be dropped without changing the route.
-     */
-    public function downloadFile(string $register, string $schema, string $objectId, int $fileId): DataDownloadResponse | JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        // Per-object clearance gate before any content is read (OWASP A01:2021).
-        $authError = $this->guardReadable(user: $user, infoObjectId: $objectId);
-        if ($authError !== null) {
-            return $authError;
-        }
-
-        return $this->streamSingle(infoObjectId: $objectId);
-    }//end downloadFile()
-
-    /**
-     * ZGW DRC-compatible download with HTTP Range support.
-     *
-     * @param string $uuid The informatieobject (enkelvoudiginformatieobject) UUID.
-     *
-     * @return \OCP\AppFramework\Http\Response|JSONResponse Full (200) or partial (206) content, or an error status.
-     *
-     * @NoAdminRequired
+     * @return array<string, mixed> The per-id result entry.
      *
      * @spec openspec/changes/document-zaakdossier/tasks.md#T05
      */
-    public function downloadZgwDocumenten(string $uuid): \OCP\AppFramework\Http\Response | JSONResponse
+    private function updateOneMetadata(IUser $user, string $id, array $metadata): array
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        if ($this->reader->guardReadable(user: $user, infoObjectId: $id) !== null) {
+            return ['id' => $id, 'success' => false, 'error' => 'Insufficient clearance'];
         }
 
-        $doc = $this->loadReadable(user: $user, infoObjectId: $uuid);
-        if ($doc instanceof JSONResponse) {
-            return $doc;
-        }
-
-        $fileName = (string) ($doc['bestandsnaam'] ?? 'document');
         try {
-            $content = $this->documentService->getContent(uuid: $uuid, fileName: $fileName);
+            $this->dossierService->updateMetadata(infoObjectId: $id, metadata: $metadata);
+            return ['id' => $id, 'success' => true];
         } catch (\Throwable $e) {
-            return new JSONResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
+            return ['id' => $id, 'success' => false, 'error' => $e->getMessage()];
         }
-
-        $rangeHeader = (string) $this->request->getHeader('Range');
-        $mime        = (string) ($doc['formaat'] ?? 'application/octet-stream');
-
-        return new RangeStreamResponse(
-            content: $content,
-            fileName: $fileName,
-            contentType: $mime,
-            rangeHeader: $rangeHeader,
-        );
-    }//end downloadZgwDocumenten()
+    }//end updateOneMetadata()
 
     /**
-     * Stream a single file as a download after a clearance check.
+     * Whether every listed informatieobject is readable by the user.
      *
-     * @param string $infoObjectId The informatieobject UUID.
+     * @param IUser            $user The requesting user.
+     * @param array<int,mixed> $ids  The informatieobject UUIDs.
      *
-     * @return DataDownloadResponse|JSONResponse The download or an error status.
+     * @return bool True when all ids pass the clearance gate.
+     *
+     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
      */
-    private function streamSingle(string $infoObjectId): DataDownloadResponse | JSONResponse
+    private function allReadable(IUser $user, array $ids): bool
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        $doc = $this->loadReadable(user: $user, infoObjectId: $infoObjectId);
-        if ($doc instanceof JSONResponse) {
-            return $doc;
-        }
-
-        $fileName = (string) ($doc['bestandsnaam'] ?? 'document');
-        try {
-            $content = $this->documentService->getContent(uuid: $infoObjectId, fileName: $fileName);
-        } catch (\Throwable $e) {
-            return new JSONResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
-        }
-
-        $mime = (string) ($doc['formaat'] ?? 'application/octet-stream');
-        return new DataDownloadResponse($content, $fileName, $mime);
-    }//end streamSingle()
-
-    /**
-     * Load an informatieobject, returning a 404/403 JSONResponse on failure.
-     *
-     * @param IUser  $user         The requesting user.
-     * @param string $infoObjectId The informatieobject UUID.
-     *
-     * @return array<string, mixed>|JSONResponse The document, or an error response.
-     */
-    private function loadReadable(IUser $user, string $infoObjectId): array | JSONResponse
-    {
-        try {
-            $doc = $this->dossierService->getInformatieobject(infoObjectId: $infoObjectId);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
-        }
-
-        if ($doc === null) {
-            return new JSONResponse(['error' => 'Informatieobject not found'], Http::STATUS_NOT_FOUND);
-        }
-
-        try {
-            $this->accessGuard->assertCanRead(user: $user, informatieobject: $doc);
-        } catch (NotPermittedException $e) {
-            return new JSONResponse(['error' => 'Insufficient clearance for this document'], Http::STATUS_FORBIDDEN);
-        }
-
-        return $doc;
-    }//end loadReadable()
-
-    /**
-     * Per-object clearance guard returning a 403/404 JSONResponse on denial.
-     *
-     * @param IUser  $user         The requesting user.
-     * @param string $infoObjectId The informatieobject UUID.
-     *
-     * @return JSONResponse|null Null when readable, otherwise the error response.
-     */
-    private function guardReadable(IUser $user, string $infoObjectId): ?JSONResponse
-    {
-        $result = $this->loadReadable(user: $user, infoObjectId: $infoObjectId);
-        if ($result instanceof JSONResponse) {
-            return $result;
-        }
-
-        return null;
-    }//end guardReadable()
-
-    /**
-     * Whether ZIP exports should be organised into per-type sub-folders.
-     *
-     * @return bool
-     */
-    private function subfolderPerTypeEnabled(): bool
-    {
-        return $this->request->getParam('subfolderPerType', '1') !== '0';
-    }//end subfolderPerTypeEnabled()
-
-    /**
-     * Decode the shared metadata JSON body into an array.
-     *
-     * @param mixed $raw The raw metadata param (JSON string or array).
-     *
-     * @return array<string, mixed>
-     */
-    private function decodeMetadata(mixed $raw): array
-    {
-        if (is_array($raw) === true) {
-            return $raw;
-        }
-
-        if (is_string($raw) === true && $raw !== '') {
-            $decoded = json_decode($raw, true);
-            if (is_array($decoded) === true) {
-                return $decoded;
+        foreach ($ids as $id) {
+            if ($this->reader->guardReadable(user: $user, infoObjectId: (string) $id) !== null) {
+                return false;
             }
         }
 
-        return [];
-    }//end decodeMetadata()
-
-    /**
-     * Normalise the PHP uploaded-file structure into a flat list of files.
-     *
-     * @param mixed $uploaded The value returned by IRequest::getUploadedFile().
-     *
-     * @return array<int, array<string, mixed>> A list of single-file arrays.
-     */
-    private function normaliseUploadedFiles(mixed $uploaded): array
-    {
-        if (is_array($uploaded) === false) {
-            return [];
-        }
-
-        // Single-file shape: ['name' => 'x', 'tmp_name' => '/tmp/...'].
-        if (isset($uploaded['name']) === true && is_array($uploaded['name']) === false) {
-            return [$uploaded];
-        }
-
-        // Multi-file shape: ['name' => [...], 'tmp_name' => [...], ...].
-        if (isset($uploaded['name']) === true && is_array($uploaded['name']) === true) {
-            $files = [];
-            foreach (array_keys($uploaded['name']) as $index) {
-                $files[] = [
-                    'name'     => ($uploaded['name'][$index] ?? ''),
-                    'type'     => ($uploaded['type'][$index] ?? ''),
-                    'tmp_name' => ($uploaded['tmp_name'][$index] ?? ''),
-                    'size'     => ($uploaded['size'][$index] ?? 0),
-                ];
-            }
-
-            return $files;
-        }
-
-        return [];
-    }//end normaliseUploadedFiles()
-
-    /**
-     * Detect executable uploads via extension and magic bytes.
-     *
-     * @param string $name    The original filename.
-     * @param string $tmpName The temp path of the uploaded content.
-     *
-     * @return bool True when the file appears to be an executable.
-     */
-    private function isExecutable(string $name, string $tmpName): bool
-    {
-        $blockedExtensions = ['exe', 'bat', 'cmd', 'com', 'msi', 'scr', 'sh', 'php', 'phar', 'dll'];
-        $extension         = strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
-        if (in_array($extension, $blockedExtensions, true) === true) {
-            return true;
-        }
-
-        if ($tmpName === '' || is_readable($tmpName) === false) {
-            return false;
-        }
-
-        $handle = fopen($tmpName, 'rb');
-        if ($handle === false) {
-            return false;
-        }
-
-        $magic = (string) fread($handle, 4);
-        fclose($handle);
-
-        // MZ (PE/DOS), ELF (\x7fELF) and shell shebang.
-        if (str_starts_with($magic, 'MZ') === true) {
-            return true;
-        }
-
-        if (str_starts_with($magic, "\x7f".'ELF') === true) {
-            return true;
-        }
-
-        if (str_starts_with($magic, '#!') === true) {
-            return true;
-        }
-
-        return false;
-    }//end isExecutable()
+        return true;
+    }//end allReadable()
 }//end class

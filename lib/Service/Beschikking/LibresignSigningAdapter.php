@@ -7,10 +7,11 @@
  * (LibreCode), the Nextcloud-native eIDAS-aligned digital signing app.
  * Resolves the signer identity from the mandaat-authorised actor UID
  * (design.md §4), creates a LibreSign signature request via
- * LibresignApiClient, performs a short bounded status poll mapping
- * LibreSign's status vocabulary via LibresignStatusMapper, and — once
- * signed — persists the signed PDF through the EXISTING
- * ZgwDocumentService binary storage path (no new storage mechanism).
+ * LibresignApiClient, and performs a short bounded status poll. Reading
+ * LibreSign's status vocabulary, persisting the signed PDF through the
+ * EXISTING ZgwDocumentService binary storage path (no new storage mechanism),
+ * and shaping the results procest publishes all belong to
+ * LibresignResultAssembler.
  *
  * See openspec/changes/libresign-besluit-signing/design.md for the full
  * rationale, including why sign() stays synchronous against an inherently
@@ -37,11 +38,9 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Beschikking;
 
-use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\ZgwDocumentService;
 use OCP\App\IAppManager;
-use OCP\Files\File;
 use OCP\Files\IRootFolder;
 use OCP\IAppConfig;
 use OCP\IUserManager;
@@ -51,6 +50,10 @@ use Throwable;
 
 /**
  * LibreSign-backed implementation of the beschikking signing adapter.
+ *
+ * Owns the LibreSign conversation only; the shape of what procest hands back —
+ * and the signed-file plumbing behind it — belongs to
+ * {@see LibresignResultAssembler}.
  *
  * @spec openspec/specs/libresign-besluit-signing/spec.md
  */
@@ -78,7 +81,19 @@ class LibresignSigningAdapter implements SigningAdapterInterface
     private $sleeper;
 
     /**
+     * Builds the signed-result and validatierapport contracts.
+     *
+     * @var LibresignResultAssembler
+     */
+    private LibresignResultAssembler $assembler;
+
+    /**
      * Constructor.
+     *
+     * `$rootFolder` and `$documentService` are accepted (rather than resolved
+     * from an injected assembler) so the DI factory's named-argument call site
+     * stays unchanged; both are handed straight to the assembler that owns
+     * them.
      *
      * @param LibresignApiClient $apiClient       The thin LibreSign HTTP client.
      * @param IAppManager        $appManager      Feature-gate: is LibreSign enabled.
@@ -94,11 +109,16 @@ class LibresignSigningAdapter implements SigningAdapterInterface
         private readonly IAppManager $appManager,
         private readonly IAppConfig $appConfig,
         private readonly IUserManager $userManager,
-        private readonly IRootFolder $rootFolder,
-        private readonly ZgwDocumentService $documentService,
+        IRootFolder $rootFolder,
+        ZgwDocumentService $documentService,
         private readonly LoggerInterface $logger,
         ?callable $sleeper=null,
     ) {
+        $this->assembler = new LibresignResultAssembler(
+            rootFolder: $rootFolder,
+            documentService: $documentService,
+        );
+
         $this->sleeper = ($sleeper ?? static function (int $seconds): void {
             if ($seconds > 0) {
                 sleep($seconds);
@@ -153,18 +173,18 @@ class LibresignSigningAdapter implements SigningAdapterInterface
 
         for ($attempt = 0; $attempt < $attempts; $attempt++) {
             $status = $this->apiClient->getStatus($uuid);
-            $raw    = (string) ($status['statusText'] ?? ($status['status'] ?? ''));
-            $mapped = LibresignStatusMapper::map($raw);
+            $mapped = $this->assembler->mapStatus(status: $status);
 
-            if ($mapped === LibresignStatusMapper::UNKNOWN) {
+            if ($mapped === LibresignResultAssembler::UNKNOWN) {
+                $raw = (string) ($status['statusText'] ?? ($status['status'] ?? ''));
                 $this->logger->warning(
                     'LibresignSigningAdapter: unrecognised LibreSign status value',
                     ['app' => Application::APP_ID, 'uuid' => $uuid, 'raw' => $raw],
                 );
             }
 
-            if ($mapped === LibresignStatusMapper::SIGNED) {
-                return $this->storeSignedResult(
+            if ($mapped === LibresignResultAssembler::SIGNED) {
+                return $this->assembler->assembleSignedResult(
                     bestandId: $bestandId,
                     ondertekenaar: $ondertekenaar,
                     uuid: $uuid,
@@ -172,7 +192,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface
                 );
             }
 
-            if ($mapped === LibresignStatusMapper::DECLINED) {
+            if ($mapped === LibresignResultAssembler::DECLINED) {
                 throw new RuntimeException('libresign_signing_declined');
             }
 
@@ -199,33 +219,17 @@ class LibresignSigningAdapter implements SigningAdapterInterface
     public function fetchValidationReport(string $validatieRapportId): array
     {
         try {
-            $status = $this->apiClient->getStatus($validatieRapportId);
-            $raw    = (string) ($status['statusText'] ?? ($status['status'] ?? ''));
-            $mapped = LibresignStatusMapper::map($raw);
-
-            return [
-                'validatieRapportId' => $validatieRapportId,
-                'soort'              => 'libresign-handtekening-rapport',
-                'norm'               => 'eIDAS / ETSI EN 319 102-1 (LibreSign)',
-                'geldig'             => ($mapped === LibresignStatusMapper::SIGNED),
-                'status'             => $mapped,
-                'signers'            => (array) ($status['signers'] ?? []),
-                'gegenereerdOp'      => (new DateTimeImmutable())->format('c'),
-            ];
+            return $this->assembler->assembleValidationReport(
+                validatieRapportId: $validatieRapportId,
+                status: $this->apiClient->getStatus($validatieRapportId),
+            );
         } catch (Throwable $e) {
             $this->logger->warning(
                 'LibresignSigningAdapter: fetchValidationReport degraded to an invalid report',
                 ['app' => Application::APP_ID, 'validatieRapportId' => $validatieRapportId, 'error' => $e->getMessage()],
             );
 
-            return [
-                'validatieRapportId' => $validatieRapportId,
-                'soort'              => 'libresign-handtekening-rapport',
-                'norm'               => 'eIDAS / ETSI EN 319 102-1 (LibreSign)',
-                'geldig'             => false,
-                'foutmelding'        => 'libresign_api_error',
-                'gegenereerdOp'      => (new DateTimeImmutable())->format('c'),
-            ];
+            return $this->assembler->assembleFailedValidationReport(validatieRapportId: $validatieRapportId);
         }//end try
     }//end fetchValidationReport()
 
@@ -271,73 +275,4 @@ class LibresignSigningAdapter implements SigningAdapterInterface
             'displayName' => $user->getDisplayName(),
         ];
     }//end resolveSigner()
-
-    /**
-     * Download the LibreSign-produced signed PDF and persist it via the existing document
-     * storage service, returning the full sign() contract.
-     *
-     * @param string               $bestandId     The original PDF file id.
-     * @param string               $ondertekenaar The signer UID (owns the signed file in NC storage).
-     * @param string               $uuid          The LibreSign request uuid.
-     * @param array<string, mixed> $status        The last polled LibreSign status payload.
-     *
-     * @return array<string, string>
-     *
-     * @throws RuntimeException 'libresign_signed_file_missing' when the signed file cannot be read.
-     */
-    private function storeSignedResult(string $bestandId, string $ondertekenaar, string $uuid, array $status): array
-    {
-        $signedFileId = (int) ($status['file']['signedFileId'] ?? 0);
-        if ($signedFileId <= 0) {
-            throw new RuntimeException('libresign_signed_file_missing');
-        }
-
-        $content  = $this->readSignedFileContent(uid: $ondertekenaar, fileId: $signedFileId);
-        $fileName = 'beschikking-'.$bestandId.'-signed.pdf';
-
-        // Persist through the EXISTING zaakdossier binary storage path — no new storage
-        // mechanism. storeRaw() returns the byte count; getFileId() resolves the id it just
-        // wrote, both against the same service.
-        $this->documentService->storeRaw(uuid: $bestandId, fileName: $fileName, content: $content);
-        $newFileId = $this->documentService->getFileId(uuid: $bestandId, fileName: $fileName);
-
-        return [
-            'signedBestandId'        => (string) $newFileId,
-            'validatieRapportId'     => $uuid,
-            'certificaatSerienummer' => (string) ($status['certificateSerialNumber'] ?? ('libresign-'.$uuid)),
-            'tspProviderEidasId'     => 'LibreSign',
-            'ondertekeningTijdstip'  => (new DateTimeImmutable())->format('c'),
-        ];
-    }//end storeSignedResult()
-
-    /**
-     * Read the LibreSign-produced signed file's bytes by Nextcloud file id.
-     *
-     * @param string $uid    The Nextcloud user whose folder holds the signed file.
-     * @param int    $fileId The Nextcloud file id.
-     *
-     * @return string
-     *
-     * @throws RuntimeException 'libresign_signed_file_missing'.
-     */
-    private function readSignedFileContent(string $uid, int $fileId): string
-    {
-        try {
-            $userFolder = $this->rootFolder->getUserFolder($uid);
-            $nodes      = $userFolder->getById($fileId);
-        } catch (Throwable $e) {
-            throw new RuntimeException('libresign_signed_file_missing', 0, $e);
-        }
-
-        if (count($nodes) === 0) {
-            throw new RuntimeException('libresign_signed_file_missing');
-        }
-
-        $node = $nodes[0];
-        if (($node instanceof File) === false) {
-            throw new RuntimeException('libresign_signed_file_missing');
-        }
-
-        return $node->getContent();
-    }//end readSignedFileContent()
 }//end class

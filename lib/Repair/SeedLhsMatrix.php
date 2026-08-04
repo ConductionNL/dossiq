@@ -85,59 +85,7 @@ class SeedLhsMatrix implements IRepairStep
         }
 
         try {
-            $objectService = $this->settingsService->getObjectService();
-            if ($objectService === null) {
-                $output->warning('ObjectService unavailable. Skipping LHS matrix seed.');
-                return;
-            }
-
-            $register = $this->settingsService->getConfigValue('register');
-            $schema   = $this->settingsService->getConfigValue('lhs_matrix_schema');
-            if ($register === '' || $schema === '') {
-                $output->warning(
-                    'LHS register/schema not configured. Skipping LHS matrix seed.'
-                );
-                return;
-            }
-
-            $existing = $objectService->findAll(
-                [
-                    'filters' => ['register' => $register, 'schema' => $schema, 'active' => true],
-                    'limit'   => 1,
-                ],
-            );
-            if ($this->hasRow(results: $existing) === true) {
-                $output->info('Active LHS matrix already exists. Skipping seed.');
-                return;
-            }
-
-            $seedPath = __DIR__.'/../Settings/seed/lhs-matrix-2024.json';
-            if (file_exists($seedPath) === false) {
-                $output->warning('LHS seed file not found: '.$seedPath);
-                return;
-            }
-
-            $raw     = (string) file_get_contents($seedPath);
-            $payload = json_decode($raw, true);
-            if (is_array($payload) === false) {
-                $output->warning('LHS seed file is not valid JSON.');
-                return;
-            }
-
-            $payload['createdAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-
-            $objectService->saveObject(
-                register: $register,
-                schema: $schema,
-                object: $payload,
-            );
-
-            $cellCount = 0;
-            if (is_array($payload['cells'] ?? null) === true) {
-                $cellCount = count($payload['cells']);
-            }
-
-            $output->info('LHS matrix seeded: 1 matrix with '.$cellCount.' cells.');
+            $this->seedMatrix(output: $output);
         } catch (Throwable $e) {
             $output->warning('Could not seed LHS matrix: '.$e->getMessage());
             $this->logger->error(
@@ -146,6 +94,70 @@ class SeedLhsMatrix implements IRepairStep
             );
         }//end try
     }//end run()
+
+    /**
+     * Seed the single active LHS matrix, unless one already exists or the seed file is unusable.
+     *
+     * @param IOutput $output Output interface for progress reporting
+     *
+     * @return void
+     */
+    private function seedMatrix(IOutput $output): void
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            $output->warning('ObjectService unavailable. Skipping LHS matrix seed.');
+            return;
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        $schema   = $this->settingsService->getConfigValue('lhs_matrix_schema');
+        if ($register === '' || $schema === '') {
+            $output->warning(
+                'LHS register/schema not configured. Skipping LHS matrix seed.'
+            );
+            return;
+        }
+
+        $existing = $objectService->findAll(
+            [
+                'filters' => ['register' => $register, 'schema' => $schema, 'active' => true],
+                'limit'   => 1,
+            ],
+        );
+        if ($this->hasRow(results: $existing) === true) {
+            $output->info('Active LHS matrix already exists. Skipping seed.');
+            return;
+        }
+
+        $seedPath = __DIR__.'/../Settings/seed/lhs-matrix-2024.json';
+        if (file_exists($seedPath) === false) {
+            $output->warning('LHS seed file not found: '.$seedPath);
+            return;
+        }
+
+        $raw     = (string) file_get_contents($seedPath);
+        $payload = json_decode($raw, true);
+        if (is_array($payload) === false) {
+            $output->warning('LHS seed file is not valid JSON.');
+            return;
+        }
+
+        $payload['createdAt'] = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+
+        $objectService->saveObject(
+            register: $register,
+            schema: $schema,
+            object: $payload,
+        );
+
+        $cellCount = 0;
+        if (is_array($payload['cells'] ?? null) === true) {
+            $cellCount = count($payload['cells']);
+        }
+
+        $output->info('LHS matrix seeded: 1 matrix with '.$cellCount.' cells.');
+    }//end seedMatrix()
 
     /**
      * Whether the ObjectService result contains at least one row.

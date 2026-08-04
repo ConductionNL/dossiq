@@ -32,6 +32,8 @@ namespace OCA\Procest\Tests\Unit\Service;
 use OCA\Procest\Service\CaseTransferService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\TenantAuditTrailService;
+use OCA\Procest\Service\Transfer\TransferRegisterGateway;
+use OCA\Procest\Service\Transfer\TransferShareBroker;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -233,6 +235,9 @@ final class CtfFakeFederatedShareMapper
 
 /**
  * @covers \OCA\Procest\Service\CaseTransferService
+ *
+ * @uses \OCA\Procest\Service\Transfer\TransferRegisterGateway
+ * @uses \OCA\Procest\Service\Transfer\TransferShareBroker
  */
 class CaseTransferServiceFederationTest extends TestCase
 {
@@ -243,6 +248,40 @@ class CaseTransferServiceFederationTest extends TestCase
     private CtfFakeFederatedShareMapper $mapper;
 
     private CaseTransferService $service;
+
+    /**
+     * Assemble CaseTransferService with real transfer collaborators.
+     *
+     * The register gateway and share broker are real objects rather than
+     * mocks: every assertion in this class is about behaviour they inherited
+     * verbatim from CaseTransferService, and they stay driven entirely by the
+     * mocked app manager and container passed in here.
+     *
+     * @param SettingsService         $settings   Settings service (mock).
+     * @param IAppManager             $appManager App manager (mock).
+     * @param ContainerInterface      $container  DI container (mock).
+     * @param LoggerInterface         $logger     Logger (mock).
+     * @param TenantAuditTrailService $auditTrail Audit trail (mock).
+     *
+     * @return CaseTransferService
+     */
+    private static function makeTransferService(
+        SettingsService $settings,
+        IAppManager $appManager,
+        ContainerInterface $container,
+        LoggerInterface $logger,
+        TenantAuditTrailService $auditTrail,
+    ): CaseTransferService {
+        $gateway = new TransferRegisterGateway($appManager, $container, $logger);
+
+        return new CaseTransferService(
+            settingsService: $settings,
+            gateway: $gateway,
+            shareBroker: new TransferShareBroker($gateway, $logger),
+            logger: $logger,
+            auditTrail: $auditTrail,
+        );
+    }//end makeTransferService()
 
     /**
      * @return void
@@ -279,12 +318,12 @@ class CaseTransferServiceFederationTest extends TestCase
             }
         );
 
-        $this->service = new CaseTransferService(
-            settingsService: $settings,
-            appManager: $appManager,
-            container: $container,
-            logger: $this->createMock(LoggerInterface::class),
-            tenantAuditTrailService: $this->createMock(TenantAuditTrailService::class),
+        $this->service = self::makeTransferService(
+            $settings,
+            $appManager,
+            $container,
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(TenantAuditTrailService::class),
         );
     }//end setUp()
 
@@ -509,12 +548,12 @@ class CaseTransferServiceFederationTest extends TestCase
             }
         );
 
-        $service = new CaseTransferService(
-            settingsService: $settings,
-            appManager: $appManager,
-            container: $container,
-            logger: $this->createMock(LoggerInterface::class),
-            tenantAuditTrailService: $this->createMock(TenantAuditTrailService::class),
+        $service = self::makeTransferService(
+            $settings,
+            $appManager,
+            $container,
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(TenantAuditTrailService::class),
         );
 
         $result = $service->initiateTransfer('case-1', 'org-a', 'org-b', 'reason', '2026-08-01', 'alice', 'partner@remote.example');

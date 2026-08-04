@@ -15,6 +15,13 @@
  *    transition that revisits a status the case already left earlier)
  *  - weekly throughput trend (cases closed per week)
  *
+ * This class is the orchestrator only. The read path lives in
+ * {@see ProcessMiningDataLoader}; each metric family lives in its own
+ * calculator ({@see DwellTimeAnalyzer}, {@see TransitionMatrixBuilder},
+ * {@see ThroughputTrendCalculator}). What remains here is the report
+ * assembly: resolving the reporting period, grouping the loaded cases per
+ * case type, and handing each group to the calculators.
+ *
  * See openspec/changes/process-mining-bottlenecks/design.md for why the
  * `statusRecord` register (rather than a new event log) is the source of
  * truth.
@@ -42,23 +49,31 @@ namespace OCA\Procest\Service;
 
 use DateInterval;
 use DateTimeImmutable;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Procest\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Procest\Service\ProcessMining\ProcessMiningDataLoader;
+use OCA\Procest\Service\ProcessMining\ThroughputTrendCalculator;
+use OCA\Procest\Service\ProcessMining\TransitionMatrixBuilder;
 
 /**
  * Computes process-mining bottleneck metrics from recorded status history.
  */
 class ProcessMiningService
 {
-
-    use SearchesObjects;
-
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Shared settings/OR resolver.
+     * @param ProcessMiningDataLoader   $dataLoader           The OpenRegister read path + lookup indexes.
+     * @param DwellTimeAnalyzer         $dwellTimeAnalyzer    Dwell-interval reconstruction + bottleneck ranking.
+     * @param TransitionMatrixBuilder   $transitionBuilder    Transition matrix + rework detection.
+     * @param ThroughputTrendCalculator $throughputCalculator Weekly closed-case throughput trend.
+     *
+     * @return void
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
+        private readonly ProcessMiningDataLoader $dataLoader,
+        private readonly DwellTimeAnalyzer $dwellTimeAnalyzer,
+        private readonly TransitionMatrixBuilder $transitionBuilder,
+        private readonly ThroughputTrendCalculator $throughputCalculator,
     ) {
     }//end __construct()
 
@@ -74,21 +89,19 @@ class ProcessMiningService
      */
     public function getReport(array $params): array
     {
-        $to   = $this->parseDate(value: ($params['to'] ?? null), fallback: new DateTimeImmutable('today'));
-        $from = $to->sub(new DateInterval('P12M'));
-        if (isset($params['from']) === true && is_string($params['from']) === true && $params['from'] !== '') {
-            $from = $this->parseDate(value: $params['from'], fallback: $to->sub(new DateInterval('P12M')));
+        $to        = $this->parseDate(value: ($params['to'] ?? null), fallback: new DateTimeImmutable('today'));
+        $from      = $to->sub(new DateInterval('P12M'));
+        $fromParam = $this->nonEmptyStringParam(params: $params, key: 'from');
+        if ($fromParam !== null) {
+            $from = $this->parseDate(value: $fromParam, fallback: $to->sub(new DateInterval('P12M')));
         }
 
-        $caseTypeFilter = null;
-        if (isset($params['caseType']) === true && is_string($params['caseType']) === true && $params['caseType'] !== '') {
-            $caseTypeFilter = $params['caseType'];
-        }
+        $caseTypeFilter = $this->nonEmptyStringParam(params: $params, key: 'caseType');
 
-        $cases       = $this->loadCases(caseTypeFilter: $caseTypeFilter);
-        $caseTypes   = $this->loadCaseTypes();
-        $statusTypes = $this->loadStatusTypes();
-        $records     = $this->loadStatusRecords();
+        $cases       = $this->dataLoader->loadCases(caseTypeFilter: $caseTypeFilter);
+        $caseTypes   = $this->dataLoader->loadCaseTypes();
+        $statusTypes = $this->dataLoader->loadStatusTypes();
+        $records     = $this->dataLoader->loadStatusRecords();
 
         $casesById = [];
         foreach ($cases as $caseData) {
@@ -100,8 +113,8 @@ class ProcessMiningService
 
         $recordsByCase = $this->groupRecordsByCase(records: $records, caseIds: array_keys($casesById));
 
-        $statusTypeIndex = $this->indexById(rows: $statusTypes);
-        $caseTypeIndex   = $this->indexByIdAndSlug(rows: $caseTypes);
+        $statusTypeIndex = $this->dataLoader->indexById(rows: $statusTypes);
+        $caseTypeIndex   = $this->dataLoader->indexByIdAndSlug(rows: $caseTypes);
 
         $now = new DateTimeImmutable('now');
 
@@ -112,7 +125,7 @@ class ProcessMiningService
             $caseIdsInGroup      = array_keys($group['cases']);
             $recordsForThisGroup = array_intersect_key($recordsByCase, array_flip($caseIdsInGroup));
 
-            $intervals = $this->computeDwellIntervals(
+            $intervals = $this->dwellTimeAnalyzer->computeDwellIntervals(
                 recordsByCase: $recordsForThisGroup,
                 casesById: $group['cases'],
                 now: $now,
@@ -120,9 +133,12 @@ class ProcessMiningService
                 periodTo: $to,
             );
 
-            $dwellStats  = $this->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $statusTypeIndex);
-            $bottlenecks = $this->rankBottlenecks(dwellStats: $dwellStats);
-            $transitions = $this->computeTransitionMatrix(recordsByCase: $recordsForThisGroup, statusTypeIndex: $statusTypeIndex);
+            $dwellStats  = $this->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $statusTypeIndex);
+            $bottlenecks = $this->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats);
+            $transitions = $this->transitionBuilder->computeTransitionMatrix(
+                recordsByCase: $recordsForThisGroup,
+                statusTypeIndex: $statusTypeIndex
+            );
 
             $caseTypeReports[] = [
                 'id'               => $caseTypeId,
@@ -145,23 +161,14 @@ class ProcessMiningService
             'period'          => ['from' => $from->format('Y-m-d'), 'to' => $to->format('Y-m-d')],
             'caseTypeFilter'  => $caseTypeFilter,
             'caseTypes'       => $caseTypeReports,
-            'throughputTrend' => $this->computeThroughputTrend(cases: $casesById, from: $from, to: $to),
+            'throughputTrend' => $this->throughputCalculator->computeThroughputTrend(cases: $casesById, from: $from, to: $to),
         ];
     }//end getReport()
 
     /**
-     * Build dwell-time intervals: one entry per (case, status-visit), the
-     * time the case spent in that status before the next recorded
-     * transition (or, for the still-current status, before `$now`/the
-     * case's `endDate`).
+     * Build dwell-time intervals: one entry per (case, status-visit).
      *
-     * Handles the invariants callers rely on:
-     *  - a case with zero statusRecords contributes nothing (no crash);
-     *  - the still-open current status uses `$now` as its exit boundary;
-     *  - a closed case's final status uses the case's `endDate`;
-     *  - two records with an identical timestamp yield a zero-hour interval;
-     *  - only intervals that ENTERED the status within `[periodFrom, periodTo]`
-     *    are returned — the exit boundary may fall outside the window.
+     * Delegates to {@see DwellTimeAnalyzer::computeDwellIntervals()}.
      *
      * @param array<string, array<int, array<string, mixed>>> $recordsByCase Chronologically sorted statusRecords, keyed by case id.
      * @param array<string, array<string, mixed>>             $casesById     Case rows, keyed by id.
@@ -180,65 +187,19 @@ class ProcessMiningService
         DateTimeImmutable $periodFrom,
         DateTimeImmutable $periodTo,
     ): array {
-        $windowStart = $periodFrom->setTime(0, 0, 0);
-        $windowEnd   = $periodTo->setTime(23, 59, 59);
-
-        $intervals = [];
-        foreach ($recordsByCase as $caseId => $records) {
-            $count = count($records);
-            if ($count === 0) {
-                continue;
-            }
-
-            $case     = ($casesById[$caseId] ?? []);
-            $endDate  = ($case['endDate'] ?? null);
-            $closedAt = null;
-            if (is_string($endDate) === true && $endDate !== '') {
-                $closedAt = $this->parseDate(value: $endDate, fallback: $now);
-            }
-
-            for ($i = 0; $i < $count; $i++) {
-                $statusId = (string) ($records[$i]['statusType'] ?? '');
-                if ($statusId === '') {
-                    continue;
-                }
-
-                $enteredAt = $this->extractTimestamp(record: $records[$i]);
-                if ($enteredAt === null) {
-                    continue;
-                }
-
-                if ($enteredAt < $windowStart || $enteredAt > $windowEnd) {
-                    continue;
-                }
-
-                $exitedAt = ($closedAt ?? $now);
-                if (($i + 1) < $count) {
-                    $exitedAt = $this->extractTimestamp(record: $records[$i + 1]);
-                }
-
-                if ($exitedAt === null) {
-                    $exitedAt = $enteredAt;
-                }
-
-                $hours = (($exitedAt->getTimestamp() - $enteredAt->getTimestamp()) / 3600.0);
-                if ($hours < 0.0) {
-                    $hours = 0.0;
-                }
-
-                $intervals[] = [
-                    'caseId'   => (string) $caseId,
-                    'statusId' => $statusId,
-                    'hours'    => $hours,
-                ];
-            }//end for
-        }//end foreach
-
-        return $intervals;
+        return $this->dwellTimeAnalyzer->computeDwellIntervals(
+            recordsByCase: $recordsByCase,
+            casesById: $casesById,
+            now: $now,
+            periodFrom: $periodFrom,
+            periodTo: $periodTo,
+        );
     }//end computeDwellIntervals()
 
     /**
      * Aggregate dwell-time intervals per status into median/p90/mean stats.
+     *
+     * Delegates to {@see DwellTimeAnalyzer::aggregateDwellStats()}.
      *
      * @param array<int, array{caseId: string, statusId: string, hours: float}> $intervals       Dwell intervals.
      * @param array<string, array<string, mixed>>                               $statusTypeIndex StatusType rows, keyed by id.
@@ -249,40 +210,13 @@ class ProcessMiningService
      */
     public function aggregateDwellStats(array $intervals, array $statusTypeIndex): array
     {
-        $byStatus = [];
-        foreach ($intervals as $interval) {
-            $statusId = $interval['statusId'];
-            if (isset($byStatus[$statusId]) === false) {
-                $byStatus[$statusId] = [];
-            }
-
-            $byStatus[$statusId][] = $interval['hours'];
-        }
-
-        $out = [];
-        foreach ($byStatus as $statusId => $hoursList) {
-            sort($hoursList);
-            $out[] = [
-                'statusId'    => $statusId,
-                'statusName'  => $this->statusLabel(statusId: $statusId, statusTypeIndex: $statusTypeIndex),
-                'visitCount'  => count($hoursList),
-                'medianHours' => round(self::percentile(sorted: $hoursList, percentile: 50.0), 1),
-                'p90Hours'    => round(self::percentile(sorted: $hoursList, percentile: 90.0), 1),
-                'meanHours'   => round((array_sum($hoursList) / count($hoursList)), 1),
-            ];
-        }
-
-        return $out;
+        return $this->dwellTimeAnalyzer->aggregateDwellStats(intervals: $intervals, statusTypeIndex: $statusTypeIndex);
     }//end aggregateDwellStats()
 
     /**
      * Rank statuses by bottleneck severity: median dwell time x visit volume.
-     * Highest score first.
      *
-     * Each `$dwellStats` row is the shape {@see self::aggregateDwellStats()}
-     * returns: statusId, statusName, visitCount, medianHours, p90Hours,
-     * meanHours. Spelled as a loose shape here only to keep the tag on one
-     * line — PHPCS's PEAR sniff cannot parse a wrapped `@param`.
+     * Delegates to {@see DwellTimeAnalyzer::rankBottlenecks()}.
      *
      * @param array<int, array<string, mixed>> $dwellStats Per-status dwell stats.
      *
@@ -292,29 +226,13 @@ class ProcessMiningService
      */
     public function rankBottlenecks(array $dwellStats): array
     {
-        $ranked = [];
-        foreach ($dwellStats as $stat) {
-            $ranked[] = [
-                'statusId'    => $stat['statusId'],
-                'statusName'  => $stat['statusName'],
-                'visitCount'  => $stat['visitCount'],
-                'medianHours' => $stat['medianHours'],
-                'score'       => round(($stat['medianHours'] * $stat['visitCount']), 1),
-            ];
-        }
-
-        usort(
-            $ranked,
-            static fn (array $left, array $right): int => ($right['score'] <=> $left['score'])
-        );
-
-        return $ranked;
+        return $this->dwellTimeAnalyzer->rankBottlenecks(dwellStats: $dwellStats);
     }//end rankBottlenecks()
 
     /**
-     * Build the from→to transition frequency matrix and detect rework
-     * loops — a transition whose target status the case had already left
-     * earlier in its own history.
+     * Build the from→to transition frequency matrix and detect rework loops.
+     *
+     * Delegates to {@see TransitionMatrixBuilder::computeTransitionMatrix()}.
      *
      * @param array<string, array<int, array<string, mixed>>> $recordsByCase   Chronologically sorted statusRecords, keyed by case id.
      * @param array<string, array<string, mixed>>             $statusTypeIndex StatusType rows, keyed by id.
@@ -326,65 +244,16 @@ class ProcessMiningService
      */
     public function computeTransitionMatrix(array $recordsByCase, array $statusTypeIndex): array
     {
-        $matrix     = [];
-        $totalCount = 0;
-        $reworkSum  = 0;
-
-        foreach ($recordsByCase as $records) {
-            $transitions = $this->computeCaseTransitions(sortedRecords: $records);
-            foreach ($transitions as $transition) {
-                $key = ($transition['from'].'::'.$transition['to']);
-                if (isset($matrix[$key]) === false) {
-                    $matrix[$key] = [
-                        'from'        => $transition['from'],
-                        'to'          => $transition['to'],
-                        'count'       => 0,
-                        'reworkCount' => 0,
-                    ];
-                }
-
-                $matrix[$key]['count']++;
-                $totalCount++;
-                if ($transition['isRework'] === true) {
-                    $matrix[$key]['reworkCount']++;
-                    $reworkSum++;
-                }
-            }
-        }//end foreach
-
-        $out = [];
-        foreach ($matrix as $row) {
-            $out[] = [
-                'from'        => $row['from'],
-                'fromName'    => $this->statusLabel(statusId: $row['from'], statusTypeIndex: $statusTypeIndex),
-                'to'          => $row['to'],
-                'toName'      => $this->statusLabel(statusId: $row['to'], statusTypeIndex: $statusTypeIndex),
-                'count'       => $row['count'],
-                'reworkCount' => $row['reworkCount'],
-            ];
-        }
-
-        usort(
-            $out,
-            static fn (array $left, array $right): int => ($right['count'] <=> $left['count'])
+        return $this->transitionBuilder->computeTransitionMatrix(
+            recordsByCase: $recordsByCase,
+            statusTypeIndex: $statusTypeIndex
         );
-
-        $reworkPercent = 0.0;
-        if ($totalCount !== 0) {
-            $reworkPercent = round((($reworkSum / $totalCount) * 100), 1);
-        }
-
-        return [
-            'matrix'        => $out,
-            'reworkPercent' => $reworkPercent,
-            'totalCount'    => $totalCount,
-        ];
     }//end computeTransitionMatrix()
 
     /**
-     * Walk one case's chronologically sorted statusRecords into
-     * from→to transition pairs, flagging any transition that revisits a
-     * status the case had already left earlier (a rework loop).
+     * Walk one case's chronologically sorted statusRecords into from→to pairs.
+     *
+     * Delegates to {@see TransitionMatrixBuilder::computeCaseTransitions()}.
      *
      * @param array<int, array<string, mixed>> $sortedRecords Chronologically sorted statusRecords for one case.
      *
@@ -394,40 +263,13 @@ class ProcessMiningService
      */
     public function computeCaseTransitions(array $sortedRecords): array
     {
-        $count = count($sortedRecords);
-        if ($count < 2) {
-            return [];
-        }
-
-        $visited = [];
-        $first   = (string) ($sortedRecords[0]['statusType'] ?? '');
-        if ($first !== '') {
-            $visited[$first] = true;
-        }
-
-        $transitions = [];
-        for ($i = 1; $i < $count; $i++) {
-            $from = (string) ($sortedRecords[$i - 1]['statusType'] ?? '');
-            $to   = (string) ($sortedRecords[$i]['statusType'] ?? '');
-            if ($from === '' || $to === '') {
-                continue;
-            }
-
-            $isRework      = isset($visited[$to]);
-            $transitions[] = [
-                'from'     => $from,
-                'to'       => $to,
-                'isRework' => $isRework,
-            ];
-            $visited[$to]  = true;
-        }
-
-        return $transitions;
+        return $this->transitionBuilder->computeCaseTransitions(sortedRecords: $sortedRecords);
     }//end computeCaseTransitions()
 
     /**
-     * Weekly throughput trend: cases closed (by `endDate`) per ISO week
-     * within `[from, to]`.
+     * Weekly throughput trend: cases closed (by `endDate`) per ISO week.
+     *
+     * Delegates to {@see ThroughputTrendCalculator::computeThroughputTrend()}.
      *
      * @param array<string, array<string, mixed>> $cases Case rows, keyed by id.
      * @param DateTimeImmutable                   $from  Inclusive period start.
@@ -439,45 +281,27 @@ class ProcessMiningService
      */
     public function computeThroughputTrend(array $cases, DateTimeImmutable $from, DateTimeImmutable $to): array
     {
-        $buckets = [];
-
-        // Seed every ISO week in range so gaps render as zero, not "missing".
-        $cursor = $from->modify('monday this week');
-        $end    = $to;
-        while ($cursor <= $end) {
-            $buckets[$cursor->format('o-\WW')] = 0;
-            $cursor = $cursor->modify('+1 week');
-        }
-
-        foreach ($cases as $caseData) {
-            $endDate = ($caseData['endDate'] ?? null);
-            if (is_string($endDate) === false || $endDate === '') {
-                continue;
-            }
-
-            $closedAt = $this->parseDate(value: $endDate, fallback: null);
-            if ($closedAt === null || $closedAt < $from || $closedAt > $to) {
-                continue;
-            }
-
-            $week = $closedAt->format('o-\WW');
-            if (isset($buckets[$week]) === false) {
-                $buckets[$week] = 0;
-            }
-
-            $buckets[$week]++;
-        }//end foreach
-
-        $out = [];
-        foreach ($buckets as $week => $count) {
-            $out[] = ['week' => $week, 'count' => $count];
-        }
-
-        ksort($out);
-        usort($out, static fn (array $left, array $right): int => strcmp($left['week'], $right['week']));
-
-        return $out;
+        return $this->throughputCalculator->computeThroughputTrend(cases: $cases, from: $from, to: $to);
     }//end computeThroughputTrend()
+
+    /**
+     * Read a query parameter that MUST be a non-empty string, or null when it is absent, not a
+     * string, or empty.
+     *
+     * @param array<string, mixed> $params The query parameters.
+     * @param string               $key    The parameter name.
+     *
+     * @return string|null The parameter value, or null.
+     */
+    private function nonEmptyStringParam(array $params, string $key): ?string
+    {
+        $value = ($params[$key] ?? null);
+        if (is_string($value) === false || $value === '') {
+            return null;
+        }
+
+        return $value;
+    }//end nonEmptyStringParam()
 
     /**
      * Group cases by their caseType, resolving the display title.
@@ -572,101 +396,6 @@ class ProcessMiningService
     }//end extractTimestamp()
 
     /**
-     * Resolve a statusType id to its human-readable label.
-     *
-     * @param string                              $statusId        StatusType UUID.
-     * @param array<string, array<string, mixed>> $statusTypeIndex StatusType rows, keyed by id.
-     *
-     * @return string
-     */
-    private function statusLabel(string $statusId, array $statusTypeIndex): string
-    {
-        if (isset($statusTypeIndex[$statusId]) === false) {
-            return $statusId;
-        }
-
-        $entry = $statusTypeIndex[$statusId];
-        $label = ($entry['name'] ?? ($entry['title'] ?? ''));
-        if (is_string($label) === true && $label !== '') {
-            return $label;
-        }
-
-        return $statusId;
-    }//end statusLabel()
-
-    /**
-     * Index a list of rows by their `id` field.
-     *
-     * @param array<int, array<string, mixed>> $rows Rows to index.
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    private function indexById(array $rows): array
-    {
-        $index = [];
-        foreach ($rows as $row) {
-            $id = (string) ($row['id'] ?? '');
-            if ($id !== '') {
-                $index[$id] = $row;
-            }
-        }
-
-        return $index;
-    }//end indexById()
-
-    /**
-     * Index a list of rows by both `id` and `slug`, mirroring
-     * {@see DoorlooptijdService::enrichCases()}'s caseType lookup so a case's
-     * `caseType` field resolves whether it stores the UUID or the slug.
-     *
-     * @param array<int, array<string, mixed>> $rows Rows to index.
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    private function indexByIdAndSlug(array $rows): array
-    {
-        $index = [];
-        foreach ($rows as $row) {
-            $id   = (string) ($row['id'] ?? '');
-            $slug = (string) ($row['slug'] ?? '');
-            if ($id !== '') {
-                $index[$id] = $row;
-            }
-
-            if ($slug !== '') {
-                $index[$slug] = $row;
-            }
-        }
-
-        return $index;
-    }//end indexByIdAndSlug()
-
-    /**
-     * Percentile of a pre-sorted numeric list (nearest-rank method).
-     *
-     * @param array<int, float> $sorted     Ascending-sorted values.
-     * @param float             $percentile Percentile in [0, 100].
-     *
-     * @return float
-     */
-    private static function percentile(array $sorted, float $percentile): float
-    {
-        $count = count($sorted);
-        if ($count === 0) {
-            return 0.0;
-        }
-
-        if ($count === 1) {
-            return $sorted[0];
-        }
-
-        $rank = (int) ceil(($percentile / 100.0) * $count);
-        $rank = max(1, min($count, $rank));
-
-        return $sorted[($rank - 1)];
-    }//end percentile()
-
-    /**
      * Parse a date/datetime string; return `$fallback` on empty/invalid input.
      *
      * @param mixed                  $value    Raw date value.
@@ -686,118 +415,4 @@ class ProcessMiningService
             return $fallback;
         }
     }//end parseDate()
-
-    /**
-     * Load every case record via OpenRegister.
-     *
-     * @param string|null $caseTypeFilter Optional caseType filter (UUID or slug).
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function loadCases(?string $caseTypeFilter): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        $filters = ['_limit' => 2000];
-        if ($caseTypeFilter !== null && $caseTypeFilter !== '') {
-            $filters['caseType'] = $caseTypeFilter;
-        }
-
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: $filters,
-        );
-    }//end loadCases()
-
-    /**
-     * Load all caseType definitions.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function loadCaseTypes(): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_type_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['_limit' => 500],
-        );
-    }//end loadCaseTypes()
-
-    /**
-     * Load all statusType definitions.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function loadStatusTypes(): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('status_type_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['_limit' => 500],
-        );
-    }//end loadStatusTypes()
-
-    /**
-     * Load statusRecord rows — the same register {@see StatusTransitionService}
-     * writes on every transition. No `case` filter: process mining reads
-     * across the whole case population, then groups in-memory (mirrors
-     * {@see StatusTransitionService::replay()}'s single-case read, scaled up).
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function loadStatusRecords(): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('status_record_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['_limit' => 10000],
-        );
-    }//end loadStatusRecords()
 }//end class

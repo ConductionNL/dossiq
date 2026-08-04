@@ -43,18 +43,18 @@ class MandaatController extends Controller
     /**
      * Constructor.
      *
-     * @param string                   $appName                  The application name.
-     * @param IRequest                 $request                  The request object.
-     * @param MandaatValidationService $mandaatValidationService The mandate validation service.
-     * @param IUserSession             $userSession              The user session.
-     * @param LoggerInterface          $logger                   The logger.
+     * @param string                   $appName          The application name.
+     * @param IRequest                 $request          The request object.
+     * @param MandaatValidationService $mandaatValidator The mandate validation service.
+     * @param IUserSession             $userSession      The user session.
+     * @param LoggerInterface          $logger           The logger.
      *
      * @return void
      */
     public function __construct(
         string $appName,
         IRequest $request,
-        private readonly MandaatValidationService $mandaatValidationService,
+        private readonly MandaatValidationService $mandaatValidator,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
@@ -98,7 +98,7 @@ class MandaatController extends Controller
         }
 
         try {
-            $result = $this->mandaatValidationService->validate(
+            $result = $this->mandaatValidator->validate(
                 caseId: $id,
                 signingUserId: $signingUserId,
             );
@@ -127,6 +127,13 @@ class MandaatController extends Controller
     private function authorizeMandaatAccess(string $caseId, ?IUser $user): void
     {
         if ($user === null) {
+            // Log the denial with the case it targeted — an anonymous probe of
+            // the mandate surface is exactly what an audit needs to see, and
+            // without the case id the alert is not actionable.
+            $this->logger->warning(
+                'MandaatController: unauthenticated mandaat check denied',
+                ['caseId' => $caseId]
+            );
             throw new OCSForbiddenException('Not authenticated');
         }
     }//end authorizeMandaatAccess()

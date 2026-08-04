@@ -74,22 +74,26 @@ class BesluitvormingPublishHandler implements ActionHandlerInterface
         try {
             $caseId = (string) ($case['id'] ?? $case['uuid'] ?? '');
             if ($caseId === '') {
-                return ActionResult::failure(error: 'no_case_id');
+                return new ActionResult(succeeded: false, error: 'no_case_id');
             }
 
             $result = $this->publicationService->publish($caseId, ['channel' => 'website']);
             if (($result['ok'] ?? false) === true) {
-                return ActionResult::success(data: $result);
+                return new ActionResult(succeeded: true, data: $result);
             }
 
             // Failure does not block the transition; surface for manual retry.
-            return ActionResult::failure(error: (string) ($result['error'] ?? 'publication_failed'), data: $result);
+            return new ActionResult(
+                succeeded: false,
+                error: (string) ($result['error'] ?? 'publication_failed'),
+                data: $result,
+            );
         } catch (\Throwable $e) {
             $this->logger->error(
                 'BesluitvormingPublishHandler failed',
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
-            return ActionResult::failure(error: 'publication_failed');
+            return new ActionResult(succeeded: false, error: 'publication_failed');
         }//end try
     }//end handle()
 }//end class

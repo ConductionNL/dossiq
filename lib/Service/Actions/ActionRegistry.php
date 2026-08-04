@@ -65,30 +65,24 @@ class ActionRegistry
     private array $cache = [];
 
     /**
-     * In-memory handler index keyed by handler `type` slug.
-     *
-     * Populated lazily from the DI container the first time a handler is
-     * requested. Mirrors the dispatch lookup in SideEffectDispatcher so that
-     * external callers (e.g. a dry-run endpoint) can resolve a handler
-     * without rebuilding the table.
-     *
-     * @var array<string, ActionHandlerInterface>|null
-     */
-    private ?array $handlerIndex = null;
-
-    /**
      * Constructor for ActionRegistry.
      *
-     * @param ContainerInterface $container DI container — used to lazily
-     *                                      resolve OpenRegister's
-     *                                      ObjectService and to discover
-     *                                      handler implementations.
-     * @param IAppConfig         $appConfig Procest app config — provides the
-     *                                      `register` and
-     *                                      `automatic_action_schema` keys.
-     * @param LoggerInterface    $logger    PSR-3 logger for error logging on
-     *                                      unknown slugs, cross-tenant
-     *                                      attempts, and resolution failures.
+     * @param ContainerInterface   $container      DI container — used
+     *                                             to lazily resolve
+     *                                             OpenRegister's
+     *                                             ObjectService and to
+     *                                             discover handler
+     *                                             implementations.
+     * @param IAppConfig           $appConfig      Procest app config —
+     *                                             provides the `register` and
+     *                                             `automatic_action_schema`
+     *                                             keys.
+     * @param LoggerInterface      $logger         PSR-3 logger for error logging on
+     *                                             unknown slugs, cross-tenant
+     *                                             attempts, and resolution
+     *                                             failures.
+     * @param ActionHandlerLocator $handlerLocator Owns the handler table and
+     *                                             resolves handlers by `type` slug.
      *
      * @return void
      */
@@ -96,6 +90,7 @@ class ActionRegistry
         private readonly ContainerInterface $container,
         private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
+        private readonly ActionHandlerLocator $handlerLocator,
     ) {
     }//end __construct()
 
@@ -184,24 +179,39 @@ class ActionRegistry
             return null;
         }
 
-        // Normalise `config`: stored as JSON string in OpenRegister; the
-        // dispatcher expects a decoded array. Tolerate already-decoded
-        // configs for forward compat.
-        $config = ($action['config'] ?? null);
-        if (is_string($config) === true && $config !== '') {
-            $decoded = json_decode($config, true);
-            if (is_array($decoded) === true) {
-                $action['config'] = $decoded;
-            }
-        }
-
-        if (isset($action['config']) === false || is_array($action['config']) === false) {
-            $action['config'] = [];
-        }
+        $action['config'] = $this->normaliseConfig(action: $action);
 
         $this->cache[$cacheKey] = $action;
         return $action;
     }//end resolve()
+
+    /**
+     * Normalise a stored `config` value to a decoded array.
+     *
+     * OpenRegister stores the config as a JSON string; the dispatcher expects
+     * a decoded array. Already-decoded configs are passed through for forward
+     * compatibility, and anything unreadable degrades to an empty array.
+     *
+     * @param array $action The stored action carrying the raw `config` value.
+     *
+     * @return array The decoded config, or an empty array.
+     */
+    private function normaliseConfig(array $action): array
+    {
+        $config = ($action['config'] ?? null);
+        if (is_string($config) === true && $config !== '') {
+            $decoded = json_decode($config, true);
+            if (is_array($decoded) === true) {
+                return $decoded;
+            }
+        }
+
+        if (is_array($config) === false) {
+            return [];
+        }
+
+        return $config;
+    }//end normaliseConfig()
 
     /**
      * List all actions for a tenant (used by admin UI and dry-run preview).
@@ -262,41 +272,7 @@ class ActionRegistry
      */
     public function getHandler(string $type): ?ActionHandlerInterface
     {
-        if ($this->handlerIndex === null) {
-            $this->handlerIndex = [];
-            // Each handler class is registered as a regular DI service and
-            // referenced by FQCN; we resolve them lazily so the container
-            // can stay lean.
-            $candidates = [
-                \OCA\Procest\Service\Actions\SendEmailHandler::class,
-                \OCA\Procest\Service\Actions\CreateDocumentHandler::class,
-                \OCA\Procest\Service\Actions\NotifyRoleHandler::class,
-                \OCA\Procest\Service\Actions\CallWebhookHandler::class,
-                \OCA\Procest\Service\Actions\MergeTemplateHandler::class,
-                \OCA\Procest\Service\Actions\ScheduleReminderHandler::class,
-            ];
-            foreach ($candidates as $fqcn) {
-                try {
-                    $handler = $this->container->get($fqcn);
-                } catch (\Throwable $e) {
-                    $this->logger->error(
-                        'ActionRegistry: failed to resolve handler',
-                        [
-                            'app'       => Application::APP_ID,
-                            'fqcn'      => $fqcn,
-                            'exception' => $e->getMessage(),
-                        ]
-                    );
-                    continue;
-                }
-
-                if ($handler instanceof ActionHandlerInterface) {
-                    $this->handlerIndex[$handler->type()] = $handler;
-                }
-            }
-        }//end if
-
-        return ($this->handlerIndex[$type] ?? null);
+        return $this->handlerLocator->get(type: $type);
     }//end getHandler()
 
     /**

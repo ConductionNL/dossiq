@@ -9,6 +9,11 @@
  * malformed SLA, unknown action keys, dangling field references, and
  * escalation rules without an accompanying SLA.
  *
+ * The escalationRule half of the contract (rules 5, 6 and 7) lives in
+ * {@see \OCA\Procest\Service\StepConfig\EscalationRuleValidator}; this class
+ * owns the shape-level rules and composes that validator's errors into the
+ * single flat list the caller receives.
+ *
  * No DI, no I/O, no Nextcloud APIs. Returns a list of structured
  * validation errors with keys {path, code, message}. Never returns raw
  * exception messages — callers log the structured errors via the host
@@ -35,6 +40,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\Service\StepConfig\EscalationRuleValidator;
+
 /**
  * Pure-function validator for WorkflowStep.config.
  *
@@ -49,6 +56,8 @@ namespace OCA\Procest\Service;
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  *
  * @link https://procest.nl
+ *
+ * @spec openspec/specs/process-step-configuration/spec.md
  */
 final class StepConfigValidator
 {
@@ -62,16 +71,22 @@ final class StepConfigValidator
     /**
      * Allowed enum values for the `escalationRule.offsetUnit` property.
      *
+     * Re-exported from EscalationRuleValidator, which owns the escalation
+     * rules, so existing `StepConfigValidator::OFFSET_UNITS` callers keep
+     * reading the single source of truth.
+     *
      * @var array<int, string>
      */
-    public const OFFSET_UNITS = ['hours', 'businessDays'];
+    public const OFFSET_UNITS = EscalationRuleValidator::OFFSET_UNITS;
 
     /**
      * Allowed enum values for the `escalationRule.trigger` property.
      *
+     * Re-exported from EscalationRuleValidator — see OFFSET_UNITS.
+     *
      * @var array<int, string>
      */
-    public const TRIGGERS = ['preBreach', 'slaBreached'];
+    public const TRIGGERS = EscalationRuleValidator::TRIGGERS;
 
     /**
      * Upper bound on `sla.value` (inclusive).
@@ -171,7 +186,7 @@ final class StepConfigValidator
 
         $errors = array_merge(
             $errors,
-            self::validateEscalationRule(
+            (new EscalationRuleValidator())->validate(
                 rule: ($config['escalationRule'] ?? null),
                 sla: ($config['sla'] ?? null),
                 roleTypes: ($caseTypeSchema['roleTypes'] ?? []),
@@ -350,122 +365,4 @@ final class StepConfigValidator
 
         return $errors;
     }//end validateAutoActions()
-
-    /**
-     * Validate `config.escalationRule`.
-     *
-     * Rules 5, 6, and 7 from design.md.
-     *
-     * @param mixed                $rule      The raw escalationRule value.
-     * @param mixed                $sla       The raw sla value (for rules 6 + 7).
-     * @param array<string, mixed> $roleTypes Map of role name/uuid to definition.
-     * @param string               $path      The path prefix for any error.
-     *
-     * @return array<int, array{path: string, code: string, message: string}>
-     */
-    private static function validateEscalationRule(
-        mixed $rule,
-        mixed $sla,
-        array $roleTypes,
-        string $path
-    ): array {
-        if ($rule === null) {
-            return [];
-        }
-
-        if (is_array($rule) === false) {
-            return [self::error(path: $path, code: 'malformed_escalation_rule', message: 'escalationRule must be an object')];
-        }
-
-        $errors = [];
-
-        // Rule 6: escalationRule requires an SLA.
-        if ($sla === null) {
-            $errors[] = self::error(
-                path: $path,
-                code: 'escalation_requires_sla',
-                message: 'escalationRule cannot be set without a sla'
-            );
-        }
-
-        $trigger = ($rule['trigger'] ?? null);
-        if (is_string($trigger) === false || in_array($trigger, self::TRIGGERS, true) === false) {
-            $errors[] = self::error(
-                path: $path.'.trigger',
-                code: 'unknown_trigger',
-                message: 'escalationRule.trigger must be one of: '.implode(', ', self::TRIGGERS)
-            );
-        }
-
-        $offset = ($rule['offset'] ?? null);
-        if (is_int($offset) === false || $offset < 0) {
-            $errors[] = self::error(
-                path: $path.'.offset',
-                code: 'out_of_range',
-                message: 'escalationRule.offset must be a non-negative integer'
-            );
-        }
-
-        $offsetUnit = ($rule['offsetUnit'] ?? null);
-        if (is_string($offsetUnit) === false
-            || in_array($offsetUnit, self::OFFSET_UNITS, true) === false
-        ) {
-            $errors[] = self::error(
-                path: $path.'.offsetUnit',
-                code: 'unknown_offset_unit',
-                message: 'escalationRule.offsetUnit must be one of: '.implode(', ', self::OFFSET_UNITS)
-            );
-        }
-
-        // Rule 7: preBreach offset cannot exceed sla.value.
-        if ($trigger === 'preBreach'
-            && is_int($offset) === true
-            && is_array($sla) === true
-            && is_int(($sla['value'] ?? null)) === true
-            && $offset > $sla['value']
-        ) {
-            $errors[] = self::error(
-                path: $path.'.offset',
-                code: 'offset_exceeds_sla',
-                message: 'escalationRule.offset must not exceed sla.value when trigger is preBreach'
-            );
-        }
-
-        // Rule 5: notifyRole + escalateToRole must resolve when roleTypes provided.
-        $checkRoles = ($roleTypes !== []);
-        foreach (['notifyRole', 'escalateToRole'] as $roleKey) {
-            $role = ($rule[$roleKey] ?? null);
-            if ($role === null) {
-                continue;
-            }
-
-            if (is_string($role) === false || $role === '') {
-                $errors[] = self::error(
-                    path: $path.'.'.$roleKey,
-                    code: 'malformed_role_reference',
-                    message: $roleKey.' must be a non-empty role reference'
-                );
-                continue;
-            }
-
-            if ($checkRoles === true && array_key_exists($role, $roleTypes) === false) {
-                $errors[] = self::error(
-                    path: $path.'.'.$roleKey,
-                    code: 'unknown_role_reference',
-                    message: $roleKey.' does not resolve to a roleType on the linked caseType'
-                );
-            }
-        }//end foreach
-
-        $openIncident = ($rule['openIncident'] ?? null);
-        if ($openIncident !== null && is_bool($openIncident) === false) {
-            $errors[] = self::error(
-                path: $path.'.openIncident',
-                code: 'malformed_open_incident',
-                message: 'escalationRule.openIncident must be a boolean'
-            );
-        }
-
-        return $errors;
-    }//end validateEscalationRule()
 }//end class

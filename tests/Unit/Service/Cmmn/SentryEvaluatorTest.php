@@ -35,6 +35,24 @@ final class SentryEvaluatorTest extends TestCase
 {
 
     /**
+     * The evaluator under test.
+     *
+     * @var SentryEvaluator
+     */
+    private SentryEvaluator $evaluator;
+
+    /**
+     * Build the (stateless) evaluator for each test.
+     *
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->evaluator = new SentryEvaluator();
+    }//end setUp()
+
+    /**
      * A sentry with only an onPart (planItem transition) fires once that
      * plan item reaches the target state, and not before.
      *
@@ -44,10 +62,10 @@ final class SentryEvaluatorTest extends TestCase
     {
         $sentry  = ['onPart' => ['planItem' => 'taskA', 'standardEvent' => 'complete']];
         $context = ['planItemStates' => ['taskA' => 'active'], 'caseFile' => [], 'touchedKeys' => [], 'changedKeys' => []];
-        self::assertFalse(SentryEvaluator::fires(sentry: $sentry, context: $context));
+        self::assertFalse($this->evaluator->fires(sentry: $sentry, context: $context));
 
         $context['planItemStates']['taskA'] = 'completed';
-        self::assertTrue(SentryEvaluator::fires(sentry: $sentry, context: $context));
+        self::assertTrue($this->evaluator->fires(sentry: $sentry, context: $context));
     }//end testOnPartPlanItemTransitionFires()
 
     /**
@@ -64,15 +82,15 @@ final class SentryEvaluatorTest extends TestCase
 
         // onPart fires (touched) but ifPart fails (value false).
         $context = ['planItemStates' => [], 'caseFile' => ['urgent' => false], 'touchedKeys' => ['urgent'], 'changedKeys' => ['urgent']];
-        self::assertFalse(SentryEvaluator::fires(sentry: $sentry, context: $context));
+        self::assertFalse($this->evaluator->fires(sentry: $sentry, context: $context));
 
         // Both satisfied.
         $context['caseFile']['urgent'] = true;
-        self::assertTrue(SentryEvaluator::fires(sentry: $sentry, context: $context));
+        self::assertTrue($this->evaluator->fires(sentry: $sentry, context: $context));
 
         // ifPart satisfied but onPart not touched this call.
         $context['touchedKeys'] = [];
-        self::assertFalse(SentryEvaluator::fires(sentry: $sentry, context: $context));
+        self::assertFalse($this->evaluator->fires(sentry: $sentry, context: $context));
     }//end testMultiPartSentryRequiresBothOnPartAndIfPart()
 
     /**
@@ -88,10 +106,10 @@ final class SentryEvaluatorTest extends TestCase
         ];
 
         $context = ['planItemStates' => ['a' => 'active', 'b' => 'active'], 'caseFile' => [], 'touchedKeys' => [], 'changedKeys' => []];
-        self::assertFalse(SentryEvaluator::anyFires(sentries: $sentries, context: $context));
+        self::assertFalse($this->evaluator->anyFires(sentries: $sentries, context: $context));
 
         $context['planItemStates']['b'] = 'completed';
-        self::assertTrue(SentryEvaluator::anyFires(sentries: $sentries, context: $context));
+        self::assertTrue($this->evaluator->anyFires(sentries: $sentries, context: $context));
     }//end testMultipleSentriesAreOred()
 
     /**
@@ -103,7 +121,7 @@ final class SentryEvaluatorTest extends TestCase
     public function testEmptySentryArrayNeverFires(): void
     {
         $context = ['planItemStates' => [], 'caseFile' => [], 'touchedKeys' => [], 'changedKeys' => []];
-        self::assertFalse(SentryEvaluator::anyFires(sentries: [], context: $context));
+        self::assertFalse($this->evaluator->anyFires(sentries: [], context: $context));
     }//end testEmptySentryArrayNeverFires()
 
     /**
@@ -118,11 +136,11 @@ final class SentryEvaluatorTest extends TestCase
         $changedSentry = ['onPart' => ['caseFileItem' => 'note', 'caseFileEvent' => 'changed']];
 
         $context = ['planItemStates' => [], 'caseFile' => ['note' => 'x'], 'touchedKeys' => ['note'], 'changedKeys' => []];
-        self::assertTrue(SentryEvaluator::fires(sentry: $setSentry, context: $context));
-        self::assertFalse(SentryEvaluator::fires(sentry: $changedSentry, context: $context));
+        self::assertTrue($this->evaluator->fires(sentry: $setSentry, context: $context));
+        self::assertFalse($this->evaluator->fires(sentry: $changedSentry, context: $context));
 
         $context['changedKeys'] = ['note'];
-        self::assertTrue(SentryEvaluator::fires(sentry: $changedSentry, context: $context));
+        self::assertTrue($this->evaluator->fires(sentry: $changedSentry, context: $context));
     }//end testCaseFileChangedVersusSet()
 
     /**
@@ -134,17 +152,17 @@ final class SentryEvaluatorTest extends TestCase
     {
         $context = static fn (mixed $value): array => ['planItemStates' => [], 'caseFile' => ['f' => $value], 'touchedKeys' => [], 'changedKeys' => []];
 
-        self::assertTrue(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'eq', 'value' => 5]], $context(5)));
-        self::assertTrue(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'neq', 'value' => 5]], $context(6)));
-        self::assertTrue(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'gt', 'value' => 5]], $context(6)));
-        self::assertTrue(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'gte', 'value' => 5]], $context(5)));
-        self::assertTrue(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'lt', 'value' => 5]], $context(4)));
-        self::assertTrue(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'lte', 'value' => 5]], $context(5)));
-        self::assertTrue(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'in', 'value' => [1, 2, 3]]], $context(2)));
-        self::assertTrue(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'notIn', 'value' => [1, 2, 3]]], $context(9)));
-        self::assertTrue(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'truthy']], $context(true)));
-        self::assertTrue(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'falsy']], $context(false)));
-        self::assertFalse(SentryEvaluator::fires(['ifPart' => ['field' => 'f', 'operator' => 'gt', 'value' => 5]], $context(4)));
+        self::assertTrue($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'eq', 'value' => 5]], $context(5)));
+        self::assertTrue($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'neq', 'value' => 5]], $context(6)));
+        self::assertTrue($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'gt', 'value' => 5]], $context(6)));
+        self::assertTrue($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'gte', 'value' => 5]], $context(5)));
+        self::assertTrue($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'lt', 'value' => 5]], $context(4)));
+        self::assertTrue($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'lte', 'value' => 5]], $context(5)));
+        self::assertTrue($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'in', 'value' => [1, 2, 3]]], $context(2)));
+        self::assertTrue($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'notIn', 'value' => [1, 2, 3]]], $context(9)));
+        self::assertTrue($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'truthy']], $context(true)));
+        self::assertTrue($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'falsy']], $context(false)));
+        self::assertFalse($this->evaluator->fires(['ifPart' => ['field' => 'f', 'operator' => 'gt', 'value' => 5]], $context(4)));
     }//end testIfPartOperators()
 
     /**
@@ -155,7 +173,7 @@ final class SentryEvaluatorTest extends TestCase
     public function testMalformedIfPartFailsClosed(): void
     {
         $context = ['planItemStates' => [], 'caseFile' => [], 'touchedKeys' => [], 'changedKeys' => []];
-        self::assertFalse(SentryEvaluator::fires(['ifPart' => ['operator' => 'eq', 'value' => 1]], $context));
+        self::assertFalse($this->evaluator->fires(['ifPart' => ['operator' => 'eq', 'value' => 1]], $context));
     }//end testMalformedIfPartFailsClosed()
 
     /**
@@ -169,6 +187,6 @@ final class SentryEvaluatorTest extends TestCase
     public function testSentryWithNeitherPartIsVacuouslyTrue(): void
     {
         $context = ['planItemStates' => [], 'caseFile' => [], 'touchedKeys' => [], 'changedKeys' => []];
-        self::assertTrue(SentryEvaluator::fires([], $context));
+        self::assertTrue($this->evaluator->fires([], $context));
     }//end testSentryWithNeitherPartIsVacuouslyTrue()
 }//end class

@@ -99,11 +99,7 @@ class WOODeadlineService
      */
     public function calculate(string $ontvangstdatum): array
     {
-        $receipt = \DateTimeImmutable::createFromFormat('Y-m-d', $ontvangstdatum);
-        if ($receipt === false) {
-            throw new InvalidArgumentException('Invalid ontvangstdatum: '.$ontvangstdatum);
-        }
-
+        $receipt  = $this->requireIsoDate(value: $ontvangstdatum, label: 'ontvangstdatum');
         $deadline = $receipt->modify('+'.self::INITIAL_PERIOD_DAYS.' days');
 
         return [
@@ -175,7 +171,7 @@ class WOODeadlineService
             $currentDeadline = $calculated['expectedResolution'];
         }
 
-        $deadline    = \DateTimeImmutable::createFromFormat('Y-m-d', $currentDeadline);
+        $deadline    = $this->requireIsoDate(value: (string) $currentDeadline, label: 'expectedResolution');
         $newDeadline = $deadline->modify('+'.self::EXTENSION_PERIOD_DAYS.' days');
 
         $updateData = array_merge(
@@ -218,45 +214,12 @@ class WOODeadlineService
      */
     public function checkAndWarn(string $caseId, string $behandelaar): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return ['warned' => false, 'reason' => 'OpenRegister unavailable'];
+        $resolved = $this->resolveWarningDeadline(caseId: $caseId);
+        if ($resolved['deadline'] === null) {
+            return ['warned' => false, 'reason' => $resolved['reason']];
         }
 
-        $register   = $this->settingsService->getConfigValue('register');
-        $caseSchema = $this->settingsService->getConfigValue('case_schema');
-
-        if (empty($register) === true || empty($caseSchema) === true) {
-            return ['warned' => false, 'reason' => 'Case schema not configured'];
-        }
-
-        $case = $this->findObjectAsArray(
-            objectService: $objectService,
-            register: $register,
-            schema: $caseSchema,
-            id: $caseId
-        );
-        if ($case === null) {
-            return ['warned' => false, 'reason' => 'Case not found'];
-        }
-
-        $caseData = (array) $case;
-
-        $deadlineStr = $caseData['expectedResolution'] ?? null;
-        if (empty($deadlineStr) === true) {
-            return ['warned' => false, 'reason' => 'No deadline set'];
-        }
-
-        $today    = new DateTimeImmutable('today');
-        $deadline = \DateTimeImmutable::createFromFormat('Y-m-d', $deadlineStr);
-        if ($deadline === false) {
-            return ['warned' => false, 'reason' => 'Invalid deadline format'];
-        }
-
-        $daysRemaining = (int) $today->diff($deadline)->days;
-        if ($today > $deadline) {
-            $daysRemaining = -$daysRemaining;
-        }
+        $daysRemaining = $this->signedDaysUntil(deadline: $resolved['deadline']);
 
         $isOverdue = ($daysRemaining < 0);
         $warned    = false;
@@ -278,6 +241,70 @@ class WOODeadlineService
             'warned'        => $warned,
         ];
     }//end checkAndWarn()
+
+    /**
+     * Load the case and resolve the deadline that the warning check operates on.
+     *
+     * @param string $caseId The case UUID
+     *
+     * @return array{deadline: \DateTimeImmutable|null, reason: string} The parsed deadline, or null with the blocking reason
+     */
+    private function resolveWarningDeadline(string $caseId): array
+    {
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            return ['deadline' => null, 'reason' => 'OpenRegister unavailable'];
+        }
+
+        $register   = $this->settingsService->getConfigValue('register');
+        $caseSchema = $this->settingsService->getConfigValue('case_schema');
+
+        if (empty($register) === true || empty($caseSchema) === true) {
+            return ['deadline' => null, 'reason' => 'Case schema not configured'];
+        }
+
+        $case = $this->findObjectAsArray(
+            objectService: $objectService,
+            register: $register,
+            schema: $caseSchema,
+            id: $caseId
+        );
+        if ($case === null) {
+            return ['deadline' => null, 'reason' => 'Case not found'];
+        }
+
+        $caseData = (array) $case;
+
+        $deadlineStr = $caseData['expectedResolution'] ?? null;
+        if (empty($deadlineStr) === true) {
+            return ['deadline' => null, 'reason' => 'No deadline set'];
+        }
+
+        $deadline = $this->parseIsoDate(value: (string) $deadlineStr);
+        if ($deadline === null) {
+            return ['deadline' => null, 'reason' => 'Invalid deadline format'];
+        }
+
+        return ['deadline' => $deadline, 'reason' => ''];
+    }//end resolveWarningDeadline()
+
+    /**
+     * Count the days between today and a deadline, negative once the deadline has passed.
+     *
+     * @param DateTimeImmutable $deadline The deadline to measure against
+     *
+     * @return int Days remaining, negative when overdue
+     */
+    private function signedDaysUntil(DateTimeImmutable $deadline): int
+    {
+        $today         = new DateTimeImmutable('today');
+        $daysRemaining = (int) $today->diff($deadline)->days;
+        if ($today > $deadline) {
+            return -$daysRemaining;
+        }
+
+        return $daysRemaining;
+    }//end signedDaysUntil()
 
     /**
      * Send a deadline notification to the behandelaar.
@@ -321,4 +348,54 @@ class WOODeadlineService
             );
         }//end try
     }//end sendDeadlineNotification()
+
+    /**
+     * Parse an ISO 8601 calendar date (Y-m-d) into an immutable date at midnight.
+     *
+     * Constructing the value directly (rather than through a static factory)
+     * keeps the parse honest: an unparseable value yields null instead of a
+     * boolean sentinel, and the resulting instant is midnight rather than the
+     * current wall-clock time, so day arithmetic is whole-day exact. A trailing
+     * time component is accepted and discarded — deadlines are calendar dates.
+     *
+     * @param string $value The date string to parse (e.g. '2026-05-01')
+     *
+     * @return \DateTimeImmutable|null The parsed date, or null when unparseable
+     *
+     * @spec openspec/changes/woo-case-type/tasks.md#task-4
+     */
+    private function parseIsoDate(string $value): ?DateTimeImmutable
+    {
+        if (preg_match('/^(\d{4})-(\d{1,2})-(\d{1,2})/', $value, $parts) !== 1) {
+            return null;
+        }
+
+        try {
+            return new DateTimeImmutable($parts[1].'-'.$parts[2].'-'.$parts[3].' 00:00:00');
+        } catch (\Exception $e) {
+            return null;
+        }
+    }//end parseIsoDate()
+
+    /**
+     * Parse an ISO 8601 calendar date, rejecting an unparseable value.
+     *
+     * @param string $value The date string to parse (e.g. '2026-05-01')
+     * @param string $label The field name to name in the rejection message
+     *
+     * @return \DateTimeImmutable The parsed date at midnight
+     *
+     * @throws \InvalidArgumentException If the value is not a Y-m-d date
+     *
+     * @spec openspec/changes/woo-case-type/tasks.md#task-4
+     */
+    private function requireIsoDate(string $value, string $label): DateTimeImmutable
+    {
+        $parsed = $this->parseIsoDate(value: $value);
+        if ($parsed === null) {
+            throw new InvalidArgumentException('Invalid '.$label.': '.$value);
+        }
+
+        return $parsed;
+    }//end requireIsoDate()
 }//end class

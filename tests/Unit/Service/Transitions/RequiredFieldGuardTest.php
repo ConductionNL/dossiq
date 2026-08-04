@@ -30,6 +30,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\RequiredFieldGuard
+ *
+ * @uses \OCA\Procest\Service\Transitions\GuardResult
  */
 class RequiredFieldGuardTest extends TestCase
 {

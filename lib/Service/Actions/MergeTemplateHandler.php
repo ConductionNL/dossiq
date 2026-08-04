@@ -94,16 +94,16 @@ class MergeTemplateHandler implements ActionHandlerInterface
             ];
 
             if (($transitionContext['dryRun'] ?? false) === true) {
-                return ActionResult::success($preview);
+                return new ActionResult(succeeded: true, data: $preview);
             }
 
             if ($targetField === '') {
-                return ActionResult::failure('missing_target_field', $preview);
+                return new ActionResult(succeeded: false, error: 'missing_target_field', data: $preview);
             }
 
             $objectService = $this->resolveObjectService();
             if ($objectService === null) {
-                return ActionResult::failure('object_service_unavailable', $preview);
+                return new ActionResult(succeeded: false, error: 'object_service_unavailable', data: $preview);
             }
 
             $register = $this->appConfig->getValueString(
@@ -118,14 +118,14 @@ class MergeTemplateHandler implements ActionHandlerInterface
             );
 
             if ($register === '' || $schema === '') {
-                return ActionResult::failure('case_schema_unconfigured', $preview);
+                return new ActionResult(succeeded: false, error: 'case_schema_unconfigured', data: $preview);
             }
 
             $updated = array_merge($case, [$targetField => $rendered]);
 
             $objectService->saveObject(object: $updated, register: $register, schema: $schema);
 
-            return ActionResult::success($preview);
+            return new ActionResult(succeeded: true, data: $preview);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'MergeTemplateHandler: failed to merge template',
@@ -135,7 +135,7 @@ class MergeTemplateHandler implements ActionHandlerInterface
                     'exception' => $e->getMessage(),
                 ]
             );
-            return ActionResult::failure('merge_template_failed');
+            return new ActionResult(succeeded: false, error: 'merge_template_failed');
         }//end try
     }//end handle()
 

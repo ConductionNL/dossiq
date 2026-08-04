@@ -33,6 +33,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for CallbackService.
  *
  * @covers \OCA\Procest\Service\Kcc\CallbackService
+ *
+ * @uses \OCA\Procest\Service\Kcc\SlaCalculator
  */
 class CallbackServiceTest extends TestCase
 {

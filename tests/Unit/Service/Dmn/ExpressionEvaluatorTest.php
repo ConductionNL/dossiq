@@ -32,9 +32,27 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Procest\Service\Dmn\ExpressionEvaluator
+ *
+ * @uses \OCA\Procest\Service\Dmn\DecisionEvaluationException
  */
 class ExpressionEvaluatorTest extends TestCase
 {
+
+    /**
+     * The evaluator under test.
+     *
+     * @var ExpressionEvaluator
+     */
+    private ExpressionEvaluator $evaluator;
+
+    /**
+     * @return void
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->evaluator = new ExpressionEvaluator();
+    }//end setUp()
 
     // ------------------------------------------------------------------
     // Wildcard
@@ -45,7 +63,7 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testEmptyExpressionIsWildcard(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '', value: 'anything', type: 'string'));
+        self::assertTrue($this->evaluator->matches(expression: '', value: 'anything', type: 'string'));
     }//end testEmptyExpressionIsWildcard()
 
     /**
@@ -53,7 +71,7 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testDashExpressionIsWildcard(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '-', value: 12345.0, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '-', value: 12345.0, type: 'number'));
     }//end testDashExpressionIsWildcard()
 
     /**
@@ -61,8 +79,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testQuotedDashIsLiteralNotWildcard(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '"-"', value: '-', type: 'string'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '"-"', value: 'anything-else', type: 'string'));
+        self::assertTrue($this->evaluator->matches(expression: '"-"', value: '-', type: 'string'));
+        self::assertFalse($this->evaluator->matches(expression: '"-"', value: 'anything-else', type: 'string'));
     }//end testQuotedDashIsLiteralNotWildcard()
 
     // ------------------------------------------------------------------
@@ -74,8 +92,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testLessThan(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '< 10', value: 5.0, type: 'number'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '< 10', value: 10.0, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '< 10', value: 5.0, type: 'number'));
+        self::assertFalse($this->evaluator->matches(expression: '< 10', value: 10.0, type: 'number'));
     }//end testLessThan()
 
     /**
@@ -83,8 +101,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testLessThanOrEqual(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '<= 10', value: 10.0, type: 'number'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '<= 10', value: 10.5, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '<= 10', value: 10.0, type: 'number'));
+        self::assertFalse($this->evaluator->matches(expression: '<= 10', value: 10.5, type: 'number'));
     }//end testLessThanOrEqual()
 
     /**
@@ -92,8 +110,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testGreaterThan(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '> 10', value: 11.0, type: 'number'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '> 10', value: 10.0, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '> 10', value: 11.0, type: 'number'));
+        self::assertFalse($this->evaluator->matches(expression: '> 10', value: 10.0, type: 'number'));
     }//end testGreaterThan()
 
     /**
@@ -101,8 +119,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testGreaterThanOrEqual(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '>= 10', value: 10.0, type: 'number'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '>= 10', value: 9.999, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '>= 10', value: 10.0, type: 'number'));
+        self::assertFalse($this->evaluator->matches(expression: '>= 10', value: 9.999, type: 'number'));
     }//end testGreaterThanOrEqual()
 
     /**
@@ -110,8 +128,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testEquals(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '= gold', value: 'gold', type: 'string'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '= gold', value: 'silver', type: 'string'));
+        self::assertTrue($this->evaluator->matches(expression: '= gold', value: 'gold', type: 'string'));
+        self::assertFalse($this->evaluator->matches(expression: '= gold', value: 'silver', type: 'string'));
     }//end testEquals()
 
     /**
@@ -119,8 +137,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testNotEquals(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '!= gold', value: 'silver', type: 'string'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '!= gold', value: 'gold', type: 'string'));
+        self::assertTrue($this->evaluator->matches(expression: '!= gold', value: 'silver', type: 'string'));
+        self::assertFalse($this->evaluator->matches(expression: '!= gold', value: 'gold', type: 'string'));
     }//end testNotEquals()
 
     /**
@@ -130,7 +148,7 @@ class ExpressionEvaluatorTest extends TestCase
     {
         $this->expectException(DecisionEvaluationException::class);
         try {
-            ExpressionEvaluator::matches(expression: '>=   ', value: 1.0, type: 'number');
+            $this->evaluator->matches(expression: '>=   ', value: 1.0, type: 'number');
         } catch (DecisionEvaluationException $e) {
             self::assertSame('invalid_expression', $e->getErrorCode());
             throw $e;
@@ -146,10 +164,10 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testInclusiveRangeBoundsMatch(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '[0..25000]', value: 0.0, type: 'number'));
-        self::assertTrue(ExpressionEvaluator::matches(expression: '[0..25000]', value: 25000.0, type: 'number'));
-        self::assertTrue(ExpressionEvaluator::matches(expression: '[0..25000]', value: 12500.0, type: 'number'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '[0..25000]', value: 25000.01, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '[0..25000]', value: 0.0, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '[0..25000]', value: 25000.0, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '[0..25000]', value: 12500.0, type: 'number'));
+        self::assertFalse($this->evaluator->matches(expression: '[0..25000]', value: 25000.01, type: 'number'));
     }//end testInclusiveRangeBoundsMatch()
 
     /**
@@ -157,9 +175,9 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testExclusiveRangeBoundsDoNotMatch(): void
     {
-        self::assertFalse(ExpressionEvaluator::matches(expression: '(25000..40000)', value: 25000.0, type: 'number'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '(25000..40000)', value: 40000.0, type: 'number'));
-        self::assertTrue(ExpressionEvaluator::matches(expression: '(25000..40000)', value: 30000.0, type: 'number'));
+        self::assertFalse($this->evaluator->matches(expression: '(25000..40000)', value: 25000.0, type: 'number'));
+        self::assertFalse($this->evaluator->matches(expression: '(25000..40000)', value: 40000.0, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '(25000..40000)', value: 30000.0, type: 'number'));
     }//end testExclusiveRangeBoundsDoNotMatch()
 
     /**
@@ -167,10 +185,10 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testMixedRangeBoundaries(): void
     {
-        self::assertFalse(ExpressionEvaluator::matches(expression: '(25000..40000]', value: 25000.0, type: 'number'));
-        self::assertTrue(ExpressionEvaluator::matches(expression: '(25000..40000]', value: 40000.0, type: 'number'));
-        self::assertTrue(ExpressionEvaluator::matches(expression: '[25000..40000)', value: 25000.0, type: 'number'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '[25000..40000)', value: 40000.0, type: 'number'));
+        self::assertFalse($this->evaluator->matches(expression: '(25000..40000]', value: 25000.0, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '(25000..40000]', value: 40000.0, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '[25000..40000)', value: 25000.0, type: 'number'));
+        self::assertFalse($this->evaluator->matches(expression: '[25000..40000)', value: 40000.0, type: 'number'));
     }//end testMixedRangeBoundaries()
 
     /**
@@ -180,7 +198,7 @@ class ExpressionEvaluatorTest extends TestCase
     {
         $this->expectException(DecisionEvaluationException::class);
         try {
-            ExpressionEvaluator::matches(expression: '[1..', value: 5.0, type: 'number');
+            $this->evaluator->matches(expression: '[1..', value: 5.0, type: 'number');
         } catch (DecisionEvaluationException $e) {
             // No `..` match at all falls through to bare-literal coercion,
             // which for a non-numeric literal like "[1.." on a number type
@@ -198,7 +216,7 @@ class ExpressionEvaluatorTest extends TestCase
     {
         $this->expectException(DecisionEvaluationException::class);
         try {
-            ExpressionEvaluator::matches(expression: '[1..]', value: 5.0, type: 'number');
+            $this->evaluator->matches(expression: '[1..]', value: 5.0, type: 'number');
         } catch (DecisionEvaluationException $e) {
             self::assertSame('invalid_expression', $e->getErrorCode());
             throw $e;
@@ -212,7 +230,7 @@ class ExpressionEvaluatorTest extends TestCase
     {
         $this->expectException(DecisionEvaluationException::class);
         try {
-            ExpressionEvaluator::matches(expression: '[abc..100]', value: 5.0, type: 'number');
+            $this->evaluator->matches(expression: '[abc..100]', value: 5.0, type: 'number');
         } catch (DecisionEvaluationException $e) {
             self::assertSame('type_mismatch', $e->getErrorCode());
             throw $e;
@@ -228,8 +246,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testSetMembershipUnquoted(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: 'in (gold, silver, bronze)', value: 'silver', type: 'string'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: 'in (gold, silver, bronze)', value: 'platinum', type: 'string'));
+        self::assertTrue($this->evaluator->matches(expression: 'in (gold, silver, bronze)', value: 'silver', type: 'string'));
+        self::assertFalse($this->evaluator->matches(expression: 'in (gold, silver, bronze)', value: 'platinum', type: 'string'));
     }//end testSetMembershipUnquoted()
 
     /**
@@ -237,8 +255,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testSetMembershipQuotedWithCommas(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: 'in ("a b", "c,d")', value: 'c,d', type: 'string'));
-        self::assertTrue(ExpressionEvaluator::matches(expression: 'in ("a b", "c,d")', value: 'a b', type: 'string'));
+        self::assertTrue($this->evaluator->matches(expression: 'in ("a b", "c,d")', value: 'c,d', type: 'string'));
+        self::assertTrue($this->evaluator->matches(expression: 'in ("a b", "c,d")', value: 'a b', type: 'string'));
     }//end testSetMembershipQuotedWithCommas()
 
     /**
@@ -246,7 +264,7 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testSetMembershipCaseInsensitivePrefix(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: 'IN (1, 2, 3)', value: 2.0, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: 'IN (1, 2, 3)', value: 2.0, type: 'number'));
     }//end testSetMembershipCaseInsensitivePrefix()
 
     // ------------------------------------------------------------------
@@ -258,8 +276,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testBareLiteralString(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: 'gold', value: 'gold', type: 'string'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: 'gold', value: 'silver', type: 'string'));
+        self::assertTrue($this->evaluator->matches(expression: 'gold', value: 'gold', type: 'string'));
+        self::assertFalse($this->evaluator->matches(expression: 'gold', value: 'silver', type: 'string'));
     }//end testBareLiteralString()
 
     /**
@@ -267,7 +285,7 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testBareLiteralNumber(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: '42', value: 42.0, type: 'number'));
+        self::assertTrue($this->evaluator->matches(expression: '42', value: 42.0, type: 'number'));
     }//end testBareLiteralNumber()
 
     /**
@@ -275,8 +293,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testBareLiteralBooleanTrue(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: 'true', value: true, type: 'boolean'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: 'true', value: false, type: 'boolean'));
+        self::assertTrue($this->evaluator->matches(expression: 'true', value: true, type: 'boolean'));
+        self::assertFalse($this->evaluator->matches(expression: 'true', value: false, type: 'boolean'));
     }//end testBareLiteralBooleanTrue()
 
     /**
@@ -284,7 +302,7 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testBareLiteralBooleanFalse(): void
     {
-        self::assertTrue(ExpressionEvaluator::matches(expression: 'false', value: false, type: 'boolean'));
+        self::assertTrue($this->evaluator->matches(expression: 'false', value: false, type: 'boolean'));
     }//end testBareLiteralBooleanFalse()
 
     // ------------------------------------------------------------------
@@ -296,7 +314,7 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testCoerceString(): void
     {
-        self::assertSame('42', ExpressionEvaluator::coerce(value: 42, type: 'string'));
+        self::assertSame('42', $this->evaluator->coerce(value: 42, type: 'string'));
     }//end testCoerceString()
 
     /**
@@ -304,7 +322,7 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testCoerceNumberFromString(): void
     {
-        self::assertSame(42.5, ExpressionEvaluator::coerce(value: '42.5', type: 'number'));
+        self::assertSame(42.5, $this->evaluator->coerce(value: '42.5', type: 'number'));
     }//end testCoerceNumberFromString()
 
     /**
@@ -314,7 +332,7 @@ class ExpressionEvaluatorTest extends TestCase
     {
         $this->expectException(DecisionEvaluationException::class);
         try {
-            ExpressionEvaluator::coerce(value: 'not-a-number', type: 'number');
+            $this->evaluator->coerce(value: 'not-a-number', type: 'number');
         } catch (DecisionEvaluationException $e) {
             self::assertSame('type_mismatch', $e->getErrorCode());
             throw $e;
@@ -326,8 +344,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testCoerceBooleanFromString(): void
     {
-        self::assertTrue(ExpressionEvaluator::coerce(value: 'true', type: 'boolean'));
-        self::assertFalse(ExpressionEvaluator::coerce(value: 'false', type: 'boolean'));
+        self::assertTrue($this->evaluator->coerce(value: 'true', type: 'boolean'));
+        self::assertFalse($this->evaluator->coerce(value: 'false', type: 'boolean'));
     }//end testCoerceBooleanFromString()
 
     /**
@@ -337,7 +355,7 @@ class ExpressionEvaluatorTest extends TestCase
     {
         $this->expectException(DecisionEvaluationException::class);
         try {
-            ExpressionEvaluator::coerce(value: 'maybe', type: 'boolean');
+            $this->evaluator->coerce(value: 'maybe', type: 'boolean');
         } catch (DecisionEvaluationException $e) {
             self::assertSame('type_mismatch', $e->getErrorCode());
             throw $e;
@@ -349,7 +367,7 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testCoerceDateFromIsoString(): void
     {
-        $timestamp = ExpressionEvaluator::coerce(value: '2026-01-01T00:00:00+00:00', type: 'date');
+        $timestamp = $this->evaluator->coerce(value: '2026-01-01T00:00:00+00:00', type: 'date');
         self::assertIsInt($timestamp);
     }//end testCoerceDateFromIsoString()
 
@@ -360,7 +378,7 @@ class ExpressionEvaluatorTest extends TestCase
     {
         $this->expectException(DecisionEvaluationException::class);
         try {
-            ExpressionEvaluator::coerce(value: 'not-a-date', type: 'date');
+            $this->evaluator->coerce(value: 'not-a-date', type: 'date');
         } catch (DecisionEvaluationException $e) {
             self::assertSame('type_mismatch', $e->getErrorCode());
             throw $e;
@@ -372,8 +390,8 @@ class ExpressionEvaluatorTest extends TestCase
      */
     public function testDateRangeComparison(): void
     {
-        $value = ExpressionEvaluator::coerce(value: '2026-06-15', type: 'date');
-        self::assertTrue(ExpressionEvaluator::matches(expression: '[2026-01-01..2026-12-31]', value: $value, type: 'date'));
-        self::assertFalse(ExpressionEvaluator::matches(expression: '[2027-01-01..2027-12-31]', value: $value, type: 'date'));
+        $value = $this->evaluator->coerce(value: '2026-06-15', type: 'date');
+        self::assertTrue($this->evaluator->matches(expression: '[2026-01-01..2026-12-31]', value: $value, type: 'date'));
+        self::assertFalse($this->evaluator->matches(expression: '[2027-01-01..2027-12-31]', value: $value, type: 'date'));
     }//end testDateRangeComparison()
 }//end class

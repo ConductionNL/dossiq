@@ -50,14 +50,14 @@ class NotesController extends Controller
     /**
      * Constructor.
      *
-     * @param IRequest                   $request                    The HTTP request
-     * @param MentionNotificationService $mentionNotificationService The mention notification service
-     * @param IUserSession               $userSession                The user session
-     * @param LoggerInterface            $logger                     The logger
+     * @param IRequest                   $request     The HTTP request
+     * @param MentionNotificationService $mentionSvc  The mention notification service
+     * @param IUserSession               $userSession The user session
+     * @param LoggerInterface            $logger      The logger
      */
     public function __construct(
         IRequest $request,
-        private readonly MentionNotificationService $mentionNotificationService,
+        private readonly MentionNotificationService $mentionSvc,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
@@ -109,7 +109,7 @@ class NotesController extends Controller
         }
 
         try {
-            $notified = $this->mentionNotificationService->notifyMention(
+            $notified = $this->mentionSvc->notifyMention(
                 actorUserId: $actor->getUID(),
                 actorDisplayName: $actor->getDisplayName(),
                 objectId: $objectId,

@@ -136,10 +136,10 @@ class BelplanRoutingService
      *      callers past overflow thresholds → return a generalist routing
      *      decision flagged with escalatieAanbevolen=true.
      *
-     * @param string                           $vaardigheid            The required skill.
-     * @param array<int, array<string, mixed>> $pool                   Specialist availability snapshot.
-     * @param int                              $overflowWachttijd      Seconds threshold.
-     * @param int                              $overflowWachtrijLengte Queue threshold.
+     * @param string                           $vaardigheid       The required skill.
+     * @param array<int, array<string, mixed>> $pool              Specialist availability snapshot.
+     * @param int                              $overflowWachttijd Seconds threshold.
+     * @param int                              $maxWachtrijLengte Queue threshold.
      *
      * @return array{destinationSpecialistId: string|null, escalatieFlag: bool,
      *               estimatedWaitTime: int, vaardigheid: string,
@@ -151,7 +151,7 @@ class BelplanRoutingService
         string $vaardigheid,
         array $pool,
         int $overflowWachttijd=self::DEFAULT_OVERFLOW_WACHTTIJD,
-        int $overflowWachtrijLengte=self::DEFAULT_OVERFLOW_WACHTRIJ_LENGTE,
+        int $maxWachtrijLengte=self::DEFAULT_OVERFLOW_WACHTRIJ_LENGTE,
     ): array {
         if ($vaardigheid === '') {
             return [
@@ -187,7 +187,7 @@ class BelplanRoutingService
         if (count($available) === 0) {
             $minQueue = $this->minQueueLength(pool: $candidates);
             $estWait  = $minQueue * $this->avgBehandelduur(pool: $candidates);
-            $overflow = ($estWait > $overflowWachttijd) || ($minQueue > $overflowWachtrijLengte);
+            $overflow = ($estWait > $overflowWachttijd) || ($minQueue > $maxWachtrijLengte);
 
             return [
                 'destinationSpecialistId' => null,

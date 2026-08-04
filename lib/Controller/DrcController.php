@@ -164,11 +164,7 @@ class DrcController extends ZgwController
             $outboundMapping = $this->zgwService->createOutboundMapping(mappingConfig: $mappingConfig);
             $mapped          = [];
             foreach ($objects as $object) {
-                if (is_array($object) === true) {
-                    $objectData = $object;
-                } else {
-                    $objectData = $object->jsonSerialize();
-                }
+                $objectData = $this->objectToArray(row: $object);
 
                 $mapped[] = $this->zgwService->applyOutboundMapping(
                     objectData: $objectData,
@@ -301,16 +297,12 @@ class DrcController extends ZgwController
                 );
             }
 
-            $object = $this->zgwService->getObjectService()->saveObject(
+            $object     = $this->zgwService->getObjectService()->saveObject(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
                 object: $englishData
             );
-            if (is_array($object) === true) {
-                $objectData = $object;
-            } else {
-                $objectData = $object->jsonSerialize();
-            }
+            $objectData = $this->objectToArray(row: $object);
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? '');
 
@@ -526,16 +518,12 @@ class DrcController extends ZgwController
             $mappingConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, $resource);
             if ($mappingConfig !== null) {
                 try {
-                    $existing = $this->zgwService->getObjectService()->find(
+                    $existing     = $this->zgwService->getObjectService()->find(
                         $uuid,
                         register: $mappingConfig['sourceRegister'],
                         schema: $mappingConfig['sourceSchema']
                     );
-                    if (is_array($existing) === true) {
-                        $existingData = $existing;
-                    } else {
-                        $existingData = $existing->jsonSerialize();
-                    }
+                    $existingData = $this->objectToArray(row: $existing);
 
                     $fileName = $existingData['fileName'] ?? 'document';
                     if ($fileName === '') {
@@ -625,16 +613,12 @@ class DrcController extends ZgwController
         }
 
         try {
-            $object = $this->zgwService->getObjectService()->find(
+            $object     = $this->zgwService->getObjectService()->find(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
                 id: $uuid
             );
-            if (is_array($object) === true) {
-                $objectData = $object;
-            } else {
-                $objectData = $object->jsonSerialize();
-            }
+            $objectData = $this->objectToArray(row: $object);
 
             $fileName = $objectData['fileName'] ?? 'document';
             if ($fileName === '') {
@@ -760,16 +744,12 @@ class DrcController extends ZgwController
         }
 
         try {
-            $existing = $objectService->find(
+            $existing     = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existing) === true) {
-                $existingData = $existing;
-            } else {
-                $existingData = $existing->jsonSerialize();
-            }
+            $existingData = $this->objectToArray(row: $existing);
 
             $lockId = bin2hex(random_bytes(16));
 
@@ -855,10 +835,9 @@ class DrcController extends ZgwController
                 'geforceerd-bijwerken'
             );
             if ($hasForceScope === false) {
+                $detail = $this->l10n->t('Lock ID does not match and forced unlocking is not allowed.');
                 if ($lockId === '') {
                     $detail = $this->l10n->t('Forced unlocking is not allowed without the correct scope.');
-                } else {
-                    $detail = $this->l10n->t('Lock ID does not match and forced unlocking is not allowed.');
                 }
 
                 return new JSONResponse(
@@ -914,16 +893,12 @@ class DrcController extends ZgwController
         }
 
         try {
-            $existing = $objectService->find(
+            $existing     = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existing) === true) {
-                $existingData = $existing;
-            } else {
-                $existingData = $existing->jsonSerialize();
-            }
+            $existingData = $this->objectToArray(row: $existing);
 
             unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
             $existingData['locked'] = false;
@@ -1152,11 +1127,7 @@ class DrcController extends ZgwController
     {
         $ids = [];
         foreach (($result['results'] ?? []) as $obj) {
-            if (is_array($obj) === true) {
-                $data = $obj;
-            } else {
-                $data = $obj->jsonSerialize();
-            }
+            $data = $this->objectToArray(row: $obj);
 
             $id = $data['id'] ?? ($data['@self']['id'] ?? null);
             if ($id !== null) {
@@ -1195,11 +1166,7 @@ class DrcController extends ZgwController
             $result = $objectService->searchObjectsPaginated(query: $query);
 
             foreach (($result['results'] ?? []) as $gr) {
-                if (is_array($gr) === true) {
-                    $grData = $gr;
-                } else {
-                    $grData = $gr->jsonSerialize();
-                }
+                $grData = $this->objectToArray(row: $gr);
 
                 $grUuid = $grData['id'] ?? ($grData['@self']['id'] ?? '');
                 if ($grUuid !== '') {
@@ -1257,16 +1224,12 @@ class DrcController extends ZgwController
         }
 
         try {
-            $obj = $objectService->find(
+            $obj  = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($obj) === true) {
-                $data = $obj;
-            } else {
-                $data = $obj->jsonSerialize();
-            }
+            $data = $this->objectToArray(row: $obj);
 
             $ioRef       = $data['document'] ?? ($data['informatieobject'] ?? '');
             $uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
@@ -1315,16 +1278,12 @@ class DrcController extends ZgwController
                 $eioConfig = $this->zgwService->loadMappingConfig(self::ZGW_API, self::EIO_RESOURCE);
                 if ($eioConfig !== null) {
                     try {
-                        $eioObj = $objectService->find(
+                        $eioObj  = $objectService->find(
                             $eioUuid,
                             register: $eioConfig['sourceRegister'],
                             schema: $eioConfig['sourceSchema']
                         );
-                        if (is_array($eioObj) === true) {
-                            $eioData = $eioObj;
-                        } else {
-                            $eioData = $eioObj->jsonSerialize();
-                        }
+                        $eioData = $this->objectToArray(row: $eioObj);
 
                         $eioData['usageRightsIndication'] = null;
 
@@ -1375,16 +1334,12 @@ class DrcController extends ZgwController
         }
 
         try {
-            $eioObj = $objectService->find(
+            $eioObj  = $objectService->find(
                 $ioMatches[1],
                 register: $eioConfig['sourceRegister'],
                 schema: $eioConfig['sourceSchema']
             );
-            if (is_array($eioObj) === true) {
-                $eioData = $eioObj;
-            } else {
-                $eioData = $eioObj->jsonSerialize();
-            }
+            $eioData = $this->objectToArray(row: $eioObj);
 
             $eioData['usageRightsIndication'] = $value;
 
@@ -1440,16 +1395,12 @@ class DrcController extends ZgwController
 
         try {
             // Find the EIO object.
-            $existing = $objectService->find(
+            $existing   = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existing) === true) {
-                $objectData = $existing;
-            } else {
-                $objectData = $existing->jsonSerialize();
-            }
+            $objectData = $this->objectToArray(row: $existing);
 
             // Verify this document has a pending chunked upload.
             $chunkInfo = $this->parseFileParts(objectData: $objectData);
@@ -1578,16 +1529,12 @@ class DrcController extends ZgwController
         }
 
         try {
-            $existing = $this->zgwService->getObjectService()->find(
+            $existing   = $this->zgwService->getObjectService()->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existing) === true) {
-                $objectData = $existing;
-            } else {
-                $objectData = $existing->jsonSerialize();
-            }
+            $objectData = $this->objectToArray(row: $existing);
 
             $data = $response->getData();
             if (is_array($data) === false) {
@@ -1709,10 +1656,9 @@ class DrcController extends ZgwController
                 return $lockError;
             }
 
+            $action = 'update';
             if ($partial === true) {
                 $action = 'partial_update';
-            } else {
-                $action = 'update';
             }
 
             $ruleResult = $this->zgwService->getBusinessRulesService()->validate(
@@ -1735,16 +1681,12 @@ class DrcController extends ZgwController
             $inhoud = $body['inhoud'] ?? null;
 
             // Preserve lock state from existing object.
-            $existing = $this->zgwService->getObjectService()->find(
+            $existing     = $this->zgwService->getObjectService()->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existing) === true) {
-                $existingData = $existing;
-            } else {
-                $existingData = $existing->jsonSerialize();
-            }
+            $existingData = $this->objectToArray(row: $existing);
 
             $inboundMapping = $this->zgwService->createInboundMapping(mappingConfig: $mappingConfig);
             $englishData    = $this->zgwService->applyInboundMapping(
@@ -1769,17 +1711,13 @@ class DrcController extends ZgwController
             $englishData['locked'] = $existingData['locked'] ?? false;
             $englishData['lockId'] = $existingData['lockId'] ?? '';
 
-            $object = $this->zgwService->getObjectService()->saveObject(
+            $object     = $this->zgwService->getObjectService()->saveObject(
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema'],
                 object: $englishData,
                 uuid: $uuid
             );
-            if (is_array($object) === true) {
-                $objectData = $object;
-            } else {
-                $objectData = $object->jsonSerialize();
-            }
+            $objectData = $this->objectToArray(row: $object);
 
             $objectUuid = $objectData['id'] ?? ($objectData['@self']['id'] ?? $uuid);
 
@@ -1893,12 +1831,11 @@ class DrcController extends ZgwController
         if ($providedLockId === '') {
             // PUT (full update): lock is a required field (drc-009d).
             // PATCH (partial): lock is missing for lock enforcement (drc-009e).
+            $errorName = 'nonFieldErrors';
+            $errorCode = 'missing-lock-id';
             if ($partial === false) {
                 $errorName = 'lock';
                 $errorCode = 'required';
-            } else {
-                $errorName = 'nonFieldErrors';
-                $errorCode = 'missing-lock-id';
             }
 
             return new JSONResponse(
@@ -1968,16 +1905,12 @@ class DrcController extends ZgwController
 
         // Check the object data blob for lockId (stored by lock/lockFallback).
         try {
-            $existing = $objectService->find(
+            $existing     = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existing) === true) {
-                $existingData = $existing;
-            } else {
-                $existingData = $existing->jsonSerialize();
-            }
+            $existingData = $this->objectToArray(row: $existing);
 
             // Check for stored lockId first.
             $lockId = $existingData['lockId'] ?? null;
@@ -2016,16 +1949,12 @@ class DrcController extends ZgwController
         string $lockId
     ): void {
         try {
-            $existing = $objectService->find(
+            $existing     = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existing) === true) {
-                $existingData = $existing;
-            } else {
-                $existingData = $existing->jsonSerialize();
-            }
+            $existingData = $this->objectToArray(row: $existing);
 
             unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
             $existingData['locked'] = true;
@@ -2059,16 +1988,12 @@ class DrcController extends ZgwController
         string $uuid
     ): void {
         try {
-            $existing = $objectService->find(
+            $existing     = $objectService->find(
                 $uuid,
                 register: $mappingConfig['sourceRegister'],
                 schema: $mappingConfig['sourceSchema']
             );
-            if (is_array($existing) === true) {
-                $existingData = $existing;
-            } else {
-                $existingData = $existing->jsonSerialize();
-            }
+            $existingData = $this->objectToArray(row: $existing);
 
             unset($existingData['@self'], $existingData['id'], $existingData['organisation']);
             $existingData['locked'] = false;

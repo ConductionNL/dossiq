@@ -29,7 +29,17 @@ declare(strict_types=1);
 // The procest-bespoke dashboard PWA assets (dashboard#serviceWorker /
 // dashboard#webManifest) and every domain route below are passed through as
 // `$extra`; they are inserted before the catch-all so they keep priority.
-return \OCA\OpenRegister\AppHost\Routes::standard([
+//
+// ⚠️ The AppHost builder is invoked through a `class_exists()` guard. Nextcloud
+// `include`s this file for EVERY procest request, so an unguarded static call
+// to a class in another app makes every route in the app fatal with HTTP 500
+// when openregister is absent — not just the AppHost ones. Procest does not
+// declare `<app>openregister</app>`, so an admin can create exactly that
+// configuration. Fixing only the controllers MOVES the fatal here rather than
+// removing it. The fallback branch below reproduces `Routes::standard()`'s
+// output locally so procest still routes without openregister.
+// See decidesk#377 / #388.
+$extra = [
         // Backend manifest delta — case-type navigation (case-type-navigation).
         // Consumed by useAppManifest('procest', bundled, { mergeStrategy: 'delta' }).
         ['name' => 'manifest#manifest',  'url' => '/api/manifest',           'verb' => 'GET'],
@@ -48,9 +58,9 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'ai#recordAction',    'url' => '/api/ai/record-action',   'verb' => 'POST'],
         ['name' => 'ai#auditIndex',      'url' => '/api/ai/audit',           'verb' => 'GET'],
         ['name' => 'aiAuditExport#export', 'url' => '/api/ai/audit/export',  'verb' => 'GET'],
-        ['name' => 'ai#getSettings',     'url' => '/api/ai/settings',        'verb' => 'GET'],
-        ['name' => 'ai#updateSettings',  'url' => '/api/ai/settings',        'verb' => 'POST'],
-        ['name' => 'ai#healthCheck',     'url' => '/api/ai/health',          'verb' => 'POST'],
+        ['name' => 'aiSettings#getSettings',    'url' => '/api/ai/settings',  'verb' => 'GET'],
+        ['name' => 'aiSettings#updateSettings', 'url' => '/api/ai/settings', 'verb' => 'POST'],
+        ['name' => 'aiSettings#healthCheck',   'url' => '/api/ai/health',    'verb' => 'POST'],
 
         // Case assistant via Hermiq (case-assistant-via-hermiq): thin consumer
         // surface — conversational assistance is delegated to Hermiq's
@@ -423,16 +433,16 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
 
         // Federated (cross-instance) case collaboration (federated-case-collaboration).
         // Local session endpoints — case-access RBAC enforced in the controller.
-        ['name' => 'caseSharing#createFederatedShare', 'url' => '/api/federation/shares',                              'verb' => 'POST'],
-        ['name' => 'caseSharing#revokeFederatedShare', 'url' => '/api/federation/shares/{shareId}',                    'verb' => 'DELETE'],
-        ['name' => 'caseSharing#postActivity',         'url' => '/api/federation/activity/{federatedShareId}',         'verb' => 'POST'],
-        ['name' => 'caseSharing#listActivity',         'url' => '/api/federation/activity/{federatedShareId}',         'verb' => 'GET'],
+        ['name' => 'caseFederation#createFederatedShare', 'url' => '/api/federation/shares',                            'verb' => 'POST'],
+        ['name' => 'caseFederation#revokeFederatedShare', 'url' => '/api/federation/shares/{shareId}',                  'verb' => 'DELETE'],
+        ['name' => 'caseFederation#postActivity',         'url' => '/api/federation/activity/{federatedShareId}',       'verb' => 'POST'],
+        ['name' => 'caseFederation#listActivity',         'url' => '/api/federation/activity/{federatedShareId}',       'verb' => 'GET'],
         // Public (remote-instance) endpoints — authenticated via the OR-minted
         // scoped bearer token, NOT a local session (the caller is another
         // Nextcloud instance). See design.md §1/§4.
-        ['name' => 'caseSharing#handleFederatedTransfer', 'url' => '/api/public/federation/transfers/{shareToken}/{transferId}',        'verb' => 'PUT'],
-        ['name' => 'caseSharing#postRemoteActivity',      'url' => '/api/public/federation/activity/{shareToken}/{federatedShareId}',   'verb' => 'POST'],
-        ['name' => 'caseSharing#listRemoteActivity',      'url' => '/api/public/federation/activity/{shareToken}/{federatedShareId}',   'verb' => 'GET'],
+        ['name' => 'caseFederation#handleFederatedTransfer', 'url' => '/api/public/federation/transfers/{shareToken}/{transferId}',      'verb' => 'PUT'],
+        ['name' => 'caseFederation#postRemoteActivity',      'url' => '/api/public/federation/activity/{shareToken}/{federatedShareId}', 'verb' => 'POST'],
+        ['name' => 'caseFederation#listRemoteActivity',      'url' => '/api/public/federation/activity/{shareToken}/{federatedShareId}', 'verb' => 'GET'],
 
         // Role-based routing engine action — manual recompute of step assignees.
         // CRUD of routing rules themselves lives on workflowTemplate (manifest).
@@ -490,10 +500,10 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'consultation#requestExtension',    'url' => '/api/consultations/{id}/extension',               'verb' => 'POST'],
         ['name' => 'consultation#approveExtension',    'url' => '/api/consultations/{id}/extension/approve',       'verb' => 'POST'],
         ['name' => 'consultation#overdue',             'url' => '/api/consultations/overdue',                      'verb' => 'GET'],
-        ['name' => 'consultation#listAdvisoryBodies',  'url' => '/api/advisory-bodies',                            'verb' => 'GET'],
-        ['name' => 'consultation#searchAdvisoryBodies','url' => '/api/advisory-bodies/search',                     'verb' => 'GET'],
-        ['name' => 'consultation#publicResponseGet',   'url' => '/api/public/consultations/{token}',               'verb' => 'GET'],
-        ['name' => 'consultation#publicResponsePost',  'url' => '/api/public/consultations/{token}',               'verb' => 'POST'],
+        ['name' => 'advisoryBody#listAdvisoryBodies',   'url' => '/api/advisory-bodies',                            'verb' => 'GET'],
+        ['name' => 'advisoryBody#searchAdvisoryBodies', 'url' => '/api/advisory-bodies/search',                     'verb' => 'GET'],
+        ['name' => 'consultationPublic#publicResponseGet',  'url' => '/api/public/consultations/{token}',           'verb' => 'GET'],
+        ['name' => 'consultationPublic#publicResponsePost', 'url' => '/api/public/consultations/{token}',           'verb' => 'POST'],
 
         // ── Email (outbound case communication) ─────────────────────────
         ['name' => 'email#send',             'url' => '/api/email/{caseId}/send',            'verb' => 'POST'],
@@ -587,27 +597,29 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         // Literal GET sub-paths MUST be registered before the `/{id}` wildcard,
         // otherwise `complaint#show` captures `/complaints/deadline-alerts`,
         // `/complaints/analytics` and `/complaints/kpi` as an `{id}` lookup.
-        ['name' => 'complaint#deadlineAlerts',     'url' => '/api/complaints/deadline-alerts',             'verb' => 'GET'],
-        ['name' => 'complaint#analytics',          'url' => '/api/complaints/analytics',                  'verb' => 'GET'],
-        ['name' => 'complaint#kpi',                'url' => '/api/complaints/kpi',                        'verb' => 'GET'],
+        // The analytics pair now lives on ComplaintAnalyticsController, but the
+        // ordering constraint is unchanged: they still precede `complaint#show`.
+        ['name' => 'complaint#deadlineAlerts',              'url' => '/api/complaints/deadline-alerts',    'verb' => 'GET'],
+        ['name' => 'complaintAnalytics#analytics',          'url' => '/api/complaints/analytics',          'verb' => 'GET'],
+        ['name' => 'complaintAnalytics#kpi',                'url' => '/api/complaints/kpi',                'verb' => 'GET'],
         ['name' => 'complaint#show',               'url' => '/api/complaints/{id}',                        'verb' => 'GET'],
         ['name' => 'complaint#update',             'url' => '/api/complaints/{id}',                        'verb' => 'PUT'],
         ['name' => 'complaint#transition',         'url' => '/api/complaints/{id}/transition',             'verb' => 'POST'],
         ['name' => 'complaint#verdaging',          'url' => '/api/complaints/{id}/verdaging',              'verb' => 'POST'],
         ['name' => 'complaint#escalate',           'url' => '/api/complaints/{id}/escalate',               'verb' => 'POST'],
         // Hearings.
-        ['name' => 'complaint#hearings',           'url' => '/api/complaints/{id}/hearings',               'verb' => 'GET'],
-        ['name' => 'complaint#scheduleHearing',    'url' => '/api/complaints/{id}/hearings',               'verb' => 'POST'],
-        ['name' => 'complaint#recordHearingOutcome','url' => '/api/complaints/{id}/hearings/{hearingId}',  'verb' => 'PUT'],
+        ['name' => 'complaintHearing#hearings',             'url' => '/api/complaints/{id}/hearings',                  'verb' => 'GET'],
+        ['name' => 'complaintHearing#scheduleHearing',      'url' => '/api/complaints/{id}/hearings',                  'verb' => 'POST'],
+        ['name' => 'complaintHearing#recordHearingOutcome', 'url' => '/api/complaints/{id}/hearings/{hearingId}',      'verb' => 'PUT'],
         // Dispositions.
-        ['name' => 'complaint#getDisposition',     'url' => '/api/complaints/{id}/disposition',            'verb' => 'GET'],
-        ['name' => 'complaint#submitDisposition',  'url' => '/api/complaints/{id}/disposition',            'verb' => 'POST'],
-        ['name' => 'complaint#approveDisposition', 'url' => '/api/complaints/{id}/disposition/approve',   'verb' => 'POST'],
-        ['name' => 'complaint#generateLetter',     'url' => '/api/complaints/{id}/disposition/letter',    'verb' => 'POST'],
+        ['name' => 'complaintDisposition#getDisposition',     'url' => '/api/complaints/{id}/disposition',           'verb' => 'GET'],
+        ['name' => 'complaintDisposition#submitDisposition',  'url' => '/api/complaints/{id}/disposition',           'verb' => 'POST'],
+        ['name' => 'complaintDisposition#approveDisposition', 'url' => '/api/complaints/{id}/disposition/approve',   'verb' => 'POST'],
+        ['name' => 'complaintDisposition#generateLetter',     'url' => '/api/complaints/{id}/disposition/letter',    'verb' => 'POST'],
         // Categories (admin).
-        ['name' => 'complaint#categories',         'url' => '/api/complaint-categories',                  'verb' => 'GET'],
-        ['name' => 'complaint#createCategory',     'url' => '/api/complaint-categories',                  'verb' => 'POST'],
-        ['name' => 'complaint#updateCategory',     'url' => '/api/complaint-categories/{id}',             'verb' => 'PUT'],
+        ['name' => 'complaintCategory#categories',     'url' => '/api/complaint-categories',              'verb' => 'GET'],
+        ['name' => 'complaintCategory#createCategory', 'url' => '/api/complaint-categories',              'verb' => 'POST'],
+        ['name' => 'complaintCategory#updateCategory', 'url' => '/api/complaint-categories/{id}',         'verb' => 'PUT'],
 
         // Archief / e-Depot handover is owned by OpenRegister (migrate-archival-to-or,
         // ADR-022): retention, transfer, proof and destruction run through OR's
@@ -631,8 +643,8 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         ['name' => 'substitution#substitutedWork', 'url' => '/api/substitutions/work',            'verb' => 'GET'],
         ['name' => 'substitution#actions',         'url' => '/api/substitutions/{id}/actions',    'verb' => 'GET'],
         ['name' => 'substitution#revoke',          'url' => '/api/substitutions/{id}/revoke',     'verb' => 'POST'],
-        ['name' => 'substitution#reassignPreview', 'url' => '/api/reassignments/preview',         'verb' => 'POST'],
-        ['name' => 'substitution#reassignExecute', 'url' => '/api/reassignments/execute',         'verb' => 'POST'],
+        ['name' => 'caseReassignment#reassignPreview', 'url' => '/api/reassignments/preview',      'verb' => 'POST'],
+        ['name' => 'caseReassignment#reassignExecute', 'url' => '/api/reassignments/execute',      'verb' => 'POST'],
 
         // ── Termijnbewaking + dwangsom engine (AWB 4:13/4:14/4:17) ─────────
         // Public webhook for openconnector/ERP payment confirmation callbacks.
@@ -664,15 +676,15 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
         // Specific endpoints precede the {infoObjectId} wildcards so bulk/status routes resolve first.
         ['name' => 'zaakdossier#listDossier',          'url' => '/api/cases/{caseId}/dossier',                     'verb' => 'GET'],
         ['name' => 'zaakdossier#uploadDocument',       'url' => '/api/cases/{caseId}/dossier',                     'verb' => 'POST'],
-        ['name' => 'zaakdossier#downloadZip',          'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
+        ['name' => 'zaakdossierDownload#downloadZip',  'url' => '/api/cases/{caseId}/dossier/zip',                 'verb' => 'POST'],
         ['name' => 'zaakdossier#linkExisting',         'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'POST'],
         ['name' => 'zaakdossier#unlinkDocument',       'url' => '/api/cases/{caseId}/dossier/{infoObjectId}/link', 'verb' => 'DELETE'],
         ['name' => 'zaakdossier#bulkTransitionStatus', 'url' => '/api/informatieobjecten/bulk/status',            'verb' => 'POST'],
         ['name' => 'zaakdossier#bulkUpdateMetadata',   'url' => '/api/informatieobjecten/bulk/metadata',          'verb' => 'POST'],
         ['name' => 'zaakdossier#transitionStatus',     'url' => '/api/informatieobjecten/{infoObjectId}/status',   'verb' => 'PATCH'],
         ['name' => 'zaakdossier#updateMetadata',       'url' => '/api/informatieobjecten/{infoObjectId}',          'verb' => 'PATCH'],
-        ['name' => 'zaakdossier#downloadFile',         'url' => '/api/objects/{register}/{schema}/{objectId}/files/{fileId}/download', 'verb' => 'GET'],
-        ['name' => 'zaakdossier#downloadZgwDocumenten','url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download', 'verb' => 'GET'],
+        ['name' => 'zaakdossierDownload#downloadFile',         'url' => '/api/objects/{register}/{schema}/{objectId}/files/{fileId}/download', 'verb' => 'GET'],
+        ['name' => 'zaakdossierDownload#downloadZgwDocumenten','url' => '/api/zgw/documenten/v1/enkelvoudiginformatieobjecten/{uuid}/download', 'verb' => 'GET'],
 
         // ── ORI Atom Feeds (public, no auth required) ───────────────────
         ['name' => 'raadsinformatieFeed#vergaderingen', 'url' => '/feed/ori/vergaderingen.rss', 'verb' => 'GET'],
@@ -681,5 +693,55 @@ return \OCA\OpenRegister\AppHost\Routes::standard([
 
         // NOTE: dashboard#page (`/`) and the SPA catch-all (`/{path}`,
         // dashboard#catchAll) are supplied by Routes::standard(); both resolve to
-        // procest's DashboardController, which extends GenericDashboardController.
-]);
+        // procest's DashboardController, which implements them locally.
+];
+
+// Preferred path: the OpenRegister AppHost owns the canonical route table.
+// `class_exists()` autoloads without fatalling when the class is unavailable.
+if (class_exists('OCA\OpenRegister\AppHost\Routes') === true) {
+    return \OCA\OpenRegister\AppHost\Routes::standard($extra);
+}
+
+// Fallback: openregister is not installed. Reproduce `Routes::standard()`
+// locally — canonical routes first (minus any name `$extra` overrides), then
+// `$extra`, then the SPA catch-all LAST so it never shadows a real route.
+$canonicalRoutes = [
+    ['name' => 'dashboard#page', 'url' => '/', 'verb' => 'GET'],
+    ['name' => 'settings#index', 'url' => '/api/settings', 'verb' => 'GET'],
+    ['name' => 'settings#create', 'url' => '/api/settings', 'verb' => 'POST'],
+    ['name' => 'settings#update', 'url' => '/api/settings', 'verb' => 'PUT'],
+    ['name' => 'settings#load', 'url' => '/api/settings/load', 'verb' => 'POST'],
+    ['name' => 'preferences#getPreference', 'url' => '/api/preferences/{key}', 'verb' => 'GET'],
+    ['name' => 'preferences#setPreference', 'url' => '/api/preferences/{key}', 'verb' => 'PUT'],
+    ['name' => 'metrics#index', 'url' => '/api/metrics', 'verb' => 'GET'],
+    ['name' => 'health#index', 'url' => '/api/health', 'verb' => 'GET'],
+];
+
+$catchAllRoute = [
+    'name'         => 'dashboard#catchAll',
+    'url'          => '/{path}',
+    'verb'         => 'GET',
+    'requirements' => ['path' => '.+'],
+    'defaults'     => ['path' => ''],
+];
+
+$extraNames = [];
+foreach ($extra as $extraRoute) {
+    if (isset($extraRoute['name']) === true) {
+        $extraNames[(string) $extraRoute['name']] = true;
+    }
+}
+
+$mergedRoutes = [];
+foreach ($canonicalRoutes as $canonicalRoute) {
+    if (isset($extraNames[$canonicalRoute['name']]) === true) {
+        continue;
+    }
+
+    $mergedRoutes[] = $canonicalRoute;
+}
+
+$mergedRoutes   = array_merge($mergedRoutes, $extra);
+$mergedRoutes[] = $catchAllRoute;
+
+return ['routes' => $mergedRoutes];

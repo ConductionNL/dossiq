@@ -36,6 +36,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\WebhookHandler
+ *
+ * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
 class WebhookHandlerTest extends TestCase
 {
@@ -55,7 +57,7 @@ class WebhookHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('webhook_invalid_url', $result->error);
     }//end testFailsWhenUrlMissing()
 
@@ -75,7 +77,7 @@ class WebhookHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('webhook_invalid_url', $result->error);
     }//end testFailsWhenUrlSchemeNotHttp()
 
@@ -108,7 +110,7 @@ class WebhookHandlerTest extends TestCase
             transitionContext: ['transitionLabel' => 'Decided'],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
         self::assertSame(202, $result->data['status']);
         self::assertSame('https://example.com/hook', $captured['url']);
         self::assertSame(['X-Auth' => 'k'], $captured['options']['headers']);
@@ -139,7 +141,7 @@ class WebhookHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('webhook_non_2xx', $result->error);
         self::assertSame(503, $result->data['status']);
     }//end testFailsOnNon2xxResponse()
@@ -163,7 +165,7 @@ class WebhookHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('webhook_failed', $result->error);
     }//end testSwallowsTransportException()
 }//end class

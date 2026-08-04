@@ -67,7 +67,7 @@ class SetFieldHandler implements ActionHandlerInterface
         try {
             $field = (string) ($actionConfig['field'] ?? '');
             if ($field === '') {
-                return ActionResult::failure(error: 'set_field_missing_field');
+                return new ActionResult(succeeded: false, error: 'set_field_missing_field');
             }
 
             $value = $actionConfig['value'] ?? null;
@@ -77,25 +77,25 @@ class SetFieldHandler implements ActionHandlerInterface
 
             $objectService = $this->settingsService->getObjectService();
             if ($objectService === null) {
-                return ActionResult::failure(error: 'storage_unavailable');
+                return new ActionResult(succeeded: false, error: 'storage_unavailable');
             }
 
             $register   = $this->settingsService->getConfigValue(key: 'register');
             $caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
             if ($register === '' || $caseSchema === '') {
-                return ActionResult::failure(error: 'case_schema_not_configured');
+                return new ActionResult(succeeded: false, error: 'case_schema_not_configured');
             }
 
             $case[$field] = $value;
             $objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
 
-            return ActionResult::success(data: ['field' => $field]);
+            return new ActionResult(succeeded: true, data: ['field' => $field]);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'SetFieldHandler failed',
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
-            return ActionResult::failure(error: 'set_field_failed');
+            return new ActionResult(succeeded: false, error: 'set_field_failed');
         }//end try
     }//end handle()
 }//end class

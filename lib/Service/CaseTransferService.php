@@ -27,8 +27,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTime;
-use OCP\App\IAppManager;
-use Psr\Container\ContainerInterface;
+use OCA\Procest\Service\Transfer\TransferRegisterGateway;
+use OCA\Procest\Service\Transfer\TransferShareBroker;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -44,20 +44,20 @@ class CaseTransferService
     /**
      * Constructor for the CaseTransferService.
      *
-     * @param SettingsService         $settingsService         The settings service
-     * @param IAppManager             $appManager              The app manager
-     * @param ContainerInterface      $container               The DI container
-     * @param LoggerInterface         $logger                  The logger
-     * @param TenantAuditTrailService $tenantAuditTrailService Audit-trail emitter for custody-change actions
+     * @param SettingsService         $settingsService The settings service
+     * @param TransferRegisterGateway $gateway         OpenRegister resolution for the transfer surface
+     * @param TransferShareBroker     $shareBroker     Transfer-scoped OCM token minting and resolution
+     * @param LoggerInterface         $logger          The logger
+     * @param TenantAuditTrailService $auditTrail      Audit-trail emitter for custody-change actions
      *
      * @return void
      */
     public function __construct(
         private SettingsService $settingsService,
-        private IAppManager $appManager,
-        private ContainerInterface $container,
+        private TransferRegisterGateway $gateway,
+        private TransferShareBroker $shareBroker,
         private LoggerInterface $logger,
-        private TenantAuditTrailService $tenantAuditTrailService,
+        private TenantAuditTrailService $auditTrail,
     ) {
     }//end __construct()
 
@@ -95,7 +95,7 @@ class CaseTransferService
         string $initiatedBy='',
         ?string $remoteCloudId=null,
     ): array {
-        $objectService = $this->getObjectService();
+        $objectService = $this->gateway->objectService();
         if ($objectService === null) {
             return ['error' => 'OpenRegister is not available'];
         }
@@ -105,8 +105,8 @@ class CaseTransferService
 
         $idempotencyKey = null;
         if ($remoteCloudId !== null && $remoteCloudId !== '') {
-            $federationShareService = $this->getFederationShareService();
-            if ($federationShareService === null) {
+            $shareService = $this->gateway->federationShareService();
+            if ($shareService === null) {
                 return ['error' => 'Federated case transfer requires the OpenRegister federation leaf'];
             }
 
@@ -125,7 +125,81 @@ class CaseTransferService
 
         $now = (new DateTime())->format('c');
 
-        $transferData = [
+        $transferData = $this->buildInitialTransferData(
+            caseId: $caseId,
+            sourceOrganization: $sourceOrganization,
+            targetOrganization: $targetOrganization,
+            reason: $reason,
+            requestedDate: $requestedDate,
+            initiatedBy: $initiatedBy,
+            remoteCloudId: $remoteCloudId,
+            idempotencyKey: $idempotencyKey,
+            now: $now,
+        );
+
+        $result     = $objectService->saveObject(
+            object: $transferData,
+            register: (int) $register,
+            schema: (int) $schema,
+        );
+        $resultData = $result->jsonSerialize();
+
+        if ($remoteCloudId !== null && $remoteCloudId !== '') {
+            $transferUuid = (string) ($resultData['id'] ?? $resultData['uuid'] ?? '');
+            $mintedShare  = $this->shareBroker->mintTransferShare(
+                transferUuid: $transferUuid,
+                remoteCloudId: $remoteCloudId,
+                register: (string) $register,
+                schema: (string) $schema,
+            );
+            if ($mintedShare === null) {
+                return ['error' => 'Could not mint the federated transfer token'];
+            }
+
+            $resultData['federationShareId'] = $mintedShare->getId();
+            $result     = $objectService->saveObject(object: $resultData, register: (int) $register, schema: (int) $schema);
+            $resultData = $result->jsonSerialize();
+        }
+
+        $this->recordTransferInitiated(
+            result: $result,
+            caseId: $caseId,
+            targetOrganization: $targetOrganization,
+            initiatedBy: $initiatedBy,
+            remoteCloudId: $remoteCloudId,
+        );
+
+        return $resultData;
+    }//end initiateTransfer()
+
+    /**
+     * Build the initial (pending) transfer object payload with its first
+     * custody-audit entry.
+     *
+     * @param string      $caseId             The UUID of the case to transfer
+     * @param string      $sourceOrganization The source organization identifier
+     * @param string      $targetOrganization The UUID of the target partner organization
+     * @param string      $reason             The reason for transfer
+     * @param string      $requestedDate      The requested transfer date (ISO 8601)
+     * @param string      $initiatedBy        User ID of the initiator (custody audit trail)
+     * @param string|null $remoteCloudId      The federated target (slug@host), or null for a local-only transfer
+     * @param string|null $idempotencyKey     The federated idempotency key, or null for a local-only transfer
+     * @param string      $now                The ISO 8601 timestamp used for the custody entry
+     *
+     * @return array The transfer object payload ready to be saved
+     */
+    private function buildInitialTransferData(
+        string $caseId,
+        string $sourceOrganization,
+        string $targetOrganization,
+        string $reason,
+        string $requestedDate,
+        string $initiatedBy,
+        ?string $remoteCloudId,
+        ?string $idempotencyKey,
+        string $now,
+    ): array {
+        return [
             'caseId'             => $caseId,
             'sourceOrganization' => $sourceOrganization,
             'targetOrganization' => $targetOrganization,
@@ -145,32 +219,27 @@ class CaseTransferService
                 ],
             ],
         ];
+    }//end buildInitialTransferData()
 
-        $result     = $objectService->saveObject(
-            object: $transferData,
-            register: (int) $register,
-            schema: (int) $schema,
-        );
-        $resultData = $result->jsonSerialize();
-
-        if ($remoteCloudId !== null && $remoteCloudId !== '') {
-            $transferUuid = (string) ($resultData['id'] ?? $resultData['uuid'] ?? '');
-            $mintedShare  = $this->mintFederatedTransferShare(
-                transferUuid: $transferUuid,
-                remoteCloudId: $remoteCloudId,
-                register: (string) $register,
-                schema: (string) $schema,
-            );
-            if ($mintedShare === null) {
-                return ['error' => 'Could not mint the federated transfer token'];
-            }
-
-            $resultData['federationShareId'] = $mintedShare->getId();
-            $result     = $objectService->saveObject(object: $resultData, register: (int) $register, schema: (int) $schema);
-            $resultData = $result->jsonSerialize();
-        }
-
-        $this->tenantAuditTrailService->emit(
+    /**
+     * Emit the tenant audit event and log line for a freshly initiated transfer.
+     *
+     * @param object      $result             The saved transfer object
+     * @param string      $caseId             The UUID of the transferred case
+     * @param string      $targetOrganization The UUID of the target partner organization
+     * @param string      $initiatedBy        User ID of the initiator
+     * @param string|null $remoteCloudId      The federated target (slug@host), or null for a local-only transfer
+     *
+     * @return void
+     */
+    private function recordTransferInitiated(
+        object $result,
+        string $caseId,
+        string $targetOrganization,
+        string $initiatedBy,
+        ?string $remoteCloudId,
+    ): void {
+        $this->auditTrail->emit(
             [
                 'action'   => 'case_transfer_initiated',
                 'actor'    => $initiatedBy,
@@ -188,9 +257,7 @@ class CaseTransferService
                 'federated'  => ($remoteCloudId !== null),
             ]
         );
-
-        return $resultData;
-    }//end initiateTransfer()
+    }//end recordTransferInitiated()
 
     /**
      * Accept a pending case transfer request. Idempotent when called again
@@ -255,7 +322,7 @@ class CaseTransferService
         ?string $remoteCloudId=null,
         string $rejectionReason='',
     ): array {
-        $objectService = $this->getObjectService();
+        $objectService = $this->gateway->objectService();
         if ($objectService === null) {
             return ['error' => 'OpenRegister is not available'];
         }
@@ -290,26 +357,17 @@ class CaseTransferService
         // Read the existing custody chain before the status writes below, which
         // is also where the pre-existing trail must be preserved from.
         $auditTrail = (array) ($transferData['custodyAuditTrail'] ?? []);
+        $actorType  = $this->resolveCustodyActorType(remoteCloudId: $remoteCloudId);
 
-        $transferData['status']      = $targetStatus;
-        $transferData['completedAt'] = $now;
-        if ($targetStatus === 'rejected') {
-            $transferData['rejectionReason'] = $rejectionReason;
-        }
-
-        $actorType = 'local';
-        if ($remoteCloudId !== null) {
-            $actorType = 'remote';
-        }
-
-        $auditTrail[] = [
-            'event'     => $targetStatus,
-            'actor'     => ($remoteCloudId ?? ''),
-            'actorType' => $actorType,
-            'cloudId'   => ($remoteCloudId ?? ''),
-            'timestamp' => $now,
-        ];
-        $transferData['custodyAuditTrail'] = $auditTrail;
+        $transferData = $this->applyTransferCompletion(
+            transferData: $transferData,
+            auditTrail: $auditTrail,
+            targetStatus: $targetStatus,
+            rejectionReason: $rejectionReason,
+            actorType: $actorType,
+            remoteCloudId: $remoteCloudId,
+            now: $now,
+        );
 
         $result = $objectService->saveObject(
             object: $transferData,
@@ -317,7 +375,7 @@ class CaseTransferService
             schema: (int) $schema,
         );
 
-        $this->tenantAuditTrailService->emit(
+        $this->auditTrail->emit(
             [
                 'action'   => 'case_transfer_'.$targetStatus,
                 'actor'    => ($remoteCloudId ?? 'local'),
@@ -344,6 +402,63 @@ class CaseTransferService
     }//end completeTransfer()
 
     /**
+     * Resolve the custody-audit actor type for a completion event.
+     *
+     * @param string|null $remoteCloudId Set when the call was authenticated via a federated token
+     *
+     * @return string 'remote' for a federated call, 'local' otherwise
+     */
+    private function resolveCustodyActorType(?string $remoteCloudId): string
+    {
+        if ($remoteCloudId !== null) {
+            return 'remote';
+        }
+
+        return 'local';
+    }//end resolveCustodyActorType()
+
+    /**
+     * Apply the completion status, optional rejection reason and custody entry
+     * to a transfer payload.
+     *
+     * @param array       $transferData    The transfer payload being completed
+     * @param array       $auditTrail      The pre-existing custody chain, read before the status writes
+     * @param string      $targetStatus    'accepted' or 'rejected'
+     * @param string      $rejectionReason Reason text (rejected only)
+     * @param string      $actorType       'local' or 'remote'
+     * @param string|null $remoteCloudId   Set for a federated (remote-authenticated) call
+     * @param string      $now             The ISO 8601 completion timestamp
+     *
+     * @return array The completed transfer payload
+     */
+    private function applyTransferCompletion(
+        array $transferData,
+        array $auditTrail,
+        string $targetStatus,
+        string $rejectionReason,
+        string $actorType,
+        ?string $remoteCloudId,
+        string $now,
+    ): array {
+        $transferData['status']      = $targetStatus;
+        $transferData['completedAt'] = $now;
+        if ($targetStatus === 'rejected') {
+            $transferData['rejectionReason'] = $rejectionReason;
+        }
+
+        $auditTrail[] = [
+            'event'     => $targetStatus,
+            'actor'     => ($remoteCloudId ?? ''),
+            'actorType' => $actorType,
+            'cloudId'   => ($remoteCloudId ?? ''),
+            'timestamp' => $now,
+        ];
+        $transferData['custodyAuditTrail'] = $auditTrail;
+
+        return $transferData;
+    }//end applyTransferCompletion()
+
+    /**
      * Look up the caseId for a given transfer UUID (for the controller's
      * per-case RBAC check before local accept/reject).
      *
@@ -355,7 +470,7 @@ class CaseTransferService
      */
     public function getCaseIdForTransfer(string $transferId): ?string
     {
-        $objectService = $this->getObjectService();
+        $objectService = $this->gateway->objectService();
         if ($objectService === null) {
             return null;
         }
@@ -408,38 +523,7 @@ class CaseTransferService
      */
     public function resolveFederatedTransferShare(string $shareToken, string $transferId): ?array
     {
-        $shareMapper = $this->getFederatedShareMapper();
-        if ($shareMapper === null || $shareToken === '' || $transferId === '') {
-            return null;
-        }
-
-        try {
-            $share = $shareMapper->findByToken($shareToken);
-        } catch (\Throwable $e) {
-            return null;
-        }
-
-        if ($share->getDirection() !== 'outgoing') {
-            return null;
-        }
-
-        if (in_array($share->getStatus(), ['revoked', 'declined'], true) === true) {
-            return null;
-        }
-
-        if ($share->getPermissions() !== 'read-write') {
-            return null;
-        }
-
-        $objectUri = (string) $share->getObjectUri();
-        if ($this->uuidFromUri(uri: $objectUri) !== $transferId) {
-            return null;
-        }
-
-        return [
-            'sharedWith'   => (string) $share->getSharedWith(),
-            'organisation' => $share->getOrganisation(),
-        ];
+        return $this->shareBroker->resolveTransferShare(shareToken: $shareToken, transferId: $transferId);
     }//end resolveFederatedTransferShare()
 
     /**
@@ -477,149 +561,4 @@ class CaseTransferService
 
         return null;
     }//end findTransferByIdempotencyKey()
-
-    /**
-     * Mint a transfer-scoped OR federated share (read-write, pointed only
-     * at the transfer object) so the remote org can later authenticate its
-     * accept/reject call. Distinct from the case-summary share's token —
-     * this one grants no access to the case itself, only to this one
-     * transfer's status field via procest's own state machine.
-     *
-     * @param string $transferUuid  The transfer object's uuid
-     * @param string $remoteCloudId The federated target (slug@host)
-     * @param string $register      The register id/slug
-     * @param string $schema        The case_transfer_schema id/slug
-     *
-     * @return object|null The minted OR FederatedShare, or null on failure
-     */
-    private function mintFederatedTransferShare(string $transferUuid, string $remoteCloudId, string $register, string $schema): ?object
-    {
-        $federationShareService = $this->getFederationShareService();
-        if ($federationShareService === null) {
-            return null;
-        }
-
-        try {
-            return $federationShareService->createOutgoingShare(
-                params: [
-                    'scope'       => 'object',
-                    'register'    => $register,
-                    'schema'      => $schema,
-                    'objectUri'   => $transferUuid,
-                    'sharedWith'  => $remoteCloudId,
-                    'permissions' => 'read-write',
-                ]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'CaseTransferService: OR createOutgoingShare failed',
-                ['transferUuid' => $transferUuid, 'exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end mintFederatedTransferShare()
-
-    /**
-     * Extract the trailing uuid from a canonical object uri (or return it
-     * as-is when it is already a bare uuid).
-     *
-     * @param string $uri The object uri or uuid
-     *
-     * @return string The uuid
-     */
-    private function uuidFromUri(string $uri): string
-    {
-        $parts = explode('/', rtrim($uri, '/'));
-        return (string) end($parts);
-    }//end uuidFromUri()
-
-    /**
-     * Resolve OpenRegister's FederationShareService. Returns null (fail
-     * closed) when OR or its federation classes are unavailable.
-     *
-     * @return object|null The OR FederationShareService, or null
-     */
-    private function getFederationShareService(): ?object
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-            return null;
-        }
-
-        try {
-            $service = $this->container->get('OCA\OpenRegister\Service\FederationShareService');
-            if (method_exists($service, 'createOutgoingShare') === false) {
-                return null;
-            }
-
-            return $service;
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: Could not get OR FederationShareService',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end getFederationShareService()
-
-    /**
-     * Resolve OpenRegister's FederatedShareMapper — used only to resolve a
-     * scoped bearer token to its share (`findByToken`), for the remote
-     * accept/reject endpoint. Returns null (fail closed) when unavailable.
-     *
-     * @return object|null The OR FederatedShareMapper, or null
-     */
-    private function getFederatedShareMapper(): ?object
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-            return null;
-        }
-
-        try {
-            $mapper = $this->container->get('OCA\OpenRegister\Db\FederatedShareMapper');
-            if (method_exists($mapper, 'findByToken') === false) {
-                return null;
-            }
-
-            return $mapper;
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: Could not get OR FederatedShareMapper',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end getFederatedShareMapper()
-
-    /**
-     * Get the OpenRegister ObjectService.
-     *
-     * Pre-existing gap fixed alongside the federation extension: this
-     * previously declared a concrete `?\OCA\OpenRegister\Service\ObjectService`
-     * return type. That class is not part of this app's autoload map (OR is
-     * a separate app, resolved only through the DI container at runtime), so
-     * the type declaration was unenforceable and would TypeError the moment
-     * any test exercised this method with a test double — which none did
-     * before this change, since CaseTransferService had zero prior test
-     * coverage. `?object` matches the pattern already used everywhere else
-     * in this file (getFederationShareService/getFederatedShareMapper) and
-     * in CaseSharingService's own getObjectService().
-     *
-     * @return object|null The service or null
-     */
-    private function getObjectService(): ?object
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-            return null;
-        }
-
-        try {
-            return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-        } catch (\Exception $e) {
-            $this->logger->error(
-                'Procest: Could not get ObjectService',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end getObjectService()
 }//end class

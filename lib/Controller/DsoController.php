@@ -8,6 +8,11 @@
  * workflow actions (status transition, beschikking generation, samenwerking
  * initiation/response, doorsturen) for omgevingsvergunning zaken.
  *
+ * OpenRegister reads are delegated to {@see DsoObjectRepository} and the
+ * doorsturen domain event to {@see DsoDoorsturenNotifier} (ADR-022), so this
+ * controller only validates input, applies the authorization guard and maps
+ * outcomes onto responses.
+ *
  * All endpoints require authentication (@NoAdminRequired) and carry per-object
  * authorization guards (ADR-005 Rule 3) to prevent IDOR.
  *
@@ -28,16 +33,14 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\BeschikkingGenerationService;
+use OCA\Procest\Service\Dso\DsoDoorsturenNotifier;
+use OCA\Procest\Service\Dso\DsoObjectRepository;
 use OCA\Procest\Service\DsoCaseService;
 use OCA\Procest\Service\SamenwerkverzoekService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\EventDispatcher\GenericEvent;
-use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -49,9 +52,6 @@ use Psr\Log\LoggerInterface;
  */
 class DsoController extends Controller
 {
-
-    use SearchesObjects;
-
     /**
      * Constructor.
      *
@@ -60,9 +60,9 @@ class DsoController extends Controller
      * @param DsoCaseService               $dsoCaseService     The DSO case service
      * @param BeschikkingGenerationService $beschikkingService The beschikking generation service
      * @param SamenwerkverzoekService      $samenwerkService   The samenwerkverzoek service
-     * @param SettingsService              $settingsService    The settings service (config + ObjectService bridge)
+     * @param DsoObjectRepository          $repository         The OpenRegister read collaborator
+     * @param DsoDoorsturenNotifier        $doorsturenNotifier The doorsturen event dispatcher
      * @param IUserSession                 $userSession        The user session
-     * @param IEventDispatcher             $eventDispatcher    The event dispatcher
      * @param LoggerInterface              $logger             The logger
      */
     public function __construct(
@@ -71,9 +71,9 @@ class DsoController extends Controller
         private readonly DsoCaseService $dsoCaseService,
         private readonly BeschikkingGenerationService $beschikkingService,
         private readonly SamenwerkverzoekService $samenwerkService,
-        private readonly SettingsService $settingsService,
+        private readonly DsoObjectRepository $repository,
+        private readonly DsoDoorsturenNotifier $doorsturenNotifier,
         private readonly IUserSession $userSession,
-        private readonly IEventDispatcher $eventDispatcher,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
@@ -101,61 +101,33 @@ class DsoController extends Controller
 
         $activiteitgroep   = $this->request->getParam('activiteitgroep', '');
         $regelkwalificatie = $this->request->getParam('regelkwalificatie', '');
-        $status            = $this->request->getParam('status', '');
         $locatie           = $this->request->getParam('locatie', '');
-        $gemeenteCode      = $this->request->getParam('gemeenteCode', '');
-        $procedureType     = $this->request->getParam('procedureType', '');
 
         $params = ['caseType' => 'omgevingsvergunning'];
 
-        if ($status !== '') {
-            $params['status'] = $status;
-        }
-
-        if ($procedureType !== '') {
-            $params['procedureType'] = $procedureType;
-        }
-
-        if ($gemeenteCode !== '') {
-            $params['gemeenteCode'] = $gemeenteCode;
+        foreach (['status', 'procedureType', 'gemeenteCode'] as $key) {
+            $value = (string) $this->request->getParam($key, '');
+            if ($value !== '') {
+                $params[$key] = $value;
+            }
         }
 
         $params['_limit']  = 100;
         $params['_offset'] = 0;
 
         try {
-            $objectService = $this->getObjectServiceOrFail();
-            if ($objectService === null) {
-                return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
-            }
-
-            // Resolve register and schema via the config helper.
-            $register   = '';
-            $caseSchema = '';
-
-            // Resolve via container — inject via IAppConfig.
-            $register   = $this->resolveConfigValue(key: 'register');
-            $caseSchema = $this->resolveConfigValue(key: 'case_schema');
-
-            if ($register === '' || $caseSchema === '') {
-                return new JSONResponse(['error' => 'Case register not configured'], Http::STATUS_SERVICE_UNAVAILABLE);
-            }
-
-            $zakenList = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $caseSchema,
-                filters: $params
-            );
-
-            $filtered = $this->applyInMemoryFilters(
-                zaken: $zakenList,
+            $outcome = $this->repository->fetchDashboard(
+                params: $params,
                 activiteitgroep: (string) $activiteitgroep,
                 regelkwalificatie: (string) $regelkwalificatie,
                 locatie: (string) $locatie
             );
 
-            return new JSONResponse(['results' => $filtered, 'count' => count($filtered)]);
+            if ($outcome['error'] !== null) {
+                return new JSONResponse(['error' => $outcome['error']], Http::STATUS_SERVICE_UNAVAILABLE);
+            }
+
+            return new JSONResponse(['results' => $outcome['results'], 'count' => count($outcome['results'])]);
         } catch (\Throwable $e) {
             $this->logger->error('Procest DsoController::dashboard failed: '.$e->getMessage());
             return new JSONResponse(['error' => 'Could not load dashboard'], Http::STATUS_INTERNAL_SERVER_ERROR);
@@ -188,18 +160,6 @@ class DsoController extends Controller
         $body      = $this->readJsonBody();
         $newStatus = (string) ($body['newStatus'] ?? '');
 
-        if (isset($body['besluitdatum']) === true) {
-            $besluitdatum = (string) $body['besluitdatum'];
-        } else {
-            $besluitdatum = null;
-        }
-
-        if (isset($body['toelichting']) === true) {
-            $toelichting = (string) $body['toelichting'];
-        } else {
-            $toelichting = null;
-        }
-
         if ($newStatus === '') {
             return new JSONResponse(['error' => 'newStatus is required'], Http::STATUS_BAD_REQUEST);
         }
@@ -210,7 +170,7 @@ class DsoController extends Controller
         }
 
         try {
-            $zaak = $this->loadZaak(caseId: $caseId);
+            $zaak = $this->repository->findZaak(caseId: $caseId);
             if ($zaak === null) {
                 return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
             }
@@ -220,19 +180,14 @@ class DsoController extends Controller
             $updated = $this->dsoCaseService->transitionStatus(
                 zaakId: $caseId,
                 newStatus: $newStatus,
-                besluitdatum: $besluitdatum,
-                toelichting: $toelichting,
+                besluitdatum: $this->optionalString(body: $body, key: 'besluitdatum'),
+                toelichting: $this->optionalString(body: $body, key: 'toelichting'),
                 userId: $user->getUID()
             );
 
             return new JSONResponse($updated);
         } catch (\Exception $e) {
-            if ($e->getMessage() === 'Not authorized') {
-                return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
-            }
-
-            $this->logger->error('Procest DsoController::transitionStatus failed: '.$e->getMessage());
-            return new JSONResponse(['error' => 'Could not transition status'], Http::STATUS_INTERNAL_SERVER_ERROR);
+            return $this->failure(exception: $e, action: 'transitionStatus', message: 'Could not transition status');
         }//end try
     }//end transitionStatus()
 
@@ -272,7 +227,7 @@ class DsoController extends Controller
         }
 
         try {
-            $zaak = $this->loadZaak(caseId: $caseId);
+            $zaak = $this->repository->findZaak(caseId: $caseId);
             if ($zaak === null) {
                 return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
             }
@@ -287,12 +242,11 @@ class DsoController extends Controller
 
             return new JSONResponse($result, Http::STATUS_CREATED);
         } catch (\Exception $e) {
-            if ($e->getMessage() === 'Not authorized') {
-                return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
-            }
-
-            $this->logger->error('Procest DsoController::generateBeschikking failed: '.$e->getMessage());
-            return new JSONResponse(['error' => 'Could not generate beschikking'], Http::STATUS_INTERNAL_SERVER_ERROR);
+            return $this->failure(
+                exception: $e,
+                action: 'generateBeschikking',
+                message: 'Could not generate beschikking'
+            );
         }//end try
     }//end generateBeschikking()
 
@@ -318,11 +272,11 @@ class DsoController extends Controller
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $body = $this->readJsonBody();
-        $aangezochtBevoegdGezag = (string) ($body['aangezochtBevoegdGezag'] ?? '');
-        $rationale = (string) ($body['rationale'] ?? '');
+        $body         = $this->readJsonBody();
+        $bevoegdGezag = (string) ($body['aangezochtBevoegdGezag'] ?? '');
+        $rationale    = (string) ($body['rationale'] ?? '');
 
-        if ($aangezochtBevoegdGezag === '') {
+        if ($bevoegdGezag === '') {
             return new JSONResponse(
                 ['error' => 'aangezochtBevoegdGezag is required'],
                 Http::STATUS_BAD_REQUEST
@@ -330,7 +284,7 @@ class DsoController extends Controller
         }
 
         try {
-            $zaak = $this->loadZaak(caseId: $caseId);
+            $zaak = $this->repository->findZaak(caseId: $caseId);
             if ($zaak === null) {
                 return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
             }
@@ -339,18 +293,17 @@ class DsoController extends Controller
 
             $samenwerkverzoek = $this->samenwerkService->initiateSamenwerking(
                 zaakId: $caseId,
-                aangezochtBevoegdGezag: $aangezochtBevoegdGezag,
+                aangezochtGezag: $bevoegdGezag,
                 rationale: $rationale
             );
 
             return new JSONResponse($samenwerkverzoek, Http::STATUS_CREATED);
         } catch (\Exception $e) {
-            if ($e->getMessage() === 'Not authorized') {
-                return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
-            }
-
-            $this->logger->error('Procest DsoController::initiateSamenwerking failed: '.$e->getMessage());
-            return new JSONResponse(['error' => 'Could not initiate samenwerking'], Http::STATUS_INTERNAL_SERVER_ERROR);
+            return $this->failure(
+                exception: $e,
+                action: 'initiateSamenwerking',
+                message: 'Could not initiate samenwerking'
+            );
         }//end try
     }//end initiateSamenwerking()
 
@@ -381,7 +334,7 @@ class DsoController extends Controller
         $advies = (string) ($body['advies'] ?? '');
 
         try {
-            $samenwerkverzoek = $this->loadSamenwerkverzoek(samenwerkId: $samenwerkId);
+            $samenwerkverzoek = $this->repository->findSamenwerkverzoek(samenwerkId: $samenwerkId);
             if ($samenwerkverzoek === null) {
                 return new JSONResponse(['error' => 'Samenwerkverzoek not found'], Http::STATUS_NOT_FOUND);
             }
@@ -399,12 +352,11 @@ class DsoController extends Controller
 
             return new JSONResponse($updated);
         } catch (\Exception $e) {
-            if ($e->getMessage() === 'Not authorized') {
-                return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
-            }
-
-            $this->logger->error('Procest DsoController::respondSamenwerking failed: '.$e->getMessage());
-            return new JSONResponse(['error' => 'Could not respond to samenwerking'], Http::STATUS_INTERNAL_SERVER_ERROR);
+            return $this->failure(
+                exception: $e,
+                action: 'respondSamenwerking',
+                message: 'Could not respond to samenwerking'
+            );
         }//end try
     }//end respondSamenwerking()
 
@@ -443,25 +395,19 @@ class DsoController extends Controller
         }
 
         try {
-            $zaak = $this->loadZaak(caseId: $caseId);
+            $zaak = $this->repository->findZaak(caseId: $caseId);
             if ($zaak === null) {
                 return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
             }
 
             $this->dsoCaseService->authorizeZaakMutation(zaak: $zaak, user: $user);
 
-            $event = new GenericEvent(
-                subject: $zaak,
-                arguments: [
-                    'caseId'             => $caseId,
-                    'targetBevoegdGezag' => $targetBevoegdGezag,
-                    'reden'              => $reden,
-                    'userId'             => $user->getUID(),
-                ]
-            );
-            $this->eventDispatcher->dispatch(
-                eventName: 'OCA\Procest\Event\VergunningDoorgestuurd',
-                event: $event
+            $this->doorsturenNotifier->dispatchDoorgestuurd(
+                zaak: $zaak,
+                caseId: $caseId,
+                targetBevoegdGezag: $targetBevoegdGezag,
+                reden: $reden,
+                userId: $user->getUID()
             );
 
             return new JSONResponse(
@@ -472,14 +418,52 @@ class DsoController extends Controller
                 ]
             );
         } catch (\Exception $e) {
-            if ($e->getMessage() === 'Not authorized') {
-                return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
-            }
-
-            $this->logger->error('Procest DsoController::doorsturen failed: '.$e->getMessage());
-            return new JSONResponse(['error' => 'Could not doorsturen'], Http::STATUS_INTERNAL_SERVER_ERROR);
+            return $this->failure(exception: $e, action: 'doorsturen', message: 'Could not doorsturen');
         }//end try
     }//end doorsturen()
+
+    /**
+     * Map a workflow exception onto a response.
+     *
+     * An authorization refusal surfaces as a 403; anything else is logged and
+     * reported as a 500 with the endpoint's own message.
+     *
+     * @param \Exception $exception The caught exception.
+     * @param string     $action    The endpoint name, for the log line.
+     * @param string     $message   The 500 message for this endpoint.
+     *
+     * @return JSONResponse The mapped error response.
+     *
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+     */
+    private function failure(\Exception $exception, string $action, string $message): JSONResponse
+    {
+        if ($exception->getMessage() === 'Not authorized') {
+            return new JSONResponse(['error' => 'Forbidden'], Http::STATUS_FORBIDDEN);
+        }
+
+        $this->logger->error('Procest DsoController::'.$action.' failed: '.$exception->getMessage());
+        return new JSONResponse(['error' => $message], Http::STATUS_INTERNAL_SERVER_ERROR);
+    }//end failure()
+
+    /**
+     * Read an optional string field from the decoded body.
+     *
+     * @param array<string,mixed> $body The decoded request body.
+     * @param string              $key  The field name.
+     *
+     * @return string|null The value, or null when absent.
+     *
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+     */
+    private function optionalString(array $body, string $key): ?string
+    {
+        if (isset($body[$key]) === false) {
+            return null;
+        }
+
+        return (string) $body[$key];
+    }//end optionalString()
 
     /**
      * Decode a JSON request body safely.
@@ -518,136 +502,4 @@ class DsoController extends Controller
 
         return [];
     }//end readJsonBody()
-
-    /**
-     * Load a zaak by ID from the ObjectService.
-     *
-     * Returns null when the zaak does not exist or the service is unavailable.
-     *
-     * @param string $caseId The zaak UUID
-     *
-     * @return array<string,mixed>|null
-     */
-    private function loadZaak(string $caseId): ?array
-    {
-        try {
-            $objectService = $this->getObjectServiceOrFail();
-            if ($objectService === null) {
-                return null;
-            }
-
-            $register   = $this->resolveConfigValue(key: 'register');
-            $caseSchema = $this->resolveConfigValue(key: 'case_schema');
-
-            if ($register === '' || $caseSchema === '') {
-                return null;
-            }
-
-            return $this->findObjectAsArray(
-                objectService: $objectService,
-                register: $register,
-                schema: $caseSchema,
-                id: $caseId
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Procest DsoController: could not load zaak '.$caseId.': '.$e->getMessage()
-            );
-            return null;
-        }//end try
-    }//end loadZaak()
-
-    /**
-     * Load a samenwerkverzoek by ID from the ObjectService.
-     *
-     * @param string $samenwerkId The samenwerkverzoek UUID
-     *
-     * @return array<string,mixed>|null
-     */
-    private function loadSamenwerkverzoek(string $samenwerkId): ?array
-    {
-        try {
-            $objectService = $this->getObjectServiceOrFail();
-            if ($objectService === null) {
-                return null;
-            }
-
-            $register = $this->resolveConfigValue(key: 'register');
-            $samenwerkverzoekSchema = $this->resolveConfigValue(key: 'dso_samenwerkverzoek_schema');
-
-            if ($register === '' || $samenwerkverzoekSchema === '') {
-                $samenwerkverzoekSchema = 'samenwerkverzoek';
-            }
-
-            return $this->findObjectAsArray(
-                objectService: $objectService,
-                register: $register,
-                schema: $samenwerkverzoekSchema,
-                id: $samenwerkId
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Procest DsoController: could not load samenwerkverzoek '.$samenwerkId.': '.$e->getMessage()
-            );
-            return null;
-        }//end try
-    }//end loadSamenwerkverzoek()
-
-    /**
-     * Get the ObjectService from the DI container; returns null when unavailable.
-     *
-     * @return object|null
-     */
-    private function getObjectServiceOrFail(): ?object
-    {
-        return $this->settingsService->getObjectService();
-    }//end getObjectServiceOrFail()
-
-    /**
-     * Resolve an app config value from the Nextcloud app config.
-     *
-     * @param string $key Config key
-     *
-     * @return string Config value or empty string
-     */
-    private function resolveConfigValue(string $key): string
-    {
-        return $this->settingsService->getConfigValue(key: $key);
-    }//end resolveConfigValue()
-
-    /**
-     * Apply in-memory filters that cannot be pushed to ObjectService params.
-     *
-     * @param array<int,mixed> $zaken             The zaken array (elements come from ObjectService and are not guaranteed to be arrays)
-     * @param string           $activiteitgroep   Filter by activiteitgroep
-     * @param string           $regelkwalificatie Filter by regelkwalificatie
-     * @param string           $locatie           Filter by locatie substring
-     *
-     * @return array<int,array<string,mixed>>
-     */
-    private function applyInMemoryFilters(
-        array $zaken,
-        string $activiteitgroep,
-        string $regelkwalificatie,
-        string $locatie,
-    ): array {
-        if ($activiteitgroep === '' && $regelkwalificatie === '' && $locatie === '') {
-            return $zaken;
-        }
-
-        $result = [];
-        foreach ($zaken as $zaak) {
-            if (is_array($zaak) === false) {
-                continue;
-            }
-
-            if ($locatie !== '' && str_contains((string) ($zaak['locatie'] ?? ''), $locatie) === false) {
-                continue;
-            }
-
-            $result[] = $zaak;
-        }
-
-        return $result;
-    }//end applyInMemoryFilters()
 }//end class

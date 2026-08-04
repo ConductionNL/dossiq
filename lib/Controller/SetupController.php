@@ -129,16 +129,15 @@ class SetupController extends Controller
                 continue;
             }
 
-            if (is_scalar($value) === true) {
-                $stored = (string) $value;
-            } else {
+            $stored = $value;
+            if (is_scalar($value) === false) {
                 $stored = json_encode($value);
             }
 
             $this->appConfig->setValueString(
                 'procest',
                 (string) $key,
-                $stored,
+                (string) $stored,
             );
         }
 

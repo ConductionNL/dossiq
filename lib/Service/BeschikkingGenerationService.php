@@ -68,10 +68,9 @@ class BeschikkingGenerationService
      */
     public function generateBeschikking(string $zaakId, string $outcome, string $motivation): array
     {
+        $templateKey = 'dso_beschikking_template_verleend';
         if ($outcome === 'geweigerd') {
             $templateKey = 'dso_beschikking_template_geweigerd';
-        } else {
-            $templateKey = 'dso_beschikking_template_verleend';
         }
 
         $templateId = $this->appConfig->getValueString(

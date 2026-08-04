@@ -64,7 +64,7 @@ class SendEmailHandler implements ActionHandlerInterface
         try {
             $recipient = (string) ($actionConfig['to'] ?? '');
             if ($recipient === '') {
-                return ActionResult::failure(error: 'send_email_missing_recipient');
+                return new ActionResult(succeeded: false, error: 'send_email_missing_recipient');
             }
 
             $payload = [
@@ -77,20 +77,20 @@ class SendEmailHandler implements ActionHandlerInterface
 
             if (method_exists($this->notificatieService, 'sendEmail') === true) {
                 $this->notificatieService->sendEmail($recipient, $payload);
-                return ActionResult::success(data: ['to' => $recipient]);
+                return new ActionResult(succeeded: true, data: ['to' => $recipient]);
             }
 
             // No mail delivery available — record as success since notification
             // dispatch is best-effort per spec REQ-STE-5-002 (failures do not
             // block transitions). Log a warning so the gap is visible.
             $this->logger->warning('SendEmailHandler: NotificatieService::sendEmail missing — skipping');
-            return ActionResult::success(data: ['to' => $recipient, 'skipped' => true]);
+            return new ActionResult(succeeded: true, data: ['to' => $recipient, 'skipped' => true]);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'SendEmailHandler failed',
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
-            return ActionResult::failure(error: 'send_email_failed');
+            return new ActionResult(succeeded: false, error: 'send_email_failed');
         }//end try
     }//end handle()
 }//end class

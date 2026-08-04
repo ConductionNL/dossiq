@@ -17,6 +17,12 @@ const ADMIN_SETTINGS_URL = '/settings/admin/procest'
 
 test.describe('Case-types admin — 7-tab integration shell', () => {
 
+	// Same reason as spec-coverage/admin-settings.spec.ts: the Nextcloud admin
+	// settings page mounts fourteen OpenRegister-backed sections and has been
+	// measured between ~7s and 3.2m under the CI `php -S` server — variable
+	// enough to overrun even test.slow()'s tripled budget.
+	test.setTimeout(300_000)
+
 	// @e2e openspec/changes/case-types-04-property-doc-decision-tabs/tasks.md#TASK-CT-13
 	test('admin settings surface renders the Case Type Management heading', async ({ page }) => {
 		await page.goto(ADMIN_SETTINGS_URL)

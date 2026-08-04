@@ -29,6 +29,9 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Advice\AdviceAuthorizationGuard;
+use OCA\Procest\Service\Advice\AdviceNotifier;
+use OCA\Procest\Service\Advice\AdviceRepository;
 use OCA\Procest\Service\AdviceDelegationService;
 use OCA\Procest\Service\AdviceService;
 use OCA\Procest\Service\SettingsService;
@@ -84,6 +87,11 @@ interface AdviceObjectServiceStub
  * Unit tests for AdviceService transition authorization.
  *
  * @covers \OCA\Procest\Service\AdviceService
+ *
+ * @uses \OCA\Procest\Service\Advice\AdviceAuthorizationGuard
+ * @uses \OCA\Procest\Service\Advice\AdviceNotifier
+ * @uses \OCA\Procest\Service\Advice\AdviceRepository
+ * @uses \OCA\Procest\Service\Support\SearchesObjects
  */
 class AdviceServiceAuthorizationTest extends TestCase
 {
@@ -153,13 +161,26 @@ class AdviceServiceAuthorizationTest extends TestCase
             }
         );
 
+        $logger = $this->createMock(LoggerInterface::class);
+
         $this->service = new AdviceService(
             settingsService: $this->settingsService,
             userSession: $this->userSession,
-            groupManager: $this->groupManager,
-            notificationManager: $this->createMock(INotificationManager::class),
-            logger: $this->createMock(LoggerInterface::class),
+            logger: $logger,
             adviceDelegation: $this->createMock(AdviceDelegationService::class),
+            repository: new AdviceRepository(
+                settingsService: $this->settingsService,
+                logger: $logger,
+            ),
+            guard: new AdviceAuthorizationGuard(
+                settingsService: $this->settingsService,
+                userSession: $this->userSession,
+                groupManager: $this->groupManager,
+            ),
+            notifier: new AdviceNotifier(
+                notificationManager: $this->createMock(INotificationManager::class),
+                logger: $logger,
+            ),
         );
     }//end setUp()
 

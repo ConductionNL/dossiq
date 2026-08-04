@@ -9,8 +9,11 @@
  * field-edit immutability contract, and the verifiable audit-pakket export.
  *
  * All state changes go through StateMachineService, which enforces the formal
- * transition rules and writes an immutable stateMachineLog record. Persistence
- * is delegated to the OpenRegister ObjectService resolved via SettingsService.
+ * transition rules and writes an immutable stateMachineLog record. This class
+ * owns the transitions themselves and nothing else: persistence lives in
+ * {@see BeschikkingRepository}, the authority rules in {@see MandaatVerifier},
+ * the export in {@see AuditPacketBuilder}, and the Awb 6:7 objection period in
+ * {@see BezwaarTermijnScheduler}.
  *
  * Special-category identifiers (BSN) are never logged raw; only masked.
  *
@@ -35,15 +38,15 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use DateInterval;
 use DateTimeImmutable;
 use OCA\Procest\Service\Beschikking\ArchivalAdapterInterface;
+use OCA\Procest\Service\Beschikking\AuditPacketBuilder;
+use OCA\Procest\Service\Beschikking\BeschikkingRepository;
+use OCA\Procest\Service\Beschikking\BezwaarTermijnScheduler;
+use OCA\Procest\Service\Beschikking\MandaatVerifier;
 use OCA\Procest\Service\Beschikking\SigningAdapterInterface;
 use OCA\Procest\Service\Beschikking\TemplateEngineAdapterInterface;
-use OCA\Procest\Service\Support\SearchesObjects;
-use Psr\Log\LoggerInterface;
 use RuntimeException;
-use ZipArchive;
 
 /**
  * Beschikking lifecycle orchestrator.
@@ -52,8 +55,6 @@ use ZipArchive;
  */
 class BeschikkingService
 {
-
-    use SearchesObjects;
 
     /**
      * Fields that may NOT be edited once a beschikking is immutable.
@@ -73,22 +74,28 @@ class BeschikkingService
     /**
      * Constructor.
      *
-     * @param SettingsService                $settingsService The settings/config service.
-     * @param StateMachineService            $stateMachine    The state-machine guard.
-     * @param BerichtenboxRoutingService     $berichtenbox    The Berichtenbox routing service.
-     * @param TemplateEngineAdapterInterface $templateAdapter The Docudesk template adapter.
-     * @param SigningAdapterInterface        $signingAdapter  The OpenConnector TSP adapter.
-     * @param ArchivalAdapterInterface       $archivalAdapter The OpenRegister archival adapter.
-     * @param LoggerInterface                $logger          The logger.
+     * @param StateMachineService            $stateMachine     The state-machine guard.
+     * @param BerichtenboxRoutingService     $berichtenbox     The Berichtenbox routing service.
+     * @param TemplateEngineAdapterInterface $templateAdapter  The Docudesk template adapter.
+     * @param SigningAdapterInterface        $signingAdapter   The OpenConnector TSP adapter.
+     * @param ArchivalAdapterInterface       $archivalAdapter  The OpenRegister archival adapter.
+     * @param BeschikkingRepository          $repository       Beschikking persistence.
+     * @param MandaatVerifier                $mandaatVerifier  Mandaat resolution + verification.
+     * @param AuditPacketBuilder             $auditPacket      Verifiable audit-pakket assembly.
+     * @param BezwaarTermijnScheduler        $bezwaarScheduler Awb 6:7 bezwaartermijn scheduling.
+     *
+     * @return void
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
         private readonly StateMachineService $stateMachine,
         private readonly BerichtenboxRoutingService $berichtenbox,
         private readonly TemplateEngineAdapterInterface $templateAdapter,
         private readonly SigningAdapterInterface $signingAdapter,
         private readonly ArchivalAdapterInterface $archivalAdapter,
-        private readonly LoggerInterface $logger,
+        private readonly BeschikkingRepository $repository,
+        private readonly MandaatVerifier $mandaatVerifier,
+        private readonly AuditPacketBuilder $auditPacket,
+        private readonly BezwaarTermijnScheduler $bezwaarScheduler,
     ) {
     }//end __construct()
 
@@ -130,12 +137,14 @@ class BeschikkingService
             'motivering'          => ($overrides['motivering'] ?? null),
         ];
 
-        $saved = $this->save(beschikking: $beschikking);
+        $saved = $this->repository->save(beschikking: $beschikking);
         return $this->markRequiredFields(beschikking: $saved);
     }//end compose()
 
     /**
      * Load a single beschikking by id. [T06]
+     *
+     * Delegates to {@see BeschikkingRepository::find()}.
      *
      * @param string $beschikkingId The beschikking UUID.
      *
@@ -145,25 +154,7 @@ class BeschikkingService
      */
     public function find(string $beschikkingId): ?array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        [$register, $schema] = $this->resolveRegisterSchema();
-        if ($register === '' || $schema === '') {
-            return null;
-        }
-
-        try {
-            return $this->toArray(value: $objectService->find($beschikkingId, register: $register, schema: $schema));
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'BeschikkingService: find failed',
-                ['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
-            );
-            return null;
-        }
+        return $this->repository->find(beschikkingId: $beschikkingId);
     }//end find()
 
     /**
@@ -180,15 +171,19 @@ class BeschikkingService
      */
     public function akkoord(string $beschikkingId, string $akkoordDoor): array
     {
-        $beschikking = $this->requireBeschikking(beschikkingId: $beschikkingId);
+        $beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
         $current     = (string) ($beschikking['huidigeStatus'] ?? '');
 
         if ($this->stateMachine->validateTransition($current, 'akkoord-mandaat') === false) {
             throw new RuntimeException('invalid_transition');
         }
 
-        $regeling = $this->resolveMandaatRegeling(zaaktype: (string) ($beschikking['zaaktype'] ?? ''));
-        $niveau   = $this->resolveNiveauForUser(regeling: $regeling, beschikking: $beschikking, akkoordDoor: $akkoordDoor);
+        $regeling = $this->mandaatVerifier->resolveMandaatRegeling(zaaktype: (string) ($beschikking['zaaktype'] ?? ''));
+        $niveau   = $this->mandaatVerifier->resolveNiveauForUser(
+            regeling: $regeling,
+            beschikking: $beschikking,
+            akkoordDoor: $akkoordDoor
+        );
 
         if ($niveau === null) {
             throw new RuntimeException('mandaat_insufficient');
@@ -202,7 +197,7 @@ class BeschikkingService
         ];
         $beschikking['huidigeStatus']  = 'akkoord-mandaat';
 
-        $saved = $this->save(beschikking: $beschikking);
+        $saved = $this->repository->save(beschikking: $beschikking);
         $this->stateMachine->logTransition(
             $beschikkingId,
             $current,
@@ -228,7 +223,7 @@ class BeschikkingService
      */
     public function onderteken(string $beschikkingId, string $tspProvider, string $ondertekenaar): array
     {
-        $beschikking = $this->requireBeschikking(beschikkingId: $beschikkingId);
+        $beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
         $current     = (string) ($beschikking['huidigeStatus'] ?? '');
 
         if ($this->stateMachine->validateTransition($current, 'ondertekend') === false) {
@@ -250,7 +245,7 @@ class BeschikkingService
         $beschikking['samengesteldeInhoud']['bestandId'] = (string) ($signature['signedBestandId'] ?? $bestandId);
         $beschikking['huidigeStatus'] = 'ondertekend';
 
-        $saved = $this->save(beschikking: $beschikking);
+        $saved = $this->repository->save(beschikking: $beschikking);
         $this->stateMachine->logTransition(
             $beschikkingId,
             $current,
@@ -285,7 +280,7 @@ class BeschikkingService
      */
     public function verzend(string $beschikkingId, string $actor): array
     {
-        $beschikking = $this->requireBeschikking(beschikkingId: $beschikkingId);
+        $beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
         $current     = (string) ($beschikking['huidigeStatus'] ?? '');
 
         if ($this->stateMachine->validateTransition($current, 'verzonden') === false) {
@@ -295,22 +290,21 @@ class BeschikkingService
         $verzending = $this->berichtenbox->routeToBerichtenbox($beschikking);
 
         $bekendmaking = (new DateTimeImmutable())->format('Y-m-d');
-        $eindDatum    = (new DateTimeImmutable($bekendmaking))->add(new DateInterval('P6W'));
-        $herinnering  = $eindDatum->sub(new DateInterval('P1W'));
+        $termijn      = $this->bezwaarScheduler->computeTermijn(bekendmaking: $bekendmaking);
 
         $beschikking['verzending']        = $verzending;
         $beschikking['bekendmakingDatum'] = $bekendmaking;
-        $beschikking['bezwaarTermijnEindDatum'] = $eindDatum->format('Y-m-d');
-        $beschikking['herinneringDatum']        = $herinnering->format('Y-m-d');
+        $beschikking['bezwaarTermijnEindDatum'] = $termijn['eindDatum'];
+        $beschikking['herinneringDatum']        = $termijn['herinnering'];
         $beschikking['huidigeStatus']           = 'verzonden';
 
-        $saved = $this->save(beschikking: $beschikking);
+        $saved = $this->repository->save(beschikking: $beschikking);
 
-        $this->createBezwaarTrigger(
+        $this->bezwaarScheduler->createBezwaarTrigger(
             beschikkingId: $beschikkingId,
             bekendmaking: $bekendmaking,
-            eindDatum: $eindDatum->format('Y-m-d'),
-            herinnering: $herinnering->format('Y-m-d'),
+            eindDatum: $termijn['eindDatum'],
+            herinnering: $termijn['herinnering'],
         );
 
         $this->stateMachine->logTransition(
@@ -337,7 +331,7 @@ class BeschikkingService
      */
     public function updateFields(string $beschikkingId, array $updates): array
     {
-        $beschikking = $this->requireBeschikking(beschikkingId: $beschikkingId);
+        $beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
         $status      = (string) ($beschikking['huidigeStatus'] ?? '');
 
         if ($this->stateMachine->isImmutable($status) === true) {
@@ -354,11 +348,13 @@ class BeschikkingService
 
         $beschikking['ontwerpVersie'] = ((int) ($beschikking['ontwerpVersie'] ?? 1)) + 1;
 
-        return $this->save(beschikking: $beschikking);
+        return $this->repository->save(beschikking: $beschikking);
     }//end updateFields()
 
     /**
      * Verify whether a mandaat covers a decision. [T14 verifyMandaat]
+     *
+     * Delegates to {@see MandaatVerifier::verifyMandaat()}.
      *
      * @param array<string, mixed> $regeling        The mandaatRegeling object.
      * @param string               $niveau          The proposed approver level.
@@ -377,36 +373,19 @@ class BeschikkingService
         string $beschikkingType,
         string $zaaktype,
     ): bool {
-        foreach ((array) ($regeling['mandaatGroepen'] ?? []) as $groep) {
-            if ((string) ($groep['niveau'] ?? '') !== $niveau) {
-                continue;
-            }
-
-            $zaaktypes = (array) ($groep['zaaktypes'] ?? []);
-            if (empty($zaaktypes) === false && in_array($zaaktype, $zaaktypes, true) === false) {
-                continue;
-            }
-
-            $types = (array) ($groep['beschikkingTypes'] ?? []);
-            if (empty($types) === false && in_array($beschikkingType, $types, true) === false) {
-                continue;
-            }
-
-            $limit = ($groep['tot_bedrag'] ?? null);
-            if ($limit === null) {
-                return true;
-            }
-
-            if ($bedrag <= (float) $limit) {
-                return true;
-            }
-        }//end foreach
-
-        return false;
+        return $this->mandaatVerifier->verifyMandaat(
+            regeling: $regeling,
+            niveau: $niveau,
+            bedrag: $bedrag,
+            beschikkingType: $beschikkingType,
+            zaaktype: $zaaktype,
+        );
     }//end verifyMandaat()
 
     /**
      * Assemble and PKCS#7-sign the verifiable audit-pakket ZIP. [T10]
+     *
+     * Delegates to {@see AuditPacketBuilder::build()}.
      *
      * @param string $beschikkingId The beschikking UUID.
      *
@@ -418,43 +397,9 @@ class BeschikkingService
      */
     public function exportAuditPacket(string $beschikkingId): string
     {
-        $beschikking = $this->requireBeschikking(beschikkingId: $beschikkingId);
+        $beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
 
-        $logs            = $this->findStateMachineLogs(beschikkingId: $beschikkingId);
-        $rapportId       = (string) (($beschikking['handtekening']['validatieRapportId'] ?? ''));
-        $validatieReport = [];
-        if ($rapportId !== '') {
-            $validatieReport = $this->signingAdapter->fetchValidationReport($rapportId);
-        }
-
-        $manifest = [
-            'beschikkingId' => $beschikkingId,
-            'kenmerk'       => (string) ($beschikking['kenmerk'] ?? ''),
-            'gegenereerdOp' => (new DateTimeImmutable())->format('c'),
-            'inhoud'        => ['beschikking.json', 'state-machine-log.json', 'validatierapport.json', 'manifest.json'],
-        ];
-
-        $entries = [
-            'beschikking.json'       => json_encode($this->maskBeschikking(beschikking: $beschikking), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-            'state-machine-log.json' => json_encode($logs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-            'validatierapport.json'  => json_encode($validatieReport, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-            'manifest.json'          => json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-        ];
-
-        $zipBytes = $this->buildZip(entries: $entries);
-
-        // Detached PKCS#7 signature over the ZIP content (design D6). When no
-        // signing material is configured a SHA-256 digest stands in so the
-        // package is always integrity-checkable.
-        $signature = 'sha256:'.hash('sha256', $zipBytes);
-        $entries['signature.p7s.txt'] = $signature;
-
-        $this->logger->info(
-            'BeschikkingService: audit-pakket geexporteerd',
-            ['beschikkingId' => $beschikkingId, 'kenmerk' => (string) ($beschikking['kenmerk'] ?? '')],
-        );
-
-        return $this->buildZip(entries: $entries);
+        return $this->auditPacket->build(beschikkingId: $beschikkingId, beschikking: $beschikking);
     }//end exportAuditPacket()
 
     /**
@@ -470,7 +415,7 @@ class BeschikkingService
      */
     public function archive(string $beschikkingId): array
     {
-        $beschikking = $this->requireBeschikking(beschikkingId: $beschikkingId);
+        $beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
         $current     = (string) ($beschikking['huidigeStatus'] ?? '');
 
         if ($this->stateMachine->validateTransition($current, 'gearchiveerd') === false) {
@@ -498,7 +443,7 @@ class BeschikkingService
         ];
         $beschikking['huidigeStatus'] = 'gearchiveerd';
 
-        $saved = $this->save(beschikking: $beschikking);
+        $saved = $this->repository->save(beschikking: $beschikking);
         $this->stateMachine->logTransition(
             $beschikkingId,
             $current,
@@ -508,235 +453,6 @@ class BeschikkingService
 
         return $saved;
     }//end archive()
-
-    // ------------------------------------------------------------------
-    // Internal helpers
-    // ------------------------------------------------------------------
-
-    /**
-     * Load a beschikking or throw.
-     *
-     * @param string $beschikkingId The beschikking UUID.
-     *
-     * @return array<string, mixed>
-     *
-     * @throws RuntimeException 'not_found' when absent.
-     */
-    private function requireBeschikking(string $beschikkingId): array
-    {
-        $beschikking = $this->find(beschikkingId: $beschikkingId);
-        if ($beschikking === null) {
-            throw new RuntimeException('not_found');
-        }
-
-        // Preserve the id for downstream save() calls.
-        if (isset($beschikking['id']) === false) {
-            $beschikking['id'] = $beschikkingId;
-        }
-
-        return $beschikking;
-    }//end requireBeschikking()
-
-    /**
-     * Persist a beschikking via ObjectService.
-     *
-     * @param array<string, mixed> $beschikking The beschikking payload.
-     *
-     * @return array<string, mixed>
-     *
-     * @throws RuntimeException When storage is unavailable or unconfigured.
-     */
-    private function save(array $beschikking): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('storage_unavailable');
-        }
-
-        [$register, $schema] = $this->resolveRegisterSchema();
-        if ($register === '' || $schema === '') {
-            throw new RuntimeException('beschikking_schema_not_configured');
-        }
-
-        return $this->toArray(value: $objectService->saveObject(object: $beschikking, register: $register, schema: $schema));
-    }//end save()
-
-    /**
-     * Create the BezwaarTrigger scheduling record on verzending.
-     *
-     * @param string $beschikkingId The beschikking UUID.
-     * @param string $bekendmaking  The bekendmaking date.
-     * @param string $eindDatum     The bezwaartermijn end date.
-     * @param string $herinnering   The reminder date.
-     *
-     * @return void
-     */
-    private function createBezwaarTrigger(
-        string $beschikkingId,
-        string $bekendmaking,
-        string $eindDatum,
-        string $herinnering,
-    ): void {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return;
-        }
-
-        $register = $this->settingsService->getConfigValue(key: 'register');
-        $schema   = $this->settingsService->getConfigValue(key: 'bezwaar_trigger_schema');
-        if ($register === '' || $schema === '') {
-            return;
-        }
-
-        $archiefDatum = (new DateTimeImmutable($eindDatum))->add(new DateInterval('P1D'))->format('Y-m-d');
-
-        try {
-            $objectService->saveObject(
-                register: $register,
-                schema: $schema,
-                object: [
-                    'beschikkingId'           => $beschikkingId,
-                    'bekendmakingDatum'       => $bekendmaking,
-                    'bezwaarTermijnEindDatum' => $eindDatum,
-                    'herinneringDatum'        => $herinnering,
-                    'bezwaarOntvangen'        => false,
-                    'archiefTriggerActief'    => true,
-                    'archiefDatum'            => $archiefDatum,
-                ],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'BeschikkingService: createBezwaarTrigger failed',
-                ['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
-            );
-        }
-    }//end createBezwaarTrigger()
-
-    /**
-     * Resolve the mandaatRegeling applicable to a zaaktype.
-     *
-     * @param string $zaaktype The case type slug.
-     *
-     * @return array<string, mixed>
-     */
-    private function resolveMandaatRegeling(string $zaaktype): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue(key: 'register');
-        $schema   = $this->settingsService->getConfigValue(key: 'mandaat_regeling_schema');
-        if ($register === '' || $schema === '') {
-            return [];
-        }
-
-        try {
-            $regelingen = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                filters: []
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error('BeschikkingService: resolveMandaatRegeling failed', ['exception' => $e->getMessage()]);
-            return [];
-        }
-
-        foreach ((array) $regelingen as $regeling) {
-            $arr = $this->toArray(value: $regeling);
-            foreach ((array) ($arr['mandaatGroepen'] ?? []) as $groep) {
-                $zaaktypes = (array) ($groep['zaaktypes'] ?? []);
-                if ($zaaktype === '' || in_array($zaaktype, $zaaktypes, true) === true) {
-                    return $arr;
-                }
-            }
-        }
-
-        return [];
-    }//end resolveMandaatRegeling()
-
-    /**
-     * Resolve the highest niveau a user is authorised for, verifying the mandaat.
-     *
-     * The user-to-niveau mapping is supplied out-of-band (the gemeente maps
-     * approvers to groups). For the build we accept the niveau encoded in the
-     * approver UID prefix (e.g. `afdelingsmanager-wmo-15`) and verify it covers
-     * the beschikking. Returns null when no covering niveau is found.
-     *
-     * @param array<string, mixed> $regeling    The mandaatRegeling.
-     * @param array<string, mixed> $beschikking The beschikking.
-     * @param string               $akkoordDoor The approver UID.
-     *
-     * @return string|null
-     */
-    private function resolveNiveauForUser(array $regeling, array $beschikking, string $akkoordDoor): ?string
-    {
-        $bedrag          = (float) ($beschikking['legesbedrag'] ?? 0);
-        $beschikkingType = (string) ($beschikking['beschikkingType'] ?? '');
-        $zaaktype        = (string) ($beschikking['zaaktype'] ?? '');
-
-        foreach ((array) ($regeling['mandaatGroepen'] ?? []) as $groep) {
-            $niveau = (string) ($groep['niveau'] ?? '');
-            if ($niveau === '' || str_starts_with($akkoordDoor, $niveau) === false) {
-                continue;
-            }
-
-            $covered = $this->verifyMandaat(
-                regeling: $regeling,
-                niveau: $niveau,
-                bedrag: $bedrag,
-                beschikkingType: $beschikkingType,
-                zaaktype: $zaaktype,
-            );
-            if ($covered === true) {
-                return $niveau;
-            }
-        }
-
-        return null;
-    }//end resolveNiveauForUser()
-
-    /**
-     * Find all stateMachineLog records for a beschikking.
-     *
-     * @param string $beschikkingId The beschikking UUID.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function findStateMachineLogs(string $beschikkingId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue(key: 'register');
-        $schema   = $this->settingsService->getConfigValue(key: 'state_machine_log_schema');
-        if ($register === '' || $schema === '') {
-            return [];
-        }
-
-        try {
-            $logs = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                filters: ['beschikkingId' => $beschikkingId]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error('BeschikkingService: findStateMachineLogs failed', ['exception' => $e->getMessage()]);
-            return [];
-        }
-
-        $out = [];
-        foreach ((array) $logs as $log) {
-            $out[] = $this->toArray(value: $log);
-        }
-
-        return $out;
-    }//end findStateMachineLogs()
 
     /**
      * Flag required-but-empty fields with `_required` markers.
@@ -758,103 +474,4 @@ class BeschikkingService
 
         return $beschikking;
     }//end markRequiredFields()
-
-    /**
-     * Mask special-category identifiers (BSN) in an exported beschikking.
-     *
-     * @param array<string, mixed> $beschikking The beschikking.
-     *
-     * @return array<string, mixed>
-     */
-    private function maskBeschikking(array $beschikking): array
-    {
-        if (isset($beschikking['geadresseerde']['bsn']) === true) {
-            $bsn    = (string) $beschikking['geadresseerde']['bsn'];
-            $masked = '***';
-            if (strlen($bsn) > 3) {
-                $masked = str_repeat('*', (strlen($bsn) - 3)).substr($bsn, -3);
-            }
-
-            $beschikking['geadresseerde']['bsn'] = $masked;
-        }
-
-        return $beschikking;
-    }//end maskBeschikking()
-
-    /**
-     * Build an in-memory ZIP from name => content entries.
-     *
-     * @param array<string, string> $entries The ZIP entries.
-     *
-     * @return string The ZIP bytes.
-     *
-     * @throws RuntimeException When the zip extension is unavailable.
-     */
-    private function buildZip(array $entries): string
-    {
-        if (class_exists(ZipArchive::class) === false) {
-            throw new RuntimeException('zip_unavailable');
-        }
-
-        $tmp = tempnam(sys_get_temp_dir(), 'audit');
-        if ($tmp === false) {
-            throw new RuntimeException('zip_tempfile_failed');
-        }
-
-        $zip = new ZipArchive();
-        if ($zip->open($tmp, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            throw new RuntimeException('zip_open_failed');
-        }
-
-        foreach ($entries as $name => $content) {
-            $zip->addFromString($name, (string) $content);
-        }
-
-        $zip->close();
-
-        $bytes = file_get_contents($tmp);
-        unlink($tmp);
-
-        if ($bytes === false) {
-            throw new RuntimeException('zip_read_failed');
-        }
-
-        return $bytes;
-    }//end buildZip()
-
-    /**
-     * Resolve the register id and beschikking schema id from config.
-     *
-     * @return array{0: string, 1: string}
-     */
-    private function resolveRegisterSchema(): array
-    {
-        return [
-            $this->settingsService->getConfigValue(key: 'register'),
-            $this->settingsService->getConfigValue(key: 'beschikking_schema'),
-        ];
-    }//end resolveRegisterSchema()
-
-    /**
-     * Normalise an ObjectService return value to an array.
-     *
-     * @param mixed $value The entity, array, or JsonSerializable.
-     *
-     * @return array<string, mixed>
-     */
-    private function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
-
-        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-            $serialised = $value->jsonSerialize();
-            if (is_array($serialised) === true) {
-                return $serialised;
-            }
-        }
-
-        return [];
-    }//end toArray()
 }//end class

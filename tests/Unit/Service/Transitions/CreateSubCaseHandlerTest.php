@@ -34,6 +34,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\CreateSubCaseHandler
+ *
+ * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
 class CreateSubCaseHandlerTest extends TestCase
 {
@@ -53,7 +55,7 @@ class CreateSubCaseHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('storage_unavailable', $result->error);
     }//end testFailsWhenObjectServiceUnavailable()
 
@@ -81,7 +83,7 @@ class CreateSubCaseHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('case_schema_not_configured', $result->error);
     }//end testFailsWhenCaseSchemaNotConfigured()
 
@@ -126,7 +128,7 @@ class CreateSubCaseHandlerTest extends TestCase
             transitionContext: ['transitionLabel' => 'In Behandeling'],
         );
 
-        self::assertTrue($result->ok);
+        self::assertTrue($result->succeeded);
         self::assertSame('sub-uuid', $result->data['subCaseId']);
         self::assertSame('parent-42', $recorded['hoofdzaak']);
         self::assertSame('ct-9', $recorded['caseType']);
@@ -164,7 +166,7 @@ class CreateSubCaseHandlerTest extends TestCase
             transitionContext: [],
         );
 
-        self::assertFalse($result->ok);
+        self::assertFalse($result->succeeded);
         self::assertSame('create_sub_case_failed', $result->error);
     }//end testCatchesExceptionFromObjectService()
 }//end class

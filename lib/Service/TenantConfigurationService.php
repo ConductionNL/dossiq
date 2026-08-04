@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use InvalidArgumentException;
+use OCA\Procest\Service\Tenant\TenantBrandingSanitiser;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -32,6 +33,10 @@ use Throwable;
 
 /**
  * Per-tenant configuration with sanitised branding inputs.
+ *
+ * Branding validation is owned by {@see TenantBrandingSanitiser}; this service
+ * owns configuration storage — read, merge, persist — plus locale and feature
+ * flags.
  */
 class TenantConfigurationService
 {
@@ -51,47 +56,44 @@ class TenantConfigurationService
 
     /**
      * Maximum logo size in bytes (5MB).
+     *
+     * Canonically owned by {@see TenantBrandingSanitiser}; aliased here so
+     * existing callers keep working.
+     *
+     * @var int
      */
-    public const LOGO_MAX_BYTES = 5_242_880;
+    public const LOGO_MAX_BYTES = TenantBrandingSanitiser::LOGO_MAX_BYTES;
 
     /**
      * Allowed logo MIME types.
      *
+     * Canonically owned by {@see TenantBrandingSanitiser}.
+     *
      * @var array<int, string>
      */
-    public const LOGO_ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'];
+    public const LOGO_ALLOWED_MIME = TenantBrandingSanitiser::LOGO_ALLOWED_MIME;
 
     /**
      * Custom-CSS property whitelist (sanitiser).
      *
+     * Canonically owned by {@see TenantBrandingSanitiser}.
+     *
      * @var array<int, string>
      */
-    public const CSS_PROPERTY_WHITELIST = [
-        'color',
-        'background-color',
-        'border-color',
-        'font-family',
-        'font-size',
-        'font-weight',
-        'border-radius',
-        'padding',
-        'margin',
-        '--nc-color-primary',
-        '--nc-color-primary-element',
-        '--nc-color-text',
-        '--nc-border-radius',
-    ];
+    public const CSS_PROPERTY_WHITELIST = TenantBrandingSanitiser::CSS_PROPERTY_WHITELIST;
 
     /**
      * Constructor.
      *
-     * @param IAppManager        $appManager App manager.
-     * @param ContainerInterface $container  Service container.
-     * @param LoggerInterface    $logger     Logger.
+     * @param IAppManager             $appManager App manager.
+     * @param ContainerInterface      $container  Service container.
+     * @param TenantBrandingSanitiser $sanitiser  Fail-closed branding input validation.
+     * @param LoggerInterface         $logger     Logger.
      */
     public function __construct(
         private readonly IAppManager $appManager,
         private readonly ContainerInterface $container,
+        private readonly TenantBrandingSanitiser $sanitiser,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -245,41 +247,7 @@ class TenantConfigurationService
      */
     public function sanitiseBranding(array $branding): array
     {
-        $out = [];
-        if (isset($branding['logo']) === true) {
-            // Fail closed: when the upload carries MIME/size metadata, enforce
-            // the logo MIME-type + 5 MB guard before accepting it.
-            // validateLogoUpload() throws InvalidArgumentException on a
-            // disallowed MIME type or an oversized file.
-            $logoMime  = (string) ($branding['logoMimeType'] ?? '');
-            $logoBytes = (int) ($branding['logoBytes'] ?? 0);
-            if ($logoMime !== '' || $logoBytes > 0) {
-                $this->validateLogoUpload(mimeType: $logoMime, bytes: $logoBytes);
-            }
-
-            $out['logo'] = (string) $branding['logo'];
-        }
-
-        foreach (['primaryColor', 'secondaryColor'] as $colorField) {
-            if (isset($branding[$colorField]) === true) {
-                $val = (string) $branding[$colorField];
-                if ($this->isHexColor(val: $val) === false) {
-                    throw new InvalidArgumentException('Invalid hex color for '.$colorField.': '.$val);
-                }
-
-                $out[$colorField] = $val;
-            }
-        }
-
-        if (isset($branding['fontFamily']) === true) {
-            $out['fontFamily'] = (string) $branding['fontFamily'];
-        }
-
-        if (isset($branding['customCSS']) === true) {
-            $out['customCSS'] = $this->sanitiseCustomCss(css: (string) $branding['customCSS']);
-        }
-
-        return $out;
+        return $this->sanitiser->sanitiseBranding(branding: $branding);
     }//end sanitiseBranding()
 
     /**
@@ -292,45 +260,7 @@ class TenantConfigurationService
      */
     public function sanitiseCustomCss(string $css): string
     {
-        // Drop dangerous tokens entirely.
-        $dangerous = ['url(', 'expression(', '@import', 'javascript:', '<', '>'];
-        foreach ($dangerous as $bad) {
-            if (stripos($css, $bad) !== false) {
-                return '';
-            }
-        }
-
-        $lines = preg_split('/[\n;]/', $css);
-        if ($lines === false) {
-            $lines = [];
-        }
-
-        $kept = [];
-        foreach ($lines as $line) {
-            $trim = trim($line);
-            if ($trim === '') {
-                continue;
-            }
-
-            $parts = explode(':', $trim, 2);
-            if (count($parts) !== 2) {
-                continue;
-            }
-
-            $prop = trim(strtolower($parts[0]));
-            $val  = trim($parts[1]);
-            if (in_array($prop, self::CSS_PROPERTY_WHITELIST, true) === false) {
-                continue;
-            }
-
-            $kept[] = $prop.': '.$val;
-        }
-
-        if (count($kept) > 0) {
-            return implode('; ', $kept).';';
-        }
-
-        return '';
+        return $this->sanitiser->sanitiseCustomCss(css: $css);
     }//end sanitiseCustomCss()
 
     /**
@@ -345,13 +275,7 @@ class TenantConfigurationService
      */
     public function validateLogoUpload(string $mimeType, int $bytes): void
     {
-        if (in_array($mimeType, self::LOGO_ALLOWED_MIME, true) === false) {
-            throw new InvalidArgumentException('Unsupported logo MIME type: '.$mimeType);
-        }
-
-        if ($bytes > self::LOGO_MAX_BYTES) {
-            throw new InvalidArgumentException('Logo exceeds 5MB');
-        }
+        $this->sanitiser->validateLogoUpload(mimeType: $mimeType, bytes: $bytes);
     }//end validateLogoUpload()
 
     /**
@@ -363,7 +287,7 @@ class TenantConfigurationService
      */
     public function isHexColor(string $val): bool
     {
-        return preg_match('/^#[0-9a-fA-F]{6}$/', $val) === 1;
+        return $this->sanitiser->isHexColor(val: $val);
     }//end isHexColor()
 
     /**
@@ -384,11 +308,10 @@ class TenantConfigurationService
         $current = ($this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId]);
         $next    = array_merge($current, $delta);
         try {
-            $uuid = (string) ($current['uuid'] ?? $current['id'] ?? '');
+            $uuidArg = null;
+            $uuid    = (string) ($current['uuid'] ?? $current['id'] ?? '');
             if ($uuid !== '') {
                 $uuidArg = $uuid;
-            } else {
-                $uuidArg = null;
             }
 
             return $objectService->saveObject(

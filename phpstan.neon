@@ -1,8 +1,9 @@
-includes:
-    # Per-app tracked lint debt lives here (auto-generated via `phpstan --generate-baseline`).
-    # Apps without debt ship an empty baseline file; canonical includes are otherwise byte-identical
-    # across the fleet.
-    - phpstan-baseline.neon
+# No baseline. Procest carries zero suppressed PHPStan errors: `phpstan-baseline.neon`
+# was deleted once its last 10 live entries (injected-but-unused constructor
+# dependencies) were fixed at source. Do NOT reintroduce it — a baseline makes the
+# `phpstan` leg of `composer check:strict` exit 0 while real errors remain, which is
+# exactly what it was doing here. Fix at source, or add a documented `ignoreErrors`
+# pattern below with a written justification.
 
 parameters:
     level: 5

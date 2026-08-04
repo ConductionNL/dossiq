@@ -71,7 +71,7 @@ class MandaatGuard implements GuardEvaluatorInterface
     {
         // An explicit, auditable manual confirmation satisfies the guard.
         if (($case['mandaatHandmatigBevestigd'] ?? false) === true) {
-            return GuardResult::pass(details: ['mandaat' => 'handmatig_bevestigd']);
+            return new GuardResult(passed: true, details: ['mandaat' => 'handmatig_bevestigd']);
         }
 
         $caseId    = (string) ($case['id'] ?? $case['uuid'] ?? '');
@@ -80,11 +80,12 @@ class MandaatGuard implements GuardEvaluatorInterface
         $result = $this->validationService->validate(caseId: $caseId, signingUserId: $signingId);
 
         if (($result['valid'] ?? false) === true) {
-            return GuardResult::pass(details: ['mandaat' => 'bevestigd']);
+            return new GuardResult(passed: true, details: ['mandaat' => 'bevestigd']);
         }
 
-        return GuardResult::fail(
-            message: (string) ($result['message'] ?? 'Onvoldoende mandaat voor dit besluit.'),
+        return new GuardResult(
+            passed: false,
+            failureMessage: (string) ($result['message'] ?? 'Onvoldoende mandaat voor dit besluit.'),
             details: [
                 'requiresManualConfirmation' => (bool) ($result['requiresManualConfirmation'] ?? false),
                 'registerLink'               => (string) ($result['registerLink'] ?? ''),

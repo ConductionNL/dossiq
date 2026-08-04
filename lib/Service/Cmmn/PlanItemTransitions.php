@@ -5,9 +5,10 @@
  *
  * The single source of truth for which plan-item state transitions are
  * legal, per the CMMN 1.1 state model documented in
- * `openspec/changes/cmmn-adaptive-case/design.md` §3. Pure and static — no
+ * `openspec/changes/cmmn-adaptive-case/design.md` §3. Pure and stateless — no
  * I/O, no case data, just the transition graph plus the guard that rejects
- * anything not in it.
+ * anything not in it. Injected as a collaborator (see `CaseModelEngine`)
+ * rather than called statically.
  *
  * @category Service
  * @package  OCA\Procest\Service\Cmmn
@@ -103,7 +104,7 @@ final class PlanItemTransitions
      *
      * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
      */
-    public static function initialState(): string
+    public function initialState(): string
     {
         return self::STATE_AVAILABLE;
     }//end initialState()
@@ -117,7 +118,7 @@ final class PlanItemTransitions
      *
      * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
      */
-    public static function isTerminal(string $state): bool
+    public function isTerminal(string $state): bool
     {
         return isset(self::TERMINAL_STATES[$state]);
     }//end isTerminal()
@@ -133,7 +134,7 @@ final class PlanItemTransitions
      *
      * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
      */
-    public static function isLegal(string $itemType, string $fromState, string $toState): bool
+    public function isLegal(string $itemType, string $fromState, string $toState): bool
     {
         $table = self::TABLE[$itemType] ?? [];
         return isset($table[$fromState.'->'.$toState]);
@@ -153,9 +154,9 @@ final class PlanItemTransitions
      *
      * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
      */
-    public static function assertLegal(string $itemId, string $itemType, string $fromState, string $toState): void
+    public function assertLegal(string $itemId, string $itemType, string $fromState, string $toState): void
     {
-        if (self::isLegal(itemType: $itemType, fromState: $fromState, toState: $toState) === false) {
+        if ($this->isLegal(itemType: $itemType, fromState: $fromState, toState: $toState) === false) {
             throw new IllegalPlanItemTransitionException(
                 itemId: $itemId,
                 itemType: $itemType,

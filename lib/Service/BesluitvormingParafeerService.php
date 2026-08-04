@@ -175,21 +175,12 @@ class BesluitvormingParafeerService
         $voorstel = $this->toArray(value: $voorstelResults[0]);
 
         // Load parafeeractie.
-        $actie  = [];
-        $action = 'goedgekeurd';
-        if (empty($actieSchema) === false) {
-            $actieResults = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $actieSchema,
-                filters: ['id' => $parafeeractieId]
-            );
-
-            if (empty($actieResults) === false) {
-                $actie  = $this->toArray(value: $actieResults[0]);
-                $action = (string) ($actie['action'] ?? 'goedgekeurd');
-            }
-        }
+        $action = $this->resolveParaafActionType(
+            objectService: $objectService,
+            register: $register,
+            actieSchema: $actieSchema,
+            parafeeractieId: $parafeeractieId,
+        );
 
         // Handle retour: set voorstel status to retour.
         if ($action === 'retour') {
@@ -202,23 +193,10 @@ class BesluitvormingParafeerService
         }
 
         // Advance to next step.
-        $currentStep = (int) ($voorstel['currentStep'] ?? 1);
-        $snapshot    = $voorstel['routeSnapshot'] ?? [];
-        if (is_string($snapshot) === true) {
-            $snapshot = json_decode($snapshot, true) ?? [];
-        }
-
-        $nextStep = null;
-        foreach ($snapshot as $step) {
-            if (is_array($step) === true) {
-                $stepOrder = (int) ($step['order'] ?? 0);
-                if ($stepOrder > $currentStep) {
-                    if ($nextStep === null || $stepOrder < $nextStep) {
-                        $nextStep = $stepOrder;
-                    }
-                }
-            }
-        }
+        $nextStep = $this->findNextParaafStep(
+            snapshot: ($voorstel['routeSnapshot'] ?? []),
+            currentStep: (int) ($voorstel['currentStep'] ?? 1),
+        );
 
         if ($nextStep === null) {
             // All steps complete: transition case to gereed voor agendering.
@@ -247,6 +225,75 @@ class BesluitvormingParafeerService
 
         return $this->toArray(value: $updated);
     }//end handleParaafAction()
+
+    /**
+     * Resolve the action recorded on a parafeeractie, defaulting to approval.
+     *
+     * @param object $objectService   The OpenRegister object service.
+     * @param string $register        The register identifier.
+     * @param string $actieSchema     The parafeeractie schema identifier, may be empty.
+     * @param string $parafeeractieId The UUID of the parafeeractie.
+     *
+     * @return string The action slug ('goedgekeurd' when unresolvable).
+     */
+    private function resolveParaafActionType(
+        object $objectService,
+        string $register,
+        string $actieSchema,
+        string $parafeeractieId
+    ): string {
+        if (empty($actieSchema) === true) {
+            return 'goedgekeurd';
+        }
+
+        $actieResults = $this->searchObjectsAsArrays(
+            objectService: $objectService,
+            register: $register,
+            schema: $actieSchema,
+            filters: ['id' => $parafeeractieId]
+        );
+
+        if (empty($actieResults) === true) {
+            return 'goedgekeurd';
+        }
+
+        $actie = $this->toArray(value: $actieResults[0]);
+
+        return (string) ($actie['action'] ?? 'goedgekeurd');
+    }//end resolveParaafActionType()
+
+    /**
+     * Find the lowest route-snapshot step order beyond the current step.
+     *
+     * @param mixed $snapshot    The route snapshot (array or JSON string).
+     * @param int   $currentStep The step the voorstel is currently on.
+     *
+     * @return int|null The next step order, or null when all steps are done.
+     */
+    private function findNextParaafStep(mixed $snapshot, int $currentStep): ?int
+    {
+        if (is_string($snapshot) === true) {
+            $snapshot = json_decode($snapshot, true) ?? [];
+        }
+
+        $nextStep = null;
+        foreach ($snapshot as $step) {
+            if (is_array($step) === false) {
+                continue;
+            }
+
+            $stepOrder = (int) ($step['order'] ?? 0);
+            if ($stepOrder <= $currentStep) {
+                continue;
+            }
+
+            if ($nextStep === null || $stepOrder < $nextStep) {
+                $nextStep = $stepOrder;
+            }
+        }//end foreach
+
+        return $nextStep;
+    }//end findNextParaafStep()
 
     /**
      * Check whether all required parafen have been collected for a voorstel.

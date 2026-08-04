@@ -93,9 +93,9 @@ class MapTileService
             foreach ($this->tilesForZoom(bbox: $bbox, zoom: (int) $z) as $tile) {
                 $tile['url'] = $this->urlFor(
                     template: $resolvedTemplate,
-                    z: $tile['z'],
-                    x: $tile['x'],
-                    y: $tile['y']
+                    zoom: $tile['z'],
+                    tileX: $tile['x'],
+                    tileY: $tile['y']
                 );
                 $tiles[]     = $tile;
                 if (count($tiles) > self::MAX_TILES) {
@@ -154,22 +154,22 @@ class MapTileService
      * Resolve a (z, x, y) URL from a tile template.
      *
      * @param string $template The url template with {z}/{x}/{y}.
-     * @param int    $z        Zoom level.
-     * @param int    $x        Tile x.
-     * @param int    $y        Tile y.
+     * @param int    $zoom     Zoom level.
+     * @param int    $tileX    Tile x.
+     * @param int    $tileY    Tile y.
      *
      * @return string The resolved URL.
      *
      * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-6
      */
-    public function urlFor(string $template, int $z, int $x, int $y): string
+    public function urlFor(string $template, int $zoom, int $tileX, int $tileY): string
     {
         return strtr(
             $template,
             [
-                '{z}' => (string) $z,
-                '{x}' => (string) $x,
-                '{y}' => (string) $y,
+                '{z}' => (string) $zoom,
+                '{x}' => (string) $tileX,
+                '{y}' => (string) $tileY,
             ]
         );
     }//end urlFor()

@@ -12,16 +12,31 @@ test.describe('Sidebar Navigation', () => {
 		// ("Documentation" is a `section: "footer"` external link in the
 		// manifest — it lives in a collapsed footer area and is not a visible
 		// top-level nav entry, so it is asserted separately below.)
-		// Per procest-nav-dedup-and-grouping the operational core is grouped:
-		// "My Work" now lives under the "Work" group and the "Cases" leaf was
-		// relabelled to "All cases" (under the "Cases" group) to drop the
-		// duplicate "Cases" label. The standalone "Tasks" top-level entry was
-		// dropped by that same dedup pass — Tasks is now reached from a case's
-		// Tasks sidebar tab (and the /tasks page route stays deep-linkable,
-		// covered by pages.spec.ts), so it is no longer a top-level nav link.
-		// All routes are unchanged.
-		for (const label of ['Dashboard', 'My Work', 'All cases']) {
+		// Labels and visibility measured on a CI runner (2026-08-04). The
+		// manifest ships "My work" (lower-case w), NOT "My Work", and a flat
+		// "Cases" leaf — the "All cases" label this spec used to assert was
+		// removed when the "Cases" GROUP IA was reverted, so it matched zero
+		// links and the assertion could only ever fail.
+		//
+		// Only "Dashboard" and "Cases" are top-level VISIBLE leaves. The rest
+		// render inside collapsed groups ("Work queue", "Reports", "Personal
+		// settings"), so they are present in the DOM but `display:none` until
+		// their group is expanded — asserted separately below.
+		for (const label of ['Dashboard', 'Cases']) {
 			await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible()
+		}
+
+		// Collapsed-group leaves: present in the navigation, hidden until the
+		// group is expanded. They must be matched by CSS, NOT by getByRole —
+		// `display:none` removes an element from the accessibility tree, so
+		// `getByRole` resolves to 0 elements even under `toHaveCount`.
+		for (const href of ['/my-work', '/workflow-board', '/doorlooptijd']) {
+			await expect(nav.locator(`a[href$="${href}"]`)).toHaveCount(1)
+		}
+
+		// And the group headers themselves are visible toggles.
+		for (const group of ['Work queue', 'Reports']) {
+			await expect(nav.getByRole('link', { name: group, exact: true })).toBeVisible()
 		}
 
 		// The Documentation footer link is present in the navigation DOM.
@@ -32,17 +47,25 @@ test.describe('Sidebar Navigation', () => {
 		await page.goto('/index.php/apps/procest')
 		const nav = sidebarNav(page)
 
-		const expected: Record<string, string> = {
-			'My Work': '/apps/procest/my-work',
-			// "Cases" leaf relabelled to "All cases" (route/href unchanged).
-			'All cases': '/apps/procest/cases',
-			// "Tasks" is no longer a top-level nav entry (dropped by the
-			// nav-dedup pass); its /tasks page route stays deep-linkable.
-		}
+		// Hrefs measured on a CI runner (2026-08-04). Note the rendered hrefs
+		// carry the `/index.php` prefix — the bare `/apps/procest/...` values
+		// this spec used to assert never matched what the nav actually emits.
+		// "Tasks" is not a top-level nav entry; its /tasks route stays
+		// deep-linkable and is covered by pages.spec.ts.
+		// "Cases" is a visible top-level leaf, so it can be matched by role.
+		await expect(nav.getByRole('link', { name: 'Cases', exact: true }))
+			.toHaveAttribute('href', '/index.php/apps/procest/cases')
 
-		for (const [name, href] of Object.entries(expected)) {
-			await expect(nav.getByRole('link', { name, exact: true })).toHaveAttribute('href', href)
+		// The rest live in collapsed groups and are therefore absent from the
+		// accessibility tree — assert their href wiring via the DOM, checking
+		// the label text travels with the expected link.
+		const byHref = async (href: string, label: string) => {
+			const link = nav.locator(`a[href="${href}"]`)
+			await expect(link).toHaveCount(1)
+			await expect(link).toHaveText(new RegExp(label))
 		}
+		await byHref('/index.php/apps/procest/my-work', 'My work')
+		await byHref('/index.php/apps/procest/workflow-board', 'Workflow board')
 	})
 
 	test('settings button is visible', async ({ page }) => {
@@ -65,8 +88,9 @@ test.describe('Sidebar Navigation', () => {
 		}
 
 		const nav = sidebarNav(page)
-		// "Cases" leaf relabelled to "All cases" (route unchanged).
-		await nav.getByRole('link', { name: 'All cases', exact: true }).click()
+		// "Cases" is a flat, visible, directly-navigating leaf — the "All
+		// cases" label this used to click does not exist in the rendered nav.
+		await nav.getByRole('link', { name: 'Cases', exact: true }).click()
 		await expect(page).toHaveURL(/.*cases/)
 	})
 })

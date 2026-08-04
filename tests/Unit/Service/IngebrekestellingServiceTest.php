@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\IngebrekestellingService
+ *
+ * @uses \OCA\Procest\Service\TermijnService
  */
 class IngebrekestellingServiceTest extends TestCase
 {

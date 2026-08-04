@@ -30,12 +30,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\Ai\AiAuditService;
 use OCA\Procest\Service\AiService;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
-use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
@@ -45,23 +43,22 @@ use Psr\Log\LoggerInterface;
  * AI-assisted processing API controller.
  *
  * All endpoints require authenticated Nextcloud user.
- * AI features must be enabled in settings.
+ * AI features must be enabled in settings. The admin-gated configuration and
+ * health endpoints live on {@see AiSettingsController}.
  *
  * @psalm-suppress UnusedClass
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 class AiController extends Controller
 {
     /**
      * Constructor for AiController.
      *
-     * @param string          $appName         The application name
-     * @param IRequest        $request         The request object
-     * @param AiService       $aiService       The AI service
-     * @param SettingsService $settingsService The settings service
-     * @param IUserSession    $userSession     The user session
-     * @param LoggerInterface $logger          The logger interface
+     * @param string          $appName      The application name
+     * @param IRequest        $request      The request object
+     * @param AiService       $aiService    The AI service
+     * @param AiAuditService  $auditService The AI oversight audit service
+     * @param IUserSession    $userSession  The user session
+     * @param LoggerInterface $logger       The logger interface
      *
      * @return void
      */
@@ -69,7 +66,7 @@ class AiController extends Controller
         string $appName,
         IRequest $request,
         private AiService $aiService,
-        private SettingsService $settingsService,
+        private AiAuditService $auditService,
         private IUserSession $userSession,
         private LoggerInterface $logger,
     ) {
@@ -306,7 +303,7 @@ class AiController extends Controller
         }
 
         $userId = $user->getUID();
-        $result = $this->aiService->recordUserAction(
+        $result = $this->auditService->recordUserAction(
             $caseId,
             $type,
             $userAction,
@@ -323,7 +320,7 @@ class AiController extends Controller
      * Get AI audit trail entries.
      *
      * Queries the recorded `aiAuditEntry` objects from OpenRegister via
-     * {@see AiService::listAuditEntries()} — filterable by `caseId`/`type`,
+     * {@see AiAuditService::listAuditEntries()} — filterable by `caseId`/`type`,
      * paged via `limit`/`offset`, newest first.
      *
      * @return JSONResponse
@@ -344,7 +341,7 @@ class AiController extends Controller
         $offset = (int) $this->request->getParam('offset', '0');
 
         try {
-            $result = $this->aiService->listAuditEntries(
+            $result = $this->auditService->listAuditEntries(
                 filters: array_filter(['caseId' => $caseId, 'type' => $type]),
                 limit: $limit,
                 offset: $offset,
@@ -370,50 +367,4 @@ class AiController extends Controller
                     );
         }//end try
     }//end auditIndex()
-
-    /**
-     * Get AI settings.
-     *
-     * @return JSONResponse
-
-      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-      */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function getSettings(): JSONResponse
-    {
-        $settings = $this->aiService->getAiSettings();
-
-        return new JSONResponse($settings);
-    }//end getSettings()
-
-    /**
-     * Update AI settings.
-     *
-     * @return JSONResponse
-
-      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-      */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function updateSettings(): JSONResponse
-    {
-        $data   = $this->request->getParams();
-        $result = $this->settingsService->updateSettings($data);
-
-        return new JSONResponse($result);
-    }//end updateSettings()
-
-    /**
-     * Test AI model health/connectivity.
-     *
-     * @return JSONResponse
-
-      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-      */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function healthCheck(): JSONResponse
-    {
-        $result = $this->aiService->testHealth();
-
-        return new JSONResponse($result);
-    }//end healthCheck()
 }//end class

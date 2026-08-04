@@ -34,6 +34,9 @@ use Psr\Log\LoggerInterface;
  * Unit tests for VTH-specific SettingsService configuration.
  *
  * @covers \OCA\Procest\Service\SettingsService
+ *
+ * @uses \OCA\Procest\Service\Settings\SchemaAnnotationReconciler
+ * @uses \OCA\Procest\Service\Settings\SchemaKeyReconciler
  */
 class VthSettingsServiceTest extends TestCase
 {

@@ -27,6 +27,7 @@ import {
 	cleanupAddressFixtures,
 	ADDRESS_RUN_PREFIX,
 } from '../helpers/addressFixtures'
+import { BASE_URL } from '../base-url'
 
 const OC_PREFIX = '/apps/openconnector/api/pdok'
 
@@ -127,7 +128,8 @@ test.describe('PDOK via openconnector — OR address fixtures (live)', () => {
 	// @e2e openspec/changes/migrate-pdok-to-openconnector/specs/pdok-consumer/spec.md#all-six-functions-are-exported-with-unchanged-signatures
 	test('seeded OR addresses are retrievable without PDOK/openconnector being available', async () => {
 		const ctx = await request.newContext({
-			baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
+			// Single source of truth — see tests/e2e/base-url.ts.
+			baseURL: BASE_URL,
 		})
 		try {
 			const available = await addressesRegisterAvailable(ctx)

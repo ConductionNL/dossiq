@@ -130,7 +130,7 @@ class StufFieldMappingService
             $this->customMappings['zkn'] ?? []
         );
 
-        return $this->applyMappings(data: $stufData, mappings: $mappings, direction: 'toInternal');
+        return $this->applyMappings(data: $stufData, mappings: $mappings);
     }//end mapZknToInternal()
 
     /**
@@ -172,7 +172,7 @@ class StufFieldMappingService
             $this->customMappings['bg'] ?? []
         );
 
-        return $this->applyMappings(data: $stufData, mappings: $mappings, direction: 'toInternal');
+        return $this->applyMappings(data: $stufData, mappings: $mappings);
     }//end mapBgToInternal()
 
     /**
@@ -209,17 +209,25 @@ class StufFieldMappingService
      */
     public function stufDateToIso(string $stufDate): ?string
     {
+        // `YYYYMMDD` and `YYYYMMDDHHMMSS` are both ISO-8601 *basic* forms that
+        // the DateTimeImmutable constructor parses natively; unlike
+        // createFromFormat() it rejects out-of-range components (e.g. month 13)
+        // instead of silently rolling them over, which matches this method's
+        // documented "null if invalid" contract.
+        $outputFormat = null;
         if (strlen($stufDate) === 8) {
-            $parsed = \DateTimeImmutable::createFromFormat(self::STUF_DATE_FORMAT, $stufDate);
-            if ($parsed !== false) {
-                return $parsed->format('Y-m-d');
-            }
+            $outputFormat = 'Y-m-d';
         }
 
         if (strlen($stufDate) === 14) {
-            $parsed = \DateTimeImmutable::createFromFormat(self::STUF_DATETIME_FORMAT, $stufDate);
-            if ($parsed !== false) {
-                return $parsed->format(\DateTimeInterface::ATOM);
+            $outputFormat = \DateTimeInterface::ATOM;
+        }
+
+        if ($outputFormat !== null) {
+            try {
+                return (new DateTimeImmutable($stufDate))->format($outputFormat);
+            } catch (\Exception $e) {
+                $this->logger->debug('StUF date rejected by DateTimeImmutable: {msg}', ['msg' => $e->getMessage()]);
             }
         }
 
@@ -337,15 +345,16 @@ class StufFieldMappingService
     /**
      * Apply mappings to convert StUF data to internal format.
      *
-     * @param array<string, string>                                          $data      The source data.
-     * @param array<string, array{property: string, transform: string|null}> $mappings  The field mappings.
-     * @param string                                                         $direction The direction ('toInternal'; bi-directional reserved).
+     * This is the StUF-to-internal direction; the reverse direction is written
+     * by {@see StufFieldMappingService::getDefaultMappings()} consumers and does
+     * not route through here, so no direction argument is taken.
      *
-     * @psalm-suppress UnusedParam
+     * @param array<string, string>                                          $data     The source data.
+     * @param array<string, array{property: string, transform: string|null}> $mappings The field mappings.
      *
      * @return array<string, mixed> The mapped data.
      */
-    private function applyMappings(array $data, array $mappings, string $direction): array
+    private function applyMappings(array $data, array $mappings): array
     {
         $result = [];
 

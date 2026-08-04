@@ -154,18 +154,20 @@ class AdvisoryBodyService
             throw new RuntimeException('Advisory body schema not configured');
         }
 
+        $saveArgs = [$register, $schema, $data];
         if ($id !== '') {
-            $result = $objectService->saveObject($register, $schema, $data, $id);
-        } else {
-            $result = $objectService->saveObject($register, $schema, $data);
+            $saveArgs[] = $id;
+        }
+
+        $result = $objectService->saveObject(...$saveArgs);
+
+        $savedId = '';
+        if ($id !== '') {
+            $savedId = $id;
         }
 
         if (is_object($result) === true) {
             $savedId = $result->getUuid();
-        } else if ($id !== '') {
-            $savedId = $id;
-        } else {
-            $savedId = '';
         }
 
         $this->logger->info(
@@ -252,10 +254,11 @@ class AdvisoryBodyService
 
             if ($hasMatch === true) {
                 $matching[] = $body;
-            } else {
-                $rest[] = $body;
+                continue;
             }
-        }
+
+            $rest[] = $body;
+        }//end foreach
 
         return array_merge($matching, $rest);
     }//end searchBySpecialization()

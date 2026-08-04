@@ -32,6 +32,9 @@ use Psr\Log\LoggerInterface;
  * Unit tests for the SettingsService class.
  *
  * @covers \OCA\Procest\Service\SettingsService
+ *
+ * @uses \OCA\Procest\Service\Settings\SchemaAnnotationReconciler
+ * @uses \OCA\Procest\Service\Settings\SchemaKeyReconciler
  */
 class SettingsServiceTest extends TestCase
 {

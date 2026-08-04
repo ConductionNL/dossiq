@@ -31,8 +31,11 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
+use OCA\Procest\Service\Transitions\CaseStatusStore;
 use OCA\Procest\Service\Transitions\GuardRegistry;
 use OCA\Procest\Service\Transitions\SideEffectDispatcher;
+use OCA\Procest\Service\Transitions\TransitionAuthorizer;
+use OCA\Procest\Service\Transitions\TransitionSpecReader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
@@ -40,6 +43,10 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\StatusTransitionService
+ *
+ * @uses \OCA\Procest\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Procest\Service\Transitions\TransitionAuthorizer
+ * @uses \OCA\Procest\Service\Transitions\TransitionSpecReader
  */
 final class CmmnBpmnCoexistenceRegressionTest extends TestCase
 {
@@ -86,14 +93,17 @@ final class CmmnBpmnCoexistenceRegressionTest extends TestCase
         $guardRegistry = $this->createMock(GuardRegistry::class);
         $guardRegistry->method('evaluateAll')->willReturn([]);
 
+        $logger = $this->createMock(LoggerInterface::class);
+
         $service = new StatusTransitionService(
-            $settings,
             $templateLoader,
             $guardRegistry,
             $this->createMock(SideEffectDispatcher::class),
+            new CaseStatusStore($settings, $logger),
+            new TransitionAuthorizer($this->createMock(IGroupManager::class), $logger),
+            new TransitionSpecReader(),
             $this->createMock(IUserSession::class),
-            $this->createMock(IGroupManager::class),
-            $this->createMock(LoggerInterface::class),
+            $logger,
         );
 
         $result = $service->getAvailableTransitions(caseId: 'case-1');

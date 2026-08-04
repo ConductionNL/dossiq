@@ -21,8 +21,8 @@
  *
  * - zrc-001: Valideren zaaktype op de Zaak-resource
  * - zrc-002: Garanderen uniciteit bronorganisatie en identificatie
- * - zrc-003: Valideren informatieobject op ZaakInformatieObject
- * - zrc-004: Zetten relatieinformatie op ZaakInformatieObject
+ * - zrc-003: Valideren informatieobject op ZaakInformatieObject (in ZgwZrcZaakinformatieobjectRules)
+ * - zrc-004: Zetten relatieinformatie op ZaakInformatieObject (in ZgwZrcZaakinformatieobjectRules)
  * - zrc-005: Synchroniseren relaties met informatieobjecten (cross-register, in ZgwService)
  * - zrc-006: Data filteren op basis van zaaktypes (in ZrcController)
  * - zrc-007: Afsluiten zaak (in ZrcController handleEindstatusEffect)
@@ -35,7 +35,7 @@
  * - zrc-014: Betalingsindicatie en laatsteBetaaldatum
  * - zrc-015: Valideren productenOfDiensten bij een Zaak
  * - zrc-016: Valideren statustype bij Zaak.zaaktype
- * - zrc-017: Valideren informatieobjecttype bij Zaak.zaaktype
+ * - zrc-017: Valideren informatieobjecttype bij Zaak.zaaktype (in ZgwZrcZaakinformatieobjectRules)
  * - zrc-018: Valideren eigenschap bij Zaak.zaaktype
  * - zrc-019: Valideren roltype bij Zaak.zaaktype
  * - zrc-020: Valideren resultaattype bij Zaak.zaaktype
@@ -80,23 +80,15 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW business rules validation
-
      * @spec openspec/specs/status-transition-engine/spec.md
      */
     public function rulesZakenCreate(array $body): array
     {
         // Zrc-001: Validate zaaktype URL.
         $zaaktypeUrl = $body['zaaktype'] ?? '';
-        if (empty($zaaktypeUrl) === false && $this->objectService !== null) {
-            $error = $this->validateTypeUrl(
-                typeUrl: $zaaktypeUrl,
-                fieldName: 'zaaktype',
-                schemaKey: 'case_type_schema'
-            );
-            if ($error !== null) {
-                return $error;
-            }
+        $error       = $this->validateZaaktypeReference(zaaktypeUrl: $zaaktypeUrl);
+        if ($error !== null) {
+            return $error;
         }
 
         // Zrc-002: Check unique identificatie + bronorganisatie.
@@ -135,36 +127,102 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         // Auto-assign handler from zaaktype defaultAssignee if no handler set.
-        if (empty($body['assignee']) === true && empty($zaaktypeUrl) === false && $this->objectService !== null) {
-            $extractedUuid = $this->extractUuid(url: $zaaktypeUrl);
-            if ($extractedUuid !== null) {
-                $register = $this->mappingConfig['sourceRegister'] ?? '';
-                $schema   = $this->settingsService->getConfigValue(key: 'case_type_schema');
-                if (empty($register) === false && empty($schema) === false) {
-                    try {
-                        $zaaktype = $this->objectService->find(
-                            id: $extractedUuid,
-                            register: $register,
-                            schema: $schema
-                        );
-
-                        $ztData = $zaaktype;
-                        if (is_array($zaaktype) === false) {
-                            $ztData = $zaaktype->jsonSerialize();
-                        }
-
-                        if (empty($ztData['defaultAssignee']) === false) {
-                            $body['assignee'] = $ztData['defaultAssignee'];
-                        }
-                    } catch (\Throwable $e) {
-                        // Zaaktype not found; skip auto-assignment.
-                    }
-                }
-            }//end if
-        }//end if
+        $body = $this->applyDefaultAssignee(body: $body, zaaktypeUrl: $zaaktypeUrl);
 
         return $this->validateZaakFields(result: $this->isValid(body: $body), existingObject: null, isPatch: false);
     }//end rulesZakenCreate()
+
+    /**
+     * Validate the zaaktype reference on a create body (zrc-001).
+     *
+     * Returns null when there is nothing to validate — no zaaktype was supplied, or OpenRegister
+     * is unavailable — which is exactly what the inline guard did.
+     *
+     * @param mixed $zaaktypeUrl The `zaaktype` value from the request body
+     *
+     * @return array|null The validation error, or null when the reference is acceptable
+     */
+    private function validateZaaktypeReference(mixed $zaaktypeUrl): ?array
+    {
+        if (empty($zaaktypeUrl) === true || $this->objectService === null) {
+            return null;
+        }
+
+        return $this->validateTypeUrl(
+            typeUrl: $zaaktypeUrl,
+            fieldName: 'zaaktype',
+            schemaKey: 'case_type_schema'
+        );
+    }//end validateZaaktypeReference()
+
+    /**
+     * Stamp the zaaktype's `defaultAssignee` on a zaak that carries no handler yet.
+     *
+     * @param array $body        The ZGW request body
+     * @param mixed $zaaktypeUrl The `zaaktype` value from the request body
+     *
+     * @return array The body, with `assignee` filled in when one could be resolved
+     */
+    private function applyDefaultAssignee(array $body, mixed $zaaktypeUrl): array
+    {
+        if (empty($body['assignee']) === false || empty($zaaktypeUrl) === true || $this->objectService === null) {
+            return $body;
+        }
+
+        $assignee = $this->zaaktypeDefaultAssignee(objectService: $this->objectService, zaaktypeUrl: $zaaktypeUrl);
+        if ($assignee !== null) {
+            $body['assignee'] = $assignee;
+        }
+
+        return $body;
+    }//end applyDefaultAssignee()
+
+    /**
+     * Read the `defaultAssignee` off the zaaktype a zaak points at.
+     *
+     * Returns null whenever the zaaktype cannot be resolved or declares no default — a lookup
+     * failure is swallowed, exactly as the inline block did.
+     *
+     * @param object $objectService The OpenRegister ObjectService
+     * @param mixed  $zaaktypeUrl   The `zaaktype` value from the request body
+     *
+     * @return mixed The default assignee, or null when there is none
+     */
+    private function zaaktypeDefaultAssignee(object $objectService, mixed $zaaktypeUrl): mixed
+    {
+        $extractedUuid = $this->extractUuid(url: $zaaktypeUrl);
+        if ($extractedUuid === null) {
+            return null;
+        }
+
+        $register = $this->mappingConfig['sourceRegister'] ?? '';
+        $schema   = $this->settingsService->getConfigValue(key: 'case_type_schema');
+        if (empty($register) === true || empty($schema) === true) {
+            return null;
+        }
+
+        try {
+            $zaaktype = $objectService->find(
+                id: $extractedUuid,
+                register: $register,
+                schema: $schema
+            );
+
+            $ztData = $zaaktype;
+            if (is_array($zaaktype) === false) {
+                $ztData = $zaaktype->jsonSerialize();
+            }
+
+            if (empty($ztData['defaultAssignee']) === false) {
+                return $ztData['defaultAssignee'];
+            }
+        } catch (\Throwable $e) {
+            // Zaaktype not found; skip auto-assignment.
+            return null;
+        }//end try
+
+        return null;
+    }//end zaaktypeDefaultAssignee()
 
     /**
      * Rules for updating a zaak (PUT /zaken/v1/zaken/{uuid}).
@@ -364,94 +422,6 @@ class ZgwZrcRulesService extends ZgwRulesBase
     }//end rulesRollenCreate()
 
     /**
-     * Rules for creating a ZaakInformatieObject (POST /zaken/v1/zaakinformatieobjecten).
-     *
-     * Implements:
-     * - zrc-003: Validate informatieobject URL exists.
-     * - zrc-004: Set aardRelatieWeergave and registratiedatum.
-     * - zrc-017: Validate informatieobjecttype belongs to Zaak.zaaktype.
-     *
-     * @param array $body The ZGW request body
-     *
-     * @return array The validation result
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function rulesZaakinformatieobjectenCreate(array $body): array
-    {
-        // Zrc-003: Validate informatieobject URL exists.
-        $ioUrl = $body['informatieobject'] ?? '';
-        if ($ioUrl !== '') {
-            $error = $this->validateInformatieobjectUrl(ioUrl: $ioUrl);
-            if ($error !== null) {
-                return $error;
-            }
-        }
-
-        // Zrc-017: Validate informatieobjecttype belongs to zaak's zaaktype.
-        $zaakUrl = $body['zaak'] ?? '';
-        if ($ioUrl !== '' && $zaakUrl !== '' && $this->objectService !== null) {
-            $error = $this->validateZioInformatieobjecttype(zaakUrl: $zaakUrl, ioUrl: $ioUrl);
-            if ($error !== null) {
-                return $error;
-            }
-        }
-
-        // Zrc-004: Set aardRelatieWeergave and registratiedatum.
-        $body['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
-        $body['registratiedatum']    = date('Y-m-d');
-
-        return $this->isValid(body: $body);
-    }//end rulesZaakinformatieobjectenCreate()
-
-    /**
-     * Rules for updating a ZaakInformatieObject (PUT).
-     *
-     * Implements:
-     * - zrc-004: Zaak and informatieobject fields are immutable; aardRelatieWeergave is fixed.
-     *
-     * @param array      $body           The ZGW request body
-     * @param array|null $existingObject The existing ZIO data
-     *
-     * @return array The validation result
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function rulesZaakinformatieobjectenUpdate(array $body, ?array $existingObject=null): array
-    {
-        $result = $this->checkZioImmutability(result: $this->isValid(body: $body), existingObject: $existingObject);
-        if ($result['valid'] === false) {
-            return $result;
-        }
-
-        $body = $result['enrichedBody'];
-        $body['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
-
-        return $this->isValid(body: $body);
-    }//end rulesZaakinformatieobjectenUpdate()
-
-    /**
-     * Rules for patching a ZaakInformatieObject (PATCH).
-     *
-     * @param array      $body           The ZGW request body
-     * @param array|null $existingObject The existing ZIO data
-     *
-     * @return array The validation result
-     *
-     * @see rulesZaakinformatieobjectenUpdate() Same immutability rules apply.
-
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function rulesZaakinformatieobjectenPatch(array $body, ?array $existingObject=null): array
-    {
-        return $this->rulesZaakinformatieobjectenUpdate(body: $body, existingObject: $existingObject);
-    }//end rulesZaakinformatieobjectenPatch()
-
-    /**
      * Rules for creating a zaakeigenschap (POST /zaken/{zaakUuid}/zaakeigenschappen).
      *
      * Implements:
@@ -604,99 +574,6 @@ class ZgwZrcRulesService extends ZgwRulesBase
 
         return null;
     }//end validateSubResourceType()
-
-    /**
-     * Validate ZIO informatieobjecttype belongs to zaak's zaaktype (zrc-017).
-     *
-     * The informatieobjecttype of the linked informatieobject must appear
-     * in Zaak.zaaktype.informatieobjecttypen.
-     *
-     * @param string $zaakUrl The zaak URL
-     * @param string $ioUrl   The informatieobject URL
-     *
-     * @return array|null Validation error, or null if valid
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW cross-register validation
-     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW cross-register validation
-     */
-    private function validateZioInformatieobjecttype(string $zaakUrl, string $ioUrl): ?array
-    {
-        // Get the informatieobject to find its informatieobjecttype.
-        $ioUuid = $this->extractUuid(url: $ioUrl);
-        if ($ioUuid === null) {
-            return null;
-        }
-
-        $ioData = $this->findBySchemaKey(uuid: $ioUuid, schemaKey: 'document_schema');
-        if ($ioData === null) {
-            return null;
-        }
-
-        $docTypeId = $ioData['documentType'] ?? '';
-        if (empty($docTypeId) === true) {
-            return null;
-        }
-
-        // Get the zaak's zaaktype.
-        $zaakUuid = $this->extractUuid(url: $zaakUrl);
-        if ($zaakUuid === null) {
-            return null;
-        }
-
-        $zaakData = $this->findBySchemaKey(uuid: $zaakUuid, schemaKey: 'case_schema');
-        if ($zaakData === null) {
-            return null;
-        }
-
-        $zaaktypeId   = $zaakData['caseType'] ?? '';
-        $zaaktypeUuid = $this->extractUuid(url: (string) $zaaktypeId);
-        if ($zaaktypeUuid === null) {
-            return null;
-        }
-
-        // Check if a ZaakType-InformatieObjectType record links this zaaktype
-        // to the document's informatieobjecttype.
-        $docTypeUuid = $this->extractUuid(url: (string) $docTypeId);
-        if ($docTypeUuid === null) {
-            return null;
-        }
-
-        $ziotSchemaId = $this->settingsService->getConfigValue(key: 'zaaktype_informatieobjecttype_schema');
-        $register     = $this->settingsService->getConfigValue(key: 'register');
-        if ($ziotSchemaId === '' || $register === '') {
-            return null;
-        }
-
-        try {
-            $query  = $this->objectService->buildSearchQuery(
-                requestParams: ['zaaktype' => $zaaktypeUuid, 'informatieobjecttype' => $docTypeUuid, '_limit' => 1],
-                register: $register,
-                schema: $ziotSchemaId
-            );
-            $result = $this->objectService->searchObjectsPaginated(query: $query);
-            $found  = empty($result['results'] ?? []) === false;
-        } catch (\Throwable $e) {
-            return null;
-        }
-
-        if ($found === false) {
-            $detail = 'Het informatieobjecttype van het informatieobject hoort niet bij het zaaktype van de zaak.';
-            return $this->error(
-                status: 400,
-                detail: $detail,
-                invalidParams: [$this->fieldError(
-                    fieldName: 'nonFieldErrors',
-                    code: 'missing-zaaktype-informatieobjecttype-relation',
-                    reason: $detail
-                )
-                ]
-            );
-        }
-
-        return null;
-    }//end validateZioInformatieobjecttype()
 
     /**
      * Common zaak field validation for create/update/patch.
@@ -1118,8 +995,6 @@ class ZgwZrcRulesService extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-
      * @spec openspec/specs/status-transition-engine/spec.md
      */
     public function detectEindstatus(string $statustypeUuid, string $zaaktypeUuid): bool
@@ -1140,6 +1015,27 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         // Fallback: find the statustype with the highest volgnummer for this zaaktype.
+        return $this->isHighestVolgnummerStatustype(
+            objectService: $this->objectService,
+            statustypeUuid: $statustypeUuid,
+            zaaktypeUuid: $zaaktypeUuid
+        );
+    }//end detectEindstatus()
+
+    /**
+     * Test whether a statustype carries the highest `volgnummer` of its zaaktype (zrc-007a).
+     *
+     * Returns false when the register/schema are unconfigured or the lookup fails — a failure is
+     * logged and never raised, exactly as the inline block did.
+     *
+     * @param object $objectService  The OpenRegister ObjectService
+     * @param string $statustypeUuid The statustype UUID to check
+     * @param string $zaaktypeUuid   The zaaktype UUID to fetch all statustypes for
+     *
+     * @return bool True if this statustype has the highest volgnummer
+     */
+    private function isHighestVolgnummerStatustype(object $objectService, string $statustypeUuid, string $zaaktypeUuid): bool
+    {
         $register         = $this->mappingConfig['sourceRegister'] ?? '';
         $statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
         if (empty($register) === true || empty($statusTypeSchema) === true) {
@@ -1147,12 +1043,12 @@ class ZgwZrcRulesService extends ZgwRulesBase
         }
 
         try {
-            $query  = $this->objectService->buildSearchQuery(
+            $query  = $objectService->buildSearchQuery(
                 requestParams: ['caseType' => $zaaktypeUuid, '_limit' => 1000],
                 register: $register,
                 schema: $statusTypeSchema
             );
-            $result = $this->objectService->searchObjectsPaginated(query: $query);
+            $result = $objectService->searchObjectsPaginated(query: $query);
 
             $maxVolgnummer     = -1;
             $maxStatustypeUuid = null;
@@ -1175,7 +1071,7 @@ class ZgwZrcRulesService extends ZgwRulesBase
             $this->logger->warning('detectEindstatus failed: '.$e->getMessage());
             return false;
         }//end try
-    }//end detectEindstatus()
+    }//end isHighestVolgnummerStatustype()
 
     /**
      * Filter a list of zaken by consumer's authorization scope (zrc-006).
@@ -1246,59 +1142,4 @@ class ZgwZrcRulesService extends ZgwRulesBase
             )
         );
     }//end filterZakenForConsumer()
-
-    /**
-     * Check ZaakInformatieObject field immutability (zrc-004).
-     *
-     * Zaak and informatieobject fields are immutable after creation.
-     *
-     * @param array      $result         The current validation result
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The updated validation result
-     *
-     * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — immutability check on multiple fields
-     */
-    private function checkZioImmutability(array $result, ?array $existingObject): array
-    {
-        if ($existingObject === null) {
-            return $result;
-        }
-
-        $body = $result['enrichedBody'];
-
-        // Zrc-004: zaak is immutable.
-        if (isset($body['zaak']) === true) {
-            $existingZaak = $existingObject['case'] ?? ($existingObject['zaak'] ?? '');
-            $newZaakUuid  = $this->extractUuid(url: $body['zaak']);
-
-            $existZaakId = $existingZaak;
-            if (is_string($existingZaak) === true) {
-                $existZaakId = $this->extractUuid(url: $existingZaak);
-            }
-
-            if ($existZaakId !== null && $newZaakUuid !== null && $newZaakUuid !== $existZaakId) {
-                return $this->fieldImmutableError(fieldName: 'zaak');
-            }
-        }
-
-        // Zrc-004: informatieobject is immutable.
-        if (isset($body['informatieobject']) === true) {
-            $existingIo = $existingObject['document'] ?? ($existingObject['informatieobject'] ?? '');
-            $newIoUuid  = $this->extractUuid(url: $body['informatieobject']);
-
-            $existIoId = $existingIo;
-            if (is_string($existingIo) === true) {
-                $existIoId = $this->extractUuid(url: $existingIo);
-            }
-
-            if ($existIoId !== null && $newIoUuid !== null && $newIoUuid !== $existIoId) {
-                return $this->fieldImmutableError(fieldName: 'informatieobject');
-            }
-        }
-
-        return $result;
-    }//end checkZioImmutability()
 }//end class

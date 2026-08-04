@@ -10,6 +10,12 @@
  * parafeerroute records. Activation is idempotent — re-running it does not
  * duplicate records (existing caseTypes are detected by identifier).
  *
+ * This class is the activation orchestrator only: which slugs exist, which
+ * bundle file backs each one, which schemas the write needs, and the
+ * system-principal elevation the boot-time repair step requires. The writes
+ * themselves live in {@see TemplateBundleSeeder}, and the name→id rewrite of
+ * a bundle's workflow payload in {@see WorkflowReferenceResolver}.
+ *
  * @category Service
  * @package  OCA\Procest\Service
  *
@@ -32,14 +38,13 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Besluitvorming\TemplateBundleSeeder;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * Seeds besluitvorming zaaktype templates into OpenRegister.
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — orchestrates ObjectService + config.
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
@@ -61,14 +66,16 @@ class BesluitvormingTemplateService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Bridge to OpenRegister + app config.
-     * @param LoggerInterface $logger          Logger.
+     * @param SettingsService      $settingsService Bridge to OpenRegister + app config.
+     * @param LoggerInterface      $logger          Logger.
+     * @param TemplateBundleSeeder $seeder          The OpenRegister write path for a bundle.
      *
      * @return void
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
+        private readonly TemplateBundleSeeder $seeder,
     ) {
     }//end __construct()
 
@@ -146,7 +153,7 @@ class BesluitvormingTemplateService
             objectService: $objectService,
             operation: function () use ($objectService, $register, $schemas, $slug, $caseTypeData, $bundle, $identifier): array {
                 // Idempotency: skip if a caseType with this identifier already exists.
-                $existing = $this->findByIdentifier(
+                $existing = $this->seeder->findByIdentifier(
                     objectService: $objectService,
                     register: $register,
                     schema: $schemas['caseType'],
@@ -165,7 +172,7 @@ class BesluitvormingTemplateService
                 $parafeerroute = (array) ($bundle['parafeerroute'] ?? ($caseTypeData['parafeerroute'] ?? []));
                 unset($caseTypeData['parafeerroute']);
 
-                return $this->seedBundle(
+                return $this->seeder->seedBundle(
                     objectService: $objectService,
                     register: $register,
                     schemas: $schemas,
@@ -176,284 +183,6 @@ class BesluitvormingTemplateService
             }
         );
     }//end activate()
-
-    /**
-     * Seed all records of a bundle once idempotency has been cleared.
-     *
-     * @param object                $objectService The OpenRegister ObjectService.
-     * @param string                $register      The register slug.
-     * @param array<string, string> $schemas       Map of schema-key => schema id.
-     * @param string                $slug          The template slug.
-     * @param array<string, mixed>  $caseTypeData  The caseType payload (with nested arrays).
-     * @param array<string, mixed>  $parafeerroute The default parafeerroute payload.
-     *
-     * @return array<string, mixed> Creation counts.
-     *
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) — all schema ids are required.
-     */
-    private function seedBundle(
-        object $objectService,
-        string $register,
-        array $schemas,
-        string $slug,
-        array $caseTypeData,
-        array $parafeerroute,
-    ): array {
-        $counts = [
-            'success'             => true,
-            'slug'                => $slug,
-            'caseType'            => 0,
-            'statusTypes'         => 0,
-            'roleTypes'           => 0,
-            'propertyDefinitions' => 0,
-            'documentTypes'       => 0,
-            'resultTypes'         => 0,
-            'workflowTemplate'    => 0,
-            'parafeerroute'       => 0,
-        ];
-
-        $statusTypesData   = (array) ($caseTypeData['statusTypes'] ?? []);
-        $roleTypesData     = (array) ($caseTypeData['roleTypes'] ?? []);
-        $propertyDefsData  = (array) ($caseTypeData['propertyDefinitions'] ?? []);
-        $documentTypesData = (array) ($caseTypeData['documentTypes'] ?? []);
-        $resultTypesData   = (array) ($caseTypeData['resultTypes'] ?? []);
-        $workflowData      = ($caseTypeData['workflowTemplate'] ?? null);
-
-        unset(
-            $caseTypeData['statusTypes'],
-            $caseTypeData['roleTypes'],
-            $caseTypeData['propertyDefinitions'],
-            $caseTypeData['documentTypes'],
-            $caseTypeData['resultTypes'],
-            $caseTypeData['workflowTemplate'],
-        );
-
-        $caseType = $this->createObject(
-            objectService: $objectService,
-            register: $register,
-            schema: $schemas['caseType'],
-            data: $caseTypeData,
-        );
-        if ($caseType === null) {
-            return ['success' => false, 'slug' => $slug, 'message' => 'caseType_create_failed'];
-        }
-
-        $caseTypeId = $this->getObjectId(object: $caseType);
-        $counts['caseType']++;
-
-        $statusNameToId = $this->seedChildren(
-            objectService: $objectService,
-            register: $register,
-            schema: $schemas['statusType'],
-            records: $statusTypesData,
-            caseTypeId: $caseTypeId,
-            counts: $counts,
-            countKey: 'statusTypes',
-        );
-
-        $roleNameToId = $this->seedChildren(
-            objectService: $objectService,
-            register: $register,
-            schema: $schemas['roleType'],
-            records: $roleTypesData,
-            caseTypeId: $caseTypeId,
-            counts: $counts,
-            countKey: 'roleTypes',
-        );
-
-        $this->seedChildren(
-            objectService: $objectService,
-            register: $register,
-            schema: $schemas['propertyDefinition'],
-            records: $propertyDefsData,
-            caseTypeId: $caseTypeId,
-            counts: $counts,
-            countKey: 'propertyDefinitions',
-        );
-
-        $this->seedChildren(
-            objectService: $objectService,
-            register: $register,
-            schema: $schemas['documentType'],
-            records: $documentTypesData,
-            caseTypeId: $caseTypeId,
-            counts: $counts,
-            countKey: 'documentTypes',
-        );
-
-        $this->seedChildren(
-            objectService: $objectService,
-            register: $register,
-            schema: $schemas['resultType'],
-            records: $resultTypesData,
-            caseTypeId: $caseTypeId,
-            counts: $counts,
-            countKey: 'resultTypes',
-        );
-
-        if (is_array($workflowData) === true && $schemas['workflowTemplate'] !== '') {
-            $resolved = $this->resolveWorkflowReferences(
-                workflowData: $workflowData,
-                statusNameMap: $statusNameToId,
-                roleNameMap: $roleNameToId,
-                caseTypeId: $caseTypeId,
-            );
-            $created  = $this->createObject(
-                objectService: $objectService,
-                register: $register,
-                schema: $schemas['workflowTemplate'],
-                data: $resolved,
-            );
-            if ($created !== null) {
-                $counts['workflowTemplate']++;
-            }
-        }
-
-        if (empty($parafeerroute) === false && $schemas['parafeerroute'] !== '') {
-            $parafeerroute['caseType'] = $caseTypeId;
-            $createdRoute = $this->createObject(
-                objectService: $objectService,
-                register: $register,
-                schema: $schemas['parafeerroute'],
-                data: $parafeerroute,
-            );
-            if ($createdRoute !== null) {
-                $counts['parafeerroute']++;
-            }
-        }
-
-        $this->logger->info('Procest: besluitvorming template activated', $counts);
-
-        return $counts;
-    }//end seedBundle()
-
-    /**
-     * Seed a list of child records linked to a caseType, returning a name->id map.
-     *
-     * @param object               $objectService The OpenRegister ObjectService.
-     * @param string               $register      The register slug.
-     * @param string               $schema        The child schema id.
-     * @param array<int, mixed>    $records       The child record payloads.
-     * @param string               $caseTypeId    The parent caseType id.
-     * @param array<string, mixed> $counts        Counts accumulator (by reference).
-     * @param string               $countKey      The key in $counts to increment.
-     *
-     * @return array<string, string> Map of record name => created id.
-     *
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) — counts + key needed for tally.
-     */
-    private function seedChildren(
-        object $objectService,
-        string $register,
-        string $schema,
-        array $records,
-        string $caseTypeId,
-        array &$counts,
-        string $countKey,
-    ): array {
-        $nameToId = [];
-        if ($schema === '') {
-            return $nameToId;
-        }
-
-        foreach ($records as $record) {
-            if (is_array($record) === false) {
-                continue;
-            }
-
-            $record['caseType'] = $caseTypeId;
-            $created            = $this->createObject(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                data: $record,
-            );
-            if ($created === null) {
-                continue;
-            }
-
-            $name = (string) ($record['name'] ?? '');
-            if ($name !== '') {
-                $nameToId[$name] = $this->getObjectId(object: $created);
-            }
-
-            $counts[$countKey]++;
-        }//end foreach
-
-        return $nameToId;
-    }//end seedChildren()
-
-    /**
-     * Resolve workflow step/transition name references to created UUIDs.
-     *
-     * @param array<string, mixed>  $workflowData  The raw workflow template payload.
-     * @param array<string, string> $statusNameMap Map of statusType name => id.
-     * @param array<string, string> $roleNameMap   Map of roleType name => id.
-     * @param string                $caseTypeId    The owning caseType id.
-     *
-     * @return array<string, mixed> The workflow payload with resolved references.
-     */
-    private function resolveWorkflowReferences(
-        array $workflowData,
-        array $statusNameMap,
-        array $roleNameMap,
-        string $caseTypeId,
-    ): array {
-        $workflowData['caseType'] = $caseTypeId;
-
-        $resolvedSteps = [];
-        foreach ((array) ($workflowData['steps'] ?? []) as $step) {
-            if (is_array($step) === false) {
-                continue;
-            }
-
-            $statusName = (string) ($step['statusName'] ?? '');
-            unset($step['statusName']);
-            $step['id']      = $this->generateUUID();
-            $step['status']  = ($statusNameMap[$statusName] ?? '');
-            $resolvedSteps[] = $step;
-        }
-
-        $workflowData['steps'] = json_encode($resolvedSteps);
-
-        $resolvedTransitions = [];
-        foreach ((array) ($workflowData['transitions'] ?? []) as $transition) {
-            if (is_array($transition) === false) {
-                continue;
-            }
-
-            $fromName = (string) ($transition['fromStatusName'] ?? '');
-            $toName   = (string) ($transition['toStatusName'] ?? '');
-            unset($transition['fromStatusName'], $transition['toStatusName']);
-
-            $transition['id']         = $this->generateUUID();
-            $transition['fromStatus'] = ($statusNameMap[$fromName] ?? '');
-            if ($fromName === '*') {
-                $transition['fromStatus'] = '*';
-            }
-
-            $transition['toStatus'] = ($statusNameMap[$toName] ?? '');
-
-            $resolvedGuards = [];
-            foreach ((array) ($transition['guards'] ?? []) as $guard) {
-                if (is_array($guard) === true
-                    && ($guard['type'] ?? '') === 'roleGuard'
-                    && isset($guard['config']['roleName']) === true
-                ) {
-                    $guard['config']['roleId'] = ($roleNameMap[$guard['config']['roleName']] ?? '');
-                }
-
-                $resolvedGuards[] = $guard;
-            }
-
-            $transition['guards']  = $resolvedGuards;
-            $resolvedTransitions[] = $transition;
-        }//end foreach
-
-        $workflowData['transitions'] = json_encode($resolvedTransitions);
-
-        return $workflowData;
-    }//end resolveWorkflowReferences()
 
     /**
      * Load and decode a template JSON bundle.
@@ -502,139 +231,4 @@ class BesluitvormingTemplateService
             'parafeerroute'      => $this->settingsService->getConfigValue(key: 'parafeerroute_schema'),
         ];
     }//end resolveSchemas()
-
-    /**
-     * Find an existing object by its identifier field.
-     *
-     * @param object $objectService The OpenRegister ObjectService.
-     * @param string $register      The register slug.
-     * @param string $schema        The schema id.
-     * @param string $identifier    The identifier value.
-     *
-     * @return array<string, mixed>|null The found object, or null.
-     */
-    private function findByIdentifier(
-        object $objectService,
-        string $register,
-        string $schema,
-        string $identifier,
-    ): ?array {
-        try {
-            $results = $objectService->findAll(
-                [
-                    'filters' => ['register' => $register, 'schema' => $schema, 'identifier' => $identifier],
-                    'limit'   => 1,
-                ],
-            );
-
-            if (is_array($results) === true && isset($results['results']) === true) {
-                $results = $results['results'];
-            }
-
-            if (is_array($results) === true && count($results) > 0) {
-                return $this->toArray(value: $results[0]);
-            }
-
-            return null;
-        } catch (\Throwable $e) {
-            $this->logger->debug(
-                'Procest: besluitvorming idempotency lookup failed',
-                ['exception' => $e->getMessage()],
-            );
-            return null;
-        }//end try
-    }//end findByIdentifier()
-
-    /**
-     * Create an object via the ObjectService, returning null on failure.
-     *
-     * @param object               $objectService The OpenRegister ObjectService.
-     * @param string               $register      The register slug.
-     * @param string               $schema        The schema id.
-     * @param array<string, mixed> $data          The object payload.
-     *
-     * @return object|null The created object, or null.
-     */
-    private function createObject(
-        object $objectService,
-        string $register,
-        string $schema,
-        array $data,
-    ): ?object {
-        try {
-            $result = $objectService->saveObject(register: $register, schema: $schema, object: $data);
-            if (is_object($result) === true) {
-                return $result;
-            }
-
-            return null;
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: besluitvorming seed object create failed',
-                ['schema' => $schema, 'exception' => $e->getMessage()],
-            );
-            return null;
-        }
-    }//end createObject()
-
-    /**
-     * Extract an object id from an OpenRegister object.
-     *
-     * @param object $object The OpenRegister entity.
-     *
-     * @return string The id (or empty string).
-     */
-    private function getObjectId(object $object): string
-    {
-        if (method_exists($object, 'getId') === true) {
-            return (string) $object->getId();
-        }
-
-        if (method_exists($object, 'getUuid') === true) {
-            return (string) $object->getUuid();
-        }
-
-        return '';
-    }//end getObjectId()
-
-    /**
-     * Convert an arbitrary ObjectService return value to an associative array.
-     *
-     * @param mixed $value The returned object/array.
-     *
-     * @return array<string, mixed>
-     */
-    private function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
-
-        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-            $serialized = $value->jsonSerialize();
-            if (is_array($serialized) === true) {
-                return $serialized;
-            }
-        }
-
-        if (is_object($value) === true) {
-            return (array) $value;
-        }
-
-        return [];
-    }//end toArray()
-
-    /**
-     * Generate a UUID v4 string.
-     *
-     * @return string A new UUID.
-     */
-    private function generateUUID(): string
-    {
-        $data    = random_bytes(16);
-        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
-        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
-
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-    }//end generateUUID()
 }//end class

@@ -71,9 +71,9 @@ class SamenwerkverzoekService
      * Creates a samenwerkverzoek object with status 'aangevraagd' and
      * dispatches a SamenwerkverzoekInitiated event for downstream listeners.
      *
-     * @param string $zaakId                 The UUID of the zaak
-     * @param string $aangezochtBevoegdGezag The requested authority identifier
-     * @param string $rationale              The reason for requesting cooperation
+     * @param string $zaakId          The UUID of the zaak
+     * @param string $aangezochtGezag The requested authority identifier
+     * @param string $rationale       The reason for requesting cooperation
      *
      * @return array<string,mixed> The created samenwerkverzoek object
      *
@@ -83,7 +83,7 @@ class SamenwerkverzoekService
      */
     public function initiateSamenwerking(
         string $zaakId,
-        string $aangezochtBevoegdGezag,
+        string $aangezochtGezag,
         string $rationale,
     ): array {
         $objectService = $this->getObjectService();
@@ -110,9 +110,9 @@ class SamenwerkverzoekService
             throw new RuntimeException('Zaak not found: '.$zaakId);
         }
 
-        $vergunningaanvraagRef = (string) ($zaak['vergunningaanvraagRef'] ?? '');
+        $aanvraagRef = (string) ($zaak['vergunningaanvraagRef'] ?? '');
 
-        $samenwerkverzoekSchema = $this->appConfig->getValueString(
+        $verzoekSchema = $this->appConfig->getValueString(
             app: Application::APP_ID,
             key: 'dso_samenwerkverzoek_schema',
             default: 'samenwerkverzoek'
@@ -120,8 +120,8 @@ class SamenwerkverzoekService
 
         $samenwerkverzoek = [
             'zaakId'                 => $zaakId,
-            'vergunningaanvraagRef'  => $vergunningaanvraagRef,
-            'aangezochtBevoegdGezag' => $aangezochtBevoegdGezag,
+            'vergunningaanvraagRef'  => $aanvraagRef,
+            'aangezochtBevoegdGezag' => $aangezochtGezag,
             'rationale'              => $rationale,
             'status'                 => 'aangevraagd',
             'aangevraagdOp'          => date('c'),
@@ -129,7 +129,7 @@ class SamenwerkverzoekService
 
         $created = $objectService->saveObject(
             register: $register,
-            schema: $samenwerkverzoekSchema,
+            schema: $verzoekSchema,
             object: $samenwerkverzoek
         );
 
@@ -137,8 +137,8 @@ class SamenwerkverzoekService
             subject: $created,
             arguments: [
                 'zaakId'                 => $zaakId,
-                'vergunningaanvraagRef'  => $vergunningaanvraagRef,
-                'aangezochtBevoegdGezag' => $aangezochtBevoegdGezag,
+                'vergunningaanvraagRef'  => $aanvraagRef,
+                'aangezochtBevoegdGezag' => $aangezochtGezag,
             ]
         );
         $this->eventDispatcher->dispatch(
@@ -151,7 +151,7 @@ class SamenwerkverzoekService
             [
                 'app'                    => Application::APP_ID,
                 'zaakId'                 => $zaakId,
-                'aangezochtBevoegdGezag' => $aangezochtBevoegdGezag,
+                'aangezochtBevoegdGezag' => $aangezochtGezag,
             ]
         );
 
@@ -178,12 +178,12 @@ class SamenwerkverzoekService
     {
         $objectService = $this->getObjectService();
 
-        $register = $this->appConfig->getValueString(
+        $register      = $this->appConfig->getValueString(
             app: Application::APP_ID,
             key: 'register',
             default: ''
         );
-        $samenwerkverzoekSchema = $this->appConfig->getValueString(
+        $verzoekSchema = $this->appConfig->getValueString(
             app: Application::APP_ID,
             key: 'dso_samenwerkverzoek_schema',
             default: 'samenwerkverzoek'
@@ -192,7 +192,7 @@ class SamenwerkverzoekService
         $verzoek = $this->findObjectAsArray(
             objectService: $objectService,
             register: $register,
-            schema: $samenwerkverzoekSchema,
+            schema: $verzoekSchema,
             id: $samenwerkId
         );
 
@@ -207,10 +207,9 @@ class SamenwerkverzoekService
             );
         }
 
+        $verzoek['status'] = 'geweigerd';
         if ($accept === true) {
             $verzoek['status'] = 'geaccepteerd';
-        } else {
-            $verzoek['status'] = 'geweigerd';
         }
 
         $verzoek['advies']       = $advies;
@@ -218,7 +217,7 @@ class SamenwerkverzoekService
 
         $updated = $objectService->saveObject(
             register: $register,
-            schema: $samenwerkverzoekSchema,
+            schema: $verzoekSchema,
             object: $verzoek
         );
 

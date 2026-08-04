@@ -33,6 +33,7 @@ namespace OCA\Procest\BackgroundJob;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\EmailArchivalService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Support\SuppressesWarnings;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -44,6 +45,8 @@ use Psr\Log\LoggerInterface;
  */
 class InboundEmailJob extends TimedJob
 {
+
+    use SuppressesWarnings;
 
     /**
      * Subject-tag pattern carrying the case identifier.
@@ -203,69 +206,77 @@ class InboundEmailJob extends TimedJob
 
         $mailbox = '{'.$host.':'.$port.'/imap/'.$encryption.'}'.$folder;
 
-        $connection = @imap_open($mailbox, $username, $password);
+        $connection = $this->withoutWarnings(
+            operation: static function () use ($mailbox, $username, $password): mixed {
+                return imap_open($mailbox, $username, $password);
+            }
+        );
         if ($connection === false) {
-            $this->logger->warning('IMAP connection failed', ['host' => $host]);
+            $this->logger->warning(
+                'IMAP connection failed',
+                ['host' => $host, 'detail' => $this->lastSuppressedWarning()]
+            );
             return [];
         }
 
         $messages = [];
         try {
-            $ids = @imap_search($connection, 'UNSEEN');
+            $ids = $this->withoutWarnings(
+                operation: static function () use ($connection): mixed {
+                    return imap_search($connection, 'UNSEEN');
+                }
+            );
             if (is_array($ids) === false || $ids === []) {
                 return [];
             }
 
             $ids = array_slice($ids, 0, $batchSize);
             foreach ($ids as $id) {
-                $headers = @imap_headerinfo($connection, (int) $id);
+                $headers = $this->withoutWarnings(
+                    operation: static function () use ($connection, $id): mixed {
+                        return imap_headerinfo($connection, (int) $id);
+                    }
+                );
                 if ($headers === false) {
                     continue;
                 }
 
-                if (isset($headers->fromaddress) === true) {
-                    $from = (string) $headers->fromaddress;
-                } else {
-                    $from = '';
-                }
-
-                if (isset($headers->toaddress) === true) {
-                    $to = (string) $headers->toaddress;
-                } else {
-                    $to = '';
-                }
-
-                if (isset($headers->date) === true) {
-                    $sentAt = (string) $headers->date;
-                } else {
-                    $sentAt = '';
-                }
-
-                // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property name is fixed by the PHP IMAP extension.
-                if (isset($headers->Size) === true) {
-                    // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property name is fixed by the PHP IMAP extension.
-                    $sizeBytes = (int) $headers->Size;
-                } else {
-                    $sizeBytes = 0;
-                }
-
-                $messages[] = [
-                    // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property name is fixed by the PHP IMAP extension.
-                    'mailMessageId' => (string) ($headers->message_id ?? ''),
-                    'subject'       => (string) ($headers->subject ?? ''),
-                    'from'          => $from,
-                    'to'            => $to,
-                    'sentAt'        => $sentAt,
-                    'imapUid'       => (int) $id,
-                    'sizeBytes'     => $sizeBytes,
-                ];
+                $messages[] = $this->mapHeaderToMessage(headers: $headers, imapUid: (int) $id);
             }//end foreach
         } finally {
-            @imap_close($connection);
+            $this->withoutWarnings(
+                operation: static function () use ($connection): mixed {
+                    return imap_close($connection);
+                }
+            );
         }//end try
 
         return $messages;
     }//end fetchUnreadBatch()
+
+    /**
+     * Flatten one `imap_headerinfo()` result into the message array the rest
+     * of the job works with.
+     *
+     * @param object $headers The stdClass returned by imap_headerinfo().
+     * @param int    $imapUid The IMAP UID the headers were read from.
+     *
+     * @return array<string, mixed> The normalised message row.
+     */
+    private function mapHeaderToMessage(object $headers, int $imapUid): array
+    {
+        return [
+            // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property names are fixed by the PHP IMAP extension.
+            'mailMessageId' => (string) ($headers->message_id ?? ''),
+            'subject'       => (string) ($headers->subject ?? ''),
+            'from'          => (string) ($headers->fromaddress ?? ''),
+            'to'            => (string) ($headers->toaddress ?? ''),
+            'sentAt'        => (string) ($headers->date ?? ''),
+            'imapUid'       => $imapUid,
+            // phpcs:ignore Squiz.NamingConventions.ValidVariableName.MemberNotCamelCaps -- imap_headerinfo() returns a stdClass whose property names are fixed by the PHP IMAP extension.
+            'sizeBytes'     => (int) ($headers->Size ?? 0),
+        ];
+    }//end mapHeaderToMessage()
 
     /**
      * Check whether a mailMessageId is already linked to a case.

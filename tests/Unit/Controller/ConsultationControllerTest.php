@@ -26,8 +26,11 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Controller\AdvisoryBodyController;
 use OCA\Procest\Controller\ConsultationController;
+use OCA\Procest\Controller\ConsultationPublicController;
 use OCA\Procest\Service\AdvisoryBodyService;
+use OCA\Procest\Service\Consultation\ConsultationAccessGuard;
 use OCA\Procest\Service\ConsultationService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
@@ -42,6 +45,10 @@ use Psr\Log\LoggerInterface;
  * Unit tests for ConsultationController.
  *
  * @covers \OCA\Procest\Controller\ConsultationController
+ * @covers \OCA\Procest\Controller\AdvisoryBodyController
+ * @covers \OCA\Procest\Controller\ConsultationPublicController
+ *
+ * @uses \OCA\Procest\Service\Consultation\ConsultationAccessGuard
  */
 class ConsultationControllerTest extends TestCase
 {
@@ -95,9 +102,27 @@ class ConsultationControllerTest extends TestCase
      */
     private ConsultationController $controller;
 
+    /**
+     * Advisory body controller under test.
+     *
+     * @var AdvisoryBodyController
+     */
+    private AdvisoryBodyController $advisoryBodyController;
+
+    /**
+     * Public (token) consultation controller under test.
+     *
+     * @var ConsultationPublicController
+     */
+    private ConsultationPublicController $publicController;
+
 
     /**
      * Set up test fixtures.
+     *
+     * The access guard is a real collaborator over mocked dependencies, not a
+     * mock: stubbing it would make the authorization assertions below assert
+     * on the stub rather than on the guard's actual rules.
      *
      * @return void
      */
@@ -110,13 +135,31 @@ class ConsultationControllerTest extends TestCase
         $this->groupManager        = $this->createMock(IGroupManager::class);
         $this->logger              = $this->createMock(LoggerInterface::class);
 
+        $accessGuard = new ConsultationAccessGuard(
+            request: $this->request,
+            consultationService: $this->consultationService,
+            userSession: $this->userSession,
+            groupManager: $this->groupManager,
+        );
+
         $this->controller = new ConsultationController(
             appName: Application::APP_ID,
             request: $this->request,
             consultationService: $this->consultationService,
+            accessGuard: $accessGuard,
+        );
+
+        $this->advisoryBodyController = new AdvisoryBodyController(
+            appName: Application::APP_ID,
+            request: $this->request,
             advisoryBodyService: $this->advisoryBodyService,
             userSession: $this->userSession,
-            groupManager: $this->groupManager,
+        );
+
+        $this->publicController = new ConsultationPublicController(
+            appName: Application::APP_ID,
+            request: $this->request,
+            consultationService: $this->consultationService,
             logger: $this->logger,
         );
 
@@ -190,7 +233,7 @@ class ConsultationControllerTest extends TestCase
      */
     public function testPublicResponseGetReturns400ForEmptyToken(): void
     {
-        $response = $this->controller->publicResponseGet(token: '');
+        $response = $this->publicController->publicResponseGet(token:'');
 
         $this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 
@@ -207,7 +250,7 @@ class ConsultationControllerTest extends TestCase
         $this->consultationService->method('findBySecureToken')
             ->willReturn(null);
 
-        $response = $this->controller->publicResponseGet(token: 'invalid-token-value');
+        $response = $this->publicController->publicResponseGet(token:'invalid-token-value');
 
         $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 
@@ -231,7 +274,7 @@ class ConsultationControllerTest extends TestCase
         $this->consultationService->method('findBySecureToken')
             ->willReturn($consultation);
 
-        $response = $this->controller->publicResponseGet(token: str_repeat('a', 64));
+        $response = $this->publicController->publicResponseGet(token:str_repeat('a', 64));
         $data     = $response->getData();
 
         $this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -249,7 +292,7 @@ class ConsultationControllerTest extends TestCase
     {
         $this->userSession->method('getUser')->willReturn(null);
 
-        $response = $this->controller->listAdvisoryBodies();
+        $response = $this->advisoryBodyController->listAdvisoryBodies();
 
         $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 

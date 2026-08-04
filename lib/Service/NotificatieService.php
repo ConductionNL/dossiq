@@ -27,6 +27,7 @@ namespace OCA\Procest\Service;
 use DateTime;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use OCA\Procest\Support\SuppressesWarnings;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -36,6 +37,8 @@ use Psr\Log\LoggerInterface;
  */
 class NotificatieService
 {
+
+    use SuppressesWarnings;
 
     /**
      * RFC1918 + loopback + link-local CIDR blocks to deny (SSRF protection).
@@ -174,9 +177,8 @@ class NotificatieService
         $client        = new Client(['timeout' => 10]);
 
         foreach ($subscriptions as $subscription) {
-            if (is_array($subscription) === true) {
-                $subData = $subscription;
-            } else {
+            $subData = $subscription;
+            if (is_array($subscription) === false) {
                 $subData = $subscription->jsonSerialize();
             }
 
@@ -292,26 +294,30 @@ class NotificatieService
         }
 
         // DNS pin: resolve all A/AAAA records and block private ranges.
-        $records = @dns_get_record($host, DNS_A | DNS_AAAA);
+        $records = $this->withoutWarnings(
+            operation: static function () use ($host): mixed {
+                return dns_get_record($host, (DNS_A | DNS_AAAA));
+            }
+        );
         if ($records === false || count($records) === 0) {
             $this->logger->warning(
                 'NRC callback SSRF: DNS resolution returned no records',
-                ['host' => $host]
+                ['host' => $host, 'detail' => $this->lastSuppressedWarning()]
             );
             return false;
         }
 
         foreach ($records as $record) {
-            $ip = $record['ip'] ?? ($record['ipv6'] ?? null);
-            if ($ip === null) {
+            $ipAddress = $record['ip'] ?? ($record['ipv6'] ?? null);
+            if ($ipAddress === null) {
                 continue;
             }
 
             foreach (self::BLOCKED_CIDRS as $cidr) {
-                if ($this->ipInCidr(ip: $ip, cidr: $cidr) === true) {
+                if ($this->ipInCidr(ipAddress: $ipAddress, cidr: $cidr) === true) {
                     $this->logger->warning(
                         'NRC callback SSRF: host resolves to private/loopback address',
-                        ['host' => $host, 'ip' => $ip, 'cidr' => $cidr]
+                        ['host' => $host, 'ip' => $ipAddress, 'cidr' => $cidr]
                     );
                     return false;
                 }//end if
@@ -324,61 +330,91 @@ class NotificatieService
     /**
      * Check if an IP address falls within a CIDR range (IPv4 and IPv6).
      *
-     * @param string $ip   The IP address to test
-     * @param string $cidr The CIDR block (e.g. '10.0.0.0/8')
+     * @param string $ipAddress The IP address to test
+     * @param string $cidr      The CIDR block (e.g. '10.0.0.0/8')
      *
      * @return bool True if the IP is within the range
      */
-    private function ipInCidr(string $ip, string $cidr): bool
+    private function ipInCidr(string $ipAddress, string $cidr): bool
     {
         $isIpv6Cidr = str_contains($cidr, ':');
-        $isIpv6Ip   = str_contains($ip, ':');
+        $isIpv6Ip   = str_contains($ipAddress, ':');
 
         if ($isIpv6Cidr === true && $isIpv6Ip === true) {
-            [$network, $prefix] = explode('/', $cidr);
-            $prefixLen          = (int) $prefix;
-            $networkBin         = inet_pton($network);
-            $inputBin           = inet_pton($ip);
-            if ($networkBin === false || $inputBin === false) {
-                return false;
-            }//end if
-
-            $fullBytes  = intdiv($prefixLen, 8);
-            $remainBits = $prefixLen % 8;
-            for ($i = 0; $i < $fullBytes; $i++) {
-                if ($networkBin[$i] !== $inputBin[$i]) {
-                    return false;
-                }//end if
-            }
-
-            if ($remainBits > 0 && $fullBytes < 16) {
-                $mask = (0xFF << (8 - $remainBits)) & 0xFF;
-                if ((ord($networkBin[$fullBytes]) & $mask) !== (ord($inputBin[$fullBytes]) & $mask)) {
-                    return false;
-                }//end if
-            }//end if
-
-            return true;
+            return $this->ipv6InCidr(ipAddress: $ipAddress, cidr: $cidr);
         }//end if
 
         if ($isIpv6Cidr === false && $isIpv6Ip === false) {
-            [$network, $prefix] = explode('/', $cidr);
-            $prefixLen          = (int) $prefix;
-            $networkLong        = ip2long($network);
-            $ipLong = ip2long($ip);
-            if ($networkLong === false || $ipLong === false) {
-                return false;
-            }//end if
-
-            if ($prefixLen === 0) {
-                $mask = 0;
-            } else {
-                $mask = ~0 << (32 - $prefixLen);
-            }//end if
-
-            return ($ipLong & $mask) === ($networkLong & $mask);
+            return $this->ipv4InCidr(ipAddress: $ipAddress, cidr: $cidr);
         }//end if
 
+        // Address family mismatch: an IPv4 address never falls inside an IPv6
+        // block and vice versa, so the CIDR simply does not apply.
         return false;
     }//end ipInCidr()
+
+    /**
+     * Check if an IPv6 address falls within an IPv6 CIDR range.
+     *
+     * Compares the packed 16-byte representations byte by byte for the whole
+     * bytes of the prefix, then masks the single partial byte (if any).
+     *
+     * @param string $ipAddress The IPv6 address to test
+     * @param string $cidr      The IPv6 CIDR block (e.g. 'fc00::/7')
+     *
+     * @return bool True if the address is within the range
+     */
+    private function ipv6InCidr(string $ipAddress, string $cidr): bool
+    {
+        [$network, $prefix] = explode('/', $cidr);
+        $prefixLen          = (int) $prefix;
+        $networkBin         = inet_pton($network);
+        $inputBin           = inet_pton($ipAddress);
+        if ($networkBin === false || $inputBin === false) {
+            return false;
+        }//end if
+
+        $fullBytes  = intdiv($prefixLen, 8);
+        $remainBits = $prefixLen % 8;
+        for ($i = 0; $i < $fullBytes; $i++) {
+            if ($networkBin[$i] !== $inputBin[$i]) {
+                return false;
+            }//end if
+        }
+
+        if ($remainBits > 0 && $fullBytes < 16) {
+            $mask = (0xFF << (8 - $remainBits)) & 0xFF;
+            if ((ord($networkBin[$fullBytes]) & $mask) !== (ord($inputBin[$fullBytes]) & $mask)) {
+                return false;
+            }//end if
+        }//end if
+
+        return true;
+    }//end ipv6InCidr()
+
+    /**
+     * Check if an IPv4 address falls within an IPv4 CIDR range.
+     *
+     * @param string $ipAddress The IPv4 address to test
+     * @param string $cidr      The IPv4 CIDR block (e.g. '10.0.0.0/8')
+     *
+     * @return bool True if the address is within the range
+     */
+    private function ipv4InCidr(string $ipAddress, string $cidr): bool
+    {
+        [$network, $prefix] = explode('/', $cidr);
+        $prefixLen          = (int) $prefix;
+        $networkLong        = ip2long($network);
+        $ipLong = ip2long($ipAddress);
+        if ($networkLong === false || $ipLong === false) {
+            return false;
+        }//end if
+
+        $mask = 0;
+        if ($prefixLen > 0) {
+            $mask = ~0 << (32 - $prefixLen);
+        }//end if
+
+        return ($ipLong & $mask) === ($networkLong & $mask);
+    }//end ipv4InCidr()
 }//end class

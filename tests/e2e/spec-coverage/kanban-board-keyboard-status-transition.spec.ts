@@ -18,7 +18,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 
 	// @e2e openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#scenario-dash-v1-006d-keyboard-only-status-transition-new
 	test('a case card exposes a keyboard-operable "Move to…" menu', async ({ page }) => {
-		await page.goto('/apps/procest/workflow-board')
+		await page.goto('/index.php/apps/procest/workflow-board')
 		await dismissSupportDialog(page)
 
 		const heading = page.getByRole('heading', { name: /Workflow Board/ }).first()
@@ -51,7 +51,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 
 	// @e2e openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#scenario-dash-v1-006e-drag-path-unchanged-new
 	test('case cards remain draggable for mouse/touch users', async ({ page }) => {
-		await page.goto('/apps/procest/workflow-board')
+		await page.goto('/index.php/apps/procest/workflow-board')
 		await dismissSupportDialog(page)
 
 		const firstCard = page.locator('.case-card').first()

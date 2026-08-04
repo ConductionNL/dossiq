@@ -26,6 +26,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\AdviceDelegationService;
+use OCA\Procest\Service\Consultation\ConsultationDependencyGraph;
+use OCA\Procest\Service\Consultation\ConsultationRepository;
 use OCA\Procest\Service\ConsultationService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -97,6 +99,9 @@ interface ConsultationObjectServiceStub
  * Unit tests for ConsultationService.
  *
  * @covers \OCA\Procest\Service\ConsultationService
+ *
+ * @uses \OCA\Procest\Service\Consultation\ConsultationDependencyGraph
+ * @uses \OCA\Procest\Service\Consultation\ConsultationRepository
  */
 class ConsultationServiceTest extends TestCase
 {
@@ -140,10 +145,17 @@ class ConsultationServiceTest extends TestCase
         $this->settings         = $this->createMock(SettingsService::class);
         $this->logger           = $this->createMock(LoggerInterface::class);
         $this->adviceDelegation = $this->createMock(AdviceDelegationService::class);
+        // The repository and dependency graph are real collaborators, not
+        // mocks: every assertion below is about behaviour they inherited
+        // verbatim from ConsultationService, and the repository is still
+        // driven entirely by the mocked SettingsService.
+        $repository             = new ConsultationRepository($this->settings, $this->logger);
         $this->service          = new ConsultationService(
             settingsService: $this->settings,
             logger: $this->logger,
             adviceDelegation: $this->adviceDelegation,
+            repository: $repository,
+            dependencyGraph: new ConsultationDependencyGraph($repository),
         );
 
     }//end setUp()

@@ -27,7 +27,6 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service\Transitions;
 
-use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\Transitions\RoleGuard;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -37,6 +36,8 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\RoleGuard
+ *
+ * @uses \OCA\Procest\Service\Transitions\GuardResult
  */
 class RoleGuardTest extends TestCase
 {
@@ -110,7 +111,6 @@ class RoleGuardTest extends TestCase
         );
 
         $guard = new RoleGuard(
-            settingsService: $this->createMock(SettingsService::class),
             groupManager: $groupManager,
             userManager: $userManager,
             logger: new NullLogger(),
@@ -164,7 +164,6 @@ class RoleGuardTest extends TestCase
         $groupManager->method('isInGroup')->willReturn(false);
 
         return new RoleGuard(
-            settingsService: $this->createMock(SettingsService::class),
             groupManager: $groupManager,
             userManager: $userManager,
             logger: new NullLogger(),

@@ -117,7 +117,8 @@ class TermijnNotificationService
      * @param string               $recipientUserId   Recipient user id.
      * @param array<string, mixed> $context           Extra context (zaak ref, dates, amounts).
      *
-     * @return array<string, mixed>  Dispatched payload (with rendered subject + body).
+     * @return array<string, mixed>  Dispatched payload (with rendered subject +
+     *                               body and the `verzending` delivery record).
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
      */
@@ -138,9 +139,25 @@ class TermijnNotificationService
         $payload['termijnInstance'] = $termijnInstanceId;
         $payload['template']        = $type;
 
+        // Route the rendered notification through the procest notification
+        // router so the burger actually receives it; the returned delivery
+        // record (kanaal / berichtId / verzondenOp) is attached to the payload
+        // and is what the caller persists as proof of dispatch.
+        $payload['verzending'] = $this->router->routeToBerichtenbox(
+            [
+                'kenmerk'       => $termijnInstanceId,
+                'geadresseerde' => (array) ($context['geadresseerde'] ?? []),
+            ]
+        );
+
         $this->logger->info(
             'TermijnNotification dispatched',
-            ['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termijnInstanceId]
+            [
+                'type'      => $type,
+                'recipient' => $recipientUserId,
+                'instance'  => $termijnInstanceId,
+                'kanaal'    => $payload['verzending']['kanaal'],
+            ]
         );
 
         return $payload;

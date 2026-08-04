@@ -53,7 +53,6 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\Support\SearchesObjects;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -68,11 +67,6 @@ class HearingService
     use SearchesObjects;
 
     /**
-     * Awb art. 7:4 lid 2 inspection-of-file floor in days.
-     */
-    private const INSPECTION_FLOOR_DAYS = 7;
-
-    /**
      * Grace window after `scheduledDate` during which the attendance
      * array remains append-only. Past this window, mutations require a
      * documented correctionReason.
@@ -83,27 +77,34 @@ class HearingService
      * Audit-tag catalogue covering the legally relevant events on a
      * hearingSession (REQ-BH-8). Values are the canonical tags every
      * downstream consumer (beroep export, accessibility report) reads.
+     * They are declared once on {@see BezwaarAuditTrail} — the writer
+     * that stamps them — and re-exported here for backwards
+     * compatibility with existing consumers of `HearingService::TAG_*`.
      */
-    public const TAG_SCHEDULED       = 'awb-art-7:2';
-    public const TAG_INVITATION_SENT = 'awb-art-7:2';
-    public const TAG_WAIVER          = 'awb-art-7:3';
-    public const TAG_INSPECTION      = 'awb-art-7:4';
-    public const TAG_CONFIDENTIAL_WITHELD = 'awb-art-7:6';
-    public const TAG_VERSLAG           = 'awb-art-7:7';
-    public const TAG_BAC_REFERRAL      = 'awb-art-7:13';
-    public const TAG_RECORDING_CONSENT = 'avg-art-6';
+    public const TAG_SCHEDULED       = BezwaarAuditTrail::TAG_SCHEDULED;
+    public const TAG_INVITATION_SENT = BezwaarAuditTrail::TAG_INVITATION_SENT;
+    public const TAG_WAIVER          = BezwaarAuditTrail::TAG_WAIVER;
+    public const TAG_INSPECTION      = BezwaarAuditTrail::TAG_INSPECTION;
+    public const TAG_CONFIDENTIAL_WITHELD = BezwaarAuditTrail::TAG_CONFIDENTIAL_WITHELD;
+    public const TAG_VERSLAG           = BezwaarAuditTrail::TAG_VERSLAG;
+    public const TAG_BAC_REFERRAL      = BezwaarAuditTrail::TAG_BAC_REFERRAL;
+    public const TAG_RECORDING_CONSENT = BezwaarAuditTrail::TAG_RECORDING_CONSENT;
 
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Schema/register bridge
-     * @param IUserSession    $userSession     Acting identity source
-     * @param LoggerInterface $logger          Logger
+     * @param SettingsService        $settingsService Schema/register bridge
+     * @param LoggerInterface        $logger          Logger
+     * @param BezwaarAuditTrail      $auditTrail      Shared append-only audit writer
+     * @param HearingSchedulePlanner $planner         Awb art. 7:4 date arithmetic
+     * @param HearingMinutesRecorder $minutes         Awb art. 7:7 verslag assembly + consent gate
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
+        private readonly BezwaarAuditTrail $auditTrail,
+        private readonly HearingSchedulePlanner $planner,
+        private readonly HearingMinutesRecorder $minutes,
     ) {
     }//end __construct()
 
@@ -155,24 +156,20 @@ class HearingService
             );
         }
 
-        $scheduled = $this->parseDateTime(value: $scheduledDate);
-        $deadline  = $this->computeInspectionDeadline(scheduled: $scheduled);
+        $scheduled = $this->planner->parseDateTime(value: $scheduledDate);
+        $deadline  = $this->planner->computeInspectionDeadline(scheduled: $scheduled);
         $now       = new DateTimeImmutable();
 
-        $this->guardInspectionFloor(
+        $this->planner->guardInspectionFloor(
             scheduled: $scheduled,
             today: $now,
         );
 
-        $available = $now->setTime(0, 0, 0);
-        if (isset($payload['inspectionAvailableFrom']) === true) {
-            $available = $this->parseDate(value: (string) $payload['inspectionAvailableFrom']);
-        }
-
-        if ($available > $deadline) {
-            // Per design.md: inspectionAvailableFrom must be ≤ inspectionDeadline.
-            $available = $deadline;
-        }
+        $available = $this->planner->resolveAvailableFrom(
+            payload: $payload,
+            deadline: $deadline,
+            now: $now,
+        );
 
         $record = array_merge(
             [
@@ -187,7 +184,7 @@ class HearingService
                     DateTimeInterface::ATOM
                 ),
                 'chairperson'             => $chairpersonId,
-                'invitees'                => $this->stampInvitees(
+                'invitees'                => $this->planner->stampInvitees(
                     invitees: $invitees,
                     when: $now,
                 ),
@@ -199,15 +196,15 @@ class HearingService
             ]
         );
 
-        $record['auditTrail'] = $this->appendAudit(
+        $record['auditTrail'] = $this->auditTrail->append(
             existing: [],
             event: 'hearing-scheduled',
-            tag: self::TAG_SCHEDULED,
             payload: [
                 'case'               => $caseId,
                 'scheduledDate'      => $record['scheduledDate'],
                 'inspectionDeadline' => $record['inspectionDeadline'],
             ],
+            tag: self::TAG_SCHEDULED,
         );
 
         try {
@@ -279,14 +276,14 @@ class HearingService
             ]
         );
 
-        $record['auditTrail'] = $this->appendAudit(
+        $record['auditTrail'] = $this->auditTrail->append(
             existing: [],
             event: 'hearing-waived',
-            tag: self::TAG_WAIVER,
             payload: [
                 'case'   => $caseId,
                 'reason' => $reason,
             ],
+            tag: self::TAG_WAIVER,
         );
 
         try {
@@ -345,7 +342,7 @@ class HearingService
         $scheduledRaw = (string) ($current['scheduledDate'] ?? '');
         $scheduled    = $now;
         if ($scheduledRaw !== '') {
-            $scheduled = $this->parseDateTime(value: $scheduledRaw);
+            $scheduled = $this->planner->parseDateTime(value: $scheduledRaw);
         }
 
         $freezeAt = $scheduled->modify(
@@ -359,23 +356,9 @@ class HearingService
 
         foreach ($entries as $entry) {
             if ($isFrozen === true) {
-                $hasReason = isset($entry['correctionReason'])
-                    && trim((string) $entry['correctionReason']) !== '';
-                if ($hasReason === false) {
-                    throw new RuntimeException(
-                        'Aanwezigheidscorrectie vereist toelichting in audit trail'
-                    );
-                }
-
-                $audit = $this->appendAudit(
-                    existing: $audit,
-                    event: 'attendance-late-correction',
-                    tag: self::TAG_VERSLAG,
-                    payload: [
-                        'invitee'          => (string) ($entry['invitee'] ?? ''),
-                        'present'          => (bool) ($entry['present'] ?? false),
-                        'correctionReason' => (string) $entry['correctionReason'],
-                    ],
+                $audit = $this->minutes->appendLateCorrectionAudit(
+                    audit: $audit,
+                    entry: $entry,
                 );
             }
 
@@ -454,76 +437,30 @@ class HearingService
         $audit = (array) ($current['auditTrail'] ?? []);
 
         // Audio recording handling: gated by explicit consent.
-        if (isset($payload['audioRecording']) === true
-            && (string) $payload['audioRecording'] !== ''
-        ) {
-            $consent = (string) (
-                $payload['recordingConsent'] ?? ($current['recordingConsent'] ?? 'not_requested')
-            );
-            if ($consent !== 'granted') {
-                $audit = $this->appendAudit(
-                    existing: $audit,
-                    event: 'audio-upload-denied',
-                    tag: self::TAG_RECORDING_CONSENT,
-                    payload: [
-                        'consent' => $consent,
-                    ],
-                );
+        $audit = $this->minutes->guardRecordingConsent(
+            objectService: $objectService,
+            sessionId: $sessionId,
+            payload: $payload,
+            current: $current,
+            audit: $audit,
+            register: $register,
+            schema: $schema,
+        );
 
-                try {
-                    $objectService->saveObject(
-                        object: ['auditTrail' => $audit],
-                        register: $register,
-                        schema: $schema,
-                        uuid: (string) $sessionId
-                    );
-                } catch (\Throwable $auditError) {
-                    $this->logger->error(
-                        'Procest hearing: failed to log audio-denial: '
-                        .$auditError->getMessage()
-                    );
-                }
+        $update = $this->minutes->buildMinutesUpdate(
+            payload: $payload,
+            summary: $summary,
+            document: $document,
+        );
 
-                throw new RuntimeException(
-                    'Bezwaarmaker heeft geen toestemming gegeven voor audio-opname'
-                );
-            }//end if
-        }//end if
-
-        $minutesSummary = null;
-        if ($summary !== '') {
-            $minutesSummary = $summary;
-        }
-
-        $minutesDocument = null;
-        if ($document !== '') {
-            $minutesDocument = $document;
-        }
-
-        $update = [
-            'minutesSummary'  => $minutesSummary,
-            'minutesDocument' => $minutesDocument,
-            'status'          => 'uitgevoerd',
-        ];
-
-        if (isset($payload['audioRecording']) === true
-            && (string) $payload['audioRecording'] !== ''
-        ) {
-            $update['audioRecording'] = (string) $payload['audioRecording'];
-        }
-
-        if (isset($payload['recordingConsent']) === true) {
-            $update['recordingConsent'] = (string) $payload['recordingConsent'];
-        }
-
-        $update['auditTrail'] = $this->appendAudit(
+        $update['auditTrail'] = $this->auditTrail->append(
             existing: $audit,
             event: 'verslag-recorded',
-            tag: self::TAG_VERSLAG,
             payload: [
                 'hasSummary'  => trim($summary) !== '',
                 'hasDocument' => trim($document) !== '',
             ],
+            tag: self::TAG_VERSLAG,
         );
 
         try {
@@ -618,162 +555,6 @@ class HearingService
             return null;
         }
     }//end seedDefaultHearing()
-
-    /**
-     * Append an entry to the hearingSession auditTrail with a legal
-     * tag drawn from REQ-BH-8.
-     *
-     * @param array<int, array<string, mixed>> $existing Existing audit entries
-     * @param string                           $event    Event slug
-     * @param string                           $tag      Awb / AVG tag
-     * @param array<string, mixed>             $payload  Structured payload
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function appendAudit(
-        array $existing,
-        string $event,
-        string $tag,
-        array $payload
-    ): array {
-        $entry = [
-            'event'   => $event,
-            'tag'     => $tag,
-            'actor'   => $this->resolveUserId(),
-            'at'      => (new DateTimeImmutable())
-                ->format(DateTimeInterface::ATOM),
-            'payload' => $payload,
-        ];
-
-        $existing[] = $entry;
-        return $existing;
-    }//end appendAudit()
-
-    /**
-     * Resolve the acting user UID from IUserSession.
-     *
-     * @return string
-     */
-    private function resolveUserId(): string
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return 'system';
-        }
-
-        return $user->getUID();
-    }//end resolveUserId()
-
-    /**
-     * Parse an ISO-8601 date-time string into an immutable date.
-     *
-     * @param string $value Date-time string
-     *
-     * @return \DateTimeImmutable
-     *
-     * @throws RuntimeException When the value cannot be parsed.
-     */
-    private function parseDateTime(string $value): \DateTimeImmutable
-    {
-        try {
-            return new DateTimeImmutable($value);
-        } catch (\Throwable $e) {
-            throw new RuntimeException(
-                'Invalid scheduledDate: '.$value
-            );
-        }
-    }//end parseDateTime()
-
-    /**
-     * Parse an ISO-8601 date (Y-m-d) string into an immutable date.
-     *
-     * @param string $value Date string
-     *
-     * @return \DateTimeImmutable
-     */
-    private function parseDate(string $value): \DateTimeImmutable
-    {
-        try {
-            return new DateTimeImmutable($value);
-        } catch (\Throwable $e) {
-            return new DateTimeImmutable();
-        }
-    }//end parseDate()
-
-    /**
-     * Compute the Awb art. 7:4 lid 2 inspection deadline as
-     * scheduledDate − INSPECTION_FLOOR_DAYS.
-     *
-     * @param \DateTimeImmutable $scheduled Hearing date
-     *
-     * @return \DateTimeImmutable
-     */
-    private function computeInspectionDeadline(
-        \DateTimeImmutable $scheduled
-    ): \DateTimeImmutable {
-        return $scheduled->modify(
-            '-'.self::INSPECTION_FLOOR_DAYS.' days'
-        );
-    }//end computeInspectionDeadline()
-
-    /**
-     * Block scheduling/rescheduling that would violate the 7-day
-     * inspection floor (Awb art. 7:4 lid 2).
-     *
-     * @param \DateTimeImmutable $scheduled Hearing date
-     * @param \DateTimeImmutable $today     Current date
-     *
-     * @return void
-     *
-     * @throws RuntimeException When the floor is breached.
-     */
-    private function guardInspectionFloor(
-        \DateTimeImmutable $scheduled,
-        \DateTimeImmutable $today
-    ): void {
-        $minDate = $today->modify(
-            '+'.self::INSPECTION_FLOOR_DAYS.' days'
-        );
-
-        if ($scheduled < $minDate) {
-            throw new RuntimeException(
-                'Inzagetermijn (art. 7:4) wordt geschonden — minimaal 7 dagen voor de hoorzitting'
-            );
-        }
-    }//end guardInspectionFloor()
-
-    /**
-     * Stamp each invitee with an invitedAt timestamp when missing so
-     * downstream consumers have a chain-of-custody marker for REQ-BH-8.
-     *
-     * @param array<int, mixed>  $invitees Raw invitee entries
-     * @param \DateTimeImmutable $when     Timestamp to apply
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function stampInvitees(
-        array $invitees,
-        \DateTimeImmutable $when
-    ): array {
-        $stamped = [];
-        foreach ($invitees as $invitee) {
-            if (is_array($invitee) === false) {
-                continue;
-            }
-
-            if (isset($invitee['invitedAt']) === false
-                || (string) $invitee['invitedAt'] === ''
-            ) {
-                $invitee['invitedAt'] = $when->format(
-                    DateTimeInterface::ATOM
-                );
-            }
-
-            $stamped[] = $invitee;
-        }
-
-        return $stamped;
-    }//end stampInvitees()
 
     /**
      * Resolve the underlying procest case UUID from a bezwaar

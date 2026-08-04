@@ -117,11 +117,11 @@ class ScheduleReminderHandler implements ActionHandlerInterface
             ];
 
             if (($transitionContext['dryRun'] ?? false) === true) {
-                return ActionResult::success($preview);
+                return new ActionResult(succeeded: true, data: $preview);
             }
 
             if ($fireAt === null) {
-                return ActionResult::failure('invalid_offset', $preview);
+                return new ActionResult(succeeded: false, error: 'invalid_offset', data: $preview);
             }
 
             $arguments = [
@@ -133,7 +133,7 @@ class ScheduleReminderHandler implements ActionHandlerInterface
 
             $this->jobList->add(self::REMINDER_JOB_CLASS, $arguments);
 
-            return ActionResult::success($preview);
+            return new ActionResult(succeeded: true, data: $preview);
         } catch (Throwable $e) {
             $this->logger->error(
                 'ScheduleReminderHandler: failed to schedule reminder',
@@ -143,7 +143,7 @@ class ScheduleReminderHandler implements ActionHandlerInterface
                     'exception' => $e->getMessage(),
                 ]
             );
-            return ActionResult::failure('schedule_reminder_failed');
+            return new ActionResult(succeeded: false, error: 'schedule_reminder_failed');
         }//end try
     }//end handle()
 

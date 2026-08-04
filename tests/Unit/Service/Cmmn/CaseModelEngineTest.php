@@ -29,7 +29,13 @@ namespace OCA\Procest\Tests\Unit\Service\Cmmn;
 
 use OCA\Procest\Service\Cmmn\CaseModelEngine;
 use OCA\Procest\Service\Cmmn\CaseModelLoader;
+use OCA\Procest\Service\Cmmn\CasePlanRepository;
 use OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException;
+use OCA\Procest\Service\Cmmn\PlanItemCascade;
+use OCA\Procest\Service\Cmmn\PlanItemStateMachine;
+use OCA\Procest\Service\Cmmn\PlanItemTransitions;
+use OCA\Procest\Service\Cmmn\PlanItemTree;
+use OCA\Procest\Service\Cmmn\SentryEvaluator;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Tests\Unit\Service\FakeTermijnStore;
 use PHPUnit\Framework\TestCase;
@@ -62,6 +68,15 @@ class CountingFakeStore extends FakeTermijnStore
 
 /**
  * @covers \OCA\Procest\Service\Cmmn\CaseModelEngine
+ *
+ * @uses \OCA\Procest\Service\Cmmn\CaseModelLoader
+ * @uses \OCA\Procest\Service\Cmmn\CasePlanRepository
+ * @uses \OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException
+ * @uses \OCA\Procest\Service\Cmmn\PlanItemCascade
+ * @uses \OCA\Procest\Service\Cmmn\PlanItemStateMachine
+ * @uses \OCA\Procest\Service\Cmmn\PlanItemTransitions
+ * @uses \OCA\Procest\Service\Cmmn\PlanItemTree
+ * @uses \OCA\Procest\Service\Cmmn\SentryEvaluator
  */
 final class CaseModelEngineTest extends TestCase
 {
@@ -98,7 +113,21 @@ final class CaseModelEngineTest extends TestCase
 
         $loader = new CaseModelLoader($settings, $this->createMock(LoggerInterface::class));
 
-        return new CaseModelEngine($settings, $loader, $this->createMock(LoggerInterface::class));
+        // The repository, cascade, state machine and tree are real
+        // collaborators, not mocks: every assertion in this class is about
+        // behaviour they inherited verbatim from CaseModelEngine, and they
+        // stay driven entirely by the mocked SettingsService above.
+        $transitions  = new PlanItemTransitions();
+        $tree         = new PlanItemTree($transitions);
+        $stateMachine = new PlanItemStateMachine($transitions);
+
+        return new CaseModelEngine(
+            new CasePlanRepository($settings, $loader, $this->createMock(LoggerInterface::class)),
+            new PlanItemCascade($transitions, new SentryEvaluator(), $tree, $stateMachine),
+            $stateMachine,
+            $tree,
+            $transitions,
+        );
     }//end engine()
 
     /**

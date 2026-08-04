@@ -66,18 +66,18 @@ class ChecklistGuard implements GuardEvaluatorInterface
     {
         $taskId = (string) ($guardConfig['taskId'] ?? '');
         if ($taskId === '') {
-            return GuardResult::fail(message: 'Checklist guard missing taskId');
+            return new GuardResult(passed: false, failureMessage: 'Checklist guard missing taskId');
         }
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            return GuardResult::fail(message: 'Opslag niet beschikbaar');
+            return new GuardResult(passed: false, failureMessage: 'Opslag niet beschikbaar');
         }
 
         $register   = $this->settingsService->getConfigValue(key: 'register');
         $taskSchema = $this->settingsService->getConfigValue(key: 'task_schema');
         if ($register === '' || $taskSchema === '') {
-            return GuardResult::fail(message: 'Taak-register niet geconfigureerd');
+            return new GuardResult(passed: false, failureMessage: 'Taak-register niet geconfigureerd');
         }
 
         try {
@@ -85,44 +85,90 @@ class ChecklistGuard implements GuardEvaluatorInterface
             $task = $this->toArray(value: $task);
         } catch (\Throwable $e) {
             $this->logger->error('ChecklistGuard: task load failed', ['exception' => $e->getMessage()]);
-            return GuardResult::fail(message: 'Gekoppelde taak niet gevonden');
+            return new GuardResult(passed: false, failureMessage: 'Gekoppelde taak niet gevonden');
         }
 
-        $items = $task['checklist'] ?? ($task['items'] ?? []);
-        if (is_array($items) === false) {
-            $items = [];
+        $missing = $this->collectMissingItems(
+            task: $task,
+            requiredItems: ($guardConfig['requiredItems'] ?? null),
+        );
+        if ($missing === []) {
+            return new GuardResult(passed: true);
         }
 
-        $required = $guardConfig['requiredItems'] ?? null;
-        $missing  = [];
-        foreach ($items as $item) {
+        return new GuardResult(
+            passed: false,
+            failureMessage: sprintf("%d checklistitem niet afgevinkt: '%s'", count($missing), $missing[0]),
+            details: ['missing' => $missing],
+        );
+    }//end evaluate()
+
+    /**
+     * Collect the labels of checklist items that are not yet ticked off.
+     *
+     * When `requiredItems` is a non-empty array only those labels are
+     * considered; otherwise every unchecked item with a label counts.
+     *
+     * @param array<string, mixed> $task          The loaded task object
+     * @param mixed                $requiredItems Optional allow-list of required labels
+     *
+     * @return array<int, string>
+     */
+    private function collectMissingItems(array $task, mixed $requiredItems): array
+    {
+        $hasRequired = (is_array($requiredItems) === true && $requiredItems !== []);
+        $missing     = [];
+        foreach ($this->resolveItems(task: $task) as $item) {
             if (is_array($item) === false) {
                 continue;
             }
 
-            $label   = (string) ($item['label'] ?? ($item['name'] ?? ''));
-            $checked = (bool) ($item['checked'] ?? false);
-
-            $hasRequired = (is_array($required) === true && $required !== []);
-            if ($hasRequired === true && in_array($label, $required, true) === true && $checked === false) {
-                $missing[] = $label;
+            if ((bool) ($item['checked'] ?? false) === true) {
+                continue;
             }
 
-            if ($hasRequired === false && $checked === false && $label !== '') {
+            $label = $this->itemLabel(item: $item);
+            if ($hasRequired === true && in_array($label, $requiredItems, true) === true) {
+                $missing[] = $label;
+                continue;
+            }
+
+            if ($hasRequired === false && $label !== '') {
                 $missing[] = $label;
             }
+        }//end foreach
+
+        return $missing;
+    }//end collectMissingItems()
+
+    /**
+     * Read the checklist items off a task object, tolerating both shapes.
+     *
+     * @param array<string, mixed> $task The loaded task object
+     *
+     * @return array<int|string, mixed>
+     */
+    private function resolveItems(array $task): array
+    {
+        $items = $task['checklist'] ?? ($task['items'] ?? []);
+        if (is_array($items) === false) {
+            return [];
         }
 
-        if (count($missing) === 0) {
-            return GuardResult::pass();
-        }
+        return $items;
+    }//end resolveItems()
 
-        $first = $missing[0];
-        return GuardResult::fail(
-            message: sprintf("%d checklistitem niet afgevinkt: '%s'", count($missing), $first),
-            details: ['missing' => $missing],
-        );
-    }//end evaluate()
+    /**
+     * Read the display label off a single checklist item.
+     *
+     * @param array<string, mixed> $item A single checklist item
+     *
+     * @return string
+     */
+    private function itemLabel(array $item): string
+    {
+        return (string) ($item['label'] ?? ($item['name'] ?? ''));
+    }//end itemLabel()
 
     /**
      * Coerce ObjectService results to array.

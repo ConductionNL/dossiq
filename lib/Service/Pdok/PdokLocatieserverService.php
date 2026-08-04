@@ -39,7 +39,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service\Pdok;
 
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Support\SuppressesWarnings;
 use OCP\IAppConfig;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -53,6 +53,8 @@ use Throwable;
  */
 class PdokLocatieserverService
 {
+
+    use SuppressesWarnings;
 
     /**
      * Default endpoint when `pdok_locatieserver_endpoint` is empty.
@@ -94,17 +96,15 @@ class PdokLocatieserverService
     /**
      * Constructor.
      *
-     * @param ICacheFactory      $cacheFactory    Cache factory.
-     * @param IAppConfig         $appConfig       App configuration accessor.
-     * @param SettingsService    $settingsService Procest settings service.
-     * @param ContainerInterface $container       DI container for optional
-     *                                            OpenConnector resolution.
-     * @param LoggerInterface    $logger          PSR logger.
+     * @param ICacheFactory      $cacheFactory Cache factory.
+     * @param IAppConfig         $appConfig    App configuration accessor.
+     * @param ContainerInterface $container    DI container for optional
+     *                                         OpenConnector resolution.
+     * @param LoggerInterface    $logger       PSR logger.
      */
     public function __construct(
         ICacheFactory $cacheFactory,
         private IAppConfig $appConfig,
-        private SettingsService $settingsService,
         private ContainerInterface $container,
         private LoggerInterface $logger,
     ) {
@@ -117,24 +117,24 @@ class PdokLocatieserverService
      * Returns an empty array while the service is in a degraded state so the
      * caller can fall back to free-text input.
      *
-     * @param string $query Free-text address fragment.
-     * @param array  $fq    Optional Solr-style filter queries (e.g.
-     *                      `['type:adres', 'gemeentenaam:Amsterdam']`).
-     * @param int    $rows  Maximum number of suggestions to return.
+     * @param string $query         Free-text address fragment.
+     * @param array  $filterQueries Optional Solr-style filter queries (e.g.
+     *                              `['type:adres', 'gemeentenaam:Amsterdam']`).
+     * @param int    $rows          Maximum number of suggestions to return.
      *
      * @return array Decoded JSON response or `[]` while degraded.
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    public function suggest(string $query, array $fq=[], int $rows=10): array
+    public function suggest(string $query, array $filterQueries=[], int $rows=10): array
     {
         if ($this->isDegraded() === true) {
             return [];
         }
 
         $params = ['q' => $query, 'rows' => $rows];
-        if (empty($fq) === false) {
-            $params['fq'] = $fq;
+        if (empty($filterQueries) === false) {
+            $params['fq'] = $filterQueries;
         }
 
         return $this->call(
@@ -151,18 +151,18 @@ class PdokLocatieserverService
     /**
      * Free-text geocoding call.
      *
-     * @param string $query Free-text query.
-     * @param array  $fq    Optional filter queries.
+     * @param string $query         Free-text query.
+     * @param array  $filterQueries Optional filter queries.
      *
      * @return array Decoded JSON response.
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    public function free(string $query, array $fq=[]): array
+    public function free(string $query, array $filterQueries=[]): array
     {
         $params = ['q' => $query];
-        if (empty($fq) === false) {
-            $params['fq'] = $fq;
+        if (empty($filterQueries) === false) {
+            $params['fq'] = $filterQueries;
         }
 
         return $this->call(
@@ -349,14 +349,50 @@ class PdokLocatieserverService
         ];
         $context       = stream_context_create(options: $streamOptions);
 
-        $body = @file_get_contents(filename: $url, use_include_path: false, context: $context);
+        // Deliberately fopen() + stream_get_meta_data() rather than
+        // file_get_contents(): the HTTP stream wrapper publishes
+        // $http_response_header only into the scope that actually made the
+        // call, which here is the closure, so that magic variable is
+        // unreachable from this method. The wrapper_data key carries the
+        // identical response header lines and travels back with the return
+        // value.
+        $response = $this->withoutWarnings(
+            operation: static function () use ($url, $context): array {
+                $handle = fopen(filename: $url, mode: 'rb', use_include_path: false, context: $context);
+                if ($handle === false) {
+                    return [
+                        'body'    => false,
+                        'headers' => [],
+                    ];
+                }
+
+                $metaData = stream_get_meta_data($handle);
+                $headers  = ($metaData['wrapper_data'] ?? []);
+                if (is_array($headers) === false) {
+                    $headers = [];
+                }
+
+                $body = stream_get_contents($handle);
+                fclose($handle);
+
+                return [
+                    'body'    => $body,
+                    'headers' => $headers,
+                ];
+            }
+        );
+
+        $body = $response['body'];
         if ($body === false) {
+            $this->logger->warning(
+                'PDOK Locatieserver request failed',
+                ['detail' => $this->lastSuppressedWarning()]
+            );
             throw new RuntimeException('Network error contacting PDOK Locatieserver', 0);
         }
 
         $statusCode = 0;
-        // $http_response_header is populated by the HTTP wrapper.
-        foreach ($http_response_header as $header) {
+        foreach ($response['headers'] as $header) {
             if (preg_match(pattern: '#^HTTP/\S+\s+(\d{3})#', subject: $header, matches: $matches) === 1) {
                 $statusCode = (int) $matches[1];
             }

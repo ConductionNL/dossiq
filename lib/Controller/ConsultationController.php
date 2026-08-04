@@ -4,8 +4,13 @@
  * Procest Consultation Controller
  *
  * REST API for inter-departmental consultation management. Provides CRUD,
- * lifecycle transitions, advisory body search, deadline extension, and a
- * token-based public endpoint for external body responses per Awb 3:5-3:9.
+ * lifecycle transitions and deadline extension for adviesaanvragen.
+ *
+ * The advisory body directory lives on {@see AdvisoryBodyController} and the
+ * token-based external surface on {@see ConsultationPublicController}.
+ * Authentication, resolution and the authorization rules are delegated to
+ * {@see ConsultationAccessGuard} (ADR-022) — this controller only maps a
+ * guard outcome or a service result onto a response.
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -26,46 +31,34 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
-use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\AdvisoryBodyService;
+use OCA\Procest\Service\Consultation\ConsultationAccessGuard;
 use OCA\Procest\Service\ConsultationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IGroupManager;
 use OCP\IRequest;
-use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
 
 /**
  * Controller for consultation (adviesaanvraag) management.
  *
- * Mutation endpoints carry the NoAdminRequired annotation and apply an
- * authorizeConsultationAccess() guard (OWASP A01:2021, ADR-005 Rule 3).
- * The publicResponse endpoints carry PublicPage + NoCSRFRequired — access
- * is logged for BIO compliance via LoggerInterface.
+ * Every endpoint carries the NoAdminRequired annotation and applies the
+ * ConsultationAccessGuard (OWASP A01:2021, ADR-005 Rule 3).
  */
 class ConsultationController extends Controller
 {
     /**
      * Constructor.
      *
-     * @param string              $appName             The app name
-     * @param IRequest            $request             The request
-     * @param ConsultationService $consultationService The consultation service
-     * @param AdvisoryBodyService $advisoryBodyService The advisory body service
-     * @param IUserSession        $userSession         The user session
-     * @param IGroupManager       $groupManager        The group manager
-     * @param LoggerInterface     $logger              The logger for BIO audit events
+     * @param string                  $appName             The app name
+     * @param IRequest                $request             The request
+     * @param ConsultationService     $consultationService The consultation service
+     * @param ConsultationAccessGuard $accessGuard         The authorization/body-decoding guard
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly ConsultationService $consultationService,
-        private readonly AdvisoryBodyService $advisoryBodyService,
-        private readonly IUserSession $userSession,
-        private readonly IGroupManager $groupManager,
-        private readonly LoggerInterface $logger,
+        private readonly ConsultationAccessGuard $accessGuard,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -83,9 +76,9 @@ class ConsultationController extends Controller
      */
     public function index(string $caseId): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        $authError = $this->accessGuard->requireUser();
+        if ($authError !== null) {
+            return $authError;
         }
 
         $consultations = $this->consultationService->getConsultationsForCase(caseId: $caseId);
@@ -105,22 +98,12 @@ class ConsultationController extends Controller
      */
     public function show(string $id): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        $access = $this->accessGuard->authorize(consultationId: $id);
+        if ($access->error !== null) {
+            return $access->error;
         }
 
-        $consultation = $this->consultationService->getConsultation(consultationId: $id);
-        if ($consultation === null) {
-            return new JSONResponse(['error' => 'Consultation not found'], Http::STATUS_NOT_FOUND);
-        }
-
-        $authError = $this->authorizeConsultationAccess(consultation: $consultation, uid: $user->getUID());
-        if ($authError !== null) {
-            return $authError;
-        }
-
-        return new JSONResponse($consultation);
+        return new JSONResponse($access->consultation);
     }//end show()
 
     /**
@@ -134,27 +117,18 @@ class ConsultationController extends Controller
      */
     public function create(): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        $authError = $this->accessGuard->requireUser();
+        if ($authError !== null) {
+            return $authError;
         }
 
         try {
-            $data = $this->getRequestBody();
-            $data['aanvrager'] = $user->getUID();
+            $data = $this->accessGuard->requestBody();
+            $data['aanvrager'] = $this->accessGuard->currentUid();
 
-            $dependsOn = $data['dependsOn'] ?? [];
-            if (is_array($dependsOn) === true && empty($dependsOn) === false) {
-                if ($this->consultationService->validateDependencyCycle(
-                    consultationId: '',
-                    dependsOn: $dependsOn,
-                ) === true
-                ) {
-                    return new JSONResponse(
-                        ['error' => 'Dependency cycle detected in dependsOn list'],
-                        Http::STATUS_BAD_REQUEST,
-                    );
-                }
+            $cycleError = $this->accessGuard->dependencyCycleError(data: $data);
+            if ($cycleError !== null) {
+                return $cycleError;
             }
 
             $result = $this->consultationService->createConsultation(data: $data);
@@ -177,23 +151,13 @@ class ConsultationController extends Controller
      */
     public function updateStatus(string $id): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        $consultation = $this->consultationService->getConsultation(consultationId: $id);
-        if ($consultation === null) {
-            return new JSONResponse(['error' => 'Consultation not found'], Http::STATUS_NOT_FOUND);
-        }
-
-        $authError = $this->authorizeConsultationAccess(consultation: $consultation, uid: $user->getUID());
-        if ($authError !== null) {
-            return $authError;
+        $access = $this->accessGuard->authorize(consultationId: $id);
+        if ($access->error !== null) {
+            return $access->error;
         }
 
         try {
-            $data   = $this->getRequestBody();
+            $data   = $this->accessGuard->requestBody();
             $status = $data['status'] ?? '';
             $result = $this->consultationService->updateStatus(
                 consultationId: $id,
@@ -218,23 +182,13 @@ class ConsultationController extends Controller
      */
     public function submitResponse(string $id): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        $consultation = $this->consultationService->getConsultation(consultationId: $id);
-        if ($consultation === null) {
-            return new JSONResponse(['error' => 'Consultation not found'], Http::STATUS_NOT_FOUND);
-        }
-
-        $authError = $this->authorizeConsultationAccess(consultation: $consultation, uid: $user->getUID());
-        if ($authError !== null) {
-            return $authError;
+        $access = $this->accessGuard->authorize(consultationId: $id);
+        if ($access->error !== null) {
+            return $access->error;
         }
 
         try {
-            $data   = $this->getRequestBody();
+            $data   = $this->accessGuard->requestBody();
             $result = $this->consultationService->submitResponse(
                 consultationId: $id,
                 response: $data,
@@ -258,19 +212,9 @@ class ConsultationController extends Controller
      */
     public function delete(string $id): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        $consultation = $this->consultationService->getConsultation(consultationId: $id);
-        if ($consultation === null) {
-            return new JSONResponse(['error' => 'Consultation not found'], Http::STATUS_NOT_FOUND);
-        }
-
-        $authError = $this->authorizeConsultationAccess(consultation: $consultation, uid: $user->getUID());
-        if ($authError !== null) {
-            return $authError;
+        $access = $this->accessGuard->authorize(consultationId: $id);
+        if ($access->error !== null) {
+            return $access->error;
         }
 
         try {
@@ -292,9 +236,9 @@ class ConsultationController extends Controller
      */
     public function overdue(): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        $authError = $this->accessGuard->requireUser();
+        if ($authError !== null) {
+            return $authError;
         }
 
         $overdue = $this->consultationService->getOverdueConsultations();
@@ -314,23 +258,13 @@ class ConsultationController extends Controller
      */
     public function requestExtension(string $id): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        $consultation = $this->consultationService->getConsultation(consultationId: $id);
-        if ($consultation === null) {
-            return new JSONResponse(['error' => 'Consultation not found'], Http::STATUS_NOT_FOUND);
-        }
-
-        $authError = $this->authorizeConsultationAccess(consultation: $consultation, uid: $user->getUID());
-        if ($authError !== null) {
-            return $authError;
+        $access = $this->accessGuard->authorize(consultationId: $id);
+        if ($access->error !== null) {
+            return $access->error;
         }
 
         try {
-            $data          = $this->getRequestBody();
+            $data          = $this->accessGuard->requestBody();
             $justification = $data['justification'] ?? '';
             $result        = $this->consultationService->requestExtension(
                 consultationId: $id,
@@ -355,23 +289,13 @@ class ConsultationController extends Controller
      */
     public function approveExtension(string $id): JSONResponse
     {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        $consultation = $this->consultationService->getConsultation(consultationId: $id);
-        if ($consultation === null) {
-            return new JSONResponse(['error' => 'Consultation not found'], Http::STATUS_NOT_FOUND);
-        }
-
-        $authError = $this->authorizeConsultationAccess(consultation: $consultation, uid: $user->getUID());
-        if ($authError !== null) {
-            return $authError;
+        $access = $this->accessGuard->authorize(consultationId: $id);
+        if ($access->error !== null) {
+            return $access->error;
         }
 
         try {
-            $data        = $this->getRequestBody();
+            $data        = $this->accessGuard->requestBody();
             $newDeadline = $data['newDeadline'] ?? '';
             $result      = $this->consultationService->approveExtension(
                 consultationId: $id,
@@ -382,183 +306,4 @@ class ConsultationController extends Controller
             return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
         }
     }//end approveExtension()
-
-    /**
-     * List all advisory bodies.
-     *
-     * @return JSONResponse List of advisory bodies
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
-     */
-    public function listAdvisoryBodies(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        $bodies = $this->advisoryBodyService->findAll();
-        return new JSONResponse(['results' => $bodies]);
-    }//end listAdvisoryBodies()
-
-    /**
-     * Search advisory bodies by specialization tag.
-     *
-     * @return JSONResponse Ranked list of advisory bodies
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
-     */
-    public function searchAdvisoryBodies(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        $query  = (string) ($this->request->getParam('q') ?? '');
-        $bodies = $this->advisoryBodyService->searchBySpecialization(query: $query);
-        return new JSONResponse(['results' => $bodies]);
-    }//end searchAdvisoryBodies()
-
-    /**
-     * GET endpoint for external body access via secure token.
-     *
-     * Returns consultation details for the external advisory body.
-     * Access is logged for BIO compliance (Baseline Informatiebeveiliging Overheid).
-     *
-     * @param string $token The secure access token
-     *
-     * @return JSONResponse Consultation data or error
-     *
-     * @PublicPage
-     * @NoCSRFRequired
-     *
-     * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
-     */
-    public function publicResponseGet(string $token): JSONResponse
-    {
-        if (empty($token) === true) {
-            return new JSONResponse(['error' => 'Token is required'], Http::STATUS_BAD_REQUEST);
-        }
-
-        $consultation = $this->consultationService->findBySecureToken(token: $token);
-        if ($consultation === null) {
-            return new JSONResponse(['error' => 'Invalid or expired token'], Http::STATUS_NOT_FOUND);
-        }
-
-        $this->logger->info(
-            'Procest BIO: external consultation access via token (GET)',
-            [
-                'app'            => Application::APP_ID,
-                'consultationId' => $consultation['id'] ?? '',
-                'tokenPrefix'    => substr($token, 0, 8).'...',
-            ],
-        );
-
-        unset($consultation['secureToken']);
-        return new JSONResponse($consultation);
-    }//end publicResponseGet()
-
-    /**
-     * POST endpoint for external body to submit advice response via secure token.
-     *
-     * Access is logged for BIO compliance.
-     *
-     * @param string $token The secure access token
-     *
-     * @return JSONResponse Updated consultation or error
-     *
-     * @PublicPage
-     * @NoCSRFRequired
-     *
-     * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
-     */
-    public function publicResponsePost(string $token): JSONResponse
-    {
-        if (empty($token) === true) {
-            return new JSONResponse(['error' => 'Token is required'], Http::STATUS_BAD_REQUEST);
-        }
-
-        $consultation = $this->consultationService->findBySecureToken(token: $token);
-        if ($consultation === null) {
-            return new JSONResponse(['error' => 'Invalid or expired token'], Http::STATUS_NOT_FOUND);
-        }
-
-        $consultationId = $consultation['id'] ?? '';
-
-        $this->logger->info(
-            'Procest BIO: external consultation response submitted via token (POST)',
-            [
-                'app'            => Application::APP_ID,
-                'consultationId' => $consultationId,
-                'tokenPrefix'    => substr($token, 0, 8).'...',
-            ],
-        );
-
-        try {
-            $data   = $this->getRequestBody();
-            $result = $this->consultationService->submitResponse(
-                consultationId: $consultationId,
-                response: $data,
-            );
-            return new JSONResponse($result);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
-    }//end publicResponsePost()
-
-    /**
-     * Check whether the user is authorized to access or mutate a consultation.
-     *
-     * A user is authorized when they are the aanvrager (original requestor),
-     * the assignee (individual handler), or an administrator.
-     * Returns null when authorized, or a 403 JSONResponse when not.
-     *
-     * @param array<string, mixed> $consultation The consultation data
-     * @param string               $uid          The user's UID
-     *
-     * @return JSONResponse|null Null when authorized, 403 response when denied
-     */
-    private function authorizeConsultationAccess(array $consultation, string $uid): ?JSONResponse
-    {
-        if ($this->groupManager->isAdmin($uid) === true) {
-            return null;
-        }
-
-        $aanvrager = $consultation['aanvrager'] ?? '';
-        $assignee  = $consultation['assignee'] ?? '';
-
-        if ($uid === $aanvrager || ($assignee !== '' && $uid === $assignee)) {
-            return null;
-        }
-
-        return new JSONResponse(
-            ['error' => 'Access to this consultation is not permitted'],
-            Http::STATUS_FORBIDDEN,
-        );
-    }//end authorizeConsultationAccess()
-
-    /**
-     * Parse the request body as JSON and return as array.
-     *
-     * @return array<string, mixed>
-     */
-    private function getRequestBody(): array
-    {
-        $content = $this->request->getContent();
-        if ($content === '' || $content === false) {
-            $content = '{}';
-        }
-
-        $decoded = json_decode((string) $content, true);
-        if (is_array($decoded) === true) {
-            return $decoded;
-        }
-
-        return [];
-    }//end getRequestBody()
 }//end class

@@ -34,7 +34,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service\Pdok;
 
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Support\SuppressesWarnings;
 use OCP\IAppConfig;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -48,6 +48,8 @@ use Throwable;
  */
 class PdokBagService
 {
+
+    use SuppressesWarnings;
 
     /**
      * Default endpoint when `pdok_bag_endpoint` is empty.
@@ -69,17 +71,15 @@ class PdokBagService
     /**
      * Constructor.
      *
-     * @param ICacheFactory      $cacheFactory    Cache factory.
-     * @param IAppConfig         $appConfig       App configuration accessor.
-     * @param SettingsService    $settingsService Procest settings service.
-     * @param ContainerInterface $container       DI container for optional
-     *                                            OpenConnector resolution.
-     * @param LoggerInterface    $logger          PSR logger.
+     * @param ICacheFactory      $cacheFactory Cache factory.
+     * @param IAppConfig         $appConfig    App configuration accessor.
+     * @param ContainerInterface $container    DI container for optional
+     *                                         OpenConnector resolution.
+     * @param LoggerInterface    $logger       PSR logger.
      */
     public function __construct(
         ICacheFactory $cacheFactory,
         private IAppConfig $appConfig,
-        private SettingsService $settingsService,
         private ContainerInterface $container,
         private LoggerInterface $logger,
     ) {
@@ -214,29 +214,13 @@ class PdokBagService
 
         $features = ($decoded['features'] ?? []);
         if (is_array(value: $features) === false || empty($features) === true) {
-            $this->cache->set(
-                $cacheKey,
-                [],
-                (int) $this->appConfig->getValueString(
-                    Application::APP_ID,
-                    'pdok_cache_lookup_ttl_seconds',
-                    (string) self::DEFAULT_TTL
-                ),
-            );
+            $this->cache->set($cacheKey, [], $this->lookupCacheTtl());
             return [];
         }
 
         $normalised = $this->normaliseFeature(feature: $features[0]);
 
-        $this->cache->set(
-            $cacheKey,
-            $normalised,
-            (int) $this->appConfig->getValueString(
-                Application::APP_ID,
-                'pdok_cache_lookup_ttl_seconds',
-                (string) self::DEFAULT_TTL
-            ),
-        );
+        $this->cache->set($cacheKey, $normalised, $this->lookupCacheTtl());
 
         $elapsedMs = (int) ((microtime(as_float: true) - $started) * 1000);
         $this->logger->info(
@@ -251,6 +235,20 @@ class PdokBagService
 
         return $normalised;
     }//end fetch()
+
+    /**
+     * Resolve the configured TTL, in seconds, for a cached BAG lookup.
+     *
+     * @return int The cache TTL in seconds.
+     */
+    private function lookupCacheTtl(): int
+    {
+        return (int) $this->appConfig->getValueString(
+            Application::APP_ID,
+            'pdok_cache_lookup_ttl_seconds',
+            (string) self::DEFAULT_TTL
+        );
+    }//end lookupCacheTtl()
 
     /**
      * Build the OGC Filter XML for a single property equality predicate.
@@ -294,14 +292,50 @@ class PdokBagService
         ];
         $context       = stream_context_create(options: $streamOptions);
 
-        $body = @file_get_contents(filename: $url, use_include_path: false, context: $context);
+        // Deliberately fopen() + stream_get_meta_data() rather than
+        // file_get_contents(): the HTTP stream wrapper publishes
+        // $http_response_header only into the scope that actually made the
+        // call, which here is the closure, so that magic variable is
+        // unreachable from this method. The wrapper_data key carries the
+        // identical response header lines and travels back with the return
+        // value.
+        $response = $this->withoutWarnings(
+            operation: static function () use ($url, $context): array {
+                $handle = fopen(filename: $url, mode: 'rb', use_include_path: false, context: $context);
+                if ($handle === false) {
+                    return [
+                        'body'    => false,
+                        'headers' => [],
+                    ];
+                }
+
+                $metaData = stream_get_meta_data($handle);
+                $headers  = ($metaData['wrapper_data'] ?? []);
+                if (is_array($headers) === false) {
+                    $headers = [];
+                }
+
+                $body = stream_get_contents($handle);
+                fclose($handle);
+
+                return [
+                    'body'    => $body,
+                    'headers' => $headers,
+                ];
+            }
+        );
+
+        $body = $response['body'];
         if ($body === false) {
+            $this->logger->warning(
+                'PDOK BAG WFS request failed',
+                ['detail' => $this->lastSuppressedWarning()]
+            );
             throw new RuntimeException('Network error contacting PDOK BAG WFS', 0);
         }
 
         $statusCode = 0;
-        // $http_response_header is populated by the HTTP wrapper.
-        foreach ($http_response_header as $header) {
+        foreach ($response['headers'] as $header) {
             if (preg_match(pattern: '#^HTTP/\S+\s+(\d{3})#', subject: $header, matches: $matches) === 1) {
                 $statusCode = (int) $matches[1];
             }

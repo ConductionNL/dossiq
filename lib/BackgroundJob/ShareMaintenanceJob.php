@@ -112,32 +112,8 @@ class ShareMaintenanceJob extends TimedJob
             $reminderDate = new DateTime('+'.self::REMINDER_DAYS.' days');
 
             foreach ($shares as $share) {
-                if (is_object($share) === true) {
-                    $shareData = $share->jsonSerialize();
-                } else {
-                    $shareData = $share;
-                }
-
-                // Skip revoked shares.
-                if (empty($shareData['revokedAt']) === false) {
-                    continue;
-                }
-
-                // Check if share expires within reminder window.
-                if (empty($shareData['expiresAt']) === false) {
-                    $expiresAt = new DateTime($shareData['expiresAt']);
-                    if ($expiresAt <= $reminderDate && $expiresAt > new DateTime()) {
-                        $this->logger->info(
-                            'Procest: Share expiring soon',
-                            [
-                                'shareId'   => ($shareData['id'] ?? 'unknown'),
-                                'expiresAt' => $shareData['expiresAt'],
-                                'createdBy' => ($shareData['createdBy'] ?? 'unknown'),
-                            ]
-                        );
-                    }
-                }
-            }//end foreach
+                $this->reportExpiringShare(share: $share, reminderDate: $reminderDate);
+            }
         } catch (\Exception $e) {
             $this->logger->error(
                 'Procest: ShareMaintenanceJob failed',
@@ -145,4 +121,46 @@ class ShareMaintenanceJob extends TimedJob
             );
         }//end try
     }//end run()
+
+    /**
+     * Log a reminder when a single share expires within the reminder window.
+     *
+     * Revoked shares are skipped, as are shares without an expiry date and
+     * shares whose expiry lies outside the window (already lapsed, or further
+     * away than self::REMINDER_DAYS).
+     *
+     * @param mixed    $share        One share entry, either an array or an object exposing jsonSerialize()
+     * @param DateTime $reminderDate The upper bound of the reminder window
+     *
+     * @return void
+     */
+    private function reportExpiringShare(mixed $share, DateTime $reminderDate): void
+    {
+        $shareData = $share;
+        if (is_object($share) === true) {
+            $shareData = $share->jsonSerialize();
+        }
+
+        // Skip revoked shares.
+        if (empty($shareData['revokedAt']) === false) {
+            return;
+        }
+
+        // Check if share expires within reminder window.
+        if (empty($shareData['expiresAt']) === true) {
+            return;
+        }
+
+        $expiresAt = new DateTime($shareData['expiresAt']);
+        if ($expiresAt <= $reminderDate && $expiresAt > new DateTime()) {
+            $this->logger->info(
+                'Procest: Share expiring soon',
+                [
+                    'shareId'   => ($shareData['id'] ?? 'unknown'),
+                    'expiresAt' => $shareData['expiresAt'],
+                    'createdBy' => ($shareData['createdBy'] ?? 'unknown'),
+                ]
+            );
+        }
+    }//end reportExpiringShare()
 }//end class

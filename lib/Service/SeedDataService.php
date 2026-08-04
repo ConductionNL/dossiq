@@ -163,18 +163,14 @@ class SeedDataService
         $identifier = ($caseTypeData['identifier'] ?? '');
 
         // Check if case type already exists by identifier.
-        $existing = $this->findByFilter(
+        $alreadySeeded = $this->caseTypeAlreadySeeded(
             objectService: $objectService,
             registerId: $registerId,
-            schemaId: $caseTypeSchema,
-            filters: ['identifier' => $identifier],
+            caseTypeSchema: $caseTypeSchema,
+            identifier: $identifier,
         );
 
-        if ($existing !== null) {
-            $this->logger->info(
-                'Procest: Case type already exists, skipping seed',
-                ['identifier' => $identifier]
-            );
+        if ($alreadySeeded === true) {
             $counts['skipped']++;
             return $counts;
         }
@@ -190,7 +186,121 @@ class SeedDataService
             $caseTypeData['workflowTemplate']
         );
 
-        // Create the case type.
+        // Create the case type and resolve the id its children must point at.
+        $caseTypeId = $this->createCaseType(
+            objectService: $objectService,
+            caseTypeData: $caseTypeData,
+            registerId: $registerId,
+            caseTypeSchema: $caseTypeSchema,
+            identifier: $identifier,
+        );
+
+        if ($caseTypeId === null) {
+            return $counts;
+        }
+
+        $counts['caseTypes']++;
+
+        // Create status types and build a name-to-ID map.
+        $statuses = $this->seedChildTypes(
+            objectService: $objectService,
+            childrenData: $statusTypesData,
+            registerId: $registerId,
+            schemaId: $statusTypeSchema,
+            caseTypeId: $caseTypeId,
+        );
+
+        $statusNameToId         = $statuses['map'];
+        $counts['statusTypes'] += $statuses['created'];
+
+        // Create role types and build a name-to-ID map.
+        $roleNameToId = [];
+        if ($roleTypeSchema !== '') {
+            $roles = $this->seedChildTypes(
+                objectService: $objectService,
+                childrenData: $roleTypesData,
+                registerId: $registerId,
+                schemaId: $roleTypeSchema,
+                caseTypeId: $caseTypeId,
+            );
+
+            $roleNameToId         = $roles['map'];
+            $counts['roleTypes'] += $roles['created'];
+        }
+
+        // Create workflow template with resolved status/role references.
+        $counts['workflows'] += $this->seedWorkflowTemplate(
+            objectService: $objectService,
+            workflowData: $workflowData,
+            registerId: $registerId,
+            workflowSchema: $workflowSchema,
+            statusNameMap: $statusNameToId,
+            roleNameMap: $roleNameToId,
+            caseTypeId: $caseTypeId,
+        );
+
+        return $counts;
+    }//end seedCaseType()
+
+    /**
+     * Determine whether a case type with this identifier was already seeded.
+     *
+     * @param object $objectService  The OpenRegister ObjectService
+     * @param string $registerId     The register UUID
+     * @param string $caseTypeSchema The case type schema UUID
+     * @param mixed  $identifier     The case type identifier from the seed data
+     *
+     * @return bool True when a matching case type already exists
+     */
+    private function caseTypeAlreadySeeded(
+        object $objectService,
+        string $registerId,
+        string $caseTypeSchema,
+        mixed $identifier,
+    ): bool {
+        $existing = $this->findByFilter(
+            objectService: $objectService,
+            registerId: $registerId,
+            schemaId: $caseTypeSchema,
+            filters: ['identifier' => $identifier],
+        );
+
+        if ($existing === null) {
+            return false;
+        }
+
+        $this->logger->info(
+            'Procest: Case type already exists, skipping seed',
+            ['identifier' => $identifier]
+        );
+
+        return true;
+    }//end caseTypeAlreadySeeded()
+
+    /**
+     * Create the case type object and resolve the id its children must point at.
+     *
+     * Prefers the deterministic id from the seed data: OpenRegister's
+     * saveObject() return is not always hydrated with the new id (getId() and
+     * getUuid() can both be empty), which left child status/role types with an
+     * empty caseType and failed their uuid-format validation. The seed assigns
+     * fixed UUIDs to the case types, so use those.
+     *
+     * @param object $objectService  The OpenRegister ObjectService
+     * @param array  $caseTypeData   The case type seed data, nested children removed
+     * @param string $registerId     The register UUID
+     * @param string $caseTypeSchema The case type schema UUID
+     * @param mixed  $identifier     The case type identifier from the seed data
+     *
+     * @return string|null The case type UUID, or null when creation failed
+     */
+    private function createCaseType(
+        object $objectService,
+        array $caseTypeData,
+        string $registerId,
+        string $caseTypeSchema,
+        mixed $identifier,
+    ): ?string {
         $caseType = $this->createObject(
             objectService: $objectService,
             registerId: $registerId,
@@ -203,91 +313,110 @@ class SeedDataService
                 'Procest: Failed to create case type',
                 ['identifier' => $identifier]
             );
-            return $counts;
+            return null;
         }
 
-        // Prefer the deterministic id from the seed data: OpenRegister's
-        // saveObject() return is not always hydrated with the new id (getId()
-        // and getUuid() can both be empty), which left child status/role types
-        // with an empty caseType and failed their uuid-format validation. The
-        // seed assigns fixed UUIDs to the case types, so use those.
         $caseTypeId = (string) ($caseTypeData['id'] ?? $caseTypeData['uuid'] ?? '');
         if ($caseTypeId === '') {
             $caseTypeId = $this->getObjectId(object: $caseType);
         }
-
-        $counts['caseTypes']++;
 
         $this->logger->info(
             'Procest: Created case type',
             ['identifier' => $identifier, 'id' => $caseTypeId]
         );
 
-        // Create status types and build a name-to-ID map. Assign a fixed UUID
-        // up front so the id is known regardless of saveObject's return shape
-        // (used for the workflow step references below).
-        $statusNameToId = [];
-        foreach ($statusTypesData as $statusData) {
-            $statusData['caseType'] = $caseTypeId;
-            $statusId         = (string) ($statusData['id'] ?? $this->generateUUID());
-            $statusData['id'] = $statusId;
-            $statusObj        = $this->createObject(
+        return $caseTypeId;
+    }//end createCaseType()
+
+    /**
+     * Create the named children of a case type (status types, role types) and
+     * map their names to their ids.
+     *
+     * A fixed UUID is assigned up front so the id is known regardless of
+     * saveObject()'s return shape — the workflow step/transition references
+     * below are resolved from this map.
+     *
+     * @param object $objectService The OpenRegister ObjectService
+     * @param array  $childrenData  The child seed data
+     * @param string $registerId    The register UUID
+     * @param string $schemaId      The child schema UUID
+     * @param string $caseTypeId    The owning case type UUID
+     *
+     * @return array{map: array<string, string>, created: int} The name-to-id map and the created count
+     */
+    private function seedChildTypes(
+        object $objectService,
+        array $childrenData,
+        string $registerId,
+        string $schemaId,
+        string $caseTypeId,
+    ): array {
+        $map     = [];
+        $created = 0;
+
+        foreach ($childrenData as $childData) {
+            $childData['caseType'] = $caseTypeId;
+            $childId         = (string) ($childData['id'] ?? $this->generateUUID());
+            $childData['id'] = $childId;
+            $childObj        = $this->createObject(
                 objectService: $objectService,
                 registerId: $registerId,
-                schemaId: $statusTypeSchema,
-                data: $statusData,
+                schemaId: $schemaId,
+                data: $childData,
             );
 
-            if ($statusObj !== null) {
-                $statusNameToId[$statusData['name']] = $statusId;
-                $counts['statusTypes']++;
+            if ($childObj !== null) {
+                $map[$childData['name']] = $childId;
+                $created++;
             }
         }
 
-        // Create role types and build a name-to-ID map.
-        $roleNameToId = [];
-        if ($roleTypeSchema !== '') {
-            foreach ($roleTypesData as $roleData) {
-                $roleData['caseType'] = $caseTypeId;
-                $roleId         = (string) ($roleData['id'] ?? $this->generateUUID());
-                $roleData['id'] = $roleId;
-                $roleObj        = $this->createObject(
-                    objectService: $objectService,
-                    registerId: $registerId,
-                    schemaId: $roleTypeSchema,
-                    data: $roleData,
-                );
+        return ['map' => $map, 'created' => $created];
+    }//end seedChildTypes()
 
-                if ($roleObj !== null) {
-                    $roleNameToId[$roleData['name']] = $roleId;
-                    $counts['roleTypes']++;
-                }
-            }
+    /**
+     * Create the workflow template of a case type with resolved status/role references.
+     *
+     * @param object     $objectService  The OpenRegister ObjectService
+     * @param array|null $workflowData   The raw workflow template seed data, or null when absent
+     * @param string     $registerId     The register UUID
+     * @param string     $workflowSchema The workflow template schema UUID (empty disables seeding)
+     * @param array      $statusNameMap  Status name to UUID mapping
+     * @param array      $roleNameMap    Role name to UUID mapping
+     * @param string     $caseTypeId     The owning case type UUID
+     *
+     * @return int The number of workflow templates created (0 or 1)
+     */
+    private function seedWorkflowTemplate(
+        object $objectService,
+        ?array $workflowData,
+        string $registerId,
+        string $workflowSchema,
+        array $statusNameMap,
+        array $roleNameMap,
+        string $caseTypeId,
+    ): int {
+        if ($workflowData === null || $workflowSchema === '') {
+            return 0;
         }
 
-        // Create workflow template with resolved status/role references.
-        if ($workflowData !== null && $workflowSchema !== '') {
-            $resolvedWorkflow = $this->resolveWorkflowReferences(
-                workflowData: $workflowData,
-                statusNameMap: $statusNameToId,
-                roleNameMap: $roleNameToId,
-                caseTypeId: $caseTypeId,
-            );
+        $resolvedWorkflow = $this->resolveWorkflowReferences(
+            workflowData: $workflowData,
+            statusNameMap: $statusNameMap,
+            roleNameMap: $roleNameMap,
+            caseTypeId: $caseTypeId,
+        );
 
-            $workflowObj = $this->createObject(
-                objectService: $objectService,
-                registerId: $registerId,
-                schemaId: $workflowSchema,
-                data: $resolvedWorkflow,
-            );
+        $workflowObj = $this->createObject(
+            objectService: $objectService,
+            registerId: $registerId,
+            schemaId: $workflowSchema,
+            data: $resolvedWorkflow,
+        );
 
-            if ($workflowObj !== null) {
-                $counts['workflows']++;
-            }
-        }
-
-        return $counts;
-    }//end seedCaseType()
+        return (int) ($workflowObj !== null);
+    }//end seedWorkflowTemplate()
 
     /**
      * Resolve workflow step and transition references from names to UUIDs.
@@ -331,10 +460,9 @@ class SeedDataService
             $transition['id'] = $this->generateUUID();
 
             // Handle wildcard "*" for "any active status".
+            $transition['fromStatus'] = ($statusNameMap[$fromName] ?? '');
             if ($fromName === '*') {
                 $transition['fromStatus'] = '*';
-            } else {
-                $transition['fromStatus'] = ($statusNameMap[$fromName] ?? '');
             }
 
             $transition['toStatus'] = ($statusNameMap[$toName] ?? '');

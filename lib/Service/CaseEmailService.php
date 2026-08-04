@@ -29,12 +29,12 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCP\Files\IRootFolder;
-use OCP\Files\NotFoundException;
+use OCA\Procest\Service\Email\CaseContactDirectory;
+use OCA\Procest\Service\Email\CaseEmailAttachmentResolver;
+use OCA\Procest\Service\Email\CaseEmailRepository;
 use OCP\IAppConfig;
-use OCP\IUserSession;
 use OCP\Mail\IMailer;
+use OCP\Mail\IMessage;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -44,30 +44,38 @@ use RuntimeException;
 class CaseEmailService
 {
 
-    use SearchesObjects;
-
     /**
      * Regex pattern for extracting case number from email subject.
      */
     private const CASE_NUMBER_PATTERN = '/\[ZAAK-(\d{4}-\d{4,})\]/';
 
     /**
+     * Substitution mode that HTML-escapes every resolved value.
+     */
+    private const ESCAPE_HTML = 'html';
+
+    /**
+     * Substitution mode that writes resolved values through verbatim.
+     */
+    private const ESCAPE_NONE = 'none';
+
+    /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings service
-     * @param IMailer         $mailer          Nextcloud mailer
-     * @param IAppConfig      $appConfig       Nextcloud app config
-     * @param LoggerInterface $logger          Logger
-     * @param IRootFolder     $rootFolder      Root folder for user-file access
-     * @param IUserSession    $userSession     Current user session
+     * @param IMailer                     $mailer             Nextcloud mailer
+     * @param IAppConfig                  $appConfig          Nextcloud app config
+     * @param LoggerInterface             $logger             Logger
+     * @param CaseEmailRepository         $repository         OpenRegister reads/writes for case email
+     * @param CaseContactDirectory        $contactDirectory   Contact addresses registered on a case
+     * @param CaseEmailAttachmentResolver $attachmentResolver User-folder-scoped attachment resolution
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
         private readonly IMailer $mailer,
         private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
-        private readonly IRootFolder $rootFolder,
-        private readonly IUserSession $userSession,
+        private readonly CaseEmailRepository $repository,
+        private readonly CaseContactDirectory $contactDirectory,
+        private readonly CaseEmailAttachmentResolver $attachmentResolver,
     ) {
     }//end __construct()
 
@@ -95,17 +103,7 @@ class CaseEmailService
     ): array {
         // H6 / C4: Fail loudly if from-address is not configured — never fall back to
         // the reserved example.nl domain which would cause bounces and expose config errors.
-        $fromAddress = $this->appConfig->getValueString(
-            Application::APP_ID,
-            'email_from_address',
-            '',
-        );
-        if ($fromAddress === '' || str_ends_with($fromAddress, '@example.nl') === true) {
-            throw new RuntimeException(
-                'E-mail afzenderadres is niet geconfigureerd. '
-                .'Stel email_from_address in via de beheerdersinstellingen.'
-            );
-        }
+        $fromAddress = $this->resolveFromAddress();
 
         $fromName = $this->appConfig->getValueString(
             Application::APP_ID,
@@ -116,27 +114,14 @@ class CaseEmailService
         // C4 IDOR: Load the case via OR with RBAC enabled to verify the current user
         // has read access. If the case is not found (or the user has no access), OR
         // returns null — we treat that as 403.
-        $caseData = $this->loadCaseData(caseId: $caseId);
+        $caseData = $this->repository->loadCaseVariables(caseId: $caseId);
         if (empty($caseData) === true) {
             throw new RuntimeException('Zaak niet gevonden of geen toegang.');
         }
 
         // H4: Validate the recipient against the case's registered contact emails.
         // This prevents open-relay abuse where any email address could be supplied.
-        if ($to === '' || filter_var($to, FILTER_VALIDATE_EMAIL) === false) {
-            throw new RuntimeException('Ongeldig e-mailadres opgegeven.');
-        }
-
-        $allowedEmails = $this->getCaseContactEmails(caseData: $caseData);
-        if (count($allowedEmails) > 0) {
-            if (in_array(strtolower($to), $allowedEmails, true) === false) {
-                $this->logger->warning(
-                    'Blocked email to non-case-contact address',
-                    ['app' => Application::APP_ID, 'to' => $to, 'caseId' => $caseId]
-                );
-                throw new RuntimeException('Ontvanger is geen geregistreerd contact bij deze zaak.');
-            }
-        }
+        $this->assertRecipientAllowed(recipient: $to, caseData: $caseData, caseId: $caseId);
 
         $message = $this->mailer->createMessage();
         $message->setFrom([$fromAddress => $fromName]);
@@ -147,49 +132,18 @@ class CaseEmailService
 
         // H5: Resolve attachments via IUserFolder to restrict file access to the
         // calling user's own files and prevent path traversal outside their folder.
-        $currentUser = $this->userSession->getUser();
-        if ($currentUser !== null && count($attachments) > 0) {
-            $userFolder = $this->rootFolder->getUserFolder($currentUser->getUID());
-            foreach ($attachments as $fileRef) {
-                try {
-                    $file      = $userFolder->get((string) $fileRef);
-                    $localPath = $file->getStorage()->getLocalFile($file->getInternalPath());
-                    if ($localPath !== null && $localPath !== false) {
-                        $message->attachFile($localPath);
-                    }
-                } catch (NotFoundException $e) {
-                    $this->logger->warning(
-                        'Attachment file not found in user folder',
-                        ['app' => Application::APP_ID, 'fileRef' => $fileRef, 'caseId' => $caseId]
-                    );
-                } catch (\Throwable $e) {
-                    $this->logger->warning(
-                        'Failed to attach file',
-                        ['app' => Application::APP_ID, 'fileRef' => $fileRef, 'error' => $e->getMessage()]
-                    );
-                }//end try
-            }//end foreach
-        }//end if
+        $this->attachmentResolver->attach(message: $message, attachments: $attachments, caseId: $caseId);
 
-        try {
-            $this->mailer->send($message);
-        } catch (\Exception $e) {
-            // M4: Log full exception server-side; throw a generic message so internal
-            // mail-server errors (hostnames, credentials, etc.) are not leaked to callers.
-            $this->logger->error(
-                'Failed to send email for case {caseId}: {error}',
-                [
-                    'app'       => Application::APP_ID,
-                    'caseId'    => $caseId,
-                    'error'     => $e->getMessage(),
-                    'exception' => $e,
-                ],
-            );
-            throw new RuntimeException('email_send_failed');
-        }
+        $this->dispatchMessage(message: $message, caseId: $caseId);
 
         // Record the sent email as a case document.
-        $messageId = $this->recordSentEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
+        $messageId = $this->repository->recordSentEmail(
+            caseId: $caseId,
+            fromAddress: $fromAddress,
+            to: $to,
+            subject: $subject,
+            body: $body,
+        );
 
         $this->logger->info(
             'Email sent for case {caseId}',
@@ -203,6 +157,98 @@ class CaseEmailService
             'sentAt'    => date('Y-m-d\TH:i:s'),
         ];
     }//end sendEmail()
+
+    /**
+     * Resolve the configured envelope from-address.
+     *
+     * H6 / C4: fails loudly when the address is unset or still points at the
+     * reserved example.nl domain, rather than silently sending mail that bounces.
+     *
+     * @return string The configured from-address
+     *
+     * @throws \RuntimeException If no usable from-address is configured
+     */
+    private function resolveFromAddress(): string
+    {
+        $fromAddress = $this->appConfig->getValueString(
+            Application::APP_ID,
+            'email_from_address',
+            '',
+        );
+        if ($fromAddress === '' || str_ends_with($fromAddress, '@example.nl') === true) {
+            throw new RuntimeException(
+                'E-mail afzenderadres is niet geconfigureerd. '
+                .'Stel email_from_address in via de beheerdersinstellingen.'
+            );
+        }
+
+        return $fromAddress;
+    }//end resolveFromAddress()
+
+    /**
+     * Assert that a recipient address is well-formed and registered on the case.
+     *
+     * H4: prevents open-relay abuse where any address could be supplied. When the
+     * case registers no contacts at all the address list is empty and no
+     * restriction applies.
+     *
+     * @param string               $recipient The recipient email address
+     * @param array<string, mixed> $caseData  The case data array
+     * @param string               $caseId    The case UUID (logging context)
+     *
+     * @return void
+     *
+     * @throws \RuntimeException If the address is invalid or not a case contact
+     */
+    private function assertRecipientAllowed(string $recipient, array $caseData, string $caseId): void
+    {
+        if ($recipient === '' || filter_var($recipient, FILTER_VALIDATE_EMAIL) === false) {
+            throw new RuntimeException('Ongeldig e-mailadres opgegeven.');
+        }
+
+        $allowedEmails = $this->contactDirectory->collectAddresses(caseData: $caseData);
+        if (count($allowedEmails) > 0) {
+            if (in_array(strtolower($recipient), $allowedEmails, true) === false) {
+                $this->logger->warning(
+                    'Blocked email to non-case-contact address',
+                    ['app' => Application::APP_ID, 'to' => $recipient, 'caseId' => $caseId]
+                );
+                throw new RuntimeException('Ontvanger is geen geregistreerd contact bij deze zaak.');
+            }
+        }
+    }//end assertRecipientAllowed()
+
+    /**
+     * Hand a fully-built message to the mailer.
+     *
+     * M4: the full exception is logged server-side while the caller receives a
+     * generic message, so internal mail-server details (hostnames, credentials)
+     * are never leaked.
+     *
+     * @param IMessage $message The message to send
+     * @param string   $caseId  The case UUID (logging context)
+     *
+     * @return void
+     *
+     * @throws \RuntimeException If the mailer rejects the message
+     */
+    private function dispatchMessage(IMessage $message, string $caseId): void
+    {
+        try {
+            $this->mailer->send($message);
+        } catch (\Exception $e) {
+            $this->logger->error(
+                'Failed to send email for case {caseId}: {error}',
+                [
+                    'app'       => Application::APP_ID,
+                    'caseId'    => $caseId,
+                    'error'     => $e->getMessage(),
+                    'exception' => $e,
+                ],
+            );
+            throw new RuntimeException('email_send_failed');
+        }
+    }//end dispatchMessage()
 
     /**
      * Send an email using a template.
@@ -222,13 +268,13 @@ class CaseEmailService
         string $templateId,
         string $to,
     ): array {
-        $template = $this->loadTemplate(templateId: $templateId);
+        $template = $this->repository->findTemplate(templateId: $templateId);
         if ($template === null) {
             throw new RuntimeException('Email template not found');
         }
 
         // Load case data for variable resolution.
-        $caseData = $this->loadCaseData(caseId: $caseId);
+        $caseData = $this->repository->loadCaseVariables(caseId: $caseId);
 
         // Resolve template variables.
         $subject = $this->resolveVariables(template: $template['subjectPattern'] ?? '', data: $caseData);
@@ -238,30 +284,71 @@ class CaseEmailService
     }//end sendFromTemplate()
 
     /**
-     * Resolve template variables in a string.
+     * Resolve template variables in a string, HTML-escaping every value.
      *
      * Variables use {{variableName}} syntax.
      *
-     * @param string               $template   The template string
-     * @param array<string, mixed> $data       Available data for resolution
-     * @param bool                 $htmlEscape Whether to HTML-escape substituted values (default: true)
+     * H6 XSS: case data containing HTML/JS (e.g. from citizen-submitted forms)
+     * must not execute in an email client, so this is the default surface.
+     *
+     * @param string               $template The template string
+     * @param array<string, mixed> $data     Available data for resolution
      *
      * @return string The resolved string
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
-    public function resolveVariables(string $template, array $data, bool $htmlEscape=true): string
+    public function resolveVariables(string $template, array $data): string
     {
-        // H6 XSS: HTML-escape all substituted values by default so case data
-        // containing HTML/JS (e.g. from citizen-submitted forms) cannot execute
-        // in email clients. Pass $htmlEscape=false only for plain-text contexts.
+        return $this->substituteVariables(
+            template: $template,
+            data: $data,
+            escaping: self::ESCAPE_HTML
+        );
+    }//end resolveVariables()
+
+    /**
+     * Resolve template variables in a string without escaping the values.
+     *
+     * Only for plain-text contexts, where HTML escaping would corrupt the
+     * rendered output and where no HTML parser ever sees the result.
+     *
+     * @param string               $template The template string
+     * @param array<string, mixed> $data     Available data for resolution
+     *
+     * @return string The resolved string
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    public function resolveVariablesRaw(string $template, array $data): string
+    {
+        return $this->substituteVariables(
+            template: $template,
+            data: $data,
+            escaping: self::ESCAPE_NONE
+        );
+    }//end resolveVariablesRaw()
+
+    /**
+     * Shared {{variable}} substitution for both escaping modes.
+     *
+     * @param string               $template The template string
+     * @param array<string, mixed> $data     Available data for resolution
+     * @param string               $escaping One of self::ESCAPE_HTML or self::ESCAPE_NONE
+     *
+     * @return string The resolved string
+
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    private function substituteVariables(string $template, array $data, string $escaping): string
+    {
         return preg_replace_callback(
             '/\{\{(\w+)\}\}/',
-            static function (array $matches) use ($data, $htmlEscape): string {
+            static function (array $matches) use ($data, $escaping): string {
                 $key = $matches[1];
                 if (isset($data[$key]) === true && is_scalar($data[$key]) === true) {
                     $value = (string) $data[$key];
-                    if ($htmlEscape === true) {
+                    if ($escaping === self::ESCAPE_HTML) {
                         return htmlspecialchars($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     }
 
@@ -273,7 +360,7 @@ class CaseEmailService
             },
             $template,
         ) ?? $template;
-    }//end resolveVariables()
+    }//end substituteVariables()
 
     /**
      * Find unresolved variables in a template string.
@@ -341,11 +428,12 @@ class CaseEmailService
 
         if ($caseNumber !== null) {
             // Auto-link to case.
-            $caseId = $this->findCaseByIdentifier(identifier: $caseNumber);
+            $caseId = $this->repository->findCaseIdByIdentifier(identifier: $caseNumber);
             if ($caseId !== null) {
-                $messageId = $this->recordReceivedEmail(
+                $messageId = $this->repository->recordReceivedEmail(
                     caseId: $caseId,
                     from: $from,
+                    recipient: $to,
                     subject: $subject,
                     body: $body,
                     inReplyTo: $inReplyTo,
@@ -386,276 +474,6 @@ class CaseEmailService
      */
     public function getTemplatesForCaseType(string $caseTypeId): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_template_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['caseType' => $caseTypeId, '_limit' => 100],
-        );
+        return $this->repository->findTemplatesForCaseType(caseTypeId: $caseTypeId);
     }//end getTemplatesForCaseType()
-
-    /**
-     * Collect the normalised (lowercased) email addresses of all contacts on a case.
-     *
-     * Inspects the following fields (all optional): `betrokkenen`, `contacts`,
-     * `initiator`, and the top-level `email` field. Returns an empty array when
-     * no contacts are registered; the caller treats an empty array as "no restriction".
-     *
-     * @param array<string, mixed> $caseData The case data array
-     *
-     * @return array<string> Lowercase email addresses
-     */
-    private function getCaseContactEmails(array $caseData): array
-    {
-        $emails = [];
-
-        // Top-level email field.
-        $topEmail = strtolower(trim((string) ($caseData['email'] ?? '')));
-        if ($topEmail !== '' && filter_var($topEmail, FILTER_VALIDATE_EMAIL) !== false) {
-            $emails[] = $topEmail;
-        }
-
-        // Initiator field (single contact object or email string).
-        $initiator = $caseData['initiator'] ?? null;
-        if (is_array($initiator) === true) {
-            $addr = strtolower(trim((string) ($initiator['email'] ?? '')));
-            if ($addr !== '' && filter_var($addr, FILTER_VALIDATE_EMAIL) !== false) {
-                $emails[] = $addr;
-            }
-        }
-
-        // Betrokkenen / contacts arrays.
-        $contactArrays = [];
-        if (is_array($caseData['betrokkenen'] ?? null) === true) {
-            $contactArrays[] = $caseData['betrokkenen'];
-        }
-
-        if (is_array($caseData['contacts'] ?? null) === true) {
-            $contactArrays[] = $caseData['contacts'];
-        }
-
-        foreach ($contactArrays as $contacts) {
-            foreach ($contacts as $contact) {
-                if (is_array($contact) === false) {
-                    continue;
-                }
-
-                $addr = strtolower(trim((string) ($contact['email'] ?? ($contact['emailadres'] ?? ''))));
-                if ($addr !== '' && filter_var($addr, FILTER_VALIDATE_EMAIL) !== false) {
-                    $emails[] = $addr;
-                }
-            }
-        }
-
-        return array_unique($emails);
-    }//end getCaseContactEmails()
-
-    /**
-     * Load an email template.
-     *
-     * @param string $templateId The template UUID
-     *
-     * @return array<string, mixed>|null The template data
-     */
-    private function loadTemplate(string $templateId): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_template_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
-
-        $result = $objectService->find($templateId, register: $register, schema: $schema);
-        if (is_array($result) === true) {
-            return $result;
-        }
-
-        return null;
-    }//end loadTemplate()
-
-    /**
-     * Load case data for template variable resolution.
-     *
-     * @param string $caseId The case UUID
-     *
-     * @return array<string, mixed> Case data flattened for variable resolution
-     */
-    private function loadCaseData(string $caseId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-
-        $caseObj = $objectService->find($caseId, register: $register, schema: $schema);
-        if ($caseObj === null) {
-            return [];
-        }
-
-        if (is_object($caseObj) === true && method_exists($caseObj, 'jsonSerialize') === true) {
-            $caseObj = $caseObj->jsonSerialize();
-        }
-
-        if (is_array($caseObj) === false) {
-            return [];
-        }
-
-        // Flatten for variable resolution.
-        return [
-            'zaakNummer'  => $caseObj['identifier'] ?? '',
-            'titel'       => $caseObj['title'] ?? '',
-            'startdatum'  => $caseObj['startDate'] ?? '',
-            'deadline'    => $caseObj['deadline'] ?? '',
-            'status'      => $caseObj['status'] ?? '',
-            'behandelaar' => $caseObj['assignee'] ?? '',
-        ];
-    }//end loadCaseData()
-
-    /**
-     * Record a sent email as a case document.
-     *
-     * @param string $caseId  Case UUID
-     * @param string $to      Recipient
-     * @param string $subject Subject
-     * @param string $body    Body
-     *
-     * @return string The recorded message ID
-     */
-    private function recordSentEmail(
-        string $caseId,
-        string $to,
-        string $subject,
-        string $body,
-    ): string {
-        // Store as activity on the case.
-        $messageId = 'msg-'.uniqid();
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return $messageId;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_message_schema');
-
-        if (empty($register) === false && empty($schema) === false) {
-            $objectService->saveObject(
-                    object: [
-                        'case'      => $caseId,
-                        'direction' => 'outbound',
-                        'from'      => $this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''),
-                        'to'        => $to,
-                        'subject'   => $subject,
-                        'body'      => $body,
-                        'messageId' => $messageId,
-                        'sentAt'    => date('Y-m-d\TH:i:s'),
-                    ],
-                    register: $register,
-                    schema: $schema,
-                    );
-        }
-
-        return $messageId;
-    }//end recordSentEmail()
-
-    /**
-     * Record a received email.
-     *
-     * @param string $caseId    Case UUID
-     * @param string $from      Sender
-     * @param string $subject   Subject
-     * @param string $body      Body
-     * @param string $inReplyTo Threading header
-     *
-     * @return string The recorded message ID
-     */
-    private function recordReceivedEmail(
-        string $caseId,
-        string $from,
-        string $subject,
-        string $body,
-        string $inReplyTo,
-    ): string {
-        $messageId = 'msg-'.uniqid();
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return $messageId;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_message_schema');
-
-        if (empty($register) === false && empty($schema) === false) {
-            $objectService->saveObject(
-                    object: [
-                        'case'       => $caseId,
-                        'direction'  => 'inbound',
-                        'from'       => $from,
-                        'to'         => '',
-                        'subject'    => $subject,
-                        'body'       => $body,
-                        'messageId'  => $messageId,
-                        'inReplyTo'  => $inReplyTo,
-                        'receivedAt' => date('Y-m-d\TH:i:s'),
-                    ],
-                    register: $register,
-                    schema: $schema,
-                    );
-        }
-
-        return $messageId;
-    }//end recordReceivedEmail()
-
-    /**
-     * Find a case by its identifier.
-     *
-     * @param string $identifier The case identifier (e.g., 2026-0042)
-     *
-     * @return string|null The case UUID or null
-     */
-    private function findCaseByIdentifier(string $identifier): ?string
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-
-        $results = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['identifier' => $identifier, '_limit' => 1],
-        );
-
-        if (is_array($results) === true && count($results) > 0) {
-            return $results[0]['id'] ?? $results[0]['uuid'] ?? null;
-        }
-
-        return null;
-    }//end findCaseByIdentifier()
 }//end class

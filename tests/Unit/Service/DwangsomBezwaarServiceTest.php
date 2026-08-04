@@ -31,6 +31,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\DwangsomBezwaarService
+ *
+ * @uses \OCA\Procest\Service\TermijnService
  */
 class DwangsomBezwaarServiceTest extends TestCase
 {

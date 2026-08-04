@@ -42,11 +42,11 @@ class CaseCollaborationService
     /**
      * Constructor.
      *
-     * @param SettingsService         $settingsService         The settings service
-     * @param IAppManager             $appManager              The app manager
-     * @param ContainerInterface      $container               The DI container
-     * @param LoggerInterface         $logger                  The logger
-     * @param TenantAuditTrailService $tenantAuditTrailService Audit-trail emitter
+     * @param SettingsService         $settingsService  The settings service
+     * @param IAppManager             $appManager       The app manager
+     * @param ContainerInterface      $container        The DI container
+     * @param LoggerInterface         $logger           The logger
+     * @param TenantAuditTrailService $tenantAuditTrail Audit-trail emitter
      *
      * @return void
      */
@@ -55,7 +55,7 @@ class CaseCollaborationService
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
-        private TenantAuditTrailService $tenantAuditTrailService,
+        private TenantAuditTrailService $tenantAuditTrail,
     ) {
     }//end __construct()
 
@@ -189,10 +189,7 @@ class CaseCollaborationService
             return ['error' => 'Federated share not found'];
         }
 
-        $shareData = $shareObj;
-        if (is_array($shareObj) === false) {
-            $shareData = $shareObj->jsonSerialize();
-        }
+        $shareData = $this->asArray(value: $shareObj);
 
         if (($shareData['status'] ?? '') === 'revoked') {
             return ['error' => 'This federated share has been revoked'];
@@ -213,12 +210,9 @@ class CaseCollaborationService
         $activity['lastActivityAt'] = $entry['createdAt'];
 
         $result     = $objectService->saveObject(object: $activity, register: (int) $register, schema: (int) $activitySchema);
-        $resultData = $result;
-        if (is_array($result) === false) {
-            $resultData = $result->jsonSerialize();
-        }
+        $resultData = $this->asArray(value: $result);
 
-        $this->tenantAuditTrailService->emit(
+        $this->tenantAuditTrail->emit(
             [
                 'action'   => 'federated_case_activity_posted',
                 'actor'    => $entry['actor'],
@@ -230,6 +224,23 @@ class CaseCollaborationService
 
         return $resultData;
     }//end appendEntry()
+
+    /**
+     * Normalise an OpenRegister return value to its array form — OR hands back
+     * either a plain array or a JsonSerializable entity depending on the call.
+     *
+     * @param mixed $value The array or JsonSerializable entity to normalise
+     *
+     * @return array The array form of the value
+     */
+    private function asArray(mixed $value): array
+    {
+        if (is_array($value) === true) {
+            return $value;
+        }
+
+        return $value->jsonSerialize();
+    }//end asArray()
 
     /**
      * Find the caseFederatedActivity object for a share, if any.

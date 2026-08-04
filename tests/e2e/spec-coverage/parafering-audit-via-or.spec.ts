@@ -21,6 +21,7 @@
 import { test, expect, request } from '@playwright/test'
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { BASE_URL } from '../base-url'
 
 const OR_API = '/index.php/apps/openregister/api'
 const REPO_ROOT = resolve(__dirname, '../../..')
@@ -40,7 +41,8 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 	// @e2e parafering-audit-via-or::returned-transition-creates-or-audit-entry
 	test('parafeerroute transitions are recorded as OR audit entries (procest.parafering.*)', async () => {
 		const ctx = await request.newContext({
-			baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
+			// Single source of truth — see tests/e2e/base-url.ts.
+			baseURL: BASE_URL,
 		})
 		// The audit-trails API is the discovery surface for parafering transitions.
 		// On a fresh instance there may be no parafeerroute transitions yet; the
@@ -95,7 +97,8 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 	// @e2e parafering-audit-via-or::cross-actor-delegation-audit-is-preserved
 	test('parafering history is discoverable through OR audit-trail API', async () => {
 		const ctx = await request.newContext({
-			baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
+			// Single source of truth — see tests/e2e/base-url.ts.
+			baseURL: BASE_URL,
 		})
 		const cfg = registerConfig()
 		// Query by an objectUuid filter — the documented discovery contract.
@@ -117,7 +120,8 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 	// @e2e parafering-audit-via-or::or-enforces-immutability-natively
 	test('OR enforces audit immutability natively (no procest validator needed)', async () => {
 		const ctx = await request.newContext({
-			baseURL: process.env.NEXTCLOUD_URL || 'http://localhost:8080',
+			// Single source of truth — see tests/e2e/base-url.ts.
+			baseURL: BASE_URL,
 		})
 		// A PUT/DELETE on an audit-trail entry must not be a procest concern; OR
 		// rejects mutation. We assert the endpoint does not accept a PUT as 200.

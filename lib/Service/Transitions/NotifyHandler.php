@@ -67,18 +67,18 @@ class NotifyHandler implements ActionHandlerInterface
 
             if (method_exists($this->notificatieService, 'notifyUser') === true && $recipient !== '') {
                 $this->notificatieService->notifyUser($recipient, $message, ['caseId' => $caseId]);
-                return ActionResult::success(data: ['userId' => $recipient]);
+                return new ActionResult(succeeded: true, data: ['userId' => $recipient]);
             }
 
             // Fall back to logging — non-fatal.
             $this->logger->warning('NotifyHandler: NotificatieService::notifyUser missing or recipient empty');
-            return ActionResult::success(data: ['skipped' => true]);
+            return new ActionResult(succeeded: true, data: ['skipped' => true]);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'NotifyHandler failed',
                 ['exception' => $e->getMessage(), 'context' => $transitionContext],
             );
-            return ActionResult::failure(error: 'notify_failed');
+            return new ActionResult(succeeded: false, error: 'notify_failed');
         }
     }//end handle()
 }//end class

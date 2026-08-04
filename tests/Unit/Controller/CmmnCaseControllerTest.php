@@ -41,6 +41,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Controller\CmmnCaseController
+ *
+ * @uses \OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException
  */
 final class CmmnCaseControllerTest extends TestCase
 {

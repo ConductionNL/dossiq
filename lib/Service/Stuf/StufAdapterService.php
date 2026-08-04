@@ -4,14 +4,19 @@
  * Procest StufAdapterService.
  *
  * The orchestrator. Each public method takes a procest entity (a `case`) and a
- * StufEndpoint, builds the right envelope through StufMessageBuilder, sends it
- * via StufHttpClient, logs the round-trip into StufMessage, persists the
- * resulting ZaaksysteemMapping when applicable, and drives the circuit breaker.
+ * StufEndpoint, builds the right envelope through StufMessageBuilder, logs the
+ * outbound row, and hands the envelope to {@see StufOutboundTransport} to be
+ * sent and classified.
  *
- * Retries are handled here (5s, 30s, 2m, 10m) and reuse the same
- * referentienummer for idempotency — the queued retry job calls back into
- * `retrySend()` which short-circuits on circuit-open and feeds the retry
- * log on the existing StufMessage row.
+ * Retries, circuit-breaker bookkeeping and the permanent-failure signal live in
+ * StufOutboundTransport; the case → zaak mapping lives in
+ * {@see StufCaseMappingStore}. This class is left with WHAT to send and what to
+ * report back to the caller.
+ *
+ * The retry schedule (5s, 30s, 2m, 10m) reuses the same referentienummer for
+ * idempotency — the queued retry job calls back into `retrySend()`, which
+ * short-circuits on circuit-open and feeds the retry log on the existing
+ * StufMessage row.
  *
  * @category Service
  * @package  OCA\Procest\Service\Stuf
@@ -28,52 +33,53 @@
  * @link https://procest.nl
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
 
 declare(strict_types=1);
 
 namespace OCA\Procest\Service\Stuf;
 
-use DateTimeImmutable;
-use DateTimeZone;
 use OCA\Procest\Service\StufMessageBuilder;
-use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 
 /**
  * Orchestrates StUF operations against legacy zaaksystemen.
+ *
+ * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
  */
 class StufAdapterService
 {
     /**
      * Exponential-backoff schedule for kennisgeving retries (seconds).
+     *
+     * Canonically owned by {@see StufOutboundTransport}, which is the only code
+     * that reads it; re-exported here because it is part of this service's
+     * published surface.
      */
-    public const RETRY_BACKOFF_SECONDS = [5, 30, 120, 600];
+    public const RETRY_BACKOFF_SECONDS = StufOutboundTransport::RETRY_BACKOFF_SECONDS;
 
     /**
      * Constructor.
      *
-     * @param StufMessageBuilder    $builder        The envelope builder (inbound + outbound).
-     * @param StufHttpClient        $httpClient     The HTTP transport.
+     * @param StufMessageBuilder    $builder        The outbound envelope builder.
+     * @param StufOutboundTransport $transport      The send + response classifier.
      * @param StufMessageHandler    $messageHandler The audit log handler.
      * @param StufMessageParser     $parser         The response parser.
      * @param CircuitBreakerService $circuitBreaker The circuit breaker.
      * @param StufRegisterAccess    $register       The register access helper.
+     * @param StufCaseMappingStore  $mappings       The case → zaak mapping store.
      * @param NeedsInputDispatcher  $needsInput     The needs-input dispatcher.
-     * @param IJobList              $jobList        The background job list (for retry scheduling).
      * @param LoggerInterface       $logger         The logger.
      */
     public function __construct(
         private StufMessageBuilder $builder,
-        private StufHttpClient $httpClient,
+        private StufOutboundTransport $transport,
         private StufMessageHandler $messageHandler,
         private StufMessageParser $parser,
         private CircuitBreakerService $circuitBreaker,
         private StufRegisterAccess $register,
+        private StufCaseMappingStore $mappings,
         private NeedsInputDispatcher $needsInput,
-        private IJobList $jobList,
         private LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -91,7 +97,6 @@ class StufAdapterService
      */
     public function creeerZaak(array $case, array $endpoint, ?array $opts=[]): array
     {
-        $opts = ($opts ?? []);
         if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
             $this->needsInput->dispatch(type: 'stuf_circuit_open', context: ['endpointId' => ($endpoint['id'] ?? '')]);
             throw new CircuitOpenException(message: 'Circuit breaker is open');
@@ -101,40 +106,37 @@ class StufAdapterService
         if (($endpoint['zaakIdentificatieStrategie'] ?? '') === 'vooraf') {
             $zaakId = $this->genereerZaakIdentificatie(endpoint: $endpoint);
             // Anticipatory mapping.
-            $this->persistCaseMapping(case: $case, externId: $zaakId, endpoint: $endpoint);
+            $this->mappings->persist(case: $case, externId: $zaakId, endpoint: $endpoint);
         }
 
         $envelope = $this->builder->buildLk01CreeerZaak(
             case: $case,
             endpoint: $endpoint,
             zaakId: $zaakId,
-            opts: $opts
+            opts: ($opts ?? [])
         );
 
         $referentienummer = $this->extractReferentienummer(envelope: $envelope);
-        $msg = $this->messageHandler->logOutbound(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            referentienummer: $referentienummer,
-            berichtSoort: 'Lk01',
-            functie: 'creeerZaak',
-            zaakId: $zaakId,
-            bronEntiteit: 'case',
-            bronId: (string) ($case['id'] ?? '')
-        );
-
-        $result = $this->dispatch(
+        $result           = $this->transport->dispatch(
             endpoint: $endpoint,
             envelope: $envelope,
-            message: $msg,
-            functie: 'creeerZaak',
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
+            message: $this->messageHandler->logOutbound(
+                endpoint: $endpoint,
+                envelopeXml: $envelope,
+                referentienummer: $referentienummer,
+                berichtSoort: 'Lk01',
+                functie: 'creeerZaak',
+                zaakId: $zaakId,
+                bronEntiteit: 'case',
+                bronId: (string) ($case['id'] ?? '')
+            ),
+            functie: 'creeerZaak'
         );
 
         $serverZaakId = ($result['zaakIdentificatie'] ?? $zaakId);
         $mapping      = null;
         if ($result['success'] === true && $serverZaakId !== null && $serverZaakId !== '') {
-            $mapping = $this->persistCaseMapping(case: $case, externId: $serverZaakId, endpoint: $endpoint);
+            $mapping = $this->mappings->persist(case: $case, externId: $serverZaakId, endpoint: $endpoint);
         }
 
         $zaakIdentificatie = $serverZaakId;
@@ -168,14 +170,7 @@ class StufAdapterService
             throw new CircuitOpenException(message: 'Circuit breaker is open');
         }
 
-        $mapping = $this->register->findOne(
-            schema: StufRegisterAccess::SCHEMA_MAPPING,
-            filters: [
-                'bronEntiteit' => 'case',
-                'bronId'       => (string) ($case['id'] ?? ''),
-                'endpointId'   => (string) ($endpoint['id'] ?? ''),
-            ]
-        );
+        $mapping = $this->mappings->find(case: $case, endpoint: $endpoint);
         if ($mapping === null) {
             $this->logger->warning(
                 message: 'StUF actualiseerZaak: no mapping for case {id}',
@@ -196,23 +191,20 @@ class StufAdapterService
 
         $envelope         = $this->builder->buildLk02ActualiseerZaak(case: $case, mapping: $mapping, endpoint: $endpoint);
         $referentienummer = $this->extractReferentienummer(envelope: $envelope);
-        $msg = $this->messageHandler->logOutbound(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            referentienummer: $referentienummer,
-            berichtSoort: 'Lk02',
-            functie: 'actualiseerZaak',
-            zaakId: (string) ($mapping['externIdentificatie'] ?? ''),
-            bronEntiteit: 'case',
-            bronId: (string) ($case['id'] ?? '')
-        );
-
-        $result = $this->dispatch(
+        $result           = $this->transport->dispatch(
             endpoint: $endpoint,
             envelope: $envelope,
-            message: $msg,
-            functie: 'actualiseerZaak',
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
+            message: $this->messageHandler->logOutbound(
+                endpoint: $endpoint,
+                envelopeXml: $envelope,
+                referentienummer: $referentienummer,
+                berichtSoort: 'Lk02',
+                functie: 'actualiseerZaak',
+                zaakId: (string) ($mapping['externIdentificatie'] ?? ''),
+                bronEntiteit: 'case',
+                bronId: (string) ($case['id'] ?? '')
+            ),
+            functie: 'actualiseerZaak'
         );
 
         return [
@@ -242,25 +234,23 @@ class StufAdapterService
             throw new CircuitOpenException(message: 'Circuit breaker is open');
         }
 
-        $envelope         = $this->builder->buildLv01GeefDetails(zaakId: $zaakId, endpoint: $endpoint, gewensteElementen: $gewensteElementen);
-        $referentienummer = $this->extractReferentienummer(envelope: $envelope);
-        $msg = $this->messageHandler->logOutbound(
+        $envelope = $this->builder->buildLv01GeefDetails(
+            zaakId: $zaakId,
+            endpoint: $endpoint,
+            gewensteElementen: $gewensteElementen
+        );
+        $msg      = $this->messageHandler->logOutbound(
             endpoint: $endpoint,
             envelopeXml: $envelope,
-            referentienummer: $referentienummer,
+            referentienummer: $this->extractReferentienummer(envelope: $envelope),
             berichtSoort: 'Lv01',
             functie: 'geefZaakDetails',
             zaakId: $zaakId
         );
 
-        $response = $this->httpClient->send(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            soapActionFunc: 'geefZaakDetails',
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
-        );
+        $response = $this->transport->send(endpoint: $endpoint, envelope: $envelope, functie: 'geefZaakDetails');
 
-        if ($response['httpStatus'] === 0 && isset($response['fout']['code']) === true && $response['fout']['code'] === 'TIMEOUT') {
+        if ($response['httpStatus'] === 0 && ($response['fout']['code'] ?? '') === 'TIMEOUT') {
             $this->messageHandler->transitionStatus(
                 msg: $msg,
                 newStatus: 'fout',
@@ -273,14 +263,9 @@ class StufAdapterService
             throw new TimeoutException(message: 'StUF geefZaakDetails timed out');
         }
 
-        $detailStatus = 'fout';
-        if ($response['httpStatus'] >= 200 && $response['httpStatus'] < 300) {
-            $detailStatus = 'bevestigd';
-        }
-
         $this->messageHandler->transitionStatus(
             msg: $msg,
-            newStatus: $detailStatus,
+            newStatus: $this->statusForHttp(httpStatus: (int) $response['httpStatus']),
             extras: [
                 'httpStatus'          => $response['httpStatus'],
                 'duurMs'              => $response['durationMs'],
@@ -289,7 +274,7 @@ class StufAdapterService
             ]
         );
 
-        if ($response['httpStatus'] < 200 || $response['httpStatus'] >= 300) {
+        if ($this->isSuccessful(httpStatus: (int) $response['httpStatus']) === false) {
             return null;
         }
 
@@ -323,21 +308,18 @@ class StufAdapterService
             $zaakIdArg = null;
         }
 
-        $msg = $this->messageHandler->logOutbound(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            referentienummer: $referentienummer,
-            berichtSoort: 'Du01',
-            functie: $name,
-            zaakId: $zaakIdArg
-        );
-
-        $result = $this->dispatch(
+        $result = $this->transport->dispatch(
             endpoint: $endpoint,
             envelope: $envelope,
-            message: $msg,
-            functie: $name,
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
+            message: $this->messageHandler->logOutbound(
+                endpoint: $endpoint,
+                envelopeXml: $envelope,
+                referentienummer: $referentienummer,
+                berichtSoort: 'Du01',
+                functie: $name,
+                zaakId: $zaakIdArg
+            ),
+            functie: $name
         );
 
         return [
@@ -359,33 +341,25 @@ class StufAdapterService
      */
     public function genereerZaakIdentificatie(array $endpoint): string
     {
-        $envelope         = $this->builder->buildDu01GenereerZaakId(endpoint: $endpoint);
-        $referentienummer = $this->extractReferentienummer(envelope: $envelope);
-        $msg = $this->messageHandler->logOutbound(
+        $envelope = $this->builder->buildDu01GenereerZaakId(endpoint: $endpoint);
+        $msg      = $this->messageHandler->logOutbound(
             endpoint: $endpoint,
             envelopeXml: $envelope,
-            referentienummer: $referentienummer,
+            referentienummer: $this->extractReferentienummer(envelope: $envelope),
             berichtSoort: 'Du01',
             functie: 'genereerZaakIdentificatie'
         );
 
-        $response = $this->httpClient->send(
+        $response    = $this->transport->send(
             endpoint: $endpoint,
-            envelopeXml: $envelope,
-            soapActionFunc: 'genereerZaakIdentificatie',
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
+            envelope: $envelope,
+            functie: 'genereerZaakIdentificatie'
         );
-
         $bevestiging = $this->parser->parseBevestiging(responseXml: $response['responseXml']);
-
-        $vrijStatus = 'fout';
-        if ($response['httpStatus'] >= 200 && $response['httpStatus'] < 300) {
-            $vrijStatus = 'bevestigd';
-        }
 
         $this->messageHandler->transitionStatus(
             msg: $msg,
-            newStatus: $vrijStatus,
+            newStatus: $this->statusForHttp(httpStatus: (int) $response['httpStatus']),
             extras: [
                 'httpStatus'          => $response['httpStatus'],
                 'duurMs'              => $response['durationMs'],
@@ -431,231 +405,48 @@ class StufAdapterService
             return;
         }
 
-        $envelope = (string) ($msg['envelopeXml'] ?? '');
-        $functie  = (string) ($msg['functie'] ?? '');
-        $attempt  = (count(value: (array) ($msg['retries'] ?? [])) + 1);
+        $functie = (string) ($msg['functie'] ?? '');
 
-        $response = $this->httpClient->send(
+        $this->transport->handleResponse(
             endpoint: $endpoint,
-            envelopeXml: $envelope,
-            soapActionFunc: $functie,
-            timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
-        );
-
-        $this->handleResponse(
-            endpoint: $endpoint,
-            response: $response,
+            response: $this->transport->send(
+                endpoint: $endpoint,
+                envelope: (string) ($msg['envelopeXml'] ?? ''),
+                functie: $functie
+            ),
             message: $msg,
             functie: $functie,
-            attempt: $attempt
+            attempt: (count(value: (array) ($msg['retries'] ?? [])) + 1)
         );
     }//end retrySend()
 
     /**
-     * Dispatch a kennisgeving envelope (Lk01/Lk02/Du01/Bv01-expecting) — send, parse, log, retry-on-transient.
-     *
-     * @param array  $endpoint       The StufEndpoint.
-     * @param string $envelope       The envelope XML.
-     * @param array  $message        The persisted StufMessage row.
-     * @param string $functie        The functie for SOAPAction.
-     * @param int    $timeoutSeconds The HTTP timeout.
-     *
-     * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
-     */
-    private function dispatch(array $endpoint, string $envelope, array $message, string $functie, int $timeoutSeconds): array
-    {
-        $response = $this->httpClient->send(
-            endpoint: $endpoint,
-            envelopeXml: $envelope,
-            soapActionFunc: $functie,
-            timeoutSeconds: $timeoutSeconds
-        );
-        return $this->handleResponse(endpoint: $endpoint, response: $response, message: $message, functie: $functie, attempt: 1);
-    }//end dispatch()
-
-    /**
-     * Handle an HTTP response: parse Bv01/Fo02, classify, persist, and retry on transient.
-     *
-     * @param array  $endpoint The StufEndpoint.
-     * @param array  $response The httpClient response.
-     * @param array  $message  The StufMessage row.
-     * @param string $functie  The functie.
-     * @param int    $attempt  The current attempt number (1-indexed).
-     *
-     * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
-     */
-    private function handleResponse(array $endpoint, array $response, array $message, string $functie, int $attempt): array
-    {
-        $endpointId = (string) ($endpoint['id'] ?? '');
-        $messageId  = (string) ($message['id'] ?? '');
-        $httpStatus = (int) ($response['httpStatus'] ?? 0);
-        $duration   = (int) ($response['durationMs'] ?? 0);
-        $body       = (string) ($response['responseXml'] ?? '');
-        $transport  = ($response['fout'] ?? null);
-
-        if ($httpStatus >= 200 && $httpStatus < 300) {
-            $bevestiging = $this->parser->parseBevestiging(responseXml: $body);
-            $extras      = [
-                'httpStatus'          => $httpStatus,
-                'duurMs'              => $duration,
-                'responseEnvelopeXml' => $body,
-            ];
-            if (($bevestiging['zaakIdentificatie'] ?? null) !== null) {
-                $extras['zaakIdentificatie'] = $bevestiging['zaakIdentificatie'];
-            }
-
-            $this->messageHandler->transitionStatus(msg: $message, newStatus: 'bevestigd', extras: $extras);
-            $this->circuitBreaker->resetEndpoint(endpoint: $endpoint);
-            return [
-                'success'           => true,
-                'messageId'         => $messageId,
-                'zaakIdentificatie' => ($bevestiging['zaakIdentificatie'] ?? null),
-                'fout'              => null,
-            ];
-        }
-
-        $fout = $transport;
-        if ($fout === null && $body !== '') {
-            $parsed = $this->parser->parseError(responseXml: $body);
-            $fout   = [
-                'code'         => $parsed['code'],
-                'omschrijving' => $parsed['omschrijving'],
-                'details'      => $parsed['details'],
-                'soort'        => $parsed['soort'],
-            ];
-        }
-
-        $isTransient = ($this->isTransientHttp(httpStatus: $httpStatus) === true || ($fout['soort'] ?? '') === 'transient');
-        if ($isTransient === true && $attempt < (count(value: self::RETRY_BACKOFF_SECONDS) + 1)) {
-            $this->messageHandler->recordRetry(
-                msg: $message,
-                attempt: $attempt,
-                httpStatus: $httpStatus,
-                fout: ($fout ?? []),
-                durationMs: $duration
-            );
-            $this->circuitBreaker->recordFailure(endpoint: $endpoint, fout: ($fout ?? []));
-            $this->scheduleRetry(messageId: $messageId, attempt: $attempt);
-            return [
-                'success'           => false,
-                'messageId'         => $messageId,
-                'zaakIdentificatie' => null,
-                'fout'              => $fout,
-            ];
-        }
-
-        // Permanent failure path.
-        $this->messageHandler->transitionStatus(
-            msg: $message,
-            newStatus: 'fout',
-            extras: [
-                'httpStatus'          => $httpStatus,
-                'duurMs'              => $duration,
-                'responseEnvelopeXml' => $body,
-                'fout'                => $fout,
-            ]
-        );
-        $this->circuitBreaker->recordFailure(endpoint: $endpoint, fout: ($fout ?? []));
-        $this->needsInput->dispatch(
-            type: 'stuf_permanent_error',
-            context: ['endpointId' => $endpointId, 'stufMessageId' => $messageId, 'fout' => ($fout ?? []), 'functie' => $functie]
-        );
-        return [
-            'success'           => false,
-            'messageId'         => $messageId,
-            'zaakIdentificatie' => null,
-            'fout'              => $fout,
-        ];
-    }//end handleResponse()
-
-    /**
-     * Persist a case → zaak mapping (idempotent).
-     *
-     * @param array  $case     The case.
-     * @param string $externId The external zaak identificatie.
-     * @param array  $endpoint The endpoint.
-     *
-     * @return array The mapping row.
-     */
-    private function persistCaseMapping(array $case, string $externId, array $endpoint): array
-    {
-        $existing       = $this->register->findOne(
-            schema: StufRegisterAccess::SCHEMA_MAPPING,
-            filters: [
-                'bronEntiteit' => 'case',
-                'bronId'       => (string) ($case['id'] ?? ''),
-                'endpointId'   => (string) ($endpoint['id'] ?? ''),
-            ]
-        );
-        $data           = ($existing ?? [
-            'id'             => 'map-'.bin2hex(string: random_bytes(length: 6)),
-            'bronEntiteit'   => 'case',
-            'bronId'         => (string) ($case['id'] ?? ''),
-            'caseId'         => (string) ($case['id'] ?? ''),
-            'endpointId'     => (string) ($endpoint['id'] ?? ''),
-            'externEntiteit' => 'ZAK',
-        ]);
-        $data['caseId'] = (string) ($case['id'] ?? '');
-        $data['externIdentificatie'] = $externId;
-        $syncMoment = new DateTimeImmutable(
-            datetime: 'now',
-            timezone: new DateTimeZone(timezone: 'Europe/Amsterdam')
-        );
-        $data['laatsteSynchronisatie'] = $syncMoment->format(format: 'c');
-        $data['synchronisatieStatus']  = 'in_sync';
-        return $this->register->saveObject(schema: StufRegisterAccess::SCHEMA_MAPPING, data: $data);
-    }//end persistCaseMapping()
-
-    /**
-     * Schedule a delayed retry via the background job list.
-     *
-     * @param string $messageId The StufMessage id.
-     * @param int    $attempt   The attempt number that just failed (1-indexed).
-     *
-     * @return void
-     */
-    private function scheduleRetry(string $messageId, int $attempt): void
-    {
-        $delayIndex = max(0, ($attempt - 1));
-        $delay      = (self::RETRY_BACKOFF_SECONDS[$delayIndex] ?? 600);
-        try {
-            $this->jobList->add(
-                'OCA\\Procest\\BackgroundJob\\StufRetryJob',
-                ['stufMessageId' => $messageId, 'runAt' => (time() + $delay)]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(message: 'StUF retry scheduling failed: {error}', context: ['error' => $e->getMessage()]);
-        }
-
-        $this->logger->info(
-            message: 'StUF retry scheduled for {id} after {delay}s (attempt {attempt})',
-            context: ['id' => $messageId, 'delay' => $delay, 'attempt' => $attempt]
-        );
-    }//end scheduleRetry()
-
-    /**
-     * Classify an HTTP status code as transient (retry) or permanent.
+     * Whether an HTTP status is a 2xx success.
      *
      * @param int $httpStatus The status code.
      *
-     * @return bool
+     * @return bool True on 2xx.
      */
-    private function isTransientHttp(int $httpStatus): bool
+    private function isSuccessful(int $httpStatus): bool
     {
-        if ($httpStatus === 0) {
-            return true;
+        return ($httpStatus >= 200 && $httpStatus < 300);
+    }//end isSuccessful()
+
+    /**
+     * The StufMessage status a synchronous round-trip lands in.
+     *
+     * @param int $httpStatus The status code.
+     *
+     * @return string Either 'bevestigd' or 'fout'.
+     */
+    private function statusForHttp(int $httpStatus): string
+    {
+        if ($this->isSuccessful(httpStatus: $httpStatus) === true) {
+            return 'bevestigd';
         }
 
-        if ($httpStatus >= 500 && $httpStatus < 600) {
-            return true;
-        }
-
-        if ($httpStatus === 408 || $httpStatus === 429) {
-            return true;
-        }
-
-        return false;
-    }//end isTransientHttp()
+        return 'fout';
+    }//end statusForHttp()
 
     /**
      * Extract the referentienummer from an envelope (best-effort).

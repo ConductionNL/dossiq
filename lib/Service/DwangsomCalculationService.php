@@ -120,6 +120,47 @@ class DwangsomCalculationService
             return null;
         }
 
+        $row = $this->fetchBerekeningRow(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            berekeningId: $berekeningId
+        );
+        if ($row === null) {
+            return null;
+        }
+
+        if (($row['status'] ?? '') !== 'lopend' || ($row['plafondBereikt'] ?? false) === true) {
+            return $row;
+        }
+
+        $row = $this->applyDailyAccrual(row: $row);
+
+        return $this->persistBerekening(
+            objectService: $objectService,
+            register: $register,
+            schema: $schema,
+            row: $row,
+            berekeningId: $berekeningId
+        );
+    }//end calculateDaily()
+
+    /**
+     * Fetch a DwangsomBerekening row, logging and swallowing lookup failures.
+     *
+     * @param object $objectService OpenRegister object service.
+     * @param string $register      Register identifier.
+     * @param string $schema        Schema identifier.
+     * @param string $berekeningId  Berekening id.
+     *
+     * @return array<string, mixed>|null The row, or null when unavailable.
+     */
+    private function fetchBerekeningRow(
+        object $objectService,
+        string $register,
+        string $schema,
+        string $berekeningId
+    ): ?array {
         try {
             $row = $objectService->find($berekeningId, register: $register, schema: $schema);
         } catch (\Throwable $e) {
@@ -134,20 +175,27 @@ class DwangsomCalculationService
             return null;
         }
 
-        if (($row['status'] ?? '') !== 'lopend' || ($row['plafondBereikt'] ?? false) === true) {
-            return $row;
-        }
+        return $row;
+    }//end fetchBerekeningRow()
 
+    /**
+     * Accrue one calculation day onto a berekening row (capped at the plafond).
+     *
+     * @param array<string, mixed> $row Berekening row.
+     *
+     * @return array<string, mixed> The row with the new day, tariff and cumulative amount.
+     */
+    private function applyDailyAccrual(array $row): array
+    {
         $currentDay = (int) ($row['huidigeDag'] ?? 0);
         $cumulative = (int) ($row['cumulatievBedrag'] ?? 0);
         $plafond    = (int) ($row['plafondBerekend'] ?? self::AWB_PLAFOND_CENTS);
         $regime     = (string) ($row['regime'] ?? 'awb-default');
 
         $nextDay = ($currentDay + 1);
+        $tariff  = $this->dailyTariffAwb(dayNumber: $nextDay);
         if ($regime === 'afwijkend') {
             $tariff = $this->resolveCustomDailyTariff(berekening: $row);
-        } else {
-            $tariff = $this->dailyTariffAwb(dayNumber: $nextDay);
         }
 
         $newCumul   = ($cumulative + $tariff);
@@ -162,6 +210,27 @@ class DwangsomCalculationService
         $row['cumulatievBedrag'] = $newCumul;
         $row['plafondBereikt']   = $plafondHit;
 
+        return $row;
+    }//end applyDailyAccrual()
+
+    /**
+     * Persist a berekening row, falling back to the in-memory row on failure.
+     *
+     * @param object               $objectService OpenRegister object service.
+     * @param string               $register      Register identifier.
+     * @param string               $schema        Schema identifier.
+     * @param array<string, mixed> $row           Berekening row to persist.
+     * @param string               $berekeningId  Berekening id (for logging).
+     *
+     * @return array<string, mixed> The saved row, or the supplied row.
+     */
+    private function persistBerekening(
+        object $objectService,
+        string $register,
+        string $schema,
+        array $row,
+        string $berekeningId
+    ): array {
         try {
             $saved = $objectService->saveObject($register, $schema, $row);
             if (is_array($saved) === true) {
@@ -176,7 +245,7 @@ class DwangsomCalculationService
             );
             return $row;
         }
-    }//end calculateDaily()
+    }//end persistBerekening()
 
     /**
      * Stop a DwangsomBerekening because the beschikking was filed.
@@ -245,23 +314,71 @@ class DwangsomCalculationService
             return self::AWB_TIER_1_CENTS;
         }
 
-        try {
-            $instance = $objectService->find($instanceId, register: $register, schema: $instSchema);
-        } catch (\Throwable $e) {
-            return self::AWB_TIER_1_CENTS;
-        }
-
-        if (is_array($instance) === false) {
-            return self::AWB_TIER_1_CENTS;
-        }
-
-        $defId = (string) ($instance['termijnDefinitie'] ?? '');
+        $defId = $this->resolveTermijnDefinitieId(
+            objectService: $objectService,
+            register: $register,
+            schema: $instSchema,
+            instanceId: $instanceId
+        );
         if ($defId === '') {
             return self::AWB_TIER_1_CENTS;
         }
 
+        return $this->resolveRegimeDailyTariff(
+            objectService: $objectService,
+            register: $register,
+            schema: $defSchema,
+            definitieId: $defId
+        );
+    }//end resolveCustomDailyTariff()
+
+    /**
+     * Resolve the TermijnDefinitie id linked to a TermijnInstance.
+     *
+     * @param object $objectService OpenRegister object service.
+     * @param string $register      Register identifier.
+     * @param string $schema        TermijnInstance schema identifier.
+     * @param string $instanceId    TermijnInstance id.
+     *
+     * @return string The definitie id, or an empty string when unresolvable.
+     */
+    private function resolveTermijnDefinitieId(
+        object $objectService,
+        string $register,
+        string $schema,
+        string $instanceId
+    ): string {
         try {
-            $def = $objectService->find($defId, register: $register, schema: $defSchema);
+            $instance = $objectService->find($instanceId, register: $register, schema: $schema);
+        } catch (\Throwable $e) {
+            return '';
+        }
+
+        if (is_array($instance) === false) {
+            return '';
+        }
+
+        return (string) ($instance['termijnDefinitie'] ?? '');
+    }//end resolveTermijnDefinitieId()
+
+    /**
+     * Read the afwijkend regime daily tariff from a TermijnDefinitie.
+     *
+     * @param object $objectService OpenRegister object service.
+     * @param string $register      Register identifier.
+     * @param string $schema        TermijnDefinitie schema identifier.
+     * @param string $definitieId   TermijnDefinitie id.
+     *
+     * @return int Cents, falling back to the AWB tier 1 tariff.
+     */
+    private function resolveRegimeDailyTariff(
+        object $objectService,
+        string $register,
+        string $schema,
+        string $definitieId
+    ): int {
+        try {
+            $def = $objectService->find($definitieId, register: $register, schema: $schema);
         } catch (\Throwable $e) {
             return self::AWB_TIER_1_CENTS;
         }
@@ -276,5 +393,5 @@ class DwangsomCalculationService
         }
 
         return self::AWB_TIER_1_CENTS;
-    }//end resolveCustomDailyTariff()
+    }//end resolveRegimeDailyTariff()
 }//end class

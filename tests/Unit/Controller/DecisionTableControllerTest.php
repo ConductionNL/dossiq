@@ -40,6 +40,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Procest\Controller\DecisionTableController
+ *
+ * @uses \OCA\Procest\Service\Dmn\DecisionEvaluationException
  */
 class DecisionTableControllerTest extends TestCase
 {
