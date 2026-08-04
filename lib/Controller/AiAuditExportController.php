@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
-use OCA\Procest\Service\AiService;
+use OCA\Procest\Service\Ai\AiAuditService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -60,7 +60,7 @@ class AiAuditExportController extends Controller
     private const MAX_EXPORT_ROWS = 10000;
 
     /**
-     * Page size used while internally iterating {@see AiService::listAuditEntries()}
+     * Page size used while internally iterating {@see AiAuditService::listAuditEntries()}
      * to assemble the (uncapped, up to MAX_EXPORT_ROWS) export set.
      */
     private const PAGE_SIZE = 200;
@@ -97,7 +97,7 @@ class AiAuditExportController extends Controller
      * @param IRequest        $request      Incoming request
      * @param IUserSession    $userSession  Current user session
      * @param IGroupManager   $groupManager Group manager (for RBAC check)
-     * @param AiService       $aiService    The AI service (audit listing)
+     * @param AiAuditService  $auditService The AI oversight audit service (audit listing)
      * @param LoggerInterface $logger       PSR-3 logger
      */
     public function __construct(
@@ -105,7 +105,7 @@ class AiAuditExportController extends Controller
         IRequest $request,
         private readonly IUserSession $userSession,
         private readonly IGroupManager $groupManager,
-        private readonly AiService $aiService,
+        private readonly AiAuditService $auditService,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
@@ -196,7 +196,7 @@ class AiAuditExportController extends Controller
      * Collect audit entries across pages up to {@see self::MAX_EXPORT_ROWS}.
      *
      * No pagination cap is applied on the caller-facing filters — this
-     * iterates {@see AiService::listAuditEntries()} internally page by page
+     * iterates {@see AiAuditService::listAuditEntries()} internally page by page
      * (bounded page size) so a single export call never asks OpenRegister
      * for an unbounded result set in one query.
      *
@@ -212,7 +212,7 @@ class AiAuditExportController extends Controller
         $totalCount = 0;
 
         do {
-            $page       = $this->aiService->listAuditEntries(
+            $page       = $this->auditService->listAuditEntries(
                 filters: $filters,
                 limit: self::PAGE_SIZE,
                 offset: $offset,

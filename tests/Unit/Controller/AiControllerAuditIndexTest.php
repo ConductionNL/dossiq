@@ -5,7 +5,7 @@
  *
  * Asserts the audit-listing stub is gone (no more "implement with
  * OpenRegister object listing" placeholder), filters/paging params pass
- * through to AiService::listAuditEntries(), and failures are handled
+ * through to AiAuditService::listAuditEntries(), and failures are handled
  * without leaking exception internals as a 200.
  *
  * @category Tests
@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\AiController;
+use OCA\Procest\Service\Ai\AiAuditService;
 use OCA\Procest\Service\AiService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -46,6 +47,8 @@ class AiControllerAuditIndexTest extends TestCase
 
     private AiService $aiService;
 
+    private AiAuditService $auditService;
+
     private IUserSession $userSession;
 
     private IRequest $request;
@@ -63,6 +66,7 @@ class AiControllerAuditIndexTest extends TestCase
     {
         parent::setUp();
         $this->aiService       = $this->createMock(AiService::class);
+        $this->auditService    = $this->createMock(AiAuditService::class);
         $this->userSession     = $this->createMock(IUserSession::class);
         $this->request         = $this->createMock(IRequest::class);
         $this->logger           = $this->createMock(LoggerInterface::class);
@@ -75,6 +79,7 @@ class AiControllerAuditIndexTest extends TestCase
             appName: 'procest',
             request: $this->request,
             aiService: $this->aiService,
+            auditService: $this->auditService,
             userSession: $this->userSession,
             logger: $this->logger,
         );
@@ -97,7 +102,7 @@ class AiControllerAuditIndexTest extends TestCase
 
         $entries = [['id' => 'e1', 'type' => 'classification', 'caseId' => 'case-a']];
 
-        $this->aiService->expects($this->once())
+        $this->auditService->expects($this->once())
             ->method('listAuditEntries')
             ->with(
                 $this->callback(fn (array $filters) => ($filters['caseId'] ?? null) === 'case-a'),
@@ -138,7 +143,7 @@ class AiControllerAuditIndexTest extends TestCase
             ['offset', '0', '20'],
         ]);
 
-        $this->aiService->expects($this->once())
+        $this->auditService->expects($this->once())
             ->method('listAuditEntries')
             ->with(
                 ['caseId' => 'case-b', 'type' => 'summary'],
@@ -164,11 +169,12 @@ class AiControllerAuditIndexTest extends TestCase
             appName: 'procest',
             request: $this->request,
             aiService: $this->aiService,
+            auditService: $this->auditService,
             userSession: $userSession,
             logger: $this->logger,
         );
 
-        $this->aiService->expects($this->never())->method('listAuditEntries');
+        $this->auditService->expects($this->never())->method('listAuditEntries');
 
         $response = $controller->auditIndex();
 
@@ -189,7 +195,7 @@ class AiControllerAuditIndexTest extends TestCase
             ['offset', '0', '0'],
         ]);
 
-        $this->aiService->method('listAuditEntries')
+        $this->auditService->method('listAuditEntries')
             ->willThrowException(new \RuntimeException('boom'));
 
         $response = $this->controller->auditIndex();
