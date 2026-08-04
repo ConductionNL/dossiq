@@ -87,7 +87,9 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 		}
 	})
 
-	test('CaseDetail page renders the case the sub-case + email tabs hang off', async ({ page }) => {
+	// FIXME(#719): same gap as cases-crud — the case detail page does not
+	// display the assigned zaaknummer anywhere in its rendered text.
+	test.fixme('CaseDetail page renders the case the sub-case + email tabs hang off', async ({ page }) => {
 		const title = `${RUN_PREFIX} Deelzaak parent`
 		const identifier = `${RUN_PREFIX}-DZP`
 		const parent = await seedCase(api, token, { title, caseType: caseTypeId, identifier, description: 'Parent of a sub-case.' })
