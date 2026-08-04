@@ -28,7 +28,8 @@
 		"test:e2e": "playwright test",
 		"test:e2e:docs": "playwright test --project docs-capture",
 		"test:e2e:install": "playwright install chromium",
-		"check:vue3-compile": "node scripts/vue3-compile-sweep.cjs"
+		"check:vue3-compile": "node scripts/vue3-compile-sweep.cjs",
+		"prepare": "git config core.hooksPath .githooks || true"
 	},
 	"browserslist": [
 		"extends @nextcloud/browserslist-config"
