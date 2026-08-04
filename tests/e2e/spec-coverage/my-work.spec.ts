@@ -21,8 +21,11 @@ test.describe('My Work spec coverage', () => {
 	test('shows the current user\'s assigned cases as a card list', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/my-work')
 		await dismissSupportDialog(page)
-		// Page heading
-		await expect(page.getByRole('heading', { name: /My Work/ }).first()).toBeVisible({ timeout: 10000 })
+		// The My Work route renders NO page heading — measured on a CI runner
+		// (2026-08-04) it exposes zero `heading` roles. Identify the view by
+		// the sort controls unique to it, plus its card/table toggle.
+		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Newest' })).toBeVisible()
 		// Card/table view toggle is present (card view is the default)
 		await expect(page.getByRole('button', { name: /Cards/ }).first()).toBeVisible({ timeout: 10000 })
 	})

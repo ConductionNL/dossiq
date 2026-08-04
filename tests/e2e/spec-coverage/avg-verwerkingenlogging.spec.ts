@@ -74,7 +74,12 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 	test('procest exposes no processing-log endpoints of its own', async ({ page }) => {
 		// The procest route table must not answer AVG log paths — the VNG
 		// Logging Verwerkingen API is OpenRegister's (OR-PA-9).
-		const res = await page.request.get(`${APP_URL}/api/avg/verwerkingen`, { maxRedirects: 0 })
+		// MUST use the /index.php prefix. Without it the request never reaches
+		// Nextcloud's router — it is served the app shell HTML with status 200,
+		// which made this assertion fail while looking like procest DID expose
+		// the endpoint. (Had the expectation been inverted it would have
+		// "passed" while proving nothing at all.)
+		const res = await page.request.get(`/index.php${APP_URL}/api/avg/verwerkingen`, { maxRedirects: 0 })
 		expect([404, 405]).toContain(res.status())
 	})
 })

@@ -51,7 +51,9 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	test('My Work renders without error and supports the substituted filter when present', async ({ page }) => {
 		await page.goto('/index.php/apps/procest/my-work')
 		await dismissSupportDialog(page)
-		await expect(page.getByRole('heading', { name: /My Work/ }).first()).toBeVisible({ timeout: 10000 })
+		// The My Work route renders no page heading (measured on a CI runner
+		// 2026-08-04) — assert the view by a control it does render.
+		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({ timeout: 15000 })
 		// The "Show substituted work" toggle appears only when the user is an
 		// active waarnemer; its presence (or graceful absence) must not error.
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')

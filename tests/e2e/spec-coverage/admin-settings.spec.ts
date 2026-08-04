@@ -16,6 +16,14 @@ const ADMIN_SETTINGS_URL = '/settings/admin/procest'
 
 test.describe('Admin Settings spec coverage', () => {
 
+	// The Nextcloud admin settings page mounts AdminRoot.vue's fourteen
+	// CnSettingsSections, each of which queries OpenRegister on mount. Under
+	// the CI `php -S` server that load has been measured at ~50s — slower than
+	// the 60s default test budget once a couple of assertions are added, which
+	// made two of these tests fail with a bare "Test timeout exceeded" while
+	// their identical siblings passed. test.slow() triples the budget.
+	test.slow()
+
 	// @e2e openspec/specs/admin-settings/spec.md#admin-settings-page-is-accessible
 	test('admin settings page is accessible to admin users', async ({ page }) => {
 		await page.goto(ADMIN_SETTINGS_URL)

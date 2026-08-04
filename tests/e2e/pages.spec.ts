@@ -81,8 +81,11 @@ test.describe('Tasks page', () => {
 		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible()
 		await expect(page.getByRole('button', { name: /^Add (Item|Case|Task)$/ })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
-		// CnIndexSidebar's search field — placeholder is "Type to search..." (lib default).
-		await expect(page.getByPlaceholder('Type to search')).toBeVisible()
+		// CnIndexSidebar's search field — placeholder is "Type to search..."
+		// (lib default). The index sidebar starts COLLAPSED on this route, so
+		// the field is in the DOM but hidden; assert it is wired up rather
+		// than requiring the sidebar to be open.
+		await expect(page.getByPlaceholder('Type to search')).toBeAttached()
 	})
 })
 
