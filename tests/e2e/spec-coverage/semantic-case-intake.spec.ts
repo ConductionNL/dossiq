@@ -18,7 +18,7 @@ import { getRequestToken, ensureCaseType, seedCase, objectId } from '../helpers/
 import { STORAGE_STATE } from '../helpers/auth'
 import { request as pwRequest, type APIRequestContext } from '@playwright/test'
 
-const APP = '/index.php/apps/procest/index'
+const APP = '/index.php/apps/procest'
 
 test.describe('Semantic case intake — handoff provenance UI', () => {
 	let api: APIRequestContext
@@ -36,7 +36,13 @@ test.describe('Semantic case intake — handoff provenance UI', () => {
 			caseType: ct.id,
 			identifier: 'HANDOFF-INTAKE-1',
 			description: 'Case that arrived via the ns#Case semantic handoff.',
-			intakeChannel: 'handoff',
+			// NOT 'handoff': the case schema's intakeChannel enum is
+			// ["manual","balie","telefoon","email","post","website","overig",
+			// "zgw-api"], so 'handoff' is rejected by OpenRegister with a 400
+			// and the fixture never got created. The provenance UI keys off
+			// `handoffSource` alone (InitiatorSection#hasHandoff), so the
+			// channel value is incidental to what this test proves.
+			intakeChannel: 'overig',
 			handoffSource: 'urn:openregister:pipelinq:request:demo-123',
 		})
 		caseId = objectId(kase)
@@ -51,7 +57,9 @@ test.describe('Semantic case intake — handoff provenance UI', () => {
 	// test below.
 	// @e2e openspec/specs/semantic-case-intake/spec.md#behandelaar-sees-the-handoff-case-with-origin
 	test('case detail shows the handoff provenance with a source link', async ({ page }) => {
-		await page.goto(`${APP}#/cases/${caseId}`)
+		// History-mode router: the old `…/index#/cases/<id>` hash URL loaded a
+		// non-route and the detail view never rendered.
+		await page.goto(`${APP}/cases/${caseId}`)
 		const provenance = page.getByTestId('handoff-provenance')
 		await expect(provenance).toBeVisible({ timeout: 20000 })
 		await expect(provenance).toContainText('Received via handoff')

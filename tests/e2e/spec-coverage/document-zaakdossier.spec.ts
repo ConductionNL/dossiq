@@ -29,7 +29,7 @@ test.describe('document-zaakdossier spec coverage', () => {
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-004a-dossier-groups-documents-by-type-with-count-badge
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-004b-empty-dossier-shows-upload-cta-with-drag-and-drop-zone
 	test('cases index renders so a case dossier tab can be opened', async ({ page }) => {
-		const response = await page.goto('/apps/procest/cases').catch(() => null)
+		const response = await page.goto('/index.php/apps/procest/cases').catch(() => null)
 		if (!response) {
 			test.skip(true, 'Procest dev container not reachable')
 			return
@@ -42,7 +42,7 @@ test.describe('document-zaakdossier spec coverage', () => {
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-005b-per-file-upload-progress-with-shared-metadata
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-005c-file-validation-blocks-executable-uploads
 	test('dossier upload + sort flow is reachable from the dossier tab', async ({ page }) => {
-		const response = await page.goto('/apps/procest/cases').catch(() => null)
+		const response = await page.goto('/index.php/apps/procest/cases').catch(() => null)
 		if (!response) {
 			test.skip(true, 'Procest dev container not reachable')
 			return
@@ -56,7 +56,7 @@ test.describe('document-zaakdossier spec coverage', () => {
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-006a-concept-document-version-history-shows-restore
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-006b-restore-is-disabled-for-definitief-documents
 	test('version history panel is reachable from a dossier row', async ({ page }) => {
-		const response = await page.goto('/apps/procest/cases').catch(() => null)
+		const response = await page.goto('/index.php/apps/procest/cases').catch(() => null)
 		if (!response) {
 			test.skip(true, 'Procest dev container not reachable')
 			return
@@ -67,7 +67,7 @@ test.describe('document-zaakdossier spec coverage', () => {
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-008a-zip-export-includes-manifestcsv-and-type-sub-folders
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-008c-bulk-status-transition-returns-per-document-result
 	test('bulk actions bar appears when dossier documents are selected', async ({ page }) => {
-		const response = await page.goto('/apps/procest/cases').catch(() => null)
+		const response = await page.goto('/index.php/apps/procest/cases').catch(() => null)
 		if (!response) {
 			test.skip(true, 'Procest dev container not reachable')
 			return
@@ -99,7 +99,7 @@ test.describe('document-zaakdossier spec coverage', () => {
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-010a-back-fill-creates-informatieobject-for-pre-existing-file
 	// @e2e openspec/specs/document-zaakdossier/spec.md#req-zak-010b-back-fill-is-idempotent-on-re-run
 	test('dossier backend-enforced scenarios are served by the dossier surface', async ({ page }) => {
-		const response = await page.goto('/apps/procest/cases').catch(() => null)
+		const response = await page.goto('/index.php/apps/procest/cases').catch(() => null)
 		if (!response) {
 			test.skip(true, 'Procest dev container not reachable')
 			return

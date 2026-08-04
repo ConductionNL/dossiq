@@ -12,15 +12,24 @@
  */
 
 import { test, expect, request } from '@playwright/test'
+import { BASE_URL } from '../base-url'
+import { navToRoute } from '../helpers/nav'
 
 const APP_URL = '/apps/procest'
-const BASE = process.env.NEXTCLOUD_URL || 'http://localhost:8080'
+// Single source of truth — see tests/e2e/base-url.ts. The old
+// `process.env.NEXTCLOUD_URL || 'http://localhost:8080'` silently targeted the
+// SHARED dev container off CI.
+const BASE = BASE_URL
 
 test.describe('AVG verwerkingenlogging spec coverage', () => {
 
 	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#fg-opens-the-procest-verwerkingen-overview
 	test('admin (FG-equivalent) opens the verwerkingen overview', async ({ page }) => {
-		await page.goto(`${APP_URL}#/verwerkingen`)
+		// The app is history-mode, NOT hash-mode: `/apps/procest#/verwerkingen`
+		// loads the app root and leaves the hash unrouted, so the overview
+		// never renders. `/index.php/apps/procest/verwerkingen` renders it —
+		// measured on a CI runner (2026-08-04).
+		await navToRoute(page, '/verwerkingen')
 		await expect(page.getByRole('heading', { name: 'Processing activities (AVG)' })).toBeVisible({ timeout: 15000 })
 		// The catalogue table (seeded drafts) or the seed empty-state renders;
 		// either way the scoped window is up — never a procest-side error page.
@@ -31,7 +40,11 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 
 	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#inzageverzoek-export-delegates-to-the-platform
 	test('inzage export entry point delegates to the OpenRegister endpoint', async ({ page }) => {
-		await page.goto(`${APP_URL}#/verwerkingen`)
+		// The app is history-mode, NOT hash-mode: `/apps/procest#/verwerkingen`
+		// loads the app root and leaves the hash unrouted, so the overview
+		// never renders. `/index.php/apps/procest/verwerkingen` renders it —
+		// measured on a CI runner (2026-08-04).
+		await navToRoute(page, '/verwerkingen')
 		await page.getByRole('button', { name: 'Data subject access export' }).click()
 		await expect(page.getByRole('heading', { name: 'Data subject access export' })).toBeVisible()
 
@@ -61,7 +74,24 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 	test('procest exposes no processing-log endpoints of its own', async ({ page }) => {
 		// The procest route table must not answer AVG log paths — the VNG
 		// Logging Verwerkingen API is OpenRegister's (OR-PA-9).
-		const res = await page.request.get(`${APP_URL}/api/avg/verwerkingen`, { maxRedirects: 0 })
-		expect([404, 405]).toContain(res.status())
+		// A STATUS CODE CANNOT PROVE THIS. procest registers an SPA catch-all
+		// (`/{path}` -> dashboard#catchAll, from Routes::standard()), so every
+		// unmatched path under /apps/procest returns the app shell with HTTP
+		// 200 — this assertion expected 404/405 and could never pass. Note the
+		// trap: simply widening the expectation to include 200 would make it
+		// green while proving nothing, because 200 is exactly what the
+		// catch-all returns for a route that does NOT exist.
+		//
+		// What actually distinguishes "no API endpoint here" is the RESPONSE
+		// BODY: an AVG log endpoint would answer JSON, whereas the catch-all
+		// serves the HTML shell.
+		const res = await page.request.get(`/index.php${APP_URL}/api/avg/verwerkingen`, { maxRedirects: 0 })
+		const contentType = res.headers()['content-type'] ?? ''
+		expect(
+			contentType.includes('application/json'),
+			`procest answered ${APP_URL}/api/avg/verwerkingen with ${res.status()} ${contentType} — `
+			+ 'an AVG processing-log endpoint appears to exist in procest, but the VNG Logging '
+			+ "Verwerkingen API is OpenRegister's (OR-PA-9).",
+		).toBe(false)
 	})
 })
