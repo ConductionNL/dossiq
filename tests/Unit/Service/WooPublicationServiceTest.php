@@ -77,6 +77,8 @@ interface WooPublicationObjectServiceStub
  * Unit tests for WooPublicationService.
  *
  * @covers \OCA\Procest\Service\WooPublicationService
+ *
+ * @uses \OCA\Procest\Service\WooPublication\WooCategoryMapper
  */
 class WooPublicationServiceTest extends TestCase
 {

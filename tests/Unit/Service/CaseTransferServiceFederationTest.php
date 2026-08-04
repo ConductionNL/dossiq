@@ -235,6 +235,9 @@ final class CtfFakeFederatedShareMapper
 
 /**
  * @covers \OCA\Procest\Service\CaseTransferService
+ *
+ * @uses \OCA\Procest\Service\Transfer\TransferRegisterGateway
+ * @uses \OCA\Procest\Service\Transfer\TransferShareBroker
  */
 class CaseTransferServiceFederationTest extends TestCase
 {

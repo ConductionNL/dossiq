@@ -69,6 +69,8 @@ interface DsoCaseObjectServiceStub
  * Unit tests for DsoCaseService.
  *
  * @covers \OCA\Procest\Service\DsoCaseService
+ *
+ * @uses \OCA\Procest\Service\Dso\DsoStatusChangeNotifier
  */
 class DsoCaseServiceTest extends TestCase
 {

@@ -33,6 +33,9 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Procest\Service\Dmn\DecisionEngine
+ *
+ * @uses \OCA\Procest\Service\Dmn\DecisionEvaluationException
+ * @uses \OCA\Procest\Service\Dmn\ExpressionEvaluator
  */
 class DecisionEngineTest extends TestCase
 {

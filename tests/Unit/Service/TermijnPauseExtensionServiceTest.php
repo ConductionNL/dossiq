@@ -37,6 +37,11 @@ use RuntimeException;
 /**
  * @covers \OCA\Procest\Service\TermijnPauseService
  * @covers \OCA\Procest\Service\TermijnExtensionService
+ *
+ * @uses \OCA\Procest\Service\Substitution\SubstitutedWorkResolver
+ * @uses \OCA\Procest\Service\Support\SearchesObjects
+ * @uses \OCA\Procest\Service\TermijnDailyScanService
+ * @uses \OCA\Procest\Service\TermijnService
  */
 class TermijnPauseExtensionServiceTest extends TestCase
 {

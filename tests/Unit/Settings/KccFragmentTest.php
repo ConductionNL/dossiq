@@ -35,6 +35,8 @@ use ReflectionMethod;
  * Integration-style unit tests for the KCC register fragment.
  *
  * @covers \OCA\Procest\Service\SettingsService
+ *
+ * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
  */
 class KccFragmentTest extends TestCase
 {

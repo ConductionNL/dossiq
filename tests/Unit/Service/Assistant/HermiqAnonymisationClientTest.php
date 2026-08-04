@@ -42,6 +42,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\Assistant\HermiqAnonymisationClient
+ *
+ * @uses \OCA\Procest\Service\Assistant\HermiqAssistantException
  */
 class HermiqAnonymisationClientTest extends TestCase
 {

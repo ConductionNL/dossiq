@@ -367,6 +367,10 @@ class DsoControllerRequestStub implements IRequest
  * Unit tests for DsoController.
  *
  * @covers \OCA\Procest\Controller\DsoController
+ *
+ * @uses \OCA\Procest\Service\Dso\DsoDoorsturenNotifier
+ * @uses \OCA\Procest\Service\Dso\DsoObjectRepository
+ * @uses \OCA\Procest\Service\Support\SearchesObjects
  */
 class DsoControllerTest extends TestCase
 {

@@ -38,6 +38,11 @@ use OCP\IAppConfig;
 
 /**
  * @covers \OCA\Procest\Service\AiService::detectDeterministicPiiSpans
+ *
+ * @uses \OCA\Procest\Service\Ai\AiAuditLog
+ * @uses \OCA\Procest\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Procest\Service\Ai\AiPiiRedactor
+ * @uses \OCA\Procest\Service\AiService
  */
 class AiServicePiiDetectionTest extends TestCase
 {

@@ -133,6 +133,17 @@ class FakeObjectService
  * Unit tests for BeschikkingService.
  *
  * @covers \OCA\Procest\Service\BeschikkingService
+ *
+ * @uses \OCA\Procest\Service\BerichtenboxRoutingService
+ * @uses \OCA\Procest\Service\Beschikking\AuditPacketBuilder
+ * @uses \OCA\Procest\Service\Beschikking\BeschikkingRepository
+ * @uses \OCA\Procest\Service\Beschikking\BezwaarTermijnScheduler
+ * @uses \OCA\Procest\Service\Beschikking\MandaatVerifier
+ * @uses \OCA\Procest\Service\Beschikking\MockSigningAdapter
+ * @uses \OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter
+ * @uses \OCA\Procest\Service\Beschikking\OpenRegisterArchivalAdapter
+ * @uses \OCA\Procest\Service\StateMachineService
+ * @uses \OCA\Procest\Service\Support\SearchesObjects
  */
 class BeschikkingServiceTest extends TestCase
 {

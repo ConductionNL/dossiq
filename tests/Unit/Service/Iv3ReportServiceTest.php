@@ -66,6 +66,8 @@ class Iv3FakeObjectService
  * Unit tests for Iv3ReportService.
  *
  * @covers \OCA\Procest\Service\Iv3ReportService
+ *
+ * @uses \OCA\Procest\Service\Iv3TaakveldList
  */
 class Iv3ReportServiceTest extends TestCase
 {

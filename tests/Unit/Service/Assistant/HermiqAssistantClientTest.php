@@ -43,6 +43,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\Assistant\HermiqAssistantClient
+ *
+ * @uses \OCA\Procest\Service\Assistant\HermiqAssistantException
  */
 class HermiqAssistantClientTest extends TestCase
 {

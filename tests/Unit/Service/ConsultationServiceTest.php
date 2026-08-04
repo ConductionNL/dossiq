@@ -99,6 +99,9 @@ interface ConsultationObjectServiceStub
  * Unit tests for ConsultationService.
  *
  * @covers \OCA\Procest\Service\ConsultationService
+ *
+ * @uses \OCA\Procest\Service\Consultation\ConsultationDependencyGraph
+ * @uses \OCA\Procest\Service\Consultation\ConsultationRepository
  */
 class ConsultationServiceTest extends TestCase
 {

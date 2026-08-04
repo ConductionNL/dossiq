@@ -63,6 +63,9 @@ interface BvwTemplateObjectServiceStub
  * Unit tests for BesluitvormingTemplateService.
  *
  * @covers \OCA\Procest\Service\BesluitvormingTemplateService
+ *
+ * @uses \OCA\Procest\Service\Besluitvorming\TemplateBundleSeeder
+ * @uses \OCA\Procest\Service\Besluitvorming\WorkflowReferenceResolver
  */
 class BesluitvormingTemplateServiceTest extends TestCase
 {

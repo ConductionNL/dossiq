@@ -35,6 +35,8 @@ use ReflectionMethod;
  *
  * @covers \OCA\Procest\Service\SettingsService
  *
+ * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
+ *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-01
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-02
  */

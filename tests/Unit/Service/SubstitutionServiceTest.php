@@ -63,6 +63,9 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
  * Unit tests for SubstitutionService.
  *
  * @covers \OCA\Procest\Service\SubstitutionService
+ *
+ * @uses \OCA\Procest\Service\Substitution\SubstitutedWorkResolver
+ * @uses \OCA\Procest\Service\Substitution\SubstitutionValidator
  */
 class SubstitutionServiceTest extends TestCase
 {

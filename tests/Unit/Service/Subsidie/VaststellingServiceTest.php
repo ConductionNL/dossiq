@@ -86,6 +86,8 @@ class VaststellingFakeObjectService
 /**
  * @covers \OCA\Procest\Service\Subsidie\VaststellingService
  *
+ * @uses \OCA\Procest\Service\Subsidie\TerugvorderingService
+ *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-20
  * @spec openspec/changes/subsidie-settlement-case-costs/specs/subsidie-settlement-case-costs/spec.md
  */

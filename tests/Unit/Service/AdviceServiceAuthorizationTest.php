@@ -87,6 +87,11 @@ interface AdviceObjectServiceStub
  * Unit tests for AdviceService transition authorization.
  *
  * @covers \OCA\Procest\Service\AdviceService
+ *
+ * @uses \OCA\Procest\Service\Advice\AdviceAuthorizationGuard
+ * @uses \OCA\Procest\Service\Advice\AdviceNotifier
+ * @uses \OCA\Procest\Service\Advice\AdviceRepository
+ * @uses \OCA\Procest\Service\Support\SearchesObjects
  */
 class AdviceServiceAuthorizationTest extends TestCase
 {

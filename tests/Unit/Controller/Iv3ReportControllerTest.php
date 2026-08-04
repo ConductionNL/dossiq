@@ -43,6 +43,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for Iv3ReportController.
  *
  * @covers \OCA\Procest\Controller\Iv3ReportController
+ *
+ * @uses \OCA\Procest\Service\Iv3TaakveldList
  */
 class Iv3ReportControllerTest extends TestCase
 {
