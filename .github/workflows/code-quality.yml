@@ -9,7 +9,7 @@ on:
 
 jobs:
   quality:
-    uses: ConductionNL/.github/.github/workflows/quality.yml@main
+    uses: ConductionNL/.github/.github/workflows/quality.yml@fix/phpunit-not-gated-on-static-analysis
     with:
       app-name: procest
       php-version: "8.3"
