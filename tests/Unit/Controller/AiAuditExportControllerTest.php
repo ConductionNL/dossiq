@@ -26,7 +26,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\AiAuditExportController;
-use OCA\Procest\Service\AiService;
+use OCA\Procest\Service\Ai\AiAuditService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
@@ -45,7 +45,7 @@ use Psr\Log\LoggerInterface;
 class AiAuditExportControllerTest extends TestCase
 {
 
-    private AiService $aiService;
+    private AiAuditService $auditService;
 
     private IGroupManager $groupManager;
 
@@ -78,7 +78,7 @@ class AiAuditExportControllerTest extends TestCase
             request: $this->request,
             userSession: $userSession,
             groupManager: $this->groupManager,
-            aiService: $this->aiService,
+            auditService: $this->auditService,
             logger: $this->logger,
         );
     }//end makeController()
@@ -91,7 +91,7 @@ class AiAuditExportControllerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->aiService    = $this->createMock(AiService::class);
+        $this->auditService = $this->createMock(AiAuditService::class);
         $this->groupManager = $this->createMock(IGroupManager::class);
         $this->request      = $this->createMock(IRequest::class);
         $this->logger       = $this->createMock(LoggerInterface::class);
@@ -114,7 +114,7 @@ class AiAuditExportControllerTest extends TestCase
             ['format', 'csv', 'csv'],
         ]);
 
-        $this->aiService->method('listAuditEntries')->willReturn([
+        $this->auditService->method('listAuditEntries')->willReturn([
             'entries' => [
                 [
                     'id'         => 'e1',
@@ -162,7 +162,7 @@ class AiAuditExportControllerTest extends TestCase
             ['format', 'csv', 'csv'],
         ]);
 
-        $this->aiService->method('listAuditEntries')
+        $this->auditService->method('listAuditEntries')
             ->willReturn(['entries' => [], 'total' => null, 'limit' => 200, 'offset' => 0]);
 
         $controller = $this->makeController('admin-1');
@@ -182,7 +182,7 @@ class AiAuditExportControllerTest extends TestCase
         $this->groupManager->method('isInGroup')->willReturn(false);
         $this->groupManager->method('isAdmin')->willReturn(false);
 
-        $this->aiService->expects($this->never())->method('listAuditEntries');
+        $this->auditService->expects($this->never())->method('listAuditEntries');
 
         $controller = $this->makeController('plain-user');
         $response   = $controller->export();
@@ -223,7 +223,7 @@ class AiAuditExportControllerTest extends TestCase
         ]);
 
         $entries = [['id' => 'e1', 'type' => 'qa']];
-        $this->aiService->method('listAuditEntries')
+        $this->auditService->method('listAuditEntries')
             ->willReturn(['entries' => $entries, 'total' => null, 'limit' => 200, 'offset' => 0]);
 
         $controller = $this->makeController('auditor-1');
