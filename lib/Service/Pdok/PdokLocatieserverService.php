@@ -39,7 +39,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Service\Pdok;
 
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Support\SuppressesWarnings;
 use OCP\IAppConfig;
 use OCP\ICache;
@@ -97,17 +96,15 @@ class PdokLocatieserverService
     /**
      * Constructor.
      *
-     * @param ICacheFactory      $cacheFactory    Cache factory.
-     * @param IAppConfig         $appConfig       App configuration accessor.
-     * @param SettingsService    $settingsService Procest settings service.
-     * @param ContainerInterface $container       DI container for optional
-     *                                            OpenConnector resolution.
-     * @param LoggerInterface    $logger          PSR logger.
+     * @param ICacheFactory      $cacheFactory Cache factory.
+     * @param IAppConfig         $appConfig    App configuration accessor.
+     * @param ContainerInterface $container    DI container for optional
+     *                                         OpenConnector resolution.
+     * @param LoggerInterface    $logger       PSR logger.
      */
     public function __construct(
         ICacheFactory $cacheFactory,
         private IAppConfig $appConfig,
-        private SettingsService $settingsService,
         private ContainerInterface $container,
         private LoggerInterface $logger,
     ) {

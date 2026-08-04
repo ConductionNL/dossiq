@@ -28,8 +28,6 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use OCA\Procest\AppInfo\Application;
-use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
 use ZipArchive;
 
@@ -55,11 +53,9 @@ class CaseDefinitionImportService
     /**
      * Constructor.
      *
-     * @param IAppConfig      $appConfig The Nextcloud app config service.
-     * @param LoggerInterface $logger    The logger instance.
+     * @param LoggerInterface $logger The logger instance.
      */
     public function __construct(
-        private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()

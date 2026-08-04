@@ -220,11 +220,13 @@ npm run stylelint       # CSS linting
 ```
 
 `composer check:strict` is the unified quality gate, enforced on every PR by
-the `pre-merge-check-strict` workflow (`.forgejo/workflows/`). PHPMD runs with
-**no baseline** (all violations fixed). PHPStan ships a small, documented
-baseline (`phpstan-baseline.neon`) covering only injected-but-unused
-dependencies that the OR-abstraction adoption work will remove; every other
-legacy-debt cluster has been cleared.
+the `pre-merge-check-strict` workflow (`.forgejo/workflows/`). PHPMD and PHPStan
+both run with **no baseline** — every violation is fixed at source, so the gate's
+green is bought entirely by the code and not by a suppression file. The only
+PHPStan suppressions are the documented `ignoreErrors` patterns in `phpstan.neon`
+covering stub gaps in `nextcloud/ocp` (server-internal `\OC` classes, other apps'
+`OCA\` namespaces, Guzzle, Doctrine DBAL), each with a written justification.
+Do not reintroduce `phpstan-baseline.neon`.
 
 ## Tech Stack
 

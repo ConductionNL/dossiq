@@ -44,7 +44,6 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\Service\AdviceDelegationService;
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\StatusTransitionService;
 use OCA\Procest\Service\Transitions\GuardFailedException;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -96,10 +95,6 @@ class AdvisoryCommitteeService
      * Constructor.
      *
      * @param SettingsService          $settingsService  Schema/register bridge
-     * @param StatusTransitionService  $transitions      Optional integration with
-     *                                                   the case-level status FSM
-     *                                                   (used when the lifecycle
-     *                                                   advances the parent case)
      * @param LoggerInterface          $logger           Logger
      * @param AdviceDelegationService  $adviceDelegation Advice delegation to decidesk (ADR-019)
      * @param BezwaarAuditTrail        $auditTrail       Shared append-only audit writer
@@ -107,7 +102,6 @@ class AdvisoryCommitteeService
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly StatusTransitionService $transitions,
         private readonly LoggerInterface $logger,
         private readonly AdviceDelegationService $adviceDelegation,
         private readonly BezwaarAuditTrail $auditTrail,

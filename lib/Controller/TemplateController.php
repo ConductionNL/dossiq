@@ -32,7 +32,6 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
 
 /**
  * Controller for zaaktype template management.
@@ -46,14 +45,12 @@ class TemplateController extends Controller
      * @param IRequest               $request         The request
      * @param TemplateLibraryService $templateService The template service
      * @param IUserSession           $userSession     The user session
-     * @param LoggerInterface        $logger          The logger
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly TemplateLibraryService $templateService,
         private readonly IUserSession $userSession,
-        private readonly LoggerInterface $logger,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
