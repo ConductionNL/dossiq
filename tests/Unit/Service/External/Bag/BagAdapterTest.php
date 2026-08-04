@@ -37,6 +37,10 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Service\External\Bag\BagApiAdapter
  * @covers \OCA\Procest\Service\External\Bag\LogBagAdapter
+ *
+ * @uses \OCA\Procest\Service\External\Bag\BagLookupResult
+ * @uses \OCA\Procest\Service\External\Bag\BagResponseMapper
+ * @uses \OCA\Procest\Service\External\IntegrationMode
  */
 class BagAdapterTest extends TestCase
 {

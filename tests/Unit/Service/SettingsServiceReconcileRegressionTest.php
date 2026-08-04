@@ -56,6 +56,9 @@ interface ReconcileSchemaStub
  * Regression tests for SettingsService::reconcileSchemaConfig().
  *
  * @covers \OCA\Procest\Service\SettingsService
+ *
+ * @uses \OCA\Procest\Service\Settings\SchemaAnnotationReconciler
+ * @uses \OCA\Procest\Service\Settings\SchemaKeyReconciler
  */
 class SettingsServiceReconcileRegressionTest extends TestCase
 {

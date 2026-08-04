@@ -31,6 +31,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\RequiredDocumentGuard
+ *
+ * @uses \OCA\Procest\Service\Transitions\GuardResult
  */
 class RequiredDocumentGuardTest extends TestCase
 {

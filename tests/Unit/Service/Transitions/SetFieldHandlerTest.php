@@ -34,6 +34,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\SetFieldHandler
+ *
+ * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
 class SetFieldHandlerTest extends TestCase
 {

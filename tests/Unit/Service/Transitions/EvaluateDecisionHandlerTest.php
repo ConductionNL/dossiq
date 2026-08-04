@@ -37,6 +37,11 @@ use Psr\Log\NullLogger;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\EvaluateDecisionHandler
+ *
+ * @uses \OCA\Procest\Service\Dmn\DecisionEngine
+ * @uses \OCA\Procest\Service\Dmn\DecisionEvaluationException
+ * @uses \OCA\Procest\Service\Dmn\ExpressionEvaluator
+ * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
 class EvaluateDecisionHandlerTest extends TestCase
 {

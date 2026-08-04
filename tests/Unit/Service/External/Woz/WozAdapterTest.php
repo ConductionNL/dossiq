@@ -36,6 +36,10 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Service\External\Woz\WozApiAdapter
  * @covers \OCA\Procest\Service\External\Woz\LogWozAdapter
+ *
+ * @uses \OCA\Procest\Service\External\IntegrationMode
+ * @uses \OCA\Procest\Service\External\Woz\WozLookupResult
+ * @uses \OCA\Procest\Service\External\Woz\WozResponseMapper
  */
 class WozAdapterTest extends TestCase
 {
