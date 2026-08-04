@@ -26,8 +26,11 @@ test.describe('Cases page', () => {
 	// @e2e openspec/specs/case-management/spec.md#cases-index-page-renders-list-shell
 	test('renders list view with correct controls', async ({ page }) => {
 		await navTo(page, 'Cases')
-		await expect(page.getByRole('radio', { name: 'Cards' })).toBeVisible({ timeout: 15000 })
-		await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked()
+		// The view switcher renders as BUTTONS, not a radio group — measured on
+		// a CI runner (2026-08-04): the page exposes zero `radio` roles, so the
+		// old `getByRole('radio', …)` assertions could never pass.
+		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
 		await expect(page.getByRole('button', { name: /^Add (Item|Case|Task)$/ })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
 	})
@@ -73,7 +76,9 @@ test.describe('Tasks page', () => {
 		// nav-dedup pass); the /tasks page route stays reachable, so navigate
 		// to it client-side rather than via a (non-existent) nav link.
 		await navToRoute(page, '/tasks')
-		await expect(page.getByRole('radio', { name: 'Table' })).toBeChecked({ timeout: 15000 })
+		// View switcher renders as buttons, not radios — see the Cases test.
+		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible()
 		await expect(page.getByRole('button', { name: /^Add (Item|Case|Task)$/ })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
 		// CnIndexSidebar's search field — placeholder is "Type to search..." (lib default).
@@ -85,10 +90,15 @@ test.describe('My Work page', () => {
 
 	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
 	test('renders as a card index scoped to the current user', async ({ page }) => {
-		await navTo(page, 'My Work')
-		// My Work is now a CnIndexPage card list (assignee = current uid).
-		await expect(page.getByRole('heading', { name: /My Work/ }).first()).toBeVisible({ timeout: 15000 })
-		// Card/table view toggle is present (cards are the default view).
+		// The sidebar label is "My work" (lower-case w) — "My Work" matched no
+		// nav link and used to burn the whole test budget inside navTo.
+		await navTo(page, 'My work')
+		// My Work is a CnIndexPage card list (assignee = current uid). It
+		// renders NO page heading — measured on a CI runner (2026-08-04) the
+		// route exposes zero `heading` roles — so identify it by the sort
+		// controls that are unique to this view plus its card/table toggle.
+		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Newest' })).toBeVisible()
 		await expect(page.getByRole('button', { name: /Cards/ }).first()).toBeVisible()
 	})
 })
@@ -128,10 +138,10 @@ test.describe('Doorlooptijd page', () => {
 
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading
 	test('renders processing time analytics', async ({ page }) => {
-		// Deep-link without the /index.php prefix — the deployed build's
-		// history-mode router resets a /index.php deep-link to the Dashboard.
-		await page.goto('/apps/procest/doorlooptijd')
-		await dismissSupportDialog(page)
+		// Use the /index.php-prefixed deep link (navToRoute). The comment this
+		// replaces claimed a /index.php deep-link resets to the Dashboard;
+		// measured on a CI runner (2026-08-04) it renders the view correctly.
+		await navToRoute(page, '/doorlooptijd')
 		await expect(page.getByRole('heading', { name: 'Processing Time Analytics', level: 2 })).toBeVisible({ timeout: 15000 })
 		await expect(page.getByText('SLA adherence')).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Dashboard' })).toBeVisible()

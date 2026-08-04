@@ -94,9 +94,7 @@ export default defineConfig({
 	// out from under it mid-test. Serial execution removes that whole class of
 	// cross-worker flake.
 	workers: 1,
-	// TEMPORARY DIAGNOSTIC — revert before merge.
-	testMatch: ['**/zz-ci-diagnostic.spec.ts'],
-	retries: 0,
+	retries: process.env.CI ? 1 : 0,
 	reporter: [
 		['html', { open: 'never', outputFolder: path.resolve(__dirname, 'playwright-report') }],
 		['junit', { outputFile: path.resolve(__dirname, 'test-results', 'results.xml') }],
@@ -110,6 +108,15 @@ export default defineConfig({
 		// is the SHARED dev container off CI, and this suite both seeds and
 		// deletes OpenRegister objects.
 		baseURL: BASE_URL,
+		// Playwright's `actionTimeout` defaults to 0 — NO limit — so a single
+		// `.click()` on a non-actionable element (e.g. a nav leaf hidden inside
+		// a collapsed group) blocks until the entire 60s test budget is gone,
+		// then reports a bare timeout naming the element rather than the cause.
+		// That is what turned this suite into a 45-minute job that CI cancelled
+		// after 65 of 122 tests. A bounded action fails in 15s with the same
+		// diagnostic and leaves the remaining budget for the real assertions.
+		actionTimeout: 15_000,
+		navigationTimeout: 30_000,
 		// Written by global-setup.ts after the admin login. Path must match
 		// `helpers/auth.ts#STORAGE_STATE`, which global-setup imports.
 		storageState: path.resolve(__dirname, '.auth', 'user.json'),
