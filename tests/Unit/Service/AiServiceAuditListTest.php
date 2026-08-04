@@ -26,6 +26,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Ai\AiAuditLog;
+use OCA\Procest\Service\Ai\AiEndpointGuard;
+use OCA\Procest\Service\Ai\AiPiiRedactor;
+use OCA\Procest\Service\Ai\AiPromptFactory;
 use OCA\Procest\Service\AiService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -92,7 +96,10 @@ class AiServiceAuditListTest extends TestCase
 
         $this->service = new AiService(
             appConfig: $this->appConfig,
-            container: $this->container,
+            prompts: new AiPromptFactory(),
+            pii: new AiPiiRedactor(),
+            endpointGuard: new AiEndpointGuard($this->logger),
+            audit: new AiAuditLog($this->appConfig, $this->container, $this->logger),
             logger: $this->logger,
         );
     }//end setUp()

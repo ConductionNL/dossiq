@@ -32,6 +32,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Ai\AiAuditLog;
+use OCA\Procest\Service\Ai\AiEndpointGuard;
+use OCA\Procest\Service\Ai\AiPiiRedactor;
+use OCA\Procest\Service\Ai\AiPromptFactory;
 use OCA\Procest\Service\AiService;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -145,10 +149,19 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase
         $this->container = $this->createMock(ContainerInterface::class);
         $this->container->method('get')->willReturn($this->objectService);
 
+        $logger = $this->createMock(LoggerInterface::class);
+
+        // Real collaborators, mocked boundaries: the audit sink still reaches
+        // the same ObjectService stub, so this suite keeps asserting that every
+        // suggestion-time operation actually WRITES an audit entry rather than
+        // that AiService merely calls a mock.
         $this->service = new StubbedAiService(
             appConfig: $this->appConfig,
-            container: $this->container,
-            logger: $this->createMock(LoggerInterface::class),
+            prompts: new AiPromptFactory(),
+            pii: new AiPiiRedactor(),
+            endpointGuard: new AiEndpointGuard($logger),
+            audit: new AiAuditLog($this->appConfig, $this->container, $logger),
+            logger: $logger,
         );
     }//end setUp()
 
