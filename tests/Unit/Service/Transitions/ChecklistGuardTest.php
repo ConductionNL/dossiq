@@ -34,8 +34,6 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\ChecklistGuard
- *
- * @uses \OCA\Procest\Service\Transitions\GuardResult
  */
 class ChecklistGuardTest extends TestCase
 {

@@ -123,7 +123,7 @@ class RoleGuardTest extends TestCase
         );
 
         self::assertTrue($result->passed);
-        self::assertSame('Behandelaar', $result->details['matchedRole']);
+        self::assertSame('POSITIVE-CONTROL-DELIBERATE-BREAK', $result->details['matchedRole']);
         self::assertSame('group', $result->details['via']);
     }//end testFallsBackToGroupMembership()
 
