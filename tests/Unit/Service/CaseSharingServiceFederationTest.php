@@ -29,6 +29,10 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\CaseSharingService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Sharing\CaseAccessPolicy;
+use OCA\Procest\Service\Sharing\CaseTokenShareService;
+use OCA\Procest\Service\Sharing\FederatedCaseShareService;
+use OCA\Procest\Service\Sharing\OpenRegisterSharingGateway;
 use OCA\Procest\Service\TenantAuditTrailService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -159,6 +163,42 @@ class CaseSharingServiceFederationTest extends TestCase
     private CaseSharingService $service;
 
     /**
+     * Assemble CaseSharingService with real sharing collaborators.
+     *
+     * The gateway, access policy, token-share service and federated-share
+     * service are real objects rather than mocks: every assertion in this
+     * class is about behaviour they inherited verbatim from CaseSharingService,
+     * and they stay driven entirely by the mocked app manager, container and
+     * settings passed in here.
+     *
+     * @param SettingsService         $settings   Settings service (mock).
+     * @param IAppManager             $appManager App manager (mock).
+     * @param ContainerInterface      $container  DI container (mock).
+     * @param LoggerInterface         $logger     Logger (mock).
+     * @param TenantAuditTrailService $audit      Audit trail (mock).
+     *
+     * @return CaseSharingService
+     */
+    private static function makeSharingService(
+        SettingsService $settings,
+        IAppManager $appManager,
+        ContainerInterface $container,
+        LoggerInterface $logger,
+        TenantAuditTrailService $audit,
+    ): CaseSharingService {
+        $gateway = new OpenRegisterSharingGateway($appManager, $container, $logger);
+
+        return new CaseSharingService(
+            settingsService: $settings,
+            gateway: $gateway,
+            accessPolicy: new CaseAccessPolicy($settings, $gateway, $logger),
+            tokenShares: new CaseTokenShareService($settings, $gateway, $logger),
+            federatedShares: new FederatedCaseShareService($settings, $gateway, $logger, $audit),
+            logger: $logger,
+        );
+    }//end makeSharingService()
+
+    /**
      * @return void
      */
     protected function setUp(): void
@@ -194,12 +234,12 @@ class CaseSharingServiceFederationTest extends TestCase
 
         $this->audit = $this->createMock(TenantAuditTrailService::class);
 
-        $this->service = new CaseSharingService(
-            settingsService: $settings,
-            appManager: $appManager,
-            container: $this->container,
-            logger: $this->createMock(LoggerInterface::class),
-            auditTrailService: $this->audit,
+        $this->service = self::makeSharingService(
+            $settings,
+            $appManager,
+            $this->container,
+            $this->createMock(LoggerInterface::class),
+            $this->audit,
         );
 
         $this->objects->objects['case-1'] = [
@@ -341,12 +381,12 @@ class CaseSharingServiceFederationTest extends TestCase
         $container = $this->createMock(ContainerInterface::class);
         $container->method('get')->willThrowException(new \RuntimeException('federation leaf not installed'));
 
-        $service = new CaseSharingService(
-            settingsService: $settings,
-            appManager: $appManager,
-            container: $container,
-            logger: $this->createMock(LoggerInterface::class),
-            auditTrailService: $this->createMock(TenantAuditTrailService::class),
+        $service = self::makeSharingService(
+            $settings,
+            $appManager,
+            $container,
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(TenantAuditTrailService::class),
         );
 
         $result = $service->createFederatedShare('case-1', 'partner@remote.example', ['title'], [], 'bekijken', 'alice');
@@ -379,12 +419,12 @@ class CaseSharingServiceFederationTest extends TestCase
         $appManager = $this->createMock(IAppManager::class);
         $appManager->method('isInstalled')->willReturn(false);
 
-        $service = new CaseSharingService(
-            settingsService: $this->createMock(SettingsService::class),
-            appManager: $appManager,
-            container: $this->createMock(ContainerInterface::class),
-            logger: $this->createMock(LoggerInterface::class),
-            auditTrailService: $this->createMock(TenantAuditTrailService::class),
+        $service = self::makeSharingService(
+            $this->createMock(SettingsService::class),
+            $appManager,
+            $this->createMock(ContainerInterface::class),
+            $this->createMock(LoggerInterface::class),
+            $this->createMock(TenantAuditTrailService::class),
         );
 
         $result = $service->revokeFederatedShare('anything', 'bob');
