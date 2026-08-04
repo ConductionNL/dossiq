@@ -579,25 +579,22 @@ class SettingsService
         // concurrent same-app builds add registers/schemas via isolated
         // fragment files instead of all editing procest_register.json and
         // conflicting. Fragments are applied in sorted filename order.
-        [$configData, $fragmentHash] = $this->fragments->merge(
+        // The merge also returns a hash of the fragment set. It is deliberately
+        // not captured: it used to be folded into the version below so that
+        // adding or changing a fragment forced a re-import, but OpenRegister
+        // gates with version_compare, which treats `+…` as further version
+        // parts and compares them LEXICALLY rather than as semver build
+        // metadata — so whether the gate fired depended on how two md5 hashes
+        // happened to sort. Unchanged content re-imported about half the time;
+        // a real change was skipped the other half. OpenRegister now hashes the
+        // merged configuration itself and skips on hash equality, which detects
+        // a changed fragment from the data. The version stays a version.
+        [$configData] = $this->fragments->merge(
             base: $configData,
             fragmentDir: __DIR__.'/../Settings/register.d'
         );
 
         $configVersion = ($configData['info']['version'] ?? '0.0.0');
-
-        // The fragment hash is deliberately NOT folded into the version.
-        //
-        // It used to be, so that adding or changing a fragment forced a
-        // re-import. But OpenRegister gates with version_compare, which treats
-        // `+…` as further version parts and compares them LEXICALLY rather than
-        // as semver build metadata — so whether the gate fired depended on how
-        // two md5 hashes happened to sort. Unchanged content re-imported about
-        // half the time; a real change was skipped the other half.
-        //
-        // OpenRegister now hashes the merged configuration itself and skips on
-        // hash equality, which detects a changed fragment from the data. The
-        // version stays a version.
 
         try {
             $importResult = $configurationService->importFromApp(
