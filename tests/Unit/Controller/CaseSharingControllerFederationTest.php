@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Controller;
 
+use OCA\Procest\Controller\CaseFederationController;
 use OCA\Procest\Controller\CaseSharingController;
 use OCA\Procest\Service\CaseCollaborationService;
 use OCA\Procest\Service\CaseSharingService;
@@ -41,6 +42,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Procest\Controller\CaseSharingController
+ * @covers \OCA\Procest\Controller\CaseFederationController
  */
 class CaseSharingControllerFederationTest extends TestCase
 {
@@ -56,6 +58,8 @@ class CaseSharingControllerFederationTest extends TestCase
 
     private CaseSharingController $controller;
 
+    private CaseFederationController $federationController;
+
     /**
      * @return void
      */
@@ -68,6 +72,13 @@ class CaseSharingControllerFederationTest extends TestCase
         $this->userSession           = $this->createMock(IUserSession::class);
 
         $this->controller = new CaseSharingController(
+            request: $this->request,
+            caseSharingService: $this->sharingService,
+            caseTransferService: $this->transferService,
+            userSession: $this->userSession,
+        );
+
+        $this->federationController = new CaseFederationController(
             request: $this->request,
             caseSharingService: $this->sharingService,
             caseTransferService: $this->transferService,
@@ -146,7 +157,7 @@ class CaseSharingControllerFederationTest extends TestCase
         $this->sharingService->method('canUserAccessCase')->willReturn(false);
         $this->sharingService->expects(self::never())->method('createFederatedShare');
 
-        $response = $this->controller->createFederatedShare();
+        $response = $this->federationController->createFederatedShare();
 
         self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
     }//end testCreateFederatedShareDeniesAUserWithoutCaseAccess()
@@ -159,7 +170,7 @@ class CaseSharingControllerFederationTest extends TestCase
         $this->authenticate();
         $this->request->method('getParam')->willReturnCallback(static fn (string $k, $d=null) => $d);
 
-        $response = $this->controller->createFederatedShare();
+        $response = $this->federationController->createFederatedShare();
 
         self::assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
     }//end testCreateFederatedShareRequiresCaseIdAndRemoteCloudId()
@@ -180,7 +191,7 @@ class CaseSharingControllerFederationTest extends TestCase
 
         $this->request->method('getParam')->willReturn('accept');
 
-        $response = $this->controller->handleFederatedTransfer('bad-token', 'transfer-1');
+        $response = $this->federationController->handleFederatedTransfer('bad-token', 'transfer-1');
 
         self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
     }//end testHandleFederatedTransferRejectsAnInvalidToken()
@@ -201,7 +212,7 @@ class CaseSharingControllerFederationTest extends TestCase
             ->with('transfer-1', 'partner@remote.example')
             ->willReturn(['status' => 'accepted']);
 
-        $response = $this->controller->handleFederatedTransfer('good-token', 'transfer-1');
+        $response = $this->federationController->handleFederatedTransfer('good-token', 'transfer-1');
 
         self::assertSame(Http::STATUS_OK, $response->getStatus());
     }//end testHandleFederatedTransferAcceptsWithAValidToken()
@@ -217,7 +228,7 @@ class CaseSharingControllerFederationTest extends TestCase
     {
         $this->transferService->method('resolveFederatedTransferShare')->willReturn(null);
 
-        $response = $this->controller->handleFederatedTransfer('read-only-case-share-token', 'transfer-1');
+        $response = $this->federationController->handleFederatedTransfer('read-only-case-share-token', 'transfer-1');
 
         self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
     }//end testHandleFederatedTransferRejectsWhenTokenCannotBeResolved()
@@ -229,7 +240,7 @@ class CaseSharingControllerFederationTest extends TestCase
     {
         $this->userSession->method('getUser')->willReturn(null);
 
-        $response = $this->controller->postActivity('share-1');
+        $response = $this->federationController->postActivity('share-1');
 
         self::assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
     }//end testPostActivityRequiresAuthentication()
@@ -243,7 +254,7 @@ class CaseSharingControllerFederationTest extends TestCase
         $this->request->method('getParam')->willReturnCallback(static fn (string $k, $d=null) => $k === 'message' ? 'hello' : $d);
         $this->collaborationService->method('postRemoteActivity')->willReturn(['entries' => [['message' => 'hello']]]);
 
-        $response = $this->controller->postRemoteActivity('tok', 'share-1');
+        $response = $this->federationController->postRemoteActivity('tok', 'share-1');
 
         self::assertSame(Http::STATUS_OK, $response->getStatus());
     }//end testPostRemoteActivityIsReachableWithoutALocalSession()

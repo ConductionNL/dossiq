@@ -34,11 +34,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Mcp;
 
 use OCA\OpenRegister\Mcp\IMcpToolProvider;
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCP\IGroupManager;
-use OCP\IUserSession;
-use Psr\Log\LoggerInterface;
+use OCA\Procest\Mcp\Tool\ProcestCaseAuthorizer;
+use OCA\Procest\Mcp\Tool\ProcestCaseReader;
 
 /**
  * Procest MCP Tool Provider.
@@ -61,29 +58,12 @@ use Psr\Log\LoggerInterface;
 class ProcestToolProvider implements IMcpToolProvider
 {
 
-    use SearchesObjects;
-
-
-    /**
-     * Maximum number of items / source descriptors returned per tool result.
-     *
-     * @var int
-     */
-    private const ITEMS_CAP = 20;
-
     /**
      * Hard upper bound for the listProcesses limit argument.
      *
      * @var int
      */
     private const LIMIT_MAX = 50;
-
-    /**
-     * Dedicated procest admin group id (mirrors StatusTransitionService).
-     *
-     * @var string
-     */
-    private const ADMIN_GROUP_ID = 'procest-admin';
 
     /**
      * Tool catalogue — hard-coded so unit tests can assert it as a fixture.
@@ -140,18 +120,14 @@ class ProcestToolProvider implements IMcpToolProvider
     /**
      * Constructor for ProcestToolProvider.
      *
-     * @param SettingsService $settingsService The Procest settings service (OpenRegister bridge + config)
-     * @param IUserSession    $userSession     The current user session
-     * @param IGroupManager   $groupManager    The group manager (for admin checks)
-     * @param LoggerInterface $logger          The PSR-3 logger
+     * @param ProcestCaseReader     $caseReader The OpenRegister case reader (lookup + shape normalisation)
+     * @param ProcestCaseAuthorizer $authorizer The per-object read authorisation check
      *
      * @return void
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly IUserSession $userSession,
-        private readonly IGroupManager $groupManager,
-        private readonly LoggerInterface $logger,
+        private readonly ProcestCaseReader $caseReader,
+        private readonly ProcestCaseAuthorizer $authorizer,
     ) {
     }//end __construct()
 
@@ -229,13 +205,13 @@ class ProcestToolProvider implements IMcpToolProvider
             return $this->errorEnvelope(code: 'invalid_arguments', message: 'Invalid limit. Must be an integer between 1 and 50.');
         }
 
-        $store = $this->resolveCaseStore();
-        if (isset($store['error']) === true) {
-            return $store;
+        $store = $this->caseReader->resolveCaseStore();
+        if ($store['ok'] === false) {
+            return $this->errorEnvelope(code: $store['code'], message: $store['message']);
         }
 
         $filters  = $this->buildListFilters(args: $args);
-        $rawCases = $this->findCases(store: $store, filters: $filters, limit: $limit);
+        $rawCases = $this->caseReader->findCases(store: $store, filters: $filters, limit: $limit);
         if ($rawCases === null) {
             return $this->errorEnvelope(code: 'internal_error', message: 'Failed to list processes. See server log for details.');
         }
@@ -243,19 +219,19 @@ class ProcestToolProvider implements IMcpToolProvider
         $items   = [];
         $sources = [];
         foreach ($rawCases as $raw) {
-            $case = $this->toArray(value: $raw);
-            if ($this->canReadCase(case: $case) === false) {
+            $case = $this->caseReader->toArray(value: $raw);
+            if ($this->mayRead(case: $case) === false) {
                 continue;
             }
 
             $items[]   = $case;
-            $sources[] = $this->buildCaseSource(case: $case);
+            $sources[] = $this->caseReader->buildCaseSource(case: $case);
         }
 
         return [
             'success'   => true,
-            'processes' => array_slice($items, 0, self::ITEMS_CAP),
-            'sources'   => array_slice($sources, 0, self::ITEMS_CAP),
+            'processes' => array_slice($items, 0, ProcestCaseReader::ITEMS_CAP),
+            'sources'   => array_slice($sources, 0, ProcestCaseReader::ITEMS_CAP),
         ];
 
     }//end handleListProcesses()
@@ -277,12 +253,12 @@ class ProcestToolProvider implements IMcpToolProvider
             return $this->errorEnvelope(code: 'invalid_arguments', message: 'Required argument id (or uuid) is missing.');
         }
 
-        $store = $this->resolveCaseStore();
-        if (isset($store['error']) === true) {
-            return $store;
+        $store = $this->caseReader->resolveCaseStore();
+        if ($store['ok'] === false) {
+            return $this->errorEnvelope(code: $store['code'], message: $store['message']);
         }
 
-        $case = $this->findCase(store: $store, caseId: $caseId);
+        $case = $this->caseReader->findCase(store: $store, caseId: $caseId);
         if ($case === null) {
             return $this->errorEnvelope(code: 'internal_error', message: 'Failed to load the process. See server log for details.');
         }
@@ -292,19 +268,19 @@ class ProcestToolProvider implements IMcpToolProvider
         }
 
         // Authorisation BEFORE business logic — actually runs, not wrapped in catch.
-        if ($this->canReadCase(case: $case) === false) {
+        if ($this->mayRead(case: $case) === false) {
             return $this->errorEnvelope(code: 'forbidden', message: 'You are not authorised to read this process.');
         }
 
-        $caseUuid = $this->extractUuid(item: $case);
-        $history  = $this->loadHistory(store: $store, caseUuid: $caseUuid);
+        $caseUuid = $this->caseReader->extractUuid(item: $case);
+        $history  = $this->caseReader->loadHistory(store: $store, caseUuid: $caseUuid);
 
         return [
             'success'     => true,
             'process'     => $case,
             'currentStep' => ($case['status'] ?? null),
-            'history'     => array_slice($history, 0, self::ITEMS_CAP),
-            'sources'     => [$this->buildCaseSource(case: $case)],
+            'history'     => array_slice($history, 0, ProcestCaseReader::ITEMS_CAP),
+            'sources'     => [$this->caseReader->buildCaseSource(case: $case)],
         ];
 
     }//end handleGetProcessDetails()
@@ -323,7 +299,7 @@ class ProcestToolProvider implements IMcpToolProvider
     private function parseLimit(array $args): ?int
     {
         if (isset($args['limit']) === false) {
-            return self::ITEMS_CAP;
+            return ProcestCaseReader::ITEMS_CAP;
         }
 
         $limit = (int) $args['limit'];
@@ -375,274 +351,27 @@ class ProcestToolProvider implements IMcpToolProvider
     }//end parseCaseId()
 
     // =========================================================================
-    // Private helpers — OpenRegister access
-    // =========================================================================
-
-    /**
-     * Resolve the OpenRegister object store + configured register/case schema.
-     *
-     * @return array{objectService: object, register: string, caseSchema: string}|array{error: array{code: string, message: string}}
-     */
-    private function resolveCaseStore(): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return $this->errorEnvelope(code: 'storage_unavailable', message: 'The OpenRegister object store is not available.');
-        }
-
-        $register   = $this->settingsService->getConfigValue(key: 'register');
-        $caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-        if ($register === '' || $caseSchema === '') {
-            return $this->errorEnvelope(code: 'not_configured', message: 'The Procest case schema is not configured.');
-        }
-
-        return [
-            'objectService' => $objectService,
-            'register'      => $register,
-            'caseSchema'    => $caseSchema,
-        ];
-
-    }//end resolveCaseStore()
-
-    /**
-     * Find cases via the OpenRegister object store.
-     *
-     * @param array<string, mixed> $store   The resolved case store
-     * @param array<string, mixed> $filters The OpenRegister filter map
-     * @param int                  $limit   The maximum number of rows to fetch
-     *
-     * @return array<int, mixed>|null The raw rows, or null on backend failure.
-     */
-    private function findCases(array $store, array $filters, int $limit): ?array
-    {
-        try {
-            $rows = $this->searchObjectsAsArrays(
-                objectService: $store['objectService'],
-                register: $store['register'],
-                schema: $store['caseSchema'],
-                filters: array_merge($filters, ['_limit' => $limit]),
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest MCP: listProcesses search failed',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-
-        return $rows;
-
-    }//end findCases()
-
-    /**
-     * Find a single case via the OpenRegister object store.
-     *
-     * @param array<string, mixed> $store  The resolved case store
-     * @param string               $caseId The case id or uuid
-     *
-     * @return array<string, mixed>|null The case array (empty when not found), or null on backend failure.
-     */
-    private function findCase(array $store, string $caseId): ?array
-    {
-        try {
-            return $this->toArray(value: $store['objectService']->find($caseId, register: $store['register'], schema: $store['caseSchema']));
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest MCP: getProcessDetails findObject failed',
-                ['caseId' => $caseId, 'exception' => $e->getMessage()]
-            );
-            return null;
-        }
-
-    }//end findCase()
-
-    /**
-     * Load the chronological transition history (statusRecord rows) for a case.
-     *
-     * @param array<string, mixed> $store    The resolved case store
-     * @param string               $caseUuid The case uuid
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function loadHistory(array $store, string $caseUuid): array
-    {
-        if ($caseUuid === '') {
-            return [];
-        }
-
-        $recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
-        if ($recordSchema === '') {
-            return [];
-        }
-
-        try {
-            $records = $this->searchObjectsAsArrays(
-                objectService: $store['objectService'],
-                register: $store['register'],
-                schema: $recordSchema,
-                filters: ['case' => $caseUuid, '_limit' => self::ITEMS_CAP],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest MCP: loadHistory search failed',
-                ['caseUuid' => $caseUuid, 'exception' => $e->getMessage()]
-            );
-            return [];
-        }
-
-        $rows = [];
-        if (is_array($records) === true) {
-            $rows = $records;
-        }
-
-        $list = [];
-        foreach ($rows as $record) {
-            $list[] = $this->toArray(value: $record);
-        }
-
-        usort(
-            $list,
-            static function (array $left, array $right): int {
-                $leftAt  = (string) ($left['createdAt'] ?? ($left['@self']['createdAt'] ?? ''));
-                $rightAt = (string) ($right['createdAt'] ?? ($right['@self']['createdAt'] ?? ''));
-                return strcmp($leftAt, $rightAt);
-            }
-        );
-
-        return $list;
-
-    }//end loadHistory()
-
-    // =========================================================================
     // Private helpers — authorisation
     // =========================================================================
 
     /**
-     * Check whether the calling user may read a case.
+     * Ask the authorizer whether the calling user may read a case.
      *
-     * Auth design (OWASP A01:2021 / ADR-005):
-     * - This helper actually runs — it does NOT return true unconditionally
-     *   and is NOT wrapped in catch(\Throwable).
-     * - An admin (procest admin group OR system admin group) may read any case.
-     * - A non-admin may read a case only when they are its assignee (primary
-     *   handler) or hold a role record linking them to the case.
+     * Authorisation is delegated, not skipped: the check actually runs and is
+     * not wrapped in catch(\Throwable) anywhere along this path.
      *
      * @param array<string, mixed> $case The case object as an associative array
      *
      * @return bool True when the caller may read the case.
      */
-    private function canReadCase(array $case): bool
+    private function mayRead(array $case): bool
     {
-        $userId = $this->currentUserId();
-        if ($userId === '') {
-            return false;
-        }
+        return $this->authorizer->canReadCase(
+            case: $case,
+            caseUuid: $this->caseReader->extractUuid(item: $case)
+        );
 
-        if ($this->isAdmin(userId: $userId) === true) {
-            return true;
-        }
-
-        $assignee = $case['assignee'] ?? null;
-        if ($assignee !== null && (string) $assignee === $userId) {
-            return true;
-        }
-
-        return $this->hasRoleOnCase(caseUuid: $this->extractUuid(item: $case), userId: $userId);
-
-    }//end canReadCase()
-
-    /**
-     * Check whether the user holds a role record linking them to the case.
-     *
-     * @param string $caseUuid The case uuid
-     * @param string $userId   The Nextcloud user id
-     *
-     * @return bool True when at least one role record links the user to the case.
-     */
-    private function hasRoleOnCase(string $caseUuid, string $userId): bool
-    {
-        if ($caseUuid === '') {
-            return false;
-        }
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return false;
-        }
-
-        $register   = $this->settingsService->getConfigValue(key: 'register');
-        $roleSchema = $this->settingsService->getConfigValue(key: 'role_schema');
-        if ($register === '' || $roleSchema === '') {
-            return false;
-        }
-
-        try {
-            $roles = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $roleSchema,
-                filters: [
-                    'case'        => $caseUuid,
-                    'participant' => $userId,
-                    '_limit'      => 1,
-                ],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest MCP: hasRoleOnCase search failed',
-                ['caseUuid' => $caseUuid, 'exception' => $e->getMessage()]
-            );
-            return false;
-        }
-
-        return is_array($roles) === true && count($roles) > 0;
-
-    }//end hasRoleOnCase()
-
-    /**
-     * Resolve the current user id, or an empty string when unauthenticated.
-     *
-     * @return string
-     */
-    private function currentUserId(): string
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return '';
-        }
-
-        return $user->getUID();
-
-    }//end currentUserId()
-
-    /**
-     * Check whether the user is a Procest or Nextcloud system administrator.
-     *
-     * @param string $userId The Nextcloud user id
-     *
-     * @return bool True when the user is an admin.
-     */
-    private function isAdmin(string $userId): bool
-    {
-        if ($userId === '') {
-            return false;
-        }
-
-        try {
-            if ($this->groupManager->isInGroup($userId, self::ADMIN_GROUP_ID) === true) {
-                return true;
-            }
-
-            return $this->groupManager->isAdmin($userId);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest MCP: admin check failed',
-                ['userId' => $userId, 'exception' => $e->getMessage()]
-            );
-            return false;
-        }
-
-    }//end isAdmin()
+    }//end mayRead()
 
     // =========================================================================
     // Private helpers — shaping
@@ -666,72 +395,4 @@ class ProcestToolProvider implements IMcpToolProvider
         ];
 
     }//end errorEnvelope()
-
-    /**
-     * Build a source descriptor for a case.
-     *
-     * @param array<string, mixed> $case The case array
-     *
-     * @return array{type: string, uuid: string, url: string, label: string}
-     */
-    private function buildCaseSource(array $case): array
-    {
-        $uuid = $this->extractUuid(item: $case);
-        return [
-            'type'  => 'procest.case',
-            'uuid'  => $uuid,
-            'url'   => "/apps/procest/cases/{$uuid}",
-            'label' => (string) ($case['title'] ?? ($case['identifier'] ?? 'Case')),
-        ];
-
-    }//end buildCaseSource()
-
-    /**
-     * Normalise an OpenRegister object (entity / array / null) to a plain array.
-     *
-     * @param mixed $value Raw value from ObjectService
-     *
-     * @return array<string, mixed>
-     */
-    private function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
-
-        if (is_object($value) === false) {
-            return [];
-        }
-
-        if (method_exists($value, 'jsonSerialize') === true) {
-            $serialized = $value->jsonSerialize();
-            if (is_array($serialized) === true) {
-                return $serialized;
-            }
-        }
-
-        if (method_exists($value, 'getObject') === true) {
-            $object = $value->getObject();
-            if (is_array($object) === true) {
-                return $object;
-            }
-        }
-
-        return (array) $value;
-
-    }//end toArray()
-
-    /**
-     * Extract the uuid from a normalised object array.
-     *
-     * @param array<string, mixed> $item The normalised object array
-     *
-     * @return string The uuid, or empty string when not found.
-     */
-    private function extractUuid(array $item): string
-    {
-        $uuid = $item['uuid'] ?? ($item['id'] ?? ($item['@self']['uuid'] ?? ($item['@self']['id'] ?? '')));
-        return (string) $uuid;
-
-    }//end extractUuid()
 }//end class

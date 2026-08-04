@@ -29,6 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\Service\Deelzaak\CaseObjectReader;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 
@@ -45,12 +46,14 @@ class DeelzaakService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Shared OR/settings resolver.
-     * @param LoggerInterface $logger          Logger.
+     * @param SettingsService  $settingsService Shared OR/settings resolver.
+     * @param LoggerInterface  $logger          Logger.
+     * @param CaseObjectReader $caseReader      Single-object case/caseType lookups.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
+        private readonly CaseObjectReader $caseReader,
     ) {
     }//end __construct()
 
@@ -187,111 +190,20 @@ class DeelzaakService
             return null;
         }
 
-        $child = $this->fetchCaseById(caseUuid: $childCaseUuid);
+        $child = $this->caseReader->fetchCaseById(caseUuid: $childCaseUuid);
         if ($child === null) {
             return null;
         }
 
-        $parentRef = $this->extractParentReference(case: $child);
+        $parentRef = $this->caseReader->extractParentReference(case: $child);
         if ($parentRef === '' || $parentRef === $childCaseUuid) {
             // No parent (not a sub-case) or a self-reference — nothing to
             // dereference. Never return the child as its own parent.
             return null;
         }
 
-        return $this->fetchCaseById(caseUuid: $parentRef);
+        return $this->caseReader->fetchCaseById(caseUuid: $parentRef);
     }//end getParentCase()
-
-    /**
-     * Read the `parentCase` reference UUID out of a case array.
-     *
-     * Tolerates both the scalar-UUID shape (`parentCase: "<uuid>"`) and an
-     * expanded-object shape (`parentCase: { id|uuid: "<uuid>" }`) that OR
-     * may emit when the relation is hydrated.
-     *
-     * @param array<string, mixed> $case Case object as an array.
-     *
-     * @return string The parent UUID, or '' when absent.
-     */
-    private function extractParentReference(array $case): string
-    {
-        $parent = ($case['parentCase'] ?? null);
-        if (is_string($parent) === true) {
-            return $parent;
-        }
-
-        if (is_array($parent) === true) {
-            $ref = ($parent['id'] ?? $parent['uuid'] ?? '');
-            if (is_string($ref) === true) {
-                return $ref;
-            }
-
-            return '';
-        }
-
-        return '';
-    }//end extractParentReference()
-
-    /**
-     * Fetch a single case object by UUID and normalise it to an array.
-     *
-     * @param string $caseUuid Case UUID.
-     *
-     * @return array<string, mixed>|null The case, or null when missing.
-     */
-    private function fetchCaseById(string $caseUuid): ?array
-    {
-        if ($caseUuid === '') {
-            return null;
-        }
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
-
-        try {
-            $obj = $objectService->find($caseUuid, register: $register, schema: $schema);
-        } catch (\Throwable $e) {
-            $this->logger->debug(
-                'Case lookup failed',
-                ['uuid' => $caseUuid, 'error' => $e->getMessage()]
-            );
-            return null;
-        }
-
-        return $this->caseObjectToArray(obj: $obj);
-    }//end fetchCaseById()
-
-    /**
-     * Normalise an OpenRegister lookup result to an associative array.
-     *
-     * @param mixed $obj The raw lookup result.
-     *
-     * @return array<string, mixed>|null The case as an array, or null when it cannot be coerced.
-     */
-    private function caseObjectToArray(mixed $obj): ?array
-    {
-        if ($obj === null) {
-            return null;
-        }
-
-        if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
-            $obj = $obj->jsonSerialize();
-        }
-
-        if (is_array($obj) === true) {
-            return $obj;
-        }
-
-        return null;
-    }//end caseObjectToArray()
 
     /**
      * Validate that creating a sub-case is allowed.
@@ -315,7 +227,7 @@ class DeelzaakService
         // `validateCreate` receives the PARENT's own UUID (the proposed
         // parent of a new sub-case), so fetch that case directly rather than
         // dereferencing a `parentCase` relation.
-        $parent = $this->fetchCaseById(caseUuid: $parentCaseUuid);
+        $parent = $this->caseReader->fetchCaseById(caseUuid: $parentCaseUuid);
         if ($parent === null) {
             return ['ok' => false, 'reason' => 'parent_not_found'];
         }
@@ -333,7 +245,7 @@ class DeelzaakService
             return ['ok' => false, 'reason' => 'parent_missing_case_type'];
         }
 
-        $parentCaseType = $this->loadCaseType(caseTypeId: $parentCaseTypeId);
+        $parentCaseType = $this->caseReader->loadCaseType(caseTypeId: $parentCaseTypeId);
         if ($parentCaseType === null) {
             return ['ok' => false, 'reason' => 'parent_case_type_not_found'];
         }
@@ -396,45 +308,4 @@ class DeelzaakService
 
         return $unlinked;
     }//end unlinkSubCases()
-
-    /**
-     * Load a caseType by id or slug.
-     *
-     * @param string $caseTypeId Identifier.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function loadCaseType(string $caseTypeId): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_type_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
-
-        try {
-            $obj = $objectService->find($caseTypeId, register: $register, schema: $schema);
-        } catch (\Throwable) {
-            return null;
-        }
-
-        if ($obj === null) {
-            return null;
-        }
-
-        if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
-            $obj = $obj->jsonSerialize();
-        }
-
-        if (is_array($obj) === true) {
-            return $obj;
-        }
-
-        return null;
-    }//end loadCaseType()
 }//end class

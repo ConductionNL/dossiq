@@ -25,8 +25,11 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
+use OCA\Procest\Service\Transitions\CaseStatusStore;
 use OCA\Procest\Service\Transitions\GuardRegistry;
 use OCA\Procest\Service\Transitions\SideEffectDispatcher;
+use OCA\Procest\Service\Transitions\TransitionAuthorizer;
+use OCA\Procest\Service\Transitions\TransitionSpecReader;
 use OCA\Procest\Service\WorkflowTemplateLoader;
 use OCP\IGroupManager;
 use OCP\IUserSession;
@@ -81,12 +84,13 @@ class StatusTransitionServiceReplayRegressionTest extends TestCase
         $this->logger          = $this->createMock(LoggerInterface::class);
 
         $this->service = new StatusTransitionService(
-            $this->settingsService,
             $this->createMock(WorkflowTemplateLoader::class),
             $this->createMock(GuardRegistry::class),
             $this->createMock(SideEffectDispatcher::class),
+            new CaseStatusStore($this->settingsService, $this->logger),
+            new TransitionAuthorizer($this->createMock(IGroupManager::class), $this->logger),
+            new TransitionSpecReader(),
             $this->createMock(IUserSession::class),
-            $this->createMock(IGroupManager::class),
             $this->logger,
         );
 

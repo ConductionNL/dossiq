@@ -24,6 +24,8 @@ namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\DsoController;
 use OCA\Procest\Service\BeschikkingGenerationService;
+use OCA\Procest\Service\Dso\DsoDoorsturenNotifier;
+use OCA\Procest\Service\Dso\DsoObjectRepository;
 use OCA\Procest\Service\DsoCaseService;
 use OCA\Procest\Service\SamenwerkverzoekService;
 use OCA\Procest\Service\SettingsService;
@@ -464,9 +466,12 @@ class DsoControllerTest extends TestCase
             dsoCaseService: $this->dsoCaseService,
             beschikkingService: $this->beschikkingService,
             samenwerkService: $this->samenwerkService,
-            settingsService: $this->settingsService,
+            repository: new DsoObjectRepository(
+                settingsService: $this->settingsService,
+                logger: $this->logger,
+            ),
+            doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
             userSession: $this->userSession,
-            eventDispatcher: $this->eventDispatcher,
             logger: $this->logger,
         );
     }//end setUp()
@@ -541,9 +546,12 @@ class DsoControllerTest extends TestCase
             dsoCaseService: $this->dsoCaseService,
             beschikkingService: $this->beschikkingService,
             samenwerkService: $this->samenwerkService,
-            settingsService: $settingsServiceMock,
+            repository: new DsoObjectRepository(
+                settingsService: $settingsServiceMock,
+                logger: $this->logger,
+            ),
+            doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
             userSession: $this->userSession,
-            eventDispatcher: $this->eventDispatcher,
             logger: $this->logger,
         );
 
@@ -577,9 +585,12 @@ class DsoControllerTest extends TestCase
             dsoCaseService: $this->dsoCaseService,
             beschikkingService: $this->beschikkingService,
             samenwerkService: $this->samenwerkService,
-            settingsService: $this->settingsService,
+            repository: new DsoObjectRepository(
+                settingsService: $this->settingsService,
+                logger: $this->logger,
+            ),
+            doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
             userSession: $this->userSession,
-            eventDispatcher: $this->eventDispatcher,
             logger: $this->logger,
         );
 

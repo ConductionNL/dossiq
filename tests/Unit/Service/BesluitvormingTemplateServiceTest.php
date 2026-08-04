@@ -23,6 +23,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Besluitvorming\TemplateBundleSeeder;
+use OCA\Procest\Service\Besluitvorming\WorkflowReferenceResolver;
 use OCA\Procest\Service\BesluitvormingTemplateService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -94,7 +96,11 @@ class BesluitvormingTemplateServiceTest extends TestCase
     {
         $this->settingsService = $this->createMock(SettingsService::class);
         $this->logger          = $this->createMock(LoggerInterface::class);
-        $this->service         = new BesluitvormingTemplateService($this->settingsService, $this->logger);
+        $this->service         = new BesluitvormingTemplateService(
+            $this->settingsService,
+            $this->logger,
+            new TemplateBundleSeeder($this->logger, new WorkflowReferenceResolver()),
+        );
     }//end setUp()
 
     /**

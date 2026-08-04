@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Deelzaak\CaseObjectReader;
 use OCA\Procest\Service\DeelzaakService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -81,9 +82,16 @@ class DeelzaakServiceTest extends TestCase
             }
         );
 
+        // A real CaseObjectReader over the same mocked SettingsService: the
+        // parent-dereference tests assert what an actual lookup returns, so a
+        // mocked reader would make them assert nothing.
         $this->service = new DeelzaakService(
             settingsService: $this->settingsService,
             logger: $this->logger,
+            caseReader: new CaseObjectReader(
+                settingsService: $this->settingsService,
+                logger: $this->logger,
+            ),
         );
     }//end setUp()
 

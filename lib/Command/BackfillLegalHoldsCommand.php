@@ -45,6 +45,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Command;
 
+use OCA\Procest\Command\Backfill\AwbProceedingScanner;
+use OCA\Procest\Command\Backfill\LegalHoldApplier;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 use Psr\Container\ContainerInterface;
@@ -83,42 +85,20 @@ class BackfillLegalHoldsCommand extends Command
     private const OBJECT_MAPPER = 'OCA\OpenRegister\Db\MagicMapper';
 
     /**
-     * The register the Awb schemas live in.
-     *
-     * @var string
-     */
-    private const REGISTER = 'procest';
-
-    /**
-     * Proceeding schemas whose existence opens an Awb proceeding.
-     *
-     * `beroep` is included here even though the listener itself does not act on
-     * it: an appeal suspends destruction exactly as an objection does, and a
-     * case sitting in beroep with no hold is the same compliance defect. The
-     * gap in the listener is reported separately on procest#694.
-     *
-     * @var array<int, string>
-     */
-    private const OPENING_SCHEMAS = ['bezwaar', 'objection', 'beroep'];
-
-    /**
-     * Scan failures collected while listing objects, reported before exit.
-     *
-     * @var array<int, string>
-     */
-    private array $scanErrors = [];
-
-    /**
      * Constructor.
      *
-     * @param ContainerInterface $container    DI container (OpenRegister resolved lazily).
-     * @param IUserSession       $userSession  Session used to impersonate an admin.
-     * @param IGroupManager      $groupManager Resolves an admin to impersonate.
+     * @param ContainerInterface   $container    DI container (OpenRegister resolved lazily).
+     * @param IUserSession         $userSession  Session used to impersonate an admin.
+     * @param IGroupManager        $groupManager Resolves an admin to impersonate.
+     * @param AwbProceedingScanner $scanner      Finds the cases with an open Awb proceeding.
+     * @param LegalHoldApplier     $applier      Reports and (with --apply) places the holds.
      */
     public function __construct(
         private readonly ContainerInterface $container,
         private readonly IUserSession $userSession,
         private readonly IGroupManager $groupManager,
+        private readonly AwbProceedingScanner $scanner,
+        private readonly LegalHoldApplier $applier,
     ) {
         parent::__construct();
     }//end __construct()
@@ -174,13 +154,13 @@ class BackfillLegalHoldsCommand extends Command
             return Command::FAILURE;
         }
 
-        $candidates = $this->collectCandidates(
+        $candidates = $this->scanner->scan(
             objectService: $objectService,
             includeDeleted: $includeDeleted,
             output: $output
         );
 
-        foreach ($this->scanErrors as $scanError) {
+        foreach ($this->scanner->getScanErrors() as $scanError) {
             $output->writeln('  <error>[scan failed]</error> '.$scanError);
         }
 
@@ -189,7 +169,7 @@ class BackfillLegalHoldsCommand extends Command
             return Command::SUCCESS;
         }
 
-        return $this->reportAndApply(
+        return $this->applier->reportAndApply(
             candidates: $candidates,
             objectMapper: $objectMapper,
             legalHoldService: $legalHoldService,
@@ -198,441 +178,6 @@ class BackfillLegalHoldsCommand extends Command
             output: $output
         );
     }//end execute()
-
-    /**
-     * Walk the candidate cases, reporting each and holding it when applying.
-     *
-     * @param array<string, array<string, mixed>> $candidates       Cases keyed by UUID.
-     * @param object                              $objectMapper     OpenRegister object mapper.
-     * @param object                              $legalHoldService OpenRegister legal hold service.
-     * @param bool                                $apply            Whether to write.
-     * @param bool                                $includeDeleted   Whether soft-deleted cases are in scope.
-     * @param OutputInterface                     $output           Console output.
-     *
-     * @return int Symfony command exit code.
-     */
-    private function reportAndApply(
-        array $candidates,
-        object $objectMapper,
-        object $legalHoldService,
-        bool $apply,
-        bool $includeDeleted,
-        OutputInterface $output
-    ): int {
-        $held       = 0;
-        $already    = 0;
-        $unresolved = 0;
-
-        $output->writeln('');
-        $output->writeln('<info>Cases with at least one OPEN Awb proceeding:</info>');
-
-        foreach ($candidates as $caseId => $meta) {
-            $caseObject = $this->findCase(
-                objectMapper: $objectMapper,
-                caseId: (string) $caseId,
-                includeDeleted: $includeDeleted
-            );
-
-            if ($caseObject === null) {
-                // A dangling reference: the proceeding names a case that does not
-                // exist (or is soft-deleted and not in scope). Reported, never
-                // silently dropped — a hold that cannot be placed is a finding.
-                $output->writeln('  <comment>[unresolved]</comment> '.$caseId.' — '.$this->describe(meta: $meta));
-                $unresolved++;
-                continue;
-            }
-
-            if ($legalHoldService->hasActiveHold($caseObject) === true) {
-                $output->writeln('  <comment>[already held]</comment> '.$caseId.' — '.$this->describe(meta: $meta));
-                $already++;
-                continue;
-            }
-
-            if ($apply === false) {
-                $output->writeln('  <info>[would hold]</info> '.$caseId.' — '.$this->describe(meta: $meta));
-                $held++;
-                continue;
-            }
-
-            try {
-                $legalHoldService->placeHold($caseObject, $this->reasonFor(meta: $meta));
-                $output->writeln('  <info>[HELD]</info> '.$caseId.' — '.$this->describe(meta: $meta));
-                $held++;
-            } catch (\Throwable $e) {
-                $output->writeln('  <error>[FAILED]</error> '.$caseId.' — '.$e->getMessage());
-                $unresolved++;
-            }
-        }//end foreach
-
-        $output->writeln('');
-        $heldLabel = '  would hold  = ';
-        if ($apply === true) {
-            $heldLabel = '  held        = ';
-        }
-
-        $output->writeln('  candidates  = '.count($candidates));
-        $output->writeln($heldLabel.$held);
-        $output->writeln('  already held= '.$already);
-        $output->writeln('  unresolved  = '.$unresolved);
-
-        if ($apply === false) {
-            $output->writeln('');
-            $output->writeln('<comment>Dry run — nothing was written. Re-run with --apply to place these holds.</comment>');
-        }
-
-        return Command::SUCCESS;
-    }//end reportAndApply()
-
-    /**
-     * Collect the cases that have at least one open Awb proceeding.
-     *
-     * A proceeding is OPEN when no terminal decision references it. Closed
-     * proceedings are deliberately excluded: backfilling a hold on a concluded
-     * case would fabricate retention history rather than repair it.
-     *
-     * @param object          $objectService  OpenRegister object service.
-     * @param bool            $includeDeleted Whether soft-deleted objects are in scope.
-     * @param OutputInterface $output         Console output.
-     *
-     * @return array<string, array<string, mixed>> Candidate cases keyed by case UUID.
-     */
-    private function collectCandidates(object $objectService, bool $includeDeleted, OutputInterface $output): array
-    {
-        $closedBezwaar = $this->terminatedProceedingIds(objectService: $objectService, schema: 'bezwaarDecision');
-        $closedAppeal  = $this->terminatedProceedingIds(objectService: $objectService, schema: 'appealDecision');
-        $closed        = array_merge($closedBezwaar, $closedAppeal);
-
-        // Report the closed set explicitly. An empty set here silently disables
-        // the "only hold OPEN proceedings" rule, which is the difference between
-        // a targeted repair and holding every case that ever saw a proceeding —
-        // exactly the kind of inert safety check this whole programme is about.
-        $output->writeln(
-            '  terminal decisions found: '.count($closed)
-            .' (bezwaarDecision='.count($closedBezwaar).', appealDecision='.count($closedAppeal).')'
-        );
-
-        $candidates = [];
-
-        foreach (self::OPENING_SCHEMAS as $schemaSlug) {
-            $proceedings = $this->listObjects(
-                objectService: $objectService,
-                schema: $schemaSlug,
-                includeDeleted: $includeDeleted
-            );
-
-            $closedHit = 0;
-
-            foreach ($proceedings as $proceeding) {
-                $uuid = (string) $proceeding['uuid'];
-                if ($this->isConcludedProceeding(uuid: $uuid, closed: $closed) === true) {
-                    // Terminal decision exists: this proceeding is concluded.
-                    $closedHit++;
-                    continue;
-                }
-
-                $caseId = $this->caseIdOf(proceeding: $proceeding['data']);
-                if ($caseId === '') {
-                    continue;
-                }
-
-                if (isset($candidates[$caseId]) === false) {
-                    $candidates[$caseId] = ['schemas' => [], 'count' => 0];
-                }
-
-                $candidates[$caseId]['count']++;
-                if (in_array($schemaSlug, $candidates[$caseId]['schemas'], true) === false) {
-                    $candidates[$caseId]['schemas'][] = $schemaSlug;
-                }
-            }//end foreach
-
-            // `closed` is reported per schema on purpose: if it is 0 while
-            // terminal decisions exist, the "only hold OPEN proceedings" rule
-            // is silently inert and every concluded case would be held too.
-            // That exact failure happened during development, and only showed
-            // up because this counter was printed.
-            $output->writeln(
-                '  scanned '.$schemaSlug.': '.count($proceedings).' object(s), '
-                .$closedHit.' already concluded'
-            );
-        }//end foreach
-
-        return $candidates;
-    }//end collectCandidates()
-
-    /**
-     * Test whether a proceeding is already concluded, i.e. a terminal decision references it.
-     *
-     * @param string             $uuid   The proceeding UUID.
-     * @param array<int, string> $closed The proceeding UUIDs that carry a terminal decision.
-     *
-     * @return bool True when the proceeding is concluded.
-     */
-    private function isConcludedProceeding(string $uuid, array $closed): bool
-    {
-        return ($uuid !== '' && in_array($uuid, $closed, true) === true);
-    }//end isConcludedProceeding()
-
-    /**
-     * List the proceeding UUIDs that already carry a terminal decision.
-     *
-     * @param object $objectService OpenRegister object service.
-     * @param string $schema        The decision schema slug.
-     *
-     * @return array<int, string> Proceeding UUIDs that are concluded.
-     */
-    private function terminatedProceedingIds(object $objectService, string $schema): array
-    {
-        $ids = [];
-
-        foreach ($this->listObjects(objectService: $objectService, schema: $schema, includeDeleted: true) as $decision) {
-            foreach (['bezwaar', 'beroep', 'appeal', 'objection'] as $key) {
-                $ref = ($decision['data'][$key] ?? null);
-                if (is_string($ref) === true && $ref !== '') {
-                    $ids[] = $ref;
-                }
-            }
-        }
-
-        return $ids;
-    }//end terminatedProceedingIds()
-
-    /**
-     * List every object of a schema in the procest register.
-     *
-     * Returns an empty array when the schema does not exist on this instance,
-     * so an instance that never installed a given Awb schema is a no-op rather
-     * than a failure.
-     *
-     * @param object $objectService  OpenRegister object service.
-     * @param string $schema         Schema slug.
-     * @param bool   $includeDeleted Whether to include soft-deleted objects.
-     *
-     * @return array<int, array<string, mixed>> Rendered objects.
-     */
-    private function listObjects(object $objectService, string $schema, bool $includeDeleted): array
-    {
-        try {
-            $filters = [];
-            if ($includeDeleted === true) {
-                $filters['_includeDeleted'] = true;
-            }
-
-            $objects = $objectService
-                ->setRegister(self::REGISTER)
-                ->setSchema($schema)
-                ->findAll(
-                    [
-                        'limit'   => null,
-                        'filters' => $filters,
-                    ],
-                    false,
-                    false
-                );
-
-            if (is_array($objects) === false) {
-                return [];
-            }
-
-            return array_map(
-                function (mixed $row): array {
-                    return $this->normaliseRow(row: $row);
-                },
-                $objects
-            );
-        } catch (\Throwable $e) {
-            // Never swallow silently: a scan that fails and a schema that is
-            // genuinely empty are indistinguishable in the result, and that
-            // ambiguity is what let the original dead listener hide.
-            $this->scanErrors[] = $schema.': '.$e->getMessage();
-            return [];
-        }//end try
-    }//end listObjects()
-
-    /**
-     * Normalise one findAll() result into a uuid + payload pair.
-     *
-     * `ObjectService::findAll()` returns ObjectEntity instances on this path
-     * rather than the rendered arrays its docblock implies, and a future
-     * release may well return arrays again. Rather than depend on either
-     * shape, both are accepted — a listener-style guess at the shape is
-     * precisely the kind of assumption that made the original bug invisible.
-     *
-     * @param mixed $row One findAll() result row.
-     *
-     * @return array{uuid: string, data: array<string, mixed>} Normalised row.
-     */
-    private function normaliseRow(mixed $row): array
-    {
-        if (is_object($row) === true) {
-            return $this->normaliseObjectRow(row: $row);
-        }
-
-        if (is_array($row) === true) {
-            return ['uuid' => $this->uuidFromArray(row: $row), 'data' => $row];
-        }
-
-        return ['uuid' => '', 'data' => []];
-    }//end normaliseRow()
-
-    /**
-     * Normalise an ObjectEntity-shaped findAll() row into a uuid + payload pair.
-     *
-     * @param object $row One findAll() result row.
-     *
-     * @return array{uuid: string, data: array<string, mixed>} Normalised row.
-     */
-    private function normaliseObjectRow(object $row): array
-    {
-        $uuid = $this->uuidFromObject(row: $row);
-        $data = [];
-
-        if (method_exists($row, 'getObject') === true && is_array($row->getObject()) === true) {
-            $data = $row->getObject();
-        }
-
-        // Fall back to jsonSerialize(), the shape the rest of OpenRegister
-        // renders to, so a future return-shape change cannot silently empty
-        // the uuid again — an empty uuid here disables the closed-proceeding
-        // filter without any visible error, which is exactly what happened
-        // during development of this command.
-        if ($uuid === '' && method_exists($row, 'jsonSerialize') === true) {
-            $serialised = $row->jsonSerialize();
-            if (is_array($serialised) === true) {
-                $uuid = $this->uuidFromArray(row: $serialised);
-                if ($data === []) {
-                    $data = $serialised;
-                }
-            }
-        }//end if
-
-        return ['uuid' => $uuid, 'data' => $data];
-    }//end normaliseObjectRow()
-
-    /**
-     * Read an object uuid off an ObjectEntity, trying getUuid() then getId().
-     *
-     * @param object $row One findAll() result row.
-     *
-     * @return string The uuid, or '' when neither getter yields one.
-     */
-    private function uuidFromObject(object $row): string
-    {
-        $uuid = '';
-        foreach (['getUuid', 'getId'] as $getter) {
-            if ($uuid === '' && method_exists($row, $getter) === true) {
-                $uuid = (string) ($row->$getter() ?? '');
-            }
-        }
-
-        return $uuid;
-    }//end uuidFromObject()
-
-    /**
-     * Read an object uuid out of a rendered object array, whatever its shape.
-     *
-     * @param array<string, mixed> $row A rendered OpenRegister object.
-     *
-     * @return string The uuid, or '' when no known key carries one.
-     */
-    private function uuidFromArray(array $row): string
-    {
-        $self = ($row['@self'] ?? []);
-        if (is_array($self) === false) {
-            $self = [];
-        }
-
-        foreach ([$self['uuid'] ?? null, $self['id'] ?? null, $row['uuid'] ?? null, $row['id'] ?? null] as $value) {
-            if (is_scalar($value) === true && (string) $value !== '') {
-                return (string) $value;
-            }
-        }
-
-        return '';
-    }//end uuidFromArray()
-
-    /**
-     * Read the case UUID a proceeding relates to.
-     *
-     * @param array<string, mixed> $proceeding The rendered proceeding object.
-     *
-     * @return string The case UUID, or '' when absent.
-     */
-    private function caseIdOf(array $proceeding): string
-    {
-        $case = ($proceeding['case'] ?? null);
-        if (is_string($case) === true) {
-            return trim($case);
-        }
-
-        // An extended render inlines the related object instead of its id.
-        if (is_array($case) === true) {
-            return (string) ($case['id'] ?? ($case['@self']['id'] ?? ''));
-        }
-
-        return '';
-    }//end caseIdOf()
-
-    /**
-     * Resolve a case ObjectEntity by UUID.
-     *
-     * Mirrors the fixed listener exactly (procest#693): `find()` with RBAC and
-     * multitenancy disabled, because occ has no session user and no active
-     * organisation, and an organisation-scoped read would find nothing and
-     * silently reopen the same hole this command exists to close.
-     *
-     * @param object $objectMapper   OpenRegister object mapper.
-     * @param string $caseId         The case UUID.
-     * @param bool   $includeDeleted Whether soft-deleted cases are in scope.
-     *
-     * @return object|null The case ObjectEntity, or null when unresolvable.
-     */
-    private function findCase(object $objectMapper, string $caseId, bool $includeDeleted): ?object
-    {
-        try {
-            $caseObject = $objectMapper->find(
-                identifier: $caseId,
-                includeDeleted: $includeDeleted,
-                _rbac: false,
-                _multitenancy: false
-            );
-
-            if (is_object($caseObject) === true) {
-                return $caseObject;
-            }
-
-            return null;
-        } catch (\Throwable $e) {
-            return null;
-        }//end try
-    }//end findCase()
-
-    /**
-     * Build the hold reason, naming the remediation so it is auditable.
-     *
-     * @param array<string, mixed> $meta Candidate metadata.
-     *
-     * @return string The reason recorded on the hold.
-     */
-    private function reasonFor(array $meta): string
-    {
-        $schemas = implode('/', ($meta['schemas'] ?? []));
-
-        return 'Awb-procedure ('.$schemas.') geregistreerd — archivering opgeschort '
-            .'[backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; '
-            .'geplaatst op de datum van herstel, niet terugwerkend]';
-    }//end reasonFor()
-
-    /**
-     * Render a one-line description of a candidate.
-     *
-     * @param array<string, mixed> $meta Candidate metadata.
-     *
-     * @return string Human-readable description.
-     */
-    private function describe(array $meta): string
-    {
-        return ($meta['count'] ?? 0).' open proceeding(s): '.implode(', ', ($meta['schemas'] ?? []));
-    }//end describe()
 
     /**
      * Impersonate an admin so OpenRegister writes are permitted.

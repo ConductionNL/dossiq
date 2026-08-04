@@ -22,7 +22,11 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Controller;
 
+use OCA\Procest\Controller\ComplaintAnalyticsController;
+use OCA\Procest\Controller\ComplaintCategoryController;
 use OCA\Procest\Controller\ComplaintController;
+use OCA\Procest\Controller\ComplaintDispositionController;
+use OCA\Procest\Service\Complaint\ComplaintAccessGuard;
 use OCA\Procest\Service\ComplaintAnalyticsService;
 use OCA\Procest\Service\ComplaintService;
 use OCA\Procest\Service\DispositionService;
@@ -39,6 +43,9 @@ use PHPUnit\Framework\TestCase;
  * Unit tests for ComplaintController.
  *
  * @covers \OCA\Procest\Controller\ComplaintController
+ * @covers \OCA\Procest\Controller\ComplaintAnalyticsController
+ * @covers \OCA\Procest\Controller\ComplaintCategoryController
+ * @covers \OCA\Procest\Controller\ComplaintDispositionController
  */
 class ComplaintControllerTest extends TestCase
 {
@@ -89,6 +96,21 @@ class ComplaintControllerTest extends TestCase
     private ComplaintController $controller;
 
     /**
+     * @var ComplaintAnalyticsController
+     */
+    private ComplaintAnalyticsController $analyticsController;
+
+    /**
+     * @var ComplaintCategoryController
+     */
+    private ComplaintCategoryController $categoryController;
+
+    /**
+     * @var ComplaintDispositionController
+     */
+    private ComplaintDispositionController $dispositionController;
+
+    /**
      * @var IUser|\PHPUnit\Framework\MockObject\MockObject
      */
     private IUser $user;
@@ -113,16 +135,43 @@ class ComplaintControllerTest extends TestCase
         $this->user->method('getUID')->willReturn('test-user');
         $this->userSession->method('getUser')->willReturn($this->user);
 
+        // The access guard is a real collaborator over mocked dependencies, not
+        // a mock: stubbing it would make the 401 assertions below assert on the
+        // stub rather than on the guard's actual session handling.
+        $accessGuard = new ComplaintAccessGuard(
+            request: $this->request,
+            userSession: $this->userSession,
+            groupManager: $this->groupManager,
+        );
+
         $this->controller = new ComplaintController(
             appName: 'procest',
             request: $this->request,
             complaintService: $this->complaintService,
-            hearingService: $this->hearingService,
-            dispositionService: $this->dispositionService,
+            accessGuard: $accessGuard,
+        );
+
+        $this->analyticsController = new ComplaintAnalyticsController(
+            appName: 'procest',
+            request: $this->request,
             analyticsService: $this->analyticsService,
+            accessGuard: $accessGuard,
+        );
+
+        $this->categoryController = new ComplaintCategoryController(
+            appName: 'procest',
+            request: $this->request,
             settingsService: $this->settingsService,
-            userSession: $this->userSession,
-            groupManager: $this->groupManager,
+            accessGuard: $accessGuard,
+        );
+
+        $this->dispositionController = new ComplaintDispositionController(
+            appName: 'procest',
+            request: $this->request,
+            complaintService: $this->complaintService,
+            dispositionService: $this->dispositionService,
+            settingsService: $this->settingsService,
+            accessGuard: $accessGuard,
         );
     }//end setUp()
 
@@ -163,12 +212,11 @@ class ComplaintControllerTest extends TestCase
             appName: 'procest',
             request: $this->request,
             complaintService: $this->complaintService,
-            hearingService: $this->hearingService,
-            dispositionService: $this->dispositionService,
-            analyticsService: $this->analyticsService,
-            settingsService: $this->settingsService,
-            userSession: $unauthSession,
-            groupManager: $this->groupManager,
+            accessGuard: new ComplaintAccessGuard(
+                request: $this->request,
+                userSession: $unauthSession,
+                groupManager: $this->groupManager,
+            ),
         );
 
         $this->request->method('getParam')->willReturn(null);
@@ -277,7 +325,7 @@ class ComplaintControllerTest extends TestCase
         $this->analyticsService->method('getMonthlyTrend')->willReturn([]);
         $this->analyticsService->method('getAverageResolutionTime')->willReturn([]);
 
-        $response = $this->controller->analytics();
+        $response = $this->analyticsController->analytics();
 
         $this->assertSame(Http::STATUS_OK, $response->getStatus());
         $data = $response->getData();
@@ -297,7 +345,7 @@ class ComplaintControllerTest extends TestCase
     {
         $this->dispositionService->method('getDispositionForComplaint')->willReturn(null);
 
-        $response = $this->controller->getDisposition('uuid-1');
+        $response = $this->dispositionController->getDisposition('uuid-1');
         $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
     }//end testGetDispositionReturns404WhenNotFound()
 
@@ -310,7 +358,7 @@ class ComplaintControllerTest extends TestCase
     {
         $this->settingsService->method('getObjectService')->willReturn(null);
 
-        $response = $this->controller->categories();
+        $response = $this->categoryController->categories();
         $this->assertSame(Http::STATUS_OK, $response->getStatus());
         $this->assertSame([], $response->getData()['results']);
     }//end testCategoriesReturnsEmptyWhenUnavailable()

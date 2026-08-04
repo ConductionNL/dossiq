@@ -34,15 +34,13 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use DateTime;
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Procest\Service\Advice\AdviceAuthorizationGuard;
+use OCA\Procest\Service\Advice\AdviceNotifier;
+use OCA\Procest\Service\Advice\AdviceRepository;
 use OCP\IUserSession;
-use OCP\IGroupManager;
-use OCP\Notification\IManager as INotificationManager;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Throwable;
 
 /**
  * Service for advice request (adviesAanvraag) workflow.
@@ -51,9 +49,6 @@ use Throwable;
  */
 class AdviceService
 {
-
-    use SearchesObjects;
-
 
     /**
      * Valid advice statuses.
@@ -67,20 +62,22 @@ class AdviceService
     /**
      * Constructor.
      *
-     * @param SettingsService         $settingsService     The settings service
-     * @param IUserSession            $userSession         The current user session
-     * @param IGroupManager           $groupManager        Group manager (Wilco #6 IDOR fix)
-     * @param INotificationManager    $notificationManager The notification manager
-     * @param LoggerInterface         $logger              The logger
-     * @param AdviceDelegationService $adviceDelegation    Advice delegation to decidesk (ADR-019)
+     * @param SettingsService          $settingsService  The settings service
+     * @param IUserSession             $userSession      The current user session
+     * @param LoggerInterface          $logger           The logger
+     * @param AdviceDelegationService  $adviceDelegation Advice delegation to decidesk (ADR-019)
+     * @param AdviceRepository         $repository       OpenRegister access for adviesAanvraag records
+     * @param AdviceAuthorizationGuard $guard            Per-object transition IDOR guard (Wilco #6)
+     * @param AdviceNotifier           $notifier         Advice notification fan-out
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
-        private readonly IGroupManager $groupManager,
-        private readonly INotificationManager $notificationManager,
         private readonly LoggerInterface $logger,
         private readonly AdviceDelegationService $adviceDelegation,
+        private readonly AdviceRepository $repository,
+        private readonly AdviceAuthorizationGuard $guard,
+        private readonly AdviceNotifier $notifier,
     ) {
     }//end __construct()
 
@@ -108,7 +105,7 @@ class AdviceService
             throw new RuntimeException('Invalid advice status');
         }
 
-        $current = $this->loadAdvice(adviceId: $adviceId);
+        $current = $this->repository->find(adviceId: $adviceId);
         if ($current === null) {
             // Collapse not-found and access-denied into one "not accessible"
             // error so the endpoint cannot be used as an existence oracle for
@@ -116,136 +113,10 @@ class AdviceService
             throw new RuntimeException('Advice request not accessible');
         }
 
-        $this->assertAdviceTransitionAuthorized(advice: $current, to: $to);
+        $this->guard->assertTransitionAuthorized(advice: $current, to: $to);
 
         return $this->applyTransition(adviceId: $adviceId, to: $to, current: $current, payload: $payload);
     }//end transitionStatus()
-
-    /**
-     * Authorize an advice status transition against the CALLER's relationship
-     * to the advice request. Fails closed.
-     *
-     * This is the procest#17 / Wilco #6 IDOR guard, ported onto the live path.
-     * It previously existed only on `submitAdvice()`, which had zero callers and
-     * was never routed — so the IDOR it was written to close stayed open on
-     * `transitionStatus()`, the path the UI actually calls
-     * (`POST /api/advice/{id}/transition`, appinfo/routes.php).
-     *
-     * Keyed on the LIVE `adviesAanvraag` schema. The dead guard read a
-     * `requestedBy` field that does not exist there (it belongs to the unused
-     * `adviceRequest` schema); the requester relationship is expressed instead
-     * through `case` -> `case.assignee`.
-     *
-     * Matrix (admins bypass all per-object checks):
-     *   - ontvangen:   the assigned `adviseur` only. This is the open IDOR —
-     *                  previously ANY authenticated user could mark ANY advice
-     *                  request as received.
-     *   - aangevraagd: the handler of the linked case, or the `adviseur`.
-     *   - verlopen:    nobody. Expiry is a system transition owned by
-     *                  AdviceDeadlineJob; it reaches the write through
-     *                  applyTransition() and never through this method.
-     *   - default:     denied (fail closed).
-     *
-     * @param array<string, mixed> $advice The current advice record.
-     * @param string               $to     Target status.
-     *
-     * @return void
-     *
-     * @throws \RuntimeException When the caller is not authorized.
-     *
-     * @spec openspec/specs/authz-bypass-fixes/spec.md
-     */
-    private function assertAdviceTransitionAuthorized(array $advice, string $to): void
-    {
-        $uid = $this->getUserId();
-        if ($uid === '') {
-            throw new RuntimeException('Not authenticated');
-        }
-
-        if ($this->groupManager->isAdmin($uid) === true) {
-            return;
-        }
-
-        if ($this->mayTransition(advice: $advice, to: $to, uid: $uid) === true) {
-            return;
-        }
-
-        throw new RuntimeException('Advice request not accessible');
-    }//end assertAdviceTransitionAuthorized()
-
-    /**
-     * Whether a non-admin caller may perform the given advice transition.
-     *
-     * Returns false for `verlopen` (system-only) and for any unknown status —
-     * the default is deny.
-     *
-     * @param array<string, mixed> $advice The current advice record.
-     * @param string               $to     Target status.
-     * @param string               $uid    The caller's user id.
-     *
-     * @return bool True when the transition is allowed for this caller.
-     *
-     * @spec openspec/specs/authz-bypass-fixes/spec.md
-     */
-    private function mayTransition(array $advice, string $to, string $uid): bool
-    {
-        $adviseur   = (string) ($advice['adviseur'] ?? '');
-        $isAdviseur = ($adviseur !== '' && $adviseur === $uid);
-
-        if ($to === 'ontvangen') {
-            return $isAdviseur;
-        }
-
-        if ($to === 'aangevraagd') {
-            return ($isAdviseur === true || $this->isHandlerOfLinkedCase(advice: $advice, uid: $uid) === true);
-        }
-
-        return false;
-    }//end mayTransition()
-
-    /**
-     * Whether the given uid is the assignee of the case this advice belongs to.
-     *
-     * @param array<string, mixed> $advice The advice record.
-     * @param string               $uid    The caller's user id.
-     *
-     * @return bool True when the caller handles the linked case.
-     *
-     * @spec openspec/specs/authz-bypass-fixes/spec.md
-     */
-    private function isHandlerOfLinkedCase(array $advice, string $uid): bool
-    {
-        $caseId = (string) ($advice['case'] ?? '');
-        if ($caseId === '') {
-            return false;
-        }
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return false;
-        }
-
-        $register   = $this->settingsService->getConfigValue('register');
-        $caseSchema = $this->settingsService->getConfigValue('case_schema');
-        if (empty($register) === true || empty($caseSchema) === true) {
-            return false;
-        }
-
-        $case = $this->findObjectAsArray(
-            objectService: $objectService,
-            register: $register,
-            schema: $caseSchema,
-            id: $caseId
-        );
-
-        if ($case === null) {
-            return false;
-        }
-
-        $assignee = (string) ($case['assignee'] ?? '');
-
-        return ($assignee !== '' && $assignee === $uid);
-    }//end isHandlerOfLinkedCase()
 
     /**
      * Apply an advice status transition WITHOUT an authorization check.
@@ -269,18 +140,6 @@ class AdviceService
      */
     private function applyTransition(string $adviceId, string $to, array $current, array $payload=[]): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            throw new RuntimeException('Advice schema is not configured');
-        }
-
         $update = ['status' => $to];
 
         if ($to === 'ontvangen') {
@@ -291,19 +150,14 @@ class AdviceService
             }
         }
 
-        try {
-            $advice = $objectService->saveObject(object: $update, register: $register, schema: $schema, uuid: (string) $adviceId);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to transition advice status: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            throw new RuntimeException('Could not update advice request');
-        }
+        $advice = $this->repository->save(update: $update, adviceId: $adviceId);
 
-        $advice = $this->normalizeResult(result: $advice);
-
-        $this->fireTransitionNotification(to: $to, current: $current, adviceId: $adviceId);
+        $this->notifier->fireTransitionNotification(
+            to: $to,
+            current: $current,
+            adviceId: $adviceId,
+            callerId: $this->getUserId(),
+        );
 
         return $advice;
     }//end applyTransition()
@@ -321,7 +175,7 @@ class AdviceService
      */
     public function dispatchReminder(string $adviceId): void
     {
-        $advice = $this->loadAdvice(adviceId: $adviceId);
+        $advice = $this->repository->find(adviceId: $adviceId);
         if ($advice === null) {
             return;
         }
@@ -331,7 +185,11 @@ class AdviceService
             return;
         }
 
-        $this->sendUserNotification(userId: $adviseur, subject: 'advies_herinnering', objectId: $adviceId);
+        $this->notifier->sendUserNotification(
+            userId: $adviseur,
+            subject: 'advies_herinnering',
+            objectId: $adviceId
+        );
     }//end dispatchReminder()
 
     /**
@@ -374,32 +232,7 @@ class AdviceService
      */
     public function getAdviceForCase(string $caseId): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        try {
-            return $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                filters: ['case' => $caseId, '_limit' => 200],
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to fetch advice for case: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            return [];
-        }
+        return $this->repository->findForCase(caseId: $caseId);
     }//end getAdviceForCase()
 
     /**
@@ -411,32 +244,7 @@ class AdviceService
      */
     public function getOpenAdvice(): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        try {
-            return $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                filters: ['status' => 'aangevraagd', '_limit' => 500],
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to load open advice: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            return [];
-        }
+        return $this->repository->findOpen();
     }//end getOpenAdvice()
 
     /**
@@ -462,13 +270,13 @@ class AdviceService
     public function expireAdvice(string $adviceId): array
     {
         try {
-            $current = $this->loadAdvice(adviceId: $adviceId);
+            $current = $this->repository->find(adviceId: $adviceId);
             if ($current === null) {
                 throw new RuntimeException('Advice request not accessible');
             }
 
             return $this->applyTransition(adviceId: $adviceId, to: 'verlopen', current: $current);
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             $this->logger->error(
                 'Procest: failed to expire advice: '.$e->getMessage(),
                 ['app' => Application::APP_ID]
@@ -476,96 +284,6 @@ class AdviceService
             return [];
         }
     }//end expireAdvice()
-
-    /**
-     * Load a single advice request by id.
-     *
-     * @param string $adviceId The advice UUID
-     *
-     * @return array<string, mixed>|null Advice data or null
-     */
-    private function loadAdvice(string $adviceId): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('advies_aanvraag_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
-
-        try {
-            $advice = $objectService->find($adviceId, register: $register, schema: $schema);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to load advice: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            return null;
-        }
-
-        return $this->normalizeResult(result: $advice);
-    }//end loadAdvice()
-
-    /**
-     * Fire the notification that matches a status transition.
-     *
-     * @param string               $to       Target status
-     * @param array<string, mixed> $current  Current advice record (pre-update)
-     * @param string               $adviceId The advice UUID
-     *
-     * @return void
-     */
-    private function fireTransitionNotification(string $to, array $current, string $adviceId): void
-    {
-        if ($to === 'aangevraagd') {
-            $adviseur = (string) ($current['adviseur'] ?? '');
-            if ($adviseur !== '') {
-                $this->sendUserNotification(
-                    userId: $adviseur,
-                    subject: 'advies_aangevraagd',
-                    objectId: $adviceId,
-                    message: (string) ($current['onderwerp'] ?? '')
-                );
-            }
-
-            return;
-        }
-
-        if ($to === 'ontvangen') {
-            $caller = $this->getUserId();
-            if ($caller !== '') {
-                $this->sendUserNotification(userId: $caller, subject: 'advies_ontvangen', objectId: $adviceId);
-            }
-        }
-    }//end fireTransitionNotification()
-
-    /**
-     * Convert an object/array result to an associative array.
-     *
-     * @param mixed $result The OpenRegister return value
-     *
-     * @return array<string, mixed> Normalized advice record
-     */
-    private function normalizeResult($result): array
-    {
-        if (is_array($result) === true) {
-            return $result;
-        }
-
-        if (is_object($result) === true && method_exists($result, 'jsonSerialize') === true) {
-            $data = $result->jsonSerialize();
-            if (is_array($data) === true) {
-                return $data;
-            }
-        }
-
-        return [];
-    }//end normalizeResult()
 
     /**
      * Resolve the current user id from session (never trust client-supplied user).
@@ -581,44 +299,6 @@ class AdviceService
 
         return $user->getUID();
     }//end getUserId()
-
-    /**
-     * Send a Nextcloud notification to a user.
-     *
-     * @param string $userId   Recipient user UID
-     * @param string $subject  Notification subject key
-     * @param string $objectId The object UUID (case or advice)
-     * @param string $message  Additional message context
-     *
-     * @return void
-     */
-    private function sendUserNotification(
-        string $userId,
-        string $subject,
-        string $objectId,
-        string $message='',
-    ): void {
-        try {
-            $notification = $this->notificationManager->createNotification();
-            $notification
-                ->setApp(Application::APP_ID)
-                ->setUser($userId)
-                ->setDateTime(new DateTime())
-                ->setObject('advies', $objectId)
-                ->setSubject($subject, ['object' => $objectId]);
-
-            if ($message !== '') {
-                $notification->setMessage('plain', ['message' => $message]);
-            }
-
-            $this->notificationManager->notify($notification);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to send advice notification: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-        }
-    }//end sendUserNotification()
 
     /**
      * Create an advice request for a VTH case.
@@ -664,10 +344,12 @@ class AdviceService
             object: $payload
         );
 
-        $adviceId = '';
+        $savedRecord = [];
         if (is_array($saved) === true) {
-            $adviceId = (string) ($saved['id'] ?? ($saved['uuid'] ?? ''));
+            $savedRecord = $saved;
         }
+
+        $adviceId = (string) ($savedRecord['id'] ?? ($savedRecord['uuid'] ?? ''));
 
         $this->delegateAdviceDecision(
             objectService: $objectService,
@@ -676,13 +358,13 @@ class AdviceService
             adviceId: $adviceId,
             data: $data,
             payload: $payload,
-            saved: $saved,
+            saved: $savedRecord,
         );
 
-        $this->notifyAdviseur(
+        $this->notifier->notifyAdviseur(
             caseId: $caseId,
             payload: $payload,
-            saved: $saved,
+            saved: $savedRecord,
         );
 
         $this->logger->info(
@@ -690,11 +372,7 @@ class AdviceService
             ['app' => Application::APP_ID]
         );
 
-        if (is_array($saved) === true) {
-            return $saved;
-        }
-
-        return [];
+        return $savedRecord;
     }//end requestAdvice()
 
     /**
@@ -707,7 +385,7 @@ class AdviceService
      * @param string               $adviceId      UUID of the saved adviceRequest
      * @param array<string, mixed> $data          Advice request data
      * @param array<string, mixed> $payload       The persisted adviceRequest payload
-     * @param mixed                $saved         The saveObject() result
+     * @param array<string, mixed> $saved         The normalized saveObject() result
      *
      * @return void
      *
@@ -720,7 +398,7 @@ class AdviceService
         string $adviceId,
         array $data,
         array $payload,
-        mixed $saved
+        array $saved
     ): void {
         // REQ-PDRD-001 / REQ-PDRD-002: the advice is *made* in decidesk. Raise a
         // decidesk `advice` Decision for this request and persist its ref. Fail
@@ -744,13 +422,8 @@ class AdviceService
             );
 
             if ($adviceId !== '') {
-                $savedBase = [];
-                if (is_array($saved) === true) {
-                    $savedBase = $saved;
-                }
-
                 $objectService->saveObject(
-                    object: array_merge($savedBase, ['decisionRef' => $decisionRef]),
+                    object: array_merge($saved, ['decisionRef' => $decisionRef]),
                     register: $register,
                     schema: 'adviceRequest',
                     uuid: $adviceId,
@@ -765,33 +438,4 @@ class AdviceService
             throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
         }//end try
     }//end delegateAdviceDecision()
-
-    /**
-     * Notify the adviseur that an advice request was created.
-     *
-     * @param string               $caseId  UUID of the case
-     * @param array<string, mixed> $payload The persisted adviceRequest payload
-     * @param mixed                $saved   The saveObject() result
-     *
-     * @return void
-     */
-    private function notifyAdviseur(string $caseId, array $payload, mixed $saved): void
-    {
-        $adviseur = $payload['adviseur'];
-        if ($adviseur === '') {
-            return;
-        }
-
-        $notificationObjectId = $caseId;
-        if (is_array($saved) === true) {
-            $notificationObjectId = $saved['id'] ?? $caseId;
-        }
-
-        $this->sendUserNotification(
-            userId: $adviseur,
-            objectId: $notificationObjectId,
-            subject: 'advice_requested',
-            message: 'Adviesaanvraag voor zaak '.$caseId
-        );
-    }//end notifyAdviseur()
 }//end class
