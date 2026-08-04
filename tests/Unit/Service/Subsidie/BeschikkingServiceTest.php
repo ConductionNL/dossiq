@@ -38,6 +38,8 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Service\Subsidie\BeschikkingService
  *
+ * @uses \OCA\Procest\Service\Subsidie\SubsidieService
+ *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-09
  */
 class BeschikkingServiceTest extends TestCase

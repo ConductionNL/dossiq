@@ -28,6 +28,9 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\ZgwZtcRulesService
+ *
+ * @uses \OCA\Procest\Service\Support\SearchesObjects
+ * @uses \OCA\Procest\Service\ZgwRulesBase
  */
 class ZgwZtcRulesServiceTest extends TestCase
 {

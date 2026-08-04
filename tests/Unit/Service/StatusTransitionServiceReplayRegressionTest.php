@@ -52,6 +52,9 @@ interface ReplayObjectServiceStub
  * Regression tests for StatusTransitionService::replay().
  *
  * @covers \OCA\Procest\Service\StatusTransitionService
+ *
+ * @uses \OCA\Procest\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Procest\Service\Transitions\TransitionAuthorizer
  */
 class StatusTransitionServiceReplayRegressionTest extends TestCase
 {

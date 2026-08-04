@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Controller\BrkController
+ *
+ * @uses \OCA\Procest\Service\External\Brk\BrkLookupResult
  */
 class BrkControllerTest extends TestCase
 {

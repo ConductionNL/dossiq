@@ -37,6 +37,9 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Service\TermijnDailyScanService
  * @covers \OCA\Procest\Service\TermijnEscalationService
+ *
+ * @uses \OCA\Procest\Service\DwangsomCalculationService
+ * @uses \OCA\Procest\Service\TermijnService
  */
 class TermijnDailyScanServiceTest extends TestCase
 {

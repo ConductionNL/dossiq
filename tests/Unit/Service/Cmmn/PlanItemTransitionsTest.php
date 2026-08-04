@@ -32,6 +32,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Procest\Service\Cmmn\PlanItemTransitions
+ *
+ * @uses \OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException
  */
 final class PlanItemTransitionsTest extends TestCase
 {

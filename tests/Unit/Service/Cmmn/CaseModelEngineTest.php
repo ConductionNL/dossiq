@@ -64,6 +64,11 @@ class CountingFakeStore extends FakeTermijnStore
 
 /**
  * @covers \OCA\Procest\Service\Cmmn\CaseModelEngine
+ *
+ * @uses \OCA\Procest\Service\Cmmn\CaseModelLoader
+ * @uses \OCA\Procest\Service\Cmmn\IllegalPlanItemTransitionException
+ * @uses \OCA\Procest\Service\Cmmn\PlanItemTransitions
+ * @uses \OCA\Procest\Service\Cmmn\SentryEvaluator
  */
 final class CaseModelEngineTest extends TestCase
 {

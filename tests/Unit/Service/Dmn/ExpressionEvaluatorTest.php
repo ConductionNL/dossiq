@@ -32,6 +32,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @covers \OCA\Procest\Service\Dmn\ExpressionEvaluator
+ *
+ * @uses \OCA\Procest\Service\Dmn\DecisionEvaluationException
  */
 class ExpressionEvaluatorTest extends TestCase
 {

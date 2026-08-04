@@ -42,6 +42,10 @@ use RuntimeException;
  * @covers \OCA\Procest\Service\External\Kvk\KvkApiAdapter
  * @covers \OCA\Procest\Service\Auth\SimulatorDigidSamlAdapter
  * @covers \OCA\Procest\Service\Auth\SimulatorEHerkenningSamlAdapter
+ *
+ * @uses \OCA\Procest\Service\Auth\BrokerAssertionResult
+ * @uses \OCA\Procest\Service\External\Brp\BrpLookupResult
+ * @uses \OCA\Procest\Service\External\Kvk\KvkLookupResult
  */
 class IntegrationTierTest extends TestCase
 {

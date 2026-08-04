@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\TenantSaasService
+ *
+ * @uses \OCA\Procest\Service\TenantAuditTrailService
  */
 class TenantSaasServiceTest extends TestCase
 {

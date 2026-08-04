@@ -30,6 +30,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\MandaatCheckService
+ *
+ * @uses \OCA\Procest\Service\ConflictOfInterestService
  */
 class MandaatCheckServiceTest extends TestCase
 {

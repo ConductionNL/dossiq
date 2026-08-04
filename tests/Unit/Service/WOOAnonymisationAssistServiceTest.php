@@ -39,6 +39,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\WOOAnonymisationAssistService
+ *
+ * @uses \OCA\Procest\Service\Assistant\HermiqAssistantException
  */
 class WOOAnonymisationAssistServiceTest extends TestCase
 {

@@ -39,6 +39,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Controller\AssistantController
+ *
+ * @uses \OCA\Procest\Service\Assistant\HermiqAssistantException
  */
 class AssistantControllerTest extends TestCase
 {

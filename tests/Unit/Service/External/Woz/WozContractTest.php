@@ -41,6 +41,9 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Service\External\Woz\WozApiAdapter
  * @covers \OCA\Procest\Service\External\Woz\WozResponseMapper
+ *
+ * @uses \OCA\Procest\Service\External\IntegrationMode
+ * @uses \OCA\Procest\Service\External\Woz\WozLookupResult
  */
 class WozContractTest extends TestCase
 {

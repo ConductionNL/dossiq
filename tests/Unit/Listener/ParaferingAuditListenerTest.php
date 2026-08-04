@@ -38,6 +38,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for ParaferingAuditListener.
  *
  * @covers \OCA\Procest\Listener\ParaferingAuditListener
+ *
+ * @uses \OCA\Procest\Event\ParafeerTransitionEvent
  */
 class ParaferingAuditListenerTest extends TestCase
 {

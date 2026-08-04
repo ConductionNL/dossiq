@@ -58,6 +58,8 @@ if (interface_exists(SubstitutionObjectServiceStub::class) === false) {
  * Unit tests for CaseReassignmentService.
  *
  * @covers \OCA\Procest\Service\CaseReassignmentService
+ *
+ * @uses \OCA\Procest\Service\Support\ReassignmentBatch
  */
 class CaseReassignmentServiceTest extends TestCase
 {

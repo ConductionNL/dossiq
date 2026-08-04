@@ -36,6 +36,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Middleware\TenantIsolationMiddleware
+ *
+ * @uses \OCA\Procest\Service\TenantContext
  */
 class TenantIsolationMiddlewareTest extends TestCase
 {
