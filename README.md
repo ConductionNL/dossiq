@@ -219,8 +219,9 @@ npm run lint            # ESLint
 npm run stylelint       # CSS linting
 ```
 
-`composer check:strict` is the unified quality gate, enforced on every PR by
-the `pre-merge-check-strict` workflow (`.forgejo/workflows/`). PHPMD and PHPStan
+`composer check:strict` is the unified quality gate; the equivalent gates are
+enforced on every PR by `.github/workflows/code-quality.yml` (the shared
+`ConductionNL/.github` quality pipeline). PHPMD and PHPStan
 both run with **no baseline** — every violation is fixed at source, so the gate's
 green is bought entirely by the code and not by a suppression file. The only
 PHPStan suppressions are the documented `ignoreErrors` patterns in `phpstan.neon`
