@@ -27,7 +27,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Procest\Service\Consultation\ConsultationDependencyGraph;
+use OCA\Procest\Service\Consultation\ConsultationRepository;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -40,8 +41,6 @@ use RuntimeException;
  */
 class ConsultationService
 {
-    use SearchesObjects;
-
     /**
      * Valid consultation statuses.
      */
@@ -79,14 +78,18 @@ class ConsultationService
     /**
      * Constructor.
      *
-     * @param SettingsService         $settingsService  Settings service
-     * @param LoggerInterface         $logger           Logger
-     * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
+     * @param SettingsService             $settingsService  Settings service
+     * @param LoggerInterface             $logger           Logger
+     * @param AdviceDelegationService     $adviceDelegation Advice delegation to decidesk (ADR-019)
+     * @param ConsultationRepository      $repository       OpenRegister reads/writes for consultations
+     * @param ConsultationDependencyGraph $dependencyGraph  `dependsOn` cycle detection
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
         private readonly AdviceDelegationService $adviceDelegation,
+        private readonly ConsultationRepository $repository,
+        private readonly ConsultationDependencyGraph $dependencyGraph,
     ) {
     }//end __construct()
 
@@ -123,7 +126,7 @@ class ConsultationService
         $this->assertRequiredConsultationFields(data: $data);
 
         // Generate unique consultation number.
-        $data['consultationNumber'] = $this->generateConsultationNumber(
+        $data['consultationNumber'] = $this->repository->nextConsultationNumber(
             objectService: $objectService,
             register: $register,
             schema: $schema,
@@ -177,24 +180,7 @@ class ConsultationService
      */
     public function getConsultationsForCase(string $caseId): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('consultation_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['parentZaak' => $caseId, '_limit' => 100],
-        );
+        return $this->repository->getConsultationsForCase(caseId: $caseId);
     }//end getConsultationsForCase()
 
     /**
@@ -208,24 +194,7 @@ class ConsultationService
      */
     public function getConsultation(string $consultationId): ?array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('consultation_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
-
-        return $this->findObjectAsArray(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            id: $consultationId,
-        );
+        return $this->repository->getConsultation(consultationId: $consultationId);
     }//end getConsultation()
 
     /**
@@ -349,26 +318,7 @@ class ConsultationService
      */
     public function deleteConsultation(string $consultationId): bool
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('consultation_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            throw new RuntimeException('Consultation schema not configured');
-        }
-
-        $objectService->deleteObject(uuid: (string) $consultationId, register: $register, schema: $schema);
-
-        $this->logger->info(
-            'Consultation deleted: '.$consultationId,
-            ['app' => Application::APP_ID],
-        );
-
-        return true;
+        return $this->repository->deleteConsultation(consultationId: $consultationId);
     }//end deleteConsultation()
 
     /**
@@ -380,44 +330,7 @@ class ConsultationService
      */
     public function getOverdueConsultations(): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('consultation_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        $openList = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['status' => 'open', '_limit' => 200],
-        );
-
-        $inProgressList = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['status' => 'in_behandeling', '_limit' => 200],
-        );
-
-        $all     = array_merge($openList, $inProgressList);
-        $today   = date('Y-m-d');
-        $overdue = [];
-
-        foreach ($all as $consultation) {
-            $deadline = $consultation['uiterlijkeReactiedatum'] ?? '';
-            if ($deadline !== '' && $deadline < $today) {
-                $overdue[] = $consultation;
-            }
-        }
-
-        return $overdue;
+        return $this->repository->getOverdueConsultations();
     }//end getOverdueConsultations()
 
     /**
@@ -470,24 +383,10 @@ class ConsultationService
      */
     public function validateDependencyCycle(string $consultationId, array $dependsOn): bool
     {
-        // Quick self-reference check.
-        if (in_array($consultationId, $dependsOn, true) === true) {
-            return true;
-        }
-
-        $visited = [];
-        foreach ($dependsOn as $depId) {
-            if ($this->hasCycleDfs(
-                startId: $consultationId,
-                currentId: $depId,
-                visited: $visited,
-            ) === true
-            ) {
-                return true;
-            }
-        }
-
-        return false;
+        return $this->dependencyGraph->wouldCreateCycle(
+            consultationId: $consultationId,
+            dependsOn: $dependsOn
+        );
     }//end validateDependencyCycle()
 
     /**
@@ -662,93 +561,6 @@ class ConsultationService
     }//end raiseAndPersistAdviceDecision()
 
     /**
-     * Generate a unique consultation number in ADV-{year}-{seq} format.
-     *
-     * Queries existing consultations to find the maximum sequence number for
-     * the current year, then increments by one.
-     *
-     * @param object $objectService The OpenRegister object service
-     * @param string $register      The register slug
-     * @param string $schema        The schema slug
-     *
-     * @return string Generated consultation number (e.g. ADV-2026-0001)
-     */
-    private function generateConsultationNumber(
-        object $objectService,
-        string $register,
-        string $schema,
-    ): string {
-        $year   = (int) date('Y');
-        $prefix = 'ADV-'.$year.'-';
-
-        $existing = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: [
-                'consultationNumber' => $prefix.'%',
-                '_order'             => ['consultationNumber' => 'DESC'],
-                '_limit'             => 1,
-            ],
-        );
-
-        $maxSeq = 0;
-        if (empty($existing) === false) {
-            $latest = $existing[0];
-            $number = $latest['consultationNumber'] ?? '';
-            if (str_starts_with($number, $prefix) === true) {
-                $seqPart = substr($number, strlen($prefix));
-                $seq     = (int) $seqPart;
-                if ($seq > $maxSeq) {
-                    $maxSeq = $seq;
-                }
-            }
-        }
-
-        return $prefix.str_pad((string) ($maxSeq + 1), 4, '0', STR_PAD_LEFT);
-    }//end generateConsultationNumber()
-
-    /**
-     * Depth-first search helper for cycle detection in dependency graph.
-     *
-     * @param string   $startId   The original consultation ID (cycle target)
-     * @param string   $currentId The current node being visited
-     * @param string[] $visited   Already-visited node IDs (prevents re-traversal)
-     *
-     * @return bool True if startId is reachable from currentId (cycle detected)
-     */
-    private function hasCycleDfs(string $startId, string $currentId, array &$visited): bool
-    {
-        if ($currentId === $startId) {
-            return true;
-        }
-
-        if (in_array($currentId, $visited, true) === true) {
-            return false;
-        }
-
-        $visited[] = $currentId;
-
-        $consultation = $this->getConsultation(consultationId: $currentId);
-        if ($consultation === null) {
-            return false;
-        }
-
-        $deps = $consultation['dependsOn'] ?? [];
-        if (is_array($deps) === false) {
-            return false;
-        }
-
-        foreach ($deps as $depId) {
-            if ($this->hasCycleDfs(startId: $startId, currentId: $depId, visited: $visited) === true) {
-                return true;
-            }
-        }
-
-        return false;
-    }//end hasCycleDfs()
-
-    /**
      * Find a consultation by its secure token (for external body public access).
      *
      * Returns null when the token is invalid, the consultation is not found,
@@ -762,48 +574,6 @@ class ConsultationService
      */
     public function findBySecureToken(string $token): ?array
     {
-        if (strlen($token) < 32) {
-            return null;
-        }
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('consultation_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
-
-        try {
-            $results = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $schema,
-                filters: ['secureToken' => $token, '_limit' => 1],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: failed to find consultation by token: '.$e->getMessage(),
-                ['app' => Application::APP_ID],
-            );
-            return null;
-        }
-
-        if (empty($results) === true) {
-            return null;
-        }
-
-        $consultation = $results[0];
-        $status       = $consultation['status'] ?? '';
-
-        if ($status === 'afgesloten' || $status === 'ingetrokken') {
-            return null;
-        }
-
-        return $consultation;
+        return $this->repository->findBySecureToken(token: $token);
     }//end findBySecureToken()
 }//end class

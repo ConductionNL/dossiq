@@ -27,8 +27,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use DateTime;
-use OCP\App\IAppManager;
-use Psr\Container\ContainerInterface;
+use OCA\Procest\Service\Transfer\TransferRegisterGateway;
+use OCA\Procest\Service\Transfer\TransferShareBroker;
 use Psr\Log\LoggerInterface;
 
 /**
@@ -45,8 +45,8 @@ class CaseTransferService
      * Constructor for the CaseTransferService.
      *
      * @param SettingsService         $settingsService The settings service
-     * @param IAppManager             $appManager      The app manager
-     * @param ContainerInterface      $container       The DI container
+     * @param TransferRegisterGateway $gateway         OpenRegister resolution for the transfer surface
+     * @param TransferShareBroker     $shareBroker     Transfer-scoped OCM token minting and resolution
      * @param LoggerInterface         $logger          The logger
      * @param TenantAuditTrailService $auditTrail      Audit-trail emitter for custody-change actions
      *
@@ -54,8 +54,8 @@ class CaseTransferService
      */
     public function __construct(
         private SettingsService $settingsService,
-        private IAppManager $appManager,
-        private ContainerInterface $container,
+        private TransferRegisterGateway $gateway,
+        private TransferShareBroker $shareBroker,
         private LoggerInterface $logger,
         private TenantAuditTrailService $auditTrail,
     ) {
@@ -95,7 +95,7 @@ class CaseTransferService
         string $initiatedBy='',
         ?string $remoteCloudId=null,
     ): array {
-        $objectService = $this->getObjectService();
+        $objectService = $this->gateway->objectService();
         if ($objectService === null) {
             return ['error' => 'OpenRegister is not available'];
         }
@@ -105,7 +105,7 @@ class CaseTransferService
 
         $idempotencyKey = null;
         if ($remoteCloudId !== null && $remoteCloudId !== '') {
-            $shareService = $this->getFederationShareService();
+            $shareService = $this->gateway->federationShareService();
             if ($shareService === null) {
                 return ['error' => 'Federated case transfer requires the OpenRegister federation leaf'];
             }
@@ -146,7 +146,7 @@ class CaseTransferService
 
         if ($remoteCloudId !== null && $remoteCloudId !== '') {
             $transferUuid = (string) ($resultData['id'] ?? $resultData['uuid'] ?? '');
-            $mintedShare  = $this->mintFederatedTransferShare(
+            $mintedShare  = $this->shareBroker->mintTransferShare(
                 transferUuid: $transferUuid,
                 remoteCloudId: $remoteCloudId,
                 register: (string) $register,
@@ -322,7 +322,7 @@ class CaseTransferService
         ?string $remoteCloudId=null,
         string $rejectionReason='',
     ): array {
-        $objectService = $this->getObjectService();
+        $objectService = $this->gateway->objectService();
         if ($objectService === null) {
             return ['error' => 'OpenRegister is not available'];
         }
@@ -470,7 +470,7 @@ class CaseTransferService
      */
     public function getCaseIdForTransfer(string $transferId): ?string
     {
-        $objectService = $this->getObjectService();
+        $objectService = $this->gateway->objectService();
         if ($objectService === null) {
             return null;
         }
@@ -523,38 +523,7 @@ class CaseTransferService
      */
     public function resolveFederatedTransferShare(string $shareToken, string $transferId): ?array
     {
-        $shareMapper = $this->getFederatedShareMapper();
-        if ($shareMapper === null || $shareToken === '' || $transferId === '') {
-            return null;
-        }
-
-        try {
-            $share = $shareMapper->findByToken($shareToken);
-        } catch (\Throwable $e) {
-            return null;
-        }
-
-        if ($share->getDirection() !== 'outgoing') {
-            return null;
-        }
-
-        if (in_array($share->getStatus(), ['revoked', 'declined'], true) === true) {
-            return null;
-        }
-
-        if ($share->getPermissions() !== 'read-write') {
-            return null;
-        }
-
-        $objectUri = (string) $share->getObjectUri();
-        if ($this->uuidFromUri(uri: $objectUri) !== $transferId) {
-            return null;
-        }
-
-        return [
-            'sharedWith'   => (string) $share->getSharedWith(),
-            'organisation' => $share->getOrganisation(),
-        ];
+        return $this->shareBroker->resolveTransferShare(shareToken: $shareToken, transferId: $transferId);
     }//end resolveFederatedTransferShare()
 
     /**
@@ -592,149 +561,4 @@ class CaseTransferService
 
         return null;
     }//end findTransferByIdempotencyKey()
-
-    /**
-     * Mint a transfer-scoped OR federated share (read-write, pointed only
-     * at the transfer object) so the remote org can later authenticate its
-     * accept/reject call. Distinct from the case-summary share's token —
-     * this one grants no access to the case itself, only to this one
-     * transfer's status field via procest's own state machine.
-     *
-     * @param string $transferUuid  The transfer object's uuid
-     * @param string $remoteCloudId The federated target (slug@host)
-     * @param string $register      The register id/slug
-     * @param string $schema        The case_transfer_schema id/slug
-     *
-     * @return object|null The minted OR FederatedShare, or null on failure
-     */
-    private function mintFederatedTransferShare(string $transferUuid, string $remoteCloudId, string $register, string $schema): ?object
-    {
-        $shareService = $this->getFederationShareService();
-        if ($shareService === null) {
-            return null;
-        }
-
-        try {
-            return $shareService->createOutgoingShare(
-                params: [
-                    'scope'       => 'object',
-                    'register'    => $register,
-                    'schema'      => $schema,
-                    'objectUri'   => $transferUuid,
-                    'sharedWith'  => $remoteCloudId,
-                    'permissions' => 'read-write',
-                ]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'CaseTransferService: OR createOutgoingShare failed',
-                ['transferUuid' => $transferUuid, 'exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end mintFederatedTransferShare()
-
-    /**
-     * Extract the trailing uuid from a canonical object uri (or return it
-     * as-is when it is already a bare uuid).
-     *
-     * @param string $uri The object uri or uuid
-     *
-     * @return string The uuid
-     */
-    private function uuidFromUri(string $uri): string
-    {
-        $parts = explode('/', rtrim($uri, '/'));
-        return (string) end($parts);
-    }//end uuidFromUri()
-
-    /**
-     * Resolve OpenRegister's FederationShareService. Returns null (fail
-     * closed) when OR or its federation classes are unavailable.
-     *
-     * @return object|null The OR FederationShareService, or null
-     */
-    private function getFederationShareService(): ?object
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-            return null;
-        }
-
-        try {
-            $service = $this->container->get('OCA\OpenRegister\Service\FederationShareService');
-            if (method_exists($service, 'createOutgoingShare') === false) {
-                return null;
-            }
-
-            return $service;
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: Could not get OR FederationShareService',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end getFederationShareService()
-
-    /**
-     * Resolve OpenRegister's FederatedShareMapper — used only to resolve a
-     * scoped bearer token to its share (`findByToken`), for the remote
-     * accept/reject endpoint. Returns null (fail closed) when unavailable.
-     *
-     * @return object|null The OR FederatedShareMapper, or null
-     */
-    private function getFederatedShareMapper(): ?object
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-            return null;
-        }
-
-        try {
-            $mapper = $this->container->get('OCA\OpenRegister\Db\FederatedShareMapper');
-            if (method_exists($mapper, 'findByToken') === false) {
-                return null;
-            }
-
-            return $mapper;
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: Could not get OR FederatedShareMapper',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end getFederatedShareMapper()
-
-    /**
-     * Get the OpenRegister ObjectService.
-     *
-     * Pre-existing gap fixed alongside the federation extension: this
-     * previously declared a concrete `?\OCA\OpenRegister\Service\ObjectService`
-     * return type. That class is not part of this app's autoload map (OR is
-     * a separate app, resolved only through the DI container at runtime), so
-     * the type declaration was unenforceable and would TypeError the moment
-     * any test exercised this method with a test double — which none did
-     * before this change, since CaseTransferService had zero prior test
-     * coverage. `?object` matches the pattern already used everywhere else
-     * in this file (getFederationShareService/getFederatedShareMapper) and
-     * in CaseSharingService's own getObjectService().
-     *
-     * @return object|null The service or null
-     */
-    private function getObjectService(): ?object
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-            return null;
-        }
-
-        try {
-            return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-        } catch (\Exception $e) {
-            $this->logger->error(
-                'Procest: Could not get ObjectService',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end getObjectService()
 }//end class
