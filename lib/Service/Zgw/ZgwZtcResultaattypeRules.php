@@ -111,16 +111,63 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase
      *
      * @return array The validation result
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-     *
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function rulesResultaattypenCreate(array $body): array
     {
+        // Ztc-002: Validate and fetch external URLs for enrichment.
+        $references        = $this->fetchResultaattypeReferences(body: $body);
+        $selectielijstData = $references['selectielijstData'];
+        $rtoData           = $references['rtoData'];
+        $errors            = $references['errors'];
+
+        if (empty($errors) === false) {
+            return $this->error(status: 400, detail: $errors[0]['reason'], invalidParams: $errors);
+        }
+
+        // Ztc-002b/f/g: Enrich body with derived fields from external data.
+        $body = $this->enrichResultaattype(body: $body, selectielijstData: $selectielijstData, rtoData: $rtoData);
+
+        // Ztc-002e: Validate selectielijstklasse procesType matches zaaktype selectielijstProcestype.
+        if ($selectielijstData !== null) {
+            $procestypeError = $this->validateProcestypeMatch(body: $body, selectielijstData: $selectielijstData);
+            if ($procestypeError !== null) {
+                return $procestypeError;
+            }
+        }
+
+        // Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
+        $archief = $body['brondatumArchiefprocedure'] ?? null;
+        if ($archief !== null) {
+            $errors = $this->brondatumValidator->validate(archief: $archief, selectielijstData: $selectielijstData);
+        }
+
+        if (empty($errors) === false) {
+            return $this->error(status: 400, detail: $errors[0]['reason'], invalidParams: $errors);
+        }
+
+        return $this->isValid(body: $body);
+    }//end rulesResultaattypenCreate()
+
+    /**
+     * Fetch the two external VNG references a resultaattype is built from (ztc-002).
+     *
+     * Both `selectielijstklasse` and `resultaattypeomschrijving` are external URLs.
+     * Each is optional, each is fetched independently, and a fetch failure is a
+     * field error rather than an abort — so both are attempted before the caller
+     * decides. Errors are returned in field order (selectielijstklasse first),
+     * because the caller reports `$errors[0]` as the problem detail.
+     *
+     * @param array $body The ZGW request body
+     *
+     * @return array{selectielijstData: array|null, rtoData: array|null, errors: array} The fetched data and errors
+     *
+     * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+     */
+    private function fetchResultaattypeReferences(array $body): array
+    {
         $errors = [];
 
-        // Ztc-002: Validate and fetch external URLs for enrichment.
         $selectieUrl       = $body['selectielijstklasse'] ?? '';
         $selectielijstData = null;
         if (empty($selectieUrl) === false) {
@@ -151,33 +198,12 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase
             }
         }
 
-        if (empty($errors) === false) {
-            return $this->error(status: 400, detail: $errors[0]['reason'], invalidParams: $errors);
-        }
-
-        // Ztc-002b/f/g: Enrich body with derived fields from external data.
-        $body = $this->enrichResultaattype(body: $body, selectielijstData: $selectielijstData, rtoData: $rtoData);
-
-        // Ztc-002e: Validate selectielijstklasse procesType matches zaaktype selectielijstProcestype.
-        if ($selectielijstData !== null) {
-            $procestypeError = $this->validateProcestypeMatch(body: $body, selectielijstData: $selectielijstData);
-            if ($procestypeError !== null) {
-                return $procestypeError;
-            }
-        }
-
-        // Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
-        $archief = $body['brondatumArchiefprocedure'] ?? null;
-        if ($archief !== null) {
-            $errors = $this->brondatumValidator->validate(archief: $archief, selectielijstData: $selectielijstData);
-        }
-
-        if (empty($errors) === false) {
-            return $this->error(status: 400, detail: $errors[0]['reason'], invalidParams: $errors);
-        }
-
-        return $this->isValid(body: $body);
-    }//end rulesResultaattypenCreate()
+        return [
+            'selectielijstData' => $selectielijstData,
+            'rtoData'           => $rtoData,
+            'errors'            => $errors,
+        ];
+    }//end fetchResultaattypeReferences()
 
     /**
      * Enrich a resultaattype body with derived fields from external APIs (ztc-002b/f/g).

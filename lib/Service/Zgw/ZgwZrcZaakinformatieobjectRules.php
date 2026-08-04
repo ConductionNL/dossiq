@@ -150,14 +150,61 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — ZGW cross-register validation
-     * @SuppressWarnings(PHPMD.NPathComplexity)      — ZGW cross-register validation
-     *
      * @spec openspec/specs/status-transition-engine/spec.md
      */
     private function validateZioInformatieobjecttype(string $zaakUrl, string $ioUrl): ?array
     {
         // Get the informatieobject to find its informatieobjecttype.
+        $docTypeId = $this->resolveDocumentTypeId(ioUrl: $ioUrl);
+        if ($docTypeId === null) {
+            return null;
+        }
+
+        // Get the zaak's zaaktype.
+        $zaaktypeUuid = $this->resolveCaseTypeUuid(zaakUrl: $zaakUrl);
+        if ($zaaktypeUuid === null) {
+            return null;
+        }
+
+        // Check if a ZaakType-InformatieObjectType record links this zaaktype
+        // to the document's informatieobjecttype.
+        $docTypeUuid = $this->extractUuid(url: $docTypeId);
+        if ($docTypeUuid === null) {
+            return null;
+        }
+
+        $isMissing = $this->isZaaktypeInformatieobjecttypeMissing(
+            zaaktypeUuid: $zaaktypeUuid,
+            docTypeUuid: $docTypeUuid
+        );
+        if ($isMissing === false) {
+            return null;
+        }
+
+        $detail = 'Het informatieobjecttype van het informatieobject hoort niet bij het zaaktype van de zaak.';
+        return $this->error(
+            status: 400,
+            detail: $detail,
+            invalidParams: [$this->fieldError(
+                fieldName: 'nonFieldErrors',
+                code: 'missing-zaaktype-informatieobjecttype-relation',
+                reason: $detail
+            )
+            ]
+        );
+    }//end validateZioInformatieobjecttype()
+
+    /**
+     * Resolve the informatieobjecttype reference carried by an informatieobject.
+     *
+     * @param string $ioUrl The informatieobject URL
+     *
+     * @return string|null The raw documentType reference, or null if unresolvable
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    private function resolveDocumentTypeId(string $ioUrl): ?string
+    {
         $ioUuid = $this->extractUuid(url: $ioUrl);
         if ($ioUuid === null) {
             return null;
@@ -173,7 +220,20 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase
             return null;
         }
 
-        // Get the zaak's zaaktype.
+        return (string) $docTypeId;
+    }//end resolveDocumentTypeId()
+
+    /**
+     * Resolve the zaaktype UUID a zaak is registered under.
+     *
+     * @param string $zaakUrl The zaak URL
+     *
+     * @return string|null The zaaktype UUID, or null if unresolvable
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    private function resolveCaseTypeUuid(string $zaakUrl): ?string
+    {
         $zaakUuid = $this->extractUuid(url: $zaakUrl);
         if ($zaakUuid === null) {
             return null;
@@ -184,23 +244,31 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase
             return null;
         }
 
-        $zaaktypeId   = $zaakData['caseType'] ?? '';
-        $zaaktypeUuid = $this->extractUuid(url: (string) $zaaktypeId);
-        if ($zaaktypeUuid === null) {
-            return null;
-        }
+        $zaaktypeId = $zaakData['caseType'] ?? '';
+        return $this->extractUuid(url: (string) $zaaktypeId);
+    }//end resolveCaseTypeUuid()
 
-        // Check if a ZaakType-InformatieObjectType record links this zaaktype
-        // to the document's informatieobjecttype.
-        $docTypeUuid = $this->extractUuid(url: (string) $docTypeId);
-        if ($docTypeUuid === null) {
-            return null;
-        }
-
+    /**
+     * Check whether the ZaakType-InformatieObjectType link is provably absent (zrc-017).
+     *
+     * Returns true only when a lookup actually ran and found nothing. An
+     * unconfigured register/schema or a failing query is "not established",
+     * not "absent", and yields false so the caller raises no error — an
+     * unavailable lookup must never be reported to the client as a rule breach.
+     *
+     * @param string $zaaktypeUuid The zaaktype UUID
+     * @param string $docTypeUuid  The informatieobjecttype UUID
+     *
+     * @return bool True when the link is provably missing
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    private function isZaaktypeInformatieobjecttypeMissing(string $zaaktypeUuid, string $docTypeUuid): bool
+    {
         $ziotSchemaId = $this->settingsService->getConfigValue(key: 'zaaktype_informatieobjecttype_schema');
         $register     = $this->settingsService->getConfigValue(key: 'register');
         if ($ziotSchemaId === '' || $register === '') {
-            return null;
+            return false;
         }
 
         try {
@@ -212,25 +280,11 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase
             $result = $this->objectService->searchObjectsPaginated(query: $query);
             $found  = empty($result['results'] ?? []) === false;
         } catch (\Throwable $e) {
-            return null;
+            return false;
         }
 
-        if ($found === false) {
-            $detail = 'Het informatieobjecttype van het informatieobject hoort niet bij het zaaktype van de zaak.';
-            return $this->error(
-                status: 400,
-                detail: $detail,
-                invalidParams: [$this->fieldError(
-                    fieldName: 'nonFieldErrors',
-                    code: 'missing-zaaktype-informatieobjecttype-relation',
-                    reason: $detail
-                )
-                ]
-            );
-        }
-
-        return null;
-    }//end validateZioInformatieobjecttype()
+        return $found === false;
+    }//end isZaaktypeInformatieobjecttypeMissing()
 
     /**
      * Check ZaakInformatieObject field immutability (zrc-004).
@@ -244,8 +298,6 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase
      *
      * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — immutability check on multiple fields
-     *
      * @spec openspec/specs/status-transition-engine/spec.md
      */
     private function checkZioImmutability(array $result, ?array $existingObject): array
@@ -257,35 +309,66 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase
         $body = $result['enrichedBody'];
 
         // Zrc-004: zaak is immutable.
-        if (isset($body['zaak']) === true) {
-            $existingZaak = $existingObject['case'] ?? ($existingObject['zaak'] ?? '');
-            $newZaakUuid  = $this->extractUuid(url: $body['zaak']);
-
-            $existZaakId = $existingZaak;
-            if (is_string($existingZaak) === true) {
-                $existZaakId = $this->extractUuid(url: $existingZaak);
-            }
-
-            if ($existZaakId !== null && $newZaakUuid !== null && $newZaakUuid !== $existZaakId) {
-                return $this->fieldImmutableError(fieldName: 'zaak');
-            }
+        $zaakChanged = $this->isRelationFieldChanged(
+            body: $body,
+            existingObject: $existingObject,
+            field: 'zaak',
+            storedKey: 'case'
+        );
+        if ($zaakChanged === true) {
+            return $this->fieldImmutableError(fieldName: 'zaak');
         }
 
         // Zrc-004: informatieobject is immutable.
-        if (isset($body['informatieobject']) === true) {
-            $existingIo = $existingObject['document'] ?? ($existingObject['informatieobject'] ?? '');
-            $newIoUuid  = $this->extractUuid(url: $body['informatieobject']);
-
-            $existIoId = $existingIo;
-            if (is_string($existingIo) === true) {
-                $existIoId = $this->extractUuid(url: $existingIo);
-            }
-
-            if ($existIoId !== null && $newIoUuid !== null && $newIoUuid !== $existIoId) {
-                return $this->fieldImmutableError(fieldName: 'informatieobject');
-            }
+        $ioChanged = $this->isRelationFieldChanged(
+            body: $body,
+            existingObject: $existingObject,
+            field: 'informatieobject',
+            storedKey: 'document'
+        );
+        if ($ioChanged === true) {
+            return $this->fieldImmutableError(fieldName: 'informatieobject');
         }
 
         return $result;
     }//end checkZioImmutability()
+
+    /**
+     * Check whether a request body changes an immutable relation field (zrc-004).
+     *
+     * The stored object may carry the relation under the procest-side key
+     * ($storedKey) or under the ZGW field name, so both are consulted in that
+     * order. Both sides are reduced to a UUID before comparing, so the same
+     * relation expressed as a bare UUID and as a full URL is not a change.
+     * An unresolvable UUID on either side is not treated as a change.
+     *
+     * @param array  $body           The request body
+     * @param array  $existingObject The stored object data
+     * @param string $field          The ZGW field name in the body
+     * @param string $storedKey      The procest-side key on the stored object
+     *
+     * @return bool True when the field is present and points at a different object
+     *
+     * @spec openspec/specs/status-transition-engine/spec.md
+     */
+    private function isRelationFieldChanged(
+        array $body,
+        array $existingObject,
+        string $field,
+        string $storedKey
+    ): bool {
+        if (isset($body[$field]) === false) {
+            return false;
+        }
+
+        $existing = $existingObject[$storedKey] ?? ($existingObject[$field] ?? '');
+        $newUuid  = $this->extractUuid(url: $body[$field]);
+
+        $existingId = $existing;
+        if (is_string($existing) === true) {
+            $existingId = $this->extractUuid(url: $existing);
+        }
+
+        return ($existingId !== null && $newUuid !== null && $newUuid !== $existingId);
+    }//end isRelationFieldChanged()
 }//end class

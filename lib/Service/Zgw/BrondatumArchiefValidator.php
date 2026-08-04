@@ -84,8 +84,6 @@ class BrondatumArchiefValidator extends ZgwRulesBase
      *
      * @return array<array{name: string, code: string, reason: string}> Validation errors
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     *
      * @spec openspec/specs/zgw-business-rules-compliance/spec.md
      */
     public function validate(array $archief, ?array $selectielijstData): array

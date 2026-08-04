@@ -105,9 +105,6 @@ class ZgwRulesDispatcher
      *
      * @return array The validation result
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-     *
      * @spec openspec/specs/zgw-business-rules-compliance/spec.md
      */
     public function dispatch(
@@ -170,6 +167,10 @@ class ZgwRulesDispatcher
     /**
      * Dispatch ZRC (Zaken API) rules.
      *
+     * The zaakinformatieobjecten sub-resource is routed out first because it is
+     * the one ZRC resource owned by a different collaborator
+     * ({@see ZgwZrcZaakinformatieobjectRules}) than the zaak itself.
+     *
      * @param string     $resource       The resource name
      * @param string     $action         The action
      * @param array      $body           The request body
@@ -177,12 +178,18 @@ class ZgwRulesDispatcher
      *
      * @return array The validation result
      *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     *
      * @spec openspec/specs/zgw-business-rules-compliance/spec.md
      */
     private function dispatchZrc(string $resource, string $action, array $body, ?array $existingObject): array
     {
+        if ($resource === 'zaakinformatieobjecten') {
+            return $this->dispatchZrcZaakinformatieobjecten(
+                action: $action,
+                body: $body,
+                existingObject: $existingObject
+            );
+        }
+
         return match (true) {
             $resource === 'zaken' && $action === 'create'
                 => $this->zrcRules->rulesZakenCreate($body),
@@ -196,17 +203,32 @@ class ZgwRulesDispatcher
                 => $this->zrcRules->rulesResultatenCreate($body),
             $resource === 'rollen' && $action === 'create'
                 => $this->zrcRules->rulesRollenCreate($body),
-            $resource === 'zaakinformatieobjecten' && $action === 'create'
-                => $this->zioRules->rulesZaakinformatieobjectenCreate($body),
-            $resource === 'zaakinformatieobjecten' && $action === 'update'
-                => $this->zioRules->rulesZaakinformatieobjectenUpdate($body, $existingObject),
-            $resource === 'zaakinformatieobjecten' && $action === 'patch'
-                => $this->zioRules->rulesZaakinformatieobjectenPatch($body, $existingObject),
             $resource === 'zaakeigenschappen' && $action === 'create'
                 => $this->zrcRules->rulesZaakeigenschappenCreate($body),
             default => $this->isValid(body: $body),
         };//end match
     }//end dispatchZrc()
+
+    /**
+     * Dispatch ZRC zaakinformatieobjecten (document-relation) rules.
+     *
+     * @param string     $action         The action
+     * @param array      $body           The request body
+     * @param array|null $existingObject The existing object data
+     *
+     * @return array The validation result
+     *
+     * @spec openspec/specs/zgw-business-rules-compliance/spec.md
+     */
+    private function dispatchZrcZaakinformatieobjecten(string $action, array $body, ?array $existingObject): array
+    {
+        return match ($action) {
+            'create' => $this->zioRules->rulesZaakinformatieobjectenCreate($body),
+            'update' => $this->zioRules->rulesZaakinformatieobjectenUpdate($body, $existingObject),
+            'patch'  => $this->zioRules->rulesZaakinformatieobjectenPatch($body, $existingObject),
+            default  => $this->isValid(body: $body),
+        };
+    }//end dispatchZrcZaakinformatieobjecten()
 
     /**
      * Dispatch ZTC (Catalogi API) rules.
