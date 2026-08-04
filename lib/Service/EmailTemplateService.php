@@ -29,17 +29,19 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use OCA\Procest\Service\Support\SearchesObjects;
+use OCA\Procest\Service\Email\EmailTemplateRepository;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
  * CRUD + prefill for emailTemplate records.
+ *
+ * OpenRegister access is delegated to EmailTemplateRepository; what stays here
+ * is the template domain itself — versioning, seeding and placeholder
+ * resolution.
  */
 class EmailTemplateService
 {
-
-    use SearchesObjects;
 
     /**
      * Default templates seeded when a caseType has no email templates.
@@ -73,11 +75,11 @@ class EmailTemplateService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Shared OR/settings resolver.
-     * @param LoggerInterface $logger          Logger.
+     * @param EmailTemplateRepository $repository OpenRegister persistence for templates and cases.
+     * @param LoggerInterface         $logger     Logger.
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
+        private readonly EmailTemplateRepository $repository,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -103,7 +105,7 @@ class EmailTemplateService
             'isActive' => true,
         ];
 
-        return $this->saveTemplate(payload: $payload);
+        return $this->repository->saveTemplate(payload: $payload);
     }//end createTemplate()
 
     /**
@@ -121,7 +123,7 @@ class EmailTemplateService
      */
     public function updateTemplate(string $templateId, array $data): array
     {
-        $existing = $this->loadTemplate(templateId: $templateId);
+        $existing = $this->repository->findTemplate(templateId: $templateId);
         if ($existing === null) {
             throw new RuntimeException('Template not found');
         }
@@ -132,7 +134,7 @@ class EmailTemplateService
         $previous = $existing;
         $previous['isActive'] = false;
         try {
-            $this->saveTemplate(payload: $previous);
+            $this->repository->saveTemplate(payload: $previous);
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'Could not deactivate previous email template version',
@@ -150,7 +152,7 @@ class EmailTemplateService
             'previousVersion' => $existing['id'] ?? null,
         ];
 
-        return $this->saveTemplate(payload: $payload);
+        return $this->repository->saveTemplate(payload: $payload);
     }//end updateTemplate()
 
     /**
@@ -164,33 +166,7 @@ class EmailTemplateService
      */
     public function listTemplates(string $caseTypeId): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_template_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        $rows = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: [
-                'caseType' => $caseTypeId,
-                '_limit'   => 100,
-            ],
-        );
-
-        return array_values(
-                array_filter(
-            $rows,
-            static fn (array $row): bool => ($row['isActive'] ?? true) === true
-        )
-                );
+        return $this->repository->findActiveByCaseType(caseTypeId: $caseTypeId);
     }//end listTemplates()
 
     /**
@@ -250,12 +226,12 @@ class EmailTemplateService
      */
     public function prefillDraft(string $caseId, string $templateId): array
     {
-        $template = $this->loadTemplate(templateId: $templateId);
+        $template = $this->repository->findTemplate(templateId: $templateId);
         if ($template === null) {
             throw new RuntimeException('Template not found');
         }
 
-        $case = $this->loadCase(caseId: $caseId);
+        $case = $this->repository->findCase(caseId: $caseId);
         if ($case === null) {
             throw new RuntimeException('Case not found');
         }
@@ -379,126 +355,6 @@ class EmailTemplateService
 
         return $unresolved;
     }//end collectUnresolved()
-
-    /**
-     * Persist (insert OR update) a template payload via OR.
-     *
-     * @param array<string, mixed> $payload Template fields.
-     *
-     * @return array<string, mixed>
-     */
-    private function saveTemplate(array $payload): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('ObjectService unavailable');
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_template_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            throw new RuntimeException('emailTemplate schema is not configured');
-        }
-
-        $saved = $objectService->saveObject(
-            object: $payload,
-            register: $register,
-            schema: $schema,
-        );
-
-        if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
-            $saved = $saved->jsonSerialize();
-        }
-
-        if (is_array($saved) === true) {
-            return $saved;
-        }
-
-        return $payload;
-    }//end saveTemplate()
-
-    /**
-     * Load a template by id/slug.
-     *
-     * @param string $templateId Template id.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function loadTemplate(string $templateId): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_template_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
-
-        try {
-            $obj = $objectService->find($templateId, register: $register, schema: $schema);
-        } catch (\Throwable) {
-            return null;
-        }
-
-        if ($obj === null) {
-            return null;
-        }
-
-        if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
-            $obj = $obj->jsonSerialize();
-        }
-
-        if (is_array($obj) === true) {
-            return $obj;
-        }
-
-        return null;
-    }//end loadTemplate()
-
-    /**
-     * Load a case (with the derived `_isFinal` flag merged in).
-     *
-     * @param string $caseId Case UUID.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function loadCase(string $caseId): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
-
-        try {
-            $obj = $objectService->find($caseId, register: $register, schema: $schema);
-        } catch (\Throwable) {
-            return null;
-        }
-
-        if ($obj === null) {
-            return null;
-        }
-
-        if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
-            $obj = $obj->jsonSerialize();
-        }
-
-        if (is_array($obj) === false) {
-            return null;
-        }
-
-        $obj['_isFinal'] = (empty($obj['endDate']) === false);
-        return $obj;
-    }//end loadCase()
 
     /**
      * Build the variable map for a single case.

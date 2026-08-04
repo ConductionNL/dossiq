@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Procest\Service\DsoCaseService;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -121,10 +122,12 @@ class DsoCaseServiceTest extends TestCase
         $this->eventDispatcher = $this->createMock(IEventDispatcher::class);
         $this->logger          = $this->createMock(LoggerInterface::class);
 
+        // A REAL notifier over the same mocked dispatcher, so an assertion on
+        // $this->eventDispatcher still observes the event the service emits.
         $this->service = new DsoCaseService(
             appConfig: $this->appConfig,
             container: $this->container,
-            eventDispatcher: $this->eventDispatcher,
+            notifier: new DsoStatusChangeNotifier(eventDispatcher: $this->eventDispatcher),
             logger: $this->logger,
         );
     }//end setUp()

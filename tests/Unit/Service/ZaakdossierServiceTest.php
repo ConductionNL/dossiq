@@ -31,6 +31,7 @@ namespace OCA\Procest\Tests\Unit\Service;
 use OCA\Procest\Service\InformatieobjectAccessGuard;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\ZaakdossierService;
+use OCA\Procest\Service\Zaakdossier\InformatieobjectStatusLifecycle;
 use OCA\Procest\Service\ZgwDocumentService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -159,10 +160,17 @@ class ZaakdossierServiceTest extends TestCase
             groupManager: $this->createMock(\OCP\IGroupManager::class),
             logger: $this->createMock(LoggerInterface::class),
         );
+        // A REAL lifecycle collaborator over the same mocked settings, so the
+        // status-transition tests below still exercise the production state
+        // machine end to end rather than a mock's canned answers.
         $this->service = new ZaakdossierService(
             settingsService: $this->settings,
             documentService: $this->documents,
             accessGuard: $this->accessGuard,
+            statusLifecycle: new InformatieobjectStatusLifecycle(
+                settingsService: $this->settings,
+                logger: $this->createMock(LoggerInterface::class),
+            ),
             logger: $this->createMock(LoggerInterface::class),
         );
 
