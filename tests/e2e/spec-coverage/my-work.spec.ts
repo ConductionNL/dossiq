@@ -19,7 +19,7 @@ test.describe('My Work spec coverage', () => {
 
 	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
 	test('shows the current user\'s assigned cases as a card list', async ({ page }) => {
-		await page.goto('/apps/procest/my-work')
+		await page.goto('/index.php/apps/procest/my-work')
 		await dismissSupportDialog(page)
 		// Page heading
 		await expect(page.getByRole('heading', { name: /My Work/ }).first()).toBeVisible({ timeout: 10000 })
@@ -29,7 +29,7 @@ test.describe('My Work spec coverage', () => {
 
 	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
 	test('view mode can be switched between cards and table', async ({ page }) => {
-		await page.goto('/apps/procest/my-work')
+		await page.goto('/index.php/apps/procest/my-work')
 		await dismissSupportDialog(page)
 		const tableToggle = page.getByRole('button', { name: /Table/ }).first()
 		await expect(tableToggle).toBeVisible({ timeout: 10000 })

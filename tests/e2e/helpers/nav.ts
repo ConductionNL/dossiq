@@ -172,6 +172,27 @@ const NON_PROCEST_NOISE = [
 ]
 
 /**
+ * Request URLs whose console errors are environment noise, matched against the
+ * console message's LOCATION rather than its text.
+ *
+ * A failed subresource logs the bare text "Failed to load resource: the server
+ * responded with a status of 404 (Not Found)" — the URL appears only in
+ * `location()`. Filtering that text outright would hide real procest 404s, so
+ * match the URL instead.
+ *
+ * procest probes optional cross-app capabilities on load (e.g. whether the
+ * hermiq assistant is installed). On an instance that does not ship the other
+ * app those probes 404 BY DESIGN, which is not a procest defect — the CI
+ * instance installs only openregister alongside procest.
+ */
+const NON_PROCEST_URL_NOISE = [
+	'/apps/hermiq/',
+	'/apps/user_status/',
+	'/status.php',
+	'favicon',
+]
+
+/**
  * Attach console-error + 5xx listeners and return a live array of
  * procest-origin errors. Filters out known Nextcloud-core / environment
  * noise so a test fails only on errors the app itself is responsible for.
@@ -184,6 +205,8 @@ export function trackProcestErrors(page: Page): string[] {
 		if (m.type() !== 'error') return
 		const text = m.text()
 		if (NON_PROCEST_NOISE.some((n) => text.includes(n))) return
+		const url = m.location()?.url ?? ''
+		if (url && NON_PROCEST_URL_NOISE.some((n) => url.includes(n))) return
 		errors.push(text)
 	})
 	page.on('response', (r) => {

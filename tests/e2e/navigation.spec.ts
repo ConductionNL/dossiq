@@ -27,10 +27,11 @@ test.describe('Sidebar Navigation', () => {
 		}
 
 		// Collapsed-group leaves: present in the navigation, hidden until the
-		// group is expanded. `toHaveCount(1)` asserts presence without
-		// requiring visibility.
-		for (const label of ['My work', 'Workflow board', 'Processing time']) {
-			await expect(nav.getByRole('link', { name: label, exact: true })).toHaveCount(1)
+		// group is expanded. They must be matched by CSS, NOT by getByRole —
+		// `display:none` removes an element from the accessibility tree, so
+		// `getByRole` resolves to 0 elements even under `toHaveCount`.
+		for (const href of ['/my-work', '/workflow-board', '/doorlooptijd']) {
+			await expect(nav.locator(`a[href$="${href}"]`)).toHaveCount(1)
 		}
 
 		// And the group headers themselves are visible toggles.
@@ -51,15 +52,20 @@ test.describe('Sidebar Navigation', () => {
 		// this spec used to assert never matched what the nav actually emits.
 		// "Tasks" is not a top-level nav entry; its /tasks route stays
 		// deep-linkable and is covered by pages.spec.ts.
-		const expected: Record<string, string> = {
-			'My work': '/index.php/apps/procest/my-work',
-			Cases: '/index.php/apps/procest/cases',
-			'Workflow board': '/index.php/apps/procest/workflow-board',
-		}
+		// "Cases" is a visible top-level leaf, so it can be matched by role.
+		await expect(nav.getByRole('link', { name: 'Cases', exact: true }))
+			.toHaveAttribute('href', '/index.php/apps/procest/cases')
 
-		for (const [name, href] of Object.entries(expected)) {
-			await expect(nav.getByRole('link', { name, exact: true })).toHaveAttribute('href', href)
+		// The rest live in collapsed groups and are therefore absent from the
+		// accessibility tree — assert their href wiring via the DOM, checking
+		// the label text travels with the expected link.
+		const byHref = async (href: string, label: string) => {
+			const link = nav.locator(`a[href="${href}"]`)
+			await expect(link).toHaveCount(1)
+			await expect(link).toHaveText(new RegExp(label))
 		}
+		await byHref('/index.php/apps/procest/my-work', 'My work')
+		await byHref('/index.php/apps/procest/workflow-board', 'Workflow board')
 	})
 
 	test('settings button is visible', async ({ page }) => {

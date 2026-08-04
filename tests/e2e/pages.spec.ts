@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { navTo, navToRoute, dismissSupportDialog } from './helpers/nav'
+import { navTo, navToRoute, dismissSupportDialog, loadAllAdminSections } from './helpers/nav'
 
 test.describe('Dashboard', () => {
 
@@ -151,32 +151,43 @@ test.describe('Doorlooptijd page', () => {
 test.describe('Settings page', () => {
 
 	// @e2e openspec/specs/admin-settings/spec.md#in-app-settings-page-renders-configuration-sections
-	test('renders version and configuration sections', async ({ page }) => {
-		await page.goto('/apps/procest/settings')
+	// NOTE ON THE URL: these used the un-prefixed `/apps/procest/settings`.
+	// Measured on a CI runner (2026-08-04), a deep link WITHOUT the
+	// `/index.php` prefix does not render the target view — the same URL with
+	// the prefix does. (Several comments in this suite asserted the opposite.)
+	// NOTE ON THE SECTIONS: `AdminRoot.vue` mounts its sections lazily as the
+	// viewport approaches them, so scroll them all in before asserting.
+	test('renders the configuration section and its save control', async ({ page }) => {
+		await page.goto('/index.php/apps/procest/settings')
 		await dismissSupportDialog(page)
-		await expect(page.getByRole('heading', { name: 'Version Information' })).toBeVisible({ timeout: 15000 })
-		await expect(page.getByRole('heading', { name: 'Configuration' })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Re-import configuration' })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Save' })).toBeVisible()
+		await loadAllAdminSections(page)
+		// "Version Information" and a "Re-import configuration" button were
+		// asserted here but exist nowhere in src/ — that surface was removed.
+		// `Settings.vue` renders a CnSettingsSection named "Configuration"
+		// with a primary "Save" action, which is the current contract.
+		await expect(page.getByRole('button', { name: 'Save' })).toBeVisible({ timeout: 15000 })
+		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
 	test('has schema configuration fields', async ({ page }) => {
-		await page.goto('/apps/procest/settings')
+		await page.goto('/index.php/apps/procest/settings')
 		await dismissSupportDialog(page)
+		await loadAllAdminSections(page)
 		// Scope to the configuration form — "Register" otherwise also matches
 		// section descriptions ("Register and schema settings", etc.). Each
 		// field renders its own <label> plus the NcTextField's label, so take
 		// the first exact match per name.
 		const form = page.locator('.settings-form')
-		await expect(form.getByText('Register', { exact: true }).first()).toBeVisible({ timeout: 10000 })
+		await expect(form.getByText('Register', { exact: true }).first()).toBeVisible({ timeout: 15000 })
 		await expect(form.getByText('Case schema', { exact: true }).first()).toBeVisible()
 		await expect(form.getByText('Task schema', { exact: true }).first()).toBeVisible()
 		await expect(form.getByText('Status schema', { exact: true }).first()).toBeVisible()
 	})
 
 	test('has case type management section', async ({ page }) => {
-		await page.goto('/apps/procest/settings')
+		await page.goto('/index.php/apps/procest/settings')
 		await dismissSupportDialog(page)
+		await loadAllAdminSections(page)
 		await expect(page.getByRole('heading', { name: 'Case Type Management' })).toBeVisible({ timeout: 15000 })
 	})
 })

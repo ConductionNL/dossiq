@@ -94,9 +94,7 @@ export default defineConfig({
 	// out from under it mid-test. Serial execution removes that whole class of
 	// cross-worker flake.
 	workers: 1,
-	// TEMPORARY DIAGNOSTIC — revert before merge.
-	testMatch: ['**/zz-ci-diagnostic.spec.ts'],
-	retries: 0,
+	retries: process.env.CI ? 1 : 0,
 	reporter: [
 		['html', { open: 'never', outputFolder: path.resolve(__dirname, 'playwright-report') }],
 		['junit', { outputFile: path.resolve(__dirname, 'test-results', 'results.xml') }],

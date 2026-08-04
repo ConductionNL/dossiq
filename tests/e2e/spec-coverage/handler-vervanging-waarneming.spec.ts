@@ -21,7 +21,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#handler-registers-their-own-substitution
 	test('user substitution settings page renders with a register action', async ({ page }) => {
-		await page.goto('/apps/procest/substitution')
+		await page.goto('/index.php/apps/procest/substitution')
 		await dismissSupportDialog(page)
 		const heading = page.getByRole('heading', { name: /Substitution/ }).first()
 		if (await heading.isVisible({ timeout: 10000 }).catch(() => false)) {
@@ -33,7 +33,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#self-substitution-is-rejected
 	test('opening the substitution form shows the substitute field', async ({ page }) => {
-		await page.goto('/apps/procest/substitution')
+		await page.goto('/index.php/apps/procest/substitution')
 		await dismissSupportDialog(page)
 		const btn = page.getByRole('button', { name: /Register substitution/ }).first()
 		if (await btn.isVisible({ timeout: 10000 }).catch(() => false)) {
@@ -49,7 +49,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#waarnemer-sees-substituted-work-in-my-work
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#scope-limited-substitution-only-routes-matching-items
 	test('My Work renders without error and supports the substituted filter when present', async ({ page }) => {
-		await page.goto('/apps/procest/my-work')
+		await page.goto('/index.php/apps/procest/my-work')
 		await dismissSupportDialog(page)
 		await expect(page.getByRole('heading', { name: /My Work/ }).first()).toBeVisible({ timeout: 10000 })
 		// The "Show substituted work" toggle appears only when the user is an
@@ -66,7 +66,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#bulk-reassignment-is-coordinator-only
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#coordinator-registers-a-substitution-on-behalf-of-an-absent-handler
 	test('coordinator admin exposes a bulk-reassign action with a mandatory preview', async ({ page }) => {
-		await page.goto('/apps/procest/substitution-admin')
+		await page.goto('/index.php/apps/procest/substitution-admin')
 		await dismissSupportDialog(page)
 		const heading = page.getByRole('heading', { name: /Substitutions & reassignment/ }).first()
 		if (await heading.isVisible({ timeout: 10000 }).catch(() => false)) {
@@ -83,7 +83,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#all-actions-under-a-substitution-are-queryable
 	// @e2e openspec/specs/handler-vervanging-waarneming/spec.md#timeline-shows-the-substituted-capacity
 	test('coordinator admin lists substitutions with an actions affordance', async ({ page }) => {
-		await page.goto('/apps/procest/substitution-admin')
+		await page.goto('/index.php/apps/procest/substitution-admin')
 		await dismissSupportDialog(page)
 		const heading = page.getByRole('heading', { name: /Substitutions & reassignment/ }).first()
 		if (await heading.isVisible({ timeout: 10000 }).catch(() => false)) {

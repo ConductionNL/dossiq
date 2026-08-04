@@ -13,6 +13,7 @@
 
 import { test, expect, request } from '@playwright/test'
 import { BASE_URL } from '../base-url'
+import { navToRoute } from '../helpers/nav'
 
 const APP_URL = '/apps/procest'
 // Single source of truth — see tests/e2e/base-url.ts. The old
@@ -24,7 +25,11 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 
 	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#fg-opens-the-procest-verwerkingen-overview
 	test('admin (FG-equivalent) opens the verwerkingen overview', async ({ page }) => {
-		await page.goto(`${APP_URL}#/verwerkingen`)
+		// The app is history-mode, NOT hash-mode: `/apps/procest#/verwerkingen`
+		// loads the app root and leaves the hash unrouted, so the overview
+		// never renders. `/index.php/apps/procest/verwerkingen` renders it —
+		// measured on a CI runner (2026-08-04).
+		await navToRoute(page, '/verwerkingen')
 		await expect(page.getByRole('heading', { name: 'Processing activities (AVG)' })).toBeVisible({ timeout: 15000 })
 		// The catalogue table (seeded drafts) or the seed empty-state renders;
 		// either way the scoped window is up — never a procest-side error page.
@@ -35,7 +40,11 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 
 	// @e2e openspec/specs/avg-verwerkingenlogging/spec.md#inzageverzoek-export-delegates-to-the-platform
 	test('inzage export entry point delegates to the OpenRegister endpoint', async ({ page }) => {
-		await page.goto(`${APP_URL}#/verwerkingen`)
+		// The app is history-mode, NOT hash-mode: `/apps/procest#/verwerkingen`
+		// loads the app root and leaves the hash unrouted, so the overview
+		// never renders. `/index.php/apps/procest/verwerkingen` renders it —
+		// measured on a CI runner (2026-08-04).
+		await navToRoute(page, '/verwerkingen')
 		await page.getByRole('button', { name: 'Data subject access export' }).click()
 		await expect(page.getByRole('heading', { name: 'Data subject access export' })).toBeVisible()
 
