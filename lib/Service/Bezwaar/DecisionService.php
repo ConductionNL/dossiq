@@ -54,7 +54,6 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Bezwaar;
 
-use DateTimeImmutable;
 use OCA\Procest\Service\BezwaarDecisionDelegationService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
@@ -73,31 +72,14 @@ class DecisionService
 {
     /**
      * Canonical Awb art. 7:11 disposition values (REQ-BD-2).
+     *
+     * Declared once on {@see DecisionValidator} — the class that enforces
+     * them — and re-exported here for backwards compatibility with
+     * existing consumers of `DecisionService::VALID_DISPOSITIONS`.
+     *
+     * @var array<int, string>
      */
-    public const VALID_DISPOSITIONS = [
-        'niet_ontvankelijk',
-        'ongegrond',
-        'gegrond_handhaven',
-        'gegrond_herroepen',
-        'gegrond_wijzigen',
-    ];
-
-    /**
-     * Dispositions for which a replacementDecision is allowed/required.
-     */
-    private const REPLACEMENT_ALLOWED = [
-        'gegrond_herroepen',
-        'gegrond_wijzigen',
-    ];
-
-    /**
-     * Dispositions for which proceskostenvergoeding may be awarded
-     * (Awb art. 7:15 lid 2).
-     */
-    private const PROCESKOSTEN_ELIGIBLE = [
-        'gegrond_herroepen',
-        'gegrond_wijzigen',
-    ];
+    public const VALID_DISPOSITIONS = DecisionValidator::VALID_DISPOSITIONS;
 
     /**
      * Bezwaar status target on publication (handed off to the
@@ -110,20 +92,6 @@ class DecisionService
      * "Beslissing op bezwaar".
      */
     private const TRANSITION_ID = 'beslissing-op-bezwaar';
-
-    /**
-     * Required appealNotice sub-fields (REQ-BD-6) regardless of
-     * filingMethod. filingUrl/filingAddress requirements are
-     * conditional on filingMethod and handled separately.
-     *
-     * @var array<int, string>
-     */
-    private const APPEAL_NOTICE_BASE_REQUIRED = [
-        'competentCourt',
-        'beroepTerm',
-        'effectiveDate',
-        'filingMethod',
-    ];
 
     /**
      * Constructor.
@@ -141,6 +109,7 @@ class DecisionService
      *                                                             logic.
      * @param LoggerInterface                  $logger             Logger.
      * @param BezwaarDecisionDelegationService $decisionDelegation Decision delegation to decidesk (event dispatch).
+     * @param DecisionValidator                $validator          The Awb validity matrix (REQ-PDRD-004).
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -148,6 +117,7 @@ class DecisionService
         private readonly StatusTransitionService $transitions,
         private readonly LoggerInterface $logger,
         private readonly BezwaarDecisionDelegationService $decisionDelegation,
+        private readonly DecisionValidator $validator,
     ) {
     }//end __construct()
 
@@ -189,7 +159,7 @@ class DecisionService
             );
         }
 
-        $this->assertDraftable(payload: $payload);
+        $this->validator->assertDraftable(payload: $payload);
 
         $record = array_merge(
             $payload,
@@ -214,44 +184,6 @@ class DecisionService
             throw new RuntimeException('Could not draft bezwaarDecision');
         }
     }//end draft()
-
-    /**
-     * Assert the draft-time Awb guards on a bezwaarDecision payload.
-     *
-     * @param array<string, mixed> $payload Decision properties.
-     *
-     * @return void
-     *
-     * @throws RuntimeException When the payload is invalid at draft time.
-     */
-    private function assertDraftable(array $payload): void
-    {
-        $disposition = (string) ($payload['dispositionType'] ?? '');
-        if (in_array($disposition, self::VALID_DISPOSITIONS, true) === false) {
-            throw new RuntimeException(
-                'Invalid disposition — must be one of the five canonical Awb '
-                .'7:11 values'
-            );
-        }
-
-        $reasoning  = (string) ($payload['reasoning'] ?? '');
-        $legalBasis = (string) ($payload['legalBasis'] ?? '');
-        if ($reasoning === '' || $legalBasis === '') {
-            throw new RuntimeException(
-                'reasoning and legalBasis are required (Awb art. 7:12)'
-            );
-        }
-
-        $replacement = (string) ($payload['replacementDecision'] ?? '');
-        if ($replacement !== ''
-            && in_array($disposition, self::REPLACEMENT_ALLOWED, true) === false
-        ) {
-            throw new RuntimeException(
-                'replacementDecision MUST NOT be set when disposition is not '
-                .'gegrond_herroepen or gegrond_wijzigen'
-            );
-        }
-    }//end assertDraftable()
 
     /**
      * Publish a draft bezwaarDecision by delegating the *deciding* to decidesk.
@@ -304,7 +236,7 @@ class DecisionService
         // motivering, proceskosten, replacement/appeal guards) stays in procest
         // and runs BEFORE the Decision is raised, so no Decision can ever be
         // raised on an Awb-invalid payload.
-        $this->assertPublishable(decision: $current);
+        $this->validator->assertPublishable(decision: $current);
 
         $bezwaarId = (string) ($current['bezwaar'] ?? '');
 
@@ -349,7 +281,7 @@ class DecisionService
             'notifiedRecipients' => $this->collectRecipients(decision: $current),
         ];
 
-        $totalAmount = $this->computeProceskostenTotal(decision: $current);
+        $totalAmount = $this->validator->computeProceskostenTotal(decision: $current);
         if ($totalAmount !== null) {
             $proceskosten = (array) ($current['proceskostenvergoeding'] ?? []);
             $proceskosten['totalAmount']     = $totalAmount;
@@ -427,167 +359,6 @@ class DecisionService
             );
         }
     }//end applyToBezwaar()
-
-    /**
-     * Run every publication-time guard against a draft decision.
-     *
-     * @param array<string, mixed> $decision The decision payload.
-     *
-     * @return void
-     *
-     * @throws RuntimeException When any guard rejects.
-     */
-    private function assertPublishable(array $decision): void
-    {
-        $disposition = (string) ($decision['dispositionType'] ?? '');
-        if (in_array($disposition, self::VALID_DISPOSITIONS, true) === false) {
-            throw new RuntimeException(
-                'dispositionType is invalid — refusing to publish'
-            );
-        }
-
-        // REQ-BD-3: gegrond_wijzigen requires replacementDecision.
-        $replacement = (string) ($decision['replacementDecision'] ?? '');
-        if ($disposition === 'gegrond_wijzigen' && $replacement === '') {
-            throw new RuntimeException(
-                'replacementDecision is required when disposition is '
-                .'gegrond_wijzigen'
-            );
-        }
-
-        // REQ-BD-3: ongegrond and gegrond_handhaven MUST NOT carry one.
-        if ($replacement !== ''
-            && in_array($disposition, self::REPLACEMENT_ALLOWED, true) === false
-        ) {
-            throw new RuntimeException(
-                'replacementDecision MUST NOT be set when disposition is '
-                .$disposition
-            );
-        }
-
-        // REQ-BD-5: deviationRationale required when advisoryOpinion is
-        // set and the decision deviates.
-        $advisory = (string) ($decision['advisoryOpinion'] ?? '');
-        if ($advisory !== '') {
-            $follows = (bool) ($decision['followsAdvice'] ?? true);
-            $reason  = (string) ($decision['deviationRationale'] ?? '');
-            if ($follows === false && $reason === '') {
-                throw new RuntimeException(
-                    'deviationRationale is required when followsAdvice is '
-                    .'false (Awb art. 7:13 lid 7)'
-                );
-            }
-        }
-
-        // REQ-BD-6: appealNotice completeness.
-        $this->assertAppealNoticeComplete(decision: $decision);
-
-        // REQ-BD-7: proceskostenvergoeding rules.
-        $this->assertProceskostenRules(decision: $decision);
-    }//end assertPublishable()
-
-    /**
-     * Validate the rechtsmiddelenclausule (REQ-BD-6).
-     *
-     * @param array<string, mixed> $decision Decision payload.
-     *
-     * @return void
-     *
-     * @throws RuntimeException When the appealNotice is incomplete.
-     */
-    private function assertAppealNoticeComplete(array $decision): void
-    {
-        $appealNotice = (array) ($decision['appealNotice'] ?? []);
-        foreach (self::APPEAL_NOTICE_BASE_REQUIRED as $field) {
-            $value = (string) ($appealNotice[$field] ?? '');
-            if ($value === '') {
-                throw new RuntimeException(
-                    'Rechtsmiddelenclausule onvolledig: '.$field.' ontbreekt'
-                );
-            }
-        }
-
-        $method = (string) $appealNotice['filingMethod'];
-        if (in_array($method, ['digitaal', 'beide'], true) === true) {
-            $url = (string) ($appealNotice['filingUrl'] ?? '');
-            if ($url === '') {
-                throw new RuntimeException(
-                    'filingUrl is required when filingMethod is '.$method
-                );
-            }
-        }
-
-        if (in_array($method, ['schriftelijk', 'beide'], true) === true) {
-            $address = (string) ($appealNotice['filingAddress'] ?? '');
-            if ($address === '') {
-                throw new RuntimeException(
-                    'filingAddress is required when filingMethod is '.$method
-                );
-            }
-        }
-    }//end assertAppealNoticeComplete()
-
-    /**
-     * Validate the proceskostenvergoeding decision (REQ-BD-7).
-     *
-     * @param array<string, mixed> $decision Decision payload.
-     *
-     * @return void
-     *
-     * @throws RuntimeException When proceskosten rules are violated.
-     */
-    private function assertProceskostenRules(array $decision): void
-    {
-        $disposition  = (string) ($decision['dispositionType'] ?? '');
-        $proceskosten = (array) ($decision['proceskostenvergoeding'] ?? []);
-        $requested    = (bool) ($proceskosten['requested'] ?? false);
-        $awardedSet   = array_key_exists('awarded', $proceskosten);
-        $awarded      = (bool) ($proceskosten['awarded'] ?? false);
-
-        $eligible = in_array(
-            $disposition,
-            self::PROCESKOSTEN_ELIGIBLE,
-            true
-        );
-
-        if ($awarded === true && $eligible === false) {
-            throw new RuntimeException(
-                'Proceskostenvergoeding niet mogelijk: primair besluit niet '
-                .'herroepen (Awb art. 7:15 lid 2)'
-            );
-        }
-
-        if ($requested === true && $eligible === true && $awardedSet === false) {
-            throw new RuntimeException(
-                'proceskosten.awarded MUST be explicitly set (true or false '
-                .'with reasoning) when the bezwaarmaker requested '
-                .'proceskostenvergoeding'
-            );
-        }
-    }//end assertProceskostenRules()
-
-    /**
-     * Compute proceskosten.totalAmount = awardedPoints * pointValue.
-     *
-     * @param array<string, mixed> $decision Decision payload.
-     *
-     * @return float|null Null when no recalculation is needed.
-     */
-    private function computeProceskostenTotal(array $decision): ?float
-    {
-        $proceskosten = (array) ($decision['proceskostenvergoeding'] ?? []);
-        if (($proceskosten['awarded'] ?? false) !== true) {
-            return null;
-        }
-
-        $points = (float) ($proceskosten['awardedPoints'] ?? 0);
-        $value  = (float) ($proceskosten['pointValue'] ?? 0);
-        if ($points <= 0.0 || $value <= 0.0) {
-            return null;
-        }
-
-        return ($points * $value);
-    }//end computeProceskostenTotal()
 
     /**
      * Build the recipient audit list for the publication notification

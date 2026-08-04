@@ -1,11 +1,13 @@
 <?php
 
 /**
- * SubstitutionController pagination-hardening tests.
+ * Substitution pagination-hardening tests.
  *
  * Verifies `allSubstitutions()` applies a bounded `_limit` to the underlying
  * OpenRegister query instead of fetching the entire substitution register
- * unbounded (performance-hardening-audit-log-and-boot, REQ-PERF-01b).
+ * unbounded (performance-hardening-audit-log-and-boot, REQ-PERF-01b). The
+ * method moved from SubstitutionController to SubstitutionAccessGuard when the
+ * substitution surface was split; the guarantee under test is unchanged.
  *
  * @category Tests
  * @package  OCA\Procest\Tests\Unit\Controller
@@ -28,21 +30,16 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Controller;
 
-use OCA\Procest\Controller\SubstitutionController;
-use OCA\Procest\Service\CaseReassignmentService;
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\SubstitutionAuditService;
-use OCA\Procest\Service\SubstitutionService;
+use OCA\Procest\Service\Substitution\SubstitutionAccessGuard;
 use OCP\IGroupManager;
-use OCP\IRequest;
 use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
 
 /**
- * Pagination-hardening test for SubstitutionController.
+ * Pagination-hardening test for the substitution surface.
  *
- * @covers \OCA\Procest\Controller\SubstitutionController
+ * @covers \OCA\Procest\Service\Substitution\SubstitutionAccessGuard
  */
 class SubstitutionControllerLimitTest extends TestCase
 {
@@ -92,21 +89,15 @@ class SubstitutionControllerLimitTest extends TestCase
 
         $settingsService->method('getObjectService')->willReturn($objectService);
 
-        $controller = new SubstitutionController(
-            appName: 'procest',
-            request: $this->createMock(originalClassName: IRequest::class),
-            substitutionService: $this->createMock(originalClassName: SubstitutionService::class),
-            auditService: $this->createMock(originalClassName: SubstitutionAuditService::class),
-            reassignmentService: $this->createMock(originalClassName: CaseReassignmentService::class),
+        $accessGuard = new SubstitutionAccessGuard(
             settingsService: $settingsService,
             userSession: $this->createMock(originalClassName: IUserSession::class),
             groupManager: $this->createMock(originalClassName: IGroupManager::class),
-            logger: $this->createMock(originalClassName: LoggerInterface::class),
         );
 
-        $method = new \ReflectionMethod(SubstitutionController::class, 'allSubstitutions');
+        $method = new \ReflectionMethod(SubstitutionAccessGuard::class, 'allSubstitutions');
         $method->setAccessible(true);
-        $method->invoke($controller);
+        $method->invoke($accessGuard);
 
         $this->assertIsArray(actual: $objectService->captured);
         $this->assertArrayHasKey(key: '_limit', array: $objectService->captured);

@@ -1,14 +1,15 @@
 <?php
 
 /**
- * Procest ZGW Business Rules Service (Dispatcher)
+ * Procest ZGW Business Rules Service
  *
- * Thin dispatcher that delegates validation and enrichment to per-register
- * rule services:
- * - ZgwZrcRulesService  (Zaken API rules)
- * - ZgwZtcRulesService  (Catalogi API rules)
- * - ZgwDrcRulesService  (Documenten API rules)
- * - ZgwBrcRulesService  (Besluiten API rules)
+ * The entry point every ZGW write passes through. It owns the cross-cutting
+ * checks that must run BEFORE any per-resource rule — catalogi concept
+ * protection (ztc-009/010), the draft→published publish guard (CT-02b), the
+ * destroy guard on caseTypes with active cases (CT-01d), and closed-zaak
+ * protection (zrc-007) — and then hands the request to
+ * {@see \OCA\Procest\Service\Zgw\ZgwRulesDispatcher}, which owns the routing
+ * table to the per-register rule services (ZRC, ZTC, DRC, BRC).
  *
  * Cross-register rules (zrc-005, brc-005, brc-006) live in ZgwService.
  *
@@ -23,8 +24,6 @@
  *
  * @link https://procest.nl
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
- *
  * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 
@@ -32,30 +31,29 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\Service\Zgw\ZgwRulesDispatcher;
+
 /**
- * Dispatcher for ZGW business rule validation and enrichment.
+ * Applies the cross-cutting ZGW guards, then delegates to the rules dispatcher.
  *
- * Delegates to per-register rule services (ZRC, ZTC, DRC, BRC).
  * Handles cross-register concerns like concept protection (ztc-009/010)
  * and closed-zaak protection (zrc-007) before delegating.
+ *
+ * @spec openspec/specs/zgw-business-rules-compliance/spec.md
  */
 class ZgwBusinessRulesService
 {
     /**
      * Constructor.
      *
-     * @param ZgwZrcRulesService $zrcRules ZRC (Zaken) rules
-     * @param ZgwZtcRulesService $ztcRules ZTC (Catalogi) rules
-     * @param ZgwDrcRulesService $drcRules DRC (Documenten) rules
-     * @param ZgwBrcRulesService $brcRules BRC (Besluiten) rules
+     * @param ZgwZtcRulesService $ztcRules   ZTC (Catalogi) rules, used by the concept/publish/destroy guards
+     * @param ZgwRulesDispatcher $dispatcher Routes a validated request to the rules service that owns it
      *
      * @return void
      */
     public function __construct(
-        private readonly ZgwZrcRulesService $zrcRules,
         private readonly ZgwZtcRulesService $ztcRules,
-        private readonly ZgwDrcRulesService $drcRules,
-        private readonly ZgwBrcRulesService $brcRules,
+        private readonly ZgwRulesDispatcher $dispatcher,
     ) {
     }//end __construct()
 
@@ -94,11 +92,10 @@ class ZgwBusinessRulesService
         ?bool $zaakClosed=null,
         bool $hasGeforceerd=true
     ): array {
-        // Set context on all per-register rule services.
-        $this->zrcRules->setContext($objectService, $mappingConfig);
+        // Set context on the ZTC rules this service guards with directly, and
+        // on every rules service the dispatcher can route to.
         $this->ztcRules->setContext($objectService, $mappingConfig);
-        $this->drcRules->setContext($objectService, $mappingConfig);
-        $this->brcRules->setContext($objectService, $mappingConfig);
+        $this->dispatcher->setContext($objectService, $mappingConfig);
 
         // ---- ZTC cross-cutting concerns (concept protection) ----
         if ($zgwApi === 'catalogi') {
@@ -155,7 +152,7 @@ class ZgwBusinessRulesService
         }
 
         // ---- Delegate to per-register rule services ----
-        return $this->dispatchToRegister(
+        return $this->dispatcher->dispatch(
             zgwApi: $zgwApi,
             resource: $resource,
             action: $action,
@@ -310,212 +307,4 @@ class ZgwBusinessRulesService
 
         return null;
     }//end guardZaaktypeDestroy()
-
-    /**
-     * Dispatch to the appropriate per-register rule service.
-     *
-     * @param string     $zgwApi         The ZGW API group
-     * @param string     $resource       The ZGW resource name
-     * @param string     $action         The action
-     * @param array      $body           The request body
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The validation result
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     * @SuppressWarnings(PHPMD.NPathComplexity)
-     */
-    private function dispatchToRegister(
-        string $zgwApi,
-        string $resource,
-        string $action,
-        array $body,
-        ?array $existingObject
-    ): array {
-        $valid = [
-            'valid'        => true,
-            'status'       => 200,
-            'detail'       => '',
-            'enrichedBody' => $body,
-        ];
-
-        // --- Zaken API (ZRC) ---
-        if ($zgwApi === 'zaken') {
-            return $this->dispatchZrc(
-                resource: $resource,
-                action: $action,
-                body: $body,
-                existingObject: $existingObject
-            );
-        }
-
-        // --- Catalogi API (ZTC) ---
-        if ($zgwApi === 'catalogi') {
-            return $this->dispatchZtc(
-                resource: $resource,
-                action: $action,
-                body: $body,
-                existingObject: $existingObject
-            );
-        }
-
-        // --- Documenten API (DRC) ---
-        if ($zgwApi === 'documenten') {
-            return $this->dispatchDrc(
-                resource: $resource,
-                action: $action,
-                body: $body,
-                existingObject: $existingObject
-            );
-        }
-
-        // --- Besluiten API (BRC) ---
-        if ($zgwApi === 'besluiten') {
-            return $this->dispatchBrc(
-                resource: $resource,
-                action: $action,
-                body: $body,
-                existingObject: $existingObject
-            );
-        }
-
-        return $valid;
-    }//end dispatchToRegister()
-
-    /**
-     * Dispatch ZRC (Zaken API) rules.
-     *
-     * @param string     $resource       The resource name
-     * @param string     $action         The action
-     * @param array      $body           The request body
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The validation result
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity)
-     */
-    private function dispatchZrc(string $resource, string $action, array $body, ?array $existingObject): array
-    {
-        return match (true) {
-            $resource === 'zaken' && $action === 'create'
-                => $this->zrcRules->rulesZakenCreate($body),
-            $resource === 'zaken' && $action === 'update'
-                => $this->zrcRules->rulesZakenUpdate($body, $existingObject),
-            $resource === 'zaken' && $action === 'patch'
-                => $this->zrcRules->rulesZakenPatch($body, $existingObject),
-            $resource === 'statussen' && $action === 'create'
-                => $this->zrcRules->rulesStatussenCreate($body),
-            $resource === 'resultaten' && $action === 'create'
-                => $this->zrcRules->rulesResultatenCreate($body),
-            $resource === 'rollen' && $action === 'create'
-                => $this->zrcRules->rulesRollenCreate($body),
-            $resource === 'zaakinformatieobjecten' && $action === 'create'
-                => $this->zrcRules->rulesZaakinformatieobjectenCreate($body),
-            $resource === 'zaakinformatieobjecten' && $action === 'update'
-                => $this->zrcRules->rulesZaakinformatieobjectenUpdate($body, $existingObject),
-            $resource === 'zaakinformatieobjecten' && $action === 'patch'
-                => $this->zrcRules->rulesZaakinformatieobjectenPatch($body, $existingObject),
-            $resource === 'zaakeigenschappen' && $action === 'create'
-                => $this->zrcRules->rulesZaakeigenschappenCreate($body),
-            default => $this->isValid(body: $body),
-        };//end match
-    }//end dispatchZrc()
-
-    /**
-     * Dispatch ZTC (Catalogi API) rules.
-     *
-     * @param string     $resource       The resource name
-     * @param string     $action         The action
-     * @param array      $body           The request body
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The validation result
-     *
-     * @psalm-suppress UnusedParam — $existingObject reserved for update validation rules
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $existingObject reserved for update rules
-     */
-    private function dispatchZtc(string $resource, string $action, array $body, ?array $existingObject): array
-    {
-        return match (true) {
-            $resource === 'zaaktypen' && $action === 'create'
-                => $this->ztcRules->rulesZaaktypenCreate($body),
-            $resource === 'besluittypen' && $action === 'create'
-                => $this->ztcRules->rulesBesluittypenCreate($body),
-            $resource === 'zaaktype-informatieobjecttypen' && $action === 'create'
-                => $this->ztcRules->rulesZaaktypeinformatieobjecttypenCreate($body),
-            $resource === 'resultaattypen' && $action === 'create'
-                => $this->ztcRules->rulesResultaattypenCreate($body),
-            default => $this->isValid(body: $body),
-        };
-    }//end dispatchZtc()
-
-    /**
-     * Dispatch DRC (Documenten API) rules.
-     *
-     * @param string     $resource       The resource name
-     * @param string     $action         The action
-     * @param array      $body           The request body
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The validation result
-     */
-    private function dispatchDrc(string $resource, string $action, array $body, ?array $existingObject): array
-    {
-        return match (true) {
-            $resource === 'enkelvoudiginformatieobjecten' && $action === 'create'
-                => $this->drcRules->rulesEnkelvoudiginformatieobjectenCreate($body),
-            $resource === 'enkelvoudiginformatieobjecten' && $action === 'update'
-                => $this->drcRules->rulesEnkelvoudiginformatieobjectenUpdate($body, $existingObject),
-            $resource === 'enkelvoudiginformatieobjecten' && $action === 'patch'
-                => $this->drcRules->rulesEnkelvoudiginformatieobjectenPatch($body, $existingObject),
-            $resource === 'enkelvoudiginformatieobjecten' && $action === 'destroy'
-                => $this->drcRules->rulesEnkelvoudiginformatieobjectenDestroy($body, $existingObject),
-            $resource === 'objectinformatieobjecten' && $action === 'create'
-                => $this->drcRules->rulesObjectinformatieobjectenCreate($body),
-            default => $this->isValid(body: $body),
-        };
-    }//end dispatchDrc()
-
-    /**
-     * Dispatch BRC (Besluiten API) rules.
-     *
-     * @param string     $resource       The resource name
-     * @param string     $action         The action
-     * @param array      $body           The request body
-     * @param array|null $existingObject The existing object data
-     *
-     * @return array The validation result
-     */
-    private function dispatchBrc(string $resource, string $action, array $body, ?array $existingObject): array
-    {
-        return match (true) {
-            $resource === 'besluiten' && $action === 'create'
-                => $this->brcRules->rulesBesluitenCreate($body),
-            $resource === 'besluiten' && $action === 'update'
-                => $this->brcRules->rulesBesluitenUpdate($body, $existingObject),
-            $resource === 'besluiten' && $action === 'patch'
-                => $this->brcRules->rulesBesluitenPatch($body, $existingObject),
-            $resource === 'besluitinformatieobjecten' && $action === 'create'
-                => $this->brcRules->rulesBesluitinformatieobjectenCreate($body),
-            default => $this->isValid(body: $body),
-        };
-    }//end dispatchBrc()
-
-    /**
-     * Build a successful validation result (pass-through).
-     *
-     * @param array $body The (possibly enriched) request body
-     *
-     * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
-     */
-    private function isValid(array $body): array
-    {
-        return [
-            'valid'        => true,
-            'status'       => 200,
-            'detail'       => '',
-            'enrichedBody' => $body,
-        ];
-    }//end isValid()
 }//end class

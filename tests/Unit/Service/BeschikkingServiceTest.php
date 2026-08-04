@@ -27,6 +27,10 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Beschikking\AuditPacketBuilder;
+use OCA\Procest\Service\Beschikking\BeschikkingRepository;
+use OCA\Procest\Service\Beschikking\BezwaarTermijnScheduler;
+use OCA\Procest\Service\Beschikking\MandaatVerifier;
 use OCA\Procest\Service\Beschikking\OpenRegisterArchivalAdapter;
 use OCA\Procest\Service\Beschikking\MockSigningAdapter;
 use OCA\Procest\Service\Beschikking\MockTemplateEngineAdapter;
@@ -174,14 +178,18 @@ class BeschikkingServiceTest extends TestCase
         $stateMachine = new StateMachineService($settings, $logger);
         $routing      = new BerichtenboxRoutingService($logger);
 
+        $signingAdapter = new MockSigningAdapter();
+
         $this->service = new BeschikkingService(
-            $settings,
             $stateMachine,
             $routing,
             new MockTemplateEngineAdapter(),
-            new MockSigningAdapter(),
+            $signingAdapter,
             new OpenRegisterArchivalAdapter($this->createMock(ContainerInterface::class), $logger),
-            $logger,
+            new BeschikkingRepository($settings, $logger),
+            new MandaatVerifier($settings, $logger),
+            new AuditPacketBuilder($settings, $signingAdapter, $logger),
+            new BezwaarTermijnScheduler($settings, $logger),
         );
 
         // Seed a WMO mandaatregeling covering the afdelingsmanager level.

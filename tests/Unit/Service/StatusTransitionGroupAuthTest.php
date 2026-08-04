@@ -26,21 +26,16 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\StatusTransitionService;
-use OCA\Procest\Service\Transitions\GuardRegistry;
-use OCA\Procest\Service\Transitions\SideEffectDispatcher;
-use OCA\Procest\Service\WorkflowTemplateLoader;
+use OCA\Procest\Service\Transitions\TransitionAuthorizer;
 use OCP\IGroupManager;
-use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
-use ReflectionMethod;
 
 /**
- * Tests for StatusTransitionService::isTransitionGroupAuthorized().
+ * Tests for TransitionAuthorizer::isTransitionGroupAuthorized(), the gate
+ * StatusTransitionService delegates its role routing to.
  *
- * @covers \OCA\Procest\Service\StatusTransitionService
+ * @covers \OCA\Procest\Service\Transitions\TransitionAuthorizer
  *
  * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-6.2
  */
@@ -48,44 +43,37 @@ final class StatusTransitionGroupAuthTest extends TestCase
 {
 
     /**
-     * Build the service with a group manager whose membership is driven by $memberships.
+     * Build the authorizer with a group manager whose membership is driven by $memberships.
      *
      * @param array<string, array<int, string>> $memberships Map of uid => group ids the user belongs to.
      *
-     * @return StatusTransitionService
+     * @return TransitionAuthorizer
      */
-    private function serviceWithGroups(array $memberships): StatusTransitionService
+    private function serviceWithGroups(array $memberships): TransitionAuthorizer
     {
         $groupManager = $this->createMock(IGroupManager::class);
         $groupManager->method('isInGroup')->willReturnCallback(
             static fn(string $uid, string $gid): bool => in_array($gid, ($memberships[$uid] ?? []), true)
         );
 
-        return new StatusTransitionService(
-            $this->createMock(SettingsService::class),
-            $this->createMock(WorkflowTemplateLoader::class),
-            $this->createMock(GuardRegistry::class),
-            $this->createMock(SideEffectDispatcher::class),
-            $this->createMock(IUserSession::class),
+        return new TransitionAuthorizer(
             $groupManager,
             $this->createMock(LoggerInterface::class),
         );
     }//end serviceWithGroups()
 
     /**
-     * Invoke the private group-authorization check.
+     * Invoke the group-authorization check.
      *
-     * @param StatusTransitionService $service    The service under test.
-     * @param array<string, mixed>    $transition The transition spec.
-     * @param string                  $userId     The acting user.
+     * @param TransitionAuthorizer $service    The authorizer under test.
+     * @param array<string, mixed> $transition The transition spec.
+     * @param string               $userId     The acting user.
      *
      * @return bool
      */
-    private function authorized(StatusTransitionService $service, array $transition, string $userId): bool
+    private function authorized(TransitionAuthorizer $service, array $transition, string $userId): bool
     {
-        $method = new ReflectionMethod(StatusTransitionService::class, 'isTransitionGroupAuthorized');
-        $method->setAccessible(true);
-        return (bool) $method->invoke($service, $transition, $userId);
+        return $service->isTransitionGroupAuthorized(transition: $transition, userId: $userId);
     }//end authorized()
 
     /**

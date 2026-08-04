@@ -45,9 +45,7 @@ use DateTimeInterface;
 use OCA\Procest\Service\AdviceDelegationService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
-use OCA\Procest\Service\Support\SearchesObjects;
 use OCA\Procest\Service\Transitions\GuardFailedException;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -58,8 +56,6 @@ use RuntimeException;
  */
 class AdvisoryCommitteeService
 {
-
-    use SearchesObjects;
 
     /**
      * Allowed advice-request lifecycle states.
@@ -99,21 +95,23 @@ class AdvisoryCommitteeService
     /**
      * Constructor.
      *
-     * @param SettingsService         $settingsService  Schema/register bridge
-     * @param IUserSession            $userSession      Acting identity source
-     * @param StatusTransitionService $transitions      Optional integration with
-     *                                                  the case-level status FSM
-     *                                                  (used when the lifecycle
-     *                                                  advances the parent case)
-     * @param LoggerInterface         $logger           Logger
-     * @param AdviceDelegationService $adviceDelegation Advice delegation to decidesk (ADR-019)
+     * @param SettingsService          $settingsService  Schema/register bridge
+     * @param StatusTransitionService  $transitions      Optional integration with
+     *                                                   the case-level status FSM
+     *                                                   (used when the lifecycle
+     *                                                   advances the parent case)
+     * @param LoggerInterface          $logger           Logger
+     * @param AdviceDelegationService  $adviceDelegation Advice delegation to decidesk (ADR-019)
+     * @param BezwaarAuditTrail        $auditTrail       Shared append-only audit writer
+     * @param PanelIndependenceChecker $independence     Awb Art. 7:13 lid 3 panel check
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly IUserSession $userSession,
         private readonly StatusTransitionService $transitions,
         private readonly LoggerInterface $logger,
         private readonly AdviceDelegationService $adviceDelegation,
+        private readonly BezwaarAuditTrail $auditTrail,
+        private readonly PanelIndependenceChecker $independence,
     ) {
     }//end __construct()
 
@@ -192,7 +190,7 @@ class AdvisoryCommitteeService
         );
 
         // Append audit entry for panel composition.
-        $record['auditTrail'] = $this->appendAudit(
+        $record['auditTrail'] = $this->auditTrail->append(
             existing: [],
             event: 'panel-member-added',
             payload: [
@@ -282,7 +280,7 @@ class AdvisoryCommitteeService
             );
         }
 
-        $userId = $this->resolveUserId();
+        $userId = $this->auditTrail->resolveActor();
 
         // Compose the update.
         $update = $this->buildTransitionUpdate(
@@ -383,7 +381,7 @@ class AdvisoryCommitteeService
                 return;
             }
 
-            $audit = $this->appendAudit(
+            $audit = $this->auditTrail->append(
                 existing: (array) ($current['auditTrail'] ?? []),
                 event: 'council-deviation-recorded',
                 payload: [
@@ -458,7 +456,7 @@ class AdvisoryCommitteeService
             );
         }
 
-        $independence = $this->checkPanelIndependence(
+        $independence = $this->independence->check(
             bezwaarId: (string) ($current['bezwaar'] ?? ''),
             panel: $panel,
         );
@@ -468,7 +466,7 @@ class AdvisoryCommitteeService
         }
 
         // Persist the failure to the audit trail before raising.
-        $audit = $this->appendAudit(
+        $audit = $this->auditTrail->append(
             existing: (array) ($current['auditTrail'] ?? []),
             event: 'independence-check-failed',
             payload: [
@@ -586,7 +584,7 @@ class AdvisoryCommitteeService
 
         $update['adviceIssuedAt'] = (new DateTimeImmutable())
             ->format(DateTimeInterface::ATOM);
-        $update['auditTrail']     = $this->appendAudit(
+        $update['auditTrail']     = $this->auditTrail->append(
             existing: (array) ($current['auditTrail'] ?? []),
             event: 'advice-signed-by-chair',
             payload: [
@@ -598,220 +596,4 @@ class AdvisoryCommitteeService
 
         return $update;
     }//end buildTransitionUpdate()
-
-    /**
-     * Member-independence check per Awb Art. 7:13(3).
-     *
-     * Compares each panel member UID against the `createdBy` (steller) of
-     * the contested primair besluit. Resolution chain:
-     *   bacAdviceRequest.bezwaar → bezwaar (lifecycle record) → bezwaar.case
-     *   (procest case) → objection (filed on that case) →
-     *   objection.contestedDecision → decision.createdBy (steller).
-     *
-     * @param string        $bezwaarId The bezwaar (lifecycle) UUID
-     * @param array<string> $panel     Panel member UIDs
-     *
-     * @return array{ok: bool, member: ?string, reason: ?string}
-     */
-    private function checkPanelIndependence(
-        string $bezwaarId,
-        array $panel
-    ): array {
-        $clear = [
-            'ok'     => true,
-            'member' => null,
-            'reason' => null,
-        ];
-
-        if ($bezwaarId === '' || $panel === []) {
-            return $clear;
-        }
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return $clear;
-        }
-
-        $register        = $this->settingsService->getConfigValue(key: 'register');
-        $bezwaarSchema   = $this->settingsService->getConfigValue(
-            key: 'bezwaar_schema'
-        );
-        $objectionSchema = $this->settingsService->getConfigValue(
-            key: 'objection_schema'
-        );
-        $decisionSchema  = $this->settingsService->getConfigValue(
-            key: 'decision_schema'
-        );
-
-        if (in_array('', [$objectionSchema, $decisionSchema], true) === true) {
-            // Unable to resolve; do not block the transition, but log.
-            $this->logger->info(
-                'Procest BAC: objection/decision schemas not configured; '
-                .'skipping independence check'
-            );
-            return $clear;
-        }
-
-        try {
-            $steller = $this->resolveContestedDecisionAuthor(
-                objectService: $objectService,
-                bezwaarId: $bezwaarId,
-                register: $register,
-                bezwaarSchema: $bezwaarSchema,
-                objectionSchema: $objectionSchema,
-                decisionSchema: $decisionSchema,
-            );
-            if ($steller === '') {
-                return $clear;
-            }
-
-            $conflicting = $this->findConflictingPanelMember(
-                panel: $panel,
-                steller: $steller,
-            );
-            if ($conflicting !== null) {
-                return [
-                    'ok'     => false,
-                    'member' => $conflicting,
-                    'reason' => 'Lid was betrokken bij het bestreden '
-                                .'besluit (Awb Art. 7:13 lid 3)',
-                ];
-            }
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest BAC: independence check error: '.$e->getMessage()
-            );
-            // Fail-open here is intentional: do not block on infra issues.
-        }//end try
-
-        return $clear;
-    }//end checkPanelIndependence()
-
-    /**
-     * Resolve the steller (author) of the primair besluit contested by the
-     * objection filed on the bezwaar's underlying procest case.
-     *
-     * Resolution chain: bezwaar (lifecycle) → bezwaar.case (procest case) →
-     * objection (filed on that case) → objection.contestedDecision →
-     * decision owner / createdBy / steller.
-     *
-     * @param object $objectService   OpenRegister object service
-     * @param string $bezwaarId       The bezwaar (lifecycle) UUID
-     * @param string $register        Register identifier
-     * @param string $bezwaarSchema   Bezwaar schema identifier, may be ''
-     * @param string $objectionSchema Objection schema identifier
-     * @param string $decisionSchema  Decision schema identifier
-     *
-     * @return string The steller UID, or '' when it cannot be resolved
-     */
-    private function resolveContestedDecisionAuthor(
-        object $objectService,
-        string $bezwaarId,
-        string $register,
-        string $bezwaarSchema,
-        string $objectionSchema,
-        string $decisionSchema
-    ): string {
-        // Resolve the underlying procest case via the bezwaar entity
-        // when the bezwaar_schema is registered. When unavailable
-        // (e.g. legacy callers passing a case UUID directly), fall back
-        // to treating the input as the case id.
-        $caseId = $bezwaarId;
-        if ($bezwaarSchema !== '') {
-            $bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
-            if (is_array($bezwaar) === true) {
-                $caseId = (string) ($bezwaar['case'] ?? $bezwaarId);
-            }
-        }
-
-        $objections = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $objectionSchema,
-            filters: ['case' => $caseId]
-        );
-        $objection  = null;
-        if (is_array($objections) === true && $objections !== []) {
-            $objection = $objections[0];
-        }
-
-        if (is_array($objection) === false) {
-            return '';
-        }
-
-        $contestedId = (string) ($objection['contestedDecision'] ?? '');
-        if ($contestedId === '') {
-            return '';
-        }
-
-        $decision = $objectService->find($contestedId, register: $register, schema: $decisionSchema);
-        if (is_array($decision) === false) {
-            return '';
-        }
-
-        return (string) (
-            $decision['@self']['owner'] ?? ($decision['createdBy'] ?? ($decision['steller'] ?? ''))
-        );
-    }//end resolveContestedDecisionAuthor()
-
-    /**
-     * Find the first panel member that is not independent from the steller.
-     *
-     * @param array<string> $panel   Panel member UIDs
-     * @param string        $steller UID of the contested decision's author
-     *
-     * @return string|null The conflicting member UID, or null when the panel
-     *                     is independent
-     */
-    private function findConflictingPanelMember(array $panel, string $steller): ?string
-    {
-        foreach ($panel as $memberUid) {
-            if ((string) $memberUid === $steller) {
-                return (string) $memberUid;
-            }
-        }
-
-        return null;
-    }//end findConflictingPanelMember()
-
-    /**
-     * Append an entry to the bac_audit_trail array.
-     *
-     * @param array<int, array<string, mixed>> $existing Current audit entries
-     * @param string                           $event    Event slug
-     * @param array<string, mixed>             $payload  Structured payload
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function appendAudit(
-        array $existing,
-        string $event,
-        array $payload
-    ): array {
-        $entry = [
-            'event'   => $event,
-            'actor'   => $this->resolveUserId(),
-            'at'      => (new DateTimeImmutable())
-                ->format(DateTimeInterface::ATOM),
-            'payload' => $payload,
-        ];
-
-        $existing[] = $entry;
-        return $existing;
-    }//end appendAudit()
-
-    /**
-     * Resolve the acting user UID from IUserSession.
-     *
-     * @return string
-     */
-    private function resolveUserId(): string
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return 'system';
-        }
-
-        return $user->getUID();
-    }//end resolveUserId()
 }//end class

@@ -23,6 +23,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Mcp;
 
 use OCA\Procest\Mcp\ProcestToolProvider;
+use OCA\Procest\Mcp\Tool\ProcestCaseAuthorizer;
+use OCA\Procest\Mcp\Tool\ProcestCaseReader;
 use OCA\Procest\Service\SettingsService;
 use OCP\IGroupManager;
 use OCP\IUserSession;
@@ -58,11 +60,20 @@ class ProcestToolProviderTest extends TestCase
         $groupManager    = $this->createMock(IGroupManager::class);
         $logger          = $this->createMock(LoggerInterface::class);
 
+        // Real collaborators over mocked infrastructure: the provider's error
+        // contract depends on what the reader/authorizer actually decide, so
+        // mocking them out would make these tests assert nothing.
         $this->provider = new ProcestToolProvider(
-            settingsService: $settingsService,
-            userSession: $userSession,
-            groupManager: $groupManager,
-            logger: $logger,
+            caseReader: new ProcestCaseReader(
+                settingsService: $settingsService,
+                logger: $logger,
+            ),
+            authorizer: new ProcestCaseAuthorizer(
+                settingsService: $settingsService,
+                userSession: $userSession,
+                groupManager: $groupManager,
+                logger: $logger,
+            ),
         );
 
     }//end setUp()

@@ -13,6 +13,12 @@
  *  - dispatch automatic actions sequentially (via SideEffectDispatcher)
  *  - replay transition history from the `statusRecord` chain
  *
+ * Three collaborators carry the concerns that are not transition decisions:
+ * {@see Transitions\CaseStatusStore} owns every OpenRegister read/write,
+ * {@see Transitions\TransitionAuthorizer} owns the OR-RBAC group gate, and
+ * {@see Transitions\TransitionSpecReader} owns the template dialects a
+ * transition's guards and actions may be spelled in.
+ *
  * Identity is ALWAYS derived from IUserSession when the caller does not pass
  * an explicit userId. Static error messages only — never bubble exception
  * detail to controllers or callers.
@@ -36,10 +42,12 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
+use OCA\Procest\Service\Transitions\CaseStatusStore;
 use OCA\Procest\Service\Transitions\GuardFailedException;
 use OCA\Procest\Service\Transitions\GuardRegistry;
 use OCA\Procest\Service\Transitions\SideEffectDispatcher;
-use OCP\IGroupManager;
+use OCA\Procest\Service\Transitions\TransitionAuthorizer;
+use OCA\Procest\Service\Transitions\TransitionSpecReader;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -48,8 +56,6 @@ use RuntimeException;
  * The status-transition engine.
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T10
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — orchestrates many collaborators by design
  */
 class StatusTransitionService
 {
@@ -57,27 +63,33 @@ class StatusTransitionService
     /**
      * Group ID used to gate admin-only free-form transitions. Matches the
      * naming used elsewhere in Procest for the admin role.
+     *
+     * Re-exported from TransitionAuthorizer, which owns the group gate, so
+     * existing `StatusTransitionService::ADMIN_GROUP_ID` callers keep reading
+     * the single source of truth.
      */
-    public const ADMIN_GROUP_ID = 'procest-admin';
+    public const ADMIN_GROUP_ID = TransitionAuthorizer::ADMIN_GROUP_ID;
 
     /**
      * Constructor.
      *
-     * @param SettingsService        $settingsService      Bridge to OpenRegister + config
      * @param WorkflowTemplateLoader $templateLoader       Active workflowTemplate loader
      * @param GuardRegistry          $guardRegistry        Guard registry
      * @param SideEffectDispatcher   $sideEffectDispatcher Side-effect dispatcher
+     * @param CaseStatusStore        $store                OpenRegister persistence for the engine
+     * @param TransitionAuthorizer   $authorizer           OR-RBAC group gate
+     * @param TransitionSpecReader   $specReader           Guard/action shape reader
      * @param IUserSession           $userSession          Current session
-     * @param IGroupManager          $groupManager         Group manager (admin gate)
      * @param LoggerInterface        $logger               Logger
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
         private readonly WorkflowTemplateLoader $templateLoader,
         private readonly GuardRegistry $guardRegistry,
         private readonly SideEffectDispatcher $sideEffectDispatcher,
+        private readonly CaseStatusStore $store,
+        private readonly TransitionAuthorizer $authorizer,
+        private readonly TransitionSpecReader $specReader,
         private readonly IUserSession $userSession,
-        private readonly IGroupManager $groupManager,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -95,7 +107,7 @@ class StatusTransitionService
     public function getAvailableTransitions(string $caseId, ?string $userId=null): array
     {
         $userId = $this->resolveUserId(explicit: $userId);
-        $case   = $this->loadCase(caseId: $caseId);
+        $case   = $this->store->loadCase(caseId: $caseId);
         if ($case === null) {
             return ['transitions' => [], 'current' => []];
         }
@@ -106,7 +118,7 @@ class StatusTransitionService
 
         $result = [
             'transitions' => [],
-            'current'     => ['statusId' => $currentId, 'statusName' => $this->lookupStatusName(statusTypeId: $currentId)],
+            'current'     => ['statusId' => $currentId, 'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId)],
         ];
 
         if ($template === null) {
@@ -127,11 +139,11 @@ class StatusTransitionService
                 continue;
             }
 
-            $guards = $this->extractGuards(transition: $transition);
+            $guards = $this->specReader->extractGuards(transition: $transition);
             $eval   = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
 
             // Drop transitions whose role guard hides them silently.
-            if ($this->isRoleHidden(evalResults: $eval) === true) {
+            if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
                 continue;
             }
 
@@ -167,7 +179,7 @@ class StatusTransitionService
     public function execute(string $caseId, string $transitionId, ?string $comment, ?string $userId=null): array
     {
         $userId = $this->resolveUserId(explicit: $userId);
-        $case   = $this->loadCase(caseId: $caseId);
+        $case   = $this->store->loadCase(caseId: $caseId);
         if ($case === null) {
             throw new RuntimeException('case_not_found');
         }
@@ -214,14 +226,14 @@ class StatusTransitionService
         }
 
         $caseAtSave['@self']['version'] = $readVersion;
-        $savedCase    = $this->saveCase(case: $caseAtSave);
+        $savedCase    = $this->store->saveCase(case: $caseAtSave);
         $savedVersion = (int) (($savedCase['@self']['version'] ?? ($savedCase['version'] ?? 0)));
 
         // Alias for the remainder of the method.
         $case = $savedCase;
 
         $label  = (string) ($transition['label'] ?? '');
-        $record = $this->writeStatusRecord(
+        $record = $this->store->writeStatusRecord(
             caseId: $caseId,
             toStatus: $toStatus,
             fromStatus: $currentId,
@@ -240,7 +252,7 @@ class StatusTransitionService
             'statusRecordUuid' => $statusRecordId,
         ];
 
-        $actions    = $this->extractActions(transition: $transition);
+        $actions    = $this->specReader->extractActions(transition: $transition);
         $dispatched = $this->sideEffectDispatcher->dispatch(actions: $actions, case: $case, transitionContext: $context);
 
         // Update the statusRecord with the actual dispatched-action results.
@@ -296,12 +308,12 @@ class StatusTransitionService
         // it on saveObject; this engine therefore enforces the SAME group
         // model here using OR's single trusted membership check (IGroupManager),
         // not a bespoke role-resolution scheme. An empty/absent list = open.
-        if ($this->isTransitionGroupAuthorized(transition: $transition, userId: $userId) === false) {
+        if ($this->authorizer->isTransitionGroupAuthorized(transition: $transition, userId: $userId) === false) {
             throw new RuntimeException('transition_unauthorized');
         }
 
         // Defence in depth — re-evaluate guards on the server side.
-        $guards = $this->extractGuards(transition: $transition);
+        $guards = $this->specReader->extractGuards(transition: $transition);
         $eval   = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
         $failed = array_values(array_filter($eval, static fn(array $guard): bool => $guard['passed'] === false));
         // @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
@@ -330,7 +342,7 @@ class StatusTransitionService
         int $readVersion,
         string $currentId
     ): array {
-        $caseAtSave = $this->loadCase(caseId: $caseId);
+        $caseAtSave = $this->store->loadCase(caseId: $caseId);
         if ($caseAtSave === null) {
             throw new RuntimeException('case_not_found');
         }
@@ -368,7 +380,7 @@ class StatusTransitionService
 
         $record['dispatchedActions'] = $dispatched;
         try {
-            return $this->updateStatusRecord(record: $record);
+            return $this->store->updateStatusRecord(record: $record);
         } catch (\Throwable $e) {
             $this->logger->error(
                 'StatusTransitionService: dispatchedActions persist failed',
@@ -396,23 +408,23 @@ class StatusTransitionService
     public function executeFreeForm(string $caseId, string $toStatusId, ?string $comment, ?string $userId=null): array
     {
         $userId = $this->resolveUserId(explicit: $userId);
-        if ($this->isAdmin(userId: $userId) === false) {
+        if ($this->authorizer->isAdmin(userId: $userId) === false) {
             throw new RuntimeException('forbidden_admin_only');
         }
 
-        $case = $this->loadCase(caseId: $caseId);
+        $case = $this->store->loadCase(caseId: $caseId);
         if ($case === null) {
             throw new RuntimeException('case_not_found');
         }
 
         $caseTypeId = (string) ($case['caseType'] ?? '');
-        $this->validateStatusBelongsToCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
+        $this->store->assertStatusBelongsToCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
 
         $currentId      = (string) ($case['status'] ?? '');
         $case['status'] = $toStatusId;
-        $case           = $this->saveCase(case: $case);
+        $case           = $this->store->saveCase(case: $case);
 
-        $record = $this->writeStatusRecord(
+        $record = $this->store->writeStatusRecord(
             caseId: $caseId,
             toStatus: $toStatusId,
             fromStatus: $currentId,
@@ -436,47 +448,9 @@ class StatusTransitionService
      */
     public function replay(string $caseId): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
+        $list = $this->store->findStatusRecords(caseId: $caseId);
+        if ($list === null) {
             return ['history' => [], 'replayable' => false];
-        }
-
-        $register     = $this->settingsService->getConfigValue(key: 'register');
-        $recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
-        if ($register === '' || $recordSchema === '') {
-            return ['history' => [], 'replayable' => false];
-        }
-
-        try {
-            // OpenRegister's ObjectService exposes `searchObjects($query)` —
-            // there is NO `findObjects()` method. Register/schema context lives
-            // under the `@self` block; the `case` field filter sits at the top
-            // level as a server-side equality match.
-            $records = $objectService->searchObjects(
-                [
-                    '@self' => [
-                        'register' => (int) $register,
-                        'schema'   => (int) $recordSchema,
-                    ],
-                    'case'  => $caseId,
-                ],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'StatusTransitionService: replay searchObjects failed',
-                ['exception' => $e->getMessage(), 'caseId' => $caseId],
-            );
-            return ['history' => [], 'replayable' => false];
-        }//end try
-
-        $recordList = [];
-        if (is_array($records) === true) {
-            $recordList = $records;
-        }
-
-        $list = [];
-        foreach ($recordList as $record) {
-            $list[] = $this->toArray(value: $record);
         }
 
         usort(
@@ -502,76 +476,8 @@ class StatusTransitionService
      */
     public function isAdmin(string $userId): bool
     {
-        if ($userId === '') {
-            return false;
-        }
-
-        try {
-            // Accept membership in either the dedicated procest admin group OR the global admin group.
-            if ($this->groupManager->isInGroup($userId, self::ADMIN_GROUP_ID) === true) {
-                return true;
-            }
-
-            return $this->groupManager->isInGroup($userId, 'admin');
-        } catch (\Throwable $e) {
-            $this->logger->error('StatusTransitionService: admin check failed', ['exception' => $e->getMessage()]);
-            return false;
-        }
+        return $this->authorizer->isAdmin(userId: $userId);
     }//end isAdmin()
-
-    /**
-     * Enforce a transition's OR-RBAC group authorization list.
-     *
-     * Consumes the `authorization` array frozen onto the transition at
-     * publish time (literal NC group ids resolved from `roleType.ncGroupId`).
-     * Semantics mirror OR's `PermissionHandler::isTransitionAuthorized`:
-     *   - an absent or empty list authorises everyone (open transition);
-     *   - an anonymous caller can never satisfy a group gate;
-     *   - admins bypass;
-     *   - otherwise the caller MUST belong to at least one listed group.
-     *
-     * @param array<string, mixed> $transition The transition spec.
-     * @param string               $userId     The acting user UID.
-     *
-     * @return bool True when the caller may perform the transition.
-     *
-     * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-2.1
-     */
-    private function isTransitionGroupAuthorized(array $transition, string $userId): bool
-    {
-        $authorization = ($transition['authorization'] ?? []);
-        if (is_array($authorization) === false || $authorization === []) {
-            return true;
-        }
-
-        if ($userId === '') {
-            return false;
-        }
-
-        if ($this->isAdmin(userId: $userId) === true) {
-            return true;
-        }
-
-        foreach ($authorization as $groupId) {
-            $groupId = (string) $groupId;
-            if ($groupId === '') {
-                continue;
-            }
-
-            try {
-                if ($this->groupManager->isInGroup($userId, $groupId) === true) {
-                    return true;
-                }
-            } catch (\Throwable $e) {
-                $this->logger->error(
-                    'StatusTransitionService: group membership check failed',
-                    ['exception' => $e->getMessage(), 'groupId' => $groupId],
-                );
-            }
-        }
-
-        return false;
-    }//end isTransitionGroupAuthorized()
 
     // ------------------------------------------------------------------
     // Internal helpers
@@ -597,316 +503,4 @@ class StatusTransitionService
 
         return $user->getUID();
     }//end resolveUserId()
-
-    /**
-     * Load a case from OpenRegister.
-     *
-     * @param string $caseId Case UUID
-     *
-     * @return array<string, mixed>|null
-     */
-    private function loadCase(string $caseId): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register   = $this->settingsService->getConfigValue(key: 'register');
-        $caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-        if ($register === '' || $caseSchema === '') {
-            return null;
-        }
-
-        try {
-            return $this->toArray(value: $objectService->find($caseId, register: $register, schema: $caseSchema));
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'StatusTransitionService: loadCase failed',
-                ['exception' => $e->getMessage(), 'caseId' => $caseId],
-            );
-            return null;
-        }
-    }//end loadCase()
-
-    /**
-     * Persist the (mutated) case via ObjectService.
-     *
-     * @param array<string, mixed> $case Case payload
-     *
-     * @return array<string, mixed>
-     */
-    private function saveCase(array $case): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('storage_unavailable');
-        }
-
-        $register   = $this->settingsService->getConfigValue(key: 'register');
-        $caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-        if ($register === '' || $caseSchema === '') {
-            throw new RuntimeException('case_schema_not_configured');
-        }
-
-        return $this->toArray(value: $objectService->saveObject(object: $case, register: $register, schema: $caseSchema));
-    }//end saveCase()
-
-    /**
-     * Write a statusRecord row for a transition.
-     *
-     * @param string                           $caseId             Case UUID
-     * @param string                           $toStatus           Target statusType UUID
-     * @param string                           $fromStatus         Prior statusType UUID
-     * @param string                           $label              Transition label
-     * @param string|null                      $comment            Free-form comment
-     * @param array<int, array<string, mixed>> $evaluatedGuards    Guard snapshots
-     * @param bool                             $noWorkflowTemplate Flag for free-form transitions
-     *
-     * @return array<string, mixed>
-     */
-    private function writeStatusRecord(
-        string $caseId,
-        string $toStatus,
-        string $fromStatus,
-        string $label,
-        ?string $comment,
-        array $evaluatedGuards,
-        bool $noWorkflowTemplate,
-    ): array {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('storage_unavailable');
-        }
-
-        $register     = $this->settingsService->getConfigValue(key: 'register');
-        $recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
-        if ($register === '' || $recordSchema === '') {
-            throw new RuntimeException('status_record_schema_not_configured');
-        }
-
-        $payload = [
-            'case'               => $caseId,
-            'statusType'         => $toStatus,
-            'transitionLabel'    => $label,
-            'evaluatedGuards'    => $evaluatedGuards,
-            'dispatchedActions'  => [],
-            'noWorkflowTemplate' => $noWorkflowTemplate,
-        ];
-        if ($fromStatus !== '') {
-            $payload['fromStatus'] = $fromStatus;
-        }
-
-        if ($comment !== null && $comment !== '') {
-            $payload['description'] = $comment;
-        }
-
-        return $this->toArray(value: $objectService->saveObject(object: $payload, register: $register, schema: $recordSchema));
-    }//end writeStatusRecord()
-
-    /**
-     * Persist an updated statusRecord.
-     *
-     * @param array<string, mixed> $record Current record payload
-     *
-     * @return array<string, mixed>
-     */
-    private function updateStatusRecord(array $record): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return $record;
-        }
-
-        $register     = $this->settingsService->getConfigValue(key: 'register');
-        $recordSchema = $this->settingsService->getConfigValue(key: 'status_record_schema');
-        if ($register === '' || $recordSchema === '') {
-            return $record;
-        }
-
-        return $this->toArray(value: $objectService->saveObject(object: $record, register: $register, schema: $recordSchema));
-    }//end updateStatusRecord()
-
-    /**
-     * Validate that a statusType belongs to the case's caseType.
-     *
-     * @param string $caseTypeId   CaseType UUID
-     * @param string $statusTypeId StatusType UUID
-     *
-     * @return void
-     *
-     * @throws RuntimeException When the statusType is not a child of the caseType
-     */
-    private function validateStatusBelongsToCaseType(string $caseTypeId, string $statusTypeId): void
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('storage_unavailable');
-        }
-
-        $register       = $this->settingsService->getConfigValue(key: 'register');
-        $caseTypeSchema = $this->settingsService->getConfigValue(key: 'case_type_schema');
-        $unconfigured   = in_array('', [$register, $caseTypeSchema, $caseTypeId, $statusTypeId], true);
-        if ($unconfigured === true) {
-            throw new RuntimeException('case_type_not_configured');
-        }
-
-        try {
-            $caseType = $this->toArray(value: $objectService->find($caseTypeId, register: $register, schema: $caseTypeSchema));
-        } catch (\Throwable $e) {
-            throw new RuntimeException('case_type_not_found');
-        }
-
-        $statuses = $caseType['statusTypes'] ?? ($caseType['statusses'] ?? []);
-        if (is_array($statuses) === false) {
-            $statuses = [];
-        }
-
-        foreach ($statuses as $entry) {
-            $id = (string) $entry;
-            if (is_array($entry) === true) {
-                $id = (string) ($entry['id'] ?? ($entry['uuid'] ?? ''));
-            }
-
-            if ($id === $statusTypeId) {
-                return;
-            }
-        }
-
-        throw new RuntimeException('status_type_not_in_case_type');
-    }//end validateStatusBelongsToCaseType()
-
-    /**
-     * Look up a human-readable status name for the case-detail panel header.
-     *
-     * @param string $statusTypeId StatusType UUID
-     *
-     * @return string
-     */
-    private function lookupStatusName(string $statusTypeId): string
-    {
-        if ($statusTypeId === '') {
-            return '';
-        }
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return '';
-        }
-
-        $register         = $this->settingsService->getConfigValue(key: 'register');
-        $statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
-        if ($register === '' || $statusTypeSchema === '') {
-            return '';
-        }
-
-        try {
-            $statusType = $this->toArray(value: $objectService->find($statusTypeId, register: $register, schema: $statusTypeSchema));
-        } catch (\Throwable $e) {
-            return '';
-        }
-
-        return (string) ($statusType['name'] ?? ($statusType['title'] ?? ''));
-    }//end lookupStatusName()
-
-    /**
-     * Extract the guards list from a transition definition (supports both
-     * `guards: []` and a single `guard: {...}` shape).
-     *
-     * @param array<string, mixed> $transition The transition
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function extractGuards(array $transition): array
-    {
-        $guards = $transition['guards'] ?? [];
-        if (is_array($guards) === false) {
-            $guards = [];
-        }
-
-        // Promote allowedRoles[] on the transition itself into a roleGuard entry.
-        $allowedRoles = $transition['allowedRoles'] ?? null;
-        if (is_array($allowedRoles) === true && count($allowedRoles) > 0) {
-            $guards[] = ['type' => 'roleGuard', 'allowedRoles' => $allowedRoles];
-        }
-
-        $list = [];
-        foreach ($guards as $guard) {
-            if (is_array($guard) === true) {
-                $list[] = $guard;
-            }
-        }
-
-        return $list;
-    }//end extractGuards()
-
-    /**
-     * Extract automaticActions[] from a transition definition.
-     *
-     * @param array<string, mixed> $transition The transition
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function extractActions(array $transition): array
-    {
-        $actions = $transition['automaticActions'] ?? ($transition['actions'] ?? []);
-        if (is_array($actions) === false) {
-            return [];
-        }
-
-        $list = [];
-        foreach ($actions as $action) {
-            if (is_array($action) === true) {
-                $list[] = $action;
-            }
-        }
-
-        return $list;
-    }//end extractActions()
-
-    /**
-     * Detect whether the role guard has hidden the transition silently.
-     *
-     * @param array<int, array<string, mixed>> $evalResults Guard evaluation snapshots
-     *
-     * @return bool
-     */
-    private function isRoleHidden(array $evalResults): bool
-    {
-        foreach ($evalResults as $entry) {
-            if (($entry['type'] ?? '') === 'roleGuard'
-                && $entry['passed'] === false
-                && (($entry['details']['silent'] ?? false) === true)
-            ) {
-                return true;
-            }
-        }
-
-        return false;
-    }//end isRoleHidden()
-
-    /**
-     * Coerce ObjectService results to an array.
-     *
-     * @param mixed $value Raw result
-     *
-     * @return array<string, mixed>
-     */
-    private function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
-
-        if (is_object($value) === true) {
-            if (method_exists($value, 'jsonSerialize') === true) {
-                $serialized = $value->jsonSerialize();
-                if (is_array($serialized) === true) {
-                    return $serialized;
-                }
-            }
-        }
-
-        return [];
-    }//end toArray()
 }//end class

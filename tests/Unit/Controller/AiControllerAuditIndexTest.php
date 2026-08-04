@@ -29,7 +29,6 @@ namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\AiController;
 use OCA\Procest\Service\AiService;
-use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -46,8 +45,6 @@ class AiControllerAuditIndexTest extends TestCase
 {
 
     private AiService $aiService;
-
-    private SettingsService $settingsService;
 
     private IUserSession $userSession;
 
@@ -66,7 +63,6 @@ class AiControllerAuditIndexTest extends TestCase
     {
         parent::setUp();
         $this->aiService       = $this->createMock(AiService::class);
-        $this->settingsService = $this->createMock(SettingsService::class);
         $this->userSession     = $this->createMock(IUserSession::class);
         $this->request         = $this->createMock(IRequest::class);
         $this->logger           = $this->createMock(LoggerInterface::class);
@@ -79,7 +75,6 @@ class AiControllerAuditIndexTest extends TestCase
             appName: 'procest',
             request: $this->request,
             aiService: $this->aiService,
-            settingsService: $this->settingsService,
             userSession: $this->userSession,
             logger: $this->logger,
         );
@@ -169,7 +164,6 @@ class AiControllerAuditIndexTest extends TestCase
             appName: 'procest',
             request: $this->request,
             aiService: $this->aiService,
-            settingsService: $this->settingsService,
             userSession: $userSession,
             logger: $this->logger,
         );

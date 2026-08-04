@@ -30,6 +30,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use DateTimeImmutable;
+use OCA\Procest\Service\ProcessMining\DwellTimeAnalyzer;
+use OCA\Procest\Service\ProcessMining\ProcessMiningDataLoader;
+use OCA\Procest\Service\ProcessMining\ThroughputTrendCalculator;
+use OCA\Procest\Service\ProcessMining\TransitionMatrixBuilder;
 use OCA\Procest\Service\ProcessMiningService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -64,7 +68,12 @@ class ProcessMiningServiceTest extends TestCase
             },
         );
 
-        $this->service = new ProcessMiningService($settings);
+        $this->service = new ProcessMiningService(
+            new ProcessMiningDataLoader($settings),
+            new DwellTimeAnalyzer(),
+            new TransitionMatrixBuilder(),
+            new ThroughputTrendCalculator(),
+        );
     }//end setUp()
 
     /**
