@@ -129,7 +129,7 @@ class BewijsstukImmutabilityListener implements IEventListener
             return;
         }
 
-        if (is_array($payload) === false || $this->isBewijsstukSchema(object: $payload) === false) {
+        if ($this->isBewijsstukSchema(object: $payload) === false) {
             return;
         }
 
