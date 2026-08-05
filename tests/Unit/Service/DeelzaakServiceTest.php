@@ -36,6 +36,8 @@ use Psr\Log\LoggerInterface;
  * Unit tests for DeelzaakService::getParentCase().
  *
  * @covers \OCA\Procest\Service\DeelzaakService
+ *
+ * @uses \OCA\Procest\Service\Deelzaak\CaseObjectReader
  */
 class DeelzaakServiceTest extends TestCase
 {

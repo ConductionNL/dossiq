@@ -47,6 +47,8 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Procest\Controller\ConsultationController
  * @covers \OCA\Procest\Controller\AdvisoryBodyController
  * @covers \OCA\Procest\Controller\ConsultationPublicController
+ *
+ * @uses \OCA\Procest\Service\Consultation\ConsultationAccessGuard
  */
 class ConsultationControllerTest extends TestCase
 {

@@ -29,11 +29,10 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCP\Files\IRootFolder;
-use OCP\Files\NotFoundException;
+use OCA\Procest\Service\Email\CaseContactDirectory;
+use OCA\Procest\Service\Email\CaseEmailAttachmentResolver;
+use OCA\Procest\Service\Email\CaseEmailRepository;
 use OCP\IAppConfig;
-use OCP\IUserSession;
 use OCP\Mail\IMailer;
 use OCP\Mail\IMessage;
 use Psr\Log\LoggerInterface;
@@ -44,8 +43,6 @@ use RuntimeException;
  */
 class CaseEmailService
 {
-
-    use SearchesObjects;
 
     /**
      * Regex pattern for extracting case number from email subject.
@@ -65,20 +62,20 @@ class CaseEmailService
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Settings service
-     * @param IMailer         $mailer          Nextcloud mailer
-     * @param IAppConfig      $appConfig       Nextcloud app config
-     * @param LoggerInterface $logger          Logger
-     * @param IRootFolder     $rootFolder      Root folder for user-file access
-     * @param IUserSession    $userSession     Current user session
+     * @param IMailer                     $mailer             Nextcloud mailer
+     * @param IAppConfig                  $appConfig          Nextcloud app config
+     * @param LoggerInterface             $logger             Logger
+     * @param CaseEmailRepository         $repository         OpenRegister reads/writes for case email
+     * @param CaseContactDirectory        $contactDirectory   Contact addresses registered on a case
+     * @param CaseEmailAttachmentResolver $attachmentResolver User-folder-scoped attachment resolution
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
         private readonly IMailer $mailer,
         private readonly IAppConfig $appConfig,
         private readonly LoggerInterface $logger,
-        private readonly IRootFolder $rootFolder,
-        private readonly IUserSession $userSession,
+        private readonly CaseEmailRepository $repository,
+        private readonly CaseContactDirectory $contactDirectory,
+        private readonly CaseEmailAttachmentResolver $attachmentResolver,
     ) {
     }//end __construct()
 
@@ -117,7 +114,7 @@ class CaseEmailService
         // C4 IDOR: Load the case via OR with RBAC enabled to verify the current user
         // has read access. If the case is not found (or the user has no access), OR
         // returns null — we treat that as 403.
-        $caseData = $this->loadCaseData(caseId: $caseId);
+        $caseData = $this->repository->loadCaseVariables(caseId: $caseId);
         if (empty($caseData) === true) {
             throw new RuntimeException('Zaak niet gevonden of geen toegang.');
         }
@@ -135,12 +132,18 @@ class CaseEmailService
 
         // H5: Resolve attachments via IUserFolder to restrict file access to the
         // calling user's own files and prevent path traversal outside their folder.
-        $this->attachUserFiles(message: $message, attachments: $attachments, caseId: $caseId);
+        $this->attachmentResolver->attach(message: $message, attachments: $attachments, caseId: $caseId);
 
         $this->dispatchMessage(message: $message, caseId: $caseId);
 
         // Record the sent email as a case document.
-        $messageId = $this->recordSentEmail(caseId: $caseId, to: $to, subject: $subject, body: $body);
+        $messageId = $this->repository->recordSentEmail(
+            caseId: $caseId,
+            fromAddress: $fromAddress,
+            to: $to,
+            subject: $subject,
+            body: $body,
+        );
 
         $this->logger->info(
             'Email sent for case {caseId}',
@@ -203,7 +206,7 @@ class CaseEmailService
             throw new RuntimeException('Ongeldig e-mailadres opgegeven.');
         }
 
-        $allowedEmails = $this->getCaseContactEmails(caseData: $caseData);
+        $allowedEmails = $this->contactDirectory->collectAddresses(caseData: $caseData);
         if (count($allowedEmails) > 0) {
             if (in_array(strtolower($recipient), $allowedEmails, true) === false) {
                 $this->logger->warning(
@@ -214,46 +217,6 @@ class CaseEmailService
             }
         }
     }//end assertRecipientAllowed()
-
-    /**
-     * Attach the requested files to a message, resolved from the caller's own folder.
-     *
-     * H5: resolving via the user folder restricts file access to the calling
-     * user's own files and prevents path traversal outside that folder. A file
-     * that cannot be resolved or attached is logged and skipped.
-     *
-     * @param IMessage      $message     The message under construction
-     * @param array<string> $attachments File references to attach
-     * @param string        $caseId      The case UUID (logging context)
-     *
-     * @return void
-     */
-    private function attachUserFiles(IMessage $message, array $attachments, string $caseId): void
-    {
-        $currentUser = $this->userSession->getUser();
-        if ($currentUser !== null && count($attachments) > 0) {
-            $userFolder = $this->rootFolder->getUserFolder($currentUser->getUID());
-            foreach ($attachments as $fileRef) {
-                try {
-                    $file      = $userFolder->get((string) $fileRef);
-                    $localPath = $file->getStorage()->getLocalFile($file->getInternalPath());
-                    if ($localPath !== null && $localPath !== false) {
-                        $message->attachFile($localPath);
-                    }
-                } catch (NotFoundException $e) {
-                    $this->logger->warning(
-                        'Attachment file not found in user folder',
-                        ['app' => Application::APP_ID, 'fileRef' => $fileRef, 'caseId' => $caseId]
-                    );
-                } catch (\Throwable $e) {
-                    $this->logger->warning(
-                        'Failed to attach file',
-                        ['app' => Application::APP_ID, 'fileRef' => $fileRef, 'error' => $e->getMessage()]
-                    );
-                }//end try
-            }//end foreach
-        }//end if
-    }//end attachUserFiles()
 
     /**
      * Hand a fully-built message to the mailer.
@@ -305,13 +268,13 @@ class CaseEmailService
         string $templateId,
         string $to,
     ): array {
-        $template = $this->loadTemplate(templateId: $templateId);
+        $template = $this->repository->findTemplate(templateId: $templateId);
         if ($template === null) {
             throw new RuntimeException('Email template not found');
         }
 
         // Load case data for variable resolution.
-        $caseData = $this->loadCaseData(caseId: $caseId);
+        $caseData = $this->repository->loadCaseVariables(caseId: $caseId);
 
         // Resolve template variables.
         $subject = $this->resolveVariables(template: $template['subjectPattern'] ?? '', data: $caseData);
@@ -465,9 +428,9 @@ class CaseEmailService
 
         if ($caseNumber !== null) {
             // Auto-link to case.
-            $caseId = $this->findCaseByIdentifier(identifier: $caseNumber);
+            $caseId = $this->repository->findCaseIdByIdentifier(identifier: $caseNumber);
             if ($caseId !== null) {
-                $messageId = $this->recordReceivedEmail(
+                $messageId = $this->repository->recordReceivedEmail(
                     caseId: $caseId,
                     from: $from,
                     recipient: $to,
@@ -511,332 +474,6 @@ class CaseEmailService
      */
     public function getTemplatesForCaseType(string $caseTypeId): array
     {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_template_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
-
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['caseType' => $caseTypeId, '_limit' => 100],
-        );
+        return $this->repository->findTemplatesForCaseType(caseTypeId: $caseTypeId);
     }//end getTemplatesForCaseType()
-
-    /**
-     * Collect the normalised (lowercased) email addresses of all contacts on a case.
-     *
-     * Inspects the following fields (all optional): `betrokkenen`, `contacts`,
-     * `initiator`, and the top-level `email` field. Returns an empty array when
-     * no contacts are registered; the caller treats an empty array as "no restriction".
-     *
-     * @param array<string, mixed> $caseData The case data array
-     *
-     * @return array<string> Lowercase email addresses
-     */
-    private function getCaseContactEmails(array $caseData): array
-    {
-        $emails = array_merge(
-            $this->collectPrimaryContactEmails(caseData: $caseData),
-            $this->collectContactListEmails(caseData: $caseData),
-        );
-
-        return array_unique($emails);
-    }//end getCaseContactEmails()
-
-    /**
-     * Collect the single-valued contact addresses on a case.
-     *
-     * Covers the top-level `email` field and the `initiator` contact object, in
-     * that order.
-     *
-     * @param array<string, mixed> $caseData The case data array
-     *
-     * @return array<string> Lowercase email addresses
-     */
-    private function collectPrimaryContactEmails(array $caseData): array
-    {
-        $emails = [];
-
-        // Top-level email field.
-        $topEmail = $this->normalizeContactEmail(value: (string) ($caseData['email'] ?? ''));
-        if ($topEmail !== null) {
-            $emails[] = $topEmail;
-        }
-
-        // Initiator field (single contact object or email string).
-        $initiator = ($caseData['initiator'] ?? null);
-        if (is_array($initiator) === true) {
-            $addr = $this->normalizeContactEmail(value: (string) ($initiator['email'] ?? ''));
-            if ($addr !== null) {
-                $emails[] = $addr;
-            }
-        }
-
-        return $emails;
-    }//end collectPrimaryContactEmails()
-
-    /**
-     * Collect the addresses held in a case's contact collections.
-     *
-     * Covers `betrokkenen` and `contacts`, in that order; each entry may carry
-     * either an `email` or an `emailadres` key.
-     *
-     * @param array<string, mixed> $caseData The case data array
-     *
-     * @return array<string> Lowercase email addresses
-     */
-    private function collectContactListEmails(array $caseData): array
-    {
-        $contactArrays = [];
-        if (is_array($caseData['betrokkenen'] ?? null) === true) {
-            $contactArrays[] = $caseData['betrokkenen'];
-        }
-
-        if (is_array($caseData['contacts'] ?? null) === true) {
-            $contactArrays[] = $caseData['contacts'];
-        }
-
-        $emails = [];
-        foreach ($contactArrays as $contacts) {
-            foreach ($contacts as $contact) {
-                if (is_array($contact) === false) {
-                    continue;
-                }
-
-                $addr = $this->normalizeContactEmail(
-                    value: (string) ($contact['email'] ?? ($contact['emailadres'] ?? ''))
-                );
-                if ($addr !== null) {
-                    $emails[] = $addr;
-                }
-            }
-        }
-
-        return $emails;
-    }//end collectContactListEmails()
-
-    /**
-     * Normalise a raw contact value to a lowercase, validated email address.
-     *
-     * @param string $value The raw contact value
-     *
-     * @return string|null The lowercase address, or null when absent/invalid
-     */
-    private function normalizeContactEmail(string $value): ?string
-    {
-        $addr = strtolower(trim($value));
-        if ($addr === '' || filter_var($addr, FILTER_VALIDATE_EMAIL) === false) {
-            return null;
-        }
-
-        return $addr;
-    }//end normalizeContactEmail()
-
-    /**
-     * Load an email template.
-     *
-     * @param string $templateId The template UUID
-     *
-     * @return array<string, mixed>|null The template data
-     */
-    private function loadTemplate(string $templateId): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_template_schema');
-
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
-
-        $result = $objectService->find($templateId, register: $register, schema: $schema);
-        if (is_array($result) === true) {
-            return $result;
-        }
-
-        return null;
-    }//end loadTemplate()
-
-    /**
-     * Load case data for template variable resolution.
-     *
-     * @param string $caseId The case UUID
-     *
-     * @return array<string, mixed> Case data flattened for variable resolution
-     */
-    private function loadCaseData(string $caseId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-
-        $caseObj = $objectService->find($caseId, register: $register, schema: $schema);
-        if ($caseObj === null) {
-            return [];
-        }
-
-        if (is_object($caseObj) === true && method_exists($caseObj, 'jsonSerialize') === true) {
-            $caseObj = $caseObj->jsonSerialize();
-        }
-
-        if (is_array($caseObj) === false) {
-            return [];
-        }
-
-        // Flatten for variable resolution.
-        return [
-            'zaakNummer'  => $caseObj['identifier'] ?? '',
-            'titel'       => $caseObj['title'] ?? '',
-            'startdatum'  => $caseObj['startDate'] ?? '',
-            'deadline'    => $caseObj['deadline'] ?? '',
-            'status'      => $caseObj['status'] ?? '',
-            'behandelaar' => $caseObj['assignee'] ?? '',
-        ];
-    }//end loadCaseData()
-
-    /**
-     * Record a sent email as a case document.
-     *
-     * @param string $caseId  Case UUID
-     * @param string $to      Recipient
-     * @param string $subject Subject
-     * @param string $body    Body
-     *
-     * @return string The recorded message ID
-     */
-    private function recordSentEmail(
-        string $caseId,
-        string $to,
-        string $subject,
-        string $body,
-    ): string {
-        // Store as activity on the case.
-        $messageId = 'msg-'.uniqid();
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return $messageId;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_message_schema');
-
-        if (empty($register) === false && empty($schema) === false) {
-            $objectService->saveObject(
-                    object: [
-                        'case'      => $caseId,
-                        'direction' => 'outbound',
-                        'from'      => $this->appConfig->getValueString(Application::APP_ID, 'email_from_address', ''),
-                        'to'        => $to,
-                        'subject'   => $subject,
-                        'body'      => $body,
-                        'messageId' => $messageId,
-                        'sentAt'    => date('Y-m-d\TH:i:s'),
-                    ],
-                    register: $register,
-                    schema: $schema,
-                    );
-        }
-
-        return $messageId;
-    }//end recordSentEmail()
-
-    /**
-     * Record a received email.
-     *
-     * @param string $caseId    Case UUID
-     * @param string $from      Sender
-     * @param string $recipient Recipient (the mailbox the message arrived on)
-     * @param string $subject   Subject
-     * @param string $body      Body
-     * @param string $inReplyTo Threading header
-     *
-     * @return string The recorded message ID
-     */
-    private function recordReceivedEmail(
-        string $caseId,
-        string $from,
-        string $recipient,
-        string $subject,
-        string $body,
-        string $inReplyTo,
-    ): string {
-        $messageId = 'msg-'.uniqid();
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return $messageId;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_message_schema');
-
-        if (empty($register) === false && empty($schema) === false) {
-            $objectService->saveObject(
-                    object: [
-                        'case'       => $caseId,
-                        'direction'  => 'inbound',
-                        'from'       => $from,
-                        'to'         => $recipient,
-                        'subject'    => $subject,
-                        'body'       => $body,
-                        'messageId'  => $messageId,
-                        'inReplyTo'  => $inReplyTo,
-                        'receivedAt' => date('Y-m-d\TH:i:s'),
-                    ],
-                    register: $register,
-                    schema: $schema,
-                    );
-        }
-
-        return $messageId;
-    }//end recordReceivedEmail()
-
-    /**
-     * Find a case by its identifier.
-     *
-     * @param string $identifier The case identifier (e.g., 2026-0042)
-     *
-     * @return string|null The case UUID or null
-     */
-    private function findCaseByIdentifier(string $identifier): ?string
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-
-        $results = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['identifier' => $identifier, '_limit' => 1],
-        );
-
-        if (is_array($results) === true && count($results) > 0) {
-            return $results[0]['id'] ?? $results[0]['uuid'] ?? null;
-        }
-
-        return null;
-    }//end findCaseByIdentifier()
 }//end class

@@ -18,6 +18,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use InvalidArgumentException;
+use OCA\Procest\Service\Tenant\TenantBrandingSanitiser;
 use OCA\Procest\Service\TenantConfigurationService;
 use OCP\App\IAppManager;
 use PHPUnit\Framework\TestCase;
@@ -26,6 +27,7 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\TenantConfigurationService
+ * @covers \OCA\Procest\Service\Tenant\TenantBrandingSanitiser
  */
 class TenantConfigurationServiceTest extends TestCase
 {
@@ -34,9 +36,13 @@ class TenantConfigurationServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        // A REAL sanitiser, not a mock: these tests assert the production
+        // fail-closed branding rules, so a mocked collaborator would only
+        // replay its own canned answer.
         $this->svc = new TenantConfigurationService(
             appManager: $this->createMock(IAppManager::class),
             container: $this->createMock(ContainerInterface::class),
+            sanitiser: new TenantBrandingSanitiser(),
             logger: $this->createMock(LoggerInterface::class),
         );
     }

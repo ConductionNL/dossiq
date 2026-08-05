@@ -34,6 +34,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Controller\BagController
+ *
+ * @uses \OCA\Procest\Service\External\Bag\BagLookupResult
  */
 class BagControllerTest extends TestCase
 {

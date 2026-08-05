@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Settings;
 
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Settings\RegisterFragmentMerger;
 use OCA\Procest\Settings\EmailSettings;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Services\IInitialState;
@@ -42,6 +42,8 @@ use ReflectionMethod;
  *
  * @covers \OCA\Procest\Service\SettingsService
  * @covers \OCA\Procest\Settings\EmailSettings
+ *
+ * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
  *
  * @spec openspec/changes/case-email-integration/tasks.md#T03
  * @spec openspec/changes/case-email-integration/tasks.md#T10
@@ -77,12 +79,9 @@ class EmailTemplateFragmentTest extends TestCase
             true
         );
 
-        $reflection = new ReflectionMethod(SettingsService::class, 'mergeRegisterFragments');
-        $reflection->setAccessible(true);
-
-        [$merged] = $reflection->invokeArgs(
-            null,
-            [$base, __DIR__.'/../../../lib/Settings/register.d']
+        [$merged] = (new RegisterFragmentMerger())->merge(
+            base: $base,
+            fragmentDir: __DIR__.'/../../../lib/Settings/register.d'
         );
 
         $this->merged = $merged;

@@ -37,6 +37,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Listener\LocationBagValidationListener
+ *
+ * @uses \OCA\Procest\Service\External\Bag\BagLookupResult
  */
 class LocationBagValidationListenerTest extends TestCase
 {

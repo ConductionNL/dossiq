@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Settings;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
@@ -37,6 +37,8 @@ use ReflectionMethod;
  * Unit tests for the 40-kcc-werkplek.json register fragment.
  *
  * @covers \OCA\Procest\Service\SettingsService
+ *
+ * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
  */
 class KccWerkplekFragmentTest extends TestCase
 {
@@ -135,10 +137,10 @@ class KccWerkplekFragmentTest extends TestCase
      */
     public function testMergeUnionsRegisterMembershipAndObjects(): void
     {
-        $reflection = new ReflectionMethod(SettingsService::class, 'deepMergeConfig');
+        $reflection = new ReflectionMethod(RegisterFragmentMerger::class, 'deepMerge');
         $reflection->setAccessible(true);
 
-        $merged = $reflection->invokeArgs(null, [$this->base, $this->fragment]);
+        $merged = $reflection->invokeArgs(new RegisterFragmentMerger(), [$this->base, $this->fragment]);
 
         $registerSchemas = $merged['components']['registers']['procest']['schemas'];
         foreach ($this->kccSchemas as $slug) {

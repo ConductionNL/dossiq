@@ -41,6 +41,12 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\ProcessMiningService
+ *
+ * @uses \OCA\Procest\Service\ProcessMining\DwellTimeAnalyzer
+ * @uses \OCA\Procest\Service\ProcessMining\ProcessMiningDataLoader
+ * @uses \OCA\Procest\Service\ProcessMining\ThroughputTrendCalculator
+ * @uses \OCA\Procest\Service\ProcessMining\TransitionMatrixBuilder
+ * @uses \OCA\Procest\Service\Support\SearchesObjects
  */
 class ProcessMiningServiceTest extends TestCase
 {

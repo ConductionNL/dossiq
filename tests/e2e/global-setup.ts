@@ -17,6 +17,7 @@ import { execSync } from 'child_process'
 import * as path from 'path'
 import * as fs from 'fs'
 import { STORAGE_STATE } from './helpers/auth'
+import { BASE_URL } from './base-url'
 
 const APP_ROOT = path.resolve(__dirname, '..', '..')
 const BUNDLE_PATH = path.join(APP_ROOT, 'js', 'procest-main.js')
@@ -59,10 +60,11 @@ async function ensureNextcloudReachable(baseURL: string): Promise<void> {
 }
 
 async function globalSetup(config: FullConfig): Promise<void> {
-	const baseURL = (config.projects[0]?.use?.baseURL as string | undefined)
-		?? process.env.NEXTCLOUD_URL
-		?? process.env.NC_BASE_URL
-		?? 'http://localhost:8080'
+	// Whatever the active config resolved, else the single shared resolver.
+	// Deliberately no `?? 'http://localhost:8080'` tail: off CI that literal is
+	// the SHARED dev container, and this setup logs in and writes storage state
+	// against it. See tests/e2e/base-url.ts — it throws instead.
+	const baseURL = (config.projects[0]?.use?.baseURL as string | undefined) ?? BASE_URL
 	const user = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin'
 	const password = process.env.ADMIN_PASSWORD ?? process.env.NC_ADMIN_PASS ?? 'admin'
 

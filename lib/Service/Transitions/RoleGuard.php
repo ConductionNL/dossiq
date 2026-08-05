@@ -27,7 +27,6 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Transitions;
 
-use OCA\Procest\Service\SettingsService;
 use OCP\IGroupManager;
 use OCP\IUserManager;
 use Psr\Log\LoggerInterface;
@@ -46,13 +45,11 @@ class RoleGuard implements GuardEvaluatorInterface
     /**
      * Constructor.
      *
-     * @param SettingsService $settingsService Bridge to OpenRegister + config
-     * @param IGroupManager   $groupManager    Nextcloud group manager
-     * @param IUserManager    $userManager     Nextcloud user manager
-     * @param LoggerInterface $logger          Logger
+     * @param IGroupManager   $groupManager Nextcloud group manager
+     * @param IUserManager    $userManager  Nextcloud user manager
+     * @param LoggerInterface $logger       Logger
      */
     public function __construct(
-        private readonly SettingsService $settingsService,
         private readonly IGroupManager $groupManager,
         private readonly IUserManager $userManager,
         private readonly LoggerInterface $logger,

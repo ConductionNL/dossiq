@@ -42,6 +42,9 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Service\External\Brk\BrkApiAdapter
  * @covers \OCA\Procest\Service\External\Brk\BrkResponseMapper
+ *
+ * @uses \OCA\Procest\Service\External\Brk\BrkLookupResult
+ * @uses \OCA\Procest\Service\External\IntegrationMode
  */
 class BrkContractTest extends TestCase
 {

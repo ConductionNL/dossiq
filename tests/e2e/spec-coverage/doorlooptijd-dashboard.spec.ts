@@ -15,7 +15,7 @@ test.describe('Doorlooptijd Dashboard spec coverage', () => {
 
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading
 	test('renders the Processing Time Analytics heading on navigation', async ({ page }) => {
-		await page.goto('/apps/procest/doorlooptijd')
+		await page.goto('/index.php/apps/procest/doorlooptijd')
 		// DoorlooptijdDashboard.vue mounts its page shell (header + the extracted
 		// DeadlineKpiRow / ComplianceCharts / DeadlineCaseTable / CaseTypeBreakdown
 		// sub-components) independently of whether case data is present. The header
@@ -33,7 +33,7 @@ test.describe('Doorlooptijd Dashboard spec coverage', () => {
 
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#no-cases-exist
 	test('shows empty state when no case data is available', async ({ page }) => {
-		await page.goto('/apps/procest/doorlooptijd')
+		await page.goto('/index.php/apps/procest/doorlooptijd')
 		// DoorlooptijdDashboard.vue renders "No case data available for processing time analysis."
 		// when showNoCasesState is true (no cases in the system).
 		const empty = page.getByText('No case data available for processing time analysis.')

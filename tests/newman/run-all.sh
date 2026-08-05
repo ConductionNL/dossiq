@@ -3,8 +3,10 @@
 # Procest ZGW Newman orchestrator.
 #
 # Runs every *.postman_collection.json in this directory against a live
-# Nextcloud instance serving the procest app (openregister-style orchestrator,
-# referenced by .forgejo/workflows/tests.yml). Each collection is self-seeding
+# Nextcloud instance serving the procest app (openregister-style orchestrator;
+# run it locally — CI newman wiring lives in .github/workflows/code-quality.yml
+# via the shared quality pipeline's `enable-newman` input, which this repo
+# currently leaves off). Each collection is self-seeding
 # and idempotent (creates the objects it needs and deletes them in teardown).
 #
 # Usage:

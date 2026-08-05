@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Mandaat\MandaatCsvParser;
+use OCA\Procest\Service\Mandaat\MandaatRepository;
 use OCA\Procest\Service\MandaatImportService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -30,6 +32,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\MandaatImportService
+ * @covers \OCA\Procest\Service\Mandaat\MandaatRepository
+ * @covers \OCA\Procest\Service\Mandaat\MandaatCsvParser
  */
 class MandaatImportServiceTest extends TestCase
 {
@@ -52,7 +56,12 @@ class MandaatImportServiceTest extends TestCase
                 };
             },
         );
-        $this->service = new MandaatImportService($settings, $this->createMock(LoggerInterface::class));
+        // REAL repository + parser over the same fake object store, so these
+        // tests still exercise the production register access and CSV parsing.
+        $this->service = new MandaatImportService(
+            repository: new MandaatRepository($settings, $this->createMock(LoggerInterface::class)),
+            csvParser: new MandaatCsvParser(),
+        );
 
         // Seed roles.
         $this->objects->saveObject('procest', 'organisatieRol', ['id' => 'rol-consulent', 'rolNaam' => 'Consulent']);

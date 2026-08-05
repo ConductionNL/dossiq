@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Listener;
 
+use OCA\Procest\AppInfo\Registrar\BezwaarSubscriptionRegistrar;
 use OCA\Procest\Listener\BezwaarLegalHoldListener;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
@@ -104,7 +105,7 @@ class BezwaarLegalHoldSchemaCoverageTest extends TestCase
 
     /**
      * The listener is subscribed with a register/schema filter in
-     * `Application::subscribeBezwaarListeners()`. That filter is a SECOND,
+     * `BezwaarSubscriptionRegistrar::subscribe()`. That filter is a SECOND,
      * independent list: a schema missing there never reaches `handle()` at all,
      * however correct the constants are. `beroep` was missing from both.
      *
@@ -112,33 +113,54 @@ class BezwaarLegalHoldSchemaCoverageTest extends TestCase
      */
     public function testSubscriptionFilterCoversEveryProceedingSchema(): void
     {
-        $application = file_get_contents(filename: __DIR__.'/../../../lib/AppInfo/Application.php');
-        $this->assertIsString(actual: $application);
+        $declared = (array) (new ReflectionClass(objectOrClass: BezwaarSubscriptionRegistrar::class))
+            ->getConstant(name: 'LEGAL_HOLD_SCHEMAS');
 
-        $matched = preg_match(
-            pattern: '/BezwaarLegalHoldListener::class,\s*registers:\s*\[[^\]]*\],\s*schemas:\s*\[([^\]]*)\]/',
-            subject: $application,
-            matches: $matches
-        );
-        $this->assertSame(
-            expected: 1,
-            actual: $matched,
-            message: 'Could not locate the BezwaarLegalHoldListener subscription filter.'
+        $this->assertNotEmpty(
+            actual: $declared,
+            message: 'Could not read BezwaarSubscriptionRegistrar::LEGAL_HOLD_SCHEMAS — '
+                .'if the constant was renamed this test silently stops guarding anything.'
         );
 
-        $declared = $matches[1];
         $expected = array_merge(
             $this->constant(name: 'PROCEEDING_OPENED_SCHEMAS'),
             $this->constant(name: 'PROCEEDING_CLOSED_SCHEMAS')
         );
 
         foreach ($expected as $schemaSlug) {
-            $this->assertStringContainsString(
-                needle: "'".$schemaSlug."'",
+            $this->assertContains(
+                needle: $schemaSlug,
                 haystack: $declared,
                 message: 'Schema "'.$schemaSlug.'" is handled by the listener but absent from its '
                     .'subscription filter, so the listener never runs for it.'
             );
         }
     }//end testSubscriptionFilterCoversEveryProceedingSchema()
+
+    /**
+     * The constant guarded above only matters if it is the list actually handed
+     * to the dispatcher for THIS listener. Without this pairing check the test
+     * above would keep passing against a constant nothing reads.
+     *
+     * @return void
+     */
+    public function testLegalHoldSubscriptionUsesTheGuardedConstant(): void
+    {
+        $source = file_get_contents(
+            filename: __DIR__.'/../../../lib/AppInfo/Registrar/BezwaarSubscriptionRegistrar.php'
+        );
+        $this->assertIsString(actual: $source);
+
+        $matched = preg_match(
+            pattern: '/BezwaarLegalHoldListener::class,\s*schemas:\s*self::LEGAL_HOLD_SCHEMAS/',
+            subject: $source
+        );
+
+        $this->assertSame(
+            expected: 1,
+            actual: $matched,
+            message: 'BezwaarLegalHoldListener is no longer subscribed with self::LEGAL_HOLD_SCHEMAS, '
+                .'so the schema-coverage assertion above guards a list nothing uses.'
+        );
+    }//end testLegalHoldSubscriptionUsesTheGuardedConstant()
 }//end class

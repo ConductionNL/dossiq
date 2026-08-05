@@ -34,6 +34,8 @@ use RuntimeException;
 
 /**
  * @covers \OCA\Procest\Service\Transitions\CreateSubCaseHandler
+ *
+ * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
 class CreateSubCaseHandlerTest extends TestCase
 {

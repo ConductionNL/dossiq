@@ -26,6 +26,9 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\CaseEmailService;
+use OCA\Procest\Service\Email\CaseContactDirectory;
+use OCA\Procest\Service\Email\CaseEmailAttachmentResolver;
+use OCA\Procest\Service\Email\CaseEmailRepository;
 use OCA\Procest\Service\SettingsService;
 use OCP\Files\IRootFolder;
 use OCP\IAppConfig;
@@ -40,6 +43,9 @@ use Psr\Log\LoggerInterface;
  * Covers C4 (IDOR + file-disclosure), H6 (XSS + reserved-domain), L1 (log-injection).
  *
  * @covers \OCA\Procest\Service\CaseEmailService
+ *
+ * @uses \OCA\Procest\Service\Email\CaseEmailAttachmentResolver
+ * @uses \OCA\Procest\Service\Email\CaseEmailRepository
  */
 class CaseEmailServiceTest extends TestCase
 {
@@ -107,13 +113,17 @@ class CaseEmailServiceTest extends TestCase
         $this->rootFolder      = $this->createMock(IRootFolder::class);
         $this->userSession     = $this->createMock(IUserSession::class);
 
+        // The repository and contact directory are real collaborators, not mocks:
+        // every assertion below is about behaviour they inherited verbatim from
+        // CaseEmailService, and the repository is still driven entirely by the
+        // mocked SettingsService (getObjectService() === null ⇒ no case data).
         $this->service = new CaseEmailService(
-            $this->settingsService,
             $this->mailer,
             $this->appConfig,
             $this->logger,
-            $this->rootFolder,
-            $this->userSession,
+            new CaseEmailRepository($this->settingsService),
+            new CaseContactDirectory(),
+            new CaseEmailAttachmentResolver($this->rootFolder, $this->userSession, $this->logger),
         );
 
     }//end setUp()

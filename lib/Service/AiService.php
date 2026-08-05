@@ -32,10 +32,12 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\Support\SearchesObjects;
-use OCA\Procest\Support\SuppressesWarnings;
+use OCA\Procest\Service\Ai\AiAuditLog;
+use OCA\Procest\Service\Ai\AiEndpointGuard;
+use OCA\Procest\Service\Ai\AiModelIdentity;
+use OCA\Procest\Service\Ai\AiPiiRedactor;
+use OCA\Procest\Service\Ai\AiPromptFactory;
 use OCP\IAppConfig;
-use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
@@ -46,6 +48,15 @@ use RuntimeException;
  * AI suggests, humans confirm. Every interaction is recorded
  * in the audit trail for Algoritmeregister compliance.
  *
+ * This class is the orchestration layer only: it decides WHETHER a feature is
+ * enabled, asks {@see AiPromptFactory} for the prompt, scrubs it through
+ * {@see AiPiiRedactor}, makes the one outbound model call (guarded by
+ * {@see AiEndpointGuard}) and records the result via {@see AiAuditLog}.
+ *
+ * The oversight surface — recording what a human did with a suggestion,
+ * recording a conversational assistant exchange, and reading the trail back —
+ * lives in {@see \OCA\Procest\Service\Ai\AiAuditService}.
+ *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  *
@@ -55,48 +66,26 @@ use RuntimeException;
  */
 class AiService
 {
-    use SearchesObjects;
-    use SuppressesWarnings;
-
-    /**
-     * RFC1918 + loopback + link-local CIDR blocks to deny (SSRF protection).
-     *
-     * @var string[]
-     */
-    private const BLOCKED_CIDRS = [
-        '10.0.0.0/8',
-        '172.16.0.0/12',
-        '192.168.0.0/16',
-        '127.0.0.0/8',
-        '169.254.0.0/16',
-        '::1/128',
-        'fc00::/7',
-    ];
-
-    /**
-     * Regex patterns for PII detection and stripping.
-     *
-     * @var array<string, string>
-     */
-    private const PII_PATTERNS = [
-        'bsn'      => '/\b\d{9}\b/',
-        'iban'     => '/\b[A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}([A-Z0-9]?){0,16}\b/',
-        'phone'    => '/\b(0\d{9}|\+31\d{9})\b/',
-        'postcode' => '/\b\d{4}\s?[A-Z]{2}\b/',
-    ];
-
     /**
      * Constructor for AiService.
      *
-     * @param IAppConfig         $appConfig The app configuration service
-     * @param ContainerInterface $container The DI container
-     * @param LoggerInterface    $logger    The logger interface
+     * @param IAppConfig      $appConfig     The app configuration service
+     * @param AiPromptFactory $prompts       The prompt templates
+     * @param AiPiiRedactor   $pii           The PII detector / scrubber
+     * @param AiEndpointGuard $endpointGuard The model-URL SSRF guard
+     * @param AiAuditLog      $audit         The oversight audit trail
+     * @param AiModelIdentity $modelIdentity The configured model identifier
+     * @param LoggerInterface $logger        The logger interface
      *
      * @return void
      */
     public function __construct(
         private IAppConfig $appConfig,
-        private ContainerInterface $container,
+        private AiPromptFactory $prompts,
+        private AiPiiRedactor $pii,
+        private AiEndpointGuard $endpointGuard,
+        private AiAuditLog $audit,
+        private AiModelIdentity $modelIdentity,
         private LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -165,7 +154,7 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildClassificationPrompt(caseId: $caseId, documentId: $documentId);
+            $prompt = $this->prompts->classification(caseId: $caseId, documentId: $documentId);
             $prompt = $this->stripPiiIfEnabled(prompt: $prompt);
 
             $result = $this->callAiModel(prompt: $prompt);
@@ -227,7 +216,7 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildExtractionPrompt(caseId: $caseId, documentId: $documentId);
+            $prompt = $this->prompts->extraction(caseId: $caseId, documentId: $documentId);
             $prompt = $this->stripPiiIfEnabled(prompt: $prompt);
 
             $result = $this->callAiModel(prompt: $prompt);
@@ -289,7 +278,7 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildQaPrompt(caseId: $caseId, question: $question);
+            $prompt = $this->prompts->question(caseId: $caseId, question: $question);
 
             $result = $this->callAiModel(prompt: $prompt);
 
@@ -351,7 +340,7 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildSummaryPrompt(caseId: $caseId, type: $type, documentId: $documentId);
+            $prompt = $this->prompts->summary(caseId: $caseId, type: $type, documentId: $documentId);
             $prompt = $this->stripPiiIfEnabled(prompt: $prompt);
 
             $result = $this->callAiModel(prompt: $prompt);
@@ -411,7 +400,7 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildRoutingPrompt(caseId: $caseId);
+            $prompt = $this->prompts->routing(caseId: $caseId);
 
             $result = $this->callAiModel(prompt: $prompt);
 
@@ -470,7 +459,7 @@ class AiService
         $startTime = microtime(true);
 
         try {
-            $prompt = $this->buildNextStepPrompt(caseId: $caseId);
+            $prompt = $this->prompts->nextStep(caseId: $caseId);
 
             $result = $this->callAiModel(prompt: $prompt);
 
@@ -505,162 +494,6 @@ class AiService
             ];
         }//end try
     }//end suggestNextStep()
-
-    /**
-     * Record a user action on an AI suggestion (accept, reject, modify).
-     *
-     * @param string      $caseId      The case ID
-     * @param string      $type        AI type (classification, extraction, etc.)
-     * @param string      $userAction  User action (accepted, rejected, modified)
-     * @param array       $suggestion  The original suggestion
-     * @param array|null  $actualValue The value actually applied
-     * @param string|null $reason      Reason for rejection/modification
-     * @param string      $userId      The current user ID
-     *
-     * @return array
-     *
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) — audit entries need full context
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function recordUserAction(
-        string $caseId,
-        string $type,
-        string $userAction,
-        array $suggestion,
-        ?array $actualValue,
-        ?string $reason,
-        string $userId,
-    ): array {
-        $this->recordAuditEntry(
-                entry: [
-                    'type'        => $type,
-                    'action'      => $userAction,
-                    'caseId'      => $caseId,
-                    'model'       => $this->getModelIdentifier(),
-                    'suggestion'  => $suggestion,
-                    'userAction'  => $userAction,
-                    'actualValue' => ($actualValue ?? []),
-                    'reason'      => ($reason ?? ''),
-                    'userId'      => $userId,
-                    'timestamp'   => date('c'),
-                ]
-                );
-
-        return ['success' => true];
-    }//end recordUserAction()
-
-    /**
-     * List recorded AI audit entries from OpenRegister, newest first.
-     *
-     * Resolves the register + `ai_audit_entry_schema` config exactly like
-     * {@see self::recordAuditEntry()}. Degrades gracefully (empty result,
-     * warning logged, no throw) when AI audit storage is not configured or
-     * the OpenRegister lookup fails, so a misconfigured instance never 500s
-     * the oversight surface.
-     *
-     * @param array<string, mixed> $filters Optional filters: 'caseId', 'type'.
-     * @param int                  $limit   Page size (clamped to 1-200, default 50).
-     * @param int                  $offset  Paging offset (clamped to >= 0).
-     *
-     * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
-     *
-     * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
-     */
-    public function listAuditEntries(array $filters=[], int $limit=50, int $offset=0): array
-    {
-        $limit  = $this->clampAuditLimit(limit: $limit);
-        $offset = max(0, $offset);
-
-        $empty = [
-            'entries' => [],
-            'total'   => null,
-            'limit'   => $limit,
-            'offset'  => $offset,
-        ];
-
-        try {
-            $registerId = $this->appConfig->getValueString(
-                Application::APP_ID,
-                'register',
-                ''
-            );
-            $schemaId   = $this->appConfig->getValueString(
-                Application::APP_ID,
-                'ai_audit_entry_schema',
-                ''
-            );
-
-            if (empty($registerId) === true || empty($schemaId) === true) {
-                $this->logger->warning('AI audit: register or schema ID not configured');
-                return $empty;
-            }
-
-            $objectService = $this->container->get(
-                'OCA\OpenRegister\Service\ObjectService'
-            );
-
-            $query = [
-                '_limit'  => $limit,
-                '_offset' => $offset,
-                // Newest first — the schema's business timestamp, not OR's
-                // system @self.created, is the ordering key the oversight
-                // page needs (matches when the AI call actually happened).
-                '_order'  => ['timestamp' => 'DESC'],
-            ];
-
-            $caseId = ($filters['caseId'] ?? null);
-            if (empty($caseId) === false) {
-                $query['caseId'] = $caseId;
-            }
-
-            $type = ($filters['type'] ?? null);
-            if (empty($type) === false) {
-                $query['type'] = $type;
-            }
-
-            $entries = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $registerId,
-                schema: $schemaId,
-                filters: $query
-            );
-
-            return [
-                'entries' => $entries,
-                // The array-normalising search bridge (searchObjectsAsArrays)
-                // does not expose a cheap row count for slug-resolved
-                // register/schema — a real total would require a second,
-                // uncapped fetch. Left null rather than faked; callers page
-                // by whether a full page of `limit` rows came back.
-                'total'   => null,
-                'limit'   => $limit,
-                'offset'  => $offset,
-            ];
-        } catch (\Exception $e) {
-            $this->logger->error(
-                'Failed to list AI audit entries',
-                ['error' => $e->getMessage()]
-            );
-            return $empty;
-        }//end try
-    }//end listAuditEntries()
-
-    /**
-     * Clamp a requested audit-listing page size to a safe range.
-     *
-     * @param int $limit The requested limit.
-     *
-     * @return int The clamped limit (1-200, default 50 for non-positive input).
-     */
-    private function clampAuditLimit(int $limit): int
-    {
-        if ($limit <= 0) {
-            return 50;
-        }
-
-        return min($limit, 200);
-    }//end clampAuditLimit()
 
     /**
      * Test AI model connectivity.
@@ -729,26 +562,21 @@ class AiService
      */
     private function getModelIdentifier(): string
     {
-        $type = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local');
-        $name = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', 'unknown');
-
-        return $type.'/'.$name;
+        return $this->modelIdentity->identifier();
     }//end getModelIdentifier()
 
     /**
-     * Deterministically detect PII spans in free text using the SAME
-     * `PII_PATTERNS` regex set `stripPiiIfEnabled()` uses to scrub prompts
-     * before they leave this app. Returns character offsets rather than
-     * scrubbing, so callers (e.g. `WOOAnonymisationAssistService`) can
-     * present the exact matched ranges for human review and treat them as an
-     * immutable "rules floor" that an LLM-assisted proposal is layered on
-     * top of, never allowed to remove (woo-llm-anonymisation design.md).
+     * Deterministically detect PII spans in free text using the SAME regex set
+     * {@see AiPiiRedactor::strip()} uses to scrub prompts before they leave this
+     * app. Returns character offsets rather than scrubbing, so callers (e.g.
+     * `WOOAnonymisationAssistService`) can present the exact matched ranges for
+     * human review and treat them as an immutable "rules floor" that an
+     * LLM-assisted proposal is layered on top of, never allowed to remove
+     * (woo-llm-anonymisation design.md).
      *
-     * Public and pure (no I/O, no config lookups) — this is the ONE place
-     * the deterministic PII pattern set is defined; `stripPiiIfEnabled()`
-     * keeps its own `preg_replace()` call for the (different) scrub-in-place
-     * shape it needs, but both read from the same `PII_PATTERNS` constant so
-     * the two can never drift apart on WHICH patterns count as PII.
+     * Pure (no I/O, no config lookups). The pattern set itself lives in
+     * {@see AiPiiRedactor}, which is the ONE place it is defined — detection and
+     * scrubbing can never drift apart on WHICH patterns count as PII.
      *
      * @param string $text The text to scan.
      *
@@ -759,28 +587,7 @@ class AiService
      */
     public function detectDeterministicPiiSpans(string $text): array
     {
-        $spans = [];
-
-        foreach (self::PII_PATTERNS as $category => $pattern) {
-            $matches = [];
-            if (preg_match_all($pattern, $text, $matches, PREG_OFFSET_CAPTURE) === false) {
-                continue;
-            }
-
-            foreach ($matches[0] as $match) {
-                [$matchedText, $byteOffset] = $match;
-                $spans[] = [
-                    'start'    => $byteOffset,
-                    'end'      => ($byteOffset + strlen($matchedText)),
-                    'category' => $category,
-                    'text'     => $matchedText,
-                ];
-            }
-        }
-
-        usort($spans, static fn (array $a, array $b): int => ($a['start'] <=> $b['start']));
-
-        return $spans;
+        return $this->pii->detectSpans(text: $text);
     }//end detectDeterministicPiiSpans()
 
     /**
@@ -802,11 +609,7 @@ class AiService
             return $prompt;
         }
 
-        foreach (self::PII_PATTERNS as $type => $pattern) {
-            $prompt = preg_replace($pattern, '['.strtoupper($type).'_REMOVED]', $prompt);
-        }
-
-        return $prompt;
+        return $this->pii->strip(prompt: $prompt);
     }//end stripPiiIfEnabled()
 
     /**
@@ -864,7 +667,7 @@ class AiService
         $endpoint = rtrim($modelUrl, '/').'/api/generate';
 
         // SSRF guard: validate the configured model URL before making outbound requests.
-        if ($this->isSafeAiUrl(url: $modelUrl, modelType: $modelType) === false) {
+        if ($this->endpointGuard->isSafeUrl(url: $modelUrl, modelType: $modelType) === false) {
             throw new RuntimeException('AI model URL failed SSRF security check');
         }
 
@@ -939,35 +742,6 @@ class AiService
     }//end decodeAiModelResponse()
 
     /**
-     * Record an audit entry for a case-assistant-via-hermiq conversational
-     * exchange, using the SAME audit sink (register/schema, append-only
-     * OpenRegister write) every discrete AI operation in this class already
-     * writes to — so the existing AI oversight trail
-     * (`listAuditEntries()`/`AiAuditExportController`) covers the
-     * conversational surface too, with no second audit mechanism.
-     *
-     * A thin public forwarder is needed (rather than widening
-     * `recordAuditEntry()` itself to public) because the case-assistant
-     * surface lives in `AssistantController`/`HermiqAssistantClient` — a
-     * separate class per the fleet rule that AI functionality/LLM calls live
-     * in Hermiq, not in this class. This method carries no LLM logic; it only
-     * forwards an already-built entry to the existing writer.
-     *
-     * @param array $entry The audit entry data — same shape as the other
-     *                     `recordAuditEntry()` call sites (`type`, `action`,
-     *                     `caseId`, `model`, `prompt`, `suggestion`,
-     *                     `confidence`, `userId`, `timestamp`, `responseTimeMs`).
-     *
-     * @return void
-     *
-     * @spec openspec/specs/case-assistant-via-hermiq/spec.md
-     */
-    public function recordAssistantAuditEntry(array $entry): void
-    {
-        $this->recordAuditEntry(entry: $entry);
-    }//end recordAssistantAuditEntry()
-
-    /**
      * Record an AI audit trail entry in OpenRegister.
      *
      * @param array $entry The audit entry data
@@ -976,345 +750,6 @@ class AiService
      */
     private function recordAuditEntry(array $entry): void
     {
-        try {
-            $objectService = $this->container->get(
-                'OCA\OpenRegister\Service\ObjectService'
-            );
-
-            $registerId = $this->appConfig->getValueString(
-                Application::APP_ID,
-                'register',
-                ''
-            );
-            $schemaId   = $this->appConfig->getValueString(
-                Application::APP_ID,
-                'ai_audit_entry_schema',
-                ''
-            );
-
-            if (empty($registerId) === true || empty($schemaId) === true) {
-                $this->logger->warning('AI audit: register or schema ID not configured');
-                return;
-            }
-
-            $objectService->saveObject(
-                register: $registerId,
-                schema: $schemaId,
-                object: $entry,
-            );
-        } catch (\Exception $e) {
-            $this->logger->error(
-                'Failed to record AI audit entry',
-                ['error' => $e->getMessage()]
-            );
-        }//end try
+        $this->audit->record(entry: $entry);
     }//end recordAuditEntry()
-
-    /**
-     * Build a classification prompt for the AI model.
-     *
-     * @param string $caseId     The case ID
-     * @param string $documentId The document ID
-     *
-     * @return string The classification prompt
-     */
-    private function buildClassificationPrompt(string $caseId, string $documentId): string
-    {
-        return 'Classify the following document for case '.$caseId
-            .'. Document ID: '.$documentId
-            .'. Return JSON with fields: documentType (string), confidence (number 0-1), '
-            .'metadata (object with date, sender, subject).';
-    }//end buildClassificationPrompt()
-
-    /**
-     * Build a data extraction prompt for the AI model.
-     *
-     * @param string      $caseId     The case ID
-     * @param string|null $documentId Optional document ID
-     *
-     * @return string The extraction prompt
-     */
-    private function buildExtractionPrompt(string $caseId, ?string $documentId): string
-    {
-        $prompt = 'Extract structured data from documents in case '.$caseId.'.';
-        if ($documentId !== null) {
-            $prompt .= ' Focus on document '.$documentId.'.';
-        }
-
-        $prompt .= ' Return JSON with fields: array of {name, value, confidence (0-1), source}.';
-
-        return $prompt;
-    }//end buildExtractionPrompt()
-
-    /**
-     * Build a Q&A prompt with case context.
-     *
-     * @param string $caseId   The case ID
-     * @param string $question The user's question
-     *
-     * @return string The Q&A prompt
-     */
-    private function buildQaPrompt(string $caseId, string $question): string
-    {
-        return 'Answer the following question in the context of case '.$caseId
-            .'. Question: '.$question
-            .'. Return JSON with fields: answer (string), sources (array of {document, page, quote}), '
-            .'confidence (number 0-1). '
-            .'If no relevant information is found, return: '
-            .'{"answer": "Geen relevante informatie gevonden in de kennisbank", "sources": [], "confidence": 0}.';
-    }//end buildQaPrompt()
-
-    /**
-     * Build a summarization prompt.
-     *
-     * @param string      $caseId     The case ID
-     * @param string      $type       Summary type
-     * @param string|null $documentId Optional document ID
-     *
-     * @return string The summary prompt
-     */
-    private function buildSummaryPrompt(string $caseId, string $type, ?string $documentId): string
-    {
-        $prompt = 'Generate a '.$type.' summary for case '.$caseId.'.';
-        if ($type === 'document' && $documentId !== null) {
-            $prompt .= ' Summarize document '.$documentId.'.';
-        }
-
-        $prompt .= ' Return JSON with field: summary (string, 3-5 sentences in Dutch).';
-
-        return $prompt;
-    }//end buildSummaryPrompt()
-
-    /**
-     * Build a routing suggestion prompt.
-     *
-     * @param string $caseId The case ID
-     *
-     * @return string The routing prompt
-     */
-    private function buildRoutingPrompt(string $caseId): string
-    {
-        return 'Suggest the best case worker for case '.$caseId
-            .' based on expertise and current workload. '
-            .'Return JSON with fields: suggestions (array of {userId, name, reason, confidence}).';
-    }//end buildRoutingPrompt()
-
-    /**
-     * Build a next-step suggestion prompt.
-     *
-     * @param string $caseId The case ID
-     *
-     * @return string The next-step prompt
-     */
-    private function buildNextStepPrompt(string $caseId): string
-    {
-        return 'Analyze the current state of case '.$caseId
-            .' and suggest what the case worker should do next. '
-            .'Return JSON with fields: suggestions (array of {action, reason, priority}).';
-    }//end buildNextStepPrompt()
-
-    /**
-     * Validate that the configured AI model URL is safe to connect to (SSRF guard).
-     *
-     * For cloud models, requires https and a public hostname.
-     * For local models, allows http only to localhost / 127.0.0.1.
-     *
-     * @param string $url       The base AI model URL
-     * @param string $modelType The model type ('local' or 'cloud')
-     *
-     * @return bool True if the URL passes the SSRF check
-     */
-    private function isSafeAiUrl(string $url, string $modelType): bool
-    {
-        $parsed = parse_url($url);
-        $scheme = strtolower($parsed['scheme'] ?? '');
-        $host   = strtolower($parsed['host'] ?? '');
-
-        if ($host === '') {
-            return false;
-        }//end if
-
-        if ($modelType === 'local') {
-            return $this->isSafeLocalAiUrl(scheme: $scheme, host: $host);
-        }//end if
-
-        return $this->isSafeCloudAiUrl(scheme: $scheme, host: $host);
-    }//end isSafeAiUrl()
-
-    /**
-     * Validate a local-model URL (SSRF guard).
-     *
-     * Only http/https to localhost or 127.0.0.1; named docker service hostnames
-     * are allowed but must not resolve into the cloud metadata range.
-     *
-     * @param string $scheme The lower-cased URL scheme
-     * @param string $host   The lower-cased URL host
-     *
-     * @return bool True if the URL passes the SSRF check
-     */
-    private function isSafeLocalAiUrl(string $scheme, string $host): bool
-    {
-        // Local models: only http/https to localhost or 127.0.0.1.
-        if (in_array($scheme, ['http', 'https'], true) === false) {
-            return false;
-        }//end if
-
-        if ($host !== 'localhost' && $host !== '127.0.0.1' && $host !== '::1') {
-            // Allow named docker service hostnames (e.g. 'ollama') for local deployments
-            // but still block known public metadata endpoints and RFC1918 IPs.
-            $ipAddress = gethostbyname($host);
-            if ($ipAddress !== $host
-                && $this->ipInCidr(ipAddress: $ipAddress, cidr: '169.254.0.0/16') === true
-            ) {
-                $this->logger->warning(
-                    'AI SSRF: local model URL resolves to cloud metadata range',
-                    ['host' => $host, 'ip' => $ipAddress]
-                );
-                return false;
-            }//end if
-        }//end if
-
-        return true;
-    }//end isSafeLocalAiUrl()
-
-    /**
-     * Validate a cloud-model URL (SSRF guard).
-     *
-     * Https only, and the host must resolve to a public (non-RFC1918,
-     * non-loopback) address.
-     *
-     * @param string $scheme The lower-cased URL scheme
-     * @param string $host   The lower-cased URL host
-     *
-     * @return bool True if the URL passes the SSRF check
-     */
-    private function isSafeCloudAiUrl(string $scheme, string $host): bool
-    {
-        // Cloud models: https only, must resolve to a public (non-RFC1918) address.
-        if ($scheme !== 'https') {
-            $this->logger->warning(
-                'AI SSRF: cloud model URL must use https',
-                ['scheme' => $scheme]
-            );
-            return false;
-        }//end if
-
-        $records = $this->withoutWarnings(
-            operation: static function () use ($host): mixed {
-                return dns_get_record($host, (DNS_A | DNS_AAAA));
-            }
-        );
-        if ($records === false || count($records) === 0) {
-            $this->logger->warning(
-                'AI SSRF: DNS resolution returned no records',
-                ['host' => $host, 'detail' => $this->lastSuppressedWarning()]
-            );
-            return false;
-        }//end if
-
-        foreach ($records as $record) {
-            $ipAddress = $record['ip'] ?? ($record['ipv6'] ?? null);
-            if ($ipAddress === null) {
-                continue;
-            }//end if
-
-            foreach (self::BLOCKED_CIDRS as $cidr) {
-                if ($this->ipInCidr(ipAddress: $ipAddress, cidr: $cidr) === true) {
-                    $this->logger->warning(
-                        'AI SSRF: cloud model URL resolves to private/loopback address',
-                        ['host' => $host, 'ip' => $ipAddress, 'cidr' => $cidr]
-                    );
-                    return false;
-                }//end if
-            }
-        }
-
-        return true;
-    }//end isSafeCloudAiUrl()
-
-    /**
-     * Check if an IP address falls within a CIDR range (IPv4 and IPv6).
-     *
-     * @param string $ipAddress The IP address to test
-     * @param string $cidr      The CIDR block (e.g. '10.0.0.0/8')
-     *
-     * @return bool True if the IP is within the range
-     */
-    private function ipInCidr(string $ipAddress, string $cidr): bool
-    {
-        $isIpv6Cidr = str_contains($cidr, ':');
-        $isIpv6Ip   = str_contains($ipAddress, ':');
-
-        if ($isIpv6Cidr === true && $isIpv6Ip === true) {
-            return $this->isIpv6InCidr(ipAddress: $ipAddress, cidr: $cidr);
-        }//end if
-
-        if ($isIpv6Cidr === false && $isIpv6Ip === false) {
-            return $this->isIpv4InCidr(ipAddress: $ipAddress, cidr: $cidr);
-        }//end if
-
-        return false;
-    }//end ipInCidr()
-
-    /**
-     * Check if an IPv6 address falls within an IPv6 CIDR range.
-     *
-     * @param string $ipAddress The IPv6 address to test
-     * @param string $cidr      The IPv6 CIDR block (e.g. 'fc00::/7')
-     *
-     * @return bool True if the IP is within the range
-     */
-    private function isIpv6InCidr(string $ipAddress, string $cidr): bool
-    {
-        [$network, $prefix] = explode('/', $cidr);
-        $prefixLen          = (int) $prefix;
-        $networkBin         = inet_pton($network);
-        $inputBin           = inet_pton($ipAddress);
-        if ($networkBin === false || $inputBin === false) {
-            return false;
-        }//end if
-
-        $fullBytes  = intdiv($prefixLen, 8);
-        $remainBits = $prefixLen % 8;
-        for ($i = 0; $i < $fullBytes; $i++) {
-            if ($networkBin[$i] !== $inputBin[$i]) {
-                return false;
-            }//end if
-        }
-
-        if ($remainBits > 0 && $fullBytes < 16) {
-            $mask = (0xFF << (8 - $remainBits)) & 0xFF;
-            if ((ord($networkBin[$fullBytes]) & $mask) !== (ord($inputBin[$fullBytes]) & $mask)) {
-                return false;
-            }//end if
-        }//end if
-
-        return true;
-    }//end isIpv6InCidr()
-
-    /**
-     * Check if an IPv4 address falls within an IPv4 CIDR range.
-     *
-     * @param string $ipAddress The IPv4 address to test
-     * @param string $cidr      The IPv4 CIDR block (e.g. '10.0.0.0/8')
-     *
-     * @return bool True if the IP is within the range
-     */
-    private function isIpv4InCidr(string $ipAddress, string $cidr): bool
-    {
-        [$network, $prefix] = explode('/', $cidr);
-        $prefixLen          = (int) $prefix;
-        $networkLong        = ip2long($network);
-        $ipLong = ip2long($ipAddress);
-        if ($networkLong === false || $ipLong === false) {
-            return false;
-        }//end if
-
-        $mask = 0;
-        if ($prefixLen !== 0) {
-            $mask = ~0 << (32 - $prefixLen);
-        }//end if
-
-        return ($ipLong & $mask) === ($networkLong & $mask);
-    }//end isIpv4InCidr()
 }//end class

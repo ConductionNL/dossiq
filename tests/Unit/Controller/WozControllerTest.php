@@ -35,6 +35,8 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Controller\WozController
+ *
+ * @uses \OCA\Procest\Service\External\Woz\WozLookupResult
  */
 class WozControllerTest extends TestCase
 {

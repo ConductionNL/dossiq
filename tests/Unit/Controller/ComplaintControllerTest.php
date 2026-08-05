@@ -46,6 +46,8 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Procest\Controller\ComplaintAnalyticsController
  * @covers \OCA\Procest\Controller\ComplaintCategoryController
  * @covers \OCA\Procest\Controller\ComplaintDispositionController
+ *
+ * @uses \OCA\Procest\Service\Complaint\ComplaintAccessGuard
  */
 class ComplaintControllerTest extends TestCase
 {

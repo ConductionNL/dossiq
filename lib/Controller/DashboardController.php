@@ -3,12 +3,21 @@
 /**
  * Procest Dashboard Controller
  *
- * Thin subclass of the OpenRegister AppHost GenericDashboardController.
- *
- * The SPA shell (`page()` / `catchAll()`) is inherited unchanged from the
- * engine; only the two procest-specific PWA asset endpoints
- * (`serviceWorker()` / `webManifest()`) — required by the
+ * SPA host implemented by COMPOSITION, not inheritance. The SPA shell
+ * (`page()` / `catchAll()`) is behaviourally identical to the OpenRegister
+ * AppHost `GenericDashboardController` this class used to subclass, but is
+ * implemented locally against OCP only. The two procest-specific PWA asset
+ * endpoints (`serviceWorker()` / `webManifest()`) — required by the
  * mobiel-inspectie-offline Progressive Web App — remain bespoke here.
+ *
+ * ⚠️ DO NOT "simplify" this back into a subclass of the AppHost generic, and do
+ * not `use`-import an OpenRegister class here. Nextcloud's router
+ * `ReflectionClass()`es every file in `lib/Controller/` while MATCHING a route,
+ * so an unresolvable parent makes EVERY route in procest return HTTP 500 —
+ * including routes with no OpenRegister involvement at all. Procest does not
+ * declare `<app>openregister</app>`, so an admin can create exactly that
+ * configuration. `extends` is resolved by the AUTOLOADER, not the DI container,
+ * so no amount of lazy registration can rescue it. See decidesk#377 / #388.
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -31,12 +40,14 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
-use OCA\OpenRegister\AppHost\Controller\GenericDashboardController;
 use OCA\Procest\AppInfo\Application;
+use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDownloadResponse;
+use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 
 /**
@@ -44,7 +55,7 @@ use OCP\IRequest;
  *
  * @psalm-suppress UnusedClass
  */
-class DashboardController extends GenericDashboardController
+class DashboardController extends Controller
 {
     /**
      * App-root-relative location of the bundled PWA assets.
@@ -56,9 +67,8 @@ class DashboardController extends GenericDashboardController
     /**
      * Constructor.
      *
-     * Supplies the procest app id to the engine base controller so Nextcloud's
-     * DI can auto-wire this subclass from `IRequest` alone (the engine base
-     * otherwise takes an injected `string $appName` via the Bootstrap factory).
+     * Supplies the procest app id so Nextcloud's DI can auto-wire this
+     * controller from `IRequest` alone.
      *
      * @param IRequest $request HTTP request.
      */
@@ -66,6 +76,48 @@ class DashboardController extends GenericDashboardController
     {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
+
+    /**
+     * Render the main SPA page from `templates/index.php`.
+     *
+     * `#[NoAdminRequired]` / `#[NoCSRFRequired]` were previously INHERITED from
+     * the AppHost generic; they are declared explicitly here so the auth posture
+     * is byte-for-byte unchanged by dropping the inheritance.
+     *
+     * @return TemplateResponse The rendered procest index template.
+     *
+     * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+     */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    public function page(): TemplateResponse
+    {
+        return $this->renderIndex();
+    }//end page()
+
+    /**
+     * Serve the SPA for deep links (Vue history mode). Delegates to {@see page()}.
+     *
+     * @return TemplateResponse The rendered procest index template.
+     *
+     * @spec openspec/changes/adopt-apphost/tasks.md#task-2.1
+     */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    public function catchAll(): TemplateResponse
+    {
+        return $this->page();
+    }//end catchAll()
+
+    /**
+     * Build the `index` TemplateResponse.
+     *
+     * @return TemplateResponse The rendered procest index template.
+     */
+    protected function renderIndex(): TemplateResponse
+    {
+        return new TemplateResponse($this->appName, 'index');
+    }//end renderIndex()
 
     /**
      * Serve the mobiel-inspectie-offline Service Worker script.

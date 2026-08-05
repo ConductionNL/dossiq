@@ -6,7 +6,7 @@
  * Exercises validation (400s), fail-closed case loading (404 on missing OR /
  * unknown / unreadable case — never distinguished), the bounded case-context
  * summary sent to Hermiq, per-(user,case) session continuity via IConfig, and
- * audit recording through the existing AiService sink.
+ * audit recording through the existing AiAuditService sink.
  *
  * @category Tests
  * @package  OCA\Procest\Tests\Unit\Service\Assistant
@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service\Assistant;
 
 use Exception;
-use OCA\Procest\Service\AiService;
+use OCA\Procest\Service\Ai\AiAuditService;
 use OCA\Procest\Service\Assistant\CaseAssistantService;
 use OCA\Procest\Service\Assistant\HermiqAssistantClient;
 use OCA\Procest\Service\SettingsService;
@@ -98,11 +98,11 @@ class CaseAssistantServiceTest extends TestCase
     private HermiqAssistantClient $hermiqClient;
 
     /**
-     * Mock AiService.
+     * Mock AiAuditService.
      *
-     * @var AiService&MockObject
+     * @var AiAuditService&MockObject
      */
-    private AiService $aiService;
+    private AiAuditService $auditService;
 
     /**
      * Mock IConfig.
@@ -128,7 +128,7 @@ class CaseAssistantServiceTest extends TestCase
             }
         );
         $this->hermiqClient = $this->createMock(HermiqAssistantClient::class);
-        $this->aiService     = $this->createMock(AiService::class);
+        $this->auditService  = $this->createMock(AiAuditService::class);
         $this->config        = $this->createMock(IConfig::class);
     }//end setUp()
 
@@ -142,7 +142,7 @@ class CaseAssistantServiceTest extends TestCase
         return new CaseAssistantService(
             $this->settingsService,
             $this->hermiqClient,
-            $this->aiService,
+            $this->auditService,
             $this->config,
             $this->createMock(LoggerInterface::class)
         );
@@ -232,7 +232,7 @@ class CaseAssistantServiceTest extends TestCase
     /**
      * Happy path: builds a bounded summary from only the safe fields, sends
      * the prior Hermiq session for continuity, persists the new session, and
-     * records an audit entry via AiService.
+     * records an audit entry via AiAuditService.
      *
      * @return void
      */
@@ -276,7 +276,7 @@ class CaseAssistantServiceTest extends TestCase
             ->method('setUserValue')
             ->with('alice', 'procest', 'assistant_session_case-1', 'new-session');
 
-        $this->aiService->expects($this->once())
+        $this->auditService->expects($this->once())
             ->method('recordAssistantAuditEntry')
             ->with($this->callback(function (array $entry) {
                 return $entry['type'] === 'assistant'

@@ -33,8 +33,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service;
 
-use DateTimeImmutable;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Routing\RoleDelegationResolver;
 use OCA\Procest\Service\Routing\RoutingStrategyMissingException;
 use OCA\Procest\Service\Routing\StrategyRegistry;
 use OCP\ICache;
@@ -47,9 +47,6 @@ use Throwable;
  * Central role-routing engine.
  *
  * @spec openspec/changes/role-based-step-routing/tasks.md#T02
- *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — orchestrates strategies,
- *   OpenRegister, cache and logger.
  */
 class RoleResolverService
 {
@@ -78,15 +75,17 @@ class RoleResolverService
     /**
      * Constructor.
      *
-     * @param StrategyRegistry $registry        Strategy registry
-     * @param SettingsService  $settingsService Bridge to ObjectService + config
-     * @param ICacheFactory    $cacheFactory    Cache factory
-     * @param LoggerInterface  $logger          Logger
+     * @param StrategyRegistry       $registry        Strategy registry
+     * @param SettingsService        $settingsService Bridge to ObjectService + config
+     * @param ICacheFactory          $cacheFactory    Cache factory
+     * @param RoleDelegationResolver $delegation      Active-window delegate substitution
+     * @param LoggerInterface        $logger          Logger
      */
     public function __construct(
         private readonly StrategyRegistry $registry,
         private readonly SettingsService $settingsService,
         ICacheFactory $cacheFactory,
+        private readonly RoleDelegationResolver $delegation,
         private readonly LoggerInterface $logger,
     ) {
         $this->cache = $cacheFactory->createLocal(Application::APP_ID.'_routing');
@@ -187,7 +186,7 @@ class RoleResolverService
                 ->resolve(['strategy' => self::STRATEGY_SINGLE_ROLE, 'roleType' => $fallback], $case, $roles);
         }
 
-        $resolved = $this->applyDelegation(participants: $primary, roles: $roles);
+        $resolved = $this->delegation->apply(participants: $primary, roles: $roles);
 
         if ($caseId !== '') {
             $this->cache->set($cacheKey, $resolved, self::CACHE_TTL);
@@ -261,93 +260,6 @@ class RoleResolverService
         // resolver hits are rebuilt within 60s anyway.
         $this->cache->clear();
     }//end invalidateCache()
-
-    /**
-     * Substitute delegates inside an active delegation window; break cycles.
-     *
-     * @param array<int, string>               $participants Raw resolver output
-     * @param array<int, array<string, mixed>> $roles        All case roles
-     *
-     * @return array<int, string>
-     */
-    private function applyDelegation(array $participants, array $roles): array
-    {
-        $now    = new DateTimeImmutable('now');
-        $byUser = [];
-        foreach ($roles as $role) {
-            $participant = (string) ($role['participant'] ?? '');
-            if ($participant !== '') {
-                $byUser[$participant] = $role;
-            }
-        }
-
-        $result = [];
-        foreach ($participants as $participant) {
-            $result[] = $this->resolveDelegate(
-                participant: $participant,
-                byUser: $byUser,
-                now: $now,
-            );
-        }
-
-        return $result;
-    }//end applyDelegation()
-
-    /**
-     * Resolve one participant to its active delegate (single hop, cycle-safe).
-     *
-     * @param string                              $participant The original participant
-     * @param array<string, array<string, mixed>> $byUser      Case roles indexed by participant
-     * @param DateTimeImmutable                   $now         The evaluation moment
-     *
-     * @return string The delegate when an active window applies, else the participant
-     */
-    private function resolveDelegate(string $participant, array $byUser, DateTimeImmutable $now): string
-    {
-        $resolved = $participant;
-        $visited  = [$participant => true];
-        while (isset($byUser[$resolved]) === true) {
-            $role     = $byUser[$resolved];
-            $from     = (string) ($role['delegateFrom'] ?? '');
-            $until    = (string) ($role['delegateUntil'] ?? '');
-            $delegate = (string) ($role['delegate'] ?? '');
-            if ($delegate === '' || $from === '' || $until === '') {
-                break;
-            }
-
-            try {
-                $fromAt  = new DateTimeImmutable($from);
-                $untilAt = new DateTimeImmutable($until);
-            } catch (Throwable $e) {
-                break;
-            }
-
-            if ($now < $fromAt || $now > $untilAt) {
-                break;
-            }
-
-            if (isset($visited[$delegate]) === true) {
-                $this->logger->warning(
-                    'Procest: delegation cycle detected',
-                    [
-                        'event'    => 'RoleRoutingDelegationCycle',
-                        'original' => $participant,
-                        'delegate' => $delegate,
-                        'app'      => Application::APP_ID,
-                    ],
-                );
-                break;
-            }
-
-            $visited[$delegate] = true;
-            $resolved           = $delegate;
-
-            // Per spec: break after exactly one hop.
-            break;
-        }//end while
-
-        return $resolved;
-    }//end resolveDelegate()
 
     /**
      * Build a cache key from rule + caseId.

@@ -34,8 +34,11 @@
  *
  * Per the per-app convention every mutation goes through OpenRegister via
  * the manifest renderer; this service composes those calls and never owns
- * bespoke CRUD. Identity is ALWAYS derived from `IUserSession`; static
- * error messages only — exception details never bubble to controllers.
+ * bespoke CRUD. Identity is never resolved here: every write lands through
+ * OpenRegister, which stamps the acting user on its own audit trail, and the
+ * one status change this service triggers goes through
+ * `StatusTransitionService::execute()`, which resolves the actor itself.
+ * Static error messages only — exception details never bubble to controllers.
  *
  * @category Service
  * @package  OCA\Procest\Service\Bezwaar
@@ -59,7 +62,6 @@ namespace OCA\Procest\Service\Bezwaar;
 use DateTimeImmutable;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\StatusTransitionService;
-use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Throwable;
@@ -107,7 +109,6 @@ class BeroepService
      * Constructor.
      *
      * @param SettingsService         $settingsService Schema/register bridge
-     * @param IUserSession            $userSession     Acting identity source
      * @param StatusTransitionService $transitions     Engine used by
      *                                                 executeCascade() to
      *                                                 re-open the source
@@ -118,7 +119,6 @@ class BeroepService
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly IUserSession $userSession,
         private readonly StatusTransitionService $transitions,
         private readonly LoggerInterface $logger,
     ) {

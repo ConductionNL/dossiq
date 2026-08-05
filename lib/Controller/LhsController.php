@@ -29,7 +29,6 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\LhsLookupService;
-use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\Vth\LhsRecommendationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -58,7 +57,6 @@ class LhsController extends Controller
      * @param IRequest                 $request          Request
      * @param LhsRecommendationService $lhsService       LHS engine
      * @param LhsLookupService         $lhsLookupService LHS simple lookup service
-     * @param SettingsService          $settingsService  Settings bridge
      * @param IUserSession             $userSession      User session
      * @param IGroupManager            $groupManager     Group manager
      * @param LoggerInterface          $logger           Logger
@@ -68,7 +66,6 @@ class LhsController extends Controller
         IRequest $request,
         private readonly LhsRecommendationService $lhsService,
         private readonly LhsLookupService $lhsLookupService,
-        private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
         private readonly IGroupManager $groupManager,
         private readonly LoggerInterface $logger,

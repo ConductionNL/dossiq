@@ -7,6 +7,22 @@ on:
     branches: [main, master, development]
   workflow_dispatch:
 
+concurrency:
+  group: quality-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+# Permission CEILING for the called quality pipeline. GitHub statically
+# validates the called workflow's declared job permissions against this
+# grant — even for jobs that are disabled — so it must cover the maximum
+# any nested job declares: journeydoc-capture (contents+actions write),
+# update-baseline / features-extract (contents write), and the Quality
+# Report PR comment (issues / pull-requests write).
+permissions:
+  contents: write
+  actions: write
+  issues: write
+  pull-requests: write
+
 jobs:
   quality:
     uses: ConductionNL/.github/.github/workflows/quality.yml@fix/phpunit-not-gated-on-static-analysis
@@ -29,7 +45,16 @@ jobs:
       newman-collection-path: "data"
       newman-environment-path: "tests/zgw/zgw-environment.json"
       newman-seed-command: "bash apps/procest/tests/zgw/seed-consumers.sh"
-      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"feature/php-linting"}]'
+      # `ref` moved off `feature/php-linting`. That is a short-lived quality
+      # branch, not a line anyone develops against: pinning the FOUNDATION app
+      # to it made every CI instance behave unlike any environment procest is
+      # actually built or run in, and it silently rots the moment the branch is
+      # merged or deleted (the checkout step does `git clone --depth 1 --branch
+      # "$ref"`, which fails outright). procest's own appinfo/routes.php depends
+      # on `\OCA\OpenRegister\AppHost\Routes::standard()` and the E2E job's seed
+      # needs the `settings#load` route it ships — `development` is where that
+      # plumbing lands first.
+      additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"}]'
       # SBOM disabled until @conduction/nextcloud-vue's dependency declarations
       # are cleaned up — its `npm ls` tree fails ELSPROBLEMS (bootstrap-vue is a
       # non-optional peer, apexcharts/pinia/vue version ranges don't match what
@@ -38,14 +63,87 @@ jobs:
       # `npm ls` under the hood; `--package-lock-only` doesn't sidestep it).
       # No other Conduction app enables SBOM today. Tracked in #434.
       enable-sbom: false
-      # Playwright disabled until upstream @conduction/nextcloud-vue
-      # CnObjectDataWidget bundling bug is fixed: the published bundle has a
-      # hard-coded `require('../../store/index.js')` inside a soft try/catch
-      # that webpack can't resolve in consumer apps, so the procest bundle
-      # fails to build and every E2E spec then 404s. Tracked in
-      # ConductionNL/nextcloud-vue#242 — re-enable once a beta past that fix
-      # is pinned in package.json.
-      enable-playwright: false
+      # ── E2E browser tests ────────────────────────────────────────────────
+      # Previously LEFT OFF. The comment that lived here recorded the blocker,
+      # so it is kept (not deleted) next to what changed:
+      #
+      #   "Playwright disabled until the upstream @conduction/nextcloud-vue
+      #    CnObjectDataWidget bundling bug is fixed: the published bundle has a
+      #    hard-coded `require('../../store/index.js')` inside a soft try/catch
+      #    that webpack can't resolve in consumer apps, so the procest bundle
+      #    fails to build and every E2E spec then 404s. Tracked in
+      #    ConductionNL/nextcloud-vue#242 — re-enable once a beta past that fix
+      #    is pinned in package.json."
+      #
+      # That precondition is met: package.json now pins
+      # @conduction/nextcloud-vue 2.1.0-vue3.16 (the Vue 3 line, past #242) and
+      # `npm run build` emits js/procest-main.js. It is no longer taken on
+      # trust either — `ci-seed.sh` ends by FETCHING the bundle over HTTP and
+      # failing the step unless the response is real JavaScript of non-trivial
+      # size. A missing bundle returns HTTP 200 `text/html` (the Nextcloud error
+      # page through index.php), never a 404, so a status-code check alone would
+      # read the exact failure this input was disabled for as a success.
+      enable-playwright: true
+      # Double duty in the shared workflow: it is both the directory the
+      # "Validate Playwright tests exist" step counts *.spec.ts in, AND the
+      # FIRST place the run step looks for a config
+      # (`${playwright-test-path}/playwright.config.ts`), falling back to the
+      # repo root only if that file is absent. We ship
+      # tests/e2e/playwright.config.ts precisely so that lookup hits it: the run
+      # step passes no `--project`, so the ROOT config would also run
+      # `docs-capture` (re-shooting every documentation screenshot on every PR)
+      # and `visual` (whose own README records that a CI Linux runner cannot
+      # byte-match a dev-container PNG baseline).
+      playwright-test-path: tests/e2e
+      # Left OFF deliberately. Turning it on adds a hard threshold gate to a job
+      # that has never run here; enable it in a follow-up once this job has a
+      # measured baseline. The threshold below is inert while this is false.
       enable-playwright-coverage: false
       playwright-coverage-threshold: 75
-      playwright-seed-command: 'php occ maintenance:repair'
+      # WAS `php occ maintenance:repair`. That is the IRepairStep path, and it
+      # CANNOT provision procest's register: a repair step runs with no user
+      # session, so OpenRegister RBAC denies the import ("User 'Anonymous' does
+      # not have permission to 'create' objects in schema '…'"),
+      # Repair\InitializeSettings::run() catches the Throwable and downgrades it
+      # to a warning, and occ still exits 0. The register is absent, the app
+      # looks fine, and every fixture call then 404s.
+      #
+      # ci-seed.sh instead imports EXPLICITLY over the admin HTTP API
+      # (POST /apps/procest/api/settings/load → loadConfiguration(force: true),
+      # which also deep-merges the 20 lib/Settings/register.d/*.json fragments)
+      # and then VERIFIES the register + schema slugs, so a bad provision is one
+      # loud step failure instead of a hundred misleading spec failures.
+      #
+      # cwd for this step is the Nextcloud server root.
+      playwright-seed-command: 'bash apps/procest/tests/e2e/ci-seed.sh'
+
+      # Integration Tests (Newman) stays OFF here, deliberately. The
+      # `enable-newman: false` further up is not a default nobody chose: it
+      # records that the ZGW compliance collections fail at 95%+ because the ZGW
+      # API implementation is still in progress. Four collections are committed
+      # under `data/` and would all meet that same known cause — a guaranteed
+      # red that teaches nothing the comment does not already say. Flipped back
+      # on in the commit that gets the core CRUD assertions passing.
+
+      # ── Frontend Check legs ──────────────────────────────────────────────
+      # `frontend-checks` defaults to `[]`, and an empty list means the shared
+      # workflow emits NO "Frontend Check" job at all — so these three
+      # validators ran nowhere while the run still looked complete.
+      # Measured on this tree before enabling: `test:l10n` PASSES;
+      # `check:manifest` FAILS on three counts — `pages[4]` and `pages[5]`
+      # (`type=custom requires component field`) and `pages[52].type: "roadmap"
+      # not in v1.2 enum`. `check:vue3-compile` could not be measured locally
+      # (it needs `@vue/compiler-sfc`, which only exists after the leg's own
+      # `npm ci`), so CI is the first place it gets a real verdict.
+      # `test` / `test:unit` are NOT listed: "Frontend Tests (unit)" runs them.
+      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n"]'
+
+      # ── Hydra mechanical gates ───────────────────────────────────────────
+      # `enable-hydra-gates` defaults to FALSE, so this tier has never executed
+      # here — the job reported `skipped`, which the Quality Report renders
+      # identically to a pass. Pinned to v1.0.1 so a change to the gate package
+      # cannot move this repo's verdict without a commit here.
+      # `enable-axe` deliberately NOT set: a vanilla Nextcloud 34 already carries
+      # serious/critical violations from core's own UI.
+      enable-hydra-gates: true
+      hydra-gates-ref: v1.0.1

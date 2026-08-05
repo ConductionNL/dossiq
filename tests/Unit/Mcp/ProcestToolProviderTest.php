@@ -35,6 +35,9 @@ use Psr\Log\LoggerInterface;
  * Unit tests for the ProcestToolProvider class.
  *
  * @covers \OCA\Procest\Mcp\ProcestToolProvider
+ *
+ * @uses \OCA\Procest\Mcp\Tool\ProcestCaseAuthorizer
+ * @uses \OCA\Procest\Mcp\Tool\ProcestCaseReader
  */
 class ProcestToolProviderTest extends TestCase
 {

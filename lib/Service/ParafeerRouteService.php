@@ -35,7 +35,9 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Event\ParafeerTransitionEvent;
-use OCA\Procest\Service\Routing\RoutingStrategyMissingException;
+use OCA\Procest\Service\Parafering\ParaferingStepActivator;
+use OCA\Procest\Service\Parafering\VoorstelRouteMapper;
+use OCA\Procest\Service\Support\ObjectArrayNormalizer;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -53,7 +55,9 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  *
- * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — orchestrates ObjectService + IUserSession
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) — orchestrates ObjectService, IUserSession,
+ *   the event dispatcher and the parafering collaborators; still 15 after the step-activation,
+ *   route-mapping and array-normalisation seams were extracted.
  */
 class ParafeerRouteService
 {
@@ -83,17 +87,21 @@ class ParafeerRouteService
      * @param SettingsService          $settingsService The Procest settings/config bridge to OpenRegister
      * @param IUserSession             $userSession     The current Nextcloud user session
      * @param LoggerInterface          $logger          The logger
-     * @param RoleResolverService      $roleResolver    Central role-routing engine
+     * @param ParaferingStepActivator  $stepActivator   Step activation + concrete actor resolution
      * @param IEventDispatcher         $eventDispatcher The event dispatcher
      * @param ParaferingApprovalBridge $approvalBridge  Bridge to OpenRegister approval-workflow (ADR-022)
+     * @param VoorstelRouteMapper      $routeMapper     Route-snapshot / audit-trail shaping
+     * @param ObjectArrayNormalizer    $normalizer      Collapses OpenRegister's array-or-entity shape
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
-        private readonly RoleResolverService $roleResolver,
+        private readonly ParaferingStepActivator $stepActivator,
         private readonly IEventDispatcher $eventDispatcher,
         private readonly ParaferingApprovalBridge $approvalBridge,
+        private readonly VoorstelRouteMapper $routeMapper,
+        private readonly ObjectArrayNormalizer $normalizer,
     ) {
     }//end __construct()
 
@@ -163,15 +171,15 @@ class ParafeerRouteService
         [$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
         $routeSchema = $this->requireConfig(key: 'parafeerroute_schema');
 
-        $voorstel = $this->toArray(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
+        $voorstel = $this->normalizer->toArrayWithCast(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
 
         $routeRef = (string) ($voorstel['parafeerroute'] ?? '');
         if ($routeRef === '') {
             throw new RuntimeException('Voorstel has no linked parafeerroute');
         }
 
-        $route = $this->toArray(value: $objectService->find($routeRef, register: $register, schema: $routeSchema));
-        $steps = $this->normalizeSteps(value: $route['steps'] ?? []);
+        $route = $this->normalizer->toArrayWithCast(value: $objectService->find($routeRef, register: $register, schema: $routeSchema));
+        $steps = $this->routeMapper->normalizeSteps(value: $route['steps'] ?? []);
         if (count($steps) === 0) {
             throw new RuntimeException('Linked parafeerroute has no steps');
         }
@@ -189,9 +197,11 @@ class ParafeerRouteService
             $voorstel['approvalChainUuid'] = $chainUuid;
         }
 
-        $voorstel = $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
+        $voorstel = $this->normalizer->toArrayWithCast(
+            value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema)
+        );
 
-        $this->activateStep(voorstel: $voorstel, step: 1, steps: $steps);
+        $this->stepActivator->activateStep(voorstel: $voorstel, step: 1, steps: $steps);
 
         $this->dispatchTransition(
             voorstelId: (string) ($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId),
@@ -262,8 +272,8 @@ class ParafeerRouteService
         [$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
         $actieSchema = $this->requireConfig(key: 'parafeeractie_schema');
 
-        $voorstel = $this->toArray(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
-        $steps    = $this->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
+        $voorstel = $this->normalizer->toArrayWithCast(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
+        $steps    = $this->routeMapper->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
 
         if (($voorstel['status'] ?? '') !== self::STATUS_IN_PARAFERING) {
             throw new RuntimeException('Voorstel is not in parafering');
@@ -344,8 +354,8 @@ class ParafeerRouteService
         [$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
         $actieSchema = $this->requireConfig(key: 'parafeeractie_schema');
 
-        $voorstel = $this->toArray(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
-        $steps    = $this->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
+        $voorstel = $this->normalizer->toArrayWithCast(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
+        $steps    = $this->routeMapper->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
 
         $target = null;
         foreach ($steps as $candidate) {
@@ -391,7 +401,7 @@ class ParafeerRouteService
             ),
         );
 
-        $voorstel = $this->appendAuditTrail(
+        $voorstel = $this->routeMapper->appendAuditTrail(
             voorstel: $voorstel,
             entry: [
                 'action'    => 'step_skipped',
@@ -422,12 +432,14 @@ class ParafeerRouteService
                 register: $register,
                 voorstelSchema: $voorstelSchema,
                 voorstel: $voorstel,
-                steps: $this->normalizeSteps(value: $voorstel['routeSnapshot']),
+                steps: $this->routeMapper->normalizeSteps(value: $voorstel['routeSnapshot']),
                 fromStep: $step,
             );
         }
 
-        return $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
+        return $this->normalizer->toArrayWithCast(
+            value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema)
+        );
     }//end skipStep()
 
     /**
@@ -452,8 +464,8 @@ class ParafeerRouteService
     {
         [$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
 
-        $voorstel = $this->toArray(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
-        $steps    = $this->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
+        $voorstel = $this->normalizer->toArrayWithCast(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
+        $steps    = $this->routeMapper->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
 
         $currentStep = (int) ($voorstel['currentStep'] ?? 0);
         $insertAfter = $afterStep;
@@ -493,7 +505,7 @@ class ParafeerRouteService
         $voorstel['routeSnapshot'] = json_encode($rebuilt);
 
         $userId   = $this->requireUserId();
-        $voorstel = $this->appendAuditTrail(
+        $voorstel = $this->routeMapper->appendAuditTrail(
             voorstel: $voorstel,
             entry: [
                 'action'    => 'step_added',
@@ -509,7 +521,9 @@ class ParafeerRouteService
             ],
         );
 
-        $saved = $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
+        $saved = $this->normalizer->toArrayWithCast(
+            value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema)
+        );
 
         $this->dispatchTransition(
             voorstelId: (string) ($saved['id'] ?? $saved['uuid'] ?? $voorstelId),
@@ -554,7 +568,9 @@ class ParafeerRouteService
 
         if ($nextStep === null) {
             $voorstel['status'] = self::STATUS_GEACCORDEERD;
-            $voorstel           = $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
+            $voorstel           = $this->normalizer->toArrayWithCast(
+                value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema)
+            );
             $this->logger->info(
                 'Procest: voorstel {id} fully accorded',
                 [
@@ -575,210 +591,14 @@ class ParafeerRouteService
         }//end if
 
         $voorstel['currentStep'] = $nextStep;
-        $voorstel = $this->toArray(value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema));
+        $voorstel = $this->normalizer->toArrayWithCast(
+            value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema)
+        );
 
-        $this->activateStep(voorstel: $voorstel, step: $nextStep, steps: $steps);
+        $this->stepActivator->activateStep(voorstel: $voorstel, step: $nextStep, steps: $steps);
 
         return $voorstel;
     }//end advanceVoorstel()
-
-    /**
-     * Activate a step: log a notification intent and (best-effort) create a task.
-     *
-     * Notification dispatch and task creation are delegated to the platform
-     * services when available. Failures are logged but do not abort routing.
-     *
-     * @param array<string, mixed>             $voorstel The voorstel
-     * @param int                              $step     The step order to activate
-     * @param array<int, array<string, mixed>> $steps    The decoded routeSnapshot
-     *
-     * @return void
-     */
-    private function activateStep(array $voorstel, int $step, array $steps): void
-    {
-        $stepInfo = null;
-        foreach ($steps as $candidate) {
-            if ((int) ($candidate['order'] ?? 0) === $step) {
-                $stepInfo = $candidate;
-                break;
-            }
-        }
-
-        if ($stepInfo === null) {
-            return;
-        }
-
-        $resolvedActors = $this->resolveStepActors(stepInfo: $stepInfo, voorstel: $voorstel);
-
-        $this->logger->info(
-            'Procest: activated parafering step {step} of voorstel {voorstelId} for actor {actor}',
-            [
-                'step'       => $step,
-                'voorstelId' => $voorstel['id'] ?? $voorstel['uuid'] ?? '',
-                'actor'      => (string) ($stepInfo['actor'] ?? ''),
-                'resolved'   => $resolvedActors,
-                'app'        => Application::APP_ID,
-            ],
-        );
-    }//end activateStep()
-
-    /**
-     * Resolve the concrete actor set for a step.
-     *
-     * For role-typed actors, the step's actor UUID is treated as the
-     * `roleType` parameter of an implicit single-role rule and dispatched to
-     * the shared RoleResolverService — this inherits delegation + workload
-     * features automatically. For user-typed actors the original UUID is
-     * returned as-is.
-     *
-     * @param array<string, mixed> $stepInfo The step from routeSnapshot
-     * @param array<string, mixed> $voorstel The voorstel object (provides caseRef + caseType)
-     *
-     * @return array<int, string>
-     *
-     * @spec openspec/changes/role-based-step-routing/tasks.md#T07
-     */
-    private function resolveStepActors(array $stepInfo, array $voorstel): array
-    {
-        $actorType = (string) ($stepInfo['actorType'] ?? 'user');
-        $actor     = (string) ($stepInfo['actor'] ?? '');
-        if ($actor === '') {
-            return [];
-        }
-
-        if ($actorType !== 'role') {
-            return [$actor];
-        }
-
-        $caseRef = (string) ($voorstel['case'] ?? ($voorstel['zaak'] ?? ''));
-        if ($caseRef === '') {
-            return [$actor];
-        }
-
-        $case = ['id' => $caseRef, 'caseType' => (string) ($voorstel['caseType'] ?? '')];
-        $rule = $stepInfo['routingRule'] ?? null;
-        if (is_array($rule) === false || isset($rule['strategy']) === false) {
-            $rule = [
-                'strategy' => RoleResolverService::STRATEGY_SINGLE_ROLE,
-                'roleType' => $actor,
-            ];
-        }
-
-        try {
-            return $this->roleResolver->resolve($rule, $case);
-        } catch (RoutingStrategyMissingException $e) {
-            $this->logger->warning(
-                'Procest: parafering step references unknown routing strategy: '.$e->getMessage(),
-            );
-            return [$actor];
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest: failed to resolve parafering step actors: '.$e->getMessage(),
-            );
-            return [$actor];
-        }
-    }//end resolveStepActors()
-
-    /**
-     * Append an entry to the voorstel auditTrail field.
-     *
-     * @param array<string, mixed> $voorstel The voorstel
-     * @param array<string, mixed> $entry    The entry to append
-     *
-     * @return array<string, mixed>
-     */
-    private function appendAuditTrail(array $voorstel, array $entry): array
-    {
-        $trail = $voorstel['auditTrail'] ?? [];
-        if (is_string($trail) === true) {
-            $decoded = json_decode($trail, true);
-            $trail   = [];
-            if (is_array($decoded) === true) {
-                $trail = $decoded;
-            }
-        }
-
-        if (is_array($trail) === false) {
-            $trail = [];
-        }
-
-        $trail[] = $entry;
-        $voorstel['auditTrail'] = $trail;
-
-        return $voorstel;
-    }//end appendAuditTrail()
-
-    /**
-     * Normalize a steps value (JSON string or array) to a plain ordered array.
-     *
-     * @param mixed $value The raw value from routeSnapshot or schema field
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function normalizeSteps(mixed $value): array
-    {
-        if (is_string($value) === true) {
-            $decoded = json_decode($value, true);
-            $value   = [];
-            if (is_array($decoded) === true) {
-                $value = $decoded;
-            }
-        }
-
-        if (is_array($value) === false) {
-            return [];
-        }
-
-        $steps = [];
-        foreach ($value as $candidate) {
-            if (is_array($candidate) === true) {
-                $steps[] = $candidate;
-            }
-        }
-
-        usort(
-            $steps,
-            static function (array $left, array $right): int {
-                return ((int) ($left['order'] ?? 0)) <=> ((int) ($right['order'] ?? 0));
-            },
-        );
-
-        return $steps;
-    }//end normalizeSteps()
-
-    /**
-     * Convert an arbitrary ObjectService return value to an associative array.
-     *
-     * @param mixed $value The returned object/array
-     *
-     * @return array<string, mixed>
-     */
-    private function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
-
-        if (is_object($value) === true) {
-            if (method_exists($value, 'jsonSerialize') === true) {
-                $serialized = $value->jsonSerialize();
-                if (is_array($serialized) === true) {
-                    return $serialized;
-                }
-            }
-
-            if (method_exists($value, 'toArray') === true) {
-                $arr = $value->toArray();
-                if (is_array($arr) === true) {
-                    return $arr;
-                }
-            }
-
-            return (array) $value;
-        }
-
-        return [];
-    }//end toArray()
 
     /**
      * Resolve ObjectService and the (register, voorstel schema) pair.

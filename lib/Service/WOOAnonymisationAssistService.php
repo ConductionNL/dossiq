@@ -53,6 +53,7 @@ namespace OCA\Procest\Service;
 
 use InvalidArgumentException;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\Ai\AiAuditService;
 use OCA\Procest\Service\Assistant\HermiqAnonymisationClient;
 use OCA\Procest\Service\Assistant\HermiqAssistantException;
 use Psr\Log\LoggerInterface;
@@ -85,6 +86,7 @@ class WOOAnonymisationAssistService
      * Constructor.
      *
      * @param AiService                    $aiService         Deterministic PII rules floor.
+     * @param AiAuditService               $auditService      AI oversight audit sink.
      * @param HermiqAnonymisationClient    $hermiqClient      Thin HTTP client to Hermiq's
      *                                                        detect-pii surface.
      * @param WOODocumentAssessmentService $assessmentService Reads/writes the wooAssessment
@@ -98,6 +100,7 @@ class WOOAnonymisationAssistService
      */
     public function __construct(
         private readonly AiService $aiService,
+        private readonly AiAuditService $auditService,
         private readonly HermiqAnonymisationClient $hermiqClient,
         private readonly WOODocumentAssessmentService $assessmentService,
         private readonly WOORedactionService $redactionService,
@@ -172,7 +175,7 @@ class WOOAnonymisationAssistService
             proposal: $proposal
         );
 
-        $this->aiService->recordAssistantAuditEntry(
+        $this->auditService->recordAssistantAuditEntry(
             entry: [
                 'type'           => 'anonymisation',
                 'action'         => 'proposal',

@@ -43,6 +43,10 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\StatusTransitionService
+ *
+ * @uses \OCA\Procest\Service\Transitions\CaseStatusStore
+ * @uses \OCA\Procest\Service\Transitions\TransitionAuthorizer
+ * @uses \OCA\Procest\Service\Transitions\TransitionSpecReader
  */
 final class CmmnBpmnCoexistenceRegressionTest extends TestCase
 {

@@ -23,7 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Settings;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
@@ -36,19 +36,33 @@ class RegisterFragmentMergeTest extends TestCase
     /**
      * Invoke a private static method on SettingsService via reflection.
      *
-     * @param string $method The private static method name.
+     * @param string $method The private method name on RegisterFragmentMerger.
      * @param array  $args   Positional arguments to pass.
      *
      * @return mixed The method's return value.
      */
-    private function invokePrivateStatic(string $method, array $args)
+    private function invokePrivate(string $method, array $args)
     {
-        $reflection = new ReflectionMethod(SettingsService::class, $method);
+        $reflection = new ReflectionMethod(RegisterFragmentMerger::class, $method);
         $reflection->setAccessible(true);
 
-        return $reflection->invokeArgs(null, $args);
+        return $reflection->invokeArgs(new RegisterFragmentMerger(), $args);
 
-    }//end invokePrivateStatic()
+    }//end invokePrivate()
+
+    /**
+     * Merge fragments through the public entry point.
+     *
+     * @param array  $base The base configuration.
+     * @param string $dir  The fragment directory.
+     *
+     * @return array{0: array<string,mixed>, 1: string} The merged config and hash.
+     */
+    private function merge(array $base, string $dir): array
+    {
+        return (new RegisterFragmentMerger())->merge(base: $base, fragmentDir: $dir);
+
+    }//end merge()
 
     /**
      * deepMergeConfig merges nested associative maps key-by-key.
@@ -72,7 +86,7 @@ class RegisterFragmentMergeTest extends TestCase
             ],
         ];
 
-        $result = $this->invokePrivateStatic('deepMergeConfig', [$base, $override]);
+        $result = $this->invokePrivate('deepMerge', [$base, $override]);
 
         $this->assertArrayHasKey('Existing', $result['components']['schemas']);
         $this->assertArrayHasKey('Added', $result['components']['schemas']);
@@ -91,7 +105,7 @@ class RegisterFragmentMergeTest extends TestCase
         $base     = ['info' => ['version' => '1.0.0', 'title' => 'Procest']];
         $override = ['info' => ['version' => '2.0.0']];
 
-        $result = $this->invokePrivateStatic('deepMergeConfig', [$base, $override]);
+        $result = $this->invokePrivate('deepMerge', [$base, $override]);
 
         $this->assertSame('2.0.0', $result['info']['version']);
         $this->assertSame('Procest', $result['info']['title']);
@@ -108,7 +122,7 @@ class RegisterFragmentMergeTest extends TestCase
         $base     = ['required' => ['a', 'b']];
         $override = ['required' => ['c']];
 
-        $result = $this->invokePrivateStatic('deepMergeConfig', [$base, $override]);
+        $result = $this->invokePrivate('deepMerge', [$base, $override]);
 
         $this->assertSame(['a', 'b', 'c'], $result['required']);
 
@@ -124,7 +138,7 @@ class RegisterFragmentMergeTest extends TestCase
         $base     = ['a' => 1];
         $override = ['b' => 2];
 
-        $result = $this->invokePrivateStatic('deepMergeConfig', [$base, $override]);
+        $result = $this->invokePrivate('deepMerge', [$base, $override]);
 
         $this->assertSame(['a' => 1, 'b' => 2], $result);
 
@@ -140,10 +154,7 @@ class RegisterFragmentMergeTest extends TestCase
     {
         $base = ['info' => ['version' => '1.0.0']];
 
-        [$merged, $hash] = $this->invokePrivateStatic(
-            'mergeRegisterFragments',
-            [$base, '/nonexistent/register.d']
-        );
+        [$merged, $hash] = $this->merge($base, '/nonexistent/register.d');
 
         $this->assertSame($base, $merged);
         $this->assertSame('', $hash);
@@ -172,10 +183,7 @@ class RegisterFragmentMergeTest extends TestCase
 
         $base = ['components' => ['schemas' => ['Base' => ['title' => 'Base']]]];
 
-        [$merged, $hash] = $this->invokePrivateStatic(
-            'mergeRegisterFragments',
-            [$base, $dir]
-        );
+        [$merged, $hash] = $this->merge($base, $dir);
 
         // Cleanup.
         unlink($dir.'/10-first.json');
@@ -205,10 +213,7 @@ class RegisterFragmentMergeTest extends TestCase
 
         $base = ['info' => ['version' => '1.0.0']];
 
-        [$merged, $hash] = $this->invokePrivateStatic(
-            'mergeRegisterFragments',
-            [$base, $dir]
-        );
+        [$merged, $hash] = $this->merge($base, $dir);
 
         unlink($dir.'/README.md');
         rmdir($dir);

@@ -55,6 +55,8 @@ interface ObjectServiceStub
  *
  * @covers \OCA\Procest\Service\ZgwZrcRulesService
  * @covers \OCA\Procest\Service\ZgwRulesBase
+ *
+ * @uses \OCA\Procest\Service\FieldValidator
  */
 class ZgwZrcRulesServiceTest extends TestCase
 {

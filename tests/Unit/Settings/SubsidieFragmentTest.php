@@ -26,7 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Settings;
 
-use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Settings\RegisterFragmentMerger;
 use PHPUnit\Framework\TestCase;
 use ReflectionMethod;
 
@@ -34,6 +34,8 @@ use ReflectionMethod;
  * Integration-style unit tests for the subsidie register fragment.
  *
  * @covers \OCA\Procest\Service\SettingsService
+ *
+ * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-01
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-02
@@ -75,12 +77,9 @@ class SubsidieFragmentTest extends TestCase
             true
         );
 
-        $reflection = new ReflectionMethod(SettingsService::class, 'mergeRegisterFragments');
-        $reflection->setAccessible(true);
-
-        [$merged] = $reflection->invokeArgs(
-            null,
-            [$base, __DIR__.'/../../../lib/Settings/register.d']
+        [$merged] = (new RegisterFragmentMerger())->merge(
+            base: $base,
+            fragmentDir: __DIR__.'/../../../lib/Settings/register.d'
         );
 
         $this->merged = $merged;
