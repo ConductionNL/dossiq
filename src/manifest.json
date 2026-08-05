@@ -327,10 +327,10 @@
 					"persistKey": "procest-dashboard-range",
 					"default": { "preset": "month" },
 					"presets": [
-						{ "id": "week", "label": "Week", "days": 7 },
-						{ "id": "month", "label": "Month", "days": 30 },
-						{ "id": "quarter", "label": "Quarter", "days": 90 },
-						{ "id": "year", "label": "Year", "days": 365 },
+						{ "id": "week", "label": "Current week", "period": "week" },
+						{ "id": "month", "label": "Current month", "period": "month" },
+						{ "id": "quarter", "label": "Current quarter", "period": "quarter" },
+						{ "id": "year", "label": "Current year", "period": "year" },
 						{ "id": "all", "label": "All", "days": null }
 					]
 				},
@@ -384,7 +384,7 @@
 								"register": "procest",
 								"schema": "case",
 								"filter": { "isFinalStatus": false },
-								"aggregate": { "groupBy": "caseType", "metric": "count", "labelResolve": { "schema": "caseType", "labelField": "name" } },
+								"aggregate": { "groupBy": "caseType", "metric": "count", "labelResolve": { "schema": "caseType", "labelField": "title" } },
 								"drilldown": { "route": "Cases", "filterParam": "caseType" }
 							}
 						}
