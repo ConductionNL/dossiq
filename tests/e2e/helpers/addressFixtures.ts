@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Address-fixture seeding helper for the PDOK-via-openconnector e2e layer
  * (migrate-pdok-to-openconnector, task PR-4).

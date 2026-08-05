@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Behavioural UI coverage for the procest administrative settings pages.
  * Each renders an OpenRegister-backed index with a view-specific primary
