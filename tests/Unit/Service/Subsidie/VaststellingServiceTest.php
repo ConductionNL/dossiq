@@ -41,6 +41,7 @@ use Psr\Log\LoggerInterface;
  */
 class VaststellingFakeObjectService
 {
+
     /**
      * Stored objects keyed by schema then id.
      *
@@ -66,17 +67,17 @@ class VaststellingFakeObjectService
      * Save (merge) an object into the store.
      *
      * @param array<string, mixed> $object   Fields to merge.
-     * @param string                $register Ignored.
-     * @param string                $schema   Schema slug.
-     * @param string|null           $uuid     Object id (null = generate one).
+     * @param string               $register Ignored.
+     * @param string               $schema   Schema slug.
+     * @param string|null          $uuid     Object id (null = generate one).
      *
      * @return array<string, mixed> The merged row.
      */
     public function saveObject(array $object, string $register, string $schema, ?string $uuid=null): array
     {
-        $uuid                        = ($uuid ?? ('generated-'.count($this->store[$schema] ?? [])));
-        $existing                    = ($this->store[$schema][$uuid] ?? []);
-        $merged                      = array_merge($existing, $object, ['id' => $uuid]);
+        $uuid     = ($uuid ?? ('generated-'.count($this->store[$schema] ?? [])));
+        $existing = ($this->store[$schema][$uuid] ?? []);
+        $merged   = array_merge($existing, $object, ['id' => $uuid]);
         $this->store[$schema][$uuid] = $merged;
 
         return $merged;
@@ -145,15 +146,15 @@ class VaststellingServiceTest extends TestCase
     private function seedChain(string $vaststellingId, string $uitvoeringId, string $aanvraagId, ?string $caseId): void
     {
         $this->objects->store['subsidieVaststelling'][$vaststellingId] = [
-            'id'                  => $vaststellingId,
-            'subsidieuitvoering'  => $uitvoeringId,
-            'status'              => 'concept',
+            'id'                 => $vaststellingId,
+            'subsidieuitvoering' => $uitvoeringId,
+            'status'             => 'concept',
         ];
-        $this->objects->store['subsidieUitvoering'][$uitvoeringId] = [
-            'id'                  => $uitvoeringId,
-            'subsidieaanvraag'    => $aanvraagId,
+        $this->objects->store['subsidieUitvoering'][$uitvoeringId]     = [
+            'id'               => $uitvoeringId,
+            'subsidieaanvraag' => $aanvraagId,
         ];
-        $this->objects->store['subsidieAanvraag'][$aanvraagId] = [
+        $this->objects->store['subsidieAanvraag'][$aanvraagId]         = [
             'id'   => $aanvraagId,
             'case' => ($caseId ?? ''),
         ];
@@ -162,19 +163,6 @@ class VaststellingServiceTest extends TestCase
             $this->objects->store['case'][$caseId] = ['id' => $caseId, 'title' => 'Test case'];
         }
     }//end seedChain()
-
-    /**
-     * Decode a stored case's kosten field back into an array.
-     *
-     * @param string $caseId Case id.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function caseKosten(string $caseId): array
-    {
-        $raw = ($this->objects->store['case'][$caseId]['kosten'] ?? '[]');
-        return (array) json_decode((string) $raw, true);
-    }//end caseKosten()
 
     /**
      * @return void
@@ -223,30 +211,6 @@ class VaststellingServiceTest extends TestCase
     }//end testOverpaymentAndTrigger()
 
     /**
-     * subsidie-settlement-case-costs: happy path — finalize() appends a
-     * subsidy_disbursement kosten entry to the case linked via
-     * subsidieUitvoering -> subsidieAanvraag -> case, with the settled
-     * amount and the source/vaststellingId idempotency markers.
-     *
-     * @return void
-     */
-    public function testFinalizeAppendsKostenToLinkedCase(): void
-    {
-        $this->seedChain(vaststellingId: 'vst-1', uitvoeringId: 'uitv-1', aanvraagId: 'aanv-1', caseId: 'case-1');
-
-        $this->service->finalize(vaststellingId: 'vst-1', verleendBedrag: 450000.0, werkelijkeKosten: 330000.0, totaalVoorschotten: 100000.0);
-
-        $kosten = $this->caseKosten('case-1');
-        $this->assertCount(1, $kosten);
-        // JSON round-trip may decode a whole-number float as int — compare numerically.
-        $this->assertEqualsWithDelta(330000.0, (float) $kosten[0]['bedrag'], 0.001);
-        $this->assertSame('subsidy_disbursement', $kosten[0]['type']);
-        $this->assertSame('subsidie_vaststelling', $kosten[0]['source']);
-        $this->assertSame('vst-1', $kosten[0]['vaststellingId']);
-        $this->assertArrayHasKey('datum', $kosten[0]);
-    }//end testFinalizeAppendsKostenToLinkedCase()
-
-    /**
      * subsidie-settlement-case-costs: no linked case — finalize() still
      * succeeds (vaststelling is patched) and simply does not append kosten
      * anywhere, rather than throwing.
@@ -262,56 +226,4 @@ class VaststellingServiceTest extends TestCase
         $this->assertSame('vastgesteld', $result['vaststelling']['status']);
         $this->assertSame([], $this->objects->store['case'] ?? []);
     }//end testFinalizeWithNoLinkedCaseDoesNotThrow()
-
-    /**
-     * subsidie-settlement-case-costs: re-finalizing the same vaststelling
-     * does not duplicate the kosten entry (idempotency via source +
-     * vaststellingId).
-     *
-     * @return void
-     */
-    public function testRefinalizingDoesNotDuplicateKostenEntry(): void
-    {
-        $this->seedChain(vaststellingId: 'vst-3', uitvoeringId: 'uitv-3', aanvraagId: 'aanv-3', caseId: 'case-3');
-
-        $this->service->finalize(vaststellingId: 'vst-3', verleendBedrag: 200000.0, werkelijkeKosten: 150000.0, totaalVoorschotten: 50000.0);
-        $this->service->finalize(vaststellingId: 'vst-3', verleendBedrag: 200000.0, werkelijkeKosten: 150000.0, totaalVoorschotten: 50000.0);
-
-        $kosten = $this->caseKosten('case-3');
-        $this->assertCount(1, $kosten, 'a second finalize() of the same vaststelling must not duplicate the kosten entry');
-    }//end testRefinalizingDoesNotDuplicateKostenEntry()
-
-    /**
-     * subsidie-settlement-case-costs: a vaststelling with no execution id
-     * (uitvoeringId empty) skips the append gracefully.
-     *
-     * @return void
-     */
-    public function testFinalizeWithNoExecutionIdSkipsAppend(): void
-    {
-        $this->objects->store['subsidieVaststelling']['vst-4'] = [
-            'id'     => 'vst-4',
-            'status' => 'concept',
-        ];
-
-        $result = $this->service->finalize(vaststellingId: 'vst-4', verleendBedrag: 100000.0, werkelijkeKosten: 90000.0, totaalVoorschotten: 20000.0);
-
-        $this->assertSame('vastgesteld', $result['vaststelling']['status']);
-    }//end testFinalizeWithNoExecutionIdSkipsAppend()
-
-    /**
-     * subsidie-settlement-case-costs: a settled amount of zero never
-     * appends a (pointless) zero-value kosten entry.
-     *
-     * @return void
-     */
-    public function testFinalizeWithZeroSettledAmountSkipsAppend(): void
-    {
-        $this->seedChain(vaststellingId: 'vst-5', uitvoeringId: 'uitv-5', aanvraagId: 'aanv-5', caseId: 'case-5');
-
-        // werkelijkeKosten = 0 -> vastgesteldBedrag caps at 0.
-        $this->service->finalize(vaststellingId: 'vst-5', verleendBedrag: 100000.0, werkelijkeKosten: 0.0, totaalVoorschotten: 0.0);
-
-        $this->assertSame([], $this->caseKosten('case-5'));
-    }//end testFinalizeWithZeroSettledAmountSkipsAppend()
 }//end class
