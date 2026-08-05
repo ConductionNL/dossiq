@@ -139,11 +139,27 @@ jobs:
       frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n"]'
 
       # ── Hydra mechanical gates ───────────────────────────────────────────
-      # `enable-hydra-gates` defaults to FALSE, so this tier has never executed
-      # here — the job reported `skipped`, which the Quality Report renders
-      # identically to a pass. Pinned to v1.0.1 so a change to the gate package
-      # cannot move this repo's verdict without a commit here.
+      # The tier is ON. Pinned to a tag, not `main`, so a change to the gate
+      # package cannot move this repo's verdict without a commit here.
+      #
+      # Moved v1.0.1 -> v1.2.0. Two things this repo's last run needed:
+      #
+      #   1. gate-22 (manifest-validation) reported `FAIL — 0` here. The
+      #      finding is real; the COUNT was the bug — `$(grep -c … || echo 1)`
+      #      captures BOTH grep's printed "0" AND the fallback "1", so the
+      #      "clamp to at least 1" guard errored instead of firing and the
+      #      reason was orphaned onto a second line no `^\[gate-` consumer
+      #      reads. Fixed by the shared `_count` helper in v1.1.0.
+      #
+      #   2. gate-5 (route-auth) reported 4 findings. v1.0.1's gate-5 could not
+      #      tell "this routed method has no auth attribute" from "I could not
+      #      resolve the controller class", and reported both as the former.
+      #      v1.2.0 separates them (ConductionNL/.github#162, closing #153).
+      #      Whichever of the 4 are genuine will still fail — and v1.2.0 also
+      #      starts judging camelCase route slugs, which v1.0.1's
+      #      `'[a-z_]+#…'` regex never matched, so EXPECT NEW REAL FINDINGS.
+      #
       # `enable-axe` deliberately NOT set: a vanilla Nextcloud 34 already carries
       # serious/critical violations from core's own UI.
       enable-hydra-gates: true
-      hydra-gates-ref: v1.0.1
+      hydra-gates-ref: v1.2.0
