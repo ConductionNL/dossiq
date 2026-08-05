@@ -32,8 +32,11 @@ namespace OCA\Procest\AppInfo\Registrar;
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\OpenRegister\Event\ObjectCreatingEvent;
 use OCA\OpenRegister\Event\ObjectDeletedEvent;
+use OCA\OpenRegister\Event\ObjectDeletingEvent;
 use OCA\OpenRegister\Event\ObjectUpdatedEvent;
 use OCA\OpenRegister\Event\ObjectUpdatingEvent;
+use OCA\Procest\Listener\BewijsstukImmutabilityListener;
+use OCA\Procest\Listener\ChecklistRunImmutabilityListener;
 use OCA\Procest\Listener\KpiCacheInvalidationListener;
 use OCA\Procest\Listener\LocationBagValidationListener;
 use OCA\Procest\Listener\RoleMutationListener;
@@ -68,7 +71,46 @@ class ObjectListenerRegistrar
 
         $this->registerCacheInvalidationListeners(context: $context);
         $this->registerIntakeListeners(context: $context);
+        $this->registerImmutabilityListeners(context: $context);
     }//end register()
+
+    /**
+     * Register the pre-persist immutability guards.
+     *
+     * Both listeners subscribe to OpenRegister's PRE-persist, stoppable
+     * events. The post-persist pair cannot be used: OpenRegister dispatches
+     * `ObjectUpdatedEvent`/`ObjectDeletedEvent` after the row has already
+     * been written, with no surrounding transaction, so a listener there
+     * cannot stop the mutation it objects to.
+     *
+     * @param IRegistrationContext $context The registration context.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/subsidieverlening-keten/spec.md
+     */
+    private function registerImmutabilityListeners(IRegistrationContext $context): void
+    {
+        // REQ-SUB-007: a bewijsstuk linked to a vaststelling is immutable.
+        // This is the production call site for
+        // BewijsstukService::assertMutable(), which previously had none.
+        $context->registerEventListener(
+            event: ObjectUpdatingEvent::class,
+            listener: BewijsstukImmutabilityListener::class
+        );
+        $context->registerEventListener(
+            event: ObjectDeletingEvent::class,
+            listener: BewijsstukImmutabilityListener::class
+        );
+
+        // REQ-IC-8: a submitted inspectionChecklistRun is append-only. The
+        // listener existed but was never registered, so the rule was not
+        // enforced by anything.
+        $context->registerEventListener(
+            event: ObjectUpdatingEvent::class,
+            listener: ChecklistRunImmutabilityListener::class
+        );
+    }//end registerImmutabilityListeners()
 
     /**
      * Register the KPI and role-routing cache-invalidation listeners.
