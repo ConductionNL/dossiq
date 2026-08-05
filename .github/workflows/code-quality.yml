@@ -55,14 +55,41 @@ jobs:
       # needs the `settings#load` route it ships — `development` is where that
       # plumbing lands first.
       additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"}]'
-      # SBOM disabled until @conduction/nextcloud-vue's dependency declarations
-      # are cleaned up — its `npm ls` tree fails ELSPROBLEMS (bootstrap-vue is a
-      # non-optional peer, apexcharts/pinia/vue version ranges don't match what
-      # apps install, @types/react comes from a transitive rehype-react), which
-      # @cyclonedx/cyclonedx-npm propagates as a hard failure (it always runs
-      # `npm ls` under the hood; `--package-lock-only` doesn't sidestep it).
-      # No other Conduction app enables SBOM today. Tracked in #434.
-      enable-sbom: false
+      # SBOM was disabled here until @conduction/nextcloud-vue's dependency
+      # declarations were cleaned up — its `npm ls` tree fails ELSPROBLEMS
+      # (bootstrap-vue is a non-optional peer, apexcharts/pinia/vue version
+      # ranges don't match what apps install, @types/react comes from a
+      # transitive rehype-react), and @cyclonedx/cyclonedx-npm propagated that
+      # as a hard failure because it always runs `npm ls` under the hood.
+      # Tracked in #434.
+      #
+      # That blocker is STALE, and the old comment's last line ("No other
+      # Conduction app enables SBOM today") is now false — which is exactly why
+      # it was worth re-measuring rather than trusting. The shared workflow's
+      # npm SBOM step now runs:
+      #
+      #   npx @cyclonedx/cyclonedx-npm --package-lock-only --ignore-npm-errors …
+      #
+      # `--ignore-npm-errors` is the flag that neutralises ELSPROBLEMS, and it
+      # was not there when this was switched off.
+      #
+      # Measured positive control rather than assumed: ConductionNL/docudesk
+      # depends on the SAME `@conduction/nextcloud-vue` version this repo pins
+      # (2.2.0-vue3.3), and its SBOM job on `development` ran the npm leg to
+      # completion and merged the PHP + npm SBOMs — run 31016019235, job
+      # 92340789907. openregister, opencatalogi and doriath are green on SBOM
+      # too. The dependency this comment blamed does not stop the job in four
+      # sibling repos, so it does not stop it here.
+      #
+      # procest already ships the other prerequisite: `composer.json` requires
+      # cyclonedx/cyclonedx-php-composer ^6.2 and allows its plugin, so the
+      # `composer CycloneDX:make-sbom` step has what it needs.
+      #
+      # NOTE: SBOM only runs on a branch push (its `if:` tests github.ref
+      # against refs/heads/{main,beta,development}); on a pull_request the ref
+      # is refs/pull/N/merge, so this job is invisible on the PR that enables
+      # it and first reports on the merge to `development`.
+      enable-sbom: true
       # ── E2E browser tests ────────────────────────────────────────────────
       # Previously LEFT OFF. The comment that lived here recorded the blocker,
       # so it is kept (not deleted) next to what changed:
@@ -141,9 +168,17 @@ jobs:
       # ── Hydra mechanical gates ───────────────────────────────────────────
       # `enable-hydra-gates` defaults to FALSE, so this tier has never executed
       # here — the job reported `skipped`, which the Quality Report renders
-      # identically to a pass. Pinned to v1.0.1 so a change to the gate package
+      # identically to a pass. Pinned to v1.3.0 so a change to the gate package
       # cannot move this repo's verdict without a commit here.
       # `enable-axe` deliberately NOT set: a vanilla Nextcloud 34 already carries
       # serious/critical violations from core's own UI.
       enable-hydra-gates: true
-      hydra-gates-ref: v1.0.1
+      # PIN MOVED v1.0.1 -> v1.3.0. `hydra-gates-require-full-coverage`
+      # (default ON) fails a run when a gate whose subject matter EXISTS did
+      # not report; its contract is that a not-applicable gate must DECLARE
+      # itself. v1.0.1 contains ZERO `_skip` calls — no na/structural/wiring
+      # vocabulary at all — so such a gate emits NOTHING and is counted as
+      # "DID NOT RUN". v1.3.0 ships 36 such declarations. Measured on doriath
+      # (PR #160): gates 4/24/33 went from unexplained "DID NOT RUN" to
+      # explicit NOT APPLICABLE, and Hydra Gates went failure -> success.
+      hydra-gates-ref: v1.3.0
