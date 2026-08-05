@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Case-types admin smoke — covers the 7-tab integration spec'd by
  * case-types-03-result-role-tabs and case-types-04-property-doc-decision-tabs.
