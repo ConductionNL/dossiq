@@ -88,6 +88,35 @@ class AppHostRegistrar
      * skipped: procest still boots and still routes, and the AppHost-backed
      * endpoints degrade individually. See decidesk#377 / #388.
      *
+     * ⚠️ AND THAT GUARD IS WHY THE PRELUDE BELOW IS NEEDED (ADR-040).
+     * `class_exists()` answers with the autoloader as it stands AT THIS MOMENT,
+     * and during boot that is not the autoloader as it ends up. Apps register
+     * one at a time in SORTED order: `OC_App::getEnabledApps()` does `sort()`,
+     * and `Coordinator::registerApps()` walks that list calling
+     * `registerAutoloading($appId)` and then `$application->register()` per app.
+     * So every app's `register()` runs before the PSR-4 prefix of every
+     * alphabetically LATER app exists.
+     *
+     * `procest` sorts after `openregister`, so today this works — by alphabet
+     * alone, not by design. That makes the defect LATENT rather than absent,
+     * and latent here is the dangerous kind, because the guard converts it into
+     * SILENCE: `class_exists()` would answer false, this method would return
+     * early, and the app would boot, route and look healthy while every
+     * AppHost-backed endpoint 500s. Not 404 — 500, because
+     * `Controller\HealthController` exists only as a Bootstrap DI alias onto
+     * `AppHost\Controller\GenericHealthController`, so the route matches and
+     * the resolution fails. Renaming this app, or moving this code into one
+     * that sorts earlier, is all it would take. Measured elsewhere in the
+     * fleet: openconnector records `class_exists at register(): false` on a
+     * clean install, and doriath's audit listener recorded ZERO dispatched
+     * events because an unguarded reference aborted the rest of `register()`.
+     *
+     * Registering OpenRegister's autoloader first costs one call and removes
+     * the dependence on sort order entirely. It is wrapped in
+     * try/catch(\Throwable) because `getAppPath()` throws when the app is not
+     * installed — which is a legitimate state here, and precisely the one the
+     * `class_exists()` guard below then handles.
+     *
      * @param IRegistrationContext $context The registration context.
      *
      * @return void
@@ -98,6 +127,10 @@ class AppHostRegistrar
      */
     public function register(IRegistrationContext $context): void
     {
+        // The ADR-040 prelude that makes the guard below answer correctly runs
+        // in OpenRegisterAutoloadRegistrar, immediately before this registrar
+        // in ServiceRegistrar. It is a separate class only to keep this one
+        // under PHPMD's coupling limit; see its docblock for the mechanism.
         if (class_exists(Bootstrap::class) === false) {
             // OpenRegister is absent or disabled. Skip the engine registration
             // rather than fatalling every request; see the note above.

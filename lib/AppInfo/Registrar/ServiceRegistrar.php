@@ -56,6 +56,14 @@ class ServiceRegistrar
      */
     public function register(IRegistrationContext $context): void
     {
+        // MUST be first, and specifically before AppHostRegistrar (ADR-040).
+        // Apps register in sorted order, so `OCA\OpenRegister\` is not yet
+        // autoloadable for any app sorting before `openregister`; procest only
+        // escapes that by alphabet. Without this line AppHostRegistrar's
+        // class_exists() guard would silently answer false and every
+        // AppHost-backed endpoint would 500. See its docblock.
+        (new OpenRegisterAutoloadRegistrar())->register();
+
         (new AppHostRegistrar())->register(context: $context);
         (new BespokeServiceRegistrar())->register(context: $context);
 
