@@ -5,7 +5,7 @@
 
 **Product:** Procest
 **Categorie:** Zaakgericht werken & case management
-**Licentie:** AGPL (vrije open source)
+**Licentie:** EUPL-1.2 (vrije open source)
 **Leverancier:** Conduction B.V.
 **Platform:** Nextcloud + Open Register (self-hosted / on-premise / cloud)
 
@@ -89,7 +89,7 @@
 | # | Eis | Status | Toelichting |
 |---|-----|--------|-------------|
 | T-01 | On-premise / self-hosted installatie | Beschikbaar | Nextcloud-app, volledig on-premise |
-| T-02 | Open source (broncode beschikbaar) | Beschikbaar | AGPL licentie, GitHub |
+| T-02 | Open source (broncode beschikbaar) | Beschikbaar | EUPL-1.2 licentie, GitHub |
 | T-03 | RESTful API | Via platform | OpenRegister REST API |
 | T-04 | Event-driven architectuur | Via platform | OpenRegister events |
 | T-05 | Schaalbaarheid | Via platform | OpenRegister + Solr |

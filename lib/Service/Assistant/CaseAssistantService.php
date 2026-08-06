@@ -10,7 +10,7 @@
  * documents, contacts, or initiator PII), forwards it to Hermiq via
  * `HermiqAssistantClient`, persists the Hermiq session per (user, case) so
  * follow-up turns keep continuity, and records the exchange through the
- * existing `AiService` audit sink.
+ * existing `AiAuditService` audit sink.
  *
  * FLEET RULE: this class contains NO LLM/prompt logic — Hermiq owns the
  * conversation. This is context assembly + authorization + audit plumbing.
@@ -38,7 +38,7 @@ namespace OCA\Procest\Service\Assistant;
 
 use Exception;
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Service\AiService;
+use OCA\Procest\Service\Ai\AiAuditService;
 use OCA\Procest\Service\SettingsService;
 use OCP\IConfig;
 use Psr\Log\LoggerInterface;
@@ -83,14 +83,14 @@ class CaseAssistantService
      *
      * @param SettingsService       $settingsService Resolves the OpenRegister ObjectService + config.
      * @param HermiqAssistantClient $hermiqClient    Thin HTTP client to Hermiq's assistant surface.
-     * @param AiService             $aiService       Existing AI oversight audit sink.
+     * @param AiAuditService        $auditService    Existing AI oversight audit sink.
      * @param IConfig               $config          Per-user Hermiq session continuity storage.
      * @param LoggerInterface       $logger          Structured logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly HermiqAssistantClient $hermiqClient,
-        private readonly AiService $aiService,
+        private readonly AiAuditService $auditService,
         private readonly IConfig $config,
         private readonly LoggerInterface $logger,
     ) {
@@ -142,7 +142,7 @@ class CaseAssistantService
             $this->config->setUserValue($userId, Application::APP_ID, $sessionKey, $result['sessionId']);
         }
 
-        $this->aiService->recordAssistantAuditEntry(
+        $this->auditService->recordAssistantAuditEntry(
             entry: [
                 'type'           => 'assistant',
                 'action'         => 'conversation',

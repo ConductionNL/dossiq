@@ -34,6 +34,7 @@ namespace OCA\Procest\Service;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\Ai\AiAuditLog;
 use OCA\Procest\Service\Ai\AiEndpointGuard;
+use OCA\Procest\Service\Ai\AiModelIdentity;
 use OCA\Procest\Service\Ai\AiPiiRedactor;
 use OCA\Procest\Service\Ai\AiPromptFactory;
 use OCP\IAppConfig;
@@ -52,6 +53,10 @@ use RuntimeException;
  * {@see AiPiiRedactor}, makes the one outbound model call (guarded by
  * {@see AiEndpointGuard}) and records the result via {@see AiAuditLog}.
  *
+ * The oversight surface — recording what a human did with a suggestion,
+ * recording a conversational assistant exchange, and reading the trail back —
+ * lives in {@see \OCA\Procest\Service\Ai\AiAuditService}.
+ *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity)
  *
@@ -69,6 +74,7 @@ class AiService
      * @param AiPiiRedactor   $pii           The PII detector / scrubber
      * @param AiEndpointGuard $endpointGuard The model-URL SSRF guard
      * @param AiAuditLog      $audit         The oversight audit trail
+     * @param AiModelIdentity $modelIdentity The configured model identifier
      * @param LoggerInterface $logger        The logger interface
      *
      * @return void
@@ -79,6 +85,7 @@ class AiService
         private AiPiiRedactor $pii,
         private AiEndpointGuard $endpointGuard,
         private AiAuditLog $audit,
+        private AiModelIdentity $modelIdentity,
         private LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -489,71 +496,6 @@ class AiService
     }//end suggestNextStep()
 
     /**
-     * Record a user action on an AI suggestion (accept, reject, modify).
-     *
-     * @param string      $caseId      The case ID
-     * @param string      $type        AI type (classification, extraction, etc.)
-     * @param string      $userAction  User action (accepted, rejected, modified)
-     * @param array       $suggestion  The original suggestion
-     * @param array|null  $actualValue The value actually applied
-     * @param string|null $reason      Reason for rejection/modification
-     * @param string      $userId      The current user ID
-     *
-     * @return array
-     *
-     * @SuppressWarnings(PHPMD.ExcessiveParameterList) — audit entries need full context
-
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function recordUserAction(
-        string $caseId,
-        string $type,
-        string $userAction,
-        array $suggestion,
-        ?array $actualValue,
-        ?string $reason,
-        string $userId,
-    ): array {
-        $this->recordAuditEntry(
-                entry: [
-                    'type'        => $type,
-                    'action'      => $userAction,
-                    'caseId'      => $caseId,
-                    'model'       => $this->getModelIdentifier(),
-                    'suggestion'  => $suggestion,
-                    'userAction'  => $userAction,
-                    'actualValue' => ($actualValue ?? []),
-                    'reason'      => ($reason ?? ''),
-                    'userId'      => $userId,
-                    'timestamp'   => date('c'),
-                ]
-                );
-
-        return ['success' => true];
-    }//end recordUserAction()
-
-    /**
-     * List recorded AI audit entries from OpenRegister, newest first.
-     *
-     * Reads the same audit sink {@see AiAuditLog::record()} writes to. Degrades
-     * gracefully (empty result, warning logged, no throw) when AI audit storage
-     * is not configured or the OpenRegister lookup fails, so a misconfigured
-     * instance never 500s the oversight surface.
-     *
-     * @param array<string, mixed> $filters Optional filters: 'caseId', 'type'.
-     * @param int                  $limit   Page size (clamped to 1-200, default 50).
-     * @param int                  $offset  Paging offset (clamped to >= 0).
-     *
-     * @return array{entries: array<int, array<string, mixed>>, total: int|null, limit: int, offset: int}
-     *
-     * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
-     */
-    public function listAuditEntries(array $filters=[], int $limit=50, int $offset=0): array
-    {
-        return $this->audit->list(filters: $filters, limit: $limit, offset: $offset);
-    }//end listAuditEntries()
-
-    /**
      * Test AI model connectivity.
      *
      * @return array Health check result
@@ -620,10 +562,7 @@ class AiService
      */
     private function getModelIdentifier(): string
     {
-        $type = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local');
-        $name = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', 'unknown');
-
-        return $type.'/'.$name;
+        return $this->modelIdentity->identifier();
     }//end getModelIdentifier()
 
     /**
@@ -801,35 +740,6 @@ class AiService
 
         return $parsed;
     }//end decodeAiModelResponse()
-
-    /**
-     * Record an audit entry for a case-assistant-via-hermiq conversational
-     * exchange, using the SAME audit sink (register/schema, append-only
-     * OpenRegister write) every discrete AI operation in this class already
-     * writes to — so the existing AI oversight trail
-     * (`listAuditEntries()`/`AiAuditExportController`) covers the
-     * conversational surface too, with no second audit mechanism.
-     *
-     * A thin public forwarder is needed (rather than widening
-     * `recordAuditEntry()` itself to public) because the case-assistant
-     * surface lives in `AssistantController`/`HermiqAssistantClient` — a
-     * separate class per the fleet rule that AI functionality/LLM calls live
-     * in Hermiq, not in this class. This method carries no LLM logic; it only
-     * forwards an already-built entry to the existing writer.
-     *
-     * @param array $entry The audit entry data — same shape as the other
-     *                     `recordAuditEntry()` call sites (`type`, `action`,
-     *                     `caseId`, `model`, `prompt`, `suggestion`,
-     *                     `confidence`, `userId`, `timestamp`, `responseTimeMs`).
-     *
-     * @return void
-     *
-     * @spec openspec/specs/case-assistant-via-hermiq/spec.md
-     */
-    public function recordAssistantAuditEntry(array $entry): void
-    {
-        $this->recordAuditEntry(entry: $entry);
-    }//end recordAssistantAuditEntry()
 
     /**
      * Record an AI audit trail entry in OpenRegister.

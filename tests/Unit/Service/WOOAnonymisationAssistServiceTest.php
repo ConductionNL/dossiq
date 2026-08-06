@@ -7,7 +7,7 @@
  * the rules-floor merge invariant (an LLM proposal can only ADD spans, never
  * remove/shrink a rule-detected one), fail-closed behaviour on any Hermiq
  * failure, rules-only behaviour when the LLM assist is unavailable, and that
- * every proposal call is recorded through the existing AiService audit sink.
+ * every proposal call is recorded through the existing AiAuditService audit sink.
  *
  * @category Tests
  * @package  OCA\Procest\Tests\Unit\Service
@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\Procest\Service\Ai\AiAuditService;
 use OCA\Procest\Service\AiService;
 use OCA\Procest\Service\Assistant\HermiqAnonymisationClient;
 use OCA\Procest\Service\Assistant\HermiqAssistantException;
@@ -48,6 +49,11 @@ class WOOAnonymisationAssistServiceTest extends TestCase
      * @var AiService|\PHPUnit\Framework\MockObject\MockObject
      */
     private AiService $aiService;
+
+    /**
+     * @var AiAuditService|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private AiAuditService $auditService;
 
     /**
      * @var HermiqAnonymisationClient|\PHPUnit\Framework\MockObject\MockObject
@@ -77,6 +83,7 @@ class WOOAnonymisationAssistServiceTest extends TestCase
     protected function setUp(): void
     {
         $this->aiService         = $this->createMock(AiService::class);
+        $this->auditService      = $this->createMock(AiAuditService::class);
         $this->hermiqClient      = $this->createMock(HermiqAnonymisationClient::class);
         $this->assessmentService = $this->createMock(WOODocumentAssessmentService::class);
         $this->redactionService  = $this->createMock(WOORedactionService::class);
@@ -110,6 +117,7 @@ class WOOAnonymisationAssistServiceTest extends TestCase
     {
         return new WOOAnonymisationAssistService(
             $this->aiService,
+            $this->auditService,
             $this->hermiqClient,
             $this->assessmentService,
             $this->redactionService,
@@ -350,7 +358,7 @@ class WOOAnonymisationAssistServiceTest extends TestCase
 
     /**
      * Every proposeSpans() call records an audit entry through the existing
-     * AiService sink, regardless of outcome (rules-only, LLM failure, or
+     * AiAuditService sink, regardless of outcome (rules-only, LLM failure, or
      * full merge).
      *
      * @return void
@@ -361,7 +369,7 @@ class WOOAnonymisationAssistServiceTest extends TestCase
         $this->hermiqClient->method('isAvailable')->willReturn(false);
 
         $capturedEntry = null;
-        $this->aiService->expects($this->once())->method('recordAssistantAuditEntry')->willReturnCallback(
+        $this->auditService->expects($this->once())->method('recordAssistantAuditEntry')->willReturnCallback(
             function (array $entry) use (&$capturedEntry): void {
                 $capturedEntry = $entry;
             }

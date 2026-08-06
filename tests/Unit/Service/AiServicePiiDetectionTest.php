@@ -28,6 +28,7 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\Ai\AiAuditLog;
 use OCA\Procest\Service\Ai\AiEndpointGuard;
+use OCA\Procest\Service\Ai\AiModelIdentity;
 use OCA\Procest\Service\Ai\AiPiiRedactor;
 use OCA\Procest\Service\Ai\AiPromptFactory;
 use OCA\Procest\Service\AiService;
@@ -41,6 +42,7 @@ use OCP\IAppConfig;
  *
  * @uses \OCA\Procest\Service\Ai\AiAuditLog
  * @uses \OCA\Procest\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Procest\Service\Ai\AiModelIdentity
  * @uses \OCA\Procest\Service\Ai\AiPiiRedactor
  * @uses \OCA\Procest\Service\AiService
  */
@@ -64,6 +66,7 @@ class AiServicePiiDetectionTest extends TestCase
             pii: new AiPiiRedactor(),
             endpointGuard: new AiEndpointGuard($logger),
             audit: new AiAuditLog($appConfig, $this->createMock(ContainerInterface::class), $logger),
+            modelIdentity: new AiModelIdentity($appConfig),
             logger: $logger,
         );
     }//end service()

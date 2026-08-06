@@ -33,6 +33,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Service\SettingsService
  *
+ * @uses \OCA\Procest\Service\Settings\RegisterFragmentMerger
  * @uses \OCA\Procest\Service\Settings\SchemaAnnotationReconciler
  * @uses \OCA\Procest\Service\Settings\SchemaKeyReconciler
  */
@@ -269,4 +270,95 @@ class SettingsServiceTest extends TestCase
     }//end testLoadConfigurationFailsWithoutOpenRegister()
 
 
+    /**
+     * loadConfiguration() reads procest_register.json, deep-merges the ADR-037
+     * register.d fragments on top of it, and hands the RESULT to
+     * ConfigurationService::importFromApp() under the file's own version.
+     *
+     * Guards the read/parse/merge path: without this, that whole path could be
+     * broken (wrong file, unparsed JSON, fragments dropped) and the only
+     * existing loadConfiguration test — the OpenRegister-unavailable early
+     * return — would still pass, because it returns before any of it runs.
+     *
+     * @return void
+     */
+    public function testLoadConfigurationImportsMergedConfigUnderItsOwnVersion(): void
+    {
+        $this->appManager->method('isEnabledForUser')->willReturn(true);
+        $this->appManager->method('isInstalled')->willReturn(true);
+
+        $configurationService = $this->createMock(ProcestConfigurationServiceStub::class);
+
+        $captured = [];
+        $configurationService->expects($this->once())
+            ->method('importFromApp')
+            ->willReturnCallback(
+                function (string $appId, array $data, string $version, bool $force) use (&$captured): array {
+                    $captured = [
+                        'appId'   => $appId,
+                        'data'    => $data,
+                        'version' => $version,
+                        'force'   => $force,
+                    ];
+                    return ['registers' => [], 'schemas' => []];
+                }
+            );
+
+        $this->container->method('get')->willReturnCallback(
+            static function (string $class) use ($configurationService) {
+                if ($class === 'OCA\OpenRegister\Service\ConfigurationService') {
+                    return $configurationService;
+                }
+
+                throw new \RuntimeException('not resolvable in this test: '.$class);
+            }
+        );
+
+        $result = $this->service->loadConfiguration();
+
+        // The on-disk configuration is what must have been read and merged.
+        $onDisk = json_decode(
+            file_get_contents(__DIR__.'/../../../lib/Settings/procest_register.json'),
+            true
+        );
+
+        $this->assertTrue($result['success']);
+        $this->assertSame('procest', $captured['appId']);
+        $this->assertFalse($captured['force']);
+        $this->assertSame($onDisk['info']['version'], $captured['version']);
+        $this->assertSame($onDisk['info']['version'], $result['version']);
+
+        // Parsed, not handed over as a raw string, and carrying the file's own
+        // content rather than an empty array.
+        $this->assertIsArray($captured['data']);
+        $this->assertArrayHasKey('info', $captured['data']);
+        $this->assertNotEmpty($captured['data']);
+
+        // The version must stay a bare version — never a `+frag.<hash>` build
+        // suffix, which OpenRegister's version_compare gate compares
+        // lexically (see #721).
+        $this->assertStringNotContainsString('+', $captured['version']);
+    }//end testLoadConfigurationImportsMergedConfigUnderItsOwnVersion()
+
+
 }//end class
+
+/**
+ * Stub matching the named-arg signature of OpenRegister's ConfigurationService
+ * as loadConfiguration() calls it.
+ */
+interface ProcestConfigurationServiceStub
+{
+
+    /**
+     * Import a register configuration on behalf of an app.
+     *
+     * @param string $appId   The importing app id.
+     * @param array  $data    The effective (merged) configuration.
+     * @param string $version The configuration version.
+     * @param bool   $force   Whether to re-import regardless of version.
+     *
+     * @return array
+     */
+    public function importFromApp(string $appId, array $data, string $version, bool $force): array;
+}//end interface

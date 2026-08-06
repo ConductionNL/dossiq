@@ -1,14 +1,14 @@
 <?php
 
 /**
- * AiService::listAuditEntries() Unit Tests
+ * AiAuditService::listAuditEntries() Unit Tests
  *
  * Covers filter/paging pass-through, limit clamping, and graceful
  * degradation (empty result + warning, no throw) when AI audit storage is
  * unconfigured or the OpenRegister lookup fails.
  *
  * @category Tests
- * @package  OCA\Procest\Tests\Unit\Service
+ * @package  OCA\Procest\Tests\Unit\Service\Ai
  *
  * @author    Conduction Development Team <info@conduction.nl>
  * @copyright 2026 Conduction B.V.
@@ -24,13 +24,11 @@
 
 declare(strict_types=1);
 
-namespace OCA\Procest\Tests\Unit\Service;
+namespace OCA\Procest\Tests\Unit\Service\Ai;
 
 use OCA\Procest\Service\Ai\AiAuditLog;
-use OCA\Procest\Service\Ai\AiEndpointGuard;
-use OCA\Procest\Service\Ai\AiPiiRedactor;
-use OCA\Procest\Service\Ai\AiPromptFactory;
-use OCA\Procest\Service\AiService;
+use OCA\Procest\Service\Ai\AiAuditService;
+use OCA\Procest\Service\Ai\AiModelIdentity;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -58,15 +56,15 @@ interface AiAuditObjectServiceStub
 }//end interface
 
 /**
- * Unit tests for AiService::listAuditEntries().
+ * Unit tests for AiAuditService::listAuditEntries().
  *
- * @covers \OCA\Procest\Service\AiService
+ * @covers \OCA\Procest\Service\Ai\AiAuditService
  *
  * @uses \OCA\Procest\Service\Ai\AiAuditLog
- * @uses \OCA\Procest\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Procest\Service\Ai\AiModelIdentity
  * @uses \OCA\Procest\Service\Support\SearchesObjects
  */
-class AiServiceAuditListTest extends TestCase
+class AiAuditServiceListTest extends TestCase
 {
 
     /**
@@ -84,7 +82,7 @@ class AiServiceAuditListTest extends TestCase
      */
     private LoggerInterface $logger;
 
-    private AiService $service;
+    private AiAuditService $service;
 
     /**
      * Set up test fixtures.
@@ -98,13 +96,9 @@ class AiServiceAuditListTest extends TestCase
         $this->container = $this->createMock(ContainerInterface::class);
         $this->logger     = $this->createMock(LoggerInterface::class);
 
-        $this->service = new AiService(
-            appConfig: $this->appConfig,
-            prompts: new AiPromptFactory(),
-            pii: new AiPiiRedactor(),
-            endpointGuard: new AiEndpointGuard($this->logger),
+        $this->service = new AiAuditService(
             audit: new AiAuditLog($this->appConfig, $this->container, $this->logger),
-            logger: $this->logger,
+            modelIdentity: new AiModelIdentity($this->appConfig),
         );
     }//end setUp()
 

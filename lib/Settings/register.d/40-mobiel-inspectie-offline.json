@@ -25,6 +25,11 @@
             "title": "Inspector Reference",
             "description": "User UID of the inspector assigned to this inspection"
           },
+          "checklistTemplateRef": {
+            "type": "string",
+            "title": "Checklist Template Reference",
+            "description": "Reference to the inspectionChecklist template the inspector must complete for this inspection. Read off the planned item by the field-inspection leaf (offlineConfig.templateRefField) to load the checklist offline, and copied onto the resulting checklistResult"
+          },
           "scheduledAt": {
             "type": "string",
             "format": "date-time",

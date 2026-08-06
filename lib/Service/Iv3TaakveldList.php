@@ -148,7 +148,7 @@ class Iv3TaakveldList
 
     /**
      * Resolve the aggregation bucket key for a taakveld code — the single
-     * entry point {@see Iv3ReportService} uses so cases classified under a
+     * entry point a taakveld consumer uses so cases classified under a
      * deprecated pre-2023 code (e.g. `6.72`) and cases classified under one
      * of its 2023-refinement successors (e.g. `6.72a`, `6.73a`, `6.74b`)
      * land in the SAME quarterly report bucket, keyed by the pre-2023

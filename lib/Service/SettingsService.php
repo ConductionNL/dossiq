@@ -552,48 +552,12 @@ class SettingsService
             ];
         }
 
-        $configPath = __DIR__.'/../Settings/procest_register.json';
-        if (file_exists($configPath) === false) {
-            $this->logger->error(
-                'Procest: Configuration file not found at '.$configPath
-            );
-            return [
-                'success' => false,
-                'message' => 'Configuration file not found',
-            ];
+        $effective = $this->readEffectiveConfiguration();
+        if (isset($effective['error']) === true) {
+            return $effective['error'];
         }
 
-        $configContent = file_get_contents($configPath);
-        $configData    = json_decode($configContent, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            $this->logger->error('Procest: Invalid JSON in configuration file');
-            return [
-                'success' => false,
-                'message' => 'Invalid JSON in configuration file',
-            ];
-        }
-
-        // ADR-037: deep-merge any modular register fragments from
-        // lib/Settings/register.d/*.json on top of the monolith. This lets
-        // concurrent same-app builds add registers/schemas via isolated
-        // fragment files instead of all editing procest_register.json and
-        // conflicting. Fragments are applied in sorted filename order.
-        // The merge also returns a hash of the fragment set. It is deliberately
-        // not captured: it used to be folded into the version below so that
-        // adding or changing a fragment forced a re-import, but OpenRegister
-        // gates with version_compare, which treats `+…` as further version
-        // parts and compares them LEXICALLY rather than as semver build
-        // metadata — so whether the gate fired depended on how two md5 hashes
-        // happened to sort. Unchanged content re-imported about half the time;
-        // a real change was skipped the other half. OpenRegister now hashes the
-        // merged configuration itself and skips on hash equality, which detects
-        // a changed fragment from the data. The version stays a version.
-        [$configData] = $this->fragments->merge(
-            base: $configData,
-            fragmentDir: __DIR__.'/../Settings/register.d'
-        );
-
+        $configData    = $effective['data'];
         $configVersion = ($configData['info']['version'] ?? '0.0.0');
 
         try {
@@ -630,6 +594,69 @@ class SettingsService
             ];
         }//end try
     }//end loadConfiguration()
+
+    /**
+     * Read procest_register.json and deep-merge the ADR-037 register fragments
+     * on top of it, producing the effective register configuration to import.
+     *
+     * Returns either `['data' => array]` on success or `['error' => array]`
+     * carrying the caller-facing failure shape, so {@see loadConfiguration()}
+     * stays a single import flow rather than also being a file reader.
+     *
+     * @return array{data?: array, error?: array}
+     *
+     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+     */
+    private function readEffectiveConfiguration(): array
+    {
+        $configPath = __DIR__.'/../Settings/procest_register.json';
+        if (file_exists($configPath) === false) {
+            $this->logger->error(
+                'Procest: Configuration file not found at '.$configPath
+            );
+            return [
+                'error' => [
+                    'success' => false,
+                    'message' => 'Configuration file not found',
+                ],
+            ];
+        }
+
+        $configContent = file_get_contents($configPath);
+        $configData    = json_decode($configContent, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $this->logger->error('Procest: Invalid JSON in configuration file');
+            return [
+                'error' => [
+                    'success' => false,
+                    'message' => 'Invalid JSON in configuration file',
+                ],
+            ];
+        }
+
+        // ADR-037: deep-merge any modular register fragments from
+        // lib/Settings/register.d/*.json on top of the monolith. This lets
+        // concurrent same-app builds add registers/schemas via isolated
+        // fragment files instead of all editing procest_register.json and
+        // conflicting. Fragments are applied in sorted filename order.
+        // The merge also returns a hash of the fragment set. It is deliberately
+        // not captured: it used to be folded into the version so that adding or
+        // changing a fragment forced a re-import, but OpenRegister gates with
+        // version_compare, which treats `+…` as further version parts and
+        // compares them LEXICALLY rather than as semver build metadata — so
+        // whether the gate fired depended on how two md5 hashes happened to
+        // sort. Unchanged content re-imported about half the time; a real
+        // change was skipped the other half. OpenRegister now hashes the merged
+        // configuration itself and skips on hash equality, which detects a
+        // changed fragment from the data. The version stays a version.
+        [$configData] = $this->fragments->merge(
+            base: $configData,
+            fragmentDir: __DIR__.'/../Settings/register.d'
+        );
+
+        return ['data' => $configData];
+    }//end readEffectiveConfiguration()
 
     /**
      * Get all current settings as an associative array.

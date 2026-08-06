@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * Gate-19 spec-coverage tests for kanban-board-keyboard-status-transition
  * (WCAG 2.1.1 Keyboard fix on the Workflow Board's status-move control).

@@ -7,6 +7,55 @@ on:
     branches: [main, master, development]
   workflow_dispatch:
 
+# Deduplicating a `push` run against the `pull_request` run for the SAME head
+# ref is the point of this block, and for a feature branch it is exactly right:
+# two runs of identical jobs, one of them wasted.
+#
+# It is wrong for `main` and `development`, because the push run there is NOT a
+# duplicate — it is the only carrier of the push-only jobs: "Coverage Baseline
+# Check" (`github.event_name == 'push'`), "SBOM" and "Features Extract". A push
+# to `development` and any open PR whose `head_ref` IS `development` both
+# render the group `quality-development`, and `cancel-in-progress` then kills
+# whichever started first — always the push run, by a few seconds.
+#
+# Note this repo's own wrinkle: the standing "Release: merge development into
+# beta" (#18) targets `beta`, and `beta` is NOT in this workflow's
+# `pull_request.branches` list, so that PR alone does not collide here. But
+# #669 ("fix(security): wave-3 critical fixes") is head `development` -> base
+# `main`, and `main` IS in the list — so the collision is live regardless, and
+# will recur for any future development->main PR.
+#
+# Measured on this repo: push run 30896826480 cancelled 45s in. That duration
+# is the discriminator: the shared workflow's `timeout-minutes: 45`
+# cancellation lands at 45m16s–45m28s, so this is a concurrency kill.
+#
+# On the surviving PR run "Coverage Baseline Check" reports `skipped`, which is
+# CORRECT for a pull_request event and renders exactly like a pass. So the gate
+# appears on both runs and executes on neither — a dead gate of the
+# permanently-pending shape.
+#
+# Suffixing only the default-branch push keeps feature-branch dedup untouched
+# (`quality-feature/x` for both events, exactly as before) and gives the two
+# default branches' push runs a lane of their own.
+#
+# Proven in openconnector#1158: its first-ever completed `development` push run
+# (31048998594) executed Coverage Baseline Check, SBOM and Features Extract.
+concurrency:
+  group: quality-${{ github.head_ref || github.ref_name }}${{ (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'development')) && '-push' || '' }}
+  cancel-in-progress: true
+
+# Permission CEILING for the called quality pipeline. GitHub statically
+# validates the called workflow's declared job permissions against this
+# grant — even for jobs that are disabled — so it must cover the maximum
+# any nested job declares: journeydoc-capture (contents+actions write),
+# update-baseline / features-extract (contents write), and the Quality
+# Report PR comment (issues / pull-requests write).
+permissions:
+  contents: write
+  actions: write
+  issues: write
+  pull-requests: write
+
 jobs:
   quality:
     uses: ConductionNL/.github/.github/workflows/quality.yml@main
@@ -39,14 +88,41 @@ jobs:
       # needs the `settings#load` route it ships — `development` is where that
       # plumbing lands first.
       additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"development"}]'
-      # SBOM disabled until @conduction/nextcloud-vue's dependency declarations
-      # are cleaned up — its `npm ls` tree fails ELSPROBLEMS (bootstrap-vue is a
-      # non-optional peer, apexcharts/pinia/vue version ranges don't match what
-      # apps install, @types/react comes from a transitive rehype-react), which
-      # @cyclonedx/cyclonedx-npm propagates as a hard failure (it always runs
-      # `npm ls` under the hood; `--package-lock-only` doesn't sidestep it).
-      # No other Conduction app enables SBOM today. Tracked in #434.
-      enable-sbom: false
+      # SBOM was disabled here until @conduction/nextcloud-vue's dependency
+      # declarations were cleaned up — its `npm ls` tree fails ELSPROBLEMS
+      # (bootstrap-vue is a non-optional peer, apexcharts/pinia/vue version
+      # ranges don't match what apps install, @types/react comes from a
+      # transitive rehype-react), and @cyclonedx/cyclonedx-npm propagated that
+      # as a hard failure because it always runs `npm ls` under the hood.
+      # Tracked in #434.
+      #
+      # That blocker is STALE, and the old comment's last line ("No other
+      # Conduction app enables SBOM today") is now false — which is exactly why
+      # it was worth re-measuring rather than trusting. The shared workflow's
+      # npm SBOM step now runs:
+      #
+      #   npx @cyclonedx/cyclonedx-npm --package-lock-only --ignore-npm-errors …
+      #
+      # `--ignore-npm-errors` is the flag that neutralises ELSPROBLEMS, and it
+      # was not there when this was switched off.
+      #
+      # Measured positive control rather than assumed: ConductionNL/docudesk
+      # depends on the SAME `@conduction/nextcloud-vue` version this repo pins
+      # (2.2.0-vue3.3), and its SBOM job on `development` ran the npm leg to
+      # completion and merged the PHP + npm SBOMs — run 31016019235, job
+      # 92340789907. openregister, opencatalogi and doriath are green on SBOM
+      # too. The dependency this comment blamed does not stop the job in four
+      # sibling repos, so it does not stop it here.
+      #
+      # procest already ships the other prerequisite: `composer.json` requires
+      # cyclonedx/cyclonedx-php-composer ^6.2 and allows its plugin, so the
+      # `composer CycloneDX:make-sbom` step has what it needs.
+      #
+      # NOTE: SBOM only runs on a branch push (its `if:` tests github.ref
+      # against refs/heads/{main,beta,development}); on a pull_request the ref
+      # is refs/pull/N/merge, so this job is invisible on the PR that enables
+      # it and first reports on the merge to `development`.
+      enable-sbom: true
       # ── E2E browser tests ────────────────────────────────────────────────
       # Previously LEFT OFF. The comment that lived here recorded the blocker,
       # so it is kept (not deleted) next to what changed:
@@ -100,3 +176,51 @@ jobs:
       #
       # cwd for this step is the Nextcloud server root.
       playwright-seed-command: 'bash apps/procest/tests/e2e/ci-seed.sh'
+
+      # Integration Tests (Newman) stays OFF here, deliberately. The
+      # `enable-newman: false` further up is not a default nobody chose: it
+      # records that the ZGW compliance collections fail at 95%+ because the ZGW
+      # API implementation is still in progress. Four collections are committed
+      # under `data/` and would all meet that same known cause — a guaranteed
+      # red that teaches nothing the comment does not already say. Flipped back
+      # on in the commit that gets the core CRUD assertions passing.
+
+      # ── Frontend Check legs ──────────────────────────────────────────────
+      # `frontend-checks` defaults to `[]`, and an empty list means the shared
+      # workflow emits NO "Frontend Check" job at all — so these three
+      # validators ran nowhere while the run still looked complete.
+      # Measured on this tree before enabling: `test:l10n` PASSES;
+      # `check:manifest` FAILS on three counts — `pages[4]` and `pages[5]`
+      # (`type=custom requires component field`) and `pages[52].type: "roadmap"
+      # not in v1.2 enum`. `check:vue3-compile` could not be measured locally
+      # (it needs `@vue/compiler-sfc`, which only exists after the leg's own
+      # `npm ci`), so CI is the first place it gets a real verdict.
+      # `test` / `test:unit` are NOT listed: "Frontend Tests (unit)" runs them.
+      frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n"]'
+
+      # ── Hydra mechanical gates ───────────────────────────────────────────
+      # `enable-hydra-gates` defaults to FALSE, so this tier has never executed
+      # here — the job reported `skipped`, which the Quality Report renders
+      # identically to a pass. Pinned to v1.3.0 so a change to the gate package
+      # cannot move this repo's verdict without a commit here.
+      # `enable-axe` deliberately NOT set: a vanilla Nextcloud 34 already carries
+      # serious/critical violations from core's own UI.
+      enable-hydra-gates: true
+      # PIN MOVED v1.0.1 -> v1.3.0. `hydra-gates-require-full-coverage`
+      # (default ON) fails a run when a gate whose subject matter EXISTS did
+      # not report; its contract is that a not-applicable gate must DECLARE
+      # itself. v1.0.1 contains ZERO `_skip` calls — no na/structural/wiring
+      # vocabulary at all — so such a gate emits NOTHING and is counted as
+      # "DID NOT RUN". v1.3.0 ships 36 such declarations. Measured on doriath
+      # (PR #160): gates 4/24/33 went from unexplained "DID NOT RUN" to
+      # explicit NOT APPLICABLE, and Hydra Gates went failure -> success.
+      hydra-gates-ref: v1.5.0
+      # PIN MOVED v1.3.0 -> v1.4.0 (fleet consumer-ref sweep, 2026-08-05).
+      # A pinned ref is a silent expiry date on every upstream fix: this repo
+      # cannot receive a gate-package fix until this line moves. v1.4.0 is the
+      # latest tag and the FIRST one carrying `hydra-gates/scripts/axe-run.cjs`
+      # (verified absent at v1.3.0), so it is also the first that has #168's
+      # axe DOM scoping and #165's gate-46 fix.
+      # `enable-axe` is deliberately still NOT set — a vanilla Nextcloud 34
+      # reports serious/critical violations on core's OWN routes that DOM
+      # scoping does not remove. Enabling axe is a separate decision.

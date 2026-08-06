@@ -34,6 +34,7 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\Ai\AiAuditLog;
 use OCA\Procest\Service\Ai\AiEndpointGuard;
+use OCA\Procest\Service\Ai\AiModelIdentity;
 use OCA\Procest\Service\Ai\AiPiiRedactor;
 use OCA\Procest\Service\Ai\AiPromptFactory;
 use OCA\Procest\Service\AiService;
@@ -91,6 +92,7 @@ class StubbedAiService extends AiService
  *
  * @uses \OCA\Procest\Service\Ai\AiAuditLog
  * @uses \OCA\Procest\Service\Ai\AiEndpointGuard
+ * @uses \OCA\Procest\Service\Ai\AiModelIdentity
  * @uses \OCA\Procest\Service\Ai\AiPromptFactory
  */
 class AiServiceAuditLoggingCompletenessTest extends TestCase
@@ -165,6 +167,7 @@ class AiServiceAuditLoggingCompletenessTest extends TestCase
             pii: new AiPiiRedactor(),
             endpointGuard: new AiEndpointGuard($logger),
             audit: new AiAuditLog($this->appConfig, $this->container, $logger),
+            modelIdentity: new AiModelIdentity($this->appConfig),
             logger: $logger,
         );
     }//end setUp()

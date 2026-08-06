@@ -9,7 +9,7 @@ Procest is a lightweight case management (zaakgericht werken) app for Nextcloud,
 - **Type**: Nextcloud App (PHP backend + Vue 2 frontend)
 - **Data layer**: OpenRegister (all data stored as register objects)
 - **Pattern**: Thin client — Procest provides UI/UX, OpenRegister handles persistence
-- **License**: AGPL-3.0-or-later
+- **License**: EUPL-1.2
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for detailed architecture and data model decisions.
 
