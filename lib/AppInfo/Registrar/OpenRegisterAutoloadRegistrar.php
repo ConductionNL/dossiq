@@ -90,6 +90,15 @@ class OpenRegisterAutoloadRegistrar
      *
      * @return void
      *
+     * `OC_App` is a legacy Nextcloud global with no OCP counterpart and no
+     * stub in the psalm baseline, so psalm reports UndefinedClass for it. The
+     * class is real and public API for this purpose — `Coordinator` itself
+     * calls `OC_App::registerAutoloading()` — so the suppression is narrowed to
+     * this method rather than the file, and it must NOT be widened: any OTHER
+     * undefined class in here should still be an error.
+     *
+     * @psalm-suppress UndefinedClass OC_App is a legacy NC global with no OCP equivalent; Coordinator calls it for exactly this.
+     *
      * @SuppressWarnings(PHPMD.StaticAccess) OC_App::registerAutoloading() is the ADR-040 prelude; there is no injectable equivalent.
      *
      * @spec openspec/specs/beschikking-generatie/spec.md
