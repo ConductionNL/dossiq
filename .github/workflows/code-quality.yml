@@ -7,8 +7,41 @@ on:
     branches: [main, master, development]
   workflow_dispatch:
 
+# Deduplicating a `push` run against the `pull_request` run for the SAME head
+# ref is the point of this block, and for a feature branch it is exactly right:
+# two runs of identical jobs, one of them wasted.
+#
+# It is wrong for `main` and `development`, because the push run there is NOT a
+# duplicate — it is the only carrier of the push-only jobs: "Coverage Baseline
+# Check" (`github.event_name == 'push'`), "SBOM" and "Features Extract". A push
+# to `development` and any open PR whose `head_ref` IS `development` both
+# render the group `quality-development`, and `cancel-in-progress` then kills
+# whichever started first — always the push run, by a few seconds.
+#
+# Note this repo's own wrinkle: the standing "Release: merge development into
+# beta" (#18) targets `beta`, and `beta` is NOT in this workflow's
+# `pull_request.branches` list, so that PR alone does not collide here. But
+# #669 ("fix(security): wave-3 critical fixes") is head `development` -> base
+# `main`, and `main` IS in the list — so the collision is live regardless, and
+# will recur for any future development->main PR.
+#
+# Measured on this repo: push run 30896826480 cancelled 45s in. That duration
+# is the discriminator: the shared workflow's `timeout-minutes: 45`
+# cancellation lands at 45m16s–45m28s, so this is a concurrency kill.
+#
+# On the surviving PR run "Coverage Baseline Check" reports `skipped`, which is
+# CORRECT for a pull_request event and renders exactly like a pass. So the gate
+# appears on both runs and executes on neither — a dead gate of the
+# permanently-pending shape.
+#
+# Suffixing only the default-branch push keeps feature-branch dedup untouched
+# (`quality-feature/x` for both events, exactly as before) and gives the two
+# default branches' push runs a lane of their own.
+#
+# Proven in openconnector#1158: its first-ever completed `development` push run
+# (31048998594) executed Coverage Baseline Check, SBOM and Features Extract.
 concurrency:
-  group: quality-${{ github.head_ref || github.ref_name }}
+  group: quality-${{ github.head_ref || github.ref_name }}${{ (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'development')) && '-push' || '' }}
   cancel-in-progress: true
 
 # Permission CEILING for the called quality pipeline. GitHub statically
