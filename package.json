@@ -62,13 +62,12 @@
 		"vue-router": "^4.6.4"
 	},
 	"overrides": {
-		"@nextcloud/axios": "~2.5.2",
-		"minimatch": "^3.1.2"
+		"@nextcloud/axios": "~2.5.2"
 	},
 	"devDependencies": {
 		"@babel/core": "^7.29.0",
 		"@babel/eslint-parser": "^7.28.6",
-		"@cyclonedx/cyclonedx-npm": "^4.2.1",
+		"@cyclonedx/cyclonedx-npm": "^6.0.0",
 		"@eslint/config-helpers": "^0.4.2",
 		"@eslint/eslintrc": "^3.3.1",
 		"@eslint/js": "^9.39.1",
@@ -78,8 +77,8 @@
 		"@nextcloud/stylelint-config": "^2.4.0",
 		"@nextcloud/webpack-vue-config": "^6.0.1",
 		"@playwright/test": "^1.49.0",
-		"@vitejs/plugin-vue": "^5.2.1",
-		"@vitest/coverage-v8": "^1.6.1",
+		"@vitejs/plugin-vue": "^6.0.0",
+		"@vitest/coverage-v8": "^3.2.7",
 		"@vue/compiler-sfc": "^3.5.13",
 		"@vue/eslint-config-typescript": "^13.0.0",
 		"@vue/test-utils": "^2.4.6",
@@ -106,7 +105,7 @@
 		"stylelint-config-recommended-vue": "^1.6.1",
 		"terser-webpack-plugin": "^5.6.1",
 		"typescript": "^5.9.3",
-		"vitest": "^1.6.1",
+		"vitest": "^3.2.7",
 		"vue-loader": "^17.4.2",
 		"webpack": "^5.94.0",
 		"webpack-cli": "^6.0.1"
