@@ -54,3 +54,7 @@ tests/e2e/.auth/
 /coverage-vitest/
 /coverage/
 composer.phar
+
+# Build-output backup taken by hand before a rebuild — 60MB of compiled JS.
+# Never a source artefact, and large enough to bloat every clone if committed.
+js.bak/
