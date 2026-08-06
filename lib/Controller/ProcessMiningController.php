@@ -5,7 +5,7 @@
  *
  * REST surface for the process-mining bottleneck report:
  * `GET /api/reports/process-mining`. Same gate shape as
- * {@see Iv3ReportController} — the report spans every case in the tenant,
+ * the retired IV3 report — process mining spans every case in the tenant,
  * not just the caller's own work, so access is restricted to the
  * controller/beheerder/admin roles rather than any authenticated user.
  * Defers all logic to {@see ProcessMiningService} (ADR-022).
@@ -53,7 +53,7 @@ class ProcessMiningController extends Controller
 {
     /**
      * Groups that may read the process-mining report — same gate shape as
-     * {@see Iv3ReportController::ALLOWED_GROUPS}: the report spans the
+     * the same allowed-group shape the retired IV3 report used: it spans the
      * whole case population, not just the caller's own work.
      */
     private const ALLOWED_GROUPS = ['controllers', 'beheerders', 'admin'];
@@ -199,7 +199,7 @@ class ProcessMiningController extends Controller
     /**
      * Check whether the given user id belongs to an allowed group (or is an
      * NC admin, defensive default) — same shape as
-     * {@see Iv3ReportController::isAllowed()}.
+     * the retired IV3 report's isAllowed().
      *
      * @param string $uid The Nextcloud user id.
      *

@@ -224,7 +224,9 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "workflowTemplate",
-                        "x-relation-filter": {"caseType": "@objectId"},
+                        "x-relation-filter": {
+                            "caseType": "@objectId"
+                        },
                         "description": "UUID reference to the pinned active workflowTemplate for this case type. When unset, new cases fall through to the latest published workflowTemplate for this caseType. New cases are bound to the version that is published+isActive at the moment of case creation (see case.workflowTemplate + case.workflowVersion).",
                         "title": "Workflow Definition"
                     },
@@ -1050,7 +1052,9 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "statusType",
-                        "x-relation-filter": { "caseType": "@object.caseType" },
+                        "x-relation-filter": {
+                            "caseType": "@object.caseType"
+                        },
                         "description": "Reference to the current status type. Initialised declaratively to the case type's initial status by OpenRegister (x-openregister-lifecycle.initial); user-editable thereafter because OR's transition engine only supports STATIC from/to state values and cannot express procest's per-caseType statusType graph yet — revert to readOnly + lifecycle transitions once OR supports FK-based status graphs. x-relation-filter scopes the picker to the case's own type's statuses.",
                         "title": "Status",
                         "facetable": true
@@ -1068,7 +1072,9 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "result",
-                        "x-relation-filter": {"case": "@objectId"},
+                        "x-relation-filter": {
+                            "case": "@objectId"
+                        },
                         "description": "Reference to the result record (set on completion)",
                         "visible": false,
                         "title": "Result"
@@ -1265,7 +1271,9 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "workflowTemplate",
-                        "x-relation-filter": {"caseType": "@object.caseType"},
+                        "x-relation-filter": {
+                            "caseType": "@object.caseType"
+                        },
                         "description": "Reference to the bound workflow template",
                         "visible": false,
                         "title": "Workflow Template"
@@ -1380,12 +1388,6 @@
                         },
                         "referenceType": "decision",
                         "x-allow-create": true
-                    },
-                    "kosten": {
-                        "type": "string",
-                        "description": "JSON-encoded array of IV3 cost entries: [{bedrag, type, datum, source?, vaststellingId?}]. type is \"leges_income\", \"handling_cost\", or \"subsidy_disbursement\" (auto-appended by VaststellingService::finalize() on a subsidie settlement, source=\"subsidie_vaststelling\" + vaststellingId for idempotency); datum is an ISO date. IV3-reporting record only (Iv3ReportService) — not a general ledger; real municipal fee transactions live in Pipelinq per ADR-003.",
-                        "visible": false,
-                        "title": "Costs"
                     }
                 },
                 "searchable": true
@@ -2353,7 +2355,9 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "statusType",
-                        "x-relation-filter": {"caseType": "@object.zaaktype"},
+                        "x-relation-filter": {
+                            "caseType": "@object.zaaktype"
+                        },
                         "description": "Reference to a status type",
                         "title": "Status Type Reference"
                     }
@@ -2743,7 +2747,9 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "parafeerroute",
-                        "x-relation-filter": {"voorstelType": "@object.type"},
+                        "x-relation-filter": {
+                            "voorstelType": "@object.type"
+                        },
                         "description": "Reference to the parafeerroute being used",
                         "title": "Sign-off Route"
                     },
@@ -2791,7 +2797,9 @@
                         "type": "string",
                         "format": "uuid",
                         "$ref": "decision",
-                        "x-relation-filter": {"case": "@object.case"},
+                        "x-relation-filter": {
+                            "case": "@object.case"
+                        },
                         "description": "Reference to the linked decision (set when besluit is registered)",
                         "visible": false,
                         "title": "Decision"
@@ -3433,16 +3441,32 @@
                                     "dateAdd": {
                                         "date": {
                                             "dateAdd": {
-                                                "date": { "prop": "ontvangstdatum" },
+                                                "date": {
+                                                    "prop": "ontvangstdatum"
+                                                },
                                                 "amount": 6,
                                                 "unit": "weeks"
                                             }
                                         },
-                                        "amount": { "coalesce": [ { "prop": "verdagingsperiode" }, 0 ] },
+                                        "amount": {
+                                            "coalesce": [
+                                                {
+                                                    "prop": "verdagingsperiode"
+                                                },
+                                                0
+                                            ]
+                                        },
                                         "unit": "days"
                                     }
                                 },
-                                "amount": { "coalesce": [ { "prop": "opschorting" }, 0 ] },
+                                "amount": {
+                                    "coalesce": [
+                                        {
+                                            "prop": "opschorting"
+                                        },
+                                        0
+                                    ]
+                                },
                                 "unit": "days"
                             }
                         }
@@ -3456,9 +3480,127 @@
                                 1442,
                                 {
                                     "+": [
-                                        { "*": [ { "min": [ 14, { "max": [ 0, { "coalesce": [ { "dateDiff": { "from": { "dateAdd": { "date": { "prop": "ingebrekestelling" }, "amount": 14, "unit": "days" } }, "to": { "now": [] }, "unit": "days" } }, 0 ] } ] } ] }, 23 ] },
-                                        { "*": [ { "min": [ 14, { "max": [ 0, { "-": [ { "coalesce": [ { "dateDiff": { "from": { "dateAdd": { "date": { "prop": "ingebrekestelling" }, "amount": 14, "unit": "days" } }, "to": { "now": [] }, "unit": "days" } }, 0 ] }, 14 ] } ] } ] }, 35 ] },
-                                        { "*": [ { "min": [ 14, { "max": [ 0, { "-": [ { "coalesce": [ { "dateDiff": { "from": { "dateAdd": { "date": { "prop": "ingebrekestelling" }, "amount": 14, "unit": "days" } }, "to": { "now": [] }, "unit": "days" } }, 0 ] }, 28 ] } ] } ] }, 45 ] }
+                                        {
+                                            "*": [
+                                                {
+                                                    "min": [
+                                                        14,
+                                                        {
+                                                            "max": [
+                                                                0,
+                                                                {
+                                                                    "coalesce": [
+                                                                        {
+                                                                            "dateDiff": {
+                                                                                "from": {
+                                                                                    "dateAdd": {
+                                                                                        "date": {
+                                                                                            "prop": "ingebrekestelling"
+                                                                                        },
+                                                                                        "amount": 14,
+                                                                                        "unit": "days"
+                                                                                    }
+                                                                                },
+                                                                                "to": {
+                                                                                    "now": []
+                                                                                },
+                                                                                "unit": "days"
+                                                                            }
+                                                                        },
+                                                                        0
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                23
+                                            ]
+                                        },
+                                        {
+                                            "*": [
+                                                {
+                                                    "min": [
+                                                        14,
+                                                        {
+                                                            "max": [
+                                                                0,
+                                                                {
+                                                                    "-": [
+                                                                        {
+                                                                            "coalesce": [
+                                                                                {
+                                                                                    "dateDiff": {
+                                                                                        "from": {
+                                                                                            "dateAdd": {
+                                                                                                "date": {
+                                                                                                    "prop": "ingebrekestelling"
+                                                                                                },
+                                                                                                "amount": 14,
+                                                                                                "unit": "days"
+                                                                                            }
+                                                                                        },
+                                                                                        "to": {
+                                                                                            "now": []
+                                                                                        },
+                                                                                        "unit": "days"
+                                                                                    }
+                                                                                },
+                                                                                0
+                                                                            ]
+                                                                        },
+                                                                        14
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                35
+                                            ]
+                                        },
+                                        {
+                                            "*": [
+                                                {
+                                                    "min": [
+                                                        14,
+                                                        {
+                                                            "max": [
+                                                                0,
+                                                                {
+                                                                    "-": [
+                                                                        {
+                                                                            "coalesce": [
+                                                                                {
+                                                                                    "dateDiff": {
+                                                                                        "from": {
+                                                                                            "dateAdd": {
+                                                                                                "date": {
+                                                                                                    "prop": "ingebrekestelling"
+                                                                                                },
+                                                                                                "amount": 14,
+                                                                                                "unit": "days"
+                                                                                            }
+                                                                                        },
+                                                                                        "to": {
+                                                                                            "now": []
+                                                                                        },
+                                                                                        "unit": "days"
+                                                                                    }
+                                                                                },
+                                                                                0
+                                                                            ]
+                                                                        },
+                                                                        28
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                45
+                                            ]
+                                        }
                                     ]
                                 }
                             ]

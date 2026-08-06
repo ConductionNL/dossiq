@@ -9,7 +9,6 @@
 		"WorkflowBoard": "WorkGroup",
 		"Analytics": "AnalyticsGroup",
 		"TermijnDashboardMenu": "AnalyticsGroup",
-		"Iv3ReportDashboardMenu": "AnalyticsGroup",
 		"ProcessMiningDashboardMenu": "AnalyticsGroup"
 	},
 	"removals": [
