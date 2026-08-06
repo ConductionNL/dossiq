@@ -105,5 +105,5 @@ The prelude MUST NOT throw under any instance state. An exception escaping it wo
 
 - **GIVEN** an instance with OpenRegister not installed
 - **WHEN** the prelude runs
-- **THEN** it MUST return `false` rather than throw, and the caller MUST fall through to its degraded path
+- **THEN** it MUST return control to its caller rather than throw, and the caller MUST fall through to its degraded path
 - @e2e exclude composition-root load order — asserted by tests/Unit/AppInfo/OpenRegisterAutoloaderTest.php
