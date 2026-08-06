@@ -83,3 +83,27 @@ Procest's Settings cluster — `SettingsController`, `SettingsService`, `AdminSe
 - **THEN** the retained procest `InitializeSettings` repair step MUST import `procest_register.json` plus all `register.d/*.json` fragments through ConfigurationService AND run `reconcileSchemaConfig()`, exactly as before adoption — the generic `GenericInitializeSettings` stub MUST NOT replace it, since it does not perform the register.d merge or the schema reconcile
 - @e2e exclude install-time occ behaviour — covered by PHPUnit + the install smoke check, not browser UI
 
+
+### Requirement: OpenRegister's Autoloader Is Registered Before AppHost Is Referenced
+
+`AppInfo\OpenRegisterAutoloader::register()` SHALL put OpenRegister's PSR-4 prefix on the composer autoloader — via `OC_App::registerAutoloading('openregister', …)` — before the composition root references any `OCA\OpenRegister\AppHost\…` name, including any `class_exists()` guard.
+
+Nextcloud registers apps in sorted order: `OC_App::getEnabledApps()` does `sort($apps)` and `Coordinator::registerApps()` walks that list calling `OC_App::registerAutoloading($appId, $path)` and then `$app->register()` for one app at a time, so every app's `register()` runs before the PSR-4 prefix of every alphabetically-later app exists.
+
+`OC_App::registerAutoloading()` is idempotent and touches only the autoloader. `IAppManager::loadApp('openregister')` MUST NOT be used instead: it marks OpenRegister loaded and calls `Coordinator::bootApp()`, booting OpenRegister before its own `register()` has run.
+
+The prelude MUST NOT throw under any instance state. An exception escaping it would abort the entire `register()`, which is strictly worse than the failure it prevents — `Coordinator::registerApps()` catches the Throwable, logs an `emergency` and continues, leaving the app enabled and serving with every later registration silently missing.
+
+#### Scenario: AppHost resolves regardless of registration order
+
+- **GIVEN** an instance with OpenRegister enabled
+- **WHEN** the composition root runs at its sorted position
+- **THEN** `OCA\OpenRegister\AppHost\Bootstrap` MUST be autoloadable, because the prelude has already registered OpenRegister's prefix, and the AppHost engine registration MUST run
+- @e2e exclude composition-root load order — observable only during the app registration phase, before any HTTP request or browser session exists; asserted by tests/Unit/AppInfo/OpenRegisterAutoloaderTest.php and by hydra gate-64 (apphost-autoload-prelude)
+
+#### Scenario: OpenRegister genuinely absent
+
+- **GIVEN** an instance with OpenRegister not installed
+- **WHEN** the prelude runs
+- **THEN** it MUST return `false` rather than throw, and the caller MUST fall through to its degraded path
+- @e2e exclude composition-root load order — asserted by tests/Unit/AppInfo/OpenRegisterAutoloaderTest.php

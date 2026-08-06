@@ -32,6 +32,7 @@ namespace OCA\Procest\AppInfo\Registrar;
 
 use OCA\OpenRegister\AppHost\Bootstrap;
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\AppInfo\OpenRegisterAutoloader;
 use OCA\Procest\Dashboard\CasesOverviewWidget;
 use OCA\Procest\Dashboard\DeadlineAlertsWidget;
 use OCA\Procest\Dashboard\MyTasksWidget;
@@ -98,6 +99,19 @@ class AppHostRegistrar
      */
     public function register(IRegistrationContext $context): void
     {
+        // ADR-040 load-order prelude. OC_App::getEnabledApps() sort()s the app
+        // list and Coordinator::registerApps() walks THAT sorted list calling
+        // OC_App::registerAutoloading($appId) and then $app->register() one app
+        // at a time, so an app registers before the PSR-4 prefix of every
+        // alphabetically-LATER app exists. `procest` sorts after `openregister`
+        // so this happens to hold today — by alphabet, not by design — and the
+        // guard below cannot tell "OpenRegister absent" from "OpenRegister's
+        // prefix not registered yet": both answer FALSE and both silently skip
+        // the entire engine. Registering the prefix ourselves removes the
+        // dependency on ordering; registerAutoloading() is idempotent, so on the
+        // current ordering this costs nothing.
+        OpenRegisterAutoloader::register();
+
         if (class_exists(Bootstrap::class) === false) {
             // OpenRegister is absent or disabled. Skip the engine registration
             // rather than fatalling every request; see the note above.
