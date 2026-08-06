@@ -53,7 +53,7 @@ namespace OCA\Procest\AppInfo;
  * path contract — "this NEVER throws, whatever the instance looks like" — is
  * reachable from a unit test without a Nextcloud DI container.
  *
- * @spec openspec/specs/apphost-adoption/spec.md
+ * @spec openspec/specs/apphost-autoload-prelude/spec.md
  */
 final class OpenRegisterAutoloader
 {
@@ -83,7 +83,7 @@ final class OpenRegisterAutoloader
      * autoloader, and this runs at the composition root where no container is
      * available to resolve an adapter from.
      *
-     * @spec openspec/specs/apphost-adoption/spec.md
+     * @spec openspec/specs/apphost-autoload-prelude/spec.md
      */
     public static function register(): void
     {
