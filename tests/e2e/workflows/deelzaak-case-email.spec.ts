@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2026 Procest Contributors
- * SPDX-License-Identifier: AGPL-3.0-or-later
+ * SPDX-License-Identifier: EUPL-1.2
  *
  * DEEP e2e for this week's new UI: DEELZAAK (sub-case) support + CASE-EMAIL
  * integration. Backend unit tests already landed; this covers the user-facing

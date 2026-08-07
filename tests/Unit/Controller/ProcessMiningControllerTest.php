@@ -5,7 +5,7 @@
  *
  * Verifies the controller/beheerder/admin-only auth gate (401
  * unauthenticated / 403 for a caller outside ALLOWED_GROUPS — same shape
- * as Iv3ReportControllerTest), parameter validation, and the happy path
+ * as the retired Iv3ReportControllerTest did), parameter validation, and the happy path
  * delegating to {@see ProcessMiningService::getReport()}.
  *
  * @category Tests

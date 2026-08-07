@@ -7,8 +7,41 @@ on:
     branches: [main, master, development]
   workflow_dispatch:
 
+# Deduplicating a `push` run against the `pull_request` run for the SAME head
+# ref is the point of this block, and for a feature branch it is exactly right:
+# two runs of identical jobs, one of them wasted.
+#
+# It is wrong for `main` and `development`, because the push run there is NOT a
+# duplicate — it is the only carrier of the push-only jobs: "Coverage Baseline
+# Check" (`github.event_name == 'push'`), "SBOM" and "Features Extract". A push
+# to `development` and any open PR whose `head_ref` IS `development` both
+# render the group `quality-development`, and `cancel-in-progress` then kills
+# whichever started first — always the push run, by a few seconds.
+#
+# Note this repo's own wrinkle: the standing "Release: merge development into
+# beta" (#18) targets `beta`, and `beta` is NOT in this workflow's
+# `pull_request.branches` list, so that PR alone does not collide here. But
+# #669 ("fix(security): wave-3 critical fixes") is head `development` -> base
+# `main`, and `main` IS in the list — so the collision is live regardless, and
+# will recur for any future development->main PR.
+#
+# Measured on this repo: push run 30896826480 cancelled 45s in. That duration
+# is the discriminator: the shared workflow's `timeout-minutes: 45`
+# cancellation lands at 45m16s–45m28s, so this is a concurrency kill.
+#
+# On the surviving PR run "Coverage Baseline Check" reports `skipped`, which is
+# CORRECT for a pull_request event and renders exactly like a pass. So the gate
+# appears on both runs and executes on neither — a dead gate of the
+# permanently-pending shape.
+#
+# Suffixing only the default-branch push keeps feature-branch dedup untouched
+# (`quality-feature/x` for both events, exactly as before) and gives the two
+# default branches' push runs a lane of their own.
+#
+# Proven in openconnector#1158: its first-ever completed `development` push run
+# (31048998594) executed Coverage Baseline Check, SBOM and Features Extract.
 concurrency:
-  group: quality-${{ github.head_ref || github.ref_name }}
+  group: quality-${{ github.head_ref || github.ref_name }}${{ (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'development')) && '-push' || '' }}
   cancel-in-progress: true
 
 # Permission CEILING for the called quality pipeline. GitHub statically
@@ -30,7 +63,19 @@ jobs:
       app-name: procest
       php-version: "8.3"
       php-test-versions: '["8.3", "8.4"]'
-      nextcloud-test-refs: '["stable31", "stable32"]'
+      # stable31 is REMOVED, not "dropped for coverage". `additional-apps` below
+      # installs openregister, which declares min-version="32" and therefore
+      # cannot install on NC31 — `occ app:enable openregister` fails with only a
+      # ::warning::, so the run continued WITHOUT its data layer and every
+      # /apps/openregister/... call returned Nextcloud's HTML 404 page. A stable31
+      # leg was testing an impossible configuration, so its red said nothing.
+      # newman, playwright and journeydoc-capture all pin
+      # `fromJSON(inputs.nextcloud-test-refs)[0]`, so the FIRST entry has to be a
+      # version openregister can load.
+      #
+      # stable33 is deliberately NOT added: this removes an impossible leg, it
+      # does not widen the matrix.
+      nextcloud-test-refs: '["stable32"]'
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: false
@@ -166,19 +211,39 @@ jobs:
       frontend-checks: '["check:manifest", "check:vue3-compile", "test:l10n"]'
 
       # ── Hydra mechanical gates ───────────────────────────────────────────
-      # `enable-hydra-gates` defaults to FALSE, so this tier has never executed
+      # `enable-hydra-gates` defaults to FALSE, so this tier had never executed
       # here — the job reported `skipped`, which the Quality Report renders
-      # identically to a pass. Pinned to v1.3.0 so a change to the gate package
-      # cannot move this repo's verdict without a commit here.
-      # `enable-axe` deliberately NOT set: a vanilla Nextcloud 34 already carries
-      # serious/critical violations from core's own UI.
+      # identically to a pass.
       enable-hydra-gates: true
-      # PIN MOVED v1.0.1 -> v1.3.0. `hydra-gates-require-full-coverage`
-      # (default ON) fails a run when a gate whose subject matter EXISTS did
-      # not report; its contract is that a not-applicable gate must DECLARE
-      # itself. v1.0.1 contains ZERO `_skip` calls — no na/structural/wiring
-      # vocabulary at all — so such a gate emits NOTHING and is counted as
-      # "DID NOT RUN". v1.3.0 ships 36 such declarations. Measured on doriath
-      # (PR #160): gates 4/24/33 went from unexplained "DID NOT RUN" to
-      # explicit NOT APPLICABLE, and Hydra Gates went failure -> success.
-      hydra-gates-ref: v1.3.0
+      # No `hydra-gates-ref` here on purpose. The shared workflow defaults it
+      # to @main, and this workflow is itself consumed at @main, so the two
+      # sides move together and a gate fix reaches this repo without a commit
+      # in this repo. A pin is a silent expiry date: 22 repos sat on v1.0.1 and
+      # 16 gates were dead fleet-wide while every one reported PASS (.github#159),
+      # and a default flipped at @main later reached those old runners and made
+      # them red on gates they had no subject matter for (.github#173).
+      # To hold this repo still for a specific reason, set the input explicitly
+      # and say why — it is still honoured. To roll back for everyone, revert on
+      # ConductionNL/.github main.
+      #
+      # THIRD CAUSE, and the one that is failing this repo RIGHT NOW
+      # (.github#177): quality.yml@main began executing three gate helpers BY
+      # NAME — check_spec_anchors.py, check_form_labels.py and
+      # check_license_triangle.py — which exist in NO tag before v1.5.0.
+      # Verified by DIRECTORY LISTING of each tag, not by per-file lookups:
+      # those answered "present" uniformly across v1.0.0..v1.5.0, and the
+      # uniformity across independent inputs was the tell that the instrument
+      # was wrong. So the Hydra Gates job here fails at "Verify the pinned gates
+      # package satisfies this workflow", before a single gate runs, with the
+      # workflow's own words: "This is NOT a code-quality finding about your
+      # repository." Removing the pin is the repair.
+      #
+      # Unpinning also picks up v1.5.1's push scoping (.github#179): on a push to
+      # `development`, `origin/development` IS `HEAD`, so the diff was empty by
+      # construction — <= v1.4.0 passed over it (permanently green) and v1.5.0
+      # refused with exit 99 (permanently red). The scope is now
+      # `github.event.before...HEAD`, what the push actually changed.
+      #
+      # `enable-axe` is deliberately still NOT set — a vanilla Nextcloud 34
+      # reports serious/critical violations on core's OWN routes that DOM
+      # scoping does not remove. Enabling axe is a separate decision.

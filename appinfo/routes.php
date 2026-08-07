@@ -668,9 +668,11 @@ $extra = [
         ['name' => 'termijnReporting#dashboard',         'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
         ['name' => 'termijnReporting#kwartaalrapport',   'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
         ['name' => 'termijnReporting#jaarrekening',      'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
-        // IV3 (Informatie voor Derden) quarterly cost report (controller / beheerder).
-        ['name' => 'iv3Report#report',                   'url' => '/api/reports/iv3',                      'verb' => 'GET'],
-        ['name' => 'iv3Report#taakvelden',                'url' => '/api/reports/iv3/taakvelden',           'verb' => 'GET'],
+        // IV3/BBV taakveld reference list, for the case-type classification
+        // picker. The quarterly IV3 cost report that used to sit alongside it
+        // is gone under ADR-081 — Shillinq is the only statutory reporter. The
+        // URL is unchanged because the settings picker calls it directly.
+        ['name' => 'iv3Taakveld#taakvelden',             'url' => '/api/reports/iv3/taakvelden',           'verb' => 'GET'],
 
         // ── ZGW DRC Case Dossier (document-zaakdossier spec) ────────────
         // Specific endpoints precede the {infoObjectId} wildcards so bulk/status routes resolve first.
