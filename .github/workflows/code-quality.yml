@@ -63,7 +63,19 @@ jobs:
       app-name: procest
       php-version: "8.3"
       php-test-versions: '["8.3", "8.4"]'
-      nextcloud-test-refs: '["stable31", "stable32"]'
+      # stable31 is REMOVED, not "dropped for coverage". `additional-apps` below
+      # installs openregister, which declares min-version="32" and therefore
+      # cannot install on NC31 — `occ app:enable openregister` fails with only a
+      # ::warning::, so the run continued WITHOUT its data layer and every
+      # /apps/openregister/... call returned Nextcloud's HTML 404 page. A stable31
+      # leg was testing an impossible configuration, so its red said nothing.
+      # newman, playwright and journeydoc-capture all pin
+      # `fromJSON(inputs.nextcloud-test-refs)[0]`, so the FIRST entry has to be a
+      # version openregister can load.
+      #
+      # stable33 is deliberately NOT added: this removes an impossible leg, it
+      # does not widen the matrix.
+      nextcloud-test-refs: '["stable32"]'
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: false
