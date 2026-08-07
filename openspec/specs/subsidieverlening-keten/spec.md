@@ -7,10 +7,15 @@ status-note: |
   run. Their capability methods are implemented and unit-tested yet have ZERO
   callers, so no user or API path can reach them:
 
-  - REQ-SUB-007 (bewijsstukken): `BewijsstukService::verifyHash()` and
-    `::assertMutable()` are never invoked — no hash is verified on read, and no
-    document is locked once linked to a vaststelling. There is no bewijsstuk
-    route, no nightly archief-trigger, and no Docudesk PDF/A handover.
+  - REQ-SUB-007 (bewijsstukken): PARTIALLY CLOSED on 2026-08-05. The
+    immutability half now runs: `BewijsstukService::assertMutable()` is invoked
+    from `BewijsstukImmutabilityListener`, which subscribes to OpenRegister's
+    PRE-persist `ObjectUpdatingEvent`/`ObjectDeletingEvent` and stops the save,
+    so a bewijsstuk linked to a vaststelling can no longer be edited or deleted
+    through the generic object write path the frontend uses (ADR-022). The rest
+    of the requirement is STILL not running: `::verifyHash()` has no caller so
+    no hash is verified on read, and there is no bewijsstuk route, no nightly
+    archief-trigger and no Docudesk PDF/A handover.
   - REQ-SUB-008 (staatssteun): `StaatssteunClassifier::requiresStaatssteunGrondslag()`
     is never invoked — no de-minimis gate runs on assessment, and no AGVV/TAM
     melding is emitted.

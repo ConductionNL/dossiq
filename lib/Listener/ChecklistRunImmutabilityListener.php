@@ -5,13 +5,23 @@
  *
  * Enforces REQ-IC-8: once a `inspectionChecklistRun` reaches
  * status = ingediend (or gearchiveerd), the object becomes append-only.
- * Any UPDATE that mutates protected fields after submit is rejected with
- * a RuntimeException whose message ("Checklist run is append-only") is the
- * canonical spec error string surfaced via REQ-IC-4 / REQ-IC-8 scenarios.
+ * Any UPDATE that mutates protected fields after submit is rejected, with
+ * the canonical spec error string ("Checklist run is append-only")
+ * surfaced via REQ-IC-4 / REQ-IC-8 scenarios.
  *
- * The listener never blocks the initial create (ObjectCreatedEvent) and
- * lets a status transition from `in_uitvoering → ingediend` through; only
- * subsequent edits to a submitted run trigger the rejection.
+ * The listener never blocks the initial create and lets a status transition
+ * from `in_uitvoering → ingediend` through; only subsequent edits to a
+ * submitted run trigger the rejection.
+ *
+ * It hooks OpenRegister's PRE-persist `ObjectUpdatingEvent`, which
+ * implements `StoppableEventInterface`: `stopPropagation()` makes
+ * MagicMapper raise `HookStoppedException` BEFORE the row is written. The
+ * post-persist `ObjectUpdatedEvent` this listener previously declared is
+ * dispatched AFTER `updateObjectEntity()` has already committed the row and
+ * OpenRegister opens no transaction around it, so throwing from there could
+ * not undo anything — the mutation landed and the caller merely saw an
+ * error. That, combined with the class never having been registered in
+ * `ObjectListenerRegistrar`, meant REQ-IC-8 was not enforced at all.
  *
  * @category Listener
  * @package  OCA\Procest\Listener
@@ -32,12 +42,11 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Listener;
 
-use OCA\OpenRegister\Event\ObjectUpdatedEvent;
+use OCA\OpenRegister\Event\ObjectUpdatingEvent;
 use OCA\Procest\Service\SettingsService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 use Throwable;
 
 /**
@@ -69,19 +78,18 @@ class ChecklistRunImmutabilityListener implements IEventListener
     }//end __construct()
 
     /**
-     * Inspect ObjectUpdatedEvent and reject illegal mutations.
+     * Inspect ObjectUpdatingEvent and reject illegal mutations before the
+     * row is written.
      *
      * @param Event $event The dispatched event
      *
      * @return void
      *
-     * @throws RuntimeException When a submitted run is being mutated.
-
      * @spec openspec/specs/inspection-checklists/spec.md
      */
     public function handle(Event $event): void
     {
-        if ($event instanceof ObjectUpdatedEvent === false) {
+        if ($event instanceof ObjectUpdatingEvent === false) {
             return;
         }
 
@@ -89,16 +97,20 @@ class ChecklistRunImmutabilityListener implements IEventListener
             if ($this->isFrozenRunMutation(event: $event) === false) {
                 return;
             }
-
-            throw new RuntimeException('Checklist run is append-only');
-        } catch (RuntimeException $rejection) {
-            // Re-throw rejection so OpenRegister surfaces it to the caller.
-            throw $rejection;
         } catch (Throwable $e) {
             $this->logger->debug(
                 'Procest: checklist immutability listener swallowed exception: '.$e->getMessage(),
             );
+            return;
         }//end try
+
+        $event->setErrors(
+            [
+                'message' => 'Checklist run is append-only',
+                'code'    => 'inspectionChecklistRun.appendOnly',
+            ]
+        );
+        $event->stopPropagation();
     }//end handle()
 
     /**

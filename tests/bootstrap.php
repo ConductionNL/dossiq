@@ -290,6 +290,12 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatingEvent') === false) {
     include_once __DIR__.'/Stubs/Event/ObjectUpdatingEventStub.php';
 }
 
+// REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
+// BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
+    include_once __DIR__.'/Stubs/Event/ObjectDeletingEventStub.php';
+}
+
 // OpenRegister AppHost stubs (ADR-040) — loaded when the openregister runtime
 // is absent so Application::register() (Bootstrap::register) and procest's
 // DashboardController (extends GenericDashboardController) resolve in bare CI
