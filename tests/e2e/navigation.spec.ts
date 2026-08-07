@@ -70,9 +70,13 @@ test.describe('Sidebar Navigation', () => {
 
 	test('settings button is visible', async ({ page }) => {
 		await page.goto('/index.php/apps/procest')
-		// Settings button at the bottom of the app sidebar. Target the
-		// dedicated settings toggle by its testid so it doesn't collide with
-		// the "SettingsMenu" nav entry (both render the text "Settings").
+		// Settings button at the bottom of the app sidebar — the platform gear
+		// foldout, which legitimately says "Settings".
+		//
+		// The testid is still the right target, but the collision it was
+		// guarding against is gone: the SettingsMenu nav entry was relabelled
+		// "Configuration" under ADR-079 D4, precisely because two things
+		// reading "Settings" rendered "Settings > Settings".
 		await expect(page.getByTestId('cn-nav-settings').getByRole('button', { name: 'Settings' })).toBeVisible()
 	})
 
