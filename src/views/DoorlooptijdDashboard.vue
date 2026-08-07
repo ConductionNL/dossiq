@@ -71,7 +71,7 @@
 		<div v-else-if="showNoSlaState" class="doorlooptijd-empty">
 			<p>{{ t('procest', 'No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking.') }}</p>
 			<NcButton type="primary"
-				@click="$router.push({ name: 'Settings' })">
+				@click="$router.push({ name: 'ProcestConfiguration' })">
 				{{ t('procest', 'Go to Settings') }}
 			</NcButton>
 		</div>
@@ -446,6 +446,24 @@ export default {
 @keyframes pulse {
 	0%, 100% { opacity: 1; }
 	50% { opacity: 0.5; }
+}
+
+/*
+ * Respect a reduced-motion preference (WCAG 2.3.3; gate-45).
+ *
+ * The three skeletons above pulse indefinitely while the dashboard loads, and
+ * an indefinite animation is exactly what someone with vestibular sensitivity
+ * sets this preference to avoid. The skeleton still needs to read as "not real
+ * data yet", so the animation is dropped and a dimmed, static state is kept
+ * rather than the placeholder becoming indistinguishable from a loaded card.
+ */
+@media (prefers-reduced-motion: reduce) {
+	.skeleton-kpi,
+	.skeleton-chart,
+	.skeleton-table {
+		animation: none;
+		opacity: 0.6;
+	}
 }
 
 /* Empty states */

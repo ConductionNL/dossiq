@@ -244,7 +244,7 @@
 			"id": "CaseTypesMenu",
 			"label": "Case types",
 			"icon": "FolderCogOutline",
-			"route": "Settings",
+			"route": "ProcestConfiguration",
 			"section": "settings",
 			"order": 95
 		},
@@ -382,9 +382,9 @@
 		},
 		{
 			"id": "SettingsMenu",
-			"label": "Settings",
+			"label": "Configuration",
 			"icon": "CogOutline",
-			"route": "Settings",
+			"route": "ProcestConfiguration",
 			"section": "settings",
 			"order": 99
 		},
@@ -2613,15 +2613,15 @@
 			}
 		},
 		{
-			"id": "Settings",
+			"id": "ProcestConfiguration",
 			"route": "/settings",
 			"type": "settings",
-			"title": "Settings",
+			"title": "Configuration",
 			"config": {
 				"sections": [
 					{
 						"id": "admin",
-						"title": "Settings"
+						"title": "Configuration"
 					}
 				]
 			},
