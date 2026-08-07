@@ -1263,6 +1263,27 @@
 						}
 					},
 					{
+						"id": "case-kpis-hours",
+						"type": "stats-block",
+						"title": "Hours booked",
+						"icon": "History",
+						"content": {
+							"entries": [
+								{
+									"title": "Hours booked",
+									"register": "shillinq",
+									"schema": "UrenRegistratie",
+									"metric": "sum",
+									"field": "hours",
+									"filter": {
+										"subjectApp": "procest",
+										"subjectId": "@objectId"
+									}
+								}
+							]
+						}
+					},
+					{
 						"id": "case-related",
 						"type": "related",
 						"title": "Case type, parent & related cases",
@@ -1518,7 +1539,7 @@
 						"id": "case-assistant",
 						"type": "custom",
 						"title": "Case assistant",
-						"icon": "Creation",
+						"icon": "Lightbulb",
 						"_note": "Case-assistant chat panel (case-assistant-via-hermiq). Resolved via page slots (widget-case-assistant -> CaseAssistantPanel); conversational assistance is delegated to Hermiq (fleet rule: AI lives in Hermiq), procest only enriches with case context the current user may read. Availability-gated: renders nothing when the hermiq app is not installed/enabled."
 					},
 					{
@@ -1694,6 +1715,15 @@
 						"gridWidth": 12,
 						"gridHeight": 6,
 						"showTitle": true
+					},
+					{
+						"id": "22",
+						"widgetId": "case-kpis-hours",
+						"gridX": 0,
+						"gridY": 10,
+						"gridWidth": 4,
+						"gridHeight": 2,
+						"showTitle": false
 					}
 				],
 				"lifecycleActions": {
