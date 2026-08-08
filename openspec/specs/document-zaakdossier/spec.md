@@ -33,6 +33,8 @@ This join pattern allows a single document to be linked to multiple cases withou
   `registratiedatum` → current timestamp
 - **AND** the file MUST receive system tags `object:{uuid}` and `doctype:{type}` via `TaggingHandler`
 
+@e2e exclude Service-layer contract (`ZaakdossierService::uploadDocument` + `CreateFileHandler`/`TaggingHandler` wiring) asserted in tests/Unit/Service/ZaakdossierServiceTest and at the API layer in tests/newman/document-zaakdossier.postman_collection.json; there is no UI assertion that can observe the join-object and system-tag side effects.
+
 #### Scenario: REQ-ZAK-001b Same informatieobject linked to two cases without duplication
 
 - **GIVEN** informatieobject `advies-brandweer.pdf` is already linked to `vergunning-1`
@@ -41,6 +43,8 @@ This join pattern allows a single document to be linked to multiple cases withou
 - **AND** the informatieobject record itself MUST NOT be duplicated
 - **AND** both zaak dossier views MUST show the document
 
+@e2e exclude Non-duplication of the informatieobject across two zaakinformatieobject joins is a persistence invariant asserted in tests/Unit/Service/ZaakdossierServiceTest; the UI cannot distinguish "one record, two joins" from "two records".
+
 #### Scenario: REQ-ZAK-001c Unlink preserves informatieobject
 
 - **GIVEN** `bijlage.pdf` is linked to `vergunning-1` via `zaakinformatieobject` `zio-0001`
@@ -48,6 +52,8 @@ This join pattern allows a single document to be linked to multiple cases withou
 - **THEN** only the `zaakinformatieobject` join record MUST be deleted
 - **AND** the informatieobject itself MUST remain in the register
 - **AND** the Nextcloud file MUST remain in Nextcloud Files
+
+@e2e exclude "Only the join record is deleted, the informatieobject and the Nextcloud file survive" is a storage-layer assertion (tests/Unit/Service/ZaakdossierServiceTest) — the dossier UI shows the same absence for a true delete and a mere unlink.
 
 ---
 
@@ -69,6 +75,8 @@ MUST validate each transition and:
 - **AND** a subsequent upload of a new version MUST return HTTP 409 with message
   "Definitieve documenten kunnen niet worden gewijzigd"
 
+@e2e exclude Status-lifecycle enforcement and the HTTP 409 on re-upload are server contracts asserted in tests/Unit/Service/ZaakdossierServiceTest and in the Newman collection; the UI has no control that can attempt a blocked version upload.
+
 #### Scenario: REQ-ZAK-002b Reverse transition definitief → concept is rejected
 
 - **GIVEN** informatieobject `besluit.pdf` with `status` = `definitief`
@@ -77,6 +85,8 @@ MUST validate each transition and:
 - **AND** the response body MUST indicate the invalid transition
 - **AND** the `status` and `vergrendeldOp` MUST remain unchanged
 
+@e2e exclude Reverse-transition rejection is an API contract (HTTP 400 from `PATCH /api/informatieobjecten/{id}/status`) asserted in the Newman collection; the UI never offers the backwards transition, so no UI flow can exercise it.
+
 #### Scenario: REQ-ZAK-002c Deletion of definitief document is rejected
 
 - **GIVEN** informatieobject `besluit.pdf` with `status` = `definitief`
@@ -84,12 +94,16 @@ MUST validate each transition and:
 - **THEN** the deletion MUST be rejected with HTTP 409 Conflict
 - **AND** the informatieobject record MUST remain intact
 
+@e2e exclude HTTP 409 from `DeleteFileHandler` for definitief documents is a backend guard asserted in tests/Unit/Service/ZaakdossierServiceTest + Newman; the guard must hold regardless of whether the UI renders a delete affordance.
+
 #### Scenario: REQ-ZAK-002d Transition definitief → gearchiveerd is permitted
 
 - **GIVEN** informatieobject with `status` = `definitief`
 - **WHEN** `transitionStatus(id, 'gearchiveerd')` is called (e.g., by the archival process)
 - **THEN** the status MUST update to `gearchiveerd`
 - **AND** the transition MUST be recorded in the OpenRegister audit trail
+
+@e2e exclude Archival transition is driven by a background/archival process, not a UI control, and the audit-trail write is an OpenRegister side effect; asserted in tests/Unit/Service/ZaakdossierServiceTest.
 
 ---
 
@@ -109,6 +123,8 @@ and download operation. Guards MUST be checked at the service layer, not only in
 - **AND** the API MUST respond with HTTP 403 Forbidden
 - **AND** the document MUST NOT appear in the dossier listing for that user
 
+@e2e exclude Clearance guard (`InformatieobjectAccessGuard::canRead`) is asserted in tests/Unit/Service/InformatieobjectAccessGuardTest; exercising it through the UI would need two seeded users at different clearance levels, which the Playwright environment does not provision.
+
 #### Scenario: REQ-ZAK-003b Filtered dossier listing respects clearance
 
 - **GIVEN** a dossier with 10 documents at various vertrouwelijkheidaanduiding levels
@@ -118,6 +134,8 @@ and download operation. Guards MUST be checked at the service layer, not only in
   with vertrouwelijkheidaanduiding above `intern` from the response
 - **AND** documents with `openbaar`, `beperkt_openbaar`, or `intern` MUST be returned
 
+@e2e exclude Listing-filter matrix (`filterDossierForUser`) is asserted per clearance level in tests/Unit/Service/InformatieobjectAccessGuardTest; a UI check could only observe one row count, not the filter contract.
+
 #### Scenario: REQ-ZAK-003c Public share rejected for confidential documents
 
 - **GIVEN** informatieobject has `vertrouwelijkheidaanduiding` = `vertrouwelijk`
@@ -125,12 +143,16 @@ and download operation. Guards MUST be checked at the service layer, not only in
 - **THEN** `InformatieobjectAccessGuard.canPublish(informatieobject)` MUST return `false`
 - **AND** the share creation MUST be blocked with an appropriate error message
 
+@e2e exclude Public-share refusal (`canPublish`) is a service-layer guard asserted in tests/Unit/Service/InformatieobjectAccessGuardTest; share creation runs through Nextcloud's own sharing UI, outside the procest e2e surface.
+
 #### Scenario: REQ-ZAK-003d Default vertrouwelijkheidaanduiding from informatieobjecttype
 
 - **GIVEN** informatieobjecttype `intern-advies` has default `vertrouwelijkheidaanduiding` = `intern`
 - **WHEN** a user uploads a document of this type without specifying a classification
 - **THEN** the informatieobject MUST receive `vertrouwelijkheidaanduiding` = `intern`
 - **AND** the user MAY override to a more restrictive level but NOT to a less restrictive one
+
+@e2e exclude Default-classification inheritance from informatieobjecttype and the one-way override rule are resolved server-side on create; asserted in tests/Unit/Service/ZaakdossierServiceTest + Newman.
 
 ---
 
@@ -244,12 +266,16 @@ metadata search MUST be supported via `FileSearchController`.
 - **AND** the document MUST become full-text searchable once extraction completes
 - **AND** the upload response MUST not wait for extraction to finish
 
+@e2e exclude Asynchronous job scheduling (`FileTextExtractionJob`) completes outside the request the browser observes; asserted in tests/Unit/Service/ZaakdossierServiceTest and by the background-job unit tests.
+
 #### Scenario: REQ-ZAK-007b Dossier search returns only matching documents
 
 - **GIVEN** a dossier with 25 documents, 3 containing the phrase "brandveiligheidsplan"
 - **WHEN** the user searches "brandveiligheidsplan" in the dossier search bar
 - **THEN** exactly the 3 matching documents MUST be returned with highlighted snippets
 - **AND** documents not in this dossier MUST NOT appear in results
+
+@e2e exclude Dossier-scoped search relevance depends on a 25-document seeded corpus with extracted full text; asserted at the API layer in tests/newman/document-zaakdossier.postman_collection.json.
 
 ---
 
@@ -278,6 +304,8 @@ informatieobjecttype sub-folders plus a `manifest.csv` with columns:
 - **THEN** the ZIP MUST contain only 6 documents
 - **AND** `manifest.csv` MUST contain only those 6 rows
 
+@e2e exclude ZIP contents and manifest rows are inspected in tests/Unit/Service/ZipManifestBuilderTest; the browser receives an opaque streamed download that Playwright cannot open to count clearance-excluded entries.
+
 #### Scenario: REQ-ZAK-008c Bulk status transition returns per-document result
 
 - **GIVEN** the user selects 5 concept documents and clicks "Markeer als definitief"
@@ -305,6 +333,8 @@ streaming begins.
 - **AND** the response MUST include `Content-Range: bytes 0-1048575/54525952`
 - **AND** the first 1 MB of file content MUST be returned
 
+@e2e exclude HTTP 206 + `Content-Range` on a Range request is a transport contract asserted in tests/Unit/Http/RangeStreamResponseTest and in the Newman collection; a browser page navigation cannot set a Range header or assert partial-content framing.
+
 #### Scenario: REQ-ZAK-009b Download blocked when user lacks clearance
 
 - **GIVEN** informatieobject has `vertrouwelijkheidaanduiding` = `geheim`
@@ -312,6 +342,8 @@ streaming begins.
 - **WHEN** a download request arrives at the ZGW DRC endpoint
 - **THEN** `InformatieobjectAccessGuard.canRead()` MUST deny access
 - **AND** the server MUST return HTTP 403 Forbidden before streaming any content
+
+@e2e exclude "403 before any bytes stream" is a guard-ordering assertion on the ZGW DRC endpoint, covered in tests/Unit/Service/InformatieobjectAccessGuardTest + Newman; the UI never links a document the caller may not read.
 
 ---
 
@@ -334,6 +366,8 @@ informatieobject MUST be skipped.
   and `integriteit.waarde` = SHA-256 hash of the file content
 - **AND** a `zaakinformatieobject` join MUST link the informatieobject to `vergunning-1`
 
+@e2e exclude `BackfillInformatieobjectMetadata` is an `info.xml` repair step that runs at install/upgrade, never from a UI action; asserted in the repair-step unit tests.
+
 #### Scenario: REQ-ZAK-010b Back-fill is idempotent on re-run
 
 - **GIVEN** `BackfillInformatieobjectMetadata` has already run and created informatieobject
@@ -341,4 +375,6 @@ informatieobject MUST be skipped.
 - **WHEN** the repair step is executed a second time
 - **THEN** NO new `informatieobject` or `zaakinformatieobject` records MUST be created
 - **AND** existing records MUST remain unchanged
+
+@e2e exclude Repair-step idempotence is proven by running the step twice and comparing record counts — a PHPUnit-level assertion (repair-step unit tests); there is no UI that re-runs a repair step.
 
