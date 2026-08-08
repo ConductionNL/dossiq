@@ -68,8 +68,15 @@ Vrij en open source onder de AGPL-licentie.
     <screenshot>https://raw.githubusercontent.com/ConductionNL/procest/main/img/app-store.svg</screenshot>
 
     <dependencies>
-        <nextcloud min-version="28" max-version="33"/>
-        <php min-version="8.1"/>
+        <!--
+            Nextcloud floor raised to 32 fleet-wide (product directive): standardising on
+            NC 32 is what lets the fleet require PHP 8.3. Openregister declares a Nextcloud
+            floor of 32 on its development branch, so leaf apps that consume it must not
+            advertise support below that — the App Store would offer an install range the
+            dependency refuses to install into. max-version is unchanged.
+        -->
+        <nextcloud min-version="32" max-version="33"/>
+        <php min-version="8.3"/>
     </dependencies>
 
     <repair-steps>
