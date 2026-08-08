@@ -162,12 +162,20 @@ class SettingsController extends Controller
     /**
      * Update settings with provided data.
      *
+     * This is the canonical write, matching `GenericSettingsControllerBase::
+     * update()`. The AppHost route table routes `PUT /api/settings` here, and
+     * because this app ships its own SettingsController the generic is never
+     * aliased in (see `AppHost\Bootstrap::aliasControllerUnlessLeafDefinesIt()`)
+     * — so the method has to exist here or the request dies with a 500 rather
+     * than a 404. `src/store/modules/enforcement.js::saveLhsMatrix()` is the
+     * live caller.
+     *
      * @return JSONResponse
 
       * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
       */
     #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function create(): JSONResponse
+    public function update(): JSONResponse
     {
         $data   = $this->request->getParams();
         $config = $this->settingsService->updateSettings($data);
@@ -178,6 +186,23 @@ class SettingsController extends Controller
                 'config'  => $config,
             ]
         );
+    }//end update()
+
+    /**
+     * Legacy alias for {@see update()}.
+     *
+     * The canonical AppHost route table still ships `settings#create`
+     * (POST /api/settings) for the pre-ADR-066 `index/create/load` dialect, and
+     * three procest views still POST to it, so it stays reachable (ADR-029).
+     *
+     * @return JSONResponse
+
+      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+      */
+    #[AuthorizedAdminSetting(AdminSettings::class)]
+    public function create(): JSONResponse
+    {
+        return $this->update();
     }//end create()
 
     /**
