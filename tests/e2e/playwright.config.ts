@@ -95,6 +95,21 @@ export default defineConfig({
 	// cross-worker flake.
 	workers: 1,
 	retries: process.env.CI ? 1 : 0,
+	// Stop on our own clock, ahead of the shared job's `timeout-minutes: 45`.
+	//
+	// The `actionTimeout` note below records exactly what happens without this:
+	// "a 45-minute job that CI cancelled after 65 of 122 tests". A cancelled
+	// job is not a verdict — Playwright never prints its tally, the
+	// `if: failure()` trace upload never fires, and the `if: always()` report
+	// upload does not run on a cancelled job either. The evidence that 57 tests
+	// never ran had to be reconstructed from the live log rather than read off
+	// an artifact, because there was no artifact.
+	//
+	// With a globalTimeout Playwright stops itself and exits with a count, and
+	// the uploads run. Measured overhead before `Run Playwright tests` starts
+	// is 2.0-2.4 min and the uploads take seconds, so 38m keeps ~7 min of
+	// margin under the cap.
+	globalTimeout: 38 * 60_000,
 	reporter: [
 		['html', { open: 'never', outputFolder: path.resolve(__dirname, 'playwright-report') }],
 		['junit', { outputFile: path.resolve(__dirname, 'test-results', 'results.xml') }],
@@ -120,7 +135,16 @@ export default defineConfig({
 		// Written by global-setup.ts after the admin login. Path must match
 		// `helpers/auth.ts#STORAGE_STATE`, which global-setup imports.
 		storageState: path.resolve(__dirname, '.auth', 'user.json'),
-		trace: 'on-first-retry',
+		// `on-first-retry` writes a trace only when a retry actually happens, so
+		// the trace artifact is a function of `retries`. Off CI `retries` is 0
+		// above, so a local failure has never produced a trace at all; on CI it
+		// traces the SECOND attempt only, which means the failure that does not
+		// reproduce — the one actually worth a trace — leaves no record of the
+		// attempt that failed. `retain-on-failure` traces every attempt and
+		// keeps the ones that failed: strictly more informative, and
+		// independent of the retry count. (The app-root config already used
+		// `retain-on-failure`; this file, the one CI actually loads, did not.)
+		trace: 'retain-on-failure',
 		screenshot: 'only-on-failure',
 	},
 
