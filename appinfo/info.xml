@@ -71,17 +71,31 @@ Vrij en open source onder de EUPL-1.2-licentie.
     <dependencies>
         <php min-version="8.3"/>
         <!--
-        min-version is 32, NOT 28, because the OpenRegister dependency noted below is
-        HARD (src/manifest.json lists "openregister" as a required dependency) and
-        openregister declares min-version="32" — its lib/ContextChat/ContentProvider.php
-        implements OCP\ContextChat\IContentProvider, an interface core does not have
-        before Nextcloud 32. On NC 28-31 openregister refuses to install ("cannot be
-        installed because it is not compatible with this version of the server") and
-        every Procest entity is an OpenRegister object, so the app cannot function
-        there. Declaring 28 advertised a range this app cannot deliver.
-        Same defect as openconnector#1173.
+        min-version is 32, NOT 28.
+
+        ⚠️ The reason is NOT the one an earlier revision of this comment gave.
+        That text said "openregister declares min-version=32"; measured against
+        the canonical repo on 2026-08-08, ConductionNL/openregister@development
+        declares <nextcloud min-version="28" max-version="34"/>. It was true when
+        written and was undone by openregister#2380. The openconnector#1173 rule
+        — min-version must be >= the max of every <app> dependency's floor — is
+        therefore satisfied by any value here, and imposes no constraint at all.
+        Do not re-derive this floor from openregister's.
+
+        The floor is 32 for two reasons that are true today:
+
+        1. Nothing below 32 is tested, and an untested range is an advertised
+           claim we cannot support. .github/workflows/code-quality.yml pins
+           nextcloud-test-refs to exactly ["stable32"]; the stable31 leg was
+           REMOVED, not merely dropped for coverage.
+        2. This app declares <php min-version="8.3"/> directly above. Nextcloud
+           28 does not support PHP 8.3, so the pair (NC 28, PHP 8.3) that the
+           two lines together advertise is not a configuration that exists.
+
+        max-version stays at 34, which is the fleet-wide value everywhere except
+        openconnector (35).
         -->
-        <nextcloud min-version="28" max-version="34"/>
+        <nextcloud min-version="32" max-version="34"/>
         <!-- App dependency (not expressible in app-info.xsd): OpenRegister >= 0.2.16
              (MDM engine: x-openregister-quality / x-openregister-dedup schema support and
              on-save qualityScore/qualityStatus materialisation, ADR-045 / OR change
