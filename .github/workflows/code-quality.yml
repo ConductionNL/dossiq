@@ -63,12 +63,20 @@ jobs:
       app-name: procest
       php-version: "8.3"
       php-test-versions: '["8.3", "8.4"]'
-      # stable31 is REMOVED, not "dropped for coverage". `additional-apps` below
-      # installs openregister, which declares min-version="32" and therefore
-      # cannot install on NC31 — `occ app:enable openregister` fails with only a
-      # ::warning::, so the run continued WITHOUT its data layer and every
-      # /apps/openregister/... call returned Nextcloud's HTML 404 page. A stable31
-      # leg was testing an impossible configuration, so its red said nothing.
+      # stable31 is REMOVED, not "dropped for coverage".
+      #
+      # The original reason recorded here — "openregister declares
+      # min-version=32" — is STALE: measured 2026-08-08, openregister@development
+      # declares min-version="28" (openregister#2380 reverted it). Do not rely on
+      # it. What made the stable31 leg worthless still happened, though:
+      # `occ app:enable openregister` failed with only a ::warning::, so the run
+      # continued WITHOUT its data layer and every /apps/openregister/... call
+      # returned Nextcloud's HTML 404 page — a red that said nothing.
+      #
+      # The standing reason is procest's own floor: appinfo/info.xml declares
+      # <nextcloud min-version="32"/>, so a leg below 32 would test a
+      # configuration this app does not claim to support.
+      # tests/Unit/AppInfo/NextcloudFloorMatrixTest.php holds the two in sync.
       # newman, playwright and journeydoc-capture all pin
       # `fromJSON(inputs.nextcloud-test-refs)[0]`, so the FIRST entry has to be a
       # version openregister can load.
