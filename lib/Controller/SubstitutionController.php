@@ -169,7 +169,15 @@ class SubstitutionController extends Controller
             return $this->accessGuard->forbidden(message: 'You may only revoke your own substitution');
         }
 
-        $updated = $this->substitutionService->revoke($id);
+        try {
+            $updated = $this->substitutionService->revoke($id);
+        } catch (\InvalidArgumentException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        } catch (\Throwable $e) {
+            $this->logger->error('Substitution revoke failed', ['error' => $e->getMessage()]);
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+
         return new JSONResponse($updated ?? ['status' => 'revoked']);
     }//end revoke()
 
@@ -222,6 +230,13 @@ class SubstitutionController extends Controller
             return $this->accessGuard->forbidden();
         }
 
-        return new JSONResponse(['results' => $this->auditService->getActionsForSubstitution($id)]);
+        try {
+            $results = $this->auditService->getActionsForSubstitution($id);
+        } catch (\Throwable $e) {
+            $this->logger->error('Substitution action list failed', ['error' => $e->getMessage()]);
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_INTERNAL_SERVER_ERROR);
+        }
+
+        return new JSONResponse(['results' => $results]);
     }//end actions()
 }//end class

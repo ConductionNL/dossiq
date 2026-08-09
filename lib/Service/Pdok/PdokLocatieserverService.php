@@ -39,7 +39,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service\Pdok;
 
 use OCA\Procest\AppInfo\Application;
-use OCA\Procest\Support\SuppressesWarnings;
+use OCP\Http\Client\IClientService;
 use OCP\IAppConfig;
 use OCP\ICache;
 use OCP\ICacheFactory;
@@ -50,11 +50,11 @@ use Throwable;
 
 /**
  * Single ingress for PDOK Locatieserver v3_1 calls.
+ *
+ * @spec openspec/specs/pdok-integration/spec.md
  */
 class PdokLocatieserverService
 {
-
-    use SuppressesWarnings;
 
     /**
      * Default endpoint when `pdok_locatieserver_endpoint` is empty.
@@ -96,17 +96,19 @@ class PdokLocatieserverService
     /**
      * Constructor.
      *
-     * @param ICacheFactory      $cacheFactory Cache factory.
-     * @param IAppConfig         $appConfig    App configuration accessor.
-     * @param ContainerInterface $container    DI container for optional
-     *                                         OpenConnector resolution.
-     * @param LoggerInterface    $logger       PSR logger.
+     * @param ICacheFactory      $cacheFactory  Cache factory.
+     * @param IAppConfig         $appConfig     App configuration accessor.
+     * @param ContainerInterface $container     DI container for optional
+     *                                          OpenConnector resolution.
+     * @param LoggerInterface    $logger        PSR logger.
+     * @param IClientService     $clientService Nextcloud HTTP client factory.
      */
     public function __construct(
         ICacheFactory $cacheFactory,
         private IAppConfig $appConfig,
         private ContainerInterface $container,
         private LoggerInterface $logger,
+        private IClientService $clientService,
     ) {
         $this->cache = $cacheFactory->createDistributed('procest_pdok_locatieserver');
     }//end __construct()
@@ -333,78 +335,77 @@ class PdokLocatieserverService
      * @throws \RuntimeException When the upstream returns non-2xx or the
      *                           network call fails. The exception code carries
      *                           the HTTP status (or 0 for network failures).
-     *
-     * @SuppressWarnings(PHPMD.UndefinedVariable) $matches is a preg_match() by-reference
-     * out-parameter, which PHPMD does not model.
      */
     private function callDirect(string $url): string
     {
-        $streamOptions = [
-            'http' => [
-                'method'        => 'GET',
-                'timeout'       => 10,
-                'header'        => "Accept: application/json\r\n",
-                'ignore_errors' => true,
-            ],
-        ];
-        $context       = stream_context_create(options: $streamOptions);
-
-        // Deliberately fopen() + stream_get_meta_data() rather than
-        // file_get_contents(): the HTTP stream wrapper publishes
-        // $http_response_header only into the scope that actually made the
-        // call, which here is the closure, so that magic variable is
-        // unreachable from this method. The wrapper_data key carries the
-        // identical response header lines and travels back with the return
-        // value.
-        $response = $this->withoutWarnings(
-            operation: static function () use ($url, $context): array {
-                $handle = fopen(filename: $url, mode: 'rb', use_include_path: false, context: $context);
-                if ($handle === false) {
-                    return [
-                        'body'    => false,
-                        'headers' => [],
-                    ];
-                }
-
-                $metaData = stream_get_meta_data($handle);
-                $headers  = ($metaData['wrapper_data'] ?? []);
-                if (is_array($headers) === false) {
-                    $headers = [];
-                }
-
-                $body = stream_get_contents($handle);
-                fclose($handle);
-
-                return [
-                    'body'    => $body,
-                    'headers' => $headers,
-                ];
+        // Nextcloud's own HTTP client, not the `http://` stream wrapper. The
+        // wrapper ignores the instance's proxy and certificate configuration
+        // and is unavailable outright when `allow_url_fopen` is off, so on a
+        // hardened or proxied deployment the direct PDOK path failed in a way
+        // that looked like PDOK being down. IClientService honours config.php
+        // (`proxy`, `proxyuserpwd`) and gives the status code directly instead
+        // of it having to be parsed back out of `wrapper_data`.
+        try {
+            $response = $this->clientService->newClient()->get(
+                $url,
+                [
+                    'timeout' => 10,
+                    'headers' => ['Accept' => 'application/json'],
+                ]
+            );
+        } catch (Throwable $e) {
+            $statusCode = $this->statusFromException(exception: $e);
+            if ($statusCode !== 0) {
+                throw new RuntimeException('PDOK Locatieserver HTTP '.$statusCode, $statusCode);
             }
-        );
 
-        $body = $response['body'];
-        if ($body === false) {
             $this->logger->warning(
                 'PDOK Locatieserver request failed',
-                ['detail' => $this->lastSuppressedWarning()]
+                ['detail' => $e->getMessage()]
             );
             throw new RuntimeException('Network error contacting PDOK Locatieserver', 0);
-        }
+        }//end try
 
-        $statusCode = 0;
-        foreach ($response['headers'] as $header) {
-            if (preg_match(pattern: '#^HTTP/\S+\s+(\d{3})#', subject: $header, matches: $matches) === 1) {
-                $statusCode = (int) $matches[1];
-            }
-        }
-
+        $statusCode = $response->getStatusCode();
         if ($statusCode < 200 || $statusCode >= 300) {
             throw new RuntimeException('PDOK Locatieserver HTTP '.$statusCode, $statusCode);
         }
 
         $this->recordSuccess();
-        return $body;
+        return (string) $response->getBody();
     }//end callDirect()
+
+    /**
+     * Recover the upstream HTTP status from a client exception.
+     *
+     * The HTTP client raises on non-2xx, and the status lives on the
+     * exception's response rather than on the exception itself. Returns 0 when
+     * the failure carried no status — a genuine transport error — so the
+     * caller can tell "PDOK said no" from "PDOK was unreachable".
+     *
+     * @param Throwable $exception The exception raised by the HTTP client.
+     *
+     * @return int The HTTP status code, or 0 when there was none.
+     */
+    private function statusFromException(Throwable $exception): int
+    {
+        if (method_exists($exception, 'getResponse') === true) {
+            $response = $exception->getResponse();
+            if (is_object($response) === true && method_exists($response, 'getStatusCode') === true) {
+                $status = (int) $response->getStatusCode();
+                if ($status >= 100 && $status < 600) {
+                    return $status;
+                }
+            }
+        }
+
+        $code = $exception->getCode();
+        if (is_int($code) === true && $code >= 100 && $code < 600) {
+            return $code;
+        }
+
+        return 0;
+    }//end statusFromException()
 
     /**
      * Dispatch through an OpenConnector source slug when configured.

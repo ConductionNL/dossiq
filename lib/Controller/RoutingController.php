@@ -84,7 +84,10 @@ class RoutingController extends Controller
      *
      * @return JSONResponse
      *
-     * @NoAdminRequired
+     * @auth admin-only rerouting reassigns every open step on a case, so it is
+     * restricted to server admins — the body enforces the same rule via
+     * IGroupManager::isAdmin() and this declaration states it rather than
+     * contradicting it with @NoAdminRequired.
      *
      * @psalm-suppress PossiblyUnusedMethod
      *
