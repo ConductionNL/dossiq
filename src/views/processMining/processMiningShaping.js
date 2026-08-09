@@ -13,7 +13,7 @@
  * Kept DOM-free and dependency-free so their output can be locked by Vitest
  * in the `node` environment.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T05
+ * @spec openspec/specs/process-mining-bottlenecks/spec.md
  */
 
 /**

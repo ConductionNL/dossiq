@@ -1,7 +1,7 @@
 <!--
   SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
-  @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+  @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off
 -->
 <!--
   LLM-assisted redaction-span proposal review (woo-llm-anonymisation).
@@ -152,7 +152,7 @@ export default {
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5 */
+		/** @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off */
 		canDetect() {
 			return this.text.trim().length > 0 && this.text.length <= this.maxLength
 		},
@@ -165,7 +165,7 @@ export default {
 		 *
 		 * @param {object} span The span `{start, end, category, source}`.
 		 * @return {string}
-		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+		 * @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off
 		 */
 		previewFor(span) {
 			return buildSpanPreview(this.text, span)
@@ -183,7 +183,7 @@ export default {
 		/**
 		 * @param {number} index The span's index in `proposal.spans`.
 		 * @param {boolean} checked Whether the span is now selected.
-		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+		 * @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off
 		 */
 		toggleSpan(index, checked) {
 			this.selections = { ...this.selections, [index]: checked }
@@ -192,7 +192,7 @@ export default {
 		/**
 		 * Request a merged rules-floor + LLM-assisted proposal.
 		 *
-		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+		 * @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off
 		 */
 		async detect() {
 			this.detecting = true
@@ -218,7 +218,7 @@ export default {
 		 * Approve the currently-selected spans — hands them to the existing
 		 * redaction pipeline as guidance (never performs redaction itself).
 		 *
-		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+		 * @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off
 		 */
 		async approve() {
 			await this.review('approve')
@@ -228,7 +228,7 @@ export default {
 		 * Reject the proposal — discards it; the pre-existing manual/Docudesk
 		 * fallback is unaffected.
 		 *
-		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+		 * @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off
 		 */
 		async reject() {
 			await this.review('reject')
@@ -236,7 +236,7 @@ export default {
 
 		/**
 		 * @param {string} decision 'approve' or 'reject'.
-		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+		 * @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off
 		 */
 		async review(decision) {
 			this.submitting = true

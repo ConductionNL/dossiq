@@ -27,7 +27,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/zaakportaal-01-schema-foundation/tasks.md
+ * @spec openspec/specs/zaakportaal-mijngemeente/spec.md#requirement-digid-and-eherkenning-authentication-with-wdo-mandated-trust-levels
  */
 
 declare(strict_types=1);
