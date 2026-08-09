@@ -128,11 +128,11 @@
 				<table v-if="bottleneckRows.length > 0" class="process-mining-dashboard__table">
 					<thead>
 						<tr>
-							<th>{{ t('procest', 'Case type') }}</th>
-							<th>{{ t('procest', 'Status') }}</th>
-							<th>{{ t('procest', 'Median hours') }}</th>
-							<th>{{ t('procest', 'Visits') }}</th>
-							<th>{{ t('procest', 'Score') }}</th>
+							<th scope="col">{{ t('procest', 'Case type') }}</th>
+							<th scope="col">{{ t('procest', 'Status') }}</th>
+							<th scope="col">{{ t('procest', 'Median hours') }}</th>
+							<th scope="col">{{ t('procest', 'Visits') }}</th>
+							<th scope="col">{{ t('procest', 'Score') }}</th>
 						</tr>
 					</thead>
 					<tbody>

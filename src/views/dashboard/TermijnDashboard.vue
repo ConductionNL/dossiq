@@ -102,14 +102,14 @@
 				<table class="termijn-dashboard__table">
 					<thead>
 						<tr>
-							<th>{{ t('procest', 'Zaaktype') }}</th>
-							<th>{{ t('procest', 'Total') }}</th>
-							<th>{{ t('procest', 'Within deadline') }}</th>
-							<th>{{ t('procest', 'Overruns') }}</th>
-							<th>{{ t('procest', 'Avg. duration') }}</th>
-							<th>{{ t('procest', 'Extensions') }}</th>
-							<th>{{ t('procest', 'Notices of default') }}</th>
-							<th>{{ t('procest', 'Total penalty payment') }}</th>
+							<th scope="col">{{ t('procest', 'Zaaktype') }}</th>
+							<th scope="col">{{ t('procest', 'Total') }}</th>
+							<th scope="col">{{ t('procest', 'Within deadline') }}</th>
+							<th scope="col">{{ t('procest', 'Overruns') }}</th>
+							<th scope="col">{{ t('procest', 'Avg. duration') }}</th>
+							<th scope="col">{{ t('procest', 'Extensions') }}</th>
+							<th scope="col">{{ t('procest', 'Notices of default') }}</th>
+							<th scope="col">{{ t('procest', 'Total penalty payment') }}</th>
 						</tr>
 					</thead>
 					<tbody>

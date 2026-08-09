@@ -39,11 +39,11 @@
 		<table v-else class="substitution-settings__table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Substitute') }}</th>
-					<th>{{ t('procest', 'Period') }}</th>
-					<th>{{ t('procest', 'Scope') }}</th>
-					<th>{{ t('procest', 'Reason') }}</th>
-					<th>{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('procest', 'Substitute') }}</th>
+					<th scope="col">{{ t('procest', 'Period') }}</th>
+					<th scope="col">{{ t('procest', 'Scope') }}</th>
+					<th scope="col">{{ t('procest', 'Reason') }}</th>
+					<th scope="col">{{ t('procest', 'Status') }}</th>
 					<th />
 				</tr>
 			</thead>

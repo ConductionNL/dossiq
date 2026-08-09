@@ -76,13 +76,13 @@
 			<table class="consultation-dashboard__table">
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'Number') }}</th>
-						<th>{{ t('procest', 'Case') }}</th>
-						<th>{{ t('procest', 'Onderwerp') }}</th>
-						<th>{{ t('procest', 'Department') }}</th>
-						<th>{{ t('procest', 'Deadline') }}</th>
-						<th>{{ t('procest', 'Status') }}</th>
-						<th>{{ t('procest', 'Acties') }}</th>
+						<th scope="col">{{ t('procest', 'Number') }}</th>
+						<th scope="col">{{ t('procest', 'Case') }}</th>
+						<th scope="col">{{ t('procest', 'Onderwerp') }}</th>
+						<th scope="col">{{ t('procest', 'Department') }}</th>
+						<th scope="col">{{ t('procest', 'Deadline') }}</th>
+						<th scope="col">{{ t('procest', 'Status') }}</th>
+						<th scope="col">{{ t('procest', 'Acties') }}</th>
 					</tr>
 				</thead>
 				<tbody>

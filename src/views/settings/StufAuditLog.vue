@@ -42,13 +42,13 @@
 		<table class="stuf-audit-log__table" data-testid="stuf-audit-log-table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Sent at') }}</th>
-					<th>{{ t('procest', 'Direction') }}</th>
-					<th>{{ t('procest', 'Message') }}</th>
-					<th>{{ t('procest', 'Function') }}</th>
-					<th>{{ t('procest', 'Status') }}</th>
-					<th>{{ t('procest', 'HTTP') }}</th>
-					<th>{{ t('procest', 'Duration (ms)') }}</th>
+					<th scope="col">{{ t('procest', 'Sent at') }}</th>
+					<th scope="col">{{ t('procest', 'Direction') }}</th>
+					<th scope="col">{{ t('procest', 'Message') }}</th>
+					<th scope="col">{{ t('procest', 'Function') }}</th>
+					<th scope="col">{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('procest', 'HTTP') }}</th>
+					<th scope="col">{{ t('procest', 'Duration (ms)') }}</th>
 					<th class="stuf-audit-log__actions" />
 				</tr>
 			</thead>
@@ -95,10 +95,10 @@
 				<table v-if="hasRetries(inspectRow)" class="stuf-audit-log__retries">
 					<thead>
 						<tr>
-							<th>{{ t('procest', 'Attempt') }}</th>
-							<th>{{ t('procest', 'Timestamp') }}</th>
-							<th>{{ t('procest', 'HTTP') }}</th>
-							<th>{{ t('procest', 'Duration (ms)') }}</th>
+							<th scope="col">{{ t('procest', 'Attempt') }}</th>
+							<th scope="col">{{ t('procest', 'Timestamp') }}</th>
+							<th scope="col">{{ t('procest', 'HTTP') }}</th>
+							<th scope="col">{{ t('procest', 'Duration (ms)') }}</th>
 						</tr>
 					</thead>
 					<tbody>

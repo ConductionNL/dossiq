@@ -35,10 +35,10 @@
 			<table class="viewTable">
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'Relation') }}</th>
-						<th>{{ t('procest', 'Case') }}</th>
-						<th>{{ t('procest', 'Status') }}</th>
-						<th>{{ t('procest', 'Explanation') }}</th>
+						<th scope="col">{{ t('procest', 'Relation') }}</th>
+						<th scope="col">{{ t('procest', 'Case') }}</th>
+						<th scope="col">{{ t('procest', 'Status') }}</th>
+						<th scope="col">{{ t('procest', 'Explanation') }}</th>
 						<th class="related-cases-section__actions-col" />
 					</tr>
 				</thead>

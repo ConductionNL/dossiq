@@ -19,13 +19,13 @@
 		<table v-else class="bevoegdheden-panel__table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Mandate #') }}</th>
-					<th>{{ t('procest', 'Description') }}</th>
-					<th>{{ t('procest', 'Type') }}</th>
-					<th>{{ t('procest', 'Ceiling') }}</th>
-					<th>{{ t('procest', 'Subdelegation') }}</th>
-					<th>{{ t('procest', 'Valid') }}</th>
-					<th>{{ t('procest', 'Details') }}</th>
+					<th scope="col">{{ t('procest', 'Mandate #') }}</th>
+					<th scope="col">{{ t('procest', 'Description') }}</th>
+					<th scope="col">{{ t('procest', 'Type') }}</th>
+					<th scope="col">{{ t('procest', 'Ceiling') }}</th>
+					<th scope="col">{{ t('procest', 'Subdelegation') }}</th>
+					<th scope="col">{{ t('procest', 'Valid') }}</th>
+					<th scope="col">{{ t('procest', 'Details') }}</th>
 				</tr>
 			</thead>
 			<tbody>

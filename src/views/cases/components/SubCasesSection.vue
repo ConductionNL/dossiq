@@ -13,10 +13,10 @@
 				<table class="viewTable">
 					<thead>
 						<tr>
-							<th>{{ t('procest', 'Title') }}</th>
-							<th>{{ t('procest', 'Status') }}</th>
-							<th>{{ t('procest', 'Assignee') }}</th>
-							<th>{{ t('procest', 'Deadline') }}</th>
+							<th scope="col">{{ t('procest', 'Title') }}</th>
+							<th scope="col">{{ t('procest', 'Status') }}</th>
+							<th scope="col">{{ t('procest', 'Assignee') }}</th>
+							<th scope="col">{{ t('procest', 'Deadline') }}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -249,5 +249,11 @@ export default {
 .status-badge--final {
 	background: var(--color-success);
 	color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.viewTableRow {
+		transition: none;
+	}
 }
 </style>

@@ -17,14 +17,14 @@
 				<table class="ai-extract-dialog__table">
 					<thead>
 						<tr>
-							<th>
+							<th scope="col">
 								<NcCheckboxRadioSwitch
 									:model-value="allSelected"
 									@update:model-value="toggleAll" />
 							</th>
-							<th>{{ t('procest', 'Field') }}</th>
-							<th>{{ t('procest', 'Extracted value') }}</th>
-							<th>{{ t('procest', 'Confidence') }}</th>
+							<th scope="col">{{ t('procest', 'Field') }}</th>
+							<th scope="col">{{ t('procest', 'Extracted value') }}</th>
+							<th scope="col">{{ t('procest', 'Confidence') }}</th>
 						</tr>
 					</thead>
 					<tbody>

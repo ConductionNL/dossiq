@@ -38,11 +38,11 @@
 		<table v-else class="complaint-list__table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Title') }}</th>
-					<th>{{ t('procest', 'Category') }}</th>
-					<th>{{ t('procest', 'Status') }}</th>
-					<th>{{ t('procest', 'Deadline') }}</th>
-					<th>{{ t('procest', 'Handler') }}</th>
+					<th scope="col">{{ t('procest', 'Title') }}</th>
+					<th scope="col">{{ t('procest', 'Category') }}</th>
+					<th scope="col">{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('procest', 'Deadline') }}</th>
+					<th scope="col">{{ t('procest', 'Handler') }}</th>
 				</tr>
 			</thead>
 			<tbody>

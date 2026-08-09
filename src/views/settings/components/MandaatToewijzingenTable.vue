@@ -30,12 +30,12 @@
 		<table v-if="!loading && assignments.length > 0" class="toewijzingen-table__table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Person') }}</th>
-					<th>{{ t('procest', 'Role') }}</th>
-					<th>{{ t('procest', 'Type') }}</th>
-					<th>{{ t('procest', 'From') }}</th>
-					<th>{{ t('procest', 'Up to and including') }}</th>
-					<th>{{ t('procest', 'Acties') }}</th>
+					<th scope="col">{{ t('procest', 'Person') }}</th>
+					<th scope="col">{{ t('procest', 'Role') }}</th>
+					<th scope="col">{{ t('procest', 'Type') }}</th>
+					<th scope="col">{{ t('procest', 'From') }}</th>
+					<th scope="col">{{ t('procest', 'Up to and including') }}</th>
+					<th scope="col">{{ t('procest', 'Acties') }}</th>
 				</tr>
 			</thead>
 			<tbody>
