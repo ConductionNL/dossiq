@@ -171,10 +171,10 @@
                         "type": "array",
                         "title": "Products or Services",
                         "description": "Products/services (fees) that apply to this case type. References product objects in the Pipelinq product register (ADR-003); the charge on a concrete case is a Pipelinq financial transaction.",
+                        "x-external-register": "pipelinq",
                         "items": {
                             "type": "string",
-                            "format": "uuid",
-                            "$ref": "product"
+                            "format": "uuid"
                         }
                     },
                     "selectionListProcessType": {
@@ -1286,7 +1286,7 @@
                     "vergunningaanvraagRef": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "vergunningaanvraag",
+                        "x-external-register": "dso",
                         "description": "Reference to the DSO vergunningaanvraag object in OpenRegister",
                         "visible": false,
                         "title": "Permit Application Reference"
