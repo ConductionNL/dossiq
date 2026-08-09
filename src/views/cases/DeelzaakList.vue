@@ -82,12 +82,12 @@
 			<table class="viewTable">
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'Identifier') }}</th>
-						<th>{{ t('procest', 'Title') }}</th>
-						<th>{{ t('procest', 'Status') }}</th>
-						<th>{{ t('procest', 'Assignee') }}</th>
-						<th>{{ t('procest', 'Deadline') }}</th>
-						<th>{{ t('procest', 'Completed') }}</th>
+						<th scope="col">{{ t('procest', 'Identifier') }}</th>
+						<th scope="col">{{ t('procest', 'Title') }}</th>
+						<th scope="col">{{ t('procest', 'Status') }}</th>
+						<th scope="col">{{ t('procest', 'Assignee') }}</th>
+						<th scope="col">{{ t('procest', 'Deadline') }}</th>
+						<th scope="col">{{ t('procest', 'Completed') }}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -124,6 +124,16 @@
 			:sub-case-count="totalCount"
 			@deleted="onParentDeleted"
 			@close="showDeleteWarning = false" />
+
+		<CnConfirmDialog
+			v-if="showDeleteConfirm"
+			ref="deleteConfirmDialog"
+			:dialog-title="t('procest', 'Delete case')"
+			:message="t('procest', 'Are you sure you want to delete this case?')"
+			variant="error"
+			:confirm-label="t('procest', 'Delete')"
+			@confirm="onConfirmDeleteParent"
+			@close="showDeleteConfirm = false" />
 	</div>
 </template>
 
@@ -133,6 +143,7 @@ import {
 	NcEmptyContent,
 	NcLoadingIcon,
 } from '@nextcloud/vue'
+import { CnConfirmDialog } from '@conduction/nextcloud-vue'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
 import FolderMultipleOutline from 'vue-material-design-icons/FolderMultipleOutline.vue'
@@ -158,6 +169,7 @@ export default {
 		Plus,
 		DeelzaakCreateModal,
 		DeelzaakDeleteWarningModal,
+		CnConfirmDialog,
 	},
 	props: {
 		/** Optional override for the parent case UUID (otherwise read from $route.params.id). */
@@ -174,6 +186,7 @@ export default {
 			loading: true,
 			showCreate: false,
 			showDeleteWarning: false,
+			showDeleteConfirm: false,
 		}
 	},
 	computed: {
@@ -334,19 +347,29 @@ export default {
 		 *
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
 		 */
-		async onDeleteParent() {
+		onDeleteParent() {
 			if (requiresOrphanWarning(this.totalCount)) {
 				this.showDeleteWarning = true
 				return
 			}
-			if (!window.confirm(t('procest', 'Are you sure you want to delete this case?'))) {
-				return
-			}
+			this.showDeleteConfirm = true
+		},
+		/**
+		 * Confirm-handler for the CnConfirmDialog opened by onDeleteParent().
+		 * Runs the actual delete and reports the outcome back to the dialog.
+		 *
+		 * @spec openspec/changes/deelzaak-support/tasks.md#T11
+		 */
+		async onConfirmDeleteParent() {
 			try {
 				await this.objectStore.deleteObject('case', this.parentCaseId)
+				this.showDeleteConfirm = false
 				this.onParentDeleted(this.parentCaseId)
 			} catch (err) {
 				console.error('[DeelzaakList] parent delete failed', err)
+				this.$refs.deleteConfirmDialog.setResult({
+					error: t('procest', 'The case could not be deleted. Please try again.'),
+				})
 			}
 		},
 		/**
@@ -460,5 +483,11 @@ export default {
 .status-badge--final {
 	background: var(--color-success);
 	color: white;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.viewTableRow {
+		transition: none;
+	}
 }
 </style>

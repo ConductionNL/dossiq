@@ -53,11 +53,22 @@
 			:saving="saving"
 			@save="saveChecklist"
 			@cancel="closeEditor" />
+
+		<CnConfirmDialog
+			v-if="showDeleteConfirm"
+			ref="deleteConfirmDialog"
+			:dialog-title="t('procest', 'Delete checklist')"
+			:message="t('procest', 'Delete checklist “{name}”?', { name: pendingDeleteChecklist && pendingDeleteChecklist.name })"
+			variant="error"
+			:confirm-label="t('procest', 'Delete')"
+			@confirm="onConfirmDelete"
+			@close="showDeleteConfirm = false" />
 	</div>
 </template>
 
 <script>
 import { NcButton, NcLoadingIcon, NcEmptyContent, NcIconSvgWrapper } from '@nextcloud/vue'
+import { CnConfirmDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { showError, showSuccess } from '@nextcloud/dialogs'
@@ -72,6 +83,7 @@ export default {
 		NcEmptyContent,
 		NcIconSvgWrapper,
 		InspectionChecklistEditor,
+		CnConfirmDialog,
 	},
 
 	data() {
@@ -81,6 +93,8 @@ export default {
 			editing: false,
 			saving: false,
 			editingChecklist: null,
+			showDeleteConfirm: false,
+			pendingDeleteChecklist: null,
 			clipboardIcon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19,3H14.82C14.25,1.44 12.53,0.64 11,1.2C10.14,1.5 9.5,2.16 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7Z" /></svg>',
 		}
 	},
@@ -140,17 +154,39 @@ export default {
 			}
 		},
 
-		async confirmDelete(checklist) {
-			if (!window.confirm(t('procest', 'Delete checklist "{name}"?', { name: checklist.name }))) {
-				return
-			}
+		/**
+		 * Open the delete-confirmation dialog for a checklist.
+		 *
+		 * @param {object} checklist Checklist row.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/vth-module/tasks.md#task-5
+		 */
+		confirmDelete(checklist) {
+			this.pendingDeleteChecklist = checklist
+			this.showDeleteConfirm = true
+		},
+
+		/**
+		 * Confirm-handler for the CnConfirmDialog opened by confirmDelete().
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/vth-module/tasks.md#task-5
+		 */
+		async onConfirmDelete() {
+			const checklist = this.pendingDeleteChecklist
 			try {
 				const url = generateUrl('/apps/procest/api/objects/inspectionChecklist/' + encodeURIComponent(checklist.id))
 				await axios.delete(url)
 				showSuccess(t('procest', 'Checklist deleted'))
+				this.showDeleteConfirm = false
 				await this.loadChecklists()
 			} catch (e) {
 				showError(t('procest', 'Failed to delete checklist'))
+				this.$refs.deleteConfirmDialog.setResult({
+					error: t('procest', 'Failed to delete checklist'),
+				})
 			}
 		},
 	},

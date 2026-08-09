@@ -13,9 +13,9 @@
 		<table v-else-if="categories.length" class="klachtcat-tab__table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Name') }}</th>
-					<th>{{ t('procest', 'Default handler') }}</th>
-					<th>{{ t('procest', 'SLA override (days)') }}</th>
+					<th scope="col">{{ t('procest', 'Name') }}</th>
+					<th scope="col">{{ t('procest', 'Default handler') }}</th>
+					<th scope="col">{{ t('procest', 'SLA override (days)') }}</th>
 					<th class="actions" />
 				</tr>
 			</thead>
@@ -78,10 +78,22 @@
 		<p v-else class="klachtcat-tab__empty">
 			{{ t('procest', 'No complaint categories yet.') }}
 		</p>
+
+		<CnConfirmDialog
+			v-if="showDeleteConfirm"
+			ref="deleteConfirmDialog"
+			:dialog-title="t('procest', 'Delete complaint category')"
+			:message="t('procest', 'Delete this complaint category?')"
+			variant="error"
+			:confirm-label="t('procest', 'Delete')"
+			@confirm="onConfirmDelete"
+			@close="showDeleteConfirm = false" />
 	</div>
 </template>
 
 <script>
+import { CnConfirmDialog } from '@conduction/nextcloud-vue'
+
 /**
  * Tenant-admin tab for complaint categories.
  *
@@ -89,6 +101,10 @@
  */
 export default {
 	name: 'KlachtcategorieenTab',
+
+	components: {
+		CnConfirmDialog,
+	},
 
 	data() {
 		return {
@@ -100,6 +116,8 @@ export default {
 				defaultHandler: '',
 				slaOverrideDays: null,
 			},
+			showDeleteConfirm: false,
+			pendingDeleteCat: null,
 		}
 	},
 
@@ -209,10 +227,20 @@ export default {
 		 *
 		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09
 		 */
-		async onDelete(cat) {
-			if (!window.confirm(t('procest', 'Delete this complaint category?'))) {
-				return
-			}
+		onDelete(cat) {
+			this.pendingDeleteCat = cat
+			this.showDeleteConfirm = true
+		},
+
+		/**
+		 * Confirm-handler for the CnConfirmDialog opened by onDelete().
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09
+		 */
+		async onConfirmDelete() {
+			const cat = this.pendingDeleteCat
 			try {
 				const res = await fetch(
 					OC.generateUrl('/apps/openregister/api/objects/procest/complaintCategory/' + cat.id),
@@ -223,9 +251,16 @@ export default {
 				)
 				if (res.ok) {
 					await this.fetch()
+					this.showDeleteConfirm = false
+				} else {
+					this.$refs.deleteConfirmDialog.setResult({
+						error: t('procest', 'The category could not be deleted. Please try again.'),
+					})
 				}
 			} catch (e) {
-				// Same — error feedback handled by the alert / inline error row.
+				this.$refs.deleteConfirmDialog.setResult({
+					error: t('procest', 'The category could not be deleted. Please try again.'),
+				})
 			}
 		},
 	},
