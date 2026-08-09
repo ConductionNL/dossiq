@@ -58,6 +58,15 @@ class BezwaarDecisionListener implements IEventListener
     private const PROTECTED_STATUS = 'Beslissing op bezwaar';
 
     /**
+     * Upper bound on the decision rows the guard will pull per bezwaar.
+     *
+     * The probe answers a yes/no question ("does a decided bezwaarDecision
+     * exist?"), so it never needs the whole set; the bound keeps a write-path
+     * lookup cheap and bounded.
+     */
+    private const DECISION_PROBE_LIMIT = 100;
+
+    /**
      * Constructor.
      *
      * @param SettingsService $settingsService Schema slug bridge.
@@ -75,6 +84,15 @@ class BezwaarDecisionListener implements IEventListener
      * @param Event $event Event instance.
      *
      * @return void
+     *
+     * @listener-placement inline correctness — this listener is a transition
+     * guard, not follow-up work. Its whole job is to undo a status change that
+     * should not have been persisted, so it has to run inside the write that
+     * made it. Deferring the revert would publish an invalid
+     * "Beslissing op bezwaar" state to every reader, and to the notification
+     * and audit listeners that fire off the same write, for as long as the
+     * queue took to drain. The revert is a single bounded saveObject() on the
+     * object already being written.
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
@@ -148,11 +166,28 @@ class BezwaarDecisionListener implements IEventListener
         // delegated to decidesk and carries a `decisionRef` (the besluit is the
         // decidesk outcome — procest-delegate-remaining-decisions-to-decidesk,
         // REQ-PDRD-001/REQ-PDRD-003). Both satisfy the published-decision guard.
+        // OpenRegister's ObjectService::findAll() takes ONE config array. This
+        // call used to pass ($register, $decisionSchema, $filters)
+        // positionally, which is a TypeError against `array $config` — and the
+        // catch below turned that TypeError into "allow by default", so this
+        // guard has never once blocked a transition.
+        //
+        // BOUNDED on purpose. This runs on the write path of every bezwaar
+        // update, so an unbounded findAll() would list and materialise every
+        // decision row on the register on each save — the
+        // OpenRegisterFlowResolver failure mode. A bezwaar carries one
+        // decision, occasionally a handful; self::DECISION_PROBE_LIMIT is two
+        // orders of magnitude of headroom.
         try {
             $all = $objectService->findAll(
-                $register,
-                $decisionSchema,
-                ['bezwaar' => $bezwaarId]
+                [
+                    'filters' => [
+                        'register' => $register,
+                        'schema'   => $decisionSchema,
+                        'bezwaar'  => $bezwaarId,
+                    ],
+                    'limit'   => self::DECISION_PROBE_LIMIT,
+                ]
             );
         } catch (Throwable $e) {
             $this->logger->debug(
@@ -166,7 +201,26 @@ class BezwaarDecisionListener implements IEventListener
             return false;
         }
 
-        return $this->containsDecidedDecision(decisions: $all);
+        if ($this->containsDecidedDecision(decisions: $all) === true) {
+            return true;
+        }
+
+        // A FULL page means the bound, not the data, ended the scan: a decided
+        // decision may sit past it. Reverting here would block a legitimate
+        // transition on a bezwaar with an improbable number of decisions, so
+        // the guard fails open — the same policy the rest of this listener
+        // applies to a lookup it cannot complete.
+        if (count($all) >= self::DECISION_PROBE_LIMIT) {
+            $this->logger->warning(
+                'Procest bezwaar-decision: decision probe hit its bound of '
+                .self::DECISION_PROBE_LIMIT.' rows — allowing the transition '
+                .'rather than reverting on an incomplete scan',
+                ['bezwaarId' => $bezwaarId]
+            );
+            return true;
+        }
+
+        return false;
     }//end hasPublishedDecision()
 
     /**

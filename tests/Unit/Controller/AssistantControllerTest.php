@@ -142,6 +142,24 @@ class AssistantControllerTest extends TestCase
     }//end testAvailabilityReflectsClient()
 
     /**
+     * The availability probe is deployment information, so an unauthenticated
+     * caller gets 401 and the Hermiq client is never consulted.
+     *
+     * @return void
+     */
+    public function testAvailabilityUnauthenticatedReturns401(): void
+    {
+        $this->userSession = $this->createMock(IUserSession::class);
+        $this->userSession->method('getUser')->willReturn(null);
+
+        $this->hermiqClient->expects($this->never())->method('isAvailable');
+
+        $response = $this->controller()->availability();
+
+        $this->assertSame(401, $response->getStatus());
+    }//end testAvailabilityUnauthenticatedReturns401()
+
+    /**
      * An unauthenticated caller gets 401 and the service is never invoked.
      *
      * @return void

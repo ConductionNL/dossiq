@@ -290,6 +290,13 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatingEvent') === false) {
     include_once __DIR__.'/Stubs/Event/ObjectUpdatingEventStub.php';
 }
 
+// bezwaar-decision: the post-persist counterpart, so
+// BezwaarDecisionListenerTest can exercise the guard's real decision through
+// handle() — including the probe's call shape, which is what silently broke.
+if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
+    include_once __DIR__.'/Stubs/Event/ObjectUpdatedEventStub.php';
+}
+
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {

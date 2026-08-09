@@ -75,6 +75,10 @@ class AssistantController extends Controller
      * Whether the case-assistant UI panel should render — absent/disabled
      * Hermiq hides the panel rather than showing a permanently-erroring one.
      *
+     * Whether an LLM backend is wired up is deployment information, so the
+     * probe is answered only for an authenticated session — the same
+     * fail-closed shape `converse()` uses.
+     *
      * @return JSONResponse `{available: bool}`.
      *
      * @NoAdminRequired
@@ -83,6 +87,14 @@ class AssistantController extends Controller
      */
     public function availability(): JSONResponse
     {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            return new JSONResponse(
+                ['error' => $this->l10n->t('Authentication required')],
+                Http::STATUS_UNAUTHORIZED
+            );
+        }
+
         return new JSONResponse(['available' => $this->hermiqClient->isAvailable()]);
     }//end availability()
 
