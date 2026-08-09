@@ -1287,9 +1287,11 @@
                     "vergunningaanvraagRef": {
                         "type": "string",
                         "format": "uuid",
+                        "$ref": "vergunningaanvraag",
                         "description": "Reference to the DSO vergunningaanvraag object in OpenRegister",
                         "visible": false,
-                        "title": "Permit Application Reference"
+                        "title": "Permit Application Reference",
+                        "x-external-register": "dso"
                     },
                     "procedureType": {
                         "type": "string",
@@ -1383,7 +1385,7 @@
                         "items": {
                             "type": "string",
                             "format": "uuid",
-                            "$ref": "Decision",
+                            "$ref": "decision",
                             "x-external-register": "decidesk"
                         },
                         "referenceType": "decision",
