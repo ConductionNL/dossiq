@@ -225,4 +225,10 @@ export default {
 	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
 }
+
+@media (prefers-reduced-motion: reduce) {
+	.start-case-widget__card {
+		transition: none;
+	}
+}
 </style>

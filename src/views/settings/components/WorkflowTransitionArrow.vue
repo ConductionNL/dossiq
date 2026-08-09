@@ -120,4 +120,10 @@ export default {
 	stroke: var(--color-primary);
 	stroke-width: 3;
 }
+
+@media (prefers-reduced-motion: reduce) {
+	.workflow-transition__path {
+		transition: none;
+	}
+}
 </style>

@@ -455,4 +455,10 @@ export default {
 	margin: 4px 0 0 16px;
 	padding: 0;
 }
+
+@media (prefers-reduced-motion: reduce) {
+	.tenant-onboarding__progress-bar-fill {
+		transition: none;
+	}
+}
 </style>

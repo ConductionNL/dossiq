@@ -156,4 +156,10 @@ export default {
 	color: var(--color-primary);
 	font-weight: 500;
 }
+
+@media (prefers-reduced-motion: reduce) {
+	.duration-picker__preset {
+		transition: none;
+	}
+}
 </style>
