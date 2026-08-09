@@ -322,7 +322,7 @@ export default {
 		 * Docudesk/manual redaction flow, never a replacement.
 		 *
 		 * @param {string} docId
-		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+		 * @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off
 		 */
 		openRedactionAssist(docId) {
 			this.activeRedactionDoc = docId
@@ -334,7 +334,7 @@ export default {
 		 * redaction-status indicator it renders.
 		 *
 		 * @param {object} result The updated proposal record.
-		 * @spec openspec/changes/woo-llm-anonymisation/tasks.md#task-2-5
+		 * @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off
 		 */
 		onRedactionReviewed(result) {
 			this.$emit('redaction-reviewed', result)

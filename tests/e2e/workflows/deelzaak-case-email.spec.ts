@@ -98,8 +98,7 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 		// so assert the ASSIGNED value the create returned, not the seed input.
 		const assignedIdentifier = String((parent as Record<string, unknown>).identifier ?? identifier)
 
-		await page.goto(`/index.php/apps/procest/cases/${parentId}`)
-		await page.waitForLoadState('networkidle').catch(() => {})
+		await page.goto(`/index.php/apps/procest/cases/${parentId}`, { waitUntil: 'domcontentloaded' })
 		await dismissSupportDialog(page)
 
 		// The detail page (history-mode route /cases/:id) mounts + shows the case.
