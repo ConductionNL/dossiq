@@ -10,7 +10,7 @@
  * SPDX-License-Identifier: EUPL-1.2
  * SPDX-FileCopyrightText: 2026 Conduction B.V.
  *
- * @spec openspec/changes/process-mining-bottlenecks/tasks.md#T05
+ * @spec openspec/specs/process-mining-bottlenecks/spec.md
  */
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'

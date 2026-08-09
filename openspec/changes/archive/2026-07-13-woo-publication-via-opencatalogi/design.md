@@ -178,7 +178,7 @@ requiring template changes out of proportion to this task. `publishDecision()`
 / `withdrawPublication()` are added to `WOOAssessmentController` next to
 `createDecision()`, same shape, same `requireCaseMutationAccess()` guard.
 
-## Fallback: catalog discovery is best-effort, not required
+## Fallback: catalog discovery is best-effort, not required (Fallback)
 
 `OpenCatalogiApiClient::resolveCatalog(): ?array` optionally calls the public
 `GET /api/catalogi` (via `IClientService`, unauthenticated — it is explicitly

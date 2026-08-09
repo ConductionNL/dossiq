@@ -101,8 +101,14 @@ async function go(page: Page, route: string): Promise<void> {
 		const tail = route.startsWith('/') ? route : `/${route}`
 		url = `${APP}${tail}`.replace(/\/$/, '')
 	}
-	await page.goto(url).catch(() => { /* tolerate a 404 — caller decides */ })
-	await page.waitForLoadState('networkidle').catch(() => { /* idle never fires on some pages */ })
+	await page.goto(url, { waitUntil: 'domcontentloaded' }).catch(() => { /* tolerate a 404 — caller decides */ })
+	// The NC SPA keeps background XHR alive, so `networkidle` never settles
+	// (ADR-074 rule 4). Wait on the actual content region instead — the main
+	// app-content area rendering — then let any loading spinner clear.
+	await page.locator('main, #app-content, .app-content, #content-vue').first()
+		.waitFor({ state: 'visible', timeout: 20_000 }).catch(() => { /* 404 pages have no app-content */ })
+	await page.locator('.icon-loading, .loading, .material-design-icon.loading-icon, [class*="skeleton"]').first()
+		.waitFor({ state: 'hidden', timeout: 8_000 }).catch(() => { /* no spinner present, or it never appeared */ })
 	await dismissOverlays(page)
 	await page.waitForTimeout(900)
 }
@@ -283,8 +289,11 @@ test.describe('docs: admin track', () => {
 		// docs/tutorials/admin/03-admin-settings.md — Procest's admin
 		// surface lives at /index.php/settings/admin/procest (NC core
 		// settings, not the in-app /settings route).
-		await page.goto('/index.php/settings/admin/procest')
-		await page.waitForLoadState('networkidle').catch(() => {})
+		await page.goto('/index.php/settings/admin/procest', { waitUntil: 'domcontentloaded' })
+		// networkidle never settles on Nextcloud (ADR-074 rule 4) — wait on
+		// the actual admin settings section instead.
+		await page.locator('#content, main, .section').first()
+			.waitFor({ state: 'visible', timeout: 20_000 }).catch(() => {})
 		await dismissOverlays(page)
 		await page.waitForTimeout(900)
 		await page.evaluate(() => window.scrollTo(0, 0))
