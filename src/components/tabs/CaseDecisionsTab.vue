@@ -33,7 +33,11 @@
 				v-for="decision in decisions"
 				:key="decision.id"
 				class="case-tab__item"
-				@click="openEdit(decision)">
+				role="button"
+				tabindex="0"
+				@click="openEdit(decision)"
+				@keydown.enter="openEdit(decision)"
+				@keydown.space.prevent="openEdit(decision)">
 				<div class="case-tab__row">
 					<strong class="case-tab__item-title">{{ decision.title || '—' }}</strong>
 					<NcActions :inline="0" @click.stop>

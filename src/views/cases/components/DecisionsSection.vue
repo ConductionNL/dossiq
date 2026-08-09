@@ -16,7 +16,11 @@
 					v-for="decision in sortedDecisions"
 					:key="decision.id"
 					class="decision-card"
-					@click="editDecision(decision)">
+					role="button"
+					tabindex="0"
+					@click="editDecision(decision)"
+					@keydown.enter="editDecision(decision)"
+					@keydown.space.prevent="editDecision(decision)">
 					<div class="decision-card__header">
 						<span class="decision-card__title">{{ decision.title || '—' }}</span>
 						<span
@@ -49,7 +53,13 @@
 		</NcButton>
 
 		<!-- Create/Edit Dialog -->
-		<div v-if="showCreateForm" class="decision-overlay" @click.self="closeForm">
+		<div v-if="showCreateForm"
+			class="decision-overlay"
+			role="button"
+			tabindex="0"
+			@click.self="closeForm"
+			@keydown.enter.self="closeForm"
+			@keydown.space.self.prevent="closeForm">
 			<div class="decision-dialog">
 				<h3>{{ editingDecision ? t('procest', 'Edit Decision') : t('procest', 'New Decision') }}</h3>
 
@@ -452,5 +462,11 @@ export default {
 	color: var(--color-error);
 	font-size: 13px;
 	margin-top: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.decision-card {
+		transition: none;
+	}
 }
 </style>

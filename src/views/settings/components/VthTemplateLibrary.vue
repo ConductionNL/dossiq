@@ -11,7 +11,11 @@
 				:key="template.slug"
 				class="vth-template-card"
 				:class="{ 'vth-template-card--selected': selectedTemplate?.slug === template.slug }"
-				@click="selectTemplate(template)">
+				role="button"
+				tabindex="0"
+				@click="selectTemplate(template)"
+				@keydown.enter="selectTemplate(template)"
+				@keydown.space.prevent="selectTemplate(template)">
 				<div class="vth-template-card__header">
 					<span class="vth-template-card__icon">
 						<NcIconSvgWrapper :svg="getIcon(template.category)" :size="24" />
@@ -305,5 +309,11 @@ export default {
 	display: flex;
 	gap: 8px;
 	margin-top: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.vth-template-card {
+		transition: none;
+	}
 }
 </style>

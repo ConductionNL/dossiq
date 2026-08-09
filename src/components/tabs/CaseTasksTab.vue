@@ -35,7 +35,11 @@
 				:key="task.id"
 				class="case-tab__item"
 				:class="{ 'case-tab__item--overdue': isOverdue(task) }"
-				@click="openTask(task)">
+				role="button"
+				tabindex="0"
+				@click="openTask(task)"
+				@keydown.enter="openTask(task)"
+				@keydown.space.prevent="openTask(task)">
 				<div class="case-tab__row">
 					<strong class="case-tab__item-title">{{ task.title || '—' }}</strong>
 					<CnStatusBadge :status="statusLabel(task.status)" :type="statusBadgeType(task.status)" />

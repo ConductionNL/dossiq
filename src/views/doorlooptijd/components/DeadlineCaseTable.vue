@@ -20,7 +20,11 @@
 			<div v-for="c in cases"
 				:key="c.id"
 				class="at-risk-item"
-				@click="$emit('select-case', c.id)">
+				role="button"
+				tabindex="0"
+				@click="$emit('select-case', c.id)"
+				@keydown.enter="$emit('select-case', c.id)"
+				@keydown.space.prevent="$emit('select-case', c.id)">
 				<div class="at-risk-item__header">
 					<span class="at-risk-item__title">{{ c.title || c.identifier }}</span>
 					<span v-if="c.isOverdue" class="at-risk-badge at-risk-badge--overdue">
@@ -185,5 +189,12 @@ export default {
 .text-error {
 	color: var(--color-error);
 	font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.at-risk-item,
+	.progress-fill {
+		transition: none;
+	}
 }
 </style>

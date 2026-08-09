@@ -13,7 +13,11 @@
 					:key="voorstel.id"
 					class="voorstellen-panel__item"
 					:class="{ 'voorstellen-panel__item--active': isActive(voorstel) }"
-					@click="$router.push({ name: 'VoorstelDetail', params: { id: voorstel.id } })">
+					role="button"
+					tabindex="0"
+					@click="$router.push({ name: 'VoorstelDetail', params: { id: voorstel.id } })"
+					@keydown.enter="$router.push({ name: 'VoorstelDetail', params: { id: voorstel.id } })"
+					@keydown.space.prevent="$router.push({ name: 'VoorstelDetail', params: { id: voorstel.id } })">
 					<div class="voorstellen-panel__item-header">
 						<span class="voorstellen-panel__type">{{ formatType(voorstel.type) }}</span>
 						<span class="voorstellen-panel__status" :class="`voorstellen-panel__status--${voorstel.status}`">

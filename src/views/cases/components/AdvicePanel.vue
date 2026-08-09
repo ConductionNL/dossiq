@@ -57,7 +57,13 @@
 		</div>
 
 		<!-- Advice request dialog -->
-		<div v-if="showRequestDialog" class="advice-panel__dialog-overlay" @click.self="showRequestDialog = false">
+		<div v-if="showRequestDialog"
+			class="advice-panel__dialog-overlay"
+			role="button"
+			tabindex="0"
+			@click.self="showRequestDialog = false"
+			@keydown.enter.self="showRequestDialog = false"
+			@keydown.space.self.prevent="showRequestDialog = false">
 			<div class="advice-panel__dialog">
 				<h4>{{ t('procest', 'Request Advice') }}</h4>
 

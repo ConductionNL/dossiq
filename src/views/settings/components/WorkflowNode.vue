@@ -73,10 +73,14 @@
 				class="workflow-node__step"
 				:class="{ 'workflow-node__step--required': step.isRequired }"
 				draggable="true"
+				role="button"
+				tabindex="0"
 				@dragstart.stop="onStepDragStart(step, $event)"
 				@dragover.prevent
 				@drop.stop="onStepDrop(step, $event)"
-				@click.stop="$emit('step-click', step)">
+				@click.stop="$emit('step-click', step)"
+				@keydown.enter="$emit('step-click', step)"
+				@keydown.space.prevent="$emit('step-click', step)">
 				<span class="workflow-node__step-name">{{ step.title }}</span>
 				<span
 					v-if="step.checklist && step.checklist.length > 0"

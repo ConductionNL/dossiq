@@ -33,7 +33,11 @@
 				v-for="doc in documents"
 				:key="doc.id"
 				class="case-tab__item"
-				@click="openEdit(doc)">
+				role="button"
+				tabindex="0"
+				@click="openEdit(doc)"
+				@keydown.enter="openEdit(doc)"
+				@keydown.space.prevent="openEdit(doc)">
 				<div class="case-tab__row">
 					<strong class="case-tab__item-title">{{ doc.title || '—' }}</strong>
 					<NcActions :inline="0" @click.stop>

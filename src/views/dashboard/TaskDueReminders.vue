@@ -14,7 +14,11 @@
 					v-for="item in overdue"
 					:key="'overdue-' + item.id"
 					class="task-reminders__row task-reminders__row--overdue"
-					@click="$router.push({ name: 'TaskDetail', params: { id: item.id } })">
+					role="button"
+					tabindex="0"
+					@click="$router.push({ name: 'TaskDetail', params: { id: item.id } })"
+					@keydown.enter="$router.push({ name: 'TaskDetail', params: { id: item.id } })"
+					@keydown.space.prevent="$router.push({ name: 'TaskDetail', params: { id: item.id } })">
 					<div class="task-reminders__info">
 						<span class="task-reminders__title">{{ item.title }}</span>
 						<span class="task-reminders__reference">{{ item.caseReference }}</span>
@@ -35,7 +39,11 @@
 					v-for="item in dueSoon"
 					:key="'soon-' + item.id"
 					class="task-reminders__row task-reminders__row--warning"
-					@click="$router.push({ name: 'TaskDetail', params: { id: item.id } })">
+					role="button"
+					tabindex="0"
+					@click="$router.push({ name: 'TaskDetail', params: { id: item.id } })"
+					@keydown.enter="$router.push({ name: 'TaskDetail', params: { id: item.id } })"
+					@keydown.space.prevent="$router.push({ name: 'TaskDetail', params: { id: item.id } })">
 					<div class="task-reminders__info">
 						<span class="task-reminders__title">{{ item.title }}</span>
 						<span class="task-reminders__reference">{{ item.caseReference }}</span>
@@ -183,5 +191,11 @@ export default {
 	font-size: 24px;
 	display: block;
 	margin-bottom: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.task-reminders__row {
+		transition: none;
+	}
 }
 </style>

@@ -43,7 +43,12 @@
 					</template>
 
 					<template v-else>
-						<div class="property-item__value" @click="startEdit(propDef)">
+						<div class="property-item__value"
+							role="button"
+							tabindex="0"
+							@click="startEdit(propDef)"
+							@keydown.enter="startEdit(propDef)"
+							@keydown.space.prevent="startEdit(propDef)">
 							<span v-if="getPropertyValue(propDef.id)">
 								{{ getPropertyValue(propDef.id) }}
 							</span>

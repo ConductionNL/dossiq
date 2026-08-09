@@ -5,6 +5,10 @@
 			:key="card.id"
 			class="kpi-card"
 			:class="[card.colorClass, { 'kpi-card--clickable': true }]"
+			role="button"
+			tabindex="0"
+			@keydown.enter="$emit('click-card', card.id)"
+			@keydown.space.prevent="$emit('click-card', card.id)"
 			@click="$emit('click-card', card.id)">
 			<template v-if="loading">
 				<NcLoadingIcon :size="32" />
@@ -162,5 +166,11 @@ export default {
 
 .kpi-card__sub--success {
 	color: var(--color-success);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.kpi-card--clickable {
+		transition: none;
+	}
 }
 </style>

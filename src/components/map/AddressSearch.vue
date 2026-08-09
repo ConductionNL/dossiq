@@ -15,7 +15,11 @@
 				v-for="result in results"
 				:key="result.id"
 				class="address-search__item"
-				@click="selectResult(result)">
+				role="button"
+				tabindex="0"
+				@click="selectResult(result)"
+				@keydown.enter="selectResult(result)"
+				@keydown.space.prevent="selectResult(result)">
 				<span class="address-search__icon">
 					{{ getTypeIcon(result.type) }}
 				</span>

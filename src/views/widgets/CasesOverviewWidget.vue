@@ -7,7 +7,9 @@
 		:empty-text="t('procest', 'No cases found')"
 		@row-click="onRowClick">
 		<template #footer>
-			<a class="cn-data-table__view-all" @click.prevent="onViewAll">
+			<a class="cn-data-table__view-all"
+				:href="viewAllUrl"
+				@click.prevent="onViewAll">
 				{{ t('procest', 'View all') }} →
 			</a>
 		</template>
@@ -43,6 +45,16 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		objectStore() {
 			return useObjectStore()
+		},
+		/**
+		 * Real destination URL for the "View all" link (gate-32: an `<a>`
+		 * with a real `href` is a genuine link, not a mouse-only click
+		 * target).
+		 *
+		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
+		 */
+		viewAllUrl() {
+			return generateUrl('/apps/procest/cases')
 		},
 		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
 		items() {

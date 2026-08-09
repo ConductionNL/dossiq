@@ -19,7 +19,11 @@
 				:key="task.id"
 				class="task-row"
 				:class="{ 'task-row--overdue': isOverdue(task) }"
-				@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
+				role="button"
+				tabindex="0"
+				@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })"
+				@keydown.enter="$router.push({ name: 'TaskDetail', params: { id: task.id } })"
+				@keydown.space.prevent="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
 				<span class="task-status-dot" :class="'task-status-dot--' + task.status" />
 				<span class="task-title">{{ task.title || '---' }}</span>
 				<span class="task-assignee">{{ task.assignee || '' }}</span>

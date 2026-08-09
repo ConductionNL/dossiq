@@ -1,9 +1,14 @@
 <template>
-	<div class="task-create-overlay" @click.self="$emit('close')">
+	<div class="task-create-overlay"
+		role="button"
+		tabindex="0"
+		@click.self="$emit('close')"
+		@keydown.enter.self="$emit('close')"
+		@keydown.space.self.prevent="$emit('close')">
 		<div class="task-create-dialog">
 			<div class="task-create-dialog__header">
 				<h3>{{ t('procest', 'New Task') }}</h3>
-				<NcButton type="tertiary" @click="$emit('close')">
+				<NcButton type="tertiary" :aria-label="t('procest', 'Close')" @click="$emit('close')">
 					✕
 				</NcButton>
 			</div>
