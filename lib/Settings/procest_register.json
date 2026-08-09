@@ -175,8 +175,7 @@
                             "type": "string",
                             "format": "uuid",
                             "$ref": "product"
-                        },
-                        "x-external-register": "pipelinq"
+                        }
                     },
                     "selectionListProcessType": {
                         "type": "string",
@@ -1290,8 +1289,7 @@
                         "$ref": "vergunningaanvraag",
                         "description": "Reference to the DSO vergunningaanvraag object in OpenRegister",
                         "visible": false,
-                        "title": "Permit Application Reference",
-                        "x-external-register": "dso"
+                        "title": "Permit Application Reference"
                     },
                     "procedureType": {
                         "type": "string",
@@ -1385,8 +1383,7 @@
                         "items": {
                             "type": "string",
                             "format": "uuid",
-                            "$ref": "decision",
-                            "x-external-register": "decidesk"
+                            "$ref": "decision"
                         },
                         "referenceType": "decision",
                         "x-allow-create": true
