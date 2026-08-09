@@ -24,7 +24,11 @@
 						:key="tpl.id || tpl.name"
 						class="email-template-admin__list-item"
 						:class="{ 'email-template-admin__list-item--active': isSelected(tpl) }"
-						@click="selectTemplate(tpl)">
+						role="button"
+						tabindex="0"
+						@click="selectTemplate(tpl)"
+						@keydown.enter="selectTemplate(tpl)"
+						@keydown.space.prevent="selectTemplate(tpl)">
 						<span class="email-template-admin__list-name">{{ tpl.name }}</span>
 						<span class="email-template-admin__list-version">v{{ tpl.version || 1 }}</span>
 					</li>

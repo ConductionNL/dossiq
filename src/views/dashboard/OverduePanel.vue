@@ -36,7 +36,11 @@
 					:key="c.id"
 					class="overdue-panel__row"
 					:class="severityClass(c.daysOverdue)"
-					@click="$emit('click-case', c.id)">
+					role="button"
+					tabindex="0"
+					@click="$emit('click-case', c.id)"
+					@keydown.enter="$emit('click-case', c.id)"
+					@keydown.space.prevent="$emit('click-case', c.id)">
 					<div class="overdue-panel__info">
 						<span class="overdue-panel__identifier">{{ c.identifier }}</span>
 						<span class="overdue-panel__case-title">{{ c.title }}</span>
@@ -243,5 +247,15 @@ export default {
 	0% { opacity: 0.6; }
 	50% { opacity: 1; }
 	100% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.overdue-panel__row {
+		transition: none;
+	}
+
+	.skeleton-row {
+		animation: none;
+	}
 }
 </style>

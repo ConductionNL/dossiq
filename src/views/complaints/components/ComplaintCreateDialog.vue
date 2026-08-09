@@ -1,5 +1,10 @@
 <template>
-	<div class="dialog-overlay" @click.self="$emit('close')">
+	<div class="dialog-overlay"
+		role="button"
+		tabindex="0"
+		@click.self="$emit('close')"
+		@keydown.enter.self="$emit('close')"
+		@keydown.space.self.prevent="$emit('close')">
 		<div class="dialog" role="dialog" :aria-label="t('procest', 'New Complaint')">
 			<h2>{{ t('procest', 'Register New Complaint') }}</h2>
 

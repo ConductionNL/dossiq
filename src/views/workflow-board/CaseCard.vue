@@ -307,4 +307,11 @@ export default {
 .case-card__deadline--ok {
 	color: var(--color-text-maxcontrast);
 }
+
+@media (prefers-reduced-motion: reduce) {
+	.case-card,
+	.case-card__select {
+		transition: none;
+	}
+}
 </style>

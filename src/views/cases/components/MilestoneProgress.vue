@@ -23,7 +23,11 @@
 				<div
 					class="milestone-progress__dot"
 					:class="dotClass(milestone, index)"
-					@click="!isReadOnly && onDotClick(milestone, index)">
+					role="button"
+					:tabindex="isReadOnly ? -1 : 0"
+					@click="!isReadOnly && onDotClick(milestone, index)"
+					@keydown.enter="!isReadOnly && onDotClick(milestone, index)"
+					@keydown.space.prevent="!isReadOnly && onDotClick(milestone, index)">
 					<span v-if="milestone.reached" class="milestone-progress__check">&#10003;</span>
 					<span v-else class="milestone-progress__number">{{ index + 1 }}</span>
 				</div>
@@ -239,5 +243,11 @@ export default {
 .milestone-progress__percentage {
 	font-size: 0.75rem;
 	color: var(--color-text-maxcontrast);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.milestone-progress__bar {
+		transition: none;
+	}
 }
 </style>

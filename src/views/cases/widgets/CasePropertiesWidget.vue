@@ -163,7 +163,7 @@ export default {
 			immediate: true,
 			/**
 			 * @param data
-			 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
+			 * @spec openspec/specs/signalering-widgets/spec.md
 			 */
 			handler(data) {
 				if (data && data.title !== undefined) {
@@ -179,7 +179,7 @@ export default {
 	},
 	methods: {
 		formatDate,
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		async save() {
 			const validation = validateCaseUpdate(this.form)
 			if (!validation.valid) {

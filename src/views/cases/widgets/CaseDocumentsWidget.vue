@@ -39,7 +39,7 @@ export default {
 		formatDate,
 		/**
 		 * @param mimeType
-		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
+		 * @spec openspec/specs/signalering-widgets/spec.md
 		 */
 		getFileIcon(mimeType) {
 			if (!mimeType) return '📄'

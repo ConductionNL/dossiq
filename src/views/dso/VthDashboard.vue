@@ -62,13 +62,13 @@
 			<table class="vth-dashboard__table">
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'Identifier') }}</th>
-						<th>{{ t('procest', 'Title') }}</th>
-						<th>{{ t('procest', 'Status') }}</th>
-						<th>{{ t('procest', 'Procedure') }}</th>
-						<th>{{ t('procest', 'Competent Authority') }}</th>
-						<th>{{ t('procest', 'Deadline') }}</th>
-						<th>{{ t('procest', 'Actions') }}</th>
+						<th scope="col">{{ t('procest', 'Identifier') }}</th>
+						<th scope="col">{{ t('procest', 'Title') }}</th>
+						<th scope="col">{{ t('procest', 'Status') }}</th>
+						<th scope="col">{{ t('procest', 'Procedure') }}</th>
+						<th scope="col">{{ t('procest', 'Competent Authority') }}</th>
+						<th scope="col">{{ t('procest', 'Deadline') }}</th>
+						<th scope="col">{{ t('procest', 'Actions') }}</th>
 					</tr>
 				</thead>
 				<tbody>

@@ -1766,6 +1766,12 @@
 							"label": "Email",
 							"icon": "EmailOutline",
 							"component": "CaseEmailTab"
+						},
+						{
+							"id": "besluitvorming",
+							"label": "Besluitvorming",
+							"icon": "Gavel",
+							"component": "BesluitvormingLeafTab"
 						}
 					]
 				}
@@ -3058,7 +3064,7 @@
 						"id": "ai-audit-data",
 						"type": "data",
 						"title": "AI audit entry",
-						"icon": "RobotOutline",
+						"icon": "ShieldCheckOutline",
 						"content": {
 							"columns": 2
 						}

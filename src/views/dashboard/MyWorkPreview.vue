@@ -30,7 +30,11 @@
 				v-for="item in items"
 				:key="`${item.type}-${item.id}`"
 				class="my-work-preview__row"
-				@click="$emit('click-item', item.type, item.id)">
+				role="button"
+				tabindex="0"
+				@click="$emit('click-item', item.type, item.id)"
+				@keydown.enter="$emit('click-item', item.type, item.id)"
+				@keydown.space.prevent="$emit('click-item', item.type, item.id)">
 				<span class="my-work-preview__badge" :class="`my-work-preview__badge--${item.type}`">
 					{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
 				</span>
@@ -198,5 +202,15 @@ export default {
 	0% { opacity: 0.6; }
 	50% { opacity: 1; }
 	100% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.my-work-preview__row {
+		transition: none;
+	}
+
+	.skeleton-row {
+		animation: none;
+	}
 }
 </style>

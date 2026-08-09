@@ -1,5 +1,10 @@
 <template>
-	<div class="enforcement-wizard-overlay" @click.self="$emit('close')">
+	<div class="enforcement-wizard-overlay"
+		role="button"
+		tabindex="0"
+		@click.self="$emit('close')"
+		@keydown.enter.self="$emit('close')"
+		@keydown.space.self.prevent="$emit('close')">
 		<div class="enforcement-wizard">
 			<h3>{{ t('procest', 'Start Enforcement Action') }}</h3>
 

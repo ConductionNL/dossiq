@@ -16,13 +16,13 @@
 		<table class="stuf-endpoints__table" data-testid="stuf-endpoints-table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', 'Name') }}</th>
-					<th>{{ t('procest', 'Municipality code') }}</th>
-					<th>{{ t('procest', 'Application') }}</th>
-					<th>{{ t('procest', 'SOAP version') }}</th>
-					<th>{{ t('procest', 'Strategy') }}</th>
-					<th>{{ t('procest', 'Health') }}</th>
-					<th>{{ t('procest', 'Active') }}</th>
+					<th scope="col">{{ t('procest', 'Name') }}</th>
+					<th scope="col">{{ t('procest', 'Municipality code') }}</th>
+					<th scope="col">{{ t('procest', 'Application') }}</th>
+					<th scope="col">{{ t('procest', 'SOAP version') }}</th>
+					<th scope="col">{{ t('procest', 'Strategy') }}</th>
+					<th scope="col">{{ t('procest', 'Health') }}</th>
+					<th scope="col">{{ t('procest', 'Active') }}</th>
 				</tr>
 			</thead>
 			<tbody>

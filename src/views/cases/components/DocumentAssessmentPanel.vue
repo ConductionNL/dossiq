@@ -15,10 +15,10 @@
 			<table class="viewTable">
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'Document') }}</th>
-						<th>{{ t('procest', 'Assessment') }}</th>
-						<th>{{ t('procest', 'Grounds') }}</th>
-						<th>{{ t('procest', 'Actions') }}</th>
+						<th scope="col">{{ t('procest', 'Document') }}</th>
+						<th scope="col">{{ t('procest', 'Assessment') }}</th>
+						<th scope="col">{{ t('procest', 'Grounds') }}</th>
+						<th scope="col">{{ t('procest', 'Actions') }}</th>
 					</tr>
 				</thead>
 				<tbody>

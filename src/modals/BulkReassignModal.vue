@@ -59,11 +59,11 @@
 				<table v-else class="bulk-reassign__table">
 					<thead>
 						<tr>
-							<th>{{ t('procest', 'Type') }}</th>
-							<th>{{ t('procest', 'Title') }}</th>
-							<th>{{ t('procest', 'Case type') }}</th>
-							<th>{{ t('procest', 'Status') }}</th>
-							<th>{{ t('procest', 'Next deadline') }}</th>
+							<th scope="col">{{ t('procest', 'Type') }}</th>
+							<th scope="col">{{ t('procest', 'Title') }}</th>
+							<th scope="col">{{ t('procest', 'Case type') }}</th>
+							<th scope="col">{{ t('procest', 'Status') }}</th>
+							<th scope="col">{{ t('procest', 'Next deadline') }}</th>
 						</tr>
 					</thead>
 					<tbody>

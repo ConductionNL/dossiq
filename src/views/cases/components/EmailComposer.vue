@@ -83,7 +83,13 @@
 		</div>
 
 		<!-- Preview dialog -->
-		<div v-if="showPreview" class="email-composer__preview-overlay" @click.self="showPreview = false">
+		<div v-if="showPreview"
+			class="email-composer__preview-overlay"
+			role="button"
+			tabindex="0"
+			@click.self="showPreview = false"
+			@keydown.enter.self="showPreview = false"
+			@keydown.space.self.prevent="showPreview = false">
 			<div class="email-composer__preview">
 				<h5>{{ t('procest', 'Email Preview') }}</h5>
 				<p><strong>{{ t('procest', 'To:') }}</strong> {{ form.to }}</p>

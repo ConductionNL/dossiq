@@ -27,7 +27,11 @@
 				v-for="report in reports"
 				:key="report.id"
 				class="inspection-panel__report"
-				@click="toggleReport(report.id)">
+				role="button"
+				tabindex="0"
+				@click="toggleReport(report.id)"
+				@keydown.enter="toggleReport(report.id)"
+				@keydown.space.prevent="toggleReport(report.id)">
 				<div class="inspection-panel__report-header">
 					<span
 						class="inspection-panel__result-badge"
@@ -89,7 +93,11 @@
 						v-for="cl in activeChecklists"
 						:key="cl.id"
 						class="inspection-panel__checklist-option"
-						@click="selectedChecklist = cl">
+						role="button"
+						tabindex="0"
+						@click="selectedChecklist = cl"
+						@keydown.enter="selectedChecklist = cl"
+						@keydown.space.prevent="selectedChecklist = cl">
 						<strong>{{ cl.name }}</strong>
 						<small>{{ t('procest', '{count} items', { count: (cl.items || []).length }) }}</small>
 					</div>
@@ -566,5 +574,11 @@ export default {
 	display: flex;
 	gap: 8px;
 	margin-top: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.inspection-panel__progress-fill {
+		transition: none;
+	}
 }
 </style>

@@ -65,7 +65,7 @@ export default {
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
@@ -79,7 +79,7 @@ export default {
 		 *
 		 * @return {Promise<void>}
 		 */
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		async fetchCaseTypes() {
 			this.loading = true
 			try {
@@ -138,7 +138,7 @@ export default {
 		 * @param {object} caseType The case type to start
 		 * @param {object} extraFields Additional case fields (initiator projection)
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
+		 * @spec openspec/specs/signalering-widgets/spec.md
 		 */
 		async createCase(caseType, extraFields = {}) {
 			if (!caseType || this.creating) {
@@ -224,5 +224,11 @@ export default {
 	display: -webkit-box;
 	-webkit-line-clamp: 2;
 	-webkit-box-orient: vertical;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.start-case-widget__card {
+		transition: none;
+	}
 }
 </style>

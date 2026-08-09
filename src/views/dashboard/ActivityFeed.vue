@@ -201,4 +201,10 @@ export default {
 	50% { opacity: 1; }
 	100% { opacity: 0.6; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+	.skeleton-row {
+		animation: none;
+	}
+}
 </style>

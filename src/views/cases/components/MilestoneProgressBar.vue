@@ -79,4 +79,10 @@ export default {
 	color: var(--color-text-maxcontrast);
 	white-space: nowrap;
 }
+
+@media (prefers-reduced-motion: reduce) {
+	.milestone-bar__fill {
+		transition: none;
+	}
+}
 </style>

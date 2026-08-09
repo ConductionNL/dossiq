@@ -12,14 +12,14 @@
 				<thead>
 					<tr>
 						<th />
-						<th v-for="gedrag in gedragLabels" :key="gedrag.key">
+						<th v-for="gedrag in gedragLabels" :key="gedrag.key" scope="col">
 							{{ gedrag.label }}
 						</th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr v-for="ernst in ernstLabels" :key="ernst.key">
-						<th>{{ ernst.label }}</th>
+						<th scope="row">{{ ernst.label }}</th>
 						<td v-for="gedrag in gedragLabels" :key="gedrag.key">
 							<select
 								:value="matrix[ernst.key]?.[gedrag.key] || ''"

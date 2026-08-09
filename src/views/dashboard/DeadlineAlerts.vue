@@ -14,7 +14,11 @@
 					v-for="item in overdue"
 					:key="'overdue-' + item.id"
 					class="deadline-alerts__row deadline-alerts__row--overdue"
-					@click="$router.push({ name: 'CaseDetail', params: { id: item.id } })">
+					role="button"
+					tabindex="0"
+					@click="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
+					@keydown.enter="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
+					@keydown.space.prevent="$router.push({ name: 'CaseDetail', params: { id: item.id } })">
 					<div class="deadline-alerts__info">
 						<span class="deadline-alerts__identifier">{{ item.identifier }}</span>
 						<span class="deadline-alerts__title">{{ item.title }}</span>
@@ -33,7 +37,11 @@
 					v-for="item in atRisk"
 					:key="'atrisk-' + item.id"
 					class="deadline-alerts__row deadline-alerts__row--warning"
-					@click="$router.push({ name: 'CaseDetail', params: { id: item.id } })">
+					role="button"
+					tabindex="0"
+					@click="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
+					@keydown.enter="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
+					@keydown.space.prevent="$router.push({ name: 'CaseDetail', params: { id: item.id } })">
 					<div class="deadline-alerts__info">
 						<span class="deadline-alerts__identifier">{{ item.identifier }}</span>
 						<span class="deadline-alerts__title">{{ item.title }}</span>
@@ -183,5 +191,11 @@ export default {
 	font-size: 24px;
 	display: block;
 	margin-bottom: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.deadline-alerts__row {
+		transition: none;
+	}
 }
 </style>

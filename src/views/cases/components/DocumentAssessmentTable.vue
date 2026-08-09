@@ -31,12 +31,12 @@
 			<table class="viewTable">
 				<thead>
 					<tr>
-						<th>{{ t('procest', '#') }}</th>
-						<th>{{ t('procest', 'Document') }}</th>
-						<th>{{ t('procest', 'Assessment') }}</th>
-						<th>{{ t('procest', 'Grounds (WOO Art. 5.1/5.2)') }}</th>
-						<th>{{ t('procest', 'Motivation') }}</th>
-						<th>{{ t('procest', 'Redaction') }}</th>
+						<th scope="col">{{ t('procest', '#') }}</th>
+						<th scope="col">{{ t('procest', 'Document') }}</th>
+						<th scope="col">{{ t('procest', 'Assessment') }}</th>
+						<th scope="col">{{ t('procest', 'Grounds (WOO Art. 5.1/5.2)') }}</th>
+						<th scope="col">{{ t('procest', 'Motivation') }}</th>
+						<th scope="col">{{ t('procest', 'Redaction') }}</th>
 					</tr>
 				</thead>
 				<tbody>

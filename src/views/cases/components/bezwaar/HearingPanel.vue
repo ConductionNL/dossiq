@@ -78,7 +78,13 @@
 		</template>
 
 		<!-- Schedule Dialog -->
-		<div v-if="showScheduleDialog" class="dialog-overlay" @click.self="showScheduleDialog = false">
+		<div v-if="showScheduleDialog"
+			class="dialog-overlay"
+			role="button"
+			tabindex="0"
+			@click.self="showScheduleDialog = false"
+			@keydown.enter.self="showScheduleDialog = false"
+			@keydown.space.self.prevent="showScheduleDialog = false">
 			<div class="dialog-card">
 				<h3>{{ t('procest', 'Schedule Hearing') }}</h3>
 				<div class="form-group">
@@ -114,7 +120,13 @@
 		</div>
 
 		<!-- Waiver Dialog -->
-		<div v-if="showWaiverDialog" class="dialog-overlay" @click.self="showWaiverDialog = false">
+		<div v-if="showWaiverDialog"
+			class="dialog-overlay"
+			role="button"
+			tabindex="0"
+			@click.self="showWaiverDialog = false"
+			@keydown.enter.self="showWaiverDialog = false"
+			@keydown.space.self.prevent="showWaiverDialog = false">
 			<div class="dialog-card">
 				<h3>{{ t('procest', 'Record Hearing Waiver') }}</h3>
 				<p>{{ t('procest', 'The objector waives the right to be heard (Awb art. 7:3).') }}</p>
@@ -137,7 +149,13 @@
 		</div>
 
 		<!-- Minutes Dialog -->
-		<div v-if="showMinutesDialog" class="dialog-overlay" @click.self="showMinutesDialog = false">
+		<div v-if="showMinutesDialog"
+			class="dialog-overlay"
+			role="button"
+			tabindex="0"
+			@click.self="showMinutesDialog = false"
+			@keydown.enter.self="showMinutesDialog = false"
+			@keydown.space.self.prevent="showMinutesDialog = false">
 			<div class="dialog-card">
 				<h3>{{ t('procest', 'Record Hearing Minutes') }}</h3>
 				<div class="form-group">

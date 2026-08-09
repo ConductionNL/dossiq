@@ -4,9 +4,9 @@
 			<table>
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'ZGW Resource') }}</th>
-						<th>{{ t('procest', 'Status') }}</th>
-						<th>{{ t('procest', 'Actions') }}</th>
+						<th scope="col">{{ t('procest', 'ZGW Resource') }}</th>
+						<th scope="col">{{ t('procest', 'Status') }}</th>
+						<th scope="col">{{ t('procest', 'Actions') }}</th>
 					</tr>
 				</thead>
 				<tbody>

@@ -1,5 +1,10 @@
 <template>
-	<div class="add-participant-overlay" @click.self="$emit('close')">
+	<div class="add-participant-overlay"
+		role="button"
+		tabindex="0"
+		@click.self="$emit('close')"
+		@keydown.enter.self="$emit('close')"
+		@keydown.space.self.prevent="$emit('close')">
 		<div class="add-participant-dialog">
 			<h3>{{ t('procest', 'Add Participant') }}</h3>
 

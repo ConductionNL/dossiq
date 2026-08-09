@@ -2,7 +2,7 @@
 	<div class="transition-config-panel">
 		<div class="transition-config-panel__header">
 			<h4>{{ t('procest', 'Transition Configuration') }}</h4>
-			<NcButton type="tertiary" @click="$emit('close')">
+			<NcButton type="tertiary" :aria-label="t('procest', 'Close transition configuration')" @click="$emit('close')">
 				<template #icon>
 					<CloseIcon :size="20" />
 				</template>
@@ -107,6 +107,7 @@
 
 					<NcButton
 						type="tertiary"
+						:aria-label="t('procest', 'Remove guard')"
 						@click="removeGuard(index)">
 						<template #icon>
 							<CloseIcon :size="16" />
@@ -227,6 +228,7 @@
 
 					<NcButton
 						type="tertiary"
+						:aria-label="t('procest', 'Remove action')"
 						@click="removeAction(index)">
 						<template #icon>
 							<CloseIcon :size="16" />

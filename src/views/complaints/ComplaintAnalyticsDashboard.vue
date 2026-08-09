@@ -21,6 +21,12 @@
 			<section class="complaint-analytics__card">
 				<h3>{{ t('procest', 'By category') }}</h3>
 				<table>
+					<thead>
+						<tr>
+							<th scope="col">{{ t('procest', 'Category') }}</th>
+							<th scope="col" class="num">{{ t('procest', 'Count') }}</th>
+						</tr>
+					</thead>
 					<tbody>
 						<tr v-for="row in analytics.byCategory || []" :key="row.category">
 							<td>{{ row.category }}</td>

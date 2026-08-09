@@ -2,7 +2,10 @@
 	<aside class="mandaat-widget">
 		<header class="mandaat-widget__header">
 			<h4>{{ mandaat.omschrijving || mandaat.mandaatNummer }}</h4>
-			<button type="button" class="mandaat-widget__close" @click="$emit('close')">
+			<button type="button"
+				class="mandaat-widget__close"
+				:aria-label="t('procest', 'Close mandate details')"
+				@click="$emit('close')">
 				×
 			</button>
 		</header>

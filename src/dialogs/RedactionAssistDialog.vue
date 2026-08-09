@@ -56,9 +56,9 @@
 					<thead>
 						<tr>
 							<th />
-							<th>{{ t('procest', 'Category') }}</th>
-							<th>{{ t('procest', 'Source') }}</th>
-							<th>{{ t('procest', 'Preview') }}</th>
+							<th scope="col">{{ t('procest', 'Category') }}</th>
+							<th scope="col">{{ t('procest', 'Source') }}</th>
+							<th scope="col">{{ t('procest', 'Preview') }}</th>
 						</tr>
 					</thead>
 					<tbody>

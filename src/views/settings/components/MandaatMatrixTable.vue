@@ -33,12 +33,12 @@
 		<table v-if="!loading && matrices.length > 0" class="mandaat-matrix-table__table">
 			<thead>
 				<tr>
-					<th>{{ t('procest', '#') }}</th>
-					<th>{{ t('procest', 'Naam') }}</th>
-					<th>{{ t('procest', 'Status') }}</th>
-					<th>{{ t('procest', 'In werkingtreding') }}</th>
-					<th>{{ t('procest', 'Expiry date') }}</th>
-					<th>{{ t('procest', 'Acties') }}</th>
+					<th scope="col">{{ t('procest', '#') }}</th>
+					<th scope="col">{{ t('procest', 'Naam') }}</th>
+					<th scope="col">{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('procest', 'In werkingtreding') }}</th>
+					<th scope="col">{{ t('procest', 'Expiry date') }}</th>
+					<th scope="col">{{ t('procest', 'Acties') }}</th>
 				</tr>
 			</thead>
 			<tbody>

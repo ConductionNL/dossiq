@@ -17,6 +17,7 @@
 			<thead>
 				<tr>
 					<th class="sortable"
+						scope="col"
 						@click="sortTable('name')">
 						{{ t('procest', 'Case Type') }}
 						<span v-if="sortColumn === 'name'" class="sort-indicator">
@@ -24,6 +25,7 @@
 						</span>
 					</th>
 					<th class="sortable numeric"
+						scope="col"
 						@click="sortTable('targetDays')">
 						{{ t('procest', 'Target (days)') }}
 						<span v-if="sortColumn === 'targetDays'" class="sort-indicator">
@@ -31,6 +33,7 @@
 						</span>
 					</th>
 					<th class="sortable numeric"
+						scope="col"
 						@click="sortTable('avgActualDays')">
 						{{ t('procest', 'Avg Actual (days)') }}
 						<span v-if="sortColumn === 'avgActualDays'" class="sort-indicator">
@@ -38,6 +41,7 @@
 						</span>
 					</th>
 					<th class="sortable numeric"
+						scope="col"
 						@click="sortTable('complianceRate')">
 						{{ t('procest', 'Compliance %') }}
 						<span v-if="sortColumn === 'complianceRate'" class="sort-indicator">
@@ -45,13 +49,14 @@
 						</span>
 					</th>
 					<th class="sortable numeric"
+						scope="col"
 						@click="sortTable('total')">
 						{{ t('procest', 'Cases') }}
 						<span v-if="sortColumn === 'total'" class="sort-indicator">
 							{{ sortDirection === 'asc' ? '▲' : '▼' }}
 						</span>
 					</th>
-					<th>{{ t('procest', 'Status') }}</th>
+					<th scope="col">{{ t('procest', 'Status') }}</th>
 				</tr>
 			</thead>
 			<tbody>

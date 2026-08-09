@@ -13,7 +13,11 @@
 					v-for="item in stalledCases"
 					:key="item.id"
 					class="stalled-cases__row"
-					@click="$router.push({ name: 'CaseDetail', params: { id: item.id } })">
+					role="button"
+					tabindex="0"
+					@click="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
+					@keydown.enter="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
+					@keydown.space.prevent="$router.push({ name: 'CaseDetail', params: { id: item.id } })">
 					<div class="stalled-cases__info">
 						<span class="stalled-cases__identifier">{{ item.identifier }}</span>
 						<span class="stalled-cases__title">{{ item.title }}</span>
@@ -123,5 +127,11 @@ export default {
 	font-size: 24px;
 	display: block;
 	margin-bottom: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.stalled-cases__row {
+		transition: none;
+	}
 }
 </style>

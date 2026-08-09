@@ -48,10 +48,10 @@
 			<table v-else class="verwerkingen-overview__table">
 				<thead>
 					<tr>
-						<th>{{ t('procest', 'Code') }}</th>
-						<th>{{ t('procest', 'Activity') }}</th>
-						<th>{{ t('procest', 'Legal basis') }}</th>
-						<th>{{ t('procest', 'Review status') }}</th>
+						<th scope="col">{{ t('procest', 'Code') }}</th>
+						<th scope="col">{{ t('procest', 'Activity') }}</th>
+						<th scope="col">{{ t('procest', 'Legal basis') }}</th>
+						<th scope="col">{{ t('procest', 'Review status') }}</th>
 					</tr>
 				</thead>
 				<tbody>

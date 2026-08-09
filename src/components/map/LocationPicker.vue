@@ -1,5 +1,10 @@
 <template>
-	<div class="location-picker-overlay" @click.self="$emit('cancel')">
+	<div class="location-picker-overlay"
+		role="button"
+		tabindex="0"
+		@click.self="$emit('cancel')"
+		@keydown.enter.self="$emit('cancel')"
+		@keydown.space.self.prevent="$emit('cancel')">
 		<div class="location-picker">
 			<div class="location-picker__header">
 				<h3>{{ t('procest', 'Select location') }}</h3>
