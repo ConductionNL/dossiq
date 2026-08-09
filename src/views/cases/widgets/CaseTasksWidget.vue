@@ -67,11 +67,11 @@ export default {
 		},
 	},
 	computed: {
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		sortedTasks() {
 			return sortTasks(this.tasks)
 		},
-		/** @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md */
+		/** @spec openspec/specs/signalering-widgets/spec.md */
 		completedCount() {
 			return this.tasks.filter(t => t.status === 'completed').length
 		},
@@ -83,7 +83,7 @@ export default {
 		formatDueDate,
 		/**
 		 * @param task
-		 * @spec openspec/changes/retrofit-2026-05-24-signalering-widgets/tasks.md
+		 * @spec openspec/specs/signalering-widgets/spec.md
 		 */
 		dueDateClass(task) {
 			if (isOverdue(task)) return 'task-due--overdue'
