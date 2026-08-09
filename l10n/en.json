@@ -3099,7 +3099,21 @@
         "working days": "working days",
         "Your action": "Your action",
         "Your advice": "Your advice",
-        "Your advice has been received successfully. You can close this window.": "Your advice has been received successfully. You can close this window."
+        "Your advice has been received successfully. You can close this window.": "Your advice has been received successfully. You can close this window.",
+        "Close mandate details": "Close mandate details",
+        "Close step configuration": "Close step configuration",
+        "Close transition configuration": "Close transition configuration",
+        "Count": "Count",
+        "Delete {name}": "Delete {name}",
+        "Delete checklist “{name}”?": "Delete checklist “{name}”?",
+        "Delete complaint category": "Delete complaint category",
+        "Edit {name}": "Edit {name}",
+        "Remove action": "Remove action",
+        "Remove checklist item": "Remove checklist item",
+        "Remove guard": "Remove guard",
+        "Remove participant": "Remove participant",
+        "Remove required field": "Remove required field",
+        "The category could not be deleted. Please try again.": "The category could not be deleted. Please try again."
     },
     "plurals": ""
 }
