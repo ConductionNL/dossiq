@@ -32,12 +32,24 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\WorkflowDefinitionService;
+use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
 /**
  * Lifecycle-only controller for workflow definitions.
+ *
+ * Workflow definitions are case-type configuration, so every endpoint here —
+ * the three lifecycle writes and the two read-outs — is administrative.
+ * That was already the effective posture (a Nextcloud controller method with
+ * no auth attribute is admin-only), but it was never declared, which is what
+ * gate-5 flags: an undeclared posture is indistinguishable from a forgotten
+ * one. `AuthorizedAdminSetting` states it explicitly and matches the sibling
+ * seam, CaseDefinitionController.
+ *
+ * @spec openspec/specs/workflow-definition-engine/spec.md
  */
 class WorkflowDefinitionController extends Controller
 {
@@ -67,6 +79,7 @@ class WorkflowDefinitionController extends Controller
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function publish(string $id): JSONResponse
     {
         $result = $this->service->publish($id);
@@ -92,6 +105,7 @@ class WorkflowDefinitionController extends Controller
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function deprecate(string $id): JSONResponse
     {
         $result = $this->service->deprecate($id);
@@ -114,6 +128,7 @@ class WorkflowDefinitionController extends Controller
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function cloneDefinition(string $id): JSONResponse
     {
         $result = $this->service->cloneDefinition($id);
@@ -138,6 +153,7 @@ class WorkflowDefinitionController extends Controller
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function active(string $caseTypeId): JSONResponse
     {
         $definition = $this->service->getActiveDefinitionFor($caseTypeId);
@@ -161,6 +177,7 @@ class WorkflowDefinitionController extends Controller
 
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
+    #[AuthorizedAdminSetting(AdminSettings::class)]
     public function forCase(string $caseId): JSONResponse
     {
         $definition = $this->service->getDefinitionForCase($caseId);

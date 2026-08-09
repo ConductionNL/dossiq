@@ -300,17 +300,27 @@ class RoleResolverService
         }
 
         try {
+            // OpenRegister's ObjectService::findAll() takes ONE config array.
+            // This call used to pass ($register, $schema, $filters)
+            // positionally, which is a TypeError against `array $config` — and
+            // the catch below turned that TypeError into an empty role list, so
+            // stored case roles were never loaded and rule resolution silently
+            // fell through to its other sources.
             $records = $objectService->findAll(
-                $register,
-                $schema,
-                ['filters' => ['case' => $caseId]],
+                [
+                    'filters' => [
+                        'register' => $register,
+                        'schema'   => $schema,
+                        'case'     => $caseId,
+                    ],
+                ]
             );
         } catch (Throwable $e) {
             $this->logger->warning(
                 'Procest: failed to load roles for case '.$caseId.': '.$e->getMessage(),
             );
             return [];
-        }
+        }//end try
 
         $rows = [];
         foreach ((array) $records as $record) {
