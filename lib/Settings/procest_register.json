@@ -6884,6 +6884,7 @@
                                         "local",
                                         "remote"
                                     ],
+                                    "description": "Whether the actor is a local user on this Nextcloud instance or a remote user on the federated partner instance",
                                     "title": "Actor Type"
                                 },
                                 "cloudId": {
@@ -6893,11 +6894,13 @@
                                 },
                                 "message": {
                                     "type": "string",
+                                    "description": "Free-text message content of this activity entry",
                                     "title": "Message"
                                 },
                                 "createdAt": {
                                     "type": "string",
                                     "format": "date-time",
+                                    "description": "Timestamp when this activity entry was recorded",
                                     "title": "Created At"
                                 }
                             }
@@ -7128,6 +7131,7 @@
                                         "accepted",
                                         "rejected"
                                     ],
+                                    "description": "Custody-change event this audit-trail entry records",
                                     "title": "Event"
                                 },
                                 "actor": {
@@ -7141,15 +7145,18 @@
                                         "local",
                                         "remote"
                                     ],
+                                    "description": "Whether the actor is a local user on this Nextcloud instance or a remote user on the federated partner instance",
                                     "title": "Actor Type"
                                 },
                                 "cloudId": {
                                     "type": "string",
+                                    "description": "Remote cloud id, set only for actorType=remote",
                                     "title": "Cloud ID"
                                 },
                                 "timestamp": {
                                     "type": "string",
                                     "format": "date-time",
+                                    "description": "Timestamp when this custody event was recorded",
                                     "title": "Timestamp"
                                 }
                             }
