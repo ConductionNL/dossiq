@@ -18,12 +18,12 @@
 							<span class="role-type-row__name">{{ rt.name }}</span>
 							<span class="role-type-row__generic">{{ genericRoleLabel(rt.genericRole) }}</span>
 							<div class="role-type-row__actions">
-								<NcButton type="tertiary" @click="startEdit(rt)">
+								<NcButton type="tertiary" :aria-label="t('procest', 'Edit {name}', { name: rt.name })" @click="startEdit(rt)">
 									<template #icon>
 										<PencilIcon :size="20" />
 									</template>
 								</NcButton>
-								<NcButton type="tertiary" @click="deleteRoleType(rt)">
+								<NcButton type="tertiary" :aria-label="t('procest', 'Delete {name}', { name: rt.name })" @click="deleteRoleType(rt)">
 									<template #icon>
 										<DeleteIcon :size="20" />
 									</template>
@@ -266,4 +266,8 @@ export default {
 .roles-tab__empty { color: var(--color-text-maxcontrast); padding: 20px; text-align: center; }
 .roles-tab__error { color: var(--color-error); margin-top: 12px; }
 .field-error { display: block; color: var(--color-error); font-size: 12px; margin-bottom: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+	.role-type-row { transition: none; }
+}
 </style>

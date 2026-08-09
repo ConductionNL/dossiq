@@ -25,12 +25,12 @@
 								{{ formatPeriod(rt.archivalPeriod) }}
 							</span>
 							<div class="result-type-row__actions">
-								<NcButton type="tertiary" @click="startEdit(rt)">
+								<NcButton type="tertiary" :aria-label="t('procest', 'Edit {name}', { name: rt.name })" @click="startEdit(rt)">
 									<template #icon>
 										<PencilIcon :size="20" />
 									</template>
 								</NcButton>
-								<NcButton type="tertiary" @click="deleteResultType(rt)">
+								<NcButton type="tertiary" :aria-label="t('procest', 'Delete {name}', { name: rt.name })" @click="deleteResultType(rt)">
 									<template #icon>
 										<DeleteIcon :size="20" />
 									</template>
@@ -312,4 +312,8 @@ export default {
 .results-tab__empty { color: var(--color-text-maxcontrast); padding: 20px; text-align: center; }
 .results-tab__error { color: var(--color-error); margin-top: 12px; }
 .field-error { display: block; color: var(--color-error); font-size: 12px; margin-bottom: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+	.result-type-row { transition: none; }
+}
 </style>

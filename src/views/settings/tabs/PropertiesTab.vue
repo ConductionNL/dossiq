@@ -24,12 +24,12 @@
 								{{ pd.requiredAtStatus || t('procest', 'Optional') }}
 							</span>
 							<div class="property-row__actions">
-								<NcButton type="tertiary" @click="startEdit(pd)">
+								<NcButton type="tertiary" :aria-label="t('procest', 'Edit {name}', { name: pd.name })" @click="startEdit(pd)">
 									<template #icon>
 										<PencilIcon :size="20" />
 									</template>
 								</NcButton>
-								<NcButton type="tertiary" @click="deleteProperty(pd)">
+								<NcButton type="tertiary" :aria-label="t('procest', 'Delete {name}', { name: pd.name })" @click="deleteProperty(pd)">
 									<template #icon>
 										<DeleteIcon :size="20" />
 									</template>
@@ -330,4 +330,8 @@ export default {
 .properties-tab__empty { color: var(--color-text-maxcontrast); padding: 20px; text-align: center; }
 .properties-tab__error { color: var(--color-error); margin-top: 12px; }
 .field-error { display: block; color: var(--color-error); font-size: 12px; margin-bottom: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+	.property-row { transition: none; }
+}
 </style>

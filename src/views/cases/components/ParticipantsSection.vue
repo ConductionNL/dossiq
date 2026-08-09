@@ -50,6 +50,7 @@
 						<NcButton
 							v-else
 							type="tertiary"
+							:aria-label="t('procest', 'Remove participant')"
 							@click="removeRole(role)">
 							<template #icon>
 								<Delete :size="20" />

@@ -16,12 +16,12 @@
 							{{ t('procest', 'Disabled') }}
 						</span>
 						<div class="sub-entity-row__actions">
-							<NcButton type="tertiary" @click="startEdit(item)">
+							<NcButton type="tertiary" :aria-label="t('procest', 'Edit {name}', { name: item.name })" @click="startEdit(item)">
 								<template #icon>
 									<PencilIcon :size="20" />
 								</template>
 							</NcButton>
-							<NcButton type="tertiary" @click="deleteItem(item)">
+							<NcButton type="tertiary" :aria-label="t('procest', 'Delete {name}', { name: item.name })" @click="deleteItem(item)">
 								<template #icon>
 									<DeleteIcon :size="20" />
 								</template>

@@ -10,7 +10,7 @@
 					@click="$emit('delete', localStep.id)">
 					{{ t('procest', 'Delete step') }}
 				</NcButton>
-				<NcButton type="tertiary" @click="$emit('close')">
+				<NcButton type="tertiary" :aria-label="t('procest', 'Close step configuration')" @click="$emit('close')">
 					<template #icon>
 						<CloseIcon :size="20" />
 					</template>
@@ -88,6 +88,7 @@
 						@input="emitUpdate">
 					<NcButton
 						type="tertiary"
+						:aria-label="t('procest', 'Remove checklist item')"
 						@click="removeChecklistItem(index)">
 						<template #icon>
 							<CloseIcon :size="16" />
@@ -168,6 +169,7 @@
 							<NcButton
 								type="tertiary"
 								:disabled="readOnly"
+								:aria-label="t('procest', 'Remove required field')"
 								@click="removeRequiredField(index)">
 								<template #icon>
 									<CloseIcon :size="16" />
@@ -297,6 +299,7 @@
 						@input="emitUpdate">
 					<NcButton
 						type="tertiary"
+						:aria-label="t('procest', 'Remove action')"
 						@click="removeAction(index)">
 						<template #icon>
 							<CloseIcon :size="16" />

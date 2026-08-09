@@ -40,12 +40,12 @@
 								{{ st.notificationText }}
 							</span>
 							<div class="status-type-row__actions">
-								<NcButton type="tertiary" @click="startEdit(st)">
+								<NcButton type="tertiary" :aria-label="t('procest', 'Edit {name}', { name: st.name })" @click="startEdit(st)">
 									<template #icon>
 										<PencilIcon :size="20" />
 									</template>
 								</NcButton>
-								<NcButton type="tertiary" @click="deleteStatusType(st)">
+								<NcButton type="tertiary" :aria-label="t('procest', 'Delete {name}', { name: st.name })" @click="deleteStatusType(st)">
 									<template #icon>
 										<DeleteIcon :size="20" />
 									</template>
@@ -608,5 +608,11 @@ export default {
 	color: var(--color-error);
 	font-size: 12px;
 	margin-bottom: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.status-type-row {
+		transition: none;
+	}
 }
 </style>
