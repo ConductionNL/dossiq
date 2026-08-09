@@ -3058,7 +3058,7 @@
 						"id": "ai-audit-data",
 						"type": "data",
 						"title": "AI audit entry",
-						"icon": "RobotOutline",
+						"icon": "ShieldCheckOutline",
 						"content": {
 							"columns": 2
 						}
