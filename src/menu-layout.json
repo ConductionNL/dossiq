@@ -2,7 +2,8 @@
 	"_meta": {
 		"spdx-license": "EUPL-1.2",
 		"spdx-copyright": "2026 Conduction B.V.",
-		"description": "Canonical navigation layout applied AFTER all manifest.d fragments merge (see applyMenuRelocations in main.js). Fragments stay the source of WHAT exists in the menu (ADR-037); this file is the single place deciding WHERE entries live. relocations: sourceId -> targetGroupId (groups dissolve into the target, leaves move under it). removals: leaf menu-entry ids retired as duplicate navigation — their PAGES stay routable for deep links and e2e specs. settingsSection: top-level config/definition/admin ids lifted into Nextcloud's settings foldout (NcAppNavigationSettings gear, outside the scrollable nav) — see applySettingsSection in main.js; operational/report/dashboard items stay in the main nav."
+		"description": "Canonical navigation layout applied AFTER all manifest.d fragments merge (see applyMenuRelocations in main.js). Fragments stay the source of WHAT exists in the menu (ADR-037); this file is the single place deciding WHERE entries live. relocations: sourceId -> targetGroupId (groups dissolve into the target, leaves move under it). removals: leaf menu-entry ids retired as duplicate navigation — their PAGES stay routable for deep links and e2e specs. settingsSection: top-level config/definition/admin ids lifted into Nextcloud's settings foldout (NcAppNavigationSettings gear, outside the scrollable nav) — see applySettingsSection in main.js; operational/report/dashboard items stay in the main nav.",
+		"removalsCoverageNote": "The 8 entries in `removals` (BezwaarBeroepGroup, Bezwaren, Beroepen, SubsidiesGroup, CaseMap, Voorstellen, Advice, BesluitvormingAgenda) each orphan their route under the static top-level `.menu` tree gate-53 (effective-manifest-crossref) inspects — deliberately, per two sequential, documented architecture changes: (1) `case-type-navigation` (commit d6824aa20) replaced the standalone Bezwaar/Beroep/Subsidie nav with case-type children resolved dynamically onto the `Cases` page's own `folderSidebar`, and gave `Cases` a `map` viewMode superseding the standalone `CaseMap` leaf; (2) `consume-decidesk-besluitvorming-leaf` (commit d2df51b8b) replaced the standalone Besluitvorming nav (Voorstellen/Advice/Agenda) with a `BesluitvormingLeafTab` sidebar tab on `CaseDetail`. Both replacements are live, wired, and menu-reachable via `Cases`/`CaseDetail` — but gate-53 only walks the static `.menu` tree and cannot see a runtime folderSidebar filter, a page viewMode, or a per-object sidebar tab as 'reachability'. Restoring these as static top-level entries would reintroduce the exact anti-pattern both changes explicitly rejected (hard-coding the case-type taxonomy into the bundled manifest; duplicating the decision surface across two apps). Retiring the ROUTES instead would violate each change's own explicit ADR-044 'hard invariant' to keep them deep-link/e2e routable. Left red pending a gate-53 enhancement that recognises folderSidebar/viewMode/sidebarTab reachability."
 	},
 	"relocations": {
 		"MyWork": "WorkGroup",
@@ -12,23 +13,14 @@
 		"ProcessMiningDashboardMenu": "AnalyticsGroup"
 	},
 	"removals": [
-		"SubstitutionMenu",
 		"BezwaarBeroepGroup",
 		"Bezwaren",
 		"Beroepen",
-		"BezwaarDecisions",
-		"BezwaarAdviceRequests",
 		"SubsidiesGroup",
-		"Subsidies",
 		"CaseMap",
-		"BesluitvormingGroup",
 		"Voorstellen",
 		"Advice",
-		"BesluitvormingAgenda",
-		"LeverancierDashboard",
-		"MijnZaken",
-		"MijnNotificaties",
-		"Inspecties"
+		"BesluitvormingAgenda"
 	],
 	"settingsSection": [
 		"CaseTypesMenu",
