@@ -53,8 +53,8 @@
 <script>
 import { NcDialog, NcButton, NcTextField, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import { classifyDocument } from '../../../services/aiApi.js'
-import AiConfidenceBadge from './AiConfidenceBadge.vue'
+import { classifyDocument } from '../services/aiApi.js'
+import AiConfidenceBadge from '../views/cases/components/AiConfidenceBadge.vue'
 
 export default {
 	name: 'AiClassifyDialog',

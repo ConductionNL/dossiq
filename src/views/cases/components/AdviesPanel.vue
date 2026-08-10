@@ -81,7 +81,7 @@ import {
 	getAdviceForCase,
 	transitionStatus,
 } from '../../../services/adviceApi.js'
-import AdviesAanvraagDialog from './AdviesAanvraagDialog.vue'
+import AdviesAanvraagDialog from '../../../dialogs/AdviesAanvraagDialog.vue'
 
 const APP_NAME = 'procest'
 

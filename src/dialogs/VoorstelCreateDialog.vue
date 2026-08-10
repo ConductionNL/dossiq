@@ -74,7 +74,7 @@
 <script>
 import { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import { getCurrentUser } from '@nextcloud/auth'
-import { useObjectStore } from '../../../store/modules/object.js'
+import { useObjectStore } from '../store/modules/object.js'
 
 export default {
 	name: 'VoorstelCreateDialog',

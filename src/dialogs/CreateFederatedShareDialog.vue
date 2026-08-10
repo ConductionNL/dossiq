@@ -69,7 +69,7 @@ import {
 	FEDERATION_ALLOWED_FIELDS,
 	shapeFederatedSharePayload,
 	isFederatedShareFormValid,
-} from '../../../utils/federatedShareHelpers.js'
+} from '../utils/federatedShareHelpers.js'
 
 export default {
 	name: 'CreateFederatedShareDialog',

@@ -38,7 +38,7 @@
 import { NcButton } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
 import { listMessages } from '../../../services/berichtenboxApi.js'
-import BerichtenboxComposeDialog from './BerichtenboxComposeDialog.vue'
+import BerichtenboxComposeDialog from '../../../dialogs/BerichtenboxComposeDialog.vue'
 
 export default {
 	name: 'BerichtenboxTab',

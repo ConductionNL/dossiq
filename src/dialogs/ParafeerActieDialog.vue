@@ -104,8 +104,8 @@
 <script>
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
-import DelegateSelectorField from './DelegateSelectorField.vue'
-import { recordAction } from '../../../services/parafeerActieApi.js'
+import DelegateSelectorField from '../views/voorstellen/components/DelegateSelectorField.vue'
+import { recordAction } from '../services/parafeerActieApi.js'
 
 export default {
 	name: 'ParafeerActieDialog',

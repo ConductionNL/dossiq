@@ -72,7 +72,7 @@
 <script>
 import { NcDialog, NcButton, NcTextField, NcSelect, NcNoteCard } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import { sendMessage } from '../../../services/berichtenboxApi.js'
+import { sendMessage } from '../services/berichtenboxApi.js'
 
 export default {
 	name: 'BerichtenboxComposeDialog',

@@ -52,7 +52,7 @@
 
 <script>
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
-import VoorstelCreateDialog from '../../voorstellen/components/VoorstelCreateDialog.vue'
+import VoorstelCreateDialog from '../../../dialogs/VoorstelCreateDialog.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 const STATUS_LABELS = {

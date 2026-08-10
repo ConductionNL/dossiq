@@ -72,8 +72,8 @@
 
 <script>
 import { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
-import { useObjectStore } from '../../../store/modules/object.js'
-import { registerBesluit } from '../../../services/voorstelBesluitApi.js'
+import { useObjectStore } from '../store/modules/object.js'
+import { registerBesluit } from '../services/voorstelBesluitApi.js'
 
 export default {
 	name: 'BesluitRegistration',
