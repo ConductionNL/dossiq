@@ -26,10 +26,11 @@
 			</div>
 
 			<div v-if="showToelichting" class="consultation-response-form__field">
-				<label class="consultation-response-form__label">
+				<label class="consultation-response-form__label" for="consultation-response-toelichting">
 					{{ t('procest', 'Explanation') }} <span v-if="toelichtingRequired">*</span>
 				</label>
 				<textarea
+					id="consultation-response-toelichting"
 					v-model="form.toelichting"
 					class="consultation-response-form__textarea"
 					rows="4"
@@ -48,6 +49,7 @@
 					<input
 						v-model="voorwaarde.description"
 						class="consultation-response-form__condition-input"
+						:aria-label="t('procest', 'Condition description {n}', { n: idx + 1 })"
 						:placeholder="t('procest', 'Condition description')"
 						type="text">
 					<NcSelect
@@ -71,10 +73,11 @@
 			</div>
 
 			<div class="consultation-response-form__field">
-				<label class="consultation-response-form__label">
+				<label class="consultation-response-form__label" for="consultation-response-datum">
 					{{ t('procest', 'Advice date') }} *
 				</label>
 				<input
+					id="consultation-response-datum"
 					v-model="form.datum"
 					type="date"
 					class="consultation-response-form__date-input"

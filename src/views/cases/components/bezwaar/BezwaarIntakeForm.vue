@@ -4,8 +4,9 @@
 
 		<!-- Contested Decision selector -->
 		<div class="form-group">
-			<label>{{ t('procest', 'Contested Decision (Bestreden Besluit)') }} *</label>
+			<label for="bezwaar-intake-contested-decision">{{ t('procest', 'Contested Decision (Bestreden Besluit)') }} *</label>
 			<NcTextField
+				id="bezwaar-intake-contested-decision"
 				:model-value="form.contestedDecision"
 				:disabled="isReadOnly"
 				:placeholder="t('procest', 'UUID of the contested decision')"
@@ -18,8 +19,9 @@
 
 		<!-- Grounds -->
 		<div class="form-group">
-			<label>{{ t('procest', 'Grounds for Objection (Gronden van Bezwaar)') }} *</label>
+			<label for="bezwaar-intake-grounds">{{ t('procest', 'Grounds for Objection (Gronden van Bezwaar)') }} *</label>
 			<textarea
+				id="bezwaar-intake-grounds"
 				v-model="form.grounds"
 				:disabled="isReadOnly"
 				:placeholder="t('procest', 'Describe the grounds for objection...')"
@@ -31,8 +33,9 @@
 
 		<!-- Requested Relief -->
 		<div class="form-group">
-			<label>{{ t('procest', 'Requested Outcome') }}</label>
+			<label for="bezwaar-intake-requested-relief">{{ t('procest', 'Requested Outcome') }}</label>
 			<textarea
+				id="bezwaar-intake-requested-relief"
 				v-model="form.requestedRelief"
 				:disabled="isReadOnly"
 				:placeholder="t('procest', 'What outcome does the objector seek?')"
@@ -42,8 +45,9 @@
 		<div class="form-row">
 			<!-- Received Date -->
 			<div class="form-group">
-				<label>{{ t('procest', 'Date Received') }} *</label>
+				<label for="bezwaar-intake-received-date">{{ t('procest', 'Date Received') }} *</label>
 				<NcTextField
+					id="bezwaar-intake-received-date"
 					:model-value="form.receivedDate"
 					:disabled="isReadOnly"
 					type="date"
@@ -80,8 +84,9 @@
 
 		<!-- Timeliness Assessment (when late) -->
 		<div v-if="timelinessResult && !timelinessResult.isTimely" class="form-group">
-			<label>{{ t('procest', 'Timeliness Assessment') }}</label>
+			<label for="bezwaar-intake-timeliness-assessment">{{ t('procest', 'Timeliness Assessment') }}</label>
 			<textarea
+				id="bezwaar-intake-timeliness-assessment"
 				v-model="form.timelinessAssessment"
 				:disabled="isReadOnly"
 				:placeholder="t('procest', 'E.g. verschoonbare termijnoverschrijding...')"

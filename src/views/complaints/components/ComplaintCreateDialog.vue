@@ -9,8 +9,9 @@
 			<h2>{{ t('procest', 'Register New Complaint') }}</h2>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Subject') }} *</label>
+				<label for="complaint-create-onderwerp">{{ t('procest', 'Subject') }} *</label>
 				<NcTextField
+					id="complaint-create-onderwerp"
 					:model-value="form.onderwerp"
 					:error="!!errors.onderwerp"
 					@update:model-value="v => { form.onderwerp = v; errors.onderwerp = '' }" />
@@ -20,8 +21,9 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Description') }} *</label>
+				<label for="complaint-create-omschrijving">{{ t('procest', 'Description') }} *</label>
 				<textarea
+					id="complaint-create-omschrijving"
 					v-model="form.omschrijving"
 					rows="4"
 					:class="{ 'input--error': errors.omschrijving }" />
@@ -32,14 +34,16 @@
 
 			<div class="form-row">
 				<div class="form-group">
-					<label>{{ t('procest', 'Complainant name') }}</label>
+					<label for="complaint-create-klager-naam">{{ t('procest', 'Complainant name') }}</label>
 					<NcTextField
+						id="complaint-create-klager-naam"
 						:model-value="form.klagerNaam"
 						@update:model-value="v => form.klagerNaam = v" />
 				</div>
 				<div class="form-group">
-					<label>{{ t('procest', 'Email') }}</label>
+					<label for="complaint-create-klager-email">{{ t('procest', 'Email') }}</label>
 					<NcTextField
+						id="complaint-create-klager-email"
 						:model-value="form.klagerEmail"
 						@update:model-value="v => form.klagerEmail = v" />
 				</div>

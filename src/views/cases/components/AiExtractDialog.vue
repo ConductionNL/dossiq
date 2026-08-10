@@ -20,6 +20,7 @@
 							<th scope="col">
 								<NcCheckboxRadioSwitch
 									:model-value="allSelected"
+									:aria-label="t('procest', 'Select all fields')"
 									@update:model-value="toggleAll" />
 							</th>
 							<th scope="col">{{ t('procest', 'Field') }}</th>
@@ -35,12 +36,14 @@
 							<td>
 								<NcCheckboxRadioSwitch
 									:model-value="selectedFields.includes(field.name)"
+									:aria-label="t('procest', 'Select field {field}', { field: field.name })"
 									@update:model-value="toggleField(field.name)" />
 							</td>
 							<td>{{ field.name }}</td>
 							<td>
 								<NcTextField
 									:model-value="modifiedValues[field.name] || field.value"
+									:aria-label="t('procest', 'Extracted value for {field}', { field: field.name })"
 									@update:model-value="v => modifiedValues[field.name] = v" />
 							</td>
 							<td>

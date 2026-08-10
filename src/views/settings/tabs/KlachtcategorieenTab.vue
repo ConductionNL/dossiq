@@ -36,13 +36,25 @@
 					</tr>
 					<tr v-else :key="cat.id" class="klachtcat-tab__edit-row">
 						<td>
-							<input v-model="form.name" type="text" :placeholder="t('procest', 'Name')">
+							<input
+								v-model="form.name"
+								type="text"
+								:aria-label="t('procest', 'Name')"
+								:placeholder="t('procest', 'Name')">
 						</td>
 						<td>
-							<input v-model="form.defaultHandler" type="text" :placeholder="t('procest', 'User id')">
+							<input
+								v-model="form.defaultHandler"
+								type="text"
+								:aria-label="t('procest', 'User id')"
+								:placeholder="t('procest', 'User id')">
 						</td>
 						<td>
-							<input v-model.number="form.slaOverrideDays" type="number" min="0">
+							<input
+								v-model.number="form.slaOverrideDays"
+								type="number"
+								:aria-label="t('procest', 'SLA override (days)')"
+								min="0">
 						</td>
 						<td class="actions">
 							<button type="button" @click="onSave">
@@ -56,13 +68,25 @@
 				</template>
 				<tr v-if="editingId === '__new'" class="klachtcat-tab__edit-row">
 					<td>
-						<input v-model="form.name" type="text" :placeholder="t('procest', 'Name')">
+						<input
+							v-model="form.name"
+							type="text"
+							:aria-label="t('procest', 'Name')"
+							:placeholder="t('procest', 'Name')">
 					</td>
 					<td>
-						<input v-model="form.defaultHandler" type="text" :placeholder="t('procest', 'User id')">
+						<input
+							v-model="form.defaultHandler"
+							type="text"
+							:aria-label="t('procest', 'User id')"
+							:placeholder="t('procest', 'User id')">
 					</td>
 					<td>
-						<input v-model.number="form.slaOverrideDays" type="number" min="0">
+						<input
+							v-model.number="form.slaOverrideDays"
+							type="number"
+							:aria-label="t('procest', 'SLA override (days)')"
+							min="0">
 					</td>
 					<td class="actions">
 						<button type="button" @click="onSave">

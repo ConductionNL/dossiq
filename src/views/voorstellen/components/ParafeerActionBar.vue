@@ -3,8 +3,9 @@
 		<!-- Advisory step: Adviseren -->
 		<template v-if="isAdvisoryStep">
 			<div class="form-group">
-				<label>{{ t('procest', 'Advice') }}</label>
+				<label for="parafeer-action-advice">{{ t('procest', 'Advice') }}</label>
 				<textarea
+					id="parafeer-action-advice"
 					v-model="adviceText"
 					:placeholder="t('procest', 'Provide your advice...')"
 					rows="3" />
@@ -40,10 +41,12 @@
 					<NcTextField
 						:model-value="delegateFor"
 						:placeholder="t('procest', 'User ID of principal')"
+						:aria-label="t('procest', 'User ID of principal')"
 						@update:model-value="v => delegateFor = v" />
 					<NcTextField
 						:model-value="mandateRef"
 						:placeholder="t('procest', 'Mandate reference')"
+						:aria-label="t('procest', 'Mandate reference')"
 						@update:model-value="v => mandateRef = v" />
 				</div>
 			</div>
@@ -52,8 +55,9 @@
 		<!-- Return form (shared) -->
 		<div v-if="showReturnForm" class="parafeer-action-bar__return-form">
 			<div class="form-group">
-				<label>{{ t('procest', 'Reason for returning') }} *</label>
+				<label for="parafeer-return-reason">{{ t('procest', 'Reason for returning') }} *</label>
 				<textarea
+					id="parafeer-return-reason"
 					v-model="returnComment"
 					:placeholder="t('procest', 'Provide the reason why the proposal is being returned...')"
 					rows="3" />

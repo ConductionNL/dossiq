@@ -29,6 +29,7 @@
 						<div class="property-item__edit">
 							<NcTextField
 								:model-value="editValue"
+								:aria-label="propDef.name"
 								:placeholder="propDef.definition || t('procest', 'Enter value...')"
 								@update:model-value="v => editValue = v" />
 							<div class="property-item__edit-actions">

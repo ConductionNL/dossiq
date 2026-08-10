@@ -81,11 +81,12 @@
 					</div>
 
 					<div v-if="responseForm.advies !== null" class="external-consultation-response__field">
-						<label class="external-consultation-response__label">
+						<label class="external-consultation-response__label" for="external-consultation-response-toelichting">
 							{{ t('procest', 'Explanation') }}
 							<span v-if="toelichtingRequired">*</span>
 						</label>
 						<textarea
+							id="external-consultation-response-toelichting"
 							v-model="responseForm.toelichting"
 							class="external-consultation-response__textarea"
 							rows="5"
@@ -104,6 +105,7 @@
 							<input
 								v-model="voorwaarde.description"
 								class="external-consultation-response__condition-input"
+								:aria-label="t('procest', 'Description condition {n}', { n: idx + 1 })"
 								:placeholder="t('procest', 'Condition description')"
 								type="text">
 							<NcSelect
@@ -127,10 +129,11 @@
 					</div>
 
 					<div class="external-consultation-response__field">
-						<label class="external-consultation-response__label">
+						<label class="external-consultation-response__label" for="external-consultation-response-datum">
 							{{ t('procest', 'Advice date') }} *
 						</label>
 						<input
+							id="external-consultation-response-datum"
 							v-model="responseForm.datum"
 							type="date"
 							class="external-consultation-response__date-input">

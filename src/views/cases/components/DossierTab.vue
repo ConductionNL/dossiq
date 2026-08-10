@@ -32,6 +32,7 @@
 			ref="fileInput"
 			type="file"
 			multiple
+			:aria-label="t('procest', 'Upload document')"
 			class="dossier-tab__file-input"
 			@change="onFilesSelected">
 

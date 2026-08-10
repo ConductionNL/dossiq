@@ -64,8 +64,9 @@
 				<h3>{{ editingDecision ? t('procest', 'Edit Decision') : t('procest', 'New Decision') }}</h3>
 
 				<div class="form-group">
-					<label>{{ t('procest', 'Title') }} *</label>
+					<label for="decisions-section-title">{{ t('procest', 'Title') }} *</label>
 					<NcTextField
+						id="decisions-section-title"
 						:model-value="form.title"
 						:error="!!formErrors.title"
 						@update:model-value="v => { form.title = v; formErrors.title = '' }" />
@@ -75,21 +76,23 @@
 				</div>
 
 				<div class="form-group">
-					<label>{{ t('procest', 'Description') }}</label>
-					<textarea v-model="form.description" rows="3" />
+					<label for="decisions-section-description">{{ t('procest', 'Description') }}</label>
+					<textarea id="decisions-section-description" v-model="form.description" rows="3" />
 				</div>
 
 				<div class="form-row">
 					<div class="form-group">
-						<label>{{ t('procest', 'Effective date') }}</label>
+						<label for="decisions-section-effective-date">{{ t('procest', 'Effective date') }}</label>
 						<NcTextField
+							id="decisions-section-effective-date"
 							:model-value="form.effectiveDate"
 							type="date"
 							@update:model-value="v => form.effectiveDate = v" />
 					</div>
 					<div class="form-group">
-						<label>{{ t('procest', 'Expiry date') }}</label>
+						<label for="decisions-section-expiry-date">{{ t('procest', 'Expiry date') }}</label>
 						<NcTextField
+							id="decisions-section-expiry-date"
 							:model-value="form.expiryDate"
 							type="date"
 							:error="!!formErrors.expiryDate"

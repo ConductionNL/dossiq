@@ -24,8 +24,9 @@
 
 			<!-- Advies field: required on advies steps. -->
 			<div v-if="isAdviesStep && !showReturnForm" class="parafeer-actie-dialog__field">
-				<label>{{ t('procest', 'Advice') }} *</label>
+				<label for="parafeer-actie-advice">{{ t('procest', 'Advice') }} *</label>
 				<textarea
+					id="parafeer-actie-advice"
 					v-model="advice"
 					rows="4"
 					:placeholder="t('procest', 'Advice')"
@@ -34,8 +35,9 @@
 
 			<!-- Optional comment for parafering/accordering. -->
 			<div v-if="!isAdviesStep && !showReturnForm" class="parafeer-actie-dialog__field">
-				<label>{{ t('procest', 'Optional comment') }}</label>
+				<label for="parafeer-actie-comment">{{ t('procest', 'Optional comment') }}</label>
 				<textarea
+					id="parafeer-actie-comment"
 					v-model="comment"
 					rows="3"
 					:placeholder="t('procest', 'Optional comment')"
@@ -44,8 +46,9 @@
 
 			<!-- Return reason form (toggled by Terugsturen click). -->
 			<div v-if="showReturnForm" class="parafeer-actie-dialog__field">
-				<label>{{ t('procest', 'Reason for returning') }} *</label>
+				<label for="parafeer-actie-return-reason">{{ t('procest', 'Reason for returning') }} *</label>
 				<textarea
+					id="parafeer-actie-return-reason"
 					v-model="returnReason"
 					rows="4"
 					:placeholder="t('procest', 'Reason for returning')"

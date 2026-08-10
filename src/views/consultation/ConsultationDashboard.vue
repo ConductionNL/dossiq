@@ -35,17 +35,19 @@
 				:placeholder="t('procest', 'All statuses')" />
 
 			<div class="consultation-dashboard__date-range">
-				<label class="consultation-dashboard__filter-label">
+				<label class="consultation-dashboard__filter-label" for="consultation-dashboard-deadline-from">
 					{{ t('procest', 'Deadline from') }}
 				</label>
 				<input
+					id="consultation-dashboard-deadline-from"
 					v-model="filters.dateFrom"
 					type="date"
 					class="consultation-dashboard__date-input">
-				<label class="consultation-dashboard__filter-label">
+				<label class="consultation-dashboard__filter-label" for="consultation-dashboard-deadline-to">
 					{{ t('procest', 'to') }}
 				</label>
 				<input
+					id="consultation-dashboard-deadline-to"
 					v-model="filters.dateTo"
 					type="date"
 					class="consultation-dashboard__date-input">

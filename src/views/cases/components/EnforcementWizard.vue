@@ -55,28 +55,34 @@
 				<h4>{{ t('procest', 'Step 2: Intervention Details') }}</h4>
 
 				<div class="enforcement-wizard__field">
-					<label>{{ t('procest', 'Intervention type') }}</label>
-					<input v-model="interventie" type="text" class="enforcement-wizard__input">
+					<label for="enforcement-intervention-type">{{ t('procest', 'Intervention type') }}</label>
+					<input id="enforcement-intervention-type"
+						v-model="interventie"
+						type="text"
+						class="enforcement-wizard__input">
 				</div>
 
 				<div v-if="isDwangsom" class="enforcement-wizard__dwangsom-fields">
 					<div class="enforcement-wizard__field">
-						<label>{{ t('procest', 'Penalty per violation (EUR)') }}</label>
-						<input v-model.number="dwangsomBedrag"
+						<label for="enforcement-penalty-amount">{{ t('procest', 'Penalty per violation (EUR)') }}</label>
+						<input id="enforcement-penalty-amount"
+							v-model.number="dwangsomBedrag"
 							type="number"
 							class="enforcement-wizard__input"
 							min="0">
 					</div>
 					<div class="enforcement-wizard__field">
-						<label>{{ t('procest', 'Maximum penalty (EUR)') }}</label>
-						<input v-model.number="dwangsomMaximaal"
+						<label for="enforcement-penalty-maximum">{{ t('procest', 'Maximum penalty (EUR)') }}</label>
+						<input id="enforcement-penalty-maximum"
+							v-model.number="dwangsomMaximaal"
 							type="number"
 							class="enforcement-wizard__input"
 							min="0">
 					</div>
 					<div class="enforcement-wizard__field">
-						<label>{{ t('procest', 'Grace period (days)') }}</label>
-						<input v-model.number="begunstigingstermijn"
+						<label for="enforcement-grace-period">{{ t('procest', 'Grace period (days)') }}</label>
+						<input id="enforcement-grace-period"
+							v-model.number="begunstigingstermijn"
 							type="number"
 							class="enforcement-wizard__input"
 							min="1">
@@ -85,14 +91,20 @@
 
 				<div v-if="isBestuursdwang" class="enforcement-wizard__bestuursdwang-fields">
 					<div class="enforcement-wizard__field">
-						<label>{{ t('procest', 'Execution date') }}</label>
-						<input v-model="effectueringsDatum" type="date" class="enforcement-wizard__input">
+						<label for="enforcement-execution-date">{{ t('procest', 'Execution date') }}</label>
+						<input id="enforcement-execution-date"
+							v-model="effectueringsDatum"
+							type="date"
+							class="enforcement-wizard__input">
 					</div>
 				</div>
 
 				<div v-if="overrideReason || interventie !== suggestedIntervention" class="enforcement-wizard__field">
-					<label>{{ t('procest', 'Override reason (required if different from suggestion)') }}</label>
-					<textarea v-model="overrideReason" class="enforcement-wizard__textarea" rows="2" />
+					<label for="enforcement-override-reason">{{ t('procest', 'Override reason (required if different from suggestion)') }}</label>
+					<textarea id="enforcement-override-reason"
+						v-model="overrideReason"
+						class="enforcement-wizard__textarea"
+						rows="2" />
 				</div>
 			</div>
 
@@ -102,8 +114,9 @@
 				<p>{{ t('procest', 'A vooraankondiging letter will be generated and a zienswijze period will be set.') }}</p>
 
 				<div class="enforcement-wizard__field">
-					<label>{{ t('procest', 'Zienswijze period (days)') }}</label>
-					<input v-model.number="zienswijzetermijn"
+					<label for="enforcement-zienswijze-period">{{ t('procest', 'Zienswijze period (days)') }}</label>
+					<input id="enforcement-zienswijze-period"
+						v-model.number="zienswijzetermijn"
 						type="number"
 						class="enforcement-wizard__input"
 						min="1">

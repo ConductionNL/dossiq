@@ -28,8 +28,9 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Message (plain text only)') }}</label>
+				<label for="berichtenbox-compose-body">{{ t('procest', 'Message (plain text only)') }}</label>
 				<textarea
+					id="berichtenbox-compose-body"
 					v-model="form.body"
 					class="compose-dialog__body"
 					rows="8"

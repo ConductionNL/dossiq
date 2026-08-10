@@ -5,8 +5,9 @@
 		@closing="$emit('close')">
 		<div class="voorstel-create">
 			<div class="form-group">
-				<label>{{ t('procest', 'Onderwerp') }} *</label>
+				<label for="voorstel-create-onderwerp">{{ t('procest', 'Onderwerp') }} *</label>
 				<NcTextField
+					id="voorstel-create-onderwerp"
 					:model-value="form.onderwerp"
 					:error="!!errors.onderwerp"
 					:placeholder="t('procest', 'Subject of the proposal...')"
@@ -38,16 +39,18 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Portfolio holder') }}</label>
+				<label for="voorstel-create-portfolio-holder">{{ t('procest', 'Portfolio holder') }}</label>
 				<NcTextField
+					id="voorstel-create-portfolio-holder"
 					:model-value="form.portefeuillehouder"
 					:placeholder="t('procest', 'Alderman user ID')"
 					@update:model-value="v => form.portefeuillehouder = v" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Department') }}</label>
+				<label for="voorstel-create-department">{{ t('procest', 'Department') }}</label>
 				<NcTextField
+					id="voorstel-create-department"
 					:model-value="form.afdeling"
 					:placeholder="t('procest', 'Department')"
 					@update:model-value="v => form.afdeling = v" />

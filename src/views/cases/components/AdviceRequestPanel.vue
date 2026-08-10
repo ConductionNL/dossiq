@@ -36,25 +36,28 @@
 		<!-- New request form -->
 		<div v-if="showForm" class="advice-request__form">
 			<div class="form-group">
-				<label>{{ t('procest', 'Department / Organization') }} *</label>
+				<label for="advice-request-department">{{ t('procest', 'Department / Organization') }} *</label>
 				<NcTextField
+					id="advice-request-department"
 					:model-value="form.department"
 					:placeholder="t('procest', 'e.g., Brandweer, Welstandscommissie')"
 					@update:model-value="v => form.department = v" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Subject') }} *</label>
+				<label for="advice-request-subject">{{ t('procest', 'Subject') }} *</label>
 				<NcTextField
+					id="advice-request-subject"
 					:model-value="form.subject"
 					@update:model-value="v => form.subject = v" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Question') }}</label>
-				<textarea v-model="form.question" rows="3" />
+				<label for="advice-request-question">{{ t('procest', 'Question') }}</label>
+				<textarea id="advice-request-question" v-model="form.question" rows="3" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Deadline') }} *</label>
+				<label for="advice-request-deadline">{{ t('procest', 'Deadline') }} *</label>
 				<NcTextField
+					id="advice-request-deadline"
 					:model-value="form.deadline"
 					type="date"
 					@update:model-value="v => form.deadline = v" />

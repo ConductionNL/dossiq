@@ -66,6 +66,7 @@
 							<td>
 								<input
 									type="checkbox"
+									:aria-label="t('procest', 'Select redaction candidate {category}', { category: span.category })"
 									:checked="selections[index]"
 									:disabled="!isToggleable(span)"
 									@change="e => toggleSpan(index, e.target.checked)">

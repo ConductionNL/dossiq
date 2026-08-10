@@ -4,6 +4,7 @@
 	<div class="dossier-document-row">
 		<NcCheckboxRadioSwitch
 			:model-value="selected"
+			:aria-label="t('procest', 'Select document {title}', { title: document.titel })"
 			class="dossier-document-row__select"
 			@update:model-value="$emit('toggle-select', document)" />
 

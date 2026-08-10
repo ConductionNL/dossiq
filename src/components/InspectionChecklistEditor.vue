@@ -16,8 +16,9 @@
 		</div>
 
 		<div class="checklist-editor__field">
-			<label class="checklist-editor__label">{{ t('procest', 'Name') }}</label>
+			<label class="checklist-editor__label" for="checklist-editor-name">{{ t('procest', 'Name') }}</label>
 			<input
+				id="checklist-editor-name"
 				v-model="localChecklist.name"
 				type="text"
 				class="checklist-editor__input"
@@ -25,8 +26,9 @@
 		</div>
 
 		<div class="checklist-editor__field">
-			<label class="checklist-editor__label">{{ t('procest', 'Version') }}</label>
+			<label class="checklist-editor__label" for="checklist-editor-version">{{ t('procest', 'Version') }}</label>
 			<input
+				id="checklist-editor-version"
 				v-model.number="localChecklist.version"
 				type="number"
 				class="checklist-editor__input"
@@ -41,8 +43,9 @@
 		</div>
 
 		<div class="checklist-editor__field">
-			<label class="checklist-editor__label">{{ t('procest', 'Valid from') }}</label>
+			<label class="checklist-editor__label" for="checklist-editor-valid-from">{{ t('procest', 'Valid from') }}</label>
 			<input
+				id="checklist-editor-valid-from"
 				v-model="localChecklist.validFrom"
 				type="date"
 				class="checklist-editor__input">
@@ -65,6 +68,7 @@
 						v-model="item.question"
 						type="text"
 						class="checklist-editor__input checklist-editor__input--question"
+						:aria-label="t('procest', 'Question or instruction')"
 						:placeholder="t('procest', 'Question or instruction')">
 					<select v-model="item.type" class="checklist-editor__select">
 						<option value="boolean">
@@ -88,6 +92,7 @@
 						v-model.number="item.weight"
 						type="number"
 						class="checklist-editor__input checklist-editor__input--weight"
+						:aria-label="t('procest', 'Weight')"
 						:placeholder="t('procest', 'Weight')"
 						min="0"
 						max="100">

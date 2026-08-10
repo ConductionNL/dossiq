@@ -16,8 +16,9 @@
 			<div class="task-create-dialog__body">
 				<!-- Title -->
 				<div class="form-group">
-					<label>{{ t('procest', 'Title') }} *</label>
+					<label for="task-create-title">{{ t('procest', 'Title') }} *</label>
 					<NcTextField
+						id="task-create-title"
 						:model-value="form.title"
 						:placeholder="t('procest', 'Enter task title...')"
 						:error="!!errors.title"
@@ -29,8 +30,9 @@
 
 				<!-- Description -->
 				<div class="form-group">
-					<label>{{ t('procest', 'Description') }}</label>
+					<label for="task-create-description">{{ t('procest', 'Description') }}</label>
 					<textarea
+						id="task-create-description"
 						v-model="form.description"
 						:placeholder="t('procest', 'Optional description...')"
 						rows="3" />
@@ -48,8 +50,9 @@
 							:placeholder="t('procest', 'Select priority')" />
 					</div>
 					<div class="form-group">
-						<label>{{ t('procest', 'Due date') }}</label>
+						<label for="task-create-due-date">{{ t('procest', 'Due date') }}</label>
 						<NcTextField
+							id="task-create-due-date"
 							:model-value="form.dueDate || ''"
 							type="date"
 							:placeholder="t('procest', 'Select due date')"
@@ -59,8 +62,9 @@
 
 				<!-- Assignee -->
 				<div class="form-group">
-					<label>{{ t('procest', 'Assignee') }}</label>
+					<label for="task-create-assignee">{{ t('procest', 'Assignee') }}</label>
 					<NcTextField
+						id="task-create-assignee"
 						:model-value="form.assignee"
 						:placeholder="t('procest', 'Username (optional)')"
 						@update:model-value="v => form.assignee = v" />

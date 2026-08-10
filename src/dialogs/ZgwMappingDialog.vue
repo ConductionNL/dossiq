@@ -30,32 +30,36 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Property Mapping (outbound: English → Dutch)') }}</label>
+				<label for="zgw-mapping-property">{{ t('procest', 'Property Mapping (outbound: English → Dutch)') }}</label>
 				<textarea
+					id="zgw-mapping-property"
 					v-model="propertyMappingJson"
 					class="mapping-textarea"
 					rows="10" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Reverse Mapping (inbound: Dutch → English)') }}</label>
+				<label for="zgw-mapping-reverse">{{ t('procest', 'Reverse Mapping (inbound: Dutch → English)') }}</label>
 				<textarea
+					id="zgw-mapping-reverse"
 					v-model="reverseMappingJson"
 					class="mapping-textarea"
 					rows="10" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Value Mappings (enum translations)') }}</label>
+				<label for="zgw-mapping-value">{{ t('procest', 'Value Mappings (enum translations)') }}</label>
 				<textarea
+					id="zgw-mapping-value"
 					v-model="valueMappingJson"
 					class="mapping-textarea"
 					rows="6" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Query Parameter Mapping') }}</label>
+				<label for="zgw-mapping-query-param">{{ t('procest', 'Query Parameter Mapping') }}</label>
 				<textarea
+					id="zgw-mapping-query-param"
 					v-model="queryParamMappingJson"
 					class="mapping-textarea"
 					rows="6" />
