@@ -105,7 +105,7 @@
 							<input
 								v-model="voorwaarde.description"
 								class="external-consultation-response__condition-input"
-								:aria-label="t('procest', 'Description condition {n}', { n: idx + 1 })"
+								:aria-label="t('procest', 'Condition description {n}', { n: idx + 1 })"
 								:placeholder="t('procest', 'Condition description')"
 								type="text">
 							<NcSelect
