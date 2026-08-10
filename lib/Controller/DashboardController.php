@@ -47,6 +47,7 @@ use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDownloadResponse;
+use OCP\AppFramework\Http\EmptyContentSecurityPolicy;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 
@@ -127,6 +128,19 @@ class DashboardController extends Controller
      * no-CSRF because the worker must register before the user is interactive
      * and runs without the SPA's request context.
      *
+     * ⚠️ THE CSP ON THIS RESPONSE IS LOAD-BEARING. A Service Worker inherits
+     * the Content-Security-Policy of its OWN script response, not the one on
+     * the page that registered it. Nextcloud's default for a controller
+     * response is an EmptyContentSecurityPolicy — `default-src 'none'` with no
+     * `connect-src` — under which EVERY `fetch()` the worker makes is blocked
+     * and rejects with `TypeError: Failed to fetch`. Measured on a Nextcloud
+     * 32 instance: with the default policy, `fetch(request)`,
+     * `fetch(request.url)` and `fetch(url, {mode: 'same-origin'})` all threw
+     * inside the worker, so both strategies in `public/service-worker.js`
+     * (`cacheFirst` / `networkFirst`) could never populate a cache and always
+     * fell through to `Response.error()`. Any request the worker claimed with
+     * `respondWith()` was therefore guaranteed to fail in the page.
+     *
      * @return DataDownloadResponse The service-worker JavaScript.
      *
      * @spec openspec/specs/mobiel-inspectie-offline/spec.md#requirement-offline-daily-planning-synchronization
@@ -143,6 +157,15 @@ class DashboardController extends Controller
 
         $response = new DataDownloadResponse($body, 'service-worker.js', 'application/javascript', $status);
         $response->addHeader('Service-Worker-Allowed', '/');
+
+        $csp = new EmptyContentSecurityPolicy();
+        // The offline sync strategy talks back to this Nextcloud.
+        $csp->addAllowedConnectDomain('\'self\'');
+        // The tile strategy talks to the BRT achtergrondkaart WMTS host, which
+        // is the only third-party host public/service-worker.js will fetch.
+        $csp->addAllowedConnectDomain('https://service.pdok.nl');
+        $response->setContentSecurityPolicy($csp);
+
         return $response;
     }//end serviceWorker()
 

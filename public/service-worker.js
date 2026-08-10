@@ -18,6 +18,16 @@
  * OpenRegister requests, and the network-first fallback turned that into a
  * `Response.error()` (surfacing in the page as `TypeError: Failed to fetch`).
  *
+ * The reason a re-issued `fetch()` throws is now measured rather than assumed:
+ * a Service Worker inherits the CSP of its OWN script response, and Nextcloud
+ * served `/apps/procest/service-worker.js` with `default-src 'none'` and no
+ * `connect-src`, so EVERY fetch the worker made was blocked. Every request the
+ * worker claimed with `respondWith()` therefore became a network error; the
+ * worker could only ever break a request, never serve one. That is fixed in
+ * `DashboardController::serviceWorker()`, which now sends a `connect-src` the
+ * two strategies below can actually use — but the rule above stands: claim
+ * nothing this feature does not own.
+ *
  * Caching strategy (Workbox-style, hand-rolled to avoid a build-time Workbox
  * dependency in this app's webpack pipeline):
  *
@@ -44,6 +54,41 @@
 const CACHE_VERSION = 'procest-mio-v2'
 const DATA_CACHE = `${CACHE_VERSION}-data`
 const TILE_CACHE = `${CACHE_VERSION}-tiles`
+
+/**
+ * The third-party hosts this app loads map tiles from.
+ *
+ * `service.pdok.nl` serves the BRT achtergrondkaart WMTS layer used by
+ * `src/components/map/LocationPicker.vue`. It is deliberately an exact-host
+ * allow-list rather than a substring test — see `isMapTileRequest()`.
+ */
+const TILE_HOSTS = new Set(['service.pdok.nl'])
+
+/**
+ * Is this request one of the map tiles the offline layer owns?
+ *
+ * Tiles are ALWAYS third-party, so a request back to this Nextcloud is never a
+ * tile. That guard is the whole point of this function.
+ *
+ * ⚠️ REGRESSION THIS REPLACES. The predicate used to be
+ * `/(brtachtergrondkaart|wmts|pdok|service\.pdok\.nl)/i.test(url.host + url.pathname)`
+ * — a substring test over the SAME-ORIGIN path as well as the host. It
+ * therefore matched this app's own address lookups, which since the
+ * migrate-pdok-to-openconnector change live at
+ * `/index.php/apps/openconnector/api/pdok/{suggest,lookup,free,reverse}`, on
+ * the literal `pdok`. Every one of them was answered cache-first out of the
+ * TILE cache, and since a worker cannot reach the network under its script's
+ * `default-src 'none'` CSP (see DashboardController::serviceWorker()) the
+ * caller got `TypeError: Failed to fetch` instead of the 503/404 degradation
+ * `src/services/pdokService.js` implements — which rethrows on an error with
+ * no HTTP status, so the address field broke outright.
+ *
+ * @param {URL} url The parsed request URL.
+ * @return {boolean} True when the request is a third-party map tile.
+ */
+function isMapTileRequest(url) {
+	return url.origin !== self.location.origin && TILE_HOSTS.has(url.hostname)
+}
 
 self.addEventListener('install', (event) => {
 	event.waitUntil(self.skipWaiting())
@@ -115,8 +160,9 @@ self.addEventListener('fetch', (event) => {
 		return
 	}
 
-	// PDOK map tiles → cache-first.
-	if (/(brtachtergrondkaart|wmts|pdok|service\.pdok\.nl)/i.test(url.host + url.pathname)) {
+	// PDOK map tiles → cache-first. Third-party tile hosts ONLY: a request back
+	// to this Nextcloud is never a tile, whatever its path happens to spell.
+	if (isMapTileRequest(url)) {
 		event.respondWith(cacheFirst(request, TILE_CACHE))
 		return
 	}
