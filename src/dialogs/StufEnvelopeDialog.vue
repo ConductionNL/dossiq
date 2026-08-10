@@ -87,6 +87,7 @@ export default {
 .stuf-audit-log__details h4 {
 	margin: 16px 0 4px;
 }
+
 .stuf-audit-log__pre {
 	background: var(--color-background-dark);
 	padding: 8px;
@@ -97,10 +98,12 @@ export default {
 	white-space: pre-wrap;
 	word-break: break-all;
 }
+
 .stuf-audit-log__retries {
 	width: 100%;
 	border-collapse: collapse;
 }
+
 .stuf-audit-log__retries th,
 .stuf-audit-log__retries td {
 	padding: 4px 8px;

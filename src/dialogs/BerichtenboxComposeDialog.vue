@@ -158,5 +158,6 @@ export default {
 }
 
 .form-group { margin-bottom: 12px; }
+
 .form-error { color: var(--color-error); font-size: 12px; margin-top: 4px; }
 </style>
