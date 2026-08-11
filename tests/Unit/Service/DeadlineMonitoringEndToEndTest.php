@@ -36,7 +36,7 @@ use OCA\Procest\Service\DwangsomCalculationService;
 use OCA\Procest\Service\DwangsomUitbetalingService;
 use OCA\Procest\Service\IngebrekestellingService;
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnDailyScanService;
+use OCA\Procest\Service\DeadlineDailyScanService;
 use OCA\Procest\Service\DeadlineEscalationService;
 use OCA\Procest\Service\DeadlineExtensionService;
 use OCA\Procest\Service\TermijnNotificationService;
@@ -48,7 +48,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Drives all 5 termijnbewaking E2E scenarios against the chain.
  */
-class TermijnbewakingEndToEndTest extends TestCase
+class DeadlineMonitoringEndToEndTest extends TestCase
 {
     private FakeTermijnStore $objects;
     private SettingsService $settings;
@@ -60,7 +60,7 @@ class TermijnbewakingEndToEndTest extends TestCase
     private DwangsomUitbetalingService $uitService;
     private DwangsomBezwaarService $bezService;
     private TermijnNotificationService $notifService;
-    private TermijnDailyScanService $scanService;
+    private DeadlineDailyScanService $scanService;
 
     protected function setUp(): void
     {
@@ -96,7 +96,7 @@ class TermijnbewakingEndToEndTest extends TestCase
             new BerichtenboxRoutingService($logger),
             $logger
         );
-        $this->scanService    = new TermijnDailyScanService(
+        $this->scanService    = new DeadlineDailyScanService(
             $settings,
             $this->termijnService,
             new DeadlineEscalationService($this->termijnService, $logger),

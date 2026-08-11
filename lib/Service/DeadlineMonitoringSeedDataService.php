@@ -36,7 +36,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Seeds three demo TermijnDefinitie rows into OpenRegister.
  */
-class TermijnbewakingSeedDataService
+class DeadlineMonitoringSeedDataService
 {
     use SearchesObjects;
 

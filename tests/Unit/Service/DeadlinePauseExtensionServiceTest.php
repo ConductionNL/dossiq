@@ -40,7 +40,7 @@ use RuntimeException;
  *
  * @uses \OCA\Procest\Service\Substitution\SubstitutedWorkResolver
  * @uses \OCA\Procest\Service\Support\SearchesObjects
- * @uses \OCA\Procest\Service\TermijnDailyScanService
+ * @uses \OCA\Procest\Service\DeadlineDailyScanService
  * @uses \OCA\Procest\Service\TermijnService
  */
 class DeadlinePauseExtensionServiceTest extends TestCase
