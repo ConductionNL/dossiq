@@ -325,8 +325,12 @@ class RenameDutchDeadlineColumns implements IRepairStep
                 continue;
             }
 
-            // Everything after the marker must be the numeric schema id, so
-            // register 17 cannot match register 170's tables.
+            // Everything after the marker must be the numeric schema id, so a
+            // derived table (…_17_85_backup) or a non-shard (…_17_audit) is not
+            // migrated. Register 17 vs 170 is NOT what this guards: the marker
+            // already ends in '_', so `openregister_table_17_` is simply not a
+            // substring of `openregister_table_170_85`. An earlier revision of
+            // this comment claimed otherwise; the test proved it false.
             if (ctype_digit(substr($table, ($offset + strlen($marker)))) === true) {
                 return true;
             }
