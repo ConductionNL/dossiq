@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TermijnDailyScanService.
+ * Procest DeadlineDailyScanService.
  *
  * Server-authoritative service that performs the daily sweep over all
  * active TermijnInstance rows: computes days-to-deadline, buckets into
@@ -45,7 +45,7 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/termijn-escalation/spec.md
  */
-class TermijnDailyScanService
+class DeadlineDailyScanService
 {
     use SearchesObjects;
 
