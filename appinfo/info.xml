@@ -132,6 +132,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
             <step>OCA\Procest\Repair\VthSeedDataRepairStep</step>
             <step>OCA\Procest\Repair\SeedDeadlineMonitoringData</step>
+            <!--
+                Must run AFTER the register sync that adds the English columns, so it
+                can tell the rename case from the back-fill case. Matches BOTH the
+                procest and procest-default registers, which each hold live rows.
+                Idempotent, non-destructive, and refuses ambiguous renames.
+            -->
+            <step>OCA\Procest\Repair\RenameDutchDeadlineColumns</step>
             <step>OCA\Procest\Repair\MigrateArchivalToOpenRegister</step>
             <step>OCA\Procest\Repair\SeedKccWerkplekData</step>
             <step>OCA\Procest\Repair\BackfillInformatieobjectMetadata</step>
