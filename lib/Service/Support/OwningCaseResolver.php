@@ -51,7 +51,6 @@ use Throwable;
  */
 class OwningCaseResolver
 {
-
     /**
      * Constructor.
      *

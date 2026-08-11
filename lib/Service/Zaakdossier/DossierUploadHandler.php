@@ -56,7 +56,8 @@ class DossierUploadHandler
     /**
      * Constructor.
      *
-     * @param ZaakdossierService $dossierService The dossier orchestrator.
+     * @param ZaakdossierService $dossierService  The dossier orchestrator.
+     * @param CaseAccessGuard    $caseAccessGuard Per-case authorization (fails closed).
      *
      * @return void
      */

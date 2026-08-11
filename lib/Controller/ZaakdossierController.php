@@ -53,11 +53,11 @@ class ZaakdossierController extends Controller
     /**
      * Constructor.
      *
-     * @param string                 $appName         The app name.
-     * @param IRequest               $request         The request.
-     * @param ZaakdossierService     $dossierService  The dossier orchestrator.
-     * @param InformatieobjectReader $reader          The clearance-gated document reader.
-     * @param DossierUploadHandler   $uploadHandler   The upload decoding/screening collaborator.
+     * @param string                 $appName        The app name.
+     * @param IRequest               $request        The request.
+     * @param ZaakdossierService     $dossierService The dossier orchestrator.
+     * @param InformatieobjectReader $reader         The clearance-gated document reader.
+     * @param DossierUploadHandler   $uploadHandler  The upload decoding/screening collaborator.
      * @param IUserSession           $userSession    The user session.
      */
     public function __construct(

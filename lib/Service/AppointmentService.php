@@ -56,9 +56,9 @@ class AppointmentService
      * @param SettingsService    $settingsService The settings service.
      * @param IAppManager        $appManager      The Nextcloud app manager.
      * @param IClientService     $clientService   The HTTP client service.
-     * @param ContainerInterface  $container      The DI container.
-     * @param LoggerInterface     $logger         The logger.
-     * @param OwningCaseResolver  $owningCase     Resolves an appointment's owning case.
+     * @param ContainerInterface $container       The DI container.
+     * @param LoggerInterface    $logger          The logger.
+     * @param OwningCaseResolver $owningCase      Resolves an appointment's owning case.
      */
     public function __construct(
         private SettingsService $settingsService,
