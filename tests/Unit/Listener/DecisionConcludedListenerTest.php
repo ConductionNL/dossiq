@@ -27,6 +27,7 @@ namespace OCA\Procest\Tests\Unit\Listener;
 
 use OCA\Decidesk\Event\DecisionConcludedEvent;
 use OCA\Procest\Listener\DecisionConcludedListener;
+use OCA\Procest\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Procest\Service\BesluitMaterialisationService;
 use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
@@ -81,7 +82,12 @@ class DecisionConcludedListenerTest extends TestCase
                     }
                     );
 
-        $listener = new DecisionConcludedListener($settings, $materialiser, $this->createMock(LoggerInterface::class));
+        $listener = new DecisionConcludedListener(
+            $settings,
+            $materialiser,
+            $this->createMock(AdvisoryCommitteeService::class),
+            $this->createMock(LoggerInterface::class)
+        );
 
         $listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
     }//end testMaterialisesBesluitForProcestSourceApp()
@@ -99,7 +105,12 @@ class DecisionConcludedListenerTest extends TestCase
         $materialiser = $this->createMock(BesluitMaterialisationService::class);
         $materialiser->expects($this->never())->method('materialiseFromConcludedEvent');
 
-        $listener = new DecisionConcludedListener($settings, $materialiser, $this->createMock(LoggerInterface::class));
+        $listener = new DecisionConcludedListener(
+            $settings,
+            $materialiser,
+            $this->createMock(AdvisoryCommitteeService::class),
+            $this->createMock(LoggerInterface::class)
+        );
 
         $listener->handle($this->event(sourceApp: 'docudesk', status: 'approved'));
     }//end testIgnoresOtherSourceApp()
@@ -117,10 +128,116 @@ class DecisionConcludedListenerTest extends TestCase
         $materialiser = $this->createMock(BesluitMaterialisationService::class);
         $materialiser->expects($this->never())->method('materialiseFromConcludedEvent');
 
-        $listener = new DecisionConcludedListener($settings, $materialiser, $this->createMock(LoggerInterface::class));
+        $listener = new DecisionConcludedListener(
+            $settings,
+            $materialiser,
+            $this->createMock(AdvisoryCommitteeService::class),
+            $this->createMock(LoggerInterface::class)
+        );
 
         $listener->handle($this->event(sourceApp: 'procest', status: 'pending'));
     }//end testIgnoresNonTerminalStatus()
+
+    /**
+     * A concluded besluit that departs from the BAC advice mirrors the
+     * deviation onto the advice request's audit trail (Awb art. 7:13 lid 7).
+     *
+     * @return void
+     */
+    public function testRecordsCouncilDeviationWhenDecisionDepartsFromAdvice(): void
+    {
+        $bac = $this->createMock(AdvisoryCommitteeService::class);
+
+        $listener = $this->listenerForDecision(
+            record: [
+                'decisionRef'        => 'dec-1',
+                'case'               => 'case-9',
+                'besluitRef'         => 'bes-2',
+                'advisoryOpinion'    => 'bac-req-7',
+                'followsAdvice'      => false,
+                'deviationRationale' => 'Commissie miste de nieuwe feiten',
+            ],
+            bac: $bac
+        );
+
+        $bac->expects($this->once())
+            ->method('recordCouncilDeviation')
+            ->with('bac-req-7', 'bes-2', 'Commissie miste de nieuwe feiten');
+
+        $listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
+    }//end testRecordsCouncilDeviationWhenDecisionDepartsFromAdvice()
+
+    /**
+     * A besluit that follows the committee advice records no deviation.
+     *
+     * @return void
+     */
+    public function testRecordsNoDeviationWhenDecisionFollowsAdvice(): void
+    {
+        $bac = $this->createMock(AdvisoryCommitteeService::class);
+
+        $listener = $this->listenerForDecision(
+            record: [
+                'decisionRef'     => 'dec-1',
+                'case'            => 'case-9',
+                'besluitRef'      => 'bes-2',
+                'advisoryOpinion' => 'bac-req-7',
+                'followsAdvice'   => true,
+            ],
+            bac: $bac
+        );
+
+        $bac->expects($this->never())->method('recordCouncilDeviation');
+
+        $listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
+    }//end testRecordsNoDeviationWhenDecisionFollowsAdvice()
+
+    /**
+     * A besluit that was never referred to a committee records no deviation.
+     *
+     * @return void
+     */
+    public function testRecordsNoDeviationWhenNoCommitteeWasInvolved(): void
+    {
+        $bac = $this->createMock(AdvisoryCommitteeService::class);
+
+        $listener = $this->listenerForDecision(
+            record: [
+                'decisionRef' => 'dec-1',
+                'case'        => 'case-9',
+                'besluitRef'  => 'bes-2',
+            ],
+            bac: $bac
+        );
+
+        $bac->expects($this->never())->method('recordCouncilDeviation');
+
+        $listener->handle($this->event(sourceApp: 'procest', status: 'approved'));
+    }//end testRecordsNoDeviationWhenNoCommitteeWasInvolved()
+
+    /**
+     * Build a listener whose decisionRef lookup resolves to $record.
+     *
+     * @param array<string,mixed>      $record The bezwaarDecision record the search returns.
+     * @param AdvisoryCommitteeService $bac    The BAC service mock the listener writes through.
+     *
+     * @return DecisionConcludedListener
+     */
+    private function listenerForDecision(array $record, AdvisoryCommitteeService $bac): DecisionConcludedListener
+    {
+        $objectService = $this->createMock(ConcludedObjectServiceStub::class);
+        $objectService->method('searchObjectsBySlug')->willReturn([$record]);
+
+        $settings = $this->createMock(SettingsService::class);
+        $settings->method('getObjectService')->willReturn($objectService);
+
+        return new DecisionConcludedListener(
+            $settings,
+            $this->createMock(BesluitMaterialisationService::class),
+            $bac,
+            $this->createMock(LoggerInterface::class)
+        );
+    }//end listenerForDecision()
 
     /**
      * Build a DecisionConcludedEvent fixture.

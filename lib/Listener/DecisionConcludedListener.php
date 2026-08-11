@@ -39,6 +39,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Listener;
 
+use OCA\Procest\Service\Bezwaar\AdvisoryCommitteeService;
 use OCA\Procest\Service\BesluitMaterialisationService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\Support\SearchesObjects;
@@ -74,11 +75,13 @@ class DecisionConcludedListener implements IEventListener
      *
      * @param SettingsService               $settingsService     Schema/register/ObjectService bridge.
      * @param BesluitMaterialisationService $besluitMaterialiser ZGW Besluit projection from the outcome.
+     * @param AdvisoryCommitteeService      $bacService          BAC advice-request audit writer (Awb art. 7:13 lid 7).
      * @param LoggerInterface               $logger              Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly BesluitMaterialisationService $besluitMaterialiser,
+        private readonly AdvisoryCommitteeService $bacService,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -126,7 +129,7 @@ class DecisionConcludedListener implements IEventListener
             // Locate the procest domain record carrying this decisionRef so we
             // can resolve the owning case and any existing besluitRef. Fall back
             // to the externalReference / subjectId as the case identifier.
-            [$caseId, $besluitId] = $this->resolveCaseAndBesluit(
+            [$caseId, $besluitId, $decisionRecord] = $this->resolveCaseAndBesluit(
                 objectService: $objectService,
                 register: $register,
                 schema: $schema,
@@ -153,6 +156,17 @@ class DecisionConcludedListener implements IEventListener
                 'Procest DecisionConcludedListener: materialised ZGW Besluit from decidesk outcome',
                 ['decisionId' => $decisionId, 'caseId' => $caseId, 'status' => $status]
             );
+
+            // Awb art. 7:13 lid 7: a besluit op bezwaar that departs from the
+            // BAC advice must carry a documented motivation. The besluit is
+            // FINAL at this point, so this is where the deviation becomes a
+            // fact worth mirroring onto the advice request's own append-only
+            // audit trail.
+            $this->recordCouncilDeviation(
+                decision: $decisionRecord,
+                besluitId: $besluitId,
+                subjectId: $subjectId
+            );
         } catch (Throwable $e) {
             // Never block event delivery on our own derivation failure; never
             // author a besluit on a failed outcome.
@@ -173,7 +187,7 @@ class DecisionConcludedListener implements IEventListener
      * @param string $subjectId     The subject id from the event.
      * @param string $externalRef   The external reference (often the case/subject UUID).
      *
-     * @return array{0:string,1:string} [caseId, besluitId].
+     * @return array{0:string,1:string,2:array<string,mixed>|null} [caseId, besluitId, decisionRecord].
      */
     private function resolveCaseAndBesluit(
         object $objectService,
@@ -203,7 +217,7 @@ class DecisionConcludedListener implements IEventListener
         if (is_array($record) === true) {
             $caseId    = (string) ($record['case'] ?? $record['caseRef'] ?? $externalRef);
             $besluitId = (string) ($record['besluitRef'] ?? '');
-            return [$caseId, $besluitId];
+            return [$caseId, $besluitId, $record];
         }
 
         // No record matched: use the external reference (then subjectId) as the
@@ -213,8 +227,68 @@ class DecisionConcludedListener implements IEventListener
             $caseId = $externalRef;
         }
 
-        return [$caseId, ''];
+        return [$caseId, '', null];
     }//end resolveCaseAndBesluit()
+
+    /**
+     * Mirror an Awb art. 7:13 lid 7 council deviation onto the linked BAC
+     * advice request.
+     *
+     * `DecisionValidator::assertPublishable()` already REFUSES to raise a
+     * bezwaarDecision that sets `advisoryOpinion`, clears `followsAdvice`
+     * and leaves `deviationRationale` empty, so by the time decidesk
+     * concludes, a deviating decision is guaranteed to carry its motivation.
+     * This method only records that fact on the advice request's own
+     * append-only audit trail so the beroep dossier export can demonstrate
+     * compliance from either side of the referral.
+     *
+     * A decision that follows the advice, or that was never referred to a
+     * committee, is a no-op. The write itself is swallow-and-log inside
+     * {@see AdvisoryCommitteeService::recordCouncilDeviation()}, so a
+     * failure here never blocks besluit materialisation.
+     *
+     * @param array<string,mixed>|null $decision  The bezwaarDecision record, when one matched.
+     * @param string                   $besluitId The materialised ZGW Besluit ref, when known.
+     * @param string                   $subjectId The bezwaarDecision UUID from the event.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+     */
+    private function recordCouncilDeviation(
+        ?array $decision,
+        string $besluitId,
+        string $subjectId,
+    ): void {
+        if ($decision === null) {
+            return;
+        }
+
+        $requestId = (string) ($decision['advisoryOpinion'] ?? '');
+        if ($requestId === '') {
+            // Never referred to a committee — there is no advice to deviate from.
+            return;
+        }
+
+        if ((bool) ($decision['followsAdvice'] ?? true) === true) {
+            return;
+        }
+
+        $rationale = (string) ($decision['deviationRationale'] ?? '');
+
+        // Prefer the materialised ZGW Besluit; fall back to the bezwaarDecision
+        // itself, which IS the besluit op bezwaar when no ZGW ref is known yet.
+        $reference = $besluitId;
+        if ($reference === '') {
+            $reference = (string) ($decision['@self']['id'] ?? ($decision['id'] ?? $subjectId));
+        }
+
+        $this->bacService->recordCouncilDeviation(
+            requestId: $requestId,
+            besluitId: $reference,
+            motivatieRef: $rationale
+        );
+    }//end recordCouncilDeviation()
 
     /**
      * Read a duck-typed getter off the decidesk event as a string.
