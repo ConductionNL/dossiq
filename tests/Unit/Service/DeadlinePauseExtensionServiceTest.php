@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for TermijnPauseService + TermijnExtensionService.
+ * Unit tests for DeadlinePauseService + DeadlineExtensionService.
  *
  * Exercises AWB 4:5/4:15 pause + resume math and AWB 4:14 verlenging
  * (ceiling + supervisor override) against an in-memory store.
@@ -27,28 +27,28 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnExtensionService;
-use OCA\Procest\Service\TermijnPauseService;
+use OCA\Procest\Service\DeadlineExtensionService;
+use OCA\Procest\Service\DeadlinePauseService;
 use OCA\Procest\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\TermijnPauseService
- * @covers \OCA\Procest\Service\TermijnExtensionService
+ * @covers \OCA\Procest\Service\DeadlinePauseService
+ * @covers \OCA\Procest\Service\DeadlineExtensionService
  *
  * @uses \OCA\Procest\Service\Substitution\SubstitutedWorkResolver
  * @uses \OCA\Procest\Service\Support\SearchesObjects
  * @uses \OCA\Procest\Service\TermijnDailyScanService
  * @uses \OCA\Procest\Service\TermijnService
  */
-class TermijnPauseExtensionServiceTest extends TestCase
+class DeadlinePauseExtensionServiceTest extends TestCase
 {
     private FakeTermijnStore $objects;
     private TermijnService $termijnService;
-    private TermijnPauseService $pauseService;
-    private TermijnExtensionService $extService;
+    private DeadlinePauseService $pauseService;
+    private DeadlineExtensionService $extService;
 
     protected function setUp(): void
     {
@@ -69,8 +69,8 @@ class TermijnPauseExtensionServiceTest extends TestCase
 
         $logger = $this->createMock(LoggerInterface::class);
         $this->termijnService = new TermijnService($settings, $logger);
-        $this->pauseService   = new TermijnPauseService($this->termijnService);
-        $this->extService     = new TermijnExtensionService($this->termijnService);
+        $this->pauseService   = new DeadlinePauseService($this->termijnService);
+        $this->extService     = new DeadlineExtensionService($this->termijnService);
 
         // Seed an Omgevingsvergunning definition (max 1 extension).
         $this->objects->saveObject('procest', 'termijnDefinitie', [

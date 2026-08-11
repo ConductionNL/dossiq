@@ -37,10 +37,10 @@ use OCA\Procest\Service\DwangsomUitbetalingService;
 use OCA\Procest\Service\IngebrekestellingService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\TermijnDailyScanService;
-use OCA\Procest\Service\TermijnEscalationService;
-use OCA\Procest\Service\TermijnExtensionService;
+use OCA\Procest\Service\DeadlineEscalationService;
+use OCA\Procest\Service\DeadlineExtensionService;
 use OCA\Procest\Service\TermijnNotificationService;
-use OCA\Procest\Service\TermijnPauseService;
+use OCA\Procest\Service\DeadlinePauseService;
 use OCA\Procest\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -53,8 +53,8 @@ class TermijnbewakingEndToEndTest extends TestCase
     private FakeTermijnStore $objects;
     private SettingsService $settings;
     private TermijnService $termijnService;
-    private TermijnPauseService $pauseService;
-    private TermijnExtensionService $extService;
+    private DeadlinePauseService $pauseService;
+    private DeadlineExtensionService $extService;
     private IngebrekestellingService $ingService;
     private DwangsomCalculationService $calcService;
     private DwangsomUitbetalingService $uitService;
@@ -85,8 +85,8 @@ class TermijnbewakingEndToEndTest extends TestCase
 
         $logger = $this->createMock(LoggerInterface::class);
         $this->termijnService = new TermijnService($settings, $logger);
-        $this->pauseService   = new TermijnPauseService($this->termijnService);
-        $this->extService     = new TermijnExtensionService($this->termijnService);
+        $this->pauseService   = new DeadlinePauseService($this->termijnService);
+        $this->extService     = new DeadlineExtensionService($this->termijnService);
         $this->ingService     = new IngebrekestellingService($settings, $this->termijnService, $logger);
         $this->calcService    = new DwangsomCalculationService($settings, $logger);
         $this->uitService     = new DwangsomUitbetalingService($settings);
@@ -99,7 +99,7 @@ class TermijnbewakingEndToEndTest extends TestCase
         $this->scanService    = new TermijnDailyScanService(
             $settings,
             $this->termijnService,
-            new TermijnEscalationService($this->termijnService, $logger),
+            new DeadlineEscalationService($this->termijnService, $logger),
             $logger,
             $this->calcService
         );

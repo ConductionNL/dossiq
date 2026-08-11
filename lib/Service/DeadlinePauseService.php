@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TermijnPauseService.
+ * Procest DeadlinePauseService.
  *
  * AWB 4:5 / 4:15 hersteltermijn pause + resume on a TermijnInstance.
  * Pausing extends einddatumActueel by the requested duration in days and
@@ -36,7 +36,7 @@ use RuntimeException;
 /**
  * AWB 4:5 / 4:15 pause + resume on a TermijnInstance.
  */
-class TermijnPauseService
+class DeadlinePauseService
 {
     /**
      * Constructor.
