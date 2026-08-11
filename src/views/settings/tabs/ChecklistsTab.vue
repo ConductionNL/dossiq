@@ -152,6 +152,13 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * Load the checklist collection for the admin list.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/inspection-checklists/spec.md#inspection-checklist-admin-ui
+		 */
 		async loadChecklists() {
 			this.loading = true
 			try {
@@ -178,11 +185,28 @@ export default {
 			this.editing = true
 		},
 
+		/**
+		 * Close the checklist editor and drop the working copy.
+		 *
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/inspection-checklists/spec.md#inspection-checklist-admin-ui
+		 */
 		closeEditor() {
 			this.editing = false
 			this.editingChecklist = null
 		},
 
+		/**
+		 * Create or update a checklist, then reload the list.
+		 *
+		 * @param {object} checklist The checklist being saved; an `id` selects
+		 *                           update (PUT) over create (POST).
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/inspection-checklists/spec.md#inspection-checklist-admin-ui
+		 */
 		async saveChecklist(checklist) {
 			this.saving = true
 			try {

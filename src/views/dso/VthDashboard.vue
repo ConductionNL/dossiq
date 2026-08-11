@@ -1,7 +1,12 @@
 <!--
   SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl>
   SPDX-License-Identifier: EUPL-1.2
-  @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+  @spec openspec/specs/dso-omgevingsloket/spec.md
+
+  NOTE: this used to read `@spec openspec/changes/dso-omgevingsloket/tasks.md#T07`.
+  That change directory does not exist — the whole path was dangling, not just the
+  `#T07` fragment — and a dangling `@spec` anchor is accepted silently, so it read
+  as traceability while pointing at nothing. Repointed at the canonical spec.
 -->
 <template>
 	<div class="vth-dashboard">
@@ -161,6 +166,19 @@ export default {
 	},
 	methods: {
 		t,
+		/**
+		 * Load the omgevingsvergunning list for the dashboard, applying the
+		 * active status / procedureType / gemeenteCode / activiteitgroep filters.
+		 *
+		 * Anchored at the canonical DSO spec FILE rather than a requirement:
+		 * no single requirement covers this dashboard's combined filter set.
+		 * REQ-DSO-010 covers the gemeenteCode/location filter only, and citing
+		 * it here would overstate what the spec says about the rest.
+		 *
+		 * @return {Promise<void>}
+		 *
+		 * @spec openspec/specs/dso-omgevingsloket/spec.md
+		 */
 		async loadCases() {
 			this.loading = true
 			this.error = null
