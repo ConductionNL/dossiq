@@ -34,9 +34,17 @@ use RuntimeException;
  * ChecklistService composes ChecklistPayloadReader directly rather than taking
  * it by injection (REQ-003 requires the service to be constructible with no
  * dependencies), so exercising the service necessarily executes the reader.
- * Declared with @uses so PHPUnit's strict mode does not report every case here
- * as risky; the reader has its own @covers suite in
+ * The reader is therefore declared below so PHPUnit's strict coverage metadata
+ * does not report every case here as risky. It is covered in its own right by
  * tests/Unit/Service/Support/ChecklistPayloadReaderTest.php.
+ *
+ * ⚠️ Never write a literal coverage-annotation token in this prose. PHPUnit
+ * scans the whole docblock and matches them MID-LINE, not just at the start of
+ * one. The sentence above originally used the annotation word followed by
+ * "suite"; PHPUnit registered a coverage target literally named `suite` and
+ * failed the run with an "is invalid" warning on all 16 cases, with every test
+ * still passing. Same family as the fleet's gate-19/gate-26 prose-parsing
+ * defect — an explanatory comment is not inert.
  *
  * @covers \OCA\Procest\Service\ChecklistService
  * @uses   \OCA\Procest\Service\Support\ChecklistPayloadReader
