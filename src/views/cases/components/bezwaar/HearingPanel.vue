@@ -348,28 +348,34 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 }
+
 .hearing-panel__details {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 12px;
 }
+
 .hearing-detail {
 	display: flex;
 	flex-direction: column;
 }
+
 .hearing-detail__label {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 }
+
 .hearing-panel__actions {
 	display: flex;
 	gap: 8px;
 }
+
 .hearing-panel__minutes {
 	background: var(--color-background-dark);
 	border-radius: var(--border-radius-large);
 	padding: 12px;
 }
+
 .dialog-overlay {
 	position: fixed;
 	top: 0;
@@ -382,6 +388,7 @@ export default {
 	justify-content: center;
 	z-index: 10000;
 }
+
 .dialog-card {
 	background: var(--color-main-background);
 	border-radius: var(--border-radius-large);
@@ -389,18 +396,21 @@ export default {
 	width: 480px;
 	max-width: 90vw;
 }
+
 .dialog-card__actions {
 	display: flex;
 	justify-content: flex-end;
 	gap: 8px;
 	margin-top: 16px;
 }
+
 .form-group {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
 	margin-bottom: 12px;
 }
+
 textarea {
 	width: 100%;
 	padding: 8px;

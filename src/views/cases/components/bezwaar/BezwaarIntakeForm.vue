@@ -287,52 +287,63 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 }
+
 .form-group {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
 }
+
 .form-row {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 16px;
 }
+
 .form-error {
 	color: var(--color-error);
 	font-size: 12px;
 	margin: 0;
 }
+
 .bezwaar-intake-form__warning,
 .bezwaar-intake-form__info {
 	margin: 8px 0;
 }
+
 .bezwaar-intake-form__deadlines {
 	background: var(--color-background-dark);
 	border-radius: var(--border-radius-large);
 	padding: 12px;
 }
+
 .deadline-grid {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
 	gap: 12px;
 	margin-top: 8px;
 }
+
 .deadline-item {
 	display: flex;
 	flex-direction: column;
 }
+
 .deadline-label {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 }
+
 .deadline-value {
 	font-weight: bold;
 }
+
 .bezwaar-intake-form__actions {
 	display: flex;
 	justify-content: flex-end;
 	margin-top: 8px;
 }
+
 textarea {
 	width: 100%;
 	padding: 8px;

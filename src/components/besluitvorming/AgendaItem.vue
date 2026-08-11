@@ -58,20 +58,25 @@ export default {
 	margin-bottom: 6px;
 	background: var(--color-main-background);
 }
+
 .agenda-item--bespreekstuk {
 	border-left: 4px solid var(--color-primary-element);
 }
+
 .agenda-item__handle {
 	cursor: grab;
 	color: var(--color-text-maxcontrast);
 }
+
 .agenda-item__number {
 	font-weight: bold;
 	min-width: 32px;
 }
+
 .agenda-item__title {
 	flex: 1;
 }
+
 .agenda-item__toggle {
 	display: flex;
 	gap: 6px;

@@ -116,8 +116,11 @@ export default {
 }
 
 .status--sent { color: var(--color-primary); }
+
 .status--read { color: var(--color-success); }
+
 .status--failed { color: var(--color-error); }
+
 .status--unread_flagged { color: var(--color-warning); }
 
 .berichtenbox-tab__message-meta small {

@@ -119,10 +119,12 @@ export default {
 	background: var(--color-background-dark);
 	margin-bottom: 8px;
 }
+
 .besluit-publicatie-panel__badge--success {
 	background: var(--color-success);
 	color: var(--color-primary-element-text);
 }
+
 .besluit-publicatie-panel__badge--failed {
 	background: var(--color-error);
 	color: var(--color-primary-element-text);

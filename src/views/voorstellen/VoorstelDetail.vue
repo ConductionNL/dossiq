@@ -399,9 +399,13 @@ export default {
 }
 
 .voorstel-detail__status-badge--concept { background: var(--color-background-dark); }
+
 .voorstel-detail__status-badge--in_parafering { background: var(--color-primary-element-light); color: var(--color-primary-element); }
+
 .voorstel-detail__status-badge--geaccordeerd { background: var(--color-success-light, #e8f5e9); color: var(--color-success, #2e7d32); }
+
 .voorstel-detail__status-badge--besloten { background: var(--color-success-light, #e8f5e9); color: var(--color-success, #2e7d32); }
+
 .voorstel-detail__status-badge--teruggestuurd { background: var(--color-warning-light, #fff3e0); color: var(--color-warning, #e65100); }
 
 .form-row {

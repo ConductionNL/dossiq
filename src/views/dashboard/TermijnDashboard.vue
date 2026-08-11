@@ -346,9 +346,13 @@ export default {
 }
 
 .kpi-card--good { border-left: 4px solid var(--color-success); }
+
 .kpi-card--warn { border-left: 4px solid var(--color-warning); }
+
 .kpi-card--alert { border-left: 4px solid var(--color-error); }
+
 .kpi-card--neutral { border-left: 4px solid var(--color-primary-element); }
+
 .kpi-card--meta { border-left: 4px solid var(--color-border-dark); }
 
 .kpi-card__label {

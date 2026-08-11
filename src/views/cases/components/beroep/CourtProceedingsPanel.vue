@@ -136,25 +136,31 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 }
+
 .court-proceedings-panel__parent {
 	margin-bottom: 4px;
 }
+
 .court-proceedings-panel__ruling {
 	margin: 8px 0;
 }
+
 .ruling-detail {
 	display: flex;
 	flex-direction: column;
 }
+
 .ruling-detail__label {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 }
+
 .form-group {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
 }
+
 .court-proceedings-panel__save-btn {
 	align-self: flex-end;
 	margin-top: 8px;

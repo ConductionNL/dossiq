@@ -121,16 +121,19 @@ export default {
 	width: 100%;
 	border-collapse: collapse;
 }
+
 .stuf-endpoints__table th,
 .stuf-endpoints__table td {
 	padding: 6px 8px;
 	border-bottom: 1px solid var(--color-border);
 	text-align: left;
 }
+
 .stuf-endpoints__empty {
 	color: var(--color-text-maxcontrast);
 	font-style: italic;
 }
+
 .stuf-endpoints__health {
 	display: inline-block;
 	padding: 2px 8px;
@@ -138,23 +141,28 @@ export default {
 	font-size: 11px;
 	font-weight: bold;
 }
+
 .stuf-endpoints__health--ok {
 	background: var(--color-success);
 	color: white;
 }
+
 .stuf-endpoints__health--degraded {
 	background: var(--color-warning);
 	color: white;
 }
+
 .stuf-endpoints__health--circuit_open {
 	background: var(--color-error);
 	color: white;
 }
+
 .stuf-endpoints__note {
 	color: var(--color-text-maxcontrast);
 	margin-top: 12px;
 	font-size: 13px;
 }
+
 .stuf-endpoints__error {
 	color: var(--color-error);
 	margin-top: 12px;

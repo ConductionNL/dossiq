@@ -219,23 +219,28 @@ export default {
 	align-items: end;
 	flex-wrap: wrap;
 }
+
 .stuf-audit-log__table {
 	width: 100%;
 	border-collapse: collapse;
 }
+
 .stuf-audit-log__table th,
 .stuf-audit-log__table td {
 	padding: 6px 8px;
 	border-bottom: 1px solid var(--color-border);
 	text-align: left;
 }
+
 .stuf-audit-log__empty {
 	color: var(--color-text-maxcontrast);
 	font-style: italic;
 }
+
 .stuf-audit-log__actions {
 	text-align: right;
 }
+
 .stuf-audit-log__status {
 	display: inline-block;
 	padding: 2px 8px;
@@ -243,22 +248,27 @@ export default {
 	font-size: 11px;
 	font-weight: bold;
 }
+
 .stuf-audit-log__status--verzonden {
 	background: var(--color-primary);
 	color: white;
 }
+
 .stuf-audit-log__status--bevestigd {
 	background: var(--color-success);
 	color: white;
 }
+
 .stuf-audit-log__status--fout {
 	background: var(--color-error);
 	color: white;
 }
+
 .stuf-audit-log__status--wacht_op_retry {
 	background: var(--color-warning);
 	color: white;
 }
+
 .stuf-audit-log__error {
 	color: var(--color-error);
 	margin-top: 12px;
