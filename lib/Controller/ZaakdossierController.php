@@ -35,7 +35,6 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
-use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Procest\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Procest\Service\ZaakdossierService;
@@ -59,8 +58,7 @@ class ZaakdossierController extends Controller
      * @param ZaakdossierService     $dossierService  The dossier orchestrator.
      * @param InformatieobjectReader $reader          The clearance-gated document reader.
      * @param DossierUploadHandler   $uploadHandler   The upload decoding/screening collaborator.
-     * @param IUserSession           $userSession     The user session.
-     * @param CaseAccessGuard        $caseAccessGuard Per-case authorization (fails closed).
+     * @param IUserSession           $userSession    The user session.
      */
     public function __construct(
         string $appName,
@@ -69,7 +67,6 @@ class ZaakdossierController extends Controller
         private readonly InformatieobjectReader $reader,
         private readonly DossierUploadHandler $uploadHandler,
         private readonly IUserSession $userSession,
-        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -134,7 +131,7 @@ class ZaakdossierController extends Controller
         // the DOCUMENT, and upload has no existing document to check. The
         // missing half is the CASE, so this endpoint wrote attachments into
         // any case on the instance.
-        if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+        if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
             return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 

@@ -31,6 +31,7 @@ namespace OCA\Procest\Service;
 use DateTime;
 use OCA\Procest\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Procest\Service\BerichtenboxAdapter\MockAdapter;
+use OCA\Procest\Service\Support\OwningCaseResolver;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
@@ -50,12 +51,14 @@ class BerichtenboxService
      * @param IAppManager        $appManager      The Nextcloud app manager.
      * @param ContainerInterface $container       The DI container.
      * @param LoggerInterface    $logger          The logger.
+     * @param OwningCaseResolver $owningCase      Resolves a message's owning case.
      */
     public function __construct(
         private SettingsService $settingsService,
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
+        private readonly OwningCaseResolver $owningCase,
     ) {
     }//end __construct()
 
@@ -209,45 +212,11 @@ class BerichtenboxService
      */
     public function getCaseIdForMessage(string $messageId): ?string
     {
-        if ($messageId === '') {
-            return null;
-        }
-
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('berichtenbox_message_schema');
-        if ($register === '' || $schema === '') {
-            return null;
-        }
-
-        try {
-            $message = $objectService->find($messageId, register: (int) $register, schema: (int) $schema);
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest: Berichtenbox message lookup failed — denying poll: '.$e->getMessage(),
-            );
-            return null;
-        }
-
-        if (is_object($message) === false || method_exists($message, 'jsonSerialize') === false) {
-            return null;
-        }
-
-        $data   = $message->jsonSerialize();
-        $caseId = '';
-        if (is_array($data) === true) {
-            $caseId = (string) ($data['caseId'] ?? '');
-        }
-
-        if ($caseId === '') {
-            return null;
-        }
-
-        return $caseId;
+        return $this->owningCase->resolve(
+            objectId: $messageId,
+            schemaKey: 'berichtenbox_message_schema',
+            caseField: 'caseId',
+        );
     }//end getCaseIdForMessage()
 
     /**

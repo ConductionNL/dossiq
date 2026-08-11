@@ -34,6 +34,7 @@ namespace OCA\Procest\Service;
 use OCA\Procest\Service\AppointmentBackend\AppointmentBackendInterface;
 use OCA\Procest\Service\AppointmentBackend\JccBackend;
 use OCA\Procest\Service\AppointmentBackend\QmaticBackend;
+use OCA\Procest\Service\Support\OwningCaseResolver;
 use RuntimeException;
 use OCP\App\IAppManager;
 use OCP\Http\Client\IClientService;
@@ -55,8 +56,9 @@ class AppointmentService
      * @param SettingsService    $settingsService The settings service.
      * @param IAppManager        $appManager      The Nextcloud app manager.
      * @param IClientService     $clientService   The HTTP client service.
-     * @param ContainerInterface $container       The DI container.
-     * @param LoggerInterface    $logger          The logger.
+     * @param ContainerInterface  $container      The DI container.
+     * @param LoggerInterface     $logger         The logger.
+     * @param OwningCaseResolver  $owningCase     Resolves an appointment's owning case.
      */
     public function __construct(
         private SettingsService $settingsService,
@@ -64,6 +66,7 @@ class AppointmentService
         private IClientService $clientService,
         private ContainerInterface $container,
         private LoggerInterface $logger,
+        private readonly OwningCaseResolver $owningCase,
     ) {
     }//end __construct()
 
@@ -150,45 +153,11 @@ class AppointmentService
      */
     public function getCaseIdForAppointment(string $appointmentId): ?string
     {
-        if ($appointmentId === '') {
-            return null;
-        }
-
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('appointment_schema');
-        if ($register === '' || $schema === '') {
-            return null;
-        }
-
-        try {
-            $appointment = $objectService->find($appointmentId, register: (int) $register, schema: (int) $schema);
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Procest: appointment lookup failed — denying: '.$e->getMessage(),
-            );
-            return null;
-        }
-
-        if (is_object($appointment) === false || method_exists($appointment, 'jsonSerialize') === false) {
-            return null;
-        }
-
-        $data   = $appointment->jsonSerialize();
-        $caseId = '';
-        if (is_array($data) === true) {
-            $caseId = (string) ($data['caseId'] ?? '');
-        }
-
-        if ($caseId === '') {
-            return null;
-        }
-
-        return $caseId;
+        return $this->owningCase->resolve(
+            objectId: $appointmentId,
+            schemaKey: 'appointment_schema',
+            caseField: 'caseId',
+        );
     }//end getCaseIdForAppointment()
 
     /**

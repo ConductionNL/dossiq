@@ -34,7 +34,9 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Zaakdossier;
 
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\ZaakdossierService;
+use OCP\IUser;
 use RuntimeException;
 
 /**
@@ -60,8 +62,33 @@ class DossierUploadHandler
      */
     public function __construct(
         private readonly ZaakdossierService $dossierService,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
     }//end __construct()
+
+    /**
+     * Whether the given user may add documents to the given case.
+     *
+     * The case-side authorization for uploads lives here rather than in
+     * `ZaakdossierController` because this class is the collaborator that
+     * performs the write, and because the controller's document-side guard
+     * (`InformatieobjectReader::guardReadable()`) has no document to check on
+     * an upload — the missing half was always the CASE.
+     *
+     * Called once per request, not once per file: the answer cannot differ
+     * between files of the same upload.
+     *
+     * @param IUser  $user   The authenticated user.
+     * @param string $caseId The case (zaak) UUID.
+     *
+     * @return bool True when the user handles the case.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function hasCaseUploadAccess(IUser $user, string $caseId): bool
+    {
+        return $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user);
+    }//end hasCaseUploadAccess()
 
     /**
      * Upload a single multipart file into a case dossier.

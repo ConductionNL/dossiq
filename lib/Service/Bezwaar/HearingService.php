@@ -52,6 +52,7 @@ namespace OCA\Procest\Service\Bezwaar;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\OwningCaseResolver;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -98,6 +99,7 @@ class HearingService
      * @param BezwaarAuditTrail      $auditTrail      Shared append-only audit writer
      * @param HearingSchedulePlanner $planner         Awb art. 7:4 date arithmetic
      * @param HearingMinutesRecorder $minutes         Awb art. 7:7 verslag assembly + consent gate
+     * @param OwningCaseResolver     $owningCase      Resolves a session's parent bezwaar case
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -105,6 +107,7 @@ class HearingService
         private readonly BezwaarAuditTrail $auditTrail,
         private readonly HearingSchedulePlanner $planner,
         private readonly HearingMinutesRecorder $minutes,
+        private readonly OwningCaseResolver $owningCase,
     ) {
     }//end __construct()
 
@@ -313,42 +316,11 @@ class HearingService
      */
     public function getCaseIdForSession(string $sessionId): ?string
     {
-        if ($sessionId === '') {
-            return null;
-        }
-
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
-
-        $register = $this->settingsService->getConfigValue(key: 'register');
-        $schema   = $this->settingsService->getConfigValue(
-            key: 'hearing_session_schema'
+        return $this->owningCase->resolve(
+            objectId: $sessionId,
+            schemaKey: 'hearing_session_schema',
+            caseField: 'case',
         );
-        if ($register === '' || $schema === '') {
-            return null;
-        }
-
-        try {
-            $session = $objectService->find($sessionId, register: $register, schema: $schema);
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Procest hearing: session lookup failed — denying: '.$e->getMessage()
-            );
-            return null;
-        }
-
-        if (is_array($session) === false) {
-            return null;
-        }
-
-        $caseId = (string) ($session['case'] ?? '');
-        if ($caseId === '') {
-            return null;
-        }
-
-        return $caseId;
     }//end getCaseIdForSession()
 
     /**
