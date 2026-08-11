@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TermijnReportingService.
+ * Procest DeadlineReportingService.
  *
  * Two report families:
  *   - Quarterly KPI report (per zaaktype): totaal, binnen-termijn %,
@@ -40,8 +40,10 @@ use RuntimeException;
 
 /**
  * Quarterly KPI + annual dwangsom audit + dashboard KPI reports.
+ *
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
-class TermijnReportingService
+class DeadlineReportingService
 {
     use SearchesObjects;
 
@@ -58,26 +60,30 @@ class TermijnReportingService
     /**
      * Generate a quarterly KPI report.
      *
-     * @param string      $periode  Period (YYYY-Qn, e.g. "2026-Q2").
-     * @param string|null $afdeling Optional department filter.
+     * @param string      $period     Period (YYYY-Qn, e.g. "2026-Q2").
+     * @param string|null $department Optional department filter.
      *
      * @return array<string, mixed>
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
-    public function generateQuarterlyReport(string $periode, ?string $afdeling=null): array
+    public function generateQuarterlyReport(string $period, ?string $department=null): array
     {
-        $bounds = $this->resolveQuarter(periode: $periode);
+        $bounds = $this->resolveQuarter(period: $period);
         $rows   = $this->listInstances(from: $bounds['from'], until: $bounds['until']);
 
-        $byType = $this->aggregateByType(rows: $rows, afdeling: $afdeling);
+        $byType = $this->aggregateByType(rows: $rows, department: $department);
 
         // Reduce per-type aggregates.
         $perType = $this->reducePerType(byType: $byType);
 
         return [
-            'periode'  => $periode,
-            'afdeling' => $afdeling,
+            // 'periode' and 'afdeling' are RESPONSE KEYS, not identifiers. They
+            // are the published shape of /api/termijn/reports/kwartaal and are
+            // read by the dashboard; they move only with a coordinated frontend
+            // change, not with this rename.
+            'periode'  => $period,
+            'afdeling' => $department,
             'from'     => $bounds['from'],
             'until'    => $bounds['until'],
             'perType'  => $perType,
@@ -91,17 +97,19 @@ class TermijnReportingService
     /**
      * Bucket instance rows per zaaktype, skipping rows outside the department filter.
      *
-     * @param array<int, array<string, mixed>> $rows     Instance rows.
-     * @param string|null                      $afdeling Optional department filter.
+     * @param array<int, array<string, mixed>> $rows       Instance rows.
+     * @param string|null                      $department Optional department filter.
      *
      * @return array<string, array<string, mixed>> Raw per-zaaktype tallies.
      */
-    private function aggregateByType(array $rows, ?string $afdeling): array
+    private function aggregateByType(array $rows, ?string $department): array
     {
         $byType = [];
         foreach ($rows as $row) {
             $type = (string) ($row['zaaktype'] ?? 'onbekend');
-            if ($afdeling !== null && (string) ($row['afdeling'] ?? '') !== $afdeling) {
+            // $row['afdeling'] is a SCHEMA PROPERTY — OpenRegister materialises
+            // it as a real column. It moves with a data migration, not here.
+            if ($department !== null && (string) ($row['afdeling'] ?? '') !== $department) {
                 continue;
             }
 
@@ -194,13 +202,13 @@ class TermijnReportingService
     /**
      * Generate an annual dwangsom audit report.
      *
-     * @param int $jaar Year.
+     * @param int $year Year.
      *
      * @return array<string, mixed>
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
-    public function generateDwangsomAuditReport(int $jaar): array
+    public function generateDwangsomAuditReport(int $year): array
     {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
@@ -215,14 +223,14 @@ class TermijnReportingService
             return ['rows' => [], 'summary' => ['count' => 0, 'totalCents' => 0]];
         }
 
-        $jaarPrefix = (string) $jaar;
+        $yearPrefix = (string) $year;
         $outRows    = [];
         $totaal     = 0;
         $warnings   = [];
 
         foreach ($rows as $row) {
             $betaal = (string) ($row['werkelijkeBetaaldatum'] ?? '');
-            if (str_starts_with($betaal, $jaarPrefix) === false) {
+            if (str_starts_with($betaal, $yearPrefix) === false) {
                 continue;
             }
 
@@ -245,7 +253,7 @@ class TermijnReportingService
         }//end foreach
 
         return [
-            'jaar'     => $jaar,
+            'jaar'     => $year,
             'rows'     => $outRows,
             'summary'  => ['count' => count($outRows), 'totalCents' => $totaal],
             'warnings' => $warnings,
@@ -380,14 +388,14 @@ class TermijnReportingService
     /**
      * Resolve a quarter spec (YYYY-Qn) to its from/until date bounds.
      *
-     * @param string $periode Period (YYYY-Qn).
+     * @param string $period Period (YYYY-Qn).
      *
      * @return array{from:string,until:string}
      */
-    private function resolveQuarter(string $periode): array
+    private function resolveQuarter(string $period): array
     {
-        if (preg_match('/^(\d{4})-Q([1-4])$/', $periode, $matches) !== 1) {
-            throw new RuntimeException('Invalid periode (expected YYYY-Qn): '.$periode);
+        if (preg_match('/^(\d{4})-Q([1-4])$/', $period, $matches) !== 1) {
+            throw new RuntimeException('Invalid periode (expected YYYY-Qn): '.$period);
         }
 
         $year    = (int) $matches[1];

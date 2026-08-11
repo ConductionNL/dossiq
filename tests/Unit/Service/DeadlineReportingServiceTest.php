@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for TermijnReportingService.
+ * Unit tests for DeadlineReportingService.
  *
  * @category Tests
  * @package  OCA\Procest\Tests\Unit\Service
@@ -23,17 +23,17 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnReportingService;
+use OCA\Procest\Service\DeadlineReportingService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TermijnReportingService
+ * @covers \OCA\Procest\Service\DeadlineReportingService
  */
-class TermijnReportingServiceTest extends TestCase
+class DeadlineReportingServiceTest extends TestCase
 {
     private FakeTermijnStore $objects;
-    private TermijnReportingService $service;
+    private DeadlineReportingService $service;
 
     protected function setUp(): void
     {
@@ -51,7 +51,7 @@ class TermijnReportingServiceTest extends TestCase
             },
         );
 
-        $this->service = new TermijnReportingService($settings);
+        $this->service = new DeadlineReportingService($settings);
 
         // Seed 5 instances spread across Q2-2026 for one zaaktype.
         for ($i = 1; $i <= 5; $i++) {
