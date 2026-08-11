@@ -40,8 +40,15 @@ use RuntimeException;
  *
  * The paging loop calls listSubCases(), and the service is constructed with a
  * REAL CaseObjectReader (as DeelzaakServiceTest does, for the same reason), so
- * both are executed here without being the subject. Declared with @uses so
- * PHPUnit's strict coverage metadata does not report every case as risky.
+ * both are executed here without being the subject, and are therefore declared
+ * below so PHPUnit's strict coverage metadata does not report every case as
+ * risky.
+ *
+ * ⚠️ Never write a literal coverage-annotation token in this prose. PHPUnit
+ * matches them MID-LINE anywhere in the docblock, so the sentence above
+ * originally read "Declared with <token> so ..." and PHPUnit registered a
+ * coverage target literally named `so`, failing the cell with an "is invalid"
+ * warning while every test still passed.
  *
  * @covers \OCA\Procest\Service\DeelzaakService::unlinkSubCases
  * @uses   \OCA\Procest\Service\DeelzaakService::listSubCases
