@@ -29,10 +29,18 @@ procest is the app the others wait on: openconnector, docudesk and pipelinq all 
       (`handler`/`guard`/`requires`/`preconditions`/`save`/`fallbackGuard`). A renamed
       class stops being wired silently.
 
-## 3. Measure
+## 3. Measure and plan the migration
 
-- [ ] 3.1 Count stored objects across all 75 schemas — per-schema shard tables, excluding
-      soft-deleted rows.
+- [ ] 3.1 Count stored objects across all 75 schemas. Resolve numeric register and schema
+      ids through `oc_openregister_schemas`, then read the
+      `oc_openregister_table_<reg>_<schema>` shards — matching shard table names against
+      the schema title matches nothing and reports zero for every app. Exclude `_deleted`,
+      and sum across every register each schema is registered in. Prove the query can
+      return non-zero before recording any zero.
+- [ ] 3.2 Write the migration. ⚠️ procest's is the most consequential in the fleet: the
+      `besluit`/`decision` **merge** (task 1.1) is a data migration by definition — two
+      populated schemas becoming one — and `Zaak` → `Case` rewrites the key three other
+      apps hold. Neither is a rename that data can sit out.
 
 ## 4. Rename app-local vocabulary with statute markers
 
@@ -87,7 +95,9 @@ procest is the app the others wait on: openconnector, docudesk and pipelinq all 
 
 ## Acceptance criteria
 
-- The Besluit/Decision question is decided and recorded before any rename lands.
+- The Besluit/Decision question is decided and recorded before any rename lands, and the
+  merge ships with a migration — two populated schemas becoming one is data work, not a rename.
+- Stored-object counts measured across all 75 schemas and proven by a positive control.
 - No rename produces a schema name already declared in procest or another app.
 - All 198 methods individually classified; the protocol-facing set listed and justified.
 - Every fragment that wires a renamed class by name is updated.
