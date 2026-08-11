@@ -66,6 +66,8 @@ class DeadlineNotificationDispatchJob extends QueuedJob
      *                        `type`, `termijnInstanceId`, `recipientUserId`, `context`.
      *
      * @return void
+     *
+     * @spec openspec/specs/burger-notifications/spec.md
      */
     protected function run($argument): void
     {
