@@ -3122,6 +3122,7 @@
         "Select all fields": "Alle velden selecteren",
         "Select document {title}": "Document {title} selecteren",
         "Select field {field}": "Veld {field} selecteren",
-        "Select redaction candidate {category}": "Lakkandidaat {category} selecteren"
+        "Select redaction candidate {category}": "Lakkandidaat {category} selecteren",
+        "{failed} of {total} sub-cases could not be detached, so the case was not deleted. Detach them first, then try again.": "{failed} van {total} deelzaken konden niet worden losgekoppeld, dus de zaak is niet verwijderd. Koppel ze eerst los en probeer het opnieuw."
     }
 }

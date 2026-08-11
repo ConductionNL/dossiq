@@ -97,8 +97,14 @@ export async function validateSubCase({ parentCaseUuid, childCaseTypeId }) {
  * that still answers with a bare count blocks the delete rather than silently
  * permitting the failure mode this change exists to close.
  *
+ * The requirement is explicit that it is ALL child cases — "The system MUST
+ * clear the `parentCase` field on all child cases before proceeding with
+ * deletion (orphan cleanup)" — which a 200-record page and a swallowed failure
+ * did not satisfy.
+ *
  * @param {string} parentCaseUuid Parent UUID.
  * @return {Promise<{unlinked: number, failed: number, total: number, complete: boolean}>} The unlink outcome.
+ * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-deletion-protection
  */
 export async function unlinkSubCases(parentCaseUuid) {
 	const { data } = await axios.post(base(`/${encodeURIComponent(parentCaseUuid)}/unlink`))
