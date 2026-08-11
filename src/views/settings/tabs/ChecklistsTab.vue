@@ -74,6 +74,54 @@ import { generateUrl } from '@nextcloud/router'
 import { showError, showSuccess } from '@nextcloud/dialogs'
 import InspectionChecklistEditor from '../../../components/InspectionChecklistEditor.vue'
 
+/**
+ * Checklist CRUD for the admin surface goes through procest's OWN controller.
+ *
+ * `InspectionChecklistController` already serves exactly the four verbs this tab
+ * uses — `GET/POST /api/vth/checklists` and `PUT/DELETE /api/vth/checklists/{id}`
+ * (appinfo/routes.php) — and every one of them is guarded with
+ * `#[AuthorizedAdminSetting(settings: AdminSettings::class)]`, which is the right
+ * posture for a control that lives in the admin settings page. It also routes
+ * through `InspectionChecklistService`, which owns checklist versioning and
+ * `caseTypeRef` filtering.
+ *
+ * The old URL, `/apps/procest/api/objects/inspectionChecklist`, matched NO route:
+ * procest's auto-exposed `/api/objects/<register>/<schema>` endpoints were deleted
+ * (appinfo/routes.php, "only engine routes remain"). Nextcloud answers an
+ * unmatched app URL with its own HTML page under **HTTP 200**, so axios never
+ * threw and the body was a 45,031-character string — see `asChecklistArray`.
+ *
+ * Addressing OpenRegister's generic object route instead would also have worked
+ * mechanically, and was this fix's first attempt. It is the wrong choice: it
+ * bypasses procest's admin-setting authorization, bypasses the service that owns
+ * versioning, and adds a second write path for a resource that already has one.
+ */
+const COLLECTION_URL = '/apps/procest/api/vth/checklists'
+
+/**
+ * Coerce an API response into the checklist array the template iterates.
+ *
+ * This guard is load-bearing, not defensive padding. `v-for` over a STRING
+ * iterates one item per character, so assigning an unvalidated response body
+ * straight to `checklists` rendered one table row — two NcButtons — per
+ * character of whatever came back. A 45,031-byte HTML error page produced
+ * 45,031 rows, 90,122 buttons and a 50 MB DOM on which Playwright's
+ * accessible-name computation never terminated (procest#784).
+ *
+ * @param {*} body Parsed response body, of any shape.
+ * @return {Array} The checklist rows, or an empty array when the body is not
+ *                 a recognised collection shape.
+ */
+function asChecklistArray(body) {
+	if (Array.isArray(body)) {
+		return body
+	}
+	if (body !== null && typeof body === 'object' && Array.isArray(body.results)) {
+		return body.results
+	}
+	return []
+}
+
 export default {
 	name: 'ChecklistsTab',
 
@@ -107,9 +155,8 @@ export default {
 		async loadChecklists() {
 			this.loading = true
 			try {
-				const url = generateUrl('/apps/procest/api/objects/inspectionChecklist')
-				const response = await axios.get(url)
-				this.checklists = response.data?.results || response.data || []
+				const response = await axios.get(generateUrl(COLLECTION_URL))
+				this.checklists = asChecklistArray(response.data)
 			} catch (e) {
 				showError(t('procest', 'Failed to load checklists'))
 			} finally {
@@ -140,8 +187,8 @@ export default {
 			this.saving = true
 			try {
 				const url = checklist.id
-					? generateUrl('/apps/procest/api/objects/inspectionChecklist/' + encodeURIComponent(checklist.id))
-					: generateUrl('/apps/procest/api/objects/inspectionChecklist')
+					? generateUrl(COLLECTION_URL + '/' + encodeURIComponent(checklist.id))
+					: generateUrl(COLLECTION_URL)
 				const method = checklist.id ? 'put' : 'post'
 				await axios[method](url, checklist)
 				showSuccess(t('procest', 'Checklist saved'))
@@ -177,7 +224,7 @@ export default {
 		async onConfirmDelete() {
 			const checklist = this.pendingDeleteChecklist
 			try {
-				const url = generateUrl('/apps/procest/api/objects/inspectionChecklist/' + encodeURIComponent(checklist.id))
+				const url = generateUrl(COLLECTION_URL + '/' + encodeURIComponent(checklist.id))
 				await axios.delete(url)
 				showSuccess(t('procest', 'Checklist deleted'))
 				this.showDeleteConfirm = false

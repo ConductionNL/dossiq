@@ -181,7 +181,16 @@ export default {
 
 				const url = generateUrl('/apps/procest/api/dso/dashboard')
 				const response = await axios.get(url, { params })
-				this.cases = response.data.cases || response.data || []
+				// Never assign an unvalidated body to a `v-for` source: `v-for`
+				// over a STRING iterates one item per character, so an HTML
+				// error page (served under HTTP 200 for an unmatched app route)
+				// renders one row per byte. See procest#784.
+				const body = response.data
+				if (body !== null && typeof body === 'object' && Array.isArray(body.cases)) {
+					this.cases = body.cases
+				} else {
+					this.cases = Array.isArray(body) ? body : []
+				}
 			} catch (err) {
 				this.error = t('procest', 'Failed to load omgevingsvergunningen: {message}', {
 					message: err?.response?.data?.message || err.message,

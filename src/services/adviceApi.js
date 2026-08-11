@@ -60,7 +60,18 @@ export async function getAdviceForCase(caseId) {
 	const response = await axios.get(orUrl(), {
 		params: { _filters: JSON.stringify({ case: caseId }), _limit: 200 },
 	})
-	return response.data?.results || response.data || []
+	// `x?.results || x || []` admits a STRING: a non-empty body that is not JSON
+	// (Nextcloud answers an unmatched app route with an HTML page under HTTP 200)
+	// falls through to the raw body, and a `v-for` over a string renders one row
+	// per character. See procest#784.
+	const body = response.data
+	if (Array.isArray(body)) {
+		return body
+	}
+	if (body !== null && typeof body === 'object' && Array.isArray(body.results)) {
+		return body.results
+	}
+	return []
 }
 
 /**
