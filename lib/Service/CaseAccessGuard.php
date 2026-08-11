@@ -157,6 +157,61 @@ class CaseAccessGuard
     }//end hasCaseMutationAccess()
 
     /**
+     * Whether the given user may read the given case.
+     *
+     * Reads are granted to a slightly wider set than mutations, because a case
+     * is worked on by more people than the one named in `assignee`: the
+     * `assignees` array is honoured as well. It is still a real per-case
+     * relationship, and it still fails closed at every branch — an
+     * unresolvable case, an absent OpenRegister, or an unconfigured schema all
+     * DENY.
+     *
+     * Deliberately NOT delegated to
+     * {@see Sharing\CaseAccessPolicy::canUserAccessCase()}: that one returns
+     * TRUE when OpenRegister is absent, when the schema is unconfigured, and
+     * when the lookup throws. Those three fail-OPEN branches are acceptable for
+     * the sharing UI it was written for and are not acceptable here.
+     *
+     * @param string $caseId The case UUID.
+     * @param IUser  $user   The authenticated user.
+     *
+     * @return bool True when the user works on the case or is an admin.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function hasCaseReadAccess(string $caseId, IUser $user): bool
+    {
+        $uid = $user->getUID();
+        if ($uid === '' || $caseId === '') {
+            return false;
+        }
+
+        try {
+            if ($this->groupManager->isAdmin($uid) === true) {
+                return true;
+            }
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'Procest CaseAccessGuard: admin check failed: '.$e->getMessage(),
+                ['app' => Application::APP_ID]
+            );
+        }
+
+        $case = $this->loadCase(caseId: $caseId);
+        if ($case === null) {
+            return false;
+        }
+
+        if ((string) ($case['assignee'] ?? '') === $uid) {
+            return true;
+        }
+
+        $assignees = ($case['assignees'] ?? []);
+
+        return (is_array($assignees) === true && in_array($uid, $assignees, true) === true);
+    }//end hasCaseReadAccess()
+
+    /**
      * Load a case through OpenRegister.
      *
      * @param string $caseId The case UUID.

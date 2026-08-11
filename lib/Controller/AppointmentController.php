@@ -26,10 +26,12 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\AppointmentService;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -43,11 +45,13 @@ class AppointmentController extends Controller
      * @param IRequest           $request            The request object.
      * @param AppointmentService $appointmentService The appointment service.
      * @param IUserSession       $userSession        The user session.
+     * @param CaseAccessGuard    $caseAccessGuard    Per-case authorization (fails closed).
      */
     public function __construct(
         IRequest $request,
         private AppointmentService $appointmentService,
         private IUserSession $userSession,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -63,12 +67,28 @@ class AppointmentController extends Controller
      */
     public function index(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $caseId       = $this->request->getParam('caseId');
-        $appointments = $this->appointmentService->getAppointmentsForCase($caseId ?? '');
+        $caseId = (string) ($this->request->getParam('caseId') ?? '');
+        if ($caseId === '') {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'caseId required'],
+                Http::STATUS_BAD_REQUEST
+            );
+        }
+
+        // Appointment records carry the citizen's name, e-mail and phone.
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Not authorized'],
+                Http::STATUS_FORBIDDEN
+            );
+        }
+
+        $appointments = $this->appointmentService->getAppointmentsForCase($caseId);
         return new JSONResponse(['success' => true, 'appointments' => $appointments]);
     }//end index()
 
@@ -83,13 +103,22 @@ class AppointmentController extends Controller
      */
     public function create(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
         $caseId = $this->request->getParam('caseId');
         if (empty($caseId) === true) {
             return new JSONResponse(['success' => false, 'error' => 'caseId required'], Http::STATUS_BAD_REQUEST);
+        }
+
+        // Books onto an arbitrary case and stores citizen contact details.
+        if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: (string) $caseId, user: $user) === false) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Not authorized'],
+                Http::STATUS_FORBIDDEN
+            );
         }
 
         $data = [
@@ -120,8 +149,16 @@ class AppointmentController extends Controller
      */
     public function cancel(string $appointmentId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        if ($this->mayMutateAppointment(appointmentId: $appointmentId, user: $user) === false) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Not authorized'],
+                Http::STATUS_FORBIDDEN
+            );
         }
 
         $result = $this->appointmentService->cancelAppointment($appointmentId);
@@ -141,8 +178,16 @@ class AppointmentController extends Controller
      */
     public function noShow(string $appointmentId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        if ($this->mayMutateAppointment(appointmentId: $appointmentId, user: $user) === false) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Not authorized'],
+                Http::STATUS_FORBIDDEN
+            );
         }
 
         $result = $this->appointmentService->markNoShow($appointmentId);
@@ -171,4 +216,28 @@ class AppointmentController extends Controller
         $slots = $this->appointmentService->getTimeslots($productId, $locationId, $date);
         return new JSONResponse(['success' => true, 'timeslots' => $slots]);
     }//end timeslots()
+
+    /**
+     * Whether the caller may mutate the appointment with the given id.
+     *
+     * The route carries only an appointment id, so the owning case is resolved
+     * first and the ordinary per-case guard applied. An appointment that cannot
+     * be resolved DENIES, so an unknown id is not an existence oracle.
+     *
+     * @param string $appointmentId The appointment UUID.
+     * @param IUser  $user          The authenticated user.
+     *
+     * @return bool True when the caller handles the owning case.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private function mayMutateAppointment(string $appointmentId, IUser $user): bool
+    {
+        $caseId = $this->appointmentService->getCaseIdForAppointment($appointmentId);
+        if ($caseId === null) {
+            return false;
+        }
+
+        return $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user);
+    }//end mayMutateAppointment()
 }//end class

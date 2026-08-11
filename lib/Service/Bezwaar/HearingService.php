@@ -52,6 +52,7 @@ namespace OCA\Procest\Service\Bezwaar;
 use DateTimeImmutable;
 use DateTimeInterface;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\OwningCaseResolver;
 use OCA\Procest\Service\Support\SearchesObjects;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -98,6 +99,7 @@ class HearingService
      * @param BezwaarAuditTrail      $auditTrail      Shared append-only audit writer
      * @param HearingSchedulePlanner $planner         Awb art. 7:4 date arithmetic
      * @param HearingMinutesRecorder $minutes         Awb art. 7:7 verslag assembly + consent gate
+     * @param OwningCaseResolver     $owningCase      Resolves a session's parent bezwaar case
      */
     public function __construct(
         private readonly SettingsService $settingsService,
@@ -105,6 +107,7 @@ class HearingService
         private readonly BezwaarAuditTrail $auditTrail,
         private readonly HearingSchedulePlanner $planner,
         private readonly HearingMinutesRecorder $minutes,
+        private readonly OwningCaseResolver $owningCase,
     ) {
     }//end __construct()
 
@@ -295,6 +298,30 @@ class HearingService
             throw new RuntimeException('Could not record waiver');
         }
     }//end waive()
+
+    /**
+     * Resolve the bezwaar case a hearing session belongs to.
+     *
+     * `recordAttendance()` carries only a session id, so there is nothing in
+     * its signature to authorise against. This resolves the parent case so the
+     * controller can apply the ordinary per-case guard. Returns null — which
+     * the caller treats as DENY — whenever the session cannot be resolved, so
+     * an unknown id is not an existence oracle.
+     *
+     * @param string $sessionId UUID of the hearingSession
+     *
+     * @return string|null The parent case UUID, or null when unresolvable.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function getCaseIdForSession(string $sessionId): ?string
+    {
+        return $this->owningCase->resolve(
+            objectId: $sessionId,
+            schemaKey: 'hearing_session_schema',
+            caseField: 'case',
+        );
+    }//end getCaseIdForSession()
 
     /**
      * Record attendance on a hearingSession (REQ-BH-5).

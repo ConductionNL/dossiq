@@ -38,6 +38,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\Bezwaar\HearingService;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -60,10 +61,11 @@ class BezwaarHearingController extends Controller
     /**
      * Constructor.
      *
-     * @param string         $appName        The app name
-     * @param IRequest       $request        The request
-     * @param HearingService $hearingService The bezwaar hearing domain service
-     * @param IUserSession   $userSession    The user session
+     * @param string          $appName         The app name
+     * @param IRequest        $request         The request
+     * @param HearingService  $hearingService  The bezwaar hearing domain service
+     * @param IUserSession    $userSession     The user session
+     * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
      *
      * @return void
      */
@@ -72,6 +74,7 @@ class BezwaarHearingController extends Controller
         IRequest $request,
         private readonly HearingService $hearingService,
         private readonly IUserSession $userSession,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -85,17 +88,22 @@ class BezwaarHearingController extends Controller
      * Neither rule is enforceable through a generic schema edit form, which
      * is why this is a domain endpoint rather than manifest CRUD.
      *
-     * The auth posture mirrors the other authenticated-user mutations in
-     * this app (see AdvisoryBodyController and EmailTemplateController):
-     * `@NoAdminRequired` plus an explicit 401 when there is no session.
-     * Attendance is recorded by the behandelaar or the committee secretary,
-     * neither of whom is an administrator, so an admin-only posture would
-     * lock out exactly the roles that perform this task.
+     * The auth posture used to be `@NoAdminRequired` plus an explicit 401 and
+     * nothing else, on the reasoning that attendance is recorded by the
+     * behandelaar or the committee secretary, neither of whom is an
+     * administrator, so an admin-only posture would lock out exactly the roles
+     * that perform this task. That half was right — but "not admin-only" was
+     * implemented as "any authenticated account", which is a 401 where an
+     * authorisation check belongs. The posture is now per-case: the parent
+     * bezwaar case is resolved from the session and
+     * `CaseAccessGuard::hasCaseMutationAccess()` decides, which admits exactly
+     * the behandelaar the old comment was protecting.
      *
      * @param string $sessionId UUID of the hearingSession
      *
      * @return JSONResponse The updated hearingSession, 400 on a rejected
-     *                      correction, 401 when unauthenticated
+     *                      correction, 401 when unauthenticated, 403 when the
+     *                      caller does not handle the parent case
      *
      * @NoAdminRequired
      *
@@ -106,6 +114,16 @@ class BezwaarHearingController extends Controller
         $user = $this->userSession->getUser();
         if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // Writes an awb-art-7:7 audit entry against a hearing session picked
+        // by uuid; the parent bezwaar case is resolved first so the ordinary
+        // per-case guard applies. An unresolvable session denies.
+        $caseId = $this->hearingService->getCaseIdForSession(sessionId: $sessionId);
+        if ($caseId === null
+            || $this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false
+        ) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         $entries = $this->request->getParam('entries');

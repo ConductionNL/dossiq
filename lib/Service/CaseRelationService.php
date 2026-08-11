@@ -101,9 +101,21 @@ class CaseRelationService
      *   - no self-relation (`caseId == targetId`);
      *   - no duplicate `{caseId, aardRelatie}` pair;
      *   - no overlap with an existing direct hoofdzaak/deelzaak hierarchy link;
-     *   - the actor must have OR read access to BOTH cases (enforced because
-     *     {@see self::fetchCase()} resolves through the session's ObjectService,
-     *     which applies OpenRegister RBAC — an unreadable case resolves to null).
+     *   - both cases must resolve (a missing case is refused as `access_denied`
+     *     so the endpoint is not an existence oracle).
+     *
+     * ⚠️ This list used to claim the null-check below also enforced per-object
+     * authorisation, *"because the store resolves through the session's
+     * ObjectService, which applies OpenRegister RBAC — an unreadable case
+     * resolves to null"*. That claim was false and the check was INERT:
+     * `PermissionHandler::hasGroupPermission()` returns `true` for a schema
+     * with no `authorization` block and `enforce_default_closed` defaults
+     * false, and none of procest's 85 schemas declares one — so an existing
+     * case never resolved to null for anybody (ConductionNL/.github#372).
+     * Authorisation is now enforced by `CaseAccessGuard` in
+     * `CaseRelationController`, ahead of every call into this service. Do not
+     * re-state the RBAC claim here unless the schemas declare `authorization`
+     * AND a test fails when that declaration is removed.
      *
      * @param string      $caseId      Origin case UUID.
      * @param string      $targetId    Target case UUID.
