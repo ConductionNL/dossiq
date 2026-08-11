@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TermijnExtensionService.
+ * Procest DeadlineExtensionService.
  *
  * AWB 4:14 verlenging on a TermijnInstance. Validates that the
  * verlenging-count is below the TermijnDefinitie's aantalVerlengingen
@@ -37,7 +37,7 @@ use RuntimeException;
 /**
  * AWB 4:14 verlenging engine on a TermijnInstance.
  */
-class TermijnExtensionService
+class DeadlineExtensionService
 {
     /**
      * Extension mode: the ordinary AWB 4:14 lid 1 verlenging, bound by the

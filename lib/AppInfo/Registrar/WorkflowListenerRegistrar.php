@@ -30,7 +30,7 @@ namespace OCA\Procest\AppInfo\Registrar;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\Procest\Listener\DecisionConcludedListener;
-use OCA\Procest\Listener\TermijnCaseCreatedListener;
+use OCA\Procest\Listener\DeadlineCaseCreatedListener;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
 
 /**
@@ -75,7 +75,7 @@ class WorkflowListenerRegistrar
     {
         $context->registerEventListener(
             event: ObjectCreatedEvent::class,
-            listener: TermijnCaseCreatedListener::class
+            listener: DeadlineCaseCreatedListener::class
         );
     }//end registerTermijnListeners()
 

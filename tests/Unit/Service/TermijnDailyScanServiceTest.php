@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for TermijnDailyScanService + TermijnEscalationService.
+ * Unit tests for TermijnDailyScanService + DeadlineEscalationService.
  *
  * Drives the daily sweep through bucketing, overdue flips, pause-expiry,
  * and duplicate-suppression scenarios against an in-memory store.
@@ -29,14 +29,14 @@ use DateTimeImmutable;
 use OCA\Procest\Service\DwangsomCalculationService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\TermijnDailyScanService;
-use OCA\Procest\Service\TermijnEscalationService;
+use OCA\Procest\Service\DeadlineEscalationService;
 use OCA\Procest\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\TermijnDailyScanService
- * @covers \OCA\Procest\Service\TermijnEscalationService
+ * @covers \OCA\Procest\Service\DeadlineEscalationService
  *
  * @uses \OCA\Procest\Service\DwangsomCalculationService
  * @uses \OCA\Procest\Service\TermijnService
@@ -46,7 +46,7 @@ class TermijnDailyScanServiceTest extends TestCase
     private FakeTermijnStore $objects;
     private SettingsService $settings;
     private TermijnService $termijnService;
-    private TermijnEscalationService $escalation;
+    private DeadlineEscalationService $escalation;
     private TermijnDailyScanService $scan;
 
     protected function setUp(): void
@@ -69,7 +69,7 @@ class TermijnDailyScanServiceTest extends TestCase
         $this->settings        = $settings;
         $logger                = $this->createMock(LoggerInterface::class);
         $this->termijnService  = new TermijnService($settings, $logger);
-        $this->escalation      = new TermijnEscalationService($this->termijnService, $logger);
+        $this->escalation      = new DeadlineEscalationService($this->termijnService, $logger);
         $this->scan            = new TermijnDailyScanService(
             $settings,
             $this->termijnService,
@@ -210,7 +210,7 @@ class TermijnDailyScanServiceTest extends TestCase
         $scan   = new TermijnDailyScanService(
             $settings,
             new TermijnService($settings, $logger),
-            new TermijnEscalationService(new TermijnService($settings, $logger), $logger),
+            new DeadlineEscalationService(new TermijnService($settings, $logger), $logger),
             $logger,
             $calc
         );

@@ -6,7 +6,7 @@
  * Daily background job that drives the AWB termijnbewaking sweep:
  * computes days-to-deadline for every active TermijnInstance, flips
  * overdue rows to `overschreden`, raises pause-expiry events, and
- * dispatches threshold escalation via {@see TermijnEscalationService}.
+ * dispatches threshold escalation via {@see DeadlineEscalationService}.
  *
  * @category BackgroundJob
  * @package  OCA\Procest\BackgroundJob
