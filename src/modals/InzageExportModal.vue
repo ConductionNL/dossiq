@@ -14,7 +14,11 @@
 <template>
 	<NcModal size="normal" :name="t('procest', 'Data subject access export')" @close="$emit('close')">
 		<div class="inzage-export">
-			<h2>{{ t('procest', 'Data subject access export') }}</h2>
+			<!-- No <h2> here: NcModal's `name` prop already renders the dialog
+			     heading (h2.modal-header__name) and wires it as the dialog's
+			     accessible name. Repeating it in the body announced the title
+			     twice to a screen reader and made every
+			     getByRole('heading', …) query ambiguous. -->
 			<p class="inzage-export__hint">
 				{{ t('procest', 'Produces the per-subject processing extract from OpenRegister (AVG art. 15). The export itself is logged.') }}
 			</p>
