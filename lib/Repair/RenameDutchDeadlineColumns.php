@@ -262,13 +262,53 @@ class RenameDutchDeadlineColumns implements IRepairStep
             return [];
         }
 
-        $prefix = preg_quote($this->db->getPrefix(), '/');
+        // Table discovery goes through information_schema, NOT IDBConnection.
+        // OCP\IDBConnection exposes neither getSchema() nor getPrefix() — it has
+        // only getQueryBuilder/getDatabasePlatform/getDatabaseProvider and a
+        // couple of shard helpers. Calling either is a runtime fatal that
+        // `php -l` and phpcs both report as clean; only phpstan catches it.
+        //
+        // The pattern here follows openregister's own RegisterService: match on
+        // the `openregister_table_` MARKER rather than a computed prefix.
+        // getQueryBuilder()->getTableName('') yields the literal `*PREFIX*`
+        // placeholder, which is resolved only when a query runs through the NC
+        // DB layer — a raw information_schema string never is, so building a
+        // LIKE from it matches zero tables and reports every register empty.
+        try {
+            $stmt = $this->db->prepare(
+                'SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern'
+            );
+            $stmt->bindValue('pattern', '%openregister\_table\_%');
+            $stmt->execute();
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'RenameDutchDeadlineColumns: could not list tables; skipping.',
+                ['exception' => $e->getMessage()]
+            );
+            return [];
+        }
+
+        $wanted = [];
+        foreach ($ids as $id) {
+            $wanted[] = 'openregister_table_'.((int) $id).'_';
+        }
 
         $tables = [];
-        foreach ($this->db->getSchema()->getTableNames() as $qualified) {
-            $name = substr($qualified, (strrpos($qualified, '.') + 1));
-            foreach ($ids as $id) {
-                if (preg_match('/^'.$prefix.'openregister_table_'.((int) $id).'_\d+$/', $name) === 1) {
+        while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
+            $name = (string) ($row['table_name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+
+            foreach ($wanted as $marker) {
+                $at = strpos($name, $marker);
+                if ($at === false) {
+                    continue;
+                }
+
+                // Everything after the marker must be the numeric schema id, so
+                // register 17 cannot match register 170's tables.
+                if (ctype_digit(substr($name, ($at + strlen($marker)))) === true) {
                     $tables[] = $name;
                 }
             }
@@ -287,8 +327,14 @@ class RenameDutchDeadlineColumns implements IRepairStep
      */
     private function columnsOf(string $table): array
     {
+        // information_schema again, for the same reason as shardTables():
+        // IDBConnection has no getSchema().
         try {
-            return array_keys($this->db->getSchema()->getTable($table)->getColumns());
+            $stmt = $this->db->prepare(
+                'SELECT column_name FROM information_schema.columns WHERE table_name = :table'
+            );
+            $stmt->bindValue('table', $table);
+            $stmt->execute();
         } catch (\Throwable $e) {
             $this->logger->warning(
                 'RenameDutchDeadlineColumns: could not read columns; skipping table.',
@@ -296,6 +342,16 @@ class RenameDutchDeadlineColumns implements IRepairStep
             );
             return [];
         }
+
+        $columns = [];
+        while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
+            $name = (string) ($row['column_name'] ?? '');
+            if ($name !== '') {
+                $columns[] = $name;
+            }
+        }
+
+        return $columns;
 
     }//end columnsOf()
 
