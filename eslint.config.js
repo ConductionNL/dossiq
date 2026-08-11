@@ -52,4 +52,15 @@ module.exports = defineConfig([{
 		'import/no-named-as-default-member': 'off',
 		'import/no-unresolved': ['error', { ignore: ['^@conduction/nextcloud-vue'] }],
 	},
+}, {
+	// Test files legitimately import devDependencies (`vitest`,
+	// `@vue/test-utils`, `@playwright/test`). `n/no-unpublished-import` exists
+	// to stop a devDependency leaking into shipped code, and a spec file is not
+	// shipped — so it flags every spec in the suite as an error. Note this was
+	// invisible: `npm run lint` is `eslint src`, so `tests/` is never linted by
+	// CI and the error only appears when a file is linted by path.
+	files: ['tests/**/*.js', 'tests/**/*.ts'],
+	rules: {
+		'n/no-unpublished-import': 'off',
+	},
 }])
