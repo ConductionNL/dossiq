@@ -15,7 +15,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T13
+ * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
  */
 
 declare(strict_types=1);
@@ -136,7 +136,7 @@ class SamenwerkverzoekServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T13
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
      */
     public function testInitiateSamenwerkingCreatesObject(): void
     {
@@ -214,7 +214,7 @@ class SamenwerkverzoekServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T13
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
      */
     public function testRespondToSamenwerkingAcceptUpdatesStatus(): void
     {
@@ -273,7 +273,7 @@ class SamenwerkverzoekServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T13
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
      */
     public function testRespondToSamenwerkingRejectUpdatesStatus(): void
     {

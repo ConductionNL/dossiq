@@ -16,7 +16,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T11
+ * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
  */
 
 declare(strict_types=1);
@@ -142,7 +142,7 @@ class DsoCaseServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T11
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
      */
     public function testComputeDeadlineReguliere(): void
     {
@@ -180,7 +180,7 @@ class DsoCaseServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T11
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
      */
     public function testComputeDeadlineUitgebreide(): void
     {
@@ -209,7 +209,7 @@ class DsoCaseServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T11
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
      */
     public function testComputeDeadlineSkipsWeekends(): void
     {
@@ -239,7 +239,7 @@ class DsoCaseServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T11
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
      */
     public function testComputeDeadlineSkipsEasterHolidays(): void
     {
@@ -288,7 +288,7 @@ class DsoCaseServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T11
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
      */
     public function testCreateZaakFromVergunningaanvraagCallsObjectService(): void
     {

@@ -37,7 +37,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Service\Transitions\TransitionAuthorizer
  *
- * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-6.2
+ * @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-5.1
  */
 final class StatusTransitionGroupAuthTest extends TestCase
 {

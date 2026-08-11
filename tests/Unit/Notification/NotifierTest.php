@@ -18,7 +18,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#mentions
+ * @spec openspec/changes/ncvue-w2-leaves-adoption/specs/ncvue-w2-leaves-adoption/spec.md#REQ-W2L-003
  */
 
 declare(strict_types=1);

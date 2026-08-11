@@ -15,7 +15,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T12
+ * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
  */
 
 declare(strict_types=1);
@@ -92,7 +92,7 @@ class BeschikkingGenerationServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T12
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
      */
     public function testConstructorSetsProperties(): void
     {
@@ -113,7 +113,7 @@ class BeschikkingGenerationServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T12
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
      */
     public function testGenerateBeschikkingWhenDocudeskUnavailableReturnsStub(): void
     {
@@ -146,7 +146,7 @@ class BeschikkingGenerationServiceTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T12
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
      */
     public function testGenerateBeschikkingOutcomeSelectsCorrectTemplate(): void
     {

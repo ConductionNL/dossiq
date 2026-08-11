@@ -16,7 +16,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T16
+ * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
  */
 
 declare(strict_types=1);
@@ -95,7 +95,7 @@ class VergunningaanvraagCreatedListenerTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T16
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
      */
     public function testHandleIgnoresNonObjectCreatedEvents(): void
     {
@@ -113,7 +113,7 @@ class VergunningaanvraagCreatedListenerTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T16
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
      */
     public function testHandleIgnoresNonMatchingSchema(): void
     {
@@ -148,7 +148,7 @@ class VergunningaanvraagCreatedListenerTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T16
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
      */
     public function testHandleCallsDsoCaseServiceOnMatch(): void
     {
