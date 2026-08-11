@@ -15,7 +15,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T14
+ * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
  */
 
 declare(strict_types=1);
@@ -156,7 +156,7 @@ class DsoDeadlineJobTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T14
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
      */
     public function testGetRemainingWorkingDaysReturnsPositiveForFutureDate(): void
     {
@@ -176,7 +176,7 @@ class DsoDeadlineJobTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T14
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
      */
     public function testGetRemainingWorkingDaysReturnsNegativeForPastDate(): void
     {
@@ -198,7 +198,7 @@ class DsoDeadlineJobTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T14
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
      */
     public function testRunCatchesExceptionsPerTask(): void
     {

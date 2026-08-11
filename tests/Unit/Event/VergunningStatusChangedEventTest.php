@@ -15,7 +15,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T15
+ * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
  */
 
 declare(strict_types=1);
@@ -38,7 +38,7 @@ class VergunningStatusChangedEventTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T15
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
      */
     public function testEventExtendsOcpEvent(): void
     {
@@ -59,7 +59,7 @@ class VergunningStatusChangedEventTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T15
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
      */
     public function testGettersReturnConstructorValues(): void
     {
@@ -87,7 +87,7 @@ class VergunningStatusChangedEventTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T15
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
      */
     public function testNullableFieldsAcceptNull(): void
     {

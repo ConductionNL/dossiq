@@ -15,7 +15,7 @@
  *
  * @link https://procest.nl
  *
- * @spec openspec/changes/dso-omgevingsloket/tasks.md#T17
+ * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
  */
 
 declare(strict_types=1);
@@ -485,7 +485,7 @@ class DsoControllerTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T17
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
      */
     public function testTransitionStatusReturns401WhenUnauthenticated(): void
     {
@@ -501,7 +501,7 @@ class DsoControllerTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T17
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
      */
     public function testTransitionStatusReturns400WhenStatusMissing(): void
     {
@@ -524,7 +524,7 @@ class DsoControllerTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T17
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
      */
     public function testTransitionStatusReturns403WhenNotAuthorized(): void
     {
@@ -573,7 +573,7 @@ class DsoControllerTest extends TestCase
      *
      * @return void
      *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T17
+     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
      */
     public function testGenerateBeschikkingReturns400WhenOutcomeMissing(): void
     {
