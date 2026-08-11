@@ -30,6 +30,11 @@
  * `AiAuditExportController`, `ProcessMiningController`): a fixed set of
  * deployment group names plus an admin fallback.
  *
+ * ⚠️ The MECHANISM is precedented; two of the four group NAMES are not. See
+ * the note on {@see self::ALLOWED_GROUPS} — `beheerders` and `admin` are
+ * attested elsewhere in this app, `kcc` and `klantcontact` are assumptions
+ * made by the author of this class, and this guard denies until they exist.
+ *
  * @category Service
  * @package  OCA\Procest\Service
  *
@@ -69,6 +74,32 @@ class CitizenLookupGuard
      * An empty intersection denies. The existence of these groups is never
      * part of the decision — a group that does not exist simply matches
      * nobody.
+     *
+     * ⚠️ TWO OF THESE FOUR NAMES ARE ASSUMPTIONS, NOT ESTABLISHED FACTS.
+     * Verified with `grep -w` across this repository at `cb63acad3`:
+     *
+     *   - `beheerders` and `admin` are ATTESTED — both are already used as
+     *     Nextcloud group names by `ProcessMiningController::ALLOWED_GROUPS`
+     *     and `ParaferingAuditExportController::ALLOWED_GROUPS`.
+     *   - `kcc` and `klantcontact` are ASSUMED. Neither appears anywhere in
+     *     this codebase as a group name: `kcc` occurs only as a feature name,
+     *     spec slug and CSS class, and `klantcontact` only as a ZGW domain
+     *     term and a spec slug. They were chosen by the author of this class,
+     *     not derived from anything the app already does.
+     *
+     * The consequence is deliberate and it fails CLOSED: if a deployment's KCC
+     * group is called something else, its call-centre staff get HTTP 403 and an
+     * operator fixes it by creating the group or editing this constant. The
+     * alternative — leaving the endpoint open — returned a citizen's phone
+     * number and the free-text summary of every previous call to ANY
+     * authenticated account (finding PROC-IDOR-01, reproduced live).
+     *
+     * A wrong name here is a functional regression an operator can correct in
+     * a minute. A missing guard is a personal-data breach nobody notices.
+     *
+     * 🔧 DEPLOYMENT: this guard denies until the group exists. Create `kcc`
+     * (or rename the entry below to match your instance) and add the KCC
+     * handlers to it.
      */
     private const ALLOWED_GROUPS = ['kcc', 'klantcontact', 'beheerders', 'admin'];
 
