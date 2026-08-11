@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for TermijnNotificationService.
+ * Unit tests for DeadlineNotificationService.
  *
  * Asserts each template renders with the expected subject + body and
  * that the dispatcher attaches the recipient + instance metadata.
@@ -27,20 +27,20 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\BerichtenboxRoutingService;
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnNotificationService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Procest\Service\DeadlineNotificationService;
+use OCA\Procest\Service\DeadlineService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TermijnNotificationService
+ * @covers \OCA\Procest\Service\DeadlineNotificationService
  *
  * @uses \OCA\Procest\Service\BerichtenboxRoutingService
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Procest\Service\DeadlineService
  */
-class TermijnNotificationServiceTest extends TestCase
+class DeadlineNotificationServiceTest extends TestCase
 {
-    private TermijnNotificationService $service;
+    private DeadlineNotificationService $service;
 
     protected function setUp(): void
     {
@@ -65,8 +65,8 @@ class TermijnNotificationServiceTest extends TestCase
         ]);
 
         $logger = $this->createMock(LoggerInterface::class);
-        $this->service = new TermijnNotificationService(
-            new TermijnService($settings, $logger),
+        $this->service = new DeadlineNotificationService(
+            new DeadlineService($settings, $logger),
             new BerichtenboxRoutingService($logger),
             $logger
         );

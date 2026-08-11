@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TermijnNotificationService.
+ * Procest DeadlineNotificationService.
  *
  * Renders + routes the four AWB notification templates (ontvangstbevestiging,
  * extension, ingebrekestelling-receipt, dwangsom-payment) using the
@@ -38,7 +38,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Burger notification template renderer + dispatcher.
  */
-class TermijnNotificationService
+class DeadlineNotificationService
 {
     public const TEMPLATES = [
         'ontvangstbevestiging',
@@ -50,13 +50,13 @@ class TermijnNotificationService
     /**
      * Constructor.
      *
-     * @param TermijnService             $termijnService Termijn service.
+     * @param DeadlineService            $termijnService Termijn service.
      * @param BerichtenboxRoutingService $router         Router (procest notification-router).
      * @param LoggerInterface            $logger         Logger.
      * @param IJobList|null              $jobList        Optional job list for async dispatch.
      */
     public function __construct(
-        private readonly TermijnService $termijnService,
+        private readonly DeadlineService $termijnService,
         private readonly BerichtenboxRoutingService $router,
         private readonly LoggerInterface $logger,
         private readonly ?IJobList $jobList=null,

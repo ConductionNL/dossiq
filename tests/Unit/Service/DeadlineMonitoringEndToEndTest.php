@@ -39,9 +39,9 @@ use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\DeadlineDailyScanService;
 use OCA\Procest\Service\DeadlineEscalationService;
 use OCA\Procest\Service\DeadlineExtensionService;
-use OCA\Procest\Service\TermijnNotificationService;
+use OCA\Procest\Service\DeadlineNotificationService;
 use OCA\Procest\Service\DeadlinePauseService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Procest\Service\DeadlineService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -52,14 +52,14 @@ class DeadlineMonitoringEndToEndTest extends TestCase
 {
     private FakeTermijnStore $objects;
     private SettingsService $settings;
-    private TermijnService $termijnService;
+    private DeadlineService $termijnService;
     private DeadlinePauseService $pauseService;
     private DeadlineExtensionService $extService;
     private IngebrekestellingService $ingService;
     private DwangsomCalculationService $calcService;
     private DwangsomUitbetalingService $uitService;
     private DwangsomBezwaarService $bezService;
-    private TermijnNotificationService $notifService;
+    private DeadlineNotificationService $notifService;
     private DeadlineDailyScanService $scanService;
 
     protected function setUp(): void
@@ -84,14 +84,14 @@ class DeadlineMonitoringEndToEndTest extends TestCase
         $this->settings = $settings;
 
         $logger = $this->createMock(LoggerInterface::class);
-        $this->termijnService = new TermijnService($settings, $logger);
+        $this->termijnService = new DeadlineService($settings, $logger);
         $this->pauseService   = new DeadlinePauseService($this->termijnService);
         $this->extService     = new DeadlineExtensionService($this->termijnService);
         $this->ingService     = new IngebrekestellingService($settings, $this->termijnService, $logger);
         $this->calcService    = new DwangsomCalculationService($settings, $logger);
         $this->uitService     = new DwangsomUitbetalingService($settings);
         $this->bezService     = new DwangsomBezwaarService($settings, $this->termijnService, $logger);
-        $this->notifService   = new TermijnNotificationService(
+        $this->notifService   = new DeadlineNotificationService(
             $this->termijnService,
             new BerichtenboxRoutingService($logger),
             $logger

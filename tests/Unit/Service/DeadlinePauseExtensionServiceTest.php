@@ -29,7 +29,7 @@ use DateTimeImmutable;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\DeadlineExtensionService;
 use OCA\Procest\Service\DeadlinePauseService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Procest\Service\DeadlineService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -41,12 +41,12 @@ use RuntimeException;
  * @uses \OCA\Procest\Service\Substitution\SubstitutedWorkResolver
  * @uses \OCA\Procest\Service\Support\SearchesObjects
  * @uses \OCA\Procest\Service\DeadlineDailyScanService
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Procest\Service\DeadlineService
  */
 class DeadlinePauseExtensionServiceTest extends TestCase
 {
     private FakeTermijnStore $objects;
-    private TermijnService $termijnService;
+    private DeadlineService $termijnService;
     private DeadlinePauseService $pauseService;
     private DeadlineExtensionService $extService;
 
@@ -68,7 +68,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase
         );
 
         $logger = $this->createMock(LoggerInterface::class);
-        $this->termijnService = new TermijnService($settings, $logger);
+        $this->termijnService = new DeadlineService($settings, $logger);
         $this->pauseService   = new DeadlinePauseService($this->termijnService);
         $this->extService     = new DeadlineExtensionService($this->termijnService);
 

@@ -29,19 +29,19 @@ namespace OCA\Procest\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Procest\Service\IngebrekestellingService;
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Procest\Service\DeadlineService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\IngebrekestellingService
  *
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Procest\Service\DeadlineService
  */
 class IngebrekestellingServiceTest extends TestCase
 {
     private FakeTermijnStore $objects;
-    private TermijnService $termijnService;
+    private DeadlineService $termijnService;
     private IngebrekestellingService $service;
 
     protected function setUp(): void
@@ -64,7 +64,7 @@ class IngebrekestellingServiceTest extends TestCase
         );
 
         $logger               = $this->createMock(LoggerInterface::class);
-        $this->termijnService = new TermijnService($settings, $logger);
+        $this->termijnService = new DeadlineService($settings, $logger);
         $this->service        = new IngebrekestellingService($settings, $this->termijnService, $logger);
 
         // Seed an AWB-default definition.

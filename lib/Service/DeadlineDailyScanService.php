@@ -53,14 +53,14 @@ class DeadlineDailyScanService
      * Constructor.
      *
      * @param SettingsService                 $settingsService   Settings service.
-     * @param TermijnService                  $termijnService    TermijnService.
+     * @param DeadlineService                 $termijnService    DeadlineService.
      * @param DeadlineEscalationService       $escalationService Escalation service.
      * @param LoggerInterface                 $logger            Logger.
      * @param DwangsomCalculationService|null $dwangsomService   Dwangsom calculation service.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly TermijnService $termijnService,
+        private readonly DeadlineService $termijnService,
         private readonly DeadlineEscalationService $escalationService,
         private readonly LoggerInterface $logger,
         private readonly ?DwangsomCalculationService $dwangsomService=null,

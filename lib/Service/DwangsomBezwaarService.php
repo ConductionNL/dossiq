@@ -47,12 +47,12 @@ class DwangsomBezwaarService
      * Constructor.
      *
      * @param SettingsService $settingsService Settings.
-     * @param TermijnService  $termijnService  Termijn service for events.
+     * @param DeadlineService $termijnService  Termijn service for events.
      * @param LoggerInterface $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly TermijnService $termijnService,
+        private readonly DeadlineService $termijnService,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()

@@ -41,10 +41,10 @@ class DeadlinePauseService
     /**
      * Constructor.
      *
-     * @param TermijnService $termijnService TermijnService.
+     * @param DeadlineService $termijnService DeadlineService.
      */
     public function __construct(
-        private readonly TermijnService $termijnService,
+        private readonly DeadlineService $termijnService,
     ) {
     }//end __construct()
 

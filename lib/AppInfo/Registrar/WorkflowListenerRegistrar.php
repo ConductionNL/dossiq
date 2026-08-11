@@ -63,7 +63,7 @@ class WorkflowListenerRegistrar
      * On case creation, an AWB TermijnInstance is automatically bound to
      * the case using the active TermijnDefinitie for the zaaktype. The
      * listener is a pure observer (ADR-022); all logic lives in
-     * {@see \OCA\Procest\Service\TermijnService}.
+     * {@see \OCA\Procest\Service\DeadlineService}.
      *
      * @param IRegistrationContext $context The registration context.
      *

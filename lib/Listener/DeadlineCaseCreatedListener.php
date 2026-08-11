@@ -6,7 +6,7 @@
  * Observes OpenRegister ObjectCreatedEvent on the procest case schema and
  * binds an AWB termijn (TermijnInstance) to the case using the active
  * TermijnDefinitie for the case zaaktype. Defers all work to
- * {@see TermijnService} (ADR-022). A missing definition is logged at debug
+ * {@see DeadlineService} (ADR-022). A missing definition is logged at debug
  * level but never blocks case creation.
  *
  * @category Listener
@@ -32,7 +32,7 @@ namespace OCA\Procest\Listener;
 
 use OCA\OpenRegister\Event\ObjectCreatedEvent;
 use OCA\Procest\Service\ObjectSchemaSlugResolver;
-use OCA\Procest\Service\TermijnService;
+use OCA\Procest\Service\DeadlineService;
 use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use Psr\Log\LoggerInterface;
@@ -47,12 +47,12 @@ class DeadlineCaseCreatedListener implements IEventListener
     /**
      * Constructor.
      *
-     * @param TermijnService           $termijnService TermijnService.
+     * @param DeadlineService          $termijnService DeadlineService.
      * @param ObjectSchemaSlugResolver $slugResolver   Schema id-to-slug resolver.
      * @param LoggerInterface          $logger         Logger.
      */
     public function __construct(
-        private readonly TermijnService $termijnService,
+        private readonly DeadlineService $termijnService,
         private readonly ObjectSchemaSlugResolver $slugResolver,
         private readonly LoggerInterface $logger,
     ) {

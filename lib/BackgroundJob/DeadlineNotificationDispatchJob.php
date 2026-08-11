@@ -7,7 +7,7 @@
  * notification (ontvangstbevestiging / extension / ingebrekestelling-
  * receipt / dwangsom-payment) outside the request thread, so SMTP /
  * berichtenbox-router failures never block burger-facing flows. The
- * synchronous {@see TermijnNotificationService::sendTermijnNotification}
+ * synchronous {@see DeadlineNotificationService::sendTermijnNotification}
  * remains the canonical render path; this job re-enters it from the
  * NC background-job runner.
  *
@@ -32,7 +32,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\BackgroundJob;
 
-use OCA\Procest\Service\TermijnNotificationService;
+use OCA\Procest\Service\DeadlineNotificationService;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\QueuedJob;
 use Psr\Log\LoggerInterface;
@@ -47,13 +47,13 @@ class DeadlineNotificationDispatchJob extends QueuedJob
     /**
      * Constructor.
      *
-     * @param ITimeFactory               $time                Time factory.
-     * @param TermijnNotificationService $notificationService Notification service.
-     * @param LoggerInterface            $logger              Logger.
+     * @param ITimeFactory                $time                Time factory.
+     * @param DeadlineNotificationService $notificationService Notification service.
+     * @param LoggerInterface             $logger              Logger.
      */
     public function __construct(
         ITimeFactory $time,
-        private readonly TermijnNotificationService $notificationService,
+        private readonly DeadlineNotificationService $notificationService,
         private readonly LoggerInterface $logger,
     ) {
         parent::__construct(time: $time);

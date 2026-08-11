@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Procest TermijnController.
+ * Procest DeadlineController.
  *
  * REST surface for TermijnInstance lifecycle (create, get, pauze,
  * hervat, verleng, voltooi). Defers all business logic to
- * {@see TermijnService}, {@see DeadlinePauseService} and
+ * {@see DeadlineService}, {@see DeadlinePauseService} and
  * {@see DeadlineExtensionService} (ADR-022).
  *
  * Auth: @NoAdminRequired — handler / caseworker calls only. Per-object
@@ -38,7 +38,7 @@ namespace OCA\Procest\Controller;
 use DateTimeImmutable;
 use OCA\Procest\Service\DeadlineExtensionService;
 use OCA\Procest\Service\DeadlinePauseService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Procest\Service\DeadlineService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -55,14 +55,14 @@ use Throwable;
  * @spec openspec/specs/termijn-binding/spec.md
  * @spec openspec/specs/termijn-pause-extension/spec.md
  */
-class TermijnController extends Controller
+class DeadlineController extends Controller
 {
     /**
      * Constructor.
      *
      * @param string                   $appName     App id.
      * @param IRequest                 $request     Request.
-     * @param TermijnService           $termijn     Termijn service.
+     * @param DeadlineService          $termijn     Termijn service.
      * @param DeadlinePauseService     $pause       Pause service.
      * @param DeadlineExtensionService $extension   Extension service.
      * @param IUserSession             $userSession User session.
@@ -71,7 +71,7 @@ class TermijnController extends Controller
     public function __construct(
         string $appName,
         IRequest $request,
-        private readonly TermijnService $termijn,
+        private readonly DeadlineService $termijn,
         private readonly DeadlinePauseService $pause,
         private readonly DeadlineExtensionService $extension,
         private readonly IUserSession $userSession,
@@ -85,7 +85,7 @@ class TermijnController extends Controller
      *
      * Returns a Http::STATUS_FORBIDDEN response when no user is logged in.
      * Per-object IDOR enforcement (the user must have access to the
-     * specific zaak) is delegated to {@see TermijnService} which only
+     * specific zaak) is delegated to {@see DeadlineService} which only
      * returns instances bound to a zaak the caller can see — the NC
      * SecurityMiddleware enforces base auth + we re-check the session
      * here so the controller cannot be reached anonymously even if
@@ -171,7 +171,7 @@ class TermijnController extends Controller
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
-    public function pauze(string $id): JSONResponse
+    public function pause(string $id): JSONResponse
     {
         $denied = $this->ensureAuthenticated();
         if ($denied !== null) {
@@ -189,7 +189,7 @@ class TermijnController extends Controller
         } catch (Throwable $e) {
             return $this->error(e: $e, log: 'Pauze failed');
         }
-    }//end pauze()
+    }//end pause()
 
     /**
      * Resume after pauze.
@@ -202,7 +202,7 @@ class TermijnController extends Controller
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
-    public function hervat(string $id): JSONResponse
+    public function resume(string $id): JSONResponse
     {
         $denied = $this->ensureAuthenticated();
         if ($denied !== null) {
@@ -222,7 +222,7 @@ class TermijnController extends Controller
         } catch (Throwable $e) {
             return $this->error(e: $e, log: 'Hervat failed');
         }
-    }//end hervat()
+    }//end resume()
 
     /**
      * Request a verlenging.
@@ -235,7 +235,7 @@ class TermijnController extends Controller
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
-    public function verleng(string $id): JSONResponse
+    public function extend(string $id): JSONResponse
     {
         $denied = $this->ensureAuthenticated();
         if ($denied !== null) {
@@ -264,7 +264,7 @@ class TermijnController extends Controller
         } catch (Throwable $e) {
             return $this->error(e: $e, log: 'Verleng failed');
         }
-    }//end verleng()
+    }//end extend()
 
     /**
      * Mark a TermijnInstance as voltooid.
@@ -277,7 +277,7 @@ class TermijnController extends Controller
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
      */
-    public function voltooi(string $id): JSONResponse
+    public function complete(string $id): JSONResponse
     {
         $denied = $this->ensureAuthenticated();
         if ($denied !== null) {
@@ -306,7 +306,7 @@ class TermijnController extends Controller
         } catch (Throwable $e) {
             return $this->error(e: $e, log: 'Voltooi failed');
         }
-    }//end voltooi()
+    }//end complete()
 
     /**
      * Decode the JSON request body into an array.

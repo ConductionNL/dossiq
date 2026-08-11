@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for TermijnService.
+ * Unit tests for DeadlineService.
  *
  * Drives termijn instance creation, definition version resolution,
  * completion, and error handling against an in-memory ObjectService fake.
@@ -27,19 +27,19 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use DateTimeImmutable;
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Procest\Service\DeadlineService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @covers \OCA\Procest\Service\TermijnService
+ * @covers \OCA\Procest\Service\DeadlineService
  */
-class TermijnServiceTest extends TestCase
+class DeadlineServiceTest extends TestCase
 {
     private FakeTermijnStore $objects;
 
-    private TermijnService $service;
+    private DeadlineService $service;
 
     protected function setUp(): void
     {
@@ -58,7 +58,7 @@ class TermijnServiceTest extends TestCase
             },
         );
 
-        $this->service = new TermijnService($settings, $this->createMock(LoggerInterface::class));
+        $this->service = new DeadlineService($settings, $this->createMock(LoggerInterface::class));
 
         // Seed two definitions: omgevingsvergunning 56d (active) + Wmo 42d (active).
         $this->objects->saveObject('procest', 'termijnDefinitie', [
@@ -152,7 +152,7 @@ class TermijnServiceTest extends TestCase
                 };
             },
         );
-        $service = new TermijnService($settings, $this->createMock(LoggerInterface::class));
+        $service = new DeadlineService($settings, $this->createMock(LoggerInterface::class));
 
         $resolved = $service->getTermijnDefinitie('omgevingsvergunning-regulier');
         self::assertNotNull($resolved);
@@ -256,7 +256,7 @@ class TermijnServiceTest extends TestCase
                 };
             },
         );
-        $freshService = new TermijnService($settings, $this->createMock(LoggerInterface::class));
+        $freshService = new DeadlineService($settings, $this->createMock(LoggerInterface::class));
 
         $fresh = $freshService->createTermijnInstance(
             'Z/2026/301',

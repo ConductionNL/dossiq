@@ -58,10 +58,10 @@ class DeadlineExtensionService
     /**
      * Constructor.
      *
-     * @param TermijnService $termijnService TermijnService.
+     * @param DeadlineService $termijnService DeadlineService.
      */
     public function __construct(
-        private readonly TermijnService $termijnService,
+        private readonly DeadlineService $termijnService,
     ) {
     }//end __construct()
 
@@ -294,10 +294,10 @@ class DeadlineExtensionService
             return 1;
         }
 
-        // Walk the TermijnService cache by zaaktype if available. As a
+        // Walk the DeadlineService cache by zaaktype if available. As a
         // safe fallback, return the default 1 — a real lookup would
         // call SettingsService->getObjectService()->find($defId) here,
-        // but TermijnService already caches lookups by zaaktype which
+        // but DeadlineService already caches lookups by zaaktype which
         // is the data we actually need.
         $svcDef = null;
         try {

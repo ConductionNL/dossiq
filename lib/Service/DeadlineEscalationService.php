@@ -54,11 +54,11 @@ class DeadlineEscalationService
     /**
      * Constructor.
      *
-     * @param TermijnService  $termijnService TermijnService for instance lookup/update.
+     * @param DeadlineService $termijnService DeadlineService for instance lookup/update.
      * @param LoggerInterface $logger         Logger.
      */
     public function __construct(
-        private readonly TermijnService $termijnService,
+        private readonly DeadlineService $termijnService,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()

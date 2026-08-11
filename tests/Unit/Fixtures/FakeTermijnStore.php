@@ -5,12 +5,12 @@
  *
  * Tiny in-memory ObjectService fake reused across the termijnbewaking +
  * archief-edepot unit tests. Lives in the global namespace (same as the
- * original declaration in TermijnServiceTest.php) so that every test file
+ * original declaration in DeadlineServiceTest.php) so that every test file
  * referencing `new FakeTermijnStore()` keeps working unchanged.
  *
  * Loaded via tests/bootstrap.php so individual test files can run
  * standalone — previously the class was declared at the bottom of
- * TermijnServiceTest.php, which meant any --filter run against a single
+ * DeadlineServiceTest.php, which meant any --filter run against a single
  * other test file fataled with "Class FakeTermijnStore not found".
  *
  * @category Tests
@@ -40,7 +40,7 @@ if (class_exists(FakeTermijnStore::class, false) === true) {
  * Tiny in-memory ObjectService fake reused by all termijnbewaking +
  * archief-edepot unit tests.
  *
- * Originally lived at the bottom of TermijnServiceTest.php inside the
+ * Originally lived at the bottom of DeadlineServiceTest.php inside the
  * `OCA\Procest\Tests\Unit\Service` namespace. Extracted to this fixture
  * file so every test file referencing `new FakeTermijnStore()` resolves
  * standalone — the namespace pin keeps the existing 10 call sites

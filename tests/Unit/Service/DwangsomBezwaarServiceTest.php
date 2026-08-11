@@ -24,7 +24,7 @@ namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\DwangsomBezwaarService;
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Procest\Service\DeadlineService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -32,7 +32,7 @@ use RuntimeException;
 /**
  * @covers \OCA\Procest\Service\DwangsomBezwaarService
  *
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Procest\Service\DeadlineService
  */
 class DwangsomBezwaarServiceTest extends TestCase
 {
@@ -61,7 +61,7 @@ class DwangsomBezwaarServiceTest extends TestCase
         $logger        = $this->createMock(LoggerInterface::class);
         $this->service = new DwangsomBezwaarService(
             $settings,
-            new TermijnService($settings, $logger),
+            new DeadlineService($settings, $logger),
             $logger
         );
 

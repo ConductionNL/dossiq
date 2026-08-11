@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TermijnService.
+ * Procest DeadlineService.
  *
  * Server-authoritative service for the AWB termijnbewaking engine. Owns
  * the TermijnInstance lifecycle: create, get, update, complete. Resolves
@@ -44,7 +44,7 @@ use RuntimeException;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class TermijnService
+class DeadlineService
 {
     use SearchesObjects;
 
@@ -159,7 +159,7 @@ class TermijnService
             return null;
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'TermijnService.getTermijnInstance failed',
+                'DeadlineService.getTermijnInstance failed',
                 ['id' => $termijnInstanceId, 'error' => $e->getMessage()]
             );
             return null;
@@ -267,7 +267,7 @@ class TermijnService
             );
         } catch (\Throwable $e) {
             $this->logger->warning(
-                'TermijnService.getTermijnDefinitie lookup failed',
+                'DeadlineService.getTermijnDefinitie lookup failed',
                 ['zaaktype' => $zaaktype, 'error' => $e->getMessage()]
             );
             return null;
@@ -423,7 +423,7 @@ class TermijnService
             return null;
         } catch (\Throwable $e) {
             $this->logger->error(
-                'TermijnService persist failed',
+                'DeadlineService persist failed',
                 ['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()]
             );
             return null;

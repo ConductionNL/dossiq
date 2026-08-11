@@ -30,7 +30,7 @@ use OCA\Procest\Service\DwangsomCalculationService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\DeadlineDailyScanService;
 use OCA\Procest\Service\DeadlineEscalationService;
-use OCA\Procest\Service\TermijnService;
+use OCA\Procest\Service\DeadlineService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
@@ -39,13 +39,13 @@ use Psr\Log\LoggerInterface;
  * @covers \OCA\Procest\Service\DeadlineEscalationService
  *
  * @uses \OCA\Procest\Service\DwangsomCalculationService
- * @uses \OCA\Procest\Service\TermijnService
+ * @uses \OCA\Procest\Service\DeadlineService
  */
 class DeadlineDailyScanServiceTest extends TestCase
 {
     private FakeTermijnStore $objects;
     private SettingsService $settings;
-    private TermijnService $termijnService;
+    private DeadlineService $termijnService;
     private DeadlineEscalationService $escalation;
     private DeadlineDailyScanService $scan;
 
@@ -68,7 +68,7 @@ class DeadlineDailyScanServiceTest extends TestCase
 
         $this->settings        = $settings;
         $logger                = $this->createMock(LoggerInterface::class);
-        $this->termijnService  = new TermijnService($settings, $logger);
+        $this->termijnService  = new DeadlineService($settings, $logger);
         $this->escalation      = new DeadlineEscalationService($this->termijnService, $logger);
         $this->scan            = new DeadlineDailyScanService(
             $settings,
@@ -209,8 +209,8 @@ class DeadlineDailyScanServiceTest extends TestCase
         $calc   = new DwangsomCalculationService($settings, $logger);
         $scan   = new DeadlineDailyScanService(
             $settings,
-            new TermijnService($settings, $logger),
-            new DeadlineEscalationService(new TermijnService($settings, $logger), $logger),
+            new DeadlineService($settings, $logger),
+            new DeadlineEscalationService(new DeadlineService($settings, $logger), $logger),
             $logger,
             $calc
         );

@@ -246,7 +246,7 @@ if ($ncBaseLoaded === false) {
 // Shared in-memory ObjectService fake. Lives in tests/Unit/Fixtures/ so
 // every termijnbewaking + archief-edepot unit test file can resolve
 // `FakeTermijnStore` even when run standalone (previously it sat at the
-// bottom of TermijnServiceTest.php and only loaded if PHPUnit happened
+// bottom of DeadlineServiceTest.php and only loaded if PHPUnit happened
 // to require that file first).
 require_once __DIR__.'/Unit/Fixtures/FakeTermijnStore.php';
 

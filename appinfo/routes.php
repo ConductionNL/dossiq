@@ -659,12 +659,17 @@ $extra = [
         // Public webhook for openconnector/ERP payment confirmation callbacks.
         ['name' => 'dwangsomPaymentCallback#callback', 'url' => '/api/procest/openconnector/dwangsom-payment-callback', 'verb' => 'POST'],
         // TermijnInstance lifecycle (caseworker / handler).
-        ['name' => 'termijn#create',     'url' => '/api/termijn/instances',                  'verb' => 'POST'],
-        ['name' => 'termijn#show',       'url' => '/api/termijn/instances/{id}',             'verb' => 'GET'],
-        ['name' => 'termijn#pauze',      'url' => '/api/termijn/instances/{id}/pauze',       'verb' => 'POST'],
-        ['name' => 'termijn#hervat',     'url' => '/api/termijn/instances/{id}/hervat',      'verb' => 'POST'],
-        ['name' => 'termijn#verleng',    'url' => '/api/termijn/instances/{id}/verleng',     'verb' => 'POST'],
-        ['name' => 'termijn#voltooi',    'url' => '/api/termijn/instances/{id}/voltooi',     'verb' => 'POST'],
+        // Route NAMES follow the renamed controller and its methods; the URLs
+        // deliberately do NOT. /api/termijn/* is the published contract and
+        // moving it is a breaking change for every consumer — a separate
+        // decision from this rename. Nothing references these route names; the
+        // frontend calls the URLs directly.
+        ['name' => 'deadline#create',    'url' => '/api/termijn/instances',                  'verb' => 'POST'],
+        ['name' => 'deadline#show',      'url' => '/api/termijn/instances/{id}',             'verb' => 'GET'],
+        ['name' => 'deadline#pause',     'url' => '/api/termijn/instances/{id}/pauze',       'verb' => 'POST'],
+        ['name' => 'deadline#resume',    'url' => '/api/termijn/instances/{id}/hervat',      'verb' => 'POST'],
+        ['name' => 'deadline#extend',    'url' => '/api/termijn/instances/{id}/verleng',     'verb' => 'POST'],
+        ['name' => 'deadline#complete',  'url' => '/api/termijn/instances/{id}/voltooi',     'verb' => 'POST'],
         // Ingebrekestelling registration.
         ['name' => 'ingebrekestelling#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
         ['name' => 'ingebrekestelling#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
