@@ -159,6 +159,7 @@ export default {
 	flex-direction: column;
 	gap: 8px;
 }
+
 .bezwaar-timeline__items {
 	display: flex;
 	flex-direction: column;
@@ -166,6 +167,7 @@ export default {
 	padding-left: 16px;
 	border-left: 2px solid var(--color-border-dark);
 }
+
 .timeline-item {
 	display: flex;
 	align-items: flex-start;
@@ -173,6 +175,7 @@ export default {
 	padding: 8px 0;
 	position: relative;
 }
+
 .timeline-item__marker {
 	width: 12px;
 	height: 12px;
@@ -182,27 +185,34 @@ export default {
 	margin-left: -23px;
 	margin-top: 4px;
 }
+
 .timeline-item--completed .timeline-item__marker {
 	background: var(--color-success);
 }
+
 .timeline-item--active .timeline-item__marker {
 	background: var(--color-primary);
 }
+
 .timeline-item--deadline .timeline-item__marker {
 	background: var(--color-warning);
 	border: 2px solid var(--color-warning-text);
 }
+
 .timeline-item__content {
 	display: flex;
 	flex-direction: column;
 }
+
 .timeline-item__date {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 }
+
 .timeline-item__label {
 	font-weight: 500;
 }
+
 .timeline-item__detail {
 	font-size: 13px;
 	color: var(--color-text-lighter);

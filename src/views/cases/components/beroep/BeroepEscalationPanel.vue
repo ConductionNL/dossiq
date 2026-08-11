@@ -114,10 +114,12 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 }
+
 .beroep-escalation-panel__actions {
 	display: flex;
 	justify-content: flex-end;
 }
+
 .form-group {
 	margin: 8px 0;
 }

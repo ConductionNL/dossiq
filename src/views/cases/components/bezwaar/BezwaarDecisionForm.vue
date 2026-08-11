@@ -290,43 +290,52 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 }
+
 .bezwaar-decision-form__details {
 	display: grid;
 	grid-template-columns: 1fr 1fr 1fr;
 	gap: 12px;
 }
+
 .decision-detail {
 	display: flex;
 	flex-direction: column;
 }
+
 .decision-detail__label {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 }
+
 .bezwaar-decision-form__content {
 	background: var(--color-background-dark);
 	border-radius: var(--border-radius-large);
 	padding: 12px;
 }
+
 .bezwaar-decision-form__actions {
 	display: flex;
 	justify-content: flex-end;
 }
+
 .form-group {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
 }
+
 .form-row {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
 	gap: 16px;
 }
+
 .form-error {
 	color: var(--color-error);
 	font-size: 12px;
 	margin: 0;
 }
+
 textarea {
 	width: 100%;
 	padding: 8px;

@@ -177,8 +177,11 @@ export default {
 }
 
 .audit-trail__action-badge--parafered { background: var(--color-success-light, #e8f5e9); color: var(--color-success, #2e7d32); }
+
 .audit-trail__action-badge--returned { background: var(--color-warning-light, #fff3e0); color: var(--color-warning, #e65100); }
+
 .audit-trail__action-badge--advised { background: var(--color-primary-element-light); color: var(--color-primary-element); }
+
 .audit-trail__action-badge--skipped { background: var(--color-background-dark); }
 
 .audit-trail__step {

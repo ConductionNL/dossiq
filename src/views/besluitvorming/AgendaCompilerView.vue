@@ -207,15 +207,18 @@ export default {
 	display: flex;
 	gap: 16px;
 }
+
 .agenda-compiler__panel {
 	flex: 1;
 }
+
 .agenda-compiler__controls {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	max-width: 420px;
 }
+
 .agenda-compiler__available-item {
 	display: flex;
 	align-items: center;

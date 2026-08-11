@@ -217,10 +217,6 @@ export default {
 	opacity: 1;
 }
 
-.case-card__header {
-	padding-left: 26px;
-}
-
 .case-card:hover,
 .case-card:focus-visible {
 	background: var(--color-background-hover);
@@ -246,6 +242,8 @@ export default {
 	align-items: center;
 	gap: 8px;
 	margin-bottom: 4px;
+	/* Space for the absolutely-positioned .case-card__select checkbox. */
+	padding-left: 26px;
 }
 
 .case-card__identifier {

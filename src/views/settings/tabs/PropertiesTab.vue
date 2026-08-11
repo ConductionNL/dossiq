@@ -306,29 +306,53 @@ export default {
 
 <style scoped>
 .properties-tab__notice { padding: 16px; background: var(--color-background-dark); border-radius: var(--border-radius); color: var(--color-text-maxcontrast); }
+
 .properties-tab__list { margin-bottom: 24px; }
+
 .property-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--color-border); transition: background 0.15s; }
+
 .property-row:hover { background: var(--color-background-hover); }
+
 .property-row--editing { background: var(--color-background-dark); padding: 12px; flex-direction: column; align-items: stretch; }
+
 .property-row__name { flex: 1; font-weight: 500; }
+
 .property-row__format { padding: 2px 8px; border-radius: var(--border-radius-pill); font-size: 11px; font-weight: 500; background: var(--color-background-dark); }
+
 .property-row__max { font-size: 12px; color: var(--color-text-maxcontrast); }
+
 .property-row__required { font-size: 12px; color: var(--color-text-maxcontrast); font-style: italic; }
+
 .property-row__actions { display: flex; gap: 2px; margin-left: auto; }
+
 .property-row__edit-form { width: 100%; }
+
 .format-select { width: 100%; padding: 8px; border: 1px solid var(--color-border-dark); border-radius: var(--border-radius); background: var(--color-main-background); }
+
 .edit-row { display: flex; gap: 12px; margin-bottom: 8px; align-items: center; }
+
 .edit-row--actions { margin-top: 8px; }
+
 .edit-field { flex: 1; }
+
 .edit-field--small { max-width: 100px; }
+
 .field-label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px; color: var(--color-text-maxcontrast); }
+
 .properties-tab__add { border-top: 2px solid var(--color-border); padding-top: 16px; }
+
 .properties-tab__add h4 { margin-bottom: 12px; }
+
 .add-form__row { display: flex; gap: 12px; margin-bottom: 8px; align-items: center; }
+
 .add-form__field { flex: 1; }
+
 .add-form__field--small { max-width: 100px; }
+
 .properties-tab__empty { color: var(--color-text-maxcontrast); padding: 20px; text-align: center; }
+
 .properties-tab__error { color: var(--color-error); margin-top: 12px; }
+
 .field-error { display: block; color: var(--color-error); font-size: 12px; margin-bottom: 8px; }
 
 @media (prefers-reduced-motion: reduce) {

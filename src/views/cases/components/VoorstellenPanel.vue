@@ -210,9 +210,13 @@ export default {
 }
 
 .voorstellen-panel__status--concept { background: var(--color-background-dark); }
+
 .voorstellen-panel__status--in_parafering { background: var(--color-primary-element-light); color: var(--color-primary-element); }
+
 .voorstellen-panel__status--geaccordeerd { background: var(--color-success-light, #e8f5e9); color: var(--color-success, #2e7d32); }
+
 .voorstellen-panel__status--besloten { background: var(--color-success-light, #e8f5e9); color: var(--color-success, #2e7d32); }
+
 .voorstellen-panel__status--teruggestuurd { background: var(--color-warning-light, #fff3e0); color: var(--color-warning, #e65100); }
 
 .voorstellen-panel__item-meta {

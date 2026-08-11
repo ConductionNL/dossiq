@@ -67,5 +67,6 @@ export default {
 
 <style scoped>
 .form-group { margin-bottom: 16px; }
+
 .form-group label { display: block; font-weight: 600; margin-bottom: 4px; }
 </style>

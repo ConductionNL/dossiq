@@ -213,6 +213,7 @@ export default {
 	gap: 8px;
 	max-width: 520px;
 }
+
 .vergadering-detail__actions {
 	display: flex;
 	gap: 8px;

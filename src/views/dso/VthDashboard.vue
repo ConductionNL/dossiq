@@ -245,9 +245,11 @@ export default {
 .vth-dashboard {
 	padding: 20px;
 }
+
 .vth-dashboard__header h2 {
 	margin-bottom: 16px;
 }
+
 .vth-dashboard__filters {
 	display: flex;
 	flex-wrap: wrap;
@@ -255,12 +257,15 @@ export default {
 	align-items: flex-end;
 	margin-bottom: 16px;
 }
+
 .vth-filter {
 	min-width: 180px;
 }
+
 .vth-filter--small {
 	min-width: 100px;
 }
+
 .vth-dashboard__loading,
 .vth-dashboard__error {
 	display: flex;
@@ -268,37 +273,51 @@ export default {
 	gap: 8px;
 	padding: 24px;
 }
+
 .vth-dashboard__table-wrapper {
 	overflow-x: auto;
 }
+
 .vth-dashboard__table {
 	width: 100%;
 	border-collapse: collapse;
 }
+
 .vth-dashboard__table th,
 .vth-dashboard__table td {
 	padding: 8px 12px;
 	border-bottom: 1px solid var(--color-border);
 	text-align: left;
 }
+
 .vth-dashboard__empty {
 	text-align: center;
 	color: var(--color-text-lighter);
 	padding: 32px !important;
 }
+
 .vth-status {
 	display: inline-block;
 	padding: 2px 8px;
 	border-radius: 4px;
 	font-size: 0.85em;
 }
+
 .vth-status--ingediend { background: var(--color-info); color: #fff; }
+
 .vth-status--in-behandeling { background: var(--color-warning); color: #fff; }
+
 .vth-status--verleend { background: var(--color-success); color: #fff; }
+
 .vth-status--geweigerd { background: var(--color-error); color: #fff; }
+
 .vth-status--ingetrokken { background: var(--color-text-lighter); color: #fff; }
+
 .vth-deadline--ok { color: var(--color-success); }
+
 .vth-deadline--warning { color: var(--color-warning); font-weight: bold; }
+
 .vth-deadline--critical { color: var(--color-error); font-weight: bold; }
+
 .vth-deadline--overdue { color: var(--color-error); font-weight: bold; text-decoration: underline; }
 </style>

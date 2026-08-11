@@ -143,14 +143,17 @@ export default {
 	background: var(--color-background-dark);
 	margin-bottom: 8px;
 }
+
 .woo-publication-panel__badge--published {
 	background: var(--color-success);
 	color: var(--color-primary-element-text);
 }
+
 .woo-publication-panel__badge--unavailable {
 	background: var(--color-warning);
 	color: var(--color-warning-text);
 }
+
 .woo-publication-panel__published,
 .woo-publication-panel__unavailable {
 	display: flex;

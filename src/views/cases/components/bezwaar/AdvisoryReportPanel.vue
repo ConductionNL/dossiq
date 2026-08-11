@@ -235,39 +235,48 @@ export default {
 	flex-direction: column;
 	gap: 12px;
 }
+
 .advisory-report-panel__details {
 	display: grid;
 	grid-template-columns: 1fr 1fr 1fr;
 	gap: 12px;
 }
+
 .report-detail {
 	display: flex;
 	flex-direction: column;
 }
+
 .report-detail__label {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 }
+
 .advisory-report-panel__content {
 	background: var(--color-background-dark);
 	border-radius: var(--border-radius-large);
 	padding: 12px;
 }
+
 .advisory-report-panel__content h5 {
 	margin-top: 12px;
 }
+
 .advisory-report-panel__content h5:first-child {
 	margin-top: 0;
 }
+
 .advisory-report-panel__actions {
 	display: flex;
 	justify-content: flex-end;
 }
+
 .form-group {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
 }
+
 textarea {
 	width: 100%;
 	padding: 8px;

@@ -59,36 +59,45 @@ export default {
 	border-radius: var(--border-radius-large);
 	border-left: 4px solid;
 }
+
 .deadline-indicator--on-track {
 	border-color: var(--color-success);
 	background: var(--color-success-hover);
 }
+
 .deadline-indicator--at-risk {
 	border-color: var(--color-warning);
 	background: var(--color-warning-hover);
 }
+
 .deadline-indicator--overdue {
 	border-color: var(--color-error);
 	background: var(--color-error-hover);
 }
+
 .deadline-indicator--suspended {
 	border-color: var(--color-text-maxcontrast);
 	background: var(--color-background-dark);
 }
+
 .deadline-indicator__icon {
 	font-size: 20px;
 }
+
 .deadline-indicator__content {
 	display: flex;
 	flex-direction: column;
 }
+
 .deadline-indicator__label {
 	font-size: 12px;
 	color: var(--color-text-maxcontrast);
 }
+
 .deadline-indicator__value {
 	font-weight: bold;
 }
+
 .deadline-indicator__date {
 	font-size: 12px;
 }
