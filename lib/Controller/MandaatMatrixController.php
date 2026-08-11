@@ -292,6 +292,55 @@ class MandaatMatrixController extends Controller
     }//end importApprove()
 
     /**
+     * Open a new escalation for a mandate-denied decision.
+     *
+     * The auth posture mirrors escalateReject() deliberately: authenticated
+     * caseworker, per-object authorization delegated to the service (ADR-022).
+     *
+     * `initiatorId` is NEVER read from the request body. It is the identity the
+     * escalation is recorded against, and identity supplied by the requester is
+     * not identity — it is derived from the session, the same stance probe()
+     * takes when it strips CLIENT_SUPPLIED_IDENTITY_KEYS.
+     *
+     * The body is read via IRequest::getParam() rather than the file-local
+     * jsonBody() helper: Nextcloud merges a JSON request body into the request
+     * parameters, and unlike a raw php://input read that seam is observable
+     * from a test, so this endpoint can actually be covered.
+     *
+     * @return JSONResponse The created escalation, 201.
+     *
+     * @NoAdminRequired
+     *
+     * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
+     */
+    public function escalateCreate(): JSONResponse
+    {
+        $denied = $this->ensureAuthenticated();
+        if ($denied !== null) {
+            return $denied;
+        }
+
+        $zaakId         = (string) $this->request->getParam('zaakId', '');
+        $decisionType   = (string) $this->request->getParam('decisionType', '');
+        $escalatieReden = (string) $this->request->getParam('escalatieReden', '');
+        if ($zaakId === '' || $decisionType === '' || $escalatieReden === '') {
+            return $this->badRequest(msg: 'zaakId, decisionType and escalatieReden are required');
+        }
+
+        try {
+            $r = $this->escalatie->createEscalatie(
+                $zaakId,
+                $decisionType,
+                $this->currentUserId(),
+                $escalatieReden
+            );
+            return new JSONResponse($r, Http::STATUS_CREATED);
+        } catch (Throwable $e) {
+            return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+    }//end escalateCreate()
+
+    /**
      * Approve an open escalation.
      *
      * @param string $id Escalation id.
