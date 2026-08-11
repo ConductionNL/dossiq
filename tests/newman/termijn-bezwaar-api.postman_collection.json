@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "d9a4d2e2-3f4e-4d5b-aa1f-procesttermijn1",
 		"name": "Procest Termijnbewaking + Dwangsom REST API",
-		"description": "API/contract coverage for the termijnbewaking-dwangsom-engine chain (member 10 — bezwaar REST API). Exercises the full REST surface that the `DeadlineController`, `IngebrekestellingController`, `DwangsomController`, and `DeadlineReportingController` expose against a live procest instance.\n\nCovers validation and error cases per task 3 of `openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md`:\n  - each endpoint with happy + validation paths,\n  - unauthorized case access rejected with 401/403 (no state change),\n  - 400 on missing/invalid bodies,\n  - 404 on unknown ids.\n\nAuth is HTTP Basic + OCS-APIRequest. Defaults to admin:admin against http://localhost:8080. Unauthorized-access tests connect WITHOUT credentials by overriding auth at the request level.",
+		"description": "API/contract coverage for the termijnbewaking-dwangsom-engine chain (member 10 — bezwaar REST API). Exercises the full REST surface that the `DeadlineController`, `NoticeOfDefaultController`, `DwangsomController`, and `DeadlineReportingController` expose against a live procest instance.\n\nCovers validation and error cases per task 3 of `openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md`:\n  - each endpoint with happy + validation paths,\n  - unauthorized case access rejected with 401/403 (no state change),\n  - 400 on missing/invalid bodies,\n  - 404 on unknown ids.\n\nAuth is HTTP Basic + OCS-APIRequest. Defaults to admin:admin against http://localhost:8080. Unauthorized-access tests connect WITHOUT credentials by overriding auth at the request level.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -139,7 +139,7 @@
 			]
 		},
 		{
-			"name": "IngebrekestellingController — POST register missing fields returns 400",
+			"name": "NoticeOfDefaultController — POST register missing fields returns 400",
 			"request": {
 				"method": "POST",
 				"header": [
@@ -161,7 +161,7 @@
 			]
 		},
 		{
-			"name": "IngebrekestellingController — GET unknown id returns 404",
+			"name": "NoticeOfDefaultController — GET unknown id returns 404",
 			"request": {
 				"method": "GET",
 				"header": [{"key": "OCS-APIRequest", "value": "true"}],

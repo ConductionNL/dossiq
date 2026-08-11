@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for IngebrekestellingService.
+ * Unit tests for NoticeOfDefaultService.
  *
  * Drives the AWB 4:17 registration through valid + premature + duplicate
  * notices, verifies DwangsomBerekening creation, and asserts the
@@ -27,22 +27,22 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\IngebrekestellingService;
+use OCA\Procest\Service\NoticeOfDefaultService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\DeadlineService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\IngebrekestellingService
+ * @covers \OCA\Procest\Service\NoticeOfDefaultService
  *
  * @uses \OCA\Procest\Service\DeadlineService
  */
-class IngebrekestellingServiceTest extends TestCase
+class NoticeOfDefaultServiceTest extends TestCase
 {
     private FakeTermijnStore $objects;
     private DeadlineService $deadlineService;
-    private IngebrekestellingService $service;
+    private NoticeOfDefaultService $service;
 
     protected function setUp(): void
     {
@@ -65,7 +65,7 @@ class IngebrekestellingServiceTest extends TestCase
 
         $logger               = $this->createMock(LoggerInterface::class);
         $this->deadlineService = new DeadlineService($settings, $logger);
-        $this->service        = new IngebrekestellingService($settings, $this->deadlineService, $logger);
+        $this->service        = new NoticeOfDefaultService($settings, $this->deadlineService, $logger);
 
         // Seed an AWB-default definition.
         $this->objects->saveObject('procest', 'termijnDefinitie', [

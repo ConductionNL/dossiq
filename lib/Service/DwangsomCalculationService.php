@@ -11,7 +11,7 @@
  *
  * Custom regimes (e.g. Woo €15/day max €500) override via the
  * DwangsomBerekening.regime=afwijkend + the linked TermijnDefinitie
- * (resolved by {@see IngebrekestellingService::registerIngebrekestelling}).
+ * (resolved by {@see NoticeOfDefaultService::registerIngebrekestelling}).
  *
  * Money values: integer EUR cents throughout (ADR-031).
  *

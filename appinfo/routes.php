@@ -671,8 +671,10 @@ $extra = [
         ['name' => 'deadline#extend',    'url' => '/api/termijn/instances/{id}/verleng',     'verb' => 'POST'],
         ['name' => 'deadline#complete',  'url' => '/api/termijn/instances/{id}/voltooi',     'verb' => 'POST'],
         // Ingebrekestelling registration.
-        ['name' => 'ingebrekestelling#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
-        ['name' => 'ingebrekestelling#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
+        // Route names follow the renamed controller; the /api/termijn/* URLs are
+        // the published contract and deliberately do not move.
+        ['name' => 'noticeOfDefault#register',   'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
+        ['name' => 'noticeOfDefault#show',       'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
         // Dwangsom state + bezwaar.
         ['name' => 'dwangsom#show',         'url' => '/api/termijn/dwangsom/{id}',             'verb' => 'GET'],
         ['name' => 'dwangsom#beschikking',  'url' => '/api/termijn/dwangsom/{id}/beschikking', 'verb' => 'POST'],

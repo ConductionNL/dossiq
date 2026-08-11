@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest IngebrekestellingService.
+ * Procest NoticeOfDefaultService.
  *
  * Handles AWB 4:17 ingebrekestelling registration: validates the notice
  * against the lapsed TermijnInstance, sets gevalideerd + geldigheidStatus,
@@ -40,7 +40,7 @@ use RuntimeException;
 /**
  * AWB 4:17 ingebrekestelling registration + DwangsomBerekening creation.
  */
-class IngebrekestellingService
+class NoticeOfDefaultService
 {
     public const TARIFF_AWB_PLAFOND = 144200;
     public const TARIFF_AWB_GRACE   = 14;
@@ -129,7 +129,7 @@ class IngebrekestellingService
         $row['dwangsomBerekening'] = $this->startDwangsomBerekening(
             termijnInstanceId: $termijnInstanceId,
             instance: $instance,
-            ingebrekestellingId: (string) $row['id'],
+            noticeOfDefaultId: (string) $row['id'],
             ontvangstDatum: $ontvangstDatum,
             kanaal: $kanaal,
             documentLink: $documentLink,
@@ -141,26 +141,26 @@ class IngebrekestellingService
     /**
      * Link the first valid notice to its instance and open the DwangsomBerekening.
      *
-     * @param string               $termijnInstanceId   TermijnInstance id.
-     * @param array<string, mixed> $instance            TermijnInstance row.
-     * @param string               $ingebrekestellingId Id of the saved ingebrekestelling.
-     * @param DateTimeImmutable    $ontvangstDatum      Receipt date.
-     * @param string               $kanaal              Receipt channel.
-     * @param string               $documentLink        Document link.
+     * @param string               $termijnInstanceId TermijnInstance id.
+     * @param array<string, mixed> $instance          TermijnInstance row.
+     * @param string               $noticeOfDefaultId Id of the saved ingebrekestelling.
+     * @param DateTimeImmutable    $ontvangstDatum    Receipt date.
+     * @param string               $kanaal            Receipt channel.
+     * @param string               $documentLink      Document link.
      *
      * @return array<string, mixed> The created DwangsomBerekening row.
      */
     private function startDwangsomBerekening(
         string $termijnInstanceId,
         array $instance,
-        string $ingebrekestellingId,
+        string $noticeOfDefaultId,
         DateTimeImmutable $ontvangstDatum,
         string $kanaal,
         string $documentLink
     ): array {
         $this->deadlineService->updateTermijnInstance(
             $termijnInstanceId,
-            ['relevantIngbrekes' => $ingebrekestellingId]
+            ['relevantIngbrekes' => $noticeOfDefaultId]
         );
 
         $regime  = $this->resolveRegime(instance: $instance);
@@ -174,7 +174,7 @@ class IngebrekestellingService
         $berekening = $this->saveSchema(
             schemaConfigKey: 'dwangsom_berekening_schema',
             object: [
-                'ingebrekestelling' => $ingebrekestellingId,
+                'ingebrekestelling' => $noticeOfDefaultId,
                 'termijnInstance'   => $termijnInstanceId,
                 'startDatum'        => $startAt,
                 'huidigeDag'        => 0,
@@ -279,7 +279,7 @@ class IngebrekestellingService
             return $object;
         } catch (\Throwable $e) {
             $this->logger->error(
-                'IngebrekestellingService persist failed',
+                'NoticeOfDefaultService persist failed',
                 ['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()]
             );
             return $object;

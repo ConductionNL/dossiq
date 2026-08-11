@@ -34,7 +34,7 @@ use OCA\Procest\Service\BerichtenboxRoutingService;
 use OCA\Procest\Service\DwangsomBezwaarService;
 use OCA\Procest\Service\DwangsomCalculationService;
 use OCA\Procest\Service\DwangsomUitbetalingService;
-use OCA\Procest\Service\IngebrekestellingService;
+use OCA\Procest\Service\NoticeOfDefaultService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\DeadlineDailyScanService;
 use OCA\Procest\Service\DeadlineEscalationService;
@@ -55,7 +55,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase
     private DeadlineService $deadlineService;
     private DeadlinePauseService $pauseService;
     private DeadlineExtensionService $extService;
-    private IngebrekestellingService $ingService;
+    private NoticeOfDefaultService $ingService;
     private DwangsomCalculationService $calcService;
     private DwangsomUitbetalingService $uitService;
     private DwangsomBezwaarService $bezService;
@@ -87,7 +87,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase
         $this->deadlineService = new DeadlineService($settings, $logger);
         $this->pauseService   = new DeadlinePauseService($this->deadlineService);
         $this->extService     = new DeadlineExtensionService($this->deadlineService);
-        $this->ingService     = new IngebrekestellingService($settings, $this->deadlineService, $logger);
+        $this->ingService     = new NoticeOfDefaultService($settings, $this->deadlineService, $logger);
         $this->calcService    = new DwangsomCalculationService($settings, $logger);
         $this->uitService     = new DwangsomUitbetalingService($settings);
         $this->bezService     = new DwangsomBezwaarService($settings, $this->deadlineService, $logger);
