@@ -338,4 +338,40 @@ class EmailTemplateController extends Controller
 
         return new JSONResponse($this->templateService->getAvailableVariables(caseTypeId: $caseTypeId));
     }//end variables()
+
+    /**
+     * Seed the three Dutch default templates for a caseType.
+     *
+     * Idempotent: the service skips any default whose name already exists, so
+     * calling this twice creates nothing the second time and returns 0.
+     *
+     * The auth posture mirrors createTemplate() deliberately — this endpoint
+     * is a loop over exactly that call and creates nothing a user could not
+     * create one at a time, so a stricter guard here would be inconsistent
+     * rather than safer.
+     *
+     * @param string $caseTypeId Owning caseType id.
+     *
+     * @NoAdminRequired
+     *
+     * @return JSONResponse {created: int} — how many were created on this run.
+     *
+     * @spec openspec/changes/case-email-integration/tasks.md#T04
+     */
+    public function seedDefaults(string $caseTypeId): JSONResponse
+    {
+        if ($this->userSession->getUser() === null) {
+            return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        try {
+            return new JSONResponse(
+                    [
+                        'created' => $this->templateService->seedDefaultTemplates(caseTypeId: $caseTypeId),
+                    ]
+                    );
+        } catch (\RuntimeException $e) {
+            return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+    }//end seedDefaults()
 }//end class
