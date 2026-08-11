@@ -288,35 +288,53 @@ class RenameDutchDeadlineColumns implements IRepairStep
             return [];
         }
 
-        $wanted = [];
+        $markers = [];
         foreach ($ids as $id) {
-            $wanted[] = 'openregister_table_'.((int) $id).'_';
+            $markers[] = 'openregister_table_'.((int) $id).'_';
         }
 
         $tables = [];
         while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
             $name = (string) ($row['table_name'] ?? '');
-            if ($name === '') {
-                continue;
-            }
-
-            foreach ($wanted as $marker) {
-                $at = strpos($name, $marker);
-                if ($at === false) {
-                    continue;
-                }
-
-                // Everything after the marker must be the numeric schema id, so
-                // register 17 cannot match register 170's tables.
-                if (ctype_digit(substr($name, ($at + strlen($marker)))) === true) {
-                    $tables[] = $name;
-                }
+            if ($this->isShardOf(table: $name, markers: $markers) === true) {
+                $tables[] = $name;
             }
         }
 
         return array_values(array_unique($tables));
 
     }//end shardTables()
+
+    /**
+     * Whether a table name is a shard of one of the given registers.
+     *
+     * @param string             $table   Table name from information_schema.
+     * @param array<int, string> $markers `openregister_table_<registerId>_` prefixes.
+     *
+     * @return bool
+     */
+    private function isShardOf(string $table, array $markers): bool
+    {
+        if ($table === '') {
+            return false;
+        }
+
+        foreach ($markers as $marker) {
+            $offset = strpos($table, $marker);
+            if ($offset === false) {
+                continue;
+            }
+
+            // Everything after the marker must be the numeric schema id, so
+            // register 17 cannot match register 170's tables.
+            if (ctype_digit(substr($table, ($offset + strlen($marker)))) === true) {
+                return true;
+            }
+        }
+
+        return false;
+
+    }//end isShardOf()
 
     /**
      * List the column names of a table.
@@ -327,7 +345,7 @@ class RenameDutchDeadlineColumns implements IRepairStep
      */
     private function columnsOf(string $table): array
     {
-        // information_schema again, for the same reason as shardTables():
+        // Queried from information_schema for the same reason as shardTables():
         // IDBConnection has no getSchema().
         try {
             $stmt = $this->db->prepare(
