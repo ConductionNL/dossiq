@@ -180,4 +180,64 @@ class MandaatCheckServiceTest extends TestCase
         $r = $this->service->isAuthorized('bob', 'wmo-toekenning', 'Z/2026/6', ['bedragCents' => 100000]);
         self::assertTrue($r['authorized']);
     }
+
+    /**
+     * An unbound conflict-of-interest service is INDETERMINATE, and
+     * indeterminate denies — it must not skip the belangenconflict check.
+     *
+     * The `authz-bypass-fixes` spec has required this since the original
+     * change ("A missing conflict service denies rather than skips"), and the
+     * behaviour is implemented at `MandaatCheckService::isAuthorized()`, but no
+     * test exercised it: every fixture in this class binds a real service. The
+     * scenario was the one requirement in that spec with no coverage to point
+     * at, so it is covered here rather than waived.
+     *
+     * The arm is deliberately one that WOULD be authorized with the service
+     * bound — `alice` is under her plafond and the fixtures carry no
+     * natural-person applicant — so this asserts the null service is what
+     * denies, not the mandaat logic.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function testMissingConflictServiceDeniesRatherThanSkips(): void
+    {
+        $settings = $this->createMock(SettingsService::class);
+        $settings->method('getObjectService')->willReturn($this->objects);
+        $settings->method('getConfigValue')->willReturnCallback(
+            static function (string $key): string {
+                return match ($key) {
+                    'register'                         => 'procest',
+                    'mandaat_schema'                   => 'mandaat',
+                    'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
+                    default                            => '',
+                };
+            },
+        );
+
+        // Positive control: the SAME call authorizes when a service is bound.
+        $bound = new MandaatCheckService(
+            $settings,
+            $this->createMock(LoggerInterface::class),
+            new ConflictOfInterestService($this->createMock(LoggerInterface::class)),
+        );
+        $allowed = $bound->isAuthorized('alice', 'wmo-toekenning', 'Z/2026/7', ['bedragCents' => 100000]);
+        self::assertTrue($allowed['authorized']);
+
+        // Same inputs, conflict service absent.
+        $unbound = new MandaatCheckService(
+            $settings,
+            $this->createMock(LoggerInterface::class),
+            null,
+        );
+        $denied = $unbound->isAuthorized('alice', 'wmo-toekenning', 'Z/2026/7', ['bedragCents' => 100000]);
+
+        self::assertFalse($denied['authorized']);
+        self::assertSame(MandaatCheckService::REDEN_BELANGENCONFLICT, $denied['reden']);
+        self::assertSame(
+            ConflictOfInterestService::REASON_IDENTITY_INDETERMINATE,
+            $denied['conflictReason'],
+        );
+    }
 }

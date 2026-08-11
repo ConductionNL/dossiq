@@ -33,9 +33,11 @@ use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\EmailTemplateService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Settings\AdminSettings;
 use OCA\Procest\Support\SuppressesWarnings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
 use OCP\IGroupManager;
@@ -125,14 +127,21 @@ class EmailTemplateController extends Controller
     /**
      * Create a new template (version 1).
      *
-     * @param string $caseTypeId Owning caseType id.
+     * Admin-only: an email template is instance-wide configuration whose body
+     * is mailed to citizens, so it is a config write, not case data. The
+     * attribute makes Nextcloud's middleware enforce that BEFORE the controller
+     * runs; the in-body check below is defence in depth and is what the unit
+     * tests drive. `@NoAdminRequired` was removed rather than left alongside an
+     * admin body — that combination is exactly the attribute-vs-body mismatch
+     * gate-9 exists to catch.
      *
-     * @NoAdminRequired
+     * @param string $caseTypeId Owning caseType id.
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/case-email-integration/tasks.md#T06
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function createTemplate(string $caseTypeId): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -164,14 +173,15 @@ class EmailTemplateController extends Controller
     /**
      * Update a template (bumps version).
      *
-     * @param string $templateId Existing template id.
+     * Admin-only, same posture and same reasoning as createTemplate().
      *
-     * @NoAdminRequired
+     * @param string $templateId Existing template id.
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/case-email-integration/tasks.md#T06
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function updateTemplate(string $templateId): JSONResponse
     {
         $user = $this->userSession->getUser();
@@ -387,12 +397,11 @@ class EmailTemplateController extends Controller
      *
      * @param string $caseTypeId Owning caseType id.
      *
-     * @NoAdminRequired
-     *
      * @return JSONResponse {created: int} — how many were created on this run.
      *
-     * @spec openspec/changes/case-email-integration/tasks.md#T04
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
+    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
     public function seedDefaults(string $caseTypeId): JSONResponse
     {
         $user = $this->userSession->getUser();

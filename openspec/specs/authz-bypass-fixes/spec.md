@@ -18,6 +18,9 @@ live HTTP path (`POST /api/advice/{id}/transition` →
 transition whose caller relationship cannot be established MUST be rejected.
 
 #### Scenario: Unrelated user cannot mark another user's advice as received
+
+@e2e exclude Backend authorisation boundary with no browser surface; covered by `AdviceServiceAuthorizationTest::testUnrelatedUserIsRejectedFromMarkingAdviceReceived`.
+
 - **GIVEN** an advice request whose `adviseur` is `alice` and whose `case` is
   assigned to `bob`
 - **AND** an authenticated non-admin user `mallory`
@@ -27,24 +30,36 @@ transition whose caller relationship cannot be established MUST be rejected.
 - **AND** it MUST NOT write any update to the advice request
 
 #### Scenario: The assigned adviseur may mark their advice received
+
+@e2e exclude Backend authorisation boundary with no browser surface; covered by `AdviceServiceAuthorizationTest::testAssignedAdviseurMayMarkAdviceReceived`.
+
 - **GIVEN** an advice request whose `adviseur` is `alice`
 - **WHEN** `AdviceService::transitionStatus(adviceId, 'ontvangen')` is called as
   `alice`
 - **THEN** the system MUST allow the transition
 
 #### Scenario: The expiry transition is not reachable over HTTP
+
+@e2e exclude Backend authorisation boundary with no browser surface; covered by `AdviceServiceAuthorizationTest::testExpiryTransitionIsRejectedOverTheHttpPath`.
+
 - **GIVEN** any authenticated non-admin user
 - **WHEN** `AdviceService::transitionStatus(adviceId, 'verlopen')` is called
 - **THEN** the system MUST reject the transition, because `verlopen` is a
   system-only transition owned by the deadline cron
 
 #### Scenario: The deadline cron can still expire advice without a session
+
+@e2e exclude Background-job path with no user session; not reachable from a browser at all. Covered by `AdviceServiceAuthorizationTest::testExpireAdviceStillWorksWithoutASession`.
+
 - **GIVEN** no authenticated user session (background job context)
 - **WHEN** `AdviceService::expireAdvice(adviceId)` is called
 - **THEN** the advice request MUST be updated to status `verlopen`
 - **AND** the absence of a user session MUST NOT cause a rejection
 
 #### Scenario: An unknown target status is rejected
+
+@e2e exclude Input-validation boundary the UI cannot express (the browser only ever offers valid statuses); covered by `AdviceServiceAuthorizationTest::testInvalidStatusIsRejected`.
+
 - **GIVEN** an authenticated user
 - **WHEN** `transitionStatus()` is called with a status outside
   `aangevraagd|ontvangen|verlopen`
@@ -57,6 +72,9 @@ indistinguishable from an implemented control and conceals the unguarded live
 path.
 
 #### Scenario: submitAdvice and cancelAdvice no longer exist
+
+@e2e exclude Code-absence requirement: there is no runtime surface to exercise, because the assertion IS that the methods do not exist. Verified by grep over `lib/` (0 hits; the search is live — it still matches the schema key in `lib/Settings/procest_register.json` and the docblock in `AdviceServiceAuthorizationTest`).
+
 - **GIVEN** the procest codebase after this change
 - **WHEN** `AdviceService` is inspected
 - **THEN** `submitAdvice()` and `cancelAdvice()` MUST NOT be present
@@ -70,6 +88,9 @@ of any Nextcloud group, and MUST deny when the case or OpenRegister cannot be
 resolved.
 
 #### Scenario: Authenticated non-assignee is rejected from every WOO mutation endpoint
+
+@e2e exclude Backend authorisation boundary; expressing it in a browser needs a second logged-in session per endpoint. Covered by `WOOAssessmentControllerAuthorizationTest::testAuthenticatedNonAssigneeIsRejectedFromEveryMutationEndpoint`.
+
 - **GIVEN** a WOO case whose `assignee` is `alice`
 - **AND** an authenticated non-admin user `mallory`
 - **WHEN** `mallory` calls `bulkAssess`, `extendDeadline`, `createDecision`,
@@ -77,6 +98,9 @@ resolved.
 - **THEN** each call MUST be rejected with a forbidden response
 
 #### Scenario: Statutory deadline extension is rejected for an unrelated user
+
+@e2e exclude Backend authorisation boundary; covered by `WOOAssessmentControllerAuthorizationTest::testStatutoryDeadlineExtensionIsRejectedForUnrelatedUser`.
+
 - **GIVEN** a WOO case whose `assignee` is `alice`
 - **AND** an authenticated non-admin user `mallory`
 - **WHEN** `mallory` calls `extendDeadline` for that case
@@ -84,6 +108,9 @@ resolved.
   term is a case-worker action
 
 #### Scenario: An absent authorization group does not grant access
+
+@e2e exclude The precondition is the ABSENCE of a Nextcloud group, which a browser test cannot establish without provisioning the instance. Covered by `WOOAssessmentControllerAuthorizationTest::testAbsentAuthorizationGroupDoesNotGrantAccess`.
+
 - **GIVEN** the `procest-gebruikers` group does not exist on the instance
 - **AND** an authenticated non-admin user who is not the case assignee
 - **WHEN** that user calls any WOO case mutation endpoint
@@ -91,11 +118,17 @@ resolved.
 - **AND** the absence of the group MUST NOT be treated as authorization
 
 #### Scenario: OpenRegister unavailable denies rather than skips the check
+
+@e2e exclude The precondition is an absent collaborator app; not expressible in a browser against a working instance. Covered by `WOOAssessmentControllerAuthorizationTest::testOpenRegisterUnavailableDeniesRatherThanSkips`.
+
 - **GIVEN** OpenRegister is not available
 - **WHEN** an authenticated non-admin user calls a WOO case mutation endpoint
 - **THEN** the system MUST reject the call rather than proceed unchecked
 
 #### Scenario: The case assignee is authorized
+
+@e2e exclude Positive arm of the same backend boundary; covered by `WOOAssessmentControllerAuthorizationTest::testCaseAssigneeIsAuthorized`.
+
 - **GIVEN** a WOO case whose `assignee` is `alice`
 - **WHEN** `alice` calls a WOO case mutation endpoint for that case
 - **THEN** the system MUST allow the call
@@ -106,12 +139,18 @@ request data, and MUST NOT report "no conflict" when the check cannot be
 performed.
 
 #### Scenario: A genuine conflict is detected
+
+@e2e exclude Belangenconflict detection is a backend decision over BRP identity data; the browser only ever sees the resulting refusal. Covered by `ConflictOfInterestServiceTest::testSelfDetected` and `::testRelationshipDetected`.
+
 - **GIVEN** a case whose applicant is a natural person with a BSN
 - **AND** a case worker whose resolved identity hash equals the applicant's
 - **WHEN** `ConflictOfInterestService::checkConflict()` is called
 - **THEN** it MUST return `conflict = true` with reason `self`
 
 #### Scenario: Indeterminate identity blocks rather than passes
+
+@e2e exclude Fail-closed branch reached only when identity resolution is unavailable; not reproducible from a browser. Covered by `ConflictOfInterestServiceTest::testIndeterminateIdentityBlocksRatherThanPasses`, `::testUnresolvableIdentityBlocks` and `::testThrowingResolverBlocks`.
+
 - **GIVEN** a case whose applicant is a natural person with a BSN
 - **AND** no bound identity resolver, so the case worker's identity cannot be
   resolved
@@ -120,24 +159,36 @@ performed.
 - **AND** it MUST NOT return `conflict = false`
 
 #### Scenario: Client-supplied identity cannot influence the outcome
+
+@e2e exclude The scenario requires forging a request field the UI never sends, so a browser test cannot construct it. Covered by `ConflictOfInterestServiceTest::testClientSuppliedUserBsnIsIgnored`.
+
 - **GIVEN** a request body containing `caseProperties.userBsn`
 - **WHEN** `MandaatMatrixController::probe()` handles the request
 - **THEN** the client-supplied identity MUST be discarded
 - **AND** the applicant identity MUST be sourced from the case object
 
 #### Scenario: A case with no natural-person applicant has no conflict
+
+@e2e exclude Negative arm of the backend conflict decision; covered by `ConflictOfInterestServiceTest::testNoConflictWithoutApplicantIdentity`.
+
 - **GIVEN** a case whose `initiatorType` is not `person`
 - **WHEN** `checkConflict()` is called
 - **THEN** it MUST return `conflict = false`, because there is no applicant
   identity to conflict with
 
 #### Scenario: A missing conflict service denies rather than skips
+
+@e2e exclude The precondition is an unbound collaborator, which a browser cannot create. Covered by `MandaatCheckServiceTest::testMissingConflictServiceDeniesRatherThanSkips` — added 2026-08-12, because this was the one requirement in this spec with no coverage to point at, and it is covered rather than waived. That test carries its own positive control: the identical call authorizes with the service bound.
+
 - **GIVEN** `MandaatCheckService` has no bound `ConflictOfInterestService`
 - **WHEN** `isAuthorized()` is called
 - **THEN** the conflict check MUST be treated as indeterminate and deny, rather
   than silently skipped
 
 #### Scenario: BSN values are never logged or returned
+
+@e2e exclude Asserts the ABSENCE of a value from a payload and from log records; a browser assertion over a response it never receives proves nothing. Covered by `ConflictOfInterestServiceTest::testNoRawBsnIsReturned`.
+
 - **GIVEN** any `checkConflict()` invocation
 - **WHEN** the check completes
 - **THEN** no raw BSN MUST appear in the returned payload or in any log record
@@ -156,11 +207,17 @@ short-circuited and every authenticated user was authorized. Group existence
 MUST play no part in the authorization decision.
 
 #### Scenario: Unauthenticated request is rejected
+
+@e2e exclude Authentication boundary enforced by Nextcloud middleware ahead of the controller; covered by `AdviceServiceAuthorizationTest::testUnauthenticatedCallerIsRejected` and, live, by the unauthenticated arm of the two-account probe recorded on PR #805 (HTTP 401).
+
 - **GIVEN** no authenticated user session
 - **WHEN** `POST /api/cases/{id}/woo/publish` is called
 - **THEN** the system MUST return 401 Unauthorized
 
 #### Scenario: Authenticated non-authorized user is rejected
+
+@e2e exclude Backend authorisation boundary needing a second logged-in session; covered by `WOOAssessmentControllerAuthorizationTest::testAuthenticatedNonAssigneeIsRejectedFromEveryMutationEndpoint`, which drives the publish and withdraw endpoints named by this requirement.
+
 - **GIVEN** an authenticated user who is not an admin and is not the case
   assignee
 - **WHEN** `POST /api/cases/{id}/woo/publish` is called
