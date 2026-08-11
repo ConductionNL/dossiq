@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Procest TermijnReportingController.
+ * Procest DeadlineReportingController.
  *
  * REST surface for the termijnbewaking reporting endpoints (dashboard
- * KPI, kwartaalrapport, jaarrekening dwangsommen). Defers all logic to
- * {@see TermijnReportingService} (ADR-022).
+ * KPI, quarterlyReport, annualStatement dwangsommen). Defers all logic to
+ * {@see DeadlineReportingService} (ADR-022).
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -28,7 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
-use OCA\Procest\Service\TermijnReportingService;
+use OCA\Procest\Service\DeadlineReportingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -41,22 +41,24 @@ use Throwable;
  * Reporting REST surface.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/termijn-reporting/spec.md
  */
-class TermijnReportingController extends Controller
+class DeadlineReportingController extends Controller
 {
     /**
      * Constructor.
      *
-     * @param string                  $appName     App id.
-     * @param IRequest                $request     Request.
-     * @param TermijnReportingService $service     Reporting service.
-     * @param IUserSession            $userSession User session.
-     * @param LoggerInterface         $logger      Logger.
+     * @param string                   $appName     App id.
+     * @param IRequest                 $request     Request.
+     * @param DeadlineReportingService $service     Reporting service.
+     * @param IUserSession             $userSession User session.
+     * @param LoggerInterface          $logger      Logger.
      */
     public function __construct(
         string $appName,
         IRequest $request,
-        private readonly TermijnReportingService $service,
+        private readonly DeadlineReportingService $service,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {
@@ -106,8 +108,8 @@ class TermijnReportingController extends Controller
     /**
      * Quarterly KPI report.
      *
-     * @param string      $periode  Period (YYYY-Qn).
-     * @param string|null $afdeling Optional department filter.
+     * @param string      $period     Period (YYYY-Qn).
+     * @param string|null $department Optional department filter.
      *
      * @NoAdminRequired
      *
@@ -115,33 +117,33 @@ class TermijnReportingController extends Controller
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
-    public function kwartaalrapport(string $periode='', ?string $afdeling=null): JSONResponse
+    public function quarterlyReport(string $period='', ?string $department=null): JSONResponse
     {
         $denied = $this->ensureAuthenticated();
         if ($denied !== null) {
             return $denied;
         }
 
-        if ($periode === '') {
-            $periode = (string) $this->request->getParam('periode', '');
+        if ($period === '') {
+            $period = (string) $this->request->getParam('periode', '');
         }
 
-        if ($periode === '') {
+        if ($period === '') {
             return new JSONResponse(['message' => 'periode is required'], Http::STATUS_BAD_REQUEST);
         }
 
         try {
-            $row = $this->service->generateQuarterlyReport($periode, $afdeling);
+            $row = $this->service->generateQuarterlyReport($period, $department);
             return new JSONResponse($row);
         } catch (Throwable $e) {
             return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
         }
-    }//end kwartaalrapport()
+    }//end quarterlyReport()
 
     /**
      * Annual dwangsom audit report.
      *
-     * @param int $jaar Year.
+     * @param int $year Year.
      *
      * @NoAdminRequired
      *
@@ -149,26 +151,26 @@ class TermijnReportingController extends Controller
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
      */
-    public function jaarrekening(int $jaar=0): JSONResponse
+    public function annualStatement(int $year=0): JSONResponse
     {
         $denied = $this->ensureAuthenticated();
         if ($denied !== null) {
             return $denied;
         }
 
-        if ($jaar === 0) {
-            $jaar = (int) $this->request->getParam('jaar', '0');
+        if ($year === 0) {
+            $year = (int) $this->request->getParam('jaar', '0');
         }
 
-        if ($jaar < 2020 || $jaar > 2100) {
+        if ($year < 2020 || $year > 2100) {
             return new JSONResponse(['message' => 'jaar is required and must be between 2020 and 2100'], Http::STATUS_BAD_REQUEST);
         }
 
         try {
-            $row = $this->service->generateDwangsomAuditReport($jaar);
+            $row = $this->service->generateDwangsomAuditReport($year);
             return new JSONResponse($row);
         } catch (Throwable $e) {
             return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
         }
-    }//end jaarrekening()
+    }//end annualStatement()
 }//end class
