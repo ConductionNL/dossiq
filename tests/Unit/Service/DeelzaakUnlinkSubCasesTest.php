@@ -50,8 +50,14 @@ use RuntimeException;
  * coverage target literally named `so`, failing the cell with an "is invalid"
  * warning while every test still passed.
  *
- * @covers \OCA\Procest\Service\DeelzaakService::unlinkSubCases
- * @uses   \OCA\Procest\Service\DeelzaakService::listSubCases
+ * ⚠️ Declared at CLASS scope, matching DeelzaakServiceTest. A method-scoped
+ * declaration is not enough: constructing the service runs `__construct` and
+ * the SearchesObjects trait, neither of which is the named method, so strict
+ * coverage metadata reports every case as risky even with the collaborators
+ * declared.
+ *
+ * @covers \OCA\Procest\Service\DeelzaakService
+ * @uses   \OCA\Procest\Service\Support\SearchesObjects
  * @uses   \OCA\Procest\Service\Deelzaak\CaseObjectReader
  */
 class DeelzaakUnlinkSubCasesTest extends TestCase

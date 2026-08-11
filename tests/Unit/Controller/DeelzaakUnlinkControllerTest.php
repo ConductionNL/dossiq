@@ -38,7 +38,12 @@ use PHPUnit\Framework\TestCase;
 /**
  * Unit tests for the unlink endpoint's result reporting.
  *
- * @covers \OCA\Procest\Controller\DeelzaakController::unlink
+ * ⚠️ Declared at CLASS scope, matching the other controller tests here. A
+ * method-scoped declaration is not enough: constructing the controller runs
+ * `__construct`, which is not the named method, so strict coverage metadata
+ * reports every case as risky.
+ *
+ * @covers \OCA\Procest\Controller\DeelzaakController
  */
 class DeelzaakUnlinkControllerTest extends TestCase
 {
