@@ -262,32 +262,144 @@ class DeelzaakService
      * Unlink every sub-case of the given parent — used by the delete-with-children
      * confirmation flow to leave orphans accessible at the registry level.
      *
+     * ⚠️ This is a synchronous fan-out of `saveObject()` on the request path,
+     * the `openregister#2420` shape (procest#793). Two things are true about it
+     * and they pull in opposite directions, so read both before "just deferring
+     * it to a background job":
+     *
+     * 1. The cost is real. Each iteration is a full OpenRegister save —
+     *    validation, shard write, event dispatch, every registered listener on
+     *    `ObjectUpdatedEvent`. gate-61 cannot see this because it inspects
+     *    post-event listeners and this is a plain service seam.
+     * 2. **The caller cannot tolerate deferral as-is.**
+     *    `DeelzaakDeleteWarningModal::confirmDelete()` awaits this call and then
+     *    deletes the parent. Enqueue-and-return would delete the parent while
+     *    the children still point at it, so the "orphans survive" guarantee
+     *    (REQ-DZS-006-B) would be broken by the very fix meant to protect it.
+     *    Deferral therefore needs the delete moved into the same job — an
+     *    architecture change, tracked in procest#793, deliberately NOT done here.
+     *
+     * What IS fixed here, because it is a correctness bug rather than a
+     * performance one: the previous implementation took `listSubCases()`'s
+     * `_limit => 200` page and reported plain success. A parent with more than
+     * 200 sub-cases had the remainder silently left linked, and the caller then
+     * deleted the parent — orphaning them under a dead reference while the API
+     * answered `200 OK`. Failures inside the loop were swallowed the same way.
+     * This now pages to exhaustion and reports what actually happened, so the
+     * caller can refuse to delete a parent whose children are not all detached.
+     *
      * @param string $parentCaseUuid Parent UUID.
      *
-     * @return int Number of records unlinked.
+     * @return array{unlinked: int, failed: int, total: int, complete: bool}
+     *         `complete` is true only when every sub-case was detached.
      *
-     * @spec openspec/changes/deelzaak-support/tasks.md#T11
+     * @spec openspec/specs/deelzaak-support/spec.md
      */
-    public function unlinkSubCases(string $parentCaseUuid): int
+    public function unlinkSubCases(string $parentCaseUuid): array
     {
-        $subCases = $this->listSubCases(parentCaseUuid: $parentCaseUuid);
-        if ($subCases === []) {
-            return 0;
-        }
+        $empty = [
+            'unlinked' => 0,
+            'failed'   => 0,
+            'total'    => 0,
+            'complete' => true,
+        ];
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {
-            return 0;
+            return $empty;
         }
 
         $register = $this->settingsService->getConfigValue('register');
         $schema   = $this->settingsService->getConfigValue('case_schema');
+        if (empty($register) === true || empty($schema) === true) {
+            return $empty;
+        }
+
         $unlinked = 0;
-        foreach ($subCases as $subCase) {
+        $failed   = 0;
+
+        // Page to exhaustion. Each page re-queries the SAME filter, and a
+        // successful unlink drops that record out of the result set, so the next
+        // query returns the next batch. A record whose save FAILS stays in the
+        // set, so it would be handed back on every subsequent page — which both
+        // spins forever and double-counts. `$seen` makes each sub-case count
+        // exactly once and turns "a page containing nothing new" into the
+        // termination condition.
+        $seen = [];
+        while (true) {
+            $page = $this->listSubCases(parentCaseUuid: $parentCaseUuid);
+            if ($page === []) {
+                break;
+            }
+
+            $outcome = $this->unlinkPage(
+                page: $page,
+                parentCaseUuid: $parentCaseUuid,
+                objectService: $objectService,
+                register: $register,
+                schema: $schema,
+                seen: $seen
+            );
+
+            $unlinked += $outcome['unlinked'];
+            $failed   += $outcome['failed'];
+
+            if ($outcome['sawSomethingNew'] === false) {
+                break;
+            }
+        }//end while
+
+        $total = count($seen);
+
+        if ($failed > 0) {
+            $this->logger->error(
+                'Sub-case unlink did not complete; the parent must not be deleted',
+                ['parent' => $parentCaseUuid, 'unlinked' => $unlinked, 'failed' => $failed]
+            );
+        }
+
+        return [
+            'unlinked' => $unlinked,
+            'failed'   => $failed,
+            'total'    => $total,
+            'complete' => ($failed === 0),
+        ];
+    }//end unlinkSubCases()
+
+    /**
+     * Detach one page of sub-cases, skipping any already attempted.
+     *
+     * @param array<int, array<string, mixed>> $page           The page of rows.
+     * @param string                           $parentCaseUuid Parent UUID, for logging.
+     * @param object                           $objectService  The OR object service.
+     * @param string                           $register       Register id.
+     * @param string                           $schema         Case schema id.
+     * @param array<string, bool>              $seen           Ids already attempted, updated in place.
+     *
+     * @return array{unlinked: int, failed: int, sawSomethingNew: bool} The page outcome.
+     *
+     * @spec openspec/specs/deelzaak-support/spec.md
+     */
+    private function unlinkPage(
+        array $page,
+        string $parentCaseUuid,
+        object $objectService,
+        string $register,
+        string $schema,
+        array &$seen
+    ): array {
+        $unlinked        = 0;
+        $failed          = 0;
+        $sawSomethingNew = false;
+
+        foreach ($page as $subCase) {
             $id = (string) ($subCase['id'] ?? '');
-            if ($id === '') {
+            if ($id === '' || isset($seen[$id]) === true) {
                 continue;
             }
+
+            $seen[$id]       = true;
+            $sawSomethingNew = true;
 
             try {
                 $payload = $subCase;
@@ -299,6 +411,7 @@ class DeelzaakService
                 );
                 $unlinked++;
             } catch (\Throwable $e) {
+                $failed++;
                 $this->logger->warning(
                     'Failed to unlink sub-case',
                     ['parent' => $parentCaseUuid, 'sub' => $id, 'error' => $e->getMessage()]
@@ -306,6 +419,10 @@ class DeelzaakService
             }
         }//end foreach
 
-        return $unlinked;
-    }//end unlinkSubCases()
+        return [
+            'unlinked'        => $unlinked,
+            'failed'          => $failed,
+            'sawSomethingNew' => $sawSomethingNew,
+        ];
+    }//end unlinkPage()
 }//end class

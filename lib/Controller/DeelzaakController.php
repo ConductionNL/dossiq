@@ -185,13 +185,19 @@ class DeelzaakController extends Controller
      * Used by the "delete parent with children" confirmation flow so the
      * sub-cases survive deletion as orphans.
      *
+     * The response now reports `unlinked`, `failed`, `total` and `complete`
+     * rather than a bare count. A partial unlink used to return `200 OK` with a
+     * count that under-reported silently, and the caller went on to delete the
+     * parent — orphaning the remaining children under a dead reference. The
+     * caller MUST check `complete` before deleting the parent (procest#793).
+     *
      * @param string $caseId Parent case UUID.
      *
      * @NoAdminRequired
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/deelzaak-support/tasks.md#T11
+     * @spec openspec/specs/deelzaak-support/spec.md
      */
     public function unlink(string $caseId): JSONResponse
     {
@@ -199,10 +205,16 @@ class DeelzaakController extends Controller
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        return new JSONResponse(
-                [
-                    'unlinked' => $this->deelzaakService->unlinkSubCases(parentCaseUuid: $caseId),
-                ]
-                );
+        $result = $this->deelzaakService->unlinkSubCases(parentCaseUuid: $caseId);
+
+        // A partial unlink is not a success. 207 keeps the body readable to the
+        // existing caller while making the incomplete case distinguishable from
+        // a clean one by status code alone.
+        $status = Http::STATUS_OK;
+        if ($result['complete'] === false) {
+            $status = Http::STATUS_MULTI_STATUS;
+        }
+
+        return new JSONResponse($result, $status);
     }//end unlink()
 }//end class

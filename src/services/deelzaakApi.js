@@ -87,10 +87,25 @@ export async function validateSubCase({ parentCaseUuid, childCaseTypeId }) {
 /**
  * Unlink every sub-case of the given parent.
  *
+ * ⚠️ Returns the whole result, not a bare count. The endpoint used to answer
+ * `200 OK` with a count that silently under-reported when some sub-cases could
+ * not be detached, and the caller went on to delete the parent — orphaning the
+ * rest under a dead reference (procest#793). `complete` is the field that
+ * decides whether deleting the parent is safe; a `207` carries `complete: false`.
+ *
+ * `complete` defaults to false when the field is absent, so an older server
+ * that still answers with a bare count blocks the delete rather than silently
+ * permitting the failure mode this change exists to close.
+ *
  * @param {string} parentCaseUuid Parent UUID.
- * @return {Promise<number>} Number of records unlinked.
+ * @return {Promise<{unlinked: number, failed: number, total: number, complete: boolean}>} The unlink outcome.
  */
 export async function unlinkSubCases(parentCaseUuid) {
 	const { data } = await axios.post(base(`/${encodeURIComponent(parentCaseUuid)}/unlink`))
-	return data.unlinked || 0
+	return {
+		unlinked: data?.unlinked || 0,
+		failed: data?.failed || 0,
+		total: data?.total || 0,
+		complete: data?.complete === true,
+	}
 }
