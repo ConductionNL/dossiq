@@ -621,6 +621,12 @@ $extra = [
         ['name' => 'complaintCategory#createCategory', 'url' => '/api/complaint-categories',              'verb' => 'POST'],
         ['name' => 'complaintCategory#updateCategory', 'url' => '/api/complaint-categories/{id}',         'verb' => 'PUT'],
 
+        // ── Bezwaar hoorzitting (Awb art. 7:2) ────────────────────────────
+        // Attendance is append-only with a one-hour grace window and an
+        // awb-art-7:7 audit entry on late corrections; the `hearingSession`
+        // schema has no manifest page, so this is the only way in.
+        ['name' => 'bezwaarHearing#recordAttendance', 'url' => '/api/bezwaar/hearings/{sessionId}/attendance', 'verb' => 'POST'],
+
         // Archief / e-Depot handover is owned by OpenRegister (migrate-archival-to-or,
         // ADR-022): retention, transfer, proof and destruction run through OR's
         // /api/archival, /api/transfers, /api/settings/edepot surfaces. Procest
