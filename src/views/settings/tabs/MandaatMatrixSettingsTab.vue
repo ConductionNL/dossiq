@@ -39,6 +39,10 @@
 			{{ t('procest', 'Automatically activate a mandate import after approval') }}
 		</NcCheckboxRadioSwitch>
 
+		<NcNoteCard v-if="error" type="error">
+			{{ error }}
+		</NcNoteCard>
+
 		<NcButton
 			type="primary"
 			:disabled="!writable || saving"
@@ -67,11 +71,12 @@ import {
 } from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
+import { translate as t } from '@nextcloud/l10n'
 
 /**
  * Mandate matrix admin settings tab.
  *
- * @spec openspec/changes/mandaat-matrix-07-admin-ui/proposal.md
+ * @spec openspec/specs/mandaat-matrix/spec.md
  */
 export default {
 	name: 'MandaatMatrixSettingsTab',
@@ -90,31 +95,52 @@ export default {
 			autoFinalizeApproved: initial.autoFinalizeApproved ?? false,
 			writable: initial.writable ?? true,
 			saving: false,
+			error: null,
 		}
 	},
 	computed: {
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/proposal.md */
+		/** @spec openspec/specs/mandaat-matrix/spec.md */
 		adminDocsUrl() {
 			return 'https://docs.procest.nl/user/mandate-matrix-admin'
 		},
 	},
 	methods: {
-		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/proposal.md */
+		t,
+		/**
+		 * Persist the mandate matrix settings.
+		 *
+		 * ⚠️ This used to POST `/apps/procest/api/settings/mandaat`, a route
+		 * procest never declared. Nextcloud answers an unmatched app URL with its
+		 * own HTML page under HTTP 200, so `fetch` resolved, nothing threw, and
+		 * every save silently vanished (procest#794). It now uses the app's own
+		 * canonical settings write, which carries `#[AuthorizedAdminSetting]`.
+		 *
+		 * `fetch` does NOT reject on a non-2xx response, so `res.ok` has to be
+		 * checked explicitly or a 403 reads exactly like a successful save.
+		 *
+		 * @spec openspec/specs/mandaat-matrix/spec.md
+		 */
 		async save() {
 			this.saving = true
+			this.error = null
 			try {
-				await fetch(generateUrl('/apps/procest/api/settings/mandaat'), {
+				const res = await fetch(generateUrl('/apps/procest/api/settings'), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
 						requesttoken: OC.requestToken,
 					},
 					body: JSON.stringify({
-						decideskConnection: this.decideskConnection,
-						defaultExtensionDays: Number(this.defaultExtensionDays),
-						autoFinalizeApproved: this.autoFinalizeApproved,
+						mandaat_decidesk_connection: this.decideskConnection,
+						mandaat_default_extension_days: String(Number(this.defaultExtensionDays)),
+						mandaat_auto_finalize_approved: this.autoFinalizeApproved ? '1' : '0',
 					}),
 				})
+				if (!res.ok) {
+					this.error = t('procest', 'Saving failed ({status})', { status: res.status })
+				}
+			} catch (e) {
+				this.error = e.message || t('procest', 'Saving failed')
 			} finally {
 				this.saving = false
 			}
