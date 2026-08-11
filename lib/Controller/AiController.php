@@ -32,6 +32,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\Ai\AiAuditService;
 use OCA\Procest\Service\AiService;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -53,12 +54,13 @@ class AiController extends Controller
     /**
      * Constructor for AiController.
      *
-     * @param string          $appName      The application name
-     * @param IRequest        $request      The request object
-     * @param AiService       $aiService    The AI service
-     * @param AiAuditService  $auditService The AI oversight audit service
-     * @param IUserSession    $userSession  The user session
-     * @param LoggerInterface $logger       The logger interface
+     * @param string          $appName         The application name
+     * @param IRequest        $request         The request object
+     * @param AiService       $aiService       The AI service
+     * @param AiAuditService  $auditService    The AI oversight audit service
+     * @param IUserSession    $userSession     The user session
+     * @param LoggerInterface $logger          The logger interface
+     * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
      *
      * @return void
      */
@@ -69,6 +71,7 @@ class AiController extends Controller
         private AiAuditService $auditService,
         private IUserSession $userSession,
         private LoggerInterface $logger,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -331,14 +334,27 @@ class AiController extends Controller
      */
     public function auditIndex(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $caseId = $this->request->getParam('caseId');
+        $caseId = (string) $this->request->getParam('caseId', '');
         $type   = $this->request->getParam('type');
         $limit  = (int) $this->request->getParam('limit', '50');
         $offset = (int) $this->request->getParam('offset', '0');
+
+        // `caseId` used to be optional and the filter was built with
+        // `array_filter()`, so omitting it dropped the key entirely and the
+        // response was every AI decision record on the instance. It is now
+        // mandatory, and the caller must work on that case.
+        if ($caseId === '') {
+            return new JSONResponse(['error' => 'caseId is required'], Http::STATUS_BAD_REQUEST);
+        }
+
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+        }
 
         try {
             $result = $this->auditService->listAuditEntries(
