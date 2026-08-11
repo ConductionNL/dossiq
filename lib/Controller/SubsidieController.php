@@ -261,6 +261,46 @@ class SubsidieController extends Controller
     }//end signBeschikking()
 
     /**
+     * Schedule an interim report on a grant execution, in status "verwacht".
+     *
+     * The auth posture mirrors createBeschikking() deliberately: the two are the
+     * same shape — an authenticated caseworker drafting a new lifecycle record
+     * on an existing parent, with the parent id coming from the route and the
+     * properties from the body. The service is IDOR-safe (register/schema are
+     * resolved server-side), so a stricter guard here would be inconsistent with
+     * every other create on this controller rather than safer.
+     *
+     * `status` and `amendementTeller` are set by the service, not the body.
+     *
+     * @param string $uitvoeringId The subsidieuitvoering id.
+     *
+     * @return JSONResponse The created tussenrapportage, 201.
+     *
+     * @NoAdminRequired
+     *
+     * @psalm-suppress PossiblyUnusedMethod
+     *
+     * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
+     */
+    public function createTussenrapportage(string $uitvoeringId): JSONResponse
+    {
+        if ($this->requireUser() === null) {
+            return $this->unauthorized();
+        }
+
+        try {
+            $report = $this->tussenrapportage->createExpected(
+                uitvoeringId: $uitvoeringId,
+                payload: $this->bodyParams(),
+            );
+        } catch (OCSBadRequestException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+        }
+
+        return new JSONResponse($report, Http::STATUS_CREATED);
+    }//end createTussenrapportage()
+
+    /**
      * Approve an interim report.
      *
      * @param string $reportId The tussenrapportage id.
@@ -360,7 +400,14 @@ class SubsidieController extends Controller
     private function bodyParams(): array
     {
         $params = $this->request->getParams();
-        unset($params['id'], $params['beschikkingId'], $params['reportId'], $params['vaststellingId'], $params['_route']);
+        unset(
+            $params['id'],
+            $params['beschikkingId'],
+            $params['reportId'],
+            $params['uitvoeringId'],
+            $params['vaststellingId'],
+            $params['_route']
+        );
         return $params;
     }//end bodyParams()
 
