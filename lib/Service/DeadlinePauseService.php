@@ -41,10 +41,10 @@ class DeadlinePauseService
     /**
      * Constructor.
      *
-     * @param DeadlineService $termijnService DeadlineService.
+     * @param DeadlineService $deadlineService DeadlineService.
      */
     public function __construct(
-        private readonly DeadlineService $termijnService,
+        private readonly DeadlineService $deadlineService,
     ) {
     }//end __construct()
 
@@ -76,7 +76,7 @@ class DeadlinePauseService
             throw new RuntimeException('Pause duration must be positive (AWB 4:5)');
         }
 
-        $instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+        $instance = $this->deadlineService->getTermijnInstance($termijnInstanceId);
         if ($instance === null) {
             throw new RuntimeException('TermijnInstance not found: '.$termijnInstanceId);
         }
@@ -90,7 +90,7 @@ class DeadlinePauseService
         $newEnd   = $current->modify('+'.$duurDagen.' days')->format('Y-m-d');
         $pauseEnd = $now->modify('+'.$duurDagen.' days')->format('Y-m-d');
 
-        $updated = $this->termijnService->updateTermijnInstance(
+        $updated = $this->deadlineService->updateTermijnInstance(
             $termijnInstanceId,
             [
                 'einddatumActueel' => $newEnd,
@@ -101,7 +101,7 @@ class DeadlinePauseService
             ]
         );
 
-        $this->termijnService->recordEvent(
+        $this->deadlineService->recordEvent(
             termijnInstanceId: $termijnInstanceId,
             type: 'pauze',
             grondslag: 'AWB 4:5',
@@ -134,7 +134,7 @@ class DeadlinePauseService
     {
         $aanvullingDatum = ($aanvullingDatum ?? new DateTimeImmutable());
 
-        $instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+        $instance = $this->deadlineService->getTermijnInstance($termijnInstanceId);
         if ($instance === null) {
             throw new RuntimeException('TermijnInstance not found: '.$termijnInstanceId);
         }
@@ -155,7 +155,7 @@ class DeadlinePauseService
         $current = new DateTimeImmutable((string) ($instance['einddatumActueel'] ?? $aanvullingDatum->format('Y-m-d')));
         $newEnd  = $current->modify('-'.$unused.' days')->format('Y-m-d');
 
-        $updated = $this->termijnService->updateTermijnInstance(
+        $updated = $this->deadlineService->updateTermijnInstance(
             $termijnInstanceId,
             [
                 'einddatumActueel' => $newEnd,
@@ -164,7 +164,7 @@ class DeadlinePauseService
             ]
         );
 
-        $this->termijnService->recordEvent(
+        $this->deadlineService->recordEvent(
             termijnInstanceId: $termijnInstanceId,
             type: 'hervat',
             grondslag: 'AWB 4:15',

@@ -49,12 +49,12 @@ class IngebrekestellingService
      * Constructor.
      *
      * @param SettingsService $settingsService Settings service.
-     * @param DeadlineService $termijnService  DeadlineService.
+     * @param DeadlineService $deadlineService DeadlineService.
      * @param LoggerInterface $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly DeadlineService $termijnService,
+        private readonly DeadlineService $deadlineService,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -79,7 +79,7 @@ class IngebrekestellingService
         string $kanaal,
         string $documentLink=''
     ): array {
-        $instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+        $instance = $this->deadlineService->getTermijnInstance($termijnInstanceId);
         if ($instance === null) {
             throw new RuntimeException('TermijnInstance not found: '.$termijnInstanceId);
         }
@@ -158,7 +158,7 @@ class IngebrekestellingService
         string $kanaal,
         string $documentLink
     ): array {
-        $this->termijnService->updateTermijnInstance(
+        $this->deadlineService->updateTermijnInstance(
             $termijnInstanceId,
             ['relevantIngbrekes' => $ingebrekestellingId]
         );
@@ -187,7 +187,7 @@ class IngebrekestellingService
             ]
         );
 
-        $this->termijnService->recordEvent(
+        $this->deadlineService->recordEvent(
             termijnInstanceId: $termijnInstanceId,
             type: 'ingebrekestelling-ontvangen',
             grondslag: 'AWB 4:17',
@@ -197,7 +197,7 @@ class IngebrekestellingService
             documentLink: $documentLink,
         );
 
-        $this->termijnService->recordEvent(
+        $this->deadlineService->recordEvent(
             termijnInstanceId: $termijnInstanceId,
             type: 'dwangsom-gestart',
             grondslag: 'AWB 4:17',

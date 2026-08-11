@@ -52,7 +52,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase
 {
     private FakeTermijnStore $objects;
     private SettingsService $settings;
-    private DeadlineService $termijnService;
+    private DeadlineService $deadlineService;
     private DeadlinePauseService $pauseService;
     private DeadlineExtensionService $extService;
     private IngebrekestellingService $ingService;
@@ -84,22 +84,22 @@ class DeadlineMonitoringEndToEndTest extends TestCase
         $this->settings = $settings;
 
         $logger = $this->createMock(LoggerInterface::class);
-        $this->termijnService = new DeadlineService($settings, $logger);
-        $this->pauseService   = new DeadlinePauseService($this->termijnService);
-        $this->extService     = new DeadlineExtensionService($this->termijnService);
-        $this->ingService     = new IngebrekestellingService($settings, $this->termijnService, $logger);
+        $this->deadlineService = new DeadlineService($settings, $logger);
+        $this->pauseService   = new DeadlinePauseService($this->deadlineService);
+        $this->extService     = new DeadlineExtensionService($this->deadlineService);
+        $this->ingService     = new IngebrekestellingService($settings, $this->deadlineService, $logger);
         $this->calcService    = new DwangsomCalculationService($settings, $logger);
         $this->uitService     = new DwangsomUitbetalingService($settings);
-        $this->bezService     = new DwangsomBezwaarService($settings, $this->termijnService, $logger);
+        $this->bezService     = new DwangsomBezwaarService($settings, $this->deadlineService, $logger);
         $this->notifService   = new DeadlineNotificationService(
-            $this->termijnService,
+            $this->deadlineService,
             new BerichtenboxRoutingService($logger),
             $logger
         );
         $this->scanService    = new DeadlineDailyScanService(
             $settings,
-            $this->termijnService,
-            new DeadlineEscalationService($this->termijnService, $logger),
+            $this->deadlineService,
+            new DeadlineEscalationService($this->deadlineService, $logger),
             $logger,
             $this->calcService
         );
@@ -122,13 +122,13 @@ class DeadlineMonitoringEndToEndTest extends TestCase
      */
     public function testScenario1NormalCase(): void
     {
-        $instance = $this->termijnService->createTermijnInstance(
+        $instance = $this->deadlineService->createTermijnInstance(
             'Z/2026/S1',
             'omgevingsvergunning-regulier',
             new DateTimeImmutable('2026-06-01T10:00:00+00:00')
         );
 
-        $voltooid = $this->termijnService->markTermijnCompleted(
+        $voltooid = $this->deadlineService->markTermijnCompleted(
             (string) $instance['id'],
             new DateTimeImmutable('2026-07-15')
         );
@@ -144,8 +144,8 @@ class DeadlineMonitoringEndToEndTest extends TestCase
      */
     public function testScenario2PauseCase(): void
     {
-        $this->termijnService->getTermijnDefinitie('omgevingsvergunning-regulier');
-        $instance = $this->termijnService->createTermijnInstance(
+        $this->deadlineService->getTermijnDefinitie('omgevingsvergunning-regulier');
+        $instance = $this->deadlineService->createTermijnInstance(
             'Z/2026/S2',
             'omgevingsvergunning-regulier',
             new DateTimeImmutable('2026-06-01T10:00:00+00:00')
@@ -170,8 +170,8 @@ class DeadlineMonitoringEndToEndTest extends TestCase
      */
     public function testScenario3ExtensionCase(): void
     {
-        $this->termijnService->getTermijnDefinitie('omgevingsvergunning-regulier');
-        $instance = $this->termijnService->createTermijnInstance(
+        $this->deadlineService->getTermijnDefinitie('omgevingsvergunning-regulier');
+        $instance = $this->deadlineService->createTermijnInstance(
             'Z/2026/S3',
             'omgevingsvergunning-regulier',
             new DateTimeImmutable('2026-06-01T10:00:00+00:00')
@@ -186,7 +186,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase
         self::assertSame('verlengd', $extended['status']);
         self::assertSame(1, $extended['aantalVerlengingen']);
 
-        $voltooid = $this->termijnService->markTermijnCompleted($id, new DateTimeImmutable('2026-09-20'));
+        $voltooid = $this->deadlineService->markTermijnCompleted($id, new DateTimeImmutable('2026-09-20'));
         self::assertSame('voltooid', $voltooid['status']);
     }
 
