@@ -31,7 +31,15 @@ use RuntimeException;
 /**
  * Unit tests for the pure checklist arithmetic of REQ-003.
  *
+ * ChecklistService composes ChecklistPayloadReader directly rather than taking
+ * it by injection (REQ-003 requires the service to be constructible with no
+ * dependencies), so exercising the service necessarily executes the reader.
+ * Declared with @uses so PHPUnit's strict mode does not report every case here
+ * as risky; the reader has its own @covers suite in
+ * tests/Unit/Service/Support/ChecklistPayloadReaderTest.php.
+ *
  * @covers \OCA\Procest\Service\ChecklistService
+ * @uses   \OCA\Procest\Service\Support\ChecklistPayloadReader
  */
 class ChecklistServiceTest extends TestCase
 {
