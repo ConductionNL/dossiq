@@ -38,7 +38,14 @@ use RuntimeException;
 /**
  * Unit tests for DeelzaakService::unlinkSubCases().
  *
+ * The paging loop calls listSubCases(), and the service is constructed with a
+ * REAL CaseObjectReader (as DeelzaakServiceTest does, for the same reason), so
+ * both are executed here without being the subject. Declared with @uses so
+ * PHPUnit's strict coverage metadata does not report every case as risky.
+ *
  * @covers \OCA\Procest\Service\DeelzaakService::unlinkSubCases
+ * @uses   \OCA\Procest\Service\DeelzaakService::listSubCases
+ * @uses   \OCA\Procest\Service\Deelzaak\CaseObjectReader
  */
 class DeelzaakUnlinkSubCasesTest extends TestCase
 {
