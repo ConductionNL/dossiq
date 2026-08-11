@@ -297,6 +297,61 @@ class HearingService
     }//end waive()
 
     /**
+     * Resolve the bezwaar case a hearing session belongs to.
+     *
+     * `recordAttendance()` carries only a session id, so there is nothing in
+     * its signature to authorise against. This resolves the parent case so the
+     * controller can apply the ordinary per-case guard. Returns null — which
+     * the caller treats as DENY — whenever the session cannot be resolved, so
+     * an unknown id is not an existence oracle.
+     *
+     * @param string $sessionId UUID of the hearingSession
+     *
+     * @return string|null The parent case UUID, or null when unresolvable.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function getCaseIdForSession(string $sessionId): ?string
+    {
+        if ($sessionId === '') {
+            return null;
+        }
+
+        $objectService = $this->settingsService->getObjectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        $register = $this->settingsService->getConfigValue(key: 'register');
+        $schema   = $this->settingsService->getConfigValue(
+            key: 'hearing_session_schema'
+        );
+        if ($register === '' || $schema === '') {
+            return null;
+        }
+
+        try {
+            $session = $objectService->find($sessionId, register: $register, schema: $schema);
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'Procest hearing: session lookup failed — denying: '.$e->getMessage()
+            );
+            return null;
+        }
+
+        if (is_array($session) === false) {
+            return null;
+        }
+
+        $caseId = (string) ($session['case'] ?? '');
+        if ($caseId === '') {
+            return null;
+        }
+
+        return $caseId;
+    }//end getCaseIdForSession()
+
+    /**
      * Record attendance on a hearingSession (REQ-BH-5).
      *
      * Within the one-hour grace window after the hearing concludes

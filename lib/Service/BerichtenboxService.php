@@ -34,6 +34,7 @@ use OCA\Procest\Service\BerichtenboxAdapter\MockAdapter;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Service for sending messages to Mijn Overheid Berichtenbox.
@@ -190,6 +191,64 @@ class BerichtenboxService
 
         return array_merge($sent, $flagged);
     }//end getPendingMessages()
+
+    /**
+     * Resolve the case a stored message belongs to.
+     *
+     * `poll()` takes only a message id, so there is nothing in its signature to
+     * authorise against. This resolves the owning case so the controller can
+     * apply the same per-case guard as the rest of the file. It returns null —
+     * which the caller treats as DENY — whenever the message cannot be
+     * resolved, so an unknown id is not an existence oracle either.
+     *
+     * @param string $messageId The OpenRegister message UUID.
+     *
+     * @return string|null The owning case UUID, or null when unresolvable.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function getCaseIdForMessage(string $messageId): ?string
+    {
+        if ($messageId === '') {
+            return null;
+        }
+
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        $schema   = $this->settingsService->getConfigValue('berichtenbox_message_schema');
+        if ($register === '' || $schema === '') {
+            return null;
+        }
+
+        try {
+            $message = $objectService->find($messageId, register: (int) $register, schema: (int) $schema);
+        } catch (Throwable $e) {
+            $this->logger->warning(
+                'Procest: Berichtenbox message lookup failed — denying poll: '.$e->getMessage(),
+            );
+            return null;
+        }
+
+        if (is_object($message) === false || method_exists($message, 'jsonSerialize') === false) {
+            return null;
+        }
+
+        $data   = $message->jsonSerialize();
+        $caseId = '';
+        if (is_array($data) === true) {
+            $caseId = (string) ($data['caseId'] ?? '');
+        }
+
+        if ($caseId === '') {
+            return null;
+        }
+
+        return $caseId;
+    }//end getCaseIdForMessage()
 
     /**
      * Poll read status for a message.

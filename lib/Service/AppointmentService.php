@@ -134,12 +134,70 @@ class AppointmentService
     }//end bookAppointment()
 
     /**
+     * Resolve the case an appointment belongs to.
+     *
+     * `cancel()` and `noShow()` carry only an appointment id, so there is
+     * nothing in their signature to authorise against. This resolves the owning
+     * case so the controller can apply the same per-case guard as the rest of
+     * the file. An unresolvable appointment returns null, which the caller
+     * treats as DENY — so an unknown id is not an existence oracle.
+     *
+     * @param string $appointmentId The appointment UUID.
+     *
+     * @return string|null The owning case UUID, or null when unresolvable.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function getCaseIdForAppointment(string $appointmentId): ?string
+    {
+        if ($appointmentId === '') {
+            return null;
+        }
+
+        $objectService = $this->getObjectService();
+        if ($objectService === null) {
+            return null;
+        }
+
+        $register = $this->settingsService->getConfigValue('register');
+        $schema   = $this->settingsService->getConfigValue('appointment_schema');
+        if ($register === '' || $schema === '') {
+            return null;
+        }
+
+        try {
+            $appointment = $objectService->find($appointmentId, register: (int) $register, schema: (int) $schema);
+        } catch (\Throwable $e) {
+            $this->logger->warning(
+                'Procest: appointment lookup failed — denying: '.$e->getMessage(),
+            );
+            return null;
+        }
+
+        if (is_object($appointment) === false || method_exists($appointment, 'jsonSerialize') === false) {
+            return null;
+        }
+
+        $data   = $appointment->jsonSerialize();
+        $caseId = '';
+        if (is_array($data) === true) {
+            $caseId = (string) ($data['caseId'] ?? '');
+        }
+
+        if ($caseId === '') {
+            return null;
+        }
+
+        return $caseId;
+    }//end getCaseIdForAppointment()
+
+    /**
      * Cancel an appointment.
      *
      * @param string $appointmentId The appointment UUID.
      *
      * @return array<string, mixed> The updated appointment record.
-
+     *
      * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
      */
     public function cancelAppointment(string $appointmentId): array

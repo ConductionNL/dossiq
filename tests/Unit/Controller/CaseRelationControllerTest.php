@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\CaseRelationController;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\CaseRelationService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -57,6 +58,11 @@ class CaseRelationControllerTest extends TestCase
     private IUserSession $userSession;
 
     /**
+     * @var CaseAccessGuard|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private CaseAccessGuard $caseAccessGuard;
+
+    /**
      * The controller under test.
      *
      * @var CaseRelationController
@@ -70,16 +76,46 @@ class CaseRelationControllerTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->request     = $this->createMock(IRequest::class);
-        $this->service     = $this->createMock(CaseRelationService::class);
-        $this->userSession = $this->createMock(IUserSession::class);
+        $this->request         = $this->createMock(IRequest::class);
+        $this->service         = $this->createMock(CaseRelationService::class);
+        $this->userSession     = $this->createMock(IUserSession::class);
+        $this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
+
+        // Default: the caller works on both cases. The authorization tests at
+        // the bottom of this class override it.
+        $this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
         $this->controller = new CaseRelationController(
             request: $this->request,
             caseRelationService: $this->service,
             userSession: $this->userSession,
+            caseAccessGuard: $this->caseAccessGuard,
         );
     }//end setUp()
+
+    /**
+     * Build a controller whose guard answers per case id.
+     *
+     * @param array<string, bool> $readable Case UUID => whether it is readable.
+     *
+     * @return CaseRelationController The controller under test.
+     */
+    private function controllerWithReadableCases(array $readable): CaseRelationController
+    {
+        $guard = $this->createMock(CaseAccessGuard::class);
+        $guard->method('hasCaseReadAccess')->willReturnCallback(
+            static function (string $caseId) use ($readable): bool {
+                return ($readable[$caseId] ?? false);
+            }
+        );
+
+        return new CaseRelationController(
+            request: $this->request,
+            caseRelationService: $this->service,
+            userSession: $this->userSession,
+            caseAccessGuard: $guard,
+        );
+    }//end controllerWithReadableCases()
 
 
     /**
@@ -272,4 +308,96 @@ class CaseRelationControllerTest extends TestCase
         $this->assertArrayHasKey('results', $data);
         $this->assertCount(1, $data['results']);
     }//end testListReturnsResults()
+
+
+    /**
+     * An authenticated user who does not work on the case cannot list its
+     * relations, and the service is never reached.
+     *
+     * Before this guard the service-level `access_denied` was unreachable: it
+     * keys off `find()` returning null, and OpenRegister returns every object
+     * to every authenticated user for a schema with no `authorization` block.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function testListIsRefusedForUnrelatedUser(): void
+    {
+        $this->authenticate();
+        $this->service->expects($this->never())->method('listRelations');
+
+        $response = $this->controllerWithReadableCases(['a' => false])->list(caseId: 'a');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+    }//end testListIsRefusedForUnrelatedUser()
+
+
+    /**
+     * Holding access to only the ORIGIN case is not enough to create a
+     * relation — a relation is written to both cases.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function testCreateIsRefusedWhenOnlyTheOriginIsReadable(): void
+    {
+        $this->authenticate();
+        $this->request->method('getParam')->willReturnMap([
+            ['targetId', '', 'b'],
+            ['aardRelatie', '', 'onderwerp'],
+            ['toelichting', null, null],
+        ]);
+        $this->service->expects($this->never())->method('addRelation');
+
+        $response = $this->controllerWithReadableCases(['a' => true, 'b' => false])
+            ->create(caseId: 'a');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+    }//end testCreateIsRefusedWhenOnlyTheOriginIsReadable()
+
+
+    /**
+     * Holding access to only the TARGET case is not enough either.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function testCreateIsRefusedWhenOnlyTheTargetIsReadable(): void
+    {
+        $this->authenticate();
+        $this->request->method('getParam')->willReturnMap([
+            ['targetId', '', 'b'],
+            ['aardRelatie', '', 'onderwerp'],
+            ['toelichting', null, null],
+        ]);
+        $this->service->expects($this->never())->method('addRelation');
+
+        $response = $this->controllerWithReadableCases(['a' => false, 'b' => true])
+            ->create(caseId: 'a');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+    }//end testCreateIsRefusedWhenOnlyTheTargetIsReadable()
+
+
+    /**
+     * Removing a relation between two cases the caller does not work on is
+     * refused, and nothing is written.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function testDestroyIsRefusedForUnrelatedUser(): void
+    {
+        $this->authenticate();
+        $this->service->expects($this->never())->method('removeRelation');
+
+        $response = $this->controllerWithReadableCases(['a' => false, 'b' => false])
+            ->destroy(caseId: 'a', targetId: 'b', aardRelatie: 'onderwerp');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+    }//end testDestroyIsRefusedForUnrelatedUser()
 }//end class

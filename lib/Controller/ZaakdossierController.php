@@ -35,6 +35,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\Zaakdossier\DossierUploadHandler;
 use OCA\Procest\Service\Zaakdossier\InformatieobjectReader;
 use OCA\Procest\Service\ZaakdossierService;
@@ -53,12 +54,13 @@ class ZaakdossierController extends Controller
     /**
      * Constructor.
      *
-     * @param string                 $appName        The app name.
-     * @param IRequest               $request        The request.
-     * @param ZaakdossierService     $dossierService The dossier orchestrator.
-     * @param InformatieobjectReader $reader         The clearance-gated document reader.
-     * @param DossierUploadHandler   $uploadHandler  The upload decoding/screening collaborator.
-     * @param IUserSession           $userSession    The user session.
+     * @param string                 $appName         The app name.
+     * @param IRequest               $request         The request.
+     * @param ZaakdossierService     $dossierService  The dossier orchestrator.
+     * @param InformatieobjectReader $reader          The clearance-gated document reader.
+     * @param DossierUploadHandler   $uploadHandler   The upload decoding/screening collaborator.
+     * @param IUserSession           $userSession     The user session.
+     * @param CaseAccessGuard        $caseAccessGuard Per-case authorization (fails closed).
      */
     public function __construct(
         string $appName,
@@ -67,6 +69,7 @@ class ZaakdossierController extends Controller
         private readonly InformatieobjectReader $reader,
         private readonly DossierUploadHandler $uploadHandler,
         private readonly IUserSession $userSession,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -117,13 +120,22 @@ class ZaakdossierController extends Controller
      *
      * @NoAdminRequired
      *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function uploadDocument(string $caseId): JSONResponse
     {
         $user = $this->userSession->getUser();
         if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // Its sibling `linkExisting()` below already guards, via
+        // `InformatieobjectReader::guardReadable()` — but that guard is about
+        // the DOCUMENT, and upload has no existing document to check. The
+        // missing half is the CASE, so this endpoint wrote attachments into
+        // any case on the instance.
+        if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         $metadata = $this->uploadHandler->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));

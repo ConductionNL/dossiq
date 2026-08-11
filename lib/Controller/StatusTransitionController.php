@@ -36,6 +36,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\BulkStatusTransitionService;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\StatusTransitionService;
 use OCA\Procest\Service\Transitions\GuardFailedException;
 use OCP\AppFramework\Controller;
@@ -62,6 +63,7 @@ class StatusTransitionController extends Controller
      * @param BulkStatusTransitionService $bulkEngine       The bulk wrapper service
      * @param IUserSession                $userSession      The current session
      * @param LoggerInterface             $logger           The logger
+     * @param CaseAccessGuard             $caseAccessGuard  Per-case authorization (fails closed)
      */
     public function __construct(
         string $appName,
@@ -70,6 +72,7 @@ class StatusTransitionController extends Controller
         private readonly BulkStatusTransitionService $bulkEngine,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -87,8 +90,17 @@ class StatusTransitionController extends Controller
      */
     public function available(string $caseId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // Only PARTLY unguarded before this: the transition list itself is
+        // role-filtered inside the engine, but the case's current status was
+        // emitted unconditionally, so any authenticated user could read the
+        // status of any case.
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         try {
@@ -248,8 +260,13 @@ class StatusTransitionController extends Controller
      */
     public function history(string $caseId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         try {

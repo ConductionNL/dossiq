@@ -31,6 +31,7 @@ namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\BezwaarHearingController;
 use OCA\Procest\Service\Bezwaar\HearingService;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
@@ -74,6 +75,13 @@ final class BezwaarHearingControllerRecordAttendanceTest extends TestCase
      */
     private BezwaarHearingController $controller;
 
+    /**
+     * Per-case authorization guard.
+     *
+     * @var CaseAccessGuard|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private CaseAccessGuard $caseAccessGuard;
+
 
     /**
      * Set up fixtures.
@@ -82,17 +90,93 @@ final class BezwaarHearingControllerRecordAttendanceTest extends TestCase
      */
     protected function setUp(): void
     {
-        $this->request        = $this->createMock(IRequest::class);
-        $this->hearingService = $this->createMock(HearingService::class);
-        $this->userSession    = $this->createMock(IUserSession::class);
+        $this->request         = $this->createMock(IRequest::class);
+        $this->hearingService  = $this->createMock(HearingService::class);
+        $this->userSession     = $this->createMock(IUserSession::class);
+        $this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
+
+        // Default: the session resolves to a case the caller handles.
+        // The authorization tests below override both halves.
+        $this->hearingService->method('getCaseIdForSession')->willReturn('case-1');
+        $this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
 
         $this->controller = new BezwaarHearingController(
             appName: 'procest',
             request: $this->request,
             hearingService: $this->hearingService,
             userSession: $this->userSession,
+            caseAccessGuard: $this->caseAccessGuard,
         );
     }//end setUp()
+
+
+    /**
+     * Build a controller with an explicit guard answer and session resolution.
+     *
+     * @param string|null $resolvedCaseId What the session resolves to.
+     * @param bool        $mayMutate      Whether the caller handles that case.
+     *
+     * @return BezwaarHearingController The controller under test.
+     */
+    private function controllerWith(?string $resolvedCaseId, bool $mayMutate): BezwaarHearingController
+    {
+        $hearingService = $this->createMock(HearingService::class);
+        $hearingService->method('getCaseIdForSession')->willReturn($resolvedCaseId);
+        $hearingService->expects($this->never())->method('recordAttendance');
+
+        $guard = $this->createMock(CaseAccessGuard::class);
+        $guard->method('hasCaseMutationAccess')->willReturn($mayMutate);
+
+        return new BezwaarHearingController(
+            appName: 'procest',
+            request: $this->request,
+            hearingService: $hearingService,
+            userSession: $this->userSession,
+            caseAccessGuard: $guard,
+        );
+    }//end controllerWith()
+
+
+    /**
+     * An authenticated caller who does not handle the parent bezwaar case
+     * cannot append attendance, and nothing is written.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function testCallerWithoutCaseAccessIsRejected(): void
+    {
+        $user = $this->createMock(IUser::class);
+        $user->method('getUID')->willReturn('mallory');
+        $this->userSession->method('getUser')->willReturn($user);
+
+        $response = $this->controllerWith(resolvedCaseId: 'case-1', mayMutate: false)
+            ->recordAttendance(sessionId: 'session-1');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+    }//end testCallerWithoutCaseAccessIsRejected()
+
+
+    /**
+     * A session that cannot be resolved to a case denies, so the endpoint is
+     * not an existence oracle for hearing-session UUIDs.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function testUnresolvableSessionIsRejected(): void
+    {
+        $user = $this->createMock(IUser::class);
+        $user->method('getUID')->willReturn('behandelaar');
+        $this->userSession->method('getUser')->willReturn($user);
+
+        $response = $this->controllerWith(resolvedCaseId: null, mayMutate: true)
+            ->recordAttendance(sessionId: 'does-not-exist');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+    }//end testUnresolvableSessionIsRejected()
 
 
     /**

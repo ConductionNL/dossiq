@@ -30,6 +30,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\EmailTemplateService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Support\SuppressesWarnings;
@@ -37,6 +38,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUserSession;
 
@@ -81,6 +83,8 @@ class EmailTemplateController extends Controller
      * @param SettingsService      $settingsService Settings resolver (registers).
      * @param IAppConfig           $appConfig       App config (IMAP settings).
      * @param IUserSession         $userSession     Current user session.
+     * @param IGroupManager        $groupManager    Group manager (admin check on config writes).
+     * @param CaseAccessGuard      $caseAccessGuard Per-case authorization (fails closed).
      */
     public function __construct(
         IRequest $request,
@@ -88,6 +92,8 @@ class EmailTemplateController extends Controller
         private readonly SettingsService $settingsService,
         private readonly IAppConfig $appConfig,
         private readonly IUserSession $userSession,
+        private readonly IGroupManager $groupManager,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -129,8 +135,17 @@ class EmailTemplateController extends Controller
      */
     public function createTemplate(string $caseTypeId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // An email template is instance-wide configuration whose body is sent
+        // to citizens, so it is a config write, not case data: admin only.
+        // There is no per-case relationship to authorise against — a caseType
+        // belongs to the municipality, not to a handler.
+        if ($this->groupManager->isAdmin($user->getUID()) === false) {
+            return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
         $data = [
@@ -159,8 +174,15 @@ class EmailTemplateController extends Controller
      */
     public function updateTemplate(string $templateId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // Same posture as createTemplate(): rewriting the body of a template
+        // that is mailed to citizens is a config write.
+        if ($this->groupManager->isAdmin($user->getUID()) === false) {
+            return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
         $data = [
@@ -190,8 +212,16 @@ class EmailTemplateController extends Controller
      */
     public function prefillDraft(string $caseId, string $templateId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // The rendered draft carries the case's contactNaam, contactEmail,
+        // contactTelefoon and behandelaar back in the response, so this is a
+        // per-case read of citizen contact data.
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
         try {
@@ -346,9 +376,14 @@ class EmailTemplateController extends Controller
      * calling this twice creates nothing the second time and returns 0.
      *
      * The auth posture mirrors createTemplate() deliberately — this endpoint
-     * is a loop over exactly that call and creates nothing a user could not
+     * is a loop over exactly that call and creates nothing a caller could not
      * create one at a time, so a stricter guard here would be inconsistent
      * rather than safer.
+     *
+     * ⚠️ That argument was sound and the posture it mirrored was not:
+     * `createTemplate()` was reachable by every authenticated user, so this
+     * endpoint was too. The reasoning is kept because it is still correct —
+     * what changed is the posture on the other end. Both are now admin-only.
      *
      * @param string $caseTypeId Owning caseType id.
      *
@@ -360,8 +395,13 @@ class EmailTemplateController extends Controller
      */
     public function seedDefaults(string $caseTypeId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        if ($this->groupManager->isAdmin($user->getUID()) === false) {
+            return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
         try {
