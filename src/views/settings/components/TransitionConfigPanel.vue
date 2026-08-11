@@ -12,8 +12,9 @@
 		<div class="transition-config-panel__body">
 			<!-- Label -->
 			<div class="transition-config-panel__field">
-				<label>{{ t('procest', 'Label') }}</label>
+				<label for="transition-config-panel-label">{{ t('procest', 'Label') }}</label>
 				<input
+					id="transition-config-panel-label"
 					v-model="localTransition.label"
 					type="text"
 					class="transition-config-panel__input"
@@ -67,6 +68,7 @@
 						v-if="guard.type === 'requiredField'"
 						v-model="guard.fieldName"
 						type="text"
+						:aria-label="t('procest', 'Field name (e.g. result)')"
 						:placeholder="t('procest', 'Field name (e.g. result)')"
 						class="transition-config-panel__input"
 						@input="emitUpdate">
@@ -157,17 +159,20 @@
 						<input
 							v-model="action.recipient"
 							type="text"
+							:aria-label="t('procest', 'Recipient (role name or email)')"
 							:placeholder="t('procest', 'Recipient (role name or email)')"
 							class="transition-config-panel__input"
 							@input="emitUpdate">
 						<input
 							v-model="action.subject"
 							type="text"
+							:aria-label="t('procest', 'Subject template')"
 							:placeholder="t('procest', 'Subject template')"
 							class="transition-config-panel__input"
 							@input="emitUpdate">
 						<textarea
 							v-model="action.template"
+							:aria-label="t('procest', 'Email template (use {{case.title}}, {{transition.label}})')"
 							:placeholder="t('procest', 'Email template (use {{case.title}}, {{transition.label}})')"
 							class="transition-config-panel__textarea"
 							rows="3"
@@ -179,12 +184,14 @@
 						<input
 							v-model="action.title"
 							type="text"
+							:aria-label="t('procest', 'Task title')"
 							:placeholder="t('procest', 'Task title')"
 							class="transition-config-panel__input"
 							@input="emitUpdate">
 						<input
 							v-model="action.description"
 							type="text"
+							:aria-label="t('procest', 'Task description')"
 							:placeholder="t('procest', 'Task description')"
 							class="transition-config-panel__input"
 							@input="emitUpdate">
@@ -195,6 +202,7 @@
 						<input
 							v-model="action.url"
 							type="url"
+							:aria-label="t('procest', 'Webhook URL')"
 							:placeholder="t('procest', 'Webhook URL')"
 							class="transition-config-panel__input"
 							@input="emitUpdate">
@@ -205,12 +213,14 @@
 						<input
 							v-model="action.fieldName"
 							type="text"
+							:aria-label="t('procest', 'Field name')"
 							:placeholder="t('procest', 'Field name')"
 							class="transition-config-panel__input"
 							@input="emitUpdate">
 						<input
 							v-model="action.value"
 							type="text"
+							:aria-label="t('procest', 'Value')"
 							:placeholder="t('procest', 'Value')"
 							class="transition-config-panel__input"
 							@input="emitUpdate">
@@ -221,6 +231,7 @@
 						<input
 							v-model="action.message"
 							type="text"
+							:aria-label="t('procest', 'Notification message')"
 							:placeholder="t('procest', 'Notification message')"
 							class="transition-config-panel__input"
 							@input="emitUpdate">

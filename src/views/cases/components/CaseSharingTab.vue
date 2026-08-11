@@ -72,10 +72,10 @@ import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 import { showSuccess, showError } from '@nextcloud/dialogs'
 import ShareTab from './ShareTab.vue'
-import CreateShareDialog from './CreateShareDialog.vue'
-import CaseTransferDialog from './CaseTransferDialog.vue'
-import CreateFederatedShareDialog from './CreateFederatedShareDialog.vue'
-import FederatedActivityPanel from './FederatedActivityPanel.vue'
+import CreateShareDialog from '../../../dialogs/CreateShareDialog.vue'
+import CaseTransferDialog from '../../../dialogs/CaseTransferDialog.vue'
+import CreateFederatedShareDialog from '../../../dialogs/CreateFederatedShareDialog.vue'
+import FederatedActivityPanel from '../../../dialogs/FederatedActivityPanel.vue'
 import {
 	federatedSharesListEndpoint,
 	createFederatedShareEndpoint,

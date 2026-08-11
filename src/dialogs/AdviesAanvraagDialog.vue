@@ -66,7 +66,7 @@
 
 <script>
 import { NcButton, NcDialog, NcTextField } from '@nextcloud/vue'
-import { createAdviceWithNotification } from '../../../services/adviceApi.js'
+import { createAdviceWithNotification } from '../services/adviceApi.js'
 
 const APP_NAME = 'procest'
 

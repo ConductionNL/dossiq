@@ -20,6 +20,7 @@
 							<th scope="col">
 								<NcCheckboxRadioSwitch
 									:model-value="allSelected"
+									:aria-label="t('procest', 'Select all fields')"
 									@update:model-value="toggleAll" />
 							</th>
 							<th scope="col">{{ t('procest', 'Field') }}</th>
@@ -35,12 +36,14 @@
 							<td>
 								<NcCheckboxRadioSwitch
 									:model-value="selectedFields.includes(field.name)"
+									:aria-label="t('procest', 'Select field {field}', { field: field.name })"
 									@update:model-value="toggleField(field.name)" />
 							</td>
 							<td>{{ field.name }}</td>
 							<td>
 								<NcTextField
 									:model-value="modifiedValues[field.name] || field.value"
+									:aria-label="t('procest', 'Extracted value for {field}', { field: field.name })"
 									@update:model-value="v => modifiedValues[field.name] = v" />
 							</td>
 							<td>
@@ -72,8 +75,8 @@
 <script>
 import { NcDialog, NcButton, NcTextField, NcLoadingIcon, NcNoteCard, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import { extractData } from '../../../services/aiApi.js'
-import AiConfidenceBadge from './AiConfidenceBadge.vue'
+import { extractData } from '../services/aiApi.js'
+import AiConfidenceBadge from '../views/cases/components/AiConfidenceBadge.vue'
 
 export default {
 	name: 'AiExtractDialog',

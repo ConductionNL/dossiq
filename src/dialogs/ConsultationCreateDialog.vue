@@ -33,20 +33,22 @@
 			</div>
 
 			<div class="consultation-create-dialog__field">
-				<label class="consultation-create-dialog__label">
+				<label class="consultation-create-dialog__label" for="consultation-create-question">
 					{{ t('procest', 'Question') }} *
 				</label>
 				<textarea
+					id="consultation-create-question"
 					v-model="form.vraagstelling"
 					class="consultation-create-dialog__textarea"
 					rows="4" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
-				<label class="consultation-create-dialog__label">
+				<label class="consultation-create-dialog__label" for="consultation-create-response-date">
 					{{ t('procest', 'Latest response date') }} *
 				</label>
 				<input
+					id="consultation-create-response-date"
 					v-model="form.uiterlijkeReactiedatum"
 					type="date"
 					class="consultation-create-dialog__date-input"

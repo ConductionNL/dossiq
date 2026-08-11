@@ -44,32 +44,36 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Date') }} *</label>
+				<label for="advisory-report-advice-date">{{ t('procest', 'Date') }} *</label>
 				<NcTextField
+					id="advisory-report-advice-date"
 					:model-value="form.adviceDate"
 					type="date"
 					@update:model-value="v => form.adviceDate = v" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Summary') }} *</label>
+				<label for="advisory-report-summary">{{ t('procest', 'Summary') }} *</label>
 				<textarea
+					id="advisory-report-summary"
 					v-model="form.summary"
 					:placeholder="t('procest', 'Summary of the committee advice...')"
 					rows="3" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Legal Grounds') }} *</label>
+				<label for="advisory-report-grounds">{{ t('procest', 'Legal Grounds') }} *</label>
 				<textarea
+					id="advisory-report-grounds"
 					v-model="form.grounds"
 					:placeholder="t('procest', 'Legal reasoning and grounds...')"
 					rows="4" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Recommendation') }} *</label>
+				<label for="advisory-report-recommendation">{{ t('procest', 'Recommendation') }} *</label>
 				<textarea
+					id="advisory-report-recommendation"
 					v-model="form.recommendation"
 					:placeholder="t('procest', 'Recommended action for the beslisser...')"
 					rows="3" />

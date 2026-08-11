@@ -9,6 +9,7 @@
 			<textarea
 				v-model="noteText"
 				:placeholder="t('procest', 'Add a note...')"
+				:aria-label="t('procest', 'Add a note...')"
 				rows="2"
 				class="activity-timeline__note-input" />
 			<NcButton

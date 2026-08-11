@@ -3113,7 +3113,16 @@
         "Remove guard": "Remove guard",
         "Remove participant": "Remove participant",
         "Remove required field": "Remove required field",
-        "The category could not be deleted. Please try again.": "The category could not be deleted. Please try again."
+        "The category could not be deleted. Please try again.": "The category could not be deleted. Please try again.",
+        "Condition description {n}": "Condition description {n}",
+        "Escalation offset": "Escalation offset",
+        "Extracted value for {field}": "Extracted value for {field}",
+        "Motivation for {doc}": "Motivation for {doc}",
+        "Search complaints": "Search complaints",
+        "Select all fields": "Select all fields",
+        "Select document {title}": "Select document {title}",
+        "Select field {field}": "Select field {field}",
+        "Select redaction candidate {category}": "Select redaction candidate {category}"
     },
     "plurals": ""
 }

@@ -111,7 +111,7 @@
 						v-for="(item, index) in selectedChecklist.items"
 						:key="index"
 						class="inspection-panel__form-item">
-						<label class="inspection-panel__form-label">
+						<label class="inspection-panel__form-label" :for="`inspection-item-${index}-input`">
 							{{ item.order }}. {{ item.label }}
 							<span v-if="item.required" class="inspection-panel__required">*</span>
 						</label>
@@ -138,6 +138,7 @@
 						<!-- Number -->
 						<input
 							v-if="item.type === 'getal'"
+							:id="`inspection-item-${index}-input`"
 							v-model.number="formResults[index].measurement"
 							type="number"
 							class="inspection-panel__input"
@@ -146,6 +147,7 @@
 						<!-- Text -->
 						<input
 							v-if="item.type === 'tekst'"
+							:id="`inspection-item-${index}-input`"
 							v-model="formResults[index].comment"
 							type="text"
 							class="inspection-panel__input"
@@ -157,6 +159,7 @@
 							v-model="formResults[index].comment"
 							type="text"
 							class="inspection-panel__input inspection-panel__input--comment"
+							:aria-label="t('procest', 'Comment (optional)')"
 							:placeholder="t('procest', 'Comment (optional)')">
 
 						<!-- Photo upload warning -->

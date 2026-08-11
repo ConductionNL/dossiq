@@ -5,8 +5,9 @@
 		@closing="$emit('close')">
 		<div class="besluit-registration">
 			<div class="form-group">
-				<label>{{ t('procest', 'Title') }} *</label>
+				<label for="besluit-registration-title">{{ t('procest', 'Title') }} *</label>
 				<NcTextField
+					id="besluit-registration-title"
 					:model-value="form.title"
 					:error="!!errors.title"
 					:placeholder="t('procest', 'Title of the decision...')"
@@ -17,8 +18,9 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Effective date') }}</label>
+				<label for="besluit-registration-effective-date">{{ t('procest', 'Effective date') }}</label>
 				<NcTextField
+					id="besluit-registration-effective-date"
 					type="date"
 					:model-value="form.effectiveDate"
 					@update:model-value="v => form.effectiveDate = v" />
@@ -36,16 +38,18 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Explanation') }}</label>
+				<label for="besluit-registration-explanation">{{ t('procest', 'Explanation') }}</label>
 				<textarea
+					id="besluit-registration-explanation"
 					v-model="form.explanation"
 					:placeholder="t('procest', 'Explanation of the decision...')"
 					rows="3" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Administrative body') }}</label>
+				<label for="besluit-registration-governing-body">{{ t('procest', 'Administrative body') }}</label>
 				<NcTextField
+					id="besluit-registration-governing-body"
 					:model-value="form.governingBody"
 					:placeholder="t('procest', 'College van B&W')"
 					@update:model-value="v => form.governingBody = v" />
@@ -68,8 +72,8 @@
 
 <script>
 import { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
-import { useObjectStore } from '../../../store/modules/object.js'
-import { registerBesluit } from '../../../services/voorstelBesluitApi.js'
+import { useObjectStore } from '../store/modules/object.js'
+import { registerBesluit } from '../services/voorstelBesluitApi.js'
 
 export default {
 	name: 'BesluitRegistration',

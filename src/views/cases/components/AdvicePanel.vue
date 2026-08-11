@@ -82,8 +82,9 @@
 				</div>
 
 				<div class="advice-panel__field">
-					<label>{{ t('procest', 'Advisor') }}</label>
+					<label for="advice-panel-adviseur">{{ t('procest', 'Advisor') }}</label>
 					<input
+						id="advice-panel-adviseur"
 						v-model="newRequest.adviseur"
 						type="text"
 						class="advice-panel__input"
@@ -91,8 +92,9 @@
 				</div>
 
 				<div class="advice-panel__field">
-					<label>{{ t('procest', 'Subject') }}</label>
+					<label for="advice-panel-onderwerp">{{ t('procest', 'Subject') }}</label>
 					<input
+						id="advice-panel-onderwerp"
 						v-model="newRequest.onderwerp"
 						type="text"
 						class="advice-panel__input"
@@ -100,13 +102,18 @@
 				</div>
 
 				<div class="advice-panel__field">
-					<label>{{ t('procest', 'Deadline') }}</label>
-					<input v-model="newRequest.deadline" type="date" class="advice-panel__input">
+					<label for="advice-panel-deadline">{{ t('procest', 'Deadline') }}</label>
+					<input
+						id="advice-panel-deadline"
+						v-model="newRequest.deadline"
+						type="date"
+						class="advice-panel__input">
 				</div>
 
 				<div class="advice-panel__field">
-					<label>{{ t('procest', 'Questions') }}</label>
+					<label for="advice-panel-questions">{{ t('procest', 'Questions') }}</label>
 					<textarea
+						id="advice-panel-questions"
 						v-model="newRequest.questions"
 						class="advice-panel__textarea"
 						rows="3"

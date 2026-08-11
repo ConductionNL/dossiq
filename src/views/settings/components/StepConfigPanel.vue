@@ -21,8 +21,9 @@
 		<div class="step-config-panel__body">
 			<!-- Title -->
 			<div class="step-config-panel__field">
-				<label>{{ t('procest', 'Title') }}</label>
+				<label for="step-config-title">{{ t('procest', 'Title') }}</label>
 				<input
+					id="step-config-title"
 					v-model="localStep.title"
 					type="text"
 					class="step-config-panel__input"
@@ -31,8 +32,9 @@
 
 			<!-- Description -->
 			<div class="step-config-panel__field">
-				<label>{{ t('procest', 'Description') }}</label>
+				<label for="step-config-description">{{ t('procest', 'Description') }}</label>
 				<textarea
+					id="step-config-description"
 					v-model="localStep.description"
 					class="step-config-panel__textarea"
 					rows="3"
@@ -85,6 +87,7 @@
 						type="text"
 						class="step-config-panel__input"
 						:placeholder="t('procest', 'Checklist item')"
+						:aria-label="t('procest', 'Checklist item')"
 						@input="emitUpdate">
 					<NcButton
 						type="tertiary"
@@ -121,9 +124,10 @@
 				<div v-if="advancedOpen" class="step-config-panel__advanced-body">
 					<!-- SLA -->
 					<div class="step-config-panel__field">
-						<label>{{ t('procest', 'SLA') }}</label>
+						<label for="step-config-sla-value">{{ t('procest', 'SLA') }}</label>
 						<div class="step-config-panel__sla-row">
 							<input
+								id="step-config-sla-value"
 								v-model.number="localConfig.sla.value"
 								type="number"
 								min="1"
@@ -163,6 +167,7 @@
 								v-model="localConfig.requiredFields[index]"
 								type="text"
 								:placeholder="t('procest', 'Field name (property path)')"
+								:aria-label="t('procest', 'Field name (property path)')"
 								class="step-config-panel__input"
 								:disabled="readOnly"
 								@input="emitUpdate">
@@ -212,6 +217,7 @@
 									v-model.number="localConfig.escalationRule.offset"
 									type="number"
 									min="0"
+									:aria-label="t('procest', 'Escalation offset')"
 									class="step-config-panel__input step-config-panel__sla-value"
 									:disabled="readOnly"
 									@input="emitUpdate">
@@ -232,6 +238,7 @@
 								v-model="localConfig.escalationRule.notifyRole"
 								type="text"
 								:placeholder="t('procest', 'Warn role (UUID)')"
+								:aria-label="t('procest', 'Warn role (UUID)')"
 								class="step-config-panel__input"
 								:disabled="readOnly"
 								@input="emitUpdate">
@@ -239,6 +246,7 @@
 								v-model="localConfig.escalationRule.escalateToRole"
 								type="text"
 								:placeholder="t('procest', 'Escalate to role (UUID)')"
+								:aria-label="t('procest', 'Escalate to role (UUID)')"
 								class="step-config-panel__input"
 								:disabled="readOnly"
 								@input="emitUpdate">
@@ -281,6 +289,7 @@
 						v-model="action.title"
 						type="text"
 						:placeholder="t('procest', 'Task title')"
+						:aria-label="t('procest', 'Task title')"
 						class="step-config-panel__input"
 						@input="emitUpdate">
 					<input
@@ -288,6 +297,7 @@
 						v-model="action.message"
 						type="text"
 						:placeholder="t('procest', 'Notification message')"
+						:aria-label="t('procest', 'Notification message')"
 						class="step-config-panel__input"
 						@input="emitUpdate">
 					<input
@@ -295,6 +305,7 @@
 						v-model="action.url"
 						type="url"
 						:placeholder="t('procest', 'Webhook URL')"
+						:aria-label="t('procest', 'Webhook URL')"
 						class="step-config-panel__input"
 						@input="emitUpdate">
 					<NcButton

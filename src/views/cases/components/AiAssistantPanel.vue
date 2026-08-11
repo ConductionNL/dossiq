@@ -24,6 +24,7 @@
 			<div class="ai-assistant-panel__input">
 				<NcTextField
 					:model-value="question"
+					:aria-label="t('procest', 'Ask a question about this case...')"
 					:placeholder="t('procest', 'Ask a question about this case...')"
 					@update:model-value="v => question = v"
 					@keydown.enter="askQuestion" />

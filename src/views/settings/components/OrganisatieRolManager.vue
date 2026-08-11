@@ -42,29 +42,17 @@
 			@save="onSave"
 			@close="closeEditor" />
 
-		<NcDialog
+		<DeleteRolDialog
 			v-if="deleting"
-			:name="t('procest', 'Delete role')"
-			:open="!!deleting"
-			@update:open="v => { if (!v) deleting = null }">
-			<p>{{ t('procest', 'Delete role {n}?', { n: deleting.naam || deleting.id }) }}</p>
-			<p v-if="deleteBlockedReason" class="rol-manager__warning">
-				{{ deleteBlockedReason }}
-			</p>
-			<template #actions>
-				<NcButton @click="deleting = null">
-					{{ t('procest', 'Cancel') }}
-				</NcButton>
-				<NcButton type="error" :disabled="!!deleteBlockedReason" @click="doDelete">
-					{{ t('procest', 'Delete') }}
-				</NcButton>
-			</template>
-		</NcDialog>
+			:role="deleting"
+			:blocked-reason="deleteBlockedReason"
+			@close="deleting = null"
+			@confirm="doDelete" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcDialog, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import axios from '@nextcloud/axios'
@@ -72,10 +60,11 @@ import Plus from 'vue-material-design-icons/Plus.vue'
 import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
 import RolNode from './RolNode.vue'
 import RolEditorDialog from '../../../dialogs/RolEditorDialog.vue'
+import DeleteRolDialog from '../../../dialogs/DeleteRolDialog.vue'
 
 export default {
 	name: 'OrganisatieRolManager',
-	components: { NcButton, NcDialog, NcEmptyContent, NcLoadingIcon, Plus, AccountGroup, RolNode, RolEditorDialog },
+	components: { NcButton, NcEmptyContent, NcLoadingIcon, Plus, AccountGroup, RolNode, RolEditorDialog, DeleteRolDialog },
 	props: {
 		roles: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
@@ -183,10 +172,5 @@ export default {
 	border-radius: var(--border-radius);
 	padding: 8px;
 	background: var(--color-main-background);
-}
-
-.rol-manager__warning {
-	color: var(--color-error);
-	font-size: 12px;
 }
 </style>

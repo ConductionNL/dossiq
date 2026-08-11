@@ -76,6 +76,7 @@
 								v-if="localAssessments[doc.id] && localAssessments[doc.id].classification"
 								:model-value="localAssessments[doc.id] && localAssessments[doc.id].motivering"
 								:disabled="isReadOnly"
+								:aria-label="t('procest', 'Motivation for {doc}', { doc: doc.title || doc.name || doc.id })"
 								:placeholder="t('procest', 'Optional motivation...')"
 								@update:model-value="val => setMotivering(doc.id, val)" />
 						</td>

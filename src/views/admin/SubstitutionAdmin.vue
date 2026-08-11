@@ -35,6 +35,7 @@
 				v-model="filterText"
 				type="search"
 				class="substitution-admin__search"
+				:aria-label="t('procest', 'Filter by handler…')"
 				:placeholder="t('procest', 'Filter by handler…')">
 		</div>
 

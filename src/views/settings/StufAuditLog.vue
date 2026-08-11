@@ -76,46 +76,10 @@
 				</tr>
 			</tbody>
 		</table>
-		<NcDialog
+		<StufEnvelopeDialog
 			v-if="inspectRow"
-			:name="t('procest', 'StUF envelope')"
-			:open="!!inspectRow"
-			size="large"
-			@closing="inspectRow = null">
-			<div class="stuf-audit-log__details">
-				<h4>{{ t('procest', 'Request envelope') }}</h4>
-				<pre class="stuf-audit-log__pre">{{ inspectRow.envelopeXml || t('procest', '(no envelope)') }}</pre>
-				<h4 v-if="inspectRow.responseEnvelopeXml">
-					{{ t('procest', 'Response envelope') }}
-				</h4>
-				<pre v-if="inspectRow.responseEnvelopeXml" class="stuf-audit-log__pre">{{ inspectRow.responseEnvelopeXml }}</pre>
-				<h4 v-if="hasRetries(inspectRow)">
-					{{ t('procest', 'Retries') }}
-				</h4>
-				<table v-if="hasRetries(inspectRow)" class="stuf-audit-log__retries">
-					<thead>
-						<tr>
-							<th scope="col">{{ t('procest', 'Attempt') }}</th>
-							<th scope="col">{{ t('procest', 'Timestamp') }}</th>
-							<th scope="col">{{ t('procest', 'HTTP') }}</th>
-							<th scope="col">{{ t('procest', 'Duration (ms)') }}</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr v-for="(retry, index) in inspectRow.retries" :key="index">
-							<td>{{ retry.poging }}</td>
-							<td>{{ retry.timestamp }}</td>
-							<td>{{ retry.httpStatus || '—' }}</td>
-							<td>{{ retry.duurMs || '—' }}</td>
-						</tr>
-					</tbody>
-				</table>
-				<h4 v-if="inspectRow.fout">
-					{{ t('procest', 'Error') }}
-				</h4>
-				<pre v-if="inspectRow.fout" class="stuf-audit-log__pre">{{ pretty(inspectRow.fout) }}</pre>
-			</div>
-		</NcDialog>
+			:row="inspectRow"
+			@close="inspectRow = null" />
 		<p v-if="loadError" class="stuf-audit-log__error">
 			{{ loadError }}
 		</p>
@@ -123,13 +87,14 @@
 </template>
 
 <script>
-import { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import { showError } from '@nextcloud/dialogs'
 import { listMessages } from '../../services/stufApi.js'
+import StufEnvelopeDialog from '../../dialogs/StufEnvelopeDialog.vue'
 
 export default {
 	name: 'StufAuditLog',
-	components: { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField },
+	components: { NcButton, NcLoadingIcon, NcSelect, NcTextField, StufEnvelopeDialog },
 	data() {
 		return {
 			messages: [],
@@ -214,9 +179,6 @@ export default {
 		inspect(row) {
 			this.inspectRow = row
 		},
-		hasRetries(row) {
-			return Array.isArray(row.retries) && row.retries.length > 0
-		},
 		/**
 		 * Map a message status to its CSS modifier class.
 		 *
@@ -225,19 +187,6 @@ export default {
 		 */
 		statusClass(status) {
 			return 'stuf-audit-log__status--' + (status || 'unknown')
-		},
-		/**
-		 * Pretty-print a value as indented JSON for display.
-		 *
-		 * @param {*} value The value to render.
-		 * @spec exclude presentational JSON formatter — no business logic
-		 */
-		pretty(value) {
-			try {
-				return JSON.stringify(value, null, 2)
-			} catch (e) {
-				return String(value)
-			}
 		},
 		/**
 		 * Export the current audit-log rows as a CSV download.
@@ -309,28 +258,6 @@ export default {
 .stuf-audit-log__status--wacht_op_retry {
 	background: var(--color-warning);
 	color: white;
-}
-.stuf-audit-log__details h4 {
-	margin: 16px 0 4px;
-}
-.stuf-audit-log__pre {
-	background: var(--color-background-dark);
-	padding: 8px;
-	border-radius: var(--border-radius);
-	overflow: auto;
-	font-size: 11px;
-	max-height: 320px;
-	white-space: pre-wrap;
-	word-break: break-all;
-}
-.stuf-audit-log__retries {
-	width: 100%;
-	border-collapse: collapse;
-}
-.stuf-audit-log__retries th,
-.stuf-audit-log__retries td {
-	padding: 4px 8px;
-	border-bottom: 1px solid var(--color-border);
 }
 .stuf-audit-log__error {
 	color: var(--color-error);

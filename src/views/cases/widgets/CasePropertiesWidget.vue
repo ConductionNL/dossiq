@@ -10,9 +10,10 @@
 
 		<!-- Editable title -->
 		<div class="property-row">
-			<span class="property-label">{{ t('procest', 'Title') }}</span>
+			<label class="property-label" for="case-properties-title">{{ t('procest', 'Title') }}</label>
 			<NcTextField
 				v-if="!isReadOnly"
+				id="case-properties-title"
 				:model-value="form.title"
 				:error="!!validationErrors.title"
 				@update:model-value="v => { form.title = v; validationErrors.title = '' }" />
@@ -24,9 +25,10 @@
 
 		<!-- Description -->
 		<div class="property-row">
-			<span class="property-label">{{ t('procest', 'Description') }}</span>
+			<label class="property-label" for="case-properties-description">{{ t('procest', 'Description') }}</label>
 			<textarea
 				v-if="!isReadOnly"
+				id="case-properties-description"
 				v-model="form.description"
 				rows="2"
 				class="property-textarea" />
@@ -55,9 +57,10 @@
 				<span v-else class="property-value">{{ caseData.priority || '---' }}</span>
 			</div>
 			<div class="property-cell">
-				<span class="property-label">{{ t('procest', 'Handler') }}</span>
+				<label class="property-label" for="case-properties-assignee">{{ t('procest', 'Handler') }}</label>
 				<NcTextField
 					v-if="!isReadOnly"
+					id="case-properties-assignee"
 					:model-value="form.assignee"
 					:placeholder="t('procest', 'Assign handler...')"
 					@update:model-value="v => form.assignee = v" />

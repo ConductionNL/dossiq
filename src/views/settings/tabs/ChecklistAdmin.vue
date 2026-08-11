@@ -60,8 +60,9 @@
 			</div>
 
 			<div class="checklist-admin__field">
-				<label>{{ t('procest', 'Checklist name') }}</label>
+				<label for="checklist-admin-name">{{ t('procest', 'Checklist name') }}</label>
 				<input
+					id="checklist-admin-name"
 					v-model="editingChecklist.name"
 					type="text"
 					class="checklist-admin__input"
@@ -101,7 +102,8 @@
 							v-model="item.label"
 							type="text"
 							class="checklist-admin__input"
-							:placeholder="t('procest', 'Item label')">
+							:placeholder="t('procest', 'Item label')"
+							:aria-label="t('procest', 'Item label')">
 
 						<select v-model="item.type" class="checklist-admin__input checklist-admin__input--small">
 							<option value="ja_nee_nvt">
@@ -137,11 +139,13 @@
 							v-model="item.helpText"
 							type="text"
 							class="checklist-admin__input"
-							:placeholder="t('procest', 'Help text for inspector')">
+							:placeholder="t('procest', 'Help text for inspector')"
+							:aria-label="t('procest', 'Help text for inspector')">
 
 						<div v-if="item.type === 'meerkeuze'" class="checklist-admin__options">
-							<label>{{ t('procest', 'Options (comma-separated):') }}</label>
+							<label :for="`checklist-admin-options-${index}`">{{ t('procest', 'Options (comma-separated):') }}</label>
 							<input
+								:id="`checklist-admin-options-${index}`"
 								:value="(item.options || []).join(', ')"
 								type="text"
 								class="checklist-admin__input"

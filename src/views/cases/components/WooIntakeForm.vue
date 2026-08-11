@@ -6,8 +6,9 @@
 
 		<div class="form-row">
 			<div class="form-group">
-				<label>{{ t('procest', 'Requester name') }} *</label>
+				<label for="woo-intake-requester-name">{{ t('procest', 'Requester name') }} *</label>
 				<NcTextField
+					id="woo-intake-requester-name"
 					:model-value="form.verzoekerNaam"
 					:disabled="isReadOnly"
 					:error="!!errors.verzoekerNaam"
@@ -17,8 +18,9 @@
 				</p>
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Requester email') }} *</label>
+				<label for="woo-intake-requester-email">{{ t('procest', 'Requester email') }} *</label>
 				<NcTextField
+					id="woo-intake-requester-email"
 					:model-value="form.verzoekerEmail"
 					:disabled="isReadOnly"
 					:error="!!errors.verzoekerEmail"
@@ -52,8 +54,9 @@
 		</div>
 
 		<div class="form-group">
-			<label>{{ t('procest', 'Subject') }} *</label>
+			<label for="woo-intake-subject">{{ t('procest', 'Subject') }} *</label>
 			<NcTextField
+				id="woo-intake-subject"
 				:model-value="form.onderwerp"
 				:disabled="isReadOnly"
 				:error="!!errors.onderwerp"
@@ -65,8 +68,9 @@
 		</div>
 
 		<div class="form-group">
-			<label>{{ t('procest', 'Administrative matter') }}</label>
+			<label for="woo-intake-administrative-matter">{{ t('procest', 'Administrative matter') }}</label>
 			<NcTextField
+				id="woo-intake-administrative-matter"
 				:model-value="form.bestuurlijkeAangelegenheid"
 				:disabled="isReadOnly"
 				:placeholder="t('procest', 'Related administrative matter')"
@@ -75,16 +79,18 @@
 
 		<div class="form-row">
 			<div class="form-group">
-				<label>{{ t('procest', 'Period from') }}</label>
+				<label for="woo-intake-period-from">{{ t('procest', 'Period from') }}</label>
 				<NcTextField
+					id="woo-intake-period-from"
 					:model-value="form.periodeVan"
 					:disabled="isReadOnly"
 					type="date"
 					@update:model-value="v => update('periodeVan', v)" />
 			</div>
 			<div class="form-group">
-				<label>{{ t('procest', 'Period to') }}</label>
+				<label for="woo-intake-period-to">{{ t('procest', 'Period to') }}</label>
 				<NcTextField
+					id="woo-intake-period-to"
 					:model-value="form.periodeTot"
 					:disabled="isReadOnly"
 					type="date"
@@ -93,8 +99,9 @@
 		</div>
 
 		<div class="form-group">
-			<label>{{ t('procest', 'Receipt date') }} *</label>
+			<label for="woo-intake-receipt-date">{{ t('procest', 'Receipt date') }} *</label>
 			<NcTextField
+				id="woo-intake-receipt-date"
 				:model-value="form.ontvangstdatum"
 				:disabled="isReadOnly"
 				:error="!!errors.ontvangstdatum"

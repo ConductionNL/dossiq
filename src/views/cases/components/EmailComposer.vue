@@ -20,8 +20,9 @@
 		<!-- Email form -->
 		<div class="email-composer__form">
 			<div class="form-group">
-				<label>{{ t('procest', 'To') }} *</label>
+				<label for="email-composer-to">{{ t('procest', 'To') }} *</label>
 				<NcTextField
+					id="email-composer-to"
 					:model-value="form.to"
 					type="email"
 					:placeholder="t('procest', 'recipient@example.nl')"
@@ -29,15 +30,17 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Subject') }} *</label>
+				<label for="email-composer-subject">{{ t('procest', 'Subject') }} *</label>
 				<NcTextField
+					id="email-composer-subject"
 					:model-value="form.subject"
 					@update:model-value="v => form.subject = v" />
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Body') }} *</label>
+				<label for="email-composer-body">{{ t('procest', 'Body') }} *</label>
 				<textarea
+					id="email-composer-body"
 					v-model="form.body"
 					rows="8"
 					:placeholder="t('procest', 'Email body... Use {{variableName}} for template variables.')" />

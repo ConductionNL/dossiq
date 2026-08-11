@@ -3113,6 +3113,15 @@
         "working days": "werkdagen",
         "Your action": "Uw actie",
         "Your advice": "Uw advies",
-        "Your advice has been received successfully. You can close this window.": "Uw advies is succesvol ontvangen. U kunt dit venster sluiten."
+        "Your advice has been received successfully. You can close this window.": "Uw advies is succesvol ontvangen. U kunt dit venster sluiten.",
+        "Condition description {n}": "Omschrijving voorwaarde {n}",
+        "Escalation offset": "Escalatietermijn",
+        "Extracted value for {field}": "Geëxtraheerde waarde voor {field}",
+        "Motivation for {doc}": "Motivering voor {doc}",
+        "Search complaints": "Klachten zoeken",
+        "Select all fields": "Alle velden selecteren",
+        "Select document {title}": "Document {title} selecteren",
+        "Select field {field}": "Veld {field} selecteren",
+        "Select redaction candidate {category}": "Lakkandidaat {category} selecteren"
     }
 }

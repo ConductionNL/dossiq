@@ -88,22 +88,25 @@
 			<div class="dialog-card">
 				<h3>{{ t('procest', 'Schedule Hearing') }}</h3>
 				<div class="form-group">
-					<label>{{ t('procest', 'Date and Time') }} *</label>
+					<label for="hearing-panel-scheduled-date">{{ t('procest', 'Date and Time') }} *</label>
 					<NcTextField
+						id="hearing-panel-scheduled-date"
 						:model-value="scheduleForm.scheduledDate"
 						type="datetime-local"
 						@update:model-value="v => scheduleForm.scheduledDate = v" />
 				</div>
 				<div class="form-group">
-					<label>{{ t('procest', 'Location') }}</label>
+					<label for="hearing-panel-location">{{ t('procest', 'Location') }}</label>
 					<NcTextField
+						id="hearing-panel-location"
 						:model-value="scheduleForm.location"
 						:placeholder="t('procest', 'Location or Online')"
 						@update:model-value="v => scheduleForm.location = v" />
 				</div>
 				<div class="form-group">
-					<label>{{ t('procest', 'Video Call URL') }}</label>
+					<label for="hearing-panel-video-call-url">{{ t('procest', 'Video Call URL') }}</label>
 					<NcTextField
+						id="hearing-panel-video-call-url"
 						:model-value="scheduleForm.videoCallUrl"
 						:placeholder="t('procest', 'https://...')"
 						@update:model-value="v => scheduleForm.videoCallUrl = v" />
@@ -131,8 +134,9 @@
 				<h3>{{ t('procest', 'Record Hearing Waiver') }}</h3>
 				<p>{{ t('procest', 'The objector waives the right to be heard (Awb art. 7:3).') }}</p>
 				<div class="form-group">
-					<label>{{ t('procest', 'Reason') }}</label>
+					<label for="hearing-panel-waiver-reason">{{ t('procest', 'Reason') }}</label>
 					<textarea
+						id="hearing-panel-waiver-reason"
 						v-model="waiverForm.reason"
 						:placeholder="t('procest', 'Reason for waiving the hearing right...')"
 						rows="3" />
@@ -159,8 +163,9 @@
 			<div class="dialog-card">
 				<h3>{{ t('procest', 'Record Hearing Minutes') }}</h3>
 				<div class="form-group">
-					<label>{{ t('procest', 'Minutes Summary (Verslag)') }} *</label>
+					<label for="hearing-panel-minutes-summary">{{ t('procest', 'Minutes Summary (Verslag)') }} *</label>
 					<textarea
+						id="hearing-panel-minutes-summary"
 						v-model="minutesForm.summary"
 						:placeholder="t('procest', 'Summary of the hearing...')"
 						rows="6" />

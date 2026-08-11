@@ -11,6 +11,7 @@
 			<input
 				v-model="search"
 				type="search"
+				:aria-label="t('procest', 'Search complaints')"
 				class="complaint-list__search"
 				:placeholder="t('procest', 'Search complaints…')">
 			<select v-model="statusFilter" class="complaint-list__status">

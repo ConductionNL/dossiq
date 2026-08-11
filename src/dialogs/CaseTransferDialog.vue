@@ -21,8 +21,9 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Reason for transfer') }}</label>
+				<label for="case-transfer-reason">{{ t('procest', 'Reason for transfer') }}</label>
 				<textarea
+					id="case-transfer-reason"
 					v-model="form.reason"
 					class="case-transfer-dialog__textarea"
 					:placeholder="t('procest', 'Explain why this case should be transferred...')"

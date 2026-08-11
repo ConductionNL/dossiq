@@ -51,8 +51,9 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Motivation (Motivering)') }} *</label>
+				<label for="bezwaar-decision-motivation">{{ t('procest', 'Motivation (Motivering)') }} *</label>
 				<textarea
+					id="bezwaar-decision-motivation"
 					v-model="form.dispositionDetails"
 					:placeholder="t('procest', 'Detailed motivation for the decision (art. 7:12 Awb)...')"
 					rows="5" />
@@ -72,8 +73,9 @@
 				</div>
 
 				<div v-if="!form.followsAdvice" class="form-group">
-					<label>{{ t('procest', 'Reason for deviating from advice') }} *</label>
+					<label for="bezwaar-decision-deviation-reason">{{ t('procest', 'Reason for deviating from advice') }} *</label>
 					<textarea
+						id="bezwaar-decision-deviation-reason"
 						v-model="form.deviationReason"
 						:placeholder="t('procest', 'Per art. 7:13 lid 7, explain why the decision deviates...')"
 						rows="3" />
@@ -85,8 +87,9 @@
 
 			<!-- Remedial action (for gegrond / deels_gegrond) -->
 			<div v-if="form.dispositionType === 'gegrond' || form.dispositionType === 'deels_gegrond'" class="form-group">
-				<label>{{ t('procest', 'Remedial Action') }}</label>
+				<label for="bezwaar-decision-remedial-action">{{ t('procest', 'Remedial Action') }}</label>
 				<textarea
+					id="bezwaar-decision-remedial-action"
 					v-model="form.remedialAction"
 					:placeholder="t('procest', 'What corrective action will be taken...')"
 					rows="3" />
@@ -94,15 +97,17 @@
 
 			<div class="form-row">
 				<div class="form-group">
-					<label>{{ t('procest', 'Decision Date') }} *</label>
+					<label for="bezwaar-decision-decision-date">{{ t('procest', 'Decision Date') }} *</label>
 					<NcTextField
+						id="bezwaar-decision-decision-date"
 						:model-value="form.decisionDate"
 						type="date"
 						@update:model-value="v => form.decisionDate = v" />
 				</div>
 				<div class="form-group">
-					<label>{{ t('procest', 'Effective Date') }} *</label>
+					<label for="bezwaar-decision-effective-date">{{ t('procest', 'Effective Date') }} *</label>
 					<NcTextField
+						id="bezwaar-decision-effective-date"
 						:model-value="form.effectiveDate"
 						type="date"
 						@update:model-value="v => form.effectiveDate = v" />
@@ -111,8 +116,9 @@
 
 			<!-- Rechtsmiddelenclausule -->
 			<div class="form-group">
-				<label>{{ t('procest', 'Appeal Information (Rechtsmiddelenclausule)') }} *</label>
+				<label for="bezwaar-decision-appeal-information">{{ t('procest', 'Appeal Information (Rechtsmiddelenclausule)') }} *</label>
 				<textarea
+					id="bezwaar-decision-appeal-information"
 					v-model="form.appealInformation"
 					:placeholder="defaultAppealInformation"
 					rows="3" />

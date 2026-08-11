@@ -2,8 +2,9 @@
 	<div class="general-tab">
 		<!-- Title -->
 		<div class="form-group">
-			<label class="required">{{ t('procest', 'Title') }}</label>
+			<label class="required" for="general-tab-title">{{ t('procest', 'Title') }}</label>
 			<NcTextField
+				id="general-tab-title"
 				:model-value="form.title"
 				:error="!!errors.title"
 				:helper-text="errors.title"
@@ -12,8 +13,9 @@
 
 		<!-- Description -->
 		<div class="form-group">
-			<label>{{ t('procest', 'Description') }}</label>
+			<label for="general-tab-description">{{ t('procest', 'Description') }}</label>
 			<textarea
+				id="general-tab-description"
 				class="general-tab__textarea"
 				:value="form.description"
 				@input="$emit('update', 'description', $event.target.value)" />
@@ -21,8 +23,9 @@
 
 		<!-- Purpose -->
 		<div class="form-group">
-			<label class="required">{{ t('procest', 'Purpose') }}</label>
+			<label class="required" for="general-tab-purpose">{{ t('procest', 'Purpose') }}</label>
 			<NcTextField
+				id="general-tab-purpose"
 				:model-value="form.purpose"
 				:error="!!errors.purpose"
 				:helper-text="errors.purpose"
@@ -31,8 +34,9 @@
 
 		<!-- Trigger -->
 		<div class="form-group">
-			<label class="required">{{ t('procest', 'Trigger') }}</label>
+			<label class="required" for="general-tab-trigger">{{ t('procest', 'Trigger') }}</label>
 			<NcTextField
+				id="general-tab-trigger"
 				:model-value="form.trigger"
 				:error="!!errors.trigger"
 				:helper-text="errors.trigger"
@@ -41,8 +45,9 @@
 
 		<!-- Subject -->
 		<div class="form-group">
-			<label class="required">{{ t('procest', 'Subject') }}</label>
+			<label class="required" for="general-tab-subject">{{ t('procest', 'Subject') }}</label>
 			<NcTextField
+				id="general-tab-subject"
 				:model-value="form.subject"
 				:error="!!errors.subject"
 				:helper-text="errors.subject"
@@ -51,16 +56,18 @@
 
 		<!-- Initiator Action -->
 		<div class="form-group">
-			<label>{{ t('procest', 'Initiator action') }}</label>
+			<label for="general-tab-initiator-action">{{ t('procest', 'Initiator action') }}</label>
 			<NcTextField
+				id="general-tab-initiator-action"
 				:model-value="form.initiatorAction"
 				@update:model-value="v => $emit('update', 'initiatorAction', v)" />
 		</div>
 
 		<!-- Handler Action -->
 		<div class="form-group">
-			<label>{{ t('procest', 'Handler action') }}</label>
+			<label for="general-tab-handler-action">{{ t('procest', 'Handler action') }}</label>
 			<NcTextField
+				id="general-tab-handler-action"
 				:model-value="form.handlerAction"
 				@update:model-value="v => $emit('update', 'handlerAction', v)" />
 		</div>
@@ -152,8 +159,9 @@
 
 		<!-- Publication Text (conditional) -->
 		<div v-if="form.publicationRequired" class="form-group">
-			<label>{{ t('procest', 'Publication text') }}</label>
+			<label for="general-tab-publication-text">{{ t('procest', 'Publication text') }}</label>
 			<textarea
+				id="general-tab-publication-text"
 				class="general-tab__textarea"
 				:value="form.publicationText"
 				@input="$emit('update', 'publicationText', $event.target.value)" />
@@ -161,8 +169,9 @@
 
 		<!-- Responsible Unit -->
 		<div class="form-group">
-			<label class="required">{{ t('procest', 'Responsible unit') }}</label>
+			<label class="required" for="general-tab-responsible-unit">{{ t('procest', 'Responsible unit') }}</label>
 			<NcTextField
+				id="general-tab-responsible-unit"
 				:model-value="form.responsibleUnit"
 				:error="!!errors.responsibleUnit"
 				:helper-text="errors.responsibleUnit"
@@ -171,16 +180,18 @@
 
 		<!-- Reference Process -->
 		<div class="form-group">
-			<label>{{ t('procest', 'Reference process') }}</label>
+			<label for="general-tab-reference-process">{{ t('procest', 'Reference process') }}</label>
 			<NcTextField
+				id="general-tab-reference-process"
 				:model-value="form.referenceProcess"
 				@update:model-value="v => $emit('update', 'referenceProcess', v)" />
 		</div>
 
 		<!-- Keywords -->
 		<div class="form-group">
-			<label>{{ t('procest', 'Keywords') }}</label>
+			<label for="general-tab-keywords">{{ t('procest', 'Keywords') }}</label>
 			<NcTextField
+				id="general-tab-keywords"
 				:model-value="form.keywords"
 				:placeholder="t('procest', 'Comma-separated keywords')"
 				@update:model-value="v => $emit('update', 'keywords', v)" />
@@ -188,8 +199,9 @@
 
 		<!-- Valid From -->
 		<div class="form-group">
-			<label class="required">{{ t('procest', 'Valid from') }}</label>
+			<label class="required" for="general-tab-valid-from">{{ t('procest', 'Valid from') }}</label>
 			<input
+				id="general-tab-valid-from"
 				type="date"
 				class="general-tab__date"
 				:value="form.validFrom"
@@ -198,8 +210,9 @@
 
 		<!-- Valid Until -->
 		<div class="form-group">
-			<label>{{ t('procest', 'Valid until') }}</label>
+			<label for="general-tab-valid-until">{{ t('procest', 'Valid until') }}</label>
 			<input
+				id="general-tab-valid-until"
 				type="date"
 				class="general-tab__date"
 				:value="form.validUntil"

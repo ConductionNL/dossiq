@@ -28,8 +28,9 @@
 			</div>
 
 			<div class="form-group">
-				<label>{{ t('procest', 'Message (plain text only)') }}</label>
+				<label for="berichtenbox-compose-body">{{ t('procest', 'Message (plain text only)') }}</label>
 				<textarea
+					id="berichtenbox-compose-body"
 					v-model="form.body"
 					class="compose-dialog__body"
 					rows="8"
@@ -71,7 +72,7 @@
 <script>
 import { NcDialog, NcButton, NcTextField, NcSelect, NcNoteCard } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import { sendMessage } from '../../../services/berichtenboxApi.js'
+import { sendMessage } from '../services/berichtenboxApi.js'
 
 export default {
 	name: 'BerichtenboxComposeDialog',
@@ -157,5 +158,6 @@ export default {
 }
 
 .form-group { margin-bottom: 12px; }
+
 .form-error { color: var(--color-error); font-size: 12px; margin-top: 4px; }
 </style>
