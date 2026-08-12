@@ -31,6 +31,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\AdviceService;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -52,6 +53,7 @@ class AdviceController extends Controller {
 	 * @param AdviceService $adviceService The advice service
 	 * @param IUserSession $userSession The user session
 	 * @param LoggerInterface $logger The logger
+	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
 	 */
 	public function __construct(
 		string $appName,
@@ -59,6 +61,7 @@ class AdviceController extends Controller {
 		private readonly AdviceService $adviceService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseAccessGuard $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -190,6 +193,15 @@ class AdviceController extends Controller {
 	/**
 	 * Get all advice requests for a specific case.
 	 *
+	 * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()`.
+	 *
+	 * `GET /api/vth/cases/{id}/advice-requests` is a per-case sub-resource and
+	 * `$id` is the CASE uuid, so the case-membership predicate applies directly
+	 * — no `OwningCaseResolver` hop is needed. This is the same relationship
+	 * `AdviceAuthorizationGuard::isHandlerOfLinkedCase()` already tests on the
+	 * transition and reminder paths (assignee of the linked case, admin
+	 * bypass); the case-level LIST simply never had it.
+	 *
 	 * @param string $id UUID of the case
 	 *
 	 * @return JSONResponse List of advice requests
@@ -203,6 +215,10 @@ class AdviceController extends Controller {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSForbiddenException('Not authenticated');
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
+			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
 		}
 
 		$advice = $this->adviceService->getAdviceForCase(caseId: $id);

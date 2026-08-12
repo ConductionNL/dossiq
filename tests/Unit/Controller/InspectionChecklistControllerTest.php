@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\InspectionChecklistController;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\InspectionChecklistService;
 use OCP\AppFramework\Http;
 use OCP\IGroupManager;
@@ -67,6 +68,11 @@ class InspectionChecklistControllerTest extends TestCase {
 	private LoggerInterface $logger;
 
 	/**
+	 * @var CaseAccessGuard|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private CaseAccessGuard $caseAccessGuard;
+
+	/**
 	 * @var InspectionChecklistController
 	 */
 	private InspectionChecklistController $controller;
@@ -82,6 +88,7 @@ class InspectionChecklistControllerTest extends TestCase {
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->groupManager = $this->createMock(IGroupManager::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
 
 		$this->controller = new InspectionChecklistController(
 			appName: 'procest',
@@ -90,6 +97,7 @@ class InspectionChecklistControllerTest extends TestCase {
 			userSession: $this->userSession,
 			groupManager: $this->groupManager,
 			logger: $this->logger,
+			caseAccessGuard: $this->caseAccessGuard,
 		);
 	}//end setUp()
 
@@ -157,6 +165,11 @@ class InspectionChecklistControllerTest extends TestCase {
 		$mockUser->method('getUID')->willReturn('inspector1');
 		$this->userSession->method('getUser')->willReturn($mockUser);
 
+		// Until the per-case guard landed, "is anyone logged in" WAS this
+		// endpoint's entire authorization model, and this case asserted exactly
+		// that. It now has to state the relationship it always assumed.
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
+
 		$this->inspectionChecklistService
 			->method('getResultsForCase')
 			->willReturn([]);
@@ -165,4 +178,25 @@ class InspectionChecklistControllerTest extends TestCase {
 
 		$this->assertSame(expected: Http::STATUS_OK, actual: $response->getStatus());
 	}//end testGetResultsReturns200()
+
+	/**
+	 * An authenticated caller who does not work on the case is refused, and no
+	 * inspection result is read.
+	 *
+	 * @return void
+	 */
+	public function testGetResultsRefusesACallerWithoutCaseAccess(): void {
+		$mockUser = $this->createMock(IUser::class);
+		$mockUser->method('getUID')->willReturn('outsider');
+		$this->userSession->method('getUser')->willReturn($mockUser);
+
+		$this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(false);
+		$this->inspectionChecklistService
+			->expects($this->never())
+			->method('getResultsForCase');
+
+		$response = $this->controller->getResults(id: 'someone-elses-case');
+
+		$this->assertSame(expected: Http::STATUS_FORBIDDEN, actual: $response->getStatus());
+	}//end testGetResultsRefusesACallerWithoutCaseAccess()
 }//end class

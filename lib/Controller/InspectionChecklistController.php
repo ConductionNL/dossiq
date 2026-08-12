@@ -26,6 +26,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\InspectionChecklistService;
 use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
@@ -68,6 +69,7 @@ class InspectionChecklistController extends Controller {
 		private readonly IUserSession $userSession,
 		private readonly IGroupManager $groupManager,
 		private readonly LoggerInterface $logger,
+		private readonly CaseAccessGuard $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
@@ -235,6 +237,15 @@ class InspectionChecklistController extends Controller {
 	/**
 	 * Get all inspection results for a case.
 	 *
+	 * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()`.
+	 *
+	 * `GET /api/vth/cases/{id}/inspection-results` is a per-case sub-resource
+	 * and `$id` is the CASE uuid, so the case-membership predicate applies
+	 * directly. Inspection results carry enforcement findings against a named
+	 * address, so this is a per-case read of supervision data and not a
+	 * catalogue lookup like the checklist DEFINITIONS above (which are admin
+	 * CRUD and guarded as such).
+	 *
 	 * @param string $id UUID of the case
 	 *
 	 * @return JSONResponse List of inspectionResult objects
@@ -248,6 +259,10 @@ class InspectionChecklistController extends Controller {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSForbiddenException('Not authenticated');
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $id, user: $user) === false) {
+			return new JSONResponse(data: ['error' => 'Not authorized'], statusCode: Http::STATUS_FORBIDDEN);
 		}
 
 		$results = $this->checklistService->getResultsForCase(caseId: $id);
