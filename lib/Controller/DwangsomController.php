@@ -29,9 +29,11 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\DwangsomBezwaarService;
 use OCA\Procest\Service\DwangsomCalculationService;
 use OCA\Procest\Service\SettingsService;
+use OCA\Procest\Service\Support\OwningCaseResolver;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -55,6 +57,8 @@ class DwangsomController extends Controller
      * @param DwangsomBezwaarService     $bezwaar     Bezwaar service.
      * @param SettingsService            $settings    Settings.
      * @param IUserSession               $userSession User session.
+     * @param CaseAccessGuard            $caseAccess  Per-case authorization guard.
+     * @param OwningCaseResolver         $owningCase  Resolves a berekening's owning case.
      */
     public function __construct(
         string $appName,
@@ -63,24 +67,66 @@ class DwangsomController extends Controller
         private readonly DwangsomBezwaarService $bezwaar,
         private readonly SettingsService $settings,
         private readonly IUserSession $userSession,
+        private readonly CaseAccessGuard $caseAccess,
+        private readonly OwningCaseResolver $owningCase,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
 
     /**
-     * Per-object authorization guard.
+     * Per-object authorization guard for a DwangsomBerekening.
      *
-     * @return JSONResponse|null
+     * Replaces the former `ensureAuthenticated()`, which was documented as a
+     * "per-object authorization guard" and has never been one: it established
+     * that somebody was logged in and nothing else. Every method here is
+     * `@NoAdminRequired`, so that admitted any authenticated account to any
+     * berekening.
+     *
+     * A berekening has no owner field of its own. It belongs to a case through
+     * `termijnInstance` -> `zaak`, so the decision is delegated to
+     * {@see CaseAccessGuard} on the owning case, exactly as the other
+     * case-scoped surfaces in this app do.
+     *
+     * Fails closed at every branch: an unresolvable chain, an absent
+     * OpenRegister, or an unconfigured schema all DENY. A berekening whose
+     * owning case cannot be established is not a berekening anyone may act on.
+     *
+     * @param string $berekeningId The DwangsomBerekening UUID.
+     * @param bool   $mutation     True for write verbs, false for reads.
+     *
+     * @return JSONResponse|null A refusal, or null when access is granted.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
-    private function ensureAuthenticated(): ?JSONResponse
+    private function denyUnlessMayAccess(string $berekeningId, bool $mutation): ?JSONResponse
     {
         $user = $this->userSession->getUser();
         if ($user === null) {
             return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
         }
 
-        return null;
-    }//end ensureAuthenticated()
+        $caseId = $this->owningCase->resolveVia(
+            objectId: $berekeningId,
+            schemaKey: 'dwangsom_berekening_schema',
+            linkField: 'termijnInstance',
+            viaSchemaKey: 'termijn_instance_schema',
+            caseField: 'zaak'
+        );
+
+        if ($caseId !== null) {
+            $granted = $mutation === true
+                ? $this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user)
+                : $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user);
+            if ($granted === true) {
+                return null;
+            }
+        }
+
+        return new JSONResponse(
+            ['message' => 'Not authorized for dwangsom berekening '.$berekeningId],
+            Http::STATUS_FORBIDDEN
+        );
+    }//end denyUnlessMayAccess()
 
     /**
      * Get a DwangsomBerekening by id.
@@ -95,7 +141,7 @@ class DwangsomController extends Controller
      */
     public function show(string $id): JSONResponse
     {
-        $denied = $this->ensureAuthenticated();
+        $denied = $this->denyUnlessMayAccess(berekeningId: $id, mutation: false);
         if ($denied !== null) {
             return $denied;
         }
@@ -133,7 +179,7 @@ class DwangsomController extends Controller
      */
     public function beschikking(string $id): JSONResponse
     {
-        $denied = $this->ensureAuthenticated();
+        $denied = $this->denyUnlessMayAccess(berekeningId: $id, mutation: true);
         if ($denied !== null) {
             return $denied;
         }
@@ -159,7 +205,7 @@ class DwangsomController extends Controller
      */
     public function bezwaar(string $id): JSONResponse
     {
-        $denied = $this->ensureAuthenticated();
+        $denied = $this->denyUnlessMayAccess(berekeningId: $id, mutation: true);
         if ($denied !== null) {
             return $denied;
         }
@@ -189,7 +235,7 @@ class DwangsomController extends Controller
      */
     public function bezwaarHeroverweging(string $id): JSONResponse
     {
-        $denied = $this->ensureAuthenticated();
+        $denied = $this->denyUnlessMayAccess(berekeningId: $id, mutation: true);
         if ($denied !== null) {
             return $denied;
         }

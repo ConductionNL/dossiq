@@ -90,6 +90,49 @@ class OwningCaseResolver
     }//end resolve()
 
     /**
+     * Resolve the owning case across two hops.
+     *
+     * Some child objects do not reference their case directly. A
+     * `dwangsomBerekening`, for example, carries only `termijnInstance`, and it
+     * is the `termijnInstance` that carries `zaak`. Guarding those endpoints
+     * needs the whole chain, and every unresolvable link must DENY rather than
+     * fall through — a missing intermediate is not permission.
+     *
+     * @param string $objectId    The child object UUID.
+     * @param string $schemaKey   The settings key naming the child's schema.
+     * @param string $linkField   The property on the child holding the intermediate ref.
+     * @param string $viaSchemaKey The settings key naming the intermediate's schema.
+     * @param string $caseField   The property on the intermediate holding the case ref.
+     *
+     * @return string|null The owning case UUID, or null when unresolvable.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function resolveVia(
+        string $objectId,
+        string $schemaKey,
+        string $linkField,
+        string $viaSchemaKey,
+        string $caseField='zaak'
+    ): ?string {
+        $child = $this->loadChild(objectId: $objectId, schemaKey: $schemaKey);
+        if ($child === null) {
+            return null;
+        }
+
+        $intermediateId = (string) ($child[$linkField] ?? '');
+        if ($intermediateId === '') {
+            return null;
+        }
+
+        return $this->resolve(
+            objectId: $intermediateId,
+            schemaKey: $viaSchemaKey,
+            caseField: $caseField
+        );
+    }//end resolveVia()
+
+    /**
      * Load the child object as a plain array.
      *
      * @param string $objectId  The child object UUID.
