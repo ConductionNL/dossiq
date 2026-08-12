@@ -213,20 +213,20 @@ class MandaatImportService
     private function buildMandaatPayload(array $row, string $besluitId): array
     {
         return [
-            'mandaatNummer'       => (string) $row['mandaatNummer'],
-            'mandateDecision'     => $besluitId,
-            'omschrijving'        => (string) ($row['omschrijving'] ?? ''),
-            'gemandateerdeRol'    => (string) $row['gemandateerdeRol'],
+            'mandaatNummer'    => (string) $row['mandaatNummer'],
+            'mandateDecision'  => $besluitId,
+            'omschrijving'     => (string) ($row['omschrijving'] ?? ''),
+            'gemandateerdeRol' => (string) $row['gemandateerdeRol'],
             // Key = the schema property (renamed). Value = a CSV COLUMN HEADER,
             // which is an external input format the operator's file already
             // uses, so both spellings are read.
-            'legalBasis'          => (string) ($row['legalBasis'] ?? $row['wettelijkeGrondslag'] ?? ''),
-            'voorwaarden'         => [
+            'legalBasis'       => (string) ($row['legalBasis'] ?? $row['wettelijkeGrondslag'] ?? ''),
+            'voorwaarden'      => [
                 'plafondCents'  => (int) ($row['plafondCents'] ?? 0),
                 'subdelegatie'  => $this->csvParser->parseBool(value: (string) ($row['subdelegatie'] ?? 'false')),
                 'decisionTypes' => $this->csvParser->parseList(value: (string) ($row['decisionTypes'] ?? '')),
             ],
-            'status'              => 'concept',
+            'status'           => 'concept',
         ];
     }//end buildMandaatPayload()
 
