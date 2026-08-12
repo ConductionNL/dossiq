@@ -3122,6 +3122,8 @@
         "Select all fields": "Alle velden selecteren",
         "Select document {title}": "Document {title} selecteren",
         "Select field {field}": "Veld {field} selecteren",
-        "Select redaction candidate {category}": "Lakkandidaat {category} selecteren"
+        "Select redaction candidate {category}": "Lakkandidaat {category} selecteren",
+        "Saving failed": "Opslaan mislukt",
+        "Saving failed ({status})": "Opslaan mislukt ({status})"
     }
 }

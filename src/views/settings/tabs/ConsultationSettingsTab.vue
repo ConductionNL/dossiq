@@ -63,6 +63,10 @@
 			</p>
 		</div>
 
+		<NcNoteCard v-if="error" type="error">
+			{{ error }}
+		</NcNoteCard>
+
 		<NcButton
 			type="primary"
 			:disabled="!writable || saving"
@@ -85,6 +89,7 @@
 import { NcButton, NcInputField, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
+import { translate as t } from '@nextcloud/l10n'
 
 /**
  * Consultation management admin settings tab.
@@ -103,6 +108,7 @@ export default {
 			bottleneckThreshold: initial.bottleneckThreshold ?? 0.2,
 			writable: initial.writable ?? true,
 			saving: false,
+			error: null,
 		}
 	},
 	computed: {
@@ -112,23 +118,45 @@ export default {
 		},
 	},
 	methods: {
-		/** @spec openspec/specs/consultation-management/spec.md */
+		t,
+		/**
+		 * Persist the consultation settings.
+		 *
+		 * ⚠️ This used to POST `/apps/procest/api/settings/consultation`, a route
+		 * procest never declared. Nextcloud answers an unmatched app URL with its
+		 * own HTML page under HTTP 200, so `fetch` resolved, nothing threw, and
+		 * every save silently vanished (procest#794). It now uses the app's own
+		 * canonical settings write, which carries
+		 * `#[AuthorizedAdminSetting]` — deliberately not OpenRegister's generic
+		 * object route, which also works and would bypass that guard.
+		 *
+		 * `fetch` does NOT reject on a non-2xx response, so `res.ok` has to be
+		 * checked explicitly or a 403 reads exactly like a successful save.
+		 *
+		 * @spec openspec/specs/consultation-management/spec.md
+		 */
 		async save() {
 			this.saving = true
+			this.error = null
 			try {
-				await fetch(generateUrl('/apps/procest/api/settings/consultation'), {
+				const res = await fetch(generateUrl('/apps/procest/api/settings'), {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json',
 						requesttoken: OC.requestToken,
 					},
 					body: JSON.stringify({
-						defaultDeadlineDays: Number(this.defaultDeadlineDays),
-						warningOffsetDays: Number(this.warningOffsetDays),
-						externalResponseUrl: this.externalResponseUrl,
-						bottleneckThreshold: Number(this.bottleneckThreshold),
+						consultation_default_deadline_days: String(Number(this.defaultDeadlineDays)),
+						consultation_warning_offset_days: String(Number(this.warningOffsetDays)),
+						consultation_external_response_url: this.externalResponseUrl,
+						consultation_bottleneck_threshold: String(Number(this.bottleneckThreshold)),
 					}),
 				})
+				if (!res.ok) {
+					this.error = t('procest', 'Saving failed ({status})', { status: res.status })
+				}
+			} catch (e) {
+				this.error = e.message || t('procest', 'Saving failed')
 			} finally {
 				this.saving = false
 			}

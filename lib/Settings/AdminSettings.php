@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Settings;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\SettingsService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
@@ -42,17 +43,26 @@ class AdminSettings implements IDelegatedSettings
     /**
      * Constructor.
      *
-     * @param IAppManager   $appManager   The app manager.
-     * @param IInitialState $initialState The initial state service.
+     * @param IAppManager     $appManager      The app manager.
+     * @param IInitialState   $initialState    The initial state service.
+     * @param SettingsService $settingsService Reads the stored config values.
      */
     public function __construct(
         private IAppManager $appManager,
         private IInitialState $initialState,
+        private SettingsService $settingsService,
     ) {
     }//end __construct()
 
     /**
      * Get the settings form template.
+     *
+     * Also seeds the initial state the consultation and mandate-matrix tabs
+     * already call `loadState()` for. Both tabs shipped reading
+     * `consultationSettings` / `mandaatSettings` and both defaulted to `{}`
+     * because nothing ever provided them, so the form showed hardcoded
+     * defaults regardless of what an administrator had saved — the read half of
+     * the same silent failure as procest#794's dead write routes.
      *
      * @return TemplateResponse
      */
@@ -61,6 +71,14 @@ class AdminSettings implements IDelegatedSettings
         $version = $this->appManager->getAppVersion(appId: Application::APP_ID);
 
         $this->initialState->provideInitialState('version', $version);
+        $this->initialState->provideInitialState(
+            'consultationSettings',
+            $this->consultationSettings()
+        );
+        $this->initialState->provideInitialState(
+            'mandaatSettings',
+            $this->mandaatSettings()
+        );
 
         return new TemplateResponse(
             Application::APP_ID,
@@ -68,6 +86,61 @@ class AdminSettings implements IDelegatedSettings
             []
         );
     }//end getForm()
+
+    /**
+     * Build the consultation tab's initial state.
+     *
+     * Unset keys fall back to the same defaults the Vue component declares, so
+     * a fresh instance renders identically to before this was wired up.
+     *
+     * @return array<string, mixed> The consultation settings.
+     */
+    private function consultationSettings(): array
+    {
+        return [
+            'defaultDeadlineDays' => (int) $this->settingsService->getConfigValue(
+                'consultation_default_deadline_days',
+                '28'
+            ),
+            'warningOffsetDays'   => (int) $this->settingsService->getConfigValue(
+                'consultation_warning_offset_days',
+                '5'
+            ),
+            'externalResponseUrl' => $this->settingsService->getConfigValue(
+                'consultation_external_response_url',
+                ''
+            ),
+            'bottleneckThreshold' => (float) $this->settingsService->getConfigValue(
+                'consultation_bottleneck_threshold',
+                '0.2'
+            ),
+            'writable'            => true,
+        ];
+    }//end consultationSettings()
+
+    /**
+     * Build the mandate-matrix tab's initial state.
+     *
+     * @return array<string, mixed> The mandate matrix settings.
+     */
+    private function mandaatSettings(): array
+    {
+        return [
+            'decideskConnection'   => $this->settingsService->getConfigValue(
+                'mandaat_decidesk_connection',
+                'decidesk-default'
+            ),
+            'defaultExtensionDays' => (int) $this->settingsService->getConfigValue(
+                'mandaat_default_extension_days',
+                '14'
+            ),
+            'autoFinalizeApproved' => $this->settingsService->getConfigValue(
+                'mandaat_auto_finalize_approved',
+                ''
+            ) === '1',
+            'writable'             => true,
+        ];
+    }//end mandaatSettings()
 
     /**
      * Get the section ID this settings page belongs to.
