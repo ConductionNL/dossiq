@@ -26,7 +26,7 @@
 			</dd>
 
 			<dt>{{ t('procest', 'Source decision') }}</dt>
-			<dd>{{ mandaat.mandateringsBesluit || '-' }}</dd>
+			<dd>{{ mandaat.mandateDecision || '-' }}</dd>
 
 			<dt>{{ t('procest', 'Role holders') }}</dt>
 			<dd>

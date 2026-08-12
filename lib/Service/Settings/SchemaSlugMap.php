@@ -149,7 +149,11 @@ class SchemaSlugMap
         'dwangsomBerekening'           => 'dwangsom_berekening_schema',
         'dwangsomUitbetaling'          => 'dwangsom_uitbetaling_schema',
         // Mandaat-matrix authorization engine.
-        'mandateringsBesluit'          => 'mandaterings_besluit_schema',
+        // KEY renamed with the schema slug; VALUE deliberately left as-is. The
+        // value is the app-config key under which this schema's numeric id is
+        // already stored on every existing install — renaming it would orphan
+        // that id and the schema would silently resolve to nothing.
+        'mandateDecision'              => 'mandaterings_besluit_schema',
         'mandaat'                      => 'mandaat_schema',
         'organisatieRol'               => 'organisatie_rol_schema',
         'medewerkerRolToewijzing'      => 'medewerker_rol_toewijzing_schema',

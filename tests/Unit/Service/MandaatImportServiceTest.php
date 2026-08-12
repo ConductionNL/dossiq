@@ -49,7 +49,9 @@ class MandaatImportServiceTest extends TestCase
             static function (string $key): string {
                 return match ($key) {
                     'register'                       => 'procest',
-                    'mandaterings_besluit_schema'    => 'mandateringsBesluit',
+                    // Config KEY unchanged (it holds the stored schema id on
+                    // existing installs); the resolved schema SLUG is renamed.
+                    'mandaterings_besluit_schema'    => 'mandateDecision',
                     'mandaat_schema'                 => 'mandaat',
                     'organisatie_rol_schema'         => 'organisatieRol',
                     default                          => '',
@@ -83,7 +85,7 @@ class MandaatImportServiceTest extends TestCase
         self::assertSame(0, $r['changedCount']);
         self::assertSame(0, $r['removedCount']);
 
-        $besluit = $this->objects->store['mandateringsBesluit'][$r['mandateringsBesluitId']];
+        $besluit = $this->objects->store['mandateDecision'][$r['mandateDecisionId']];
         self::assertSame('concept', $besluit['status']);
         self::assertCount(2, $this->objects->store['mandaat']);
 
@@ -122,7 +124,7 @@ class MandaatImportServiceTest extends TestCase
     {
         $csv = "mandaatNummer,omschrijving,rolNaam,plafondCents\nWMO-001,X,Consulent,500000\n";
         $r = $this->service->importFromCsv('B-2026-4', 'X', 'decidesk-uuid-4', $csv);
-        $approved = $this->service->approveImport((string) $r['mandateringsBesluitId']);
+        $approved = $this->service->approveImport((string) $r['mandateDecisionId']);
 
         self::assertSame('vastgesteld', $approved['status']);
         $m = array_values($this->objects->store['mandaat'])[0];
@@ -137,7 +139,7 @@ class MandaatImportServiceTest extends TestCase
         // First import + approve.
         $csv1 = "mandaatNummer,omschrijving,rolNaam,plafondCents\nWMO-001,Original,Consulent,500000\n";
         $r1 = $this->service->importFromCsv('B-2026-5', 'V1', 'decidesk-uuid-5', $csv1);
-        $this->service->approveImport((string) $r1['mandateringsBesluitId']);
+        $this->service->approveImport((string) $r1['mandateDecisionId']);
 
         // Re-import with different plafond + a removed row.
         $csv2 = "mandaatNummer,omschrijving,rolNaam,plafondCents\nWMO-001,Updated,Consulent,1000000\n";

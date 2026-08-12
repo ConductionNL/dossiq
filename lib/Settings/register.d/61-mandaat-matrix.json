@@ -3,7 +3,7 @@
     "registers": {
       "procest": {
         "schemas": [
-          "mandateringsBesluit",
+          "mandateDecision",
           "mandaat",
           "organisatieRol",
           "medewerkerRolToewijzing",
@@ -13,24 +13,24 @@
       }
     },
     "schemas": {
-      "mandateringsBesluit": {
-        "slug": "mandateringsBesluit",
+      "mandateDecision": {
+        "slug": "mandateDecision",
         "icon": "Gavel",
         "version": "1.0.0",
         "x-schema-org": "schema:DigitalDocument",
-        "title": "Mandaterings Besluit",
-        "description": "Mandateringsbesluit (decision of the bestuursorgaan) — collection of Mandaat rows valid from inWerkingtreding until vervalDatum.",
+        "title": "Mandate Decision",
+        "description": "A mandate decision taken by the governing body — a collection of Mandate rows valid from effectiveFrom until expiryDate.",
         "type": "object",
-        "required": ["besluitNummer", "besluitNaam", "status"],
+        "required": ["decisionNumber", "decisionName", "status"],
         "properties": {
-          "besluitNummer":     {"type": "string", "title": "Decision Number", "description": "Unique number identifying this mandate decision.", "facetable": true, "maxLength": 64},
-          "besluitNaam":       {"type": "string", "title": "Decision Name", "description": "Human-readable name of this mandate decision.", "maxLength": 255},
-          "status":            {"type": "string", "title": "Status", "description": "Current lifecycle status of the mandate decision.", "enum": ["concept", "vastgesteld", "vervallen"], "default": "concept", "facetable": true},
-          "inWerkingtreding":  {"type": "string", "title": "Entry Into Force", "description": "Date on which this mandate decision enters into force.", "format": "date"},
-          "vervalDatum":       {"type": "string", "title": "Expiry Date", "description": "Date on which this mandate decision expires.", "format": "date"},
-          "wettelijkeGrondslag": {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate decision.", "maxLength": 255},
-          "decideskUuid":      {"type": "string", "title": "Decidesk UUID", "description": "Source besluit id in Decidesk"},
-          "vorigBesluit":      {"type": "string", "title": "Previous Decision", "description": "Prior MandateringsBesluit (for vervangt-by chain)"}
+          "decisionNumber":    {"type": "string", "title": "Decision Number", "description": "Unique number identifying this mandate decision.", "facetable": true, "maxLength": 64},
+          "decisionName":      {"type": "string", "title": "Decision Name", "description": "Human-readable name of this mandate decision.", "maxLength": 255},
+          "status":            {"type": "string", "title": "Status", "description": "Current lifecycle status of the mandate decision. The enum VALUES are stored data, not identifiers: renaming them rewrites every existing row and is a separate migration from this property rename.", "enum": ["concept", "vastgesteld", "vervallen"], "default": "concept", "facetable": true},
+          "effectiveFrom":     {"type": "string", "title": "Entry Into Force", "description": "Date on which this mandate decision enters into force.", "format": "date"},
+          "expiryDate":        {"type": "string", "title": "Expiry Date", "description": "Date on which this mandate decision expires.", "format": "date"},
+          "wettelijkeGrondslag": {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate decision. DELIBERATELY NOT RENAMED in this change: five other procest schemas (dwangsomUitbetaling, mandaat, subsidieBeschikking, termijnDefinitie, terugvordering) still declare wettelijkeGrondslag. The column migration is register-scoped, so renaming it here would migrate their data out from under declarations that still use the Dutch name. It moves fleet-wide, in one slice, with them.", "maxLength": 255},
+          "decideskUuid":      {"type": "string", "title": "Decidesk UUID", "description": "Source decision id in Decidesk"},
+          "previousDecision":  {"type": "string", "title": "Previous Decision", "description": "Prior mandate decision, forming the supersession chain."}
         }
       },
       "mandaat": {
@@ -40,10 +40,10 @@
         "title": "Mandaat",
         "description": "Individual mandate granting authority to a role.",
         "type": "object",
-        "required": ["mandaatNummer", "mandateringsBesluit", "gemandateerdeRol", "bevoegdheidType"],
+        "required": ["mandaatNummer", "mandateDecision", "gemandateerdeRol", "bevoegdheidType"],
         "properties": {
           "mandaatNummer":         {"type": "string", "title": "Mandate Number", "description": "Unique number identifying this mandate.", "facetable": true, "maxLength": 64},
-          "mandateringsBesluit":   {"type": "string", "title": "Mandate Decision", "description": "Reference to the MandateringsBesluit that issued this mandate."},
+          "mandateDecision":       {"type": "string", "title": "Mandate Decision", "description": "Reference to the mandate decision that issued this mandate."},
           "omschrijving":          {"type": "string", "title": "Description", "description": "Description of this mandate."},
           "bevoegdheidType":       {"type": "string", "title": "Authority Type", "description": "Type classification of the authority granted by this mandate.", "enum": ["mandaat", "volmacht", "machtiging"], "default": "mandaat", "facetable": true},
           "gemandateerdeRol":      {"type": "string", "title": "Delegated Role", "description": "OrganisatieRol id"},

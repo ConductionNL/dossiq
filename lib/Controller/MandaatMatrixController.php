@@ -248,17 +248,23 @@ class MandaatMatrixController extends Controller
             return $denied;
         }
 
-        $body          = $this->jsonBody();
-        $besluitNummer = (string) ($body['besluitNummer'] ?? '');
-        $besluitNaam   = (string) ($body['besluitNaam'] ?? '');
-        $decideskUuid  = (string) ($body['decideskUuid'] ?? '');
-        $csv           = (string) ($body['csv'] ?? '');
-        if ($besluitNummer === '' || $besluitNaam === '' || $csv === '') {
-            return $this->badRequest(msg: 'besluitNummer, besluitNaam and csv are required');
+        $body = $this->jsonBody();
+
+        // The request body keys are a PUBLISHED CONTRACT, not internal names:
+        // an existing caller posts besluitNummer/besluitNaam today. The new
+        // English keys are preferred, the Dutch ones still accepted, so this
+        // rename cannot break a client that has not been updated yet. Drop the
+        // fallback only once no caller sends the old keys.
+        $decisionNumber = (string) ($body['decisionNumber'] ?? $body['besluitNummer'] ?? '');
+        $decisionName   = (string) ($body['decisionName'] ?? $body['besluitNaam'] ?? '');
+        $decideskUuid   = (string) ($body['decideskUuid'] ?? '');
+        $csv            = (string) ($body['csv'] ?? '');
+        if ($decisionNumber === '' || $decisionName === '' || $csv === '') {
+            return $this->badRequest(msg: 'decisionNumber, decisionName and csv are required');
         }
 
         try {
-            $r = $this->import->importFromCsv($besluitNummer, $besluitNaam, $decideskUuid, $csv);
+            $r = $this->import->importFromCsv($decisionNumber, $decisionName, $decideskUuid, $csv);
             return new JSONResponse($r, Http::STATUS_CREATED);
         } catch (Throwable $e) {
             return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);

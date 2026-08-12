@@ -116,7 +116,7 @@ class MandaatRepository
                 objectService: $objectService,
                 register: $register,
                 schema: $mSchema,
-                filters: ['mandateringsBesluit' => $besluitId]
+                filters: ['mandateDecision' => $besluitId]
             );
         } catch (\Throwable $e) {
             $mandaten = [];
@@ -171,16 +171,16 @@ class MandaatRepository
     }//end loadRoleIndex()
 
     /**
-     * Find the prior vastgesteld besluit for a besluit number.
+     * Find the prior adopted decision for a decision number.
      *
-     * @param string      $besluitNummer Number.
-     * @param string|null $excludeId     Optional id to exclude.
+     * @param string      $decisionNumber Number.
+     * @param string|null $excludeId      Optional id to exclude.
      *
-     * @return array<string, mixed>|null The prior vastgesteld besluit, or null.
+     * @return array<string, mixed>|null The prior adopted decision, or null.
      *
      * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
      */
-    public function findPriorBesluit(string $besluitNummer, ?string $excludeId=null): ?array
+    public function findPriorDecision(string $decisionNumber, ?string $excludeId=null): ?array
     {
         $objectService = $this->settingsService->getObjectService();
         $register      = (string) $this->settingsService->getConfigValue('register');
@@ -194,7 +194,7 @@ class MandaatRepository
                 objectService: $objectService,
                 register: $register,
                 schema: $schema,
-                filters: ['besluitNummer' => $besluitNummer]
+                filters: ['decisionNumber' => $decisionNumber]
             );
         } catch (\Throwable $e) {
             return null;
@@ -211,7 +211,7 @@ class MandaatRepository
         }
 
         return null;
-    }//end findPriorBesluit()
+    }//end findPriorDecision()
 
     /**
      * Find the mandaten linked to a besluit.
@@ -236,7 +236,7 @@ class MandaatRepository
                 objectService: $objectService,
                 register: $register,
                 schema: $schema,
-                filters: ['mandateringsBesluit' => $besluitId]
+                filters: ['mandateDecision' => $besluitId]
             );
         } catch (\Throwable $e) {
             return [];

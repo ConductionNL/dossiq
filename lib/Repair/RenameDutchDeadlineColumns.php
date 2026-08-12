@@ -104,16 +104,35 @@ class RenameDutchDeadlineColumns implements IRepairStep
      * @var array<string, string>
      */
     private const COLUMN_MAP = [
-        'naam'                => 'name',
-        'onderwerp'           => 'subject',
-        'omschrijving'        => 'description',
-        'beschrijving'        => 'description',
-        'toelichting'         => 'notes',
-        'motivering'          => 'rationale',
-        'afdeling'            => 'department',
-        'aantal_verlengingen' => 'extension_count',
-        'einddatum_actueel'   => 'end_date_actual',
-        'pauze_deadline'      => 'pause_deadline',
+        'naam'                 => 'name',
+        'onderwerp'            => 'subject',
+        'omschrijving'         => 'description',
+        'beschrijving'         => 'description',
+        'toelichting'          => 'notes',
+        'motivering'           => 'rationale',
+        'afdeling'             => 'department',
+        'aantal_verlengingen'  => 'extension_count',
+        'einddatum_actueel'    => 'end_date_actual',
+        'pauze_deadline'       => 'pause_deadline',
+
+        // Mandate-decision slug rename (61-mandaat-matrix).
+        //
+        // Each of these was verified to be owned by EXACTLY ONE schema before
+        // being added. That check is not optional: this map is applied to every
+        // shard table in the procest registers, so a column name shared with a
+        // schema that still declares the Dutch spelling would have its data
+        // migrated out from under its own declaration.
+        //
+        // `wettelijke_grondslag` is the reason the check exists and is
+        // deliberately ABSENT here: five other schemas (dwangsomUitbetaling,
+        // mandaat, subsidieBeschikking, termijnDefinitie, terugvordering) still
+        // declare it. It moves fleet-wide, with them, in one slice.
+        'besluit_nummer'       => 'decision_number',
+        'besluit_naam'         => 'decision_name',
+        'in_werkingtreding'    => 'effective_from',
+        'verval_datum'         => 'expiry_date',
+        'vorig_besluit'        => 'previous_decision',
+        'mandaterings_besluit' => 'mandate_decision',
     ];
 
     /**
