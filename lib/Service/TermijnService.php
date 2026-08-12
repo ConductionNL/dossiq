@@ -119,7 +119,7 @@ class TermijnService
         $this->recordEvent(
             termijnInstanceId: (string) ($saved['id'] ?? ''),
             type: 'start',
-            grondslag: (string) ($definitie['wettelijkeGrondslag'] ?? 'AWB 4:13'),
+            grondslag: (string) ($definitie['legalBasis'] ?? 'AWB 4:13'),
             motivering: 'Termijn gestart bij zaak-aanmaak',
             dagenImpact: $durationDays,
             tijdstip: $startDate,

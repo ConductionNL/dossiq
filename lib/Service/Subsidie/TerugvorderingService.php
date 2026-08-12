@@ -171,7 +171,7 @@ class TerugvorderingService
         $record     = [
             'subsidieuitvoering'  => $uitvoeringId,
             'bedrag'              => round($bedrag, 2),
-            'wettelijkeGrondslag' => 'AWB 4:57',
+            'legalBasis'          => 'AWB 4:57',
             'bezwaartermijnEinde' => $this->computeBezwaartermijn(publicatie: $publicatie)->format('Y-m-d'),
             'betaaltermijnEinde'  => $this->computeBetaaltermijn(publicatie: $publicatie)->format('Y-m-d'),
             'betaaldBedrag'       => 0,

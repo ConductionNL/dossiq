@@ -102,7 +102,7 @@ class DwangsomUitbetalingServiceTest extends TestCase
         self::assertSame('voorbereid', $row['status']);
         self::assertSame('NL91ABNA0417164300', $row['iban']);
         self::assertSame('2026-04-29', $row['betaaldatumUiterlijk']);
-        self::assertSame('AWB 4:17', $row['wettelijkeGrondslag']);
+        self::assertSame('AWB 4:17', $row['legalBasis']);
         self::assertStringStartsWith('PROC-DWS-', $row['referentie']);
     }
 

@@ -20,9 +20,9 @@
 					:href="legalLink"
 					target="_blank"
 					rel="noopener">
-					{{ mandaat.wettelijkeGrondslag }}
+					{{ mandaat.legalBasis }}
 				</a>
-				<span v-else>{{ mandaat.wettelijkeGrondslag || '-' }}</span>
+				<span v-else>{{ mandaat.legalBasis || '-' }}</span>
 			</dd>
 
 			<dt>{{ t('procest', 'Source decision') }}</dt>
@@ -82,7 +82,7 @@ export default {
 		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
 		 */
 		legalLink() {
-			const basis = this.mandaat.wettelijkeGrondslag || ''
+			const basis = this.mandaat.legalBasis || ''
 			const wetMatch = basis.match(/^(AWB|Wabo|Wmo|Woo)\s/i)
 			if (!wetMatch) {
 				return null

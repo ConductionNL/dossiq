@@ -23,7 +23,7 @@
         "type": "object",
         "required": [
           "zaaktype",
-          "wettelijkeGrondslag",
+          "legalBasis",
           "validFrom"
         ],
         "properties": {
@@ -34,7 +34,7 @@
             "facetable": true,
             "maxLength": 255
           },
-          "wettelijkeGrondslag": {
+          "legalBasis": {
             "type": "string",
             "title": "Legal Basis",
             "description": "Legal basis citation (e.g. 'AWB 4:13', 'Wabo 3.9')",
@@ -453,7 +453,7 @@
             "description": "Unique payment reference",
             "maxLength": 255
           },
-          "wettelijkeGrondslag": {
+          "legalBasis": {
             "type": "string",
             "title": "Legal Basis",
             "description": "Legal basis (defaults to 'AWB 4:17')",

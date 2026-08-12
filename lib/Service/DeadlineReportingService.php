@@ -247,7 +247,7 @@ class DeadlineReportingService
                 'werkelijkeBetaaldatum' => $betaal,
                 'betalingsreferentie'   => (string) ($row['betalingsreferentie'] ?? ''),
                 'status'                => (string) ($row['status'] ?? ''),
-                'wettelijkeGrondslag'   => (string) ($row['wettelijkeGrondslag'] ?? ''),
+                'legalBasis'            => (string) ($row['legalBasis'] ?? ''),
                 'iban'                  => (string) ($row['iban'] ?? ''),
             ];
         }//end foreach

@@ -28,7 +28,7 @@
           "status":            {"type": "string", "title": "Status", "description": "Current lifecycle status of the mandate decision. The enum VALUES are stored data, not identifiers: renaming them rewrites every existing row and is a separate migration from this property rename.", "enum": ["concept", "vastgesteld", "vervallen"], "default": "concept", "facetable": true},
           "effectiveFrom":     {"type": "string", "title": "Entry Into Force", "description": "Date on which this mandate decision enters into force.", "format": "date"},
           "expiryDate":        {"type": "string", "title": "Expiry Date", "description": "Date on which this mandate decision expires.", "format": "date"},
-          "wettelijkeGrondslag": {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate decision. DELIBERATELY NOT RENAMED in this change: five other procest schemas (dwangsomUitbetaling, mandaat, subsidieBeschikking, termijnDefinitie, terugvordering) still declare wettelijkeGrondslag. The column migration is register-scoped, so renaming it here would migrate their data out from under declarations that still use the Dutch name. It moves fleet-wide, in one slice, with them.", "maxLength": 255},
+          "legalBasis":        {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate decision.", "maxLength": 255},
           "decideskUuid":      {"type": "string", "title": "Decidesk UUID", "description": "Source decision id in Decidesk"},
           "previousDecision":  {"type": "string", "title": "Previous Decision", "description": "Prior mandate decision, forming the supersession chain."}
         }
@@ -47,7 +47,7 @@
           "omschrijving":          {"type": "string", "title": "Description", "description": "Description of this mandate."},
           "bevoegdheidType":       {"type": "string", "title": "Authority Type", "description": "Type classification of the authority granted by this mandate.", "enum": ["mandaat", "volmacht", "machtiging"], "default": "mandaat", "facetable": true},
           "gemandateerdeRol":      {"type": "string", "title": "Delegated Role", "description": "OrganisatieRol id"},
-          "wettelijkeGrondslag":   {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate.", "maxLength": 255},
+          "legalBasis":            {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate.", "maxLength": 255},
           "voorwaarden": {
             "type": "object",
             "title": "Conditions",

@@ -206,24 +206,29 @@ class MandaatImportService
      * Build the concept mandaat payload for a single resolved CSV row.
      *
      * @param array<string, mixed> $row       A resolved CSV row.
-     * @param string               $besluitId The owning MandateringsBesluit id.
+     * @param string               $besluitId The owning mandate decision id.
      *
      * @return array<string, mixed> The mandaat object payload.
+     *
+     * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
      */
     private function buildMandaatPayload(array $row, string $besluitId): array
     {
         return [
-            'mandaatNummer'       => (string) $row['mandaatNummer'],
-            'mandateDecision'     => $besluitId,
-            'omschrijving'        => (string) ($row['omschrijving'] ?? ''),
-            'gemandateerdeRol'    => (string) $row['gemandateerdeRol'],
-            'wettelijkeGrondslag' => (string) ($row['wettelijkeGrondslag'] ?? ''),
-            'voorwaarden'         => [
+            'mandaatNummer'    => (string) $row['mandaatNummer'],
+            'mandateDecision'  => $besluitId,
+            'omschrijving'     => (string) ($row['omschrijving'] ?? ''),
+            'gemandateerdeRol' => (string) $row['gemandateerdeRol'],
+            // Key = the schema property (renamed). Value = a CSV COLUMN HEADER,
+            // which is an external input format the operator's file already
+            // uses, so both spellings are read.
+            'legalBasis'       => (string) ($row['legalBasis'] ?? $row['wettelijkeGrondslag'] ?? ''),
+            'voorwaarden'      => [
                 'plafondCents'  => (int) ($row['plafondCents'] ?? 0),
                 'subdelegatie'  => $this->csvParser->parseBool(value: (string) ($row['subdelegatie'] ?? 'false')),
                 'decisionTypes' => $this->csvParser->parseList(value: (string) ($row['decisionTypes'] ?? '')),
             ],
-            'status'              => 'concept',
+            'status'           => 'concept',
         ];
     }//end buildMandaatPayload()
 
@@ -253,11 +258,13 @@ class MandaatImportService
      * @param array<string, mixed> $payload  The freshly built mandaat payload.
      *
      * @return array<int, string> Changed field names; empty when unchanged.
+     *
+     * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
      */
     private function collectChangedFields(array $existing, array $payload): array
     {
         $changedFields = [];
-        foreach (['omschrijving', 'gemandateerdeRol', 'wettelijkeGrondslag'] as $f) {
+        foreach (['omschrijving', 'gemandateerdeRol', 'legalBasis'] as $f) {
             if ((string) ($existing[$f] ?? '') !== (string) $payload[$f]) {
                 $changedFields[] = $f;
             }

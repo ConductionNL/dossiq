@@ -123,10 +123,13 @@ class RenameDutchDeadlineColumns implements IRepairStep
         // schema that still declares the Dutch spelling would have its data
         // migrated out from under its own declaration.
         //
-        // `wettelijke_grondslag` is the reason the check exists and is
-        // deliberately ABSENT here: five other schemas (dwangsomUitbetaling,
-        // mandaat, subsidieBeschikking, termijnDefinitie, terugvordering) still
-        // declare it. It moves fleet-wide, with them, in one slice.
+        // `wettelijke_grondslag` is now safe to add: ALL SIX owning schemas
+        // (dwangsomUitbetaling, mandaat, mandateDecision, subsidieBeschikking,
+        // termijnDefinitie, terugvordering) are renamed in the same change, so
+        // no declaration is left pointing at the Dutch column. It was held back
+        // from the mandate slice for exactly this reason — a register-scoped
+        // migration cannot rename a column for one owner and not the rest.
+        'wettelijke_grondslag' => 'legal_basis',
         'besluit_nummer'       => 'decision_number',
         'besluit_naam'         => 'decision_name',
         'in_werkingtreding'    => 'effective_from',
