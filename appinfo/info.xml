@@ -76,7 +76,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
         ⚠️ The reason is NOT the one an earlier revision of this comment gave.
         That text said "openregister declares min-version=32"; measured against
         the canonical repo on 2026-08-08, ConductionNL/openregister@development
-        declares <nextcloud min-version="28" max-version="34"/>. It was true when
+        declares <nextcloud min-version="32" max-version="34"/>. It was true when
         written and was undone by openregister#2380. The openconnector#1173 rule
         — min-version must be >= the max of every <app> dependency's floor — is
         therefore satisfied by any value here, and imposes no constraint at all.
