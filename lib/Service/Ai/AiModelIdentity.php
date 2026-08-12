@@ -41,32 +41,30 @@ use OCP\IAppConfig;
  *
  * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
  */
-class AiModelIdentity
-{
-    /**
-     * Constructor.
-     *
-     * @param IAppConfig $appConfig The app configuration service.
-     *
-     * @return void
-     */
-    public function __construct(
-        private IAppConfig $appConfig,
-    ) {
-    }//end __construct()
+class AiModelIdentity {
+	/**
+	 * Constructor.
+	 *
+	 * @param IAppConfig $appConfig The app configuration service.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private IAppConfig $appConfig,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the configured AI model identifier.
-     *
-     * @return string The identifier in `<type>/<name>` form.
-     *
-     * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
-     */
-    public function identifier(): string
-    {
-        $type = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local');
-        $name = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', 'unknown');
+	/**
+	 * Get the configured AI model identifier.
+	 *
+	 * @return string The identifier in `<type>/<name>` form.
+	 *
+	 * @spec openspec/changes/ai-oversight-log/tasks.md#1.1
+	 */
+	public function identifier(): string {
+		$type = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_type', 'local');
+		$name = $this->appConfig->getValueString(Application::APP_ID, 'ai_model_name', 'unknown');
 
-        return $type.'/'.$name;
-    }//end identifier()
+		return $type . '/' . $name;
+	}//end identifier()
 }//end class

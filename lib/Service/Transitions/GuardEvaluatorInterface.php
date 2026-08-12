@@ -31,18 +31,17 @@ namespace OCA\Procest\Service\Transitions;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T04
  */
-interface GuardEvaluatorInterface
-{
-    /**
-     * Evaluate the guard.
-     *
-     * @param array<string, mixed> $guardConfig The guard configuration block from the workflowTemplate transition
-     * @param array<string, mixed> $case        The case object as an array
-     * @param string               $userId      The current user UID
-     *
-     * @return GuardResult
-
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function evaluate(array $guardConfig, array $case, string $userId): GuardResult;
+interface GuardEvaluatorInterface {
+	/**
+	 * Evaluate the guard.
+	 *
+	 * @param array<string, mixed> $guardConfig The guard configuration block from the workflowTemplate transition
+	 * @param array<string, mixed> $case The case object as an array
+	 * @param string $userId The current user UID
+	 *
+	 * @return GuardResult
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult;
 }//end interface

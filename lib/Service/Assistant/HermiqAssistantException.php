@@ -38,46 +38,43 @@ use Throwable;
  *
  * @spec openspec/specs/case-assistant-via-hermiq/spec.md
  */
-class HermiqAssistantException extends RuntimeException
-{
-    /**
-     * Constructor.
-     *
-     * @param string         $message    Human-readable detail (Hermiq's `message`/`error`, or a local code).
-     * @param int            $statusCode The HTTP status to relay.
-     * @param string|null    $errorCode  Hermiq's stable machine-readable error code, when present.
-     * @param Throwable|null $previous   The wrapped transport-layer exception, when any.
-     */
-    public function __construct(
-        string $message,
-        private readonly int $statusCode,
-        private readonly ?string $errorCode=null,
-        ?Throwable $previous=null
-    ) {
-        parent::__construct(message: $message, code: $statusCode, previous: $previous);
-    }//end __construct()
+class HermiqAssistantException extends RuntimeException {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $message Human-readable detail (Hermiq's `message`/`error`, or a local code).
+	 * @param int $statusCode The HTTP status to relay.
+	 * @param string|null $errorCode Hermiq's stable machine-readable error code, when present.
+	 * @param Throwable|null $previous The wrapped transport-layer exception, when any.
+	 */
+	public function __construct(
+		string $message,
+		private readonly int $statusCode,
+		private readonly ?string $errorCode = null,
+		?Throwable $previous = null,
+	) {
+		parent::__construct(message: $message, code: $statusCode, previous: $previous);
+	}//end __construct()
 
-    /**
-     * The HTTP status to relay to the caller.
-     *
-     * @return int
-     *
-     * @spec openspec/specs/case-assistant-via-hermiq/spec.md
-     */
-    public function getStatusCode(): int
-    {
-        return $this->statusCode;
-    }//end getStatusCode()
+	/**
+	 * The HTTP status to relay to the caller.
+	 *
+	 * @return int
+	 *
+	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
+	 */
+	public function getStatusCode(): int {
+		return $this->statusCode;
+	}//end getStatusCode()
 
-    /**
-     * Hermiq's stable machine-readable error code, when present.
-     *
-     * @return string|null
-     *
-     * @spec openspec/specs/case-assistant-via-hermiq/spec.md
-     */
-    public function getErrorCode(): ?string
-    {
-        return $this->errorCode;
-    }//end getErrorCode()
+	/**
+	 * Hermiq's stable machine-readable error code, when present.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/specs/case-assistant-via-hermiq/spec.md
+	 */
+	public function getErrorCode(): ?string {
+		return $this->errorCode;
+	}//end getErrorCode()
 }//end class

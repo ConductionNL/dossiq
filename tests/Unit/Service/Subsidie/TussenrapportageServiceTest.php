@@ -37,62 +37,56 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-13
  */
-class TussenrapportageServiceTest extends TestCase
-{
+class TussenrapportageServiceTest extends TestCase {
 
-    private TussenrapportageService $service;
+	private TussenrapportageService $service;
 
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $settings      = $this->createMock(SettingsService::class);
-        $session       = $this->createMock(IUserSession::class);
-        $logger        = $this->createMock(LoggerInterface::class);
-        $this->service = new TussenrapportageService($settings, $session, $logger);
-    }//end setUp()
+	/**
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$session = $this->createMock(IUserSession::class);
+		$logger = $this->createMock(LoggerInterface::class);
+		$this->service = new TussenrapportageService($settings, $session, $logger);
+	}//end setUp()
 
-    /**
-     * REQ-SUB-004: assessment deadline = period end + regeling term.
-     *
-     * @return void
-     */
-    public function testBeoordelingstermijn(): void
-    {
-        $eind     = new DateTimeImmutable('2026-12-31');
-        $deadline = $this->service->computeBeoordelingstermijn($eind, 22);
-        $this->assertSame('2027-06-03', $deadline->format('Y-m-d'));
-    }//end testBeoordelingstermijn()
+	/**
+	 * REQ-SUB-004: assessment deadline = period end + regeling term.
+	 *
+	 * @return void
+	 */
+	public function testBeoordelingstermijn(): void {
+		$eind = new DateTimeImmutable('2026-12-31');
+		$deadline = $this->service->computeBeoordelingstermijn($eind, 22);
+		$this->assertSame('2027-06-03', $deadline->format('Y-m-d'));
+	}//end testBeoordelingstermijn()
 
-    /**
-     * @return void
-     */
-    public function testPeriodsJaarlijks(): void
-    {
-        $periods = $this->service->periodsForFrequentie('jaarlijks', 2026);
-        $this->assertCount(1, $periods);
-        $this->assertSame('2026-01-01', $periods[0]['start']);
-        $this->assertSame('2026-12-31', $periods[0]['eind']);
-    }//end testPeriodsJaarlijks()
+	/**
+	 * @return void
+	 */
+	public function testPeriodsJaarlijks(): void {
+		$periods = $this->service->periodsForFrequentie('jaarlijks', 2026);
+		$this->assertCount(1, $periods);
+		$this->assertSame('2026-01-01', $periods[0]['start']);
+		$this->assertSame('2026-12-31', $periods[0]['eind']);
+	}//end testPeriodsJaarlijks()
 
-    /**
-     * @return void
-     */
-    public function testPeriodsHalfjaarlijks(): void
-    {
-        $periods = $this->service->periodsForFrequentie('halfjaarlijks', 2026);
-        $this->assertCount(2, $periods);
-        $this->assertSame('2026-06-30', $periods[0]['eind']);
-        $this->assertSame('2026-07-01', $periods[1]['start']);
-    }//end testPeriodsHalfjaarlijks()
+	/**
+	 * @return void
+	 */
+	public function testPeriodsHalfjaarlijks(): void {
+		$periods = $this->service->periodsForFrequentie('halfjaarlijks', 2026);
+		$this->assertCount(2, $periods);
+		$this->assertSame('2026-06-30', $periods[0]['eind']);
+		$this->assertSame('2026-07-01', $periods[1]['start']);
+	}//end testPeriodsHalfjaarlijks()
 
-    /**
-     * @return void
-     */
-    public function testPeriodsNoneForMilestoneOrGeen(): void
-    {
-        $this->assertSame([], $this->service->periodsForFrequentie('op_mijlpaal', 2026));
-        $this->assertSame([], $this->service->periodsForFrequentie('geen', 2026));
-    }//end testPeriodsNoneForMilestoneOrGeen()
+	/**
+	 * @return void
+	 */
+	public function testPeriodsNoneForMilestoneOrGeen(): void {
+		$this->assertSame([], $this->service->periodsForFrequentie('op_mijlpaal', 2026));
+		$this->assertSame([], $this->service->periodsForFrequentie('geen', 2026));
+	}//end testPeriodsNoneForMilestoneOrGeen()
 }//end class

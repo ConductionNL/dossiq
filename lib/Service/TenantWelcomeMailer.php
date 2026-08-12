@@ -33,96 +33,92 @@ use Throwable;
 /**
  * Welcome-mail dispatch for newly provisioned tenants.
  */
-class TenantWelcomeMailer
-{
-    /**
-     * Constructor.
-     *
-     * @param IMailer         $mailer Nextcloud mailer.
-     * @param LoggerInterface $logger Logger.
-     */
-    public function __construct(
-        private readonly IMailer $mailer,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class TenantWelcomeMailer {
+	/**
+	 * Constructor.
+	 *
+	 * @param IMailer $mailer Nextcloud mailer.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly IMailer $mailer,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Send the welcome email to the tenant administrator.
-     *
-     * @param array<string,mixed> $tenant Tenant row (must carry adminEmail or contractRef).
-     *
-     * @return bool True when the message was queued.
-     */
-    public function sendWelcomeEmail(array $tenant): bool
-    {
-        $to = $this->resolveAdminEmail(tenant: $tenant);
-        if ($to === null) {
-            $this->logger->info(
-                'Procest: no admin email on tenant — skipping welcome email',
-                ['tenant' => $tenant['slug'] ?? '']
-            );
-            return false;
-        }
+	/**
+	 * Send the welcome email to the tenant administrator.
+	 *
+	 * @param array<string,mixed> $tenant Tenant row (must carry adminEmail or contractRef).
+	 *
+	 * @return bool True when the message was queued.
+	 */
+	public function sendWelcomeEmail(array $tenant): bool {
+		$to = $this->resolveAdminEmail(tenant: $tenant);
+		if ($to === null) {
+			$this->logger->info(
+				'Procest: no admin email on tenant — skipping welcome email',
+				['tenant' => $tenant['slug'] ?? '']
+			);
+			return false;
+		}
 
-        try {
-            $msg = $this->mailer->createMessage();
-            $msg->setTo([$to]);
-            $msg->setSubject('Welkom bij Procest — uw werkomgeving is klaar');
-            $msg->setPlainBody($this->renderBody(tenant: $tenant));
-            $this->mailer->send($msg);
-            return true;
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: sendWelcomeEmail failed',
-                ['tenant' => $tenant['slug'] ?? '', 'exception' => $e->getMessage()]
-            );
-            return false;
-        }
-    }//end sendWelcomeEmail()
+		try {
+			$msg = $this->mailer->createMessage();
+			$msg->setTo([$to]);
+			$msg->setSubject('Welkom bij Procest — uw werkomgeving is klaar');
+			$msg->setPlainBody($this->renderBody(tenant: $tenant));
+			$this->mailer->send($msg);
+			return true;
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest: sendWelcomeEmail failed',
+				['tenant' => $tenant['slug'] ?? '', 'exception' => $e->getMessage()]
+			);
+			return false;
+		}
+	}//end sendWelcomeEmail()
 
-    /**
-     * Resolve the admin email address from a tenant row.
-     *
-     * @param array<string,mixed> $tenant Tenant row.
-     *
-     * @return string|null
-     */
-    public function resolveAdminEmail(array $tenant): ?string
-    {
-        $candidates = [
-            $tenant['adminEmail'] ?? null,
-            $tenant['contactEmail'] ?? null,
-            $tenant['emailContact'] ?? null,
-        ];
-        foreach ($candidates as $cand) {
-            if (is_string($cand) === true && $cand !== '' && filter_var($cand, FILTER_VALIDATE_EMAIL) !== false) {
-                return $cand;
-            }
-        }
+	/**
+	 * Resolve the admin email address from a tenant row.
+	 *
+	 * @param array<string,mixed> $tenant Tenant row.
+	 *
+	 * @return string|null
+	 */
+	public function resolveAdminEmail(array $tenant): ?string {
+		$candidates = [
+			$tenant['adminEmail'] ?? null,
+			$tenant['contactEmail'] ?? null,
+			$tenant['emailContact'] ?? null,
+		];
+		foreach ($candidates as $cand) {
+			if (is_string($cand) === true && $cand !== '' && filter_var($cand, FILTER_VALIDATE_EMAIL) !== false) {
+				return $cand;
+			}
+		}
 
-        return null;
-    }//end resolveAdminEmail()
+		return null;
+	}//end resolveAdminEmail()
 
-    /**
-     * Build the welcome body. Plain text — HTML templating is rendered by NC's
-     * own EmailTemplate when the procest theme is available.
-     *
-     * @param array<string,mixed> $tenant Tenant row.
-     *
-     * @return string Plain-text body.
-     */
-    public function renderBody(array $tenant): string
-    {
-        $name      = (string) ($tenant['displayName'] ?? $tenant['legalName'] ?? 'gemeente');
-        $slug      = (string) ($tenant['slug'] ?? '');
-        $domain    = (string) ($tenant['domain'] ?? '');
-        $loginHint = 'uw procest-instance';
-        if ($domain !== '') {
-            $loginHint = 'https://'.$domain;
-        }
+	/**
+	 * Build the welcome body. Plain text — HTML templating is rendered by NC's
+	 * own EmailTemplate when the procest theme is available.
+	 *
+	 * @param array<string,mixed> $tenant Tenant row.
+	 *
+	 * @return string Plain-text body.
+	 */
+	public function renderBody(array $tenant): string {
+		$name = (string)($tenant['displayName'] ?? $tenant['legalName'] ?? 'gemeente');
+		$slug = (string)($tenant['slug'] ?? '');
+		$domain = (string)($tenant['domain'] ?? '');
+		$loginHint = 'uw procest-instance';
+		if ($domain !== '') {
+			$loginHint = 'https://' . $domain;
+		}
 
-        return <<<TXT
+		return <<<TXT
 Beste beheerder,
 
 Welkom bij Procest. De werkomgeving voor {$name} is succesvol klaargezet
@@ -143,5 +139,5 @@ Met vriendelijke groet,
 Het Procest-team
 (tenant slug: {$slug})
 TXT;
-    }//end renderBody()
+	}//end renderBody()
 }//end class

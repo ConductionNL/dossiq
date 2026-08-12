@@ -35,105 +35,103 @@ namespace OCA\Procest\Service\Beschikking;
  *
  * @spec openspec/specs/libresign-besluit-signing/spec.md
  */
-class LibresignStatusMapper
-{
-    /**
-     * The request has been created but has not (yet) been fully signed.
-     *
-     * @var string
-     */
-    public const PENDING = 'pending';
+class LibresignStatusMapper {
+	/**
+	 * The request has been created but has not (yet) been fully signed.
+	 *
+	 * @var string
+	 */
+	public const PENDING = 'pending';
 
-    /**
-     * All required signers have signed.
-     *
-     * @var string
-     */
-    public const SIGNED = 'signed';
+	/**
+	 * All required signers have signed.
+	 *
+	 * @var string
+	 */
+	public const SIGNED = 'signed';
 
-    /**
-     * The request was declined, deleted, or otherwise cancelled.
-     *
-     * @var string
-     */
-    public const DECLINED = 'declined';
+	/**
+	 * The request was declined, deleted, or otherwise cancelled.
+	 *
+	 * @var string
+	 */
+	public const DECLINED = 'declined';
 
-    /**
-     * A LibreSign status value that this mapper does not recognise.
-     *
-     * @var string
-     */
-    public const UNKNOWN = 'unknown';
+	/**
+	 * A LibreSign status value that this mapper does not recognise.
+	 *
+	 * @var string
+	 */
+	public const UNKNOWN = 'unknown';
 
-    /**
-     * LibreSign `statusText`/`status` values that map to PENDING.
-     *
-     * @var array<int, string>
-     */
-    private const PENDING_VALUES = [
-        'draft',
-        'able_to_sign',
-        'partial_signed',
-        'pending',
-        '0',
-        '1',
-        '2',
-    ];
+	/**
+	 * LibreSign `statusText`/`status` values that map to PENDING.
+	 *
+	 * @var array<int, string>
+	 */
+	private const PENDING_VALUES = [
+		'draft',
+		'able_to_sign',
+		'partial_signed',
+		'pending',
+		'0',
+		'1',
+		'2',
+	];
 
-    /**
-     * LibreSign `statusText`/`status` values that map to SIGNED.
-     *
-     * @var array<int, string>
-     */
-    private const SIGNED_VALUES = [
-        'signed',
-        '3',
-    ];
+	/**
+	 * LibreSign `statusText`/`status` values that map to SIGNED.
+	 *
+	 * @var array<int, string>
+	 */
+	private const SIGNED_VALUES = [
+		'signed',
+		'3',
+	];
 
-    /**
-     * LibreSign `statusText`/`status` values that map to DECLINED.
-     *
-     * @var array<int, string>
-     */
-    private const DECLINED_VALUES = [
-        'deleted',
-        'declined',
-        'rejected',
-        'cancelled',
-        '4',
-    ];
+	/**
+	 * LibreSign `statusText`/`status` values that map to DECLINED.
+	 *
+	 * @var array<int, string>
+	 */
+	private const DECLINED_VALUES = [
+		'deleted',
+		'declined',
+		'rejected',
+		'cancelled',
+		'4',
+	];
 
-    /**
-     * Map a raw LibreSign status value onto the internal vocabulary.
-     *
-     * Accepts either LibreSign's `statusText` (preferred, e.g. "signed") or
-     * its numeric `status` code stringified (e.g. "3"). Comparison is
-     * case-insensitive; an unrecognised value returns {@see self::UNKNOWN}
-     * rather than guessing, so callers never optimistically treat an
-     * unexpected value as SIGNED.
-     *
-     * @param string $raw The raw LibreSign status value.
-     *
-     * @return string One of PENDING, SIGNED, DECLINED, UNKNOWN.
-     *
-     * @spec openspec/specs/libresign-besluit-signing/spec.md
-     */
-    public function map(string $raw): string
-    {
-        $normalised = strtolower(trim($raw));
+	/**
+	 * Map a raw LibreSign status value onto the internal vocabulary.
+	 *
+	 * Accepts either LibreSign's `statusText` (preferred, e.g. "signed") or
+	 * its numeric `status` code stringified (e.g. "3"). Comparison is
+	 * case-insensitive; an unrecognised value returns {@see self::UNKNOWN}
+	 * rather than guessing, so callers never optimistically treat an
+	 * unexpected value as SIGNED.
+	 *
+	 * @param string $raw The raw LibreSign status value.
+	 *
+	 * @return string One of PENDING, SIGNED, DECLINED, UNKNOWN.
+	 *
+	 * @spec openspec/specs/libresign-besluit-signing/spec.md
+	 */
+	public function map(string $raw): string {
+		$normalised = strtolower(trim($raw));
 
-        if (in_array($normalised, self::SIGNED_VALUES, true) === true) {
-            return self::SIGNED;
-        }
+		if (in_array($normalised, self::SIGNED_VALUES, true) === true) {
+			return self::SIGNED;
+		}
 
-        if (in_array($normalised, self::DECLINED_VALUES, true) === true) {
-            return self::DECLINED;
-        }
+		if (in_array($normalised, self::DECLINED_VALUES, true) === true) {
+			return self::DECLINED;
+		}
 
-        if (in_array($normalised, self::PENDING_VALUES, true) === true) {
-            return self::PENDING;
-        }
+		if (in_array($normalised, self::PENDING_VALUES, true) === true) {
+			return self::PENDING;
+		}
 
-        return self::UNKNOWN;
-    }//end map()
+		return self::UNKNOWN;
+	}//end map()
 }//end class

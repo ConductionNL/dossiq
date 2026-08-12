@@ -52,129 +52,123 @@ use ReflectionClass;
  * This test asserts the ITEM (each individual method), never the container
  * (the controller class merely existing).
  */
-class CanonicalRouteMethodContractTest extends TestCase
-{
+class CanonicalRouteMethodContractTest extends TestCase {
 
-    /**
-     * The canonical route names supplied by the AppHost table, as reproduced
-     * verbatim by `appinfo/routes.php`'s openregister-absent fallback.
-     *
-     * Keyed `controllerPrefix => [method, ...]`.
-     *
-     * @var array<string, array<int, string>>
-     */
-    private const CANONICAL_ROUTES = [
-        'Dashboard'   => ['page', 'catchAll'],
-        'Settings'    => ['index', 'create', 'update', 'load'],
-        'Preferences' => ['getPreference', 'setPreference'],
-        'Metrics'     => ['index'],
-        'Health'      => ['index'],
-    ];
+	/**
+	 * The canonical route names supplied by the AppHost table, as reproduced
+	 * verbatim by `appinfo/routes.php`'s openregister-absent fallback.
+	 *
+	 * Keyed `controllerPrefix => [method, ...]`.
+	 *
+	 * @var array<string, array<int, string>>
+	 */
+	private const CANONICAL_ROUTES = [
+		'Dashboard' => ['page', 'catchAll'],
+		'Settings' => ['index', 'create', 'update', 'load'],
+		'Preferences' => ['getPreference', 'setPreference'],
+		'Metrics' => ['index'],
+		'Health' => ['index'],
+	];
 
+	/**
+	 * Every canonical route name must be reproduced by the local fallback.
+	 *
+	 * This is the positive control for the test below: if `routes.php` ever
+	 * stopped declaring these names, the method assertions would pass
+	 * vacuously because there would be nothing left to route. Read a green
+	 * from the next test only together with a green here.
+	 *
+	 * @return void
+	 */
+	public function testFallbackRouteTableStillDeclaresEveryCanonicalName(): void {
+		$routesSource = file_get_contents(__DIR__ . '/../../../appinfo/routes.php');
+		$this->assertIsString($routesSource, 'appinfo/routes.php must be readable');
 
-    /**
-     * Every canonical route name must be reproduced by the local fallback.
-     *
-     * This is the positive control for the test below: if `routes.php` ever
-     * stopped declaring these names, the method assertions would pass
-     * vacuously because there would be nothing left to route. Read a green
-     * from the next test only together with a green here.
-     *
-     * @return void
-     */
-    public function testFallbackRouteTableStillDeclaresEveryCanonicalName(): void
-    {
-        $routesSource = file_get_contents(__DIR__.'/../../../appinfo/routes.php');
-        $this->assertIsString($routesSource, 'appinfo/routes.php must be readable');
+		foreach (self::CANONICAL_ROUTES as $prefix => $methods) {
+			foreach ($methods as $method) {
+				$routeName = lcfirst($prefix) . '#' . $method;
 
-        foreach (self::CANONICAL_ROUTES as $prefix => $methods) {
-            foreach ($methods as $method) {
-                $routeName = lcfirst($prefix).'#'.$method;
+				// dashboard#page / dashboard#catchAll are declared in the
+				// fallback as a literal entry and a $catchAllRoute variable
+				// respectively; both mention the name.
+				$this->assertStringContainsString(
+					$routeName,
+					$routesSource,
+					sprintf(
+						'appinfo/routes.php no longer mentions the canonical route "%s". '
+						. 'Either the AppHost table changed and this test is stale, or a '
+						. 'canonical route was silently dropped.',
+						$routeName
+					)
+				);
+			}
+		}
+	}//end testFallbackRouteTableStillDeclaresEveryCanonicalName()
 
-                // dashboard#page / dashboard#catchAll are declared in the
-                // fallback as a literal entry and a $catchAllRoute variable
-                // respectively; both mention the name.
-                $this->assertStringContainsString(
-                    $routeName,
-                    $routesSource,
-                    sprintf(
-                        'appinfo/routes.php no longer mentions the canonical route "%s". '
-                        .'Either the AppHost table changed and this test is stale, or a '
-                        .'canonical route was silently dropped.',
-                        $routeName
-                    )
-                );
-            }
-        }
-    }//end testFallbackRouteTableStillDeclaresEveryCanonicalName()
+	/**
+	 * A controller this app ships itself must implement every canonical
+	 * method routed to it — the AppHost generic will not fill the gap.
+	 *
+	 * @return void
+	 */
+	public function testLeafOwnedControllersImplementEveryCanonicalMethodRoutedToThem(): void {
+		$inspected = 0;
+		$missing = [];
 
+		foreach (self::CANONICAL_ROUTES as $prefix => $methods) {
+			$class = 'OCA\\Procest\\Controller\\' . $prefix . 'Controller';
 
-    /**
-     * A controller this app ships itself must implement every canonical
-     * method routed to it — the AppHost generic will not fill the gap.
-     *
-     * @return void
-     */
-    public function testLeafOwnedControllersImplementEveryCanonicalMethodRoutedToThem(): void
-    {
-        $inspected = 0;
-        $missing   = [];
+			// The class file existing on disk is what makes the AppHost skip
+			// the alias. `class_exists()` alone would be satisfied by the DI
+			// alias target in a booted container, which is precisely the case
+			// this test must NOT treat as leaf-owned.
+			$file = __DIR__ . '/../../../lib/Controller/' . $prefix . 'Controller.php';
+			if (file_exists($file) === false) {
+				continue;
+			}
 
-        foreach (self::CANONICAL_ROUTES as $prefix => $methods) {
-            $class = 'OCA\\Procest\\Controller\\'.$prefix.'Controller';
+			$this->assertTrue(
+				class_exists($class),
+				sprintf('%s exists on disk but does not autoload as %s', $file, $class)
+			);
 
-            // The class file existing on disk is what makes the AppHost skip
-            // the alias. `class_exists()` alone would be satisfied by the DI
-            // alias target in a booted container, which is precisely the case
-            // this test must NOT treat as leaf-owned.
-            $file = __DIR__.'/../../../lib/Controller/'.$prefix.'Controller.php';
-            if (file_exists($file) === false) {
-                continue;
-            }
+			$reflection = new ReflectionClass($class);
 
-            $this->assertTrue(
-                class_exists($class),
-                sprintf('%s exists on disk but does not autoload as %s', $file, $class)
-            );
+			foreach ($methods as $method) {
+				$inspected++;
+				if ($reflection->hasMethod($method) === false) {
+					$missing[] = $prefix . 'Controller::' . $method . '()';
+					continue;
+				}
 
-            $reflection = new ReflectionClass($class);
+				$this->assertTrue(
+					$reflection->getMethod($method)->isPublic(),
+					sprintf('%s::%s() must be public to be dispatchable', $class, $method)
+				);
+			}
+		}//end foreach
 
-            foreach ($methods as $method) {
-                $inspected++;
-                if ($reflection->hasMethod($method) === false) {
-                    $missing[] = $prefix.'Controller::'.$method.'()';
-                    continue;
-                }
+		// Positive control: a null result here ("no missing methods") is only
+		// meaningful if something was actually inspected. Zero inspections
+		// would mean the file-existence probe above silently matched nothing.
+		$this->assertGreaterThan(
+			0,
+			$inspected,
+			'No leaf-owned canonical controller was inspected — the lib/Controller '
+			. 'path probe is broken, so the empty finding list means nothing.'
+		);
 
-                $this->assertTrue(
-                    $reflection->getMethod($method)->isPublic(),
-                    sprintf('%s::%s() must be public to be dispatchable', $class, $method)
-                );
-            }
-        }//end foreach
-
-        // Positive control: a null result here ("no missing methods") is only
-        // meaningful if something was actually inspected. Zero inspections
-        // would mean the file-existence probe above silently matched nothing.
-        $this->assertGreaterThan(
-            0,
-            $inspected,
-            'No leaf-owned canonical controller was inspected — the lib/Controller '
-            .'path probe is broken, so the empty finding list means nothing.'
-        );
-
-        $this->assertSame(
-            [],
-            $missing,
-            sprintf(
-                "The canonical AppHost route table routes to %s, but this app ships the "
-                ."controller itself so no generic is aliased in. Each of these is a 500, "
-                ."not a 404.\n  - %s",
-                'these method(s)',
-                implode("\n  - ", $missing)
-            )
-        );
-    }//end testLeafOwnedControllersImplementEveryCanonicalMethodRoutedToThem()
-
+		$this->assertSame(
+			[],
+			$missing,
+			sprintf(
+				'The canonical AppHost route table routes to %s, but this app ships the '
+				. 'controller itself so no generic is aliased in. Each of these is a 500, '
+				. "not a 404.\n  - %s",
+				'these method(s)',
+				implode("\n  - ", $missing)
+			)
+		);
+	}//end testLeafOwnedControllersImplementEveryCanonicalMethodRoutedToThem()
 
 }//end class

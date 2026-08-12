@@ -46,114 +46,110 @@ use Throwable;
  *
  * @spec openspec/specs/external-integration-test-wiring/spec.md
  */
-class KvkApiAdapter implements KvkHandelsregisterAdapterInterface
-{
-    /**
-     * Default base URL — the KvK Developer Portal test environment.
-     */
-    public const DEFAULT_BASE_URL = 'https://api.kvk.nl/test/api';
+class KvkApiAdapter implements KvkHandelsregisterAdapterInterface {
+	/**
+	 * Default base URL — the KvK Developer Portal test environment.
+	 */
+	public const DEFAULT_BASE_URL = 'https://api.kvk.nl/test/api';
 
-    /**
-     * Publicly published shared KvK TEST api key (developers.kvk.nl).
-     * Not a secret — it is printed on the official testing page and only
-     * unlocks the fixed fictitious-company set on api.kvk.nl/test.
-     */
-    public const PUBLIC_TEST_API_KEY = 'l7xx1f2691f2520d487b902f4e0b57a0b197';
+	/**
+	 * Publicly published shared KvK TEST api key (developers.kvk.nl).
+	 * Not a secret — it is printed on the official testing page and only
+	 * unlocks the fixed fictitious-company set on api.kvk.nl/test.
+	 */
+	public const PUBLIC_TEST_API_KEY = 'l7xx1f2691f2520d487b902f4e0b57a0b197';
 
-    /**
-     * Constructor.
-     *
-     * @param IClientService  $clientService HTTP client factory.
-     * @param IntegrationMode $mode          Config-tier resolver.
-     * @param LoggerInterface $logger        Structured logger.
-     */
-    public function __construct(
-        private readonly IClientService $clientService,
-        private readonly IntegrationMode $mode,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IClientService $clientService HTTP client factory.
+	 * @param IntegrationMode $mode Config-tier resolver.
+	 * @param LoggerInterface $logger Structured logger.
+	 */
+	public function __construct(
+		private readonly IClientService $clientService,
+		private readonly IntegrationMode $mode,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Look up a legal entity by KvK number against the configured tier.
-     *
-     * @param string              $kvkNumber 8-digit KvK number.
-     * @param array<string,mixed> $context   Lookup context.
-     *
-     * @return KvkLookupResult
-     *
-     * @spec openspec/specs/external-integration-test-wiring/spec.md
-     */
-    public function lookup(string $kvkNumber, array $context=[]): KvkLookupResult
-    {
-        $baseUrl = $this->mode->setting(integration: 'kvk', key: 'baseUrl', default: self::DEFAULT_BASE_URL);
-        $apiKey  = $this->mode->setting(integration: 'kvk', key: 'apiKey', default: self::PUBLIC_TEST_API_KEY);
+	/**
+	 * Look up a legal entity by KvK number against the configured tier.
+	 *
+	 * @param string $kvkNumber 8-digit KvK number.
+	 * @param array<string,mixed> $context Lookup context.
+	 *
+	 * @return KvkLookupResult
+	 *
+	 * @spec openspec/specs/external-integration-test-wiring/spec.md
+	 */
+	public function lookup(string $kvkNumber, array $context = []): KvkLookupResult {
+		$baseUrl = $this->mode->setting(integration: 'kvk', key: 'baseUrl', default: self::DEFAULT_BASE_URL);
+		$apiKey = $this->mode->setting(integration: 'kvk', key: 'apiKey', default: self::PUBLIC_TEST_API_KEY);
 
-        try {
-            $response = $this->clientService->newClient()->get(
-                rtrim($baseUrl, '/').'/v2/zoeken',
-                [
-                    'timeout' => 10,
-                    'query'   => ['kvkNummer' => $kvkNumber],
-                    'headers' => ['apikey' => $apiKey, 'Accept' => 'application/json'],
-                ]
-            );
+		try {
+			$response = $this->clientService->newClient()->get(
+				rtrim($baseUrl, '/') . '/v2/zoeken',
+				[
+					'timeout' => 10,
+					'query' => ['kvkNummer' => $kvkNumber],
+					'headers' => ['apikey' => $apiKey, 'Accept' => 'application/json'],
+				]
+			);
 
-            $data       = json_decode((string) $response->getBody(), true);
-            $resultaten = [];
-            if (is_array($data) === true) {
-                $resultaten = (array) ($data['resultaten'] ?? []);
-            }
+			$data = json_decode((string)$response->getBody(), true);
+			$resultaten = [];
+			if (is_array($data) === true) {
+				$resultaten = (array)($data['resultaten'] ?? []);
+			}
 
-            if ($resultaten === []) {
-                return new KvkLookupResult(lookupStatus: 'NOT_FOUND', kvkNumber: $kvkNumber, entity: [], dormant: false);
-            }
+			if ($resultaten === []) {
+				return new KvkLookupResult(lookupStatus: 'NOT_FOUND', kvkNumber: $kvkNumber, entity: [], dormant: false);
+			}
 
-            // Prefer the hoofdvestiging (carries the address); else first.
-            $entity = (array) $resultaten[0];
-            foreach ($resultaten as $row) {
-                if (is_array($row) === true && ($row['type'] ?? '') === 'hoofdvestiging') {
-                    $entity = $row;
-                    break;
-                }
-            }
+			// Prefer the hoofdvestiging (carries the address); else first.
+			$entity = (array)$resultaten[0];
+			foreach ($resultaten as $row) {
+				if (is_array($row) === true && ($row['type'] ?? '') === 'hoofdvestiging') {
+					$entity = $row;
+					break;
+				}
+			}
 
-            return new KvkLookupResult(
-                lookupStatus: 'FOUND',
-                kvkNumber: $kvkNumber,
-                entity: $entity,
-                dormant: false,
-                extras: ['tier' => $this->mode->resolve(integration: 'kvk', allowed: [IntegrationMode::TEST, IntegrationMode::LIVE])]
-            );
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest KvK Handelsregister lookup failed',
-                [
-                    'kvkNumber' => $kvkNumber,
-                    'error'     => $e->getMessage(),
-                    'context'   => $context,
-                ]
-            );
+			return new KvkLookupResult(
+				lookupStatus: 'FOUND',
+				kvkNumber: $kvkNumber,
+				entity: $entity,
+				dormant: false,
+				extras: ['tier' => $this->mode->resolve(integration: 'kvk', allowed: [IntegrationMode::TEST, IntegrationMode::LIVE])]
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Procest KvK Handelsregister lookup failed',
+				[
+					'kvkNumber' => $kvkNumber,
+					'error' => $e->getMessage(),
+					'context' => $context,
+				]
+			);
 
-            return new KvkLookupResult(
-                lookupStatus: 'LOOKUP_ERROR',
-                kvkNumber: $kvkNumber,
-                entity: [],
-                dormant: false,
-                extras: ['reason' => 'transport-error']
-            );
-        }//end try
+			return new KvkLookupResult(
+				lookupStatus: 'LOOKUP_ERROR',
+				kvkNumber: $kvkNumber,
+				entity: [],
+				dormant: false,
+				extras: ['reason' => 'transport-error']
+			);
+		}//end try
 
-    }//end lookup()
+	}//end lookup()
 
-    /**
-     * A configured live adapter is not dormant.
-     *
-     * @return bool
-     */
-    public function isDormant(): bool
-    {
-        return false;
-
-    }//end isDormant()
+	/**
+	 * A configured live adapter is not dormant.
+	 *
+	 * @return bool
+	 */
+	public function isDormant(): bool {
+		return false;
+	}//end isDormant()
 }//end class

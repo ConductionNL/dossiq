@@ -57,450 +57,443 @@ use RuntimeException;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T10
  */
-class StatusTransitionService
-{
+class StatusTransitionService {
 
-    /**
-     * Group ID used to gate admin-only free-form transitions. Matches the
-     * naming used elsewhere in Procest for the admin role.
-     *
-     * Re-exported from TransitionAuthorizer, which owns the group gate, so
-     * existing `StatusTransitionService::ADMIN_GROUP_ID` callers keep reading
-     * the single source of truth.
-     */
-    public const ADMIN_GROUP_ID = TransitionAuthorizer::ADMIN_GROUP_ID;
+	/**
+	 * Group ID used to gate admin-only free-form transitions. Matches the
+	 * naming used elsewhere in Procest for the admin role.
+	 *
+	 * Re-exported from TransitionAuthorizer, which owns the group gate, so
+	 * existing `StatusTransitionService::ADMIN_GROUP_ID` callers keep reading
+	 * the single source of truth.
+	 */
+	public const ADMIN_GROUP_ID = TransitionAuthorizer::ADMIN_GROUP_ID;
 
-    /**
-     * Constructor.
-     *
-     * @param WorkflowTemplateLoader $templateLoader       Active workflowTemplate loader
-     * @param GuardRegistry          $guardRegistry        Guard registry
-     * @param SideEffectDispatcher   $sideEffectDispatcher Side-effect dispatcher
-     * @param CaseStatusStore        $store                OpenRegister persistence for the engine
-     * @param TransitionAuthorizer   $authorizer           OR-RBAC group gate
-     * @param TransitionSpecReader   $specReader           Guard/action shape reader
-     * @param IUserSession           $userSession          Current session
-     * @param LoggerInterface        $logger               Logger
-     */
-    public function __construct(
-        private readonly WorkflowTemplateLoader $templateLoader,
-        private readonly GuardRegistry $guardRegistry,
-        private readonly SideEffectDispatcher $sideEffectDispatcher,
-        private readonly CaseStatusStore $store,
-        private readonly TransitionAuthorizer $authorizer,
-        private readonly TransitionSpecReader $specReader,
-        private readonly IUserSession $userSession,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param WorkflowTemplateLoader $templateLoader Active workflowTemplate loader
+	 * @param GuardRegistry $guardRegistry Guard registry
+	 * @param SideEffectDispatcher $sideEffectDispatcher Side-effect dispatcher
+	 * @param CaseStatusStore $store OpenRegister persistence for the engine
+	 * @param TransitionAuthorizer $authorizer OR-RBAC group gate
+	 * @param TransitionSpecReader $specReader Guard/action shape reader
+	 * @param IUserSession $userSession Current session
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly WorkflowTemplateLoader $templateLoader,
+		private readonly GuardRegistry $guardRegistry,
+		private readonly SideEffectDispatcher $sideEffectDispatcher,
+		private readonly CaseStatusStore $store,
+		private readonly TransitionAuthorizer $authorizer,
+		private readonly TransitionSpecReader $specReader,
+		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Compute the set of transitions available to a user on a case.
-     *
-     * @param string      $caseId Case UUID
-     * @param string|null $userId Optional explicit user UID; defaults to IUserSession
-     *
-     * @return array{transitions: array<int, array<string, mixed>>, current: array<string, mixed>}
+	/**
+	 * Compute the set of transitions available to a user on a case.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
+	 *
+	 * @return array{transitions: array<int, array<string, mixed>>, current: array<string, mixed>}
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function getAvailableTransitions(string $caseId, ?string $userId = null): array {
+		$userId = $this->resolveUserId(explicit: $userId);
+		$case = $this->store->loadCase(caseId: $caseId);
+		if ($case === null) {
+			return ['transitions' => [], 'current' => []];
+		}
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function getAvailableTransitions(string $caseId, ?string $userId=null): array
-    {
-        $userId = $this->resolveUserId(explicit: $userId);
-        $case   = $this->store->loadCase(caseId: $caseId);
-        if ($case === null) {
-            return ['transitions' => [], 'current' => []];
-        }
+		$caseTypeId = (string)($case['caseType'] ?? '');
+		$currentId = (string)($case['status'] ?? '');
+		$template = $this->templateLoader->getActiveTemplate(caseTypeId: $caseTypeId);
 
-        $caseTypeId = (string) ($case['caseType'] ?? '');
-        $currentId  = (string) ($case['status'] ?? '');
-        $template   = $this->templateLoader->getActiveTemplate(caseTypeId: $caseTypeId);
+		$result = [
+			'transitions' => [],
+			'current' => ['statusId' => $currentId, 'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId)],
+		];
 
-        $result = [
-            'transitions' => [],
-            'current'     => ['statusId' => $currentId, 'statusName' => $this->store->lookupStatusName(statusTypeId: $currentId)],
-        ];
+		if ($template === null) {
+			return $result;
+		}
 
-        if ($template === null) {
-            return $result;
-        }
+		$transitions = $template['transitions'] ?? [];
+		if (is_array($transitions) === false) {
+			return $result;
+		}
 
-        $transitions = $template['transitions'] ?? [];
-        if (is_array($transitions) === false) {
-            return $result;
-        }
+		foreach ($transitions as $transition) {
+			if (is_array($transition) === false) {
+				continue;
+			}
 
-        foreach ($transitions as $transition) {
-            if (is_array($transition) === false) {
-                continue;
-            }
+			if ((string)($transition['fromStatus'] ?? '') !== $currentId) {
+				continue;
+			}
 
-            if ((string) ($transition['fromStatus'] ?? '') !== $currentId) {
-                continue;
-            }
+			$guards = $this->specReader->extractGuards(transition: $transition);
+			$eval = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
 
-            $guards = $this->specReader->extractGuards(transition: $transition);
-            $eval   = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
+			// Drop transitions whose role guard hides them silently.
+			if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
+				continue;
+			}
 
-            // Drop transitions whose role guard hides them silently.
-            if ($this->specReader->isRoleHidden(evalResults: $eval) === true) {
-                continue;
-            }
+			$failed = array_values(array_filter($eval, static fn (array $guard): bool => $guard['passed'] === false));
 
-            $failed = array_values(array_filter($eval, static fn(array $guard): bool => $guard['passed'] === false));
+			$result['transitions'][] = [
+				'id' => (string)($transition['id'] ?? ''),
+				'label' => (string)($transition['label'] ?? ''),
+				'toStatus' => (string)($transition['toStatus'] ?? ''),
+				'guardsPassed' => count($failed) === 0,
+				'failedGuards' => $failed,
+			];
+		}//end foreach
 
-            $result['transitions'][] = [
-                'id'           => (string) ($transition['id'] ?? ''),
-                'label'        => (string) ($transition['label'] ?? ''),
-                'toStatus'     => (string) ($transition['toStatus'] ?? ''),
-                'guardsPassed' => count($failed) === 0,
-                'failedGuards' => $failed,
-            ];
-        }//end foreach
+		return $result;
+	}//end getAvailableTransitions()
 
-        return $result;
-    }//end getAvailableTransitions()
+	/**
+	 * Execute a guarded transition.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $transitionId Transition id from the active workflowTemplate
+	 * @param string|null $comment Optional free-form comment
+	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
+	 *
+	 * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>, version: int}
+	 *
+	 * @throws GuardFailedException When server-side re-evaluation fails any guard
+	 * @throws RuntimeException When case/transition/template are not found
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function execute(string $caseId, string $transitionId, ?string $comment, ?string $userId = null): array {
+		$userId = $this->resolveUserId(explicit: $userId);
+		$case = $this->store->loadCase(caseId: $caseId);
+		if ($case === null) {
+			throw new RuntimeException('case_not_found');
+		}
 
-    /**
-     * Execute a guarded transition.
-     *
-     * @param string      $caseId       Case UUID
-     * @param string      $transitionId Transition id from the active workflowTemplate
-     * @param string|null $comment      Optional free-form comment
-     * @param string|null $userId       Optional explicit user UID; defaults to IUserSession
-     *
-     * @return array{status: string, statusRecord: array<string, mixed>, dispatchedActions: array<int, array<string, mixed>>, version: int}
-     *
-     * @throws GuardFailedException When server-side re-evaluation fails any guard
-     * @throws RuntimeException     When case/transition/template are not found
+		// H2: Capture the @self.version at read time for the optimistic lock check below.
+		$readVersion = (int)(($case['@self']['version'] ?? ($case['version'] ?? 0)));
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function execute(string $caseId, string $transitionId, ?string $comment, ?string $userId=null): array
-    {
-        $userId = $this->resolveUserId(explicit: $userId);
-        $case   = $this->store->loadCase(caseId: $caseId);
-        if ($case === null) {
-            throw new RuntimeException('case_not_found');
-        }
+		$caseTypeId = (string)($case['caseType'] ?? '');
+		$transition = $this->templateLoader->getTransitionById(caseTypeId: $caseTypeId, transitionId: $transitionId);
+		if ($transition === null) {
+			throw new RuntimeException('transition_not_found');
+		}
 
-        // H2: Capture the @self.version at read time for the optimistic lock check below.
-        $readVersion = (int) (($case['@self']['version'] ?? ($case['version'] ?? 0)));
+		$currentId = (string)($case['status'] ?? '');
 
-        $caseTypeId = (string) ($case['caseType'] ?? '');
-        $transition = $this->templateLoader->getTransitionById(caseTypeId: $caseTypeId, transitionId: $transitionId);
-        if ($transition === null) {
-            throw new RuntimeException('transition_not_found');
-        }
+		$eval = $this->assertTransitionAllowed(
+			case: $case,
+			transition: $transition,
+			caseId: $caseId,
+			transitionId: $transitionId,
+			currentId: $currentId,
+			userId: $userId,
+		);
 
-        $currentId = (string) ($case['status'] ?? '');
+		$toStatus = (string)($transition['toStatus'] ?? '');
+		if ($toStatus === '') {
+			throw new RuntimeException('transition_missing_to_status');
+		}
 
-        $eval = $this->assertTransitionAllowed(
-            case: $case,
-            transition: $transition,
-            caseId: $caseId,
-            transitionId: $transitionId,
-            currentId: $currentId,
-            userId: $userId,
-        );
+		// H2: Optimistic concurrency guard — re-load the case immediately before writing
+		// and abort if its status changed since we read it (concurrent transition executed
+		// between our guard evaluation and our save).
+		$caseAtSave = $this->assertNoConcurrentChange(
+			caseId: $caseId,
+			readVersion: $readVersion,
+			currentId: $currentId,
+		);
 
-        $toStatus = (string) ($transition['toStatus'] ?? '');
-        if ($toStatus === '') {
-            throw new RuntimeException('transition_missing_to_status');
-        }
+		// Status mutation BEFORE side-effects per REQ-STE-5-002.
+		// Include @self.version so the store can detect a concurrent modification.
+		$caseAtSave['status'] = $toStatus;
+		if (isset($caseAtSave['@self']) === false || is_array($caseAtSave['@self']) === false) {
+			$caseAtSave['@self'] = [];
+		}
 
-        // H2: Optimistic concurrency guard — re-load the case immediately before writing
-        // and abort if its status changed since we read it (concurrent transition executed
-        // between our guard evaluation and our save).
-        $caseAtSave = $this->assertNoConcurrentChange(
-            caseId: $caseId,
-            readVersion: $readVersion,
-            currentId: $currentId,
-        );
+		$caseAtSave['@self']['version'] = $readVersion;
+		$savedCase = $this->store->saveCase(case: $caseAtSave);
+		$savedVersion = (int)(($savedCase['@self']['version'] ?? ($savedCase['version'] ?? 0)));
 
-        // Status mutation BEFORE side-effects per REQ-STE-5-002.
-        // Include @self.version so the store can detect a concurrent modification.
-        $caseAtSave['status'] = $toStatus;
-        if (isset($caseAtSave['@self']) === false || is_array($caseAtSave['@self']) === false) {
-            $caseAtSave['@self'] = [];
-        }
+		// Alias for the remainder of the method.
+		$case = $savedCase;
 
-        $caseAtSave['@self']['version'] = $readVersion;
-        $savedCase    = $this->store->saveCase(case: $caseAtSave);
-        $savedVersion = (int) (($savedCase['@self']['version'] ?? ($savedCase['version'] ?? 0)));
+		$label = (string)($transition['label'] ?? '');
+		$record = $this->store->writeStatusRecord(
+			caseId: $caseId,
+			toStatus: $toStatus,
+			fromStatus: $currentId,
+			label: $label,
+			comment: $comment,
+			evaluatedGuards: $eval,
+			noWorkflowTemplate: false,
+		);
 
-        // Alias for the remainder of the method.
-        $case = $savedCase;
+		$statusRecordId = (string)($record['id'] ?? '');
+		$context = [
+			'fromStatus' => $currentId,
+			'toStatus' => $toStatus,
+			'transitionLabel' => $label,
+			'userId' => $userId,
+			'statusRecordUuid' => $statusRecordId,
+		];
 
-        $label  = (string) ($transition['label'] ?? '');
-        $record = $this->store->writeStatusRecord(
-            caseId: $caseId,
-            toStatus: $toStatus,
-            fromStatus: $currentId,
-            label: $label,
-            comment: $comment,
-            evaluatedGuards: $eval,
-            noWorkflowTemplate: false,
-        );
+		$actions = $this->specReader->extractActions(transition: $transition);
+		$dispatched = $this->sideEffectDispatcher->dispatch(actions: $actions, case: $case, transitionContext: $context);
 
-        $statusRecordId = (string) ($record['id'] ?? '');
-        $context        = [
-            'fromStatus'       => $currentId,
-            'toStatus'         => $toStatus,
-            'transitionLabel'  => $label,
-            'userId'           => $userId,
-            'statusRecordUuid' => $statusRecordId,
-        ];
+		// Update the statusRecord with the actual dispatched-action results.
+		$record = $this->persistDispatchedActions(
+			record: $record,
+			dispatched: $dispatched,
+			statusRecordId: $statusRecordId,
+		);
 
-        $actions    = $this->specReader->extractActions(transition: $transition);
-        $dispatched = $this->sideEffectDispatcher->dispatch(actions: $actions, case: $case, transitionContext: $context);
+		return [
+			'status' => 'ok',
+			'statusRecord' => $record,
+			'dispatchedActions' => $dispatched,
+			'version' => $savedVersion,
+		];
+	}//end execute()
 
-        // Update the statusRecord with the actual dispatched-action results.
-        $record = $this->persistDispatchedActions(
-            record: $record,
-            dispatched: $dispatched,
-            statusRecordId: $statusRecordId,
-        );
+	/**
+	 * Re-evaluate every server-side precondition for a transition.
+	 *
+	 * @param array<string, mixed> $case The loaded case
+	 * @param array<string, mixed> $transition The transition definition
+	 * @param string $caseId Case UUID (for logging)
+	 * @param string $transitionId Transition id (for logging)
+	 * @param string $currentId The case's current statusType UUID
+	 * @param string $userId The acting user UID
+	 *
+	 * @return array<int, array<string, mixed>> The guard evaluation results
+	 *
+	 * @throws GuardFailedException When server-side re-evaluation fails any guard
+	 * @throws RuntimeException When the from-status or group authorization gate rejects
+	 */
+	private function assertTransitionAllowed(
+		array $case,
+		array $transition,
+		string $caseId,
+		string $transitionId,
+		string $currentId,
+		string $userId,
+	): array {
+		$fromStatus = (string)($transition['fromStatus'] ?? '');
+		if ($fromStatus !== '' && $fromStatus !== $currentId) {
+			throw new RuntimeException('transition_from_status_mismatch');
+		}
 
-        return [
-            'status'            => 'ok',
-            'statusRecord'      => $record,
-            'dispatchedActions' => $dispatched,
-            'version'           => $savedVersion,
-        ];
-    }//end execute()
+		// OR-RBAC role-routing gate (ADR-022). At publish time
+		// WorkflowDefinitionService resolves each transition's assignee role
+		// to its `roleType.ncGroupId` and freezes the literal group id(s) on
+		// the transition `authorization` list — the same OR PR #153 gate
+		// format OR enforces declaratively on schemas that carry an
+		// x-openregister-lifecycle. `case.status` is a per-caseType dynamic
+		// state machine with no static lifecycle table, so OR cannot enforce
+		// it on saveObject; this engine therefore enforces the SAME group
+		// model here using OR's single trusted membership check (IGroupManager),
+		// not a bespoke role-resolution scheme. An empty/absent list = open.
+		if ($this->authorizer->isTransitionGroupAuthorized(transition: $transition, userId: $userId) === false) {
+			throw new RuntimeException('transition_unauthorized');
+		}
 
-    /**
-     * Re-evaluate every server-side precondition for a transition.
-     *
-     * @param array<string, mixed> $case         The loaded case
-     * @param array<string, mixed> $transition   The transition definition
-     * @param string               $caseId       Case UUID (for logging)
-     * @param string               $transitionId Transition id (for logging)
-     * @param string               $currentId    The case's current statusType UUID
-     * @param string               $userId       The acting user UID
-     *
-     * @return array<int, array<string, mixed>> The guard evaluation results
-     *
-     * @throws GuardFailedException When server-side re-evaluation fails any guard
-     * @throws RuntimeException     When the from-status or group authorization gate rejects
-     */
-    private function assertTransitionAllowed(
-        array $case,
-        array $transition,
-        string $caseId,
-        string $transitionId,
-        string $currentId,
-        string $userId
-    ): array {
-        $fromStatus = (string) ($transition['fromStatus'] ?? '');
-        if ($fromStatus !== '' && $fromStatus !== $currentId) {
-            throw new RuntimeException('transition_from_status_mismatch');
-        }
+		// Defence in depth — re-evaluate guards on the server side.
+		$guards = $this->specReader->extractGuards(transition: $transition);
+		$eval = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
+		$failed = array_values(array_filter($eval, static fn (array $guard): bool => $guard['passed'] === false));
+		// @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
+		if (count($failed) > 0) {
+			$this->logger->info('StatusTransitionService: guards failed', ['caseId' => $caseId, 'transitionId' => $transitionId]);
+			throw new GuardFailedException(failedGuards: $failed);
+		}
 
-        // OR-RBAC role-routing gate (ADR-022). At publish time
-        // WorkflowDefinitionService resolves each transition's assignee role
-        // to its `roleType.ncGroupId` and freezes the literal group id(s) on
-        // the transition `authorization` list — the same OR PR #153 gate
-        // format OR enforces declaratively on schemas that carry an
-        // x-openregister-lifecycle. `case.status` is a per-caseType dynamic
-        // state machine with no static lifecycle table, so OR cannot enforce
-        // it on saveObject; this engine therefore enforces the SAME group
-        // model here using OR's single trusted membership check (IGroupManager),
-        // not a bespoke role-resolution scheme. An empty/absent list = open.
-        if ($this->authorizer->isTransitionGroupAuthorized(transition: $transition, userId: $userId) === false) {
-            throw new RuntimeException('transition_unauthorized');
-        }
+		return $eval;
+	}//end assertTransitionAllowed()
 
-        // Defence in depth — re-evaluate guards on the server side.
-        $guards = $this->specReader->extractGuards(transition: $transition);
-        $eval   = $this->guardRegistry->evaluateAll(guards: $guards, case: $case, userId: $userId);
-        $failed = array_values(array_filter($eval, static fn(array $guard): bool => $guard['passed'] === false));
-        // @phpstan-ignore greaterThan.alwaysFalse (PHPDoc type marks passed as bool, but runtime values may differ)
-        if (count($failed) > 0) {
-            $this->logger->info('StatusTransitionService: guards failed', ['caseId' => $caseId, 'transitionId' => $transitionId]);
-            throw new GuardFailedException(failedGuards: $failed);
-        }
+	/**
+	 * Re-load the case immediately before writing and abort when another
+	 * transition landed in the meantime (H2 optimistic concurrency guard).
+	 *
+	 * @param string $caseId Case UUID
+	 * @param int $readVersion The @self.version captured at read time
+	 * @param string $currentId The statusType UUID observed at read time
+	 *
+	 * @return array<string, mixed> The freshly loaded case
+	 *
+	 * @throws RuntimeException When the case vanished or was concurrently changed
+	 */
+	private function assertNoConcurrentChange(
+		string $caseId,
+		int $readVersion,
+		string $currentId,
+	): array {
+		$caseAtSave = $this->store->loadCase(caseId: $caseId);
+		if ($caseAtSave === null) {
+			throw new RuntimeException('case_not_found');
+		}
 
-        return $eval;
-    }//end assertTransitionAllowed()
+		$versionAtSave = (int)(($caseAtSave['@self']['version'] ?? ($caseAtSave['version'] ?? 0)));
+		if ($versionAtSave !== $readVersion) {
+			throw new RuntimeException('transition_conflict');
+		}
 
-    /**
-     * Re-load the case immediately before writing and abort when another
-     * transition landed in the meantime (H2 optimistic concurrency guard).
-     *
-     * @param string $caseId      Case UUID
-     * @param int    $readVersion The @self.version captured at read time
-     * @param string $currentId   The statusType UUID observed at read time
-     *
-     * @return array<string, mixed> The freshly loaded case
-     *
-     * @throws RuntimeException When the case vanished or was concurrently changed
-     */
-    private function assertNoConcurrentChange(
-        string $caseId,
-        int $readVersion,
-        string $currentId
-    ): array {
-        $caseAtSave = $this->store->loadCase(caseId: $caseId);
-        if ($caseAtSave === null) {
-            throw new RuntimeException('case_not_found');
-        }
+		$statusAtSave = (string)($caseAtSave['status'] ?? '');
+		if ($statusAtSave !== $currentId) {
+			throw new RuntimeException('transition_conflict');
+		}
 
-        $versionAtSave = (int) (($caseAtSave['@self']['version'] ?? ($caseAtSave['version'] ?? 0)));
-        if ($versionAtSave !== $readVersion) {
-            throw new RuntimeException('transition_conflict');
-        }
+		return $caseAtSave;
+	}//end assertNoConcurrentChange()
 
-        $statusAtSave = (string) ($caseAtSave['status'] ?? '');
-        if ($statusAtSave !== $currentId) {
-            throw new RuntimeException('transition_conflict');
-        }
+	/**
+	 * Persist the dispatched-action results onto the statusRecord.
+	 *
+	 * @param array<string, mixed> $record The statusRecord
+	 * @param array<int, array<string, mixed>> $dispatched Dispatch results
+	 * @param string $statusRecordId The statusRecord UUID
+	 *
+	 * @return array<string, mixed> The (possibly updated) statusRecord
+	 */
+	private function persistDispatchedActions(
+		array $record,
+		array $dispatched,
+		string $statusRecordId,
+	): array {
+		if ($statusRecordId === '') {
+			return $record;
+		}
 
-        return $caseAtSave;
-    }//end assertNoConcurrentChange()
+		$record['dispatchedActions'] = $dispatched;
+		try {
+			return $this->store->updateStatusRecord(record: $record);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'StatusTransitionService: dispatchedActions persist failed',
+				['exception' => $e->getMessage(), 'statusRecord' => $statusRecordId],
+			);
+		}
 
-    /**
-     * Persist the dispatched-action results onto the statusRecord.
-     *
-     * @param array<string, mixed>             $record         The statusRecord
-     * @param array<int, array<string, mixed>> $dispatched     Dispatch results
-     * @param string                           $statusRecordId The statusRecord UUID
-     *
-     * @return array<string, mixed> The (possibly updated) statusRecord
-     */
-    private function persistDispatchedActions(
-        array $record,
-        array $dispatched,
-        string $statusRecordId
-    ): array {
-        if ($statusRecordId === '') {
-            return $record;
-        }
+		return $record;
+	}//end persistDispatchedActions()
 
-        $record['dispatchedActions'] = $dispatched;
-        try {
-            return $this->store->updateStatusRecord(record: $record);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'StatusTransitionService: dispatchedActions persist failed',
-                ['exception' => $e->getMessage(), 'statusRecord' => $statusRecordId],
-            );
-        }
+	/**
+	 * Execute an admin-only free-form transition for caseTypes without an active workflow template.
+	 *
+	 * @param string $caseId Case UUID
+	 * @param string $toStatusId Target statusType UUID
+	 * @param string|null $comment Optional free-form comment
+	 * @param string|null $userId Optional explicit user UID; defaults to IUserSession
+	 *
+	 * @return array{status: string, statusRecord: array<string, mixed>}
+	 *
+	 * @throws RuntimeException When the caller is not in the admin group or the target is invalid
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function executeFreeForm(string $caseId, string $toStatusId, ?string $comment, ?string $userId = null): array {
+		$userId = $this->resolveUserId(explicit: $userId);
+		if ($this->authorizer->isAdmin(userId: $userId) === false) {
+			throw new RuntimeException('forbidden_admin_only');
+		}
 
-        return $record;
-    }//end persistDispatchedActions()
+		$case = $this->store->loadCase(caseId: $caseId);
+		if ($case === null) {
+			throw new RuntimeException('case_not_found');
+		}
 
-    /**
-     * Execute an admin-only free-form transition for caseTypes without an active workflow template.
-     *
-     * @param string      $caseId     Case UUID
-     * @param string      $toStatusId Target statusType UUID
-     * @param string|null $comment    Optional free-form comment
-     * @param string|null $userId     Optional explicit user UID; defaults to IUserSession
-     *
-     * @return array{status: string, statusRecord: array<string, mixed>}
-     *
-     * @throws RuntimeException When the caller is not in the admin group or the target is invalid
+		$caseTypeId = (string)($case['caseType'] ?? '');
+		$this->store->assertStatusBelongsToCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function executeFreeForm(string $caseId, string $toStatusId, ?string $comment, ?string $userId=null): array
-    {
-        $userId = $this->resolveUserId(explicit: $userId);
-        if ($this->authorizer->isAdmin(userId: $userId) === false) {
-            throw new RuntimeException('forbidden_admin_only');
-        }
+		$currentId = (string)($case['status'] ?? '');
+		$case['status'] = $toStatusId;
+		$case = $this->store->saveCase(case: $case);
 
-        $case = $this->store->loadCase(caseId: $caseId);
-        if ($case === null) {
-            throw new RuntimeException('case_not_found');
-        }
+		$record = $this->store->writeStatusRecord(
+			caseId: $caseId,
+			toStatus: $toStatusId,
+			fromStatus: $currentId,
+			label: 'Free-form transition',
+			comment: $comment,
+			evaluatedGuards: [],
+			noWorkflowTemplate: true,
+		);
 
-        $caseTypeId = (string) ($case['caseType'] ?? '');
-        $this->store->assertStatusBelongsToCaseType(caseTypeId: $caseTypeId, statusTypeId: $toStatusId);
+		return ['status' => 'ok', 'statusRecord' => $record];
+	}//end executeFreeForm()
 
-        $currentId      = (string) ($case['status'] ?? '');
-        $case['status'] = $toStatusId;
-        $case           = $this->store->saveCase(case: $case);
+	/**
+	 * Return the chronological history of transitions for a case.
+	 *
+	 * @param string $caseId Case UUID
+	 *
+	 * @return array{history: array<int, array<string, mixed>>, replayable: bool}
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function replay(string $caseId): array {
+		$list = $this->store->findStatusRecords(caseId: $caseId);
+		if ($list === null) {
+			return ['history' => [], 'replayable' => false];
+		}
 
-        $record = $this->store->writeStatusRecord(
-            caseId: $caseId,
-            toStatus: $toStatusId,
-            fromStatus: $currentId,
-            label: 'Free-form transition',
-            comment: $comment,
-            evaluatedGuards: [],
-            noWorkflowTemplate: true,
-        );
+		usort(
+			$list,
+			static function (array $left, array $right): int {
+				$leftAt = (string)($left['createdAt'] ?? ($left['@self']['createdAt'] ?? ''));
+				$rightAt = (string)($right['createdAt'] ?? ($right['@self']['createdAt'] ?? ''));
+				return strcmp($leftAt, $rightAt);
+			},
+		);
 
-        return ['status' => 'ok', 'statusRecord' => $record];
-    }//end executeFreeForm()
+		return ['history' => $list, 'replayable' => true];
+	}//end replay()
 
-    /**
-     * Return the chronological history of transitions for a case.
-     *
-     * @param string $caseId Case UUID
-     *
-     * @return array{history: array<int, array<string, mixed>>, replayable: bool}
+	/**
+	 * Check if the current (or given) user is in the procest admin group.
+	 *
+	 * @param string $userId UID
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function isAdmin(string $userId): bool {
+		return $this->authorizer->isAdmin(userId: $userId);
+	}//end isAdmin()
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function replay(string $caseId): array
-    {
-        $list = $this->store->findStatusRecords(caseId: $caseId);
-        if ($list === null) {
-            return ['history' => [], 'replayable' => false];
-        }
+	// ------------------------------------------------------------------
+	// Internal helpers
+	// ------------------------------------------------------------------
 
-        usort(
-            $list,
-            static function (array $left, array $right): int {
-                $leftAt  = (string) ($left['createdAt'] ?? ($left['@self']['createdAt'] ?? ''));
-                $rightAt = (string) ($right['createdAt'] ?? ($right['@self']['createdAt'] ?? ''));
-                return strcmp($leftAt, $rightAt);
-            },
-        );
+	/**
+	 * Resolve a user UID either from the explicit parameter or IUserSession.
+	 *
+	 * @param string|null $explicit Caller-supplied UID, or null
+	 *
+	 * @return string
+	 */
+	private function resolveUserId(?string $explicit): string {
+		if ($explicit !== null && $explicit !== '') {
+			return $explicit;
+		}
 
-        return ['history' => $list, 'replayable' => true];
-    }//end replay()
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return '';
+		}
 
-    /**
-     * Check if the current (or given) user is in the procest admin group.
-     *
-     * @param string $userId UID
-     *
-     * @return bool
-
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function isAdmin(string $userId): bool
-    {
-        return $this->authorizer->isAdmin(userId: $userId);
-    }//end isAdmin()
-
-    // ------------------------------------------------------------------
-    // Internal helpers
-    // ------------------------------------------------------------------
-
-    /**
-     * Resolve a user UID either from the explicit parameter or IUserSession.
-     *
-     * @param string|null $explicit Caller-supplied UID, or null
-     *
-     * @return string
-     */
-    private function resolveUserId(?string $explicit): string
-    {
-        if ($explicit !== null && $explicit !== '') {
-            return $explicit;
-        }
-
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return '';
-        }
-
-        return $user->getUID();
-    }//end resolveUserId()
+		return $user->getUID();
+	}//end resolveUserId()
 }//end class

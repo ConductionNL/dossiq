@@ -41,147 +41,142 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/deelzaak-support/spec.md
  */
-class CaseObjectReader
-{
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Shared OR/settings resolver.
-     * @param LoggerInterface $logger          Logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class CaseObjectReader {
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Shared OR/settings resolver.
+	 * @param LoggerInterface $logger Logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Fetch a single case object by UUID and normalise it to an array.
-     *
-     * @param string $caseUuid Case UUID.
-     *
-     * @return array<string, mixed>|null The case, or null when missing.
-     *
-     * @spec openspec/specs/deelzaak-support/spec.md
-     */
-    public function fetchCaseById(string $caseUuid): ?array
-    {
-        if ($caseUuid === '') {
-            return null;
-        }
+	/**
+	 * Fetch a single case object by UUID and normalise it to an array.
+	 *
+	 * @param string $caseUuid Case UUID.
+	 *
+	 * @return array<string, mixed>|null The case, or null when missing.
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	public function fetchCaseById(string $caseUuid): ?array {
+		if ($caseUuid === '') {
+			return null;
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if (empty($register) === true || empty($schema) === true) {
+			return null;
+		}
 
-        try {
-            $obj = $objectService->find($caseUuid, register: $register, schema: $schema);
-        } catch (\Throwable $e) {
-            $this->logger->debug(
-                'Case lookup failed',
-                ['uuid' => $caseUuid, 'error' => $e->getMessage()]
-            );
-            return null;
-        }
+		try {
+			$obj = $objectService->find($caseUuid, register: $register, schema: $schema);
+		} catch (\Throwable $e) {
+			$this->logger->debug(
+				'Case lookup failed',
+				['uuid' => $caseUuid, 'error' => $e->getMessage()]
+			);
+			return null;
+		}
 
-        return $this->toArray(obj: $obj);
-    }//end fetchCaseById()
+		return $this->toArray(obj: $obj);
+	}//end fetchCaseById()
 
-    /**
-     * Load a caseType by id or slug.
-     *
-     * @param string $caseTypeId Identifier.
-     *
-     * @return array<string, mixed>|null The caseType, or null when missing.
-     *
-     * @spec openspec/specs/deelzaak-support/spec.md
-     */
-    public function loadCaseType(string $caseTypeId): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
+	/**
+	 * Load a caseType by id or slug.
+	 *
+	 * @param string $caseTypeId Identifier.
+	 *
+	 * @return array<string, mixed>|null The caseType, or null when missing.
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	public function loadCaseType(string $caseTypeId): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_type_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_type_schema');
+		if (empty($register) === true || empty($schema) === true) {
+			return null;
+		}
 
-        try {
-            $obj = $objectService->find($caseTypeId, register: $register, schema: $schema);
-        } catch (\Throwable) {
-            return null;
-        }
+		try {
+			$obj = $objectService->find($caseTypeId, register: $register, schema: $schema);
+		} catch (\Throwable) {
+			return null;
+		}
 
-        return $this->toArray(obj: $obj);
-    }//end loadCaseType()
+		return $this->toArray(obj: $obj);
+	}//end loadCaseType()
 
-    /**
-     * Read the `parentCase` reference UUID out of a case array.
-     *
-     * Tolerates both the scalar-UUID shape (`parentCase: "<uuid>"`) and an
-     * expanded-object shape (`parentCase: { id|uuid: "<uuid>" }`) that OR
-     * may emit when the relation is hydrated.
-     *
-     * @param array<string, mixed> $case Case object as an array.
-     *
-     * @return string The parent UUID, or '' when absent.
-     *
-     * @spec openspec/specs/deelzaak-support/spec.md
-     */
-    public function extractParentReference(array $case): string
-    {
-        $parent = ($case['parentCase'] ?? null);
-        if (is_string($parent) === true) {
-            return $parent;
-        }
+	/**
+	 * Read the `parentCase` reference UUID out of a case array.
+	 *
+	 * Tolerates both the scalar-UUID shape (`parentCase: "<uuid>"`) and an
+	 * expanded-object shape (`parentCase: { id|uuid: "<uuid>" }`) that OR
+	 * may emit when the relation is hydrated.
+	 *
+	 * @param array<string, mixed> $case Case object as an array.
+	 *
+	 * @return string The parent UUID, or '' when absent.
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	public function extractParentReference(array $case): string {
+		$parent = ($case['parentCase'] ?? null);
+		if (is_string($parent) === true) {
+			return $parent;
+		}
 
-        if (is_array($parent) === true) {
-            $ref = ($parent['id'] ?? $parent['uuid'] ?? '');
-            if (is_string($ref) === true) {
-                return $ref;
-            }
+		if (is_array($parent) === true) {
+			$ref = ($parent['id'] ?? $parent['uuid'] ?? '');
+			if (is_string($ref) === true) {
+				return $ref;
+			}
 
-            return '';
-        }
+			return '';
+		}
 
-        return '';
-    }//end extractParentReference()
+		return '';
+	}//end extractParentReference()
 
-    /**
-     * Normalise an OpenRegister lookup result to an associative array.
-     *
-     * @param mixed $obj The raw lookup result.
-     *
-     * @return array<string, mixed>|null The object as an array, or null when it cannot be coerced.
-     *
-     * @spec openspec/specs/deelzaak-support/spec.md
-     */
-    private function toArray(mixed $obj): ?array
-    {
-        if ($obj === null) {
-            return null;
-        }
+	/**
+	 * Normalise an OpenRegister lookup result to an associative array.
+	 *
+	 * @param mixed $obj The raw lookup result.
+	 *
+	 * @return array<string, mixed>|null The object as an array, or null when it cannot be coerced.
+	 *
+	 * @spec openspec/specs/deelzaak-support/spec.md
+	 */
+	private function toArray(mixed $obj): ?array {
+		if ($obj === null) {
+			return null;
+		}
 
-        if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
-            $obj = $obj->jsonSerialize();
-        }
+		if (is_object($obj) === true && method_exists($obj, 'jsonSerialize') === true) {
+			$obj = $obj->jsonSerialize();
+		}
 
-        if (is_array($obj) === true) {
-            return $obj;
-        }
+		if (is_array($obj) === true) {
+			return $obj;
+		}
 
-        return null;
-    }//end toArray()
+		return null;
+	}//end toArray()
 }//end class

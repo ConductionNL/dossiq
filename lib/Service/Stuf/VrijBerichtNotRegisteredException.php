@@ -30,6 +30,5 @@ namespace OCA\Procest\Service\Stuf;
 /**
  * Pre-send domain error: vrijBericht template not registered.
  */
-class VrijBerichtNotRegisteredException extends StufException
-{
+class VrijBerichtNotRegisteredException extends StufException {
 }//end class

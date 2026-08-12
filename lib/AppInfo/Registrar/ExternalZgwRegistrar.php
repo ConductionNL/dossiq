@@ -42,31 +42,29 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class ExternalZgwRegistrar
-{
-    /**
-     * Register the external-ZGW and ZTC aliases.
-     *
-     * TMLO metadata building + e-Depot submission adapter seams are retired
-     * (migrate-archival-to-or, ADR-022): OpenRegister's TmloService builds
-     * TMLO/MDTO metadata from schema config and its Edepot/Transport seam owns
-     * submission. Procest contributes the mapping declaratively (tmloDefaults).
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        $context->registerServiceAlias(
-            ZgwExternalAdapterInterface::class,
-            LogZgwExternalAdapter::class
-        );
-        $context->registerServiceAlias(
-            ZtcCatalogiAdapterInterface::class,
-            LogZtcCatalogiAdapter::class
-        );
-    }//end register()
+class ExternalZgwRegistrar {
+	/**
+	 * Register the external-ZGW and ZTC aliases.
+	 *
+	 * TMLO metadata building + e-Depot submission adapter seams are retired
+	 * (migrate-archival-to-or, ADR-022): OpenRegister's TmloService builds
+	 * TMLO/MDTO metadata from schema config and its Edepot/Transport seam owns
+	 * submission. Procest contributes the mapping declaratively (tmloDefaults).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		$context->registerServiceAlias(
+			ZgwExternalAdapterInterface::class,
+			LogZgwExternalAdapter::class
+		);
+		$context->registerServiceAlias(
+			ZtcCatalogiAdapterInterface::class,
+			LogZtcCatalogiAdapter::class
+		);
+	}//end register()
 }//end class

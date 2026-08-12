@@ -50,104 +50,100 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
-class TransferRegisterGateway
-{
-    /**
-     * Constructor.
-     *
-     * @param IAppManager        $appManager The app manager
-     * @param ContainerInterface $container  The DI container
-     * @param LoggerInterface    $logger     The logger
-     */
-    public function __construct(
-        private readonly IAppManager $appManager,
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class TransferRegisterGateway {
+	/**
+	 * Constructor.
+	 *
+	 * @param IAppManager $appManager The app manager
+	 * @param ContainerInterface $container The DI container
+	 * @param LoggerInterface $logger The logger
+	 */
+	public function __construct(
+		private readonly IAppManager $appManager,
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the OpenRegister ObjectService.
-     *
-     * @return object|null The service or null
-     *
-     * @spec openspec/specs/federated-case-collaboration/spec.md
-     */
-    public function objectService(): ?object
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-            return null;
-        }
+	/**
+	 * Get the OpenRegister ObjectService.
+	 *
+	 * @return object|null The service or null
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md
+	 */
+	public function objectService(): ?object {
+		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
+			return null;
+		}
 
-        try {
-            return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-        } catch (\Exception $e) {
-            $this->logger->error(
-                'Procest: Could not get ObjectService',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end objectService()
+		try {
+			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
+		} catch (\Exception $e) {
+			$this->logger->error(
+				'Procest: Could not get ObjectService',
+				['exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end objectService()
 
-    /**
-     * Resolve OpenRegister's FederationShareService. Returns null (fail
-     * closed) when OR or its federation classes are unavailable.
-     *
-     * @return object|null The OR FederationShareService, or null
-     *
-     * @spec openspec/specs/federated-case-collaboration/spec.md
-     */
-    public function federationShareService(): ?object
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-            return null;
-        }
+	/**
+	 * Resolve OpenRegister's FederationShareService. Returns null (fail
+	 * closed) when OR or its federation classes are unavailable.
+	 *
+	 * @return object|null The OR FederationShareService, or null
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md
+	 */
+	public function federationShareService(): ?object {
+		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
+			return null;
+		}
 
-        try {
-            $service = $this->container->get('OCA\OpenRegister\Service\FederationShareService');
-            if (method_exists($service, 'createOutgoingShare') === false) {
-                return null;
-            }
+		try {
+			$service = $this->container->get('OCA\OpenRegister\Service\FederationShareService');
+			if (method_exists($service, 'createOutgoingShare') === false) {
+				return null;
+			}
 
-            return $service;
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: Could not get OR FederationShareService',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end federationShareService()
+			return $service;
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Procest: Could not get OR FederationShareService',
+				['exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end federationShareService()
 
-    /**
-     * Resolve OpenRegister's FederatedShareMapper — used only to resolve a
-     * scoped bearer token to its share (`findByToken`), for the remote
-     * accept/reject endpoint. Returns null (fail closed) when unavailable.
-     *
-     * @return object|null The OR FederatedShareMapper, or null
-     *
-     * @spec openspec/specs/federated-case-collaboration/spec.md
-     */
-    public function federatedShareMapper(): ?object
-    {
-        if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
-            return null;
-        }
+	/**
+	 * Resolve OpenRegister's FederatedShareMapper — used only to resolve a
+	 * scoped bearer token to its share (`findByToken`), for the remote
+	 * accept/reject endpoint. Returns null (fail closed) when unavailable.
+	 *
+	 * @return object|null The OR FederatedShareMapper, or null
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md
+	 */
+	public function federatedShareMapper(): ?object {
+		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
+			return null;
+		}
 
-        try {
-            $mapper = $this->container->get('OCA\OpenRegister\Db\FederatedShareMapper');
-            if (method_exists($mapper, 'findByToken') === false) {
-                return null;
-            }
+		try {
+			$mapper = $this->container->get('OCA\OpenRegister\Db\FederatedShareMapper');
+			if (method_exists($mapper, 'findByToken') === false) {
+				return null;
+			}
 
-            return $mapper;
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: Could not get OR FederatedShareMapper',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end federatedShareMapper()
+			return $mapper;
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Procest: Could not get OR FederatedShareMapper',
+				['exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end federatedShareMapper()
 }//end class

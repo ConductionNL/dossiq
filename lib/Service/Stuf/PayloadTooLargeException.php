@@ -30,6 +30,5 @@ namespace OCA\Procest\Service\Stuf;
 /**
  * Pre-send domain error: payload too large for StUF envelope.
  */
-class PayloadTooLargeException extends StufException
-{
+class PayloadTooLargeException extends StufException {
 }//end class

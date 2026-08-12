@@ -45,216 +45,200 @@ use ReflectionMethod;
 /**
  * @covers \OCA\Procest\Repair\RenameDutchDeadlineColumns
  */
-class RenameDutchDeadlineColumnsTest extends TestCase
-{
-    // PHPUnit assertions take positional ($actual, $expected) arguments; the
-    // custom named-parameter sniff does not apply to them.
-    // phpcs:disable CustomSniffs.Functions.NamedParameters
+class RenameDutchDeadlineColumnsTest extends TestCase {
+	// PHPUnit assertions take positional ($actual, $expected) arguments; the
+	// custom named-parameter sniff does not apply to them.
+	// phpcs:disable CustomSniffs.Functions.NamedParameters
 
-    /**
-     * The step under test, wired with doubles.
-     *
-     * @var RenameDutchDeadlineColumns
-     */
-    private RenameDutchDeadlineColumns $step;
+	/**
+	 * The step under test, wired with doubles.
+	 *
+	 * @var RenameDutchDeadlineColumns
+	 */
+	private RenameDutchDeadlineColumns $step;
 
-    /**
-     * Build the step with mocked collaborators.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->step = new RenameDutchDeadlineColumns(
-            $this->createMock(IDBConnection::class),
-            $this->createMock(LoggerInterface::class),
-        );
+	/**
+	 * Build the step with mocked collaborators.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->step = new RenameDutchDeadlineColumns(
+			$this->createMock(IDBConnection::class),
+			$this->createMock(LoggerInterface::class),
+		);
 
-    }//end setUp()
+	}//end setUp()
 
-    /**
-     * Invoke a private method on the step.
-     *
-     * @param string       $name Method name.
-     * @param array<mixed> $args Positional arguments.
-     *
-     * @return mixed
-     */
-    private function call(string $name, array $args)
-    {
-        $m = new ReflectionMethod(RenameDutchDeadlineColumns::class, $name);
-        $m->setAccessible(true);
-        return $m->invokeArgs($this->step, $args);
+	/**
+	 * Invoke a private method on the step.
+	 *
+	 * @param string $name Method name.
+	 * @param array<mixed> $args Positional arguments.
+	 *
+	 * @return mixed
+	 */
+	private function call(string $name, array $args) {
+		$m = new ReflectionMethod(RenameDutchDeadlineColumns::class, $name);
+		$m->setAccessible(true);
+		return $m->invokeArgs($this->step, $args);
+	}//end call()
 
-    }//end call()
+	/**
+	 * Read a private constant off the step.
+	 *
+	 * @param string $name Constant name.
+	 *
+	 * @return mixed
+	 */
+	private function constant(string $name) {
+		return (new ReflectionClass(RenameDutchDeadlineColumns::class))->getConstant($name);
+	}//end constant()
 
-    /**
-     * Read a private constant off the step.
-     *
-     * @param string $name Constant name.
-     *
-     * @return mixed
-     */
-    private function constant(string $name)
-    {
-        return (new ReflectionClass(RenameDutchDeadlineColumns::class))->getConstant($name);
+	/**
+	 * A shard of the named register is matched.
+	 *
+	 * @return void
+	 */
+	public function testMatchesShardOfTheRegister(): void {
+		$markers = ['openregister_table_17_'];
+		self::assertTrue($this->call('isShardOf', ['oc_openregister_table_17_85', $markers]));
 
-    }//end constant()
+	}//end testMatchesShardOfTheRegister()
 
-    /**
-     * A shard of the named register is matched.
-     *
-     * @return void
-     */
-    public function testMatchesShardOfTheRegister(): void
-    {
-        $markers = ['openregister_table_17_'];
-        self::assertTrue($this->call('isShardOf', ['oc_openregister_table_17_85', $markers]));
+	/**
+	 * Register 17 must NOT match register 170's tables.
+	 *
+	 * This one passes on the MARKER alone — it ends in '_', so
+	 * `openregister_table_17_` is not a substring of
+	 * `openregister_table_170_85`. Kept because the property matters, but note
+	 * it is not what the ctype_digit guard is for; see the next test.
+	 *
+	 * @return void
+	 */
+	public function testDoesNotMatchALongerRegisterId(): void {
+		$markers = ['openregister_table_17_'];
+		self::assertFalse($this->call('isShardOf', ['oc_openregister_table_170_85', $markers]));
 
-    }//end testMatchesShardOfTheRegister()
+	}//end testDoesNotMatchALongerRegisterId()
 
-    /**
-     * Register 17 must NOT match register 170's tables.
-     *
-     * This one passes on the MARKER alone — it ends in '_', so
-     * `openregister_table_17_` is not a substring of
-     * `openregister_table_170_85`. Kept because the property matters, but note
-     * it is not what the ctype_digit guard is for; see the next test.
-     *
-     * @return void
-     */
-    public function testDoesNotMatchALongerRegisterId(): void
-    {
-        $markers = ['openregister_table_17_'];
-        self::assertFalse($this->call('isShardOf', ['oc_openregister_table_170_85', $markers]));
+	/**
+	 * A derived or non-shard table sharing the marker is NOT migrated.
+	 *
+	 * This is what the ctype_digit suffix check actually guards, and it is the
+	 * case that fails if the check is removed: `…_17_85_backup` and
+	 * `…_17_audit` both contain the marker, and only the digits-only rule keeps
+	 * an ALTER TABLE off them.
+	 *
+	 * The first version of this test asserted the 17-vs-170 case instead and
+	 * passed with the guard deleted — a test green for the wrong reason. A
+	 * positive control (deleting the guard and re-running) is what exposed it.
+	 *
+	 * @return void
+	 */
+	public function testDoesNotMatchDerivedOrNonShardTables(): void {
+		$markers = ['openregister_table_17_'];
+		self::assertFalse($this->call('isShardOf', ['oc_openregister_table_17_85_backup', $markers]));
+		self::assertFalse($this->call('isShardOf', ['oc_openregister_table_17_audit', $markers]));
 
-    }//end testDoesNotMatchALongerRegisterId()
+	}//end testDoesNotMatchDerivedOrNonShardTables()
 
-    /**
-     * A derived or non-shard table sharing the marker is NOT migrated.
-     *
-     * This is what the ctype_digit suffix check actually guards, and it is the
-     * case that fails if the check is removed: `…_17_85_backup` and
-     * `…_17_audit` both contain the marker, and only the digits-only rule keeps
-     * an ALTER TABLE off them.
-     *
-     * The first version of this test asserted the 17-vs-170 case instead and
-     * passed with the guard deleted — a test green for the wrong reason. A
-     * positive control (deleting the guard and re-running) is what exposed it.
-     *
-     * @return void
-     */
-    public function testDoesNotMatchDerivedOrNonShardTables(): void
-    {
-        $markers = ['openregister_table_17_'];
-        self::assertFalse($this->call('isShardOf', ['oc_openregister_table_17_85_backup', $markers]));
-        self::assertFalse($this->call('isShardOf', ['oc_openregister_table_17_audit', $markers]));
+	/**
+	 * A non-shard table is ignored, and so is an empty name.
+	 *
+	 * @return void
+	 */
+	public function testIgnoresUnrelatedTables(): void {
+		$markers = ['openregister_table_17_'];
+		self::assertFalse($this->call('isShardOf', ['oc_openregister_registers', $markers]));
+		self::assertFalse($this->call('isShardOf', ['', $markers]));
 
-    }//end testDoesNotMatchDerivedOrNonShardTables()
+	}//end testIgnoresUnrelatedTables()
 
-    /**
-     * A non-shard table is ignored, and so is an empty name.
-     *
-     * @return void
-     */
-    public function testIgnoresUnrelatedTables(): void
-    {
-        $markers = ['openregister_table_17_'];
-        self::assertFalse($this->call('isShardOf', ['oc_openregister_registers', $markers]));
-        self::assertFalse($this->call('isShardOf', ['', $markers]));
+	/**
+	 * Both procest registers are covered, not just the exact-slug one.
+	 *
+	 * The reference install carries `procest` (1051 rows) AND
+	 * `procest-default` (107). Resolving a single exact slug leaves the second
+	 * behind and still reports success.
+	 *
+	 * @return void
+	 */
+	public function testMatchesShardsOfEveryResolvedRegister(): void {
+		$markers = ['openregister_table_17_', 'openregister_table_2424_'];
+		self::assertTrue($this->call('isShardOf', ['oc_openregister_table_17_85', $markers]));
+		self::assertTrue($this->call('isShardOf', ['oc_openregister_table_2424_919', $markers]));
 
-    }//end testIgnoresUnrelatedTables()
+	}//end testMatchesShardsOfEveryResolvedRegister()
 
-    /**
-     * Both procest registers are covered, not just the exact-slug one.
-     *
-     * The reference install carries `procest` (1051 rows) AND
-     * `procest-default` (107). Resolving a single exact slug leaves the second
-     * behind and still reports success.
-     *
-     * @return void
-     */
-    public function testMatchesShardsOfEveryResolvedRegister(): void
-    {
-        $markers = ['openregister_table_17_', 'openregister_table_2424_'];
-        self::assertTrue($this->call('isShardOf', ['oc_openregister_table_17_85', $markers]));
-        self::assertTrue($this->call('isShardOf', ['oc_openregister_table_2424_919', $markers]));
+	/**
+	 * Two Dutch columns targeting one English name are refused, not merged.
+	 *
+	 * @return void
+	 */
+	public function testRefusesAmbiguousRename(): void {
+		// Both `omschrijving` and `beschrijving` map to `description`.
+		$columns = ['omschrijving', 'beschrijving', 'naam'];
+		self::assertTrue($this->call('hasCollision', ['tbl', $columns, 'description']));
 
-    }//end testMatchesShardsOfEveryResolvedRegister()
+	}//end testRefusesAmbiguousRename()
 
-    /**
-     * Two Dutch columns targeting one English name are refused, not merged.
-     *
-     * @return void
-     */
-    public function testRefusesAmbiguousRename(): void
-    {
-        // Both `omschrijving` and `beschrijving` map to `description`.
-        $columns = ['omschrijving', 'beschrijving', 'naam'];
-        self::assertTrue($this->call('hasCollision', ['tbl', $columns, 'description']));
+	/**
+	 * A single source for a destination is not a collision.
+	 *
+	 * @return void
+	 */
+	public function testSingleSourceIsNotACollision(): void {
+		$columns = ['omschrijving', 'naam'];
+		self::assertFalse($this->call('hasCollision', ['tbl', $columns, 'description']));
+		self::assertFalse($this->call('hasCollision', ['tbl', $columns, 'name']));
 
-    }//end testRefusesAmbiguousRename()
+	}//end testSingleSourceIsNotACollision()
 
-    /**
-     * A single source for a destination is not a collision.
-     *
-     * @return void
-     */
-    public function testSingleSourceIsNotACollision(): void
-    {
-        $columns = ['omschrijving', 'naam'];
-        self::assertFalse($this->call('hasCollision', ['tbl', $columns, 'description']));
-        self::assertFalse($this->call('hasCollision', ['tbl', $columns, 'name']));
+	/**
+	 * zaaktype is exempt: it is the statutory ZGW wire field name.
+	 *
+	 * It is the second most widespread Dutch column in this register (14 shard
+	 * tables), so its absence from the map is a deliberate decision rather than
+	 * an oversight, and a test should fail if someone "completes" the map.
+	 *
+	 * @return void
+	 */
+	public function testZaaktypeIsNotInTheColumnMap(): void {
+		$map = $this->constant('COLUMN_MAP');
+		self::assertIsArray($map);
+		self::assertArrayNotHasKey('zaaktype', $map);
 
-    }//end testSingleSourceIsNotACollision()
+	}//end testZaaktypeIsNotInTheColumnMap()
 
-    /**
-     * zaaktype is exempt: it is the statutory ZGW wire field name.
-     *
-     * It is the second most widespread Dutch column in this register (14 shard
-     * tables), so its absence from the map is a deliberate decision rather than
-     * an oversight, and a test should fail if someone "completes" the map.
-     *
-     * @return void
-     */
-    public function testZaaktypeIsNotInTheColumnMap(): void
-    {
-        $map = $this->constant('COLUMN_MAP');
-        self::assertIsArray($map);
-        self::assertArrayNotHasKey('zaaktype', $map);
+	/**
+	 * Every destination is snake_case, never camelCase.
+	 *
+	 * MagicMapper stores `endDateActual` as `end_date_actual` and its
+	 * de-duplication path DROPS a camelCase column whose snake_case twin
+	 * exists — so a camelCase destination here would be deleted by the mapper.
+	 *
+	 * @return void
+	 */
+	public function testEveryDestinationIsSnakeCase(): void {
+		$map = $this->constant('COLUMN_MAP');
+		foreach ($map as $old => $new) {
+			self::assertSame(
+				strtolower($new),
+				$new,
+				"Destination '$new' (from '$old') must be snake_case, not camelCase"
+			);
+		}
 
-    }//end testZaaktypeIsNotInTheColumnMap()
+	}//end testEveryDestinationIsSnakeCase()
 
-    /**
-     * Every destination is snake_case, never camelCase.
-     *
-     * MagicMapper stores `endDateActual` as `end_date_actual` and its
-     * de-duplication path DROPS a camelCase column whose snake_case twin
-     * exists — so a camelCase destination here would be deleted by the mapper.
-     *
-     * @return void
-     */
-    public function testEveryDestinationIsSnakeCase(): void
-    {
-        $map = $this->constant('COLUMN_MAP');
-        foreach ($map as $old => $new) {
-            self::assertSame(
-                strtolower($new),
-                $new,
-                "Destination '$new' (from '$old') must be snake_case, not camelCase"
-            );
-        }
+	/**
+	 * The step reports a human-readable name.
+	 *
+	 * @return void
+	 */
+	public function testGetName(): void {
+		self::assertNotSame('', $this->step->getName());
 
-    }//end testEveryDestinationIsSnakeCase()
-
-    /**
-     * The step reports a human-readable name.
-     *
-     * @return void
-     */
-    public function testGetName(): void
-    {
-        self::assertNotSame('', $this->step->getName());
-
-    }//end testGetName()
+	}//end testGetName()
 }//end class

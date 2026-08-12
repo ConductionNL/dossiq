@@ -46,104 +46,99 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Procest\Service\External\Brk\BrkLookupResult
  * @uses \OCA\Procest\Service\External\IntegrationMode
  */
-class BrkContractTest extends TestCase
-{
-    private const FIXTURES = __DIR__.'/../../../../fixtures/contracts/brk';
+class BrkContractTest extends TestCase {
+	private const FIXTURES = __DIR__ . '/../../../../fixtures/contracts/brk';
 
-    /**
-     * Build an IntegrationMode returning $mode for the `brk` integration.
-     *
-     * @param string $mode Tier.
-     *
-     * @return IntegrationMode
-     */
-    private function mode(string $mode): IntegrationMode
-    {
-        $appConfig = $this->createMock(IAppConfig::class);
-        $appConfig->method('getValueString')->willReturnCallback(
-            static function (string $app, string $key, string $default='') use ($mode): string {
-                if ($key === 'integration.brk.mode') {
-                    return $mode;
-                }
+	/**
+	 * Build an IntegrationMode returning $mode for the `brk` integration.
+	 *
+	 * @param string $mode Tier.
+	 *
+	 * @return IntegrationMode
+	 */
+	private function mode(string $mode): IntegrationMode {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			static function (string $app, string $key, string $default = '') use ($mode): string {
+				if ($key === 'integration.brk.mode') {
+					return $mode;
+				}
 
-                return $default;
-            }
-        );
+				return $default;
+			}
+		);
 
-        return new IntegrationMode(appConfig: $appConfig);
-    }//end mode()
+		return new IntegrationMode(appConfig: $appConfig);
+	}//end mode()
 
-    /**
-     * Client factory returning the given fixture body with a 200 status.
-     *
-     * @param string $fixture Path under tests/fixtures/contracts/brk.
-     *
-     * @return IClientService
-     */
-    private function clientReturningFixture(string $fixture): IClientService
-    {
-        $body = file_get_contents(self::FIXTURES.'/'.$fixture);
-        $this->assertIsString($body, "fixture {$fixture} must exist");
+	/**
+	 * Client factory returning the given fixture body with a 200 status.
+	 *
+	 * @param string $fixture Path under tests/fixtures/contracts/brk.
+	 *
+	 * @return IClientService
+	 */
+	private function clientReturningFixture(string $fixture): IClientService {
+		$body = file_get_contents(self::FIXTURES . '/' . $fixture);
+		$this->assertIsString($body, "fixture {$fixture} must exist");
 
-        $response = $this->createMock(IResponse::class);
-        $response->method('getBody')->willReturn($body);
-        $response->method('getStatusCode')->willReturn(200);
+		$response = $this->createMock(IResponse::class);
+		$response->method('getBody')->willReturn($body);
+		$response->method('getStatusCode')->willReturn(200);
 
-        $client = $this->createMock(IClient::class);
-        $client->method('get')->willReturn($response);
+		$client = $this->createMock(IClient::class);
+		$client->method('get')->willReturn($response);
 
-        $service = $this->createMock(IClientService::class);
-        $service->method('newClient')->willReturn($client);
+		$service = $this->createMock(IClientService::class);
+		$service->method('newClient')->willReturn($client);
 
-        return $service;
-    }//end clientReturningFixture()
+		return $service;
+	}//end clientReturningFixture()
 
-    /**
-     * The adapter honours the `/kadastraalonroerendezaken` HAL+JSON search
-     * contract.
-     *
-     * @return void
-     */
-    public function testKadastraleAanduidingContractAgainstSearchEnvelope(): void
-    {
-        $adapter = new BrkApiAdapter(
-            clientService: $this->clientReturningFixture('kadastraalonroerendezaken-search.json'),
-            mode: $this->mode(IntegrationMode::TEST),
-            mapper: new BrkResponseMapper(),
-            logger: $this->createMock(LoggerInterface::class),
-        );
+	/**
+	 * The adapter honours the `/kadastraalonroerendezaken` HAL+JSON search
+	 * contract.
+	 *
+	 * @return void
+	 */
+	public function testKadastraleAanduidingContractAgainstSearchEnvelope(): void {
+		$adapter = new BrkApiAdapter(
+			clientService: $this->clientReturningFixture('kadastraalonroerendezaken-search.json'),
+			mode: $this->mode(IntegrationMode::TEST),
+			mapper: new BrkResponseMapper(),
+			logger: $this->createMock(LoggerInterface::class),
+		);
 
-        $result = $adapter->lookupByKadastraleAanduiding(kadastraleGemeenteCode: 'VBSTD', sectie: 'A', perceelnummer: '1234');
-        $this->assertSame('FOUND', $result->lookupStatus);
-        $this->assertSame('Voorbeeldstad', $result->parcel['kadastraleGemeente']);
-        $this->assertSame('VBSTD', $result->parcel['kadastraleGemeenteCode']);
-        $this->assertSame('A', $result->parcel['sectie']);
-        $this->assertSame(1234, $result->parcel['perceelnummer']);
-        $this->assertSame(350, $result->parcel['oppervlakte']);
-        $this->assertSame(['wonen'], $result->parcel['soortCultuurBebouwd']);
-        $this->assertSame('ZG0001', $result->parcel['zakelijkGerechtigden'][0]['identificatie']);
-        $this->assertSame(['lng' => 4.4699, 'lat' => 51.9244], $result->parcel['geo']);
-        $this->assertSame('test', $result->extras['tier']);
-    }//end testKadastraleAanduidingContractAgainstSearchEnvelope()
+		$result = $adapter->lookupByKadastraleAanduiding(kadastraleGemeenteCode: 'VBSTD', sectie: 'A', perceelnummer: '1234');
+		$this->assertSame('FOUND', $result->lookupStatus);
+		$this->assertSame('Voorbeeldstad', $result->parcel['kadastraleGemeente']);
+		$this->assertSame('VBSTD', $result->parcel['kadastraleGemeenteCode']);
+		$this->assertSame('A', $result->parcel['sectie']);
+		$this->assertSame(1234, $result->parcel['perceelnummer']);
+		$this->assertSame(350, $result->parcel['oppervlakte']);
+		$this->assertSame(['wonen'], $result->parcel['soortCultuurBebouwd']);
+		$this->assertSame('ZG0001', $result->parcel['zakelijkGerechtigden'][0]['identificatie']);
+		$this->assertSame(['lng' => 4.4699, 'lat' => 51.9244], $result->parcel['geo']);
+		$this->assertSame('test', $result->extras['tier']);
+	}//end testKadastraleAanduidingContractAgainstSearchEnvelope()
 
-    /**
-     * The adapter honours the singular `kadastraalOnroerendeZaak` resource
-     * envelope.
-     *
-     * @return void
-     */
-    public function testObjectContractAgainstSingularEnvelope(): void
-    {
-        $adapter = new BrkApiAdapter(
-            clientService: $this->clientReturningFixture('kadastraalonroerendezaak-10280123450000.json'),
-            mode: $this->mode(IntegrationMode::TEST),
-            mapper: new BrkResponseMapper(),
-            logger: $this->createMock(LoggerInterface::class),
-        );
+	/**
+	 * The adapter honours the singular `kadastraalOnroerendeZaak` resource
+	 * envelope.
+	 *
+	 * @return void
+	 */
+	public function testObjectContractAgainstSingularEnvelope(): void {
+		$adapter = new BrkApiAdapter(
+			clientService: $this->clientReturningFixture('kadastraalonroerendezaak-10280123450000.json'),
+			mode: $this->mode(IntegrationMode::TEST),
+			mapper: new BrkResponseMapper(),
+			logger: $this->createMock(LoggerInterface::class),
+		);
 
-        $result = $adapter->lookupObject(id: '10280123450000');
-        $this->assertSame('FOUND', $result->lookupStatus);
-        $this->assertSame(350, $result->parcel['oppervlakte']);
-        $this->assertNull($result->parcel['geo'], 'the id-lookup fixture carries no centroideLL — geo must be null');
-    }//end testObjectContractAgainstSingularEnvelope()
+		$result = $adapter->lookupObject(id: '10280123450000');
+		$this->assertSame('FOUND', $result->lookupStatus);
+		$this->assertSame(350, $result->parcel['oppervlakte']);
+		$this->assertNull($result->parcel['geo'], 'the id-lookup fixture carries no centroideLL — geo must be null');
+	}//end testObjectContractAgainstSingularEnvelope()
 }//end class

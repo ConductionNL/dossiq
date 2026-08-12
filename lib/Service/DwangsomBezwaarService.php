@@ -39,243 +39,240 @@ use RuntimeException;
 /**
  * Bezwaar lifecycle for a DwangsomBerekening.
  */
-class DwangsomBezwaarService
-{
-    use SearchesObjects;
+class DwangsomBezwaarService {
+	use SearchesObjects;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Settings.
-     * @param TermijnService  $termijnService  Termijn service for events.
-     * @param LoggerInterface $logger          Logger.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly TermijnService $termijnService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Settings.
+	 * @param TermijnService $termijnService Termijn service for events.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly TermijnService $termijnService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Register a bezwaar against a DwangsomBerekening.
-     *
-     * Freezes the berekening (status=bezwaar-bevroren) and puts the
-     * linked uitbetaling on hold.
-     *
-     * @param string $berekeningId DwangsomBerekening id.
-     * @param string $grondslag    Legal basis citation.
-     * @param string $motivering   Reasoning.
-     *
-     * @return array<string, mixed> The frozen berekening row.
-     *
-     * @throws RuntimeException When the berekening is missing.
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
-     */
-    public function registerBezwaar(string $berekeningId, string $grondslag, string $motivering): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $bSchema       = (string) $this->settingsService->getConfigValue('dwangsom_berekening_schema');
-        $uSchema       = (string) $this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
-        $objectService = $this->requireDwangsomObjectService(
-            objectService: $objectService,
-            register: $register,
-            bSchema: $bSchema,
-            uSchema: $uSchema,
-        );
+	/**
+	 * Register a bezwaar against a DwangsomBerekening.
+	 *
+	 * Freezes the berekening (status=bezwaar-bevroren) and puts the
+	 * linked uitbetaling on hold.
+	 *
+	 * @param string $berekeningId DwangsomBerekening id.
+	 * @param string $grondslag Legal basis citation.
+	 * @param string $motivering Reasoning.
+	 *
+	 * @return array<string, mixed> The frozen berekening row.
+	 *
+	 * @throws RuntimeException When the berekening is missing.
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 */
+	public function registerBezwaar(string $berekeningId, string $grondslag, string $motivering): array {
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$bSchema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
+		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
+		$objectService = $this->requireDwangsomObjectService(
+			objectService: $objectService,
+			register: $register,
+			bSchema: $bSchema,
+			uSchema: $uSchema,
+		);
 
-        try {
-            $berekening = $objectService->find($berekeningId, register: $register, schema: $bSchema);
-        } catch (\Throwable $e) {
-            throw new RuntimeException('DwangsomBerekening lookup failed: '.$e->getMessage());
-        }
+		try {
+			$berekening = $objectService->find($berekeningId, register: $register, schema: $bSchema);
+		} catch (\Throwable $e) {
+			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
+		}
 
-        if (is_array($berekening) === false) {
-            throw new RuntimeException('DwangsomBerekening not found: '.$berekeningId);
-        }
+		if (is_array($berekening) === false) {
+			throw new RuntimeException('DwangsomBerekening not found: ' . $berekeningId);
+		}
 
-        $berekening['status'] = 'bezwaar-bevroren';
-        try {
-            $berekening = $objectService->saveObject($register, $bSchema, $berekening);
-        } catch (\Throwable $e) {
-            throw new RuntimeException('DwangsomBerekening persist failed: '.$e->getMessage());
-        }
+		$berekening['status'] = 'bezwaar-bevroren';
+		try {
+			$berekening = $objectService->saveObject($register, $bSchema, $berekening);
+		} catch (\Throwable $e) {
+			throw new RuntimeException('DwangsomBerekening persist failed: ' . $e->getMessage());
+		}
 
-        // Move all linked uitbetalingen to on-hold-bezwaar.
-        $uitbetalingen = $this->findUitbetalingen(
-            objectService: $objectService,
-            register: $register,
-            uSchema: $uSchema,
-            berekeningId: $berekeningId,
-        );
+		// Move all linked uitbetalingen to on-hold-bezwaar.
+		$uitbetalingen = $this->findUitbetalingen(
+			objectService: $objectService,
+			register: $register,
+			uSchema: $uSchema,
+			berekeningId: $berekeningId,
+		);
 
-        foreach ($uitbetalingen as $u) {
-            $u['status'] = 'on-hold-bezwaar';
-            try {
-                $objectService->saveObject($register, $uSchema, $u);
-            } catch (\Throwable $e) {
-                $this->logger->warning('Bezwaar freeze on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
-            }
-        }
+		foreach ($uitbetalingen as $u) {
+			$u['status'] = 'on-hold-bezwaar';
+			try {
+				$objectService->saveObject($register, $uSchema, $u);
+			} catch (\Throwable $e) {
+				$this->logger->warning('Bezwaar freeze on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
+			}
+		}
 
-        // Record event on termijn.
-        $instanceId = (string) ($berekening['termijnInstance'] ?? '');
-        if ($instanceId !== '') {
-            $this->termijnService->recordEvent(
-                termijnInstanceId: $instanceId,
-                type: 'bezwaar-ingediend',
-                grondslag: $grondslag,
-                motivering: $motivering,
-                dagenImpact: 0,
-            );
-        }
+		// Record event on termijn.
+		$instanceId = (string)($berekening['termijnInstance'] ?? '');
+		if ($instanceId !== '') {
+			$this->termijnService->recordEvent(
+				termijnInstanceId: $instanceId,
+				type: 'bezwaar-ingediend',
+				grondslag: $grondslag,
+				motivering: $motivering,
+				dagenImpact: 0,
+			);
+		}
 
-        $this->logger->info('Dwangsom bezwaar registered', ['berekening' => $berekeningId]);
-        if (is_array($berekening) === true) {
-            return $berekening;
-        }
+		$this->logger->info('Dwangsom bezwaar registered', ['berekening' => $berekeningId]);
+		if (is_array($berekening) === true) {
+			return $berekening;
+		}
 
-        return [];
-    }//end registerBezwaar()
+		return [];
+	}//end registerBezwaar()
 
-    /**
-     * Resolve a bezwaar with a corrected amount.
-     *
-     * @param string $berekeningId   Berekening id.
-     * @param int    $newBedragCents Corrected amount in EUR cents.
-     * @param string $grondslag      Legal basis.
-     *
-     * @return array<string, mixed>
-     *
-     * @throws RuntimeException When berekening missing or amount invalid.
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
-     */
-    public function resolveBezwaar(string $berekeningId, int $newBedragCents, string $grondslag): array
-    {
-        if ($newBedragCents < 0) {
-            throw new RuntimeException('newBedragCents must be >= 0');
-        }
+	/**
+	 * Resolve a bezwaar with a corrected amount.
+	 *
+	 * @param string $berekeningId Berekening id.
+	 * @param int $newBedragCents Corrected amount in EUR cents.
+	 * @param string $grondslag Legal basis.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When berekening missing or amount invalid.
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
+	 */
+	public function resolveBezwaar(string $berekeningId, int $newBedragCents, string $grondslag): array {
+		if ($newBedragCents < 0) {
+			throw new RuntimeException('newBedragCents must be >= 0');
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        $register      = (string) $this->settingsService->getConfigValue('register');
-        $bSchema       = (string) $this->settingsService->getConfigValue('dwangsom_berekening_schema');
-        $uSchema       = (string) $this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
-        $objectService = $this->requireDwangsomObjectService(
-            objectService: $objectService,
-            register: $register,
-            bSchema: $bSchema,
-            uSchema: $uSchema,
-        );
+		$objectService = $this->settingsService->getObjectService();
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$bSchema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
+		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
+		$objectService = $this->requireDwangsomObjectService(
+			objectService: $objectService,
+			register: $register,
+			bSchema: $bSchema,
+			uSchema: $uSchema,
+		);
 
-        try {
-            $berekening = $objectService->find($berekeningId, register: $register, schema: $bSchema);
-        } catch (\Throwable $e) {
-            throw new RuntimeException('DwangsomBerekening lookup failed: '.$e->getMessage());
-        }
+		try {
+			$berekening = $objectService->find($berekeningId, register: $register, schema: $bSchema);
+		} catch (\Throwable $e) {
+			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
+		}
 
-        if (is_array($berekening) === false) {
-            throw new RuntimeException('DwangsomBerekening not found: '.$berekeningId);
-        }
+		if (is_array($berekening) === false) {
+			throw new RuntimeException('DwangsomBerekening not found: ' . $berekeningId);
+		}
 
-        $berekening['definitievBedrag'] = $newBedragCents;
-        $berekening['status']           = 'voltooid';
-        try {
-            $berekening = $objectService->saveObject($register, $bSchema, $berekening);
-        } catch (\Throwable $e) {
-            throw new RuntimeException('DwangsomBerekening persist failed: '.$e->getMessage());
-        }
+		$berekening['definitievBedrag'] = $newBedragCents;
+		$berekening['status'] = 'voltooid';
+		try {
+			$berekening = $objectService->saveObject($register, $bSchema, $berekening);
+		} catch (\Throwable $e) {
+			throw new RuntimeException('DwangsomBerekening persist failed: ' . $e->getMessage());
+		}
 
-        $uitbetalingen = $this->findUitbetalingen(
-            objectService: $objectService,
-            register: $register,
-            uSchema: $uSchema,
-            berekeningId: $berekeningId,
-        );
+		$uitbetalingen = $this->findUitbetalingen(
+			objectService: $objectService,
+			register: $register,
+			uSchema: $uSchema,
+			berekeningId: $berekeningId,
+		);
 
-        foreach ($uitbetalingen as $u) {
-            $u['bedrag'] = $newBedragCents;
-            $u['status'] = 'voorbereid';
-            try {
-                $objectService->saveObject($register, $uSchema, $u);
-            } catch (\Throwable $e) {
-                $this->logger->warning('Bezwaar resolve on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
-            }
-        }
+		foreach ($uitbetalingen as $u) {
+			$u['bedrag'] = $newBedragCents;
+			$u['status'] = 'voorbereid';
+			try {
+				$objectService->saveObject($register, $uSchema, $u);
+			} catch (\Throwable $e) {
+				$this->logger->warning('Bezwaar resolve on uitbetaling failed', ['id' => $u['id'] ?? '', 'error' => $e->getMessage()]);
+			}
+		}
 
-        $instanceId = (string) ($berekening['termijnInstance'] ?? '');
-        if ($instanceId !== '') {
-            $this->termijnService->recordEvent(
-                termijnInstanceId: $instanceId,
-                type: 'bezwaar-opgelost',
-                grondslag: $grondslag,
-                motivering: 'Bezwaar opgelost; bedrag herzien',
-                dagenImpact: 0,
-            );
-        }
+		$instanceId = (string)($berekening['termijnInstance'] ?? '');
+		if ($instanceId !== '') {
+			$this->termijnService->recordEvent(
+				termijnInstanceId: $instanceId,
+				type: 'bezwaar-opgelost',
+				grondslag: $grondslag,
+				motivering: 'Bezwaar opgelost; bedrag herzien',
+				dagenImpact: 0,
+			);
+		}
 
-        $this->logger->info('Dwangsom bezwaar resolved', ['berekening' => $berekeningId, 'newBedrag' => $newBedragCents]);
-        if (is_array($berekening) === true) {
-            return $berekening;
-        }
+		$this->logger->info('Dwangsom bezwaar resolved', ['berekening' => $berekeningId, 'newBedrag' => $newBedragCents]);
+		if (is_array($berekening) === true) {
+			return $berekening;
+		}
 
-        return [];
-    }//end resolveBezwaar()
+		return [];
+	}//end resolveBezwaar()
 
-    /**
-     * Assert the dwangsom register/schemas are configured and OpenRegister is
-     * available, narrowing the object service to a non-null value.
-     *
-     * @param object|null $objectService Resolved OpenRegister object service.
-     * @param string      $register      Register identifier.
-     * @param string      $bSchema       DwangsomBerekening schema identifier.
-     * @param string      $uSchema       DwangsomUitbetaling schema identifier.
-     *
-     * @return object The available object service.
-     *
-     * @throws RuntimeException When any part of the configuration is missing.
-     */
-    private function requireDwangsomObjectService(
-        ?object $objectService,
-        string $register,
-        string $bSchema,
-        string $uSchema
-    ): object {
-        if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
-            throw new RuntimeException('Dwangsom services not configured');
-        }
+	/**
+	 * Assert the dwangsom register/schemas are configured and OpenRegister is
+	 * available, narrowing the object service to a non-null value.
+	 *
+	 * @param object|null $objectService Resolved OpenRegister object service.
+	 * @param string $register Register identifier.
+	 * @param string $bSchema DwangsomBerekening schema identifier.
+	 * @param string $uSchema DwangsomUitbetaling schema identifier.
+	 *
+	 * @return object The available object service.
+	 *
+	 * @throws RuntimeException When any part of the configuration is missing.
+	 */
+	private function requireDwangsomObjectService(
+		?object $objectService,
+		string $register,
+		string $bSchema,
+		string $uSchema,
+	): object {
+		if ($objectService === null || $register === '' || $bSchema === '' || $uSchema === '') {
+			throw new RuntimeException('Dwangsom services not configured');
+		}
 
-        return $objectService;
-    }//end requireDwangsomObjectService()
+		return $objectService;
+	}//end requireDwangsomObjectService()
 
-    /**
-     * Load the uitbetalingen linked to a berekening, tolerating lookup failures.
-     *
-     * @param object $objectService OpenRegister object service.
-     * @param string $register      Register identifier.
-     * @param string $uSchema       DwangsomUitbetaling schema identifier.
-     * @param string $berekeningId  DwangsomBerekening id.
-     *
-     * @return array<int, array<string, mixed>> The linked uitbetalingen.
-     */
-    private function findUitbetalingen(
-        object $objectService,
-        string $register,
-        string $uSchema,
-        string $berekeningId
-    ): array {
-        try {
-            return $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $uSchema,
-                filters: ['dwangsomBerekening' => $berekeningId]
-            );
-        } catch (\Throwable $e) {
-            // Lookup failures must not block the bezwaar transition.
-            return [];
-        }
-    }//end findUitbetalingen()
+	/**
+	 * Load the uitbetalingen linked to a berekening, tolerating lookup failures.
+	 *
+	 * @param object $objectService OpenRegister object service.
+	 * @param string $register Register identifier.
+	 * @param string $uSchema DwangsomUitbetaling schema identifier.
+	 * @param string $berekeningId DwangsomBerekening id.
+	 *
+	 * @return array<int, array<string, mixed>> The linked uitbetalingen.
+	 */
+	private function findUitbetalingen(
+		object $objectService,
+		string $register,
+		string $uSchema,
+		string $berekeningId,
+	): array {
+		try {
+			return $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $uSchema,
+				filters: ['dwangsomBerekening' => $berekeningId]
+			);
+		} catch (\Throwable $e) {
+			// Lookup failures must not block the bezwaar transition.
+			return [];
+		}
+	}//end findUitbetalingen()
 }//end class

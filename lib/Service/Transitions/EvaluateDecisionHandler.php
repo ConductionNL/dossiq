@@ -48,170 +48,166 @@ use RuntimeException;
  *
  * @spec openspec/specs/dmn-decision-tables/spec.md
  */
-class EvaluateDecisionHandler implements ActionHandlerInterface
-{
-    /**
-     * Constructor.
-     *
-     * @param DecisionTableService $tableService    Decision-table storage/lookup.
-     * @param DecisionEngine       $engine          Pure evaluation engine.
-     * @param SettingsService      $settingsService Bridge to OpenRegister + config.
-     * @param LoggerInterface      $logger          Logger.
-     */
-    public function __construct(
-        private readonly DecisionTableService $tableService,
-        private readonly DecisionEngine $engine,
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class EvaluateDecisionHandler implements ActionHandlerInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param DecisionTableService $tableService Decision-table storage/lookup.
+	 * @param DecisionEngine $engine Pure evaluation engine.
+	 * @param SettingsService $settingsService Bridge to OpenRegister + config.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly DecisionTableService $tableService,
+		private readonly DecisionEngine $engine,
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle the evaluateDecision action.
-     *
-     * @param array<string, mixed> $actionConfig      Action configuration.
-     * @param array<string, mixed> $case              Case object.
-     * @param array<string, mixed> $transitionContext Transition context.
-     *
-     * @return ActionResult
-     *
-     * @spec openspec/specs/dmn-decision-tables/spec.md
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
-    {
-        try {
-            $decisionKey = trim((string) ($actionConfig['decisionKey'] ?? ''));
-            if ($decisionKey === '') {
-                return new ActionResult(succeeded: false, error: 'evaluate_decision_missing_key');
-            }
+	/**
+	 * Handle the evaluateDecision action.
+	 *
+	 * @param array<string, mixed> $actionConfig Action configuration.
+	 * @param array<string, mixed> $case Case object.
+	 * @param array<string, mixed> $transitionContext Transition context.
+	 *
+	 * @return ActionResult
+	 *
+	 * @spec openspec/specs/dmn-decision-tables/spec.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$decisionKey = trim((string)($actionConfig['decisionKey'] ?? ''));
+			if ($decisionKey === '') {
+				return new ActionResult(succeeded: false, error: 'evaluate_decision_missing_key');
+			}
 
-            $table = $this->tableService->findByKey(key: $decisionKey);
-            if ($table === null) {
-                return new ActionResult(succeeded: false, error: 'decision_not_found');
-            }
+			$table = $this->tableService->findByKey(key: $decisionKey);
+			if ($table === null) {
+				return new ActionResult(succeeded: false, error: 'decision_not_found');
+			}
 
-            $inputMapping = [];
-            if (is_array($actionConfig['inputMapping'] ?? null) === true) {
-                $inputMapping = $actionConfig['inputMapping'];
-            }
+			$inputMapping = [];
+			if (is_array($actionConfig['inputMapping'] ?? null) === true) {
+				$inputMapping = $actionConfig['inputMapping'];
+			}
 
-            $outputMapping = [];
-            if (is_array($actionConfig['outputMapping'] ?? null) === true) {
-                $outputMapping = $actionConfig['outputMapping'];
-            }
+			$outputMapping = [];
+			if (is_array($actionConfig['outputMapping'] ?? null) === true) {
+				$outputMapping = $actionConfig['outputMapping'];
+			}
 
-            $inputs = $this->buildInputs(table: $table, case: $case, inputMapping: $inputMapping);
+			$inputs = $this->buildInputs(table: $table, case: $case, inputMapping: $inputMapping);
 
-            try {
-                $result = $this->engine->evaluate(decisionTable: $table, inputs: $inputs);
-            } catch (DecisionEvaluationException $e) {
-                $this->logger->info(
-                    'EvaluateDecisionHandler: evaluation failed',
-                    ['errorCode' => $e->getErrorCode(), 'details' => $e->getDetails(), 'decisionKey' => $decisionKey],
-                );
-                return new ActionResult(succeeded: false, error: $e->getErrorCode());
-            }
+			try {
+				$result = $this->engine->evaluate(decisionTable: $table, inputs: $inputs);
+			} catch (DecisionEvaluationException $e) {
+				$this->logger->info(
+					'EvaluateDecisionHandler: evaluation failed',
+					['errorCode' => $e->getErrorCode(), 'details' => $e->getDetails(), 'decisionKey' => $decisionKey],
+				);
+				return new ActionResult(succeeded: false, error: $e->getErrorCode());
+			}
 
-            $this->writeOutputs(table: $table, case: $case, outputs: $result['outputs'], outputMapping: $outputMapping);
+			$this->writeOutputs(table: $table, case: $case, outputs: $result['outputs'], outputMapping: $outputMapping);
 
-            return new ActionResult(
-                succeeded: true,
-                data: [
-                    'decisionKey'    => $decisionKey,
-                    'outputs'        => $result['outputs'],
-                    'matchedRuleIds' => $result['matchedRuleIds'],
-                ],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'EvaluateDecisionHandler failed',
-                ['exception' => $e->getMessage(), 'context' => $transitionContext],
-            );
-            return new ActionResult(succeeded: false, error: 'evaluate_decision_failed');
-        }//end try
-    }//end handle()
+			return new ActionResult(
+				succeeded: true,
+				data: [
+					'decisionKey' => $decisionKey,
+					'outputs' => $result['outputs'],
+					'matchedRuleIds' => $result['matchedRuleIds'],
+				],
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'EvaluateDecisionHandler failed',
+				['exception' => $e->getMessage(), 'context' => $transitionContext],
+			);
+			return new ActionResult(succeeded: false, error: 'evaluate_decision_failed');
+		}//end try
+	}//end handle()
 
-    /**
-     * Build the decision's inputs map from the case, applying `inputMapping`
-     * (decisionInputName => caseFieldName) with a same-name default.
-     *
-     * @param array<string, mixed> $table        The decision table definition.
-     * @param array<string, mixed> $case         The case object.
-     * @param array<string, mixed> $inputMapping Optional decisionInputName => caseFieldName map.
-     *
-     * @return array<string, mixed>
-     */
-    private function buildInputs(array $table, array $case, array $inputMapping): array
-    {
-        $inputs   = [];
-        $declared = [];
-        if (is_array($table['inputs'] ?? null) === true) {
-            $declared = $table['inputs'];
-        }
+	/**
+	 * Build the decision's inputs map from the case, applying `inputMapping`
+	 * (decisionInputName => caseFieldName) with a same-name default.
+	 *
+	 * @param array<string, mixed> $table The decision table definition.
+	 * @param array<string, mixed> $case The case object.
+	 * @param array<string, mixed> $inputMapping Optional decisionInputName => caseFieldName map.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function buildInputs(array $table, array $case, array $inputMapping): array {
+		$inputs = [];
+		$declared = [];
+		if (is_array($table['inputs'] ?? null) === true) {
+			$declared = $table['inputs'];
+		}
 
-        foreach ($declared as $inputDef) {
-            if (is_array($inputDef) === false) {
-                continue;
-            }
+		foreach ($declared as $inputDef) {
+			if (is_array($inputDef) === false) {
+				continue;
+			}
 
-            $name = (string) ($inputDef['name'] ?? '');
-            if ($name === '') {
-                continue;
-            }
+			$name = (string)($inputDef['name'] ?? '');
+			if ($name === '') {
+				continue;
+			}
 
-            $caseField     = (string) ($inputMapping[$name] ?? $name);
-            $inputs[$name] = ($case[$caseField] ?? null);
-        }
+			$caseField = (string)($inputMapping[$name] ?? $name);
+			$inputs[$name] = ($case[$caseField] ?? null);
+		}
 
-        return $inputs;
-    }//end buildInputs()
+		return $inputs;
+	}//end buildInputs()
 
-    /**
-     * Write the decision's outputs back onto the case, applying
-     * `outputMapping` (decisionOutputName => caseFieldName) with a
-     * same-name default, then persist via ObjectService.
-     *
-     * @param array<string, mixed> $table         The decision table definition.
-     * @param array<string, mixed> $case          The case object (pre-mutation).
-     * @param array<string, mixed> $outputs       The evaluated outputs, keyed by decision output name.
-     * @param array<string, mixed> $outputMapping Optional decisionOutputName => caseFieldName map.
-     *
-     * @return void
-     *
-     * @throws \RuntimeException When OpenRegister/case schema is unavailable.
-     */
-    private function writeOutputs(array $table, array $case, array $outputs, array $outputMapping): void
-    {
-        $declared = [];
-        if (is_array($table['outputs'] ?? null) === true) {
-            $declared = $table['outputs'];
-        }
+	/**
+	 * Write the decision's outputs back onto the case, applying
+	 * `outputMapping` (decisionOutputName => caseFieldName) with a
+	 * same-name default, then persist via ObjectService.
+	 *
+	 * @param array<string, mixed> $table The decision table definition.
+	 * @param array<string, mixed> $case The case object (pre-mutation).
+	 * @param array<string, mixed> $outputs The evaluated outputs, keyed by decision output name.
+	 * @param array<string, mixed> $outputMapping Optional decisionOutputName => caseFieldName map.
+	 *
+	 * @return void
+	 *
+	 * @throws \RuntimeException When OpenRegister/case schema is unavailable.
+	 */
+	private function writeOutputs(array $table, array $case, array $outputs, array $outputMapping): void {
+		$declared = [];
+		if (is_array($table['outputs'] ?? null) === true) {
+			$declared = $table['outputs'];
+		}
 
-        foreach ($declared as $outputDef) {
-            if (is_array($outputDef) === false) {
-                continue;
-            }
+		foreach ($declared as $outputDef) {
+			if (is_array($outputDef) === false) {
+				continue;
+			}
 
-            $name = (string) ($outputDef['name'] ?? '');
-            if ($name === '') {
-                continue;
-            }
+			$name = (string)($outputDef['name'] ?? '');
+			if ($name === '') {
+				continue;
+			}
 
-            $caseField        = (string) ($outputMapping[$name] ?? $name);
-            $case[$caseField] = ($outputs[$name] ?? null);
-        }
+			$caseField = (string)($outputMapping[$name] ?? $name);
+			$case[$caseField] = ($outputs[$name] ?? null);
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('storage_unavailable');
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('storage_unavailable');
+		}
 
-        $register   = $this->settingsService->getConfigValue(key: 'register');
-        $caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
-        if ($register === '' || $caseSchema === '') {
-            throw new RuntimeException('case_schema_not_configured');
-        }
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
+		if ($register === '' || $caseSchema === '') {
+			throw new RuntimeException('case_schema_not_configured');
+		}
 
-        $objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
-    }//end writeOutputs()
+		$objectService->saveObject(object: $case, register: $register, schema: $caseSchema);
+	}//end writeOutputs()
 }//end class

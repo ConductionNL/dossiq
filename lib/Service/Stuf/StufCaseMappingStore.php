@@ -42,101 +42,97 @@ use DateTimeZone;
  *
  * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
  */
-class StufCaseMappingStore
-{
-    /**
-     * Constructor.
-     *
-     * @param StufRegisterAccess $register The register access helper.
-     *
-     * @return void
-     */
-    public function __construct(private StufRegisterAccess $register)
-    {
-    }//end __construct()
+class StufCaseMappingStore {
+	/**
+	 * Constructor.
+	 *
+	 * @param StufRegisterAccess $register The register access helper.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private StufRegisterAccess $register,
+	) {
+	}//end __construct()
 
-    /**
-     * Find the existing mapping for a case on an endpoint.
-     *
-     * @param array $case     The case.
-     * @param array $endpoint The endpoint.
-     *
-     * @return array|null The mapping row, or null when the case has never been sent.
-     *
-     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
-     */
-    public function find(array $case, array $endpoint): ?array
-    {
-        return $this->register->findOne(
-            schema: StufRegisterAccess::SCHEMA_MAPPING,
-            filters: $this->identity(case: $case, endpoint: $endpoint)
-        );
-    }//end find()
+	/**
+	 * Find the existing mapping for a case on an endpoint.
+	 *
+	 * @param array $case The case.
+	 * @param array $endpoint The endpoint.
+	 *
+	 * @return array|null The mapping row, or null when the case has never been sent.
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
+	 */
+	public function find(array $case, array $endpoint): ?array {
+		return $this->register->findOne(
+			schema: StufRegisterAccess::SCHEMA_MAPPING,
+			filters: $this->identity(case: $case, endpoint: $endpoint)
+		);
+	}//end find()
 
-    /**
-     * Persist a case → zaak mapping (idempotent).
-     *
-     * @param array  $case     The case.
-     * @param string $externId The external zaak identificatie.
-     * @param array  $endpoint The endpoint.
-     *
-     * @return array The mapping row.
-     *
-     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
-     */
-    public function persist(array $case, string $externId, array $endpoint): array
-    {
-        $identity = $this->identity(case: $case, endpoint: $endpoint);
-        $data     = ($this->find(case: $case, endpoint: $endpoint) ?? array_merge(
-            $identity,
-            [
-                'id'             => 'map-'.bin2hex(string: random_bytes(length: 6)),
-                'caseId'         => $identity['bronId'],
-                'externEntiteit' => 'ZAK',
-            ]
-        ));
+	/**
+	 * Persist a case → zaak mapping (idempotent).
+	 *
+	 * @param array $case The case.
+	 * @param string $externId The external zaak identificatie.
+	 * @param array $endpoint The endpoint.
+	 *
+	 * @return array The mapping row.
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
+	 */
+	public function persist(array $case, string $externId, array $endpoint): array {
+		$identity = $this->identity(case: $case, endpoint: $endpoint);
+		$data = ($this->find(case: $case, endpoint: $endpoint) ?? array_merge(
+			$identity,
+			[
+				'id' => 'map-' . bin2hex(string: random_bytes(length: 6)),
+				'caseId' => $identity['bronId'],
+				'externEntiteit' => 'ZAK',
+			]
+		));
 
-        return $this->register->saveObject(
-            schema: StufRegisterAccess::SCHEMA_MAPPING,
-            data: array_merge(
-                $data,
-                [
-                    'caseId'                => $identity['bronId'],
-                    'externIdentificatie'   => $externId,
-                    'laatsteSynchronisatie' => $this->now(),
-                    'synchronisatieStatus'  => 'in_sync',
-                ]
-            )
-        );
-    }//end persist()
+		return $this->register->saveObject(
+			schema: StufRegisterAccess::SCHEMA_MAPPING,
+			data: array_merge(
+				$data,
+				[
+					'caseId' => $identity['bronId'],
+					'externIdentificatie' => $externId,
+					'laatsteSynchronisatie' => $this->now(),
+					'synchronisatieStatus' => 'in_sync',
+				]
+			)
+		);
+	}//end persist()
 
-    /**
-     * The (bronEntiteit, bronId, endpointId) triple that identifies one mapping.
-     *
-     * @param array $case     The case.
-     * @param array $endpoint The endpoint.
-     *
-     * @return array<string, string> The identity filter.
-     */
-    private function identity(array $case, array $endpoint): array
-    {
-        return [
-            'bronEntiteit' => 'case',
-            'bronId'       => (string) ($case['id'] ?? ''),
-            'endpointId'   => (string) ($endpoint['id'] ?? ''),
-        ];
-    }//end identity()
+	/**
+	 * The (bronEntiteit, bronId, endpointId) triple that identifies one mapping.
+	 *
+	 * @param array $case The case.
+	 * @param array $endpoint The endpoint.
+	 *
+	 * @return array<string, string> The identity filter.
+	 */
+	private function identity(array $case, array $endpoint): array {
+		return [
+			'bronEntiteit' => 'case',
+			'bronId' => (string)($case['id'] ?? ''),
+			'endpointId' => (string)($endpoint['id'] ?? ''),
+		];
+	}//end identity()
 
-    /**
-     * The current synchronisation moment in Europe/Amsterdam, ISO-8601.
-     *
-     * @return string The timestamp.
-     */
-    private function now(): string
-    {
-        return (new DateTimeImmutable(
-            datetime: 'now',
-            timezone: new DateTimeZone(timezone: 'Europe/Amsterdam')
-        ))->format(format: 'c');
-    }//end now()
+	/**
+	 * The current synchronisation moment in Europe/Amsterdam, ISO-8601.
+	 *
+	 * @return string The timestamp.
+	 */
+	private function now(): string {
+		return (new DateTimeImmutable(
+			datetime: 'now',
+			timezone: new DateTimeZone(timezone: 'Europe/Amsterdam')
+		))->format(format: 'c');
+	}//end now()
 }//end class

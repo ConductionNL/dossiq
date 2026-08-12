@@ -33,35 +33,32 @@ use RuntimeException;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T10
  */
-class GuardFailedException extends RuntimeException
-{
+class GuardFailedException extends RuntimeException {
 
-    /**
-     * Snapshots of failed guard evaluations.
-     *
-     * @var array<int, array{type: string, passed: bool, failureMessage: ?string, details: array<string, mixed>}>
-     */
-    private array $failedGuards;
+	/**
+	 * Snapshots of failed guard evaluations.
+	 *
+	 * @var array<int, array{type: string, passed: bool, failureMessage: ?string, details: array<string, mixed>}>
+	 */
+	private array $failedGuards;
 
-    /**
-     * Constructor.
-     *
-     * @param array<int, array<string, mixed>> $failedGuards The failed guard snapshots
-     * @param string                           $message      Static engine-side message
-     */
-    public function __construct(array $failedGuards, string $message='guard_failed')
-    {
-        parent::__construct(message: $message);
-        $this->failedGuards = $failedGuards;
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param array<int, array<string, mixed>> $failedGuards The failed guard snapshots
+	 * @param string $message Static engine-side message
+	 */
+	public function __construct(array $failedGuards, string $message = 'guard_failed') {
+		parent::__construct(message: $message);
+		$this->failedGuards = $failedGuards;
+	}//end __construct()
 
-    /**
-     * Get the failed guard snapshots.
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public function getFailedGuards(): array
-    {
-        return $this->failedGuards;
-    }//end getFailedGuards()
+	/**
+	 * Get the failed guard snapshots.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function getFailedGuards(): array {
+		return $this->failedGuards;
+	}//end getFailedGuards()
 }//end class

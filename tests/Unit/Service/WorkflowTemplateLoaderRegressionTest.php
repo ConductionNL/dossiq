@@ -38,9 +38,8 @@ use Psr\Log\LoggerInterface;
  * absence of any `findObjects()` method here is deliberate: it documents that
  * the real OpenRegister ObjectService never exposed one.
  */
-interface WorkflowTemplateObjectServiceStub
-{
-    public function searchObjects(array $query): array;
+interface WorkflowTemplateObjectServiceStub {
+	public function searchObjects(array $query): array;
 }//end interface
 
 /**
@@ -48,154 +47,147 @@ interface WorkflowTemplateObjectServiceStub
  *
  * @covers \OCA\Procest\Service\WorkflowTemplateLoader
  */
-class WorkflowTemplateLoaderRegressionTest extends TestCase
-{
+class WorkflowTemplateLoaderRegressionTest extends TestCase {
 
-    /**
-     * @var SettingsService&MockObject
-     */
-    private SettingsService $settingsService;
+	/**
+	 * @var SettingsService&MockObject
+	 */
+	private SettingsService $settingsService;
 
-    /**
-     * @var LoggerInterface&MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * @var LoggerInterface&MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The loader under test.
-     *
-     * @var WorkflowTemplateLoader
-     */
-    private WorkflowTemplateLoader $loader;
+	/**
+	 * The loader under test.
+	 *
+	 * @var WorkflowTemplateLoader
+	 */
+	private WorkflowTemplateLoader $loader;
 
-    /**
-     * Set up the test environment.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
+	/**
+	 * Set up the test environment.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-        $this->loader = new WorkflowTemplateLoader(
-            $this->settingsService,
-            $this->logger,
-        );
+		$this->loader = new WorkflowTemplateLoader(
+			$this->settingsService,
+			$this->logger,
+		);
 
-    }//end setUp()
+	}//end setUp()
 
-    /**
-     * Configure the SettingsService mock to return register + schema IDs.
-     *
-     * @param object $objectService The ObjectService mock to hand back.
-     *
-     * @return void
-     */
-    private function withObjectService(object $objectService): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn($objectService);
-        $this->settingsService->method('getConfigValue')->willReturnMap(
-            [
-                ['register', '', '7'],
-                ['workflow_template_schema', '', '42'],
-            ]
-        );
+	/**
+	 * Configure the SettingsService mock to return register + schema IDs.
+	 *
+	 * @param object $objectService The ObjectService mock to hand back.
+	 *
+	 * @return void
+	 */
+	private function withObjectService(object $objectService): void {
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturnMap(
+			[
+				['register', '', '7'],
+				['workflow_template_schema', '', '42'],
+			]
+		);
 
-    }//end withObjectService()
+	}//end withObjectService()
 
-    /**
-     * getActiveTemplate() must call searchObjects() with the @self register/schema
-     * context and the object-level caseType/isActive equality filters — the exact
-     * Phase-0 query shape that replaced the broken findObjects() call.
-     *
-     * @return void
-     */
-    public function testGetActiveTemplateUsesSearchObjectsWithSelfBlock(): void
-    {
-        $objectService = $this->createMock(WorkflowTemplateObjectServiceStub::class);
-        $this->withObjectService($objectService);
+	/**
+	 * getActiveTemplate() must call searchObjects() with the @self register/schema
+	 * context and the object-level caseType/isActive equality filters — the exact
+	 * Phase-0 query shape that replaced the broken findObjects() call.
+	 *
+	 * @return void
+	 */
+	public function testGetActiveTemplateUsesSearchObjectsWithSelfBlock(): void {
+		$objectService = $this->createMock(WorkflowTemplateObjectServiceStub::class);
+		$this->withObjectService($objectService);
 
-        $objectService->expects($this->once())
-            ->method('searchObjects')
-            ->with(
-                $this->callback(
-                    static function (array $query): bool {
-                        return ($query['@self']['register'] ?? null) === 7
-                            && ($query['@self']['schema'] ?? null) === 42
-                            && ($query['caseType'] ?? null) === 'ct-123'
-                            && ($query['isActive'] ?? null) === true;
-                    }
-                )
-            )
-            ->willReturn(
-                [
-                    [
-                        'id'          => 'tmpl-1',
-                        'caseType'    => 'ct-123',
-                        'transitions' => '[{"id":"t1"}]',
-                        'steps'       => '[{"id":"s1"}]',
-                    ],
-                ]
-            );
+		$objectService->expects($this->once())
+			->method('searchObjects')
+			->with(
+				$this->callback(
+					static function (array $query): bool {
+						return ($query['@self']['register'] ?? null) === 7
+							&& ($query['@self']['schema'] ?? null) === 42
+							&& ($query['caseType'] ?? null) === 'ct-123'
+							&& ($query['isActive'] ?? null) === true;
+					}
+				)
+			)
+			->willReturn(
+				[
+					[
+						'id' => 'tmpl-1',
+						'caseType' => 'ct-123',
+						'transitions' => '[{"id":"t1"}]',
+						'steps' => '[{"id":"s1"}]',
+					],
+				]
+			);
 
-        $template = $this->loader->getActiveTemplate('ct-123');
+		$template = $this->loader->getActiveTemplate('ct-123');
 
-        $this->assertIsArray($template);
-        $this->assertSame('tmpl-1', $template['id']);
-        // JSON string fields are decoded into arrays.
-        $this->assertSame([['id' => 't1']], $template['transitions']);
-        $this->assertSame([['id' => 's1']], $template['steps']);
+		$this->assertIsArray($template);
+		$this->assertSame('tmpl-1', $template['id']);
+		// JSON string fields are decoded into arrays.
+		$this->assertSame([['id' => 't1']], $template['transitions']);
+		$this->assertSame([['id' => 's1']], $template['steps']);
 
-    }//end testGetActiveTemplateUsesSearchObjectsWithSelfBlock()
+	}//end testGetActiveTemplateUsesSearchObjectsWithSelfBlock()
 
-    /**
-     * An empty searchObjects() result yields null (confirmed miss) and is cached.
-     *
-     * @return void
-     */
-    public function testGetActiveTemplateReturnsNullWhenNoMatch(): void
-    {
-        $objectService = $this->createMock(WorkflowTemplateObjectServiceStub::class);
-        $this->withObjectService($objectService);
+	/**
+	 * An empty searchObjects() result yields null (confirmed miss) and is cached.
+	 *
+	 * @return void
+	 */
+	public function testGetActiveTemplateReturnsNullWhenNoMatch(): void {
+		$objectService = $this->createMock(WorkflowTemplateObjectServiceStub::class);
+		$this->withObjectService($objectService);
 
-        $objectService->expects($this->once())
-            ->method('searchObjects')
-            ->willReturn([]);
+		$objectService->expects($this->once())
+			->method('searchObjects')
+			->willReturn([]);
 
-        $this->assertNull($this->loader->getActiveTemplate('ct-empty'));
-        // Second call must be served from cache — searchObjects() once() proves it.
-        $this->assertNull($this->loader->getActiveTemplate('ct-empty'));
+		$this->assertNull($this->loader->getActiveTemplate('ct-empty'));
+		// Second call must be served from cache — searchObjects() once() proves it.
+		$this->assertNull($this->loader->getActiveTemplate('ct-empty'));
 
-    }//end testGetActiveTemplateReturnsNullWhenNoMatch()
+	}//end testGetActiveTemplateReturnsNullWhenNoMatch()
 
-    /**
-     * A throwing searchObjects() is caught and downgraded to null (no fatal).
-     *
-     * @return void
-     */
-    public function testGetActiveTemplateSwallowsSearchObjectsFailure(): void
-    {
-        $objectService = $this->createMock(WorkflowTemplateObjectServiceStub::class);
-        $this->withObjectService($objectService);
+	/**
+	 * A throwing searchObjects() is caught and downgraded to null (no fatal).
+	 *
+	 * @return void
+	 */
+	public function testGetActiveTemplateSwallowsSearchObjectsFailure(): void {
+		$objectService = $this->createMock(WorkflowTemplateObjectServiceStub::class);
+		$this->withObjectService($objectService);
 
-        $objectService->method('searchObjects')
-            ->willThrowException(new \RuntimeException('boom'));
+		$objectService->method('searchObjects')
+			->willThrowException(new \RuntimeException('boom'));
 
-        $this->assertNull($this->loader->getActiveTemplate('ct-err'));
+		$this->assertNull($this->loader->getActiveTemplate('ct-err'));
 
-    }//end testGetActiveTemplateSwallowsSearchObjectsFailure()
+	}//end testGetActiveTemplateSwallowsSearchObjectsFailure()
 
-    /**
-     * No ObjectService (OpenRegister absent) returns null without querying.
-     *
-     * @return void
-     */
-    public function testGetActiveTemplateReturnsNullWithoutObjectService(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
+	/**
+	 * No ObjectService (OpenRegister absent) returns null without querying.
+	 *
+	 * @return void
+	 */
+	public function testGetActiveTemplateReturnsNullWithoutObjectService(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
 
-        $this->assertNull($this->loader->getActiveTemplate('ct-x'));
+		$this->assertNull($this->loader->getActiveTemplate('ct-x'));
 
-    }//end testGetActiveTemplateReturnsNullWithoutObjectService()
+	}//end testGetActiveTemplateReturnsNullWithoutObjectService()
 }//end class

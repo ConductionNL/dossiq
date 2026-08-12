@@ -49,73 +49,70 @@ namespace OCA\Procest\Service\Cmmn;
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md
  */
-class PlanItemTree
-{
-    /**
-     * Constructor.
-     *
-     * @param PlanItemTransitions $transitions Legal plan-item transition table.
-     */
-    public function __construct(
-        private readonly PlanItemTransitions $transitions,
-    ) {
-    }//end __construct()
+class PlanItemTree {
+	/**
+	 * Constructor.
+	 *
+	 * @param PlanItemTransitions $transitions Legal plan-item transition table.
+	 */
+	public function __construct(
+		private readonly PlanItemTransitions $transitions,
+	) {
+	}//end __construct()
 
-    /**
-     * Whether an item's containing stage is active (root items — no parent —
-     * are always considered active).
-     *
-     * @param array<string, mixed> $item  The plan item.
-     * @param array<string, mixed> $state Runtime state.
-     *
-     * @return bool
-     *
-     * @spec openspec/specs/cmmn-adaptive-case/spec.md
-     */
-    public function isParentActive(array $item, array $state): bool
-    {
-        $parentId = $item['parentId'] ?? null;
-        if ($parentId === null || $parentId === '') {
-            return true;
-        }
+	/**
+	 * Whether an item's containing stage is active (root items — no parent —
+	 * are always considered active).
+	 *
+	 * @param array<string, mixed> $item The plan item.
+	 * @param array<string, mixed> $state Runtime state.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/cmmn-adaptive-case/spec.md
+	 */
+	public function isParentActive(array $item, array $state): bool {
+		$parentId = $item['parentId'] ?? null;
+		if ($parentId === null || $parentId === '') {
+			return true;
+		}
 
-        return ($state['planItemStates'][$parentId] ?? $this->transitions->initialState()) === PlanItemTransitions::STATE_ACTIVE;
-    }//end isParentActive()
+		return ($state['planItemStates'][$parentId] ?? $this->transitions->initialState()) === PlanItemTransitions::STATE_ACTIVE;
+	}//end isParentActive()
 
-    /**
-     * Whether every mandatory (non-discretionary) direct child of a stage is
-     * in a terminal state. A stage with no mandatory children never
-     * auto-completes from this rule (it stays active until an exit sentry
-     * fires or is otherwise driven, since "all zero of zero children are
-     * terminal" would trivially auto-complete it on activation).
-     *
-     * @param string                              $stageId   Stage plan-item id.
-     * @param array<string, array<string, mixed>> $itemsById Plan items by id.
-     * @param array<string, mixed>                $state     Runtime state.
-     *
-     * @return bool
-     *
-     * @spec openspec/specs/cmmn-adaptive-case/spec.md
-     */
-    public function stageMandatoryChildrenAllTerminal(string $stageId, array $itemsById, array $state): bool
-    {
-        $mandatoryFound = false;
-        foreach ($itemsById as $id => $item) {
-            if (($item['parentId'] ?? null) !== $stageId) {
-                continue;
-            }
+	/**
+	 * Whether every mandatory (non-discretionary) direct child of a stage is
+	 * in a terminal state. A stage with no mandatory children never
+	 * auto-completes from this rule (it stays active until an exit sentry
+	 * fires or is otherwise driven, since "all zero of zero children are
+	 * terminal" would trivially auto-complete it on activation).
+	 *
+	 * @param string $stageId Stage plan-item id.
+	 * @param array<string, array<string, mixed>> $itemsById Plan items by id.
+	 * @param array<string, mixed> $state Runtime state.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/cmmn-adaptive-case/spec.md
+	 */
+	public function stageMandatoryChildrenAllTerminal(string $stageId, array $itemsById, array $state): bool {
+		$mandatoryFound = false;
+		foreach ($itemsById as $id => $item) {
+			if (($item['parentId'] ?? null) !== $stageId) {
+				continue;
+			}
 
-            if (($item['discretionary'] ?? false) === true) {
-                continue;
-            }
+			if (($item['discretionary'] ?? false) === true) {
+				continue;
+			}
 
-            $mandatoryFound = true;
-            $childState     = $state['planItemStates'][$id] ?? $this->transitions->initialState();
-            if ($this->transitions->isTerminal(state: $childState) === false) {
-                return false;
-            }
-        }
+			$mandatoryFound = true;
+			$childState = $state['planItemStates'][$id] ?? $this->transitions->initialState();
+			if ($this->transitions->isTerminal(state: $childState) === false) {
+				return false;
+			}
+		}
 
-        return $mandatoryFound;
-    }//end stageMandatoryChildrenAllTerminal()
+		return $mandatoryFound;
+	}//end stageMandatoryChildrenAllTerminal()
 }//end class

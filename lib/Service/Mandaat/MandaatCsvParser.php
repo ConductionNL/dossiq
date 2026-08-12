@@ -44,97 +44,93 @@ use RuntimeException;
  *
  * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
  */
-class MandaatCsvParser
-{
-    /**
-     * Columns an import CSV must carry.
-     *
-     * These are CSV HEADERS, not schema property names — an external input
-     * contract that operators' existing files already use. They deliberately do
-     * NOT move with the mandaat -> mandate rename; MandaatImportService maps
-     * them onto the renamed properties and accepts either spelling. Renaming
-     * them here would reject every import file in the field.
-     *
-     * @var string[]
-     */
-    public const REQUIRED_COLUMNS = ['mandaatNummer', 'omschrijving', 'rolNaam', 'plafondCents'];
+class MandaatCsvParser {
+	/**
+	 * Columns an import CSV must carry.
+	 *
+	 * These are CSV HEADERS, not schema property names — an external input
+	 * contract that operators' existing files already use. They deliberately do
+	 * NOT move with the mandaat -> mandate rename; MandaatImportService maps
+	 * them onto the renamed properties and accepts either spelling. Renaming
+	 * them here would reject every import file in the field.
+	 *
+	 * @var string[]
+	 */
+	public const REQUIRED_COLUMNS = ['mandaatNummer', 'omschrijving', 'rolNaam', 'plafondCents'];
 
-    /**
-     * Values a boolean CSV cell may carry for "true".
-     *
-     * @var string[]
-     */
-    private const TRUTHY_VALUES = ['1', 'true', 'ja', 'yes', 'y'];
+	/**
+	 * Values a boolean CSV cell may carry for "true".
+	 *
+	 * @var string[]
+	 */
+	private const TRUTHY_VALUES = ['1', 'true', 'ja', 'yes', 'y'];
 
-    /**
-     * Parse RFC-4180-ish CSV with first row = header.
-     *
-     * @param string $csv CSV.
-     *
-     * @return array<int, array<string, string>> The data rows keyed by header name.
-     *
-     * @throws RuntimeException When a required column is missing from the header.
-     *
-     * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
-     */
-    public function parse(string $csv): array
-    {
-        $lines = preg_split('/\r\n|\n|\r/', trim($csv));
-        if ($lines === false || count($lines) < 2) {
-            return [];
-        }
+	/**
+	 * Parse RFC-4180-ish CSV with first row = header.
+	 *
+	 * @param string $csv CSV.
+	 *
+	 * @return array<int, array<string, string>> The data rows keyed by header name.
+	 *
+	 * @throws RuntimeException When a required column is missing from the header.
+	 *
+	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	public function parse(string $csv): array {
+		$lines = preg_split('/\r\n|\n|\r/', trim($csv));
+		if ($lines === false || count($lines) < 2) {
+			return [];
+		}
 
-        $header  = str_getcsv($lines[0]);
-        $missing = array_diff(self::REQUIRED_COLUMNS, $header);
-        if (count($missing) > 0) {
-            throw new RuntimeException('Missing required CSV columns: '.implode(', ', $missing));
-        }
+		$header = str_getcsv($lines[0]);
+		$missing = array_diff(self::REQUIRED_COLUMNS, $header);
+		if (count($missing) > 0) {
+			throw new RuntimeException('Missing required CSV columns: ' . implode(', ', $missing));
+		}
 
-        $rows      = [];
-        $lineCount = count($lines);
-        for ($i = 1; $i < $lineCount; $i++) {
-            $line = trim((string) $lines[$i]);
-            if ($line === '') {
-                continue;
-            }
+		$rows = [];
+		$lineCount = count($lines);
+		for ($i = 1; $i < $lineCount; $i++) {
+			$line = trim((string)$lines[$i]);
+			if ($line === '') {
+				continue;
+			}
 
-            $values = str_getcsv($line);
-            $rows[] = array_combine($header, array_pad($values, count($header), ''));
-        }
+			$values = str_getcsv($line);
+			$rows[] = array_combine($header, array_pad($values, count($header), ''));
+		}
 
-        return $rows;
-    }//end parse()
+		return $rows;
+	}//end parse()
 
-    /**
-     * Parse a boolean from CSV text.
-     *
-     * @param string $value Boolean text.
-     *
-     * @return bool True for `1`, `true`, `ja`, `yes` or `y` (case-insensitive).
-     *
-     * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
-     */
-    public function parseBool(string $value): bool
-    {
-        return in_array(strtolower(trim($value)), self::TRUTHY_VALUES, true);
-    }//end parseBool()
+	/**
+	 * Parse a boolean from CSV text.
+	 *
+	 * @param string $value Boolean text.
+	 *
+	 * @return bool True for `1`, `true`, `ja`, `yes` or `y` (case-insensitive).
+	 *
+	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	public function parseBool(string $value): bool {
+		return in_array(strtolower(trim($value)), self::TRUTHY_VALUES, true);
+	}//end parseBool()
 
-    /**
-     * Parse a semicolon-separated list from CSV text.
-     *
-     * @param string $value Semicolon-separated list.
-     *
-     * @return array<int, string> The trimmed, non-empty entries.
-     *
-     * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
-     */
-    public function parseList(string $value): array
-    {
-        $value = trim($value);
-        if ($value === '') {
-            return [];
-        }
+	/**
+	 * Parse a semicolon-separated list from CSV text.
+	 *
+	 * @param string $value Semicolon-separated list.
+	 *
+	 * @return array<int, string> The trimmed, non-empty entries.
+	 *
+	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
+	 */
+	public function parseList(string $value): array {
+		$value = trim($value);
+		if ($value === '') {
+			return [];
+		}
 
-        return array_values(array_filter(array_map('trim', explode(';', $value))));
-    }//end parseList()
+		return array_values(array_filter(array_map('trim', explode(';', $value))));
+	}//end parseList()
 }//end class

@@ -45,47 +45,45 @@ use Psr\Container\ContainerInterface;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class BrkRegistrar
-{
-    /**
-     * Register the BRK adapter.
-     *
-     * Authoritative parcel/ownership-reference lookup (brk-woz-register-adapters).
-     * Selected by `integration.brk.mode` (external-integrations-test-environments
-     * config-tier model). DEFAULT `log` = dormant (no external call).
-     * `test`/`live` binds the BrkApiAdapter (Kadaster Haal Centraal BRK Bevragen
-     * API v2) — see openspec/changes/brk-woz-register-adapters/design.md.
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        $context->registerService(
-            BrkAdapterInterface::class,
-            static function (ContainerInterface $c): BrkAdapterInterface {
-                $modeService = $c->get(IntegrationMode::class);
-                $mode        = $modeService->resolve(
-                    'brk',
-                    [
-                        IntegrationMode::TEST,
-                        IntegrationMode::LIVE,
-                    ]
-                );
-                if ($mode !== IntegrationMode::LOG) {
-                    return new BrkApiAdapter(
-                        clientService: $c->get('OCP\\Http\\Client\\IClientService'),
-                        mode: $modeService,
-                        mapper: $c->get(BrkResponseMapper::class),
-                        logger: $c->get('Psr\\Log\\LoggerInterface'),
-                    );
-                }
+class BrkRegistrar {
+	/**
+	 * Register the BRK adapter.
+	 *
+	 * Authoritative parcel/ownership-reference lookup (brk-woz-register-adapters).
+	 * Selected by `integration.brk.mode` (external-integrations-test-environments
+	 * config-tier model). DEFAULT `log` = dormant (no external call).
+	 * `test`/`live` binds the BrkApiAdapter (Kadaster Haal Centraal BRK Bevragen
+	 * API v2) — see openspec/changes/brk-woz-register-adapters/design.md.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		$context->registerService(
+			BrkAdapterInterface::class,
+			static function (ContainerInterface $c): BrkAdapterInterface {
+				$modeService = $c->get(IntegrationMode::class);
+				$mode = $modeService->resolve(
+					'brk',
+					[
+						IntegrationMode::TEST,
+						IntegrationMode::LIVE,
+					]
+				);
+				if ($mode !== IntegrationMode::LOG) {
+					return new BrkApiAdapter(
+						clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+						mode: $modeService,
+						mapper: $c->get(BrkResponseMapper::class),
+						logger: $c->get('Psr\\Log\\LoggerInterface'),
+					);
+				}
 
-                return $c->get(LogBrkAdapter::class);
-            }
-        );
-    }//end register()
+				return $c->get(LogBrkAdapter::class);
+			}
+		);
+	}//end register()
 }//end class

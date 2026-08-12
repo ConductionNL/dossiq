@@ -37,277 +37,269 @@ use Throwable;
 /**
  * Mandate-matrix authorisation guard for tenant actions.
  */
-class TenantAuthenticationService
-{
-    /**
-     * Default deny-everything matrix (fail-closed fallback).
-     *
-     * @var array<string, array<string, bool>>
-     */
-    private const DEFAULT_DENY_MATRIX = [];
+class TenantAuthenticationService {
+	/**
+	 * Default deny-everything matrix (fail-closed fallback).
+	 *
+	 * @var array<string, array<string, bool>>
+	 */
+	private const DEFAULT_DENY_MATRIX = [];
 
-    /**
-     * Constructor.
-     *
-     * @param IAppManager        $appManager App manager (for OR availability check).
-     * @param ContainerInterface $container  DI container.
-     * @param LoggerInterface    $logger     Logger.
-     */
-    public function __construct(
-        private readonly IAppManager $appManager,
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IAppManager $appManager App manager (for OR availability check).
+	 * @param ContainerInterface $container DI container.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly IAppManager $appManager,
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Validate a tenant action against the active mandate matrix.
-     *
-     * @param string $tenantId Tenant UUID.
-     * @param string $userId   NC user ID.
-     * @param string $action   Requested action (create|edit|status_update|delete|...).
-     *
-     * @return array{allowed: bool, reason: string} Decision payload.
-     */
-    public function validateMandateMatrix(string $tenantId, string $userId, string $action): array
-    {
-        try {
-            $matrix = $this->loadActiveMatrix(tenantId: $tenantId);
-            if ($matrix === null) {
-                return ['allowed' => false, 'reason' => 'No active mandate matrix for tenant'];
-            }
+	/**
+	 * Validate a tenant action against the active mandate matrix.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $userId NC user ID.
+	 * @param string $action Requested action (create|edit|status_update|delete|...).
+	 *
+	 * @return array{allowed: bool, reason: string} Decision payload.
+	 */
+	public function validateMandateMatrix(string $tenantId, string $userId, string $action): array {
+		try {
+			$matrix = $this->loadActiveMatrix(tenantId: $tenantId);
+			if ($matrix === null) {
+				return ['allowed' => false, 'reason' => 'No active mandate matrix for tenant'];
+			}
 
-            $role = $this->resolveUserRole(tenantId: $tenantId, userId: $userId);
-            if ($role === null) {
-                return ['allowed' => false, 'reason' => 'User has no role inside tenant'];
-            }
+			$role = $this->resolveUserRole(tenantId: $tenantId, userId: $userId);
+			if ($role === null) {
+				return ['allowed' => false, 'reason' => 'User has no role inside tenant'];
+			}
 
-            $allowed = $this->isAllowed(matrix: $matrix, role: $role, action: $action);
-            if ($allowed === true) {
-                return ['allowed' => true, 'reason' => 'Authorised by mandate matrix'];
-            }
+			$allowed = $this->isAllowed(matrix: $matrix, role: $role, action: $action);
+			if ($allowed === true) {
+				return ['allowed' => true, 'reason' => 'Authorised by mandate matrix'];
+			}
 
-            return ['allowed' => false, 'reason' => 'Role '.$role.' is not authorised for action '.$action];
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest: mandate matrix validation failed (fail-closed)',
-                ['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
-            );
-            return ['allowed' => false, 'reason' => 'Mandate validation error'];
-        }//end try
-    }//end validateMandateMatrix()
+			return ['allowed' => false, 'reason' => 'Role ' . $role . ' is not authorised for action ' . $action];
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest: mandate matrix validation failed (fail-closed)',
+				['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
+			);
+			return ['allowed' => false, 'reason' => 'Mandate validation error'];
+		}//end try
+	}//end validateMandateMatrix()
 
-    /**
-     * Check whether the matrix authorises (role, action).
-     *
-     * The matrix layout is `{role: {action: bool}}`. A wildcard role `*` or
-     * action `*` is honoured. Missing entries default to false (fail-closed).
-     *
-     * @param array<string, array<string, bool>> $matrix Active mandate matrix.
-     * @param string                             $role   Resolved user role.
-     * @param string                             $action Requested action.
-     *
-     * @return bool
-     */
-    public function isAllowed(array $matrix, string $role, string $action): bool
-    {
-        $roleEntry     = ($matrix[$role] ?? null);
-        $wildcardEntry = ($matrix['*'] ?? null);
+	/**
+	 * Check whether the matrix authorises (role, action).
+	 *
+	 * The matrix layout is `{role: {action: bool}}`. A wildcard role `*` or
+	 * action `*` is honoured. Missing entries default to false (fail-closed).
+	 *
+	 * @param array<string, array<string, bool>> $matrix Active mandate matrix.
+	 * @param string $role Resolved user role.
+	 * @param string $action Requested action.
+	 *
+	 * @return bool
+	 */
+	public function isAllowed(array $matrix, string $role, string $action): bool {
+		$roleEntry = ($matrix[$role] ?? null);
+		$wildcardEntry = ($matrix['*'] ?? null);
 
-        $candidates = [];
-        if (is_array($roleEntry) === true) {
-            $candidates[] = $roleEntry;
-        }
+		$candidates = [];
+		if (is_array($roleEntry) === true) {
+			$candidates[] = $roleEntry;
+		}
 
-        if (is_array($wildcardEntry) === true) {
-            $candidates[] = $wildcardEntry;
-        }
+		if (is_array($wildcardEntry) === true) {
+			$candidates[] = $wildcardEntry;
+		}
 
-        foreach ($candidates as $entry) {
-            if (($entry[$action] ?? false) === true) {
-                return true;
-            }
+		foreach ($candidates as $entry) {
+			if (($entry[$action] ?? false) === true) {
+				return true;
+			}
 
-            if (($entry['*'] ?? false) === true) {
-                return true;
-            }
-        }
+			if (($entry['*'] ?? false) === true) {
+				return true;
+			}
+		}
 
-        return false;
-    }//end isAllowed()
+		return false;
+	}//end isAllowed()
 
-    /**
-     * Load the active mandate matrix for the tenant.
-     *
-     * @param string $tenantId Tenant UUID.
-     *
-     * @return array<string, array<string, bool>>|null Active matrix or null.
-     */
-    public function loadActiveMatrix(string $tenantId): ?array
-    {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
+	/**
+	 * Load the active mandate matrix for the tenant.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 *
+	 * @return array<string, array<string, bool>>|null Active matrix or null.
+	 */
+	public function loadActiveMatrix(string $tenantId): ?array {
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
 
-        try {
-            // ObjectService::findAll() takes a single $config array — the previous
-            // named-argument form threw "Unknown named parameter $register" and
-            // was swallowed by the catch below. Register/schema live inside
-            // `filters`; limit/offset are top-level config keys.
-            $rows = $objectService->findAll(
-                [
-                    'filters' => [
-                        'register'  => TenantSaasService::REGISTER,
-                        'schema'    => 'tenantMandate',
-                        'tenantRef' => $tenantId,
-                    ],
-                    'limit'   => 50,
-                    'offset'  => 0,
-                ]
-            );
-        } catch (Throwable $e) {
-            return null;
-        }
+		try {
+			// ObjectService::findAll() takes a single $config array — the previous
+			// named-argument form threw "Unknown named parameter $register" and
+			// was swallowed by the catch below. Register/schema live inside
+			// `filters`; limit/offset are top-level config keys.
+			$rows = $objectService->findAll(
+				[
+					'filters' => [
+						'register' => TenantSaasService::REGISTER,
+						'schema' => 'tenantMandate',
+						'tenantRef' => $tenantId,
+					],
+					'limit' => 50,
+					'offset' => 0,
+				]
+			);
+		} catch (Throwable $e) {
+			return null;
+		}
 
-        if (is_array($rows) === false || count($rows) === 0) {
-            return null;
-        }
+		if (is_array($rows) === false || count($rows) === 0) {
+			return null;
+		}
 
-        $active = $this->findActiveMandateRow(rows: $rows);
-        if ($active === null) {
-            return null;
-        }
+		$active = $this->findActiveMandateRow(rows: $rows);
+		if ($active === null) {
+			return null;
+		}
 
-        return $this->normaliseMatrix(matrixField: ($active['matrix'] ?? null));
-    }//end loadActiveMatrix()
+		return $this->normaliseMatrix(matrixField: ($active['matrix'] ?? null));
+	}//end loadActiveMatrix()
 
-    /**
-     * Pick the mandate row whose effective window contains "now".
-     *
-     * @param array<int, mixed> $rows The tenantMandate rows.
-     *
-     * @return mixed The active row, or null when none applies.
-     */
-    private function findActiveMandateRow(array $rows): mixed
-    {
-        $now = time();
-        foreach ($rows as $row) {
-            $from = strtotime((string) ($row['effectiveFrom'] ?? '1970-01-01'));
-            $to   = strtotime((string) ($row['effectiveTo'] ?? '2099-12-31'));
-            if ($from !== false && $to !== false && $from <= $now && $now <= $to) {
-                return $row;
-            }
-        }
+	/**
+	 * Pick the mandate row whose effective window contains "now".
+	 *
+	 * @param array<int, mixed> $rows The tenantMandate rows.
+	 *
+	 * @return mixed The active row, or null when none applies.
+	 */
+	private function findActiveMandateRow(array $rows): mixed {
+		$now = time();
+		foreach ($rows as $row) {
+			$from = strtotime((string)($row['effectiveFrom'] ?? '1970-01-01'));
+			$to = strtotime((string)($row['effectiveTo'] ?? '2099-12-31'));
+			if ($from !== false && $to !== false && $from <= $now && $now <= $to) {
+				return $row;
+			}
+		}
 
-        return null;
-    }//end findActiveMandateRow()
+		return null;
+	}//end findActiveMandateRow()
 
-    /**
-     * Normalise the `matrix` field of an active mandate row.
-     *
-     * @param mixed $matrixField The raw matrix value.
-     *
-     * @return array<string, array<string, bool>> The resolved matrix.
-     */
-    private function normaliseMatrix(mixed $matrixField): array
-    {
-        if (is_array($matrixField) === true) {
-            return $matrixField;
-        }
+	/**
+	 * Normalise the `matrix` field of an active mandate row.
+	 *
+	 * @param mixed $matrixField The raw matrix value.
+	 *
+	 * @return array<string, array<string, bool>> The resolved matrix.
+	 */
+	private function normaliseMatrix(mixed $matrixField): array {
+		if (is_array($matrixField) === true) {
+			return $matrixField;
+		}
 
-        if (is_string($matrixField) === true) {
-            $decoded = json_decode($matrixField, true);
-            if (is_array($decoded) === true) {
-                return $decoded;
-            }
+		if (is_string($matrixField) === true) {
+			$decoded = json_decode($matrixField, true);
+			if (is_array($decoded) === true) {
+				return $decoded;
+			}
 
-            return self::DEFAULT_DENY_MATRIX;
-        }
+			return self::DEFAULT_DENY_MATRIX;
+		}
 
-        // Fallback: a default role-action matrix when the active mandate row
-        // does not embed one. Mirrors the common municipal mandate template.
-        return [
-            'tenant_admin' => ['*' => true],
-            'case_handler' => ['create' => true, 'edit' => true, 'status_update' => true],
-            'viewer'       => [],
-        ];
-    }//end normaliseMatrix()
+		// Fallback: a default role-action matrix when the active mandate row
+		// does not embed one. Mirrors the common municipal mandate template.
+		return [
+			'tenant_admin' => ['*' => true],
+			'case_handler' => ['create' => true, 'edit' => true, 'status_update' => true],
+			'viewer' => [],
+		];
+	}//end normaliseMatrix()
 
-    /**
-     * Resolve the role for a user inside a tenant.
-     *
-     * @param string $tenantId Tenant UUID.
-     * @param string $userId   NC user ID.
-     *
-     * @return string|null Role name or null when unresolved.
-     *
-     * @spec openspec/specs/security-hardening/spec.md
-     */
-    public function resolveUserRole(string $tenantId, string $userId): ?string
-    {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
+	/**
+	 * Resolve the role for a user inside a tenant.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $userId NC user ID.
+	 *
+	 * @return string|null Role name or null when unresolved.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	public function resolveUserRole(string $tenantId, string $userId): ?string {
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
 
-        try {
-            // ObjectService::findAll() takes a single $config array — see the note
-            // above; register/schema live inside `filters`.
-            $rows = $objectService->findAll(
-                [
-                    'filters' => [
-                        'register'  => TenantSaasService::REGISTER,
-                        'schema'    => 'tenantUser',
-                        'tenantRef' => $tenantId,
-                        'userRef'   => $userId,
-                    ],
-                    'limit'   => 1,
-                    'offset'  => 0,
-                ]
-            );
-            if (is_array($rows) === true && count($rows) > 0) {
-                $row  = $rows[0];
-                $role = (string) ($row['role'] ?? '');
-                if ($role !== '') {
-                    return $role;
-                }
+		try {
+			// ObjectService::findAll() takes a single $config array — see the note
+			// above; register/schema live inside `filters`.
+			$rows = $objectService->findAll(
+				[
+					'filters' => [
+						'register' => TenantSaasService::REGISTER,
+						'schema' => 'tenantUser',
+						'tenantRef' => $tenantId,
+						'userRef' => $userId,
+					],
+					'limit' => 1,
+					'offset' => 0,
+				]
+			);
+			if (is_array($rows) === true && count($rows) > 0) {
+				$row = $rows[0];
+				$role = (string)($row['role'] ?? '');
+				if ($role !== '') {
+					return $role;
+				}
 
-                return null;
-            }
-        } catch (Throwable $e) {
-            // Fail CLOSED: a backend error is NOT "no role". Surfacing it as a
-            // null role would let the mandate-matrix caller treat the lookup as
-            // simply absent and silently fall open. Log it and re-throw so the
-            // single caller (validateMandateMatrix) denies the action.
-            $this->logger->error(
-                'Procest: resolveUserRole lookup failed (fail-closed)',
-                ['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
-            );
-            throw $e;
-        }//end try
+				return null;
+			}
+		} catch (Throwable $e) {
+			// Fail CLOSED: a backend error is NOT "no role". Surfacing it as a
+			// null role would let the mandate-matrix caller treat the lookup as
+			// simply absent and silently fall open. Log it and re-throw so the
+			// single caller (validateMandateMatrix) denies the action.
+			$this->logger->error(
+				'Procest: resolveUserRole lookup failed (fail-closed)',
+				['tenantId' => $tenantId, 'userId' => $userId, 'exception' => $e->getMessage()]
+			);
+			throw $e;
+		}//end try
 
-        return null;
-    }//end resolveUserRole()
+		return null;
+	}//end resolveUserRole()
 
-    /**
-     * Resolve OR's ObjectService when installed.
-     *
-     * @return mixed|null
-     */
-    private function getObjectService()
-    {
-        // IAppManager::getInstalledApps() declares its array return in PHPDoc
-        // only, so normalise defensively before the membership test.
-        $installed = (array) $this->appManager->getInstalledApps();
-        if (in_array('openregister', $installed, true) === false) {
-            return null;
-        }
+	/**
+	 * Resolve OR's ObjectService when installed.
+	 *
+	 * @return mixed|null
+	 */
+	private function getObjectService() {
+		// IAppManager::getInstalledApps() declares its array return in PHPDoc
+		// only, so normalise defensively before the membership test.
+		$installed = (array)$this->appManager->getInstalledApps();
+		if (in_array('openregister', $installed, true) === false) {
+			return null;
+		}
 
-        try {
-            return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-        } catch (Throwable $e) {
-            return null;
-        }
-    }//end getObjectService()
+		try {
+			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+		} catch (Throwable $e) {
+			return null;
+		}
+	}//end getObjectService()
 }//end class

@@ -34,41 +34,40 @@ use Psr\Log\LoggerInterface;
  * named arguments with "Unknown named parameter"; this typed interface lets
  * PHPUnit generate a mock whose signature accepts them.
  */
-interface HearingObjectServiceStub
-{
-    /**
-     * Find a single object by ID.
-     *
-     * @param string $register Register slug
-     * @param string $schema   Schema slug
-     * @param string $id       Object UUID
-     *
-     * @return array<string,mixed>|null
-     */
-    public function findObject(string $register, string $schema, string $id): ?array;
+interface HearingObjectServiceStub {
+	/**
+	 * Find a single object by ID.
+	 *
+	 * @param string $register Register slug
+	 * @param string $schema Schema slug
+	 * @param string $id Object UUID
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	public function findObject(string $register, string $schema, string $id): ?array;
 
-    /**
-     * Find objects matching a filter.
-     *
-     * @param string              $register Register slug
-     * @param string              $schema   Schema slug
-     * @param array<string,mixed> $filters  Filter criteria
-     *
-     * @return array<int,array<string,mixed>>
-     */
-    public function findObjects(string $register, string $schema, array $filters): array;
+	/**
+	 * Find objects matching a filter.
+	 *
+	 * @param string $register Register slug
+	 * @param string $schema Schema slug
+	 * @param array<string,mixed> $filters Filter criteria
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	public function findObjects(string $register, string $schema, array $filters): array;
 
-    /**
-     * Save or update an object.
-     *
-     * @param array<string,mixed> $object   Object data
-     * @param string              $register Register slug
-     * @param string              $schema   Schema slug
-     * @param string|null         $uuid     Optional object UUID for updates
-     *
-     * @return array<string,mixed>
-     */
-    public function saveObject(array $object, string $register, string $schema, ?string $uuid=null): array;
+	/**
+	 * Save or update an object.
+	 *
+	 * @param array<string,mixed> $object Object data
+	 * @param string $register Register slug
+	 * @param string $schema Schema slug
+	 * @param string|null $uuid Optional object UUID for updates
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
 }//end interface
 
 /**
@@ -76,165 +75,156 @@ interface HearingObjectServiceStub
  *
  * @covers \OCA\Procest\Service\HearingService
  */
-class HearingServiceTest extends TestCase
-{
+class HearingServiceTest extends TestCase {
 
-    /**
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private SettingsService $settingsService;
+	/**
+	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private SettingsService $settingsService;
 
-    /**
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * @var HearingService
-     */
-    private HearingService $service;
+	/**
+	 * @var HearingService
+	 */
+	private HearingService $service;
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-        $this->service = new HearingService(
-            settingsService: $this->settingsService,
-            logger: $this->logger,
-        );
-    }//end setUp()
+		$this->service = new HearingService(
+			settingsService: $this->settingsService,
+			logger: $this->logger,
+		);
+	}//end setUp()
 
-    /**
-     * scheduleHearing: throws when datum is missing.
-     *
-     * @return void
-     */
-    public function testScheduleHearingThrowsWhenDatumMissing(): void
-    {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessageMatches('/datum/i');
+	/**
+	 * scheduleHearing: throws when datum is missing.
+	 *
+	 * @return void
+	 */
+	public function testScheduleHearingThrowsWhenDatumMissing(): void {
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessageMatches('/datum/i');
 
-        $this->service->scheduleHearing('complaint-uuid', ['type' => 'fysiek']);
-    }//end testScheduleHearingThrowsWhenDatumMissing()
+		$this->service->scheduleHearing('complaint-uuid', ['type' => 'fysiek']);
+	}//end testScheduleHearingThrowsWhenDatumMissing()
 
-    /**
-     * scheduleHearing: throws when type is missing.
-     *
-     * @return void
-     */
-    public function testScheduleHearingThrowsWhenTypeMissing(): void
-    {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessageMatches('/type/i');
+	/**
+	 * scheduleHearing: throws when type is missing.
+	 *
+	 * @return void
+	 */
+	public function testScheduleHearingThrowsWhenTypeMissing(): void {
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessageMatches('/type/i');
 
-        $this->service->scheduleHearing('complaint-uuid', ['datum' => '2026-04-01T10:00:00']);
-    }//end testScheduleHearingThrowsWhenTypeMissing()
+		$this->service->scheduleHearing('complaint-uuid', ['datum' => '2026-04-01T10:00:00']);
+	}//end testScheduleHearingThrowsWhenTypeMissing()
 
-    /**
-     * scheduleHearing: throws when OpenRegister is not available.
-     *
-     * @return void
-     */
-    public function testScheduleHearingThrowsWhenOpenRegisterUnavailable(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
+	/**
+	 * scheduleHearing: throws when OpenRegister is not available.
+	 *
+	 * @return void
+	 */
+	public function testScheduleHearingThrowsWhenOpenRegisterUnavailable(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
 
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessageMatches('/OpenRegister/i');
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessageMatches('/OpenRegister/i');
 
-        $this->service->scheduleHearing('complaint-uuid', [
-            'datum' => '2026-04-01T10:00:00',
-            'type'  => 'fysiek',
-        ]);
-    }//end testScheduleHearingThrowsWhenOpenRegisterUnavailable()
+		$this->service->scheduleHearing('complaint-uuid', [
+			'datum' => '2026-04-01T10:00:00',
+			'type' => 'fysiek',
+		]);
+	}//end testScheduleHearingThrowsWhenOpenRegisterUnavailable()
 
-    /**
-     * scheduleHearing: succeeds for a fysiek hearing.
-     *
-     * @return void
-     */
-    public function testScheduleHearingSucceedsForFysiekHearing(): void
-    {
-        $objectServiceMock = $this->createMock(HearingObjectServiceStub::class);
-        $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-        $this->settingsService
-            ->method('getConfigValue')
-            ->willReturnMap([
-                ['register', '', 'procest'],
-                ['hearing_schema', '', 'hearing'],
-            ]);
+	/**
+	 * scheduleHearing: succeeds for a fysiek hearing.
+	 *
+	 * @return void
+	 */
+	public function testScheduleHearingSucceedsForFysiekHearing(): void {
+		$objectServiceMock = $this->createMock(HearingObjectServiceStub::class);
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService
+			->method('getConfigValue')
+			->willReturnMap([
+				['register', '', 'procest'],
+				['hearing_schema', '', 'hearing'],
+			]);
 
-        $savedHearing = [
-            'complaint' => 'complaint-uuid',
-            'datum'     => '2026-04-01T10:00:00',
-            'type'      => 'fysiek',
-            'locatie'   => 'Stadhuis kamer 12',
-        ];
+		$savedHearing = [
+			'complaint' => 'complaint-uuid',
+			'datum' => '2026-04-01T10:00:00',
+			'type' => 'fysiek',
+			'locatie' => 'Stadhuis kamer 12',
+		];
 
-        $objectServiceMock->method('saveObject')->willReturn($savedHearing);
+		$objectServiceMock->method('saveObject')->willReturn($savedHearing);
 
-        $result = $this->service->scheduleHearing('complaint-uuid', [
-            'datum'   => '2026-04-01T10:00:00',
-            'type'    => 'fysiek',
-            'locatie' => 'Stadhuis kamer 12',
-        ]);
+		$result = $this->service->scheduleHearing('complaint-uuid', [
+			'datum' => '2026-04-01T10:00:00',
+			'type' => 'fysiek',
+			'locatie' => 'Stadhuis kamer 12',
+		]);
 
-        $this->assertSame('complaint-uuid', $result['complaint']);
-        $this->assertSame('fysiek', $result['type']);
-    }//end testScheduleHearingSucceedsForFysiekHearing()
+		$this->assertSame('complaint-uuid', $result['complaint']);
+		$this->assertSame('fysiek', $result['type']);
+	}//end testScheduleHearingSucceedsForFysiekHearing()
 
-    /**
-     * recordOutcome: throws when verslag is empty.
-     *
-     * @return void
-     */
-    public function testRecordOutcomeThrowsWhenVerslagMissing(): void
-    {
-        $this->expectException(\RuntimeException::class);
-        $this->expectExceptionMessageMatches('/Verslag/i');
+	/**
+	 * recordOutcome: throws when verslag is empty.
+	 *
+	 * @return void
+	 */
+	public function testRecordOutcomeThrowsWhenVerslagMissing(): void {
+		$this->expectException(\RuntimeException::class);
+		$this->expectExceptionMessageMatches('/Verslag/i');
 
-        $this->service->recordOutcome('hearing-uuid', ['conclusie' => 'geen bezwaar']);
-    }//end testRecordOutcomeThrowsWhenVerslagMissing()
+		$this->service->recordOutcome('hearing-uuid', ['conclusie' => 'geen bezwaar']);
+	}//end testRecordOutcomeThrowsWhenVerslagMissing()
 
-    /**
-     * recordOutcome: succeeds with verslag present.
-     *
-     * @return void
-     */
-    public function testRecordOutcomeSucceedsWithVerslag(): void
-    {
-        $objectServiceMock = $this->createMock(HearingObjectServiceStub::class);
-        $this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
-        $this->settingsService->method('getConfigValue')->willReturn('procest');
+	/**
+	 * recordOutcome: succeeds with verslag present.
+	 *
+	 * @return void
+	 */
+	public function testRecordOutcomeSucceedsWithVerslag(): void {
+		$objectServiceMock = $this->createMock(HearingObjectServiceStub::class);
+		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
+		$this->settingsService->method('getConfigValue')->willReturn('procest');
 
-        $outcome = [
-            'verslag'       => 'Klager heeft zijn standpunt toegelicht.',
-            'conclusie'     => 'Klacht gegrond',
-            'datumAfgerond' => '2026-04-01',
-        ];
+		$outcome = [
+			'verslag' => 'Klager heeft zijn standpunt toegelicht.',
+			'conclusie' => 'Klacht gegrond',
+			'datumAfgerond' => '2026-04-01',
+		];
 
-        $objectServiceMock->method('saveObject')->willReturn($outcome);
+		$objectServiceMock->method('saveObject')->willReturn($outcome);
 
-        $result = $this->service->recordOutcome('hearing-uuid', $outcome);
-        $this->assertSame('Klager heeft zijn standpunt toegelicht.', $result['verslag']);
-    }//end testRecordOutcomeSucceedsWithVerslag()
+		$result = $this->service->recordOutcome('hearing-uuid', $outcome);
+		$this->assertSame('Klager heeft zijn standpunt toegelicht.', $result['verslag']);
+	}//end testRecordOutcomeSucceedsWithVerslag()
 
-    /**
-     * getHearingsForComplaint: returns empty array when OpenRegister unavailable.
-     *
-     * @return void
-     */
-    public function testGetHearingsForComplaintReturnsEmptyWhenUnavailable(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
-        $result = $this->service->getHearingsForComplaint('complaint-uuid');
-        $this->assertSame([], $result);
-    }//end testGetHearingsForComplaintReturnsEmptyWhenUnavailable()
+	/**
+	 * getHearingsForComplaint: returns empty array when OpenRegister unavailable.
+	 *
+	 * @return void
+	 */
+	public function testGetHearingsForComplaintReturnsEmptyWhenUnavailable(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
+		$result = $this->service->getHearingsForComplaint('complaint-uuid');
+		$this->assertSame([], $result);
+	}//end testGetHearingsForComplaintReturnsEmptyWhenUnavailable()
 
 }//end class

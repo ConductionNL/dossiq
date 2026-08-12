@@ -57,88 +57,86 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
  */
-class KpiCacheInvalidationListener implements IEventListener
-{
+class KpiCacheInvalidationListener implements IEventListener {
 
-    /**
-     * Cache prefix for KPI version keys.
-     */
-    private const CACHE_PREFIX = 'procest_kpis_';
+	/**
+	 * Cache prefix for KPI version keys.
+	 */
+	private const CACHE_PREFIX = 'procest_kpis_';
 
-    /**
-     * Cache key suffix for the version counter.
-     */
-    private const VERSION_SUFFIX = '_ver';
+	/**
+	 * Cache key suffix for the version counter.
+	 */
+	private const VERSION_SUFFIX = '_ver';
 
-    /**
-     * The local cache instance.
-     *
-     * @var ICache The local APCu cache
-     */
-    private ICache $cache;
+	/**
+	 * The local cache instance.
+	 *
+	 * @var ICache The local APCu cache
+	 */
+	private ICache $cache;
 
-    /**
-     * Constructor.
-     *
-     * @param ICacheFactory   $cacheFactory The cache factory
-     * @param IUserSession    $userSession  The user session
-     * @param LoggerInterface $logger       Logger
-     *
-     * @return void
-     */
-    public function __construct(
-        ICacheFactory $cacheFactory,
-        private IUserSession $userSession,
-        private LoggerInterface $logger,
-    ) {
-        $this->cache = $cacheFactory->createLocal(Application::APP_ID);
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param ICacheFactory $cacheFactory The cache factory
+	 * @param IUserSession $userSession The user session
+	 * @param LoggerInterface $logger Logger
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		ICacheFactory $cacheFactory,
+		private IUserSession $userSession,
+		private LoggerInterface $logger,
+	) {
+		$this->cache = $cacheFactory->createLocal(Application::APP_ID);
+	}//end __construct()
 
-    /**
-     * Handle an OpenRegister object lifecycle event.
-     *
-     * Increments the version counter for the current user's KPI cache,
-     * causing the next KpiController request to recompute from the DB.
-     *
-     * @param Event $event The dispatched event
-     *
-     * @return void
-     *
-     * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
-     */
-    public function handle(Event $event): void
-    {
-        if (($event instanceof ObjectCreatedEvent) === false
-            && ($event instanceof ObjectUpdatedEvent) === false
-            && ($event instanceof ObjectDeletedEvent) === false
-        ) {
-            return;
-        }
+	/**
+	 * Handle an OpenRegister object lifecycle event.
+	 *
+	 * Increments the version counter for the current user's KPI cache,
+	 * causing the next KpiController request to recompute from the DB.
+	 *
+	 * @param Event $event The dispatched event
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T12
+	 */
+	public function handle(Event $event): void {
+		if (($event instanceof ObjectCreatedEvent) === false
+			&& ($event instanceof ObjectUpdatedEvent) === false
+			&& ($event instanceof ObjectDeletedEvent) === false
+		) {
+			return;
+		}
 
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return;
-        }
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return;
+		}
 
-        $userId     = $user->getUID();
-        $versionKey = self::CACHE_PREFIX.$userId.self::VERSION_SUFFIX;
+		$userId = $user->getUID();
+		$versionKey = self::CACHE_PREFIX . $userId . self::VERSION_SUFFIX;
 
-        try {
-            $current    = $this->cache->get($versionKey);
-            $newVersion = 2;
-            if ($current !== null) {
-                $newVersion = ((int) $current) + 1;
-            }
+		try {
+			$current = $this->cache->get($versionKey);
+			$newVersion = 2;
+			if ($current !== null) {
+				$newVersion = ((int)$current) + 1;
+			}
 
-            $this->cache->set($versionKey, $newVersion);
-        } catch (\Exception $e) {
-            $this->logger->debug(
-                '[KpiCacheInvalidationListener] Failed to increment version key',
-                [
-                    'key'   => $versionKey,
-                    'error' => $e->getMessage(),
-                ]
-            );
-        }//end try
-    }//end handle()
+			$this->cache->set($versionKey, $newVersion);
+		} catch (\Exception $e) {
+			$this->logger->debug(
+				'[KpiCacheInvalidationListener] Failed to increment version key',
+				[
+					'key' => $versionKey,
+					'error' => $e->getMessage(),
+				]
+			);
+		}//end try
+	}//end handle()
 }//end class

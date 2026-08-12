@@ -46,159 +46,155 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * @spec openspec/specs/archief-edepot-handover/spec.md
  */
-class LegalHoldApplier
-{
-    /**
-     * Walk the candidate cases, reporting each and holding it when applying.
-     *
-     * @param array<string, array<string, mixed>> $candidates       Cases keyed by UUID.
-     * @param object                              $objectMapper     OpenRegister object mapper.
-     * @param object                              $legalHoldService OpenRegister legal hold service.
-     * @param bool                                $apply            Whether to write.
-     * @param bool                                $includeDeleted   Whether soft-deleted cases are in scope.
-     * @param OutputInterface                     $output           Console output.
-     *
-     * @return int Symfony command exit code.
-     *
-     * @spec openspec/specs/archief-edepot-handover/spec.md
-     */
-    public function reportAndApply(
-        array $candidates,
-        object $objectMapper,
-        object $legalHoldService,
-        bool $apply,
-        bool $includeDeleted,
-        OutputInterface $output
-    ): int {
-        $held       = 0;
-        $already    = 0;
-        $unresolved = 0;
+class LegalHoldApplier {
+	/**
+	 * Walk the candidate cases, reporting each and holding it when applying.
+	 *
+	 * @param array<string, array<string, mixed>> $candidates Cases keyed by UUID.
+	 * @param object $objectMapper OpenRegister object mapper.
+	 * @param object $legalHoldService OpenRegister legal hold service.
+	 * @param bool $apply Whether to write.
+	 * @param bool $includeDeleted Whether soft-deleted cases are in scope.
+	 * @param OutputInterface $output Console output.
+	 *
+	 * @return int Symfony command exit code.
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	public function reportAndApply(
+		array $candidates,
+		object $objectMapper,
+		object $legalHoldService,
+		bool $apply,
+		bool $includeDeleted,
+		OutputInterface $output,
+	): int {
+		$held = 0;
+		$already = 0;
+		$unresolved = 0;
 
-        $output->writeln('');
-        $output->writeln('<info>Cases with at least one OPEN Awb proceeding:</info>');
+		$output->writeln('');
+		$output->writeln('<info>Cases with at least one OPEN Awb proceeding:</info>');
 
-        foreach ($candidates as $caseId => $meta) {
-            $caseObject = $this->findCase(
-                objectMapper: $objectMapper,
-                caseId: (string) $caseId,
-                includeDeleted: $includeDeleted
-            );
+		foreach ($candidates as $caseId => $meta) {
+			$caseObject = $this->findCase(
+				objectMapper: $objectMapper,
+				caseId: (string)$caseId,
+				includeDeleted: $includeDeleted
+			);
 
-            if ($caseObject === null) {
-                // A dangling reference: the proceeding names a case that does not
-                // exist (or is soft-deleted and not in scope). Reported, never
-                // silently dropped — a hold that cannot be placed is a finding.
-                $output->writeln('  <comment>[unresolved]</comment> '.$caseId.' — '.$this->describe(meta: $meta));
-                $unresolved++;
-                continue;
-            }
+			if ($caseObject === null) {
+				// A dangling reference: the proceeding names a case that does not
+				// exist (or is soft-deleted and not in scope). Reported, never
+				// silently dropped — a hold that cannot be placed is a finding.
+				$output->writeln('  <comment>[unresolved]</comment> ' . $caseId . ' — ' . $this->describe(meta: $meta));
+				$unresolved++;
+				continue;
+			}
 
-            if ($legalHoldService->hasActiveHold($caseObject) === true) {
-                $output->writeln('  <comment>[already held]</comment> '.$caseId.' — '.$this->describe(meta: $meta));
-                $already++;
-                continue;
-            }
+			if ($legalHoldService->hasActiveHold($caseObject) === true) {
+				$output->writeln('  <comment>[already held]</comment> ' . $caseId . ' — ' . $this->describe(meta: $meta));
+				$already++;
+				continue;
+			}
 
-            if ($apply === false) {
-                $output->writeln('  <info>[would hold]</info> '.$caseId.' — '.$this->describe(meta: $meta));
-                $held++;
-                continue;
-            }
+			if ($apply === false) {
+				$output->writeln('  <info>[would hold]</info> ' . $caseId . ' — ' . $this->describe(meta: $meta));
+				$held++;
+				continue;
+			}
 
-            try {
-                $legalHoldService->placeHold($caseObject, $this->reasonFor(meta: $meta));
-                $output->writeln('  <info>[HELD]</info> '.$caseId.' — '.$this->describe(meta: $meta));
-                $held++;
-            } catch (\Throwable $e) {
-                $output->writeln('  <error>[FAILED]</error> '.$caseId.' — '.$e->getMessage());
-                $unresolved++;
-            }
-        }//end foreach
+			try {
+				$legalHoldService->placeHold($caseObject, $this->reasonFor(meta: $meta));
+				$output->writeln('  <info>[HELD]</info> ' . $caseId . ' — ' . $this->describe(meta: $meta));
+				$held++;
+			} catch (\Throwable $e) {
+				$output->writeln('  <error>[FAILED]</error> ' . $caseId . ' — ' . $e->getMessage());
+				$unresolved++;
+			}
+		}//end foreach
 
-        $output->writeln('');
-        $heldLabel = '  would hold  = ';
-        if ($apply === true) {
-            $heldLabel = '  held        = ';
-        }
+		$output->writeln('');
+		$heldLabel = '  would hold  = ';
+		if ($apply === true) {
+			$heldLabel = '  held        = ';
+		}
 
-        $output->writeln('  candidates  = '.count($candidates));
-        $output->writeln($heldLabel.$held);
-        $output->writeln('  already held= '.$already);
-        $output->writeln('  unresolved  = '.$unresolved);
+		$output->writeln('  candidates  = ' . count($candidates));
+		$output->writeln($heldLabel . $held);
+		$output->writeln('  already held= ' . $already);
+		$output->writeln('  unresolved  = ' . $unresolved);
 
-        if ($apply === false) {
-            $output->writeln('');
-            $output->writeln('<comment>Dry run — nothing was written. Re-run with --apply to place these holds.</comment>');
-        }
+		if ($apply === false) {
+			$output->writeln('');
+			$output->writeln('<comment>Dry run — nothing was written. Re-run with --apply to place these holds.</comment>');
+		}
 
-        return Command::SUCCESS;
-    }//end reportAndApply()
+		return Command::SUCCESS;
+	}//end reportAndApply()
 
-    /**
-     * Resolve a case ObjectEntity by UUID.
-     *
-     * Mirrors the fixed listener exactly (procest#693): `find()` with RBAC and
-     * multitenancy disabled, because occ has no session user and no active
-     * organisation, and an organisation-scoped read would find nothing and
-     * silently reopen the same hole this command exists to close.
-     *
-     * @param object $objectMapper   OpenRegister object mapper.
-     * @param string $caseId         The case UUID.
-     * @param bool   $includeDeleted Whether soft-deleted cases are in scope.
-     *
-     * @return object|null The case ObjectEntity, or null when unresolvable.
-     *
-     * @spec openspec/specs/archief-edepot-handover/spec.md
-     */
-    private function findCase(object $objectMapper, string $caseId, bool $includeDeleted): ?object
-    {
-        try {
-            $caseObject = $objectMapper->find(
-                identifier: $caseId,
-                includeDeleted: $includeDeleted,
-                _rbac: false,
-                _multitenancy: false
-            );
+	/**
+	 * Resolve a case ObjectEntity by UUID.
+	 *
+	 * Mirrors the fixed listener exactly (procest#693): `find()` with RBAC and
+	 * multitenancy disabled, because occ has no session user and no active
+	 * organisation, and an organisation-scoped read would find nothing and
+	 * silently reopen the same hole this command exists to close.
+	 *
+	 * @param object $objectMapper OpenRegister object mapper.
+	 * @param string $caseId The case UUID.
+	 * @param bool $includeDeleted Whether soft-deleted cases are in scope.
+	 *
+	 * @return object|null The case ObjectEntity, or null when unresolvable.
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function findCase(object $objectMapper, string $caseId, bool $includeDeleted): ?object {
+		try {
+			$caseObject = $objectMapper->find(
+				identifier: $caseId,
+				includeDeleted: $includeDeleted,
+				_rbac: false,
+				_multitenancy: false
+			);
 
-            if (is_object($caseObject) === true) {
-                return $caseObject;
-            }
+			if (is_object($caseObject) === true) {
+				return $caseObject;
+			}
 
-            return null;
-        } catch (\Throwable $e) {
-            return null;
-        }//end try
-    }//end findCase()
+			return null;
+		} catch (\Throwable $e) {
+			return null;
+		}//end try
+	}//end findCase()
 
-    /**
-     * Build the hold reason, naming the remediation so it is auditable.
-     *
-     * @param array<string, mixed> $meta Candidate metadata.
-     *
-     * @return string The reason recorded on the hold.
-     *
-     * @spec openspec/specs/archief-edepot-handover/spec.md
-     */
-    private function reasonFor(array $meta): string
-    {
-        $schemas = implode('/', ($meta['schemas'] ?? []));
+	/**
+	 * Build the hold reason, naming the remediation so it is auditable.
+	 *
+	 * @param array<string, mixed> $meta Candidate metadata.
+	 *
+	 * @return string The reason recorded on the hold.
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function reasonFor(array $meta): string {
+		$schemas = implode('/', ($meta['schemas'] ?? []));
 
-        return 'Awb-procedure ('.$schemas.') geregistreerd — archivering opgeschort '
-            .'[backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; '
-            .'geplaatst op de datum van herstel, niet terugwerkend]';
-    }//end reasonFor()
+		return 'Awb-procedure (' . $schemas . ') geregistreerd — archivering opgeschort '
+			. '[backfill procest#694: hold ontbrak doordat de listener nooit heeft gelopen; '
+			. 'geplaatst op de datum van herstel, niet terugwerkend]';
+	}//end reasonFor()
 
-    /**
-     * Render a one-line description of a candidate.
-     *
-     * @param array<string, mixed> $meta Candidate metadata.
-     *
-     * @return string Human-readable description.
-     *
-     * @spec openspec/specs/archief-edepot-handover/spec.md
-     */
-    private function describe(array $meta): string
-    {
-        return ($meta['count'] ?? 0).' open proceeding(s): '.implode(', ', ($meta['schemas'] ?? []));
-    }//end describe()
+	/**
+	 * Render a one-line description of a candidate.
+	 *
+	 * @param array<string, mixed> $meta Candidate metadata.
+	 *
+	 * @return string Human-readable description.
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function describe(array $meta): string {
+		return ($meta['count'] ?? 0) . ' open proceeding(s): ' . implode(', ', ($meta['schemas'] ?? []));
+	}//end describe()
 }//end class

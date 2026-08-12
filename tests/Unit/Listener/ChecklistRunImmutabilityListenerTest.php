@@ -37,146 +37,138 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Listener\ChecklistRunImmutabilityListener
  */
-class ChecklistRunImmutabilityListenerTest extends TestCase
-{
-    /**
-     * Schema id the listener is configured to recognise.
-     */
-    private const SCHEMA = 'checklist-run-schema-id';
+class ChecklistRunImmutabilityListenerTest extends TestCase {
+	/**
+	 * Schema id the listener is configured to recognise.
+	 */
+	private const SCHEMA = 'checklist-run-schema-id';
 
-    /**
-     * The listener under test.
-     *
-     * @var ChecklistRunImmutabilityListener
-     */
-    private ChecklistRunImmutabilityListener $listener;
+	/**
+	 * The listener under test.
+	 *
+	 * @var ChecklistRunImmutabilityListener
+	 */
+	private ChecklistRunImmutabilityListener $listener;
 
-    /**
-     * Set up the listener.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $settingsService = $this->createMock(SettingsService::class);
-        $settingsService->method('getConfigValue')->willReturnCallback(
-            static function (string $key, string $default=''): string {
-                return $key === 'inspection_checklist_run_schema' ? self::SCHEMA : $default;
-            }
-        );
+	/**
+	 * Set up the listener.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$settingsService = $this->createMock(SettingsService::class);
+		$settingsService->method('getConfigValue')->willReturnCallback(
+			static function (string $key, string $default = ''): string {
+				return $key === 'inspection_checklist_run_schema' ? self::SCHEMA : $default;
+			}
+		);
 
-        $this->listener = new ChecklistRunImmutabilityListener(
-            $settingsService,
-            $this->createMock(LoggerInterface::class),
-        );
-    }//end setUp()
+		$this->listener = new ChecklistRunImmutabilityListener(
+			$settingsService,
+			$this->createMock(LoggerInterface::class),
+		);
+	}//end setUp()
 
-    /**
-     * Build a checklist-run entity.
-     *
-     * @param array<string, mixed> $payload  Run fields.
-     * @param string               $schemaId Schema id.
-     *
-     * @return ObjectEntity
-     */
-    private function entity(array $payload, string $schemaId=self::SCHEMA): ObjectEntity
-    {
-        $entity = new ObjectEntity();
-        $entity->setObject($payload);
-        $entity->setSchemaId($schemaId);
-        $entity->setUuid('33333333-3333-3333-3333-333333333333');
+	/**
+	 * Build a checklist-run entity.
+	 *
+	 * @param array<string, mixed> $payload Run fields.
+	 * @param string $schemaId Schema id.
+	 *
+	 * @return ObjectEntity
+	 */
+	private function entity(array $payload, string $schemaId = self::SCHEMA): ObjectEntity {
+		$entity = new ObjectEntity();
+		$entity->setObject($payload);
+		$entity->setSchemaId($schemaId);
+		$entity->setUuid('33333333-3333-3333-3333-333333333333');
 
-        return $entity;
-    }//end entity()
+		return $entity;
+	}//end entity()
 
-    /**
-     * A run still in progress may be edited freely — positive control.
-     *
-     * @return void
-     */
-    public function testRunInProgressMayBeEdited(): void
-    {
-        $event = new ObjectUpdatingEvent(
-            $this->entity(['status' => 'in_uitvoering', 'responses' => ['b']]),
-            $this->entity(['status' => 'in_uitvoering', 'responses' => ['a']])
-        );
+	/**
+	 * A run still in progress may be edited freely — positive control.
+	 *
+	 * @return void
+	 */
+	public function testRunInProgressMayBeEdited(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['status' => 'in_uitvoering', 'responses' => ['b']]),
+			$this->entity(['status' => 'in_uitvoering', 'responses' => ['a']])
+		);
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertFalse($event->isPropagationStopped());
-    }//end testRunInProgressMayBeEdited()
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testRunInProgressMayBeEdited()
 
-    /**
-     * The first submit (`in_uitvoering → ingediend`) is allowed through.
-     *
-     * @return void
-     */
-    public function testFirstSubmitIsAllowed(): void
-    {
-        $event = new ObjectUpdatingEvent(
-            $this->entity(['status' => 'ingediend', 'responses' => ['a']]),
-            $this->entity(['status' => 'in_uitvoering', 'responses' => ['a']])
-        );
+	/**
+	 * The first submit (`in_uitvoering → ingediend`) is allowed through.
+	 *
+	 * @return void
+	 */
+	public function testFirstSubmitIsAllowed(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['status' => 'ingediend', 'responses' => ['a']]),
+			$this->entity(['status' => 'in_uitvoering', 'responses' => ['a']])
+		);
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertFalse($event->isPropagationStopped());
-    }//end testFirstSubmitIsAllowed()
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testFirstSubmitIsAllowed()
 
-    /**
-     * Editing a protected field on a submitted run is rejected BEFORE the row
-     * is written.
-     *
-     * @return void
-     */
-    public function testEditingASubmittedRunIsRejectedPrePersist(): void
-    {
-        $event = new ObjectUpdatingEvent(
-            $this->entity(['status' => 'ingediend', 'responses' => ['tampered']]),
-            $this->entity(['status' => 'ingediend', 'responses' => ['original']])
-        );
+	/**
+	 * Editing a protected field on a submitted run is rejected BEFORE the row
+	 * is written.
+	 *
+	 * @return void
+	 */
+	public function testEditingASubmittedRunIsRejectedPrePersist(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['status' => 'ingediend', 'responses' => ['tampered']]),
+			$this->entity(['status' => 'ingediend', 'responses' => ['original']])
+		);
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertTrue(
-            $event->isPropagationStopped(),
-            'A submitted checklist run must be append-only'
-        );
-        $this->assertSame('Checklist run is append-only', $event->getErrors()['message'] ?? null);
-    }//end testEditingASubmittedRunIsRejectedPrePersist()
+		$this->assertTrue(
+			$event->isPropagationStopped(),
+			'A submitted checklist run must be append-only'
+		);
+		$this->assertSame('Checklist run is append-only', $event->getErrors()['message'] ?? null);
+	}//end testEditingASubmittedRunIsRejectedPrePersist()
 
-    /**
-     * A metadata-only refresh of a submitted run is not a material change and
-     * is allowed.
-     *
-     * @return void
-     */
-    public function testMetadataOnlyRefreshOfASubmittedRunIsAllowed(): void
-    {
-        $event = new ObjectUpdatingEvent(
-            $this->entity(['status' => 'ingediend', 'responses' => ['a'], 'updatedAt' => '2026-08-05']),
-            $this->entity(['status' => 'ingediend', 'responses' => ['a'], 'updatedAt' => '2026-08-04'])
-        );
+	/**
+	 * A metadata-only refresh of a submitted run is not a material change and
+	 * is allowed.
+	 *
+	 * @return void
+	 */
+	public function testMetadataOnlyRefreshOfASubmittedRunIsAllowed(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['status' => 'ingediend', 'responses' => ['a'], 'updatedAt' => '2026-08-05']),
+			$this->entity(['status' => 'ingediend', 'responses' => ['a'], 'updatedAt' => '2026-08-04'])
+		);
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertFalse($event->isPropagationStopped());
-    }//end testMetadataOnlyRefreshOfASubmittedRunIsAllowed()
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testMetadataOnlyRefreshOfASubmittedRunIsAllowed()
 
-    /**
-     * Another schema's objects are untouched.
-     *
-     * @return void
-     */
-    public function testForeignSchemaIsIgnored(): void
-    {
-        $event = new ObjectUpdatingEvent(
-            $this->entity(['status' => 'ingediend', 'responses' => ['x']], 'other-schema'),
-            $this->entity(['status' => 'ingediend', 'responses' => ['y']], 'other-schema')
-        );
+	/**
+	 * Another schema's objects are untouched.
+	 *
+	 * @return void
+	 */
+	public function testForeignSchemaIsIgnored(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['status' => 'ingediend', 'responses' => ['x']], 'other-schema'),
+			$this->entity(['status' => 'ingediend', 'responses' => ['y']], 'other-schema')
+		);
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertFalse($event->isPropagationStopped());
-    }//end testForeignSchemaIsIgnored()
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testForeignSchemaIsIgnored()
 }//end class

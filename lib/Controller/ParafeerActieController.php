@@ -47,142 +47,138 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  */
-class ParafeerActieController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string               $appName              The app name.
-     * @param IRequest             $request              The request object.
-     * @param ParafeerActieService $parafeerActieService The parafering action service.
-     * @param IUserSession         $userSession          The user session (for actor identity).
-     * @param LoggerInterface      $logger               The logger.
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly ParafeerActieService $parafeerActieService,
-        private readonly IUserSession $userSession,
-        private readonly LoggerInterface $logger,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class ParafeerActieController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name.
+	 * @param IRequest $request The request object.
+	 * @param ParafeerActieService $parafeerActieService The parafering action service.
+	 * @param IUserSession $userSession The user session (for actor identity).
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly ParafeerActieService $parafeerActieService,
+		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Record a parafering action for the current step of a voorstel.
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/changes/parafering-actions/tasks.md#T03
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     */
-    #[NoAdminRequired]
-    public function create(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(
-                ['message' => 'Not authorized for this parafering step'],
-                Http::STATUS_FORBIDDEN
-            );
-        }
+	/**
+	 * Record a parafering action for the current step of a voorstel.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/parafering-actions/tasks.md#T03
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 */
+	#[NoAdminRequired]
+	public function create(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(
+				['message' => 'Not authorized for this parafering step'],
+				Http::STATUS_FORBIDDEN
+			);
+		}
 
-        try {
-            $data       = $this->getRequestBody();
-            $voorstelId = (string) ($data['voorstel'] ?? '');
-            if ($voorstelId === '') {
-                return new JSONResponse(
-                    ['message' => 'voorstel is required'],
-                    Http::STATUS_BAD_REQUEST
-                );
-            }
+		try {
+			$data = $this->getRequestBody();
+			$voorstelId = (string)($data['voorstel'] ?? '');
+			if ($voorstelId === '') {
+				return new JSONResponse(
+					['message' => 'voorstel is required'],
+					Http::STATUS_BAD_REQUEST
+				);
+			}
 
-            $result = $this->parafeerActieService->recordAction($voorstelId, $data, $user);
+			$result = $this->parafeerActieService->recordAction($voorstelId, $data, $user);
 
-            return new JSONResponse($result, Http::STATUS_CREATED);
-        } catch (OCSForbiddenException $e) {
-            return new JSONResponse(
-                ['message' => 'Not authorized for this parafering step'],
-                Http::STATUS_FORBIDDEN
-            );
-        } catch (OCSBadRequestException $e) {
-            return new JSONResponse(
-                ['message' => $e->getMessage()],
-                Http::STATUS_BAD_REQUEST
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'ParafeerActieController::create failed',
-                ['exception' => $e->getMessage()]
-            );
-            return new JSONResponse(
-                ['message' => 'Operation failed'],
-                Http::STATUS_INTERNAL_SERVER_ERROR
-            );
-        }//end try
-    }//end create()
+			return new JSONResponse($result, Http::STATUS_CREATED);
+		} catch (OCSForbiddenException $e) {
+			return new JSONResponse(
+				['message' => 'Not authorized for this parafering step'],
+				Http::STATUS_FORBIDDEN
+			);
+		} catch (OCSBadRequestException $e) {
+			return new JSONResponse(
+				['message' => $e->getMessage()],
+				Http::STATUS_BAD_REQUEST
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'ParafeerActieController::create failed',
+				['exception' => $e->getMessage()]
+			);
+			return new JSONResponse(
+				['message' => 'Operation failed'],
+				Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}//end try
+	}//end create()
 
-    /**
-     * List parafeeracties for a voorstel.
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/changes/parafering-actions/tasks.md#T03
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     */
-    #[NoAdminRequired]
-    public function index(): JSONResponse
-    {
-        if ($this->userSession->getUser() === null) {
-            return new JSONResponse(
-                ['message' => 'Not authenticated'],
-                Http::STATUS_UNAUTHORIZED
-            );
-        }
+	/**
+	 * List parafeeracties for a voorstel.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/parafering-actions/tasks.md#T03
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 */
+	#[NoAdminRequired]
+	public function index(): JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return new JSONResponse(
+				['message' => 'Not authenticated'],
+				Http::STATUS_UNAUTHORIZED
+			);
+		}
 
-        try {
-            $voorstelId = (string) ($this->request->getParam('voorstel') ?? '');
-            if ($voorstelId === '') {
-                return new JSONResponse(
-                    ['message' => 'voorstel is required'],
-                    Http::STATUS_BAD_REQUEST
-                );
-            }
+		try {
+			$voorstelId = (string)($this->request->getParam('voorstel') ?? '');
+			if ($voorstelId === '') {
+				return new JSONResponse(
+					['message' => 'voorstel is required'],
+					Http::STATUS_BAD_REQUEST
+				);
+			}
 
-            $results = $this->parafeerActieService->listActions($voorstelId);
+			$results = $this->parafeerActieService->listActions($voorstelId);
 
-            return new JSONResponse($results, Http::STATUS_OK);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'ParafeerActieController::index failed',
-                ['exception' => $e->getMessage()]
-            );
-            return new JSONResponse(
-                ['message' => 'Operation failed'],
-                Http::STATUS_INTERNAL_SERVER_ERROR
-            );
-        }//end try
-    }//end index()
+			return new JSONResponse($results, Http::STATUS_OK);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'ParafeerActieController::index failed',
+				['exception' => $e->getMessage()]
+			);
+			return new JSONResponse(
+				['message' => 'Operation failed'],
+				Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}//end try
+	}//end index()
 
-    /**
-     * Parse the JSON request body.
-     *
-     * @return array<string, mixed>
-     */
-    private function getRequestBody(): array
-    {
-        $body = file_get_contents('php://input');
-        if ($body === false || $body === '') {
-            return [];
-        }
+	/**
+	 * Parse the JSON request body.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function getRequestBody(): array {
+		$body = file_get_contents('php://input');
+		if ($body === false || $body === '') {
+			return [];
+		}
 
-        $decoded = json_decode($body, true);
-        if (is_array($decoded) === true) {
-            return $decoded;
-        }
+		$decoded = json_decode($body, true);
+		if (is_array($decoded) === true) {
+			return $decoded;
+		}
 
-        return [];
-    }//end getRequestBody()
+		return [];
+	}//end getRequestBody()
 }//end class

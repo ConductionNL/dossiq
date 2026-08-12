@@ -35,7 +35,6 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Service\Subsidie;
 
-use DateTimeImmutable;
 use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\OCS\OCSBadRequestException;
 use Psr\Log\LoggerInterface;
@@ -48,182 +47,176 @@ use Throwable;
  *
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
-class VaststellingService
-{
-    /**
-     * Constructor.
-     *
-     * @param SettingsService       $settingsService Schema/register bridge.
-     * @param TerugvorderingService $terugvordering  Clawback factory.
-     * @param LoggerInterface       $logger          Logger.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly TerugvorderingService $terugvordering,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class VaststellingService {
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Schema/register bridge.
+	 * @param TerugvorderingService $terugvordering Clawback factory.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly TerugvorderingService $terugvordering,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Whether an accountantsverklaring is mandatory for a granted amount.
-     *
-     * @param float $verleendBedrag The granted amount.
-     * @param float $drempel        The regeling threshold.
-     *
-     * @return bool True when an accountant declaration is required.
-     *
-     * @spec openspec/changes/subsidieverlening-keten/specs.md
-     */
-    public function accountantsverklaringVereist(float $verleendBedrag, float $drempel): bool
-    {
-        return $verleendBedrag > $drempel;
-    }//end accountantsverklaringVereist()
+	/**
+	 * Whether an accountantsverklaring is mandatory for a granted amount.
+	 *
+	 * @param float $verleendBedrag The granted amount.
+	 * @param float $drempel The regeling threshold.
+	 *
+	 * @return bool True when an accountant declaration is required.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 */
+	public function accountantsverklaringVereist(float $verleendBedrag, float $drempel): bool {
+		return $verleendBedrag > $drempel;
+	}//end accountantsverklaringVereist()
 
-    /**
-     * Compute the final vaststelling amount: capped at the granted amount,
-     * never above the actual costs, never negative.
-     *
-     * @param float $verleendBedrag   The granted amount.
-     * @param float $werkelijkeKosten The total actual costs.
-     *
-     * @return float The final settled amount.
-     *
-     * @spec openspec/changes/subsidieverlening-keten/specs.md
-     */
-    public function computeVastgesteldBedrag(float $verleendBedrag, float $werkelijkeKosten): float
-    {
-        $bedrag = min($verleendBedrag, $werkelijkeKosten);
-        return round(max(0.0, $bedrag), 2);
-    }//end computeVastgesteldBedrag()
+	/**
+	 * Compute the final vaststelling amount: capped at the granted amount,
+	 * never above the actual costs, never negative.
+	 *
+	 * @param float $verleendBedrag The granted amount.
+	 * @param float $werkelijkeKosten The total actual costs.
+	 *
+	 * @return float The final settled amount.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 */
+	public function computeVastgesteldBedrag(float $verleendBedrag, float $werkelijkeKosten): float {
+		$bedrag = min($verleendBedrag, $werkelijkeKosten);
+		return round(max(0.0, $bedrag), 2);
+	}//end computeVastgesteldBedrag()
 
-    /**
-     * Compute the overpayment to be reclaimed: positive when the disbursed
-     * advances exceed the final settled amount (REQ-SUB-005).
-     *
-     * @param float $totaalVoorschotten The cumulative disbursed advances.
-     * @param float $vastgesteldBedrag  The final settled amount.
-     *
-     * @return float The overpayment (0.0 when none).
-     *
-     * @spec openspec/changes/subsidieverlening-keten/specs.md
-     */
-    public function computeOverpayment(float $totaalVoorschotten, float $vastgesteldBedrag): float
-    {
-        $diff = ($totaalVoorschotten - $vastgesteldBedrag);
-        if ($diff < 0.01) {
-            return 0.0;
-        }
+	/**
+	 * Compute the overpayment to be reclaimed: positive when the disbursed
+	 * advances exceed the final settled amount (REQ-SUB-005).
+	 *
+	 * @param float $totaalVoorschotten The cumulative disbursed advances.
+	 * @param float $vastgesteldBedrag The final settled amount.
+	 *
+	 * @return float The overpayment (0.0 when none).
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 */
+	public function computeOverpayment(float $totaalVoorschotten, float $vastgesteldBedrag): float {
+		$diff = ($totaalVoorschotten - $vastgesteldBedrag);
+		if ($diff < 0.01) {
+			return 0.0;
+		}
 
-        return round($diff, 2);
-    }//end computeOverpayment()
+		return round($diff, 2);
+	}//end computeOverpayment()
 
-    /**
-     * Whether a terugvordering must be triggered for these figures.
-     *
-     * @param float $totaalVoorschotten The cumulative disbursed advances.
-     * @param float $vastgesteldBedrag  The final settled amount.
-     *
-     * @return bool True when a clawback is required.
-     *
-     * @spec openspec/changes/subsidieverlening-keten/specs.md
-     */
-    public function triggerTerugvordering(float $totaalVoorschotten, float $vastgesteldBedrag): bool
-    {
-        return $this->computeOverpayment(totaalVoorschotten: $totaalVoorschotten, vastgesteldBedrag: $vastgesteldBedrag) > 0.0;
-    }//end triggerTerugvordering()
+	/**
+	 * Whether a terugvordering must be triggered for these figures.
+	 *
+	 * @param float $totaalVoorschotten The cumulative disbursed advances.
+	 * @param float $vastgesteldBedrag The final settled amount.
+	 *
+	 * @return bool True when a clawback is required.
+	 *
+	 * @spec openspec/changes/subsidieverlening-keten/specs.md
+	 */
+	public function triggerTerugvordering(float $totaalVoorschotten, float $vastgesteldBedrag): bool {
+		return $this->computeOverpayment(totaalVoorschotten: $totaalVoorschotten, vastgesteldBedrag: $vastgesteldBedrag) > 0.0;
+	}//end triggerTerugvordering()
 
-    /**
-     * Finalise a settlement: persist the vastgesteld bedrag and, when the
-     * advances exceed it, open a clawback case for the difference. The
-     * clawback case itself is created in "concept" awaiting manager
-     * approval — this method never publishes it.
-     *
-     * @param string $vaststellingId     The settlement id.
-     * @param float  $verleendBedrag     The granted amount.
-     * @param float  $werkelijkeKosten   The total actual costs.
-     * @param float  $totaalVoorschotten The cumulative disbursed advances.
-     *
-     * @return array<string, mixed> The finalisation result with optional clawback.
-     *
-     * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
-     *
-     * @spec openspec/specs/subsidie-settlement-case-costs/spec.md
-     */
-    public function finalize(
-        string $vaststellingId,
-        float $verleendBedrag,
-        float $werkelijkeKosten,
-        float $totaalVoorschotten,
-    ): array {
-        [$objectService, $register, $schema] = $this->resolve();
+	/**
+	 * Finalise a settlement: persist the vastgesteld bedrag and, when the
+	 * advances exceed it, open a clawback case for the difference. The
+	 * clawback case itself is created in "concept" awaiting manager
+	 * approval — this method never publishes it.
+	 *
+	 * @param string $vaststellingId The settlement id.
+	 * @param float $verleendBedrag The granted amount.
+	 * @param float $werkelijkeKosten The total actual costs.
+	 * @param float $totaalVoorschotten The cumulative disbursed advances.
+	 *
+	 * @return array<string, mixed> The finalisation result with optional clawback.
+	 *
+	 * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
+	 *
+	 * @spec openspec/specs/subsidie-settlement-case-costs/spec.md
+	 */
+	public function finalize(
+		string $vaststellingId,
+		float $verleendBedrag,
+		float $werkelijkeKosten,
+		float $totaalVoorschotten,
+	): array {
+		[$objectService, $register, $schema] = $this->resolve();
 
-        $vastgesteld = $this->computeVastgesteldBedrag(verleendBedrag: $verleendBedrag, werkelijkeKosten: $werkelijkeKosten);
-        $overpayment = $this->computeOverpayment(totaalVoorschotten: $totaalVoorschotten, vastgesteldBedrag: $vastgesteld);
-        $trigger     = ($overpayment > 0.0);
+		$vastgesteld = $this->computeVastgesteldBedrag(verleendBedrag: $verleendBedrag, werkelijkeKosten: $werkelijkeKosten);
+		$overpayment = $this->computeOverpayment(totaalVoorschotten: $totaalVoorschotten, vastgesteldBedrag: $vastgesteld);
+		$trigger = ($overpayment > 0.0);
 
-        $patch = [
-            'vastgesteldBedrag'                 => $vastgesteld,
-            'triggerTerugvordering'             => $trigger,
-            'vaststellingsbeschikkingGenerated' => true,
-            'status'                            => 'vastgesteld',
-        ];
+		$patch = [
+			'vastgesteldBedrag' => $vastgesteld,
+			'triggerTerugvordering' => $trigger,
+			'vaststellingsbeschikkingGenerated' => true,
+			'status' => 'vastgesteld',
+		];
 
-        try {
-            $current = $objectService->find($vaststellingId, register: $register, schema: $schema);
-            if (is_array($current) === false) {
-                throw new OCSBadRequestException('Vaststelling niet gevonden');
-            }
+		try {
+			$current = $objectService->find($vaststellingId, register: $register, schema: $schema);
+			if (is_array($current) === false) {
+				throw new OCSBadRequestException('Vaststelling niet gevonden');
+			}
 
-            $saved = $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string) $vaststellingId);
-        } catch (OCSBadRequestException $e) {
-            throw $e;
-        } catch (Throwable $e) {
-            $this->logger->error('Procest subsidie: vaststelling finalize failed: '.$e->getMessage());
-            throw new OCSBadRequestException('Kon vaststelling niet vaststellen');
-        }
+			$saved = $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$vaststellingId);
+		} catch (OCSBadRequestException $e) {
+			throw $e;
+		} catch (Throwable $e) {
+			$this->logger->error('Procest subsidie: vaststelling finalize failed: ' . $e->getMessage());
+			throw new OCSBadRequestException('Kon vaststelling niet vaststellen');
+		}
 
-        $clawback     = null;
-        $uitvoeringId = (string) ($current['subsidieuitvoering'] ?? '');
-        if ($trigger === true && $uitvoeringId !== '') {
-            $clawback = $this->terugvordering->createClawbackCase(uitvoeringId: $uitvoeringId, bedrag: $overpayment);
-        }
+		$clawback = null;
+		$uitvoeringId = (string)($current['subsidieuitvoering'] ?? '');
+		if ($trigger === true && $uitvoeringId !== '') {
+			$clawback = $this->terugvordering->createClawbackCase(uitvoeringId: $uitvoeringId, bedrag: $overpayment);
+		}
 
-        // The settled amount used to be appended to the linked case's `kosten`
-        // array, which fed procest's own IV3 report. Both are gone under
-        // ADR-081: a domain app MUST NOT hold a ledger-shaped array, and
-        // Shillinq is the only general ledger. A disbursed grant is real
-        // municipal expenditure and still belongs in the books — it reaches
-        // them as a Shillinq cost allocation, not as a field on a case.
-        // Until that dispatch exists the amount is recorded on the
-        // vaststelling itself (`vastgesteldBedrag`, saved above), which is
-        // where it was always authoritative; the `kosten` copy was a
-        // denormalisation for a report that no longer exists.
-        return [
-            'vaststelling'   => $saved,
-            'terugvordering' => $clawback,
-        ];
-    }//end finalize()
+		// The settled amount used to be appended to the linked case's `kosten`
+		// array, which fed procest's own IV3 report. Both are gone under
+		// ADR-081: a domain app MUST NOT hold a ledger-shaped array, and
+		// Shillinq is the only general ledger. A disbursed grant is real
+		// municipal expenditure and still belongs in the books — it reaches
+		// them as a Shillinq cost allocation, not as a field on a case.
+		// Until that dispatch exists the amount is recorded on the
+		// vaststelling itself (`vastgesteldBedrag`, saved above), which is
+		// where it was always authoritative; the `kosten` copy was a
+		// denormalisation for a report that no longer exists.
+		return [
+			'vaststelling' => $saved,
+			'terugvordering' => $clawback,
+		];
+	}//end finalize()
 
-    /**
-     * Resolve the ObjectService and register/schema ids.
-     *
-     * @return array{0: object, 1: string, 2: string} ObjectService, register, schema.
-     *
-     * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
-     */
-    private function resolve(): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new OCSBadRequestException('OpenRegister is niet beschikbaar');
-        }
+	/**
+	 * Resolve the ObjectService and register/schema ids.
+	 *
+	 * @return array{0: object, 1: string, 2: string} ObjectService, register, schema.
+	 *
+	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
+	 */
+	private function resolve(): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new OCSBadRequestException('OpenRegister is niet beschikbaar');
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('subsidie_vaststelling_schema');
-        if ($register === '' || $schema === '') {
-            throw new OCSBadRequestException('Vaststelling-schema is niet geconfigureerd');
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('subsidie_vaststelling_schema');
+		if ($register === '' || $schema === '') {
+			throw new OCSBadRequestException('Vaststelling-schema is niet geconfigureerd');
+		}
 
-        return [$objectService, $register, $schema];
-    }//end resolve()
+		return [$objectService, $register, $schema];
+	}//end resolve()
 }//end class

@@ -43,146 +43,134 @@ use PHPUnit\Framework\TestCase;
  * This asserts on each ITEM (every ref in the matrix), not on the container
  * (the matrix merely being non-empty).
  */
-class NextcloudFloorMatrixTest extends TestCase
-{
+class NextcloudFloorMatrixTest extends TestCase {
 
+	/**
+	 * Read the declared `<nextcloud min-version>` from appinfo/info.xml.
+	 *
+	 * @return int The declared major version.
+	 */
+	private function declaredFloor(): int {
+		$xml = simplexml_load_file(__DIR__ . '/../../../appinfo/info.xml');
+		$this->assertNotFalse($xml, 'appinfo/info.xml must parse as XML');
 
-    /**
-     * Read the declared `<nextcloud min-version>` from appinfo/info.xml.
-     *
-     * @return int The declared major version.
-     */
-    private function declaredFloor(): int
-    {
-        $xml = simplexml_load_file(__DIR__.'/../../../appinfo/info.xml');
-        $this->assertNotFalse($xml, 'appinfo/info.xml must parse as XML');
+		$nodes = $xml->xpath('//dependencies/nextcloud');
+		$this->assertNotEmpty($nodes, 'appinfo/info.xml declares no <nextcloud> dependency');
 
-        $nodes = $xml->xpath('//dependencies/nextcloud');
-        $this->assertNotEmpty($nodes, 'appinfo/info.xml declares no <nextcloud> dependency');
+		$min = (string)$nodes[0]['min-version'];
+		$this->assertMatchesRegularExpression(
+			'/^\d+$/',
+			$min,
+			'nextcloud min-version must be a bare major version'
+		);
 
-        $min = (string) $nodes[0]['min-version'];
-        $this->assertMatchesRegularExpression(
-            '/^\d+$/',
-            $min,
-            'nextcloud min-version must be a bare major version'
-        );
+		return (int)$min;
+	}//end declaredFloor()
 
-        return (int) $min;
-    }//end declaredFloor()
+	/**
+	 * Read the `nextcloud-test-refs` legs from the quality workflow.
+	 *
+	 * @return array<int, int> The major version of every tested leg.
+	 */
+	private function testedRefs(): array {
+		$workflow = file_get_contents(__DIR__ . '/../../../.github/workflows/code-quality.yml');
+		$this->assertIsString($workflow, '.github/workflows/code-quality.yml must be readable');
 
+		$matched = preg_match(
+			"/^\s*nextcloud-test-refs:\s*'(?<json>\[[^\]]*\])'/m",
+			$workflow,
+			$matches
+		);
+		$this->assertSame(
+			1,
+			$matched,
+			'Could not find a `nextcloud-test-refs:` line in code-quality.yml. '
+			. 'If the key was renamed, this test is scanning for something that no '
+			. 'longer exists and its green would be meaningless.'
+		);
 
-    /**
-     * Read the `nextcloud-test-refs` legs from the quality workflow.
-     *
-     * @return array<int, int> The major version of every tested leg.
-     */
-    private function testedRefs(): array
-    {
-        $workflow = file_get_contents(__DIR__.'/../../../.github/workflows/code-quality.yml');
-        $this->assertIsString($workflow, '.github/workflows/code-quality.yml must be readable');
+		$refs = json_decode($matches['json'], true);
+		$this->assertIsArray($refs, 'nextcloud-test-refs must be a JSON array');
 
-        $matched = preg_match(
-            "/^\s*nextcloud-test-refs:\s*'(?<json>\[[^\]]*\])'/m",
-            $workflow,
-            $matches
-        );
-        $this->assertSame(
-            1,
-            $matched,
-            'Could not find a `nextcloud-test-refs:` line in code-quality.yml. '
-            .'If the key was renamed, this test is scanning for something that no '
-            .'longer exists and its green would be meaningless.'
-        );
+		$majors = [];
+		foreach ($refs as $ref) {
+			$this->assertMatchesRegularExpression(
+				'/^stable(\d+)$/',
+				(string)$ref,
+				sprintf('Unrecognised Nextcloud test ref "%s"', (string)$ref)
+			);
+			preg_match('/^stable(\d+)$/', (string)$ref, $m);
+			$majors[] = (int)$m[1];
+		}
 
-        $refs = json_decode($matches['json'], true);
-        $this->assertIsArray($refs, 'nextcloud-test-refs must be a JSON array');
+		return $majors;
+	}//end testedRefs()
 
-        $majors = [];
-        foreach ($refs as $ref) {
-            $this->assertMatchesRegularExpression(
-                '/^stable(\d+)$/',
-                (string) $ref,
-                sprintf('Unrecognised Nextcloud test ref "%s"', (string) $ref)
-            );
-            preg_match('/^stable(\d+)$/', (string) $ref, $m);
-            $majors[] = (int) $m[1];
-        }
+	/**
+	 * The scanners must actually find something before any absence claim
+	 * derived from them can be believed.
+	 *
+	 * @return void
+	 */
+	public function testBothDeclarationsAreActuallyReadable(): void {
+		$this->assertGreaterThan(0, $this->declaredFloor());
+		$this->assertNotEmpty(
+			$this->testedRefs(),
+			'The tested-ref list parsed as empty. An empty list would make every '
+			. 'assertion below pass vacuously.'
+		);
+	}//end testBothDeclarationsAreActuallyReadable()
 
-        return $majors;
-    }//end testedRefs()
+	/**
+	 * No CI leg may target a Nextcloud below the declared floor.
+	 *
+	 * @return void
+	 */
+	public function testNoTestedLegIsBelowTheDeclaredFloor(): void {
+		$floor = $this->declaredFloor();
+		$below = [];
 
+		foreach ($this->testedRefs() as $major) {
+			if ($major < $floor) {
+				$below[] = 'stable' . $major;
+			}
+		}
 
-    /**
-     * The scanners must actually find something before any absence claim
-     * derived from them can be believed.
-     *
-     * @return void
-     */
-    public function testBothDeclarationsAreActuallyReadable(): void
-    {
-        $this->assertGreaterThan(0, $this->declaredFloor());
-        $this->assertNotEmpty(
-            $this->testedRefs(),
-            'The tested-ref list parsed as empty. An empty list would make every '
-            .'assertion below pass vacuously.'
-        );
-    }//end testBothDeclarationsAreActuallyReadable()
+		$this->assertSame(
+			[],
+			$below,
+			sprintf(
+				'appinfo/info.xml declares <nextcloud min-version="%d"/>, but CI still '
+				. 'runs against %s. Either drop the leg or lower the floor — a leg below '
+				. 'the floor tests a configuration this app does not support, so neither '
+				. 'its red nor its green means anything.',
+				$floor,
+				implode(', ', $below)
+			)
+		);
+	}//end testNoTestedLegIsBelowTheDeclaredFloor()
 
+	/**
+	 * At least one CI leg must sit at or above the declared floor, so the
+	 * supported range is exercised rather than merely asserted.
+	 *
+	 * @return void
+	 */
+	public function testTheDeclaredFloorIsActuallyExercised(): void {
+		$floor = $this->declaredFloor();
+		$refs = $this->testedRefs();
 
-    /**
-     * No CI leg may target a Nextcloud below the declared floor.
-     *
-     * @return void
-     */
-    public function testNoTestedLegIsBelowTheDeclaredFloor(): void
-    {
-        $floor = $this->declaredFloor();
-        $below = [];
+		$atOrAbove = array_filter($refs, static fn (int $major): bool => $major >= $floor);
 
-        foreach ($this->testedRefs() as $major) {
-            if ($major < $floor) {
-                $below[] = 'stable'.$major;
-            }
-        }
-
-        $this->assertSame(
-            [],
-            $below,
-            sprintf(
-                'appinfo/info.xml declares <nextcloud min-version="%d"/>, but CI still '
-                ."runs against %s. Either drop the leg or lower the floor — a leg below "
-                .'the floor tests a configuration this app does not support, so neither '
-                .'its red nor its green means anything.',
-                $floor,
-                implode(', ', $below)
-            )
-        );
-    }//end testNoTestedLegIsBelowTheDeclaredFloor()
-
-
-    /**
-     * At least one CI leg must sit at or above the declared floor, so the
-     * supported range is exercised rather than merely asserted.
-     *
-     * @return void
-     */
-    public function testTheDeclaredFloorIsActuallyExercised(): void
-    {
-        $floor = $this->declaredFloor();
-        $refs  = $this->testedRefs();
-
-        $atOrAbove = array_filter($refs, static fn (int $major): bool => $major >= $floor);
-
-        $this->assertNotEmpty(
-            $atOrAbove,
-            sprintf(
-                'appinfo/info.xml declares a floor of %d but no CI leg runs at or above '
-                .'it (legs: %s). The declared support range is entirely untested.',
-                $floor,
-                implode(', ', array_map(static fn (int $m): string => 'stable'.$m, $refs))
-            )
-        );
-    }//end testTheDeclaredFloorIsActuallyExercised()
-
+		$this->assertNotEmpty(
+			$atOrAbove,
+			sprintf(
+				'appinfo/info.xml declares a floor of %d but no CI leg runs at or above '
+				. 'it (legs: %s). The declared support range is entirely untested.',
+				$floor,
+				implode(', ', array_map(static fn (int $m): string => 'stable' . $m, $refs))
+			)
+		);
+	}//end testTheDeclaredFloorIsActuallyExercised()
 
 }//end class

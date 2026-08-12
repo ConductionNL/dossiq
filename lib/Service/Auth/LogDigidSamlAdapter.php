@@ -41,69 +41,66 @@ use RuntimeException;
 /**
  * Default DigiD adapter — logs + refuses.
  */
-final class LogDigidSamlAdapter implements DigidSamlAdapterInterface
-{
-    /**
-     * App id for IAppConfig look-ups.
-     */
-    public const APP_ID = 'procest';
+final class LogDigidSamlAdapter implements DigidSamlAdapterInterface {
+	/**
+	 * App id for IAppConfig look-ups.
+	 */
+	public const APP_ID = 'procest';
 
-    /**
-     * Feature-flag key.
-     */
-    public const FLAG_KEY = 'digid.feature_flag';
+	/**
+	 * Feature-flag key.
+	 */
+	public const FLAG_KEY = 'digid.feature_flag';
 
-    /**
-     * Constructor.
-     *
-     * @param IAppConfig      $config App-config service (feature-flag check).
-     * @param LoggerInterface $logger Structured logger.
-     */
-    public function __construct(
-        private readonly IAppConfig $config,
-        private readonly LoggerInterface $logger
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IAppConfig $config App-config service (feature-flag check).
+	 * @param LoggerInterface $logger Structured logger.
+	 */
+	public function __construct(
+		private readonly IAppConfig $config,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Always throws — the dormant adapter refuses to fabricate an assertion.
-     *
-     * @param string $samlResponse Base64-encoded SAML response.
-     * @param string $relayState   Original RelayState.
-     *
-     * @return BrokerAssertionResult
-     *
-     * @throws RuntimeException Always.
-     */
-    public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult
-    {
-        $this->logger->warning(
-            'digid.broker.dormant',
-            [
-                'adapter'      => self::class,
-                'flag_key'     => self::FLAG_KEY,
-                'active'       => $this->isActive(),
-                'response_len' => strlen($samlResponse),
-                'relay_state'  => $relayState,
-                'activation'   => 'configure openconnector DigiD broker + private key + cert; '
-                    .'occ config:app:set procest digid.feature_flag --value 1; '
-                    .'swap DI binding to the active SamlAdapter implementation.',
-            ]
-        );
+	/**
+	 * Always throws — the dormant adapter refuses to fabricate an assertion.
+	 *
+	 * @param string $samlResponse Base64-encoded SAML response.
+	 * @param string $relayState Original RelayState.
+	 *
+	 * @return BrokerAssertionResult
+	 *
+	 * @throws RuntimeException Always.
+	 */
+	public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult {
+		$this->logger->warning(
+			'digid.broker.dormant',
+			[
+				'adapter' => self::class,
+				'flag_key' => self::FLAG_KEY,
+				'active' => $this->isActive(),
+				'response_len' => strlen($samlResponse),
+				'relay_state' => $relayState,
+				'activation' => 'configure openconnector DigiD broker + private key + cert; '
+					. 'occ config:app:set procest digid.feature_flag --value 1; '
+					. 'swap DI binding to the active SamlAdapter implementation.',
+			]
+		);
 
-        throw new RuntimeException(
-            'DigiD broker not configured — wire openconnector + flip digid.feature_flag.'
-        );
-    }//end decodeAssertion()
+		throw new RuntimeException(
+			'DigiD broker not configured — wire openconnector + flip digid.feature_flag.'
+		);
+	}//end decodeAssertion()
 
-    /**
-     * Whether the live broker is enabled.
-     *
-     * @return bool
-     */
-    public function isActive(): bool
-    {
-        $raw = $this->config->getValueString(self::APP_ID, self::FLAG_KEY, '0');
-        return ($raw === '1' || strtolower($raw) === 'true');
-    }//end isActive()
+	/**
+	 * Whether the live broker is enabled.
+	 *
+	 * @return bool
+	 */
+	public function isActive(): bool {
+		$raw = $this->config->getValueString(self::APP_ID, self::FLAG_KEY, '0');
+		return ($raw === '1' || strtolower($raw) === 'true');
+	}//end isActive()
 }//end class

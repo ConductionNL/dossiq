@@ -40,56 +40,54 @@ use OCA\Procest\Service\MandaatValidationService;
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
-class MandaatGuard implements GuardEvaluatorInterface
-{
-    /**
-     * Constructor.
-     *
-     * @param MandaatValidationService $validationService The mandaatregister validator.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly MandaatValidationService $validationService,
-    ) {
-    }//end __construct()
+class MandaatGuard implements GuardEvaluatorInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param MandaatValidationService $validationService The mandaatregister validator.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly MandaatValidationService $validationService,
+	) {
+	}//end __construct()
 
-    /**
-     * Evaluate the mandaat guard.
-     *
-     * @param array<string, mixed> $guardConfig The guard configuration block.
-     * @param array<string, mixed> $case        The case object.
-     * @param string               $userId      The current user UID.
-     *
-     * @return GuardResult
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     *
-     * @spec openspec/specs/besluitvorming-workflow/spec.md
-     */
-    public function evaluate(array $guardConfig, array $case, string $userId): GuardResult
-    {
-        // An explicit, auditable manual confirmation satisfies the guard.
-        if (($case['mandaatHandmatigBevestigd'] ?? false) === true) {
-            return new GuardResult(passed: true, details: ['mandaat' => 'handmatig_bevestigd']);
-        }
+	/**
+	 * Evaluate the mandaat guard.
+	 *
+	 * @param array<string, mixed> $guardConfig The guard configuration block.
+	 * @param array<string, mixed> $case The case object.
+	 * @param string $userId The current user UID.
+	 *
+	 * @return GuardResult
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/besluitvorming-workflow/spec.md
+	 */
+	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
+		// An explicit, auditable manual confirmation satisfies the guard.
+		if (($case['mandaatHandmatigBevestigd'] ?? false) === true) {
+			return new GuardResult(passed: true, details: ['mandaat' => 'handmatig_bevestigd']);
+		}
 
-        $caseId    = (string) ($case['id'] ?? $case['uuid'] ?? '');
-        $signingId = (string) ($case['ondertekenaar'] ?? $userId);
+		$caseId = (string)($case['id'] ?? $case['uuid'] ?? '');
+		$signingId = (string)($case['ondertekenaar'] ?? $userId);
 
-        $result = $this->validationService->validate(caseId: $caseId, signingUserId: $signingId);
+		$result = $this->validationService->validate(caseId: $caseId, signingUserId: $signingId);
 
-        if (($result['valid'] ?? false) === true) {
-            return new GuardResult(passed: true, details: ['mandaat' => 'bevestigd']);
-        }
+		if (($result['valid'] ?? false) === true) {
+			return new GuardResult(passed: true, details: ['mandaat' => 'bevestigd']);
+		}
 
-        return new GuardResult(
-            passed: false,
-            failureMessage: (string) ($result['message'] ?? 'Onvoldoende mandaat voor dit besluit.'),
-            details: [
-                'requiresManualConfirmation' => (bool) ($result['requiresManualConfirmation'] ?? false),
-                'registerLink'               => (string) ($result['registerLink'] ?? ''),
-            ],
-        );
-    }//end evaluate()
+		return new GuardResult(
+			passed: false,
+			failureMessage: (string)($result['message'] ?? 'Onvoldoende mandaat voor dit besluit.'),
+			details: [
+				'requiresManualConfirmation' => (bool)($result['requiresManualConfirmation'] ?? false),
+				'registerLink' => (string)($result['registerLink'] ?? ''),
+			],
+		);
+	}//end evaluate()
 }//end class

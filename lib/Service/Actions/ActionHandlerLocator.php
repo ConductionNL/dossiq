@@ -44,113 +44,109 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
  */
-class ActionHandlerLocator
-{
+class ActionHandlerLocator {
 
-    /**
-     * In-memory handler index keyed by handler `type` slug.
-     *
-     * Populated lazily from the DI container the first time a handler is
-     * requested, so the container stays lean until a transition actually
-     * dispatches a side effect.
-     *
-     * @var array<string, ActionHandlerInterface>|null
-     */
-    private ?array $handlerIndex = null;
+	/**
+	 * In-memory handler index keyed by handler `type` slug.
+	 *
+	 * Populated lazily from the DI container the first time a handler is
+	 * requested, so the container stays lean until a transition actually
+	 * dispatches a side effect.
+	 *
+	 * @var array<string, ActionHandlerInterface>|null
+	 */
+	private ?array $handlerIndex = null;
 
-    /**
-     * Constructor for ActionHandlerLocator.
-     *
-     * @param ContainerInterface $container DI container — used to lazily resolve the handler implementations.
-     * @param LoggerInterface    $logger    PSR-3 logger for handler-resolution failures.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor for ActionHandlerLocator.
+	 *
+	 * @param ContainerInterface $container DI container — used to lazily resolve the handler implementations.
+	 * @param LoggerInterface $logger PSR-3 logger for handler-resolution failures.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Lookup a registered handler by its `type` slug.
-     *
-     * @param string $type Handler `type` slug (matches ActionHandlerInterface::type()).
-     *
-     * @return ActionHandlerInterface|null Null when no handler is registered for the slug.
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function get(string $type): ?ActionHandlerInterface
-    {
-        if ($this->handlerIndex === null) {
-            $this->handlerIndex = $this->buildIndex();
-        }
+	/**
+	 * Lookup a registered handler by its `type` slug.
+	 *
+	 * @param string $type Handler `type` slug (matches ActionHandlerInterface::type()).
+	 *
+	 * @return ActionHandlerInterface|null Null when no handler is registered for the slug.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function get(string $type): ?ActionHandlerInterface {
+		if ($this->handlerIndex === null) {
+			$this->handlerIndex = $this->buildIndex();
+		}
 
-        return ($this->handlerIndex[$type] ?? null);
-    }//end get()
+		return ($this->handlerIndex[$type] ?? null);
+	}//end get()
 
-    /**
-     * Resolve every known handler class and index it by its `type` slug.
-     *
-     * Each handler class is registered as a regular DI service and referenced by
-     * FQCN; they are resolved lazily so the container can stay lean.
-     *
-     * @return array<string, ActionHandlerInterface> The handler index, keyed by type slug.
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    private function buildIndex(): array
-    {
-        $index      = [];
-        $candidates = [
-            SendEmailHandler::class,
-            CreateDocumentHandler::class,
-            NotifyRoleHandler::class,
-            CallWebhookHandler::class,
-            MergeTemplateHandler::class,
-            ScheduleReminderHandler::class,
-        ];
+	/**
+	 * Resolve every known handler class and index it by its `type` slug.
+	 *
+	 * Each handler class is registered as a regular DI service and referenced by
+	 * FQCN; they are resolved lazily so the container can stay lean.
+	 *
+	 * @return array<string, ActionHandlerInterface> The handler index, keyed by type slug.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function buildIndex(): array {
+		$index = [];
+		$candidates = [
+			SendEmailHandler::class,
+			CreateDocumentHandler::class,
+			NotifyRoleHandler::class,
+			CallWebhookHandler::class,
+			MergeTemplateHandler::class,
+			ScheduleReminderHandler::class,
+		];
 
-        foreach ($candidates as $fqcn) {
-            $handler = $this->resolve(fqcn: $fqcn);
-            if ($handler !== null) {
-                $index[$handler->type()] = $handler;
-            }
-        }
+		foreach ($candidates as $fqcn) {
+			$handler = $this->resolve(fqcn: $fqcn);
+			if ($handler !== null) {
+				$index[$handler->type()] = $handler;
+			}
+		}
 
-        return $index;
-    }//end buildIndex()
+		return $index;
+	}//end buildIndex()
 
-    /**
-     * Resolve one handler out of the container, tolerating a broken handler.
-     *
-     * @param string $fqcn Fully-qualified handler class name.
-     *
-     * @return ActionHandlerInterface|null The handler, or null when it cannot be built or is not a handler.
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    private function resolve(string $fqcn): ?ActionHandlerInterface
-    {
-        try {
-            $handler = $this->container->get($fqcn);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'ActionRegistry: failed to resolve handler',
-                [
-                    'app'       => Application::APP_ID,
-                    'fqcn'      => $fqcn,
-                    'exception' => $e->getMessage(),
-                ]
-            );
-            return null;
-        }
+	/**
+	 * Resolve one handler out of the container, tolerating a broken handler.
+	 *
+	 * @param string $fqcn Fully-qualified handler class name.
+	 *
+	 * @return ActionHandlerInterface|null The handler, or null when it cannot be built or is not a handler.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	private function resolve(string $fqcn): ?ActionHandlerInterface {
+		try {
+			$handler = $this->container->get($fqcn);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'ActionRegistry: failed to resolve handler',
+				[
+					'app' => Application::APP_ID,
+					'fqcn' => $fqcn,
+					'exception' => $e->getMessage(),
+				]
+			);
+			return null;
+		}
 
-        if ($handler instanceof ActionHandlerInterface) {
-            return $handler;
-        }
+		if ($handler instanceof ActionHandlerInterface) {
+			return $handler;
+		}
 
-        return null;
-    }//end resolve()
+		return null;
+	}//end resolve()
 }//end class

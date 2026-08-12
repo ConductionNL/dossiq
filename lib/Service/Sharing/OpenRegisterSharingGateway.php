@@ -50,132 +50,127 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
-class OpenRegisterSharingGateway
-{
-    /**
-     * Constructor.
-     *
-     * @param IAppManager        $appManager The app manager
-     * @param ContainerInterface $container  The DI container
-     * @param LoggerInterface    $logger     The logger
-     */
-    public function __construct(
-        private readonly IAppManager $appManager,
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class OpenRegisterSharingGateway {
+	/**
+	 * Constructor.
+	 *
+	 * @param IAppManager $appManager The app manager
+	 * @param ContainerInterface $container The DI container
+	 * @param LoggerInterface $logger The logger
+	 */
+	public function __construct(
+		private readonly IAppManager $appManager,
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Resolve the ObjectService from the DI container.
-     *
-     * @return object|null The ObjectService, or null when OpenRegister is unavailable
-     *
-     * @spec openspec/specs/federated-case-collaboration/spec.md
-     */
-    public function objectService(): ?object
-    {
-        if ($this->appManager->isInstalled('openregister') === false) {
-            return null;
-        }
+	/**
+	 * Resolve the ObjectService from the DI container.
+	 *
+	 * @return object|null The ObjectService, or null when OpenRegister is unavailable
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md
+	 */
+	public function objectService(): ?object {
+		if ($this->appManager->isInstalled('openregister') === false) {
+			return null;
+		}
 
-        try {
-            return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'CaseSharingService: ObjectService unavailable',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end objectService()
+		try {
+			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'CaseSharingService: ObjectService unavailable',
+				['exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end objectService()
 
-    /**
-     * Resolve OpenRegister's CaseTokenService — the public "track your
-     * case" token-link surface of the shares integration leaf (ADR-022).
-     *
-     * The leaf owns token generation (256-bit non-guessable handle),
-     * expiry, revocation, and the RBAC-respecting public resolve path;
-     * procest mints no share tokens of its own.
-     *
-     * @return object|null The OR CaseTokenService, or null when OR is
-     *                     unavailable / pre-foundation build.
-     *
-     * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.2
-     */
-    public function caseTokenService(): ?object
-    {
-        if ($this->appManager->isInstalled('openregister') === false) {
-            return null;
-        }
+	/**
+	 * Resolve OpenRegister's CaseTokenService — the public "track your
+	 * case" token-link surface of the shares integration leaf (ADR-022).
+	 *
+	 * The leaf owns token generation (256-bit non-guessable handle),
+	 * expiry, revocation, and the RBAC-respecting public resolve path;
+	 * procest mints no share tokens of its own.
+	 *
+	 * @return object|null The OR CaseTokenService, or null when OR is
+	 *                     unavailable / pre-foundation build.
+	 *
+	 * @spec openspec/changes/migrate-public-share-to-shares-leaf/tasks.md#P1.2
+	 */
+	public function caseTokenService(): ?object {
+		if ($this->appManager->isInstalled('openregister') === false) {
+			return null;
+		}
 
-        try {
-            $service = $this->container->get('OCA\OpenRegister\Service\CaseTokenService');
-            if (method_exists($service, 'mint') === false) {
-                return null;
-            }
+		try {
+			$service = $this->container->get('OCA\OpenRegister\Service\CaseTokenService');
+			if (method_exists($service, 'mint') === false) {
+				return null;
+			}
 
-            return $service;
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'CaseSharingService: OR CaseTokenService unavailable (shares leaf not present)',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end caseTokenService()
+			return $service;
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'CaseSharingService: OR CaseTokenService unavailable (shares leaf not present)',
+				['exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end caseTokenService()
 
-    /**
-     * Resolve OpenRegister's FederationShareService — the leaf that owns
-     * OCM token minting, transport and lifecycle status. Returns null (fail
-     * closed for federation callers) when OR or its federation classes are
-     * unavailable.
-     *
-     * @return object|null The OR FederationShareService, or null
-     *
-     * @spec openspec/specs/federated-case-collaboration/spec.md
-     */
-    public function federationShareService(): ?object
-    {
-        if ($this->appManager->isInstalled('openregister') === false) {
-            return null;
-        }
+	/**
+	 * Resolve OpenRegister's FederationShareService — the leaf that owns
+	 * OCM token minting, transport and lifecycle status. Returns null (fail
+	 * closed for federation callers) when OR or its federation classes are
+	 * unavailable.
+	 *
+	 * @return object|null The OR FederationShareService, or null
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md
+	 */
+	public function federationShareService(): ?object {
+		if ($this->appManager->isInstalled('openregister') === false) {
+			return null;
+		}
 
-        try {
-            $service = $this->container->get('OCA\OpenRegister\Service\FederationShareService');
-            if (method_exists($service, 'createOutgoingShare') === false || method_exists($service, 'setStatus') === false) {
-                return null;
-            }
+		try {
+			$service = $this->container->get('OCA\OpenRegister\Service\FederationShareService');
+			if (method_exists($service, 'createOutgoingShare') === false || method_exists($service, 'setStatus') === false) {
+				return null;
+			}
 
-            return $service;
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'CaseSharingService: OR FederationShareService unavailable (federation leaf not present)',
-                ['exception' => $e->getMessage()]
-            );
-            return null;
-        }
-    }//end federationShareService()
+			return $service;
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'CaseSharingService: OR FederationShareService unavailable (federation leaf not present)',
+				['exception' => $e->getMessage()]
+			);
+			return null;
+		}
+	}//end federationShareService()
 
-    /**
-     * Normalize an OpenRegister return value (array or ObjectEntity) to an array.
-     *
-     * @param mixed $value The value returned by the ObjectService
-     *
-     * @return array<string, mixed> The value as a plain array
-     *
-     * @spec openspec/specs/federated-case-collaboration/spec.md
-     */
-    public function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
+	/**
+	 * Normalize an OpenRegister return value (array or ObjectEntity) to an array.
+	 *
+	 * @param mixed $value The value returned by the ObjectService
+	 *
+	 * @return array<string, mixed> The value as a plain array
+	 *
+	 * @spec openspec/specs/federated-case-collaboration/spec.md
+	 */
+	public function toArray(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
 
-        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-            return (array) $value->jsonSerialize();
-        }
+		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+			return (array)$value->jsonSerialize();
+		}
 
-        return [];
-    }//end toArray()
+		return [];
+	}//end toArray()
 }//end class

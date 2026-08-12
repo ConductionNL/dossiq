@@ -48,361 +48,350 @@ use OCP\IUserSession;
 /**
  * Controller for the ZGW DRC zaakdossier.
  */
-class ZaakdossierController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string                 $appName        The app name.
-     * @param IRequest               $request        The request.
-     * @param ZaakdossierService     $dossierService The dossier orchestrator.
-     * @param InformatieobjectReader $reader         The clearance-gated document reader.
-     * @param DossierUploadHandler   $uploadHandler  The upload decoding/screening collaborator.
-     * @param IUserSession           $userSession    The user session.
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly ZaakdossierService $dossierService,
-        private readonly InformatieobjectReader $reader,
-        private readonly DossierUploadHandler $uploadHandler,
-        private readonly IUserSession $userSession,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class ZaakdossierController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name.
+	 * @param IRequest $request The request.
+	 * @param ZaakdossierService $dossierService The dossier orchestrator.
+	 * @param InformatieobjectReader $reader The clearance-gated document reader.
+	 * @param DossierUploadHandler $uploadHandler The upload decoding/screening collaborator.
+	 * @param IUserSession $userSession The user session.
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly ZaakdossierService $dossierService,
+		private readonly InformatieobjectReader $reader,
+		private readonly DossierUploadHandler $uploadHandler,
+		private readonly IUserSession $userSession,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * List the dossier for a case, grouped by type and filtered by clearance.
-     *
-     * @param string $caseId The case (zaak) UUID.
-     *
-     * @return JSONResponse Grouped dossier or an error status.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     */
-    public function listDossier(string $caseId): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * List the dossier for a case, grouped by type and filtered by clearance.
+	 *
+	 * @param string $caseId The case (zaak) UUID.
+	 *
+	 * @return JSONResponse Grouped dossier or an error status.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 */
+	public function listDossier(string $caseId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        try {
-            $dossier = $this->dossierService->getDossierForCase(caseId: $caseId);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
-        }
+		try {
+			$dossier = $this->dossierService->getDossierForCase(caseId: $caseId);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
 
-        $filtered = $this->reader->filterForUser(
-            user: $user,
-            informatieobjecten: ($dossier['informatieobjecten'] ?? []),
-        );
+		$filtered = $this->reader->filterForUser(
+			user: $user,
+			informatieobjecten: ($dossier['informatieobjecten'] ?? []),
+		);
 
-        $regrouped = $this->dossierService->groupByType(documents: $filtered);
+		$regrouped = $this->dossierService->groupByType(documents: $filtered);
 
-        return new JSONResponse($regrouped);
-    }//end listDossier()
+		return new JSONResponse($regrouped);
+	}//end listDossier()
 
-    /**
-     * Upload one or more documents to a case dossier.
-     *
-     * Accepts multipart files plus a shared `metadata` JSON body. Returns a
-     * per-file result list so a single failure does not block the rest.
-     *
-     * @param string $caseId The case (zaak) UUID.
-     *
-     * @return JSONResponse Per-file upload results.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/specs/authz-bypass-fixes/spec.md
-     */
-    public function uploadDocument(string $caseId): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Upload one or more documents to a case dossier.
+	 *
+	 * Accepts multipart files plus a shared `metadata` JSON body. Returns a
+	 * per-file result list so a single failure does not block the rest.
+	 *
+	 * @param string $caseId The case (zaak) UUID.
+	 *
+	 * @return JSONResponse Per-file upload results.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	public function uploadDocument(string $caseId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        // Its sibling `linkExisting()` below already guards, via
-        // `InformatieobjectReader::guardReadable()` — but that guard is about
-        // the DOCUMENT, and upload has no existing document to check. The
-        // missing half is the CASE, so this endpoint wrote attachments into
-        // any case on the instance.
-        if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
-            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-        }
+		// Its sibling `linkExisting()` below already guards, via
+		// `InformatieobjectReader::guardReadable()` — but that guard is about
+		// the DOCUMENT, and upload has no existing document to check. The
+		// missing half is the CASE, so this endpoint wrote attachments into
+		// any case on the instance.
+		if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
 
-        $metadata = $this->uploadHandler->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));
-        if (($metadata['auteur'] ?? '') === '') {
-            $metadata['auteur'] = $user->getDisplayName();
-        }
+		$metadata = $this->uploadHandler->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));
+		if (($metadata['auteur'] ?? '') === '') {
+			$metadata['auteur'] = $user->getDisplayName();
+		}
 
-        $files = $this->uploadHandler->normaliseUploadedFiles(uploaded: $this->request->getUploadedFile('files'));
-        if (empty($files) === true) {
-            return new JSONResponse(['error' => 'No files uploaded'], Http::STATUS_BAD_REQUEST);
-        }
+		$files = $this->uploadHandler->normaliseUploadedFiles(uploaded: $this->request->getUploadedFile('files'));
+		if (empty($files) === true) {
+			return new JSONResponse(['error' => 'No files uploaded'], Http::STATUS_BAD_REQUEST);
+		}
 
-        $results = [];
-        foreach ($files as $file) {
-            $results[] = $this->uploadHandler->uploadOne(
-                caseId: $caseId,
-                file: $file,
-                metadata: $metadata,
-            );
-        }
+		$results = [];
+		foreach ($files as $file) {
+			$results[] = $this->uploadHandler->uploadOne(
+				caseId: $caseId,
+				file: $file,
+				metadata: $metadata,
+			);
+		}
 
-        return new JSONResponse(['results' => $results], Http::STATUS_CREATED);
-    }//end uploadDocument()
+		return new JSONResponse(['results' => $results], Http::STATUS_CREATED);
+	}//end uploadDocument()
 
-    /**
-     * Link an existing informatieobject to a case.
-     *
-     * @param string $caseId       The case UUID.
-     * @param string $infoObjectId The informatieobject UUID.
-     *
-     * @return JSONResponse The join result.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     */
-    public function linkExisting(string $caseId, string $infoObjectId): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Link an existing informatieobject to a case.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $infoObjectId The informatieobject UUID.
+	 *
+	 * @return JSONResponse The join result.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 */
+	public function linkExisting(string $caseId, string $infoObjectId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-        if ($authError !== null) {
-            return $authError;
-        }
+		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-        try {
-            $result = $this->dossierService->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoObjectId);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
-        }
+		try {
+			$result = $this->dossierService->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoObjectId);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
 
-        return new JSONResponse($result, Http::STATUS_CREATED);
-    }//end linkExisting()
+		return new JSONResponse($result, Http::STATUS_CREATED);
+	}//end linkExisting()
 
-    /**
-     * Unlink an informatieobject from a case (preserves the document).
-     *
-     * @param string $caseId       The case UUID.
-     * @param string $infoObjectId The informatieobject UUID.
-     *
-     * @return JSONResponse The unlink result.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     */
-    public function unlinkDocument(string $caseId, string $infoObjectId): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Unlink an informatieobject from a case (preserves the document).
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param string $infoObjectId The informatieobject UUID.
+	 *
+	 * @return JSONResponse The unlink result.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 */
+	public function unlinkDocument(string $caseId, string $infoObjectId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-        if ($authError !== null) {
-            return $authError;
-        }
+		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-        try {
-            $removed = $this->dossierService->unlinkInformatieobject(caseId: $caseId, infoObjectId: $infoObjectId);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
-        }
+		try {
+			$removed = $this->dossierService->unlinkInformatieobject(caseId: $caseId, infoObjectId: $infoObjectId);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
 
-        return new JSONResponse(['unlinked' => $removed]);
-    }//end unlinkDocument()
+		return new JSONResponse(['unlinked' => $removed]);
+	}//end unlinkDocument()
 
-    /**
-     * Update editable metadata on an informatieobject.
-     *
-     * @param string $infoObjectId The informatieobject UUID.
-     *
-     * @return JSONResponse The updated metadata or an error status.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     */
-    public function updateMetadata(string $infoObjectId): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Update editable metadata on an informatieobject.
+	 *
+	 * @param string $infoObjectId The informatieobject UUID.
+	 *
+	 * @return JSONResponse The updated metadata or an error status.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 */
+	public function updateMetadata(string $infoObjectId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-        if ($authError !== null) {
-            return $authError;
-        }
+		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-        $metadata = [
-            'titel'                       => $this->request->getParam('titel'),
-            'beschrijving'                => $this->request->getParam('beschrijving'),
-            'informatieobjecttype'        => $this->request->getParam('informatieobjecttype'),
-            'vertrouwelijkheidaanduiding' => $this->request->getParam('vertrouwelijkheidaanduiding'),
-        ];
-        $metadata = array_filter($metadata, static fn($value) => $value !== null);
+		$metadata = [
+			'titel' => $this->request->getParam('titel'),
+			'beschrijving' => $this->request->getParam('beschrijving'),
+			'informatieobjecttype' => $this->request->getParam('informatieobjecttype'),
+			'vertrouwelijkheidaanduiding' => $this->request->getParam('vertrouwelijkheidaanduiding'),
+		];
+		$metadata = array_filter($metadata, static fn ($value) => $value !== null);
 
-        try {
-            $result = $this->dossierService->updateMetadata(infoObjectId: $infoObjectId, metadata: $metadata);
-        } catch (\DomainException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_CONFLICT);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
-        }
+		try {
+			$result = $this->dossierService->updateMetadata(infoObjectId: $infoObjectId, metadata: $metadata);
+		} catch (\DomainException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_CONFLICT);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
 
-        return new JSONResponse($result);
-    }//end updateMetadata()
+		return new JSONResponse($result);
+	}//end updateMetadata()
 
-    /**
-     * Transition a single informatieobject's status.
-     *
-     * @param string $infoObjectId The informatieobject UUID.
-     *
-     * @return JSONResponse The transition result. HTTP 400 on an invalid transition.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     */
-    public function transitionStatus(string $infoObjectId): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Transition a single informatieobject's status.
+	 *
+	 * @param string $infoObjectId The informatieobject UUID.
+	 *
+	 * @return JSONResponse The transition result. HTTP 400 on an invalid transition.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 */
+	public function transitionStatus(string $infoObjectId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
-        if ($authError !== null) {
-            return $authError;
-        }
+		$authError = $this->reader->guardReadable(user: $user, infoObjectId: $infoObjectId);
+		if ($authError !== null) {
+			return $authError;
+		}
 
-        $newStatus = (string) $this->request->getParam('status', '');
+		$newStatus = (string)$this->request->getParam('status', '');
 
-        try {
-            $result = $this->dossierService->transitionStatus(infoObjectId: $infoObjectId, newStatus: $newStatus);
-        } catch (\InvalidArgumentException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
-        }
+		try {
+			$result = $this->dossierService->transitionStatus(infoObjectId: $infoObjectId, newStatus: $newStatus);
+		} catch (\InvalidArgumentException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
 
-        return new JSONResponse($result);
-    }//end transitionStatus()
+		return new JSONResponse($result);
+	}//end transitionStatus()
 
-    /**
-     * Apply a bulk status transition over multiple informatieobjecten.
-     *
-     * @return JSONResponse Per-id success/failure list.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     */
-    public function bulkTransitionStatus(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Apply a bulk status transition over multiple informatieobjecten.
+	 *
+	 * @return JSONResponse Per-id success/failure list.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 */
+	public function bulkTransitionStatus(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $ids       = (array) $this->request->getParam('ids', []);
-        $newStatus = (string) $this->request->getParam('status', '');
+		$ids = (array)$this->request->getParam('ids', []);
+		$newStatus = (string)$this->request->getParam('status', '');
 
-        // Per-object clearance gate before any mutation.
-        if ($this->allReadable(user: $user, ids: $ids) === false) {
-            return new JSONResponse(
-                ['error' => 'Insufficient clearance for one or more selected documents'],
-                Http::STATUS_FORBIDDEN,
-            );
-        }
+		// Per-object clearance gate before any mutation.
+		if ($this->allReadable(user: $user, ids: $ids) === false) {
+			return new JSONResponse(
+				['error' => 'Insufficient clearance for one or more selected documents'],
+				Http::STATUS_FORBIDDEN,
+			);
+		}
 
-        $results = $this->dossierService->bulkTransitionStatus(infoObjectIds: $ids, newStatus: $newStatus);
+		$results = $this->dossierService->bulkTransitionStatus(infoObjectIds: $ids, newStatus: $newStatus);
 
-        return new JSONResponse(['results' => $results]);
-    }//end bulkTransitionStatus()
+		return new JSONResponse(['results' => $results]);
+	}//end bulkTransitionStatus()
 
-    /**
-     * Apply a bulk metadata update over multiple informatieobjecten.
-     *
-     * @return JSONResponse Per-id success/failure list.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     */
-    public function bulkUpdateMetadata(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Apply a bulk metadata update over multiple informatieobjecten.
+	 *
+	 * @return JSONResponse Per-id success/failure list.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 */
+	public function bulkUpdateMetadata(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $ids      = (array) $this->request->getParam('ids', []);
-        $metadata = (array) $this->request->getParam('metadata', []);
+		$ids = (array)$this->request->getParam('ids', []);
+		$metadata = (array)$this->request->getParam('metadata', []);
 
-        $results = [];
-        foreach ($ids as $id) {
-            $results[] = $this->updateOneMetadata(user: $user, id: (string) $id, metadata: $metadata);
-        }
+		$results = [];
+		foreach ($ids as $id) {
+			$results[] = $this->updateOneMetadata(user: $user, id: (string)$id, metadata: $metadata);
+		}
 
-        return new JSONResponse(['results' => $results]);
-    }//end bulkUpdateMetadata()
+		return new JSONResponse(['results' => $results]);
+	}//end bulkUpdateMetadata()
 
-    /**
-     * Update one informatieobject's metadata inside a bulk run.
-     *
-     * @param IUser                $user     The requesting user.
-     * @param string               $id       The informatieobject UUID.
-     * @param array<string, mixed> $metadata The metadata to apply.
-     *
-     * @return array<string, mixed> The per-id result entry.
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     */
-    private function updateOneMetadata(IUser $user, string $id, array $metadata): array
-    {
-        if ($this->reader->guardReadable(user: $user, infoObjectId: $id) !== null) {
-            return ['id' => $id, 'success' => false, 'error' => 'Insufficient clearance'];
-        }
+	/**
+	 * Update one informatieobject's metadata inside a bulk run.
+	 *
+	 * @param IUser $user The requesting user.
+	 * @param string $id The informatieobject UUID.
+	 * @param array<string, mixed> $metadata The metadata to apply.
+	 *
+	 * @return array<string, mixed> The per-id result entry.
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 */
+	private function updateOneMetadata(IUser $user, string $id, array $metadata): array {
+		if ($this->reader->guardReadable(user: $user, infoObjectId: $id) !== null) {
+			return ['id' => $id, 'success' => false, 'error' => 'Insufficient clearance'];
+		}
 
-        try {
-            $this->dossierService->updateMetadata(infoObjectId: $id, metadata: $metadata);
-            return ['id' => $id, 'success' => true];
-        } catch (\Throwable $e) {
-            return ['id' => $id, 'success' => false, 'error' => $e->getMessage()];
-        }
-    }//end updateOneMetadata()
+		try {
+			$this->dossierService->updateMetadata(infoObjectId: $id, metadata: $metadata);
+			return ['id' => $id, 'success' => true];
+		} catch (\Throwable $e) {
+			return ['id' => $id, 'success' => false, 'error' => $e->getMessage()];
+		}
+	}//end updateOneMetadata()
 
-    /**
-     * Whether every listed informatieobject is readable by the user.
-     *
-     * @param IUser            $user The requesting user.
-     * @param array<int,mixed> $ids  The informatieobject UUIDs.
-     *
-     * @return bool True when all ids pass the clearance gate.
-     *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
-     */
-    private function allReadable(IUser $user, array $ids): bool
-    {
-        foreach ($ids as $id) {
-            if ($this->reader->guardReadable(user: $user, infoObjectId: (string) $id) !== null) {
-                return false;
-            }
-        }
+	/**
+	 * Whether every listed informatieobject is readable by the user.
+	 *
+	 * @param IUser $user The requesting user.
+	 * @param array<int,mixed> $ids The informatieobject UUIDs.
+	 *
+	 * @return bool True when all ids pass the clearance gate.
+	 *
+	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+	 */
+	private function allReadable(IUser $user, array $ids): bool {
+		foreach ($ids as $id) {
+			if ($this->reader->guardReadable(user: $user, infoObjectId: (string)$id) !== null) {
+				return false;
+			}
+		}
 
-        return true;
-    }//end allReadable()
+		return true;
+	}//end allReadable()
 }//end class

@@ -32,99 +32,90 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Service\TenantSchemaProvisioner
  */
-class TenantSchemaProvisionerTest extends TestCase
-{
-    private TenantSchemaProvisioner $provisioner;
+class TenantSchemaProvisionerTest extends TestCase {
+	private TenantSchemaProvisioner $provisioner;
 
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $db     = $this->createMock(IDBConnection::class);
-        $logger = $this->createMock(LoggerInterface::class);
+	/**
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		$db = $this->createMock(IDBConnection::class);
+		$logger = $this->createMock(LoggerInterface::class);
 
-        $this->provisioner = new TenantSchemaProvisioner(
-            db: $db,
-            logger: $logger,
-        );
-    }//end setUp()
+		$this->provisioner = new TenantSchemaProvisioner(
+			db: $db,
+			logger: $logger,
+		);
+	}//end setUp()
 
-    /**
-     * Valid identifier passes (lowercase alphanumeric + underscore).
-     *
-     * @return void
-     */
-    public function testAssertSafeIdentifierAcceptsValid(): void
-    {
-        $this->provisioner->assertSafeIdentifier('tenant_a1b2c3d4_amsterdam');
-        $this->expectNotToPerformAssertions();
-    }//end testAssertSafeIdentifierAcceptsValid()
+	/**
+	 * Valid identifier passes (lowercase alphanumeric + underscore).
+	 *
+	 * @return void
+	 */
+	public function testAssertSafeIdentifierAcceptsValid(): void {
+		$this->provisioner->assertSafeIdentifier('tenant_a1b2c3d4_amsterdam');
+		$this->expectNotToPerformAssertions();
+	}//end testAssertSafeIdentifierAcceptsValid()
 
-    /**
-     * Identifier with uppercase rejected.
-     *
-     * @return void
-     */
-    public function testAssertSafeIdentifierRejectsUppercase(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->provisioner->assertSafeIdentifier('Tenant_Amsterdam');
-    }//end testAssertSafeIdentifierRejectsUppercase()
+	/**
+	 * Identifier with uppercase rejected.
+	 *
+	 * @return void
+	 */
+	public function testAssertSafeIdentifierRejectsUppercase(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->provisioner->assertSafeIdentifier('Tenant_Amsterdam');
+	}//end testAssertSafeIdentifierRejectsUppercase()
 
-    /**
-     * Identifier with a quote rejected (SQL-injection guard).
-     *
-     * @return void
-     */
-    public function testAssertSafeIdentifierRejectsQuote(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->provisioner->assertSafeIdentifier('tenant"; DROP SCHEMA public; --');
-    }//end testAssertSafeIdentifierRejectsQuote()
+	/**
+	 * Identifier with a quote rejected (SQL-injection guard).
+	 *
+	 * @return void
+	 */
+	public function testAssertSafeIdentifierRejectsQuote(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->provisioner->assertSafeIdentifier('tenant"; DROP SCHEMA public; --');
+	}//end testAssertSafeIdentifierRejectsQuote()
 
-    /**
-     * Identifier with hyphen rejected (use underscore).
-     *
-     * @return void
-     */
-    public function testAssertSafeIdentifierRejectsHyphen(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->provisioner->assertSafeIdentifier('tenant-amsterdam');
-    }//end testAssertSafeIdentifierRejectsHyphen()
+	/**
+	 * Identifier with hyphen rejected (use underscore).
+	 *
+	 * @return void
+	 */
+	public function testAssertSafeIdentifierRejectsHyphen(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->provisioner->assertSafeIdentifier('tenant-amsterdam');
+	}//end testAssertSafeIdentifierRejectsHyphen()
 
-    /**
-     * Identifier exceeding 63 chars rejected.
-     *
-     * @return void
-     */
-    public function testAssertSafeIdentifierRejectsOversize(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->provisioner->assertSafeIdentifier('tenant_'.str_repeat('x', 60));
-    }//end testAssertSafeIdentifierRejectsOversize()
+	/**
+	 * Identifier exceeding 63 chars rejected.
+	 *
+	 * @return void
+	 */
+	public function testAssertSafeIdentifierRejectsOversize(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->provisioner->assertSafeIdentifier('tenant_' . str_repeat('x', 60));
+	}//end testAssertSafeIdentifierRejectsOversize()
 
-    /**
-     * Empty identifier rejected.
-     *
-     * @return void
-     */
-    public function testAssertSafeIdentifierRejectsEmpty(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->provisioner->assertSafeIdentifier('');
-    }//end testAssertSafeIdentifierRejectsEmpty()
+	/**
+	 * Empty identifier rejected.
+	 *
+	 * @return void
+	 */
+	public function testAssertSafeIdentifierRejectsEmpty(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->provisioner->assertSafeIdentifier('');
+	}//end testAssertSafeIdentifierRejectsEmpty()
 
-    /**
-     * Identifier starting with digit rejected (PG identifier must start with letter).
-     *
-     * @return void
-     */
-    public function testAssertSafeIdentifierRejectsLeadingDigit(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->provisioner->assertSafeIdentifier('1tenant');
-    }//end testAssertSafeIdentifierRejectsLeadingDigit()
+	/**
+	 * Identifier starting with digit rejected (PG identifier must start with letter).
+	 *
+	 * @return void
+	 */
+	public function testAssertSafeIdentifierRejectsLeadingDigit(): void {
+		$this->expectException(InvalidArgumentException::class);
+		$this->provisioner->assertSafeIdentifier('1tenant');
+	}//end testAssertSafeIdentifierRejectsLeadingDigit()
 }//end class

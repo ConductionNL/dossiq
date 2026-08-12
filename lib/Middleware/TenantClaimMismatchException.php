@@ -30,6 +30,5 @@ use Exception;
 /**
  * Tenant-claim mismatch exception (always 403).
  */
-class TenantClaimMismatchException extends Exception
-{
+class TenantClaimMismatchException extends Exception {
 }//end class

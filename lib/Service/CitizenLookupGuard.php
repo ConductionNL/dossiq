@@ -65,81 +65,79 @@ use Throwable;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class CitizenLookupGuard
-{
+class CitizenLookupGuard {
 
-    /**
-     * Groups whose members may resolve a citizen identifier.
-     *
-     * An empty intersection denies. The existence of these groups is never
-     * part of the decision — a group that does not exist simply matches
-     * nobody.
-     *
-     * ⚠️ TWO OF THESE FOUR NAMES ARE ASSUMPTIONS, NOT ESTABLISHED FACTS.
-     * Verified with `grep -w` across this repository at `cb63acad3`:
-     *
-     *   - `beheerders` and `admin` are ATTESTED — both are already used as
-     *     Nextcloud group names by `ProcessMiningController::ALLOWED_GROUPS`
-     *     and `ParaferingAuditExportController::ALLOWED_GROUPS`.
-     *   - `kcc` and `klantcontact` are ASSUMED. Neither appears anywhere in
-     *     this codebase as a group name: `kcc` occurs only as a feature name,
-     *     spec slug and CSS class, and `klantcontact` only as a ZGW domain
-     *     term and a spec slug. They were chosen by the author of this class,
-     *     not derived from anything the app already does.
-     *
-     * The consequence is deliberate and it fails CLOSED: if a deployment's KCC
-     * group is called something else, its call-centre staff get HTTP 403 and an
-     * operator fixes it by creating the group or editing this constant. The
-     * alternative — leaving the endpoint open — returned a citizen's phone
-     * number and the free-text summary of every previous call to ANY
-     * authenticated account (finding PROC-IDOR-01, reproduced live).
-     *
-     * A wrong name here is a functional regression an operator can correct in
-     * a minute. A missing guard is a personal-data breach nobody notices.
-     *
-     * 🔧 DEPLOYMENT: this guard denies until the group exists. Create `kcc`
-     * (or rename the entry below to match your instance) and add the KCC
-     * handlers to it.
-     */
-    private const ALLOWED_GROUPS = ['kcc', 'klantcontact', 'beheerders', 'admin'];
+	/**
+	 * Groups whose members may resolve a citizen identifier.
+	 *
+	 * An empty intersection denies. The existence of these groups is never
+	 * part of the decision — a group that does not exist simply matches
+	 * nobody.
+	 *
+	 * ⚠️ TWO OF THESE FOUR NAMES ARE ASSUMPTIONS, NOT ESTABLISHED FACTS.
+	 * Verified with `grep -w` across this repository at `cb63acad3`:
+	 *
+	 *   - `beheerders` and `admin` are ATTESTED — both are already used as
+	 *     Nextcloud group names by `ProcessMiningController::ALLOWED_GROUPS`
+	 *     and `ParaferingAuditExportController::ALLOWED_GROUPS`.
+	 *   - `kcc` and `klantcontact` are ASSUMED. Neither appears anywhere in
+	 *     this codebase as a group name: `kcc` occurs only as a feature name,
+	 *     spec slug and CSS class, and `klantcontact` only as a ZGW domain
+	 *     term and a spec slug. They were chosen by the author of this class,
+	 *     not derived from anything the app already does.
+	 *
+	 * The consequence is deliberate and it fails CLOSED: if a deployment's KCC
+	 * group is called something else, its call-centre staff get HTTP 403 and an
+	 * operator fixes it by creating the group or editing this constant. The
+	 * alternative — leaving the endpoint open — returned a citizen's phone
+	 * number and the free-text summary of every previous call to ANY
+	 * authenticated account (finding PROC-IDOR-01, reproduced live).
+	 *
+	 * A wrong name here is a functional regression an operator can correct in
+	 * a minute. A missing guard is a personal-data breach nobody notices.
+	 *
+	 * 🔧 DEPLOYMENT: this guard denies until the group exists. Create `kcc`
+	 * (or rename the entry below to match your instance) and add the KCC
+	 * handlers to it.
+	 */
+	private const ALLOWED_GROUPS = ['kcc', 'klantcontact', 'beheerders', 'admin'];
 
-    /**
-     * Constructor.
-     *
-     * @param IGroupManager $groupManager The group manager.
-     */
-    public function __construct(
-        private readonly IGroupManager $groupManager,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IGroupManager $groupManager The group manager.
+	 */
+	public function __construct(
+		private readonly IGroupManager $groupManager,
+	) {
+	}//end __construct()
 
-    /**
-     * Whether the given user may resolve citizen identifiers.
-     *
-     * @param IUser $user The authenticated user.
-     *
-     * @return bool True when the user is a KCC handler or a Nextcloud admin.
-     *
-     * @spec openspec/specs/authz-bypass-fixes/spec.md
-     */
-    public function isCitizenLookupAllowed(IUser $user): bool
-    {
-        $uid = $user->getUID();
-        if ($uid === '') {
-            return false;
-        }
+	/**
+	 * Whether the given user may resolve citizen identifiers.
+	 *
+	 * @param IUser $user The authenticated user.
+	 *
+	 * @return bool True when the user is a KCC handler or a Nextcloud admin.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	public function isCitizenLookupAllowed(IUser $user): bool {
+		$uid = $user->getUID();
+		if ($uid === '') {
+			return false;
+		}
 
-        try {
-            foreach (self::ALLOWED_GROUPS as $group) {
-                if ($this->groupManager->isInGroup($uid, $group) === true) {
-                    return true;
-                }
-            }
+		try {
+			foreach (self::ALLOWED_GROUPS as $group) {
+				if ($this->groupManager->isInGroup($uid, $group) === true) {
+					return true;
+				}
+			}
 
-            return $this->groupManager->isAdmin($uid);
-        } catch (Throwable $e) {
-            // An unresolvable group check is not an authorization.
-            return false;
-        }
-    }//end isCitizenLookupAllowed()
+			return $this->groupManager->isAdmin($uid);
+		} catch (Throwable $e) {
+			// An unresolvable group check is not an authorization.
+			return false;
+		}
+	}//end isCitizenLookupAllowed()
 }//end class

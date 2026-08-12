@@ -44,90 +44,87 @@ namespace OCA\Procest\Service;
  *
  * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
-class AdviceDelegationService
-{
-    /**
-     * Constructor.
-     *
-     * @param ContractDecisionDelegationService $core Shared event-dispatch raiseDecision core.
-     */
-    public function __construct(
-        private readonly ContractDecisionDelegationService $core,
-    ) {
-    }//end __construct()
+class AdviceDelegationService {
+	/**
+	 * Constructor.
+	 *
+	 * @param ContractDecisionDelegationService $core Shared event-dispatch raiseDecision core.
+	 */
+	public function __construct(
+		private readonly ContractDecisionDelegationService $core,
+	) {
+	}//end __construct()
 
-    /**
-     * Raise a decidesk `advice` Decision for a BAC / adviesAanvraag / consultatie request.
-     *
-     * The caller MUST have run its procest domain rule (BAC panel-independence,
-     * the advice IDOR gate) BEFORE invoking this. FAILS CLOSED when the
-     * decidesk leaf is unavailable.
-     *
-     * @param string              $subjectSchema The procest subject schema (bacAdviceRequest, adviesAanvraag, consultation).
-     * @param string              $subjectId     The subject object UUID.
-     * @param array<string,mixed> $payload       Advice context + provenance: subjectRegister,
-     *                                           subjectLabel, externalReference, question,
-     *                                           adviceType, etc.
-     *
-     * @return string The decidesk decisionRef (UUID) to persist on the case.
-     *
-     * @throws \RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
-     *
-     * @spec openspec/specs/remaining-decision-delegation/spec.md
-     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
-     */
-    public function raiseAdviceDecision(string $subjectSchema, string $subjectId, array $payload=[]): string
-    {
-        return $this->core->raiseDecision(
-            decisionType: ContractDecisionDelegationService::DECISION_TYPE_ADVICE,
-            externalReference: (string) ($payload['externalReference'] ?? $subjectId),
-            subject: [
-                'subjectRegister' => (string) ($payload['subjectRegister'] ?? ''),
-                'subjectSchema'   => $subjectSchema,
-                'subjectId'       => $subjectId,
-                'subjectLabel'    => (string) ($payload['subjectLabel'] ?? ''),
-            ],
-            context: [
-                'question'   => (string) ($payload['question'] ?? ''),
-                'adviceType' => (string) ($payload['adviceType'] ?? ''),
-                'adviseur'   => (string) ($payload['adviseur'] ?? ''),
-            ],
-        );
-    }//end raiseAdviceDecision()
+	/**
+	 * Raise a decidesk `advice` Decision for a BAC / adviesAanvraag / consultatie request.
+	 *
+	 * The caller MUST have run its procest domain rule (BAC panel-independence,
+	 * the advice IDOR gate) BEFORE invoking this. FAILS CLOSED when the
+	 * decidesk leaf is unavailable.
+	 *
+	 * @param string $subjectSchema The procest subject schema (bacAdviceRequest, adviesAanvraag, consultation).
+	 * @param string $subjectId The subject object UUID.
+	 * @param array<string,mixed> $payload Advice context + provenance: subjectRegister,
+	 *                                     subjectLabel, externalReference, question,
+	 *                                     adviceType, etc.
+	 *
+	 * @return string The decidesk decisionRef (UUID) to persist on the case.
+	 *
+	 * @throws \RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+	 */
+	public function raiseAdviceDecision(string $subjectSchema, string $subjectId, array $payload = []): string {
+		return $this->core->raiseDecision(
+			decisionType: ContractDecisionDelegationService::DECISION_TYPE_ADVICE,
+			externalReference: (string)($payload['externalReference'] ?? $subjectId),
+			subject: [
+				'subjectRegister' => (string)($payload['subjectRegister'] ?? ''),
+				'subjectSchema' => $subjectSchema,
+				'subjectId' => $subjectId,
+				'subjectLabel' => (string)($payload['subjectLabel'] ?? ''),
+			],
+			context: [
+				'question' => (string)($payload['question'] ?? ''),
+				'adviceType' => (string)($payload['adviceType'] ?? ''),
+				'adviseur' => (string)($payload['adviseur'] ?? ''),
+			],
+		);
+	}//end raiseAdviceDecision()
 
-    /**
-     * Raise a decidesk `report-adoption` Decision for a voorstel besluit-registration.
-     *
-     * The caller (voorstel besluit-registration node) keeps the parafeerroute
-     * untouched; only the besluit *decision* is delegated. FAILS CLOSED when
-     * the decidesk leaf is unavailable.
-     *
-     * @param string              $voorstelId The voorstel UUID.
-     * @param array<string,mixed> $payload    Provenance + context: subjectRegister, subjectLabel, externalReference, title, governingBody.
-     *
-     * @return string The decidesk decisionRef (UUID) to persist on the case.
-     *
-     * @throws \RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
-     *
-     * @spec openspec/specs/remaining-decision-delegation/spec.md
-     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
-     */
-    public function raiseVoorstelBesluit(string $voorstelId, array $payload=[]): string
-    {
-        return $this->core->raiseDecision(
-            decisionType: ContractDecisionDelegationService::DECISION_TYPE_REPORT_ADOPTION,
-            externalReference: (string) ($payload['externalReference'] ?? $voorstelId),
-            subject: [
-                'subjectRegister' => (string) ($payload['subjectRegister'] ?? ''),
-                'subjectSchema'   => 'voorstel',
-                'subjectId'       => $voorstelId,
-                'subjectLabel'    => (string) ($payload['subjectLabel'] ?? ($payload['title'] ?? '')),
-            ],
-            context: [
-                'title'         => (string) ($payload['title'] ?? ''),
-                'governingBody' => (string) ($payload['governingBody'] ?? ''),
-                'explanation'   => (string) ($payload['explanation'] ?? ''),
-            ],
-        );
-    }//end raiseVoorstelBesluit()
+	/**
+	 * Raise a decidesk `report-adoption` Decision for a voorstel besluit-registration.
+	 *
+	 * The caller (voorstel besluit-registration node) keeps the parafeerroute
+	 * untouched; only the besluit *decision* is delegated. FAILS CLOSED when
+	 * the decidesk leaf is unavailable.
+	 *
+	 * @param string $voorstelId The voorstel UUID.
+	 * @param array<string,mixed> $payload Provenance + context: subjectRegister, subjectLabel, externalReference, title, governingBody.
+	 *
+	 * @return string The decidesk decisionRef (UUID) to persist on the case.
+	 *
+	 * @throws \RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+	 */
+	public function raiseVoorstelBesluit(string $voorstelId, array $payload = []): string {
+		return $this->core->raiseDecision(
+			decisionType: ContractDecisionDelegationService::DECISION_TYPE_REPORT_ADOPTION,
+			externalReference: (string)($payload['externalReference'] ?? $voorstelId),
+			subject: [
+				'subjectRegister' => (string)($payload['subjectRegister'] ?? ''),
+				'subjectSchema' => 'voorstel',
+				'subjectId' => $voorstelId,
+				'subjectLabel' => (string)($payload['subjectLabel'] ?? ($payload['title'] ?? '')),
+			],
+			context: [
+				'title' => (string)($payload['title'] ?? ''),
+				'governingBody' => (string)($payload['governingBody'] ?? ''),
+				'explanation' => (string)($payload['explanation'] ?? ''),
+			],
+		);
+	}//end raiseVoorstelBesluit()
 }//end class

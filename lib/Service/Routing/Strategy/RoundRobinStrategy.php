@@ -36,83 +36,81 @@ use OCP\IAppConfig;
  *
  * @spec openspec/changes/role-based-step-routing/tasks.md#T03
  */
-class RoundRobinStrategy implements RoutingStrategyInterface
-{
-    /**
-     * Constructor.
-     *
-     * @param IAppConfig $appConfig Persists the per-(caseType, roleType) cursor
-     */
-    public function __construct(private readonly IAppConfig $appConfig)
-    {
-    }//end __construct()
+class RoundRobinStrategy implements RoutingStrategyInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param IAppConfig $appConfig Persists the per-(caseType, roleType) cursor
+	 */
+	public function __construct(
+		private readonly IAppConfig $appConfig,
+	) {
+	}//end __construct()
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return string The strategy name.
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return string The strategy name.
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function name(): string {
+		return 'round-robin';
+	}//end name()
 
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function name(): string
-    {
-        return 'round-robin';
-    }//end name()
+	/**
+	 * Pick the next participant in rotation; advance and persist the cursor.
+	 *
+	 * Returns a single-element array. When no participants match the rule's
+	 * `roleType` for the case, returns an empty array.
+	 *
+	 * @param array<string, mixed> $rule The routing rule
+	 * @param array<string, mixed> $case The case object
+	 * @param array<int, array<string, mixed>> $roles Roles bound to the case
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function resolve(array $rule, array $case, array $roles): array {
+		$target = (string)($rule['roleType'] ?? '');
+		if ($target === '') {
+			return [];
+		}
 
-    /**
-     * Pick the next participant in rotation; advance and persist the cursor.
-     *
-     * Returns a single-element array. When no participants match the rule's
-     * `roleType` for the case, returns an empty array.
-     *
-     * @param array<string, mixed>             $rule  The routing rule
-     * @param array<string, mixed>             $case  The case object
-     * @param array<int, array<string, mixed>> $roles Roles bound to the case
-     *
-     * @return array<int, string>
+		$participants = [];
+		foreach ($roles as $role) {
+			if ((string)($role['roleType'] ?? '') !== $target) {
+				continue;
+			}
 
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function resolve(array $rule, array $case, array $roles): array
-    {
-        $target = (string) ($rule['roleType'] ?? '');
-        if ($target === '') {
-            return [];
-        }
+			$participant = (string)($role['participant'] ?? '');
+			if ($participant !== '') {
+				$participants[] = $participant;
+			}
+		}
 
-        $participants = [];
-        foreach ($roles as $role) {
-            if ((string) ($role['roleType'] ?? '') !== $target) {
-                continue;
-            }
+		$participants = array_values(array_unique($participants));
+		$count = count($participants);
+		if ($count === 0) {
+			return [];
+		}
 
-            $participant = (string) ($role['participant'] ?? '');
-            if ($participant !== '') {
-                $participants[] = $participant;
-            }
-        }
+		$caseType = (string)($case['caseType'] ?? '');
+		$key = sprintf('routing.rr.%s.%s', $caseType, $target);
+		$cursor = (int)$this->appConfig->getValueInt(
+			Application::APP_ID,
+			$key,
+			0,
+		);
 
-        $participants = array_values(array_unique($participants));
-        $count        = count($participants);
-        if ($count === 0) {
-            return [];
-        }
+		$pick = $participants[$cursor % $count];
+		$this->appConfig->setValueInt(
+			Application::APP_ID,
+			$key,
+			(($cursor + 1) % max($count, 1)),
+		);
 
-        $caseType = (string) ($case['caseType'] ?? '');
-        $key      = sprintf('routing.rr.%s.%s', $caseType, $target);
-        $cursor   = (int) $this->appConfig->getValueInt(
-            Application::APP_ID,
-            $key,
-            0,
-        );
-
-        $pick = $participants[$cursor % $count];
-        $this->appConfig->setValueInt(
-            Application::APP_ID,
-            $key,
-            (($cursor + 1) % max($count, 1)),
-        );
-
-        return [$pick];
-    }//end resolve()
+		return [$pick];
+	}//end resolve()
 }//end class

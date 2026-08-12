@@ -79,31 +79,30 @@ namespace OCA\Procest\Service\External\Brp;
  *
  * @spec openspec/changes/brp-kvk-register-sets/proposal.md
  */
-interface BrpHaalCentraalAdapterInterface
-{
-    /**
-     * Look up a natural person by BSN.
-     *
-     * @param string              $bsn     9-digit Burgerservicenummer.
-     * @param array<string,mixed> $context Optional context — caseId,
-     *                                     lookupReason
-     *                                     (`citizen-intake` |
-     *                                     `briefcode-resolution` |
-     *                                     `register-set-seed`),
-     *                                     correlationId,
-     *                                     autorisatieprofielId
-     *                                     (openconnector-side ref).
-     *
-     * @return BrpLookupResult The lookup outcome (status + persoon
-     *                         envelope minus BSN).
-     */
-    public function lookup(string $bsn, array $context=[]): BrpLookupResult;
+interface BrpHaalCentraalAdapterInterface {
+	/**
+	 * Look up a natural person by BSN.
+	 *
+	 * @param string $bsn 9-digit Burgerservicenummer.
+	 * @param array<string,mixed> $context Optional context — caseId,
+	 *                                     lookupReason
+	 *                                     (`citizen-intake` |
+	 *                                     `briefcode-resolution` |
+	 *                                     `register-set-seed`),
+	 *                                     correlationId,
+	 *                                     autorisatieprofielId
+	 *                                     (openconnector-side ref).
+	 *
+	 * @return BrpLookupResult The lookup outcome (status + persoon
+	 *                         envelope minus BSN).
+	 */
+	public function lookup(string $bsn, array $context = []): BrpLookupResult;
 
-    /**
-     * Whether the adapter is dormant — i.e. wired but not contacting
-     * Haal Centraal.
-     *
-     * @return bool TRUE when the adapter is a log-only stub.
-     */
-    public function isDormant(): bool;
+	/**
+	 * Whether the adapter is dormant — i.e. wired but not contacting
+	 * Haal Centraal.
+	 *
+	 * @return bool TRUE when the adapter is a log-only stub.
+	 */
+	public function isDormant(): bool;
 }//end interface

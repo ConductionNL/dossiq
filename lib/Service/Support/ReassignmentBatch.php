@@ -35,25 +35,24 @@ namespace OCA\Procest\Service\Support;
  *
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
-class ReassignmentBatch
-{
-    /**
-     * Constructor.
-     *
-     * @param string $fromUser Previous handler the work is taken from.
-     * @param string $toUser   New handler the work is given to.
-     * @param string $actorId  Acting coordinator who ordered the batch.
-     * @param string $batchId  Shared id stamped on every audit entry.
-     * @param string $now      ISO timestamp stamped on every audit entry.
-     *
-     * @return void
-     */
-    public function __construct(
-        public readonly string $fromUser,
-        public readonly string $toUser,
-        public readonly string $actorId,
-        public readonly string $batchId,
-        public readonly string $now,
-    ) {
-    }//end __construct()
+class ReassignmentBatch {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $fromUser Previous handler the work is taken from.
+	 * @param string $toUser New handler the work is given to.
+	 * @param string $actorId Acting coordinator who ordered the batch.
+	 * @param string $batchId Shared id stamped on every audit entry.
+	 * @param string $now ISO timestamp stamped on every audit entry.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		public readonly string $fromUser,
+		public readonly string $toUser,
+		public readonly string $actorId,
+		public readonly string $batchId,
+		public readonly string $now,
+	) {
+	}//end __construct()
 }//end class

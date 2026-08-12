@@ -41,49 +41,48 @@ use OCP\EventDispatcher\IEventDispatcher;
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
  */
-class DsoStatusChangeNotifier
-{
-    /**
-     * Constructor.
-     *
-     * @param IEventDispatcher $eventDispatcher The event dispatcher.
-     */
-    public function __construct(
-        private readonly IEventDispatcher $eventDispatcher,
-    ) {
-    }//end __construct()
+class DsoStatusChangeNotifier {
+	/**
+	 * Constructor.
+	 *
+	 * @param IEventDispatcher $eventDispatcher The event dispatcher.
+	 */
+	public function __construct(
+		private readonly IEventDispatcher $eventDispatcher,
+	) {
+	}//end __construct()
 
-    /**
-     * Dispatch the typed status-changed event for a transitioned zaak.
-     *
-     * @param string      $aanvraagRef  The vergunningaanvraag UUID reference.
-     * @param string      $oldStatus    The previous status value.
-     * @param string      $newStatus    The new status value.
-     * @param string|null $besluitdatum Optional decision date (ISO 8601).
-     * @param string|null $toelichting  Optional explanation text.
-     * @param string      $userId       The Nextcloud UID that triggered the transition.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
-     */
-    public function dispatchStatusChanged(
-        string $aanvraagRef,
-        string $oldStatus,
-        string $newStatus,
-        ?string $besluitdatum,
-        ?string $toelichting,
-        string $userId,
-    ): void {
-        $event = new VergunningStatusChangedEvent(
-            aanvraagRef: $aanvraagRef,
-            oldStatus: $oldStatus,
-            newStatus: $newStatus,
-            besluitdatum: $besluitdatum,
-            toelichting: $toelichting,
-            userId: $userId,
-        );
+	/**
+	 * Dispatch the typed status-changed event for a transitioned zaak.
+	 *
+	 * @param string $aanvraagRef The vergunningaanvraag UUID reference.
+	 * @param string $oldStatus The previous status value.
+	 * @param string $newStatus The new status value.
+	 * @param string|null $besluitdatum Optional decision date (ISO 8601).
+	 * @param string|null $toelichting Optional explanation text.
+	 * @param string $userId The Nextcloud UID that triggered the transition.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+	 */
+	public function dispatchStatusChanged(
+		string $aanvraagRef,
+		string $oldStatus,
+		string $newStatus,
+		?string $besluitdatum,
+		?string $toelichting,
+		string $userId,
+	): void {
+		$event = new VergunningStatusChangedEvent(
+			aanvraagRef: $aanvraagRef,
+			oldStatus: $oldStatus,
+			newStatus: $newStatus,
+			besluitdatum: $besluitdatum,
+			toelichting: $toelichting,
+			userId: $userId,
+		);
 
-        $this->eventDispatcher->dispatchTyped(event: $event);
-    }//end dispatchStatusChanged()
+		$this->eventDispatcher->dispatchTyped(event: $event);
+	}//end dispatchStatusChanged()
 }//end class

@@ -60,303 +60,294 @@ use Throwable;
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
-class WozApiAdapter implements WozAdapterInterface
-{
-    /**
-     * Default base URL — SwaggerHub auto-mock of the published WOZ
-     * Bevragen OpenAPI spec (`test`-tier smoke-testing only; see class
-     * docblock). Override via `integration.woz.baseUrl` for a real
-     * Kadaster environment.
-     */
-    public const DEFAULT_BASE_URL = 'https://virtserver.swaggerhub.com/VNG-sandbox/Waardering-onroerende-zaken/1.0.0';
+class WozApiAdapter implements WozAdapterInterface {
+	/**
+	 * Default base URL — SwaggerHub auto-mock of the published WOZ
+	 * Bevragen OpenAPI spec (`test`-tier smoke-testing only; see class
+	 * docblock). Override via `integration.woz.baseUrl` for a real
+	 * Kadaster environment.
+	 */
+	public const DEFAULT_BASE_URL = 'https://virtserver.swaggerhub.com/VNG-sandbox/Waardering-onroerende-zaken/1.0.0';
 
-    /**
-     * Dutch postcode shape — 4 digits (first non-zero) + 2 uppercase
-     * letters, no space. Same pattern as `BagApiAdapter` — WOZ objects
-     * share the BAG address taxonomy.
-     */
-    private const POSTCODE_PATTERN = '/^[1-9][0-9]{3}[A-Z]{2}$/';
+	/**
+	 * Dutch postcode shape — 4 digits (first non-zero) + 2 uppercase
+	 * letters, no space. Same pattern as `BagApiAdapter` — WOZ objects
+	 * share the BAG address taxonomy.
+	 */
+	private const POSTCODE_PATTERN = '/^[1-9][0-9]{3}[A-Z]{2}$/';
 
-    /**
-     * Constructor.
-     *
-     * @param IClientService    $clientService HTTP client factory.
-     * @param IntegrationMode   $mode          Config-tier resolver.
-     * @param WozResponseMapper $mapper        Pure response normalizer.
-     * @param LoggerInterface   $logger        Structured logger.
-     */
-    public function __construct(
-        private readonly IClientService $clientService,
-        private readonly IntegrationMode $mode,
-        private readonly WozResponseMapper $mapper,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IClientService $clientService HTTP client factory.
+	 * @param IntegrationMode $mode Config-tier resolver.
+	 * @param WozResponseMapper $mapper Pure response normalizer.
+	 * @param LoggerInterface $logger Structured logger.
+	 */
+	public function __construct(
+		private readonly IClientService $clientService,
+		private readonly IntegrationMode $mode,
+		private readonly WozResponseMapper $mapper,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Look up WOZ object(s) by postcode + huisnummer against the
-     * configured tier.
-     *
-     * @param string              $postcode   Dutch postcode.
-     * @param string              $huisnummer House number.
-     * @param string|null         $huisletter Optional house letter.
-     * @param string|null         $toevoeging Optional house number
-     *                                        addition.
-     * @param array<string,mixed> $context    Lookup context.
-     *
-     * @return WozLookupResult
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function lookupAddress(
-        string $postcode,
-        string $huisnummer,
-        ?string $huisletter=null,
-        ?string $toevoeging=null,
-        array $context=[]
-    ): WozLookupResult {
-        $normalizedPostcode = strtoupper(str_replace(' ', '', $postcode));
-        if (preg_match(self::POSTCODE_PATTERN, $normalizedPostcode) !== 1) {
-            return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-postcode']);
-        }
+	/**
+	 * Look up WOZ object(s) by postcode + huisnummer against the
+	 * configured tier.
+	 *
+	 * @param string $postcode Dutch postcode.
+	 * @param string $huisnummer House number.
+	 * @param string|null $huisletter Optional house letter.
+	 * @param string|null $toevoeging Optional house number
+	 *                                addition.
+	 * @param array<string,mixed> $context Lookup context.
+	 *
+	 * @return WozLookupResult
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function lookupAddress(
+		string $postcode,
+		string $huisnummer,
+		?string $huisletter = null,
+		?string $toevoeging = null,
+		array $context = [],
+	): WozLookupResult {
+		$normalizedPostcode = strtoupper(str_replace(' ', '', $postcode));
+		if (preg_match(self::POSTCODE_PATTERN, $normalizedPostcode) !== 1) {
+			return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-postcode']);
+		}
 
-        if ($huisnummer === '' || ctype_digit($huisnummer) === false) {
-            return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-huisnummer']);
-        }
+		if ($huisnummer === '' || ctype_digit($huisnummer) === false) {
+			return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-huisnummer']);
+		}
 
-        $query = ['postcode' => $normalizedPostcode, 'huisnummer' => $huisnummer];
-        if ($huisletter !== null && $huisletter !== '') {
-            $query['huisletter'] = $huisletter;
-        }
+		$query = ['postcode' => $normalizedPostcode, 'huisnummer' => $huisnummer];
+		if ($huisletter !== null && $huisletter !== '') {
+			$query['huisletter'] = $huisletter;
+		}
 
-        if ($toevoeging !== null && $toevoeging !== '') {
-            $query['huisnummertoevoeging'] = $toevoeging;
-        }
+		if ($toevoeging !== null && $toevoeging !== '') {
+			$query['huisnummertoevoeging'] = $toevoeging;
+		}
 
-        return $this->search(query: $query, context: $context);
-    }//end lookupAddress()
+		return $this->search(query: $query, context: $context);
+	}//end lookupAddress()
 
-    /**
-     * Look up WOZ object(s) by BAG nummeraanduiding identificatie.
-     *
-     * @param string              $nummeraanduidingId BAG nummeraanduiding identificatie.
-     * @param array<string,mixed> $context            Lookup context.
-     *
-     * @return WozLookupResult
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function lookupByNummeraanduiding(string $nummeraanduidingId, array $context=[]): WozLookupResult
-    {
-        if ($nummeraanduidingId === '') {
-            return new WozLookupResult(
-                lookupStatus: 'INVALID_INPUT',
-                wozObject: [],
-                dormant: false,
-                extras: ['reason' => 'invalid-nummeraanduiding-id']
-            );
-        }
+	/**
+	 * Look up WOZ object(s) by BAG nummeraanduiding identificatie.
+	 *
+	 * @param string $nummeraanduidingId BAG nummeraanduiding identificatie.
+	 * @param array<string,mixed> $context Lookup context.
+	 *
+	 * @return WozLookupResult
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function lookupByNummeraanduiding(string $nummeraanduidingId, array $context = []): WozLookupResult {
+		if ($nummeraanduidingId === '') {
+			return new WozLookupResult(
+				lookupStatus: 'INVALID_INPUT',
+				wozObject: [],
+				dormant: false,
+				extras: ['reason' => 'invalid-nummeraanduiding-id']
+			);
+		}
 
-        return $this->search(query: ['nummeraanduidingIdentificatie' => $nummeraanduidingId], context: $context);
-    }//end lookupByNummeraanduiding()
+		return $this->search(query: ['nummeraanduidingIdentificatie' => $nummeraanduidingId], context: $context);
+	}//end lookupByNummeraanduiding()
 
-    /**
-     * Shared search-shaped request against `/wozobjecten`.
-     *
-     * @param array<string,string> $query   Query parameters.
-     * @param array<string,mixed>  $context Lookup context.
-     *
-     * @return WozLookupResult
-     */
-    private function search(array $query, array $context): WozLookupResult
-    {
-        $baseUrl = $this->mode->setting(integration: 'woz', key: 'baseUrl', default: self::DEFAULT_BASE_URL);
+	/**
+	 * Shared search-shaped request against `/wozobjecten`.
+	 *
+	 * @param array<string,string> $query Query parameters.
+	 * @param array<string,mixed> $context Lookup context.
+	 *
+	 * @return WozLookupResult
+	 */
+	private function search(array $query, array $context): WozLookupResult {
+		$baseUrl = $this->mode->setting(integration: 'woz', key: 'baseUrl', default: self::DEFAULT_BASE_URL);
 
-        try {
-            $response = $this->clientService->newClient()->get(
-                rtrim($baseUrl, '/').'/wozobjecten',
-                [
-                    'timeout' => 10,
-                    'query'   => $query,
-                    'headers' => $this->headers(),
-                ]
-            );
+		try {
+			$response = $this->clientService->newClient()->get(
+				rtrim($baseUrl, '/') . '/wozobjecten',
+				[
+					'timeout' => 10,
+					'query' => $query,
+					'headers' => $this->headers(),
+				]
+			);
 
-            $status = (int) $response->getStatusCode();
-            if ($status < 200 || $status >= 300) {
-                return $this->errorResult(status: $status, context: $context);
-            }
+			$status = (int)$response->getStatusCode();
+			if ($status < 200 || $status >= 300) {
+				return $this->errorResult(status: $status, context: $context);
+			}
 
-            $wozObjecten = $this->extractWozObjecten(body: (string) $response->getBody());
-            if ($wozObjecten === []) {
-                return new WozLookupResult(lookupStatus: 'NOT_FOUND', wozObject: [], dormant: false);
-            }
+			$wozObjecten = $this->extractWozObjecten(body: (string)$response->getBody());
+			if ($wozObjecten === []) {
+				return new WozLookupResult(lookupStatus: 'NOT_FOUND', wozObject: [], dormant: false);
+			}
 
-            return $this->foundSearchResult(wozObjecten: $wozObjecten);
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest WOZ search lookup failed',
-                ['query' => $query, 'error' => $e->getMessage(), 'context' => $context]
-            );
+			return $this->foundSearchResult(wozObjecten: $wozObjecten);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Procest WOZ search lookup failed',
+				['query' => $query, 'error' => $e->getMessage(), 'context' => $context]
+			);
 
-            return new WozLookupResult(lookupStatus: 'LOOKUP_ERROR', wozObject: [], dormant: false, extras: ['reason' => 'transport-error']);
-        }//end try
-    }//end search()
+			return new WozLookupResult(lookupStatus: 'LOOKUP_ERROR', wozObject: [], dormant: false, extras: ['reason' => 'transport-error']);
+		}//end try
+	}//end search()
 
-    /**
-     * Extract the `_embedded.wozObjecten` list from a decoded response
-     * body, defensively defaulting to an empty list on any unexpected
-     * shape.
-     *
-     * @param string $body Raw response body.
-     *
-     * @return array<int,array<string,mixed>>
-     */
-    private function extractWozObjecten(string $body): array
-    {
-        $data = json_decode($body, true);
-        if (is_array($data) === false) {
-            return [];
-        }
+	/**
+	 * Extract the `_embedded.wozObjecten` list from a decoded response
+	 * body, defensively defaulting to an empty list on any unexpected
+	 * shape.
+	 *
+	 * @param string $body Raw response body.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private function extractWozObjecten(string $body): array {
+		$data = json_decode($body, true);
+		if (is_array($data) === false) {
+			return [];
+		}
 
-        $embedded = ($data['_embedded'] ?? []);
-        if (is_array($embedded) === false) {
-            return [];
-        }
+		$embedded = ($data['_embedded'] ?? []);
+		if (is_array($embedded) === false) {
+			return [];
+		}
 
-        return (array) ($embedded['wozObjecten'] ?? []);
-    }//end extractWozObjecten()
+		return (array)($embedded['wozObjecten'] ?? []);
+	}//end extractWozObjecten()
 
-    /**
-     * Build the FOUND result for a non-empty search.
-     *
-     * @param array<int,array<string,mixed>> $wozObjecten Raw Kadaster fragments.
-     *
-     * @return WozLookupResult
-     */
-    private function foundSearchResult(array $wozObjecten): WozLookupResult
-    {
-        $matches = $this->mapper->mapMany(rawList: $wozObjecten);
+	/**
+	 * Build the FOUND result for a non-empty search.
+	 *
+	 * @param array<int,array<string,mixed>> $wozObjecten Raw Kadaster fragments.
+	 *
+	 * @return WozLookupResult
+	 */
+	private function foundSearchResult(array $wozObjecten): WozLookupResult {
+		$matches = $this->mapper->mapMany(rawList: $wozObjecten);
 
-        return new WozLookupResult(
-            lookupStatus: 'FOUND',
-            wozObject: $matches[0],
-            dormant: false,
-            extras: [
-                'tier'    => $this->mode->resolve(integration: 'woz', allowed: [IntegrationMode::TEST, IntegrationMode::LIVE]),
-                'count'   => count($matches),
-                'matches' => $matches,
-            ]
-        );
-    }//end foundSearchResult()
+		return new WozLookupResult(
+			lookupStatus: 'FOUND',
+			wozObject: $matches[0],
+			dormant: false,
+			extras: [
+				'tier' => $this->mode->resolve(integration: 'woz', allowed: [IntegrationMode::TEST, IntegrationMode::LIVE]),
+				'count' => count($matches),
+				'matches' => $matches,
+			]
+		);
+	}//end foundSearchResult()
 
-    /**
-     * Look up a single WOZ object by its wozobjectnummer against the
-     * configured tier.
-     *
-     * @param string              $wozobjectnummer WOZ object number.
-     * @param array<string,mixed> $context         Lookup context.
-     *
-     * @return WozLookupResult
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function lookupByWozObjectNummer(string $wozobjectnummer, array $context=[]): WozLookupResult
-    {
-        if ($wozobjectnummer === '') {
-            return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-wozobjectnummer']);
-        }
+	/**
+	 * Look up a single WOZ object by its wozobjectnummer against the
+	 * configured tier.
+	 *
+	 * @param string $wozobjectnummer WOZ object number.
+	 * @param array<string,mixed> $context Lookup context.
+	 *
+	 * @return WozLookupResult
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function lookupByWozObjectNummer(string $wozobjectnummer, array $context = []): WozLookupResult {
+		if ($wozobjectnummer === '') {
+			return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-wozobjectnummer']);
+		}
 
-        $baseUrl = $this->mode->setting(integration: 'woz', key: 'baseUrl', default: self::DEFAULT_BASE_URL);
+		$baseUrl = $this->mode->setting(integration: 'woz', key: 'baseUrl', default: self::DEFAULT_BASE_URL);
 
-        try {
-            $response = $this->clientService->newClient()->get(
-                rtrim($baseUrl, '/').'/wozobjecten/'.rawurlencode($wozobjectnummer),
-                [
-                    'timeout' => 10,
-                    'headers' => $this->headers(),
-                ]
-            );
+		try {
+			$response = $this->clientService->newClient()->get(
+				rtrim($baseUrl, '/') . '/wozobjecten/' . rawurlencode($wozobjectnummer),
+				[
+					'timeout' => 10,
+					'headers' => $this->headers(),
+				]
+			);
 
-            $status = (int) $response->getStatusCode();
-            if ($status === 404) {
-                return new WozLookupResult(lookupStatus: 'NOT_FOUND', wozObject: [], dormant: false);
-            }
+			$status = (int)$response->getStatusCode();
+			if ($status === 404) {
+				return new WozLookupResult(lookupStatus: 'NOT_FOUND', wozObject: [], dormant: false);
+			}
 
-            if ($status < 200 || $status >= 300) {
-                return $this->errorResult(status: $status, context: $context);
-            }
+			if ($status < 200 || $status >= 300) {
+				return $this->errorResult(status: $status, context: $context);
+			}
 
-            $data = json_decode((string) $response->getBody(), true);
-            $body = ($data['wozObject'] ?? $data);
-            if (is_array($body) === false || $body === []) {
-                return new WozLookupResult(lookupStatus: 'NOT_FOUND', wozObject: [], dormant: false);
-            }
+			$data = json_decode((string)$response->getBody(), true);
+			$body = ($data['wozObject'] ?? $data);
+			if (is_array($body) === false || $body === []) {
+				return new WozLookupResult(lookupStatus: 'NOT_FOUND', wozObject: [], dormant: false);
+			}
 
-            return new WozLookupResult(
-                lookupStatus: 'FOUND',
-                wozObject: $this->mapper->map($body),
-                dormant: false,
-                extras: ['tier' => $this->mode->resolve(integration: 'woz', allowed: [IntegrationMode::TEST, IntegrationMode::LIVE])]
-            );
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest WOZ object lookup failed',
-                ['wozobjectnummer' => $wozobjectnummer, 'error' => $e->getMessage(), 'context' => $context]
-            );
+			return new WozLookupResult(
+				lookupStatus: 'FOUND',
+				wozObject: $this->mapper->map($body),
+				dormant: false,
+				extras: ['tier' => $this->mode->resolve(integration: 'woz', allowed: [IntegrationMode::TEST, IntegrationMode::LIVE])]
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Procest WOZ object lookup failed',
+				['wozobjectnummer' => $wozobjectnummer, 'error' => $e->getMessage(), 'context' => $context]
+			);
 
-            return new WozLookupResult(lookupStatus: 'LOOKUP_ERROR', wozObject: [], dormant: false, extras: ['reason' => 'transport-error']);
-        }//end try
-    }//end lookupByWozObjectNummer()
+			return new WozLookupResult(lookupStatus: 'LOOKUP_ERROR', wozObject: [], dormant: false, extras: ['reason' => 'transport-error']);
+		}//end try
+	}//end lookupByWozObjectNummer()
 
-    /**
-     * A configured live adapter is not dormant.
-     *
-     * @return bool
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function isDormant(): bool
-    {
-        return false;
-    }//end isDormant()
+	/**
+	 * A configured live adapter is not dormant.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function isDormant(): bool {
+		return false;
+	}//end isDormant()
 
-    /**
-     * Build the shared request headers.
-     *
-     * @return array<string,string>
-     */
-    private function headers(): array
-    {
-        $apiKey  = $this->mode->setting(integration: 'woz', key: 'apiKey');
-        $headers = ['Accept' => 'application/hal+json'];
-        if ($apiKey !== '') {
-            $headers['X-Api-Key'] = $apiKey;
-        }
+	/**
+	 * Build the shared request headers.
+	 *
+	 * @return array<string,string>
+	 */
+	private function headers(): array {
+		$apiKey = $this->mode->setting(integration: 'woz', key: 'apiKey');
+		$headers = ['Accept' => 'application/hal+json'];
+		if ($apiKey !== '') {
+			$headers['X-Api-Key'] = $apiKey;
+		}
 
-        return $headers;
-    }//end headers()
+		return $headers;
+	}//end headers()
 
-    /**
-     * Build a LOOKUP_ERROR result for a non-2xx, non-404 HTTP status.
-     *
-     * @param int                 $status  HTTP status code.
-     * @param array<string,mixed> $context Lookup context.
-     *
-     * @return WozLookupResult
-     */
-    private function errorResult(int $status, array $context): WozLookupResult
-    {
-        $this->logger->warning(
-            'Procest WOZ lookup returned a non-success status',
-            ['status' => $status, 'context' => $context]
-        );
+	/**
+	 * Build a LOOKUP_ERROR result for a non-2xx, non-404 HTTP status.
+	 *
+	 * @param int $status HTTP status code.
+	 * @param array<string,mixed> $context Lookup context.
+	 *
+	 * @return WozLookupResult
+	 */
+	private function errorResult(int $status, array $context): WozLookupResult {
+		$this->logger->warning(
+			'Procest WOZ lookup returned a non-success status',
+			['status' => $status, 'context' => $context]
+		);
 
-        return new WozLookupResult(
-            lookupStatus: 'LOOKUP_ERROR',
-            wozObject: [],
-            dormant: false,
-            extras: ['reason' => 'http-'.$status]
-        );
-    }//end errorResult()
+		return new WozLookupResult(
+			lookupStatus: 'LOOKUP_ERROR',
+			wozObject: [],
+			dormant: false,
+			extras: ['reason' => 'http-' . $status]
+		);
+	}//end errorResult()
 }//end class

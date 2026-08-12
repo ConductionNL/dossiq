@@ -65,58 +65,57 @@ namespace OCA\Procest\Service\External\Bag;
  *
  * @spec openspec/changes/bag-register-adapter/proposal.md
  */
-interface BagAdapterInterface
-{
-    /**
-     * Look up address record(s) by postcode + huisnummer.
-     *
-     * @param string              $postcode   Dutch postcode (`1234AB` shape;
-     *                                        validated by the
-     *                                        implementation).
-     * @param string              $huisnummer House number.
-     * @param string|null         $huisletter Optional house letter.
-     * @param string|null         $toevoeging Optional house number addition.
-     * @param array<string,mixed> $context    Optional context —
-     *                                        caseId, lookupReason,
-     *                                        correlationId.
-     *
-     * @return BagLookupResult The lookup outcome (status + normalized
-     *                         address envelope, empty unless FOUND).
-     *
-     * @spec openspec/changes/bag-register-adapter/proposal.md
-     */
-    public function lookupAddress(
-        string $postcode,
-        string $huisnummer,
-        ?string $huisletter=null,
-        ?string $toevoeging=null,
-        array $context=[]
-    ): BagLookupResult;
+interface BagAdapterInterface {
+	/**
+	 * Look up address record(s) by postcode + huisnummer.
+	 *
+	 * @param string $postcode Dutch postcode (`1234AB` shape;
+	 *                         validated by the
+	 *                         implementation).
+	 * @param string $huisnummer House number.
+	 * @param string|null $huisletter Optional house letter.
+	 * @param string|null $toevoeging Optional house number addition.
+	 * @param array<string,mixed> $context Optional context —
+	 *                                     caseId, lookupReason,
+	 *                                     correlationId.
+	 *
+	 * @return BagLookupResult The lookup outcome (status + normalized
+	 *                         address envelope, empty unless FOUND).
+	 *
+	 * @spec openspec/changes/bag-register-adapter/proposal.md
+	 */
+	public function lookupAddress(
+		string $postcode,
+		string $huisnummer,
+		?string $huisletter = null,
+		?string $toevoeging = null,
+		array $context = [],
+	): BagLookupResult;
 
-    /**
-     * Look up a BAG object (pand, verblijfsobject, or nummeraanduiding) by
-     * its identificatie.
-     *
-     * @param string              $objectType `pand`, `verblijfsobject`, or
-     *                                        `nummeraanduiding`.
-     * @param string              $id         BAG identificatie (16 digits).
-     * @param array<string,mixed> $context    Optional context — caseId,
-     *                                        lookupReason, correlationId.
-     *
-     * @return BagLookupResult The lookup outcome (status + normalized
-     *                         envelope, empty unless FOUND).
-     *
-     * @spec openspec/changes/bag-register-adapter/proposal.md
-     */
-    public function lookupObject(string $objectType, string $id, array $context=[]): BagLookupResult;
+	/**
+	 * Look up a BAG object (pand, verblijfsobject, or nummeraanduiding) by
+	 * its identificatie.
+	 *
+	 * @param string $objectType `pand`, `verblijfsobject`, or
+	 *                           `nummeraanduiding`.
+	 * @param string $id BAG identificatie (16 digits).
+	 * @param array<string,mixed> $context Optional context — caseId,
+	 *                                     lookupReason, correlationId.
+	 *
+	 * @return BagLookupResult The lookup outcome (status + normalized
+	 *                         envelope, empty unless FOUND).
+	 *
+	 * @spec openspec/changes/bag-register-adapter/proposal.md
+	 */
+	public function lookupObject(string $objectType, string $id, array $context = []): BagLookupResult;
 
-    /**
-     * Whether the adapter is dormant — i.e. wired but not contacting
-     * Kadaster.
-     *
-     * @return bool TRUE when the adapter is a log-only stub.
-     *
-     * @spec openspec/changes/bag-register-adapter/proposal.md
-     */
-    public function isDormant(): bool;
+	/**
+	 * Whether the adapter is dormant — i.e. wired but not contacting
+	 * Kadaster.
+	 *
+	 * @return bool TRUE when the adapter is a log-only stub.
+	 *
+	 * @spec openspec/changes/bag-register-adapter/proposal.md
+	 */
+	public function isDormant(): bool;
 }//end interface

@@ -38,185 +38,183 @@ use Psr\Log\LoggerInterface;
 /**
  * Burger notification template renderer + dispatcher.
  */
-class TermijnNotificationService
-{
-    public const TEMPLATES = [
-        'ontvangstbevestiging',
-        'extension',
-        'ingebrekestelling-receipt',
-        'dwangsom-payment',
-    ];
+class TermijnNotificationService {
+	public const TEMPLATES = [
+		'ontvangstbevestiging',
+		'extension',
+		'ingebrekestelling-receipt',
+		'dwangsom-payment',
+	];
 
-    /**
-     * Constructor.
-     *
-     * @param TermijnService             $termijnService Termijn service.
-     * @param BerichtenboxRoutingService $router         Router (procest notification-router).
-     * @param LoggerInterface            $logger         Logger.
-     * @param IJobList|null              $jobList        Optional job list for async dispatch.
-     */
-    public function __construct(
-        private readonly TermijnService $termijnService,
-        private readonly BerichtenboxRoutingService $router,
-        private readonly LoggerInterface $logger,
-        private readonly ?IJobList $jobList=null,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param TermijnService $termijnService Termijn service.
+	 * @param BerichtenboxRoutingService $router Router (procest notification-router).
+	 * @param LoggerInterface $logger Logger.
+	 * @param IJobList|null $jobList Optional job list for async dispatch.
+	 */
+	public function __construct(
+		private readonly TermijnService $termijnService,
+		private readonly BerichtenboxRoutingService $router,
+		private readonly LoggerInterface $logger,
+		private readonly ?IJobList $jobList = null,
+	) {
+	}//end __construct()
 
-    /**
-     * Enqueue a notification for asynchronous dispatch via NC's QueuedJob
-     * runner. The same payload contract as {@see sendTermijnNotification}
-     * but non-blocking on SMTP / berichtenbox-router failure — the job
-     * runner retries automatically.
-     *
-     * @param string               $type              Template type.
-     * @param string               $termijnInstanceId Instance id.
-     * @param string               $recipientUserId   Recipient user id.
-     * @param array<string, mixed> $context           Extra context.
-     *
-     * @return bool TRUE when the job was queued; FALSE when no job list is
-     *              wired (callers MAY fall back to synchronous send).
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
-     */
-    public function queueTermijnNotification(
-        string $type,
-        string $termijnInstanceId,
-        string $recipientUserId,
-        array $context=[]
-    ): bool {
-        if ($this->jobList === null) {
-            return false;
-        }
+	/**
+	 * Enqueue a notification for asynchronous dispatch via NC's QueuedJob
+	 * runner. The same payload contract as {@see sendTermijnNotification}
+	 * but non-blocking on SMTP / berichtenbox-router failure — the job
+	 * runner retries automatically.
+	 *
+	 * @param string $type Template type.
+	 * @param string $termijnInstanceId Instance id.
+	 * @param string $recipientUserId Recipient user id.
+	 * @param array<string, mixed> $context Extra context.
+	 *
+	 * @return bool TRUE when the job was queued; FALSE when no job list is
+	 *              wired (callers MAY fall back to synchronous send).
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 */
+	public function queueTermijnNotification(
+		string $type,
+		string $termijnInstanceId,
+		string $recipientUserId,
+		array $context = [],
+	): bool {
+		if ($this->jobList === null) {
+			return false;
+		}
 
-        if (in_array($type, self::TEMPLATES, true) === false) {
-            throw new InvalidArgumentException('Unknown template: '.$type);
-        }
+		if (in_array($type, self::TEMPLATES, true) === false) {
+			throw new InvalidArgumentException('Unknown template: ' . $type);
+		}
 
-        $this->jobList->add(
-                DeadlineNotificationDispatchJob::class,
-                [
-                    'type'              => $type,
-                    'termijnInstanceId' => $termijnInstanceId,
-                    'recipientUserId'   => $recipientUserId,
-                    'context'           => $context,
-                ]
-                );
-        $this->logger->info(
-            'TermijnNotification queued',
-            ['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termijnInstanceId]
-        );
-        return true;
-    }//end queueTermijnNotification()
+		$this->jobList->add(
+			DeadlineNotificationDispatchJob::class,
+			[
+				'type' => $type,
+				'termijnInstanceId' => $termijnInstanceId,
+				'recipientUserId' => $recipientUserId,
+				'context' => $context,
+			]
+		);
+		$this->logger->info(
+			'TermijnNotification queued',
+			['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termijnInstanceId]
+		);
+		return true;
+	}//end queueTermijnNotification()
 
-    /**
-     * Send a templated termijnbewaking notification.
-     *
-     * @param string               $type              Template type.
-     * @param string               $termijnInstanceId Instance id.
-     * @param string               $recipientUserId   Recipient user id.
-     * @param array<string, mixed> $context           Extra context (zaak ref, dates, amounts).
-     *
-     * @return array<string, mixed>  Dispatched payload (with rendered subject +
-     *                               body and the `verzending` delivery record).
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
-     */
-    public function sendTermijnNotification(
-        string $type,
-        string $termijnInstanceId,
-        string $recipientUserId,
-        array $context=[]
-    ): array {
-        if (in_array($type, self::TEMPLATES, true) === false) {
-            throw new InvalidArgumentException('Unknown template: '.$type);
-        }
+	/**
+	 * Send a templated termijnbewaking notification.
+	 *
+	 * @param string $type Template type.
+	 * @param string $termijnInstanceId Instance id.
+	 * @param string $recipientUserId Recipient user id.
+	 * @param array<string, mixed> $context Extra context (zaak ref, dates, amounts).
+	 *
+	 * @return array<string, mixed> Dispatched payload (with rendered subject +
+	 *                              body and the `verzending` delivery record).
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 */
+	public function sendTermijnNotification(
+		string $type,
+		string $termijnInstanceId,
+		string $recipientUserId,
+		array $context = [],
+	): array {
+		if (in_array($type, self::TEMPLATES, true) === false) {
+			throw new InvalidArgumentException('Unknown template: ' . $type);
+		}
 
-        $instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
-        $payload  = $this->renderTemplate(type: $type, instance: $instance ?? [], context: $context);
+		$instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+		$payload = $this->renderTemplate(type: $type, instance: $instance ?? [], context: $context);
 
-        $payload['recipient']       = $recipientUserId;
-        $payload['termijnInstance'] = $termijnInstanceId;
-        $payload['template']        = $type;
+		$payload['recipient'] = $recipientUserId;
+		$payload['termijnInstance'] = $termijnInstanceId;
+		$payload['template'] = $type;
 
-        // Route the rendered notification through the procest notification
-        // router so the burger actually receives it; the returned delivery
-        // record (kanaal / berichtId / verzondenOp) is attached to the payload
-        // and is what the caller persists as proof of dispatch.
-        $payload['verzending'] = $this->router->routeToBerichtenbox(
-            [
-                'kenmerk'       => $termijnInstanceId,
-                'geadresseerde' => (array) ($context['geadresseerde'] ?? []),
-            ]
-        );
+		// Route the rendered notification through the procest notification
+		// router so the burger actually receives it; the returned delivery
+		// record (kanaal / berichtId / verzondenOp) is attached to the payload
+		// and is what the caller persists as proof of dispatch.
+		$payload['verzending'] = $this->router->routeToBerichtenbox(
+			[
+				'kenmerk' => $termijnInstanceId,
+				'geadresseerde' => (array)($context['geadresseerde'] ?? []),
+			]
+		);
 
-        $this->logger->info(
-            'TermijnNotification dispatched',
-            [
-                'type'      => $type,
-                'recipient' => $recipientUserId,
-                'instance'  => $termijnInstanceId,
-                'kanaal'    => $payload['verzending']['kanaal'],
-            ]
-        );
+		$this->logger->info(
+			'TermijnNotification dispatched',
+			[
+				'type' => $type,
+				'recipient' => $recipientUserId,
+				'instance' => $termijnInstanceId,
+				'kanaal' => $payload['verzending']['kanaal'],
+			]
+		);
 
-        return $payload;
-    }//end sendTermijnNotification()
+		return $payload;
+	}//end sendTermijnNotification()
 
-    /**
-     * Render a template (nl) into a payload with subject + body.
-     *
-     * @param string               $type     Template type.
-     * @param array<string, mixed> $instance TermijnInstance (may be empty).
-     * @param array<string, mixed> $context  Extra context.
-     *
-     * @return array{subject:string, body:string, locale:string}
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
-     */
-    public function renderTemplate(string $type, array $instance, array $context): array
-    {
-        $locale = (string) ($context['locale'] ?? 'nl');
-        $zaak   = (string) ($instance['zaak'] ?? ($context['zaak'] ?? '–'));
-        $end    = (string) ($instance['einddatumActueel'] ?? ($context['einddatum'] ?? '–'));
+	/**
+	 * Render a template (nl) into a payload with subject + body.
+	 *
+	 * @param string $type Template type.
+	 * @param array<string, mixed> $instance TermijnInstance (may be empty).
+	 * @param array<string, mixed> $context Extra context.
+	 *
+	 * @return array{subject:string, body:string, locale:string}
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-08-burger-notifications/tasks.md
+	 */
+	public function renderTemplate(string $type, array $instance, array $context): array {
+		$locale = (string)($context['locale'] ?? 'nl');
+		$zaak = (string)($instance['zaak'] ?? ($context['zaak'] ?? '–'));
+		$end = (string)($instance['einddatumActueel'] ?? ($context['einddatum'] ?? '–'));
 
-        $subject = '';
-        $body    = '';
+		$subject = '';
+		$body = '';
 
-        switch ($type) {
-            case 'ontvangstbevestiging':
-                $subject = 'Ontvangstbevestiging zaak '.$zaak;
-                $body    = "Beste aanvrager,\n\n"
-                    ."Wij hebben uw aanvraag ontvangen onder zaaknummer ".$zaak.".\n"
-                    ."De wettelijke termijn loopt af op ".$end.".\n"
-                    ."Volg uw zaak via het burgerportaal of neem contact op met de gemeente.";
-                break;
-            case 'extension':
-                $newEnd  = (string) ($context['newEinddatum'] ?? $end);
-                $subject = 'Verlenging termijn zaak '.$zaak;
-                $body    = "Beste aanvrager,\n\n"
-                    ."De termijn voor zaak ".$zaak." is verlengd. De nieuwe deadline is ".$newEnd.".\n"
-                    ."U vindt de officiele verlengingsbrief in uw burgerportaal.";
-                break;
-            case 'ingebrekestelling-receipt':
-                $graceEnd = (string) ($context['graceEnd'] ?? '–');
-                $subject  = 'Bevestiging ingebrekestelling zaak '.$zaak;
-                $body     = "Beste aanvrager,\n\n"
-                    ."Wij hebben uw ingebrekestelling voor zaak ".$zaak." ontvangen.\n"
-                    ."De wettelijke begunstigingstermijn (AWB 4:17) eindigt op ".$graceEnd.".\n"
-                    ."Indien er voor dat moment een beschikking is afgegeven, vervalt de dwangsom.";
-                break;
-            case 'dwangsom-payment':
-                $bedragCents = (int) ($context['bedragCents'] ?? 0);
-                $bedragEur   = number_format($bedragCents / 100, 2, ',', '.');
-                $ref         = (string) ($context['betalingsreferentie'] ?? '–');
-                $subject     = 'Uitbetaling dwangsom zaak '.$zaak;
-                $body        = "Beste aanvrager,\n\n"
-                    ."De dwangsom van EUR ".$bedragEur." voor zaak ".$zaak." is overgemaakt.\n"
-                    ."Onder betalingsreferentie ".$ref.".";
-                break;
-        }//end switch
+		switch ($type) {
+			case 'ontvangstbevestiging':
+				$subject = 'Ontvangstbevestiging zaak ' . $zaak;
+				$body = "Beste aanvrager,\n\n"
+					. 'Wij hebben uw aanvraag ontvangen onder zaaknummer ' . $zaak . ".\n"
+					. 'De wettelijke termijn loopt af op ' . $end . ".\n"
+					. 'Volg uw zaak via het burgerportaal of neem contact op met de gemeente.';
+				break;
+			case 'extension':
+				$newEnd = (string)($context['newEinddatum'] ?? $end);
+				$subject = 'Verlenging termijn zaak ' . $zaak;
+				$body = "Beste aanvrager,\n\n"
+					. 'De termijn voor zaak ' . $zaak . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n"
+					. 'U vindt de officiele verlengingsbrief in uw burgerportaal.';
+				break;
+			case 'ingebrekestelling-receipt':
+				$graceEnd = (string)($context['graceEnd'] ?? '–');
+				$subject = 'Bevestiging ingebrekestelling zaak ' . $zaak;
+				$body = "Beste aanvrager,\n\n"
+					. 'Wij hebben uw ingebrekestelling voor zaak ' . $zaak . " ontvangen.\n"
+					. 'De wettelijke begunstigingstermijn (AWB 4:17) eindigt op ' . $graceEnd . ".\n"
+					. 'Indien er voor dat moment een beschikking is afgegeven, vervalt de dwangsom.';
+				break;
+			case 'dwangsom-payment':
+				$bedragCents = (int)($context['bedragCents'] ?? 0);
+				$bedragEur = number_format($bedragCents / 100, 2, ',', '.');
+				$ref = (string)($context['betalingsreferentie'] ?? '–');
+				$subject = 'Uitbetaling dwangsom zaak ' . $zaak;
+				$body = "Beste aanvrager,\n\n"
+					. 'De dwangsom van EUR ' . $bedragEur . ' voor zaak ' . $zaak . " is overgemaakt.\n"
+					. 'Onder betalingsreferentie ' . $ref . '.';
+				break;
+		}//end switch
 
-        return ['subject' => $subject, 'body' => $body, 'locale' => $locale];
-    }//end renderTemplate()
+		return ['subject' => $subject, 'body' => $body, 'locale' => $locale];
+	}//end renderTemplate()
 }//end class

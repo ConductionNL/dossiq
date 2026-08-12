@@ -49,243 +49,236 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
-class HoorzittingCalendarSync
-{
-    /**
-     * Default hearing duration in minutes when no endDate is supplied.
-     */
-    private const DEFAULT_DURATION_MINUTES = 60;
+class HoorzittingCalendarSync {
+	/**
+	 * Default hearing duration in minutes when no endDate is supplied.
+	 */
+	private const DEFAULT_DURATION_MINUTES = 60;
 
-    /**
-     * Constructor.
-     *
-     * @param ContainerInterface $container Service container (optional
-     *                                      calendar manager resolution).
-     * @param LoggerInterface    $logger    Logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param ContainerInterface $container Service container (optional
+	 *                                      calendar manager resolution).
+	 * @param LoggerInterface $logger Logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Synchronise a hearingSession with the calendar (best-effort).
-     *
-     * Returns the (possibly augmented) hearingSession record. On any
-     * failure the record gains a `calendar-sync-failed` audit entry but is
-     * never rejected; on success it gains a `calendarIcs` body and a
-     * `calendar-synced` audit entry.
-     *
-     * @param array<string, mixed> $hearingSession The hearingSession record.
-     *
-     * @return array<string, mixed> The hearingSession record to persist.
-     *
-     * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
-     */
-    public function sync(array $hearingSession): array
-    {
-        // A waived hearing has nothing to schedule.
-        if (($hearingSession['hearingWaived'] ?? false) === true) {
-            return $hearingSession;
-        }
+	/**
+	 * Synchronise a hearingSession with the calendar (best-effort).
+	 *
+	 * Returns the (possibly augmented) hearingSession record. On any
+	 * failure the record gains a `calendar-sync-failed` audit entry but is
+	 * never rejected; on success it gains a `calendarIcs` body and a
+	 * `calendar-synced` audit entry.
+	 *
+	 * @param array<string, mixed> $hearingSession The hearingSession record.
+	 *
+	 * @return array<string, mixed> The hearingSession record to persist.
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
+	 */
+	public function sync(array $hearingSession): array {
+		// A waived hearing has nothing to schedule.
+		if (($hearingSession['hearingWaived'] ?? false) === true) {
+			return $hearingSession;
+		}
 
-        $scheduled = $this->parseDate(value: ($hearingSession['scheduledDate'] ?? null));
-        if ($scheduled === null) {
-            return $this->appendAudit(
-                session: $hearingSession,
-                event: 'calendar-sync-skipped',
-                detail: 'no valid scheduledDate'
-            );
-        }
+		$scheduled = $this->parseDate(value: ($hearingSession['scheduledDate'] ?? null));
+		if ($scheduled === null) {
+			return $this->appendAudit(
+				session: $hearingSession,
+				event: 'calendar-sync-skipped',
+				detail: 'no valid scheduledDate'
+			);
+		}
 
-        try {
-            $ics = $this->buildIcs(hearingSession: $hearingSession, scheduled: $scheduled);
-            if ($ics === null) {
-                // Calendar manager unavailable — degrade gracefully.
-                return $this->appendAudit(
-                    session: $hearingSession,
-                    event: 'calendar-sync-skipped',
-                    detail: 'calendar manager unavailable'
-                );
-            }
+		try {
+			$ics = $this->buildIcs(hearingSession: $hearingSession, scheduled: $scheduled);
+			if ($ics === null) {
+				// Calendar manager unavailable — degrade gracefully.
+				return $this->appendAudit(
+					session: $hearingSession,
+					event: 'calendar-sync-skipped',
+					detail: 'calendar manager unavailable'
+				);
+			}
 
-            $hearingSession['calendarIcs'] = $ics;
-            return $this->appendAudit(
-                session: $hearingSession,
-                event: 'calendar-synced',
-                detail: 'ICS invitation generated for '
-                    .count($this->collectInviteeEmails(hearingSession: $hearingSession))
-                    .' invitee(s)'
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'HoorzittingCalendarSync: calendar sync failed; hearing record kept',
-                ['error' => $e->getMessage()]
-            );
+			$hearingSession['calendarIcs'] = $ics;
+			return $this->appendAudit(
+				session: $hearingSession,
+				event: 'calendar-synced',
+				detail: 'ICS invitation generated for '
+					. count($this->collectInviteeEmails(hearingSession: $hearingSession))
+					. ' invitee(s)'
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'HoorzittingCalendarSync: calendar sync failed; hearing record kept',
+				['error' => $e->getMessage()]
+			);
 
-            return $this->appendAudit(
-                session: $hearingSession,
-                event: 'calendar-sync-failed',
-                detail: $e->getMessage()
-            );
-        }//end try
-    }//end sync()
+			return $this->appendAudit(
+				session: $hearingSession,
+				event: 'calendar-sync-failed',
+				detail: $e->getMessage()
+			);
+		}//end try
+	}//end sync()
 
-    /**
-     * Build the ICS invitation body for a hearing.
-     *
-     * @param array<string, mixed> $hearingSession The hearingSession record.
-     * @param DateTimeImmutable    $scheduled      The hearing start.
-     *
-     * @return string|null The ICS body, or null when the calendar manager
-     *                     is unavailable.
-     */
-    private function buildIcs(array $hearingSession, DateTimeImmutable $scheduled): ?string
-    {
-        $manager = $this->resolveCalendarManager();
-        if ($manager === null) {
-            return null;
-        }
+	/**
+	 * Build the ICS invitation body for a hearing.
+	 *
+	 * @param array<string, mixed> $hearingSession The hearingSession record.
+	 * @param DateTimeImmutable $scheduled The hearing start.
+	 *
+	 * @return string|null The ICS body, or null when the calendar manager
+	 *                     is unavailable.
+	 */
+	private function buildIcs(array $hearingSession, DateTimeImmutable $scheduled): ?string {
+		$manager = $this->resolveCalendarManager();
+		if ($manager === null) {
+			return null;
+		}
 
-        $end = $this->parseDate(value: ($hearingSession['endDate'] ?? null));
-        if ($end === null) {
-            $end = $scheduled->modify('+'.self::DEFAULT_DURATION_MINUTES.' minutes');
-        }
+		$end = $this->parseDate(value: ($hearingSession['endDate'] ?? null));
+		if ($end === null) {
+			$end = $scheduled->modify('+' . self::DEFAULT_DURATION_MINUTES . ' minutes');
+		}
 
-        $builder = $manager->createEventBuilder();
-        $builder->setStartDate($scheduled);
-        $builder->setEndDate($end);
-        $builder->setSummary('Hoorzitting bezwaar (Awb art. 7:2)');
-        $builder->setDescription(
-            (string) ($hearingSession['minutesSummary'] ?? 'Hoorzitting in het kader van de bezwaarprocedure.')
-        );
+		$builder = $manager->createEventBuilder();
+		$builder->setStartDate($scheduled);
+		$builder->setEndDate($end);
+		$builder->setSummary('Hoorzitting bezwaar (Awb art. 7:2)');
+		$builder->setDescription(
+			(string)($hearingSession['minutesSummary'] ?? 'Hoorzitting in het kader van de bezwaarprocedure.')
+		);
 
-        $location = trim((string) ($hearingSession['location'] ?? ''));
-        if ($location !== '') {
-            $builder->setLocation($location);
-        }
+		$location = trim((string)($hearingSession['location'] ?? ''));
+		if ($location !== '') {
+			$builder->setLocation($location);
+		}
 
-        foreach ($this->collectInviteeEmails(hearingSession: $hearingSession) as $email => $name) {
-            $commonName = null;
-            if ($name !== '') {
-                $commonName = $name;
-            }
+		foreach ($this->collectInviteeEmails(hearingSession: $hearingSession) as $email => $name) {
+			$commonName = null;
+			if ($name !== '') {
+				$commonName = $name;
+			}
 
-            $builder->addAttendee($email, $commonName);
-        }
+			$builder->addAttendee($email, $commonName);
+		}
 
-        return $builder->toIcs();
-    }//end buildIcs()
+		return $builder->toIcs();
+	}//end buildIcs()
 
-    /**
-     * Collect invitee email addresses (keyed by email, value = name).
-     *
-     * @param array<string, mixed> $hearingSession The hearingSession record.
-     *
-     * @return array<string, string> Map of email => display name.
-     */
-    private function collectInviteeEmails(array $hearingSession): array
-    {
-        $invitees = ($hearingSession['invitees'] ?? []);
-        if (is_string($invitees) === true) {
-            $decoded  = json_decode($invitees, true);
-            $invitees = [];
-            if (is_array($decoded) === true) {
-                $invitees = $decoded;
-            }
-        }
+	/**
+	 * Collect invitee email addresses (keyed by email, value = name).
+	 *
+	 * @param array<string, mixed> $hearingSession The hearingSession record.
+	 *
+	 * @return array<string, string> Map of email => display name.
+	 */
+	private function collectInviteeEmails(array $hearingSession): array {
+		$invitees = ($hearingSession['invitees'] ?? []);
+		if (is_string($invitees) === true) {
+			$decoded = json_decode($invitees, true);
+			$invitees = [];
+			if (is_array($decoded) === true) {
+				$invitees = $decoded;
+			}
+		}
 
-        $emails = [];
-        if (is_array($invitees) === true) {
-            foreach ($invitees as $invitee) {
-                if (is_array($invitee) === false) {
-                    continue;
-                }
+		$emails = [];
+		if (is_array($invitees) === true) {
+			foreach ($invitees as $invitee) {
+				if (is_array($invitee) === false) {
+					continue;
+				}
 
-                $email = trim((string) ($invitee['email'] ?? ''));
-                if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
-                    continue;
-                }
+				$email = trim((string)($invitee['email'] ?? ''));
+				if ($email === '' || filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+					continue;
+				}
 
-                $emails[$email] = trim((string) ($invitee['name'] ?? ''));
-            }
-        }
+				$emails[$email] = trim((string)($invitee['name'] ?? ''));
+			}
+		}
 
-        return $emails;
-    }//end collectInviteeEmails()
+		return $emails;
+	}//end collectInviteeEmails()
 
-    /**
-     * Resolve the optional Nextcloud Calendar manager from the container.
-     *
-     * @return \OCP\Calendar\IManager|null The manager, or null when the
-     *                                     Calendar app/API is unavailable.
-     */
-    private function resolveCalendarManager(): ?\OCP\Calendar\IManager
-    {
-        try {
-            $manager = $this->container->get(\OCP\Calendar\IManager::class);
-        } catch (\Throwable $e) {
-            $this->logger->info(
-                'HoorzittingCalendarSync: calendar manager unavailable',
-                ['error' => $e->getMessage()]
-            );
-            return null;
-        }
+	/**
+	 * Resolve the optional Nextcloud Calendar manager from the container.
+	 *
+	 * @return \OCP\Calendar\IManager|null The manager, or null when the
+	 *                                     Calendar app/API is unavailable.
+	 */
+	private function resolveCalendarManager(): ?\OCP\Calendar\IManager {
+		try {
+			$manager = $this->container->get(\OCP\Calendar\IManager::class);
+		} catch (\Throwable $e) {
+			$this->logger->info(
+				'HoorzittingCalendarSync: calendar manager unavailable',
+				['error' => $e->getMessage()]
+			);
+			return null;
+		}
 
-        if ($manager instanceof \OCP\Calendar\IManager) {
-            return $manager;
-        }
+		if ($manager instanceof \OCP\Calendar\IManager) {
+			return $manager;
+		}
 
-        return null;
-    }//end resolveCalendarManager()
+		return null;
+	}//end resolveCalendarManager()
 
-    /**
-     * Append a calendar audit entry to the hearingSession.
-     *
-     * @param array<string, mixed> $session The hearingSession record.
-     * @param string               $event   The audit event name.
-     * @param string               $detail  Human-readable detail.
-     *
-     * @return array<string, mixed> The session with the audit entry added.
-     */
-    private function appendAudit(array $session, string $event, string $detail): array
-    {
-        $audit = ($session['auditTrail'] ?? []);
-        if (is_array($audit) === false) {
-            $audit = [];
-        }
+	/**
+	 * Append a calendar audit entry to the hearingSession.
+	 *
+	 * @param array<string, mixed> $session The hearingSession record.
+	 * @param string $event The audit event name.
+	 * @param string $detail Human-readable detail.
+	 *
+	 * @return array<string, mixed> The session with the audit entry added.
+	 */
+	private function appendAudit(array $session, string $event, string $detail): array {
+		$audit = ($session['auditTrail'] ?? []);
+		if (is_array($audit) === false) {
+			$audit = [];
+		}
 
-        $audit[] = [
-            'event'   => $event,
-            'tag'     => 'calendar',
-            'at'      => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-            'payload' => ['detail' => $detail],
-        ];
+		$audit[] = [
+			'event' => $event,
+			'tag' => 'calendar',
+			'at' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
+			'payload' => ['detail' => $detail],
+		];
 
-        $session['auditTrail'] = $audit;
-        return $session;
-    }//end appendAudit()
+		$session['auditTrail'] = $audit;
+		return $session;
+	}//end appendAudit()
 
-    /**
-     * Parse an ISO date/time value into an immutable date.
-     *
-     * @param mixed $value The raw value.
-     *
-     * @return DateTimeImmutable|null The parsed date, or null.
-     */
-    private function parseDate(mixed $value): ?DateTimeImmutable
-    {
-        if (is_string($value) === false || trim($value) === '') {
-            return null;
-        }
+	/**
+	 * Parse an ISO date/time value into an immutable date.
+	 *
+	 * @param mixed $value The raw value.
+	 *
+	 * @return DateTimeImmutable|null The parsed date, or null.
+	 */
+	private function parseDate(mixed $value): ?DateTimeImmutable {
+		if (is_string($value) === false || trim($value) === '') {
+			return null;
+		}
 
-        try {
-            return new DateTimeImmutable($value);
-        } catch (\Throwable $e) {
-            return null;
-        }
-    }//end parseDate()
+		try {
+			return new DateTimeImmutable($value);
+		} catch (\Throwable $e) {
+			return null;
+		}
+	}//end parseDate()
 }//end class

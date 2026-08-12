@@ -36,223 +36,209 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\BackgroundJob\BottleneckDetectionJob
  */
-class BottleneckDetectionJobTest extends TestCase
-{
+class BottleneckDetectionJobTest extends TestCase {
 
-    /**
-     * The mocked time factory.
-     *
-     * @var ITimeFactory|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private ITimeFactory $timeFactory;
+	/**
+	 * The mocked time factory.
+	 *
+	 * @var ITimeFactory|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private ITimeFactory $timeFactory;
 
-    /**
-     * The mocked milestone service.
-     *
-     * @var MilestoneService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private MilestoneService $milestoneService;
+	/**
+	 * The mocked milestone service.
+	 *
+	 * @var MilestoneService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private MilestoneService $milestoneService;
 
-    /**
-     * The mocked app manager.
-     *
-     * @var IAppManager|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IAppManager $appManager;
+	/**
+	 * The mocked app manager.
+	 *
+	 * @var IAppManager|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IAppManager $appManager;
 
-    /**
-     * The mocked notification manager.
-     *
-     * @var INotificationManager|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private INotificationManager $notificationManager;
+	/**
+	 * The mocked notification manager.
+	 *
+	 * @var INotificationManager|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private INotificationManager $notificationManager;
 
-    /**
-     * The mocked logger.
-     *
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The mocked logger.
+	 *
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The job under test.
-     *
-     * @var BottleneckDetectionJob
-     */
-    private BottleneckDetectionJob $job;
+	/**
+	 * The job under test.
+	 *
+	 * @var BottleneckDetectionJob
+	 */
+	private BottleneckDetectionJob $job;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->timeFactory = $this->createMock(ITimeFactory::class);
+		$this->milestoneService = $this->createMock(MilestoneService::class);
+		$this->appManager = $this->createMock(IAppManager::class);
+		$this->notificationManager = $this->createMock(INotificationManager::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->timeFactory         = $this->createMock(ITimeFactory::class);
-        $this->milestoneService    = $this->createMock(MilestoneService::class);
-        $this->appManager          = $this->createMock(IAppManager::class);
-        $this->notificationManager = $this->createMock(INotificationManager::class);
-        $this->logger              = $this->createMock(LoggerInterface::class);
+		$this->job = new BottleneckDetectionJob(
+			time: $this->timeFactory,
+			milestoneService: $this->milestoneService,
+			appManager: $this->appManager,
+			notificationManager: $this->notificationManager,
+			logger: $this->logger,
+		);
 
-        $this->job = new BottleneckDetectionJob(
-            time: $this->timeFactory,
-            milestoneService: $this->milestoneService,
-            appManager: $this->appManager,
-            notificationManager: $this->notificationManager,
-            logger: $this->logger,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Invoke the protected run() method.
+	 *
+	 * @return void
+	 */
+	private function invokeRun(): void {
+		$ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
+		$ref->setAccessible(accessible: true);
+		$ref->invoke($this->job, null);
 
+	}//end invokeRun()
 
-    /**
-     * Invoke the protected run() method.
-     *
-     * @return void
-     */
-    private function invokeRun(): void
-    {
-        $ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
-        $ref->setAccessible(accessible: true);
-        $ref->invoke($this->job, null);
+	/**
+	 * Test that run() exits early when OpenRegister is not installed.
+	 *
+	 * @return void
+	 */
+	public function testRunExitsEarlyWhenOpenRegisterNotInstalled(): void {
+		$this->appManager
+			->method('getInstalledApps')
+			->willReturn(['procest', 'contacts']);
 
-    }//end invokeRun()
+		$this->milestoneService
+			->expects($this->never())
+			->method('findStalledCases');
 
+		$this->invokeRun();
 
-    /**
-     * Test that run() exits early when OpenRegister is not installed.
-     *
-     * @return void
-     */
-    public function testRunExitsEarlyWhenOpenRegisterNotInstalled(): void
-    {
-        $this->appManager
-            ->method('getInstalledApps')
-            ->willReturn(['procest', 'contacts']);
+	}//end testRunExitsEarlyWhenOpenRegisterNotInstalled()
 
-        $this->milestoneService
-            ->expects($this->never())
-            ->method('findStalledCases');
+	/**
+	 * Test that a stalled case with an assignee produces a notification.
+	 *
+	 * @return void
+	 */
+	public function testStalledCaseNotifiesAssignee(): void {
+		$this->appManager
+			->method('getInstalledApps')
+			->willReturn(['openregister', 'procest']);
 
-        $this->invokeRun();
+		$this->milestoneService
+			->method('findStalledCases')
+			->willReturn(
+				[
+					[
+						'caseId' => 'zaak-1',
+						'caseTitle' => 'Omgevingsvergunning Dorpsstraat 1',
+						'caseType' => 'ct-1',
+						'assignee' => 'behandelaar-a',
+						'milestoneIdentifier' => 'inhoudelijke_beoordeling',
+						'milestoneLabel' => 'Inhoudelijke beoordeling',
+						'deadline' => '2026-03-08',
+						'daysOverdue' => 14,
+					],
+				]
+			);
 
-    }//end testRunExitsEarlyWhenOpenRegisterNotInstalled()
+		$notification = $this->createMock(INotification::class);
+		// Fluent setters return the notification itself.
+		$notification->method($this->anything())->willReturnSelf();
 
+		$this->notificationManager
+			->expects($this->once())
+			->method('createNotification')
+			->willReturn($notification);
 
-    /**
-     * Test that a stalled case with an assignee produces a notification.
-     *
-     * @return void
-     */
-    public function testStalledCaseNotifiesAssignee(): void
-    {
-        $this->appManager
-            ->method('getInstalledApps')
-            ->willReturn(['openregister', 'procest']);
+		$notification
+			->expects($this->once())
+			->method('setUser')
+			->with('behandelaar-a')
+			->willReturnSelf();
 
-        $this->milestoneService
-            ->method('findStalledCases')
-            ->willReturn(
-                [
-                    [
-                        'caseId'              => 'zaak-1',
-                        'caseTitle'           => 'Omgevingsvergunning Dorpsstraat 1',
-                        'caseType'            => 'ct-1',
-                        'assignee'            => 'behandelaar-a',
-                        'milestoneIdentifier' => 'inhoudelijke_beoordeling',
-                        'milestoneLabel'      => 'Inhoudelijke beoordeling',
-                        'deadline'            => '2026-03-08',
-                        'daysOverdue'         => 14,
-                    ],
-                ]
-            );
+		$this->notificationManager
+			->expects($this->once())
+			->method('notify')
+			->with($notification);
 
-        $notification = $this->createMock(INotification::class);
-        // Fluent setters return the notification itself.
-        $notification->method($this->anything())->willReturnSelf();
+		$this->invokeRun();
 
-        $this->notificationManager
-            ->expects($this->once())
-            ->method('createNotification')
-            ->willReturn($notification);
+	}//end testStalledCaseNotifiesAssignee()
 
-        $notification
-            ->expects($this->once())
-            ->method('setUser')
-            ->with('behandelaar-a')
-            ->willReturnSelf();
+	/**
+	 * Test that a stalled case without an assignee is skipped (no notify).
+	 *
+	 * @return void
+	 */
+	public function testStalledCaseWithoutAssigneeIsSkipped(): void {
+		$this->appManager
+			->method('getInstalledApps')
+			->willReturn(['openregister', 'procest']);
 
-        $this->notificationManager
-            ->expects($this->once())
-            ->method('notify')
-            ->with($notification);
+		$this->milestoneService
+			->method('findStalledCases')
+			->willReturn(
+				[
+					[
+						'caseId' => 'zaak-2',
+						'assignee' => '',
+						'milestoneLabel' => 'Documenten compleet',
+						'daysOverdue' => 3,
+					],
+				]
+			);
 
-        $this->invokeRun();
+		$this->notificationManager
+			->expects($this->never())
+			->method('notify');
 
-    }//end testStalledCaseNotifiesAssignee()
+		$this->invokeRun();
 
+	}//end testStalledCaseWithoutAssigneeIsSkipped()
 
-    /**
-     * Test that a stalled case without an assignee is skipped (no notify).
-     *
-     * @return void
-     */
-    public function testStalledCaseWithoutAssigneeIsSkipped(): void
-    {
-        $this->appManager
-            ->method('getInstalledApps')
-            ->willReturn(['openregister', 'procest']);
+	/**
+	 * Test that an empty stalled list sends no notifications but still logs.
+	 *
+	 * @return void
+	 */
+	public function testNoStalledCasesSendsNoNotifications(): void {
+		$this->appManager
+			->method('getInstalledApps')
+			->willReturn(['openregister', 'procest']);
 
-        $this->milestoneService
-            ->method('findStalledCases')
-            ->willReturn(
-                [
-                    [
-                        'caseId'         => 'zaak-2',
-                        'assignee'       => '',
-                        'milestoneLabel' => 'Documenten compleet',
-                        'daysOverdue'    => 3,
-                    ],
-                ]
-            );
+		$this->milestoneService
+			->method('findStalledCases')
+			->willReturn([]);
 
-        $this->notificationManager
-            ->expects($this->never())
-            ->method('notify');
+		$this->notificationManager
+			->expects($this->never())
+			->method('notify');
 
-        $this->invokeRun();
+		$this->logger
+			->expects($this->atLeastOnce())
+			->method('info')
+			->with($this->stringContains('0 stalled'));
 
-    }//end testStalledCaseWithoutAssigneeIsSkipped()
+		$this->invokeRun();
 
-
-    /**
-     * Test that an empty stalled list sends no notifications but still logs.
-     *
-     * @return void
-     */
-    public function testNoStalledCasesSendsNoNotifications(): void
-    {
-        $this->appManager
-            ->method('getInstalledApps')
-            ->willReturn(['openregister', 'procest']);
-
-        $this->milestoneService
-            ->method('findStalledCases')
-            ->willReturn([]);
-
-        $this->notificationManager
-            ->expects($this->never())
-            ->method('notify');
-
-        $this->logger
-            ->expects($this->atLeastOnce())
-            ->method('info')
-            ->with($this->stringContains('0 stalled'));
-
-        $this->invokeRun();
-
-    }//end testNoStalledCasesSendsNoNotifications()
-
+	}//end testNoStalledCasesSendsNoNotifications()
 
 }//end class

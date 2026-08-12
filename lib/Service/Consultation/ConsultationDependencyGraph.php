@@ -46,90 +46,87 @@ namespace OCA\Procest\Service\Consultation;
  *
  * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
  */
-class ConsultationDependencyGraph
-{
-    /**
-     * Constructor.
-     *
-     * @param ConsultationRepository $repository Consultation reads (dependency lists)
-     */
-    public function __construct(
-        private readonly ConsultationRepository $repository,
-    ) {
-    }//end __construct()
+class ConsultationDependencyGraph {
+	/**
+	 * Constructor.
+	 *
+	 * @param ConsultationRepository $repository Consultation reads (dependency lists)
+	 */
+	public function __construct(
+		private readonly ConsultationRepository $repository,
+	) {
+	}//end __construct()
 
-    /**
-     * Validate that adding the given dependsOn list would not create a dependency cycle.
-     *
-     * Uses depth-first traversal to detect cycles. Returns true if a cycle is
-     * detected, false if the dependency graph remains acyclic.
-     *
-     * @param string   $consultationId The consultation being updated
-     * @param string[] $dependsOn      The proposed dependency IDs
-     *
-     * @return bool True if a cycle would be created
-     *
-     * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
-     */
-    public function wouldCreateCycle(string $consultationId, array $dependsOn): bool
-    {
-        // Quick self-reference check.
-        if (in_array($consultationId, $dependsOn, true) === true) {
-            return true;
-        }
+	/**
+	 * Validate that adding the given dependsOn list would not create a dependency cycle.
+	 *
+	 * Uses depth-first traversal to detect cycles. Returns true if a cycle is
+	 * detected, false if the dependency graph remains acyclic.
+	 *
+	 * @param string $consultationId The consultation being updated
+	 * @param string[] $dependsOn The proposed dependency IDs
+	 *
+	 * @return bool True if a cycle would be created
+	 *
+	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
+	 */
+	public function wouldCreateCycle(string $consultationId, array $dependsOn): bool {
+		// Quick self-reference check.
+		if (in_array($consultationId, $dependsOn, true) === true) {
+			return true;
+		}
 
-        $visited = [];
-        foreach ($dependsOn as $depId) {
-            if ($this->hasCycleDfs(
-                startId: $consultationId,
-                currentId: $depId,
-                visited: $visited,
-            ) === true
-            ) {
-                return true;
-            }
-        }
+		$visited = [];
+		foreach ($dependsOn as $depId) {
+			if ($this->hasCycleDfs(
+				startId: $consultationId,
+				currentId: $depId,
+				visited: $visited,
+			) === true
+			) {
+				return true;
+			}
+		}
 
-        return false;
-    }//end wouldCreateCycle()
+		return false;
+	}//end wouldCreateCycle()
 
-    /**
-     * Depth-first search helper for cycle detection in dependency graph.
-     *
-     * @param string   $startId   The original consultation ID (cycle target)
-     * @param string   $currentId The current node being visited
-     * @param string[] $visited   Already-visited node IDs (prevents re-traversal)
-     *
-     * @return bool True if startId is reachable from currentId (cycle detected)
-     */
-    private function hasCycleDfs(string $startId, string $currentId, array &$visited): bool
-    {
-        if ($currentId === $startId) {
-            return true;
-        }
+	/**
+	 * Depth-first search helper for cycle detection in dependency graph.
+	 *
+	 * @param string $startId The original consultation ID (cycle target)
+	 * @param string $currentId The current node being visited
+	 * @param string[] $visited Already-visited node IDs (prevents re-traversal)
+	 *
+	 * @return bool True if startId is reachable from currentId (cycle detected)
+	 */
+	private function hasCycleDfs(string $startId, string $currentId, array &$visited): bool {
+		if ($currentId === $startId) {
+			return true;
+		}
 
-        if (in_array($currentId, $visited, true) === true) {
-            return false;
-        }
+		if (in_array($currentId, $visited, true) === true) {
+			return false;
+		}
 
-        $visited[] = $currentId;
+		$visited[] = $currentId;
 
-        $consultation = $this->repository->getConsultation(consultationId: $currentId);
-        if ($consultation === null) {
-            return false;
-        }
+		$consultation = $this->repository->getConsultation(consultationId: $currentId);
+		if ($consultation === null) {
+			return false;
+		}
 
-        $deps = $consultation['dependsOn'] ?? [];
-        if (is_array($deps) === false) {
-            return false;
-        }
+		$deps = $consultation['dependsOn'] ?? [];
+		if (is_array($deps) === false) {
+			return false;
+		}
 
-        foreach ($deps as $depId) {
-            if ($this->hasCycleDfs(startId: $startId, currentId: $depId, visited: $visited) === true) {
-                return true;
-            }
-        }
+		foreach ($deps as $depId) {
+			if ($this->hasCycleDfs(startId: $startId, currentId: $depId, visited: $visited) === true) {
+				return true;
+			}
+		}
 
-        return false;
-    }//end hasCycleDfs()
+		return false;
+	}//end hasCycleDfs()
 }//end class

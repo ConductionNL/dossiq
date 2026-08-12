@@ -41,58 +41,55 @@ namespace OCA\Procest\Support;
  * Run a warning-noisy core call with its diagnostics captured instead of
  * printed, without reaching for the `@` operator.
  */
-trait SuppressesWarnings
-{
+trait SuppressesWarnings {
 
-    /**
-     * Last diagnostic captured by {@see self::withoutWarnings()}.
-     *
-     * @var string
-     */
-    private string $suppressedWarning = '';
+	/**
+	 * Last diagnostic captured by {@see self::withoutWarnings()}.
+	 *
+	 * @var string
+	 */
+	private string $suppressedWarning = '';
 
-    /**
-     * Run a callable with E_WARNING/E_NOTICE captured rather than emitted.
-     *
-     * The callable's return value is passed straight through, so the caller
-     * keeps its normal failure check. Any diagnostic raised during the call is
-     * stored and readable via {@see self::lastSuppressedWarning()} so it can be
-     * logged with context instead of vanishing.
-     *
-     * @param callable $operation The core call to run.
-     *
-     * @return mixed Whatever $operation returned.
-     */
-    private function withoutWarnings(callable $operation): mixed
-    {
-        $this->suppressedWarning = '';
+	/**
+	 * Run a callable with E_WARNING/E_NOTICE captured rather than emitted.
+	 *
+	 * The callable's return value is passed straight through, so the caller
+	 * keeps its normal failure check. Any diagnostic raised during the call is
+	 * stored and readable via {@see self::lastSuppressedWarning()} so it can be
+	 * logged with context instead of vanishing.
+	 *
+	 * @param callable $operation The core call to run.
+	 *
+	 * @return mixed Whatever $operation returned.
+	 */
+	private function withoutWarnings(callable $operation): mixed {
+		$this->suppressedWarning = '';
 
-        set_error_handler(
-            function (int $severity, string $message): bool {
-                // Keep the severity in the recorded text — an E_DEPRECATED and
-                // an E_WARNING from the same call mean very different things to
-                // whoever reads the log line the caller writes.
-                $this->suppressedWarning = '['.$severity.'] '.$message;
-                return true;
-            },
-            (E_WARNING | E_NOTICE | E_DEPRECATED | E_USER_WARNING)
-        );
+		set_error_handler(
+			function (int $severity, string $message): bool {
+				// Keep the severity in the recorded text — an E_DEPRECATED and
+				// an E_WARNING from the same call mean very different things to
+				// whoever reads the log line the caller writes.
+				$this->suppressedWarning = '[' . $severity . '] ' . $message;
+				return true;
+			},
+			(E_WARNING | E_NOTICE | E_DEPRECATED | E_USER_WARNING)
+		);
 
-        try {
-            return $operation();
-        } finally {
-            restore_error_handler();
-        }
-    }//end withoutWarnings()
+		try {
+			return $operation();
+		} finally {
+			restore_error_handler();
+		}
+	}//end withoutWarnings()
 
-    /**
-     * The diagnostic captured by the most recent
-     * {@see self::withoutWarnings()} call, or '' when there was none.
-     *
-     * @return string The captured message.
-     */
-    private function lastSuppressedWarning(): string
-    {
-        return $this->suppressedWarning;
-    }//end lastSuppressedWarning()
+	/**
+	 * The diagnostic captured by the most recent
+	 * {@see self::withoutWarnings()} call, or '' when there was none.
+	 *
+	 * @return string The captured message.
+	 */
+	private function lastSuppressedWarning(): string {
+		return $this->suppressedWarning;
+	}//end lastSuppressedWarning()
 }//end trait

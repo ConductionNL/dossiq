@@ -38,109 +38,104 @@ namespace OCA\Procest\Command\Backfill;
  *
  * @spec openspec/specs/archief-edepot-handover/spec.md
  */
-class OpenRegisterRowNormaliser
-{
-    /**
-     * Normalise one findAll() result into a uuid + payload pair.
-     *
-     * @param mixed $row One findAll() result row.
-     *
-     * @return array{uuid: string, data: array<string, mixed>} Normalised row.
-     *
-     * @spec openspec/specs/archief-edepot-handover/spec.md
-     */
-    public function normalise(mixed $row): array
-    {
-        if (is_object($row) === true) {
-            return $this->normaliseObjectRow(row: $row);
-        }
+class OpenRegisterRowNormaliser {
+	/**
+	 * Normalise one findAll() result into a uuid + payload pair.
+	 *
+	 * @param mixed $row One findAll() result row.
+	 *
+	 * @return array{uuid: string, data: array<string, mixed>} Normalised row.
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	public function normalise(mixed $row): array {
+		if (is_object($row) === true) {
+			return $this->normaliseObjectRow(row: $row);
+		}
 
-        if (is_array($row) === true) {
-            return ['uuid' => $this->uuidFromArray(row: $row), 'data' => $row];
-        }
+		if (is_array($row) === true) {
+			return ['uuid' => $this->uuidFromArray(row: $row), 'data' => $row];
+		}
 
-        return ['uuid' => '', 'data' => []];
-    }//end normalise()
+		return ['uuid' => '', 'data' => []];
+	}//end normalise()
 
-    /**
-     * Normalise an ObjectEntity-shaped findAll() row into a uuid + payload pair.
-     *
-     * @param object $row One findAll() result row.
-     *
-     * @return array{uuid: string, data: array<string, mixed>} Normalised row.
-     *
-     * @spec openspec/specs/archief-edepot-handover/spec.md
-     */
-    private function normaliseObjectRow(object $row): array
-    {
-        $uuid = $this->uuidFromObject(row: $row);
-        $data = [];
+	/**
+	 * Normalise an ObjectEntity-shaped findAll() row into a uuid + payload pair.
+	 *
+	 * @param object $row One findAll() result row.
+	 *
+	 * @return array{uuid: string, data: array<string, mixed>} Normalised row.
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function normaliseObjectRow(object $row): array {
+		$uuid = $this->uuidFromObject(row: $row);
+		$data = [];
 
-        if (method_exists($row, 'getObject') === true && is_array($row->getObject()) === true) {
-            $data = $row->getObject();
-        }
+		if (method_exists($row, 'getObject') === true && is_array($row->getObject()) === true) {
+			$data = $row->getObject();
+		}
 
-        // Fall back to jsonSerialize(), the shape the rest of OpenRegister
-        // renders to, so a future return-shape change cannot silently empty
-        // the uuid again — an empty uuid here disables the closed-proceeding
-        // filter without any visible error, which is exactly what happened
-        // during development of this command.
-        if ($uuid === '' && method_exists($row, 'jsonSerialize') === true) {
-            $serialised = $row->jsonSerialize();
-            if (is_array($serialised) === true) {
-                $uuid = $this->uuidFromArray(row: $serialised);
-                if ($data === []) {
-                    $data = $serialised;
-                }
-            }
-        }//end if
+		// Fall back to jsonSerialize(), the shape the rest of OpenRegister
+		// renders to, so a future return-shape change cannot silently empty
+		// the uuid again — an empty uuid here disables the closed-proceeding
+		// filter without any visible error, which is exactly what happened
+		// during development of this command.
+		if ($uuid === '' && method_exists($row, 'jsonSerialize') === true) {
+			$serialised = $row->jsonSerialize();
+			if (is_array($serialised) === true) {
+				$uuid = $this->uuidFromArray(row: $serialised);
+				if ($data === []) {
+					$data = $serialised;
+				}
+			}
+		}//end if
 
-        return ['uuid' => $uuid, 'data' => $data];
-    }//end normaliseObjectRow()
+		return ['uuid' => $uuid, 'data' => $data];
+	}//end normaliseObjectRow()
 
-    /**
-     * Read an object uuid off an ObjectEntity, trying getUuid() then getId().
-     *
-     * @param object $row One findAll() result row.
-     *
-     * @return string The uuid, or '' when neither getter yields one.
-     *
-     * @spec openspec/specs/archief-edepot-handover/spec.md
-     */
-    private function uuidFromObject(object $row): string
-    {
-        $uuid = '';
-        foreach (['getUuid', 'getId'] as $getter) {
-            if ($uuid === '' && method_exists($row, $getter) === true) {
-                $uuid = (string) ($row->$getter() ?? '');
-            }
-        }
+	/**
+	 * Read an object uuid off an ObjectEntity, trying getUuid() then getId().
+	 *
+	 * @param object $row One findAll() result row.
+	 *
+	 * @return string The uuid, or '' when neither getter yields one.
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function uuidFromObject(object $row): string {
+		$uuid = '';
+		foreach (['getUuid', 'getId'] as $getter) {
+			if ($uuid === '' && method_exists($row, $getter) === true) {
+				$uuid = (string)($row->$getter() ?? '');
+			}
+		}
 
-        return $uuid;
-    }//end uuidFromObject()
+		return $uuid;
+	}//end uuidFromObject()
 
-    /**
-     * Read an object uuid out of a rendered object array, whatever its shape.
-     *
-     * @param array<string, mixed> $row A rendered OpenRegister object.
-     *
-     * @return string The uuid, or '' when no known key carries one.
-     *
-     * @spec openspec/specs/archief-edepot-handover/spec.md
-     */
-    private function uuidFromArray(array $row): string
-    {
-        $self = ($row['@self'] ?? []);
-        if (is_array($self) === false) {
-            $self = [];
-        }
+	/**
+	 * Read an object uuid out of a rendered object array, whatever its shape.
+	 *
+	 * @param array<string, mixed> $row A rendered OpenRegister object.
+	 *
+	 * @return string The uuid, or '' when no known key carries one.
+	 *
+	 * @spec openspec/specs/archief-edepot-handover/spec.md
+	 */
+	private function uuidFromArray(array $row): string {
+		$self = ($row['@self'] ?? []);
+		if (is_array($self) === false) {
+			$self = [];
+		}
 
-        foreach ([$self['uuid'] ?? null, $self['id'] ?? null, $row['uuid'] ?? null, $row['id'] ?? null] as $value) {
-            if (is_scalar($value) === true && (string) $value !== '') {
-                return (string) $value;
-            }
-        }
+		foreach ([$self['uuid'] ?? null, $self['id'] ?? null, $row['uuid'] ?? null, $row['id'] ?? null] as $value) {
+			if (is_scalar($value) === true && (string)$value !== '') {
+				return (string)$value;
+			}
+		}
 
-        return '';
-    }//end uuidFromArray()
+		return '';
+	}//end uuidFromArray()
 }//end class

@@ -36,141 +36,138 @@ use Psr\Log\LoggerInterface;
 /**
  * Seeds three demo TermijnDefinitie rows into OpenRegister.
  */
-class DeadlineMonitoringSeedDataService
-{
-    use SearchesObjects;
+class DeadlineMonitoringSeedDataService {
+	use SearchesObjects;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Settings + ObjectService access.
-     * @param LoggerInterface $logger          Logger.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Settings + ObjectService access.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Seed the termijn-definitie example data.
-     *
-     * @return array<string, mixed> Result with 'success' and either 'message' or per-kind counts.
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
-     */
-    public function seed(): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return ['success' => false, 'message' => 'OpenRegister is not available'];
-        }
+	/**
+	 * Seed the termijn-definitie example data.
+	 *
+	 * @return array<string, mixed> Result with 'success' and either 'message' or per-kind counts.
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-01-schemas-and-seed/tasks.md
+	 */
+	public function seed(): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return ['success' => false, 'message' => 'OpenRegister is not available'];
+		}
 
-        $register = (string) $this->settingsService->getConfigValue('register');
-        $schema   = (string) $this->settingsService->getConfigValue('termijn_definitie_schema');
-        if ($register === '' || $schema === '') {
-            return ['success' => false, 'message' => 'Termijn schemas not configured'];
-        }
+		$register = (string)$this->settingsService->getConfigValue('register');
+		$schema = (string)$this->settingsService->getConfigValue('termijn_definitie_schema');
+		if ($register === '' || $schema === '') {
+			return ['success' => false, 'message' => 'Termijn schemas not configured'];
+		}
 
-        $seedPath = __DIR__.'/../Settings/termijnbewaking_seed_data.json';
-        if (file_exists($seedPath) === false) {
-            return ['success' => false, 'message' => 'Seed file not found'];
-        }
+		$seedPath = __DIR__ . '/../Settings/termijnbewaking_seed_data.json';
+		if (file_exists($seedPath) === false) {
+			return ['success' => false, 'message' => 'Seed file not found'];
+		}
 
-        $data = json_decode((string) file_get_contents($seedPath), true);
-        if (is_array($data) === false) {
-            return ['success' => false, 'message' => 'Invalid seed JSON'];
-        }
+		$data = json_decode((string)file_get_contents($seedPath), true);
+		if (is_array($data) === false) {
+			return ['success' => false, 'message' => 'Invalid seed JSON'];
+		}
 
-        $existingIds = $this->existingDefinitionIds(objectService: $objectService, register: $register, schema: $schema);
+		$existingIds = $this->existingDefinitionIds(objectService: $objectService, register: $register, schema: $schema);
 
-        $counts = $this->insertDefinitions(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            data: $data,
-            existingIds: $existingIds,
-        );
+		$counts = $this->insertDefinitions(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			data: $data,
+			existingIds: $existingIds,
+		);
 
-        $this->logger->info('Procest termijnbewaking: seed complete', $counts);
+		$this->logger->info('Procest termijnbewaking: seed complete', $counts);
 
-        return array_merge(['success' => true], $counts);
-    }//end seed()
+		return array_merge(['success' => true], $counts);
+	}//end seed()
 
-    /**
-     * Persist the seed rows that are not present yet.
-     *
-     * @param object               $objectService OpenRegister ObjectService.
-     * @param string               $register      Register id.
-     * @param string               $schema        Schema id.
-     * @param array<string, mixed> $data          The decoded seed file.
-     * @param array<int, string>   $existingIds   Already-seeded definition ids.
-     *
-     * @return array<string, int> Per-kind counts.
-     */
-    private function insertDefinitions(
-        object $objectService,
-        string $register,
-        string $schema,
-        array $data,
-        array $existingIds
-    ): array {
-        $counts = ['definities' => 0, 'skipped' => 0];
+	/**
+	 * Persist the seed rows that are not present yet.
+	 *
+	 * @param object $objectService OpenRegister ObjectService.
+	 * @param string $register Register id.
+	 * @param string $schema Schema id.
+	 * @param array<string, mixed> $data The decoded seed file.
+	 * @param array<int, string> $existingIds Already-seeded definition ids.
+	 *
+	 * @return array<string, int> Per-kind counts.
+	 */
+	private function insertDefinitions(
+		object $objectService,
+		string $register,
+		string $schema,
+		array $data,
+		array $existingIds,
+	): array {
+		$counts = ['definities' => 0, 'skipped' => 0];
 
-        foreach (($data['termijnDefinities'] ?? []) as $row) {
-            $rowId = (string) ($row['id'] ?? '');
-            if ($rowId !== '' && in_array($rowId, $existingIds, true) === true) {
-                $counts['skipped']++;
-                continue;
-            }
+		foreach (($data['termijnDefinities'] ?? []) as $row) {
+			$rowId = (string)($row['id'] ?? '');
+			if ($rowId !== '' && in_array($rowId, $existingIds, true) === true) {
+				$counts['skipped']++;
+				continue;
+			}
 
-            try {
-                $objectService->saveObject($register, $schema, $row);
-                $counts['definities']++;
-            } catch (\Throwable $e) {
-                $this->logger->warning(
-                    'Procest termijnbewaking seed: row failed',
-                    ['id' => $rowId, 'error' => $e->getMessage()]
-                );
-            }
-        }
+			try {
+				$objectService->saveObject($register, $schema, $row);
+				$counts['definities']++;
+			} catch (\Throwable $e) {
+				$this->logger->warning(
+					'Procest termijnbewaking seed: row failed',
+					['id' => $rowId, 'error' => $e->getMessage()]
+				);
+			}
+		}
 
-        return $counts;
-    }//end insertDefinitions()
+		return $counts;
+	}//end insertDefinitions()
 
-    /**
-     * Collect existing TermijnDefinitie ids for idempotent skip-detection.
-     *
-     * @param object $objectService OpenRegister ObjectService.
-     * @param string $register      Register id.
-     * @param string $schema        Schema id.
-     *
-     * @return array<int, string>
-     */
-    private function existingDefinitionIds(object $objectService, string $register, string $schema): array
-    {
-        if (method_exists($objectService, 'findObjects') === false) {
-            return [];
-        }
+	/**
+	 * Collect existing TermijnDefinitie ids for idempotent skip-detection.
+	 *
+	 * @param object $objectService OpenRegister ObjectService.
+	 * @param string $register Register id.
+	 * @param string $schema Schema id.
+	 *
+	 * @return array<int, string>
+	 */
+	private function existingDefinitionIds(object $objectService, string $register, string $schema): array {
+		if (method_exists($objectService, 'findObjects') === false) {
+			return [];
+		}
 
-        try {
-            $rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema);
-        } catch (\Throwable $e) {
-            return [];
-        }
+		try {
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema);
+		} catch (\Throwable $e) {
+			return [];
+		}
 
-        $ids = [];
-        foreach ($rows as $row) {
-            $rowId = '';
-            if (isset($row['id']) === true) {
-                $rowId = (string) $row['id'];
-            }
+		$ids = [];
+		foreach ($rows as $row) {
+			$rowId = '';
+			if (isset($row['id']) === true) {
+				$rowId = (string)$row['id'];
+			}
 
-            if ($rowId !== '') {
-                $ids[] = $rowId;
-            }
-        }
+			if ($rowId !== '') {
+				$ids[] = $rowId;
+			}
+		}
 
-        return $ids;
-    }//end existingDefinitionIds()
+		return $ids;
+	}//end existingDefinitionIds()
 }//end class

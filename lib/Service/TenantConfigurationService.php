@@ -38,312 +38,300 @@ use Throwable;
  * owns configuration storage — read, merge, persist — plus locale and feature
  * flags.
  */
-class TenantConfigurationService
-{
-    /**
-     * Allowed locale identifiers (ISO + Dutch defaults).
-     *
-     * @var array<int, string>
-     */
-    public const ALLOWED_LOCALES = ['nl_NL', 'nl_BE', 'en_GB', 'en_US', 'fr_FR', 'de_DE'];
+class TenantConfigurationService {
+	/**
+	 * Allowed locale identifiers (ISO + Dutch defaults).
+	 *
+	 * @var array<int, string>
+	 */
+	public const ALLOWED_LOCALES = ['nl_NL', 'nl_BE', 'en_GB', 'en_US', 'fr_FR', 'de_DE'];
 
-    /**
-     * Allowed timezone identifiers (subset of IANA — extend as needed).
-     *
-     * @var array<int, string>
-     */
-    public const ALLOWED_TIMEZONES = ['Europe/Amsterdam', 'Europe/Brussels', 'Europe/Berlin', 'Europe/Paris', 'UTC'];
+	/**
+	 * Allowed timezone identifiers (subset of IANA — extend as needed).
+	 *
+	 * @var array<int, string>
+	 */
+	public const ALLOWED_TIMEZONES = ['Europe/Amsterdam', 'Europe/Brussels', 'Europe/Berlin', 'Europe/Paris', 'UTC'];
 
-    /**
-     * Maximum logo size in bytes (5MB).
-     *
-     * Canonically owned by {@see TenantBrandingSanitiser}; aliased here so
-     * existing callers keep working.
-     *
-     * @var int
-     */
-    public const LOGO_MAX_BYTES = TenantBrandingSanitiser::LOGO_MAX_BYTES;
+	/**
+	 * Maximum logo size in bytes (5MB).
+	 *
+	 * Canonically owned by {@see TenantBrandingSanitiser}; aliased here so
+	 * existing callers keep working.
+	 *
+	 * @var int
+	 */
+	public const LOGO_MAX_BYTES = TenantBrandingSanitiser::LOGO_MAX_BYTES;
 
-    /**
-     * Allowed logo MIME types.
-     *
-     * Canonically owned by {@see TenantBrandingSanitiser}.
-     *
-     * @var array<int, string>
-     */
-    public const LOGO_ALLOWED_MIME = TenantBrandingSanitiser::LOGO_ALLOWED_MIME;
+	/**
+	 * Allowed logo MIME types.
+	 *
+	 * Canonically owned by {@see TenantBrandingSanitiser}.
+	 *
+	 * @var array<int, string>
+	 */
+	public const LOGO_ALLOWED_MIME = TenantBrandingSanitiser::LOGO_ALLOWED_MIME;
 
-    /**
-     * Custom-CSS property whitelist (sanitiser).
-     *
-     * Canonically owned by {@see TenantBrandingSanitiser}.
-     *
-     * @var array<int, string>
-     */
-    public const CSS_PROPERTY_WHITELIST = TenantBrandingSanitiser::CSS_PROPERTY_WHITELIST;
+	/**
+	 * Custom-CSS property whitelist (sanitiser).
+	 *
+	 * Canonically owned by {@see TenantBrandingSanitiser}.
+	 *
+	 * @var array<int, string>
+	 */
+	public const CSS_PROPERTY_WHITELIST = TenantBrandingSanitiser::CSS_PROPERTY_WHITELIST;
 
-    /**
-     * Constructor.
-     *
-     * @param IAppManager             $appManager App manager.
-     * @param ContainerInterface      $container  Service container.
-     * @param TenantBrandingSanitiser $sanitiser  Fail-closed branding input validation.
-     * @param LoggerInterface         $logger     Logger.
-     */
-    public function __construct(
-        private readonly IAppManager $appManager,
-        private readonly ContainerInterface $container,
-        private readonly TenantBrandingSanitiser $sanitiser,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IAppManager $appManager App manager.
+	 * @param ContainerInterface $container Service container.
+	 * @param TenantBrandingSanitiser $sanitiser Fail-closed branding input validation.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly IAppManager $appManager,
+		private readonly ContainerInterface $container,
+		private readonly TenantBrandingSanitiser $sanitiser,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the full configuration row for a tenant.
-     *
-     * @param string $tenantId Tenant UUID.
-     *
-     * @return array<string,mixed>|null
-     */
-    public function getConfig(string $tenantId): ?array
-    {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
+	/**
+	 * Get the full configuration row for a tenant.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 *
+	 * @return array<string,mixed>|null
+	 */
+	public function getConfig(string $tenantId): ?array {
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
 
-        try {
-            // ObjectService::findAll() takes a single $config array — the previous
-            // named-argument form threw "Unknown named parameter $register" and
-            // was swallowed by the catch below. Register/schema live inside
-            // `filters`; limit/offset are top-level config keys.
-            $rows = $objectService->findAll(
-                [
-                    'filters' => [
-                        'register'  => TenantSaasService::REGISTER,
-                        'schema'    => 'tenantConfiguration',
-                        'tenantRef' => $tenantId,
-                    ],
-                    'limit'   => 1,
-                    'offset'  => 0,
-                ]
-            );
-            if (is_array($rows) === true && count($rows) > 0) {
-                return $rows[0];
-            }
+		try {
+			// ObjectService::findAll() takes a single $config array — the previous
+			// named-argument form threw "Unknown named parameter $register" and
+			// was swallowed by the catch below. Register/schema live inside
+			// `filters`; limit/offset are top-level config keys.
+			$rows = $objectService->findAll(
+				[
+					'filters' => [
+						'register' => TenantSaasService::REGISTER,
+						'schema' => 'tenantConfiguration',
+						'tenantRef' => $tenantId,
+					],
+					'limit' => 1,
+					'offset' => 0,
+				]
+			);
+			if (is_array($rows) === true && count($rows) > 0) {
+				return $rows[0];
+			}
 
-            return null;
-        } catch (Throwable $e) {
-            return null;
-        }//end try
-    }//end getConfig()
+			return null;
+		} catch (Throwable $e) {
+			return null;
+		}//end try
+	}//end getConfig()
 
-    /**
-     * Update branding for a tenant.
-     *
-     * @param string              $tenantId Tenant UUID.
-     * @param array<string,mixed> $branding Branding payload.
-     *
-     * @return array<string,mixed>
-     *
-     * @throws InvalidArgumentException When inputs are invalid.
-     */
-    public function updateBranding(string $tenantId, array $branding): array
-    {
-        $sanitised = $this->sanitiseBranding(branding: $branding);
-        return $this->mergeConfig(tenantId: $tenantId, delta: ['branding' => $sanitised]);
-    }//end updateBranding()
+	/**
+	 * Update branding for a tenant.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param array<string,mixed> $branding Branding payload.
+	 *
+	 * @return array<string,mixed>
+	 *
+	 * @throws InvalidArgumentException When inputs are invalid.
+	 */
+	public function updateBranding(string $tenantId, array $branding): array {
+		$sanitised = $this->sanitiseBranding(branding: $branding);
+		return $this->mergeConfig(tenantId: $tenantId, delta: ['branding' => $sanitised]);
+	}//end updateBranding()
 
-    /**
-     * Update locale-related fields.
-     *
-     * @param string                                                                        $tenantId Tenant UUID.
-     * @param array{locale?:string, timezone?:string, dateFormat?:string, currency?:string} $payload  Payload.
-     *
-     * @return array<string,mixed>
-     *
-     * @throws InvalidArgumentException
-     */
-    public function updateLocale(string $tenantId, array $payload): array
-    {
-        if (isset($payload['locale']) === true && in_array($payload['locale'], self::ALLOWED_LOCALES, true) === false) {
-            throw new InvalidArgumentException('Invalid locale: '.$payload['locale']);
-        }
+	/**
+	 * Update locale-related fields.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param array{locale?:string, timezone?:string, dateFormat?:string, currency?:string} $payload Payload.
+	 *
+	 * @return array<string,mixed>
+	 *
+	 * @throws InvalidArgumentException
+	 */
+	public function updateLocale(string $tenantId, array $payload): array {
+		if (isset($payload['locale']) === true && in_array($payload['locale'], self::ALLOWED_LOCALES, true) === false) {
+			throw new InvalidArgumentException('Invalid locale: ' . $payload['locale']);
+		}
 
-        if (isset($payload['timezone']) === true && in_array($payload['timezone'], self::ALLOWED_TIMEZONES, true) === false) {
-            throw new InvalidArgumentException('Invalid timezone: '.$payload['timezone']);
-        }
+		if (isset($payload['timezone']) === true && in_array($payload['timezone'], self::ALLOWED_TIMEZONES, true) === false) {
+			throw new InvalidArgumentException('Invalid timezone: ' . $payload['timezone']);
+		}
 
-        if (isset($payload['currency']) === true && preg_match('/^[A-Z]{3}$/', $payload['currency']) !== 1) {
-            throw new InvalidArgumentException('Invalid currency code: '.$payload['currency']);
-        }
+		if (isset($payload['currency']) === true && preg_match('/^[A-Z]{3}$/', $payload['currency']) !== 1) {
+			throw new InvalidArgumentException('Invalid currency code: ' . $payload['currency']);
+		}
 
-        return $this->mergeConfig(tenantId: $tenantId, delta: $payload);
-    }//end updateLocale()
+		return $this->mergeConfig(tenantId: $tenantId, delta: $payload);
+	}//end updateLocale()
 
-    /**
-     * Set or unset a feature flag.
-     *
-     * @param string $tenantId Tenant UUID.
-     * @param string $flag     Flag name.
-     * @param bool   $enabled  True to add, false to remove.
-     *
-     * @return array<string,mixed>
-     */
-    public function setFeatureFlag(string $tenantId, string $flag, bool $enabled): array
-    {
-        $current  = $this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId, 'features' => []];
-        $features = (array) ($current['features'] ?? []);
-        $features = array_values(array_unique(array_filter($features, fn ($f) => is_string($f) && $f !== '')));
-        if ($enabled === true && in_array($flag, $features, true) === false) {
-            $features[] = $flag;
-        } else if ($enabled === false) {
-            $features = array_values(array_filter($features, fn ($f) => $f !== $flag));
-        }
+	/**
+	 * Set or unset a feature flag.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param string $flag Flag name.
+	 * @param bool $enabled True to add, false to remove.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function setFeatureFlag(string $tenantId, string $flag, bool $enabled): array {
+		$current = $this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId, 'features' => []];
+		$features = (array)($current['features'] ?? []);
+		$features = array_values(array_unique(array_filter($features, fn ($f) => is_string($f) && $f !== '')));
+		if ($enabled === true && in_array($flag, $features, true) === false) {
+			$features[] = $flag;
+		} elseif ($enabled === false) {
+			$features = array_values(array_filter($features, fn ($f) => $f !== $flag));
+		}
 
-        return $this->mergeConfig(tenantId: $tenantId, delta: ['features' => $features]);
-    }//end setFeatureFlag()
+		return $this->mergeConfig(tenantId: $tenantId, delta: ['features' => $features]);
+	}//end setFeatureFlag()
 
-    /**
-     * Build the theming-tokens CSS-variable map from the tenant branding.
-     *
-     * @param array<string,mixed> $config Configuration row.
-     *
-     * @return array<string,string> CSS-variable map.
-     */
-    public function getThemingTokens(array $config): array
-    {
-        $branding = (array) ($config['branding'] ?? []);
-        $tokens   = [];
-        if (isset($branding['primaryColor']) === true && $this->isHexColor(val: (string) $branding['primaryColor']) === true) {
-            $tokens['--nc-color-primary']         = (string) $branding['primaryColor'];
-            $tokens['--nc-color-primary-element'] = (string) $branding['primaryColor'];
-        }
+	/**
+	 * Build the theming-tokens CSS-variable map from the tenant branding.
+	 *
+	 * @param array<string,mixed> $config Configuration row.
+	 *
+	 * @return array<string,string> CSS-variable map.
+	 */
+	public function getThemingTokens(array $config): array {
+		$branding = (array)($config['branding'] ?? []);
+		$tokens = [];
+		if (isset($branding['primaryColor']) === true && $this->isHexColor(val: (string)$branding['primaryColor']) === true) {
+			$tokens['--nc-color-primary'] = (string)$branding['primaryColor'];
+			$tokens['--nc-color-primary-element'] = (string)$branding['primaryColor'];
+		}
 
-        if (isset($branding['secondaryColor']) === true && $this->isHexColor(val: (string) $branding['secondaryColor']) === true) {
-            $tokens['--procest-color-secondary'] = (string) $branding['secondaryColor'];
-        }
+		if (isset($branding['secondaryColor']) === true && $this->isHexColor(val: (string)$branding['secondaryColor']) === true) {
+			$tokens['--procest-color-secondary'] = (string)$branding['secondaryColor'];
+		}
 
-        if (isset($branding['fontFamily']) === true) {
-            $fontFamily = (string) $branding['fontFamily'];
-            // Drop quotes and dangerous chars.
-            $fontFamily = preg_replace('/[^a-zA-Z0-9_\\- ,]/', '', $fontFamily) ?? '';
-            $tokens['--procest-font-family'] = $fontFamily;
-        }
+		if (isset($branding['fontFamily']) === true) {
+			$fontFamily = (string)$branding['fontFamily'];
+			// Drop quotes and dangerous chars.
+			$fontFamily = preg_replace('/[^a-zA-Z0-9_\\- ,]/', '', $fontFamily) ?? '';
+			$tokens['--procest-font-family'] = $fontFamily;
+		}
 
-        return $tokens;
-    }//end getThemingTokens()
+		return $tokens;
+	}//end getThemingTokens()
 
-    /**
-     * Sanitise a branding payload — hex-color check, whitelist custom CSS.
-     *
-     * @param array<string,mixed> $branding Input.
-     *
-     * @return array<string,mixed> Sanitised.
-     *
-     * @throws InvalidArgumentException When a hex color is invalid.
-     *
-     * @spec openspec/specs/security-hardening/spec.md
-     */
-    public function sanitiseBranding(array $branding): array
-    {
-        return $this->sanitiser->sanitiseBranding(branding: $branding);
-    }//end sanitiseBranding()
+	/**
+	 * Sanitise a branding payload — hex-color check, whitelist custom CSS.
+	 *
+	 * @param array<string,mixed> $branding Input.
+	 *
+	 * @return array<string,mixed> Sanitised.
+	 *
+	 * @throws InvalidArgumentException When a hex color is invalid.
+	 *
+	 * @spec openspec/specs/security-hardening/spec.md
+	 */
+	public function sanitiseBranding(array $branding): array {
+		return $this->sanitiser->sanitiseBranding(branding: $branding);
+	}//end sanitiseBranding()
 
-    /**
-     * Whitelist-based CSS sanitiser. Strips any rule with a property not in
-     * the whitelist or a value containing `url(`, `@import`, `expression`.
-     *
-     * @param string $css Raw CSS.
-     *
-     * @return string Sanitised CSS.
-     */
-    public function sanitiseCustomCss(string $css): string
-    {
-        return $this->sanitiser->sanitiseCustomCss(css: $css);
-    }//end sanitiseCustomCss()
+	/**
+	 * Whitelist-based CSS sanitiser. Strips any rule with a property not in
+	 * the whitelist or a value containing `url(`, `@import`, `expression`.
+	 *
+	 * @param string $css Raw CSS.
+	 *
+	 * @return string Sanitised CSS.
+	 */
+	public function sanitiseCustomCss(string $css): string {
+		return $this->sanitiser->sanitiseCustomCss(css: $css);
+	}//end sanitiseCustomCss()
 
-    /**
-     * Validate that an uploaded logo passes the MIME + size guard.
-     *
-     * @param string $mimeType Uploaded MIME.
-     * @param int    $bytes    Size in bytes.
-     *
-     * @return void
-     *
-     * @throws InvalidArgumentException
-     */
-    public function validateLogoUpload(string $mimeType, int $bytes): void
-    {
-        $this->sanitiser->validateLogoUpload(mimeType: $mimeType, bytes: $bytes);
-    }//end validateLogoUpload()
+	/**
+	 * Validate that an uploaded logo passes the MIME + size guard.
+	 *
+	 * @param string $mimeType Uploaded MIME.
+	 * @param int $bytes Size in bytes.
+	 *
+	 * @return void
+	 *
+	 * @throws InvalidArgumentException
+	 */
+	public function validateLogoUpload(string $mimeType, int $bytes): void {
+		$this->sanitiser->validateLogoUpload(mimeType: $mimeType, bytes: $bytes);
+	}//end validateLogoUpload()
 
-    /**
-     * Check whether a string is a 6-digit hex color.
-     *
-     * @param string $val 6-digit hex (with leading #).
-     *
-     * @return bool
-     */
-    public function isHexColor(string $val): bool
-    {
-        return $this->sanitiser->isHexColor(val: $val);
-    }//end isHexColor()
+	/**
+	 * Check whether a string is a 6-digit hex color.
+	 *
+	 * @param string $val 6-digit hex (with leading #).
+	 *
+	 * @return bool
+	 */
+	public function isHexColor(string $val): bool {
+		return $this->sanitiser->isHexColor(val: $val);
+	}//end isHexColor()
 
-    /**
-     * Merge a delta into the tenant configuration row and persist it.
-     *
-     * @param string              $tenantId Tenant UUID.
-     * @param array<string,mixed> $delta    Fields to merge.
-     *
-     * @return array<string,mixed>
-     */
-    private function mergeConfig(string $tenantId, array $delta): array
-    {
-        $objectService = $this->getObjectService();
-        if ($objectService === null) {
-            return ['tenantRef' => $tenantId] + $delta;
-        }
+	/**
+	 * Merge a delta into the tenant configuration row and persist it.
+	 *
+	 * @param string $tenantId Tenant UUID.
+	 * @param array<string,mixed> $delta Fields to merge.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function mergeConfig(string $tenantId, array $delta): array {
+		$objectService = $this->getObjectService();
+		if ($objectService === null) {
+			return ['tenantRef' => $tenantId] + $delta;
+		}
 
-        $current = ($this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId]);
-        $next    = array_merge($current, $delta);
-        try {
-            $uuidArg = null;
-            $uuid    = (string) ($current['uuid'] ?? $current['id'] ?? '');
-            if ($uuid !== '') {
-                $uuidArg = $uuid;
-            }
+		$current = ($this->getConfig(tenantId: $tenantId) ?? ['tenantRef' => $tenantId]);
+		$next = array_merge($current, $delta);
+		try {
+			$uuidArg = null;
+			$uuid = (string)($current['uuid'] ?? $current['id'] ?? '');
+			if ($uuid !== '') {
+				$uuidArg = $uuid;
+			}
 
-            return $objectService->saveObject(
-                object: $next,
-                register: TenantSaasService::REGISTER,
-                schema: 'tenantConfiguration',
-                uuid: $uuidArg
-            );
-        } catch (Throwable $e) {
-            $this->logger->error('Procest: tenantConfiguration save failed', ['exception' => $e->getMessage()]);
-            return $next;
-        }
-    }//end mergeConfig()
+			return $objectService->saveObject(
+				object: $next,
+				register: TenantSaasService::REGISTER,
+				schema: 'tenantConfiguration',
+				uuid: $uuidArg
+			);
+		} catch (Throwable $e) {
+			$this->logger->error('Procest: tenantConfiguration save failed', ['exception' => $e->getMessage()]);
+			return $next;
+		}
+	}//end mergeConfig()
 
-    /**
-     * Resolve the OpenRegister ObjectService when available.
-     *
-     * @return mixed|null
-     */
-    private function getObjectService()
-    {
-        // IAppManager::getInstalledApps() declares its array return in PHPDoc
-        // only, so normalise defensively before the membership test.
-        $installed = (array) $this->appManager->getInstalledApps();
-        if (in_array('openregister', $installed, true) === false) {
-            return null;
-        }
+	/**
+	 * Resolve the OpenRegister ObjectService when available.
+	 *
+	 * @return mixed|null
+	 */
+	private function getObjectService() {
+		// IAppManager::getInstalledApps() declares its array return in PHPDoc
+		// only, so normalise defensively before the membership test.
+		$installed = (array)$this->appManager->getInstalledApps();
+		if (in_array('openregister', $installed, true) === false) {
+			return null;
+		}
 
-        try {
-            return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
-        } catch (Throwable $e) {
-            return null;
-        }
-    }//end getObjectService()
+		try {
+			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+		} catch (Throwable $e) {
+			return null;
+		}
+	}//end getObjectService()
 }//end class

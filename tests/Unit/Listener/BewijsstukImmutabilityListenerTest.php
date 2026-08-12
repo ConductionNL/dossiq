@@ -44,196 +44,186 @@ use Psr\Log\LoggerInterface;
  *
  * @uses \OCA\Procest\Service\Subsidie\BewijsstukService
  */
-class BewijsstukImmutabilityListenerTest extends TestCase
-{
-    /**
-     * Schema id the listener is configured to recognise.
-     */
-    private const SCHEMA = 'bewijsstuk-schema-id';
+class BewijsstukImmutabilityListenerTest extends TestCase {
+	/**
+	 * Schema id the listener is configured to recognise.
+	 */
+	private const SCHEMA = 'bewijsstuk-schema-id';
 
-    /**
-     * The listener under test.
-     *
-     * @var BewijsstukImmutabilityListener
-     */
-    private BewijsstukImmutabilityListener $listener;
+	/**
+	 * The listener under test.
+	 *
+	 * @var BewijsstukImmutabilityListener
+	 */
+	private BewijsstukImmutabilityListener $listener;
 
-    /**
-     * Set up the listener with the REAL BewijsstukService, so the test
-     * exercises the actual assertMutable() rule and not a mock of it.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $settingsService = $this->createMock(SettingsService::class);
-        $settingsService->method('getConfigValue')->willReturnCallback(
-            static function (string $key, string $default=''): string {
-                return $key === 'bewijsstuk_schema' ? self::SCHEMA : $default;
-            }
-        );
+	/**
+	 * Set up the listener with the REAL BewijsstukService, so the test
+	 * exercises the actual assertMutable() rule and not a mock of it.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$settingsService = $this->createMock(SettingsService::class);
+		$settingsService->method('getConfigValue')->willReturnCallback(
+			static function (string $key, string $default = ''): string {
+				return $key === 'bewijsstuk_schema' ? self::SCHEMA : $default;
+			}
+		);
 
-        $logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(LoggerInterface::class);
 
-        $this->listener = new BewijsstukImmutabilityListener(
-            $settingsService,
-            new BewijsstukService($this->createMock(SettingsService::class), $logger),
-            $logger,
-        );
-    }//end setUp()
+		$this->listener = new BewijsstukImmutabilityListener(
+			$settingsService,
+			new BewijsstukService($this->createMock(SettingsService::class), $logger),
+			$logger,
+		);
+	}//end setUp()
 
-    /**
-     * Build a bewijsstuk entity.
-     *
-     * @param array<string, mixed> $payload  Bewijsstuk fields.
-     * @param string               $schemaId Schema id (`@self.schema`).
-     *
-     * @return ObjectEntity
-     */
-    private function entity(array $payload, string $schemaId=self::SCHEMA): ObjectEntity
-    {
-        $entity = new ObjectEntity();
-        $entity->setObject($payload);
-        $entity->setSchemaId($schemaId);
-        $entity->setUuid('22222222-2222-2222-2222-222222222222');
+	/**
+	 * Build a bewijsstuk entity.
+	 *
+	 * @param array<string, mixed> $payload Bewijsstuk fields.
+	 * @param string $schemaId Schema id (`@self.schema`).
+	 *
+	 * @return ObjectEntity
+	 */
+	private function entity(array $payload, string $schemaId = self::SCHEMA): ObjectEntity {
+		$entity = new ObjectEntity();
+		$entity->setObject($payload);
+		$entity->setSchemaId($schemaId);
+		$entity->setUuid('22222222-2222-2222-2222-222222222222');
 
-        return $entity;
-    }//end entity()
+		return $entity;
+	}//end entity()
 
-    /**
-     * An update to a bewijsstuk that is NOT linked to a vaststelling is
-     * allowed through — the positive control for every reject case below.
-     *
-     * @return void
-     */
-    public function testMutableBewijsstukUpdateIsAllowed(): void
-    {
-        $event = new ObjectUpdatingEvent(
-            $this->entity(['immutable' => false, 'bewijsstukType' => 'factuur']),
-            $this->entity(['immutable' => false, 'bewijsstukType' => 'urenstaat'])
-        );
+	/**
+	 * An update to a bewijsstuk that is NOT linked to a vaststelling is
+	 * allowed through — the positive control for every reject case below.
+	 *
+	 * @return void
+	 */
+	public function testMutableBewijsstukUpdateIsAllowed(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['immutable' => false, 'bewijsstukType' => 'factuur']),
+			$this->entity(['immutable' => false, 'bewijsstukType' => 'urenstaat'])
+		);
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertFalse(
-            $event->isPropagationStopped(),
-            'A mutable bewijsstuk must remain editable'
-        );
-        $this->assertSame([], $event->getErrors());
-    }//end testMutableBewijsstukUpdateIsAllowed()
+		$this->assertFalse(
+			$event->isPropagationStopped(),
+			'A mutable bewijsstuk must remain editable'
+		);
+		$this->assertSame([], $event->getErrors());
+	}//end testMutableBewijsstukUpdateIsAllowed()
 
-    /**
-     * An update to a vaststelling-linked bewijsstuk is rejected BEFORE the
-     * row is written (stopPropagation on the pre-persist event).
-     *
-     * @return void
-     */
-    public function testImmutableBewijsstukUpdateIsRejected(): void
-    {
-        $event = new ObjectUpdatingEvent(
-            $this->entity(['immutable' => true, 'bewijsstukType' => 'factuur']),
-            $this->entity(['immutable' => true, 'bewijsstukType' => 'urenstaat'])
-        );
+	/**
+	 * An update to a vaststelling-linked bewijsstuk is rejected BEFORE the
+	 * row is written (stopPropagation on the pre-persist event).
+	 *
+	 * @return void
+	 */
+	public function testImmutableBewijsstukUpdateIsRejected(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['immutable' => true, 'bewijsstukType' => 'factuur']),
+			$this->entity(['immutable' => true, 'bewijsstukType' => 'urenstaat'])
+		);
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertTrue(
-            $event->isPropagationStopped(),
-            'An immutable bewijsstuk update must be stopped pre-persist'
-        );
-        $this->assertSame('bewijsstuk.immutable', $event->getErrors()['code'] ?? null);
-        $this->assertStringContainsString('onveranderlijk', (string) ($event->getErrors()['message'] ?? ''));
-    }//end testImmutableBewijsstukUpdateIsRejected()
+		$this->assertTrue(
+			$event->isPropagationStopped(),
+			'An immutable bewijsstuk update must be stopped pre-persist'
+		);
+		$this->assertSame('bewijsstuk.immutable', $event->getErrors()['code'] ?? null);
+		$this->assertStringContainsString('onveranderlijk', (string)($event->getErrors()['message'] ?? ''));
+	}//end testImmutableBewijsstukUpdateIsRejected()
 
-    /**
-     * The STORED state decides, not the incoming payload: clearing
-     * `immutable` in the same request that mutates the document must NOT
-     * unlock it. Without this the guard is trivially bypassable.
-     *
-     * @return void
-     */
-    public function testPayloadCannotClearTheImmutableFlagToBypassTheGuard(): void
-    {
-        $event = new ObjectUpdatingEvent(
-            // Attacker-supplied new state claims the document is mutable.
-            $this->entity(['immutable' => false, 'bewijsstukType' => 'factuur']),
-            // Stored state says otherwise.
-            $this->entity(['immutable' => true, 'bewijsstukType' => 'urenstaat'])
-        );
+	/**
+	 * The STORED state decides, not the incoming payload: clearing
+	 * `immutable` in the same request that mutates the document must NOT
+	 * unlock it. Without this the guard is trivially bypassable.
+	 *
+	 * @return void
+	 */
+	public function testPayloadCannotClearTheImmutableFlagToBypassTheGuard(): void {
+		$event = new ObjectUpdatingEvent(
+			// Attacker-supplied new state claims the document is mutable.
+			$this->entity(['immutable' => false, 'bewijsstukType' => 'factuur']),
+			// Stored state says otherwise.
+			$this->entity(['immutable' => true, 'bewijsstukType' => 'urenstaat'])
+		);
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertTrue(
-            $event->isPropagationStopped(),
-            'The guard must read the stored state, not the incoming payload'
-        );
-    }//end testPayloadCannotClearTheImmutableFlagToBypassTheGuard()
+		$this->assertTrue(
+			$event->isPropagationStopped(),
+			'The guard must read the stored state, not the incoming payload'
+		);
+	}//end testPayloadCannotClearTheImmutableFlagToBypassTheGuard()
 
-    /**
-     * Deleting a vaststelling-linked bewijsstuk is rejected too — an
-     * immutability rule that only covers UPDATE is bypassable by
-     * delete-and-recreate.
-     *
-     * @return void
-     */
-    public function testImmutableBewijsstukDeleteIsRejected(): void
-    {
-        $event = new ObjectDeletingEvent($this->entity(['immutable' => true]));
+	/**
+	 * Deleting a vaststelling-linked bewijsstuk is rejected too — an
+	 * immutability rule that only covers UPDATE is bypassable by
+	 * delete-and-recreate.
+	 *
+	 * @return void
+	 */
+	public function testImmutableBewijsstukDeleteIsRejected(): void {
+		$event = new ObjectDeletingEvent($this->entity(['immutable' => true]));
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertTrue($event->isPropagationStopped());
-        $this->assertSame('bewijsstuk.immutable', $event->getErrors()['code'] ?? null);
-    }//end testImmutableBewijsstukDeleteIsRejected()
+		$this->assertTrue($event->isPropagationStopped());
+		$this->assertSame('bewijsstuk.immutable', $event->getErrors()['code'] ?? null);
+	}//end testImmutableBewijsstukDeleteIsRejected()
 
-    /**
-     * Deleting a bewijsstuk that is not linked to a vaststelling is allowed.
-     *
-     * @return void
-     */
-    public function testMutableBewijsstukDeleteIsAllowed(): void
-    {
-        $event = new ObjectDeletingEvent($this->entity(['immutable' => false]));
+	/**
+	 * Deleting a bewijsstuk that is not linked to a vaststelling is allowed.
+	 *
+	 * @return void
+	 */
+	public function testMutableBewijsstukDeleteIsAllowed(): void {
+		$event = new ObjectDeletingEvent($this->entity(['immutable' => false]));
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertFalse($event->isPropagationStopped());
-    }//end testMutableBewijsstukDeleteIsAllowed()
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testMutableBewijsstukDeleteIsAllowed()
 
-    /**
-     * Objects of another schema are untouched — the listener must not
-     * freeze unrelated registers just because they carry an `immutable`
-     * field.
-     *
-     * @return void
-     */
-    public function testForeignSchemaIsIgnored(): void
-    {
-        $event = new ObjectUpdatingEvent(
-            $this->entity(['immutable' => true], 'some-other-schema'),
-            $this->entity(['immutable' => true], 'some-other-schema')
-        );
+	/**
+	 * Objects of another schema are untouched — the listener must not
+	 * freeze unrelated registers just because they carry an `immutable`
+	 * field.
+	 *
+	 * @return void
+	 */
+	public function testForeignSchemaIsIgnored(): void {
+		$event = new ObjectUpdatingEvent(
+			$this->entity(['immutable' => true], 'some-other-schema'),
+			$this->entity(['immutable' => true], 'some-other-schema')
+		);
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertFalse(
-            $event->isPropagationStopped(),
-            'Only the bewijsstuk schema is subject to REQ-SUB-007'
-        );
-    }//end testForeignSchemaIsIgnored()
+		$this->assertFalse(
+			$event->isPropagationStopped(),
+			'Only the bewijsstuk schema is subject to REQ-SUB-007'
+		);
+	}//end testForeignSchemaIsIgnored()
 
-    /**
-     * A create (no stored state) is never blocked: `getOldObject()` is null
-     * on first write.
-     *
-     * @return void
-     */
-    public function testMissingStoredStateIsAllowed(): void
-    {
-        $event = new ObjectUpdatingEvent($this->entity(['immutable' => true]), null);
+	/**
+	 * A create (no stored state) is never blocked: `getOldObject()` is null
+	 * on first write.
+	 *
+	 * @return void
+	 */
+	public function testMissingStoredStateIsAllowed(): void {
+		$event = new ObjectUpdatingEvent($this->entity(['immutable' => true]), null);
 
-        $this->listener->handle($event);
+		$this->listener->handle($event);
 
-        $this->assertFalse($event->isPropagationStopped());
-    }//end testMissingStoredStateIsAllowed()
+		$this->assertFalse($event->isPropagationStopped());
+	}//end testMissingStoredStateIsAllowed()
 }//end class

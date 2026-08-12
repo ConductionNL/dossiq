@@ -50,37 +50,35 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @spec openspec/specs/subsidieverlening-keten/spec.md
  */
-class ImmutabilityListenerRegistrar
-{
-    /**
-     * Register the immutability listeners.
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/subsidieverlening-keten/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        // REQ-SUB-007: a bewijsstuk linked to a vaststelling is immutable.
-        // This is the production call site for
-        // BewijsstukService::assertMutable(), which previously had none.
-        $context->registerEventListener(
-            event: ObjectUpdatingEvent::class,
-            listener: BewijsstukImmutabilityListener::class
-        );
-        $context->registerEventListener(
-            event: ObjectDeletingEvent::class,
-            listener: BewijsstukImmutabilityListener::class
-        );
+class ImmutabilityListenerRegistrar {
+	/**
+	 * Register the immutability listeners.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/subsidieverlening-keten/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		// REQ-SUB-007: a bewijsstuk linked to a vaststelling is immutable.
+		// This is the production call site for
+		// BewijsstukService::assertMutable(), which previously had none.
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: BewijsstukImmutabilityListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectDeletingEvent::class,
+			listener: BewijsstukImmutabilityListener::class
+		);
 
-        // REQ-IC-8: a submitted inspectionChecklistRun is append-only. The
-        // listener existed but was never referenced by any registrar, so the
-        // rule was not enforced by anything.
-        $context->registerEventListener(
-            event: ObjectUpdatingEvent::class,
-            listener: ChecklistRunImmutabilityListener::class
-        );
-    }//end register()
+		// REQ-IC-8: a submitted inspectionChecklistRun is append-only. The
+		// listener existed but was never referenced by any registrar, so the
+		// rule was not enforced by anything.
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: ChecklistRunImmutabilityListener::class
+		);
+	}//end register()
 }//end class

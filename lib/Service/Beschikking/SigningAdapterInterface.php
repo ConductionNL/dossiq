@@ -34,29 +34,28 @@ namespace OCA\Procest\Service\Beschikking;
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T23
  */
-interface SigningAdapterInterface
-{
-    /**
-     * Sign a beschikking via the chosen TSP.
-     *
-     * @param string $bestandId     The Nextcloud file id of the rendered PDF.
-     * @param string $ondertekenaar The signer's Nextcloud UID.
-     * @param string $tspProvider   The TSP provider slug.
-     *
-     * @return array<string, string> Signature metadata keyed by signedBestandId, validatieRapportId, certificaatSerienummer, tspProviderEidasId.
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T23
-     */
-    public function sign(string $bestandId, string $ondertekenaar, string $tspProvider): array;
+interface SigningAdapterInterface {
+	/**
+	 * Sign a beschikking via the chosen TSP.
+	 *
+	 * @param string $bestandId The Nextcloud file id of the rendered PDF.
+	 * @param string $ondertekenaar The signer's Nextcloud UID.
+	 * @param string $tspProvider The TSP provider slug.
+	 *
+	 * @return array<string, string> Signature metadata keyed by signedBestandId, validatieRapportId, certificaatSerienummer, tspProviderEidasId.
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+	 */
+	public function sign(string $bestandId, string $ondertekenaar, string $tspProvider): array;
 
-    /**
-     * Fetch a previously produced validatierapport by id (for audit export).
-     *
-     * @param string $validatieRapportId The validatierapport id.
-     *
-     * @return array<string, mixed> The validatierapport contents.
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T23
-     */
-    public function fetchValidationReport(string $validatieRapportId): array;
+	/**
+	 * Fetch a previously produced validatierapport by id (for audit export).
+	 *
+	 * @param string $validatieRapportId The validatierapport id.
+	 *
+	 * @return array<string, mixed> The validatierapport contents.
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T23
+	 */
+	public function fetchValidationReport(string $validatieRapportId): array;
 }//end interface

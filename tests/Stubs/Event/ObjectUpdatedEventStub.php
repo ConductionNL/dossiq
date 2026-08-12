@@ -34,43 +34,40 @@ use OCA\OpenRegister\Db\ObjectEntity;
 use OCP\EventDispatcher\Event;
 
 if (class_exists(ObjectUpdatedEvent::class) === false) {
-    /**
-     * Stub class for ObjectUpdatedEvent — used only in standalone unit tests.
-     */
-    class ObjectUpdatedEvent extends Event
-    {
+	/**
+	 * Stub class for ObjectUpdatedEvent — used only in standalone unit tests.
+	 */
+	class ObjectUpdatedEvent extends Event {
 
-        /**
-         * Constructor.
-         *
-         * @param ObjectEntity      $newObject The post-update entity.
-         * @param ObjectEntity|null $oldObject The pre-update entity.
-         */
-        public function __construct(
-            private readonly ObjectEntity $newObject,
-            private readonly ?ObjectEntity $oldObject=null,
-        ) {
-            parent::__construct();
-        }//end __construct()
+		/**
+		 * Constructor.
+		 *
+		 * @param ObjectEntity $newObject The post-update entity.
+		 * @param ObjectEntity|null $oldObject The pre-update entity.
+		 */
+		public function __construct(
+			private readonly ObjectEntity $newObject,
+			private readonly ?ObjectEntity $oldObject = null,
+		) {
+			parent::__construct();
+		}//end __construct()
 
-        /**
-         * Get the post-update object entity.
-         *
-         * @return ObjectEntity
-         */
-        public function getNewObject(): ObjectEntity
-        {
-            return $this->newObject;
-        }//end getNewObject()
+		/**
+		 * Get the post-update object entity.
+		 *
+		 * @return ObjectEntity
+		 */
+		public function getNewObject(): ObjectEntity {
+			return $this->newObject;
+		}//end getNewObject()
 
-        /**
-         * Get the pre-update object entity.
-         *
-         * @return ObjectEntity|null
-         */
-        public function getOldObject(): ?ObjectEntity
-        {
-            return $this->oldObject;
-        }//end getOldObject()
-    }//end class
+		/**
+		 * Get the pre-update object entity.
+		 *
+		 * @return ObjectEntity|null
+		 */
+		public function getOldObject(): ?ObjectEntity {
+			return $this->oldObject;
+		}//end getOldObject()
+	}//end class
 }//end if

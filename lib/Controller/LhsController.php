@@ -49,243 +49,239 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  */
-class LhsController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string                   $appName          App name
-     * @param IRequest                 $request          Request
-     * @param LhsRecommendationService $lhsService       LHS engine
-     * @param LhsLookupService         $lhsLookupService LHS simple lookup service
-     * @param IUserSession             $userSession      User session
-     * @param IGroupManager            $groupManager     Group manager
-     * @param LoggerInterface          $logger           Logger
-     * @param CaseAccessGuard          $caseAccessGuard  Per-case authorization (fails closed)
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly LhsRecommendationService $lhsService,
-        private readonly LhsLookupService $lhsLookupService,
-        private readonly IUserSession $userSession,
-        private readonly IGroupManager $groupManager,
-        private readonly LoggerInterface $logger,
-        private readonly CaseAccessGuard $caseAccessGuard,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class LhsController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName App name
+	 * @param IRequest $request Request
+	 * @param LhsRecommendationService $lhsService LHS engine
+	 * @param LhsLookupService $lhsLookupService LHS simple lookup service
+	 * @param IUserSession $userSession User session
+	 * @param IGroupManager $groupManager Group manager
+	 * @param LoggerInterface $logger Logger
+	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed)
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly LhsRecommendationService $lhsService,
+		private readonly LhsLookupService $lhsLookupService,
+		private readonly IUserSession $userSession,
+		private readonly IGroupManager $groupManager,
+		private readonly LoggerInterface $logger,
+		private readonly CaseAccessGuard $caseAccessGuard,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Recommend an intervention for a (case, ernst, gedrag, actorType) triple.
-     *
-     * Body parameters:
-     *   - caseId (string, required)
-     *   - ernst (string, required)
-     *   - gedrag (string, required)
-     *   - actorType (string, required)
-     *   - lhsVersion (int, optional)
-     *   - inspection (string, optional)
-     *
-     * @return JSONResponse The persisted lhsRecommendation row
-     *
-     * @NoAdminRequired
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/enforcement-lhs/tasks.md#T03
-     */
-    public function recommend(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(
-                ['error' => 'Authenticatie vereist'],
-                Http::STATUS_UNAUTHORIZED,
-            );
-        }
+	/**
+	 * Recommend an intervention for a (case, ernst, gedrag, actorType) triple.
+	 *
+	 * Body parameters:
+	 *   - caseId (string, required)
+	 *   - ernst (string, required)
+	 *   - gedrag (string, required)
+	 *   - actorType (string, required)
+	 *   - lhsVersion (int, optional)
+	 *   - inspection (string, optional)
+	 *
+	 * @return JSONResponse The persisted lhsRecommendation row
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 */
+	public function recommend(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(
+				['error' => 'Authenticatie vereist'],
+				Http::STATUS_UNAUTHORIZED,
+			);
+		}
 
-        $caseId    = (string) $this->request->getParam('caseId', '');
-        $ernst     = (string) $this->request->getParam('ernst', '');
-        $gedrag    = (string) $this->request->getParam('gedrag', '');
-        $actorType = (string) $this->request->getParam('actorType', '');
-        if (in_array('', [$caseId, $ernst, $gedrag, $actorType], true) === true) {
-            return new JSONResponse(
-                ['error' => 'caseId, ernst, gedrag en actorType zijn verplicht'],
-                Http::STATUS_BAD_REQUEST,
-            );
-        }
+		$caseId = (string)$this->request->getParam('caseId', '');
+		$ernst = (string)$this->request->getParam('ernst', '');
+		$gedrag = (string)$this->request->getParam('gedrag', '');
+		$actorType = (string)$this->request->getParam('actorType', '');
+		if (in_array('', [$caseId, $ernst, $gedrag, $actorType], true) === true) {
+			return new JSONResponse(
+				['error' => 'caseId, ernst, gedrag en actorType zijn verplicht'],
+				Http::STATUS_BAD_REQUEST,
+			);
+		}
 
-        // This endpoint reads as a query but PERSISTS an `lhsRecommendation`
-        // (an enforcement-sanction record) against the named case, so it is
-        // guarded as a mutation.
-        if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
-            return new JSONResponse(
-                ['error' => 'Not authorized'],
-                Http::STATUS_FORBIDDEN,
-            );
-        }
+		// This endpoint reads as a query but PERSISTS an `lhsRecommendation`
+		// (an enforcement-sanction record) against the named case, so it is
+		// guarded as a mutation.
+		if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(
+				['error' => 'Not authorized'],
+				Http::STATUS_FORBIDDEN,
+			);
+		}
 
-        $versionParam = $this->request->getParam('lhsVersion');
-        $version      = null;
-        if ($versionParam !== null) {
-            $version = (int) $versionParam;
-        }
+		$versionParam = $this->request->getParam('lhsVersion');
+		$version = null;
+		if ($versionParam !== null) {
+			$version = (int)$versionParam;
+		}
 
-        $inspection   = $this->request->getParam('inspection');
-        $inspectionId = null;
-        if (is_string($inspection) === true && $inspection !== '') {
-            $inspectionId = $inspection;
-        }
+		$inspection = $this->request->getParam('inspection');
+		$inspectionId = null;
+		if (is_string($inspection) === true && $inspection !== '') {
+			$inspectionId = $inspection;
+		}
 
-        try {
-            $recommendation = $this->lhsService->recommend(
-                caseId: $caseId,
-                ernst: $ernst,
-                gedrag: $gedrag,
-                actorType: $actorType,
-                lhsVersion: $version,
-                inspection: $inspectionId,
-            );
-        } catch (RuntimeException $e) {
-            return new JSONResponse(
-                ['error' => $e->getMessage()],
-                Http::STATUS_UNPROCESSABLE_ENTITY,
-            );
-        } catch (Throwable $e) {
-            $this->logger->error('Procest LHS recommend failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'LHS-aanbeveling mislukt'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }//end try
+		try {
+			$recommendation = $this->lhsService->recommend(
+				caseId: $caseId,
+				ernst: $ernst,
+				gedrag: $gedrag,
+				actorType: $actorType,
+				lhsVersion: $version,
+				inspection: $inspectionId,
+			);
+		} catch (RuntimeException $e) {
+			return new JSONResponse(
+				['error' => $e->getMessage()],
+				Http::STATUS_UNPROCESSABLE_ENTITY,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error('Procest LHS recommend failed: ' . $e->getMessage());
+			return new JSONResponse(
+				['error' => 'LHS-aanbeveling mislukt'],
+				Http::STATUS_INTERNAL_SERVER_ERROR,
+			);
+		}//end try
 
-        return new JSONResponse($recommendation);
-    }//end recommend()
+		return new JSONResponse($recommendation);
+	}//end recommend()
 
-    /**
-     * Override an existing LHS recommendation.
-     *
-     * Body parameters:
-     *   - recommendation (array, required) — the original row including id
-     *   - intervention   (string, required)
-     *   - justification  (string, required, >= 20 chars)
-     *
-     * Manager role is auto-detected from the Nextcloud admin group; UI may
-     * additionally pass `userRole` for explicit selection.
-     *
-     * @return JSONResponse The updated lhsRecommendation row
-     *
-     * @NoAdminRequired
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/enforcement-lhs/tasks.md#T03
-     */
-    public function override(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(
-                ['error' => 'Authenticatie vereist'],
-                Http::STATUS_UNAUTHORIZED,
-            );
-        }
+	/**
+	 * Override an existing LHS recommendation.
+	 *
+	 * Body parameters:
+	 *   - recommendation (array, required) — the original row including id
+	 *   - intervention   (string, required)
+	 *   - justification  (string, required, >= 20 chars)
+	 *
+	 * Manager role is auto-detected from the Nextcloud admin group; UI may
+	 * additionally pass `userRole` for explicit selection.
+	 *
+	 * @return JSONResponse The updated lhsRecommendation row
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/enforcement-lhs/tasks.md#T03
+	 */
+	public function override(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(
+				['error' => 'Authenticatie vereist'],
+				Http::STATUS_UNAUTHORIZED,
+			);
+		}
 
-        $recommendation = $this->request->getParam('recommendation');
-        $intervention   = (string) $this->request->getParam('intervention', '');
-        $justification  = (string) $this->request->getParam('justification', '');
-        $hasBlank       = in_array('', [$intervention, $justification], true);
-        if (is_array($recommendation) === false || $hasBlank === true) {
-            return new JSONResponse(
-                ['error' => 'recommendation, intervention en justification zijn verplicht'],
-                Http::STATUS_BAD_REQUEST,
-            );
-        }
+		$recommendation = $this->request->getParam('recommendation');
+		$intervention = (string)$this->request->getParam('intervention', '');
+		$justification = (string)$this->request->getParam('justification', '');
+		$hasBlank = in_array('', [$intervention, $justification], true);
+		if (is_array($recommendation) === false || $hasBlank === true) {
+			return new JSONResponse(
+				['error' => 'recommendation, intervention en justification zijn verplicht'],
+				Http::STATUS_BAD_REQUEST,
+			);
+		}
 
-        $declaredRole = (string) $this->request->getParam('userRole', '');
-        $isManager    = $this->groupManager->isAdmin($user->getUID());
-        $userRole     = 'inspector';
-        if ($declaredRole === 'manager' && $isManager === true) {
-            $userRole = 'manager';
-        }
+		$declaredRole = (string)$this->request->getParam('userRole', '');
+		$isManager = $this->groupManager->isAdmin($user->getUID());
+		$userRole = 'inspector';
+		if ($declaredRole === 'manager' && $isManager === true) {
+			$userRole = 'manager';
+		}
 
-        try {
-            $updated = $this->lhsService->override(
-                recommendation: $recommendation,
-                intervention: $intervention,
-                justification: $justification,
-                userRole: $userRole,
-            );
-        } catch (RuntimeException $e) {
-            $message = $e->getMessage();
-            $status  = Http::STATUS_UNPROCESSABLE_ENTITY;
-            if ($message === 'Verzwaring vereist managerrol') {
-                $status = Http::STATUS_FORBIDDEN;
-            }
+		try {
+			$updated = $this->lhsService->override(
+				recommendation: $recommendation,
+				intervention: $intervention,
+				justification: $justification,
+				userRole: $userRole,
+			);
+		} catch (RuntimeException $e) {
+			$message = $e->getMessage();
+			$status = Http::STATUS_UNPROCESSABLE_ENTITY;
+			if ($message === 'Verzwaring vereist managerrol') {
+				$status = Http::STATUS_FORBIDDEN;
+			}
 
-            return new JSONResponse(['error' => $message], $status);
-        } catch (Throwable $e) {
-            $this->logger->error('Procest LHS override failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'LHS-override mislukt'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }//end try
+			return new JSONResponse(['error' => $message], $status);
+		} catch (Throwable $e) {
+			$this->logger->error('Procest LHS override failed: ' . $e->getMessage());
+			return new JSONResponse(
+				['error' => 'LHS-override mislukt'],
+				Http::STATUS_INTERNAL_SERVER_ERROR,
+			);
+		}//end try
 
-        return new JSONResponse($updated);
-    }//end override()
+		return new JSONResponse($updated);
+	}//end override()
 
-    /**
-     * Look up an LHS interventieladder step for a gedrag × gevolg combination.
-     *
-     * Query parameters:
-     *   - gedrag (string, required): A | B | C | D
-     *   - gevolg (string, required): 1 | 2 | 3 | 4
-     *
-     * @return JSONResponse The matching lhsMatrixCell {gedragRow, gevolgColumn, interventieStep, description}
-     *
-     * @NoAdminRequired
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/vth-module/tasks.md#task-8
-     */
-    public function lookup(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(
-                ['error' => 'Authenticatie vereist'],
-                Http::STATUS_UNAUTHORIZED,
-            );
-        }
+	/**
+	 * Look up an LHS interventieladder step for a gedrag × gevolg combination.
+	 *
+	 * Query parameters:
+	 *   - gedrag (string, required): A | B | C | D
+	 *   - gevolg (string, required): 1 | 2 | 3 | 4
+	 *
+	 * @return JSONResponse The matching lhsMatrixCell {gedragRow, gevolgColumn, interventieStep, description}
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/vth-module/tasks.md#task-8
+	 */
+	public function lookup(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(
+				['error' => 'Authenticatie vereist'],
+				Http::STATUS_UNAUTHORIZED,
+			);
+		}
 
-        $gedrag = (string) $this->request->getParam('gedrag', '');
-        $gevolg = (string) $this->request->getParam('gevolg', '');
+		$gedrag = (string)$this->request->getParam('gedrag', '');
+		$gevolg = (string)$this->request->getParam('gevolg', '');
 
-        if ($gedrag === '' || $gevolg === '') {
-            return new JSONResponse(
-                ['error' => 'gedrag en gevolg zijn verplicht'],
-                Http::STATUS_BAD_REQUEST,
-            );
-        }
+		if ($gedrag === '' || $gevolg === '') {
+			return new JSONResponse(
+				['error' => 'gedrag en gevolg zijn verplicht'],
+				Http::STATUS_BAD_REQUEST,
+			);
+		}
 
-        try {
-            $cell = $this->lhsLookupService->lookup(gedrag: $gedrag, gevolg: $gevolg);
-        } catch (RuntimeException $e) {
-            return new JSONResponse(
-                ['error' => $e->getMessage()],
-                Http::STATUS_BAD_REQUEST,
-            );
-        } catch (Throwable $e) {
-            $this->logger->error('Procest LHS lookup failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'LHS opzoeken mislukt'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
+		try {
+			$cell = $this->lhsLookupService->lookup(gedrag: $gedrag, gevolg: $gevolg);
+		} catch (RuntimeException $e) {
+			return new JSONResponse(
+				['error' => $e->getMessage()],
+				Http::STATUS_BAD_REQUEST,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error('Procest LHS lookup failed: ' . $e->getMessage());
+			return new JSONResponse(
+				['error' => 'LHS opzoeken mislukt'],
+				Http::STATUS_INTERNAL_SERVER_ERROR,
+			);
+		}
 
-        return new JSONResponse($cell);
-    }//end lookup()
+		return new JSONResponse($cell);
+	}//end lookup()
 }//end class

@@ -53,20 +53,19 @@ namespace OCA\Procest\Service;
 /**
  * Resolves a case worker's identity for belangenconflict detection.
  */
-interface MedewerkerIdentityResolverInterface
-{
-    /**
-     * Resolve the BSN of the case worker behind a Nextcloud user id.
-     *
-     * Implementations MUST return null when the identity cannot be established,
-     * so the caller can fail closed. Implementations MUST NOT log the returned
-     * value.
-     *
-     * @param string $userId The Nextcloud user id of the case worker.
-     *
-     * @return string|null The worker's BSN, or null when it cannot be resolved.
-     *
-     * @spec openspec/specs/authz-bypass-fixes/spec.md
-     */
-    public function bsnFor(string $userId): ?string;
+interface MedewerkerIdentityResolverInterface {
+	/**
+	 * Resolve the BSN of the case worker behind a Nextcloud user id.
+	 *
+	 * Implementations MUST return null when the identity cannot be established,
+	 * so the caller can fail closed. Implementations MUST NOT log the returned
+	 * value.
+	 *
+	 * @param string $userId The Nextcloud user id of the case worker.
+	 *
+	 * @return string|null The worker's BSN, or null when it cannot be resolved.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	public function bsnFor(string $userId): ?string;
 }//end interface

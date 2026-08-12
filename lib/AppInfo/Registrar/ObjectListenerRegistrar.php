@@ -48,96 +48,92 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class ObjectListenerRegistrar
-{
-    /**
-     * Register the notifier and the cross-subsystem object listeners.
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        // Note @mention notifications (nc-vue #207, ncvue-w2-leaves-adoption):
-        // MentionNotificationService raises `note_mention` notifications;
-        // this Notifier renders them for the bell menu.
-        $context->registerNotifierService(Notifier::class);
+class ObjectListenerRegistrar {
+	/**
+	 * Register the notifier and the cross-subsystem object listeners.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		// Note @mention notifications (nc-vue #207, ncvue-w2-leaves-adoption):
+		// MentionNotificationService raises `note_mention` notifications;
+		// this Notifier renders them for the bell menu.
+		$context->registerNotifierService(Notifier::class);
 
-        $this->registerCacheInvalidationListeners(context: $context);
-        $this->registerIntakeListeners(context: $context);
-    }//end register()
+		$this->registerCacheInvalidationListeners(context: $context);
+		$this->registerIntakeListeners(context: $context);
+	}//end register()
 
-    /**
-     * Register the KPI and role-routing cache-invalidation listeners.
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    private function registerCacheInvalidationListeners(IRegistrationContext $context): void
-    {
-        $context->registerEventListener(
-            event: ObjectCreatedEvent::class,
-            listener: KpiCacheInvalidationListener::class
-        );
+	/**
+	 * Register the KPI and role-routing cache-invalidation listeners.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerCacheInvalidationListeners(IRegistrationContext $context): void {
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: KpiCacheInvalidationListener::class
+		);
 
-        $context->registerEventListener(
-            event: ObjectUpdatedEvent::class,
-            listener: KpiCacheInvalidationListener::class
-        );
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: KpiCacheInvalidationListener::class
+		);
 
-        $context->registerEventListener(
-            event: ObjectDeletedEvent::class,
-            listener: KpiCacheInvalidationListener::class
-        );
+		$context->registerEventListener(
+			event: ObjectDeletedEvent::class,
+			listener: KpiCacheInvalidationListener::class
+		);
 
-        // Role-routing cache invalidation on role mutations.
-        $context->registerEventListener(
-            event: ObjectCreatedEvent::class,
-            listener: RoleMutationListener::class
-        );
-        $context->registerEventListener(
-            event: ObjectUpdatedEvent::class,
-            listener: RoleMutationListener::class
-        );
-        $context->registerEventListener(
-            event: ObjectDeletedEvent::class,
-            listener: RoleMutationListener::class
-        );
-    }//end registerCacheInvalidationListeners()
+		// Role-routing cache invalidation on role mutations.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: RoleMutationListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectUpdatedEvent::class,
+			listener: RoleMutationListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectDeletedEvent::class,
+			listener: RoleMutationListener::class
+		);
+	}//end registerCacheInvalidationListeners()
 
-    /**
-     * Register the DSO intake and BAG location-validation listeners.
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    private function registerIntakeListeners(IRegistrationContext $context): void
-    {
-        // DSO Omgevingsloket: create a Procest zaak when a vergunningaanvraag is
-        // written by OpenRegister.
-        $context->registerEventListener(
-            event: ObjectCreatedEvent::class,
-            listener: VergunningaanvraagCreatedListener::class
-        );
+	/**
+	 * Register the DSO intake and BAG location-validation listeners.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function registerIntakeListeners(IRegistrationContext $context): void {
+		// DSO Omgevingsloket: create a Procest zaak when a vergunningaanvraag is
+		// written by OpenRegister.
+		$context->registerEventListener(
+			event: ObjectCreatedEvent::class,
+			listener: VergunningaanvraagCreatedListener::class
+		);
 
-        // Bag-location-save-validation: pre-persist location source=bag
-        // enforcement (closes bag-register-adapter tasks.md item 4.1).
-        $context->registerEventListener(
-            event: ObjectCreatingEvent::class,
-            listener: LocationBagValidationListener::class
-        );
-        $context->registerEventListener(
-            event: ObjectUpdatingEvent::class,
-            listener: LocationBagValidationListener::class
-        );
-    }//end registerIntakeListeners()
+		// Bag-location-save-validation: pre-persist location source=bag
+		// enforcement (closes bag-register-adapter tasks.md item 4.1).
+		$context->registerEventListener(
+			event: ObjectCreatingEvent::class,
+			listener: LocationBagValidationListener::class
+		);
+		$context->registerEventListener(
+			event: ObjectUpdatingEvent::class,
+			listener: LocationBagValidationListener::class
+		);
+	}//end registerIntakeListeners()
 }//end class

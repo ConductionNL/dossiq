@@ -41,99 +41,95 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * Seed the Bezwaar & Beroep case types, status types and role types.
  */
-class SeedBezwaarBeroepCommand extends Command
-{
-    /**
-     * Wire the command against the seed data service and user/group managers.
-     *
-     * @param SeedDataService $seedDataService Bezwaar/beroep seeder.
-     * @param IUserSession    $userSession     Session used to impersonate an admin.
-     * @param IGroupManager   $groupManager    Resolves an admin to impersonate.
-     */
-    public function __construct(
-        private readonly SeedDataService $seedDataService,
-        private readonly IUserSession $userSession,
-        private readonly IGroupManager $groupManager,
-    ) {
-        parent::__construct();
-    }//end __construct()
+class SeedBezwaarBeroepCommand extends Command {
+	/**
+	 * Wire the command against the seed data service and user/group managers.
+	 *
+	 * @param SeedDataService $seedDataService Bezwaar/beroep seeder.
+	 * @param IUserSession $userSession Session used to impersonate an admin.
+	 * @param IGroupManager $groupManager Resolves an admin to impersonate.
+	 */
+	public function __construct(
+		private readonly SeedDataService $seedDataService,
+		private readonly IUserSession $userSession,
+		private readonly IGroupManager $groupManager,
+	) {
+		parent::__construct();
+	}//end __construct()
 
-    /**
-     * Define command name + description.
-     *
-     * @return void
-     */
-    protected function configure(): void
-    {
-        $this->setName(name: 'procest:bezwaar:seed')
-            ->setDescription('Seed the Bezwaar & Beroep case types, status types and role types (idempotent).');
-    }//end configure()
+	/**
+	 * Define command name + description.
+	 *
+	 * @return void
+	 */
+	protected function configure(): void {
+		$this->setName(name: 'procest:bezwaar:seed')
+			->setDescription('Seed the Bezwaar & Beroep case types, status types and role types (idempotent).');
+	}//end configure()
 
-    /**
-     * Execute the seed and report counts.
-     *
-     * @param InputInterface  $input  Console input.
-     * @param OutputInterface $output Console output.
-     *
-     * @return int Symfony command exit code.
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        // OpenRegister enforces RBAC on saveObject against the current user.
-        // occ runs with no session ("Anonymous"), which lacks create rights on
-        // the Case Type schema, so impersonate an admin for the seed.
-        if ($this->userSession->getUser() === null) {
-            $admin = $this->resolveAdmin();
-            if ($admin === null) {
-                $output->writeln('<error>No admin user found to run the seed under.</error>');
-                return Command::FAILURE;
-            }
+	/**
+	 * Execute the seed and report counts.
+	 *
+	 * @param InputInterface $input Console input.
+	 * @param OutputInterface $output Console output.
+	 *
+	 * @return int Symfony command exit code.
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 */
+	protected function execute(InputInterface $input, OutputInterface $output): int {
+		// OpenRegister enforces RBAC on saveObject against the current user.
+		// occ runs with no session ("Anonymous"), which lacks create rights on
+		// the Case Type schema, so impersonate an admin for the seed.
+		if ($this->userSession->getUser() === null) {
+			$admin = $this->resolveAdmin();
+			if ($admin === null) {
+				$output->writeln('<error>No admin user found to run the seed under.</error>');
+				return Command::FAILURE;
+			}
 
-            $this->userSession->setUser($admin);
-            $output->writeln('<comment>Seeding as admin user "'.$admin->getUID().'".</comment>');
-        }
+			$this->userSession->setUser($admin);
+			$output->writeln('<comment>Seeding as admin user "' . $admin->getUID() . '".</comment>');
+		}
 
-        try {
-            $result = $this->seedDataService->seedBezwaarBeroepData();
-        } catch (\Throwable $e) {
-            $output->writeln('<error>Bezwaar/beroep seed failed: '.$e->getMessage().'</error>');
-            return Command::FAILURE;
-        }
+		try {
+			$result = $this->seedDataService->seedBezwaarBeroepData();
+		} catch (\Throwable $e) {
+			$output->writeln('<error>Bezwaar/beroep seed failed: ' . $e->getMessage() . '</error>');
+			return Command::FAILURE;
+		}
 
-        if (($result['success'] ?? false) === false) {
-            $output->writeln('<error>Bezwaar/beroep seed issue: '.($result['message'] ?? 'unknown error').'</error>');
-            return Command::FAILURE;
-        }
+		if (($result['success'] ?? false) === false) {
+			$output->writeln('<error>Bezwaar/beroep seed issue: ' . ($result['message'] ?? 'unknown error') . '</error>');
+			return Command::FAILURE;
+		}
 
-        $output->writeln('<info>procest:bezwaar:seed done</info>');
-        $output->writeln('  case types   = '.($result['caseTypes'] ?? 0));
-        $output->writeln('  status types = '.($result['statusTypes'] ?? 0));
-        $output->writeln('  role types   = '.($result['roleTypes'] ?? 0));
-        $output->writeln('  workflows    = '.($result['workflows'] ?? 0));
-        $output->writeln('  skipped      = '.($result['skipped'] ?? 0));
+		$output->writeln('<info>procest:bezwaar:seed done</info>');
+		$output->writeln('  case types   = ' . ($result['caseTypes'] ?? 0));
+		$output->writeln('  status types = ' . ($result['statusTypes'] ?? 0));
+		$output->writeln('  role types   = ' . ($result['roleTypes'] ?? 0));
+		$output->writeln('  workflows    = ' . ($result['workflows'] ?? 0));
+		$output->writeln('  skipped      = ' . ($result['skipped'] ?? 0));
 
-        return Command::SUCCESS;
-    }//end execute()
+		return Command::SUCCESS;
+	}//end execute()
 
-    /**
-     * Resolve the first member of the admin group, if any.
-     *
-     * @return \OCP\IUser|null The admin user to impersonate, or null when none exists.
-     */
-    private function resolveAdmin(): ?\OCP\IUser
-    {
-        $adminGroup = $this->groupManager->get('admin');
-        if ($adminGroup === null) {
-            return null;
-        }
+	/**
+	 * Resolve the first member of the admin group, if any.
+	 *
+	 * @return \OCP\IUser|null The admin user to impersonate, or null when none exists.
+	 */
+	private function resolveAdmin(): ?\OCP\IUser {
+		$adminGroup = $this->groupManager->get('admin');
+		if ($adminGroup === null) {
+			return null;
+		}
 
-        $users = $adminGroup->getUsers();
-        if (count($users) === 0) {
-            return null;
-        }
+		$users = $adminGroup->getUsers();
+		if (count($users) === 0) {
+			return null;
+		}
 
-        return reset($users);
-    }//end resolveAdmin()
+		return reset($users);
+	}//end resolveAdmin()
 }//end class

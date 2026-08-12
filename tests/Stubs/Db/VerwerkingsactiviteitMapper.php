@@ -29,73 +29,66 @@ namespace OCA\OpenRegister\Db;
 /**
  * Stub of OpenRegister's VerwerkingsactiviteitMapper for unit tests.
  */
-class VerwerkingsactiviteitMapper
-{
-    /**
-     * In-memory store, keyed by activity code.
-     *
-     * @var array<string, Verwerkingsactiviteit>
-     */
-    private array $store = [];
+class VerwerkingsactiviteitMapper {
+	/**
+	 * In-memory store, keyed by activity code.
+	 *
+	 * @var array<string, Verwerkingsactiviteit>
+	 */
+	private array $store = [];
 
-    /**
-     * Number of insert() calls (test accessor).
-     *
-     * @var int
-     */
-    public int $inserts = 0;
+	/**
+	 * Number of insert() calls (test accessor).
+	 *
+	 * @var int
+	 */
+	public int $inserts = 0;
 
-    /**
-     * Number of update() calls (test accessor).
-     *
-     * @var int
-     */
-    public int $updates = 0;
+	/**
+	 * Number of update() calls (test accessor).
+	 *
+	 * @var int
+	 */
+	public int $updates = 0;
 
-    /**
-     * Find by short readable code.
-     *
-     * @param string $code The activity code.
-     *
-     * @return Verwerkingsactiviteit|null Null when no row matches.
-     */
-    public function findByCode(string $code): ?Verwerkingsactiviteit
-    {
-        return ($this->store[$code] ?? null);
+	/**
+	 * Find by short readable code.
+	 *
+	 * @param string $code The activity code.
+	 *
+	 * @return Verwerkingsactiviteit|null Null when no row matches.
+	 */
+	public function findByCode(string $code): ?Verwerkingsactiviteit {
+		return ($this->store[$code] ?? null);
+	}//end findByCode()
 
-    }//end findByCode()
+	/**
+	 * Insert, defaulting a blank status to `concept` (mirrors OR).
+	 *
+	 * @param Verwerkingsactiviteit $entity Entity to insert.
+	 *
+	 * @return Verwerkingsactiviteit
+	 */
+	public function insert(Verwerkingsactiviteit $entity): Verwerkingsactiviteit {
+		if ($entity->getStatus() === null || $entity->getStatus() === '') {
+			$entity->setStatus('concept');
+		}
 
-    /**
-     * Insert, defaulting a blank status to `concept` (mirrors OR).
-     *
-     * @param Verwerkingsactiviteit $entity Entity to insert.
-     *
-     * @return Verwerkingsactiviteit
-     */
-    public function insert(Verwerkingsactiviteit $entity): Verwerkingsactiviteit
-    {
-        if ($entity->getStatus() === null || $entity->getStatus() === '') {
-            $entity->setStatus('concept');
-        }
+		$this->store[(string)$entity->getCode()] = $entity;
+		$this->inserts++;
+		return $entity;
+	}//end insert()
 
-        $this->store[(string) $entity->getCode()] = $entity;
-        $this->inserts++;
-        return $entity;
-
-    }//end insert()
-
-    /**
-     * Update an existing entity.
-     *
-     * @param Verwerkingsactiviteit $entity Entity to update.
-     *
-     * @return Verwerkingsactiviteit
-     */
-    public function update(Verwerkingsactiviteit $entity): Verwerkingsactiviteit
-    {
-        $this->store[(string) $entity->getCode()] = $entity;
-        $this->updates++;
-        return $entity;
-
-    }//end update()
+	/**
+	 * Update an existing entity.
+	 *
+	 * @param Verwerkingsactiviteit $entity Entity to update.
+	 *
+	 * @return Verwerkingsactiviteit
+	 */
+	public function update(Verwerkingsactiviteit $entity): Verwerkingsactiviteit {
+		$this->store[(string)$entity->getCode()] = $entity;
+		$this->updates++;
+		return $entity;
+	}//end update()
 }//end class

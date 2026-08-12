@@ -30,60 +30,55 @@ namespace OCA\OpenRegister\Lifecycle;
 /**
  * Allow / deny verdict from a guard, optionally with a deny message.
  */
-final class GuardResult
-{
+final class GuardResult {
 
-    /**
-     * Construct a verdict — use the static factories.
-     *
-     * @param bool        $allowed Whether the transition should be allowed.
-     * @param string|null $message Optional deny message.
-     */
-    private function __construct(
-        private readonly bool $allowed,
-        private readonly ?string $message
-    ) {
-    }//end __construct()
+	/**
+	 * Construct a verdict — use the static factories.
+	 *
+	 * @param bool $allowed Whether the transition should be allowed.
+	 * @param string|null $message Optional deny message.
+	 */
+	private function __construct(
+		private readonly bool $allowed,
+		private readonly ?string $message,
+	) {
+	}//end __construct()
 
-    /**
-     * Allow the transition.
-     *
-     * @return self Allow verdict instance.
-     */
-    public static function allow(): self
-    {
-        return new self(allowed: true, message: null);
-    }//end allow()
+	/**
+	 * Allow the transition.
+	 *
+	 * @return self Allow verdict instance.
+	 */
+	public static function allow(): self {
+		return new self(allowed: true, message: null);
+	}//end allow()
 
-    /**
-     * Deny the transition with a user-visible message.
-     *
-     * @param string $message Human-readable reason surfaced to the caller.
-     *
-     * @return self Deny verdict instance.
-     */
-    public static function deny(string $message): self
-    {
-        return new self(allowed: false, message: $message);
-    }//end deny()
+	/**
+	 * Deny the transition with a user-visible message.
+	 *
+	 * @param string $message Human-readable reason surfaced to the caller.
+	 *
+	 * @return self Deny verdict instance.
+	 */
+	public static function deny(string $message): self {
+		return new self(allowed: false, message: $message);
+	}//end deny()
 
-    /**
-     * Read whether the verdict allows the transition.
-     *
-     * @return bool True when allowed, false when denied.
-     */
-    public function isAllowed(): bool
-    {
-        return $this->allowed;
-    }//end isAllowed()
+	/**
+	 * Read whether the verdict allows the transition.
+	 *
+	 * @return bool True when allowed, false when denied.
+	 */
+	public function isAllowed(): bool {
+		return $this->allowed;
+	}//end isAllowed()
 
-    /**
-     * Read the deny message, if any.
-     *
-     * @return string|null Deny message, or null when allowed.
-     */
-    public function getMessage(): ?string
-    {
-        return $this->message;
-    }//end getMessage()
+	/**
+	 * Read the deny message, if any.
+	 *
+	 * @return string|null Deny message, or null when allowed.
+	 */
+	public function getMessage(): ?string {
+		return $this->message;
+	}//end getMessage()
 }//end class

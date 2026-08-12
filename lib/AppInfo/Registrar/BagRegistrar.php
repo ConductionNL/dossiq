@@ -45,48 +45,46 @@ use Psr\Container\ContainerInterface;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class BagRegistrar
-{
-    /**
-     * Register the BAG adapter.
-     *
-     * Authoritative address + pand/verblijfsobject lookup (bag-register-adapter).
-     * Selected by `integration.bag.mode` (external-integrations-test-environments
-     * config-tier model). DEFAULT `log` = dormant (no external call).
-     * `test`/`live` binds the BagApiAdapter (Kadaster BAG API Individuele
-     * Bevragingen v2). Deliberately distinct from PdokBagService's free/open BAG
-     * WFS mirror — see openspec/changes/bag-register-adapter/design.md.
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        $context->registerService(
-            BagAdapterInterface::class,
-            static function (ContainerInterface $c): BagAdapterInterface {
-                $modeService = $c->get(IntegrationMode::class);
-                $mode        = $modeService->resolve(
-                    'bag',
-                    [
-                        IntegrationMode::TEST,
-                        IntegrationMode::LIVE,
-                    ]
-                );
-                if ($mode !== IntegrationMode::LOG) {
-                    return new BagApiAdapter(
-                        clientService: $c->get('OCP\\Http\\Client\\IClientService'),
-                        mode: $modeService,
-                        mapper: $c->get(BagResponseMapper::class),
-                        logger: $c->get('Psr\\Log\\LoggerInterface'),
-                    );
-                }
+class BagRegistrar {
+	/**
+	 * Register the BAG adapter.
+	 *
+	 * Authoritative address + pand/verblijfsobject lookup (bag-register-adapter).
+	 * Selected by `integration.bag.mode` (external-integrations-test-environments
+	 * config-tier model). DEFAULT `log` = dormant (no external call).
+	 * `test`/`live` binds the BagApiAdapter (Kadaster BAG API Individuele
+	 * Bevragingen v2). Deliberately distinct from PdokBagService's free/open BAG
+	 * WFS mirror — see openspec/changes/bag-register-adapter/design.md.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		$context->registerService(
+			BagAdapterInterface::class,
+			static function (ContainerInterface $c): BagAdapterInterface {
+				$modeService = $c->get(IntegrationMode::class);
+				$mode = $modeService->resolve(
+					'bag',
+					[
+						IntegrationMode::TEST,
+						IntegrationMode::LIVE,
+					]
+				);
+				if ($mode !== IntegrationMode::LOG) {
+					return new BagApiAdapter(
+						clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+						mode: $modeService,
+						mapper: $c->get(BagResponseMapper::class),
+						logger: $c->get('Psr\\Log\\LoggerInterface'),
+					);
+				}
 
-                return $c->get(LogBagAdapter::class);
-            }
-        );
-    }//end register()
+				return $c->get(LogBagAdapter::class);
+			}
+		);
+	}//end register()
 }//end class

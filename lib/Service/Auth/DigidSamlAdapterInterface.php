@@ -54,24 +54,23 @@ use RuntimeException;
  *  4. DI binding for `DigidSamlAdapterInterface` swapped from
  *     {@see LogDigidSamlAdapter} to the active implementation.
  */
-interface DigidSamlAdapterInterface
-{
-    /**
-     * Decode a SAML response from the DigiD broker.
-     *
-     * @param string $samlResponse Base64-encoded SAML XML response received from the broker callback.
-     * @param string $relayState   Original RelayState string (CSRF / cross-window correlation).
-     *
-     * @return BrokerAssertionResult Decoded assertion containing the citizen BSN.
-     *
-     * @throws RuntimeException When the broker is not configured, the signature is invalid, or no BSN claim is present.
-     */
-    public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult;
+interface DigidSamlAdapterInterface {
+	/**
+	 * Decode a SAML response from the DigiD broker.
+	 *
+	 * @param string $samlResponse Base64-encoded SAML XML response received from the broker callback.
+	 * @param string $relayState Original RelayState string (CSRF / cross-window correlation).
+	 *
+	 * @return BrokerAssertionResult Decoded assertion containing the citizen BSN.
+	 *
+	 * @throws RuntimeException When the broker is not configured, the signature is invalid, or no BSN claim is present.
+	 */
+	public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult;
 
-    /**
-     * Whether the live DigiD broker is enabled by the operator.
-     *
-     * @return bool True when `digid.feature_flag` is `1`.
-     */
-    public function isActive(): bool;
+	/**
+	 * Whether the live DigiD broker is enabled by the operator.
+	 *
+	 * @return bool True when `digid.feature_flag` is `1`.
+	 */
+	public function isActive(): bool;
 }//end interface

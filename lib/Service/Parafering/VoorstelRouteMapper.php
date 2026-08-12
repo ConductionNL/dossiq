@@ -42,76 +42,73 @@ namespace OCA\Procest\Service\Parafering;
  *
  * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
  */
-class VoorstelRouteMapper
-{
-    /**
-     * Append an entry to the voorstel auditTrail field.
-     *
-     * @param array<string, mixed> $voorstel The voorstel.
-     * @param array<string, mixed> $entry    The entry to append.
-     *
-     * @return array<string, mixed> The voorstel with the entry appended.
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
-     */
-    public function appendAuditTrail(array $voorstel, array $entry): array
-    {
-        $trail = $voorstel['auditTrail'] ?? [];
-        if (is_string($trail) === true) {
-            $decoded = json_decode($trail, true);
-            $trail   = [];
-            if (is_array($decoded) === true) {
-                $trail = $decoded;
-            }
-        }
+class VoorstelRouteMapper {
+	/**
+	 * Append an entry to the voorstel auditTrail field.
+	 *
+	 * @param array<string, mixed> $voorstel The voorstel.
+	 * @param array<string, mixed> $entry The entry to append.
+	 *
+	 * @return array<string, mixed> The voorstel with the entry appended.
+	 *
+	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
+	 */
+	public function appendAuditTrail(array $voorstel, array $entry): array {
+		$trail = $voorstel['auditTrail'] ?? [];
+		if (is_string($trail) === true) {
+			$decoded = json_decode($trail, true);
+			$trail = [];
+			if (is_array($decoded) === true) {
+				$trail = $decoded;
+			}
+		}
 
-        if (is_array($trail) === false) {
-            $trail = [];
-        }
+		if (is_array($trail) === false) {
+			$trail = [];
+		}
 
-        $trail[] = $entry;
-        $voorstel['auditTrail'] = $trail;
+		$trail[] = $entry;
+		$voorstel['auditTrail'] = $trail;
 
-        return $voorstel;
-    }//end appendAuditTrail()
+		return $voorstel;
+	}//end appendAuditTrail()
 
-    /**
-     * Normalize a steps value (JSON string or array) to a plain ordered array.
-     *
-     * @param mixed $value The raw value from routeSnapshot or schema field.
-     *
-     * @return array<int, array<string, mixed>> The steps, sorted by `order`.
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
-     */
-    public function normalizeSteps(mixed $value): array
-    {
-        if (is_string($value) === true) {
-            $decoded = json_decode($value, true);
-            $value   = [];
-            if (is_array($decoded) === true) {
-                $value = $decoded;
-            }
-        }
+	/**
+	 * Normalize a steps value (JSON string or array) to a plain ordered array.
+	 *
+	 * @param mixed $value The raw value from routeSnapshot or schema field.
+	 *
+	 * @return array<int, array<string, mixed>> The steps, sorted by `order`.
+	 *
+	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
+	 */
+	public function normalizeSteps(mixed $value): array {
+		if (is_string($value) === true) {
+			$decoded = json_decode($value, true);
+			$value = [];
+			if (is_array($decoded) === true) {
+				$value = $decoded;
+			}
+		}
 
-        if (is_array($value) === false) {
-            return [];
-        }
+		if (is_array($value) === false) {
+			return [];
+		}
 
-        $steps = [];
-        foreach ($value as $candidate) {
-            if (is_array($candidate) === true) {
-                $steps[] = $candidate;
-            }
-        }
+		$steps = [];
+		foreach ($value as $candidate) {
+			if (is_array($candidate) === true) {
+				$steps[] = $candidate;
+			}
+		}
 
-        usort(
-            $steps,
-            static function (array $left, array $right): int {
-                return ((int) ($left['order'] ?? 0)) <=> ((int) ($right['order'] ?? 0));
-            },
-        );
+		usort(
+			$steps,
+			static function (array $left, array $right): int {
+				return ((int)($left['order'] ?? 0)) <=> ((int)($right['order'] ?? 0));
+			},
+		);
 
-        return $steps;
-    }//end normalizeSteps()
+		return $steps;
+	}//end normalizeSteps()
 }//end class

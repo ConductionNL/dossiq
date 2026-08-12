@@ -46,53 +46,51 @@ use Psr\Container\ContainerInterface;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class AuthAdapterRegistrar
-{
-    /**
-     * Register the external auth-broker adapters (DigiD / eHerkenning).
-     *
-     * External auth-broker adapters (lib/Service/Auth/), selected by the
-     * `integration.digid.mode` config tier (external-integrations-test-environments).
-     * DEFAULT `log` = the dormant Log* implementations which throw + log
-     * so a misconfigured environment surfaces "broker not configured"
-     * immediately and NEVER makes an external call. `simulator` binds the
-     * maykinmedia-pattern local login simulator (no real SAML — capped at
-     * beta). `preprod`/`live` (certificate-bound Logius koppelvlak) are
-     * documented in docs/admin/integrations.md and bound in a follow-up
-     * once the aansluiting + PKIoverheid cert are granted; until then they
-     * fall through to the Log adapter (fail-closed).
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        $context->registerService(
-            DigidSamlAdapterInterface::class,
-            static function (ContainerInterface $c): DigidSamlAdapterInterface {
-                $mode = $c->get(IntegrationMode::class)
-                    ->resolve('digid', [IntegrationMode::SIMULATOR]);
-                if ($mode === IntegrationMode::SIMULATOR) {
-                    return new SimulatorDigidSamlAdapter();
-                }
+class AuthAdapterRegistrar {
+	/**
+	 * Register the external auth-broker adapters (DigiD / eHerkenning).
+	 *
+	 * External auth-broker adapters (lib/Service/Auth/), selected by the
+	 * `integration.digid.mode` config tier (external-integrations-test-environments).
+	 * DEFAULT `log` = the dormant Log* implementations which throw + log
+	 * so a misconfigured environment surfaces "broker not configured"
+	 * immediately and NEVER makes an external call. `simulator` binds the
+	 * maykinmedia-pattern local login simulator (no real SAML — capped at
+	 * beta). `preprod`/`live` (certificate-bound Logius koppelvlak) are
+	 * documented in docs/admin/integrations.md and bound in a follow-up
+	 * once the aansluiting + PKIoverheid cert are granted; until then they
+	 * fall through to the Log adapter (fail-closed).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		$context->registerService(
+			DigidSamlAdapterInterface::class,
+			static function (ContainerInterface $c): DigidSamlAdapterInterface {
+				$mode = $c->get(IntegrationMode::class)
+					->resolve('digid', [IntegrationMode::SIMULATOR]);
+				if ($mode === IntegrationMode::SIMULATOR) {
+					return new SimulatorDigidSamlAdapter();
+				}
 
-                return $c->get(LogDigidSamlAdapter::class);
-            }
-        );
-        $context->registerService(
-            EHerkenningSamlAdapterInterface::class,
-            static function (ContainerInterface $c): EHerkenningSamlAdapterInterface {
-                $mode = $c->get(IntegrationMode::class)
-                    ->resolve('digid', [IntegrationMode::SIMULATOR]);
-                if ($mode === IntegrationMode::SIMULATOR) {
-                    return new SimulatorEHerkenningSamlAdapter();
-                }
+				return $c->get(LogDigidSamlAdapter::class);
+			}
+		);
+		$context->registerService(
+			EHerkenningSamlAdapterInterface::class,
+			static function (ContainerInterface $c): EHerkenningSamlAdapterInterface {
+				$mode = $c->get(IntegrationMode::class)
+					->resolve('digid', [IntegrationMode::SIMULATOR]);
+				if ($mode === IntegrationMode::SIMULATOR) {
+					return new SimulatorEHerkenningSamlAdapter();
+				}
 
-                return $c->get(LogEHerkenningSamlAdapter::class);
-            }
-        );
-    }//end register()
+				return $c->get(LogEHerkenningSamlAdapter::class);
+			}
+		);
+	}//end register()
 }//end class

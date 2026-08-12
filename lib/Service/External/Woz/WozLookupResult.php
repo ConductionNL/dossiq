@@ -33,30 +33,29 @@ namespace OCA\Procest\Service\External\Woz;
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
-final class WozLookupResult
-{
-    /**
-     * Construct the result value-object.
-     *
-     * @param string              $lookupStatus FOUND / NOT_FOUND /
-     *                                          INVALID_INPUT /
-     *                                          LOOKUP_DEFERRED /
-     *                                          LOOKUP_ERROR.
-     * @param array<string,mixed> $wozObject    Normalized WOZ object
-     *                                          envelope — empty unless
-     *                                          FOUND.
-     * @param bool                $dormant      TRUE when the adapter was
-     *                                          dormant.
-     * @param array<string,mixed> $extras       Provider-specific extras —
-     *                                          tier, count/matches (for
-     *                                          multi-result searches),
-     *                                          reason (on error).
-     */
-    public function __construct(
-        public readonly string $lookupStatus,
-        public readonly array $wozObject,
-        public readonly bool $dormant,
-        public readonly array $extras=[],
-    ) {
-    }//end __construct()
+final class WozLookupResult {
+	/**
+	 * Construct the result value-object.
+	 *
+	 * @param string $lookupStatus FOUND / NOT_FOUND /
+	 *                             INVALID_INPUT /
+	 *                             LOOKUP_DEFERRED /
+	 *                             LOOKUP_ERROR.
+	 * @param array<string,mixed> $wozObject Normalized WOZ object
+	 *                                       envelope — empty unless
+	 *                                       FOUND.
+	 * @param bool $dormant TRUE when the adapter was
+	 *                      dormant.
+	 * @param array<string,mixed> $extras Provider-specific extras —
+	 *                                    tier, count/matches (for
+	 *                                    multi-result searches),
+	 *                                    reason (on error).
+	 */
+	public function __construct(
+		public readonly string $lookupStatus,
+		public readonly array $wozObject,
+		public readonly bool $dormant,
+		public readonly array $extras = [],
+	) {
+	}//end __construct()
 }//end class

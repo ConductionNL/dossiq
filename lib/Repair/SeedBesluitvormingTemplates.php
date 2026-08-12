@@ -40,75 +40,72 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
-class SeedBesluitvormingTemplates implements IRepairStep
-{
-    /**
-     * Constructor.
-     *
-     * @param BesluitvormingTemplateService $templateService The besluitvorming template service.
-     * @param SettingsService               $settingsService The settings service.
-     * @param LoggerInterface               $logger          The logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private BesluitvormingTemplateService $templateService,
-        private SettingsService $settingsService,
-        private LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class SeedBesluitvormingTemplates implements IRepairStep {
+	/**
+	 * Constructor.
+	 *
+	 * @param BesluitvormingTemplateService $templateService The besluitvorming template service.
+	 * @param SettingsService $settingsService The settings service.
+	 * @param LoggerInterface $logger The logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private BesluitvormingTemplateService $templateService,
+		private SettingsService $settingsService,
+		private LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the name of this repair step.
-     *
-     * @return string
-     *
-     * @spec openspec/specs/besluitvorming-workflow/spec.md
-     */
-    public function getName(): string
-    {
-        return 'Seed besluitvorming zaaktype templates for Procest';
-    }//end getName()
+	/**
+	 * Get the name of this repair step.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/besluitvorming-workflow/spec.md
+	 */
+	public function getName(): string {
+		return 'Seed besluitvorming zaaktype templates for Procest';
+	}//end getName()
 
-    /**
-     * Run the repair step to seed besluitvorming templates.
-     *
-     * @param IOutput $output The output interface for progress reporting.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/besluitvorming-workflow/spec.md
-     */
-    public function run(IOutput $output): void
-    {
-        $output->info('Seeding besluitvorming zaaktype templates...');
+	/**
+	 * Run the repair step to seed besluitvorming templates.
+	 *
+	 * @param IOutput $output The output interface for progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/besluitvorming-workflow/spec.md
+	 */
+	public function run(IOutput $output): void {
+		$output->info('Seeding besluitvorming zaaktype templates...');
 
-        if ($this->settingsService->isOpenRegisterAvailable() === false) {
-            $output->warning('OpenRegister is not available. Skipping besluitvorming template seed.');
-            return;
-        }
+		if ($this->settingsService->isOpenRegisterAvailable() === false) {
+			$output->warning('OpenRegister is not available. Skipping besluitvorming template seed.');
+			return;
+		}
 
-        try {
-            $summary = $this->templateService->activateAll();
-            foreach ($summary as $slug => $result) {
-                if (($result['skipped'] ?? false) === true) {
-                    $output->info('Besluitvorming template '.$slug.' already active, skipped.');
-                    continue;
-                }
+		try {
+			$summary = $this->templateService->activateAll();
+			foreach ($summary as $slug => $result) {
+				if (($result['skipped'] ?? false) === true) {
+					$output->info('Besluitvorming template ' . $slug . ' already active, skipped.');
+					continue;
+				}
 
-                if (($result['success'] ?? false) === true) {
-                    $output->info('Besluitvorming template '.$slug.' activated.');
-                    continue;
-                }
+				if (($result['success'] ?? false) === true) {
+					$output->info('Besluitvorming template ' . $slug . ' activated.');
+					continue;
+				}
 
-                $output->warning('Besluitvorming template '.$slug.' issue: '.($result['message'] ?? 'unknown'));
-            }
-        } catch (\Throwable $e) {
-            $output->warning('Could not seed besluitvorming templates: '.$e->getMessage());
-            $this->logger->error(
-                'Procest besluitvorming template seed failed',
-                ['exception' => $e->getMessage()],
-            );
-        }//end try
-    }//end run()
+				$output->warning('Besluitvorming template ' . $slug . ' issue: ' . ($result['message'] ?? 'unknown'));
+			}
+		} catch (\Throwable $e) {
+			$output->warning('Could not seed besluitvorming templates: ' . $e->getMessage());
+			$this->logger->error(
+				'Procest besluitvorming template seed failed',
+				['exception' => $e->getMessage()],
+			);
+		}//end try
+	}//end run()
 }//end class

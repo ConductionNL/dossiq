@@ -27,6 +27,5 @@ use Exception;
 /**
  * Tenant quota exceeded (429).
  */
-class QuotaExceededException extends Exception
-{
+class QuotaExceededException extends Exception {
 }//end class

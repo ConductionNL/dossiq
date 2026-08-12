@@ -27,6 +27,5 @@ use Exception;
 /**
  * Mandate matrix denied this request.
  */
-class MandateDeniedException extends Exception
-{
+class MandateDeniedException extends Exception {
 }//end class

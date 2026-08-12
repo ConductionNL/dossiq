@@ -36,260 +36,245 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Service\MentionNotificationService
  */
-class MentionNotificationServiceTest extends TestCase
-{
+class MentionNotificationServiceTest extends TestCase {
 
-    /**
-     * The mocked Nextcloud notification manager.
-     *
-     * @var IManager|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IManager $notificationManager;
+	/**
+	 * The mocked Nextcloud notification manager.
+	 *
+	 * @var IManager|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IManager $notificationManager;
 
-    /**
-     * The mocked logger interface.
-     *
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The mocked logger interface.
+	 *
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The service under test.
-     *
-     * @var MentionNotificationService
-     */
-    private MentionNotificationService $service;
+	/**
+	 * The service under test.
+	 *
+	 * @var MentionNotificationService
+	 */
+	private MentionNotificationService $service;
 
-    /**
-     * The mocked notification instance.
-     *
-     * @var INotification|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private INotification $notification;
+	/**
+	 * The mocked notification instance.
+	 *
+	 * @var INotification|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private INotification $notification;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->notificationManager = $this->createMock(IManager::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->notification = $this->createMock(INotification::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->notificationManager = $this->createMock(IManager::class);
-        $this->logger               = $this->createMock(LoggerInterface::class);
-        $this->notification         = $this->createMock(INotification::class);
+		$this->notification->method('setApp')->willReturn($this->notification);
+		$this->notification->method('setUser')->willReturn($this->notification);
+		$this->notification->method('setDateTime')->willReturn($this->notification);
+		$this->notification->method('setObject')->willReturn($this->notification);
+		$this->notification->method('setSubject')->willReturn($this->notification);
 
-        $this->notification->method('setApp')->willReturn($this->notification);
-        $this->notification->method('setUser')->willReturn($this->notification);
-        $this->notification->method('setDateTime')->willReturn($this->notification);
-        $this->notification->method('setObject')->willReturn($this->notification);
-        $this->notification->method('setSubject')->willReturn($this->notification);
+		$this->notificationManager
+			->method('createNotification')
+			->willReturn($this->notification);
 
-        $this->notificationManager
-            ->method('createNotification')
-            ->willReturn($this->notification);
+		$this->service = new MentionNotificationService(
+			$this->notificationManager,
+			$this->logger,
+		);
+	}//end setUp()
 
-        $this->service = new MentionNotificationService(
-            $this->notificationManager,
-            $this->logger,
-        );
-    }//end setUp()
+	/**
+	 * Every mentioned user gets one notification.
+	 *
+	 * @return void
+	 */
+	public function testNotifiesEveryMentionedUser(): void {
+		$this->notificationManager
+			->expects($this->exactly(2))
+			->method('notify');
 
+		$notified = $this->service->notifyMention(
+			actorUserId: 'alice',
+			actorDisplayName: 'Alice',
+			objectId: 'case-1',
+			register: 'procest',
+			schema: 'case',
+			noteId: 'note-9',
+			mentionedUserIds: ['bob', 'carol'],
+		);
 
-    /**
-     * Every mentioned user gets one notification.
-     *
-     * @return void
-     */
-    public function testNotifiesEveryMentionedUser(): void
-    {
-        $this->notificationManager
-            ->expects($this->exactly(2))
-            ->method('notify');
+		$this->assertSame(2, $notified);
+	}//end testNotifiesEveryMentionedUser()
 
-        $notified = $this->service->notifyMention(
-            actorUserId: 'alice',
-            actorDisplayName: 'Alice',
-            objectId: 'case-1',
-            register: 'procest',
-            schema: 'case',
-            noteId: 'note-9',
-            mentionedUserIds: ['bob', 'carol'],
-        );
+	/**
+	 * The note author is never notified about their own mention.
+	 *
+	 * @return void
+	 */
+	public function testSkipsSelfMention(): void {
+		$this->notificationManager
+			->expects($this->once())
+			->method('notify');
 
-        $this->assertSame(2, $notified);
-    }//end testNotifiesEveryMentionedUser()
+		$notified = $this->service->notifyMention(
+			actorUserId: 'alice',
+			actorDisplayName: 'Alice',
+			objectId: 'case-1',
+			register: 'procest',
+			schema: 'case',
+			noteId: 'note-9',
+			mentionedUserIds: ['alice', 'bob'],
+		);
 
+		$this->assertSame(1, $notified);
+	}//end testSkipsSelfMention()
 
-    /**
-     * The note author is never notified about their own mention.
-     *
-     * @return void
-     */
-    public function testSkipsSelfMention(): void
-    {
-        $this->notificationManager
-            ->expects($this->once())
-            ->method('notify');
+	/**
+	 * Duplicate mentions of the same user only send one notification.
+	 *
+	 * @return void
+	 */
+	public function testDeduplicatesRepeatedMentions(): void {
+		$this->notificationManager
+			->expects($this->once())
+			->method('notify');
 
-        $notified = $this->service->notifyMention(
-            actorUserId: 'alice',
-            actorDisplayName: 'Alice',
-            objectId: 'case-1',
-            register: 'procest',
-            schema: 'case',
-            noteId: 'note-9',
-            mentionedUserIds: ['alice', 'bob'],
-        );
+		$notified = $this->service->notifyMention(
+			actorUserId: 'alice',
+			actorDisplayName: 'Alice',
+			objectId: 'case-1',
+			register: 'procest',
+			schema: 'case',
+			noteId: 'note-9',
+			mentionedUserIds: ['bob', 'bob'],
+		);
 
-        $this->assertSame(1, $notified);
-    }//end testSkipsSelfMention()
+		$this->assertSame(1, $notified);
+	}//end testDeduplicatesRepeatedMentions()
 
+	/**
+	 * The notification is addressed to the mentioned user, uses the app id
+	 * and carries the note_mention subject with the actor + object context.
+	 *
+	 * @return void
+	 */
+	public function testNotificationShapeIsCorrect(): void {
+		$this->notification
+			->expects($this->once())
+			->method('setApp')
+			->with(Application::APP_ID)
+			->willReturn($this->notification);
 
-    /**
-     * Duplicate mentions of the same user only send one notification.
-     *
-     * @return void
-     */
-    public function testDeduplicatesRepeatedMentions(): void
-    {
-        $this->notificationManager
-            ->expects($this->once())
-            ->method('notify');
+		$this->notification
+			->expects($this->once())
+			->method('setUser')
+			->with('bob')
+			->willReturn($this->notification);
 
-        $notified = $this->service->notifyMention(
-            actorUserId: 'alice',
-            actorDisplayName: 'Alice',
-            objectId: 'case-1',
-            register: 'procest',
-            schema: 'case',
-            noteId: 'note-9',
-            mentionedUserIds: ['bob', 'bob'],
-        );
+		$this->notification
+			->expects($this->once())
+			->method('setObject')
+			->with('case', 'case-1')
+			->willReturn($this->notification);
 
-        $this->assertSame(1, $notified);
-    }//end testDeduplicatesRepeatedMentions()
+		$this->notification
+			->expects($this->once())
+			->method('setSubject')
+			->with(
+				'note_mention',
+				$this->callback(
+					function (array $params): bool {
+						return $params['actorUserId'] === 'alice'
+							&& $params['actorDisplayName'] === 'Alice'
+							&& $params['register'] === 'procest'
+							&& $params['schema'] === 'case'
+							&& $params['objectId'] === 'case-1'
+							&& $params['noteId'] === 'note-9';
+					}
+				)
+			)
+			->willReturn($this->notification);
 
+		$this->service->notifyMention(
+			actorUserId: 'alice',
+			actorDisplayName: 'Alice',
+			objectId: 'case-1',
+			register: 'procest',
+			schema: 'case',
+			noteId: 'note-9',
+			mentionedUserIds: ['bob'],
+		);
+	}//end testNotificationShapeIsCorrect()
 
-    /**
-     * The notification is addressed to the mentioned user, uses the app id
-     * and carries the note_mention subject with the actor + object context.
-     *
-     * @return void
-     */
-    public function testNotificationShapeIsCorrect(): void
-    {
-        $this->notification
-            ->expects($this->once())
-            ->method('setApp')
-            ->with(Application::APP_ID)
-            ->willReturn($this->notification);
+	/**
+	 * A missing schema falls back to 'note' as the notification object type.
+	 *
+	 * @return void
+	 */
+	public function testFallsBackToNoteObjectTypeWhenSchemaMissing(): void {
+		$this->notification
+			->expects($this->once())
+			->method('setObject')
+			->with('note', 'case-1')
+			->willReturn($this->notification);
 
-        $this->notification
-            ->expects($this->once())
-            ->method('setUser')
-            ->with('bob')
-            ->willReturn($this->notification);
+		$this->service->notifyMention(
+			actorUserId: 'alice',
+			actorDisplayName: 'Alice',
+			objectId: 'case-1',
+			register: '',
+			schema: '',
+			noteId: 'note-9',
+			mentionedUserIds: ['bob'],
+		);
+	}//end testFallsBackToNoteObjectTypeWhenSchemaMissing()
 
-        $this->notification
-            ->expects($this->once())
-            ->method('setObject')
-            ->with('case', 'case-1')
-            ->willReturn($this->notification);
+	/**
+	 * A per-recipient exception is caught, logged, and does not stop the
+	 * remaining recipients from being notified.
+	 *
+	 * @return void
+	 */
+	public function testExceptionForOneRecipientIsCaughtAndOthersStillNotified(): void {
+		$calls = 0;
+		$this->notificationManager
+			->method('notify')
+			->willReturnCallback(
+				function () use (&$calls): void {
+					$calls++;
+					if ($calls === 1) {
+						throw new \RuntimeException('Notification service unavailable');
+					}
+				}
+			);
 
-        $this->notification
-            ->expects($this->once())
-            ->method('setSubject')
-            ->with(
-                'note_mention',
-                $this->callback(
-                    function (array $params): bool {
-                        return $params['actorUserId'] === 'alice'
-                            && $params['actorDisplayName'] === 'Alice'
-                            && $params['register'] === 'procest'
-                            && $params['schema'] === 'case'
-                            && $params['objectId'] === 'case-1'
-                            && $params['noteId'] === 'note-9';
-                    }
-                )
-            )
-            ->willReturn($this->notification);
+		$this->logger
+			->expects($this->once())
+			->method('warning')
+			->with(
+				$this->stringContains('Failed to send note mention notification'),
+				$this->anything()
+			);
 
-        $this->service->notifyMention(
-            actorUserId: 'alice',
-            actorDisplayName: 'Alice',
-            objectId: 'case-1',
-            register: 'procest',
-            schema: 'case',
-            noteId: 'note-9',
-            mentionedUserIds: ['bob'],
-        );
-    }//end testNotificationShapeIsCorrect()
+		$notified = $this->service->notifyMention(
+			actorUserId: 'alice',
+			actorDisplayName: 'Alice',
+			objectId: 'case-1',
+			register: 'procest',
+			schema: 'case',
+			noteId: 'note-9',
+			mentionedUserIds: ['bob', 'carol'],
+		);
 
-
-    /**
-     * A missing schema falls back to 'note' as the notification object type.
-     *
-     * @return void
-     */
-    public function testFallsBackToNoteObjectTypeWhenSchemaMissing(): void
-    {
-        $this->notification
-            ->expects($this->once())
-            ->method('setObject')
-            ->with('note', 'case-1')
-            ->willReturn($this->notification);
-
-        $this->service->notifyMention(
-            actorUserId: 'alice',
-            actorDisplayName: 'Alice',
-            objectId: 'case-1',
-            register: '',
-            schema: '',
-            noteId: 'note-9',
-            mentionedUserIds: ['bob'],
-        );
-    }//end testFallsBackToNoteObjectTypeWhenSchemaMissing()
-
-
-    /**
-     * A per-recipient exception is caught, logged, and does not stop the
-     * remaining recipients from being notified.
-     *
-     * @return void
-     */
-    public function testExceptionForOneRecipientIsCaughtAndOthersStillNotified(): void
-    {
-        $calls = 0;
-        $this->notificationManager
-            ->method('notify')
-            ->willReturnCallback(
-                function () use (&$calls): void {
-                    $calls++;
-                    if ($calls === 1) {
-                        throw new \RuntimeException('Notification service unavailable');
-                    }
-                }
-            );
-
-        $this->logger
-            ->expects($this->once())
-            ->method('warning')
-            ->with(
-                $this->stringContains('Failed to send note mention notification'),
-                $this->anything()
-            );
-
-        $notified = $this->service->notifyMention(
-            actorUserId: 'alice',
-            actorDisplayName: 'Alice',
-            objectId: 'case-1',
-            register: 'procest',
-            schema: 'case',
-            noteId: 'note-9',
-            mentionedUserIds: ['bob', 'carol'],
-        );
-
-        $this->assertSame(1, $notified);
-    }//end testExceptionForOneRecipientIsCaughtAndOthersStillNotified()
+		$this->assertSame(1, $notified);
+	}//end testExceptionForOneRecipientIsCaughtAndOthersStillNotified()
 }//end class

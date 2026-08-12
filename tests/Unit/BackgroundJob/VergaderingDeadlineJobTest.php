@@ -34,137 +34,127 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\BackgroundJob\VergaderingDeadlineJob
  */
-class VergaderingDeadlineJobTest extends TestCase
-{
+class VergaderingDeadlineJobTest extends TestCase {
 
-    /**
-     * The mocked time factory.
-     *
-     * @var ITimeFactory|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private ITimeFactory $timeFactory;
+	/**
+	 * The mocked time factory.
+	 *
+	 * @var ITimeFactory|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private ITimeFactory $timeFactory;
 
-    /**
-     * The mocked VergaderingCaseService.
-     *
-     * @var VergaderingCaseService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private VergaderingCaseService $vergaderingCaseService;
+	/**
+	 * The mocked VergaderingCaseService.
+	 *
+	 * @var VergaderingCaseService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private VergaderingCaseService $vergaderingCaseService;
 
-    /**
-     * The mocked app manager.
-     *
-     * @var IAppManager|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IAppManager $appManager;
+	/**
+	 * The mocked app manager.
+	 *
+	 * @var IAppManager|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IAppManager $appManager;
 
-    /**
-     * The mocked logger.
-     *
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The mocked logger.
+	 *
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The job under test.
-     *
-     * @var VergaderingDeadlineJob
-     */
-    private VergaderingDeadlineJob $job;
+	/**
+	 * The job under test.
+	 *
+	 * @var VergaderingDeadlineJob
+	 */
+	private VergaderingDeadlineJob $job;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->timeFactory = $this->createMock(ITimeFactory::class);
+		$this->vergaderingCaseService = $this->createMock(VergaderingCaseService::class);
+		$this->appManager = $this->createMock(IAppManager::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->timeFactory           = $this->createMock(ITimeFactory::class);
-        $this->vergaderingCaseService = $this->createMock(VergaderingCaseService::class);
-        $this->appManager            = $this->createMock(IAppManager::class);
-        $this->logger                = $this->createMock(LoggerInterface::class);
+		$this->job = new VergaderingDeadlineJob(
+			time: $this->timeFactory,
+			vergaderingCases: $this->vergaderingCaseService,
+			appManager: $this->appManager,
+			logger: $this->logger,
+		);
 
-        $this->job = new VergaderingDeadlineJob(
-            time: $this->timeFactory,
-            vergaderingCases: $this->vergaderingCaseService,
-            appManager: $this->appManager,
-            logger: $this->logger,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Test that run() exits early when OpenRegister is not installed.
+	 *
+	 * @return void
+	 */
+	public function testRunExitsEarlyWhenOpenRegisterNotInstalled(): void {
+		$this->appManager
+			->method('getInstalledApps')
+			->willReturn(['procest', 'contacts']);
 
+		$this->vergaderingCaseService
+			->expects($this->never())
+			->method('checkDeadlines');
 
-    /**
-     * Test that run() exits early when OpenRegister is not installed.
-     *
-     * @return void
-     */
-    public function testRunExitsEarlyWhenOpenRegisterNotInstalled(): void
-    {
-        $this->appManager
-            ->method('getInstalledApps')
-            ->willReturn(['procest', 'contacts']);
+		$ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
+		$ref->setAccessible(accessible: true);
+		$ref->invoke($this->job, null);
 
-        $this->vergaderingCaseService
-            ->expects($this->never())
-            ->method('checkDeadlines');
+	}//end testRunExitsEarlyWhenOpenRegisterNotInstalled()
 
-        $ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
-        $ref->setAccessible(accessible: true);
-        $ref->invoke($this->job, null);
+	/**
+	 * Test that run() calls checkDeadlines() when OpenRegister is installed.
+	 *
+	 * @return void
+	 */
+	public function testRunCallsCheckDeadlinesWhenOpenRegisterInstalled(): void {
+		$this->appManager
+			->method('getInstalledApps')
+			->willReturn(['openregister', 'procest']);
 
-    }//end testRunExitsEarlyWhenOpenRegisterNotInstalled()
+		$this->vergaderingCaseService
+			->expects($this->once())
+			->method('checkDeadlines')
+			->willReturn(0);
 
+		$ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
+		$ref->setAccessible(accessible: true);
+		$ref->invoke($this->job, null);
 
-    /**
-     * Test that run() calls checkDeadlines() when OpenRegister is installed.
-     *
-     * @return void
-     */
-    public function testRunCallsCheckDeadlinesWhenOpenRegisterInstalled(): void
-    {
-        $this->appManager
-            ->method('getInstalledApps')
-            ->willReturn(['openregister', 'procest']);
+	}//end testRunCallsCheckDeadlinesWhenOpenRegisterInstalled()
 
-        $this->vergaderingCaseService
-            ->expects($this->once())
-            ->method('checkDeadlines')
-            ->willReturn(0);
+	/**
+	 * Test that run() logs when cases are advanced.
+	 *
+	 * @return void
+	 */
+	public function testRunLogsWhenCasesAdvanced(): void {
+		$this->appManager
+			->method('getInstalledApps')
+			->willReturn(['openregister', 'procest']);
 
-        $ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
-        $ref->setAccessible(accessible: true);
-        $ref->invoke($this->job, null);
+		$this->vergaderingCaseService
+			->method('checkDeadlines')
+			->willReturn(3);
 
-    }//end testRunCallsCheckDeadlinesWhenOpenRegisterInstalled()
+		$this->logger
+			->expects($this->once())
+			->method('info')
+			->with($this->stringContains('3 case(s)'));
 
+		$ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
+		$ref->setAccessible(accessible: true);
+		$ref->invoke($this->job, null);
 
-    /**
-     * Test that run() logs when cases are advanced.
-     *
-     * @return void
-     */
-    public function testRunLogsWhenCasesAdvanced(): void
-    {
-        $this->appManager
-            ->method('getInstalledApps')
-            ->willReturn(['openregister', 'procest']);
-
-        $this->vergaderingCaseService
-            ->method('checkDeadlines')
-            ->willReturn(3);
-
-        $this->logger
-            ->expects($this->once())
-            ->method('info')
-            ->with($this->stringContains('3 case(s)'));
-
-        $ref = new \ReflectionMethod(objectOrMethod: $this->job, method: 'run');
-        $ref->setAccessible(accessible: true);
-        $ref->invoke($this->job, null);
-
-    }//end testRunLogsWhenCasesAdvanced()
-
+	}//end testRunLogsWhenCasesAdvanced()
 
 }//end class

@@ -22,13 +22,15 @@
 // phpcs:disable
 
 namespace OC\Hooks {
-    if (interface_exists(\OC\Hooks\Emitter::class) === false) {
-        interface Emitter {}
-    }
+	if (interface_exists(\OC\Hooks\Emitter::class) === false) {
+		interface Emitter {
+		}
+	}
 }
 
 namespace OC\User {
-    if (class_exists(\OC\User\NoUserException::class) === false) {
-        class NoUserException extends \Exception {}
-    }
+	if (class_exists(\OC\User\NoUserException::class) === false) {
+		class NoUserException extends \Exception {
+		}
+	}
 }

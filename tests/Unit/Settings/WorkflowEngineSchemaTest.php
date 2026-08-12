@@ -31,133 +31,119 @@ use PHPUnit\Framework\TestCase;
  * procest_register.json. These tests validate the schema file is well-formed
  * and contains the expected schema definitions.
  */
-class WorkflowEngineSchemaTest extends TestCase
-{
+class WorkflowEngineSchemaTest extends TestCase {
 
-    /**
-     * Path to the register schema file.
-     *
-     * @var string
-     */
-    private string $schemaFilePath;
+	/**
+	 * Path to the register schema file.
+	 *
+	 * @var string
+	 */
+	private string $schemaFilePath;
 
-    /**
-     * The decoded register schema data.
-     *
-     * @var array
-     */
-    private array $registerData;
+	/**
+	 * The decoded register schema data.
+	 *
+	 * @var array
+	 */
+	private array $registerData;
 
+	/**
+	 * Set up test fixtures — load procest_register.json.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->schemaFilePath = __DIR__ . '/../../../lib/Settings/procest_register.json';
 
-    /**
-     * Set up test fixtures — load procest_register.json.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->schemaFilePath = __DIR__.'/../../../lib/Settings/procest_register.json';
+		$content = file_get_contents($this->schemaFilePath);
+		$this->registerData = json_decode($content, true);
 
-        $content            = file_get_contents($this->schemaFilePath);
-        $this->registerData = json_decode($content, true);
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Test that procest_register.json exists and is valid JSON.
+	 *
+	 * @return void
+	 */
+	public function testRegisterFileExistsAndIsValidJson(): void {
+		$this->assertFileExists($this->schemaFilePath, 'procest_register.json must exist');
+		$this->assertSame(JSON_ERROR_NONE, json_last_error(), 'procest_register.json must be valid JSON');
+		$this->assertIsArray($this->registerData);
 
+	}//end testRegisterFileExistsAndIsValidJson()
 
-    /**
-     * Test that procest_register.json exists and is valid JSON.
-     *
-     * @return void
-     */
-    public function testRegisterFileExistsAndIsValidJson(): void
-    {
-        $this->assertFileExists($this->schemaFilePath, 'procest_register.json must exist');
-        $this->assertSame(JSON_ERROR_NONE, json_last_error(), 'procest_register.json must be valid JSON');
-        $this->assertIsArray($this->registerData);
+	/**
+	 * Test that procest_register.json follows OpenAPI structure.
+	 *
+	 * @return void
+	 */
+	public function testRegisterFileFollowsOpenApiStructure(): void {
+		$this->assertArrayHasKey('openapi', $this->registerData, 'Register must have openapi key');
+		$this->assertArrayHasKey('info', $this->registerData, 'Register must have info key');
+		$this->assertArrayHasKey('components', $this->registerData, 'Register must have components key');
+		$this->assertArrayHasKey('schemas', $this->registerData['components'], 'Register must have components.schemas');
 
-    }//end testRegisterFileExistsAndIsValidJson()
+	}//end testRegisterFileFollowsOpenApiStructure()
 
+	/**
+	 * Test that the workflowTemplate schema is registered.
+	 *
+	 * The workflow engine feature adds the `workflowTemplate` schema which
+	 * stores process steps, transitions, guards, and automatic actions
+	 * per zaaktype.
+	 *
+	 * @return void
+	 */
+	public function testWorkflowTemplateSchemaIsRegistered(): void {
+		$schemas = $this->registerData['components']['schemas'];
 
-    /**
-     * Test that procest_register.json follows OpenAPI structure.
-     *
-     * @return void
-     */
-    public function testRegisterFileFollowsOpenApiStructure(): void
-    {
-        $this->assertArrayHasKey('openapi', $this->registerData, 'Register must have openapi key');
-        $this->assertArrayHasKey('info', $this->registerData, 'Register must have info key');
-        $this->assertArrayHasKey('components', $this->registerData, 'Register must have components key');
-        $this->assertArrayHasKey('schemas', $this->registerData['components'], 'Register must have components.schemas');
+		$this->assertArrayHasKey(
+			'workflowTemplate',
+			$schemas,
+			'workflowTemplate schema must be defined in procest_register.json for the workflow engine feature'
+		);
 
-    }//end testRegisterFileFollowsOpenApiStructure()
+	}//end testWorkflowTemplateSchemaIsRegistered()
 
+	/**
+	 * Test that the workflowTemplate schema has required properties.
+	 *
+	 * @return void
+	 */
+	public function testWorkflowTemplateSchemaHasRequiredProperties(): void {
+		$schemas = $this->registerData['components']['schemas'];
+		$workflow = $schemas['workflowTemplate'];
 
-    /**
-     * Test that the workflowTemplate schema is registered.
-     *
-     * The workflow engine feature adds the `workflowTemplate` schema which
-     * stores process steps, transitions, guards, and automatic actions
-     * per zaaktype.
-     *
-     * @return void
-     */
-    public function testWorkflowTemplateSchemaIsRegistered(): void
-    {
-        $schemas = $this->registerData['components']['schemas'];
+		$this->assertArrayHasKey('properties', $workflow, 'workflowTemplate must have properties');
 
-        $this->assertArrayHasKey(
-            'workflowTemplate',
-            $schemas,
-            'workflowTemplate schema must be defined in procest_register.json for the workflow engine feature'
-        );
+		$properties = $workflow['properties'];
 
-    }//end testWorkflowTemplateSchemaIsRegistered()
+		// Steps and transitions are the core of any workflow definition.
+		$this->assertArrayHasKey('steps', $properties, 'workflowTemplate must have steps property');
+		$this->assertArrayHasKey('transitions', $properties, 'workflowTemplate must have transitions property');
 
+	}//end testWorkflowTemplateSchemaHasRequiredProperties()
 
-    /**
-     * Test that the workflowTemplate schema has required properties.
-     *
-     * @return void
-     */
-    public function testWorkflowTemplateSchemaHasRequiredProperties(): void
-    {
-        $schemas  = $this->registerData['components']['schemas'];
-        $workflow = $schemas['workflowTemplate'];
+	/**
+	 * Test that all core case management schemas are present.
+	 *
+	 * These schemas must not be accidentally removed when adding new workflow
+	 * engine schemas.
+	 *
+	 * @return void
+	 */
+	public function testCoreSchemasPresentAfterWorkflowEngineMigration(): void {
+		$schemas = $this->registerData['components']['schemas'];
+		$required = ['case', 'task', 'caseType', 'statusType', 'roleType', 'workflowTemplate'];
 
-        $this->assertArrayHasKey('properties', $workflow, 'workflowTemplate must have properties');
+		foreach ($required as $schemaName) {
+			$this->assertArrayHasKey(
+				$schemaName,
+				$schemas,
+				"Core schema '{$schemaName}' must be present in procest_register.json"
+			);
+		}
 
-        $properties = $workflow['properties'];
-
-        // Steps and transitions are the core of any workflow definition.
-        $this->assertArrayHasKey('steps', $properties, 'workflowTemplate must have steps property');
-        $this->assertArrayHasKey('transitions', $properties, 'workflowTemplate must have transitions property');
-
-    }//end testWorkflowTemplateSchemaHasRequiredProperties()
-
-
-    /**
-     * Test that all core case management schemas are present.
-     *
-     * These schemas must not be accidentally removed when adding new workflow
-     * engine schemas.
-     *
-     * @return void
-     */
-    public function testCoreSchemasPresentAfterWorkflowEngineMigration(): void
-    {
-        $schemas  = $this->registerData['components']['schemas'];
-        $required = ['case', 'task', 'caseType', 'statusType', 'roleType', 'workflowTemplate'];
-
-        foreach ($required as $schemaName) {
-            $this->assertArrayHasKey(
-                $schemaName,
-                $schemas,
-                "Core schema '{$schemaName}' must be present in procest_register.json"
-            );
-        }
-
-    }//end testCoreSchemasPresentAfterWorkflowEngineMigration()
-
+	}//end testCoreSchemasPresentAfterWorkflowEngineMigration()
 
 }//end class

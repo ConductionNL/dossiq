@@ -40,87 +40,83 @@ namespace OCA\Procest\Service\Transitions;
  *
  * @spec openspec/specs/status-transition-engine/spec.md
  */
-class TransitionSpecReader
-{
-    /**
-     * Extract the guards list from a transition definition (supports both
-     * `guards: []` and a single `guard: {...}` shape).
-     *
-     * @param array<string, mixed> $transition The transition.
-     *
-     * @return array<int, array<string, mixed>> The normalised guard list.
-     *
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function extractGuards(array $transition): array
-    {
-        $guards = $transition['guards'] ?? [];
-        if (is_array($guards) === false) {
-            $guards = [];
-        }
+class TransitionSpecReader {
+	/**
+	 * Extract the guards list from a transition definition (supports both
+	 * `guards: []` and a single `guard: {...}` shape).
+	 *
+	 * @param array<string, mixed> $transition The transition.
+	 *
+	 * @return array<int, array<string, mixed>> The normalised guard list.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function extractGuards(array $transition): array {
+		$guards = $transition['guards'] ?? [];
+		if (is_array($guards) === false) {
+			$guards = [];
+		}
 
-        // Promote allowedRoles[] on the transition itself into a roleGuard entry.
-        $allowedRoles = $transition['allowedRoles'] ?? null;
-        if (is_array($allowedRoles) === true && count($allowedRoles) > 0) {
-            $guards[] = ['type' => 'roleGuard', 'allowedRoles' => $allowedRoles];
-        }
+		// Promote allowedRoles[] on the transition itself into a roleGuard entry.
+		$allowedRoles = $transition['allowedRoles'] ?? null;
+		if (is_array($allowedRoles) === true && count($allowedRoles) > 0) {
+			$guards[] = ['type' => 'roleGuard', 'allowedRoles' => $allowedRoles];
+		}
 
-        $list = [];
-        foreach ($guards as $guard) {
-            if (is_array($guard) === true) {
-                $list[] = $guard;
-            }
-        }
+		$list = [];
+		foreach ($guards as $guard) {
+			if (is_array($guard) === true) {
+				$list[] = $guard;
+			}
+		}
 
-        return $list;
-    }//end extractGuards()
+		return $list;
+	}//end extractGuards()
 
-    /**
-     * Extract automaticActions[] from a transition definition.
-     *
-     * @param array<string, mixed> $transition The transition.
-     *
-     * @return array<int, array<string, mixed>> The normalised action list.
-     *
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function extractActions(array $transition): array
-    {
-        $actions = $transition['automaticActions'] ?? ($transition['actions'] ?? []);
-        if (is_array($actions) === false) {
-            return [];
-        }
+	/**
+	 * Extract automaticActions[] from a transition definition.
+	 *
+	 * @param array<string, mixed> $transition The transition.
+	 *
+	 * @return array<int, array<string, mixed>> The normalised action list.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function extractActions(array $transition): array {
+		$actions = $transition['automaticActions'] ?? ($transition['actions'] ?? []);
+		if (is_array($actions) === false) {
+			return [];
+		}
 
-        $list = [];
-        foreach ($actions as $action) {
-            if (is_array($action) === true) {
-                $list[] = $action;
-            }
-        }
+		$list = [];
+		foreach ($actions as $action) {
+			if (is_array($action) === true) {
+				$list[] = $action;
+			}
+		}
 
-        return $list;
-    }//end extractActions()
+		return $list;
+	}//end extractActions()
 
-    /**
-     * Detect whether the role guard has hidden the transition silently.
-     *
-     * @param array<int, array<string, mixed>> $evalResults Guard evaluation snapshots.
-     *
-     * @return bool True when the transition must not be offered at all.
-     *
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function isRoleHidden(array $evalResults): bool
-    {
-        foreach ($evalResults as $entry) {
-            if (($entry['type'] ?? '') === 'roleGuard'
-                && $entry['passed'] === false
-                && (($entry['details']['silent'] ?? false) === true)
-            ) {
-                return true;
-            }
-        }
+	/**
+	 * Detect whether the role guard has hidden the transition silently.
+	 *
+	 * @param array<int, array<string, mixed>> $evalResults Guard evaluation snapshots.
+	 *
+	 * @return bool True when the transition must not be offered at all.
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function isRoleHidden(array $evalResults): bool {
+		foreach ($evalResults as $entry) {
+			if (($entry['type'] ?? '') === 'roleGuard'
+				&& $entry['passed'] === false
+				&& (($entry['details']['silent'] ?? false) === true)
+			) {
+				return true;
+			}
+		}
 
-        return false;
-    }//end isRoleHidden()
+		return false;
+	}//end isRoleHidden()
 }//end class

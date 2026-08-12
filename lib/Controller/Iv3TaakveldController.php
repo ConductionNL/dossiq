@@ -47,44 +47,42 @@ use OCP\IUserSession;
 /**
  * Read-only access to the IV3/BBV taakveld reference list.
  */
-class Iv3TaakveldController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string          $appName      The app name.
-     * @param IRequest        $request      The request.
-     * @param Iv3TaakveldList $taakveldList Taakveld reference list.
-     * @param IUserSession    $userSession  Current user session.
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly Iv3TaakveldList $taakveldList,
-        private readonly IUserSession $userSession,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class Iv3TaakveldController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name.
+	 * @param IRequest $request The request.
+	 * @param Iv3TaakveldList $taakveldList Taakveld reference list.
+	 * @param IUserSession $userSession Current user session.
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly Iv3TaakveldList $taakveldList,
+		private readonly IUserSession $userSession,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * The IV3 taakveld reference list — open to any authenticated user (it
-     * is a public CBS classification, not report data).
-     *
-     * @return JSONResponse
-     */
-    #[NoAdminRequired]
-    public function taakvelden(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['message' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * The IV3 taakveld reference list — open to any authenticated user (it
+	 * is a public CBS classification, not report data).
+	 *
+	 * @return JSONResponse
+	 */
+	#[NoAdminRequired]
+	public function taakvelden(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        return new JSONResponse(
-            [
-                'version'    => $this->taakveldList->version(),
-                'taakvelden' => $this->taakveldList->allTaakvelden(),
-            ]
-        );
-    }//end taakvelden()
+		return new JSONResponse(
+			[
+				'version' => $this->taakveldList->version(),
+				'taakvelden' => $this->taakveldList->allTaakvelden(),
+			]
+		);
+	}//end taakvelden()
 }//end class

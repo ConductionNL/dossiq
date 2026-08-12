@@ -46,82 +46,79 @@ use RuntimeException;
  *
  * @spec openspec/specs/milestone-tracking/spec.md
  */
-class MilestoneRepository
-{
+class MilestoneRepository {
 
-    use SearchesObjects;
+	use SearchesObjects;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Settings service (config + ObjectService).
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Settings service (config + ObjectService).
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the milestone definitions declared for a case type.
-     *
-     * @param string $caseTypeId The case type UUID.
-     *
-     * @return array<int, array<string, mixed>> Milestone definitions.
-     *
-     * @throws RuntimeException When OpenRegister is unavailable.
-     *
-     * @spec openspec/specs/milestone-tracking/spec.md
-     */
-    public function findDefinitions(string $caseTypeId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
+	/**
+	 * Get the milestone definitions declared for a case type.
+	 *
+	 * @param string $caseTypeId The case type UUID.
+	 *
+	 * @return array<int, array<string, mixed>> Milestone definitions.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable.
+	 *
+	 * @spec openspec/specs/milestone-tracking/spec.md
+	 */
+	public function findDefinitions(string $caseTypeId): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('milestone_definition_schema');
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('milestone_definition_schema');
 
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
+		if (empty($register) === true || empty($schema) === true) {
+			return [];
+		}
 
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['caseType' => $caseTypeId, '_limit' => 100],
-        );
-    }//end findDefinitions()
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['caseType' => $caseTypeId, '_limit' => 100],
+		);
+	}//end findDefinitions()
 
-    /**
-     * Get the milestone records recorded against a case.
-     *
-     * @param string $caseId The case UUID.
-     *
-     * @return array<int, array<string, mixed>> Milestone records.
-     *
-     * @spec openspec/specs/milestone-tracking/spec.md
-     */
-    public function findRecords(string $caseId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
+	/**
+	 * Get the milestone records recorded against a case.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<int, array<string, mixed>> Milestone records.
+	 *
+	 * @spec openspec/specs/milestone-tracking/spec.md
+	 */
+	public function findRecords(string $caseId): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return [];
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('milestone_record_schema');
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('milestone_record_schema');
 
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
+		if (empty($register) === true || empty($schema) === true) {
+			return [];
+		}
 
-        return $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['case' => $caseId, '_limit' => 100],
-        );
-    }//end findRecords()
+		return $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['case' => $caseId, '_limit' => 100],
+		);
+	}//end findRecords()
 }//end class

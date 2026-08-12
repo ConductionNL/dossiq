@@ -43,456 +43,448 @@ use Psr\Log\LoggerInterface;
 /**
  * Seed the canonical bezwaar workflow definition (published, version 1).
  */
-class SeedBezwaarWorkflowDefinition implements IRepairStep
-{
+class SeedBezwaarWorkflowDefinition implements IRepairStep {
 
-    use SearchesObjects;
+	use SearchesObjects;
 
+	/**
+	 * Required guards for transitions that change legal posture
+	 * — keyed by toStatus name, value is the human reason key.
+	 *
+	 * @var array<string, string>
+	 */
+	private const LEGAL_POSTURE_TARGETS = [
+		'Niet-ontvankelijk' => 'Niet-ontvankelijk vergt AWB-motivering (6:6)',
+		'Ingetrokken' => 'Intrekking vergt AWB-motivering (6:21)',
+	];
 
-    /**
-     * Required guards for transitions that change legal posture
-     * — keyed by toStatus name, value is the human reason key.
-     *
-     * @var array<string, string>
-     */
-    private const LEGAL_POSTURE_TARGETS = [
-        'Niet-ontvankelijk' => 'Niet-ontvankelijk vergt AWB-motivering (6:6)',
-        'Ingetrokken'       => 'Intrekking vergt AWB-motivering (6:21)',
-    ];
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService The settings service
+	 * @param WorkflowDefinitionService $workflowService The workflow definition service
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private SettingsService $settingsService,
+		private WorkflowDefinitionService $workflowService,
+		private LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService           $settingsService The settings service
-     * @param WorkflowDefinitionService $workflowService The workflow definition service
-     * @param LoggerInterface           $logger          Logger
-     */
-    public function __construct(
-        private SettingsService $settingsService,
-        private WorkflowDefinitionService $workflowService,
-        private LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Get the name of this repair step.
+	 *
+	 * @return string
+	 */
+	public function getName(): string {
+		return 'Seed canonical bezwaar workflow definition (AWB-compliant state machine)';
+	}//end getName()
 
-    /**
-     * Get the name of this repair step.
-     *
-     * @return string
-     */
-    public function getName(): string
-    {
-        return 'Seed canonical bezwaar workflow definition (AWB-compliant state machine)';
-    }//end getName()
+	/**
+	 * Run the repair step.
+	 *
+	 * @param IOutput $output Repair output channel
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function run(IOutput $output): void {
+		if ($this->settingsService->isOpenRegisterAvailable() === false) {
+			$output->warning('OpenRegister not available — skipping bezwaar workflow seed.');
+			return;
+		}
 
-    /**
-     * Run the repair step.
-     *
-     * @param IOutput $output Repair output channel
-     *
-     * @return void
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			$output->warning('OpenRegister ObjectService not resolvable — skipping bezwaar workflow seed.');
+			return;
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function run(IOutput $output): void
-    {
-        if ($this->settingsService->isOpenRegisterAvailable() === false) {
-            $output->warning('OpenRegister not available — skipping bezwaar workflow seed.');
-            return;
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
+		$statusSchema = $this->settingsService->getConfigValue('status_type_schema');
+		$templateSchema = $this->settingsService->getConfigValue('workflow_template_schema');
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            $output->warning('OpenRegister ObjectService not resolvable — skipping bezwaar workflow seed.');
-            return;
-        }
+		$missingConfig = in_array('', [$register, $caseTypeSchema, $statusSchema, $templateSchema], true);
+		if ($missingConfig === true) {
+			$output->warning('Bezwaar workflow seed: required schema config missing — skipping.');
+			return;
+		}
 
-        $register       = $this->settingsService->getConfigValue('register');
-        $caseTypeSchema = $this->settingsService->getConfigValue('case_type_schema');
-        $statusSchema   = $this->settingsService->getConfigValue('status_type_schema');
-        $templateSchema = $this->settingsService->getConfigValue('workflow_template_schema');
+		// Locate the bezwaar caseType.
+		$caseTypeId = $this->resolveSeedableCaseTypeId(
+			objectService: $objectService,
+			register: $register,
+			caseTypeSchema: $caseTypeSchema,
+			output: $output,
+		);
 
-        $missingConfig = in_array('', [$register, $caseTypeSchema, $statusSchema, $templateSchema], true);
-        if ($missingConfig === true) {
-            $output->warning('Bezwaar workflow seed: required schema config missing — skipping.');
-            return;
-        }
+		if ($caseTypeId === '') {
+			return;
+		}
 
-        // Locate the bezwaar caseType.
-        $caseTypeId = $this->resolveSeedableCaseTypeId(
-            objectService: $objectService,
-            register: $register,
-            caseTypeSchema: $caseTypeSchema,
-            output: $output,
-        );
+		$required = [
+			'Ontvangen',
+			'Ontvankelijkheidstoets',
+			'In behandeling',
+			'Hoorzitting gepland',
+			'Hoorzitting afgerond',
+			'Advies uitgebracht',
+			'Beslissing op bezwaar',
+			'Afgehandeld',
+			'Niet-ontvankelijk',
+			'Ingetrokken',
+		];
 
-        if ($caseTypeId === '') {
-            return;
-        }
+		$statusByName = $this->resolveStatusIndex(
+			objectService: $objectService,
+			register: $register,
+			statusSchema: $statusSchema,
+			caseTypeId: $caseTypeId,
+			required: $required,
+			output: $output,
+		);
 
-        $required = [
-            'Ontvangen',
-            'Ontvankelijkheidstoets',
-            'In behandeling',
-            'Hoorzitting gepland',
-            'Hoorzitting afgerond',
-            'Advies uitgebracht',
-            'Beslissing op bezwaar',
-            'Afgehandeld',
-            'Niet-ontvankelijk',
-            'Ingetrokken',
-        ];
+		if ($statusByName === null) {
+			return;
+		}
 
-        $statusByName = $this->resolveStatusIndex(
-            objectService: $objectService,
-            register: $register,
-            statusSchema: $statusSchema,
-            caseTypeId: $caseTypeId,
-            required: $required,
-            output: $output,
-        );
+		$steps = $this->buildSteps(statusByName: $statusByName, ordered: $required);
+		$transitions = $this->buildTransitions(statusByName: $statusByName);
 
-        if ($statusByName === null) {
-            return;
-        }
+		$description = 'Canonical bezwaar lifecycle state machine: Ontvangen → Afgehandeld with terminal '
+			. 'Niet-ontvankelijk/Ingetrokken. Transitions wired through the status-transition-engine; '
+			. 'deadlines computed declaratively on the bezwaar schema (x-openregister-calculations, ADR-022).';
 
-        $steps       = $this->buildSteps(statusByName: $statusByName, ordered: $required);
-        $transitions = $this->buildTransitions(statusByName: $statusByName);
+		$template = [
+			'title' => 'Bezwaar — AWB-compliant workflow',
+			'description' => $description,
+			'caseType' => $caseTypeId,
+			'version' => 1,
+			'isActive' => true,
+			'isDraft' => false,
+			'lifecycleStatus' => WorkflowDefinitionService::STATUS_PUBLISHED,
+			'steps' => json_encode($steps, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+			'transitions' => json_encode($transitions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+			'nodePositions' => '',
+		];
 
-        $description = 'Canonical bezwaar lifecycle state machine: Ontvangen → Afgehandeld with terminal '
-            .'Niet-ontvankelijk/Ingetrokken. Transitions wired through the status-transition-engine; '
-            .'deadlines computed declaratively on the bezwaar schema (x-openregister-calculations, ADR-022).';
+		$this->persistTemplate(
+			objectService: $objectService,
+			register: $register,
+			caseTypeSchema: $caseTypeSchema,
+			templateSchema: $templateSchema,
+			caseTypeId: $caseTypeId,
+			template: $template,
+			output: $output,
+		);
+	}//end run()
 
-        $template = [
-            'title'           => 'Bezwaar — AWB-compliant workflow',
-            'description'     => $description,
-            'caseType'        => $caseTypeId,
-            'version'         => 1,
-            'isActive'        => true,
-            'isDraft'         => false,
-            'lifecycleStatus' => WorkflowDefinitionService::STATUS_PUBLISHED,
-            'steps'           => json_encode($steps, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'transitions'     => json_encode($transitions, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-            'nodePositions'   => '',
-        ];
+	/**
+	 * Locate the bezwaar caseType that still needs a workflow definition.
+	 *
+	 * @param object $objectService Resolved OR ObjectService
+	 * @param string $register The register id
+	 * @param string $caseTypeSchema The caseType schema id
+	 * @param IOutput $output Repair output channel
+	 *
+	 * @return string The caseType UUID, or an empty string when not seedable
+	 */
+	private function resolveSeedableCaseTypeId(
+		object $objectService,
+		string $register,
+		string $caseTypeSchema,
+		IOutput $output,
+	): string {
+		try {
+			$caseTypes = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseTypeSchema,
+				filters: ['identifier' => 'bezwaar', '_limit' => 5],
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Procest: bezwaar workflow seed — failed to list caseTypes',
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+			);
+			$output->warning('Could not list caseTypes — skipping bezwaar workflow seed.');
+			return '';
+		}
 
-        $this->persistTemplate(
-            objectService: $objectService,
-            register: $register,
-            caseTypeSchema: $caseTypeSchema,
-            templateSchema: $templateSchema,
-            caseTypeId: $caseTypeId,
-            template: $template,
-            output: $output,
-        );
-    }//end run()
+		if ($caseTypes === []) {
+			$output->info('Bezwaar caseType not present yet — skipping workflow seed.');
+			return '';
+		}
 
-    /**
-     * Locate the bezwaar caseType that still needs a workflow definition.
-     *
-     * @param object  $objectService  Resolved OR ObjectService
-     * @param string  $register       The register id
-     * @param string  $caseTypeSchema The caseType schema id
-     * @param IOutput $output         Repair output channel
-     *
-     * @return string The caseType UUID, or an empty string when not seedable
-     */
-    private function resolveSeedableCaseTypeId(
-        object $objectService,
-        string $register,
-        string $caseTypeSchema,
-        IOutput $output
-    ): string {
-        try {
-            $caseTypes = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $caseTypeSchema,
-                filters: ['identifier' => 'bezwaar', '_limit' => 5],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: bezwaar workflow seed — failed to list caseTypes',
-                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-            );
-            $output->warning('Could not list caseTypes — skipping bezwaar workflow seed.');
-            return '';
-        }
+		$caseType = $this->normalize(object: $caseTypes[0]);
+		if ($caseType === null) {
+			return '';
+		}
 
-        if ($caseTypes === []) {
-            $output->info('Bezwaar caseType not present yet — skipping workflow seed.');
-            return '';
-        }
+		$caseTypeId = (string)($caseType['id'] ?? '');
+		if ($caseTypeId === '') {
+			return '';
+		}
 
-        $caseType = $this->normalize(object: $caseTypes[0]);
-        if ($caseType === null) {
-            return '';
-        }
+		// Idempotent guard.
+		$existingVersions = $this->workflowService->listVersions($caseTypeId);
+		if ($existingVersions !== []) {
+			$output->info('Bezwaar workflow definition already present — skipping seed.');
+			return '';
+		}
 
-        $caseTypeId = (string) ($caseType['id'] ?? '');
-        if ($caseTypeId === '') {
-            return '';
-        }
+		return $caseTypeId;
+	}//end resolveSeedableCaseTypeId()
 
-        // Idempotent guard.
-        $existingVersions = $this->workflowService->listVersions($caseTypeId);
-        if ($existingVersions !== []) {
-            $output->info('Bezwaar workflow definition already present — skipping seed.');
-            return '';
-        }
+	/**
+	 * Load the caseType's statusType rows and index them by name, asserting
+	 * that every required status is present.
+	 *
+	 * @param object $objectService Resolved OR ObjectService
+	 * @param string $register The register id
+	 * @param string $statusSchema The statusType schema id
+	 * @param string $caseTypeId The bezwaar caseType UUID
+	 * @param array<int, string> $required Status names the workflow needs
+	 * @param IOutput $output Repair output channel
+	 *
+	 * @return array<string, array<string, mixed>>|null Indexed rows, or null when not seedable
+	 */
+	private function resolveStatusIndex(
+		object $objectService,
+		string $register,
+		string $statusSchema,
+		string $caseTypeId,
+		array $required,
+		IOutput $output,
+	): ?array {
+		// Pull statusType rows for the bezwaar caseType.
+		try {
+			$statusRows = $this->searchObjectsAsArrays(
+				objectService: $objectService,
+				register: $register,
+				schema: $statusSchema,
+				filters: ['caseType' => $caseTypeId, '_limit' => 50],
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Procest: bezwaar workflow seed — failed to list statusTypes',
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+			);
+			return null;
+		}
 
-        return $caseTypeId;
-    }//end resolveSeedableCaseTypeId()
+		if ($statusRows === []) {
+			$output->info('Bezwaar statusTypes missing — skipping workflow seed.');
+			return null;
+		}
 
-    /**
-     * Load the caseType's statusType rows and index them by name, asserting
-     * that every required status is present.
-     *
-     * @param object             $objectService Resolved OR ObjectService
-     * @param string             $register      The register id
-     * @param string             $statusSchema  The statusType schema id
-     * @param string             $caseTypeId    The bezwaar caseType UUID
-     * @param array<int, string> $required      Status names the workflow needs
-     * @param IOutput            $output        Repair output channel
-     *
-     * @return array<string, array<string, mixed>>|null Indexed rows, or null when not seedable
-     */
-    private function resolveStatusIndex(
-        object $objectService,
-        string $register,
-        string $statusSchema,
-        string $caseTypeId,
-        array $required,
-        IOutput $output
-    ): ?array {
-        // Pull statusType rows for the bezwaar caseType.
-        try {
-            $statusRows = $this->searchObjectsAsArrays(
-                objectService: $objectService,
-                register: $register,
-                schema: $statusSchema,
-                filters: ['caseType' => $caseTypeId, '_limit' => 50],
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: bezwaar workflow seed — failed to list statusTypes',
-                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-            );
-            return null;
-        }
+		$statusByName = [];
+		foreach ($statusRows as $raw) {
+			$row = $this->normalize(object: $raw);
+			if ($row === null) {
+				continue;
+			}
 
-        if ($statusRows === []) {
-            $output->info('Bezwaar statusTypes missing — skipping workflow seed.');
-            return null;
-        }
+			$name = (string)($row['name'] ?? '');
+			$id = (string)($row['id'] ?? '');
+			if ($name !== '' && $id !== '') {
+				$statusByName[$name] = $row;
+			}
+		}
 
-        $statusByName = [];
-        foreach ($statusRows as $raw) {
-            $row = $this->normalize(object: $raw);
-            if ($row === null) {
-                continue;
-            }
+		foreach ($required as $name) {
+			if (isset($statusByName[$name]) === false) {
+				$output->warning('Bezwaar workflow seed: missing statusType "' . $name . '" — skipping seed.');
+				return null;
+			}
+		}
 
-            $name = (string) ($row['name'] ?? '');
-            $id   = (string) ($row['id'] ?? '');
-            if ($name !== '' && $id !== '') {
-                $statusByName[$name] = $row;
-            }
-        }
+		return $statusByName;
+	}//end resolveStatusIndex()
 
-        foreach ($required as $name) {
-            if (isset($statusByName[$name]) === false) {
-                $output->warning('Bezwaar workflow seed: missing statusType "'.$name.'" — skipping seed.');
-                return null;
-            }
-        }
+	/**
+	 * Save the workflowTemplate and pin the caseType to it.
+	 *
+	 * @param object $objectService Resolved OR ObjectService
+	 * @param string $register The register id
+	 * @param string $caseTypeSchema The caseType schema id
+	 * @param string $templateSchema The workflowTemplate schema id
+	 * @param string $caseTypeId The bezwaar caseType UUID
+	 * @param array<string, mixed> $template The workflowTemplate payload
+	 * @param IOutput $output Repair output channel
+	 *
+	 * @return void
+	 */
+	private function persistTemplate(
+		object $objectService,
+		string $register,
+		string $caseTypeSchema,
+		string $templateSchema,
+		string $caseTypeId,
+		array $template,
+		IOutput $output,
+	): void {
+		try {
+			$created = $objectService->saveObject(
+				object: $template,
+				register: $register,
+				schema: $templateSchema,
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'Procest: bezwaar workflow seed — failed to save workflowTemplate',
+				['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+			);
+			$output->warning('Bezwaar workflow seed: save failed — see log.');
+			return;
+		}
 
-        return $statusByName;
-    }//end resolveStatusIndex()
+		$createdNormalized = $this->normalize(object: $created);
+		$newId = (string)($createdNormalized['id'] ?? '');
 
-    /**
-     * Save the workflowTemplate and pin the caseType to it.
-     *
-     * @param object               $objectService  Resolved OR ObjectService
-     * @param string               $register       The register id
-     * @param string               $caseTypeSchema The caseType schema id
-     * @param string               $templateSchema The workflowTemplate schema id
-     * @param string               $caseTypeId     The bezwaar caseType UUID
-     * @param array<string, mixed> $template       The workflowTemplate payload
-     * @param IOutput              $output         Repair output channel
-     *
-     * @return void
-     */
-    private function persistTemplate(
-        object $objectService,
-        string $register,
-        string $caseTypeSchema,
-        string $templateSchema,
-        string $caseTypeId,
-        array $template,
-        IOutput $output
-    ): void {
-        try {
-            $created = $objectService->saveObject(
-                object: $template,
-                register: $register,
-                schema: $templateSchema,
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'Procest: bezwaar workflow seed — failed to save workflowTemplate',
-                ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-            );
-            $output->warning('Bezwaar workflow seed: save failed — see log.');
-            return;
-        }
+		if ($newId !== '') {
+			try {
+				$objectService->saveObject(
+					object: ['workflowDefinition' => $newId],
+					register: $register,
+					schema: $caseTypeSchema,
+					uuid: (string)$caseTypeId,
+				);
+			} catch (\Throwable $e) {
+				$this->logger->error(
+					'Procest: bezwaar workflow seed — failed to pin caseType',
+					['app' => Application::APP_ID, 'exception' => $e->getMessage()]
+				);
+			}
+		}
 
-        $createdNormalized = $this->normalize(object: $created);
-        $newId = (string) ($createdNormalized['id'] ?? '');
+		$output->info('Seeded canonical bezwaar workflow definition.');
+	}//end persistTemplate()
 
-        if ($newId !== '') {
-            try {
-                $objectService->saveObject(
-                    object: ['workflowDefinition' => $newId],
-                    register: $register,
-                    schema: $caseTypeSchema,
-                    uuid: (string) $caseTypeId,
-                );
-            } catch (\Throwable $e) {
-                $this->logger->error(
-                    'Procest: bezwaar workflow seed — failed to pin caseType',
-                    ['app' => Application::APP_ID, 'exception' => $e->getMessage()]
-                );
-            }
-        }
+	/**
+	 * Build step records from statusType rows.
+	 *
+	 * @param array<string, array<string, mixed>> $statusByName Status rows indexed by name
+	 * @param array<int, string> $ordered Ordered status names
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function buildSteps(array $statusByName, array $ordered): array {
+		$steps = [];
+		$order = 1;
+		foreach ($ordered as $name) {
+			$row = $statusByName[$name];
+			$steps[] = [
+				'id' => $this->uuid(),
+				'title' => $name,
+				'description' => (string)($row['description'] ?? ''),
+				'status' => (string)($row['id'] ?? ''),
+				'order' => $order,
+				'assigneeRole' => '',
+				'isRequired' => false,
+				'checklist' => [],
+				'automaticActions' => [],
+			];
+			$order++;
+		}
 
-        $output->info('Seeded canonical bezwaar workflow definition.');
-    }//end persistTemplate()
+		return $steps;
+	}//end buildSteps()
 
-    /**
-     * Build step records from statusType rows.
-     *
-     * @param array<string, array<string, mixed>> $statusByName Status rows indexed by name
-     * @param array<int, string>                  $ordered      Ordered status names
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function buildSteps(array $statusByName, array $ordered): array
-    {
-        $steps = [];
-        $order = 1;
-        foreach ($ordered as $name) {
-            $row     = $statusByName[$name];
-            $steps[] = [
-                'id'               => $this->uuid(),
-                'title'            => $name,
-                'description'      => (string) ($row['description'] ?? ''),
-                'status'           => (string) ($row['id'] ?? ''),
-                'order'            => $order,
-                'assigneeRole'     => '',
-                'isRequired'       => false,
-                'checklist'        => [],
-                'automaticActions' => [],
-            ];
-            $order++;
-        }
+	/**
+	 * Build the bezwaar state-machine transition matrix.
+	 *
+	 * @param array<string, array<string, mixed>> $statusByName Status rows indexed by name
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	private function buildTransitions(array $statusByName): array {
+		$matrix = [
+			['Ontvangen',              'Ontvankelijkheidstoets', 'Intake compleet'],
+			['Ontvankelijkheidstoets', 'In behandeling',         'Ontvankelijk'],
+			['Ontvankelijkheidstoets', 'Niet-ontvankelijk',      'Niet-ontvankelijk (motivering vereist)'],
+			['In behandeling',         'Hoorzitting gepland',    'Hoorzitting ingepland'],
+			['In behandeling',         'Advies uitgebracht',     'Hoorrecht afgezien (rechtstreeks advies)'],
+			['In behandeling',         'Beslissing op bezwaar',  'Hoorrecht afgezien (rechtstreeks beslissing)'],
+			['Hoorzitting gepland',    'Hoorzitting afgerond',   'Hoorzitting uitgevoerd'],
+			['Hoorzitting afgerond',   'Advies uitgebracht',     'Advies uitgebracht'],
+			['Hoorzitting afgerond',   'Beslissing op bezwaar',  'Geen commissie — direct beslissing'],
+			['Advies uitgebracht',     'Beslissing op bezwaar',  'Beslissing genomen'],
+			['Beslissing op bezwaar',  'Afgehandeld',            'Beslissing verzonden'],
+			['*',                      'Ingetrokken',            'Bezwaar ingetrokken (AWB 6:21)'],
+		];
 
-        return $steps;
-    }//end buildSteps()
+		$transitions = [];
+		foreach ($matrix as $row) {
+			[$fromName, $toName, $label] = $row;
+			$fromId = '*';
+			if ($fromName !== '*') {
+				$fromId = (string)($statusByName[$fromName]['id'] ?? '');
+			}
 
-    /**
-     * Build the bezwaar state-machine transition matrix.
-     *
-     * @param array<string, array<string, mixed>> $statusByName Status rows indexed by name
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function buildTransitions(array $statusByName): array
-    {
-        $matrix = [
-            ['Ontvangen',              'Ontvankelijkheidstoets', 'Intake compleet'],
-            ['Ontvankelijkheidstoets', 'In behandeling',         'Ontvankelijk'],
-            ['Ontvankelijkheidstoets', 'Niet-ontvankelijk',      'Niet-ontvankelijk (motivering vereist)'],
-            ['In behandeling',         'Hoorzitting gepland',    'Hoorzitting ingepland'],
-            ['In behandeling',         'Advies uitgebracht',     'Hoorrecht afgezien (rechtstreeks advies)'],
-            ['In behandeling',         'Beslissing op bezwaar',  'Hoorrecht afgezien (rechtstreeks beslissing)'],
-            ['Hoorzitting gepland',    'Hoorzitting afgerond',   'Hoorzitting uitgevoerd'],
-            ['Hoorzitting afgerond',   'Advies uitgebracht',     'Advies uitgebracht'],
-            ['Hoorzitting afgerond',   'Beslissing op bezwaar',  'Geen commissie — direct beslissing'],
-            ['Advies uitgebracht',     'Beslissing op bezwaar',  'Beslissing genomen'],
-            ['Beslissing op bezwaar',  'Afgehandeld',            'Beslissing verzonden'],
-            ['*',                      'Ingetrokken',            'Bezwaar ingetrokken (AWB 6:21)'],
-        ];
+			$toId = (string)($statusByName[$toName]['id'] ?? '');
 
-        $transitions = [];
-        foreach ($matrix as $row) {
-            [$fromName, $toName, $label] = $row;
-            $fromId = '*';
-            if ($fromName !== '*') {
-                $fromId = (string) ($statusByName[$fromName]['id'] ?? '');
-            }
+			$guards = [];
+			if (isset(self::LEGAL_POSTURE_TARGETS[$toName]) === true) {
+				$guards[] = [
+					'type' => 'requiredField',
+					'config' => [
+						'field' => 'awbReference',
+						'message' => self::LEGAL_POSTURE_TARGETS[$toName],
+					],
+				];
+			}
 
-            $toId = (string) ($statusByName[$toName]['id'] ?? '');
+			$transitions[] = [
+				'id' => $this->uuid(),
+				'fromStatus' => $fromId,
+				'toStatus' => $toId,
+				'label' => $label,
+				'guards' => $guards,
+				'automaticActions' => [],
+				'allowedRoles' => [],
+			];
+		}//end foreach
 
-            $guards = [];
-            if (isset(self::LEGAL_POSTURE_TARGETS[$toName]) === true) {
-                $guards[] = [
-                    'type'   => 'requiredField',
-                    'config' => [
-                        'field'   => 'awbReference',
-                        'message' => self::LEGAL_POSTURE_TARGETS[$toName],
-                    ],
-                ];
-            }
+		return $transitions;
+	}//end buildTransitions()
 
-            $transitions[] = [
-                'id'               => $this->uuid(),
-                'fromStatus'       => $fromId,
-                'toStatus'         => $toId,
-                'label'            => $label,
-                'guards'           => $guards,
-                'automaticActions' => [],
-                'allowedRoles'     => [],
-            ];
-        }//end foreach
+	/**
+	 * Normalize an OR object into a flat array.
+	 *
+	 * @param mixed $object Object or array
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function normalize(mixed $object): ?array {
+		if (is_array($object) === true) {
+			return $object;
+		}
 
-        return $transitions;
-    }//end buildTransitions()
+		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
+			$serialized = $object->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
 
-    /**
-     * Normalize an OR object into a flat array.
-     *
-     * @param mixed $object Object or array
-     *
-     * @return array<string, mixed>|null
-     */
-    private function normalize(mixed $object): ?array
-    {
-        if (is_array($object) === true) {
-            return $object;
-        }
+			return null;
+		}
 
-        if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-            $serialized = $object->jsonSerialize();
-            if (is_array($serialized) === true) {
-                return $serialized;
-            }
+		return null;
+	}//end normalize()
 
-            return null;
-        }
-
-        return null;
-    }//end normalize()
-
-    /**
-     * Generate a v4 UUID.
-     *
-     * @return string
-     */
-    private function uuid(): string
-    {
-        $data    = random_bytes(16);
-        $data[6] = chr((ord($data[6]) & 0x0F) | 0x40);
-        $data[8] = chr((ord($data[8]) & 0x3F) | 0x80);
-        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
-    }//end uuid()
+	/**
+	 * Generate a v4 UUID.
+	 *
+	 * @return string
+	 */
+	private function uuid(): string {
+		$data = random_bytes(16);
+		$data[6] = chr((ord($data[6]) & 0x0F) | 0x40);
+		$data[8] = chr((ord($data[8]) & 0x3F) | 0x80);
+		return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+	}//end uuid()
 }//end class

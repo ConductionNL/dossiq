@@ -33,79 +33,76 @@ use OCP\IRequest;
 /**
  * Public (citizen-facing) endpoints for appointment view/cancel by token.
  */
-class PublicAppointmentController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param IRequest           $request            The request object.
-     * @param AppointmentService $appointmentService The appointment service.
-     */
-    public function __construct(
-        IRequest $request,
-        private AppointmentService $appointmentService,
-    ) {
-        parent::__construct(appName: Application::APP_ID, request: $request);
-    }//end __construct()
+class PublicAppointmentController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest $request The request object.
+	 * @param AppointmentService $appointmentService The appointment service.
+	 */
+	public function __construct(
+		IRequest $request,
+		private AppointmentService $appointmentService,
+	) {
+		parent::__construct(appName: Application::APP_ID, request: $request);
+	}//end __construct()
 
-    /**
-     * View an appointment via its public token.
-     *
-     * @param string $token The appointment public token.
-     *
-     * @return JSONResponse
-     *
-     * @PublicPage
-     * @NoCSRFRequired
+	/**
+	 * View an appointment via its public token.
+	 *
+	 * @param string $token The appointment public token.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @PublicPage
+	 * @NoCSRFRequired
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function view(string $token): JSONResponse {
+		$appointment = $this->appointmentService->getAppointmentByToken($token);
+		if ($appointment === null) {
+			return new JSONResponse(['error' => 'Afspraak niet gevonden'], 404);
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function view(string $token): JSONResponse
-    {
-        $appointment = $this->appointmentService->getAppointmentByToken($token);
-        if ($appointment === null) {
-            return new JSONResponse(['error' => 'Afspraak niet gevonden'], 404);
-        }
+		return new JSONResponse(
+			[
+				'success' => true,
+				'appointment' => [
+					'dateTime' => $appointment['dateTime'] ?? null,
+					'duration' => $appointment['duration'] ?? 30,
+					'status' => $appointment['status'] ?? 'scheduled',
+					'locationId' => $appointment['locationId'] ?? null,
+					'productId' => $appointment['productId'] ?? null,
+				],
+			]
+		);
+	}//end view()
 
-        return new JSONResponse(
-                [
-                    'success'     => true,
-                    'appointment' => [
-                        'dateTime'   => $appointment['dateTime'] ?? null,
-                        'duration'   => $appointment['duration'] ?? 30,
-                        'status'     => $appointment['status'] ?? 'scheduled',
-                        'locationId' => $appointment['locationId'] ?? null,
-                        'productId'  => $appointment['productId'] ?? null,
-                    ],
-                ]
-                );
-    }//end view()
+	/**
+	 * Cancel an appointment via its public token.
+	 *
+	 * @param string $token The appointment public token.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @PublicPage
+	 * @NoCSRFRequired
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function cancel(string $token): JSONResponse {
+		$appointment = $this->appointmentService->getAppointmentByToken($token);
+		if ($appointment === null) {
+			return new JSONResponse(['error' => 'Afspraak niet gevonden'], 404);
+		}
 
-    /**
-     * Cancel an appointment via its public token.
-     *
-     * @param string $token The appointment public token.
-     *
-     * @return JSONResponse
-     *
-     * @PublicPage
-     * @NoCSRFRequired
+		if ($appointment['status'] === 'cancelled') {
+			return new JSONResponse(['error' => 'Afspraak is al geannuleerd'], 400);
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function cancel(string $token): JSONResponse
-    {
-        $appointment = $this->appointmentService->getAppointmentByToken($token);
-        if ($appointment === null) {
-            return new JSONResponse(['error' => 'Afspraak niet gevonden'], 404);
-        }
-
-        if ($appointment['status'] === 'cancelled') {
-            return new JSONResponse(['error' => 'Afspraak is al geannuleerd'], 400);
-        }
-
-        $id     = $appointment['uuid'] ?? $appointment['id'] ?? '';
-        $result = $this->appointmentService->cancelAppointment($id);
-        return new JSONResponse(['success' => true, 'appointment' => $result]);
-    }//end cancel()
+		$id = $appointment['uuid'] ?? $appointment['id'] ?? '';
+		$result = $this->appointmentService->cancelAppointment($id);
+		return new JSONResponse(['success' => true, 'appointment' => $result]);
+	}//end cancel()
 }//end class

@@ -44,62 +44,59 @@ namespace OCA\Procest\Service\Relation;
  *
  * @spec openspec/specs/related-case-linking/spec.md
  */
-class CaseHierarchyOverlapGuard
-{
-    /**
-     * Determine whether two cases are already linked through the deelzaak
-     * (parent/child) hierarchy in either direction.
-     *
-     * @param array<string, mixed> $caseA First case object.
-     * @param array<string, mixed> $caseB Second case object.
-     *
-     * @return bool
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function areLinked(array $caseA, array $caseB): bool
-    {
-        $idA = (string) ($caseA['id'] ?? ($caseA['@self']['id'] ?? ''));
-        $idB = (string) ($caseB['id'] ?? ($caseB['@self']['id'] ?? ''));
+class CaseHierarchyOverlapGuard {
+	/**
+	 * Determine whether two cases are already linked through the deelzaak
+	 * (parent/child) hierarchy in either direction.
+	 *
+	 * @param array<string, mixed> $caseA First case object.
+	 * @param array<string, mixed> $caseB Second case object.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function areLinked(array $caseA, array $caseB): bool {
+		$idA = (string)($caseA['id'] ?? ($caseA['@self']['id'] ?? ''));
+		$idB = (string)($caseB['id'] ?? ($caseB['@self']['id'] ?? ''));
 
-        $parentA = $this->parentRef(case: $caseA);
-        $parentB = $this->parentRef(case: $caseB);
+		$parentA = $this->parentRef(case: $caseA);
+		$parentB = $this->parentRef(case: $caseB);
 
-        if ($idB !== '' && $parentA === $idB) {
-            return true;
-        }
+		if ($idB !== '' && $parentA === $idB) {
+			return true;
+		}
 
-        if ($idA !== '' && $parentB === $idA) {
-            return true;
-        }
+		if ($idA !== '' && $parentB === $idA) {
+			return true;
+		}
 
-        return false;
-    }//end areLinked()
+		return false;
+	}//end areLinked()
 
-    /**
-     * Read the `parentCase` reference UUID out of a case array (scalar or
-     * expanded-object shape).
-     *
-     * @param array<string, mixed> $case Case object.
-     *
-     * @return string Parent UUID or '' when absent.
-     */
-    private function parentRef(array $case): string
-    {
-        $parent = ($case['parentCase'] ?? null);
-        if (is_string($parent) === true) {
-            return $parent;
-        }
+	/**
+	 * Read the `parentCase` reference UUID out of a case array (scalar or
+	 * expanded-object shape).
+	 *
+	 * @param array<string, mixed> $case Case object.
+	 *
+	 * @return string Parent UUID or '' when absent.
+	 */
+	private function parentRef(array $case): string {
+		$parent = ($case['parentCase'] ?? null);
+		if (is_string($parent) === true) {
+			return $parent;
+		}
 
-        if (is_array($parent) === true) {
-            $ref = ($parent['id'] ?? ($parent['uuid'] ?? ''));
-            if (is_string($ref) === true) {
-                return $ref;
-            }
+		if (is_array($parent) === true) {
+			$ref = ($parent['id'] ?? ($parent['uuid'] ?? ''));
+			if (is_string($ref) === true) {
+				return $ref;
+			}
 
-            return '';
-        }
+			return '';
+		}
 
-        return '';
-    }//end parentRef()
+		return '';
+	}//end parentRef()
 }//end class

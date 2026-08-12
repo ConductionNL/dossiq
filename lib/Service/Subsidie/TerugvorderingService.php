@@ -42,171 +42,165 @@ use Throwable;
  *
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
-class TerugvorderingService
-{
-    /**
-     * Default bezwaartermijn (objection window) in weeks (AWB 6:7).
-     */
-    public const BEZWAARTERMIJN_WEKEN = 6;
+class TerugvorderingService {
+	/**
+	 * Default bezwaartermijn (objection window) in weeks (AWB 6:7).
+	 */
+	public const BEZWAARTERMIJN_WEKEN = 6;
 
-    /**
-     * Default betaaltermijn (payment window) in weeks.
-     */
-    public const BETAALTERMIJN_WEKEN = 4;
+	/**
+	 * Default betaaltermijn (payment window) in weeks.
+	 */
+	public const BETAALTERMIJN_WEKEN = 4;
 
-    /**
-     * Statutory invorderingsrente, annual fraction (wettelijke rente,
-     * AWB 4:97). Expressed as a fraction (0.06 == 6 % p/a).
-     */
-    public const WETTELIJKE_RENTE_FRACTIE = 0.06;
+	/**
+	 * Statutory invorderingsrente, annual fraction (wettelijke rente,
+	 * AWB 4:97). Expressed as a fraction (0.06 == 6 % p/a).
+	 */
+	public const WETTELIJKE_RENTE_FRACTIE = 0.06;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Schema/register bridge.
-     * @param LoggerInterface $logger          Logger.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Schema/register bridge.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Compute the bezwaartermijn end date from a publication date.
-     *
-     * @param DateTimeImmutable $publicatie The publication date.
-     *
-     * @return DateTimeImmutable The bezwaartermijn end.
-     */
-    public function computeBezwaartermijn(DateTimeImmutable $publicatie): DateTimeImmutable
-    {
-        return $publicatie->add(new DateInterval('P'.(self::BEZWAARTERMIJN_WEKEN * 7).'D'));
-    }//end computeBezwaartermijn()
+	/**
+	 * Compute the bezwaartermijn end date from a publication date.
+	 *
+	 * @param DateTimeImmutable $publicatie The publication date.
+	 *
+	 * @return DateTimeImmutable The bezwaartermijn end.
+	 */
+	public function computeBezwaartermijn(DateTimeImmutable $publicatie): DateTimeImmutable {
+		return $publicatie->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
+	}//end computeBezwaartermijn()
 
-    /**
-     * Compute the betaaltermijn end date from a publication date.
-     *
-     * @param DateTimeImmutable $publicatie The publication date.
-     *
-     * @return DateTimeImmutable The betaaltermijn end.
-     */
-    public function computeBetaaltermijn(DateTimeImmutable $publicatie): DateTimeImmutable
-    {
-        return $publicatie->add(new DateInterval('P'.(self::BETAALTERMIJN_WEKEN * 7).'D'));
-    }//end computeBetaaltermijn()
+	/**
+	 * Compute the betaaltermijn end date from a publication date.
+	 *
+	 * @param DateTimeImmutable $publicatie The publication date.
+	 *
+	 * @return DateTimeImmutable The betaaltermijn end.
+	 */
+	public function computeBetaaltermijn(DateTimeImmutable $publicatie): DateTimeImmutable {
+		return $publicatie->add(new DateInterval('P' . (self::BETAALTERMIJN_WEKEN * 7) . 'D'));
+	}//end computeBetaaltermijn()
 
-    /**
-     * Compute the invorderingsrente accrued on an unpaid clawback amount
-     * between two dates (AWB 4:97). Returns 0.0 when the end date is on or
-     * before the start date. The result is rounded to whole eurocents.
-     *
-     * @param float             $openstaandBedrag The outstanding amount.
-     * @param DateTimeImmutable $vanaf            Accrual start (original payment date).
-     * @param DateTimeImmutable $tot              Accrual end.
-     * @param float|null        $jaarFractie      Annual rate fraction; defaults to the wettelijke rente.
-     *
-     * @return float The accrued rente in EUR.
-     */
-    public function computeInvorderingsrente(
-        float $openstaandBedrag,
-        DateTimeImmutable $vanaf,
-        DateTimeImmutable $tot,
-        ?float $jaarFractie=null,
-    ): float {
-        if ($openstaandBedrag <= 0.0 || $tot <= $vanaf) {
-            return 0.0;
-        }
+	/**
+	 * Compute the invorderingsrente accrued on an unpaid clawback amount
+	 * between two dates (AWB 4:97). Returns 0.0 when the end date is on or
+	 * before the start date. The result is rounded to whole eurocents.
+	 *
+	 * @param float $openstaandBedrag The outstanding amount.
+	 * @param DateTimeImmutable $vanaf Accrual start (original payment date).
+	 * @param DateTimeImmutable $tot Accrual end.
+	 * @param float|null $jaarFractie Annual rate fraction; defaults to the wettelijke rente.
+	 *
+	 * @return float The accrued rente in EUR.
+	 */
+	public function computeInvorderingsrente(
+		float $openstaandBedrag,
+		DateTimeImmutable $vanaf,
+		DateTimeImmutable $tot,
+		?float $jaarFractie = null,
+	): float {
+		if ($openstaandBedrag <= 0.0 || $tot <= $vanaf) {
+			return 0.0;
+		}
 
-        $jaarFractie = ($jaarFractie ?? self::WETTELIJKE_RENTE_FRACTIE);
-        $dagen       = (int) $vanaf->diff($tot)->days;
-        $rente       = ($openstaandBedrag * $jaarFractie * ($dagen / 365));
+		$jaarFractie = ($jaarFractie ?? self::WETTELIJKE_RENTE_FRACTIE);
+		$dagen = (int)$vanaf->diff($tot)->days;
+		$rente = ($openstaandBedrag * $jaarFractie * ($dagen / 365));
 
-        return round($rente, 2);
-    }//end computeInvorderingsrente()
+		return round($rente, 2);
+	}//end computeInvorderingsrente()
 
-    /**
-     * Determine the clawback status after a (partial) payment is recorded.
-     *
-     * @param float $bedrag  The total amount owed.
-     * @param float $betaald The cumulative amount paid.
-     *
-     * @return string The resulting status.
-     */
-    public function statusAfterPayment(float $bedrag, float $betaald): string
-    {
-        if ($betaald <= 0.0) {
-            return 'opgelegd';
-        }
+	/**
+	 * Determine the clawback status after a (partial) payment is recorded.
+	 *
+	 * @param float $bedrag The total amount owed.
+	 * @param float $betaald The cumulative amount paid.
+	 *
+	 * @return string The resulting status.
+	 */
+	public function statusAfterPayment(float $bedrag, float $betaald): string {
+		if ($betaald <= 0.0) {
+			return 'opgelegd';
+		}
 
-        if (($bedrag - $betaald) < 0.01) {
-            return 'betaald';
-        }
+		if (($bedrag - $betaald) < 0.01) {
+			return 'betaald';
+		}
 
-        return 'gedeeltelijk_betaald';
-    }//end statusAfterPayment()
+		return 'gedeeltelijk_betaald';
+	}//end statusAfterPayment()
 
-    /**
-     * Open a clawback case for an overpayment (REQ-SUB-005). The case is
-     * created in status "concept" and requires manager approval before it
-     * may be published — never auto-published.
-     *
-     * @param string                 $uitvoeringId The execution id.
-     * @param float                  $bedrag       The overpayment to recover.
-     * @param DateTimeImmutable|null $publicatie   Publication date (clock injection).
-     *
-     * @return array<string, mixed> The created clawback record.
-     *
-     * @throws OCSBadRequestException When the amount is non-positive or persistence fails.
-     */
-    public function createClawbackCase(string $uitvoeringId, float $bedrag, ?DateTimeImmutable $publicatie=null): array
-    {
-        if ($bedrag <= 0.0) {
-            throw new OCSBadRequestException('Terugvorderingsbedrag moet positief zijn');
-        }
+	/**
+	 * Open a clawback case for an overpayment (REQ-SUB-005). The case is
+	 * created in status "concept" and requires manager approval before it
+	 * may be published — never auto-published.
+	 *
+	 * @param string $uitvoeringId The execution id.
+	 * @param float $bedrag The overpayment to recover.
+	 * @param DateTimeImmutable|null $publicatie Publication date (clock injection).
+	 *
+	 * @return array<string, mixed> The created clawback record.
+	 *
+	 * @throws OCSBadRequestException When the amount is non-positive or persistence fails.
+	 */
+	public function createClawbackCase(string $uitvoeringId, float $bedrag, ?DateTimeImmutable $publicatie = null): array {
+		if ($bedrag <= 0.0) {
+			throw new OCSBadRequestException('Terugvorderingsbedrag moet positief zijn');
+		}
 
-        [$objectService, $register, $schema] = $this->resolve();
+		[$objectService, $register, $schema] = $this->resolve();
 
-        $publicatie = ($publicatie ?? new DateTimeImmutable());
-        $record     = [
-            'subsidieuitvoering'  => $uitvoeringId,
-            'bedrag'              => round($bedrag, 2),
-            'legalBasis'          => 'AWB 4:57',
-            'bezwaartermijnEinde' => $this->computeBezwaartermijn(publicatie: $publicatie)->format('Y-m-d'),
-            'betaaltermijnEinde'  => $this->computeBetaaltermijn(publicatie: $publicatie)->format('Y-m-d'),
-            'betaaldBedrag'       => 0,
-            'managerGoedgekeurd'  => false,
-            'status'              => 'concept',
-        ];
+		$publicatie = ($publicatie ?? new DateTimeImmutable());
+		$record = [
+			'subsidieuitvoering' => $uitvoeringId,
+			'bedrag' => round($bedrag, 2),
+			'legalBasis' => 'AWB 4:57',
+			'bezwaartermijnEinde' => $this->computeBezwaartermijn(publicatie: $publicatie)->format('Y-m-d'),
+			'betaaltermijnEinde' => $this->computeBetaaltermijn(publicatie: $publicatie)->format('Y-m-d'),
+			'betaaldBedrag' => 0,
+			'managerGoedgekeurd' => false,
+			'status' => 'concept',
+		];
 
-        try {
-            return $objectService->saveObject(object: $record, register: $register, schema: $schema);
-        } catch (Throwable $e) {
-            $this->logger->error('Procest subsidie: createClawbackCase failed: '.$e->getMessage());
-            throw new OCSBadRequestException('Kon terugvordering niet aanmaken');
-        }
-    }//end createClawbackCase()
+		try {
+			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
+		} catch (Throwable $e) {
+			$this->logger->error('Procest subsidie: createClawbackCase failed: ' . $e->getMessage());
+			throw new OCSBadRequestException('Kon terugvordering niet aanmaken');
+		}
+	}//end createClawbackCase()
 
-    /**
-     * Resolve the ObjectService and register/schema ids.
-     *
-     * @return array{0: object, 1: string, 2: string} ObjectService, register, schema.
-     *
-     * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
-     */
-    private function resolve(): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new OCSBadRequestException('OpenRegister is niet beschikbaar');
-        }
+	/**
+	 * Resolve the ObjectService and register/schema ids.
+	 *
+	 * @return array{0: object, 1: string, 2: string} ObjectService, register, schema.
+	 *
+	 * @throws OCSBadRequestException When OpenRegister is unavailable or unconfigured.
+	 */
+	private function resolve(): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new OCSBadRequestException('OpenRegister is niet beschikbaar');
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('terugvordering_schema');
-        if ($register === '' || $schema === '') {
-            throw new OCSBadRequestException('Terugvordering-schema is niet geconfigureerd');
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('terugvordering_schema');
+		if ($register === '' || $schema === '') {
+			throw new OCSBadRequestException('Terugvordering-schema is niet geconfigureerd');
+		}
 
-        return [$objectService, $register, $schema];
-    }//end resolve()
+		return [$objectService, $register, $schema];
+	}//end resolve()
 }//end class

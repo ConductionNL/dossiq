@@ -62,198 +62,193 @@ use Throwable;
  *
  * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
-class CaseAccessGuard
-{
+class CaseAccessGuard {
 
-    use SearchesObjects;
+	use SearchesObjects;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService The settings service (OR access).
-     * @param IGroupManager   $groupManager    Group manager (admin check only).
-     * @param LoggerInterface $logger          The logger.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly IGroupManager $groupManager,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService The settings service (OR access).
+	 * @param IGroupManager $groupManager Group manager (admin check only).
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly IGroupManager $groupManager,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Assert that the given user may mutate the given case.
-     *
-     * Decision table (fails closed at every branch):
-     *   - admin                  -> allow
-     *   - OpenRegister absent    -> DENY (never "skip the check")
-     *   - case not resolvable    -> DENY (collapsed with denied: no existence oracle)
-     *   - uid === case.assignee  -> allow
-     *   - otherwise              -> DENY
-     *
-     * Group existence plays no part. The absence of any group can never grant
-     * access.
-     *
-     * @param string $caseId The case UUID.
-     * @param IUser  $user   The authenticated user.
-     *
-     * @return void
-     *
-     * @throws OCSForbiddenException When the user may not mutate this case.
-     *
-     * @spec openspec/specs/authz-bypass-fixes/spec.md
-     */
-    public function assertCaseMutationAccess(string $caseId, IUser $user): void
-    {
-        if ($this->hasCaseMutationAccess(caseId: $caseId, user: $user) === true) {
-            return;
-        }
+	/**
+	 * Assert that the given user may mutate the given case.
+	 *
+	 * Decision table (fails closed at every branch):
+	 *   - admin                  -> allow
+	 *   - OpenRegister absent    -> DENY (never "skip the check")
+	 *   - case not resolvable    -> DENY (collapsed with denied: no existence oracle)
+	 *   - uid === case.assignee  -> allow
+	 *   - otherwise              -> DENY
+	 *
+	 * Group existence plays no part. The absence of any group can never grant
+	 * access.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param IUser $user The authenticated user.
+	 *
+	 * @return void
+	 *
+	 * @throws OCSForbiddenException When the user may not mutate this case.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	public function assertCaseMutationAccess(string $caseId, IUser $user): void {
+		if ($this->hasCaseMutationAccess(caseId: $caseId, user: $user) === true) {
+			return;
+		}
 
-        throw new OCSForbiddenException('Not authorized to modify case '.$caseId);
-    }//end assertCaseMutationAccess()
+		throw new OCSForbiddenException('Not authorized to modify case ' . $caseId);
+	}//end assertCaseMutationAccess()
 
-    /**
-     * Whether the given user may mutate the given case.
-     *
-     * @param string $caseId The case UUID.
-     * @param IUser  $user   The authenticated user.
-     *
-     * @return bool True when the user handles the case or is an admin.
-     *
-     * @spec openspec/specs/authz-bypass-fixes/spec.md
-     */
-    public function hasCaseMutationAccess(string $caseId, IUser $user): bool
-    {
-        $uid = $user->getUID();
-        if ($uid === '' || $caseId === '') {
-            return false;
-        }
+	/**
+	 * Whether the given user may mutate the given case.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param IUser $user The authenticated user.
+	 *
+	 * @return bool True when the user handles the case or is an admin.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	public function hasCaseMutationAccess(string $caseId, IUser $user): bool {
+		$uid = $user->getUID();
+		if ($uid === '' || $caseId === '') {
+			return false;
+		}
 
-        // Admins bypass per-case checks (consistent with DsoCaseService and
-        // AdviceService).
-        try {
-            if ($this->groupManager->isAdmin($uid) === true) {
-                return true;
-            }
-        } catch (Throwable $e) {
-            // An unresolvable admin check is NOT an authorization: fall through
-            // to the per-case check rather than granting or throwing.
-            $this->logger->warning(
-                'Procest CaseAccessGuard: admin check failed: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-        }
+		// Admins bypass per-case checks (consistent with DsoCaseService and
+		// AdviceService).
+		try {
+			if ($this->groupManager->isAdmin($uid) === true) {
+				return true;
+			}
+		} catch (Throwable $e) {
+			// An unresolvable admin check is NOT an authorization: fall through
+			// to the per-case check rather than granting or throwing.
+			$this->logger->warning(
+				'Procest CaseAccessGuard: admin check failed: ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+		}
 
-        $case = $this->loadCase(caseId: $caseId);
-        if ($case === null) {
-            // OR unavailable / not configured / case missing / read denied by
-            // OR's own RBAC — all deny. Never proceed unchecked.
-            return false;
-        }
+		$case = $this->loadCase(caseId: $caseId);
+		if ($case === null) {
+			// OR unavailable / not configured / case missing / read denied by
+			// OR's own RBAC — all deny. Never proceed unchecked.
+			return false;
+		}
 
-        $assignee = (string) ($case['assignee'] ?? '');
+		$assignee = (string)($case['assignee'] ?? '');
 
-        return ($assignee !== '' && $assignee === $uid);
-    }//end hasCaseMutationAccess()
+		return ($assignee !== '' && $assignee === $uid);
+	}//end hasCaseMutationAccess()
 
-    /**
-     * Whether the given user may read the given case.
-     *
-     * Reads are granted to a slightly wider set than mutations, because a case
-     * is worked on by more people than the one named in `assignee`: the
-     * `assignees` array is honoured as well. It is still a real per-case
-     * relationship, and it still fails closed at every branch — an
-     * unresolvable case, an absent OpenRegister, or an unconfigured schema all
-     * DENY.
-     *
-     * Deliberately NOT delegated to
-     * {@see Sharing\CaseAccessPolicy::canUserAccessCase()}: that one returns
-     * TRUE when OpenRegister is absent, when the schema is unconfigured, and
-     * when the lookup throws. Those three fail-OPEN branches are acceptable for
-     * the sharing UI it was written for and are not acceptable here.
-     *
-     * @param string $caseId The case UUID.
-     * @param IUser  $user   The authenticated user.
-     *
-     * @return bool True when the user works on the case or is an admin.
-     *
-     * @spec openspec/specs/authz-bypass-fixes/spec.md
-     */
-    public function hasCaseReadAccess(string $caseId, IUser $user): bool
-    {
-        $uid = $user->getUID();
-        if ($uid === '' || $caseId === '') {
-            return false;
-        }
+	/**
+	 * Whether the given user may read the given case.
+	 *
+	 * Reads are granted to a slightly wider set than mutations, because a case
+	 * is worked on by more people than the one named in `assignee`: the
+	 * `assignees` array is honoured as well. It is still a real per-case
+	 * relationship, and it still fails closed at every branch — an
+	 * unresolvable case, an absent OpenRegister, or an unconfigured schema all
+	 * DENY.
+	 *
+	 * Deliberately NOT delegated to
+	 * {@see Sharing\CaseAccessPolicy::canUserAccessCase()}: that one returns
+	 * TRUE when OpenRegister is absent, when the schema is unconfigured, and
+	 * when the lookup throws. Those three fail-OPEN branches are acceptable for
+	 * the sharing UI it was written for and are not acceptable here.
+	 *
+	 * @param string $caseId The case UUID.
+	 * @param IUser $user The authenticated user.
+	 *
+	 * @return bool True when the user works on the case or is an admin.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	public function hasCaseReadAccess(string $caseId, IUser $user): bool {
+		$uid = $user->getUID();
+		if ($uid === '' || $caseId === '') {
+			return false;
+		}
 
-        try {
-            if ($this->groupManager->isAdmin($uid) === true) {
-                return true;
-            }
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest CaseAccessGuard: admin check failed: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-        }
+		try {
+			if ($this->groupManager->isAdmin($uid) === true) {
+				return true;
+			}
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Procest CaseAccessGuard: admin check failed: ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+		}
 
-        $case = $this->loadCase(caseId: $caseId);
-        if ($case === null) {
-            return false;
-        }
+		$case = $this->loadCase(caseId: $caseId);
+		if ($case === null) {
+			return false;
+		}
 
-        if ((string) ($case['assignee'] ?? '') === $uid) {
-            return true;
-        }
+		if ((string)($case['assignee'] ?? '') === $uid) {
+			return true;
+		}
 
-        $assignees = ($case['assignees'] ?? []);
+		$assignees = ($case['assignees'] ?? []);
 
-        return (is_array($assignees) === true && in_array($uid, $assignees, true) === true);
-    }//end hasCaseReadAccess()
+		return (is_array($assignees) === true && in_array($uid, $assignees, true) === true);
+	}//end hasCaseReadAccess()
 
-    /**
-     * Load a case through OpenRegister.
-     *
-     * @param string $caseId The case UUID.
-     *
-     * @return array<string, mixed>|null The case, or null when unresolvable.
-     *
-     * @spec openspec/specs/authz-bypass-fixes/spec.md
-     */
-    private function loadCase(string $caseId): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            $this->logger->warning(
-                'Procest CaseAccessGuard: OpenRegister unavailable — denying case mutation',
-                ['app' => Application::APP_ID]
-            );
-            return null;
-        }
+	/**
+	 * Load a case through OpenRegister.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return array<string, mixed>|null The case, or null when unresolvable.
+	 *
+	 * @spec openspec/specs/authz-bypass-fixes/spec.md
+	 */
+	private function loadCase(string $caseId): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			$this->logger->warning(
+				'Procest CaseAccessGuard: OpenRegister unavailable — denying case mutation',
+				['app' => Application::APP_ID]
+			);
+			return null;
+		}
 
-        $register   = $this->settingsService->getConfigValue('register');
-        $caseSchema = $this->settingsService->getConfigValue('case_schema');
-        if (empty($register) === true || empty($caseSchema) === true) {
-            $this->logger->warning(
-                'Procest CaseAccessGuard: case schema not configured — denying case mutation',
-                ['app' => Application::APP_ID]
-            );
-            return null;
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$caseSchema = $this->settingsService->getConfigValue('case_schema');
+		if (empty($register) === true || empty($caseSchema) === true) {
+			$this->logger->warning(
+				'Procest CaseAccessGuard: case schema not configured — denying case mutation',
+				['app' => Application::APP_ID]
+			);
+			return null;
+		}
 
-        try {
-            return $this->findObjectAsArray(
-                objectService: $objectService,
-                register: $register,
-                schema: $caseSchema,
-                id: $caseId
-            );
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest CaseAccessGuard: case lookup failed — denying case mutation: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            return null;
-        }
-    }//end loadCase()
+		try {
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseSchema,
+				id: $caseId
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Procest CaseAccessGuard: case lookup failed — denying case mutation: ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+			return null;
+		}
+	}//end loadCase()
 }//end class

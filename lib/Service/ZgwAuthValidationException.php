@@ -28,6 +28,5 @@ namespace OCA\Procest\Service;
 /**
  * Exception for ZGW JWT validation failures.
  */
-class ZgwAuthValidationException extends \Exception
-{
+class ZgwAuthValidationException extends \Exception {
 }//end class

@@ -30,152 +30,138 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Procest\Service\SettingsService
  */
-class VthSchemaTest extends TestCase
-{
+class VthSchemaTest extends TestCase {
 
-    /**
-     * The decoded procest_register data.
-     *
-     * @var array
-     */
-    private array $registerData;
+	/**
+	 * The decoded procest_register data.
+	 *
+	 * @var array
+	 */
+	private array $registerData;
 
-    /**
-     * Path to the VTH templates directory.
-     *
-     * @var string
-     */
-    private string $vthTemplatesDir;
+	/**
+	 * Path to the VTH templates directory.
+	 *
+	 * @var string
+	 */
+	private string $vthTemplatesDir;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$schemaFilePath = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$content = file_get_contents($schemaFilePath);
+		$this->registerData = json_decode($content, true);
+		$this->vthTemplatesDir = __DIR__ . '/../../../lib/Settings/vth-templates';
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $schemaFilePath = __DIR__.'/../../../lib/Settings/procest_register.json';
-        $content        = file_get_contents($schemaFilePath);
-        $this->registerData    = json_decode($content, true);
-        $this->vthTemplatesDir = __DIR__.'/../../../lib/Settings/vth-templates';
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Test that all four VTH schemas are registered in procest_register.json.
+	 *
+	 * @return void
+	 */
+	public function testAllVthSchemasAreRegistered(): void {
+		$schemas = $this->registerData['components']['schemas'];
 
+		$vthSchemas = [
+			'inspectieChecklist',
+			'inspectieRapport',
+			'handhavingsactie',
+			'adviesAanvraag',
+		];
 
-    /**
-     * Test that all four VTH schemas are registered in procest_register.json.
-     *
-     * @return void
-     */
-    public function testAllVthSchemasAreRegistered(): void
-    {
-        $schemas = $this->registerData['components']['schemas'];
+		foreach ($vthSchemas as $schemaName) {
+			$this->assertArrayHasKey(
+				$schemaName,
+				$schemas,
+				"VTH schema '{$schemaName}' must be defined in procest_register.json"
+			);
+		}
 
-        $vthSchemas = [
-            'inspectieChecklist',
-            'inspectieRapport',
-            'handhavingsactie',
-            'adviesAanvraag',
-        ];
+	}//end testAllVthSchemasAreRegistered()
 
-        foreach ($vthSchemas as $schemaName) {
-            $this->assertArrayHasKey(
-                $schemaName,
-                $schemas,
-                "VTH schema '{$schemaName}' must be defined in procest_register.json"
-            );
-        }
+	/**
+	 * Test that the VTH templates directory exists.
+	 *
+	 * @return void
+	 */
+	public function testVthTemplatesDirectoryExists(): void {
+		$this->assertDirectoryExists(
+			$this->vthTemplatesDir,
+			'lib/Settings/vth-templates/ directory must exist'
+		);
 
-    }//end testAllVthSchemasAreRegistered()
+	}//end testVthTemplatesDirectoryExists()
 
+	/**
+	 * Test that each VTH template file is valid JSON with required fields.
+	 *
+	 * @return void
+	 */
+	public function testVthTemplateFilesAreValidJson(): void {
+		$templateFiles = glob($this->vthTemplatesDir . '/*.json');
 
-    /**
-     * Test that the VTH templates directory exists.
-     *
-     * @return void
-     */
-    public function testVthTemplatesDirectoryExists(): void
-    {
-        $this->assertDirectoryExists(
-            $this->vthTemplatesDir,
-            'lib/Settings/vth-templates/ directory must exist'
-        );
+		$this->assertNotEmpty(
+			$templateFiles,
+			'At least one VTH template JSON file must exist in vth-templates/'
+		);
 
-    }//end testVthTemplatesDirectoryExists()
+		foreach ($templateFiles as $file) {
+			$content = file_get_contents($file);
+			$data = json_decode($content, true);
+			$name = basename($file);
 
+			$this->assertSame(
+				JSON_ERROR_NONE,
+				json_last_error(),
+				"VTH template file '{$name}' must be valid JSON"
+			);
 
-    /**
-     * Test that each VTH template file is valid JSON with required fields.
-     *
-     * @return void
-     */
-    public function testVthTemplateFilesAreValidJson(): void
-    {
-        $templateFiles = glob($this->vthTemplatesDir.'/*.json');
+			$this->assertIsArray($data, "VTH template '{$name}' must decode to an array");
+		}
 
-        $this->assertNotEmpty(
-            $templateFiles,
-            'At least one VTH template JSON file must exist in vth-templates/'
-        );
+	}//end testVthTemplateFilesAreValidJson()
 
-        foreach ($templateFiles as $file) {
-            $content = file_get_contents($file);
-            $data    = json_decode($content, true);
-            $name    = basename($file);
+	/**
+	 * Test that the expected VTH case type template files are present.
+	 *
+	 * @return void
+	 */
+	public function testExpectedVthTemplateFilesArePresent(): void {
+		$expected = [
+			'omgevingsvergunning-regulier.json',
+			'handhavingszaak.json',
+		];
 
-            $this->assertSame(
-                JSON_ERROR_NONE,
-                json_last_error(),
-                "VTH template file '{$name}' must be valid JSON"
-            );
+		foreach ($expected as $filename) {
+			$this->assertFileExists(
+				$this->vthTemplatesDir . '/' . $filename,
+				"Expected VTH template '{$filename}' must exist"
+			);
+		}
 
-            $this->assertIsArray($data, "VTH template '{$name}' must decode to an array");
-        }
+	}//end testExpectedVthTemplateFilesArePresent()
 
-    }//end testVthTemplateFilesAreValidJson()
+	/**
+	 * Test that the vth_seed_data.json exists and is valid JSON.
+	 *
+	 * @return void
+	 */
+	public function testVthSeedDataFileExistsAndIsValid(): void {
+		$seedPath = __DIR__ . '/../../../lib/Settings/vth_seed_data.json';
 
+		$this->assertFileExists($seedPath, 'vth_seed_data.json must exist');
 
-    /**
-     * Test that the expected VTH case type template files are present.
-     *
-     * @return void
-     */
-    public function testExpectedVthTemplateFilesArePresent(): void
-    {
-        $expected = [
-            'omgevingsvergunning-regulier.json',
-            'handhavingszaak.json',
-        ];
+		$content = file_get_contents($seedPath);
+		$seedData = json_decode($content, true);
 
-        foreach ($expected as $filename) {
-            $this->assertFileExists(
-                $this->vthTemplatesDir.'/'.$filename,
-                "Expected VTH template '{$filename}' must exist"
-            );
-        }
+		$this->assertSame(JSON_ERROR_NONE, json_last_error(), 'vth_seed_data.json must be valid JSON');
+		$this->assertIsArray($seedData);
 
-    }//end testExpectedVthTemplateFilesArePresent()
-
-
-    /**
-     * Test that the vth_seed_data.json exists and is valid JSON.
-     *
-     * @return void
-     */
-    public function testVthSeedDataFileExistsAndIsValid(): void
-    {
-        $seedPath = __DIR__.'/../../../lib/Settings/vth_seed_data.json';
-
-        $this->assertFileExists($seedPath, 'vth_seed_data.json must exist');
-
-        $content  = file_get_contents($seedPath);
-        $seedData = json_decode($content, true);
-
-        $this->assertSame(JSON_ERROR_NONE, json_last_error(), 'vth_seed_data.json must be valid JSON');
-        $this->assertIsArray($seedData);
-
-    }//end testVthSeedDataFileExistsAndIsValid()
-
+	}//end testVthSeedDataFileExistsAndIsValid()
 
 }//end class

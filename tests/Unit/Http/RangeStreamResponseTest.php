@@ -36,116 +36,104 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Procest\Http\RangeStreamResponse
  */
-class RangeStreamResponseTest extends TestCase
-{
+class RangeStreamResponseTest extends TestCase {
 
-    /**
-     * No range header serves the full body with status 200 and Accept-Ranges.
-     *
-     * @return void
-     */
-    public function testFullContentWhenNoRange(): void
-    {
-        $content  = str_repeat('A', 100);
-        $response = new RangeStreamResponse($content, 'file.bin', 'application/octet-stream', '');
+	/**
+	 * No range header serves the full body with status 200 and Accept-Ranges.
+	 *
+	 * @return void
+	 */
+	public function testFullContentWhenNoRange(): void {
+		$content = str_repeat('A', 100);
+		$response = new RangeStreamResponse($content, 'file.bin', 'application/octet-stream', '');
 
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
-        $this->assertSame($content, $response->render());
-        $headers = $response->getHeaders();
-        $this->assertSame('bytes', $headers['Accept-Ranges']);
-        $this->assertSame('100', $headers['Content-Length']);
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame($content, $response->render());
+		$headers = $response->getHeaders();
+		$this->assertSame('bytes', $headers['Accept-Ranges']);
+		$this->assertSame('100', $headers['Content-Length']);
 
-    }//end testFullContentWhenNoRange()
+	}//end testFullContentWhenNoRange()
 
+	/**
+	 * A satisfiable range yields 206 with a sliced body and Content-Range.
+	 *
+	 * @return void
+	 */
+	public function testPartialContentForRange(): void {
+		$content = '';
+		for ($i = 0; $i < 256; $i++) {
+			$content .= chr($i % 256);
+		}
 
-    /**
-     * A satisfiable range yields 206 with a sliced body and Content-Range.
-     *
-     * @return void
-     */
-    public function testPartialContentForRange(): void
-    {
-        $content  = '';
-        for ($i = 0; $i < 256; $i++) {
-            $content .= chr($i % 256);
-        }
+		$response = new RangeStreamResponse($content, 'file.bin', 'application/octet-stream', 'bytes=0-9');
 
-        $response = new RangeStreamResponse($content, 'file.bin', 'application/octet-stream', 'bytes=0-9');
+		$this->assertSame(Http::STATUS_PARTIAL_CONTENT, $response->getStatus());
+		$this->assertSame(10, strlen($response->render()));
+		$this->assertSame(substr($content, 0, 10), $response->render());
 
-        $this->assertSame(Http::STATUS_PARTIAL_CONTENT, $response->getStatus());
-        $this->assertSame(10, strlen($response->render()));
-        $this->assertSame(substr($content, 0, 10), $response->render());
+		$headers = $response->getHeaders();
+		$this->assertSame('bytes 0-9/256', $headers['Content-Range']);
+		$this->assertSame('10', $headers['Content-Length']);
 
-        $headers = $response->getHeaders();
-        $this->assertSame('bytes 0-9/256', $headers['Content-Range']);
-        $this->assertSame('10', $headers['Content-Length']);
+	}//end testPartialContentForRange()
 
-    }//end testPartialContentForRange()
+	/**
+	 * A mid-file range returns the correct slice and Content-Range.
+	 *
+	 * @return void
+	 */
+	public function testMidFileRange(): void {
+		$content = str_repeat('X', 50) . str_repeat('Y', 50);
+		$response = new RangeStreamResponse($content, 'f', 'text/plain', 'bytes=50-59');
 
+		$this->assertSame(Http::STATUS_PARTIAL_CONTENT, $response->getStatus());
+		$this->assertSame('YYYYYYYYYY', $response->render());
+		$this->assertSame('bytes 50-59/100', $response->getHeaders()['Content-Range']);
 
-    /**
-     * A mid-file range returns the correct slice and Content-Range.
-     *
-     * @return void
-     */
-    public function testMidFileRange(): void
-    {
-        $content  = str_repeat('X', 50).str_repeat('Y', 50);
-        $response = new RangeStreamResponse($content, 'f', 'text/plain', 'bytes=50-59');
+	}//end testMidFileRange()
 
-        $this->assertSame(Http::STATUS_PARTIAL_CONTENT, $response->getStatus());
-        $this->assertSame('YYYYYYYYYY', $response->render());
-        $this->assertSame('bytes 50-59/100', $response->getHeaders()['Content-Range']);
+	/**
+	 * An open-ended range (start-) returns through end of file.
+	 *
+	 * @return void
+	 */
+	public function testOpenEndedRange(): void {
+		$content = str_repeat('Z', 20);
+		$response = new RangeStreamResponse($content, 'f', 'text/plain', 'bytes=10-');
 
-    }//end testMidFileRange()
+		$this->assertSame(Http::STATUS_PARTIAL_CONTENT, $response->getStatus());
+		$this->assertSame(10, strlen($response->render()));
+		$this->assertSame('bytes 10-19/20', $response->getHeaders()['Content-Range']);
 
+	}//end testOpenEndedRange()
 
-    /**
-     * An open-ended range (start-) returns through end of file.
-     *
-     * @return void
-     */
-    public function testOpenEndedRange(): void
-    {
-        $content  = str_repeat('Z', 20);
-        $response = new RangeStreamResponse($content, 'f', 'text/plain', 'bytes=10-');
+	/**
+	 * A suffix range (-N) returns the last N bytes.
+	 *
+	 * @return void
+	 */
+	public function testSuffixRange(): void {
+		$content = '0123456789';
+		$response = new RangeStreamResponse($content, 'f', 'text/plain', 'bytes=-3');
 
-        $this->assertSame(Http::STATUS_PARTIAL_CONTENT, $response->getStatus());
-        $this->assertSame(10, strlen($response->render()));
-        $this->assertSame('bytes 10-19/20', $response->getHeaders()['Content-Range']);
+		$this->assertSame(Http::STATUS_PARTIAL_CONTENT, $response->getStatus());
+		$this->assertSame('789', $response->render());
+		$this->assertSame('bytes 7-9/10', $response->getHeaders()['Content-Range']);
 
-    }//end testOpenEndedRange()
+	}//end testSuffixRange()
 
+	/**
+	 * An unsatisfiable range falls back to full content (status 200).
+	 *
+	 * @return void
+	 */
+	public function testUnsatisfiableRangeFallsBackToFull(): void {
+		$content = '0123456789';
+		$response = new RangeStreamResponse($content, 'f', 'text/plain', 'bytes=999-1200');
 
-    /**
-     * A suffix range (-N) returns the last N bytes.
-     *
-     * @return void
-     */
-    public function testSuffixRange(): void
-    {
-        $content  = '0123456789';
-        $response = new RangeStreamResponse($content, 'f', 'text/plain', 'bytes=-3');
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame($content, $response->render());
 
-        $this->assertSame(Http::STATUS_PARTIAL_CONTENT, $response->getStatus());
-        $this->assertSame('789', $response->render());
-        $this->assertSame('bytes 7-9/10', $response->getHeaders()['Content-Range']);
-
-    }//end testSuffixRange()
-
-
-    /**
-     * An unsatisfiable range falls back to full content (status 200).
-     *
-     * @return void
-     */
-    public function testUnsatisfiableRangeFallsBackToFull(): void
-    {
-        $content  = '0123456789';
-        $response = new RangeStreamResponse($content, 'f', 'text/plain', 'bytes=999-1200');
-
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
-        $this->assertSame($content, $response->render());
-
-    }//end testUnsatisfiableRangeFallsBackToFull()
+	}//end testUnsatisfiableRangeFallsBackToFull()
 }//end class

@@ -47,131 +47,124 @@ use Psr\Log\LoggerInterface;
 /**
  * Turns the schema id an OpenRegister object payload carries into its slug.
  */
-class ObjectSchemaSlugResolver
-{
+class ObjectSchemaSlugResolver {
 
-    /**
-     * Resolved slugs keyed by schema id, for the lifetime of the request.
-     *
-     * `SchemaMapper::find()` caches too, but memoising here also caches the
-     * misses, so a payload referencing a schema this instance does not have
-     * costs one failed lookup per request rather than one per event.
-     *
-     * @var array<string, string>
-     */
-    private array $slugs = [];
+	/**
+	 * Resolved slugs keyed by schema id, for the lifetime of the request.
+	 *
+	 * `SchemaMapper::find()` caches too, but memoising here also caches the
+	 * misses, so a payload referencing a schema this instance does not have
+	 * costs one failed lookup per request rather than one per event.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $slugs = [];
 
-    /**
-     * Constructor.
-     *
-     * @param ContainerInterface $container The DI container, used to reach
-     *                                      OpenRegister's SchemaMapper.
-     * @param LoggerInterface    $logger    Logger.
-     */
-    public function __construct(
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param ContainerInterface $container The DI container, used to reach
+	 *                                      OpenRegister's SchemaMapper.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Resolve the schema slug for a serialised OpenRegister object.
-     *
-     * @param array<string, mixed> $payload The object payload, as produced by
-     *                                      `ObjectEntity::jsonSerialize()`.
-     *
-     * @return string The schema slug, or an empty string when it cannot be
-     *                resolved. An empty string never matches a slug literal,
-     *                so an unresolvable schema keeps the previous fail-closed
-     *                behaviour rather than invoking a handler blindly.
-     *
-     * @spec openspec/specs/bezwaar-lifecycle/spec.md
-     */
-    public function resolveFromPayload(array $payload): string
-    {
-        return $this->resolve(schema: $this->readSchemaValue(payload: $payload));
+	/**
+	 * Resolve the schema slug for a serialised OpenRegister object.
+	 *
+	 * @param array<string, mixed> $payload The object payload, as produced by
+	 *                                      `ObjectEntity::jsonSerialize()`.
+	 *
+	 * @return string The schema slug, or an empty string when it cannot be
+	 *                resolved. An empty string never matches a slug literal,
+	 *                so an unresolvable schema keeps the previous fail-closed
+	 *                behaviour rather than invoking a handler blindly.
+	 *
+	 * @spec openspec/specs/bezwaar-lifecycle/spec.md
+	 */
+	public function resolveFromPayload(array $payload): string {
+		return $this->resolve(schema: $this->readSchemaValue(payload: $payload));
+	}//end resolveFromPayload()
 
-    }//end resolveFromPayload()
+	/**
+	 * Resolve a schema slug from the raw schema value on an object.
+	 *
+	 * Accepts a slug straight through: a caller that already holds a slug (for
+	 * instance because a future OpenRegister release starts emitting one) must
+	 * not be forced through a lookup that would fail.
+	 *
+	 * @param string $schema The schema id or slug carried by the object.
+	 *
+	 * @return string The schema slug, or an empty string when unresolvable.
+	 *
+	 * @spec openspec/specs/bezwaar-lifecycle/spec.md
+	 */
+	public function resolve(string $schema): string {
+		$schema = trim($schema);
+		if ($schema === '') {
+			return '';
+		}
 
-    /**
-     * Resolve a schema slug from the raw schema value on an object.
-     *
-     * Accepts a slug straight through: a caller that already holds a slug (for
-     * instance because a future OpenRegister release starts emitting one) must
-     * not be forced through a lookup that would fail.
-     *
-     * @param string $schema The schema id or slug carried by the object.
-     *
-     * @return string The schema slug, or an empty string when unresolvable.
-     *
-     * @spec openspec/specs/bezwaar-lifecycle/spec.md
-     */
-    public function resolve(string $schema): string
-    {
-        $schema = trim($schema);
-        if ($schema === '') {
-            return '';
-        }
+		// A non-numeric value is already a slug; ids are always digits.
+		if (ctype_digit($schema) === false) {
+			return $schema;
+		}
 
-        // A non-numeric value is already a slug; ids are always digits.
-        if (ctype_digit($schema) === false) {
-            return $schema;
-        }
+		if (array_key_exists($schema, $this->slugs) === true) {
+			return $this->slugs[$schema];
+		}
 
-        if (array_key_exists($schema, $this->slugs) === true) {
-            return $this->slugs[$schema];
-        }
+		$slug = '';
 
-        $slug = '';
+		try {
+			$schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
+			// Signature is find($id, $_extend, $_rbac, $_multitenancy). RBAC and
+			// multi-tenancy are disabled deliberately: this runs inside an event
+			// handler that may have no active organisation, and the slug is
+			// schema metadata rather than tenant data.
+			$slug = (string)$schemaMapper->find($schema, [], false, false)->getSlug();
+		} catch (\Throwable $e) {
+			$this->logger->debug(
+				'Procest: could not resolve schema slug for id ' . $schema,
+				['exception' => $e->getMessage()]
+			);
+		}
 
-        try {
-            $schemaMapper = $this->container->get('OCA\OpenRegister\Db\SchemaMapper');
-            // Signature is find($id, $_extend, $_rbac, $_multitenancy). RBAC and
-            // multi-tenancy are disabled deliberately: this runs inside an event
-            // handler that may have no active organisation, and the slug is
-            // schema metadata rather than tenant data.
-            $slug = (string) $schemaMapper->find($schema, [], false, false)->getSlug();
-        } catch (\Throwable $e) {
-            $this->logger->debug(
-                'Procest: could not resolve schema slug for id '.$schema,
-                ['exception' => $e->getMessage()]
-            );
-        }
+		$this->slugs[$schema] = $slug;
 
-        $this->slugs[$schema] = $slug;
+		return $slug;
+	}//end resolve()
 
-        return $slug;
+	/**
+	 * Read the raw schema value out of an object payload.
+	 *
+	 * @param array<string, mixed> $payload The object payload.
+	 *
+	 * @return string The raw schema id or slug, or an empty string.
+	 */
+	private function readSchemaValue(array $payload): string {
+		$self = ($payload['@self'] ?? null);
+		if (is_array($self) === true) {
+			// An extended payload carries the whole schema as an array.
+			$schema = ($self['schema'] ?? null);
+			if (is_array($schema) === true) {
+				return (string)($schema['slug'] ?? ($schema['id'] ?? ''));
+			}
 
-    }//end resolve()
+			if (is_scalar($schema) === true) {
+				return (string)$schema;
+			}
+		}
 
-    /**
-     * Read the raw schema value out of an object payload.
-     *
-     * @param array<string, mixed> $payload The object payload.
-     *
-     * @return string The raw schema id or slug, or an empty string.
-     */
-    private function readSchemaValue(array $payload): string
-    {
-        $self = ($payload['@self'] ?? null);
-        if (is_array($self) === true) {
-            // An extended payload carries the whole schema as an array.
-            $schema = ($self['schema'] ?? null);
-            if (is_array($schema) === true) {
-                return (string) ($schema['slug'] ?? ($schema['id'] ?? ''));
-            }
+		$schema = ($payload['schema'] ?? null);
+		if (is_scalar($schema) === true) {
+			return (string)$schema;
+		}
 
-            if (is_scalar($schema) === true) {
-                return (string) $schema;
-            }
-        }
-
-        $schema = ($payload['schema'] ?? null);
-        if (is_scalar($schema) === true) {
-            return (string) $schema;
-        }
-
-        return '';
-
-    }//end readSchemaValue()
+		return '';
+	}//end readSchemaValue()
 }//end class

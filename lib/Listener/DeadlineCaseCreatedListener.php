@@ -42,107 +42,103 @@ use Psr\Log\LoggerInterface;
  *
  * @template-implements IEventListener<Event>
  */
-class DeadlineCaseCreatedListener implements IEventListener
-{
-    /**
-     * Constructor.
-     *
-     * @param TermijnService           $termijnService TermijnService.
-     * @param ObjectSchemaSlugResolver $slugResolver   Schema id-to-slug resolver.
-     * @param LoggerInterface          $logger         Logger.
-     */
-    public function __construct(
-        private readonly TermijnService $termijnService,
-        private readonly ObjectSchemaSlugResolver $slugResolver,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class DeadlineCaseCreatedListener implements IEventListener {
+	/**
+	 * Constructor.
+	 *
+	 * @param TermijnService $termijnService TermijnService.
+	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly TermijnService $termijnService,
+		private readonly ObjectSchemaSlugResolver $slugResolver,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle a case-created event.
-     *
-     * @param Event $event Event.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
-     */
-    public function handle(Event $event): void
-    {
-        if (($event instanceof ObjectCreatedEvent) === false) {
-            return;
-        }
+	/**
+	 * Handle a case-created event.
+	 *
+	 * @param Event $event Event.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
+	 */
+	public function handle(Event $event): void {
+		if (($event instanceof ObjectCreatedEvent) === false) {
+			return;
+		}
 
-        $payload = $this->extractObject(event: $event);
-        if ($payload === null) {
-            return;
-        }
+		$payload = $this->extractObject(event: $event);
+		if ($payload === null) {
+			return;
+		}
 
-        if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
-            return;
-        }
+		if ($this->resolveSchemaSlug(payload: $payload) !== 'case') {
+			return;
+		}
 
-        $caseId   = (string) ($payload['id'] ?? ($payload['uuid'] ?? ''));
-        $zaaktype = (string) ($payload['caseType'] ?? ($payload['zaaktype'] ?? ''));
-        if ($caseId === '' || $zaaktype === '') {
-            return;
-        }
+		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
+		$zaaktype = (string)($payload['caseType'] ?? ($payload['zaaktype'] ?? ''));
+		if ($caseId === '' || $zaaktype === '') {
+			return;
+		}
 
-        try {
-            $this->termijnService->createTermijnInstance($caseId, $zaaktype);
-        } catch (\Throwable $e) {
-            // A case without a coupled definition is permissible — debug log only.
-            $this->logger->debug(
-                'Procest termijn: no automatic binding for case '.$caseId.': '.$e->getMessage()
-            );
-        }
-    }//end handle()
+		try {
+			$this->termijnService->createTermijnInstance($caseId, $zaaktype);
+		} catch (\Throwable $e) {
+			// A case without a coupled definition is permissible — debug log only.
+			$this->logger->debug(
+				'Procest termijn: no automatic binding for case ' . $caseId . ': ' . $e->getMessage()
+			);
+		}
+	}//end handle()
 
-    /**
-     * Extract OR object array from an event.
-     *
-     * @param Event $event Event.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function extractObject(Event $event): ?array
-    {
-        if (method_exists($event, 'getObject') === false) {
-            return null;
-        }
+	/**
+	 * Extract OR object array from an event.
+	 *
+	 * @param Event $event Event.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function extractObject(Event $event): ?array {
+		if (method_exists($event, 'getObject') === false) {
+			return null;
+		}
 
-        $object = $event->getObject();
-        if (is_array($object) === true) {
-            return $object;
-        }
+		$object = $event->getObject();
+		if (is_array($object) === true) {
+			return $object;
+		}
 
-        if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-            $serialized = $object->jsonSerialize();
-            if (is_array($serialized) === true) {
-                return $serialized;
-            }
-        }
+		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
+			$serialized = $object->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
+		}
 
-        return null;
-    }//end extractObject()
+		return null;
+	}//end extractObject()
 
-    /**
-     * Resolve the schema slug.
-     *
-     * The payload carries the schema as an ID (`@self.schema` is
-     * `ObjectEntity::$schema`, written as `(string) $schemaId`), and `@self`
-     * has no `schemaSlug` key. Reading those keys directly — as this method
-     * used to — returned an id or an empty string, so the `!== 'case'` guard in
-     * {@see self::handle()} always short-circuited and no AWB TermijnInstance
-     * has ever been bound to a case. Resolution goes through the shared
-     * {@see ObjectSchemaSlugResolver}.
-     *
-     * @param array<string, mixed> $payload Payload.
-     *
-     * @return string
-     */
-    private function resolveSchemaSlug(array $payload): string
-    {
-        return $this->slugResolver->resolveFromPayload(payload: $payload);
-    }//end resolveSchemaSlug()
+	/**
+	 * Resolve the schema slug.
+	 *
+	 * The payload carries the schema as an ID (`@self.schema` is
+	 * `ObjectEntity::$schema`, written as `(string) $schemaId`), and `@self`
+	 * has no `schemaSlug` key. Reading those keys directly — as this method
+	 * used to — returned an id or an empty string, so the `!== 'case'` guard in
+	 * {@see self::handle()} always short-circuited and no AWB TermijnInstance
+	 * has ever been bound to a case. Resolution goes through the shared
+	 * {@see ObjectSchemaSlugResolver}.
+	 *
+	 * @param array<string, mixed> $payload Payload.
+	 *
+	 * @return string
+	 */
+	private function resolveSchemaSlug(array $payload): string {
+		return $this->slugResolver->resolveFromPayload(payload: $payload);
+	}//end resolveSchemaSlug()
 }//end class

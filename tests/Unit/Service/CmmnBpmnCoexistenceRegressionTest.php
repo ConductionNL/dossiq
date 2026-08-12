@@ -48,71 +48,69 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Procest\Service\Transitions\TransitionAuthorizer
  * @uses \OCA\Procest\Service\Transitions\TransitionSpecReader
  */
-final class CmmnBpmnCoexistenceRegressionTest extends TestCase
-{
+final class CmmnBpmnCoexistenceRegressionTest extends TestCase {
 
-    /**
-     * A BPMN-managed case (no `handlingModel`, an unused `casePlanState`
-     * field present from the additive schema change) resolves its
-     * available transitions exactly per the active workflowTemplate.
-     *
-     * @return void
-     */
-    public function testBpmnCaseUnaffectedByCmmnSchemaFields(): void
-    {
-        $store = new FakeTermijnStore();
-        $store->store['case-schema']['case-1'] = [
-            'id'            => 'case-1',
-            'caseType'      => 'ct-1',
-            'status'        => 'st-1',
-            // Present because the schema now carries it for every case
-            // (additive field), but never populated or read for a BPMN
-            // case type — StatusTransitionService must ignore it entirely.
-            'casePlanState' => '',
-        ];
+	/**
+	 * A BPMN-managed case (no `handlingModel`, an unused `casePlanState`
+	 * field present from the additive schema change) resolves its
+	 * available transitions exactly per the active workflowTemplate.
+	 *
+	 * @return void
+	 */
+	public function testBpmnCaseUnaffectedByCmmnSchemaFields(): void {
+		$store = new FakeTermijnStore();
+		$store->store['case-schema']['case-1'] = [
+			'id' => 'case-1',
+			'caseType' => 'ct-1',
+			'status' => 'st-1',
+			// Present because the schema now carries it for every case
+			// (additive field), but never populated or read for a BPMN
+			// case type — StatusTransitionService must ignore it entirely.
+			'casePlanState' => '',
+		];
 
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn($store);
-        $settings->method('getConfigValue')->willReturnCallback(
-            static fn (string $key): string => match ($key) {
-                'register'    => '1',
-                'case_schema' => 'case-schema',
-                default        => '',
-            },
-        );
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($store);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static fn (string $key): string => match ($key) {
+				'register' => '1',
+				'case_schema' => 'case-schema',
+				default => '',
+			},
+		);
 
-        $templateLoader = $this->createMock(\OCA\Procest\Service\WorkflowTemplateLoader::class);
-        $templateLoader->method('getActiveTemplate')->with('ct-1')->willReturn(
-            [
-                'transitions' => [
-                    ['id' => 't1', 'fromStatus' => 'st-1', 'toStatus' => 'st-2', 'label' => 'Go'],
-                ],
-            ],
-        );
+		$templateLoader = $this->createMock(\OCA\Procest\Service\WorkflowTemplateLoader::class);
+		$templateLoader->method('getActiveTemplate')->with('ct-1')->willReturn(
+			[
+				'transitions' => [
+					['id' => 't1', 'fromStatus' => 'st-1', 'toStatus' => 'st-2', 'label' => 'Go'],
+				],
+			],
+		);
 
-        $guardRegistry = $this->createMock(GuardRegistry::class);
-        $guardRegistry->method('evaluateAll')->willReturn([]);
+		$guardRegistry = $this->createMock(GuardRegistry::class);
+		$guardRegistry->method('evaluateAll')->willReturn([]);
 
-        $logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(LoggerInterface::class);
 
-        $service = new StatusTransitionService(
-            $templateLoader,
-            $guardRegistry,
-            $this->createMock(SideEffectDispatcher::class),
-            new CaseStatusStore($settings, $logger),
-            new TransitionAuthorizer($this->createMock(IGroupManager::class), $logger),
-            new TransitionSpecReader(),
-            $this->createMock(IUserSession::class),
-            $logger,
-        );
+		$service = new StatusTransitionService(
+			$templateLoader,
+			$guardRegistry,
+			$this->createMock(SideEffectDispatcher::class),
+			new CaseStatusStore($settings, $logger),
+			new TransitionAuthorizer($this->createMock(IGroupManager::class), $logger),
+			new TransitionSpecReader(),
+			$this->createMock(IUserSession::class),
+			$logger,
+		);
 
-        $result = $service->getAvailableTransitions(caseId: 'case-1');
+		$result = $service->getAvailableTransitions(caseId: 'case-1');
 
-        self::assertCount(1, $result['transitions']);
-        self::assertSame('t1', $result['transitions'][0]['id']);
-        self::assertTrue($result['transitions'][0]['guardsPassed']);
+		self::assertCount(1, $result['transitions']);
+		self::assertSame('t1', $result['transitions'][0]['id']);
+		self::assertTrue($result['transitions'][0]['guardsPassed']);
 
-        // The stored case is untouched — no casePlanState write occurred.
-        self::assertSame('', $store->store['case-schema']['case-1']['casePlanState']);
-    }//end testBpmnCaseUnaffectedByCmmnSchemaFields()
+		// The stored case is untouched — no casePlanState write occurred.
+		self::assertSame('', $store->store['case-schema']['case-1']['casePlanState']);
+	}//end testBpmnCaseUnaffectedByCmmnSchemaFields()
 }//end class

@@ -42,66 +42,64 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  */
-class DeadlineNotificationDispatchJob extends QueuedJob
-{
-    /**
-     * Constructor.
-     *
-     * @param ITimeFactory               $time                Time factory.
-     * @param TermijnNotificationService $notificationService Notification service.
-     * @param LoggerInterface            $logger              Logger.
-     */
-    public function __construct(
-        ITimeFactory $time,
-        private readonly TermijnNotificationService $notificationService,
-        private readonly LoggerInterface $logger,
-    ) {
-        parent::__construct(time: $time);
-    }//end __construct()
+class DeadlineNotificationDispatchJob extends QueuedJob {
+	/**
+	 * Constructor.
+	 *
+	 * @param ITimeFactory $time Time factory.
+	 * @param TermijnNotificationService $notificationService Notification service.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		ITimeFactory $time,
+		private readonly TermijnNotificationService $notificationService,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(time: $time);
+	}//end __construct()
 
-    /**
-     * Execute one queued notification.
-     *
-     * @param mixed $argument Job argument; expects keys
-     *                        `type`, `termijnInstanceId`, `recipientUserId`, `context`.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/burger-notifications/spec.md
-     */
-    protected function run($argument): void
-    {
-        if (is_array($argument) === false) {
-            $this->logger->warning('DeadlineNotificationDispatchJob: invalid argument');
-            return;
-        }
+	/**
+	 * Execute one queued notification.
+	 *
+	 * @param mixed $argument Job argument; expects keys
+	 *                        `type`, `termijnInstanceId`, `recipientUserId`, `context`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/burger-notifications/spec.md
+	 */
+	protected function run($argument): void {
+		if (is_array($argument) === false) {
+			$this->logger->warning('DeadlineNotificationDispatchJob: invalid argument');
+			return;
+		}
 
-        $type = (string) ($argument['type'] ?? '');
-        $termijnInstanceId = (string) ($argument['termijnInstanceId'] ?? '');
-        $recipientUserId   = (string) ($argument['recipientUserId'] ?? '');
-        $context           = (array) ($argument['context'] ?? []);
+		$type = (string)($argument['type'] ?? '');
+		$termijnInstanceId = (string)($argument['termijnInstanceId'] ?? '');
+		$recipientUserId = (string)($argument['recipientUserId'] ?? '');
+		$context = (array)($argument['context'] ?? []);
 
-        if ($type === '' || $termijnInstanceId === '' || $recipientUserId === '') {
-            $this->logger->warning('DeadlineNotificationDispatchJob: missing required argument keys', $argument);
-            return;
-        }
+		if ($type === '' || $termijnInstanceId === '' || $recipientUserId === '') {
+			$this->logger->warning('DeadlineNotificationDispatchJob: missing required argument keys', $argument);
+			return;
+		}
 
-        try {
-            $this->notificationService->sendTermijnNotification(
-                $type,
-                $termijnInstanceId,
-                $recipientUserId,
-                $context,
-            );
-            $this->logger->info(
-                'DeadlineNotificationDispatchJob: delivered',
-                ['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termijnInstanceId]
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'DeadlineNotificationDispatchJob: delivery failed',
-                ['error' => $e->getMessage(), 'type' => $type, 'recipient' => $recipientUserId]
-            );
-        }
-    }//end run()
+		try {
+			$this->notificationService->sendTermijnNotification(
+				$type,
+				$termijnInstanceId,
+				$recipientUserId,
+				$context,
+			);
+			$this->logger->info(
+				'DeadlineNotificationDispatchJob: delivered',
+				['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termijnInstanceId]
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'DeadlineNotificationDispatchJob: delivery failed',
+				['error' => $e->getMessage(), 'type' => $type, 'recipient' => $recipientUserId]
+			);
+		}
+	}//end run()
 }//end class

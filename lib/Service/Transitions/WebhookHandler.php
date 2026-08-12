@@ -34,69 +34,67 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T08
  */
-class WebhookHandler implements ActionHandlerInterface
-{
-    /**
-     * Constructor.
-     *
-     * @param IClientService  $clientService Nextcloud HTTP client factory
-     * @param LoggerInterface $logger        Logger
-     */
-    public function __construct(
-        private readonly IClientService $clientService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class WebhookHandler implements ActionHandlerInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param IClientService $clientService Nextcloud HTTP client factory
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly IClientService $clientService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle the webhook action.
-     *
-     * @param array<string, mixed> $actionConfig      Action configuration
-     * @param array<string, mixed> $case              Case object
-     * @param array<string, mixed> $transitionContext Transition context
-     *
-     * @return ActionResult
+	/**
+	 * Handle the webhook action.
+	 *
+	 * @param array<string, mixed> $actionConfig Action configuration
+	 * @param array<string, mixed> $case Case object
+	 * @param array<string, mixed> $transitionContext Transition context
+	 *
+	 * @return ActionResult
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$url = (string)($actionConfig['url'] ?? '');
+			if ($url === '' || (str_starts_with($url, 'http://') === false && str_starts_with($url, 'https://') === false)) {
+				return new ActionResult(succeeded: false, error: 'webhook_invalid_url');
+			}
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
-    {
-        try {
-            $url = (string) ($actionConfig['url'] ?? '');
-            if ($url === '' || (str_starts_with($url, 'http://') === false && str_starts_with($url, 'https://') === false)) {
-                return new ActionResult(succeeded: false, error: 'webhook_invalid_url');
-            }
+			$client = $this->clientService->newClient();
+			$headers = $actionConfig['headers'] ?? [];
+			if (is_array($headers) === false) {
+				$headers = [];
+			}
 
-            $client  = $this->clientService->newClient();
-            $headers = $actionConfig['headers'] ?? [];
-            if (is_array($headers) === false) {
-                $headers = [];
-            }
+			$response = $client->post(
+				$url,
+				[
+					'json' => [
+						'case' => $case,
+						'transition' => $transitionContext,
+					],
+					'headers' => $headers,
+					'timeout' => 5,
+				],
+			);
 
-            $response = $client->post(
-                $url,
-                [
-                    'json'    => [
-                        'case'       => $case,
-                        'transition' => $transitionContext,
-                    ],
-                    'headers' => $headers,
-                    'timeout' => 5,
-                ],
-            );
+			$status = (int)$response->getStatusCode();
+			if ($status >= 200 && $status < 300) {
+				return new ActionResult(succeeded: true, data: ['status' => $status]);
+			}
 
-            $status = (int) $response->getStatusCode();
-            if ($status >= 200 && $status < 300) {
-                return new ActionResult(succeeded: true, data: ['status' => $status]);
-            }
-
-            return new ActionResult(succeeded: false, error: 'webhook_non_2xx', data: ['status' => $status]);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'WebhookHandler failed',
-                ['exception' => $e->getMessage(), 'context' => $transitionContext],
-            );
-            return new ActionResult(succeeded: false, error: 'webhook_failed');
-        }//end try
-    }//end handle()
+			return new ActionResult(succeeded: false, error: 'webhook_non_2xx', data: ['status' => $status]);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'WebhookHandler failed',
+				['exception' => $e->getMessage(), 'context' => $transitionContext],
+			);
+			return new ActionResult(succeeded: false, error: 'webhook_failed');
+		}//end try
+	}//end handle()
 }//end class

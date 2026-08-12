@@ -39,28 +39,26 @@ use OCP\AppFramework\Http\JSONResponse;
  * Any controller that handles a ZGW API endpoint must extend this class
  * so the middleware's guard is actually exercised.
  */
-abstract class ZgwController extends Controller
-{
-    use NormalisesObjectRows;
+abstract class ZgwController extends Controller {
+	use NormalisesObjectRows;
 
-    /**
-     * Build a standardised 403 response for missing ZGW scopes.
-     *
-     * @param string $scope The required scope identifier for the log / detail.
-     *
-     * @return JSONResponse
-     */
-    protected function scopeDeniedResponse(string $scope): JSONResponse
-    {
-        return new JSONResponse(
-            data: [
-                'type'   => 'PermissionDenied',
-                'code'   => 'permission_denied',
-                'title'  => 'Insufficient scope.',
-                'status' => Http::STATUS_FORBIDDEN,
-                'detail' => 'Scope '.$scope.' is required for this operation.',
-            ],
-            statusCode: Http::STATUS_FORBIDDEN
-        );
-    }//end scopeDeniedResponse()
+	/**
+	 * Build a standardised 403 response for missing ZGW scopes.
+	 *
+	 * @param string $scope The required scope identifier for the log / detail.
+	 *
+	 * @return JSONResponse
+	 */
+	protected function scopeDeniedResponse(string $scope): JSONResponse {
+		return new JSONResponse(
+			data: [
+				'type' => 'PermissionDenied',
+				'code' => 'permission_denied',
+				'title' => 'Insufficient scope.',
+				'status' => Http::STATUS_FORBIDDEN,
+				'detail' => 'Scope ' . $scope . ' is required for this operation.',
+			],
+			statusCode: Http::STATUS_FORBIDDEN
+		);
+	}//end scopeDeniedResponse()
 }//end class

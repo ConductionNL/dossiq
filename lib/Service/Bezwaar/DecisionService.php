@@ -68,339 +68,334 @@ use Throwable;
  *
  * @spec openspec/specs/bezwaar-decision/spec.md
  */
-class DecisionService
-{
-    /**
-     * Canonical Awb art. 7:11 disposition values (REQ-BD-2).
-     *
-     * Declared once on {@see DecisionValidator} — the class that enforces
-     * them — and re-exported here for backwards compatibility with
-     * existing consumers of `DecisionService::VALID_DISPOSITIONS`.
-     *
-     * @var array<int, string>
-     */
-    public const VALID_DISPOSITIONS = DecisionValidator::VALID_DISPOSITIONS;
+class DecisionService {
+	/**
+	 * Canonical Awb art. 7:11 disposition values (REQ-BD-2).
+	 *
+	 * Declared once on {@see DecisionValidator} — the class that enforces
+	 * them — and re-exported here for backwards compatibility with
+	 * existing consumers of `DecisionService::VALID_DISPOSITIONS`.
+	 *
+	 * @var array<int, string>
+	 */
+	public const VALID_DISPOSITIONS = DecisionValidator::VALID_DISPOSITIONS;
 
-    /**
-     * Bezwaar status target on publication (handed off to the
-     * status-transition-engine).
-     */
-    private const TARGET_BEZWAAR_STATUS = 'Beslissing op bezwaar';
+	/**
+	 * Bezwaar status target on publication (handed off to the
+	 * status-transition-engine).
+	 */
+	private const TARGET_BEZWAAR_STATUS = 'Beslissing op bezwaar';
 
-    /**
-     * Transition id wired on the bezwaar workflowTemplate to move into
-     * "Beslissing op bezwaar".
-     */
-    private const TRANSITION_ID = 'beslissing-op-bezwaar';
+	/**
+	 * Transition id wired on the bezwaar workflowTemplate to move into
+	 * "Beslissing op bezwaar".
+	 */
+	private const TRANSITION_ID = 'beslissing-op-bezwaar';
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService                  $settingsService    Schema/register bridge.
-     * @param IUserSession                     $userSession        Acting identity source.
-     * @param StatusTransitionService          $transitions        Engine used by
-     *                                                             applyToBezwaar()
-     *                                                             to transition
-     *                                                             the linked
-     *                                                             bezwaar
-     *                                                             without
-     *                                                             bespoke
-     *                                                             transition
-     *                                                             logic.
-     * @param LoggerInterface                  $logger             Logger.
-     * @param BezwaarDecisionDelegationService $decisionDelegation Decision delegation to decidesk (event dispatch).
-     * @param DecisionValidator                $validator          The Awb validity matrix (REQ-PDRD-004).
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly IUserSession $userSession,
-        private readonly StatusTransitionService $transitions,
-        private readonly LoggerInterface $logger,
-        private readonly BezwaarDecisionDelegationService $decisionDelegation,
-        private readonly DecisionValidator $validator,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Schema/register bridge.
+	 * @param IUserSession $userSession Acting identity source.
+	 * @param StatusTransitionService $transitions Engine used by
+	 *                                             applyToBezwaar()
+	 *                                             to transition
+	 *                                             the linked
+	 *                                             bezwaar
+	 *                                             without
+	 *                                             bespoke
+	 *                                             transition
+	 *                                             logic.
+	 * @param LoggerInterface $logger Logger.
+	 * @param BezwaarDecisionDelegationService $decisionDelegation Decision delegation to decidesk (event dispatch).
+	 * @param DecisionValidator $validator The Awb validity matrix (REQ-PDRD-004).
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly IUserSession $userSession,
+		private readonly StatusTransitionService $transitions,
+		private readonly LoggerInterface $logger,
+		private readonly BezwaarDecisionDelegationService $decisionDelegation,
+		private readonly DecisionValidator $validator,
+	) {
+	}//end __construct()
 
-    /**
-     * Create a bezwaarDecision in status "draft".
-     *
-     * Surface-validates the disposition enum and the per-disposition
-     * mandatory-field rules that apply at draft time (canonical enum,
-     * replacementDecision compatibility, reasoning + legalBasis
-     * presence). Hard guards that only apply at publication time
-     * (appealNotice completeness, proceskosten resolution) are
-     * deferred to publish().
-     *
-     * @param string               $bezwaarId UUID of the bezwaar.
-     * @param array<string, mixed> $payload   Decision properties.
-     *
-     * @return array<string, mixed> The created decision record.
-     *
-     * @throws RuntimeException When OpenRegister is unavailable, schemas
-     *                          are unconfigured, or the payload is
-     *                          invalid at draft time.
+	/**
+	 * Create a bezwaarDecision in status "draft".
+	 *
+	 * Surface-validates the disposition enum and the per-disposition
+	 * mandatory-field rules that apply at draft time (canonical enum,
+	 * replacementDecision compatibility, reasoning + legalBasis
+	 * presence). Hard guards that only apply at publication time
+	 * (appealNotice completeness, proceskosten resolution) are
+	 * deferred to publish().
+	 *
+	 * @param string $bezwaarId UUID of the bezwaar.
+	 * @param array<string, mixed> $payload Decision properties.
+	 *
+	 * @return array<string, mixed> The created decision record.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable, schemas
+	 *                          are unconfigured, or the payload is
+	 *                          invalid at draft time.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function draft(string $bezwaarId, array $payload): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function draft(string $bezwaarId, array $payload): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$decisionSchema = $this->settingsService->getConfigValue(
+			key: 'bezwaar_decision_schema'
+		);
+		if ($register === '' || $decisionSchema === '') {
+			throw new RuntimeException(
+				'BezwaarDecision schema is not configured'
+			);
+		}
 
-        $register       = $this->settingsService->getConfigValue(key: 'register');
-        $decisionSchema = $this->settingsService->getConfigValue(
-            key: 'bezwaar_decision_schema'
-        );
-        if ($register === '' || $decisionSchema === '') {
-            throw new RuntimeException(
-                'BezwaarDecision schema is not configured'
-            );
-        }
+		$this->validator->assertDraftable(payload: $payload);
 
-        $this->validator->assertDraftable(payload: $payload);
+		$record = array_merge(
+			$payload,
+			[
+				'bezwaar' => $bezwaarId,
+				'status' => 'draft',
+			]
+		);
+		// The publishedAt and notifiedRecipients fields are owned by publish().
+		unset($record['publishedAt'], $record['notifiedRecipients']);
 
-        $record = array_merge(
-            $payload,
-            [
-                'bezwaar' => $bezwaarId,
-                'status'  => 'draft',
-            ]
-        );
-        // The publishedAt and notifiedRecipients fields are owned by publish().
-        unset($record['publishedAt'], $record['notifiedRecipients']);
+		try {
+			return $objectService->saveObject(
+				object: $record,
+				register: $register,
+				schema: $decisionSchema
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest bezwaar-decision: failed to draft: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not draft bezwaarDecision');
+		}
+	}//end draft()
 
-        try {
-            return $objectService->saveObject(
-                object: $record,
-                register: $register,
-                schema: $decisionSchema
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest bezwaar-decision: failed to draft: '.$e->getMessage()
-            );
-            throw new RuntimeException('Could not draft bezwaarDecision');
-        }
-    }//end draft()
+	/**
+	 * Publish a draft bezwaarDecision by delegating the *deciding* to decidesk.
+	 *
+	 * Runs the full Awb validity matrix (REQ-BD-3, REQ-BD-5, REQ-BD-6,
+	 * REQ-BD-7) as procest domain validation (REQ-PDRD-004), then raises a
+	 * decidesk `bezwaar-decision` Decision by dispatching a `DecisionRequestedEvent`
+	 * (REQ-PDRD-001) and persists the returned `decisionRef` on the record.
+	 * procest no longer authors the besluit locally: there is no
+	 * `status:'published'` local decision state — the besluit is materialised
+	 * from the decidesk `DecisionConcludedEvent` by
+	 * {@see \OCA\Procest\Listener\DecisionConcludedListener} (REQ-PDRD-003,
+	 * REQ-PDRD-007). FAILS CLOSED when decidesk is unavailable (REQ-PDRD-002):
+	 * no local decided state is set as a fallback.
+	 *
+	 * @param string $decisionId UUID of the bezwaarDecision.
+	 *
+	 * @return array<string, mixed> The decision record annotated with the decidesk decisionRef.
+	 *
+	 * @throws RuntimeException When validation fails, the decidesk leaf is
+	 *                          unavailable (fail closed), or persistence errors.
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
+	 */
+	public function publish(string $decisionId): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
 
-    /**
-     * Publish a draft bezwaarDecision by delegating the *deciding* to decidesk.
-     *
-     * Runs the full Awb validity matrix (REQ-BD-3, REQ-BD-5, REQ-BD-6,
-     * REQ-BD-7) as procest domain validation (REQ-PDRD-004), then raises a
-     * decidesk `bezwaar-decision` Decision by dispatching a `DecisionRequestedEvent`
-     * (REQ-PDRD-001) and persists the returned `decisionRef` on the record.
-     * procest no longer authors the besluit locally: there is no
-     * `status:'published'` local decision state — the besluit is materialised
-     * from the decidesk `DecisionConcludedEvent` by
-     * {@see \OCA\Procest\Listener\DecisionConcludedListener} (REQ-PDRD-003,
-     * REQ-PDRD-007). FAILS CLOSED when decidesk is unavailable (REQ-PDRD-002):
-     * no local decided state is set as a fallback.
-     *
-     * @param string $decisionId UUID of the bezwaarDecision.
-     *
-     * @return array<string, mixed> The decision record annotated with the decidesk decisionRef.
-     *
-     * @throws RuntimeException When validation fails, the decidesk leaf is
-     *                          unavailable (fail closed), or persistence errors.
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$decisionSchema = $this->settingsService->getConfigValue(
+			key: 'bezwaar_decision_schema'
+		);
+		if ($register === '' || $decisionSchema === '') {
+			throw new RuntimeException(
+				'BezwaarDecision schema is not configured'
+			);
+		}
 
-     * @spec openspec/specs/remaining-decision-delegation/spec.md
-     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
-     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-004-the-awb-and-idor-domain-rules-stay-in-procest
-     */
-    public function publish(string $decisionId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
+		$current = $objectService->find($decisionId, register: $register, schema: $decisionSchema);
+		if (is_array($current) === false) {
+			throw new RuntimeException('BezwaarDecision not found');
+		}
 
-        $register       = $this->settingsService->getConfigValue(key: 'register');
-        $decisionSchema = $this->settingsService->getConfigValue(
-            key: 'bezwaar_decision_schema'
-        );
-        if ($register === '' || $decisionSchema === '') {
-            throw new RuntimeException(
-                'BezwaarDecision schema is not configured'
-            );
-        }
+		// REQ-PDRD-004: the Awb validity matrix (7:11 disposition set, 7:12
+		// motivering, proceskosten, replacement/appeal guards) stays in procest
+		// and runs BEFORE the Decision is raised, so no Decision can ever be
+		// raised on an Awb-invalid payload.
+		$this->validator->assertPublishable(decision: $current);
 
-        $current = $objectService->find($decisionId, register: $register, schema: $decisionSchema);
-        if (is_array($current) === false) {
-            throw new RuntimeException('BezwaarDecision not found');
-        }
+		$bezwaarId = (string)($current['bezwaar'] ?? '');
 
-        // REQ-PDRD-004: the Awb validity matrix (7:11 disposition set, 7:12
-        // motivering, proceskosten, replacement/appeal guards) stays in procest
-        // and runs BEFORE the Decision is raised, so no Decision can ever be
-        // raised on an Awb-invalid payload.
-        $this->validator->assertPublishable(decision: $current);
+		// REQ-PDRD-001 / REQ-PDRD-002: delegate the deciding to decidesk via the
+		// decidesk DecisionRequestedEvent. Fail closed — never author the besluit
+		// locally as a fallback. The decisionRef returned is persisted on the
+		// record so the outcome can be materialised later from the concluded event.
+		$bezwaarRef = $decisionId;
+		if ($bezwaarId !== '') {
+			$bezwaarRef = $bezwaarId;
+		}
 
-        $bezwaarId = (string) ($current['bezwaar'] ?? '');
+		try {
+			$decisionRef = $this->decisionDelegation->raiseBezwaarDecision(
+				bezwaarId: $bezwaarRef,
+				payload: [
+					'subjectRegister' => $register,
+					'subjectSchema' => $decisionSchema,
+					'subjectId' => $decisionId,
+					'subjectLabel' => (string)($current['title'] ?? ($current['onderwerp'] ?? '')),
+					'dispositionType' => (string)($current['dispositionType'] ?? ''),
+					'reasoning' => (string)($current['reasoning'] ?? ''),
+					'legalBasis' => (string)($current['legalBasis'] ?? ''),
+					'replacementDecision' => (string)($current['replacementDecision'] ?? ''),
+				],
+			);
+		} catch (RuntimeException $e) {
+			// REQ-PDRD-002: surface the fail-closed error; do NOT set any local
+			// decided state as a fallback.
+			$this->logger->error(
+				'Procest bezwaar-decision: decidesk Decision raise failed — failing closed: '
+				. $e->getMessage()
+			);
+			throw new RuntimeException('Decision service unavailable: ' . $e->getMessage(), 0, $e);
+		}//end try
 
-        // REQ-PDRD-001 / REQ-PDRD-002: delegate the deciding to decidesk via the
-        // decidesk DecisionRequestedEvent. Fail closed — never author the besluit
-        // locally as a fallback. The decisionRef returned is persisted on the
-        // record so the outcome can be materialised later from the concluded event.
-        $bezwaarRef = $decisionId;
-        if ($bezwaarId !== '') {
-            $bezwaarRef = $bezwaarId;
-        }
+		// Persist the decisionRef + notification audit list ONLY — no local
+		// "published" decision state; the besluit is the decidesk outcome.
+		$patch = [
+			'decisionRef' => $decisionRef,
+			'status' => 'awaiting-decidesk',
+			'notifiedRecipients' => $this->collectRecipients(decision: $current),
+		];
 
-        try {
-            $decisionRef = $this->decisionDelegation->raiseBezwaarDecision(
-                bezwaarId: $bezwaarRef,
-                payload: [
-                    'subjectRegister'     => $register,
-                    'subjectSchema'       => $decisionSchema,
-                    'subjectId'           => $decisionId,
-                    'subjectLabel'        => (string) ($current['title'] ?? ($current['onderwerp'] ?? '')),
-                    'dispositionType'     => (string) ($current['dispositionType'] ?? ''),
-                    'reasoning'           => (string) ($current['reasoning'] ?? ''),
-                    'legalBasis'          => (string) ($current['legalBasis'] ?? ''),
-                    'replacementDecision' => (string) ($current['replacementDecision'] ?? ''),
-                ],
-            );
-        } catch (RuntimeException $e) {
-            // REQ-PDRD-002: surface the fail-closed error; do NOT set any local
-            // decided state as a fallback.
-            $this->logger->error(
-                'Procest bezwaar-decision: decidesk Decision raise failed — failing closed: '
-                .$e->getMessage()
-            );
-            throw new RuntimeException('Decision service unavailable: '.$e->getMessage(), 0, $e);
-        }//end try
+		$totalAmount = $this->validator->computeProceskostenTotal(decision: $current);
+		if ($totalAmount !== null) {
+			$proceskosten = (array)($current['proceskostenvergoeding'] ?? []);
+			$proceskosten['totalAmount'] = $totalAmount;
+			$patch['proceskostenvergoeding'] = $proceskosten;
+		}
 
-        // Persist the decisionRef + notification audit list ONLY — no local
-        // "published" decision state; the besluit is the decidesk outcome.
-        $patch = [
-            'decisionRef'        => $decisionRef,
-            'status'             => 'awaiting-decidesk',
-            'notifiedRecipients' => $this->collectRecipients(decision: $current),
-        ];
+		try {
+			$saved = $objectService->saveObject(
+				object: $patch,
+				register: $register,
+				schema: $decisionSchema,
+				uuid: (string)$decisionId
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest bezwaar-decision: failed to persist decisionRef: '
+				. $e->getMessage()
+			);
+			throw new RuntimeException('Could not record bezwaarDecision delegation');
+		}
 
-        $totalAmount = $this->validator->computeProceskostenTotal(decision: $current);
-        if ($totalAmount !== null) {
-            $proceskosten = (array) ($current['proceskostenvergoeding'] ?? []);
-            $proceskosten['totalAmount']     = $totalAmount;
-            $patch['proceskostenvergoeding'] = $proceskosten;
-        }
+		return $saved;
+	}//end publish()
 
-        try {
-            $saved = $objectService->saveObject(
-                object: $patch,
-                register: $register,
-                schema: $decisionSchema,
-                uuid: (string) $decisionId
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest bezwaar-decision: failed to persist decisionRef: '
-                .$e->getMessage()
-            );
-            throw new RuntimeException('Could not record bezwaarDecision delegation');
-        }
+	/**
+	 * Apply the bezwaar status transition once decidesk has concluded.
+	 *
+	 * The ZGW `Besluit` is materialised from the decidesk outcome by
+	 * {@see \OCA\Procest\Listener\DecisionConcludedListener} when decidesk
+	 * dispatches a `DecisionConcludedEvent` — there is no procest-local poll of
+	 * the decidesk outcome here. This method only triggers the configured
+	 * status transition on the linked bezwaar; the status engine still owns
+	 * guards + side effects, and the besluit is never authored locally.
+	 *
+	 * @param string $bezwaarId UUID of the source bezwaar.
+	 * @param string $decisionId UUID of the bezwaarDecision being applied.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
+	 */
+	public function applyToBezwaar(string $bezwaarId, string $decisionId): void {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return;
+		}
 
-        return $saved;
-    }//end publish()
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$bezwaarSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
+		if ($register === '' || $bezwaarSchema === '') {
+			return;
+		}
 
-    /**
-     * Apply the bezwaar status transition once decidesk has concluded.
-     *
-     * The ZGW `Besluit` is materialised from the decidesk outcome by
-     * {@see \OCA\Procest\Listener\DecisionConcludedListener} when decidesk
-     * dispatches a `DecisionConcludedEvent` — there is no procest-local poll of
-     * the decidesk outcome here. This method only triggers the configured
-     * status transition on the linked bezwaar; the status engine still owns
-     * guards + side effects, and the besluit is never authored locally.
-     *
-     * @param string $bezwaarId  UUID of the source bezwaar.
-     * @param string $decisionId UUID of the bezwaarDecision being applied.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
-     */
-    public function applyToBezwaar(string $bezwaarId, string $decisionId): void
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return;
-        }
+		$bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
+		if (is_array($bezwaar) === false) {
+			return;
+		}
 
-        $register      = $this->settingsService->getConfigValue(key: 'register');
-        $bezwaarSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
-        if ($register === '' || $bezwaarSchema === '') {
-            return;
-        }
+		$caseId = (string)($bezwaar['case'] ?? '');
+		if ($caseId === '') {
+			return;
+		}
 
-        $bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
-        if (is_array($bezwaar) === false) {
-            return;
-        }
+		try {
+			$this->transitions->execute(
+				caseId: $caseId,
+				transitionId: self::TRANSITION_ID,
+				comment: 'Applied beslissing op bezwaar ' . $decisionId,
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Procest bezwaar-decision: transition to '
+				. self::TARGET_BEZWAAR_STATUS . ' failed: ' . $e->getMessage()
+			);
+		}
+	}//end applyToBezwaar()
 
-        $caseId = (string) ($bezwaar['case'] ?? '');
-        if ($caseId === '') {
-            return;
-        }
+	/**
+	 * Build the recipient audit list for the publication notification
+	 * flow (REQ-BD-10). Bezwaarmaker, gemachtigde, primair beslisser,
+	 * and the BAC secretaris (when advisoryOpinion is set) are
+	 * surfaced from the decision payload where available. The actual
+	 * notification fan-out is owned by NotificatieService /
+	 * BerichtenboxAdapter; this method records who SHOULD be reached.
+	 *
+	 * @param array<string, mixed> $decision Decision payload.
+	 *
+	 * @return array<int, string>
+	 */
+	private function collectRecipients(array $decision): array {
+		$recipients = [];
 
-        try {
-            $this->transitions->execute(
-                caseId: $caseId,
-                transitionId: self::TRANSITION_ID,
-                comment: 'Applied beslissing op bezwaar '.$decisionId,
-            );
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest bezwaar-decision: transition to '
-                .self::TARGET_BEZWAAR_STATUS.' failed: '.$e->getMessage()
-            );
-        }
-    }//end applyToBezwaar()
+		$acting = $this->userSession->getUser();
+		if ($acting !== null) {
+			$recipients[] = 'actor:' . $acting->getUID();
+		}
 
-    /**
-     * Build the recipient audit list for the publication notification
-     * flow (REQ-BD-10). Bezwaarmaker, gemachtigde, primair beslisser,
-     * and the BAC secretaris (when advisoryOpinion is set) are
-     * surfaced from the decision payload where available. The actual
-     * notification fan-out is owned by NotificatieService /
-     * BerichtenboxAdapter; this method records who SHOULD be reached.
-     *
-     * @param array<string, mixed> $decision Decision payload.
-     *
-     * @return array<int, string>
-     */
-    private function collectRecipients(array $decision): array
-    {
-        $recipients = [];
+		$bezwaarmaker = (string)($decision['bezwaarmaker'] ?? '');
+		if ($bezwaarmaker !== '') {
+			$recipients[] = 'bezwaarmaker:' . $bezwaarmaker;
+		}
 
-        $acting = $this->userSession->getUser();
-        if ($acting !== null) {
-            $recipients[] = 'actor:'.$acting->getUID();
-        }
+		$gemachtigde = (string)($decision['gemachtigde'] ?? '');
+		if ($gemachtigde !== '') {
+			$recipients[] = 'gemachtigde:' . $gemachtigde;
+		}
 
-        $bezwaarmaker = (string) ($decision['bezwaarmaker'] ?? '');
-        if ($bezwaarmaker !== '') {
-            $recipients[] = 'bezwaarmaker:'.$bezwaarmaker;
-        }
+		$primairBeslisser = (string)($decision['primairBeslisser'] ?? '');
+		if ($primairBeslisser !== '') {
+			$recipients[] = 'primair-beslisser:' . $primairBeslisser;
+		}
 
-        $gemachtigde = (string) ($decision['gemachtigde'] ?? '');
-        if ($gemachtigde !== '') {
-            $recipients[] = 'gemachtigde:'.$gemachtigde;
-        }
+		$advisory = (string)($decision['advisoryOpinion'] ?? '');
+		if ($advisory !== '') {
+			$recipients[] = 'bac-secretaris:' . $advisory;
+		}
 
-        $primairBeslisser = (string) ($decision['primairBeslisser'] ?? '');
-        if ($primairBeslisser !== '') {
-            $recipients[] = 'primair-beslisser:'.$primairBeslisser;
-        }
-
-        $advisory = (string) ($decision['advisoryOpinion'] ?? '');
-        if ($advisory !== '') {
-            $recipients[] = 'bac-secretaris:'.$advisory;
-        }
-
-        return array_values(array_unique($recipients));
-    }//end collectRecipients()
+		return array_values(array_unique($recipients));
+	}//end collectRecipients()
 }//end class

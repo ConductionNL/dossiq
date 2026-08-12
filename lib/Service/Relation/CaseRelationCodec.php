@@ -46,174 +46,166 @@ namespace OCA\Procest\Service\Relation;
  *
  * @spec openspec/specs/related-case-linking/spec.md
  */
-class CaseRelationCodec
-{
-    /**
-     * Build a single relation entry, carrying the optional clarification.
-     *
-     * @param string      $caseId      Referenced case UUID.
-     * @param string      $aardRelatie Relation type.
-     * @param string|null $toelichting Optional free-text clarification.
-     *
-     * @return array<string, string>
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function buildEntry(string $caseId, string $aardRelatie, ?string $toelichting): array
-    {
-        $entry = ['caseId' => $caseId, 'aardRelatie' => $aardRelatie];
-        if ($toelichting !== null && $toelichting !== '') {
-            $entry['toelichting'] = $toelichting;
-        }
+class CaseRelationCodec {
+	/**
+	 * Build a single relation entry, carrying the optional clarification.
+	 *
+	 * @param string $caseId Referenced case UUID.
+	 * @param string $aardRelatie Relation type.
+	 * @param string|null $toelichting Optional free-text clarification.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function buildEntry(string $caseId, string $aardRelatie, ?string $toelichting): array {
+		$entry = ['caseId' => $caseId, 'aardRelatie' => $aardRelatie];
+		if ($toelichting !== null && $toelichting !== '') {
+			$entry['toelichting'] = $toelichting;
+		}
 
-        return $entry;
-    }//end buildEntry()
+		return $entry;
+	}//end buildEntry()
 
-    /**
-     * Decode the JSON-encoded `relatedCases` field into a list of relation
-     * entries, tolerating an already-array shape.
-     *
-     * @param array<string, mixed> $case Case object.
-     *
-     * @return array<int, array<string, mixed>>
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function decode(array $case): array
-    {
-        $entries = [];
-        foreach ($this->rawRelationList(case: $case) as $item) {
-            if (is_array($item) === false) {
-                continue;
-            }
+	/**
+	 * Decode the JSON-encoded `relatedCases` field into a list of relation
+	 * entries, tolerating an already-array shape.
+	 *
+	 * @param array<string, mixed> $case Case object.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function decode(array $case): array {
+		$entries = [];
+		foreach ($this->rawRelationList(case: $case) as $item) {
+			if (is_array($item) === false) {
+				continue;
+			}
 
-            $entry = $this->decodeRelationEntry(item: $item);
-            if ($entry === null) {
-                continue;
-            }
+			$entry = $this->decodeRelationEntry(item: $item);
+			if ($entry === null) {
+				continue;
+			}
 
-            $entries[] = $entry;
-        }//end foreach
+			$entries[] = $entry;
+		}//end foreach
 
-        return $entries;
-    }//end decode()
+		return $entries;
+	}//end decode()
 
-    /**
-     * Whether a `{caseId, aardRelatie}` pair already exists in a relation list.
-     *
-     * @param array<int, array<string, mixed>> $relations   Relation entries.
-     * @param string                           $caseId      Target case UUID.
-     * @param string                           $aardRelatie Relation type.
-     *
-     * @return bool
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function hasPair(array $relations, string $caseId, string $aardRelatie): bool
-    {
-        foreach ($relations as $relation) {
-            if ((string) ($relation['caseId'] ?? '') === $caseId
-                && (string) ($relation['aardRelatie'] ?? '') === $aardRelatie
-            ) {
-                return true;
-            }
-        }
+	/**
+	 * Whether a `{caseId, aardRelatie}` pair already exists in a relation list.
+	 *
+	 * @param array<int, array<string, mixed>> $relations Relation entries.
+	 * @param string $caseId Target case UUID.
+	 * @param string $aardRelatie Relation type.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function hasPair(array $relations, string $caseId, string $aardRelatie): bool {
+		foreach ($relations as $relation) {
+			if ((string)($relation['caseId'] ?? '') === $caseId
+				&& (string)($relation['aardRelatie'] ?? '') === $aardRelatie
+			) {
+				return true;
+			}
+		}
 
-        return false;
-    }//end hasPair()
+		return false;
+	}//end hasPair()
 
-    /**
-     * Return a copy of the relation list with the given pair removed.
-     *
-     * @param array<int, array<string, mixed>> $relations   Relation entries.
-     * @param string                           $caseId      Target case UUID.
-     * @param string                           $aardRelatie Relation type.
-     *
-     * @return array<int, array<string, mixed>>
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function removePair(array $relations, string $caseId, string $aardRelatie): array
-    {
-        return array_values(
-            array_filter(
-                $relations,
-                static fn (array $relation): bool => (
-                    (string) ($relation['caseId'] ?? '') !== $caseId
-                    || (string) ($relation['aardRelatie'] ?? '') !== $aardRelatie
-                )
-            )
-        );
-    }//end removePair()
+	/**
+	 * Return a copy of the relation list with the given pair removed.
+	 *
+	 * @param array<int, array<string, mixed>> $relations Relation entries.
+	 * @param string $caseId Target case UUID.
+	 * @param string $aardRelatie Relation type.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function removePair(array $relations, string $caseId, string $aardRelatie): array {
+		return array_values(
+			array_filter(
+				$relations,
+				static fn (array $relation): bool => (
+					(string)($relation['caseId'] ?? '') !== $caseId
+					|| (string)($relation['aardRelatie'] ?? '') !== $aardRelatie
+				)
+			)
+		);
+	}//end removePair()
 
-    /**
-     * Return a copy of the relation list with every entry naming a case removed.
-     *
-     * @param array<int, array<string, mixed>> $relations Relation entries.
-     * @param string                           $caseId    Case UUID to strip.
-     *
-     * @return array<int, array<string, mixed>>
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function removeAllForCase(array $relations, string $caseId): array
-    {
-        return array_values(
-            array_filter(
-                $relations,
-                static fn (array $relation): bool => (string) ($relation['caseId'] ?? '') !== $caseId
-            )
-        );
-    }//end removeAllForCase()
+	/**
+	 * Return a copy of the relation list with every entry naming a case removed.
+	 *
+	 * @param array<int, array<string, mixed>> $relations Relation entries.
+	 * @param string $caseId Case UUID to strip.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function removeAllForCase(array $relations, string $caseId): array {
+		return array_values(
+			array_filter(
+				$relations,
+				static fn (array $relation): bool => (string)($relation['caseId'] ?? '') !== $caseId
+			)
+		);
+	}//end removeAllForCase()
 
-    /**
-     * Read the raw `relatedCases` payload as a list, accepting either the
-     * JSON-encoded string shape or an already-decoded array.
-     *
-     * @param array<string, mixed> $case Case object.
-     *
-     * @return array<mixed> The raw relation list, or [] when unusable.
-     */
-    private function rawRelationList(array $case): array
-    {
-        $raw  = ($case['relatedCases'] ?? null);
-        $list = [];
-        if (is_array($raw) === true) {
-            $list = $raw;
-        }
+	/**
+	 * Read the raw `relatedCases` payload as a list, accepting either the
+	 * JSON-encoded string shape or an already-decoded array.
+	 *
+	 * @param array<string, mixed> $case Case object.
+	 *
+	 * @return array<mixed> The raw relation list, or [] when unusable.
+	 */
+	private function rawRelationList(array $case): array {
+		$raw = ($case['relatedCases'] ?? null);
+		$list = [];
+		if (is_array($raw) === true) {
+			$list = $raw;
+		}
 
-        if (is_string($raw) === true && $raw !== '') {
-            $decoded = json_decode($raw, true);
-            if (is_array($decoded) === true) {
-                $list = $decoded;
-            }
-        }
+		if (is_string($raw) === true && $raw !== '') {
+			$decoded = json_decode($raw, true);
+			if (is_array($decoded) === true) {
+				$list = $decoded;
+			}
+		}
 
-        return $list;
-    }//end rawRelationList()
+		return $list;
+	}//end rawRelationList()
 
-    /**
-     * Normalise one raw relation item into a relation entry.
-     *
-     * @param array<string, mixed> $item Raw relation item.
-     *
-     * @return array<string, string>|null The entry, or null when it names no case.
-     */
-    private function decodeRelationEntry(array $item): ?array
-    {
-        $targetId = (string) ($item['caseId'] ?? '');
-        if ($targetId === '') {
-            return null;
-        }
+	/**
+	 * Normalise one raw relation item into a relation entry.
+	 *
+	 * @param array<string, mixed> $item Raw relation item.
+	 *
+	 * @return array<string, string>|null The entry, or null when it names no case.
+	 */
+	private function decodeRelationEntry(array $item): ?array {
+		$targetId = (string)($item['caseId'] ?? '');
+		if ($targetId === '') {
+			return null;
+		}
 
-        $entry = [
-            'caseId'      => $targetId,
-            'aardRelatie' => (string) ($item['aardRelatie'] ?? ''),
-        ];
-        if (isset($item['toelichting']) === true && (string) $item['toelichting'] !== '') {
-            $entry['toelichting'] = (string) $item['toelichting'];
-        }
+		$entry = [
+			'caseId' => $targetId,
+			'aardRelatie' => (string)($item['aardRelatie'] ?? ''),
+		];
+		if (isset($item['toelichting']) === true && (string)$item['toelichting'] !== '') {
+			$entry['toelichting'] = (string)$item['toelichting'];
+		}
 
-        return $entry;
-    }//end decodeRelationEntry()
+		return $entry;
+	}//end decodeRelationEntry()
 }//end class

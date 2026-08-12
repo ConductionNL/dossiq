@@ -47,357 +47,347 @@ use RuntimeException;
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
  */
-class ContactMomentController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string                      $appName              The app name.
-     * @param IRequest                    $request              The request.
-     * @param ContactMomentService        $contactMomentService The contactmoment service.
-     * @param CaseVoorbladService         $caseVoorbladService  The case-voorblad service.
-     * @param QuickActionService          $quickActionService   The quick-action service.
-     * @param DoorverbindingService       $transferService      The doorverbinding service.
-     * @param BurgerIdentificationService $burgerService        The burger identification service.
-     * @param IUserSession                $userSession          The user session.
-     * @param CitizenLookupGuard          $citizenLookupGuard   The citizen-lookup role guard.
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly ContactMomentService $contactMomentService,
-        private readonly CaseVoorbladService $caseVoorbladService,
-        private readonly QuickActionService $quickActionService,
-        private readonly DoorverbindingService $transferService,
-        private readonly BurgerIdentificationService $burgerService,
-        private readonly IUserSession $userSession,
-        private readonly CitizenLookupGuard $citizenLookupGuard,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class ContactMomentController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name.
+	 * @param IRequest $request The request.
+	 * @param ContactMomentService $contactMomentService The contactmoment service.
+	 * @param CaseVoorbladService $caseVoorbladService The case-voorblad service.
+	 * @param QuickActionService $quickActionService The quick-action service.
+	 * @param DoorverbindingService $transferService The doorverbinding service.
+	 * @param BurgerIdentificationService $burgerService The burger identification service.
+	 * @param IUserSession $userSession The user session.
+	 * @param CitizenLookupGuard $citizenLookupGuard The citizen-lookup role guard.
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly ContactMomentService $contactMomentService,
+		private readonly CaseVoorbladService $caseVoorbladService,
+		private readonly QuickActionService $quickActionService,
+		private readonly DoorverbindingService $transferService,
+		private readonly BurgerIdentificationService $burgerService,
+		private readonly IUserSession $userSession,
+		private readonly CitizenLookupGuard $citizenLookupGuard,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Create a contactmoment and return the case-voorblad for the burger.
-     *
-     * @return JSONResponse The created contactmoment plus case-voorblad.
-     *
-     * @NoAdminRequired
+	/**
+	 * Create a contactmoment and return the case-voorblad for the burger.
+	 *
+	 * @return JSONResponse The created contactmoment plus case-voorblad.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 */
+	public function create(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-     */
-    public function create(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+		// This method both writes a contactmoment against a caller-supplied
+		// citizen identifier and returns that citizen's voorblad, so it is the
+		// same exposure as `voorblad()` with a write attached.
+		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
 
-        // This method both writes a contactmoment against a caller-supplied
-        // citizen identifier and returns that citizen's voorblad, so it is the
-        // same exposure as `voorblad()` with a write attached.
-        if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
-            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-        }
+		$data = [
+			'kanaal' => (string)$this->request->getParam('kanaal', ''),
+			'richting' => (string)$this->request->getParam('richting', 'inkomend'),
+			'bellerIdentificatie' => (string)$this->request->getParam('bellerIdentificatie', ''),
+			'aard' => (string)$this->request->getParam('aard', 'informatieverzoek'),
+			'samenvatting' => (string)$this->request->getParam('samenvatting', ''),
+			'kccMedewerkerId' => $user->getUID(),
+			'transcriptie' => (string)$this->request->getParam('transcriptie', ''),
+		];
 
-        $data = [
-            'kanaal'              => (string) $this->request->getParam('kanaal', ''),
-            'richting'            => (string) $this->request->getParam('richting', 'inkomend'),
-            'bellerIdentificatie' => (string) $this->request->getParam('bellerIdentificatie', ''),
-            'aard'                => (string) $this->request->getParam('aard', 'informatieverzoek'),
-            'samenvatting'        => (string) $this->request->getParam('samenvatting', ''),
-            'kccMedewerkerId'     => $user->getUID(),
-            'transcriptie'        => (string) $this->request->getParam('transcriptie', ''),
-        ];
+		// Auto-resolve a burger from the caller identifier when none supplied.
+		$burgerId = (string)$this->request->getParam('geidentificeerdeBurgerId', '');
+		$method = (string)$this->request->getParam('identificatieMethode', 'niet_geidentificeerd');
+		if ($burgerId === '' && $data['bellerIdentificatie'] !== '') {
+			$resolved = $this->burgerService->lookupByIdentifier($data['bellerIdentificatie']);
+			if ($resolved !== '') {
+				$burgerId = $resolved;
+				$method = 'identificatievragen';
+			}
+		}
 
-        // Auto-resolve a burger from the caller identifier when none supplied.
-        $burgerId = (string) $this->request->getParam('geidentificeerdeBurgerId', '');
-        $method   = (string) $this->request->getParam('identificatieMethode', 'niet_geidentificeerd');
-        if ($burgerId === '' && $data['bellerIdentificatie'] !== '') {
-            $resolved = $this->burgerService->lookupByIdentifier($data['bellerIdentificatie']);
-            if ($resolved !== '') {
-                $burgerId = $resolved;
-                $method   = 'identificatievragen';
-            }
-        }
+		$identifiedBurgerId = null;
+		if ($burgerId !== '') {
+			$identifiedBurgerId = $burgerId;
+		}
 
-        $identifiedBurgerId = null;
-        if ($burgerId !== '') {
-            $identifiedBurgerId = $burgerId;
-        }
+		$data['geidentificeerdeBurgerId'] = $identifiedBurgerId;
+		$data['identificatieMethode'] = $method;
 
-        $data['geidentificeerdeBurgerId'] = $identifiedBurgerId;
-        $data['identificatieMethode']     = $method;
+		try {
+			$contactmoment = $this->contactMomentService->createContactMoment($data);
+		} catch (RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
 
-        try {
-            $contactmoment = $this->contactMomentService->createContactMoment($data);
-        } catch (RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
+		$voorblad = null;
+		if ($burgerId !== '') {
+			$voorblad = $this->caseVoorbladService->getCaseVoorblad($burgerId);
+		}
 
-        $voorblad = null;
-        if ($burgerId !== '') {
-            $voorblad = $this->caseVoorbladService->getCaseVoorblad($burgerId);
-        }
+		return new JSONResponse(['contactmoment' => $contactmoment, 'voorblad' => $voorblad]);
+	}//end create()
 
-        return new JSONResponse(['contactmoment' => $contactmoment, 'voorblad' => $voorblad]);
-    }//end create()
+	/**
+	 * List contactmomenten for an identified burger.
+	 *
+	 * @param string $burgerId The burger reference.
+	 * @param int $limit The maximum number of records.
+	 *
+	 * @return JSONResponse The contactmoment list.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 */
+	public function index(string $burgerId = '', int $limit = 50): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-    /**
-     * List contactmomenten for an identified burger.
-     *
-     * @param string $burgerId The burger reference.
-     * @param int    $limit    The maximum number of records.
-     *
-     * @return JSONResponse The contactmoment list.
-     *
-     * @NoAdminRequired
+		// `$burgerId` is a citizen identifier taken straight off the query
+		// string; without this the whole contact history of any citizen was
+		// readable by every authenticated account (PROC-IDOR-01).
+		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
 
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-     */
-    public function index(string $burgerId='', int $limit=50): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+		if ($burgerId === '') {
+			return new JSONResponse(['error' => 'burgerId is required'], Http::STATUS_BAD_REQUEST);
+		}
 
-        // `$burgerId` is a citizen identifier taken straight off the query
-        // string; without this the whole contact history of any citizen was
-        // readable by every authenticated account (PROC-IDOR-01).
-        if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
-            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-        }
+		$records = $this->contactMomentService->listForBurger($burgerId, $limit);
+		return new JSONResponse(['contactmomenten' => $records]);
+	}//end index()
 
-        if ($burgerId === '') {
-            return new JSONResponse(['error' => 'burgerId is required'], Http::STATUS_BAD_REQUEST);
-        }
+	/**
+	 * Fetch the case-voorblad for a burger.
+	 *
+	 * @param string $burgerId The burger reference.
+	 *
+	 * @return JSONResponse The case-voorblad.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 */
+	public function voorblad(string $burgerId = ''): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $records = $this->contactMomentService->listForBurger($burgerId, $limit);
-        return new JSONResponse(['contactmomenten' => $records]);
-    }//end index()
+		// The voorblad resolves a raw citizen identifier into that citizen's
+		// open cases and recent contact history. Reproduced live at HTTP 200
+		// for an unrelated authenticated account before this guard existed
+		// (PROC-IDOR-01) — iterating BSN-shaped ids walked the population.
+		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
 
-    /**
-     * Fetch the case-voorblad for a burger.
-     *
-     * @param string $burgerId The burger reference.
-     *
-     * @return JSONResponse The case-voorblad.
-     *
-     * @NoAdminRequired
+		if ($burgerId === '') {
+			return new JSONResponse(['error' => 'burgerId is required'], Http::STATUS_BAD_REQUEST);
+		}
 
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-     */
-    public function voorblad(string $burgerId=''): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+		return new JSONResponse($this->caseVoorbladService->getCaseVoorblad($burgerId));
+	}//end voorblad()
 
-        // The voorblad resolves a raw citizen identifier into that citizen's
-        // open cases and recent contact history. Reproduced live at HTTP 200
-        // for an unrelated authenticated account before this guard existed
-        // (PROC-IDOR-01) — iterating BSN-shaped ids walked the population.
-        if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
-            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-        }
+	/**
+	 * Execute the "Status terugkoppelen" quick-action.
+	 *
+	 * @return JSONResponse The draft text, or the recorded activity when confirmed.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 */
+	public function statusGeven(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        if ($burgerId === '') {
-            return new JSONResponse(['error' => 'burgerId is required'], Http::STATUS_BAD_REQUEST);
-        }
+		$caseId = (string)$this->request->getParam('caseId', '');
+		$confirm = (bool)$this->request->getParam('confirm', false);
 
-        return new JSONResponse($this->caseVoorbladService->getCaseVoorblad($burgerId));
-    }//end voorblad()
+		try {
+			$result = $this->quickActionService->executeStatusTerugkoppelen($caseId);
+		} catch (RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
 
-    /**
-     * Execute the "Status terugkoppelen" quick-action.
-     *
-     * @return JSONResponse The draft text, or the recorded activity when confirmed.
-     *
-     * @NoAdminRequired
+		if ($confirm === true) {
+			$this->contactMomentService->recordActivity(
+				$caseId,
+				'',
+				'status_given',
+				$user->getUID(),
+				$result['draftText'],
+			);
+		}
 
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-     */
-    public function statusGeven(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+		return new JSONResponse($result);
+	}//end statusGeven()
 
-        $caseId  = (string) $this->request->getParam('caseId', '');
-        $confirm = (bool) $this->request->getParam('confirm', false);
+	/**
+	 * Execute the "Nieuwe zaak" quick-action.
+	 *
+	 * @return JSONResponse The new case id.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 */
+	public function nieuweZaak(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        try {
-            $result = $this->quickActionService->executeStatusTerugkoppelen($caseId);
-        } catch (RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
+		// Creates a municipal case bound to a caller-supplied citizen id.
+		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
 
-        if ($confirm === true) {
-            $this->contactMomentService->recordActivity(
-                $caseId,
-                '',
-                'status_given',
-                $user->getUID(),
-                $result['draftText'],
-            );
-        }
+		$zaaktype = (string)$this->request->getParam('zaaktype', '');
+		$burgerId = (string)$this->request->getParam('burgerId', '');
+		$details = (array)$this->request->getParam('details', []);
 
-        return new JSONResponse($result);
-    }//end statusGeven()
+		try {
+			$result = $this->quickActionService->executeNieuweZaak($zaaktype, $burgerId, $details);
+		} catch (RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
 
-    /**
-     * Execute the "Nieuwe zaak" quick-action.
-     *
-     * @return JSONResponse The new case id.
-     *
-     * @NoAdminRequired
+		return new JSONResponse($result);
+	}//end nieuweZaak()
 
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-     */
-    public function nieuweZaak(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Execute the "Klacht registreren" quick-action.
+	 *
+	 * @return JSONResponse The klacht case id and deadline.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 */
+	public function klachtRegistreren(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        // Creates a municipal case bound to a caller-supplied citizen id.
-        if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
-            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-        }
+		// Takes an arbitrary `caseId` AND an arbitrary `burgerId`.
+		if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
 
-        $zaaktype = (string) $this->request->getParam('zaaktype', '');
-        $burgerId = (string) $this->request->getParam('burgerId', '');
-        $details  = (array) $this->request->getParam('details', []);
+		$caseId = (string)$this->request->getParam('caseId', '');
+		$samenvatting = (string)$this->request->getParam('samenvatting', '');
+		$burgerId = (string)$this->request->getParam('burgerId', '');
 
-        try {
-            $result = $this->quickActionService->executeNieuweZaak($zaaktype, $burgerId, $details);
-        } catch (RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
+		try {
+			$result = $this->quickActionService->executeKlachtRegistreren($caseId, $samenvatting, $burgerId);
+		} catch (RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
 
-        return new JSONResponse($result);
-    }//end nieuweZaak()
+		return new JSONResponse($result);
+	}//end klachtRegistreren()
 
-    /**
-     * Execute the "Klacht registreren" quick-action.
-     *
-     * @return JSONResponse The klacht case id and deadline.
-     *
-     * @NoAdminRequired
+	/**
+	 * Execute the "Doorverbinden" quick-action (initiate warm transfer).
+	 *
+	 * @return JSONResponse The doorverbinding id and status.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 */
+	public function doorverbinden(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-     */
-    public function klachtRegistreren(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+		$data = [
+			'contactmomentId' => (string)$this->request->getParam('contactmomentId', ''),
+			'vanMedewerkerId' => $user->getUID(),
+			'naarMedewerkerId' => $this->request->getParam('naarMedewerkerId', null),
+			'naarWachtrij' => $this->request->getParam('naarWachtrij', null),
+			'doorverbindingsReden' => (string)$this->request->getParam('reden', ''),
+			'contextSnapshot' => (string)$this->request->getParam('contextSnapshot', '{}'),
+		];
 
-        // Takes an arbitrary `caseId` AND an arbitrary `burgerId`.
-        if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
-            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-        }
+		try {
+			$result = $this->transferService->initiateWarmTransfer($data);
+		} catch (RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
 
-        $caseId       = (string) $this->request->getParam('caseId', '');
-        $samenvatting = (string) $this->request->getParam('samenvatting', '');
-        $burgerId     = (string) $this->request->getParam('burgerId', '');
+		return new JSONResponse($result);
+	}//end doorverbinden()
 
-        try {
-            $result = $this->quickActionService->executeKlachtRegistreren($caseId, $samenvatting, $burgerId);
-        } catch (RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
+	/**
+	 * Accept a doorverbinding (by the receiving specialist).
+	 *
+	 * @param string $id The doorverbinding UUID.
+	 *
+	 * @return JSONResponse The updated doorverbinding.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 */
+	public function acceptDoorverbinding(string $id): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        return new JSONResponse($result);
-    }//end klachtRegistreren()
+		try {
+			return new JSONResponse($this->transferService->acceptTransfer($id, $user->getUID()));
+		} catch (RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end acceptDoorverbinding()
 
-    /**
-     * Execute the "Doorverbinden" quick-action (initiate warm transfer).
-     *
-     * @return JSONResponse The doorverbinding id and status.
-     *
-     * @NoAdminRequired
+	/**
+	 * Reject a doorverbinding with a reason.
+	 *
+	 * @param string $id The doorverbinding UUID.
+	 *
+	 * @return JSONResponse The updated doorverbinding.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
+	 */
+	public function rejectDoorverbinding(string $id): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-     */
-    public function doorverbinden(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+		$reason = (string)$this->request->getParam('reason', '');
 
-        $data = [
-            'contactmomentId'      => (string) $this->request->getParam('contactmomentId', ''),
-            'vanMedewerkerId'      => $user->getUID(),
-            'naarMedewerkerId'     => $this->request->getParam('naarMedewerkerId', null),
-            'naarWachtrij'         => $this->request->getParam('naarWachtrij', null),
-            'doorverbindingsReden' => (string) $this->request->getParam('reden', ''),
-            'contextSnapshot'      => (string) $this->request->getParam('contextSnapshot', '{}'),
-        ];
-
-        try {
-            $result = $this->transferService->initiateWarmTransfer($data);
-        } catch (RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
-
-        return new JSONResponse($result);
-    }//end doorverbinden()
-
-    /**
-     * Accept a doorverbinding (by the receiving specialist).
-     *
-     * @param string $id The doorverbinding UUID.
-     *
-     * @return JSONResponse The updated doorverbinding.
-     *
-     * @NoAdminRequired
-
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-     */
-    public function acceptDoorverbinding(string $id): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        try {
-            return new JSONResponse($this->transferService->acceptTransfer($id, $user->getUID()));
-        } catch (RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
-    }//end acceptDoorverbinding()
-
-    /**
-     * Reject a doorverbinding with a reason.
-     *
-     * @param string $id The doorverbinding UUID.
-     *
-     * @return JSONResponse The updated doorverbinding.
-     *
-     * @NoAdminRequired
-
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T11
-     */
-    public function rejectDoorverbinding(string $id): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
-
-        $reason = (string) $this->request->getParam('reason', '');
-
-        try {
-            return new JSONResponse($this->transferService->rejectTransfer($id, $reason, $user->getUID()));
-        } catch (RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
-    }//end rejectDoorverbinding()
+		try {
+			return new JSONResponse($this->transferService->rejectTransfer($id, $reason, $user->getUID()));
+		} catch (RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end rejectDoorverbinding()
 }//end class

@@ -48,124 +48,120 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/related-case-linking/spec.md
  */
-class CaseRelationStore
-{
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Shared OR/settings resolver.
-     * @param LoggerInterface $logger          Logger.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class CaseRelationStore {
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Shared OR/settings resolver.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Fetch a single case object by UUID through the session's ObjectService.
-     *
-     * Resolving via OpenRegister applies its per-object RBAC for the current
-     * user, so an unreadable case resolves to null — this is the access guard.
-     *
-     * @param string $caseUuid Case UUID.
-     *
-     * @return array<string, mixed>|null
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function fetchCase(string $caseUuid): ?array
-    {
-        if ($caseUuid === '') {
-            return null;
-        }
+	/**
+	 * Fetch a single case object by UUID through the session's ObjectService.
+	 *
+	 * Resolving via OpenRegister applies its per-object RBAC for the current
+	 * user, so an unreadable case resolves to null — this is the access guard.
+	 *
+	 * @param string $caseUuid Case UUID.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function fetchCase(string $caseUuid): ?array {
+		if ($caseUuid === '') {
+			return null;
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-        if ($register === '' || $schema === '') {
-            return null;
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if ($register === '' || $schema === '') {
+			return null;
+		}
 
-        try {
-            $obj = $objectService->find($caseUuid, register: $register, schema: $schema);
-        } catch (\Throwable $e) {
-            $this->logger->debug(
-                'CaseRelationService: case lookup failed',
-                ['uuid' => $caseUuid, 'error' => $e->getMessage()]
-            );
-            return null;
-        }
+		try {
+			$obj = $objectService->find($caseUuid, register: $register, schema: $schema);
+		} catch (\Throwable $e) {
+			$this->logger->debug(
+				'CaseRelationService: case lookup failed',
+				['uuid' => $caseUuid, 'error' => $e->getMessage()]
+			);
+			return null;
+		}
 
-        return $this->normalizeCaseObject(object: $obj);
-    }//end fetchCase()
+		return $this->normalizeCaseObject(object: $obj);
+	}//end fetchCase()
 
-    /**
-     * Persist a relation list back onto a case, JSON-encoding the field
-     * (the `relatedCases` field is a JSON-encoded string).
-     *
-     * @param array<string, mixed>             $case      Case object to update.
-     * @param array<int, array<string, mixed>> $relations Relation entries.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/related-case-linking/spec.md
-     */
-    public function persistRelations(array $case, array $relations): void
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return;
-        }
+	/**
+	 * Persist a relation list back onto a case, JSON-encoding the field
+	 * (the `relatedCases` field is a JSON-encoded string).
+	 *
+	 * @param array<string, mixed> $case Case object to update.
+	 * @param array<int, array<string, mixed>> $relations Relation entries.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/related-case-linking/spec.md
+	 */
+	public function persistRelations(array $case, array $relations): void {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return;
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('case_schema');
-        if ($register === '' || $schema === '') {
-            return;
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('case_schema');
+		if ($register === '' || $schema === '') {
+			return;
+		}
 
-        $payload = $case;
-        $payload['relatedCases'] = json_encode(array_values($relations));
+		$payload = $case;
+		$payload['relatedCases'] = json_encode(array_values($relations));
 
-        try {
-            $objectService->saveObject(
-                object: $payload,
-                register: $register,
-                schema: $schema,
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'CaseRelationService: failed to persist relatedCases',
-                ['error' => $e->getMessage()]
-            );
-        }
-    }//end persistRelations()
+		try {
+			$objectService->saveObject(
+				object: $payload,
+				register: $register,
+				schema: $schema,
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'CaseRelationService: failed to persist relatedCases',
+				['error' => $e->getMessage()]
+			);
+		}
+	}//end persistRelations()
 
-    /**
-     * Normalise an OpenRegister lookup result to a plain case array.
-     *
-     * @param mixed $object The value returned by the ObjectService.
-     *
-     * @return array<string, mixed>|null The case as an array, or null when unusable.
-     */
-    private function normalizeCaseObject(mixed $object): ?array
-    {
-        if ($object === null) {
-            return null;
-        }
+	/**
+	 * Normalise an OpenRegister lookup result to a plain case array.
+	 *
+	 * @param mixed $object The value returned by the ObjectService.
+	 *
+	 * @return array<string, mixed>|null The case as an array, or null when unusable.
+	 */
+	private function normalizeCaseObject(mixed $object): ?array {
+		if ($object === null) {
+			return null;
+		}
 
-        if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-            $object = $object->jsonSerialize();
-        }
+		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
+			$object = $object->jsonSerialize();
+		}
 
-        if (is_array($object) === true) {
-            return $object;
-        }
+		if (is_array($object) === true) {
+			return $object;
+		}
 
-        return null;
-    }//end normalizeCaseObject()
+		return null;
+	}//end normalizeCaseObject()
 }//end class

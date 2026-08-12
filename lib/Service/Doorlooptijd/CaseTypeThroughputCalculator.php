@@ -43,83 +43,80 @@ namespace OCA\Procest\Service\Doorlooptijd;
  *
  * @spec openspec/specs/doorlooptijd-dashboard/spec.md
  */
-class CaseTypeThroughputCalculator
-{
-    /**
-     * Average closed-case throughput by case-type.
-     *
-     * @param array<int, array<string, mixed>> $cases     Enriched cases.
-     * @param array<int, array<string, mixed>> $caseTypes Indexed case-type metadata.
-     *
-     * @return array<int, array{id: string, title: string, avgDays: int, count: int}>
-     *
-     * @spec openspec/specs/doorlooptijd-dashboard/spec.md
-     */
-    public function computeCaseTypeBreakdown(array $cases, array $caseTypes): array
-    {
-        $accum = $this->accumulateThroughputByCaseType(cases: $cases);
+class CaseTypeThroughputCalculator {
+	/**
+	 * Average closed-case throughput by case-type.
+	 *
+	 * @param array<int, array<string, mixed>> $cases Enriched cases.
+	 * @param array<int, array<string, mixed>> $caseTypes Indexed case-type metadata.
+	 *
+	 * @return array<int, array{id: string, title: string, avgDays: int, count: int}>
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	public function computeCaseTypeBreakdown(array $cases, array $caseTypes): array {
+		$accum = $this->accumulateThroughputByCaseType(cases: $cases);
 
-        $caseTypeIndex = [];
-        foreach ($caseTypes as $caseType) {
-            $id = (string) ($caseType['id'] ?? '');
-            if ($id !== '') {
-                $caseTypeIndex[$id] = $caseType;
-            }
-        }
+		$caseTypeIndex = [];
+		foreach ($caseTypes as $caseType) {
+			$id = (string)($caseType['id'] ?? '');
+			if ($id !== '') {
+				$caseTypeIndex[$id] = $caseType;
+			}
+		}
 
-        $out = [];
-        foreach ($accum as $caseTypeId => $stats) {
-            $title = $caseTypeId;
-            if (isset($caseTypeIndex[$caseTypeId]['title']) === true) {
-                $title = (string) $caseTypeIndex[$caseTypeId]['title'];
-            }
+		$out = [];
+		foreach ($accum as $caseTypeId => $stats) {
+			$title = $caseTypeId;
+			if (isset($caseTypeIndex[$caseTypeId]['title']) === true) {
+				$title = (string)$caseTypeIndex[$caseTypeId]['title'];
+			}
 
-            $out[] = [
-                'id'      => $caseTypeId,
-                'title'   => $title,
-                'avgDays' => (int) round($stats['sum'] / $stats['count']),
-                'count'   => $stats['count'],
-            ];
-        }
+			$out[] = [
+				'id' => $caseTypeId,
+				'title' => $title,
+				'avgDays' => (int)round($stats['sum'] / $stats['count']),
+				'count' => $stats['count'],
+			];
+		}
 
-        usort(
-            $out,
-            static fn (array $left, array $right): int => ($right['avgDays'] <=> $left['avgDays'])
-        );
+		usort(
+			$out,
+			static fn (array $left, array $right): int => ($right['avgDays'] <=> $left['avgDays'])
+		);
 
-        return $out;
-    }//end computeCaseTypeBreakdown()
+		return $out;
+	}//end computeCaseTypeBreakdown()
 
-    /**
-     * Sum and count closed-case throughput days per case-type id.
-     *
-     * @param array<int, array<string, mixed>> $cases Enriched cases.
-     *
-     * @return array<string, array{sum: int, count: int}>
-     *
-     * @spec openspec/specs/doorlooptijd-dashboard/spec.md
-     */
-    private function accumulateThroughputByCaseType(array $cases): array
-    {
-        $accum = [];
-        foreach ($cases as $caseData) {
-            if ($caseData['_isOpen'] === true || $caseData['_throughputDays'] === null) {
-                continue;
-            }
+	/**
+	 * Sum and count closed-case throughput days per case-type id.
+	 *
+	 * @param array<int, array<string, mixed>> $cases Enriched cases.
+	 *
+	 * @return array<string, array{sum: int, count: int}>
+	 *
+	 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
+	 */
+	private function accumulateThroughputByCaseType(array $cases): array {
+		$accum = [];
+		foreach ($cases as $caseData) {
+			if ($caseData['_isOpen'] === true || $caseData['_throughputDays'] === null) {
+				continue;
+			}
 
-            $caseTypeId = (string) ($caseData['caseType'] ?? '');
-            if ($caseTypeId === '') {
-                continue;
-            }
+			$caseTypeId = (string)($caseData['caseType'] ?? '');
+			if ($caseTypeId === '') {
+				continue;
+			}
 
-            if (isset($accum[$caseTypeId]) === false) {
-                $accum[$caseTypeId] = ['sum' => 0, 'count' => 0];
-            }
+			if (isset($accum[$caseTypeId]) === false) {
+				$accum[$caseTypeId] = ['sum' => 0, 'count' => 0];
+			}
 
-            $accum[$caseTypeId]['sum'] += $caseData['_throughputDays'];
-            $accum[$caseTypeId]['count']++;
-        }//end foreach
+			$accum[$caseTypeId]['sum'] += $caseData['_throughputDays'];
+			$accum[$caseTypeId]['count']++;
+		}//end foreach
 
-        return $accum;
-    }//end accumulateThroughputByCaseType()
+		return $accum;
+	}//end accumulateThroughputByCaseType()
 }//end class

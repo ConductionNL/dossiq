@@ -35,42 +35,39 @@ use RuntimeException;
  *
  * @spec openspec/specs/dmn-decision-tables/spec.md
  */
-class DecisionEvaluationException extends RuntimeException
-{
-    /**
-     * Constructor.
-     *
-     * @param string               $errorCode Stable machine-readable error code.
-     * @param array<string, mixed> $details   Optional structured details (e.g. offending key/expression).
-     */
-    public function __construct(
-        private readonly string $errorCode,
-        private readonly array $details=[],
-    ) {
-        parent::__construct(message: $errorCode);
-    }//end __construct()
+class DecisionEvaluationException extends RuntimeException {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $errorCode Stable machine-readable error code.
+	 * @param array<string, mixed> $details Optional structured details (e.g. offending key/expression).
+	 */
+	public function __construct(
+		private readonly string $errorCode,
+		private readonly array $details = [],
+	) {
+		parent::__construct(message: $errorCode);
+	}//end __construct()
 
-    /**
-     * The stable error code.
-     *
-     * @return string
-     *
-     * @spec openspec/specs/dmn-decision-tables/spec.md
-     */
-    public function getErrorCode(): string
-    {
-        return $this->errorCode;
-    }//end getErrorCode()
+	/**
+	 * The stable error code.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/dmn-decision-tables/spec.md
+	 */
+	public function getErrorCode(): string {
+		return $this->errorCode;
+	}//end getErrorCode()
 
-    /**
-     * Structured details for logging/debugging (never shown raw to end users).
-     *
-     * @return array<string, mixed>
-     *
-     * @spec openspec/specs/dmn-decision-tables/spec.md
-     */
-    public function getDetails(): array
-    {
-        return $this->details;
-    }//end getDetails()
+	/**
+	 * Structured details for logging/debugging (never shown raw to end users).
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/dmn-decision-tables/spec.md
+	 */
+	public function getDetails(): array {
+		return $this->details;
+	}//end getDetails()
 }//end class

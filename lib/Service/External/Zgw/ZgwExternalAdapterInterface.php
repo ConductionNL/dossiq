@@ -76,49 +76,48 @@ namespace OCA\Procest\Service\External\Zgw;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-interface ZgwExternalAdapterInterface
-{
-    /**
-     * Push a Zaak envelope to a neighbouring ZGW Zaken-API.
-     *
-     * @param array<string,mixed> $zaakEnvelope ZGW-shaped payload —
-     *                                          identificatie, bronorganisatie,
-     *                                          omschrijving, zaaktype (URL
-     *                                          to the receiver's
-     *                                          Catalogi-API), startdatum,
-     *                                          rollen[].
-     * @param array<string,mixed> $context      Optional context —
-     *                                          receiverSourceSlug (which
-     *                                          openconnector Source row),
-     *                                          handoffReason, correlationId.
-     *
-     * @return ZgwPushResult The dispatch outcome (status +
-     *                       receiver-side zaak URL).
-     */
-    public function submitZaak(array $zaakEnvelope, array $context=[]): ZgwPushResult;
+interface ZgwExternalAdapterInterface {
+	/**
+	 * Push a Zaak envelope to a neighbouring ZGW Zaken-API.
+	 *
+	 * @param array<string,mixed> $zaakEnvelope ZGW-shaped payload —
+	 *                                          identificatie, bronorganisatie,
+	 *                                          omschrijving, zaaktype (URL
+	 *                                          to the receiver's
+	 *                                          Catalogi-API), startdatum,
+	 *                                          rollen[].
+	 * @param array<string,mixed> $context Optional context —
+	 *                                     receiverSourceSlug (which
+	 *                                     openconnector Source row),
+	 *                                     handoffReason, correlationId.
+	 *
+	 * @return ZgwPushResult The dispatch outcome (status +
+	 *                       receiver-side zaak URL).
+	 */
+	public function submitZaak(array $zaakEnvelope, array $context = []): ZgwPushResult;
 
-    /**
-     * Push a Document envelope to a neighbouring ZGW Documenten-API.
-     *
-     * @param array<string,mixed> $documentEnvelope ZGW-shaped payload —
-     *                                              identificatie,
-     *                                              bronorganisatie, titel,
-     *                                              auteur, taal,
-     *                                              informatieobjecttype,
-     *                                              inhoud (base64 or
-     *                                              upload-handle), zaak.
-     * @param array<string,mixed> $context          Optional context.
-     *
-     * @return ZgwPushResult The dispatch outcome (status +
-     *                       receiver-side document URL).
-     */
-    public function submitDocument(array $documentEnvelope, array $context=[]): ZgwPushResult;
+	/**
+	 * Push a Document envelope to a neighbouring ZGW Documenten-API.
+	 *
+	 * @param array<string,mixed> $documentEnvelope ZGW-shaped payload —
+	 *                                              identificatie,
+	 *                                              bronorganisatie, titel,
+	 *                                              auteur, taal,
+	 *                                              informatieobjecttype,
+	 *                                              inhoud (base64 or
+	 *                                              upload-handle), zaak.
+	 * @param array<string,mixed> $context Optional context.
+	 *
+	 * @return ZgwPushResult The dispatch outcome (status +
+	 *                       receiver-side document URL).
+	 */
+	public function submitDocument(array $documentEnvelope, array $context = []): ZgwPushResult;
 
-    /**
-     * Whether the adapter is dormant — i.e. wired but not contacting
-     * any external ZGW stack.
-     *
-     * @return bool TRUE when the adapter is a log-only stub.
-     */
-    public function isDormant(): bool;
+	/**
+	 * Whether the adapter is dormant — i.e. wired but not contacting
+	 * any external ZGW stack.
+	 *
+	 * @return bool TRUE when the adapter is a log-only stub.
+	 */
+	public function isDormant(): bool;
 }//end interface

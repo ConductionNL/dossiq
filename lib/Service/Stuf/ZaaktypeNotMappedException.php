@@ -30,6 +30,5 @@ namespace OCA\Procest\Service\Stuf;
 /**
  * Pre-send domain error: zaaktype not mapped.
  */
-class ZaaktypeNotMappedException extends StufException
-{
+class ZaaktypeNotMappedException extends StufException {
 }//end class

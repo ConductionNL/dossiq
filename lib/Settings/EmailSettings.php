@@ -44,106 +44,100 @@ use OCP\Settings\IDelegatedSettings;
  *
  * @spec openspec/specs/case-email-integration/spec.md
  */
-class EmailSettings implements IDelegatedSettings
-{
-    /**
-     * Shared-mailbox IMAP + poller config keys this section manages.
-     *
-     * Mirrors EmailTemplateController::IMAP_KEYS. The password key is
-     * stored sensitive and never delegated as a readable value.
-     *
-     * @var string[]
-     */
-    private const MANAGED_KEYS = [
-        'email_imap_host',
-        'email_imap_port',
-        'email_imap_encryption',
-        'email_imap_username',
-        'email_imap_folder',
-        'email_transport',
-        'email_poll_interval',
-        'email_poll_batch_size',
-    ];
+class EmailSettings implements IDelegatedSettings {
+	/**
+	 * Shared-mailbox IMAP + poller config keys this section manages.
+	 *
+	 * Mirrors EmailTemplateController::IMAP_KEYS. The password key is
+	 * stored sensitive and never delegated as a readable value.
+	 *
+	 * @var string[]
+	 */
+	private const MANAGED_KEYS = [
+		'email_imap_host',
+		'email_imap_port',
+		'email_imap_encryption',
+		'email_imap_username',
+		'email_imap_folder',
+		'email_transport',
+		'email_poll_interval',
+		'email_poll_batch_size',
+	];
 
-    /**
-     * Constructor.
-     *
-     * @param IAppManager   $appManager   The app manager.
-     * @param IInitialState $initialState The initial state service.
-     */
-    public function __construct(
-        private IAppManager $appManager,
-        private IInitialState $initialState,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IAppManager $appManager The app manager.
+	 * @param IInitialState $initialState The initial state service.
+	 */
+	public function __construct(
+		private IAppManager $appManager,
+		private IInitialState $initialState,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the settings form template.
-     *
-     * Renders the shared Procest settings SPA; the email panel is mounted
-     * by AdminRoot. The app version is published for the version card.
-     *
-     * @return TemplateResponse
-     *
-     * @spec openspec/specs/case-email-integration/spec.md
-     */
-    public function getForm(): TemplateResponse
-    {
-        $version = $this->appManager->getAppVersion(appId: Application::APP_ID);
+	/**
+	 * Get the settings form template.
+	 *
+	 * Renders the shared Procest settings SPA; the email panel is mounted
+	 * by AdminRoot. The app version is published for the version card.
+	 *
+	 * @return TemplateResponse
+	 *
+	 * @spec openspec/specs/case-email-integration/spec.md
+	 */
+	public function getForm(): TemplateResponse {
+		$version = $this->appManager->getAppVersion(appId: Application::APP_ID);
 
-        $this->initialState->provideInitialState('version', $version);
+		$this->initialState->provideInitialState('version', $version);
 
-        return new TemplateResponse(
-            Application::APP_ID,
-            'settings/email',
-            []
-        );
-    }//end getForm()
+		return new TemplateResponse(
+			Application::APP_ID,
+			'settings/email',
+			[]
+		);
+	}//end getForm()
 
-    /**
-     * Get the section ID this settings page belongs to.
-     *
-     * @return string
-     */
-    public function getSection(): string
-    {
-        return 'procest';
-    }//end getSection()
+	/**
+	 * Get the section ID this settings page belongs to.
+	 *
+	 * @return string
+	 */
+	public function getSection(): string {
+		return 'procest';
+	}//end getSection()
 
-    /**
-     * Get the priority for ordering within the section.
-     *
-     * Higher than AdminSettings (10) so the SPA mounts once at the top and
-     * this entry orders after it within the same section.
-     *
-     * @return int
-     */
-    public function getPriority(): int
-    {
-        return 60;
-    }//end getPriority()
+	/**
+	 * Get the priority for ordering within the section.
+	 *
+	 * Higher than AdminSettings (10) so the SPA mounts once at the top and
+	 * this entry orders after it within the same section.
+	 *
+	 * @return int
+	 */
+	public function getPriority(): int {
+		return 60;
+	}//end getPriority()
 
-    /**
-     * Human-readable name of the delegated settings entry.
-     *
-     * @return string|null
-     */
-    public function getName(): ?string
-    {
-        return 'Case email (shared mailbox)';
-    }//end getName()
+	/**
+	 * Human-readable name of the delegated settings entry.
+	 *
+	 * @return string|null
+	 */
+	public function getName(): ?string {
+		return 'Case email (shared mailbox)';
+	}//end getName()
 
-    /**
-     * App config keys an authorized (delegated) admin may manage.
-     *
-     * The sensitive `email_imap_password` is intentionally excluded from the
-     * delegatable set — it is written via the controller with the sensitive
-     * flag and never surfaced as a readable delegated value.
-     *
-     * @return array<string,string[]> Map of appId to allowed config keys.
-     */
-    public function getAuthorizedAppConfig(): array
-    {
-        return [Application::APP_ID => self::MANAGED_KEYS];
-    }//end getAuthorizedAppConfig()
+	/**
+	 * App config keys an authorized (delegated) admin may manage.
+	 *
+	 * The sensitive `email_imap_password` is intentionally excluded from the
+	 * delegatable set — it is written via the controller with the sensitive
+	 * flag and never surfaced as a readable delegated value.
+	 *
+	 * @return array<string,string[]> Map of appId to allowed config keys.
+	 */
+	public function getAuthorizedAppConfig(): array {
+		return [Application::APP_ID => self::MANAGED_KEYS];
+	}//end getAuthorizedAppConfig()
 }//end class

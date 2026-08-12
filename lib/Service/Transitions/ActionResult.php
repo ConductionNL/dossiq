@@ -31,19 +31,18 @@ namespace OCA\Procest\Service\Transitions;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T07
  */
-final class ActionResult
-{
-    /**
-     * Constructor.
-     *
-     * @param bool                 $succeeded Whether the action succeeded
-     * @param string|null          $error     Static error message (no exception detail)
-     * @param array<string, mixed> $data      Optional structured data from the action
-     */
-    public function __construct(
-        public readonly bool $succeeded,
-        public readonly ?string $error=null,
-        public readonly array $data=[],
-    ) {
-    }//end __construct()
+final class ActionResult {
+	/**
+	 * Constructor.
+	 *
+	 * @param bool $succeeded Whether the action succeeded
+	 * @param string|null $error Static error message (no exception detail)
+	 * @param array<string, mixed> $data Optional structured data from the action
+	 */
+	public function __construct(
+		public readonly bool $succeeded,
+		public readonly ?string $error = null,
+		public readonly array $data = [],
+	) {
+	}//end __construct()
 }//end class
