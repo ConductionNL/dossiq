@@ -206,9 +206,11 @@ class MandaatImportService
      * Build the concept mandaat payload for a single resolved CSV row.
      *
      * @param array<string, mixed> $row       A resolved CSV row.
-     * @param string               $besluitId The owning MandateringsBesluit id.
+     * @param string               $besluitId The owning mandate decision id.
      *
      * @return array<string, mixed> The mandaat object payload.
+     *
+     * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
      */
     private function buildMandaatPayload(array $row, string $besluitId): array
     {
@@ -256,6 +258,8 @@ class MandaatImportService
      * @param array<string, mixed> $payload  The freshly built mandaat payload.
      *
      * @return array<int, string> Changed field names; empty when unchanged.
+     *
+     * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
      */
     private function collectChangedFields(array $existing, array $payload): array
     {
