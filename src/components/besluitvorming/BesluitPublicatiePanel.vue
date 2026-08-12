@@ -12,7 +12,7 @@
 				:href="reference"
 				target="_blank"
 				rel="noopener noreferrer">
-				{{ t('procest', 'Bekijk publicatie in DROP/LVBB') }}
+				{{ t('procest', 'View publication in DROP/LVBB') }}
 			</a>
 		</div>
 
@@ -20,7 +20,7 @@
 			<span class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--failed">
 				{{ t('procest', 'Publicatie mislukt') }}
 			</span>
-			<p>{{ errorMessage || t('procest', 'De publicatie kon niet worden verstuurd.') }}</p>
+			<p>{{ errorMessage || t('procest', 'The publication could not be sent.') }}</p>
 			<NcButton type="primary" :disabled="busy" @click="retry">
 				{{ t('procest', 'Opnieuw proberen') }}
 			</NcButton>
@@ -87,7 +87,7 @@ export default {
 				}
 			} catch (error) {
 				this.state = 'failed'
-				this.errorMessage = this.t('procest', 'De publicatie kon niet worden verstuurd.')
+				this.errorMessage = this.t('procest', 'The publication could not be sent.')
 			} finally {
 				this.busy = false
 			}
@@ -100,12 +100,12 @@ export default {
 		 */
 		mapError(code) {
 			if (code === 'not_configured') {
-				return this.t('procest', 'Er is geen DROP/LVBB-endpoint geconfigureerd.')
+				return this.t('procest', 'No DROP/LVBB endpoint has been configured.')
 			}
 			if (code === 'no_decision') {
-				return this.t('procest', 'Er is nog geen besluit vastgelegd om te publiceren.')
+				return this.t('procest', 'No decision has been recorded to publish yet.')
 			}
-			return this.t('procest', 'De publicatie kon niet worden verstuurd.')
+			return this.t('procest', 'The publication could not be sent.')
 		},
 	},
 }

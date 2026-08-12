@@ -2008,14 +2008,14 @@
         "Besluit vastleggen": "Зафіксувати Рішення",
         "Aanhouden": "Відкласти",
         "Gepubliceerd": "Опубліковано",
-        "Bekijk publicatie in DROP/LVBB": "Переглянути публікацію в DROP/LVBB",
+        "View publication in DROP/LVBB": "Переглянути публікацію в DROP/LVBB",
         "Publicatie mislukt": "Не вдалося опублікувати",
-        "De publicatie kon niet worden verstuurd.": "Не вдалося надіслати публікацію.",
+        "The publication could not be sent.": "Не вдалося надіслати публікацію.",
         "Opnieuw proberen": "Спробувати ще раз",
         "Publicatie in behandeling": "Публікація в обробці",
         "Nu publiceren": "Опублікувати зараз",
-        "Er is geen DROP/LVBB-endpoint geconfigureerd.": "Не налаштовано кінцеву точку DROP/LVBB.",
-        "Er is nog geen besluit vastgelegd om te publiceren.": "Ще не зафіксовано Рішення для публікації."
+        "No DROP/LVBB endpoint has been configured.": "Не налаштовано кінцеву точку DROP/LVBB.",
+        "No decision has been recorded to publish yet.": "Ще не зафіксовано Рішення для публікації."
     },
     "plurals": ""
 }

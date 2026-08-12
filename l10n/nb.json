@@ -2008,13 +2008,13 @@
         "Besluit vastleggen": "Registrer vedtak",
         "Aanhouden": "Utsette",
         "Gepubliceerd": "Publisert",
-        "Bekijk publicatie in DROP/LVBB": "Vis publikasjon i DROP/LVBB",
+        "View publication in DROP/LVBB": "Vis publikasjon i DROP/LVBB",
         "Publicatie mislukt": "Publikasjon mislyktes",
-        "De publicatie kon niet worden verstuurd.": "Publikasjonen kunne ikke sendes.",
+        "The publication could not be sent.": "Publikasjonen kunne ikke sendes.",
         "Opnieuw proberen": "Prøv igjen",
         "Publicatie in behandeling": "Publikasjon under behandling",
         "Nu publiceren": "Publiser nå",
-        "Er is geen DROP/LVBB-endpoint geconfigureerd.": "Det er ikke konfigurert noe DROP/LVBB-endepunkt.",
-        "Er is nog geen besluit vastgelegd om te publiceren.": "Det er ennå ikke registrert noe vedtak å publisere."
+        "No DROP/LVBB endpoint has been configured.": "Det er ikke konfigurert noe DROP/LVBB-endepunkt.",
+        "No decision has been recorded to publish yet.": "Det er ennå ikke registrert noe vedtak å publisere."
     }
 }
