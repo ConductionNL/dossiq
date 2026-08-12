@@ -216,7 +216,9 @@ class MandaatImportService {
 			// external input contract that stays as operators' files write it.
 			'mandateNumber' => (string)$row['mandaatNummer'],
 			'mandateDecision' => $besluitId,
-			'omschrijving' => (string)($row['omschrijving'] ?? ''),
+			// Key = schema property (renamed). Value = CSV column header, an
+			// external input contract that stays as operators' files write it.
+			'description' => (string)($row['description'] ?? $row['omschrijving'] ?? ''),
 			'gemandateerdeRol' => (string)$row['gemandateerdeRol'],
 			// Key = the schema property (renamed). Value = a CSV COLUMN HEADER,
 			// which is an external input format the operator's file already
@@ -261,7 +263,7 @@ class MandaatImportService {
 	 */
 	private function collectChangedFields(array $existing, array $payload): array {
 		$changedFields = [];
-		foreach (['omschrijving', 'gemandateerdeRol', 'legalBasis'] as $f) {
+		foreach (['description', 'gemandateerdeRol', 'legalBasis'] as $f) {
 			if ((string)($existing[$f] ?? '') !== (string)$payload[$f]) {
 				$changedFields[] = $f;
 			}

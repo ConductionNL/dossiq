@@ -143,7 +143,7 @@ class MandaatImportServiceTest extends TestCase {
 		self::assertSame(0, $r2['removedCount']);
 		$diff = $r2['diff'][0];
 		self::assertSame('CHANGED', $diff['change']);
-		self::assertContains('omschrijving', $diff['fields']);
+		self::assertContains('description', $diff['fields']);
 		self::assertContains('plafondCents', $diff['fields']);
 	}
 }

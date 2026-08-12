@@ -115,7 +115,7 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function createComplaint(array $data): array {
-		$this->validateRequired(data: $data, required: ['onderwerp', 'omschrijving', 'ontvangstdatum']);
+		$this->validateRequired(data: $data, required: ['onderwerp', 'description', 'ontvangstdatum']);
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {

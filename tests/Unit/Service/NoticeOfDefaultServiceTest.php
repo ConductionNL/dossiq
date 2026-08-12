@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for IngebrekestellingService.
+ * Unit tests for NoticeOfDefaultService.
  *
  * Drives the AWB 4:17 registration through valid + premature + duplicate
  * notices, verifies DwangsomBerekening creation, and asserts the
@@ -27,21 +27,21 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\IngebrekestellingService;
+use OCA\Procest\Service\NoticeOfDefaultService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\IngebrekestellingService
+ * @covers \OCA\Procest\Service\NoticeOfDefaultService
  *
  * @uses \OCA\Procest\Service\TermijnService
  */
-class IngebrekestellingServiceTest extends TestCase {
+class NoticeOfDefaultServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
 	private TermijnService $termijnService;
-	private IngebrekestellingService $service;
+	private NoticeOfDefaultService $service;
 
 	protected function setUp(): void {
 		$this->objects = new FakeTermijnStore();
@@ -63,7 +63,7 @@ class IngebrekestellingServiceTest extends TestCase {
 
 		$logger = $this->createMock(LoggerInterface::class);
 		$this->termijnService = new TermijnService($settings, $logger);
-		$this->service = new IngebrekestellingService($settings, $this->termijnService, $logger);
+		$this->service = new NoticeOfDefaultService($settings, $this->termijnService, $logger);
 
 		// Seed an AWB-default definition.
 		$this->objects->saveObject('procest', 'termijnDefinitie', [
@@ -92,7 +92,7 @@ class IngebrekestellingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testValidNoticeCreatesBerekeningWithCorrectGrace(): void {
-		$row = $this->service->registerIngebrekestelling(
+		$row = $this->service->registerNoticeOfDefault(
 			'ti-1',
 			new DateTimeImmutable('2026-03-15'),
 			'email',
@@ -130,7 +130,7 @@ class IngebrekestellingServiceTest extends TestCase {
 			'notificatiesVerstuurd' => [],
 		]);
 
-		$row = $this->service->registerIngebrekestelling(
+		$row = $this->service->registerNoticeOfDefault(
 			'ti-lopend',
 			new DateTimeImmutable('2026-03-15'),
 			'post'
@@ -145,14 +145,14 @@ class IngebrekestellingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testSecondNoticeDoesNotSpawnSecondBerekening(): void {
-		$first = $this->service->registerIngebrekestelling(
+		$first = $this->service->registerNoticeOfDefault(
 			'ti-1',
 			new DateTimeImmutable('2026-03-15'),
 			'email'
 		);
 		self::assertArrayHasKey('dwangsomBerekening', $first);
 
-		$second = $this->service->registerIngebrekestelling(
+		$second = $this->service->registerNoticeOfDefault(
 			'ti-1',
 			new DateTimeImmutable('2026-03-20'),
 			'post'
@@ -188,7 +188,7 @@ class IngebrekestellingServiceTest extends TestCase {
 			'notificatiesVerstuurd' => [],
 		]);
 
-		$row = $this->service->registerIngebrekestelling(
+		$row = $this->service->registerNoticeOfDefault(
 			'ti-woo',
 			new DateTimeImmutable('2026-02-15'),
 			'post'

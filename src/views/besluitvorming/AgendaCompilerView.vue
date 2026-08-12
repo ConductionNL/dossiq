@@ -6,7 +6,7 @@
 	<div class="agenda-compiler">
 		<CnDetailPage
 			:title="t('procest', 'Agenda samenstellen')"
-			:subtitle="t('procest', 'Stel de vergaderagenda samen uit besluiten die gereed zijn voor agendering')"
+			:subtitle="t('procest', 'Compile the meeting agenda from decisions ready for scheduling')"
 			:loading="loading"
 			:sidebar="false">
 			<template #header-actions>
@@ -39,11 +39,11 @@
 			</CnDetailCard>
 
 			<div class="agenda-compiler__panels">
-				<CnDetailCard :title="t('procest', 'Beschikbaar voor agendering')" class="agenda-compiler__panel">
+				<CnDetailCard :title="t('procest', 'Available for scheduling')" class="agenda-compiler__panel">
 					<NcEmptyContent
 						v-if="available.length === 0"
-						:name="t('procest', 'Geen beschikbare items')"
-						:description="t('procest', 'Er zijn geen besluiten gereed voor agendering voor dit gremium.')" />
+						:name="t('procest', 'No available items')"
+						:description="t('procest', 'No decisions are ready for scheduling for this body.')" />
 					<div
 						v-for="item in available"
 						:key="item.id"
@@ -61,7 +61,7 @@
 					<NcEmptyContent
 						v-if="agenda.length === 0"
 						:name="t('procest', 'Lege agenda')"
-						:description="t('procest', 'Voeg items toe vanuit de lijst links.')" />
+						:description="t('procest', 'Add items from the list on the left.')" />
 					<AgendaItem
 						v-for="item in agenda"
 						:key="item.id"

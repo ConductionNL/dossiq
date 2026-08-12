@@ -16,7 +16,7 @@
 					:aria-label-combobox="t('procest', 'Invoegen na stap')"
 					label="label"
 					:reduce="opt => opt.value"
-					:placeholder="t('procest', 'Selecteer invoegpositie')" />
+					:placeholder="t('procest', 'Select insert position')" />
 			</div>
 			<div class="add-step-dialog__field">
 				<label class="add-step-dialog__label">
@@ -25,7 +25,7 @@
 				<NcSelect v-model="stepType"
 					:options="stepTypeOptions"
 					:aria-label-combobox="t('procest', 'Stap type')"
-					:placeholder="t('procest', 'Selecteer type')" />
+					:placeholder="t('procest', 'Select type')" />
 			</div>
 			<div class="add-step-dialog__field">
 				<label class="add-step-dialog__label">
@@ -34,7 +34,7 @@
 				<NcSelect v-model="actorType"
 					:options="actorTypeOptions"
 					:aria-label-combobox="t('procest', 'Actor type')"
-					:placeholder="t('procest', 'Selecteer actor type')" />
+					:placeholder="t('procest', 'Select actor type')" />
 			</div>
 			<div class="add-step-dialog__field">
 				<NcTextField :model-value="actor"

@@ -6,7 +6,7 @@
 			<NcLoadingIcon :size="32" />
 		</div>
 		<div v-else-if="!beschikking" class="beschikking-detail__empty">
-			<NcEmptyContent :name="t('procest', 'Geen beschikking gevonden')" />
+			<NcEmptyContent :name="t('procest', 'No decision found')" />
 		</div>
 		<div v-else class="beschikking-detail__body">
 			<header class="beschikking-detail__header">
@@ -40,7 +40,7 @@
 					     lives in that column's JSON rather than as a column of its own
 					     and is deliberately not renamed here. -->
 					<dd>{{ beschikking.mandateGranted.mandaatNiveau }}</dd>
-					<dt>{{ t('procest', 'Akkoord door') }}</dt>
+					<dt>{{ t('procest', 'Approved by') }}</dt>
 					<dd>{{ beschikking.mandateGranted.akkoordDoor }}</dd>
 				</dl>
 			</section>

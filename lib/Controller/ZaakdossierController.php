@@ -242,7 +242,10 @@ class ZaakdossierController extends Controller {
 
 		$metadata = [
 			'titel' => $this->request->getParam('titel'),
-			'beschrijving' => $this->request->getParam('beschrijving'),
+			// Key = schema property (renamed). The request param keeps both
+			// spellings: it is a published contract and an un-updated client
+			// must not break.
+			'description' => $this->request->getParam('description') ?? $this->request->getParam('beschrijving'),
 			'informatieobjecttype' => $this->request->getParam('informatieobjecttype'),
 			'vertrouwelijkheidaanduiding' => $this->request->getParam('vertrouwelijkheidaanduiding'),
 		];

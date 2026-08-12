@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest IngebrekestellingController.
+ * Procest NoticeOfDefaultController.
  *
  * @category Controller
  * @package  OCA\Procest\Controller
@@ -25,7 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\IngebrekestellingService;
+use OCA\Procest\Service\NoticeOfDefaultService;
 use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -40,13 +40,13 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  */
-class IngebrekestellingController extends Controller {
+class NoticeOfDefaultController extends Controller {
 	/**
 	 * Constructor.
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param IngebrekestellingService $service Service.
+	 * @param NoticeOfDefaultService $service Service.
 	 * @param SettingsService $settings Settings.
 	 * @param IUserSession $userSession User session.
 	 * @param LoggerInterface $logger Logger.
@@ -54,7 +54,7 @@ class IngebrekestellingController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly IngebrekestellingService $service,
+		private readonly NoticeOfDefaultService $service,
 		private readonly SettingsService $settings,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
@@ -112,7 +112,7 @@ class IngebrekestellingController extends Controller {
 		}
 
 		try {
-			$row = $this->service->registerIngebrekestelling(
+			$row = $this->service->registerNoticeOfDefault(
 				$instanceId,
 				new DateTimeImmutable($whenStr),
 				$kanaal,

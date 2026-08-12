@@ -14,7 +14,7 @@
 						:input-label="t('procest', 'Sjabloon')"
 						label="label"
 						:reduce="opt => opt.value"
-						:placeholder="t('procest', 'Selecteer een sjabloon')" />
+						:placeholder="t('procest', 'Select a template')" />
 				</div>
 				<div class="beschikking-composer__field">
 					<NcTextField :model-value="geadresseerdeNaam"
@@ -33,7 +33,7 @@
 
 			<div v-else class="beschikking-composer__preview">
 				<NcNoteCard type="success">
-					{{ t('procest', 'De beschikking is samengesteld als concept.') }}
+					{{ t('procest', 'The decision has been composed as a draft.') }}
 				</NcNoteCard>
 				<dl class="beschikking-composer__meta">
 					<dt>{{ t('procest', 'Kenmerk') }}</dt>
@@ -44,10 +44,10 @@
 					<dd>{{ composed.huidigeStatus }}</dd>
 				</dl>
 				<NcNoteCard v-if="composed.motivering_required" type="warning">
-					{{ t('procest', 'De motivering ontbreekt nog en is verplicht.') }}
+					{{ t('procest', 'The rationale is still missing and is required.') }}
 				</NcNoteCard>
 				<NcNoteCard v-if="composed.geadresseerde_required" type="warning">
-					{{ t('procest', 'De geadresseerde ontbreekt nog en is verplicht.') }}
+					{{ t('procest', 'The addressee is still missing and is required.') }}
 				</NcNoteCard>
 			</div>
 		</div>
@@ -123,7 +123,7 @@ export default {
 				this.composed = await compose(this.zaakId, this.templateId, overrides)
 				this.$emit('composed', this.composed)
 			} catch (e) {
-				this.error = t('procest', 'De beschikking kon niet worden opgesteld.')
+				this.error = t('procest', 'The decision could not be drafted.')
 			} finally {
 				this.submitting = false
 			}

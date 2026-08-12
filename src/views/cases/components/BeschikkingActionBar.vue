@@ -85,7 +85,7 @@ export default {
 				const updated = await fn()
 				this.$emit('updated', updated)
 			} catch (e) {
-				this.error = t('procest', 'De actie kon niet worden uitgevoerd.')
+				this.error = t('procest', 'The action could not be performed.')
 			} finally {
 				this.busy = false
 			}
@@ -102,7 +102,7 @@ export default {
 				link.click()
 				window.URL.revokeObjectURL(url)
 			} catch (e) {
-				this.error = t('procest', 'Het audit-pakket kon niet worden geexporteerd.')
+				this.error = t('procest', 'The audit package could not be exported.')
 			} finally {
 				this.busy = false
 			}
