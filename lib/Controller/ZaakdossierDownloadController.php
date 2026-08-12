@@ -39,6 +39,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Http\RangeStreamResponse;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\Zaakdossier\DossierZipExporter;
 use OCA\Procest\Service\Zaakdossier\InformatieobjectReader;
 use OCP\AppFramework\Controller;
@@ -67,6 +68,7 @@ class ZaakdossierDownloadController extends Controller {
 	 * @param DossierZipExporter $zipExporter The ZIP export collaborator.
 	 * @param IUserSession $userSession The user session.
 	 * @param LoggerInterface $logger The logger.
+	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
 	 *
 	 * @return void
 	 */
@@ -77,12 +79,31 @@ class ZaakdossierDownloadController extends Controller {
 		private readonly DossierZipExporter $zipExporter,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
+		private readonly CaseAccessGuard $caseAccessGuard,
 	) {
 		parent::__construct(appName: $appName, request: $request);
 	}//end __construct()
 
 	/**
 	 * Export a case dossier as a ZIP with manifest, clearance-filtered.
+	 *
+	 * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()`.
+	 *
+	 * ⚠️ THE CLEARANCE FILTER DEEPER DOWN IS NOT THIS GUARD. `buildZipData()`
+	 * routes through `ZipManifestBuilder::filterByClearance()` →
+	 * `InformatieobjectAccessGuard::filterDossierForUser()`, which compares the
+	 * caller's clearance ORDINAL against each document's
+	 * `vertrouwelijkheidaanduiding`. That is a classification filter: it decides
+	 * how sensitive a document the caller may see, and says nothing about
+	 * whether the caller has anything to do with THIS case. So before this
+	 * guard, any authenticated account whose clearance cleared the documents
+	 * could download any case's dossier by supplying its id.
+	 *
+	 * The sibling capability was already guarded this way:
+	 * `DossierExportController::plan()` calls `hasCaseReadAccess()` before
+	 * returning the export PLAN. This endpoint returns the BYTES the plan
+	 * describes, so the two were inconsistent rather than deliberately
+	 * different.
 	 *
 	 * @param string $caseId The case UUID.
 	 *
@@ -96,6 +117,10 @@ class ZaakdossierDownloadController extends Controller {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
+
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
 		try {
