@@ -32,18 +32,17 @@ namespace OCA\Procest\Service\Transitions;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T07
  */
-interface ActionHandlerInterface
-{
-    /**
-     * Handle a single automatic action.
-     *
-     * @param array<string, mixed> $actionConfig      The action block (`{type, ...config}`)
-     * @param array<string, mixed> $case              The case object as an array
-     * @param array<string, mixed> $transitionContext Snapshot of the transition: fromStatus, toStatus, transitionLabel, userId, statusRecordUuid
-     *
-     * @return ActionResult
-
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult;
+interface ActionHandlerInterface {
+	/**
+	 * Handle a single automatic action.
+	 *
+	 * @param array<string, mixed> $actionConfig The action block (`{type, ...config}`)
+	 * @param array<string, mixed> $case The case object as an array
+	 * @param array<string, mixed> $transitionContext Snapshot of the transition: fromStatus, toStatus, transitionLabel, userId, statusRecordUuid
+	 *
+	 * @return ActionResult
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult;
 }//end interface

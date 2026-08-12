@@ -30,6 +30,5 @@ namespace OCA\Procest\Service\Stuf;
 /**
  * Short-circuited: circuit breaker is open for the endpoint.
  */
-class CircuitOpenException extends StufException
-{
+class CircuitOpenException extends StufException {
 }//end class

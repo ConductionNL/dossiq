@@ -42,196 +42,188 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Controller\AiAuditExportController
  */
-class AiAuditExportControllerTest extends TestCase
-{
+class AiAuditExportControllerTest extends TestCase {
 
-    private AiAuditService $auditService;
+	private AiAuditService $auditService;
 
-    private IGroupManager $groupManager;
+	private IGroupManager $groupManager;
 
-    private IUserSession $userSession;
+	private IUserSession $userSession;
 
-    private IRequest $request;
+	private IRequest $request;
 
-    private LoggerInterface $logger;
+	private LoggerInterface $logger;
 
-    /**
-     * Build a controller instance for a given user id (null = unauthenticated).
-     *
-     * @param string|null $uid The Nextcloud user id, or null for no session.
-     *
-     * @return AiAuditExportController
-     */
-    private function makeController(?string $uid): AiAuditExportController
-    {
-        $userSession = $this->createMock(IUserSession::class);
-        if ($uid === null) {
-            $userSession->method('getUser')->willReturn(null);
-        } else {
-            $user = $this->createMock(IUser::class);
-            $user->method('getUID')->willReturn($uid);
-            $userSession->method('getUser')->willReturn($user);
-        }
+	/**
+	 * Build a controller instance for a given user id (null = unauthenticated).
+	 *
+	 * @param string|null $uid The Nextcloud user id, or null for no session.
+	 *
+	 * @return AiAuditExportController
+	 */
+	private function makeController(?string $uid): AiAuditExportController {
+		$userSession = $this->createMock(IUserSession::class);
+		if ($uid === null) {
+			$userSession->method('getUser')->willReturn(null);
+		} else {
+			$user = $this->createMock(IUser::class);
+			$user->method('getUID')->willReturn($uid);
+			$userSession->method('getUser')->willReturn($user);
+		}
 
-        return new AiAuditExportController(
-            appName: 'procest',
-            request: $this->request,
-            userSession: $userSession,
-            groupManager: $this->groupManager,
-            auditService: $this->auditService,
-            logger: $this->logger,
-        );
-    }//end makeController()
+		return new AiAuditExportController(
+			appName: 'procest',
+			request: $this->request,
+			userSession: $userSession,
+			groupManager: $this->groupManager,
+			auditService: $this->auditService,
+			logger: $this->logger,
+		);
+	}//end makeController()
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $this->auditService = $this->createMock(AiAuditService::class);
-        $this->groupManager = $this->createMock(IGroupManager::class);
-        $this->request      = $this->createMock(IRequest::class);
-        $this->logger       = $this->createMock(LoggerInterface::class);
-    }//end setUp()
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		$this->auditService = $this->createMock(AiAuditService::class);
+		$this->groupManager = $this->createMock(IGroupManager::class);
+		$this->request = $this->createMock(IRequest::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
+	}//end setUp()
 
-    /**
-     * A user in an allowed group receives a CSV download with a header row.
-     *
-     * @return void
-     */
-    public function testExportAllowedGroupReturnsCsv(): void
-    {
-        $this->groupManager->method('isInGroup')
-            ->willReturnCallback(fn ($uid, $group) => $group === 'auditors');
-        $this->groupManager->method('isAdmin')->willReturn(false);
+	/**
+	 * A user in an allowed group receives a CSV download with a header row.
+	 *
+	 * @return void
+	 */
+	public function testExportAllowedGroupReturnsCsv(): void {
+		$this->groupManager->method('isInGroup')
+			->willReturnCallback(fn ($uid, $group) => $group === 'auditors');
+		$this->groupManager->method('isAdmin')->willReturn(false);
 
-        $this->request->method('getParam')->willReturnMap([
-            ['caseId', null, null],
-            ['type', null, null],
-            ['format', 'csv', 'csv'],
-        ]);
+		$this->request->method('getParam')->willReturnMap([
+			['caseId', null, null],
+			['type', null, null],
+			['format', 'csv', 'csv'],
+		]);
 
-        $this->auditService->method('listAuditEntries')->willReturn([
-            'entries' => [
-                [
-                    'id'         => 'e1',
-                    'type'       => 'classification',
-                    'action'     => 'suggestion',
-                    'caseId'     => 'case-a',
-                    'userId'     => 'behandelaar-1',
-                    'timestamp'  => '2026-07-12T10:00:00+00:00',
-                    'suggestion' => ['documentType' => 'brief'],
-                ],
-            ],
-            'total'   => null,
-            'limit'   => 200,
-            'offset'  => 0,
-        ]);
+		$this->auditService->method('listAuditEntries')->willReturn([
+			'entries' => [
+				[
+					'id' => 'e1',
+					'type' => 'classification',
+					'action' => 'suggestion',
+					'caseId' => 'case-a',
+					'userId' => 'behandelaar-1',
+					'timestamp' => '2026-07-12T10:00:00+00:00',
+					'suggestion' => ['documentType' => 'brief'],
+				],
+			],
+			'total' => null,
+			'limit' => 200,
+			'offset' => 0,
+		]);
 
-        $controller = $this->makeController('auditor-1');
-        $response   = $controller->export();
+		$controller = $this->makeController('auditor-1');
+		$response = $controller->export();
 
-        $this->assertInstanceOf(DataDownloadResponse::class, $response);
-        $this->assertSame('text/csv', $response->getHeaders()['Content-Type']);
+		$this->assertInstanceOf(DataDownloadResponse::class, $response);
+		$this->assertSame('text/csv', $response->getHeaders()['Content-Type']);
 
-        $csv = $response->render();
-        $this->assertStringContainsString('id,created,type,action,caseId', $csv);
-        $this->assertStringContainsString('e1', $csv);
-        $this->assertStringContainsString('classification', $csv);
-        // Array-valued field flattened to a JSON string cell.
-        $this->assertStringContainsString('documentType', $csv);
-    }//end testExportAllowedGroupReturnsCsv()
+		$csv = $response->render();
+		$this->assertStringContainsString('id,created,type,action,caseId', $csv);
+		$this->assertStringContainsString('e1', $csv);
+		$this->assertStringContainsString('classification', $csv);
+		// Array-valued field flattened to a JSON string cell.
+		$this->assertStringContainsString('documentType', $csv);
+	}//end testExportAllowedGroupReturnsCsv()
 
-    /**
-     * An NC admin outside the allowed groups is still permitted (defensive
-     * fallback, mirrors the parafering export).
-     *
-     * @return void
-     */
-    public function testExportAdminFallbackAllowed(): void
-    {
-        $this->groupManager->method('isInGroup')->willReturn(false);
-        $this->groupManager->method('isAdmin')->willReturn(true);
+	/**
+	 * An NC admin outside the allowed groups is still permitted (defensive
+	 * fallback, mirrors the parafering export).
+	 *
+	 * @return void
+	 */
+	public function testExportAdminFallbackAllowed(): void {
+		$this->groupManager->method('isInGroup')->willReturn(false);
+		$this->groupManager->method('isAdmin')->willReturn(true);
 
-        $this->request->method('getParam')->willReturnMap([
-            ['caseId', null, null],
-            ['type', null, null],
-            ['format', 'csv', 'csv'],
-        ]);
+		$this->request->method('getParam')->willReturnMap([
+			['caseId', null, null],
+			['type', null, null],
+			['format', 'csv', 'csv'],
+		]);
 
-        $this->auditService->method('listAuditEntries')
-            ->willReturn(['entries' => [], 'total' => null, 'limit' => 200, 'offset' => 0]);
+		$this->auditService->method('listAuditEntries')
+			->willReturn(['entries' => [], 'total' => null, 'limit' => 200, 'offset' => 0]);
 
-        $controller = $this->makeController('admin-1');
-        $response   = $controller->export();
+		$controller = $this->makeController('admin-1');
+		$response = $controller->export();
 
-        $this->assertInstanceOf(DataDownloadResponse::class, $response);
-    }//end testExportAdminFallbackAllowed()
+		$this->assertInstanceOf(DataDownloadResponse::class, $response);
+	}//end testExportAdminFallbackAllowed()
 
-    /**
-     * A user in none of the allowed groups (and not an admin) is denied
-     * with 403 and no data.
-     *
-     * @return void
-     */
-    public function testExportDeniesPlainUser(): void
-    {
-        $this->groupManager->method('isInGroup')->willReturn(false);
-        $this->groupManager->method('isAdmin')->willReturn(false);
+	/**
+	 * A user in none of the allowed groups (and not an admin) is denied
+	 * with 403 and no data.
+	 *
+	 * @return void
+	 */
+	public function testExportDeniesPlainUser(): void {
+		$this->groupManager->method('isInGroup')->willReturn(false);
+		$this->groupManager->method('isAdmin')->willReturn(false);
 
-        $this->auditService->expects($this->never())->method('listAuditEntries');
+		$this->auditService->expects($this->never())->method('listAuditEntries');
 
-        $controller = $this->makeController('plain-user');
-        $response   = $controller->export();
+		$controller = $this->makeController('plain-user');
+		$response = $controller->export();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-    }//end testExportDeniesPlainUser()
+		$this->assertInstanceOf(JSONResponse::class, $response);
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testExportDeniesPlainUser()
 
-    /**
-     * An unauthenticated request is rejected with 401.
-     *
-     * @return void
-     */
-    public function testExportRejectsUnauthenticated(): void
-    {
-        $controller = $this->makeController(null);
-        $response   = $controller->export();
+	/**
+	 * An unauthenticated request is rejected with 401.
+	 *
+	 * @return void
+	 */
+	public function testExportRejectsUnauthenticated(): void {
+		$controller = $this->makeController(null);
+		$response = $controller->export();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-    }//end testExportRejectsUnauthenticated()
+		$this->assertInstanceOf(JSONResponse::class, $response);
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}//end testExportRejectsUnauthenticated()
 
-    /**
-     * format=json returns the raw entries array shape instead of CSV.
-     *
-     * @return void
-     */
-    public function testExportFormatJsonReturnsRawEntries(): void
-    {
-        $this->groupManager->method('isInGroup')
-            ->willReturnCallback(fn ($uid, $group) => $group === 'auditors');
-        $this->groupManager->method('isAdmin')->willReturn(false);
+	/**
+	 * format=json returns the raw entries array shape instead of CSV.
+	 *
+	 * @return void
+	 */
+	public function testExportFormatJsonReturnsRawEntries(): void {
+		$this->groupManager->method('isInGroup')
+			->willReturnCallback(fn ($uid, $group) => $group === 'auditors');
+		$this->groupManager->method('isAdmin')->willReturn(false);
 
-        $this->request->method('getParam')->willReturnMap([
-            ['caseId', null, null],
-            ['type', null, null],
-            ['format', 'csv', 'json'],
-        ]);
+		$this->request->method('getParam')->willReturnMap([
+			['caseId', null, null],
+			['type', null, null],
+			['format', 'csv', 'json'],
+		]);
 
-        $entries = [['id' => 'e1', 'type' => 'qa']];
-        $this->auditService->method('listAuditEntries')
-            ->willReturn(['entries' => $entries, 'total' => null, 'limit' => 200, 'offset' => 0]);
+		$entries = [['id' => 'e1', 'type' => 'qa']];
+		$this->auditService->method('listAuditEntries')
+			->willReturn(['entries' => $entries, 'total' => null, 'limit' => 200, 'offset' => 0]);
 
-        $controller = $this->makeController('auditor-1');
-        $response   = $controller->export();
+		$controller = $this->makeController('auditor-1');
+		$response = $controller->export();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $data = $response->getData();
-        $this->assertSame($entries, $data['entries']);
-        $this->assertSame(1, $data['count']);
-    }//end testExportFormatJsonReturnsRawEntries()
+		$this->assertInstanceOf(JSONResponse::class, $response);
+		$data = $response->getData();
+		$this->assertSame($entries, $data['entries']);
+		$this->assertSame(1, $data['count']);
+	}//end testExportFormatJsonReturnsRawEntries()
 }//end class

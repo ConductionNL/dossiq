@@ -44,133 +44,128 @@ use Throwable;
  *
  * @spec openspec/specs/termijn-reporting/spec.md
  */
-class DeadlineReportingController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string                   $appName     App id.
-     * @param IRequest                 $request     Request.
-     * @param DeadlineReportingService $service     Reporting service.
-     * @param IUserSession             $userSession User session.
-     * @param LoggerInterface          $logger      Logger.
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly DeadlineReportingService $service,
-        private readonly IUserSession $userSession,
-        private readonly LoggerInterface $logger,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class DeadlineReportingController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName App id.
+	 * @param IRequest $request Request.
+	 * @param DeadlineReportingService $service Reporting service.
+	 * @param IUserSession $userSession User session.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly DeadlineReportingService $service,
+		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Per-object authorization guard.
-     *
-     * @return JSONResponse|null
-     */
-    private function ensureAuthenticated(): ?JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
-        }
+	/**
+	 * Per-object authorization guard.
+	 *
+	 * @return JSONResponse|null
+	 */
+	private function ensureAuthenticated(): ?JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
+		}
 
-        return null;
-    }//end ensureAuthenticated()
+		return null;
+	}//end ensureAuthenticated()
 
-    /**
-     * Dashboard KPI snapshot.
-     *
-     * @NoAdminRequired
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
-     */
-    public function dashboard(): JSONResponse
-    {
-        $denied = $this->ensureAuthenticated();
-        if ($denied !== null) {
-            return $denied;
-        }
+	/**
+	 * Dashboard KPI snapshot.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 */
+	public function dashboard(): JSONResponse {
+		$denied = $this->ensureAuthenticated();
+		if ($denied !== null) {
+			return $denied;
+		}
 
-        try {
-            $row = $this->service->getTermijnKpi();
-            return new JSONResponse($row);
-        } catch (Throwable $e) {
-            $this->logger->error('Termijn dashboard failed', ['error' => $e->getMessage()]);
-            return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
-        }
-    }//end dashboard()
+		try {
+			$row = $this->service->getTermijnKpi();
+			return new JSONResponse($row);
+		} catch (Throwable $e) {
+			$this->logger->error('Termijn dashboard failed', ['error' => $e->getMessage()]);
+			return new JSONResponse(['message' => 'Internal error'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+	}//end dashboard()
 
-    /**
-     * Quarterly KPI report.
-     *
-     * @param string      $period     Period (YYYY-Qn).
-     * @param string|null $department Optional department filter.
-     *
-     * @NoAdminRequired
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
-     */
-    public function quarterlyReport(string $period='', ?string $department=null): JSONResponse
-    {
-        $denied = $this->ensureAuthenticated();
-        if ($denied !== null) {
-            return $denied;
-        }
+	/**
+	 * Quarterly KPI report.
+	 *
+	 * @param string $period Period (YYYY-Qn).
+	 * @param string|null $department Optional department filter.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 */
+	public function quarterlyReport(string $period = '', ?string $department = null): JSONResponse {
+		$denied = $this->ensureAuthenticated();
+		if ($denied !== null) {
+			return $denied;
+		}
 
-        if ($period === '') {
-            $period = (string) $this->request->getParam('periode', '');
-        }
+		if ($period === '') {
+			$period = (string)$this->request->getParam('periode', '');
+		}
 
-        if ($period === '') {
-            return new JSONResponse(['message' => 'periode is required'], Http::STATUS_BAD_REQUEST);
-        }
+		if ($period === '') {
+			return new JSONResponse(['message' => 'periode is required'], Http::STATUS_BAD_REQUEST);
+		}
 
-        try {
-            $row = $this->service->generateQuarterlyReport($period, $department);
-            return new JSONResponse($row);
-        } catch (Throwable $e) {
-            return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
-    }//end quarterlyReport()
+		try {
+			$row = $this->service->generateQuarterlyReport($period, $department);
+			return new JSONResponse($row);
+		} catch (Throwable $e) {
+			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end quarterlyReport()
 
-    /**
-     * Annual dwangsom audit report.
-     *
-     * @param int $year Year.
-     *
-     * @NoAdminRequired
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
-     */
-    public function annualStatement(int $year=0): JSONResponse
-    {
-        $denied = $this->ensureAuthenticated();
-        if ($denied !== null) {
-            return $denied;
-        }
+	/**
+	 * Annual dwangsom audit report.
+	 *
+	 * @param int $year Year.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
+	 */
+	public function annualStatement(int $year = 0): JSONResponse {
+		$denied = $this->ensureAuthenticated();
+		if ($denied !== null) {
+			return $denied;
+		}
 
-        if ($year === 0) {
-            $year = (int) $this->request->getParam('jaar', '0');
-        }
+		if ($year === 0) {
+			$year = (int)$this->request->getParam('jaar', '0');
+		}
 
-        if ($year < 2020 || $year > 2100) {
-            return new JSONResponse(['message' => 'jaar is required and must be between 2020 and 2100'], Http::STATUS_BAD_REQUEST);
-        }
+		if ($year < 2020 || $year > 2100) {
+			return new JSONResponse(['message' => 'jaar is required and must be between 2020 and 2100'], Http::STATUS_BAD_REQUEST);
+		}
 
-        try {
-            $row = $this->service->generateDwangsomAuditReport($year);
-            return new JSONResponse($row);
-        } catch (Throwable $e) {
-            return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
-    }//end annualStatement()
+		try {
+			$row = $this->service->generateDwangsomAuditReport($year);
+			return new JSONResponse($row);
+		} catch (Throwable $e) {
+			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end annualStatement()
 }//end class

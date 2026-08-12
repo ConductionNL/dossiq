@@ -34,299 +34,279 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Service\ParaferingNotificationService
  */
-class ParaferingNotificationServiceTest extends TestCase
-{
+class ParaferingNotificationServiceTest extends TestCase {
 
-    /**
-     * The mocked Nextcloud notification manager.
-     *
-     * @var IManager|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IManager $notificationManager;
+	/**
+	 * The mocked Nextcloud notification manager.
+	 *
+	 * @var IManager|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IManager $notificationManager;
 
-    /**
-     * The mocked logger interface.
-     *
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The mocked logger interface.
+	 *
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The service under test.
-     *
-     * @var ParaferingNotificationService
-     */
-    private ParaferingNotificationService $service;
+	/**
+	 * The service under test.
+	 *
+	 * @var ParaferingNotificationService
+	 */
+	private ParaferingNotificationService $service;
 
-    /**
-     * The mocked notification instance.
-     *
-     * @var INotification|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private INotification $notification;
+	/**
+	 * The mocked notification instance.
+	 *
+	 * @var INotification|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private INotification $notification;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->notificationManager = $this->createMock(IManager::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->notification = $this->createMock(INotification::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->notificationManager = $this->createMock(IManager::class);
-        $this->logger              = $this->createMock(LoggerInterface::class);
-        $this->notification        = $this->createMock(INotification::class);
+		// The notification fluent builder chain.
+		$this->notification->method('setApp')->willReturn($this->notification);
+		$this->notification->method('setUser')->willReturn($this->notification);
+		$this->notification->method('setDateTime')->willReturn($this->notification);
+		$this->notification->method('setObject')->willReturn($this->notification);
+		$this->notification->method('setSubject')->willReturn($this->notification);
 
-        // The notification fluent builder chain.
-        $this->notification->method('setApp')->willReturn($this->notification);
-        $this->notification->method('setUser')->willReturn($this->notification);
-        $this->notification->method('setDateTime')->willReturn($this->notification);
-        $this->notification->method('setObject')->willReturn($this->notification);
-        $this->notification->method('setSubject')->willReturn($this->notification);
+		$this->notificationManager
+			->method('createNotification')
+			->willReturn($this->notification);
 
-        $this->notificationManager
-            ->method('createNotification')
-            ->willReturn($this->notification);
+		$this->service = new ParaferingNotificationService(
+			$this->notificationManager,
+			$this->logger,
+		);
 
-        $this->service = new ParaferingNotificationService(
-            $this->notificationManager,
-            $this->logger,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Test that notifyStepActivated sends a notification to the correct user.
+	 *
+	 * @return void
+	 */
+	public function testNotifyStepActivatedSendsNotificationToActor(): void {
+		$this->notification
+			->expects($this->once())
+			->method('setUser')
+			->with('actor-user-1')
+			->willReturn($this->notification);
 
+		$this->notificationManager
+			->expects($this->once())
+			->method('notify')
+			->with($this->notification);
 
-    /**
-     * Test that notifyStepActivated sends a notification to the correct user.
-     *
-     * @return void
-     */
-    public function testNotifyStepActivatedSendsNotificationToActor(): void
-    {
-        $this->notification
-            ->expects($this->once())
-            ->method('setUser')
-            ->with('actor-user-1')
-            ->willReturn($this->notification);
+		$this->service->notifyStepActivated(
+			actorUserId: 'actor-user-1',
+			onderwerp: 'Testvoorstel',
+			voorstelId: 'voorstel-uuid-123',
+			stepLabel: 'Afdelingshoofd',
+		);
 
-        $this->notificationManager
-            ->expects($this->once())
-            ->method('notify')
-            ->with($this->notification);
+	}//end testNotifyStepActivatedSendsNotificationToActor()
 
-        $this->service->notifyStepActivated(
-            actorUserId: 'actor-user-1',
-            onderwerp: 'Testvoorstel',
-            voorstelId: 'voorstel-uuid-123',
-            stepLabel: 'Afdelingshoofd',
-        );
+	/**
+	 * Test that notifyStepActivated sets the correct notification subject.
+	 *
+	 * @return void
+	 */
+	public function testNotifyStepActivatedSetsCorrectSubject(): void {
+		$this->notification
+			->expects($this->once())
+			->method('setSubject')
+			->with(
+				'parafering_step_activated',
+				$this->callback(
+					function (array $params): bool {
+						return isset($params['onderwerp']) === true
+							&& isset($params['stepLabel']) === true
+							&& $params['onderwerp'] === 'Testvoorstel'
+							&& $params['stepLabel'] === 'Afdelingshoofd';
+					}
+				)
+			)
+			->willReturn($this->notification);
 
-    }//end testNotifyStepActivatedSendsNotificationToActor()
+		$this->service->notifyStepActivated(
+			actorUserId: 'actor-user-1',
+			onderwerp: 'Testvoorstel',
+			voorstelId: 'voorstel-uuid-123',
+			stepLabel: 'Afdelingshoofd',
+		);
 
+	}//end testNotifyStepActivatedSetsCorrectSubject()
 
-    /**
-     * Test that notifyStepActivated sets the correct notification subject.
-     *
-     * @return void
-     */
-    public function testNotifyStepActivatedSetsCorrectSubject(): void
-    {
-        $this->notification
-            ->expects($this->once())
-            ->method('setSubject')
-            ->with(
-                'parafering_step_activated',
-                $this->callback(
-                    function (array $params): bool {
-                        return isset($params['onderwerp']) === true
-                            && isset($params['stepLabel']) === true
-                            && $params['onderwerp'] === 'Testvoorstel'
-                            && $params['stepLabel'] === 'Afdelingshoofd';
-                    }
-                )
-            )
-            ->willReturn($this->notification);
+	/**
+	 * Test that notifyStepActivated sets the app to Application::APP_ID.
+	 *
+	 * @return void
+	 */
+	public function testNotifyStepActivatedSetsAppId(): void {
+		$this->notification
+			->expects($this->once())
+			->method('setApp')
+			->with(Application::APP_ID)
+			->willReturn($this->notification);
 
-        $this->service->notifyStepActivated(
-            actorUserId: 'actor-user-1',
-            onderwerp: 'Testvoorstel',
-            voorstelId: 'voorstel-uuid-123',
-            stepLabel: 'Afdelingshoofd',
-        );
+		$this->service->notifyStepActivated(
+			actorUserId: 'actor-user-1',
+			onderwerp: 'Testvoorstel',
+			voorstelId: 'voorstel-uuid-123',
+			stepLabel: 'Afdelingshoofd',
+		);
 
-    }//end testNotifyStepActivatedSetsCorrectSubject()
+	}//end testNotifyStepActivatedSetsAppId()
 
+	/**
+	 * Test that notifyVoorstelReturned sends a notification to the steller.
+	 *
+	 * @return void
+	 */
+	public function testNotifyVoorstelReturnedSendsNotificationToSteller(): void {
+		$this->notification
+			->expects($this->once())
+			->method('setUser')
+			->with('steller-user-1')
+			->willReturn($this->notification);
 
-    /**
-     * Test that notifyStepActivated sets the app to Application::APP_ID.
-     *
-     * @return void
-     */
-    public function testNotifyStepActivatedSetsAppId(): void
-    {
-        $this->notification
-            ->expects($this->once())
-            ->method('setApp')
-            ->with(Application::APP_ID)
-            ->willReturn($this->notification);
+		$this->notificationManager
+			->expects($this->once())
+			->method('notify')
+			->with($this->notification);
 
-        $this->service->notifyStepActivated(
-            actorUserId: 'actor-user-1',
-            onderwerp: 'Testvoorstel',
-            voorstelId: 'voorstel-uuid-123',
-            stepLabel: 'Afdelingshoofd',
-        );
+		$this->service->notifyVoorstelReturned(
+			stellerUserId: 'steller-user-1',
+			onderwerp: 'Testvoorstel',
+			voorstelId: 'voorstel-uuid-123',
+			returnedBy: 'manager-user',
+			comment: 'Aanpassing nodig',
+		);
 
-    }//end testNotifyStepActivatedSetsAppId()
+	}//end testNotifyVoorstelReturnedSendsNotificationToSteller()
 
+	/**
+	 * Test that notifyVoorstelReturned includes the return comment in subject params.
+	 *
+	 * @return void
+	 */
+	public function testNotifyVoorstelReturnedIncludesComment(): void {
+		$this->notification
+			->expects($this->once())
+			->method('setSubject')
+			->with(
+				'voorstel_returned',
+				$this->callback(
+					function (array $params): bool {
+						return isset($params['comment']) === true
+							&& $params['comment'] === 'Aanpassing nodig';
+					}
+				)
+			)
+			->willReturn($this->notification);
 
-    /**
-     * Test that notifyVoorstelReturned sends a notification to the steller.
-     *
-     * @return void
-     */
-    public function testNotifyVoorstelReturnedSendsNotificationToSteller(): void
-    {
-        $this->notification
-            ->expects($this->once())
-            ->method('setUser')
-            ->with('steller-user-1')
-            ->willReturn($this->notification);
+		$this->service->notifyVoorstelReturned(
+			stellerUserId: 'steller-user-1',
+			onderwerp: 'Testvoorstel',
+			voorstelId: 'voorstel-uuid-123',
+			returnedBy: 'manager-user',
+			comment: 'Aanpassing nodig',
+		);
 
-        $this->notificationManager
-            ->expects($this->once())
-            ->method('notify')
-            ->with($this->notification);
+	}//end testNotifyVoorstelReturnedIncludesComment()
 
-        $this->service->notifyVoorstelReturned(
-            stellerUserId: 'steller-user-1',
-            onderwerp: 'Testvoorstel',
-            voorstelId: 'voorstel-uuid-123',
-            returnedBy: 'manager-user',
-            comment: 'Aanpassing nodig',
-        );
+	/**
+	 * Test that notifyParaferingReminder sends a reminder to the actor.
+	 *
+	 * @return void
+	 */
+	public function testNotifyParaferingReminderSendsToActor(): void {
+		$this->notification
+			->expects($this->once())
+			->method('setUser')
+			->with('actor-user-1')
+			->willReturn($this->notification);
 
-    }//end testNotifyVoorstelReturnedSendsNotificationToSteller()
+		$this->notificationManager
+			->expects($this->once())
+			->method('notify');
 
+		$this->service->notifyParaferingReminder(
+			actorUserId: 'actor-user-1',
+			onderwerp: 'Testvoorstel',
+			voorstelId: 'voorstel-uuid-123',
+			daysWaiting: 3,
+		);
 
-    /**
-     * Test that notifyVoorstelReturned includes the return comment in subject params.
-     *
-     * @return void
-     */
-    public function testNotifyVoorstelReturnedIncludesComment(): void
-    {
-        $this->notification
-            ->expects($this->once())
-            ->method('setSubject')
-            ->with(
-                'voorstel_returned',
-                $this->callback(
-                    function (array $params): bool {
-                        return isset($params['comment']) === true
-                            && $params['comment'] === 'Aanpassing nodig';
-                    }
-                )
-            )
-            ->willReturn($this->notification);
+	}//end testNotifyParaferingReminderSendsToActor()
 
-        $this->service->notifyVoorstelReturned(
-            stellerUserId: 'steller-user-1',
-            onderwerp: 'Testvoorstel',
-            voorstelId: 'voorstel-uuid-123',
-            returnedBy: 'manager-user',
-            comment: 'Aanpassing nodig',
-        );
+	/**
+	 * Test that notifyParaferingReminder includes daysWaiting in subject params.
+	 *
+	 * @return void
+	 */
+	public function testNotifyParaferingReminderIncludesDaysWaiting(): void {
+		$this->notification
+			->expects($this->once())
+			->method('setSubject')
+			->with(
+				'parafering_reminder',
+				$this->callback(
+					function (array $params): bool {
+						return isset($params['daysWaiting']) === true
+							&& $params['daysWaiting'] === 5;
+					}
+				)
+			)
+			->willReturn($this->notification);
 
-    }//end testNotifyVoorstelReturnedIncludesComment()
+		$this->service->notifyParaferingReminder(
+			actorUserId: 'actor-user-1',
+			onderwerp: 'Testvoorstel',
+			voorstelId: 'voorstel-uuid-123',
+			daysWaiting: 5,
+		);
 
+	}//end testNotifyParaferingReminderIncludesDaysWaiting()
 
-    /**
-     * Test that notifyParaferingReminder sends a reminder to the actor.
-     *
-     * @return void
-     */
-    public function testNotifyParaferingReminderSendsToActor(): void
-    {
-        $this->notification
-            ->expects($this->once())
-            ->method('setUser')
-            ->with('actor-user-1')
-            ->willReturn($this->notification);
+	/**
+	 * Test that notification exceptions are caught and logged as warnings.
+	 *
+	 * @return void
+	 */
+	public function testNotificationExceptionIsCaughtAndLogged(): void {
+		$this->notificationManager
+			->method('notify')
+			->willThrowException(new \RuntimeException('Notification service unavailable'));
 
-        $this->notificationManager
-            ->expects($this->once())
-            ->method('notify');
+		$this->logger
+			->expects($this->once())
+			->method('warning')
+			->with(
+				$this->stringContains('Failed to send parafering step notification'),
+				$this->anything()
+			);
 
-        $this->service->notifyParaferingReminder(
-            actorUserId: 'actor-user-1',
-            onderwerp: 'Testvoorstel',
-            voorstelId: 'voorstel-uuid-123',
-            daysWaiting: 3,
-        );
+		// Should not throw — exception must be swallowed.
+		$this->service->notifyStepActivated(
+			actorUserId: 'actor-user-1',
+			onderwerp: 'Testvoorstel',
+			voorstelId: 'voorstel-uuid-123',
+			stepLabel: 'Afdelingshoofd',
+		);
 
-    }//end testNotifyParaferingReminderSendsToActor()
-
-
-    /**
-     * Test that notifyParaferingReminder includes daysWaiting in subject params.
-     *
-     * @return void
-     */
-    public function testNotifyParaferingReminderIncludesDaysWaiting(): void
-    {
-        $this->notification
-            ->expects($this->once())
-            ->method('setSubject')
-            ->with(
-                'parafering_reminder',
-                $this->callback(
-                    function (array $params): bool {
-                        return isset($params['daysWaiting']) === true
-                            && $params['daysWaiting'] === 5;
-                    }
-                )
-            )
-            ->willReturn($this->notification);
-
-        $this->service->notifyParaferingReminder(
-            actorUserId: 'actor-user-1',
-            onderwerp: 'Testvoorstel',
-            voorstelId: 'voorstel-uuid-123',
-            daysWaiting: 5,
-        );
-
-    }//end testNotifyParaferingReminderIncludesDaysWaiting()
-
-
-    /**
-     * Test that notification exceptions are caught and logged as warnings.
-     *
-     * @return void
-     */
-    public function testNotificationExceptionIsCaughtAndLogged(): void
-    {
-        $this->notificationManager
-            ->method('notify')
-            ->willThrowException(new \RuntimeException('Notification service unavailable'));
-
-        $this->logger
-            ->expects($this->once())
-            ->method('warning')
-            ->with(
-                $this->stringContains('Failed to send parafering step notification'),
-                $this->anything()
-            );
-
-        // Should not throw — exception must be swallowed.
-        $this->service->notifyStepActivated(
-            actorUserId: 'actor-user-1',
-            onderwerp: 'Testvoorstel',
-            voorstelId: 'voorstel-uuid-123',
-            stepLabel: 'Afdelingshoofd',
-        );
-
-    }//end testNotificationExceptionIsCaughtAndLogged()
-
+	}//end testNotificationExceptionIsCaughtAndLogged()
 
 }//end class

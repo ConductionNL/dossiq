@@ -73,335 +73,325 @@ namespace OCA\Procest\Portal;
  *
  * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
  */
-class PortalContributionProvider
-{
-    /**
-     * The OpenRegister register slug every collection/action below lives in.
-     *
-     * @var string
-     */
-    private const REGISTER = 'procest';
+class PortalContributionProvider {
+	/**
+	 * The OpenRegister register slug every collection/action below lives in.
+	 *
+	 * @var string
+	 */
+	private const REGISTER = 'procest';
 
-    /**
-     * The audiences this provider contributes to (contract v2, preferred).
-     *
-     * The registry probes for this method first. Procest serves suppliers, the
-     * citizen ('Mijn gemeente') and external field inspectors.
-     *
-     * @return array<int, string> The audience identifiers.
-     *
-     * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
-     */
-    public function getAudiences(): array
-    {
-        return ['supplier', 'citizen', 'inspector'];
+	/**
+	 * The audiences this provider contributes to (contract v2, preferred).
+	 *
+	 * The registry probes for this method first. Procest serves suppliers, the
+	 * citizen ('Mijn gemeente') and external field inspectors.
+	 *
+	 * @return array<int, string> The audience identifiers.
+	 *
+	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 */
+	public function getAudiences(): array {
+		return ['supplier', 'citizen', 'inspector'];
+	}//end getAudiences()
 
-    }//end getAudiences()
+	/**
+	 * The primary audience this provider contributes to (contract v1 fallback).
+	 *
+	 * Kept alongside getAudiences() so the provider also works against a v1
+	 * registry that predates multi-audience support.
+	 *
+	 * @return string The primary audience identifier.
+	 *
+	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 */
+	public function getAudience(): string {
+		return 'supplier';
+	}//end getAudience()
 
-    /**
-     * The primary audience this provider contributes to (contract v1 fallback).
-     *
-     * Kept alongside getAudiences() so the provider also works against a v1
-     * registry that predates multi-audience support.
-     *
-     * @return string The primary audience identifier.
-     *
-     * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
-     */
-    public function getAudience(): string
-    {
-        return 'supplier';
+	/**
+	 * Build the declarative portal manifest for one resolved subject.
+	 *
+	 * @param array<string, mixed> $subject The resolved portal subject
+	 *                                      (subjectRef, audience, organisation,
+	 *                                      trust).
+	 *
+	 * @return array<string, mixed>|null The manifest, or null when not serving.
+	 *
+	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 */
+	public function getContribution(array $subject): ?array {
+		$audience = ($subject['audience'] ?? '');
 
-    }//end getAudience()
+		if ($audience === 'supplier') {
+			return $this->supplierContribution();
+		}
 
-    /**
-     * Build the declarative portal manifest for one resolved subject.
-     *
-     * @param array<string, mixed> $subject The resolved portal subject
-     *                                      (subjectRef, audience, organisation,
-     *                                      trust).
-     *
-     * @return array<string, mixed>|null The manifest, or null when not serving.
-     *
-     * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
-     */
-    public function getContribution(array $subject): ?array
-    {
-        $audience = ($subject['audience'] ?? '');
+		if ($audience === 'citizen') {
+			return $this->citizenContribution();
+		}
 
-        if ($audience === 'supplier') {
-            return $this->supplierContribution();
-        }
+		if ($audience === 'inspector') {
+			return $this->inspectorContribution();
+		}
 
-        if ($audience === 'citizen') {
-            return $this->citizenContribution();
-        }
+		// Any audience Procest does not serve → null (fail-closed; ADR-005).
+		return null;
+	}//end getContribution()
 
-        if ($audience === 'inspector') {
-            return $this->inspectorContribution();
-        }
+	/**
+	 * Manifest for the `supplier` audience (unchanged from the v1 provider).
+	 *
+	 * The supplier's tenders, contracts, invoices and message inbox, all scoped
+	 * by the DEFAULT subjectRef == the record's `supplierRef`. Portaliq reads
+	 * them RBAC-scoped to the subject; Procest exposes no portal endpoints of
+	 * its own here.
+	 *
+	 * @return array<string, mixed> The supplier manifest.
+	 *
+	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 */
+	private function supplierContribution(): array {
+		return [
+			'label' => 'Procest',
+			'collections' => [
+				[
+					'id' => 'tenders',
+					'register' => self::REGISTER,
+					'schema' => 'supplierTender',
+					'scopeField' => 'supplierRef',
+					'label' => 'Aanbestedingen',
+					'listable' => true,
+				],
+				[
+					'id' => 'contracts',
+					'register' => self::REGISTER,
+					'schema' => 'supplierContract',
+					'scopeField' => 'supplierRef',
+					'label' => 'Contracten',
+					'listable' => true,
+				],
+				[
+					'id' => 'invoices',
+					'register' => self::REGISTER,
+					'schema' => 'supplierInvoice',
+					'scopeField' => 'supplierRef',
+					'label' => 'Facturen',
+					'listable' => true,
+				],
+				[
+					'id' => 'messages',
+					'kind' => 'inbox',
+					'register' => self::REGISTER,
+					'schema' => 'supplierMessage',
+					'scopeField' => 'supplierRef',
+					'label' => 'Berichten',
+					'listable' => true,
+				],
+			],
+			'actions' => [],
+			'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
+		];
 
-        // Any audience Procest does not serve → null (fail-closed; ADR-005).
-        return null;
+	}//end supplierContribution()
 
-    }//end getContribution()
+	/**
+	 * Manifest for the `citizen` audience (the 'Mijn gemeente' portal).
+	 *
+	 * `subject.subjectRef` is the citizen's pseudonymous, one-way subject
+	 * reference. Every collection is scoped by the DEFAULT subjectRef against
+	 * the reference the record already stores — never a raw BSN, which is
+	 * hashed into the subjectRef upstream (so a `scopeClaim: 'bsn'` indirection
+	 * would not match; see design.md):
+	 *
+	 *  - `mijnZaken` (`case`, scope `portaalSubject`) — the citizen's own cases,
+	 *    field-projected to citizen-safe columns (case identity, type, status,
+	 *    result, dates, deadline); assignee, confidentiality, workflow internals
+	 *    and quality scores are dropped.
+	 *  - `berichten` (`portaalBericht`, scope `recipientRef`, `kind: 'inbox'`) —
+	 *    the citizen's berichtenbox: messages addressed to them.
+	 *  - `verzoeken` (`portaalVerzoek`, scope `submitterRef`) — the citizen's own
+	 *    requests/complaints/objections and their lifecycle status.
+	 *
+	 * One safe create ships: `createKlacht` (a standalone complaint) stamps
+	 * `submitterRef` == subjectRef; it whitelists only the citizen's own content
+	 * (no case cross-reference), so it can never grant access to another party's
+	 * case. The bezwaar (objection) create is DEFERRED — it needs a client
+	 * `tegenZaakId` cross-reference + AWB deadline validation the flat writer
+	 * cannot verify (write-IDOR, portaliq#16); so is the message reply (needs a
+	 * verified case/thread linkage). See design.md "Deferred creates".
+	 *
+	 * minTrust is `low` (Portaliq's password edge); raise to `substantial` once
+	 * the DigiD broker lands and cases carry Wdo-level assurance.
+	 *
+	 * @return array<string, mixed> The citizen manifest.
+	 *
+	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 */
+	private function citizenContribution(): array {
+		return [
+			'label' => 'Procest',
+			'collections' => [
+				[
+					'id' => 'mijnZaken',
+					'register' => self::REGISTER,
+					'schema' => 'case',
+					'scopeField' => 'portaalSubject',
+					'label' => 'Mijn zaken',
+					'listable' => true,
+					'minTrust' => 'low',
+					'fields' => [
+						'identifier',
+						'title',
+						'caseType',
+						'status',
+						'result',
+						'startDate',
+						'endDate',
+						'deadline',
+					],
+				],
+				[
+					'id' => 'berichten',
+					'kind' => 'inbox',
+					'register' => self::REGISTER,
+					'schema' => 'portaalBericht',
+					'scopeField' => 'recipientRef',
+					'label' => 'Berichten',
+					'listable' => true,
+					'minTrust' => 'low',
+					'fields' => [
+						'caseReference',
+						'senderType',
+						'senderName',
+						'subject',
+						'content',
+						'attachments',
+						'direction',
+						'sentAt',
+						'readByRecipientAt',
+					],
+				],
+				[
+					'id' => 'verzoeken',
+					'register' => self::REGISTER,
+					'schema' => 'portaalVerzoek',
+					'scopeField' => 'submitterRef',
+					'label' => 'Mijn verzoeken',
+					'listable' => true,
+					'minTrust' => 'low',
+					'fields' => [
+						'soort',
+						'categorie',
+						'onderwerp',
+						'motivering',
+						'referentie',
+						'status',
+						'submittedAt',
+						'deadline',
+						'binnenTermijn',
+					],
+				],
+			],
+			'actions' => [
+				[
+					'id' => 'createKlacht',
+					'type' => 'create',
+					'label' => 'Een klacht indienen',
+					'register' => self::REGISTER,
+					'schema' => 'portaalVerzoek',
+					'scopeField' => 'submitterRef',
+					'minTrust' => 'low',
+					'fields' => [
+						'soort',
+						'categorie',
+						'onderwerp',
+						'motivering',
+						'attachments',
+					],
+				],
+			],
+			'notifications' => [],
+		];
 
-    /**
-     * Manifest for the `supplier` audience (unchanged from the v1 provider).
-     *
-     * The supplier's tenders, contracts, invoices and message inbox, all scoped
-     * by the DEFAULT subjectRef == the record's `supplierRef`. Portaliq reads
-     * them RBAC-scoped to the subject; Procest exposes no portal endpoints of
-     * its own here.
-     *
-     * @return array<string, mixed> The supplier manifest.
-     *
-     * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
-     */
-    private function supplierContribution(): array
-    {
-        return [
-            'label'         => 'Procest',
-            'collections'   => [
-                [
-                    'id'         => 'tenders',
-                    'register'   => self::REGISTER,
-                    'schema'     => 'supplierTender',
-                    'scopeField' => 'supplierRef',
-                    'label'      => 'Aanbestedingen',
-                    'listable'   => true,
-                ],
-                [
-                    'id'         => 'contracts',
-                    'register'   => self::REGISTER,
-                    'schema'     => 'supplierContract',
-                    'scopeField' => 'supplierRef',
-                    'label'      => 'Contracten',
-                    'listable'   => true,
-                ],
-                [
-                    'id'         => 'invoices',
-                    'register'   => self::REGISTER,
-                    'schema'     => 'supplierInvoice',
-                    'scopeField' => 'supplierRef',
-                    'label'      => 'Facturen',
-                    'listable'   => true,
-                ],
-                [
-                    'id'         => 'messages',
-                    'kind'       => 'inbox',
-                    'register'   => self::REGISTER,
-                    'schema'     => 'supplierMessage',
-                    'scopeField' => 'supplierRef',
-                    'label'      => 'Berichten',
-                    'listable'   => true,
-                ],
-            ],
-            'actions'       => [],
-            'notifications' => ['tenderPublished', 'contractExpiring', 'invoiceDue'],
-        ];
+	}//end citizenContribution()
 
-    }//end supplierContribution()
+	/**
+	 * Manifest for the `inspector` audience (an EXTERNAL field inspector).
+	 *
+	 * `subject.subjectRef` is the external inspector's pseudonymous portal
+	 * reference — they have no Nextcloud account, so scoping is by the additive
+	 * `assignedInspectorRef` (DEFAULT subjectRef), NOT the internal `inspector`
+	 * NC-user-UID column. Two read collections, field-projected to the
+	 * inspector's own result-level data (large/internal columns — the frozen
+	 * `templateSnapshot`, raw per-item `responses`, `photos` blobs — are
+	 * dropped):
+	 *
+	 *  - `inspectieRapporten` (`inspectieRapport`, scope `assignedInspectorRef`)
+	 *    — the inspector's assigned/completed inspection reports.
+	 *  - `checklistRuns` (`inspectionChecklistRun`, scope `assignedInspectorRef`)
+	 *    — their checklist runs and lifecycle/result state.
+	 *
+	 * No create action: submitting a run needs client `case`/`template`
+	 * cross-references the flat writer cannot verify against the inspector's
+	 * assignment (write-IDOR, portaliq#16), so the submit is DEFERRED — it
+	 * re-adds once Portaliq validates create-body cross-refs. See design.md.
+	 *
+	 * minTrust is `low` (Portaliq's password edge) pending an inspector identity
+	 * broker.
+	 *
+	 * @return array<string, mixed> The inspector manifest.
+	 *
+	 * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
+	 */
+	private function inspectorContribution(): array {
+		return [
+			'label' => 'Procest',
+			'collections' => [
+				[
+					'id' => 'inspectieRapporten',
+					'register' => self::REGISTER,
+					'schema' => 'inspectieRapport',
+					'scopeField' => 'assignedInspectorRef',
+					'label' => 'Mijn inspecties',
+					'listable' => true,
+					'minTrust' => 'low',
+					'fields' => [
+						'case',
+						'checklist',
+						'inspectionDate',
+						'location',
+						'result',
+						'failedItems',
+						'remarks',
+						'followUpRequired',
+					],
+				],
+				[
+					'id' => 'checklistRuns',
+					'register' => self::REGISTER,
+					'schema' => 'inspectionChecklistRun',
+					'scopeField' => 'assignedInspectorRef',
+					'label' => 'Mijn checklists',
+					'listable' => true,
+					'minTrust' => 'low',
+					'fields' => [
+						'case',
+						'template',
+						'templateVersion',
+						'startedAt',
+						'completedAt',
+						'submittedAt',
+						'status',
+						'overallResult',
+						'followUpType',
+						'syncState',
+					],
+				],
+			],
+			'actions' => [],
+			'notifications' => [],
+		];
 
-    /**
-     * Manifest for the `citizen` audience (the 'Mijn gemeente' portal).
-     *
-     * `subject.subjectRef` is the citizen's pseudonymous, one-way subject
-     * reference. Every collection is scoped by the DEFAULT subjectRef against
-     * the reference the record already stores — never a raw BSN, which is
-     * hashed into the subjectRef upstream (so a `scopeClaim: 'bsn'` indirection
-     * would not match; see design.md):
-     *
-     *  - `mijnZaken` (`case`, scope `portaalSubject`) — the citizen's own cases,
-     *    field-projected to citizen-safe columns (case identity, type, status,
-     *    result, dates, deadline); assignee, confidentiality, workflow internals
-     *    and quality scores are dropped.
-     *  - `berichten` (`portaalBericht`, scope `recipientRef`, `kind: 'inbox'`) —
-     *    the citizen's berichtenbox: messages addressed to them.
-     *  - `verzoeken` (`portaalVerzoek`, scope `submitterRef`) — the citizen's own
-     *    requests/complaints/objections and their lifecycle status.
-     *
-     * One safe create ships: `createKlacht` (a standalone complaint) stamps
-     * `submitterRef` == subjectRef; it whitelists only the citizen's own content
-     * (no case cross-reference), so it can never grant access to another party's
-     * case. The bezwaar (objection) create is DEFERRED — it needs a client
-     * `tegenZaakId` cross-reference + AWB deadline validation the flat writer
-     * cannot verify (write-IDOR, portaliq#16); so is the message reply (needs a
-     * verified case/thread linkage). See design.md "Deferred creates".
-     *
-     * minTrust is `low` (Portaliq's password edge); raise to `substantial` once
-     * the DigiD broker lands and cases carry Wdo-level assurance.
-     *
-     * @return array<string, mixed> The citizen manifest.
-     *
-     * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
-     */
-    private function citizenContribution(): array
-    {
-        return [
-            'label'         => 'Procest',
-            'collections'   => [
-                [
-                    'id'         => 'mijnZaken',
-                    'register'   => self::REGISTER,
-                    'schema'     => 'case',
-                    'scopeField' => 'portaalSubject',
-                    'label'      => 'Mijn zaken',
-                    'listable'   => true,
-                    'minTrust'   => 'low',
-                    'fields'     => [
-                        'identifier',
-                        'title',
-                        'caseType',
-                        'status',
-                        'result',
-                        'startDate',
-                        'endDate',
-                        'deadline',
-                    ],
-                ],
-                [
-                    'id'         => 'berichten',
-                    'kind'       => 'inbox',
-                    'register'   => self::REGISTER,
-                    'schema'     => 'portaalBericht',
-                    'scopeField' => 'recipientRef',
-                    'label'      => 'Berichten',
-                    'listable'   => true,
-                    'minTrust'   => 'low',
-                    'fields'     => [
-                        'caseReference',
-                        'senderType',
-                        'senderName',
-                        'subject',
-                        'content',
-                        'attachments',
-                        'direction',
-                        'sentAt',
-                        'readByRecipientAt',
-                    ],
-                ],
-                [
-                    'id'         => 'verzoeken',
-                    'register'   => self::REGISTER,
-                    'schema'     => 'portaalVerzoek',
-                    'scopeField' => 'submitterRef',
-                    'label'      => 'Mijn verzoeken',
-                    'listable'   => true,
-                    'minTrust'   => 'low',
-                    'fields'     => [
-                        'soort',
-                        'categorie',
-                        'onderwerp',
-                        'motivering',
-                        'referentie',
-                        'status',
-                        'submittedAt',
-                        'deadline',
-                        'binnenTermijn',
-                    ],
-                ],
-            ],
-            'actions'       => [
-                [
-                    'id'         => 'createKlacht',
-                    'type'       => 'create',
-                    'label'      => 'Een klacht indienen',
-                    'register'   => self::REGISTER,
-                    'schema'     => 'portaalVerzoek',
-                    'scopeField' => 'submitterRef',
-                    'minTrust'   => 'low',
-                    'fields'     => [
-                        'soort',
-                        'categorie',
-                        'onderwerp',
-                        'motivering',
-                        'attachments',
-                    ],
-                ],
-            ],
-            'notifications' => [],
-        ];
-
-    }//end citizenContribution()
-
-    /**
-     * Manifest for the `inspector` audience (an EXTERNAL field inspector).
-     *
-     * `subject.subjectRef` is the external inspector's pseudonymous portal
-     * reference — they have no Nextcloud account, so scoping is by the additive
-     * `assignedInspectorRef` (DEFAULT subjectRef), NOT the internal `inspector`
-     * NC-user-UID column. Two read collections, field-projected to the
-     * inspector's own result-level data (large/internal columns — the frozen
-     * `templateSnapshot`, raw per-item `responses`, `photos` blobs — are
-     * dropped):
-     *
-     *  - `inspectieRapporten` (`inspectieRapport`, scope `assignedInspectorRef`)
-     *    — the inspector's assigned/completed inspection reports.
-     *  - `checklistRuns` (`inspectionChecklistRun`, scope `assignedInspectorRef`)
-     *    — their checklist runs and lifecycle/result state.
-     *
-     * No create action: submitting a run needs client `case`/`template`
-     * cross-references the flat writer cannot verify against the inspector's
-     * assignment (write-IDOR, portaliq#16), so the submit is DEFERRED — it
-     * re-adds once Portaliq validates create-body cross-refs. See design.md.
-     *
-     * minTrust is `low` (Portaliq's password edge) pending an inspector identity
-     * broker.
-     *
-     * @return array<string, mixed> The inspector manifest.
-     *
-     * @spec openspec/changes/move-portals-to-portaliq/tasks.md#T1
-     */
-    private function inspectorContribution(): array
-    {
-        return [
-            'label'         => 'Procest',
-            'collections'   => [
-                [
-                    'id'         => 'inspectieRapporten',
-                    'register'   => self::REGISTER,
-                    'schema'     => 'inspectieRapport',
-                    'scopeField' => 'assignedInspectorRef',
-                    'label'      => 'Mijn inspecties',
-                    'listable'   => true,
-                    'minTrust'   => 'low',
-                    'fields'     => [
-                        'case',
-                        'checklist',
-                        'inspectionDate',
-                        'location',
-                        'result',
-                        'failedItems',
-                        'remarks',
-                        'followUpRequired',
-                    ],
-                ],
-                [
-                    'id'         => 'checklistRuns',
-                    'register'   => self::REGISTER,
-                    'schema'     => 'inspectionChecklistRun',
-                    'scopeField' => 'assignedInspectorRef',
-                    'label'      => 'Mijn checklists',
-                    'listable'   => true,
-                    'minTrust'   => 'low',
-                    'fields'     => [
-                        'case',
-                        'template',
-                        'templateVersion',
-                        'startedAt',
-                        'completedAt',
-                        'submittedAt',
-                        'status',
-                        'overallResult',
-                        'followUpType',
-                        'syncState',
-                    ],
-                ],
-            ],
-            'actions'       => [],
-            'notifications' => [],
-        ];
-
-    }//end inspectorContribution()
+	}//end inspectorContribution()
 }//end class

@@ -29,19 +29,18 @@ namespace OCA\Procest\Service;
 /**
  * Contract for voice-memo transcribers.
  */
-interface TranscriberInterface
-{
-    /**
-     * Transcribe a voice memo identified by its blob ref.
-     *
-     * @param string $blobRef  The opaque storage reference for the audio blob.
-     * @param string $language The expected language (BCP-47, e.g. "nl", "en").
-     *
-     * @return string The plain-text transcription.
-     *
-     * @throws \RuntimeException On transcription failure.
-     *
-     * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
-     */
-    public function transcribe(string $blobRef, string $language): string;
+interface TranscriberInterface {
+	/**
+	 * Transcribe a voice memo identified by its blob ref.
+	 *
+	 * @param string $blobRef The opaque storage reference for the audio blob.
+	 * @param string $language The expected language (BCP-47, e.g. "nl", "en").
+	 *
+	 * @return string The plain-text transcription.
+	 *
+	 * @throws \RuntimeException On transcription failure.
+	 *
+	 * @spec openspec/changes/mobiel-inspectie-offline/tasks.md#Task-9
+	 */
+	public function transcribe(string $blobRef, string $language): string;
 }//end interface

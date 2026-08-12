@@ -37,59 +37,57 @@ use Psr\Log\LoggerInterface;
 /**
  * On-demand background job that retries a single StufMessage.
  */
-class StufRetryJob extends Job
-{
-    /**
-     * Constructor.
-     *
-     * @param ITimeFactory       $time    The time factory.
-     * @param StufAdapterService $adapter The adapter service.
-     * @param LoggerInterface    $logger  The logger.
-     */
-    public function __construct(
-        ITimeFactory $time,
-        private StufAdapterService $adapter,
-        private LoggerInterface $logger,
-    ) {
-        parent::__construct(time: $time);
-    }//end __construct()
+class StufRetryJob extends Job {
+	/**
+	 * Constructor.
+	 *
+	 * @param ITimeFactory $time The time factory.
+	 * @param StufAdapterService $adapter The adapter service.
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		ITimeFactory $time,
+		private StufAdapterService $adapter,
+		private LoggerInterface $logger,
+	) {
+		parent::__construct(time: $time);
+	}//end __construct()
 
-    /**
-     * Execute the retry.
-     *
-     * @param mixed $argument The job payload: {stufMessageId: string, runAt?: int}.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
-     */
-    protected function run(mixed $argument): void
-    {
-        $payload = [];
-        if (is_array(value: $argument) === true) {
-            $payload = $argument;
-        }
+	/**
+	 * Execute the retry.
+	 *
+	 * @param mixed $argument The job payload: {stufMessageId: string, runAt?: int}.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
+	 */
+	protected function run(mixed $argument): void {
+		$payload = [];
+		if (is_array(value: $argument) === true) {
+			$payload = $argument;
+		}
 
-        $stufMessageId = (string) ($payload['stufMessageId'] ?? '');
-        $runAt         = (int) ($payload['runAt'] ?? 0);
+		$stufMessageId = (string)($payload['stufMessageId'] ?? '');
+		$runAt = (int)($payload['runAt'] ?? 0);
 
-        if ($stufMessageId === '') {
-            $this->logger->warning(message: 'StufRetryJob: missing stufMessageId in payload');
-            return;
-        }
+		if ($stufMessageId === '') {
+			$this->logger->warning(message: 'StufRetryJob: missing stufMessageId in payload');
+			return;
+		}
 
-        if ($runAt > 0 && time() < $runAt) {
-            // Re-defer: the cron picked us up early.
-            return;
-        }
+		if ($runAt > 0 && time() < $runAt) {
+			// Re-defer: the cron picked us up early.
+			return;
+		}
 
-        try {
-            $this->adapter->retrySend(stufMessageId: $stufMessageId);
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                message: 'StufRetryJob failed for {id}: {error}',
-                context: ['id' => $stufMessageId, 'error' => $e->getMessage()]
-            );
-        }
-    }//end run()
+		try {
+			$this->adapter->retrySend(stufMessageId: $stufMessageId);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				message: 'StufRetryJob failed for {id}: {error}',
+				context: ['id' => $stufMessageId, 'error' => $e->getMessage()]
+			);
+		}
+	}//end run()
 }//end class

@@ -50,128 +50,124 @@ use Psr\Log\LoggerInterface;
  *
  * @template-implements IEventListener<Event>
  */
-class BezwaarLifecycleListener implements IEventListener
-{
+class BezwaarLifecycleListener implements IEventListener {
 
-    /**
-     * Schemas this listener cares about (slugs).
-     *
-     * @var array<int, string>
-     */
-    private const RELEVANT_SCHEMAS = [
-        'bezwaar',
-        'objection',
-        'hearingSession',
-        'advisoryReport',
-        'decision',
-    ];
+	/**
+	 * Schemas this listener cares about (slugs).
+	 *
+	 * @var array<int, string>
+	 */
+	private const RELEVANT_SCHEMAS = [
+		'bezwaar',
+		'objection',
+		'hearingSession',
+		'advisoryReport',
+		'decision',
+	];
 
-    /**
-     * Constructor.
-     *
-     * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver
-     * @param LoggerInterface          $logger       Logger
-     */
-    public function __construct(
-        private ObjectSchemaSlugResolver $slugResolver,
-        private LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private ObjectSchemaSlugResolver $slugResolver,
+		private LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle an OR object event.
-     *
-     * @param Event $event The dispatched event
-     *
-     * @return void
+	/**
+	 * Handle an OR object event.
+	 *
+	 * @param Event $event The dispatched event
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function handle(Event $event): void {
+		if (($event instanceof ObjectCreatedEvent) === false
+			&& ($event instanceof ObjectUpdatedEvent) === false
+		) {
+			return;
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function handle(Event $event): void
-    {
-        if (($event instanceof ObjectCreatedEvent) === false
-            && ($event instanceof ObjectUpdatedEvent) === false
-        ) {
-            return;
-        }
+		$payload = $this->extractObject(event: $event);
+		if ($payload === null) {
+			return;
+		}
 
-        $payload = $this->extractObject(event: $event);
-        if ($payload === null) {
-            return;
-        }
+		$schemaSlug = $this->resolveSchemaSlug(payload: $payload);
+		if (in_array($schemaSlug, self::RELEVANT_SCHEMAS, true) === false) {
+			return;
+		}
 
-        $schemaSlug = $this->resolveSchemaSlug(payload: $payload);
-        if (in_array($schemaSlug, self::RELEVANT_SCHEMAS, true) === false) {
-            return;
-        }
+		// Log only — actual state machine work happens inside
+		// StatusTransitionService.execute(), driven by user-initiated
+		// transitions via the controller layer. This listener exists
+		// so the wiring is observable; sister capabilities trigger
+		// their own engine calls via their own listeners. Per ADR
+		// and REQ-BL-8 there is intentionally no bespoke transition
+		// logic here.
+		$this->logger->debug(
+			'Procest bezwaar-lifecycle: observed ' . $schemaSlug . ' ' . $event::class,
+			[
+				'app' => Application::APP_ID,
+				'schema' => $schemaSlug,
+				'objectId' => (string)($payload['id'] ?? ''),
+				'caseId' => (string)($payload['case'] ?? ''),
+				'status' => (string)($payload['status'] ?? ''),
+			]
+		);
+	}//end handle()
 
-        // Log only — actual state machine work happens inside
-        // StatusTransitionService.execute(), driven by user-initiated
-        // transitions via the controller layer. This listener exists
-        // so the wiring is observable; sister capabilities trigger
-        // their own engine calls via their own listeners. Per ADR
-        // and REQ-BL-8 there is intentionally no bespoke transition
-        // logic here.
-        $this->logger->debug(
-            'Procest bezwaar-lifecycle: observed '.$schemaSlug.' '.$event::class,
-            [
-                'app'      => Application::APP_ID,
-                'schema'   => $schemaSlug,
-                'objectId' => (string) ($payload['id'] ?? ''),
-                'caseId'   => (string) ($payload['case'] ?? ''),
-                'status'   => (string) ($payload['status'] ?? ''),
-            ]
-        );
-    }//end handle()
+	/**
+	 * Extract the OR object array from an event.
+	 *
+	 * @param Event $event Event instance
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function extractObject(Event $event): ?array {
+		$object = null;
 
-    /**
-     * Extract the OR object array from an event.
-     *
-     * @param Event $event Event instance
-     *
-     * @return array<string, mixed>|null
-     */
-    private function extractObject(Event $event): ?array
-    {
-        $object = null;
+		if (method_exists($event, 'getObject') === true) {
+			$object = $event->getObject();
+		}
 
-        if (method_exists($event, 'getObject') === true) {
-            $object = $event->getObject();
-        }
+		if (is_array($object) === true) {
+			return $object;
+		}
 
-        if (is_array($object) === true) {
-            return $object;
-        }
+		if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
+			$serialized = $object->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
 
-        if (is_object($object) === true && method_exists($object, 'jsonSerialize') === true) {
-            $serialized = $object->jsonSerialize();
-            if (is_array($serialized) === true) {
-                return $serialized;
-            }
+			return null;
+		}
 
-            return null;
-        }
+		return null;
+	}//end extractObject()
 
-        return null;
-    }//end extractObject()
-
-    /**
-     * Resolve the schema slug for an OR object payload.
-     *
-     * The payload carries the schema as an ID (`@self.schema` is
-     * `ObjectEntity::$schema`, written as `(string) $schemaId`), and no
-     * `schemaSlug` key exists on `@self`. Reading those keys directly — as this
-     * method used to — yielded an id or an empty string, so the strict
-     * `in_array()` against {@see self::RELEVANT_SCHEMAS} never matched and this
-     * listener's body had never run. Resolution goes through the shared
-     * {@see ObjectSchemaSlugResolver} so every listener uses one lookup.
-     *
-     * @param array<string, mixed> $payload Object payload
-     *
-     * @return string
-     */
-    private function resolveSchemaSlug(array $payload): string
-    {
-        return $this->slugResolver->resolveFromPayload(payload: $payload);
-    }//end resolveSchemaSlug()
+	/**
+	 * Resolve the schema slug for an OR object payload.
+	 *
+	 * The payload carries the schema as an ID (`@self.schema` is
+	 * `ObjectEntity::$schema`, written as `(string) $schemaId`), and no
+	 * `schemaSlug` key exists on `@self`. Reading those keys directly — as this
+	 * method used to — yielded an id or an empty string, so the strict
+	 * `in_array()` against {@see self::RELEVANT_SCHEMAS} never matched and this
+	 * listener's body had never run. Resolution goes through the shared
+	 * {@see ObjectSchemaSlugResolver} so every listener uses one lookup.
+	 *
+	 * @param array<string, mixed> $payload Object payload
+	 *
+	 * @return string
+	 */
+	private function resolveSchemaSlug(array $payload): string {
+		return $this->slugResolver->resolveFromPayload(payload: $payload);
+	}//end resolveSchemaSlug()
 }//end class

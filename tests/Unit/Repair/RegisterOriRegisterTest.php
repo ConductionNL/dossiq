@@ -36,19 +36,18 @@ use Psr\Log\LoggerInterface;
  * Using createMock() instead of getMockBuilder(\stdClass::class)
  * so PHPUnit generates a real interface-backed mock that honours named args.
  */
-interface OriConfigurationServiceStub
-{
-    /**
-     * Import a register configuration for an app.
-     *
-     * @param string $appId   The app identifier
-     * @param array  $data    The configuration data
-     * @param string $version The version string
-     * @param bool   $force   Whether to force re-import
-     *
-     * @return array
-     */
-    public function importFromApp(string $appId, array $data, string $version, bool $force): array;
+interface OriConfigurationServiceStub {
+	/**
+	 * Import a register configuration for an app.
+	 *
+	 * @param string $appId The app identifier
+	 * @param array $data The configuration data
+	 * @param string $version The version string
+	 * @param bool $force Whether to force re-import
+	 *
+	 * @return array
+	 */
+	public function importFromApp(string $appId, array $data, string $version, bool $force): array;
 }//end interface
 
 /**
@@ -56,204 +55,188 @@ interface OriConfigurationServiceStub
  *
  * @covers \OCA\Procest\Repair\RegisterOriRegister
  */
-class RegisterOriRegisterTest extends TestCase
-{
+class RegisterOriRegisterTest extends TestCase {
 
-    /**
-     * The mocked settings service.
-     *
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private SettingsService $settingsService;
+	/**
+	 * The mocked settings service.
+	 *
+	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private SettingsService $settingsService;
 
-    /**
-     * The mocked DI container.
-     *
-     * @var ContainerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private ContainerInterface $container;
+	/**
+	 * The mocked DI container.
+	 *
+	 * @var ContainerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private ContainerInterface $container;
 
-    /**
-     * The mocked logger.
-     *
-     * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * The mocked logger.
+	 *
+	 * @var LoggerInterface|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The mocked migration output.
-     *
-     * @var IOutput|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IOutput $output;
+	/**
+	 * The mocked migration output.
+	 *
+	 * @var IOutput|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IOutput $output;
 
-    /**
-     * The repair step under test.
-     *
-     * @var RegisterOriRegister
-     */
-    private RegisterOriRegister $repairStep;
+	/**
+	 * The repair step under test.
+	 *
+	 * @var RegisterOriRegister
+	 */
+	private RegisterOriRegister $repairStep;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->container = $this->createMock(ContainerInterface::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
+		$this->output = $this->createMock(IOutput::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->container       = $this->createMock(ContainerInterface::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
-        $this->output          = $this->createMock(IOutput::class);
+		$this->repairStep = new RegisterOriRegister(
+			settingsService: $this->settingsService,
+			container: $this->container,
+			logger: $this->logger,
+		);
 
-        $this->repairStep = new RegisterOriRegister(
-            settingsService: $this->settingsService,
-            container: $this->container,
-            logger: $this->logger,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * Test getName() returns a non-empty string.
+	 *
+	 * @return void
+	 */
+	public function testGetNameReturnsNonEmptyString(): void {
+		$name = $this->repairStep->getName();
 
+		$this->assertIsString($name);
+		$this->assertNotEmpty($name);
 
-    /**
-     * Test getName() returns a non-empty string.
-     *
-     * @return void
-     */
-    public function testGetNameReturnsNonEmptyString(): void
-    {
-        $name = $this->repairStep->getName();
+	}//end testGetNameReturnsNonEmptyString()
 
-        $this->assertIsString($name);
-        $this->assertNotEmpty($name);
+	/**
+	 * Test getName() mentions ORI.
+	 *
+	 * @return void
+	 */
+	public function testGetNameMentionsOri(): void {
+		$name = $this->repairStep->getName();
 
-    }//end testGetNameReturnsNonEmptyString()
+		$this->assertStringContainsStringIgnoringCase('ORI', $name);
 
+	}//end testGetNameMentionsOri()
 
-    /**
-     * Test getName() mentions ORI.
-     *
-     * @return void
-     */
-    public function testGetNameMentionsOri(): void
-    {
-        $name = $this->repairStep->getName();
+	/**
+	 * Test run() emits a warning and returns early when OpenRegister is not available.
+	 *
+	 * @return void
+	 */
+	public function testRunSkipsWhenOpenRegisterUnavailable(): void {
+		$this->settingsService
+			->method('isOpenRegisterAvailable')
+			->willReturn(false);
 
-        $this->assertStringContainsStringIgnoringCase('ORI', $name);
+		$this->container
+			->expects($this->never())
+			->method('get');
 
-    }//end testGetNameMentionsOri()
+		$this->output
+			->expects($this->once())
+			->method('warning')
+			->with($this->stringContains('not installed'));
 
+		$this->repairStep->run($this->output);
 
-    /**
-     * Test run() emits a warning and returns early when OpenRegister is not available.
-     *
-     * @return void
-     */
-    public function testRunSkipsWhenOpenRegisterUnavailable(): void
-    {
-        $this->settingsService
-            ->method('isOpenRegisterAvailable')
-            ->willReturn(false);
+	}//end testRunSkipsWhenOpenRegisterUnavailable()
 
-        $this->container
-            ->expects($this->never())
-            ->method('get');
+	/**
+	 * Test run() emits a warning when ConfigurationService cannot be resolved.
+	 *
+	 * @return void
+	 */
+	public function testRunHandlesContainerException(): void {
+		$this->settingsService
+			->method('isOpenRegisterAvailable')
+			->willReturn(true);
 
-        $this->output
-            ->expects($this->once())
-            ->method('warning')
-            ->with($this->stringContains('not installed'));
+		$this->container
+			->method('get')
+			->willThrowException(new \Exception('Service not found'));
 
-        $this->repairStep->run($this->output);
+		$this->output
+			->expects($this->once())
+			->method('warning');
 
-    }//end testRunSkipsWhenOpenRegisterUnavailable()
+		$this->repairStep->run($this->output);
 
+	}//end testRunHandlesContainerException()
 
-    /**
-     * Test run() emits a warning when ConfigurationService cannot be resolved.
-     *
-     * @return void
-     */
-    public function testRunHandlesContainerException(): void
-    {
-        $this->settingsService
-            ->method('isOpenRegisterAvailable')
-            ->willReturn(true);
+	/**
+	 * Test run() calls ConfigurationService::importFromApp() when available.
+	 *
+	 * @return void
+	 */
+	public function testRunCallsImportFromApp(): void {
+		$this->settingsService
+			->method('isOpenRegisterAvailable')
+			->willReturn(true);
 
-        $this->container
-            ->method('get')
-            ->willThrowException(new \Exception('Service not found'));
+		$configurationService = $this->createMock(OriConfigurationServiceStub::class);
 
-        $this->output
-            ->expects($this->once())
-            ->method('warning');
+		$configurationService
+			->expects($this->once())
+			->method('importFromApp')
+			->willReturn(['success' => true]);
 
-        $this->repairStep->run($this->output);
+		$this->container
+			->method('get')
+			->with('OCA\OpenRegister\Service\ConfigurationService')
+			->willReturn($configurationService);
 
-    }//end testRunHandlesContainerException()
+		$this->output
+			->expects($this->atLeastOnce())
+			->method('info');
 
+		$this->repairStep->run($this->output);
 
-    /**
-     * Test run() calls ConfigurationService::importFromApp() when available.
-     *
-     * @return void
-     */
-    public function testRunCallsImportFromApp(): void
-    {
-        $this->settingsService
-            ->method('isOpenRegisterAvailable')
-            ->willReturn(true);
+	}//end testRunCallsImportFromApp()
 
-        $configurationService = $this->createMock(OriConfigurationServiceStub::class);
+	/**
+	 * Test run() handles import exceptions gracefully.
+	 *
+	 * @return void
+	 */
+	public function testRunHandlesImportExceptionGracefully(): void {
+		$this->settingsService
+			->method('isOpenRegisterAvailable')
+			->willReturn(true);
 
-        $configurationService
-            ->expects($this->once())
-            ->method('importFromApp')
-            ->willReturn(['success' => true]);
+		$configurationService = $this->createMock(OriConfigurationServiceStub::class);
 
-        $this->container
-            ->method('get')
-            ->with('OCA\OpenRegister\Service\ConfigurationService')
-            ->willReturn($configurationService);
+		$configurationService
+			->method('importFromApp')
+			->willThrowException(new \RuntimeException('Import failure'));
 
-        $this->output
-            ->expects($this->atLeastOnce())
-            ->method('info');
+		$this->container
+			->method('get')
+			->willReturn($configurationService);
 
-        $this->repairStep->run($this->output);
+		$this->output
+			->expects($this->once())
+			->method('warning');
 
-    }//end testRunCallsImportFromApp()
+		$this->repairStep->run($this->output);
 
-
-    /**
-     * Test run() handles import exceptions gracefully.
-     *
-     * @return void
-     */
-    public function testRunHandlesImportExceptionGracefully(): void
-    {
-        $this->settingsService
-            ->method('isOpenRegisterAvailable')
-            ->willReturn(true);
-
-        $configurationService = $this->createMock(OriConfigurationServiceStub::class);
-
-        $configurationService
-            ->method('importFromApp')
-            ->willThrowException(new \RuntimeException('Import failure'));
-
-        $this->container
-            ->method('get')
-            ->willReturn($configurationService);
-
-        $this->output
-            ->expects($this->once())
-            ->method('warning');
-
-        $this->repairStep->run($this->output);
-
-    }//end testRunHandlesImportExceptionGracefully()
-
+	}//end testRunHandlesImportExceptionGracefully()
 
 }//end class

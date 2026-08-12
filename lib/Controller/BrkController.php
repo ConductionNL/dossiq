@@ -50,162 +50,157 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  */
-class BrkController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string              $appName     App name
-     * @param IRequest            $request     Request
-     * @param BrkAdapterInterface $brkAdapter  BRK lookup port
-     * @param IUserSession        $userSession User session
-     * @param LoggerInterface     $logger      Logger
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly BrkAdapterInterface $brkAdapter,
-        private readonly IUserSession $userSession,
-        private readonly LoggerInterface $logger,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class BrkController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName App name
+	 * @param IRequest $request Request
+	 * @param BrkAdapterInterface $brkAdapter BRK lookup port
+	 * @param IUserSession $userSession User session
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly BrkAdapterInterface $brkAdapter,
+		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Look up a parcel by kadastrale aanduiding.
-     *
-     * Query parameters:
-     *   - kadastraleGemeenteCode (string, required)
-     *   - sectie (string, required)
-     *   - perceelnummer (string, required)
-     *   - appartementsrechtVolgnummer (string, optional)
-     *
-     * @return JSONResponse {lookupStatus, parcel, dormant, extras}
-     *
-     * @NoAdminRequired
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function parcel(): JSONResponse
-    {
-        $unauthorized = $this->requireUser();
-        if ($unauthorized !== null) {
-            return $unauthorized;
-        }
+	/**
+	 * Look up a parcel by kadastrale aanduiding.
+	 *
+	 * Query parameters:
+	 *   - kadastraleGemeenteCode (string, required)
+	 *   - sectie (string, required)
+	 *   - perceelnummer (string, required)
+	 *   - appartementsrechtVolgnummer (string, optional)
+	 *
+	 * @return JSONResponse {lookupStatus, parcel, dormant, extras}
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function parcel(): JSONResponse {
+		$unauthorized = $this->requireUser();
+		if ($unauthorized !== null) {
+			return $unauthorized;
+		}
 
-        $gemeenteCode  = (string) $this->request->getParam('kadastraleGemeenteCode', '');
-        $sectie        = (string) $this->request->getParam('sectie', '');
-        $perceelnummer = (string) $this->request->getParam('perceelnummer', '');
-        if ($gemeenteCode === '' || $sectie === '' || $perceelnummer === '') {
-            return new JSONResponse(
-                ['error' => 'kadastraleGemeenteCode, sectie and perceelnummer are required'],
-                Http::STATUS_BAD_REQUEST,
-            );
-        }
+		$gemeenteCode = (string)$this->request->getParam('kadastraleGemeenteCode', '');
+		$sectie = (string)$this->request->getParam('sectie', '');
+		$perceelnummer = (string)$this->request->getParam('perceelnummer', '');
+		if ($gemeenteCode === '' || $sectie === '' || $perceelnummer === '') {
+			return new JSONResponse(
+				['error' => 'kadastraleGemeenteCode, sectie and perceelnummer are required'],
+				Http::STATUS_BAD_REQUEST,
+			);
+		}
 
-        $volgnummerParam = $this->request->getParam('appartementsrechtVolgnummer');
-        $volgnummer      = null;
-        if (is_string($volgnummerParam) === true && $volgnummerParam !== '') {
-            $volgnummer = $volgnummerParam;
-        }
+		$volgnummerParam = $this->request->getParam('appartementsrechtVolgnummer');
+		$volgnummer = null;
+		if (is_string($volgnummerParam) === true && $volgnummerParam !== '') {
+			$volgnummer = $volgnummerParam;
+		}
 
-        try {
-            $result = $this->brkAdapter->lookupByKadastraleAanduiding(
-                kadastraleGemeenteCode: $gemeenteCode,
-                sectie: $sectie,
-                perceelnummer: $perceelnummer,
-                appartementsrechtVolgnummer: $volgnummer,
-            );
-        } catch (Throwable $e) {
-            $this->logger->error('Procest BRK parcel lookup failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'BRK parcel lookup failed'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
+		try {
+			$result = $this->brkAdapter->lookupByKadastraleAanduiding(
+				kadastraleGemeenteCode: $gemeenteCode,
+				sectie: $sectie,
+				perceelnummer: $perceelnummer,
+				appartementsrechtVolgnummer: $volgnummer,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error('Procest BRK parcel lookup failed: ' . $e->getMessage());
+			return new JSONResponse(
+				['error' => 'BRK parcel lookup failed'],
+				Http::STATUS_INTERNAL_SERVER_ERROR,
+			);
+		}
 
-        return $this->toResponse(result: $result);
-    }//end parcel()
+		return $this->toResponse(result: $result);
+	}//end parcel()
 
-    /**
-     * Look up a parcel by its Kadaster identificatie.
-     *
-     * @param string $id BRK kadastraalOnroerendeZaak identificatie.
-     *
-     * @return JSONResponse {lookupStatus, parcel, dormant, extras}
-     *
-     * @NoAdminRequired
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function object(string $id): JSONResponse
-    {
-        $unauthorized = $this->requireUser();
-        if ($unauthorized !== null) {
-            return $unauthorized;
-        }
+	/**
+	 * Look up a parcel by its Kadaster identificatie.
+	 *
+	 * @param string $id BRK kadastraalOnroerendeZaak identificatie.
+	 *
+	 * @return JSONResponse {lookupStatus, parcel, dormant, extras}
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function object(string $id): JSONResponse {
+		$unauthorized = $this->requireUser();
+		if ($unauthorized !== null) {
+			return $unauthorized;
+		}
 
-        if ($id === '') {
-            return new JSONResponse(
-                ['error' => 'id is required'],
-                Http::STATUS_BAD_REQUEST,
-            );
-        }
+		if ($id === '') {
+			return new JSONResponse(
+				['error' => 'id is required'],
+				Http::STATUS_BAD_REQUEST,
+			);
+		}
 
-        try {
-            $result = $this->brkAdapter->lookupObject(id: $id);
-        } catch (Throwable $e) {
-            $this->logger->error('Procest BRK object lookup failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'BRK object lookup failed'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
+		try {
+			$result = $this->brkAdapter->lookupObject(id: $id);
+		} catch (Throwable $e) {
+			$this->logger->error('Procest BRK object lookup failed: ' . $e->getMessage());
+			return new JSONResponse(
+				['error' => 'BRK object lookup failed'],
+				Http::STATUS_INTERNAL_SERVER_ERROR,
+			);
+		}
 
-        return $this->toResponse(result: $result);
-    }//end object()
+		return $this->toResponse(result: $result);
+	}//end object()
 
-    /**
-     * Require an active user session.
-     *
-     * @return JSONResponse|null A 401 response when unauthenticated, else
-     *                           null.
-     */
-    private function requireUser(): ?JSONResponse
-    {
-        if ($this->userSession->getUser() === null) {
-            return new JSONResponse(
-                ['error' => 'Authentication required'],
-                Http::STATUS_UNAUTHORIZED,
-            );
-        }
+	/**
+	 * Require an active user session.
+	 *
+	 * @return JSONResponse|null A 401 response when unauthenticated, else
+	 *                           null.
+	 */
+	private function requireUser(): ?JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return new JSONResponse(
+				['error' => 'Authentication required'],
+				Http::STATUS_UNAUTHORIZED,
+			);
+		}
 
-        return null;
-    }//end requireUser()
+		return null;
+	}//end requireUser()
 
-    /**
-     * Wrap a BrkLookupResult as a 200 JSON response — the adapter's own
-     * `lookupStatus` (including LOOKUP_DEFERRED / NOT_FOUND / INVALID_INPUT
-     * / LOOKUP_ERROR) carries the outcome; the controller never turns
-     * "not configured" or "not found" into an HTTP error.
-     *
-     * @param BrkLookupResult $result Adapter result.
-     *
-     * @return JSONResponse
-     */
-    private function toResponse(BrkLookupResult $result): JSONResponse
-    {
-        return new JSONResponse(
-            [
-                'lookupStatus' => $result->lookupStatus,
-                'parcel'       => $result->parcel,
-                'dormant'      => $result->dormant,
-                'extras'       => $result->extras,
-            ]
-        );
-    }//end toResponse()
+	/**
+	 * Wrap a BrkLookupResult as a 200 JSON response — the adapter's own
+	 * `lookupStatus` (including LOOKUP_DEFERRED / NOT_FOUND / INVALID_INPUT
+	 * / LOOKUP_ERROR) carries the outcome; the controller never turns
+	 * "not configured" or "not found" into an HTTP error.
+	 *
+	 * @param BrkLookupResult $result Adapter result.
+	 *
+	 * @return JSONResponse
+	 */
+	private function toResponse(BrkLookupResult $result): JSONResponse {
+		return new JSONResponse(
+			[
+				'lookupStatus' => $result->lookupStatus,
+				'parcel' => $result->parcel,
+				'dormant' => $result->dormant,
+				'extras' => $result->extras,
+			]
+		);
+	}//end toResponse()
 }//end class

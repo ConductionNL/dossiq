@@ -40,68 +40,65 @@ use Throwable;
  *
  * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
  */
-class SeedKccWerkplekData implements IRepairStep
-{
-    /**
-     * Constructor.
-     *
-     * @param KccWerkplekSeedDataService $seedService     Seed service.
-     * @param SettingsService            $settingsService Settings service.
-     * @param LoggerInterface            $logger          Logger.
-     */
-    public function __construct(
-        private readonly KccWerkplekSeedDataService $seedService,
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class SeedKccWerkplekData implements IRepairStep {
+	/**
+	 * Constructor.
+	 *
+	 * @param KccWerkplekSeedDataService $seedService Seed service.
+	 * @param SettingsService $settingsService Settings service.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly KccWerkplekSeedDataService $seedService,
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the repair-step display name.
-     *
-     * @return string
-     *
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
-     */
-    public function getName(): string
-    {
-        return 'Seed default KCC-werkplek quick-actions and example belplannen';
-    }//end getName()
+	/**
+	 * Get the repair-step display name.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
+	 */
+	public function getName(): string {
+		return 'Seed default KCC-werkplek quick-actions and example belplannen';
+	}//end getName()
 
-    /**
-     * Run the repair step.
-     *
-     * @param IOutput $output Output sink.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
-     */
-    public function run(IOutput $output): void
-    {
-        $output->info('Seeding KCC-werkplek defaults...');
+	/**
+	 * Run the repair step.
+	 *
+	 * @param IOutput $output Output sink.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md
+	 */
+	public function run(IOutput $output): void {
+		$output->info('Seeding KCC-werkplek defaults...');
 
-        if ($this->settingsService->isOpenRegisterAvailable() === false) {
-            $output->warning('OpenRegister is not available. Skipping KCC-werkplek seed.');
-            return;
-        }
+		if ($this->settingsService->isOpenRegisterAvailable() === false) {
+			$output->warning('OpenRegister is not available. Skipping KCC-werkplek seed.');
+			return;
+		}
 
-        try {
-            $result = $this->seedService->seed();
-            if (($result['success'] ?? false) === true) {
-                $output->info(
-                    'KCC-werkplek seed complete: '
-                    .((int) ($result['quickActions'] ?? 0)).' quick-actions, '
-                    .((int) ($result['belplannen'] ?? 0)).' belplannen ('
-                    .((int) ($result['skipped'] ?? 0)).' overgeslagen)'
-                );
-                return;
-            }
+		try {
+			$result = $this->seedService->seed();
+			if (($result['success'] ?? false) === true) {
+				$output->info(
+					'KCC-werkplek seed complete: '
+					. ((int)($result['quickActions'] ?? 0)) . ' quick-actions, '
+					. ((int)($result['belplannen'] ?? 0)) . ' belplannen ('
+					. ((int)($result['skipped'] ?? 0)) . ' overgeslagen)'
+				);
+				return;
+			}
 
-            $output->warning('KCC-werkplek seed issue: '.((string) ($result['message'] ?? 'unknown error')));
-        } catch (Throwable $e) {
-            $output->warning('Could not seed KCC-werkplek data: '.$e->getMessage());
-            $this->logger->error('Procest KCC-werkplek seed failed', ['exception' => $e->getMessage()]);
-        }
-    }//end run()
+			$output->warning('KCC-werkplek seed issue: ' . ((string)($result['message'] ?? 'unknown error')));
+		} catch (Throwable $e) {
+			$output->warning('Could not seed KCC-werkplek data: ' . $e->getMessage());
+			$this->logger->error('Procest KCC-werkplek seed failed', ['exception' => $e->getMessage()]);
+		}
+	}//end run()
 }//end class

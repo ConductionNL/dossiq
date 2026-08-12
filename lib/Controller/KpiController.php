@@ -47,94 +47,92 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T09
  */
-class KpiController extends Controller
-{
+class KpiController extends Controller {
 
-    /**
-     * Cache TTL for computed KPI data in seconds.
-     */
-    private const CACHE_TTL = 60;
+	/**
+	 * Cache TTL for computed KPI data in seconds.
+	 */
+	private const CACHE_TTL = 60;
 
-    /**
-     * Cache prefix for KPI data keys.
-     */
-    private const CACHE_PREFIX = 'procest_kpis_';
+	/**
+	 * Cache prefix for KPI data keys.
+	 */
+	private const CACHE_PREFIX = 'procest_kpis_';
 
-    /**
-     * Cache key suffix for the version counter.
-     */
-    private const VERSION_SUFFIX = '_ver';
+	/**
+	 * Cache key suffix for the version counter.
+	 */
+	private const VERSION_SUFFIX = '_ver';
 
-    /**
-     * The local cache instance.
-     *
-     * @var ICache The local APCu cache
-     */
-    private ICache $cache;
+	/**
+	 * The local cache instance.
+	 *
+	 * @var ICache The local APCu cache
+	 */
+	private ICache $cache;
 
-    /**
-     * Constructor.
-     *
-     * @param IRequest              $request        The HTTP request
-     * @param IUserSession          $userSession    The user session
-     * @param KpiAggregationService $kpiAggregation The KPI aggregation service
-     * @param ICacheFactory         $cacheFactory   The cache factory
-     * @param LoggerInterface       $logger         Logger
-     *
-     * @return void
-     */
-    public function __construct(
-        IRequest $request,
-        private IUserSession $userSession,
-        private KpiAggregationService $kpiAggregation,
-        ICacheFactory $cacheFactory,
-        private LoggerInterface $logger,
-    ) {
-        parent::__construct(appName: Application::APP_ID, request: $request);
-        $this->cache = $cacheFactory->createLocal(Application::APP_ID);
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest $request The HTTP request
+	 * @param IUserSession $userSession The user session
+	 * @param KpiAggregationService $kpiAggregation The KPI aggregation service
+	 * @param ICacheFactory $cacheFactory The cache factory
+	 * @param LoggerInterface $logger Logger
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		IRequest $request,
+		private IUserSession $userSession,
+		private KpiAggregationService $kpiAggregation,
+		ICacheFactory $cacheFactory,
+		private LoggerInterface $logger,
+	) {
+		parent::__construct(appName: Application::APP_ID, request: $request);
+		$this->cache = $cacheFactory->createLocal(Application::APP_ID);
+	}//end __construct()
 
-    /**
-     * Return aggregated KPI data for the authenticated user.
-     *
-     * Uses a per-user version-keyed cache with 60s TTL. Returns cacheHit: true
-     * when served from cache, false when DB queries were executed.
-     *
-     * @NoAdminRequired
-     *
-     * @return JSONResponse JSON response with KPI data
-     *
-     * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T09
-     */
-    public function index(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Return aggregated KPI data for the authenticated user.
+	 *
+	 * Uses a per-user version-keyed cache with 60s TTL. Returns cacheHit: true
+	 * when served from cache, false when DB queries were executed.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse JSON response with KPI data
+	 *
+	 * @spec openspec/changes/add-server-side-kpi-aggregation/tasks.md#T09
+	 */
+	public function index(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $userId = $user->getUID();
+		$userId = $user->getUID();
 
-        $versionKey = self::CACHE_PREFIX.$userId.self::VERSION_SUFFIX;
-        $version    = $this->cache->get($versionKey) ?? 1;
-        $dataKey    = self::CACHE_PREFIX.$userId.'_v'.$version;
+		$versionKey = self::CACHE_PREFIX . $userId . self::VERSION_SUFFIX;
+		$version = $this->cache->get($versionKey) ?? 1;
+		$dataKey = self::CACHE_PREFIX . $userId . '_v' . $version;
 
-        $cached = $this->cache->get($dataKey);
-        if ($cached !== null && is_array($cached) === true) {
-            $cached['cacheHit'] = true;
-            return new JSONResponse($cached);
-        }
+		$cached = $this->cache->get($dataKey);
+		if ($cached !== null && is_array($cached) === true) {
+			$cached['cacheHit'] = true;
+			return new JSONResponse($cached);
+		}
 
-        $kpis = $this->kpiAggregation->computeKpis($userId);
-        $kpis['computedAt'] = (new DateTime())->format(DateTime::ATOM);
-        $kpis['cacheHit']   = false;
+		$kpis = $this->kpiAggregation->computeKpis($userId);
+		$kpis['computedAt'] = (new DateTime())->format(DateTime::ATOM);
+		$kpis['cacheHit'] = false;
 
-        try {
-            $this->cache->set($dataKey, $kpis, self::CACHE_TTL);
-        } catch (\Exception $e) {
-            $this->logger->debug('[KpiController] Cache store failed', ['key' => $dataKey, 'error' => $e->getMessage()]);
-        }
+		try {
+			$this->cache->set($dataKey, $kpis, self::CACHE_TTL);
+		} catch (\Exception $e) {
+			$this->logger->debug('[KpiController] Cache store failed', ['key' => $dataKey, 'error' => $e->getMessage()]);
+		}
 
-        return new JSONResponse($kpis);
-    }//end index()
+		return new JSONResponse($kpis);
+	}//end index()
 }//end class

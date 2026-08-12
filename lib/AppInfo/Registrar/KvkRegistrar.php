@@ -44,46 +44,44 @@ use Psr\Container\ContainerInterface;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class KvkRegistrar
-{
-    /**
-     * Register the KvK Handelsregister adapter.
-     *
-     * Used by the leverancier-zaakportaal eHerkenning kvkNummer enrichment,
-     * bedrijfszaak intake and the brp-kvk-register-sets seed. Selected by
-     * `integration.kvk.mode` (external-integrations-test-environments).
-     * DEFAULT `log` = dormant (no external call); `test`/`live` binds the
-     * KvkApiAdapter (test tier = api.kvk.nl/test, public key).
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        $context->registerService(
-            KvkHandelsregisterAdapterInterface::class,
-            static function (ContainerInterface $c): KvkHandelsregisterAdapterInterface {
-                $modeService = $c->get(IntegrationMode::class);
-                $mode        = $modeService->resolve(
-                    'kvk',
-                    [
-                        IntegrationMode::TEST,
-                        IntegrationMode::LIVE,
-                    ]
-                );
-                if ($mode !== IntegrationMode::LOG) {
-                    return new KvkApiAdapter(
-                        clientService: $c->get('OCP\\Http\\Client\\IClientService'),
-                        mode: $modeService,
-                        logger: $c->get('Psr\\Log\\LoggerInterface'),
-                    );
-                }
+class KvkRegistrar {
+	/**
+	 * Register the KvK Handelsregister adapter.
+	 *
+	 * Used by the leverancier-zaakportaal eHerkenning kvkNummer enrichment,
+	 * bedrijfszaak intake and the brp-kvk-register-sets seed. Selected by
+	 * `integration.kvk.mode` (external-integrations-test-environments).
+	 * DEFAULT `log` = dormant (no external call); `test`/`live` binds the
+	 * KvkApiAdapter (test tier = api.kvk.nl/test, public key).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		$context->registerService(
+			KvkHandelsregisterAdapterInterface::class,
+			static function (ContainerInterface $c): KvkHandelsregisterAdapterInterface {
+				$modeService = $c->get(IntegrationMode::class);
+				$mode = $modeService->resolve(
+					'kvk',
+					[
+						IntegrationMode::TEST,
+						IntegrationMode::LIVE,
+					]
+				);
+				if ($mode !== IntegrationMode::LOG) {
+					return new KvkApiAdapter(
+						clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+						mode: $modeService,
+						logger: $c->get('Psr\\Log\\LoggerInterface'),
+					);
+				}
 
-                return $c->get(LogKvkHandelsregisterAdapter::class);
-            }
-        );
-    }//end register()
+				return $c->get(LogKvkHandelsregisterAdapter::class);
+			}
+		);
+	}//end register()
 }//end class

@@ -50,61 +50,59 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseEmailAttachmentResolver
-{
-    /**
-     * Constructor.
-     *
-     * @param IRootFolder     $rootFolder  Root folder for user-file access
-     * @param IUserSession    $userSession Current user session
-     * @param LoggerInterface $logger      Logger
-     */
-    public function __construct(
-        private readonly IRootFolder $rootFolder,
-        private readonly IUserSession $userSession,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class CaseEmailAttachmentResolver {
+	/**
+	 * Constructor.
+	 *
+	 * @param IRootFolder $rootFolder Root folder for user-file access
+	 * @param IUserSession $userSession Current user session
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly IRootFolder $rootFolder,
+		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Attach the requested files to a message, resolved from the caller's own folder.
-     *
-     * H5: resolving via the user folder restricts file access to the calling
-     * user's own files and prevents path traversal outside that folder. A file
-     * that cannot be resolved or attached is logged and skipped.
-     *
-     * @param IMessage      $message     The message under construction
-     * @param array<string> $attachments File references to attach
-     * @param string        $caseId      The case UUID (logging context)
-     *
-     * @return void
-     *
-     * @spec openspec/specs/case-management/spec.md
-     */
-    public function attach(IMessage $message, array $attachments, string $caseId): void
-    {
-        $currentUser = $this->userSession->getUser();
-        if ($currentUser !== null && count($attachments) > 0) {
-            $userFolder = $this->rootFolder->getUserFolder($currentUser->getUID());
-            foreach ($attachments as $fileRef) {
-                try {
-                    $file      = $userFolder->get((string) $fileRef);
-                    $localPath = $file->getStorage()->getLocalFile($file->getInternalPath());
-                    if ($localPath !== null && $localPath !== false) {
-                        $message->attachFile($localPath);
-                    }
-                } catch (NotFoundException $e) {
-                    $this->logger->warning(
-                        'Attachment file not found in user folder',
-                        ['app' => Application::APP_ID, 'fileRef' => $fileRef, 'caseId' => $caseId]
-                    );
-                } catch (\Throwable $e) {
-                    $this->logger->warning(
-                        'Failed to attach file',
-                        ['app' => Application::APP_ID, 'fileRef' => $fileRef, 'error' => $e->getMessage()]
-                    );
-                }//end try
-            }//end foreach
-        }//end if
-    }//end attach()
+	/**
+	 * Attach the requested files to a message, resolved from the caller's own folder.
+	 *
+	 * H5: resolving via the user folder restricts file access to the calling
+	 * user's own files and prevents path traversal outside that folder. A file
+	 * that cannot be resolved or attached is logged and skipped.
+	 *
+	 * @param IMessage $message The message under construction
+	 * @param array<string> $attachments File references to attach
+	 * @param string $caseId The case UUID (logging context)
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function attach(IMessage $message, array $attachments, string $caseId): void {
+		$currentUser = $this->userSession->getUser();
+		if ($currentUser !== null && count($attachments) > 0) {
+			$userFolder = $this->rootFolder->getUserFolder($currentUser->getUID());
+			foreach ($attachments as $fileRef) {
+				try {
+					$file = $userFolder->get((string)$fileRef);
+					$localPath = $file->getStorage()->getLocalFile($file->getInternalPath());
+					if ($localPath !== null && $localPath !== false) {
+						$message->attachFile($localPath);
+					}
+				} catch (NotFoundException $e) {
+					$this->logger->warning(
+						'Attachment file not found in user folder',
+						['app' => Application::APP_ID, 'fileRef' => $fileRef, 'caseId' => $caseId]
+					);
+				} catch (\Throwable $e) {
+					$this->logger->warning(
+						'Failed to attach file',
+						['app' => Application::APP_ID, 'fileRef' => $fileRef, 'error' => $e->getMessage()]
+					);
+				}//end try
+			}//end foreach
+		}//end if
+	}//end attach()
 }//end class

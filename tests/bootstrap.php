@@ -21,7 +21,7 @@ declare(strict_types=1);
 
 define('PHPUNIT_RUN', 1);
 
-require_once __DIR__.'/../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 // Guard against a dangling vendor/nextcloud/ocp/OCP symlink. The nextcloud/ocp
 // composer package normally vendors real OCP\ source files, but when its
@@ -35,22 +35,22 @@ require_once __DIR__.'/../vendor/autoload.php';
 // 2026-07-14 dev-test-failures investigation, where this dangling symlink
 // was mistaken for a code regression across PRs #202-#211 before being
 // traced here). Fail fast with an actionable message instead.
-$ocpVendorDir = __DIR__.'/../vendor/nextcloud/ocp/OCP';
+$ocpVendorDir = __DIR__ . '/../vendor/nextcloud/ocp/OCP';
 if (is_link($ocpVendorDir) === true && file_exists($ocpVendorDir) === false) {
-    fwrite(
-        STDERR,
-        "\nFATAL: vendor/nextcloud/ocp/OCP is a dangling symlink to "
-        .(readlink($ocpVendorDir) ?: '(unknown target)')."\n"
-        ."This happens when vendor/ is copied from a checkout that was "
-        ."composer-installed inside a live Nextcloud dev container (which "
-        ."symlinks OCP/ to that container's /var/www/html/lib/public) into "
-        ."an environment without that path — e.g. rsync'ing vendor/ into a "
-        ."bare php:8.3-cli test container.\n"
-        ."Fix: rm -rf vendor && composer install --no-interaction "
-        ."--ignore-platform-reqs (do NOT rsync vendor/ from a live-NC-mounted "
-        ."checkout).\n\n"
-    );
-    exit(1);
+	fwrite(
+		STDERR,
+		"\nFATAL: vendor/nextcloud/ocp/OCP is a dangling symlink to "
+		. (readlink($ocpVendorDir) ?: '(unknown target)') . "\n"
+		. 'This happens when vendor/ is copied from a checkout that was '
+		. 'composer-installed inside a live Nextcloud dev container (which '
+		. "symlinks OCP/ to that container's /var/www/html/lib/public) into "
+		. "an environment without that path — e.g. rsync'ing vendor/ into a "
+		. "bare php:8.3-cli test container.\n"
+		. 'Fix: rm -rf vendor && composer install --no-interaction '
+		. '--ignore-platform-reqs (do NOT rsync vendor/ from a live-NC-mounted '
+		. "checkout).\n\n"
+	);
+	exit(1);
 }//end if
 
 unset($ocpVendorDir);
@@ -61,35 +61,34 @@ unset($ocpVendorDir);
 // no-op there. The algorithm is the standard Gauss/Meeus computation returning
 // a Unix timestamp for noon (matching the extension's CAL_EASTER_DEFAULT).
 if (function_exists('easter_date') === false) {
-    /**
-     * Compute the Unix timestamp of Easter Sunday for a Gregorian year.
-     *
-     * @param int|null $year The year (defaults to the current year).
-     *
-     * @return int Unix timestamp (UTC noon) of Easter Sunday.
-     */
-    function easter_date(?int $year=null): int
-    {
-        $year = ($year ?? (int) date('Y'));
+	/**
+	 * Compute the Unix timestamp of Easter Sunday for a Gregorian year.
+	 *
+	 * @param int|null $year The year (defaults to the current year).
+	 *
+	 * @return int Unix timestamp (UTC noon) of Easter Sunday.
+	 */
+	function easter_date(?int $year = null): int {
+		$year = ($year ?? (int)date('Y'));
 
-        $a = ($year % 19);
-        $b = intdiv($year, 100);
-        $c = ($year % 100);
-        $d = intdiv($b, 4);
-        $e = ($b % 4);
-        $f = intdiv(($b + 8), 25);
-        $g = intdiv((($b - $f) + 1), 3);
-        $h = (((19 * $a) + $b - $d - $g + 15) % 30);
-        $i = intdiv($c, 4);
-        $k = ($c % 4);
-        $l = ((32 + (2 * $e) + (2 * $i) - $h - $k) % 7);
-        $m = intdiv(($a + (11 * $h) + (22 * $l)), 451);
+		$a = ($year % 19);
+		$b = intdiv($year, 100);
+		$c = ($year % 100);
+		$d = intdiv($b, 4);
+		$e = ($b % 4);
+		$f = intdiv(($b + 8), 25);
+		$g = intdiv((($b - $f) + 1), 3);
+		$h = (((19 * $a) + $b - $d - $g + 15) % 30);
+		$i = intdiv($c, 4);
+		$k = ($c % 4);
+		$l = ((32 + (2 * $e) + (2 * $i) - $h - $k) % 7);
+		$m = intdiv(($a + (11 * $h) + (22 * $l)), 451);
 
-        $month = intdiv(($h + $l - (7 * $m) + 114), 31);
-        $day   = ((($h + $l - (7 * $m) + 114) % 31) + 1);
+		$month = intdiv(($h + $l - (7 * $m) + 114), 31);
+		$day = ((($h + $l - (7 * $m) + 114) % 31) + 1);
 
-        return gmmktime(0, 0, 0, $month, $day, $year);
-    }//end easter_date()
+		return gmmktime(0, 0, 0, $month, $day, $year);
+	}//end easter_date()
 }//end if
 
 // Load the OC-internal and Doctrine stubs FIRST — before the OCP pre-load and
@@ -111,8 +110,8 @@ if (function_exists('easter_date') === false) {
 // Every declaration in both files is class_exists()/interface_exists()-guarded,
 // so loading them this early is a no-op when a real Nextcloud runtime later
 // supplies the genuine classes.
-require_once __DIR__.'/Unit/Stubs/DoctrineStubs.php';
-require_once __DIR__.'/Unit/Stubs/OcInternalStubs.php';
+require_once __DIR__ . '/Unit/Stubs/DoctrineStubs.php';
+require_once __DIR__ . '/Unit/Stubs/OcInternalStubs.php';
 
 // Pre-load ALL OCP\ / NCU\ classes from the real Nextcloud lib/public tree
 // BEFORE lib/base.php runs. This ensures every OCP interface/class is already
@@ -142,75 +141,75 @@ require_once __DIR__.'/Unit/Stubs/OcInternalStubs.php';
 // OCP interfaces cannot be included in the multi-pass pre-load below, which
 // leaves them uncached and lets openregister's stale classmap loader supply an
 // older stub version that omits recently-added methods.
-if (file_exists(__DIR__.'/../../../3rdparty/autoload.php') === true) {
-    require_once __DIR__.'/../../../3rdparty/autoload.php';
+if (file_exists(__DIR__ . '/../../../3rdparty/autoload.php') === true) {
+	require_once __DIR__ . '/../../../3rdparty/autoload.php';
 }
 
-$ncLibPublicDir = realpath(__DIR__.'/../../../lib/public');
+$ncLibPublicDir = realpath(__DIR__ . '/../../../lib/public');
 if ($ncLibPublicDir !== false && is_dir($ncLibPublicDir) === true) {
-    $ncClassmapFile = __DIR__.'/../../../lib/composer/composer/autoload_classmap.php';
-    if (file_exists($ncClassmapFile) === true) {
-        /** @var array<string,string> $ncFullClassmap */
-        $ncFullClassmap = require $ncClassmapFile;
+	$ncClassmapFile = __DIR__ . '/../../../lib/composer/composer/autoload_classmap.php';
+	if (file_exists($ncClassmapFile) === true) {
+		/** @var array<string,string> $ncFullClassmap */
+		$ncFullClassmap = require $ncClassmapFile;
 
-        // Filter to OCP\ and NCU\ entries only.
-        $ocpClassmap = array_filter(
-            $ncFullClassmap,
-            static function (string $class): bool {
-                return strncmp($class, 'OCP\\', 4) === 0 || strncmp($class, 'NCU\\', 4) === 0;
-            },
-            ARRAY_FILTER_USE_KEY
-        );
+		// Filter to OCP\ and NCU\ entries only.
+		$ocpClassmap = array_filter(
+			$ncFullClassmap,
+			static function (string $class): bool {
+				return strncmp($class, 'OCP\\', 4) === 0 || strncmp($class, 'NCU\\', 4) === 0;
+			},
+			ARRAY_FILTER_USE_KEY
+		);
 
-        // Multi-pass load: retry on dependency errors until stable.
-        $pending = $ocpClassmap;
-        for ($pass = 0; $pass < 10 && count($pending) > 0; $pass++) {
-            $stillPending = [];
-            foreach ($pending as $class => $file) {
-                if (class_exists($class, false) === true
-                    || interface_exists($class, false) === true
-                    || trait_exists($class, false) === true
-                    || (function_exists('enum_exists') === true && enum_exists($class, false) === true)
-                ) {
-                    // Already cached by an earlier pass or autoloader.
-                    continue;
-                }
+		// Multi-pass load: retry on dependency errors until stable.
+		$pending = $ocpClassmap;
+		for ($pass = 0; $pass < 10 && count($pending) > 0; $pass++) {
+			$stillPending = [];
+			foreach ($pending as $class => $file) {
+				if (class_exists($class, false) === true
+					|| interface_exists($class, false) === true
+					|| trait_exists($class, false) === true
+					|| (function_exists('enum_exists') === true && enum_exists($class, false) === true)
+				) {
+					// Already cached by an earlier pass or autoloader.
+					continue;
+				}
 
-                if (file_exists($file) === false) {
-                    continue;
-                }
+				if (file_exists($file) === false) {
+					continue;
+				}
 
-                // Use plain `include` (not `include_once`) so that if the
-                // first pass fails mid-file (because a dependency was not yet
-                // loaded), a subsequent pass can retry the same file. PHP's
-                // `include_once` marks the file as "included" even after a
-                // partial-failure, preventing any later retry.
-                try {
-                    @include $file;
-                } catch (\Throwable $e) {
-                    // Dependency not yet loaded — defer to next pass.
-                    $stillPending[$class] = $file;
-                }
-            }//end foreach
+				// Use plain `include` (not `include_once`) so that if the
+				// first pass fails mid-file (because a dependency was not yet
+				// loaded), a subsequent pass can retry the same file. PHP's
+				// `include_once` marks the file as "included" even after a
+				// partial-failure, preventing any later retry.
+				try {
+					@include $file;
+				} catch (\Throwable $e) {
+					// Dependency not yet loaded — defer to next pass.
+					$stillPending[$class] = $file;
+				}
+			}//end foreach
 
-            $pending = $stillPending;
-        }//end for
+			$pending = $stillPending;
+		}//end for
 
-        unset($ocpClassmap, $ncFullClassmap, $pending, $stillPending);
-    }//end if
+		unset($ocpClassmap, $ncFullClassmap, $pending, $stillPending);
+	}//end if
 }//end if
 
 // Load a real Nextcloud server when one is present (CI/dev container). This
 // must happen BEFORE the stub OCP PSR-4 registration below so that NC's
 // classmap autoloader takes priority for any remaining OCP classes.
 if (defined('OC_CONSOLE') === false) {
-    if (file_exists(__DIR__.'/../../../lib/base.php') === true) {
-        include_once __DIR__.'/../../../lib/base.php';
-    }
+	if (file_exists(__DIR__ . '/../../../lib/base.php') === true) {
+		include_once __DIR__ . '/../../../lib/base.php';
+	}
 
-    if (file_exists(__DIR__.'/../../../tests/autoload.php') === true) {
-        include_once __DIR__.'/../../../tests/autoload.php';
-    }
+	if (file_exists(__DIR__ . '/../../../tests/autoload.php') === true) {
+		include_once __DIR__ . '/../../../tests/autoload.php';
+	}
 }
 
 // Register OCP and NCU namespaces from the nextcloud/ocp stub package so that
@@ -229,14 +228,14 @@ if (defined('OC_CONSOLE') === false) {
 // so its presence is a true "NC runtime is live" signal.
 $ncBaseLoaded = class_exists('\OC_App', false);
 if ($ncBaseLoaded === false) {
-    $loaders = spl_autoload_functions();
-    foreach ($loaders as $loader) {
-        if (is_array($loader) && $loader[0] instanceof \Composer\Autoload\ClassLoader) {
-            $loader[0]->addPsr4('OCP\\', __DIR__.'/../vendor/nextcloud/ocp/OCP/');
-            $loader[0]->addPsr4('NCU\\', __DIR__.'/../vendor/nextcloud/ocp/NCU/');
-            break;
-        }
-    }
+	$loaders = spl_autoload_functions();
+	foreach ($loaders as $loader) {
+		if (is_array($loader) && $loader[0] instanceof \Composer\Autoload\ClassLoader) {
+			$loader[0]->addPsr4('OCP\\', __DIR__ . '/../vendor/nextcloud/ocp/OCP/');
+			$loader[0]->addPsr4('NCU\\', __DIR__ . '/../vendor/nextcloud/ocp/NCU/');
+			break;
+		}
+	}
 }
 
 // (DoctrineStubs.php and OcInternalStubs.php are loaded near the top of this
@@ -248,7 +247,7 @@ if ($ncBaseLoaded === false) {
 // `FakeTermijnStore` even when run standalone (previously it sat at the
 // bottom of TermijnServiceTest.php and only loaded if PHPUnit happened
 // to require that file first).
-require_once __DIR__.'/Unit/Fixtures/FakeTermijnStore.php';
+require_once __DIR__ . '/Unit/Fixtures/FakeTermijnStore.php';
 
 // OCP\Http\Client interface stubs — the vendored nextcloud/ocp does not ship
 // the OCP\Http\Client namespace, so services depending on IClientService
@@ -262,7 +261,7 @@ require_once __DIR__ . '/Stubs/HttpClientStubs.php';
 // interface is present (e.g. when the openregister app is installed). Must be
 // in place before \OC_App::loadApp('procest') below tries to load that class.
 if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
-    include_once __DIR__.'/Stubs/Mcp/IMcpToolProvider.php';
+	include_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
 }
 
 // Decidesk decision-event stubs — loaded when the decidesk app is absent so the
@@ -270,11 +269,11 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 // against the decidesk event contract. The real classes ship in decidesk
 // (OCA\Decidesk\Event\*); these stubs no-op when the real classes are present.
 if (class_exists('\\OCA\\Decidesk\\Event\\DecisionRequestedEvent') === false) {
-    include_once __DIR__.'/Stubs/Decidesk/Event/DecisionRequestedEvent.php';
+	include_once __DIR__ . '/Stubs/Decidesk/Event/DecisionRequestedEvent.php';
 }
 
 if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {
-    include_once __DIR__.'/Stubs/Decidesk/Event/DecisionConcludedEvent.php';
+	include_once __DIR__ . '/Stubs/Decidesk/Event/DecisionConcludedEvent.php';
 }
 
 // bag-location-save-validation: pre-persist OpenRegister event stubs —
@@ -283,24 +282,24 @@ if (class_exists('\\OCA\\Decidesk\\Event\\DecisionConcludedEvent') === false) {
 // stopPropagation()/setErrors() semantics. Self-skip when openregister is
 // installed (real classes present).
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectCreatingEvent') === false) {
-    include_once __DIR__.'/Stubs/Event/ObjectCreatingEventStub.php';
+	include_once __DIR__ . '/Stubs/Event/ObjectCreatingEventStub.php';
 }
 
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatingEvent') === false) {
-    include_once __DIR__.'/Stubs/Event/ObjectUpdatingEventStub.php';
+	include_once __DIR__ . '/Stubs/Event/ObjectUpdatingEventStub.php';
 }
 
 // bezwaar-decision: the post-persist counterpart, so
 // BezwaarDecisionListenerTest can exercise the guard's real decision through
 // handle() — including the probe's call shape, which is what silently broke.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectUpdatedEvent') === false) {
-    include_once __DIR__.'/Stubs/Event/ObjectUpdatedEventStub.php';
+	include_once __DIR__ . '/Stubs/Event/ObjectUpdatedEventStub.php';
 }
 
 // REQ-SUB-007 bewijsstuk immutability: the pre-persist delete counterpart, so
 // BewijsstukImmutabilityListenerTest can exercise the reject path on delete.
 if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
-    include_once __DIR__.'/Stubs/Event/ObjectDeletingEventStub.php';
+	include_once __DIR__ . '/Stubs/Event/ObjectDeletingEventStub.php';
 }
 
 // OpenRegister AppHost stubs (ADR-040) — loaded when the openregister runtime
@@ -309,15 +308,15 @@ if (class_exists('\\OCA\\OpenRegister\\Event\\ObjectDeletingEvent') === false) {
 // containers + standalone static analysis. The stubs self-skip when the real
 // classes are present (openregister installed).
 if (class_exists('\\OCA\\OpenRegister\\AppHost\\Bootstrap') === false) {
-    include_once __DIR__.'/Stubs/AppHost/Bootstrap.php';
+	include_once __DIR__ . '/Stubs/AppHost/Bootstrap.php';
 }
 
 if (class_exists('\\OCA\\OpenRegister\\AppHost\\Controller\\GenericDashboardController') === false) {
-    include_once __DIR__.'/Stubs/AppHost/Controller/GenericDashboardController.php';
+	include_once __DIR__ . '/Stubs/AppHost/Controller/GenericDashboardController.php';
 }
 
 if (defined('OC_CONSOLE') === false && class_exists('\OC_App') === true) {
-    \OC_App::loadApps();
-    \OC_App::loadApp('procest');
-    OC_Hook::clear();
+	\OC_App::loadApps();
+	\OC_App::loadApp('procest');
+	OC_Hook::clear();
 }

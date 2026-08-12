@@ -54,198 +54,191 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  */
-class BagController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string              $appName     App name
-     * @param IRequest            $request     Request
-     * @param BagAdapterInterface $bagAdapter  BAG lookup port
-     * @param IUserSession        $userSession User session
-     * @param LoggerInterface     $logger      Logger
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly BagAdapterInterface $bagAdapter,
-        private readonly IUserSession $userSession,
-        private readonly LoggerInterface $logger,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class BagController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName App name
+	 * @param IRequest $request Request
+	 * @param BagAdapterInterface $bagAdapter BAG lookup port
+	 * @param IUserSession $userSession User session
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly BagAdapterInterface $bagAdapter,
+		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Look up address record(s) by postcode + huisnummer.
-     *
-     * Query parameters:
-     *   - postcode (string, required): Dutch postcode, e.g. `1234AB`
-     *   - huisnummer (string, required): house number
-     *   - huisletter (string, optional)
-     *   - huisnummertoevoeging (string, optional)
-     *
-     * @return JSONResponse {lookupStatus, address, dormant, extras}
-     *
-     * @NoAdminRequired
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/bag-register-adapter/proposal.md
-     */
-    public function address(): JSONResponse
-    {
-        $unauthorized = $this->requireUser();
-        if ($unauthorized !== null) {
-            return $unauthorized;
-        }
+	/**
+	 * Look up address record(s) by postcode + huisnummer.
+	 *
+	 * Query parameters:
+	 *   - postcode (string, required): Dutch postcode, e.g. `1234AB`
+	 *   - huisnummer (string, required): house number
+	 *   - huisletter (string, optional)
+	 *   - huisnummertoevoeging (string, optional)
+	 *
+	 * @return JSONResponse {lookupStatus, address, dormant, extras}
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/bag-register-adapter/proposal.md
+	 */
+	public function address(): JSONResponse {
+		$unauthorized = $this->requireUser();
+		if ($unauthorized !== null) {
+			return $unauthorized;
+		}
 
-        $postcode   = (string) $this->request->getParam('postcode', '');
-        $huisnummer = (string) $this->request->getParam('huisnummer', '');
-        if ($postcode === '' || $huisnummer === '') {
-            return new JSONResponse(
-                ['error' => 'postcode and huisnummer are required'],
-                Http::STATUS_BAD_REQUEST,
-            );
-        }
+		$postcode = (string)$this->request->getParam('postcode', '');
+		$huisnummer = (string)$this->request->getParam('huisnummer', '');
+		if ($postcode === '' || $huisnummer === '') {
+			return new JSONResponse(
+				['error' => 'postcode and huisnummer are required'],
+				Http::STATUS_BAD_REQUEST,
+			);
+		}
 
-        $huisletterParam = $this->request->getParam('huisletter');
-        $huisletter      = null;
-        if (is_string($huisletterParam) === true && $huisletterParam !== '') {
-            $huisletter = $huisletterParam;
-        }
+		$huisletterParam = $this->request->getParam('huisletter');
+		$huisletter = null;
+		if (is_string($huisletterParam) === true && $huisletterParam !== '') {
+			$huisletter = $huisletterParam;
+		}
 
-        $toevoegingParam = $this->request->getParam('huisnummertoevoeging');
-        $toevoeging      = null;
-        if (is_string($toevoegingParam) === true && $toevoegingParam !== '') {
-            $toevoeging = $toevoegingParam;
-        }
+		$toevoegingParam = $this->request->getParam('huisnummertoevoeging');
+		$toevoeging = null;
+		if (is_string($toevoegingParam) === true && $toevoegingParam !== '') {
+			$toevoeging = $toevoegingParam;
+		}
 
-        try {
-            $result = $this->bagAdapter->lookupAddress(
-                postcode: $postcode,
-                huisnummer: $huisnummer,
-                huisletter: $huisletter,
-                toevoeging: $toevoeging,
-            );
-        } catch (Throwable $e) {
-            $this->logger->error('Procest BAG address lookup failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'BAG address lookup failed'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
+		try {
+			$result = $this->bagAdapter->lookupAddress(
+				postcode: $postcode,
+				huisnummer: $huisnummer,
+				huisletter: $huisletter,
+				toevoeging: $toevoeging,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error('Procest BAG address lookup failed: ' . $e->getMessage());
+			return new JSONResponse(
+				['error' => 'BAG address lookup failed'],
+				Http::STATUS_INTERNAL_SERVER_ERROR,
+			);
+		}
 
-        return $this->toResponse(result: $result);
-    }//end address()
+		return $this->toResponse(result: $result);
+	}//end address()
 
-    /**
-     * Look up a pand (building) by its BAG identificatie.
-     *
-     * @param string $id BAG pand identificatie.
-     *
-     * @return JSONResponse {lookupStatus, address, dormant, extras}
-     *
-     * @NoAdminRequired
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/bag-register-adapter/proposal.md
-     */
-    public function pand(string $id): JSONResponse
-    {
-        return $this->objectLookup(objectType: 'pand', id: $id);
-    }//end pand()
+	/**
+	 * Look up a pand (building) by its BAG identificatie.
+	 *
+	 * @param string $id BAG pand identificatie.
+	 *
+	 * @return JSONResponse {lookupStatus, address, dormant, extras}
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/bag-register-adapter/proposal.md
+	 */
+	public function pand(string $id): JSONResponse {
+		return $this->objectLookup(objectType: 'pand', id: $id);
+	}//end pand()
 
-    /**
-     * Look up a verblijfsobject by its BAG identificatie.
-     *
-     * @param string $id BAG verblijfsobject identificatie.
-     *
-     * @return JSONResponse {lookupStatus, address, dormant, extras}
-     *
-     * @NoAdminRequired
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/bag-register-adapter/proposal.md
-     */
-    public function verblijfsobject(string $id): JSONResponse
-    {
-        return $this->objectLookup(objectType: 'verblijfsobject', id: $id);
-    }//end verblijfsobject()
+	/**
+	 * Look up a verblijfsobject by its BAG identificatie.
+	 *
+	 * @param string $id BAG verblijfsobject identificatie.
+	 *
+	 * @return JSONResponse {lookupStatus, address, dormant, extras}
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/bag-register-adapter/proposal.md
+	 */
+	public function verblijfsobject(string $id): JSONResponse {
+		return $this->objectLookup(objectType: 'verblijfsobject', id: $id);
+	}//end verblijfsobject()
 
-    /**
-     * Shared pand/verblijfsobject lookup implementation.
-     *
-     * @param string $objectType `pand` or `verblijfsobject`.
-     * @param string $id         BAG identificatie.
-     *
-     * @return JSONResponse
-     */
-    private function objectLookup(string $objectType, string $id): JSONResponse
-    {
-        $unauthorized = $this->requireUser();
-        if ($unauthorized !== null) {
-            return $unauthorized;
-        }
+	/**
+	 * Shared pand/verblijfsobject lookup implementation.
+	 *
+	 * @param string $objectType `pand` or `verblijfsobject`.
+	 * @param string $id BAG identificatie.
+	 *
+	 * @return JSONResponse
+	 */
+	private function objectLookup(string $objectType, string $id): JSONResponse {
+		$unauthorized = $this->requireUser();
+		if ($unauthorized !== null) {
+			return $unauthorized;
+		}
 
-        if ($id === '') {
-            return new JSONResponse(
-                ['error' => 'id is required'],
-                Http::STATUS_BAD_REQUEST,
-            );
-        }
+		if ($id === '') {
+			return new JSONResponse(
+				['error' => 'id is required'],
+				Http::STATUS_BAD_REQUEST,
+			);
+		}
 
-        try {
-            $result = $this->bagAdapter->lookupObject(objectType: $objectType, id: $id);
-        } catch (Throwable $e) {
-            $this->logger->error('Procest BAG object lookup failed: '.$e->getMessage());
-            return new JSONResponse(
-                ['error' => 'BAG object lookup failed'],
-                Http::STATUS_INTERNAL_SERVER_ERROR,
-            );
-        }
+		try {
+			$result = $this->bagAdapter->lookupObject(objectType: $objectType, id: $id);
+		} catch (Throwable $e) {
+			$this->logger->error('Procest BAG object lookup failed: ' . $e->getMessage());
+			return new JSONResponse(
+				['error' => 'BAG object lookup failed'],
+				Http::STATUS_INTERNAL_SERVER_ERROR,
+			);
+		}
 
-        return $this->toResponse(result: $result);
-    }//end objectLookup()
+		return $this->toResponse(result: $result);
+	}//end objectLookup()
 
-    /**
-     * Require an active user session.
-     *
-     * @return JSONResponse|null A 401 response when unauthenticated, else
-     *                           null.
-     */
-    private function requireUser(): ?JSONResponse
-    {
-        if ($this->userSession->getUser() === null) {
-            return new JSONResponse(
-                ['error' => 'Authentication required'],
-                Http::STATUS_UNAUTHORIZED,
-            );
-        }
+	/**
+	 * Require an active user session.
+	 *
+	 * @return JSONResponse|null A 401 response when unauthenticated, else
+	 *                           null.
+	 */
+	private function requireUser(): ?JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return new JSONResponse(
+				['error' => 'Authentication required'],
+				Http::STATUS_UNAUTHORIZED,
+			);
+		}
 
-        return null;
-    }//end requireUser()
+		return null;
+	}//end requireUser()
 
-    /**
-     * Wrap a BagLookupResult as a 200 JSON response — the adapter's own
-     * `lookupStatus` (including LOOKUP_DEFERRED / NOT_FOUND / INVALID_INPUT
-     * / LOOKUP_ERROR) carries the outcome; the controller never turns
-     * "not configured" or "not found" into an HTTP error.
-     *
-     * @param BagLookupResult $result Adapter result.
-     *
-     * @return JSONResponse
-     */
-    private function toResponse(BagLookupResult $result): JSONResponse
-    {
-        return new JSONResponse(
-            [
-                'lookupStatus' => $result->lookupStatus,
-                'address'      => $result->address,
-                'dormant'      => $result->dormant,
-                'extras'       => $result->extras,
-            ]
-        );
-    }//end toResponse()
+	/**
+	 * Wrap a BagLookupResult as a 200 JSON response — the adapter's own
+	 * `lookupStatus` (including LOOKUP_DEFERRED / NOT_FOUND / INVALID_INPUT
+	 * / LOOKUP_ERROR) carries the outcome; the controller never turns
+	 * "not configured" or "not found" into an HTTP error.
+	 *
+	 * @param BagLookupResult $result Adapter result.
+	 *
+	 * @return JSONResponse
+	 */
+	private function toResponse(BagLookupResult $result): JSONResponse {
+		return new JSONResponse(
+			[
+				'lookupStatus' => $result->lookupStatus,
+				'address' => $result->address,
+				'dormant' => $result->dormant,
+				'extras' => $result->extras,
+			]
+		);
+	}//end toResponse()
 }//end class

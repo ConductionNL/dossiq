@@ -43,142 +43,135 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Procest\Controller\ZgwOpenApiController
  */
-class ZgwOpenApiControllerTest extends TestCase
-{
+class ZgwOpenApiControllerTest extends TestCase {
 
-    /**
-     * The six documented ZGW API ids.
-     *
-     * @var array<int, string>
-     */
-    private const APIS = ['zaken', 'documenten', 'catalogi', 'besluiten', 'autorisaties', 'notificaties'];
+	/**
+	 * The six documented ZGW API ids.
+	 *
+	 * @var array<int, string>
+	 */
+	private const APIS = ['zaken', 'documenten', 'catalogi', 'besluiten', 'autorisaties', 'notificaties'];
 
-    /**
-     * The mocked request.
-     *
-     * @var IRequest|MockObject
-     */
-    private IRequest $request;
+	/**
+	 * The mocked request.
+	 *
+	 * @var IRequest|MockObject
+	 */
+	private IRequest $request;
 
-    /**
-     * The controller under test.
-     *
-     * @var ZgwOpenApiController
-     */
-    private ZgwOpenApiController $controller;
+	/**
+	 * The controller under test.
+	 *
+	 * @var ZgwOpenApiController
+	 */
+	private ZgwOpenApiController $controller;
 
-    /**
-     * Set up the controller with a mocked request.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+	/**
+	 * Set up the controller with a mocked request.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
 
-        $this->request = $this->createMock(IRequest::class);
-        $this->request->method('getServerProtocol')->willReturn('https');
-        $this->request->method('getServerHost')->willReturn('procest.example.org');
+		$this->request = $this->createMock(IRequest::class);
+		$this->request->method('getServerProtocol')->willReturn('https');
+		$this->request->method('getServerHost')->willReturn('procest.example.org');
 
-        $this->controller = new ZgwOpenApiController(request: $this->request);
-    }//end setUp()
+		$this->controller = new ZgwOpenApiController(request: $this->request);
+	}//end setUp()
 
-    /**
-     * index() lists exactly the six ZGW APIs, each with an id, name,
-     * basePath, standard and a resolvable specUrl.
-     *
-     * @return void
-     */
-    public function testIndexListsSixApisWithSpecUrls(): void
-    {
-        $response = $this->controller->index();
+	/**
+	 * index() lists exactly the six ZGW APIs, each with an id, name,
+	 * basePath, standard and a resolvable specUrl.
+	 *
+	 * @return void
+	 */
+	public function testIndexListsSixApisWithSpecUrls(): void {
+		$response = $this->controller->index();
 
-        self::assertInstanceOf(JSONResponse::class, $response);
-        self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertInstanceOf(JSONResponse::class, $response);
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
 
-        $data = $response->getData();
-        self::assertIsArray($data);
-        self::assertArrayHasKey('apis', $data);
-        self::assertCount(6, $data['apis']);
+		$data = $response->getData();
+		self::assertIsArray($data);
+		self::assertArrayHasKey('apis', $data);
+		self::assertCount(6, $data['apis']);
 
-        $ids = array_column($data['apis'], 'id');
-        self::assertSame(self::APIS, $ids);
+		$ids = array_column($data['apis'], 'id');
+		self::assertSame(self::APIS, $ids);
 
-        foreach ($data['apis'] as $api) {
-            self::assertArrayHasKey('id', $api);
-            self::assertArrayHasKey('name', $api);
-            self::assertArrayHasKey('basePath', $api);
-            self::assertArrayHasKey('standard', $api);
-            self::assertArrayHasKey('specUrl', $api);
-            self::assertSame('VNG ZGW 1.x', $api['standard']);
-            self::assertStringEndsWith(
-                '/apps/procest/api/zgw/'.$api['id'].'/openapi.yaml',
-                $api['specUrl']
-            );
-        }
-    }//end testIndexListsSixApisWithSpecUrls()
+		foreach ($data['apis'] as $api) {
+			self::assertArrayHasKey('id', $api);
+			self::assertArrayHasKey('name', $api);
+			self::assertArrayHasKey('basePath', $api);
+			self::assertArrayHasKey('standard', $api);
+			self::assertArrayHasKey('specUrl', $api);
+			self::assertSame('VNG ZGW 1.x', $api['standard']);
+			self::assertStringEndsWith(
+				'/apps/procest/api/zgw/' . $api['id'] . '/openapi.yaml',
+				$api['specUrl']
+			);
+		}
+	}//end testIndexListsSixApisWithSpecUrls()
 
-    /**
-     * spec() returns the YAML document with an application/yaml content
-     * type for every known API id.
-     *
-     * @return void
-     */
-    public function testSpecReturnsYamlForEveryKnownApi(): void
-    {
-        foreach (self::APIS as $api) {
-            $response = $this->controller->spec(api: $api);
+	/**
+	 * spec() returns the YAML document with an application/yaml content
+	 * type for every known API id.
+	 *
+	 * @return void
+	 */
+	public function testSpecReturnsYamlForEveryKnownApi(): void {
+		foreach (self::APIS as $api) {
+			$response = $this->controller->spec(api: $api);
 
-            self::assertInstanceOf(DataDisplayResponse::class, $response, 'api: '.$api);
-            self::assertSame(Http::STATUS_OK, $response->getStatus());
-            self::assertSame('application/yaml', $response->getHeaders()['Content-Type'] ?? null);
-            self::assertStringContainsString('openapi: 3.0.3', (string) $response->getData());
-        }
-    }//end testSpecReturnsYamlForEveryKnownApi()
+			self::assertInstanceOf(DataDisplayResponse::class, $response, 'api: ' . $api);
+			self::assertSame(Http::STATUS_OK, $response->getStatus());
+			self::assertSame('application/yaml', $response->getHeaders()['Content-Type'] ?? null);
+			self::assertStringContainsString('openapi: 3.0.3', (string)$response->getData());
+		}
+	}//end testSpecReturnsYamlForEveryKnownApi()
 
-    /**
-     * spec() 404s for an api id outside the allow-list (no path traversal).
-     *
-     * @return void
-     */
-    public function testSpecReturns404ForUnknownApi(): void
-    {
-        $response = $this->controller->spec(api: 'bogus');
+	/**
+	 * spec() 404s for an api id outside the allow-list (no path traversal).
+	 *
+	 * @return void
+	 */
+	public function testSpecReturns404ForUnknownApi(): void {
+		$response = $this->controller->spec(api: 'bogus');
 
-        self::assertInstanceOf(JSONResponse::class, $response);
-        self::assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-    }//end testSpecReturns404ForUnknownApi()
+		self::assertInstanceOf(JSONResponse::class, $response);
+		self::assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}//end testSpecReturns404ForUnknownApi()
 
-    /**
-     * spec() 404s for a path-traversal attempt, never touching the
-     * filesystem outside docs/openapi/zgw/.
-     *
-     * @return void
-     */
-    public function testSpecReturns404ForPathTraversalAttempt(): void
-    {
-        $response = $this->controller->spec(api: '../../../../etc/passwd');
+	/**
+	 * spec() 404s for a path-traversal attempt, never touching the
+	 * filesystem outside docs/openapi/zgw/.
+	 *
+	 * @return void
+	 */
+	public function testSpecReturns404ForPathTraversalAttempt(): void {
+		$response = $this->controller->spec(api: '../../../../etc/passwd');
 
-        self::assertInstanceOf(JSONResponse::class, $response);
-        self::assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
-    }//end testSpecReturns404ForPathTraversalAttempt()
+		self::assertInstanceOf(JSONResponse::class, $response);
+		self::assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}//end testSpecReturns404ForPathTraversalAttempt()
 
-    /**
-     * Both index() and spec() are annotated @PublicPage and @NoCSRFRequired
-     * so the discovery surface is reachable without authentication (spec
-     * Requirement: Public, read-only discovery).
-     *
-     * @return void
-     */
-    public function testIndexAndSpecAreAnnotatedPublicAndNoCsrf(): void
-    {
-        foreach (['index', 'spec'] as $method) {
-            $reflection = new \ReflectionMethod(ZgwOpenApiController::class, $method);
-            $docComment = $reflection->getDocComment();
+	/**
+	 * Both index() and spec() are annotated @PublicPage and @NoCSRFRequired
+	 * so the discovery surface is reachable without authentication (spec
+	 * Requirement: Public, read-only discovery).
+	 *
+	 * @return void
+	 */
+	public function testIndexAndSpecAreAnnotatedPublicAndNoCsrf(): void {
+		foreach (['index', 'spec'] as $method) {
+			$reflection = new \ReflectionMethod(ZgwOpenApiController::class, $method);
+			$docComment = $reflection->getDocComment();
 
-            self::assertIsString($docComment, 'Missing doc comment on '.$method.'()');
-            self::assertStringContainsString('@PublicPage', $docComment, $method.'() must be @PublicPage');
-            self::assertStringContainsString('@NoCSRFRequired', $docComment, $method.'() must be @NoCSRFRequired');
-        }
-    }//end testIndexAndSpecAreAnnotatedPublicAndNoCsrf()
+			self::assertIsString($docComment, 'Missing doc comment on ' . $method . '()');
+			self::assertStringContainsString('@PublicPage', $docComment, $method . '() must be @PublicPage');
+			self::assertStringContainsString('@NoCSRFRequired', $docComment, $method . '() must be @NoCSRFRequired');
+		}
+	}//end testIndexAndSpecAreAnnotatedPublicAndNoCsrf()
 }//end class

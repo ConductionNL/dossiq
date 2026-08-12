@@ -65,287 +65,277 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
  */
-class StufController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string                    $appName    The app name.
-     * @param IRequest                  $request    The request object.
-     * @param StufServices              $stuf       The bundled StUF collaborators.
-     * @param StufSoapRequestDispatcher $dispatcher The inbound SOAP dispatcher.
-     * @param StufEnvelopeInspector     $inspector  The raw-envelope inspector.
-     * @param IL10N                     $l10n       The localization service.
-     * @param LoggerInterface           $logger     The logger.
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly StufServices $stuf,
-        private readonly StufSoapRequestDispatcher $dispatcher,
-        private readonly StufEnvelopeInspector $inspector,
-        private readonly IL10N $l10n,
-        private readonly LoggerInterface $logger,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class StufController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name.
+	 * @param IRequest $request The request object.
+	 * @param StufServices $stuf The bundled StUF collaborators.
+	 * @param StufSoapRequestDispatcher $dispatcher The inbound SOAP dispatcher.
+	 * @param StufEnvelopeInspector $inspector The raw-envelope inspector.
+	 * @param IL10N $l10n The localization service.
+	 * @param LoggerInterface $logger The logger.
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly StufServices $stuf,
+		private readonly StufSoapRequestDispatcher $dispatcher,
+		private readonly StufEnvelopeInspector $inspector,
+		private readonly IL10N $l10n,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Handle inbound StUF-ZKN SOAP messages for case operations.
-     *
-     * @return DataDisplayResponse SOAP XML response.
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    #[PublicPage]
-    #[NoCSRFRequired]
-    public function zaken(): DataDisplayResponse
-    {
-        return $this->dispatcher->dispatch(
-            rawBody: file_get_contents('php://input'),
-            service: 'zaken'
-        );
-    }//end zaken()
+	/**
+	 * Handle inbound StUF-ZKN SOAP messages for case operations.
+	 *
+	 * @return DataDisplayResponse SOAP XML response.
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	public function zaken(): DataDisplayResponse {
+		return $this->dispatcher->dispatch(
+			rawBody: file_get_contents('php://input'),
+			service: 'zaken'
+		);
+	}//end zaken()
 
-    /**
-     * Handle inbound StUF-BG SOAP messages for person operations.
-     *
-     * @return DataDisplayResponse SOAP XML response.
-     *
-     * @psalm-suppress PossiblyUnusedMethod
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    #[PublicPage]
-    #[NoCSRFRequired]
-    public function personen(): DataDisplayResponse
-    {
-        return $this->dispatcher->dispatch(
-            rawBody: file_get_contents('php://input'),
-            service: 'personen'
-        );
-    }//end personen()
+	/**
+	 * Handle inbound StUF-BG SOAP messages for person operations.
+	 *
+	 * @return DataDisplayResponse SOAP XML response.
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	public function personen(): DataDisplayResponse {
+		return $this->dispatcher->dispatch(
+			rawBody: file_get_contents('php://input'),
+			service: 'personen'
+		);
+	}//end personen()
 
-    /**
-     * Send a vrijBericht to the named endpoint (outbound).
-     *
-     * Admin-only via #[AuthorizedAdminSetting]. Body: { endpointId, berichtNaam, payload }.
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
-     *
-     * @contract exclude SOAP vrijBericht proxy needs a seeded endpoint + vault + live peer; covered by PHPUnit + env-gated live-e2e/Newman.
-     */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function outbound(): JSONResponse
-    {
-        $endpointId  = (string) $this->request->getParam(key: 'endpointId', default: '');
-        $berichtNaam = (string) $this->request->getParam(key: 'berichtNaam', default: '');
-        $payload     = (array) $this->request->getParam(key: 'payload', default: []);
+	/**
+	 * Send a vrijBericht to the named endpoint (outbound).
+	 *
+	 * Admin-only via #[AuthorizedAdminSetting]. Body: { endpointId, berichtNaam, payload }.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
+	 *
+	 * @contract exclude SOAP vrijBericht proxy needs a seeded endpoint + vault + live peer; covered by PHPUnit + env-gated live-e2e/Newman.
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function outbound(): JSONResponse {
+		$endpointId = (string)$this->request->getParam(key: 'endpointId', default: '');
+		$berichtNaam = (string)$this->request->getParam(key: 'berichtNaam', default: '');
+		$payload = (array)$this->request->getParam(key: 'payload', default: []);
 
-        if ($endpointId === '' || $berichtNaam === '') {
-            return new JSONResponse(['error' => $this->l10n->t('endpointId and berichtNaam are required')], Http::STATUS_BAD_REQUEST);
-        }
+		if ($endpointId === '' || $berichtNaam === '') {
+			return new JSONResponse(['error' => $this->l10n->t('endpointId and berichtNaam are required')], Http::STATUS_BAD_REQUEST);
+		}
 
-        $endpoint = $this->stuf->register->findOne(
-            schema: StufRegisterAccess::SCHEMA_ENDPOINT,
-            filters: ['id' => $endpointId]
-        );
-        if ($endpoint === null) {
-            return new JSONResponse(['error' => $this->l10n->t('Endpoint not found')], Http::STATUS_NOT_FOUND);
-        }
+		$endpoint = $this->stuf->register->findOne(
+			schema: StufRegisterAccess::SCHEMA_ENDPOINT,
+			filters: ['id' => $endpointId]
+		);
+		if ($endpoint === null) {
+			return new JSONResponse(['error' => $this->l10n->t('Endpoint not found')], Http::STATUS_NOT_FOUND);
+		}
 
-        try {
-            $result = $this->stuf->adapter->vrijBericht(name: $berichtNaam, payload: $payload, endpoint: $endpoint);
-            return new JSONResponse($result);
-        } catch (CircuitOpenException $e) {
-            return new JSONResponse(
-                ['error' => $this->l10n->t('Circuit breaker open for this endpoint'), 'errorCode' => 'CIRCUIT_OPEN'],
-                Http::STATUS_SERVICE_UNAVAILABLE
-            );
-        } catch (StufException $e) {
-            return new JSONResponse(
-                ['error' => $e->getMessage(), 'errorCode' => 'STUF_VALIDATION'],
-                Http::STATUS_BAD_REQUEST
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(message: 'StUF outbound failed: {error}', context: ['error' => $e->getMessage()]);
-            return new JSONResponse(['error' => $this->l10n->t('Internal error')], Http::STATUS_INTERNAL_SERVER_ERROR);
-        }//end try
-    }//end outbound()
+		try {
+			$result = $this->stuf->adapter->vrijBericht(name: $berichtNaam, payload: $payload, endpoint: $endpoint);
+			return new JSONResponse($result);
+		} catch (CircuitOpenException $e) {
+			return new JSONResponse(
+				['error' => $this->l10n->t('Circuit breaker open for this endpoint'), 'errorCode' => 'CIRCUIT_OPEN'],
+				Http::STATUS_SERVICE_UNAVAILABLE
+			);
+		} catch (StufException $e) {
+			return new JSONResponse(
+				['error' => $e->getMessage(), 'errorCode' => 'STUF_VALIDATION'],
+				Http::STATUS_BAD_REQUEST
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(message: 'StUF outbound failed: {error}', context: ['error' => $e->getMessage()]);
+			return new JSONResponse(['error' => $this->l10n->t('Internal error')], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}//end try
+	}//end outbound()
 
-    /**
-     * Receive an inbound async confirmation/notification from the zaaksysteem.
-     *
-     * Public (no user session) but authenticates the caller via WSSE
-     * UsernameToken matched against the StufEndpoint vault reference.
-     * Persists the inbound envelope as a StufMessage row and, when the
-     * envelope is a Bv01 bevestiging, transitions the matching outbound row
-     * from "verzonden" → "bevestigd".
-     *
-     * @return DataResponse
-     *
-     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
-     *
-     * @contract exclude WSSE SOAP webhook needs a signed XML body + seeded endpoint/vault; covered by PHPUnit + env-gated live-e2e/Newman.
-     */
-    #[PublicPage]
-    #[NoCSRFRequired]
-    public function inkomend(): DataResponse
-    {
-        $rawXml = (string) file_get_contents(filename: 'php://input');
-        if ($rawXml === '') {
-            return new DataResponse(data: 'empty body', statusCode: Http::STATUS_BAD_REQUEST);
-        }
+	/**
+	 * Receive an inbound async confirmation/notification from the zaaksysteem.
+	 *
+	 * Public (no user session) but authenticates the caller via WSSE
+	 * UsernameToken matched against the StufEndpoint vault reference.
+	 * Persists the inbound envelope as a StufMessage row and, when the
+	 * envelope is a Bv01 bevestiging, transitions the matching outbound row
+	 * from "verzonden" → "bevestigd".
+	 *
+	 * @return DataResponse
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
+	 *
+	 * @contract exclude WSSE SOAP webhook needs a signed XML body + seeded endpoint/vault; covered by PHPUnit + env-gated live-e2e/Newman.
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	public function inkomend(): DataResponse {
+		$rawXml = (string)file_get_contents(filename: 'php://input');
+		if ($rawXml === '') {
+			return new DataResponse(data: 'empty body', statusCode: Http::STATUS_BAD_REQUEST);
+		}
 
-        $endpoint = $this->inspector->resolveEndpoint(
-            envelopeXml: $rawXml,
-            headerEndpointId: (string) $this->request->getHeader(name: 'x-procest-endpoint-id')
-        );
-        if ($endpoint === null) {
-            $this->logger->warning(message: 'StUF inkomend: could not resolve endpoint from envelope');
-            return new DataResponse(data: 'unknown endpoint', statusCode: Http::STATUS_BAD_REQUEST);
-        }
+		$endpoint = $this->inspector->resolveEndpoint(
+			envelopeXml: $rawXml,
+			headerEndpointId: (string)$this->request->getHeader(name: 'x-procest-endpoint-id')
+		);
+		if ($endpoint === null) {
+			$this->logger->warning(message: 'StUF inkomend: could not resolve endpoint from envelope');
+			return new DataResponse(data: 'unknown endpoint', statusCode: Http::STATUS_BAD_REQUEST);
+		}
 
-        if ($this->inspector->verifyWsse(envelopeXml: $rawXml, endpoint: $endpoint) === false) {
-            $this->logger->warning(message: 'StUF inkomend: WSSE signature mismatch for endpoint {id}', context: ['id' => ($endpoint['id'] ?? '')]);
-            // 422 (Unprocessable Entity) signals "invalid signature" without
-            // surfacing an NC session-auth status to the upstream zaaksysteem.
-            // This is WSSE signature verification of a PublicPage webhook, not
-            // NC session auth — so the semantic-auth gate stays unambiguous.
-            return new DataResponse(data: 'invalid signature', statusCode: Http::STATUS_UNPROCESSABLE_ENTITY);
-        }
+		if ($this->inspector->verifyWsse(envelopeXml: $rawXml, endpoint: $endpoint) === false) {
+			$this->logger->warning(message: 'StUF inkomend: WSSE signature mismatch for endpoint {id}', context: ['id' => ($endpoint['id'] ?? '')]);
+			// 422 (Unprocessable Entity) signals "invalid signature" without
+			// surfacing an NC session-auth status to the upstream zaaksysteem.
+			// This is WSSE signature verification of a PublicPage webhook, not
+			// NC session auth — so the semantic-auth gate stays unambiguous.
+			return new DataResponse(data: 'invalid signature', statusCode: Http::STATUS_UNPROCESSABLE_ENTITY);
+		}
 
-        $berichtSoort = $this->inspector->detectBerichtSoort(envelopeXml: $rawXml);
-        $crossRef     = $this->inspector->extractCrossRefnummer(envelopeXml: $rawXml);
-        $zaakId       = ($this->stuf->parser->parseBevestiging(responseXml: $rawXml)['zaakIdentificatie'] ?? null);
+		$berichtSoort = $this->inspector->detectBerichtSoort(envelopeXml: $rawXml);
+		$crossRef = $this->inspector->extractCrossRefnummer(envelopeXml: $rawXml);
+		$zaakId = ($this->stuf->parser->parseBevestiging(responseXml: $rawXml)['zaakIdentificatie'] ?? null);
 
-        $this->stuf->messageHandler->logInbound(
-            endpoint: $endpoint,
-            responseXml: $rawXml,
-            berichtSoort: $berichtSoort,
-            crossRefnummer: $crossRef,
-            zaakId: $zaakId,
-            functie: $this->inspector->extractFunctie(envelopeXml: $rawXml)
-        );
+		$this->stuf->messageHandler->logInbound(
+			endpoint: $endpoint,
+			responseXml: $rawXml,
+			berichtSoort: $berichtSoort,
+			crossRefnummer: $crossRef,
+			zaakId: $zaakId,
+			functie: $this->inspector->extractFunctie(envelopeXml: $rawXml)
+		);
 
-        $this->confirmOutbound(berichtSoort: $berichtSoort, crossRef: $crossRef, rawXml: $rawXml, zaakId: $zaakId);
+		$this->confirmOutbound(berichtSoort: $berichtSoort, crossRef: $crossRef, rawXml: $rawXml, zaakId: $zaakId);
 
-        return new DataResponse(data: 'ack', statusCode: Http::STATUS_OK);
-    }//end inkomend()
+		return new DataResponse(data: 'ack', statusCode: Http::STATUS_OK);
+	}//end inkomend()
 
-    /**
-     * List all configured StufEndpoint objects (admin REST).
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
-     */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function endpoints(): JSONResponse
-    {
-        $items = $this->stuf->register->findAll(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: [], limit: 500);
-        $items = array_map(
-            callback: function (array $endpoint): array {
-                return $this->enrichEndpointWithHealth(endpoint: $endpoint);
-            },
-            array: $items
-        );
-        return new JSONResponse(['items' => $items, 'total' => count(value: $items)]);
-    }//end endpoints()
+	/**
+	 * List all configured StufEndpoint objects (admin REST).
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-rest-surface
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function endpoints(): JSONResponse {
+		$items = $this->stuf->register->findAll(schema: StufRegisterAccess::SCHEMA_ENDPOINT, filters: [], limit: 500);
+		$items = array_map(
+			callback: function (array $endpoint): array {
+				return $this->enrichEndpointWithHealth(endpoint: $endpoint);
+			},
+			array: $items
+		);
+		return new JSONResponse(['items' => $items, 'total' => count(value: $items)]);
+	}//end endpoints()
 
-    /**
-     * Query the StufMessage audit log (admin REST).
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
-     */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function messages(): JSONResponse
-    {
-        $limit   = max(1, min(500, (int) $this->request->getParam(key: 'limit', default: 50)));
-        $filters = $this->messageFilters();
+	/**
+	 * Query the StufMessage audit log (admin REST).
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-audit-log
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function messages(): JSONResponse {
+		$limit = max(1, min(500, (int)$this->request->getParam(key: 'limit', default: 50)));
+		$filters = $this->messageFilters();
 
-        $items = $this->stuf->register->findAll(schema: StufRegisterAccess::SCHEMA_MESSAGE, filters: $filters, limit: $limit);
-        return new JSONResponse(['items' => $items, 'total' => count(value: $items), 'limit' => $limit]);
-    }//end messages()
+		$items = $this->stuf->register->findAll(schema: StufRegisterAccess::SCHEMA_MESSAGE, filters: $filters, limit: $limit);
+		return new JSONResponse(['items' => $items, 'total' => count(value: $items), 'limit' => $limit]);
+	}//end messages()
 
-    /**
-     * Collect the optional audit-log filters present on the request.
-     *
-     * @return array<string, string> The non-empty filters.
-     */
-    private function messageFilters(): array
-    {
-        $filters = [];
-        foreach (['endpointId', 'berichtSoort', 'status'] as $key) {
-            $value = (string) $this->request->getParam(key: $key, default: '');
-            if ($value !== '') {
-                $filters[$key] = $value;
-            }
-        }
+	/**
+	 * Collect the optional audit-log filters present on the request.
+	 *
+	 * @return array<string, string> The non-empty filters.
+	 */
+	private function messageFilters(): array {
+		$filters = [];
+		foreach (['endpointId', 'berichtSoort', 'status'] as $key) {
+			$value = (string)$this->request->getParam(key: $key, default: '');
+			if ($value !== '') {
+				$filters[$key] = $value;
+			}
+		}
 
-        return $filters;
-    }//end messageFilters()
+		return $filters;
+	}//end messageFilters()
 
-    /**
-     * Transition the matching outbound message to "bevestigd" on a Bv01.
-     *
-     * @param string      $berichtSoort The detected bericht-soort.
-     * @param string      $crossRef     The cross-reference to the outbound row.
-     * @param string      $rawXml       The raw inbound envelope.
-     * @param string|null $zaakId       The zaak identificatie from the bevestiging.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
-     */
-    private function confirmOutbound(string $berichtSoort, string $crossRef, string $rawXml, ?string $zaakId): void
-    {
-        if ($berichtSoort !== 'Bv01' || $crossRef === '') {
-            return;
-        }
+	/**
+	 * Transition the matching outbound message to "bevestigd" on a Bv01.
+	 *
+	 * @param string $berichtSoort The detected bericht-soort.
+	 * @param string $crossRef The cross-reference to the outbound row.
+	 * @param string $rawXml The raw inbound envelope.
+	 * @param string|null $zaakId The zaak identificatie from the bevestiging.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
+	 */
+	private function confirmOutbound(string $berichtSoort, string $crossRef, string $rawXml, ?string $zaakId): void {
+		if ($berichtSoort !== 'Bv01' || $crossRef === '') {
+			return;
+		}
 
-        $outbound = $this->stuf->messageHandler->findOutboundByReferentienummer(referentienummer: $crossRef);
-        if ($outbound === null) {
-            return;
-        }
+		$outbound = $this->stuf->messageHandler->findOutboundByReferentienummer(referentienummer: $crossRef);
+		if ($outbound === null) {
+			return;
+		}
 
-        $this->stuf->messageHandler->transitionStatus(
-            msg: $outbound,
-            newStatus: 'bevestigd',
-            extras: [
-                'responseEnvelopeXml' => $rawXml,
-                'zaakIdentificatie'   => ($zaakId ?? ($outbound['zaakIdentificatie'] ?? '')),
-            ]
-        );
-    }//end confirmOutbound()
+		$this->stuf->messageHandler->transitionStatus(
+			msg: $outbound,
+			newStatus: 'bevestigd',
+			extras: [
+				'responseEnvelopeXml' => $rawXml,
+				'zaakIdentificatie' => ($zaakId ?? ($outbound['zaakIdentificatie'] ?? '')),
+			]
+		);
+	}//end confirmOutbound()
 
-    /**
-     * Enrich an endpoint with its health snapshot (status badge + last 5 messages).
-     *
-     * @param array $endpoint The raw endpoint row.
-     *
-     * @return array
-     */
-    private function enrichEndpointWithHealth(array $endpoint): array
-    {
-        $snapshot = $this->stuf->circuitBreaker->snapshot(endpointId: (string) ($endpoint['id'] ?? ''));
-        $recent   = $this->stuf->register->findAll(
-            schema: StufRegisterAccess::SCHEMA_MESSAGE,
-            filters: ['endpointId' => (string) ($endpoint['id'] ?? '')],
-            limit: 5
-        );
-        $endpoint['health'] = [
-            'state'        => $snapshot['state'],
-            'failureCount' => $snapshot['failureCount'],
-            'openedAt'     => $snapshot['openedAt'],
-            'recentCount'  => count(value: $recent),
-        ];
-        return $endpoint;
-    }//end enrichEndpointWithHealth()
+	/**
+	 * Enrich an endpoint with its health snapshot (status badge + last 5 messages).
+	 *
+	 * @param array $endpoint The raw endpoint row.
+	 *
+	 * @return array
+	 */
+	private function enrichEndpointWithHealth(array $endpoint): array {
+		$snapshot = $this->stuf->circuitBreaker->snapshot(endpointId: (string)($endpoint['id'] ?? ''));
+		$recent = $this->stuf->register->findAll(
+			schema: StufRegisterAccess::SCHEMA_MESSAGE,
+			filters: ['endpointId' => (string)($endpoint['id'] ?? '')],
+			limit: 5
+		);
+		$endpoint['health'] = [
+			'state' => $snapshot['state'],
+			'failureCount' => $snapshot['failureCount'],
+			'openedAt' => $snapshot['openedAt'],
+			'recentCount' => count(value: $recent),
+		];
+		return $endpoint;
+	}//end enrichEndpointWithHealth()
 }//end class

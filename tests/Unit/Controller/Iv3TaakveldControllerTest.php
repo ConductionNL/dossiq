@@ -42,81 +42,76 @@ use PHPUnit\Framework\TestCase;
  * @covers \OCA\Procest\Controller\Iv3TaakveldController
  * @uses   \OCA\Procest\Service\Iv3TaakveldList
  */
-class Iv3TaakveldControllerTest extends TestCase
-{
-    /**
-     * Build the controller with a session that either has a user or does not.
-     *
-     * @param bool $authenticated Whether a user is logged in.
-     *
-     * @return Iv3TaakveldController
-     */
-    private function controller(bool $authenticated): Iv3TaakveldController
-    {
-        $session = $this->createMock(IUserSession::class);
-        if ($authenticated === true) {
-            $user = $this->createMock(IUser::class);
-            $user->method('getUID')->willReturn('alice');
-            $session->method('getUser')->willReturn($user);
-        } else {
-            $session->method('getUser')->willReturn(null);
-        }
+class Iv3TaakveldControllerTest extends TestCase {
+	/**
+	 * Build the controller with a session that either has a user or does not.
+	 *
+	 * @param bool $authenticated Whether a user is logged in.
+	 *
+	 * @return Iv3TaakveldController
+	 */
+	private function controller(bool $authenticated): Iv3TaakveldController {
+		$session = $this->createMock(IUserSession::class);
+		if ($authenticated === true) {
+			$user = $this->createMock(IUser::class);
+			$user->method('getUID')->willReturn('alice');
+			$session->method('getUser')->willReturn($user);
+		} else {
+			$session->method('getUser')->willReturn(null);
+		}
 
-        return new Iv3TaakveldController(
-            'procest',
-            $this->createMock(IRequest::class),
-            new Iv3TaakveldList(),
-            $session
-        );
-    }//end controller()
+		return new Iv3TaakveldController(
+			'procest',
+			$this->createMock(IRequest::class),
+			new Iv3TaakveldList(),
+			$session
+		);
+	}//end controller()
 
-    /**
-     * An authenticated user gets the list — including a plain user with no
-     * special group. The picker must work for anyone who can edit a case type.
-     *
-     * @return void
-     */
-    public function testAuthenticatedUserGetsTheTaakveldList(): void
-    {
-        $response = $this->controller(authenticated: true)->taakvelden();
+	/**
+	 * An authenticated user gets the list — including a plain user with no
+	 * special group. The picker must work for anyone who can edit a case type.
+	 *
+	 * @return void
+	 */
+	public function testAuthenticatedUserGetsTheTaakveldList(): void {
+		$response = $this->controller(authenticated: true)->taakvelden();
 
-        $this->assertInstanceOf(JSONResponse::class, $response);
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertInstanceOf(JSONResponse::class, $response);
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 
-        $data = $response->getData();
-        $this->assertArrayHasKey('version', $data);
-        $this->assertArrayHasKey('taakvelden', $data);
-        $this->assertNotEmpty($data['taakvelden'], 'an empty list would leave the picker unusable');
-    }//end testAuthenticatedUserGetsTheTaakveldList()
+		$data = $response->getData();
+		$this->assertArrayHasKey('version', $data);
+		$this->assertArrayHasKey('taakvelden', $data);
+		$this->assertNotEmpty($data['taakvelden'], 'an empty list would leave the picker unusable');
+	}//end testAuthenticatedUserGetsTheTaakveldList()
 
-    /**
-     * Every entry carries the code and label the picker renders. A silently
-     * reshaped list would leave the dropdown showing blanks.
-     *
-     * @return void
-     */
-    public function testEveryTaakveldCarriesACodeAndLabel(): void
-    {
-        $data = $this->controller(authenticated: true)->taakvelden()->getData();
+	/**
+	 * Every entry carries the code and label the picker renders. A silently
+	 * reshaped list would leave the dropdown showing blanks.
+	 *
+	 * @return void
+	 */
+	public function testEveryTaakveldCarriesACodeAndLabel(): void {
+		$data = $this->controller(authenticated: true)->taakvelden()->getData();
 
-        foreach ($data['taakvelden'] as $taakveld) {
-            $this->assertArrayHasKey('code', $taakveld);
-            $this->assertArrayHasKey('label', $taakveld);
-            $this->assertNotSame('', trim((string) $taakveld['code']));
-            $this->assertNotSame('', trim((string) $taakveld['label']));
-        }
-    }//end testEveryTaakveldCarriesACodeAndLabel()
+		foreach ($data['taakvelden'] as $taakveld) {
+			$this->assertArrayHasKey('code', $taakveld);
+			$this->assertArrayHasKey('label', $taakveld);
+			$this->assertNotSame('', trim((string)$taakveld['code']));
+			$this->assertNotSame('', trim((string)$taakveld['label']));
+		}
+	}//end testEveryTaakveldCarriesACodeAndLabel()
 
-    /**
-     * An unauthenticated caller is refused rather than served.
-     *
-     * @return void
-     */
-    public function testUnauthenticatedCallerIsRefused(): void
-    {
-        $response = $this->controller(authenticated: false)->taakvelden();
+	/**
+	 * An unauthenticated caller is refused rather than served.
+	 *
+	 * @return void
+	 */
+	public function testUnauthenticatedCallerIsRefused(): void {
+		$response = $this->controller(authenticated: false)->taakvelden();
 
-        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-        $this->assertArrayNotHasKey('taakvelden', $response->getData());
-    }//end testUnauthenticatedCallerIsRefused()
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertArrayNotHasKey('taakvelden', $response->getData());
+	}//end testUnauthenticatedCallerIsRefused()
 }//end class

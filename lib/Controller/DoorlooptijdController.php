@@ -38,62 +38,60 @@ use OCP\IUserSession;
 /**
  * REST controller for the throughput-time dashboard.
  */
-class DoorlooptijdController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param IRequest            $request             Inbound request.
-     * @param DoorlooptijdService $doorlooptijdService Metrics service.
-     * @param IUserSession        $userSession         Current user session.
-     */
-    public function __construct(
-        IRequest $request,
-        private readonly DoorlooptijdService $doorlooptijdService,
-        private readonly IUserSession $userSession,
-    ) {
-        parent::__construct(appName: Application::APP_ID, request: $request);
-    }//end __construct()
+class DoorlooptijdController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param IRequest $request Inbound request.
+	 * @param DoorlooptijdService $doorlooptijdService Metrics service.
+	 * @param IUserSession $userSession Current user session.
+	 */
+	public function __construct(
+		IRequest $request,
+		private readonly DoorlooptijdService $doorlooptijdService,
+		private readonly IUserSession $userSession,
+	) {
+		parent::__construct(appName: Application::APP_ID, request: $request);
+	}//end __construct()
 
-    /**
-     * Return the metrics payload.
-     *
-     * @NoAdminRequired
-     *
-     * @return JSONResponse Metrics body or 400 on invalid parameters.
-     *
-     * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02
-     */
-    public function metrics(): JSONResponse
-    {
-        if ($this->userSession->getUser() === null) {
-            return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Return the metrics payload.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @return JSONResponse Metrics body or 400 on invalid parameters.
+	 *
+	 * @spec openspec/changes/doorlooptijd-dashboard/tasks.md#T02
+	 */
+	public function metrics(): JSONResponse {
+		if ($this->userSession->getUser() === null) {
+			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $caseType  = $this->request->getParam('caseType');
-        $period    = $this->request->getParam('period', '12m');
-        $atRiskRaw = $this->request->getParam('atRiskDays', 5);
+		$caseType = $this->request->getParam('caseType');
+		$period = $this->request->getParam('period', '12m');
+		$atRiskRaw = $this->request->getParam('atRiskDays', 5);
 
-        if ($caseType !== null && is_string($caseType) === false) {
-            return new JSONResponse(['message' => 'caseType must be a string'], Http::STATUS_BAD_REQUEST);
-        }
+		if ($caseType !== null && is_string($caseType) === false) {
+			return new JSONResponse(['message' => 'caseType must be a string'], Http::STATUS_BAD_REQUEST);
+		}
 
-        if (is_string($period) === false || preg_match('/^\d+m$/', $period) !== 1) {
-            return new JSONResponse(['message' => 'period must look like 12m'], Http::STATUS_BAD_REQUEST);
-        }
+		if (is_string($period) === false || preg_match('/^\d+m$/', $period) !== 1) {
+			return new JSONResponse(['message' => 'period must look like 12m'], Http::STATUS_BAD_REQUEST);
+		}
 
-        if (is_numeric($atRiskRaw) === false) {
-            return new JSONResponse(['message' => 'atRiskDays must be a number'], Http::STATUS_BAD_REQUEST);
-        }
+		if (is_numeric($atRiskRaw) === false) {
+			return new JSONResponse(['message' => 'atRiskDays must be a number'], Http::STATUS_BAD_REQUEST);
+		}
 
-        $params = [
-            'period'     => $period,
-            'atRiskDays' => (int) $atRiskRaw,
-        ];
-        if (is_string($caseType) === true && $caseType !== '') {
-            $params['caseType'] = $caseType;
-        }
+		$params = [
+			'period' => $period,
+			'atRiskDays' => (int)$atRiskRaw,
+		];
+		if (is_string($caseType) === true && $caseType !== '') {
+			$params['caseType'] = $caseType;
+		}
 
-        return new JSONResponse($this->doorlooptijdService->getMetrics(params: $params));
-    }//end metrics()
+		return new JSONResponse($this->doorlooptijdService->getMetrics(params: $params));
+	}//end metrics()
 }//end class

@@ -39,31 +39,30 @@ use OCA\Procest\Service\StufMessageBuilder;
  *
  * @spec openspec/specs/stuf-integration/spec.md
  */
-class StufServices
-{
-    /**
-     * Constructor.
-     *
-     * @param StufFieldMappingService $mappingService The field mapping service.
-     * @param StufMessageBuilder      $messageBuilder The message builder service.
-     * @param StufAdapterService      $adapter        The outbound adapter.
-     * @param StufRegisterAccess      $register       The register access helper.
-     * @param StufMessageHandler      $messageHandler The audit log handler.
-     * @param StufMessageParser       $parser         The message parser.
-     * @param StufVaultService        $vault          The vault adapter.
-     * @param CircuitBreakerService   $circuitBreaker The circuit breaker.
-     *
-     * @return void
-     */
-    public function __construct(
-        public readonly StufFieldMappingService $mappingService,
-        public readonly StufMessageBuilder $messageBuilder,
-        public readonly StufAdapterService $adapter,
-        public readonly StufRegisterAccess $register,
-        public readonly StufMessageHandler $messageHandler,
-        public readonly StufMessageParser $parser,
-        public readonly StufVaultService $vault,
-        public readonly CircuitBreakerService $circuitBreaker,
-    ) {
-    }//end __construct()
+class StufServices {
+	/**
+	 * Constructor.
+	 *
+	 * @param StufFieldMappingService $mappingService The field mapping service.
+	 * @param StufMessageBuilder $messageBuilder The message builder service.
+	 * @param StufAdapterService $adapter The outbound adapter.
+	 * @param StufRegisterAccess $register The register access helper.
+	 * @param StufMessageHandler $messageHandler The audit log handler.
+	 * @param StufMessageParser $parser The message parser.
+	 * @param StufVaultService $vault The vault adapter.
+	 * @param CircuitBreakerService $circuitBreaker The circuit breaker.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		public readonly StufFieldMappingService $mappingService,
+		public readonly StufMessageBuilder $messageBuilder,
+		public readonly StufAdapterService $adapter,
+		public readonly StufRegisterAccess $register,
+		public readonly StufMessageHandler $messageHandler,
+		public readonly StufMessageParser $parser,
+		public readonly StufVaultService $vault,
+		public readonly CircuitBreakerService $circuitBreaker,
+	) {
+	}//end __construct()
 }//end class

@@ -47,143 +47,139 @@ use OCP\IRequest;
  *
  * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
  */
-class ComplaintCategoryController extends Controller
-{
-    use SearchesObjects;
+class ComplaintCategoryController extends Controller {
+	use SearchesObjects;
 
-    /**
-     * Constructor.
-     *
-     * @param string               $appName         App name
-     * @param IRequest             $request         Request
-     * @param SettingsService      $settingsService Settings service
-     * @param ComplaintAccessGuard $accessGuard     Shared complaint authorization guard
-     *
-     * @return void
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly SettingsService $settingsService,
-        private readonly ComplaintAccessGuard $accessGuard,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName App name
+	 * @param IRequest $request Request
+	 * @param SettingsService $settingsService Settings service
+	 * @param ComplaintAccessGuard $accessGuard Shared complaint authorization guard
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly SettingsService $settingsService,
+		private readonly ComplaintAccessGuard $accessGuard,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * List complaint categories.
-     *
-     * @return JSONResponse List of categories
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
-     */
-    public function categories(): JSONResponse
-    {
-        if ($this->accessGuard->currentUid() === '') {
-            return $this->accessGuard->notAuthenticated();
-        }
+	/**
+	 * List complaint categories.
+	 *
+	 * @return JSONResponse List of categories
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	public function categories(): JSONResponse {
+		if ($this->accessGuard->currentUid() === '') {
+			return $this->accessGuard->notAuthenticated();
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return new JSONResponse(['results' => []]);
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return new JSONResponse(['results' => []]);
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('complaint_category_schema');
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('complaint_category_schema');
 
-        if (empty($register) === true || empty($schema) === true) {
-            return new JSONResponse(['results' => []]);
-        }
+		if (empty($register) === true || empty($schema) === true) {
+			return new JSONResponse(['results' => []]);
+		}
 
-        $list = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: ['_limit' => 200]
-        );
+		$list = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: ['_limit' => 200]
+		);
 
-        return new JSONResponse(['results' => $list]);
-    }//end categories()
+		return new JSONResponse(['results' => $list]);
+	}//end categories()
 
-    /**
-     * Create a complaint category (admin only).
-     *
-     * @return JSONResponse Created category
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
-     */
-    public function createCategory(): JSONResponse
-    {
-        $userId = $this->accessGuard->currentUid();
-        if ($userId === '') {
-            return $this->accessGuard->notAuthenticated();
-        }
+	/**
+	 * Create a complaint category (admin only).
+	 *
+	 * @return JSONResponse Created category
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	public function createCategory(): JSONResponse {
+		$userId = $this->accessGuard->currentUid();
+		if ($userId === '') {
+			return $this->accessGuard->notAuthenticated();
+		}
 
-        $this->accessGuard->requireCoordinator(userId: $userId);
+		$this->accessGuard->requireCoordinator(userId: $userId);
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
 
-        try {
-            $data     = $this->accessGuard->parseBody();
-            $register = $this->settingsService->getConfigValue('register');
-            $schema   = $this->settingsService->getConfigValue('complaint_category_schema');
-            $category = $objectService->saveObject(object: $data, register: $register, schema: $schema);
+		try {
+			$data = $this->accessGuard->parseBody();
+			$register = $this->settingsService->getConfigValue('register');
+			$schema = $this->settingsService->getConfigValue('complaint_category_schema');
+			$category = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
-            if (is_array($category) === true) {
-                return new JSONResponse($category, Http::STATUS_CREATED);
-            }
+			if (is_array($category) === true) {
+				return new JSONResponse($category, Http::STATUS_CREATED);
+			}
 
-            return new JSONResponse(array_merge($data, ['id' => $category->getUuid()]), Http::STATUS_CREATED);
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
-    }//end createCategory()
+			return new JSONResponse(array_merge($data, ['id' => $category->getUuid()]), Http::STATUS_CREATED);
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end createCategory()
 
-    /**
-     * Update a complaint category (admin only).
-     *
-     * @param string $id Category UUID
-     *
-     * @return JSONResponse Updated category
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
-     */
-    public function updateCategory(string $id): JSONResponse
-    {
-        $userId = $this->accessGuard->currentUid();
-        if ($userId === '') {
-            return $this->accessGuard->notAuthenticated();
-        }
+	/**
+	 * Update a complaint category (admin only).
+	 *
+	 * @param string $id Category UUID
+	 *
+	 * @return JSONResponse Updated category
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
+	 */
+	public function updateCategory(string $id): JSONResponse {
+		$userId = $this->accessGuard->currentUid();
+		if ($userId === '') {
+			return $this->accessGuard->notAuthenticated();
+		}
 
-        $this->accessGuard->requireCoordinator(userId: $userId);
+		$this->accessGuard->requireCoordinator(userId: $userId);
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return new JSONResponse(['error' => 'OpenRegister not available'], Http::STATUS_SERVICE_UNAVAILABLE);
+		}
 
-        try {
-            $data     = $this->accessGuard->parseBody();
-            $register = $this->settingsService->getConfigValue('register');
-            $schema   = $this->settingsService->getConfigValue('complaint_category_schema');
-            $result   = $objectService->saveObject(object: $data, register: $register, schema: $schema, uuid: (string) $id);
+		try {
+			$data = $this->accessGuard->parseBody();
+			$register = $this->settingsService->getConfigValue('register');
+			$schema = $this->settingsService->getConfigValue('complaint_category_schema');
+			$result = $objectService->saveObject(object: $data, register: $register, schema: $schema, uuid: (string)$id);
 
-            if (is_array($result) === true) {
-                return new JSONResponse($result);
-            }
+			if (is_array($result) === true) {
+				return new JSONResponse($result);
+			}
 
-            return new JSONResponse(array_merge($data, ['id' => $id]));
-        } catch (\RuntimeException $e) {
-            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
-        }
-    }//end updateCategory()
+			return new JSONResponse(array_merge($data, ['id' => $id]));
+		} catch (\RuntimeException $e) {
+			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
+		}
+	}//end updateCategory()
 }//end class

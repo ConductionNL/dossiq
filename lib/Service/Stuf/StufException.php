@@ -29,6 +29,5 @@ use RuntimeException;
 /**
  * Base StUF adapter exception.
  */
-class StufException extends RuntimeException
-{
+class StufException extends RuntimeException {
 }//end class

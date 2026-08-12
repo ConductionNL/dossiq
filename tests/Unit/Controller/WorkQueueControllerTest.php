@@ -40,177 +40,167 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Controller\WorkQueueController
  */
-class WorkQueueControllerTest extends TestCase
-{
+class WorkQueueControllerTest extends TestCase {
 
-    /**
-     * @var IRequest|MockObject
-     */
-    private IRequest $request;
+	/**
+	 * @var IRequest|MockObject
+	 */
+	private IRequest $request;
 
-    /**
-     * @var IUserSession|MockObject
-     */
-    private IUserSession $userSession;
+	/**
+	 * @var IUserSession|MockObject
+	 */
+	private IUserSession $userSession;
 
-    /**
-     * @var IGroupManager|MockObject
-     */
-    private IGroupManager $groupManager;
+	/**
+	 * @var IGroupManager|MockObject
+	 */
+	private IGroupManager $groupManager;
 
-    /**
-     * @var WorkQueueService|MockObject
-     */
-    private WorkQueueService $workQueueService;
+	/**
+	 * @var WorkQueueService|MockObject
+	 */
+	private WorkQueueService $workQueueService;
 
-    /**
-     * @var LoggerInterface|MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * @var LoggerInterface|MockObject
+	 */
+	private LoggerInterface $logger;
 
-    private WorkQueueController $controller;
+	private WorkQueueController $controller;
 
-    /**
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->request          = $this->createMock(IRequest::class);
-        $this->userSession      = $this->createMock(IUserSession::class);
-        $this->groupManager     = $this->createMock(IGroupManager::class);
-        $this->workQueueService = $this->createMock(WorkQueueService::class);
-        $this->logger           = $this->createMock(LoggerInterface::class);
+	/**
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->request = $this->createMock(IRequest::class);
+		$this->userSession = $this->createMock(IUserSession::class);
+		$this->groupManager = $this->createMock(IGroupManager::class);
+		$this->workQueueService = $this->createMock(WorkQueueService::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-        $this->controller = new WorkQueueController(
-            $this->request,
-            $this->userSession,
-            $this->groupManager,
-            $this->workQueueService,
-            $this->logger,
-        );
-    }//end setUp()
+		$this->controller = new WorkQueueController(
+			$this->request,
+			$this->userSession,
+			$this->groupManager,
+			$this->workQueueService,
+			$this->logger,
+		);
+	}//end setUp()
 
-    /**
-     * @param string $uid The user id.
-     *
-     * @return IUser|MockObject
-     */
-    private function mockUser(string $uid): IUser
-    {
-        $user = $this->createMock(IUser::class);
-        $user->method('getUID')->willReturn($uid);
-        return $user;
-    }//end mockUser()
+	/**
+	 * @param string $uid The user id.
+	 *
+	 * @return IUser|MockObject
+	 */
+	private function mockUser(string $uid): IUser {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn($uid);
+		return $user;
+	}//end mockUser()
 
-    /**
-     * @return void
-     */
-    public function testIndexReturns401WhenNotAuthenticated(): void
-    {
-        $this->userSession->method('getUser')->willReturn(null);
+	/**
+	 * @return void
+	 */
+	public function testIndexReturns401WhenNotAuthenticated(): void {
+		$this->userSession->method('getUser')->willReturn(null);
 
-        $response = $this->controller->index();
+		$response = $this->controller->index();
 
-        self::assertSame(401, $response->getStatus());
-        self::assertArrayHasKey('error', $response->getData());
-    }//end testIndexReturns401WhenNotAuthenticated()
+		self::assertSame(401, $response->getStatus());
+		self::assertArrayHasKey('error', $response->getData());
+	}//end testIndexReturns401WhenNotAuthenticated()
 
-    /**
-     * @return void
-     */
-    public function testIndexReturnsScopedQueueForAuthenticatedUser(): void
-    {
-        $user = $this->mockUser('jan');
-        $this->userSession->method('getUser')->willReturn($user);
+	/**
+	 * @return void
+	 */
+	public function testIndexReturnsScopedQueueForAuthenticatedUser(): void {
+		$user = $this->mockUser('jan');
+		$this->userSession->method('getUser')->willReturn($user);
 
-        $fixture = [['id' => 'case-1', 'itemType' => 'case', 'tier' => 'overdue', 'score' => 1005.0]];
-        $this->workQueueService->expects($this->once())
-            ->method('computeQueue')
-            ->with('jan')
-            ->willReturn($fixture);
+		$fixture = [['id' => 'case-1', 'itemType' => 'case', 'tier' => 'overdue', 'score' => 1005.0]];
+		$this->workQueueService->expects($this->once())
+			->method('computeQueue')
+			->with('jan')
+			->willReturn($fixture);
 
-        $response = $this->controller->index();
+		$response = $this->controller->index();
 
-        self::assertSame(200, $response->getStatus());
-        $data = $response->getData();
-        self::assertSame($fixture, $data['items']);
-        self::assertArrayHasKey('computedAt', $data);
-    }//end testIndexReturnsScopedQueueForAuthenticatedUser()
+		self::assertSame(200, $response->getStatus());
+		$data = $response->getData();
+		self::assertSame($fixture, $data['items']);
+		self::assertArrayHasKey('computedAt', $data);
+	}//end testIndexReturnsScopedQueueForAuthenticatedUser()
 
-    /**
-     * @return void
-     */
-    public function testIndexReturns500WhenServiceThrows(): void
-    {
-        $user = $this->mockUser('jan');
-        $this->userSession->method('getUser')->willReturn($user);
-        $this->workQueueService->method('computeQueue')->willThrowException(new \RuntimeException('boom'));
+	/**
+	 * @return void
+	 */
+	public function testIndexReturns500WhenServiceThrows(): void {
+		$user = $this->mockUser('jan');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->workQueueService->method('computeQueue')->willThrowException(new \RuntimeException('boom'));
 
-        $response = $this->controller->index();
+		$response = $this->controller->index();
 
-        self::assertSame(500, $response->getStatus());
-    }//end testIndexReturns500WhenServiceThrows()
+		self::assertSame(500, $response->getStatus());
+	}//end testIndexReturns500WhenServiceThrows()
 
-    /**
-     * @return void
-     */
-    public function testWorkloadReturns401WhenNotAuthenticated(): void
-    {
-        $this->userSession->method('getUser')->willReturn(null);
+	/**
+	 * @return void
+	 */
+	public function testWorkloadReturns401WhenNotAuthenticated(): void {
+		$this->userSession->method('getUser')->willReturn(null);
 
-        $response = $this->controller->workload();
+		$response = $this->controller->workload();
 
-        self::assertSame(401, $response->getStatus());
-    }//end testWorkloadReturns401WhenNotAuthenticated()
+		self::assertSame(401, $response->getStatus());
+	}//end testWorkloadReturns401WhenNotAuthenticated()
 
-    /**
-     * @return void
-     */
-    public function testWorkloadReturns403ForNonCoordinator(): void
-    {
-        $user = $this->mockUser('jan');
-        $this->userSession->method('getUser')->willReturn($user);
-        $this->groupManager->method('isAdmin')->with('jan')->willReturn(false);
+	/**
+	 * @return void
+	 */
+	public function testWorkloadReturns403ForNonCoordinator(): void {
+		$user = $this->mockUser('jan');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->with('jan')->willReturn(false);
 
-        $this->workQueueService->expects($this->never())->method('computeWorkload');
+		$this->workQueueService->expects($this->never())->method('computeWorkload');
 
-        $response = $this->controller->workload();
+		$response = $this->controller->workload();
 
-        self::assertSame(403, $response->getStatus());
-    }//end testWorkloadReturns403ForNonCoordinator()
+		self::assertSame(403, $response->getStatus());
+	}//end testWorkloadReturns403ForNonCoordinator()
 
-    /**
-     * @return void
-     */
-    public function testWorkloadReturns200ForCoordinator(): void
-    {
-        $user = $this->mockUser('admin-alice');
-        $this->userSession->method('getUser')->willReturn($user);
-        $this->groupManager->method('isAdmin')->with('admin-alice')->willReturn(true);
+	/**
+	 * @return void
+	 */
+	public function testWorkloadReturns200ForCoordinator(): void {
+		$user = $this->mockUser('admin-alice');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->with('admin-alice')->willReturn(true);
 
-        $fixture = [['handler' => 'jan', 'openCaseCount' => 4]];
-        $this->workQueueService->expects($this->once())
-            ->method('computeWorkload')
-            ->willReturn($fixture);
+		$fixture = [['handler' => 'jan', 'openCaseCount' => 4]];
+		$this->workQueueService->expects($this->once())
+			->method('computeWorkload')
+			->willReturn($fixture);
 
-        $response = $this->controller->workload();
+		$response = $this->controller->workload();
 
-        self::assertSame(200, $response->getStatus());
-        self::assertSame($fixture, $response->getData()['handlers']);
-    }//end testWorkloadReturns200ForCoordinator()
+		self::assertSame(200, $response->getStatus());
+		self::assertSame($fixture, $response->getData()['handlers']);
+	}//end testWorkloadReturns200ForCoordinator()
 
-    /**
-     * @return void
-     */
-    public function testWorkloadReturns500WhenServiceThrows(): void
-    {
-        $user = $this->mockUser('admin-alice');
-        $this->userSession->method('getUser')->willReturn($user);
-        $this->groupManager->method('isAdmin')->willReturn(true);
-        $this->workQueueService->method('computeWorkload')->willThrowException(new \RuntimeException('boom'));
+	/**
+	 * @return void
+	 */
+	public function testWorkloadReturns500WhenServiceThrows(): void {
+		$user = $this->mockUser('admin-alice');
+		$this->userSession->method('getUser')->willReturn($user);
+		$this->groupManager->method('isAdmin')->willReturn(true);
+		$this->workQueueService->method('computeWorkload')->willThrowException(new \RuntimeException('boom'));
 
-        $response = $this->controller->workload();
+		$response = $this->controller->workload();
 
-        self::assertSame(500, $response->getStatus());
-    }//end testWorkloadReturns500WhenServiceThrows()
+		self::assertSame(500, $response->getStatus());
+	}//end testWorkloadReturns500WhenServiceThrows()
 }//end class

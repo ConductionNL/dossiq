@@ -35,43 +35,40 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Procest\Service\Ai\AiModelIdentity
  */
-class AiModelIdentityTest extends TestCase
-{
+class AiModelIdentityTest extends TestCase {
 
-    /**
-     * The configured model type and name are joined with a slash.
-     *
-     * @return void
-     */
-    public function testIdentifierJoinsConfiguredTypeAndName(): void
-    {
-        $appConfig = $this->createMock(IAppConfig::class);
-        $appConfig->method('getValueString')
-            ->willReturnCallback(
-                static fn (string $app, string $key, string $default): string => match ($key) {
-                    'ai_model_type' => 'openai',
-                    'ai_model_name' => 'gpt-4o',
-                    default         => $default,
-                }
-            );
+	/**
+	 * The configured model type and name are joined with a slash.
+	 *
+	 * @return void
+	 */
+	public function testIdentifierJoinsConfiguredTypeAndName(): void {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')
+			->willReturnCallback(
+				static fn (string $app, string $key, string $default): string => match ($key) {
+					'ai_model_type' => 'openai',
+					'ai_model_name' => 'gpt-4o',
+					default => $default,
+				}
+			);
 
-        $this->assertSame('openai/gpt-4o', (new AiModelIdentity($appConfig))->identifier());
-    }//end testIdentifierJoinsConfiguredTypeAndName()
+		$this->assertSame('openai/gpt-4o', (new AiModelIdentity($appConfig))->identifier());
+	}//end testIdentifierJoinsConfiguredTypeAndName()
 
-    /**
-     * An unconfigured instance falls back to `local/unknown` rather than
-     * writing an empty `model` field into the audit trail.
-     *
-     * @return void
-     */
-    public function testIdentifierFallsBackToLocalUnknown(): void
-    {
-        $appConfig = $this->createMock(IAppConfig::class);
-        $appConfig->method('getValueString')
-            ->willReturnCallback(
-                static fn (string $app, string $key, string $default): string => $default
-            );
+	/**
+	 * An unconfigured instance falls back to `local/unknown` rather than
+	 * writing an empty `model` field into the audit trail.
+	 *
+	 * @return void
+	 */
+	public function testIdentifierFallsBackToLocalUnknown(): void {
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')
+			->willReturnCallback(
+				static fn (string $app, string $key, string $default): string => $default
+			);
 
-        $this->assertSame('local/unknown', (new AiModelIdentity($appConfig))->identifier());
-    }//end testIdentifierFallsBackToLocalUnknown()
+		$this->assertSame('local/unknown', (new AiModelIdentity($appConfig))->identifier());
+	}//end testIdentifierFallsBackToLocalUnknown()
 }//end class

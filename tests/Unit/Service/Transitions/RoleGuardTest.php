@@ -39,134 +39,127 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Procest\Service\Transitions\GuardResult
  */
-class RoleGuardTest extends TestCase
-{
-    /**
-     * @return void
-     */
-    public function testPassesWhenNoAllowedRolesConfigured(): void
-    {
-        $guard = $this->buildGuard();
+class RoleGuardTest extends TestCase {
+	/**
+	 * @return void
+	 */
+	public function testPassesWhenNoAllowedRolesConfigured(): void {
+		$guard = $this->buildGuard();
 
-        $result = $guard->evaluate(
-            guardConfig: [],
-            case: ['id' => 'c'],
-            userId: 'alice',
-        );
+		$result = $guard->evaluate(
+			guardConfig: [],
+			case: ['id' => 'c'],
+			userId: 'alice',
+		);
 
-        self::assertTrue($result->passed);
-    }//end testPassesWhenNoAllowedRolesConfigured()
+		self::assertTrue($result->passed);
+	}//end testPassesWhenNoAllowedRolesConfigured()
 
-    /**
-     * @return void
-     */
-    public function testFailsSilentlyWhenNoUserId(): void
-    {
-        $guard = $this->buildGuard();
+	/**
+	 * @return void
+	 */
+	public function testFailsSilentlyWhenNoUserId(): void {
+		$guard = $this->buildGuard();
 
-        $result = $guard->evaluate(
-            guardConfig: ['allowedRoles' => ['Behandelaar']],
-            case: ['id' => 'c'],
-            userId: '',
-        );
+		$result = $guard->evaluate(
+			guardConfig: ['allowedRoles' => ['Behandelaar']],
+			case: ['id' => 'c'],
+			userId: '',
+		);
 
-        self::assertFalse($result->passed);
-        self::assertTrue($result->details['silent']);
-    }//end testFailsSilentlyWhenNoUserId()
+		self::assertFalse($result->passed);
+		self::assertTrue($result->details['silent']);
+	}//end testFailsSilentlyWhenNoUserId()
 
-    /**
-     * @return void
-     */
-    public function testPassesOnDirectRoleAssignment(): void
-    {
-        $guard = $this->buildGuard();
+	/**
+	 * @return void
+	 */
+	public function testPassesOnDirectRoleAssignment(): void {
+		$guard = $this->buildGuard();
 
-        $result = $guard->evaluate(
-            guardConfig: ['allowedRoles' => ['Behandelaar', 'Afdelingshoofd']],
-            case: [
-                'roles' => [
-                    ['userId' => 'alice', 'role' => 'Behandelaar'],
-                ],
-            ],
-            userId: 'alice',
-        );
+		$result = $guard->evaluate(
+			guardConfig: ['allowedRoles' => ['Behandelaar', 'Afdelingshoofd']],
+			case: [
+				'roles' => [
+					['userId' => 'alice', 'role' => 'Behandelaar'],
+				],
+			],
+			userId: 'alice',
+		);
 
-        self::assertTrue($result->passed);
-        self::assertSame('Behandelaar', $result->details['matchedRole']);
-    }//end testPassesOnDirectRoleAssignment()
+		self::assertTrue($result->passed);
+		self::assertSame('Behandelaar', $result->details['matchedRole']);
+	}//end testPassesOnDirectRoleAssignment()
 
-    /**
-     * @return void
-     */
-    public function testFallsBackToGroupMembership(): void
-    {
-        $user = $this->createMock(IUser::class);
+	/**
+	 * @return void
+	 */
+	public function testFallsBackToGroupMembership(): void {
+		$user = $this->createMock(IUser::class);
 
-        $userManager = $this->createMock(IUserManager::class);
-        $userManager->method('get')->with('alice')->willReturn($user);
+		$userManager = $this->createMock(IUserManager::class);
+		$userManager->method('get')->with('alice')->willReturn($user);
 
-        $groupManager = $this->createMock(IGroupManager::class);
-        $groupManager->method('isInGroup')->willReturnCallback(
-            fn (string $uid, string $gid): bool => $uid === 'alice' && $gid === 'behandelaar'
-        );
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('isInGroup')->willReturnCallback(
+			fn (string $uid, string $gid): bool => $uid === 'alice' && $gid === 'behandelaar'
+		);
 
-        $guard = new RoleGuard(
-            groupManager: $groupManager,
-            userManager: $userManager,
-            logger: new NullLogger(),
-        );
+		$guard = new RoleGuard(
+			groupManager: $groupManager,
+			userManager: $userManager,
+			logger: new NullLogger(),
+		);
 
-        $result = $guard->evaluate(
-            guardConfig: ['allowedRoles' => ['Behandelaar']],
-            case: ['id' => 'c'],
-            userId: 'alice',
-        );
+		$result = $guard->evaluate(
+			guardConfig: ['allowedRoles' => ['Behandelaar']],
+			case: ['id' => 'c'],
+			userId: 'alice',
+		);
 
-        self::assertTrue($result->passed);
-        self::assertSame('Behandelaar', $result->details['matchedRole']);
-        self::assertSame('group', $result->details['via']);
-    }//end testFallsBackToGroupMembership()
+		self::assertTrue($result->passed);
+		self::assertSame('Behandelaar', $result->details['matchedRole']);
+		self::assertSame('group', $result->details['via']);
+	}//end testFallsBackToGroupMembership()
 
-    /**
-     * @return void
-     */
-    public function testFailsSilentlyOnRoleMismatch(): void
-    {
-        $guard = $this->buildGuard();
+	/**
+	 * @return void
+	 */
+	public function testFailsSilentlyOnRoleMismatch(): void {
+		$guard = $this->buildGuard();
 
-        $result = $guard->evaluate(
-            guardConfig: ['allowedRoles' => ['Behandelaar']],
-            case: [
-                'roles' => [
-                    ['userId' => 'alice', 'role' => 'Aanvrager'],
-                ],
-            ],
-            userId: 'alice',
-        );
+		$result = $guard->evaluate(
+			guardConfig: ['allowedRoles' => ['Behandelaar']],
+			case: [
+				'roles' => [
+					['userId' => 'alice', 'role' => 'Aanvrager'],
+				],
+			],
+			userId: 'alice',
+		);
 
-        self::assertFalse($result->passed);
-        self::assertTrue($result->details['silent']);
-        self::assertSame(['Behandelaar'], $result->details['allowedRoles']);
-    }//end testFailsSilentlyOnRoleMismatch()
+		self::assertFalse($result->passed);
+		self::assertTrue($result->details['silent']);
+		self::assertSame(['Behandelaar'], $result->details['allowedRoles']);
+	}//end testFailsSilentlyOnRoleMismatch()
 
-    /**
-     * Build a RoleGuard with manager mocks that return null/false (no group
-     * membership, no resolvable user).
-     *
-     * @return RoleGuard
-     */
-    private function buildGuard(): RoleGuard
-    {
-        $userManager = $this->createMock(IUserManager::class);
-        $userManager->method('get')->willReturn(null);
+	/**
+	 * Build a RoleGuard with manager mocks that return null/false (no group
+	 * membership, no resolvable user).
+	 *
+	 * @return RoleGuard
+	 */
+	private function buildGuard(): RoleGuard {
+		$userManager = $this->createMock(IUserManager::class);
+		$userManager->method('get')->willReturn(null);
 
-        $groupManager = $this->createMock(IGroupManager::class);
-        $groupManager->method('isInGroup')->willReturn(false);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('isInGroup')->willReturn(false);
 
-        return new RoleGuard(
-            groupManager: $groupManager,
-            userManager: $userManager,
-            logger: new NullLogger(),
-        );
-    }//end buildGuard()
+		return new RoleGuard(
+			groupManager: $groupManager,
+			userManager: $userManager,
+			logger: new NullLogger(),
+		);
+	}//end buildGuard()
 }//end class

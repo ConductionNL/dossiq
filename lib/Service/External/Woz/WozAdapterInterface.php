@@ -74,65 +74,64 @@ namespace OCA\Procest\Service\External\Woz;
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
-interface WozAdapterInterface
-{
-    /**
-     * Look up WOZ object(s) by postcode + huisnummer.
-     *
-     * @param string              $postcode   Dutch postcode.
-     * @param string              $huisnummer House number.
-     * @param string|null         $huisletter Optional house letter.
-     * @param string|null         $toevoeging Optional house number
-     *                                        addition.
-     * @param array<string,mixed> $context    Optional context — caseId,
-     *                                        lookupReason, correlationId.
-     *
-     * @return WozLookupResult The lookup outcome (status + normalized
-     *                         envelope, empty unless FOUND).
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function lookupAddress(
-        string $postcode,
-        string $huisnummer,
-        ?string $huisletter=null,
-        ?string $toevoeging=null,
-        array $context=[]
-    ): WozLookupResult;
+interface WozAdapterInterface {
+	/**
+	 * Look up WOZ object(s) by postcode + huisnummer.
+	 *
+	 * @param string $postcode Dutch postcode.
+	 * @param string $huisnummer House number.
+	 * @param string|null $huisletter Optional house letter.
+	 * @param string|null $toevoeging Optional house number
+	 *                                addition.
+	 * @param array<string,mixed> $context Optional context — caseId,
+	 *                                     lookupReason, correlationId.
+	 *
+	 * @return WozLookupResult The lookup outcome (status + normalized
+	 *                         envelope, empty unless FOUND).
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function lookupAddress(
+		string $postcode,
+		string $huisnummer,
+		?string $huisletter = null,
+		?string $toevoeging = null,
+		array $context = [],
+	): WozLookupResult;
 
-    /**
-     * Look up WOZ object(s) by BAG nummeraanduiding identificatie — the
-     * preferred lookup when a caller already holds one (avoids
-     * re-implementing BAG's address resolution here).
-     *
-     * @param string              $nummeraanduidingId BAG nummeraanduiding identificatie.
-     * @param array<string,mixed> $context            Optional context.
-     *
-     * @return WozLookupResult
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function lookupByNummeraanduiding(string $nummeraanduidingId, array $context=[]): WozLookupResult;
+	/**
+	 * Look up WOZ object(s) by BAG nummeraanduiding identificatie — the
+	 * preferred lookup when a caller already holds one (avoids
+	 * re-implementing BAG's address resolution here).
+	 *
+	 * @param string $nummeraanduidingId BAG nummeraanduiding identificatie.
+	 * @param array<string,mixed> $context Optional context.
+	 *
+	 * @return WozLookupResult
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function lookupByNummeraanduiding(string $nummeraanduidingId, array $context = []): WozLookupResult;
 
-    /**
-     * Look up a single WOZ object by its wozobjectnummer.
-     *
-     * @param string              $wozobjectnummer WOZ object number.
-     * @param array<string,mixed> $context         Optional context.
-     *
-     * @return WozLookupResult
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function lookupByWozObjectNummer(string $wozobjectnummer, array $context=[]): WozLookupResult;
+	/**
+	 * Look up a single WOZ object by its wozobjectnummer.
+	 *
+	 * @param string $wozobjectnummer WOZ object number.
+	 * @param array<string,mixed> $context Optional context.
+	 *
+	 * @return WozLookupResult
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function lookupByWozObjectNummer(string $wozobjectnummer, array $context = []): WozLookupResult;
 
-    /**
-     * Whether the adapter is dormant — i.e. wired but not contacting
-     * Kadaster.
-     *
-     * @return bool TRUE when the adapter is a log-only stub.
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function isDormant(): bool;
+	/**
+	 * Whether the adapter is dormant — i.e. wired but not contacting
+	 * Kadaster.
+	 *
+	 * @return bool TRUE when the adapter is a log-only stub.
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function isDormant(): bool;
 }//end interface

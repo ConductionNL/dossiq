@@ -22,17 +22,17 @@ namespace OCA\Procest\Tests\Unit\Stubs;
 /**
  * Duck-typed stub for the function builder returned by IQueryBuilder::func().
  */
-class StubFunctionBuilder
-{
+class StubFunctionBuilder {
 
-    /**
-     * Stub count function.
-     *
-     * @param mixed ...$args Arguments (ignored)
-     *
-     * @return string
-     */
-    public function count(mixed ...$args): string { return 'COUNT(*)'; }
-
+	/**
+	 * Stub count function.
+	 *
+	 * @param mixed ...$args Arguments (ignored)
+	 *
+	 * @return string
+	 */
+	public function count(mixed ...$args): string {
+		return 'COUNT(*)';
+	}
 
 }//end class

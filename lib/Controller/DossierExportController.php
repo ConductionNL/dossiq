@@ -50,71 +50,69 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
  */
-class DossierExportController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string              $appName         The app name.
-     * @param IRequest            $request         The HTTP request.
-     * @param BeroepDossierExport $dossierExport   The export service.
-     * @param IUserSession        $userSession     The current session.
-     * @param LoggerInterface     $logger          The logger.
-     * @param CaseAccessGuard     $caseAccessGuard Per-case authorization (fails closed).
-     *
-     * @return void
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly BeroepDossierExport $dossierExport,
-        private readonly IUserSession $userSession,
-        private readonly LoggerInterface $logger,
-        private readonly CaseAccessGuard $caseAccessGuard,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class DossierExportController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name.
+	 * @param IRequest $request The HTTP request.
+	 * @param BeroepDossierExport $dossierExport The export service.
+	 * @param IUserSession $userSession The current session.
+	 * @param LoggerInterface $logger The logger.
+	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly BeroepDossierExport $dossierExport,
+		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
+		private readonly CaseAccessGuard $caseAccessGuard,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Build the ordered dossier export plan for a case.
-     *
-     * @param string $caseId The case UUID.
-     *
-     * @return JSONResponse The export plan, or an error response.
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
-     */
-    public function export(string $caseId): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Build the ordered dossier export plan for a case.
+	 *
+	 * @param string $caseId The case UUID.
+	 *
+	 * @return JSONResponse The export plan, or an error response.
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
+	 */
+	public function export(string $caseId): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        if (trim($caseId) === '') {
-            return new JSONResponse(['error' => 'A case id is required'], Http::STATUS_BAD_REQUEST);
-        }
+		if (trim($caseId) === '') {
+			return new JSONResponse(['error' => 'A case id is required'], Http::STATUS_BAD_REQUEST);
+		}
 
-        // The plan spans every case linked via `_sourceCase`, so one
-        // unauthorised export walks a whole bezwaar/beroep chain.
-        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
-            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
-        }
+		// The plan spans every case linked via `_sourceCase`, so one
+		// unauthorised export walks a whole bezwaar/beroep chain.
+		if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
+		}
 
-        try {
-            $plan = $this->dossierExport->buildPlan(caseId: $caseId);
-            return new JSONResponse($plan);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'DossierExportController: export failed',
-                ['caseId' => $caseId, 'exception' => $e->getMessage()]
-            );
-            return new JSONResponse(
-                ['error' => 'Could not build dossier export'],
-                Http::STATUS_INTERNAL_SERVER_ERROR
-            );
-        }
-    }//end export()
+		try {
+			$plan = $this->dossierExport->buildPlan(caseId: $caseId);
+			return new JSONResponse($plan);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'DossierExportController: export failed',
+				['caseId' => $caseId, 'exception' => $e->getMessage()]
+			);
+			return new JSONResponse(
+				['error' => 'Could not build dossier export'],
+				Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}
+	}//end export()
 }//end class

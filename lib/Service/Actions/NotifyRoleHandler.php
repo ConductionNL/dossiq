@@ -35,169 +35,163 @@ use Psr\Log\LoggerInterface;
 /**
  * Handler for `notifyRole` automatic actions.
  */
-class NotifyRoleHandler implements ActionHandlerInterface
-{
-    use HandlesTemplates;
+class NotifyRoleHandler implements ActionHandlerInterface {
+	use HandlesTemplates;
 
-    /**
-     * Constructor for NotifyRoleHandler.
-     *
-     * @param ContainerInterface $container DI container — used to resolve
-     *                                      NotificatieService lazily.
-     * @param LoggerInterface    $logger    PSR-3 logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly ContainerInterface $container,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor for NotifyRoleHandler.
+	 *
+	 * @param ContainerInterface $container DI container — used to resolve
+	 *                                      NotificatieService lazily.
+	 * @param LoggerInterface $logger PSR-3 logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly ContainerInterface $container,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return string The action type slug handled by this handler.
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return string The action type slug handled by this handler.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function type(): string {
+		return 'notifyRole';
+	}//end type()
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function type(): string
-    {
-        return 'notifyRole';
-    }//end type()
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @param array $actionConfig Resolved action config array.
+	 * @param array $case The full case object.
+	 * @param array $transitionContext Transition context (carries dryRun).
+	 *
+	 * @return ActionResult The outcome of the role notification.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$roleSlug = (string)($actionConfig['roleSlug'] ?? '');
+			$message = $this->renderTemplate(
+				template: (string)($actionConfig['messageTemplate'] ?? ''),
+				case: $case
+			);
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param array $actionConfig      Resolved action config array.
-     * @param array $case              The full case object.
-     * @param array $transitionContext Transition context (carries dryRun).
-     *
-     * @return ActionResult The outcome of the role notification.
+			$recipients = $this->resolveRoleMembers(roleSlug: $roleSlug, case: $case);
+			$preview = [
+				'roleSlug' => $roleSlug,
+				'recipients' => $recipients,
+				'message' => $message,
+			];
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
-    {
-        try {
-            $roleSlug = (string) ($actionConfig['roleSlug'] ?? '');
-            $message  = $this->renderTemplate(
-                template: (string) ($actionConfig['messageTemplate'] ?? ''),
-                case: $case
-            );
+			if (($transitionContext['dryRun'] ?? false) === true) {
+				return new ActionResult(succeeded: true, data: $preview);
+			}
 
-            $recipients = $this->resolveRoleMembers(roleSlug: $roleSlug, case: $case);
-            $preview    = [
-                'roleSlug'   => $roleSlug,
-                'recipients' => $recipients,
-                'message'    => $message,
-            ];
+			if ($roleSlug === '' || $recipients === []) {
+				return new ActionResult(succeeded: false, error: 'no_recipients', data: $preview);
+			}
 
-            if (($transitionContext['dryRun'] ?? false) === true) {
-                return new ActionResult(succeeded: true, data: $preview);
-            }
+			$notificatie = $this->resolveNotificatieService();
+			if ($notificatie === null) {
+				return new ActionResult(succeeded: false, error: 'notificatie_unavailable', data: $preview);
+			}
 
-            if ($roleSlug === '' || $recipients === []) {
-                return new ActionResult(succeeded: false, error: 'no_recipients', data: $preview);
-            }
+			foreach ($recipients as $userId) {
+				if (method_exists($notificatie, 'notifyUser') === true) {
+					// @phpstan-ignore-next-line — signature owned by service.
+					$notificatie->notifyUser($userId, $message);
+				}
+			}
 
-            $notificatie = $this->resolveNotificatieService();
-            if ($notificatie === null) {
-                return new ActionResult(succeeded: false, error: 'notificatie_unavailable', data: $preview);
-            }
+			return new ActionResult(succeeded: true, data: $preview);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'NotifyRoleHandler: failed to dispatch notification',
+				[
+					'app' => Application::APP_ID,
+					'slug' => (string)($actionConfig['slug'] ?? ''),
+					'exception' => $e->getMessage(),
+				]
+			);
+			return new ActionResult(succeeded: false, error: 'notify_role_failed');
+		}//end try
+	}//end handle()
 
-            foreach ($recipients as $userId) {
-                if (method_exists($notificatie, 'notifyUser') === true) {
-                    // @phpstan-ignore-next-line — signature owned by service.
-                    $notificatie->notifyUser($userId, $message);
-                }
-            }
+	/**
+	 * Resolve a role slug to a list of user identifiers on the case.
+	 *
+	 * V1 strategy: look up `case.<roleSlug>` for a single user, or
+	 * `case.<roleSlug>Members[]` for a collection. RoleResolverService will
+	 * supersede this lookup once role-based-step-routing lands.
+	 *
+	 * @param string $roleSlug Role slug.
+	 * @param array $case Case object.
+	 *
+	 * @return array<int, string>
+	 */
+	private function resolveRoleMembers(string $roleSlug, array $case): array {
+		if ($roleSlug === '') {
+			return [];
+		}
 
-            return new ActionResult(succeeded: true, data: $preview);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'NotifyRoleHandler: failed to dispatch notification',
-                [
-                    'app'       => Application::APP_ID,
-                    'slug'      => (string) ($actionConfig['slug'] ?? ''),
-                    'exception' => $e->getMessage(),
-                ]
-            );
-            return new ActionResult(succeeded: false, error: 'notify_role_failed');
-        }//end try
-    }//end handle()
+		$singleId = $this->memberId(member: ($case[$roleSlug] ?? null));
+		if ($singleId !== '') {
+			return [$singleId];
+		}
 
-    /**
-     * Resolve a role slug to a list of user identifiers on the case.
-     *
-     * V1 strategy: look up `case.<roleSlug>` for a single user, or
-     * `case.<roleSlug>Members[]` for a collection. RoleResolverService will
-     * supersede this lookup once role-based-step-routing lands.
-     *
-     * @param string $roleSlug Role slug.
-     * @param array  $case     Case object.
-     *
-     * @return array<int, string>
-     */
-    private function resolveRoleMembers(string $roleSlug, array $case): array
-    {
-        if ($roleSlug === '') {
-            return [];
-        }
+		$multi = ($case[$roleSlug . 'Members'] ?? null);
+		if (is_array($multi) === false) {
+			return [];
+		}
 
-        $singleId = $this->memberId(member: ($case[$roleSlug] ?? null));
-        if ($singleId !== '') {
-            return [$singleId];
-        }
+		$out = [];
+		foreach ($multi as $member) {
+			$memberId = $this->memberId(member: $member);
+			if ($memberId !== '') {
+				$out[] = $memberId;
+			}
+		}
 
-        $multi = ($case[$roleSlug.'Members'] ?? null);
-        if (is_array($multi) === false) {
-            return [];
-        }
+		return $out;
+	}//end resolveRoleMembers()
 
-        $out = [];
-        foreach ($multi as $member) {
-            $memberId = $this->memberId(member: $member);
-            if ($memberId !== '') {
-                $out[] = $memberId;
-            }
-        }
+	/**
+	 * Read a user identifier off a role member, which may be a bare uid
+	 * string or an object with an `id` / `userId` key.
+	 *
+	 * @param mixed $member A single role member entry.
+	 *
+	 * @return string The user identifier, or empty string when unreadable.
+	 */
+	private function memberId(mixed $member): string {
+		if (is_string($member) === true) {
+			return $member;
+		}
 
-        return $out;
-    }//end resolveRoleMembers()
+		if (is_array($member) === false) {
+			return '';
+		}
 
-    /**
-     * Read a user identifier off a role member, which may be a bare uid
-     * string or an object with an `id` / `userId` key.
-     *
-     * @param mixed $member A single role member entry.
-     *
-     * @return string The user identifier, or empty string when unreadable.
-     */
-    private function memberId(mixed $member): string
-    {
-        if (is_string($member) === true) {
-            return $member;
-        }
+		return (string)($member['id'] ?? ($member['userId'] ?? ''));
+	}//end memberId()
 
-        if (is_array($member) === false) {
-            return '';
-        }
-
-        return (string) ($member['id'] ?? ($member['userId'] ?? ''));
-    }//end memberId()
-
-    /**
-     * Resolve NotificatieService lazily.
-     *
-     * @return object|null
-     */
-    private function resolveNotificatieService(): ?object
-    {
-        try {
-            return $this->container->get('OCA\Procest\Service\NotificatieService');
-        } catch (\Throwable $e) {
-            return null;
-        }
-    }//end resolveNotificatieService()
+	/**
+	 * Resolve NotificatieService lazily.
+	 *
+	 * @return object|null
+	 */
+	private function resolveNotificatieService(): ?object {
+		try {
+			return $this->container->get('OCA\Procest\Service\NotificatieService');
+		} catch (\Throwable $e) {
+			return null;
+		}
+	}//end resolveNotificatieService()
 }//end class

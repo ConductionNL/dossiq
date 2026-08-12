@@ -39,162 +39,152 @@ use PHPUnit\Framework\TestCase;
  *
  * @spec openspec/changes/migrate-status-engine-to-or-lifecycle/tasks.md#P-6.2
  */
-final class BezwaarLifecycleTest extends TestCase
-{
+final class BezwaarLifecycleTest extends TestCase {
 
-    /**
-     * Decoded x-openregister-lifecycle annotation for the bezwaar schema.
-     *
-     * @var array<string, mixed>
-     */
-    private array $lifecycle;
+	/**
+	 * Decoded x-openregister-lifecycle annotation for the bezwaar schema.
+	 *
+	 * @var array<string, mixed>
+	 */
+	private array $lifecycle;
 
-    /**
-     * Load the bezwaar lifecycle annotation from the shipped register.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $registerPath = __DIR__.'/../../../lib/Settings/procest_register.json';
-        $register     = json_decode((string) file_get_contents($registerPath), true);
-        $bezwaar      = $register['components']['schemas']['bezwaar'] ?? [];
-        $this->lifecycle = ($bezwaar['configuration']['x-openregister-lifecycle'] ?? []);
-    }//end setUp()
+	/**
+	 * Load the bezwaar lifecycle annotation from the shipped register.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$registerPath = __DIR__ . '/../../../lib/Settings/procest_register.json';
+		$register = json_decode((string)file_get_contents($registerPath), true);
+		$bezwaar = $register['components']['schemas']['bezwaar'] ?? [];
+		$this->lifecycle = ($bezwaar['configuration']['x-openregister-lifecycle'] ?? []);
+	}//end setUp()
 
-    /**
-     * Emulate OR's transition lookup: is moving from $from to $to declared?
-     *
-     * @param string $from Current lifecycle value.
-     * @param string $to   Attempted lifecycle value.
-     *
-     * @return bool True when a declared transition allows the move.
-     */
-    private function transitionAllowed(string $from, string $to): bool
-    {
-        $transitions = ($this->lifecycle['transitions'] ?? []);
-        foreach ($transitions as $spec) {
-            if (($spec['to'] ?? null) !== $to) {
-                continue;
-            }
+	/**
+	 * Emulate OR's transition lookup: is moving from $from to $to declared?
+	 *
+	 * @param string $from Current lifecycle value.
+	 * @param string $to Attempted lifecycle value.
+	 *
+	 * @return bool True when a declared transition allows the move.
+	 */
+	private function transitionAllowed(string $from, string $to): bool {
+		$transitions = ($this->lifecycle['transitions'] ?? []);
+		foreach ($transitions as $spec) {
+			if (($spec['to'] ?? null) !== $to) {
+				continue;
+			}
 
-            $fromList = ($spec['from'] ?? []);
-            if (is_string($fromList) === true) {
-                $fromList = [$fromList];
-            }
+			$fromList = ($spec['from'] ?? []);
+			if (is_string($fromList) === true) {
+				$fromList = [$fromList];
+			}
 
-            if (in_array($from, $fromList, true) === true) {
-                return true;
-            }
-        }
+			if (in_array($from, $fromList, true) === true) {
+				return true;
+			}
+		}
 
-        return false;
-    }//end transitionAllowed()
+		return false;
+	}//end transitionAllowed()
 
-    /**
-     * The schema declares the field + AWB initial state.
-     *
-     * @return void
-     */
-    public function testLifecycleDeclaresStatusFieldAndInitialState(): void
-    {
-        $this->assertSame('status', ($this->lifecycle['field'] ?? null));
-        $this->assertSame('Ontvangen', ($this->lifecycle['initial'] ?? null));
-    }//end testLifecycleDeclaresStatusFieldAndInitialState()
+	/**
+	 * The schema declares the field + AWB initial state.
+	 *
+	 * @return void
+	 */
+	public function testLifecycleDeclaresStatusFieldAndInitialState(): void {
+		$this->assertSame('status', ($this->lifecycle['field'] ?? null));
+		$this->assertSame('Ontvangen', ($this->lifecycle['initial'] ?? null));
+	}//end testLifecycleDeclaresStatusFieldAndInitialState()
 
-    /**
-     * Sequential AWB progression is declared (valid transition succeeds).
-     *
-     * @return void
-     */
-    public function testSequentialAwbProgressionIsDeclared(): void
-    {
-        $this->assertTrue($this->transitionAllowed('Ontvangen', 'Ontvankelijkheidstoets'));
-        $this->assertTrue($this->transitionAllowed('Ontvankelijkheidstoets', 'In behandeling'));
-        $this->assertTrue($this->transitionAllowed('In behandeling', 'Hoorzitting gepland'));
-        $this->assertTrue($this->transitionAllowed('Beslissing op bezwaar', 'Afgehandeld'));
-    }//end testSequentialAwbProgressionIsDeclared()
+	/**
+	 * Sequential AWB progression is declared (valid transition succeeds).
+	 *
+	 * @return void
+	 */
+	public function testSequentialAwbProgressionIsDeclared(): void {
+		$this->assertTrue($this->transitionAllowed('Ontvangen', 'Ontvankelijkheidstoets'));
+		$this->assertTrue($this->transitionAllowed('Ontvankelijkheidstoets', 'In behandeling'));
+		$this->assertTrue($this->transitionAllowed('In behandeling', 'Hoorzitting gepland'));
+		$this->assertTrue($this->transitionAllowed('Beslissing op bezwaar', 'Afgehandeld'));
+	}//end testSequentialAwbProgressionIsDeclared()
 
-    /**
-     * Out-of-sequence jumps are NOT declared (illegal transition rejected).
-     *
-     * @return void
-     */
-    public function testOutOfSequenceTransitionIsNotDeclared(): void
-    {
-        // Skipping the ontvankelijkheidstoets is illegal.
-        $this->assertFalse($this->transitionAllowed('Ontvangen', 'In behandeling'));
-        // Re-opening a closed bezwaar is illegal.
-        $this->assertFalse($this->transitionAllowed('Afgehandeld', 'In behandeling'));
-    }//end testOutOfSequenceTransitionIsNotDeclared()
+	/**
+	 * Out-of-sequence jumps are NOT declared (illegal transition rejected).
+	 *
+	 * @return void
+	 */
+	public function testOutOfSequenceTransitionIsNotDeclared(): void {
+		// Skipping the ontvankelijkheidstoets is illegal.
+		$this->assertFalse($this->transitionAllowed('Ontvangen', 'In behandeling'));
+		// Re-opening a closed bezwaar is illegal.
+		$this->assertFalse($this->transitionAllowed('Afgehandeld', 'In behandeling'));
+	}//end testOutOfSequenceTransitionIsNotDeclared()
 
-    /**
-     * intrekken is accepted from the four open states only.
-     *
-     * @return void
-     */
-    public function testIntrekkenAcceptedFromOpenStatesOnly(): void
-    {
-        $this->assertTrue($this->transitionAllowed('Ontvangen', 'Ingetrokken'));
-        $this->assertTrue($this->transitionAllowed('Ontvankelijkheidstoets', 'Ingetrokken'));
-        $this->assertTrue($this->transitionAllowed('In behandeling', 'Ingetrokken'));
-        $this->assertTrue($this->transitionAllowed('Hoorzitting gepland', 'Ingetrokken'));
-        // Not from a terminal/late state.
-        $this->assertFalse($this->transitionAllowed('Beslissing op bezwaar', 'Ingetrokken'));
-    }//end testIntrekkenAcceptedFromOpenStatesOnly()
+	/**
+	 * intrekken is accepted from the four open states only.
+	 *
+	 * @return void
+	 */
+	public function testIntrekkenAcceptedFromOpenStatesOnly(): void {
+		$this->assertTrue($this->transitionAllowed('Ontvangen', 'Ingetrokken'));
+		$this->assertTrue($this->transitionAllowed('Ontvankelijkheidstoets', 'Ingetrokken'));
+		$this->assertTrue($this->transitionAllowed('In behandeling', 'Ingetrokken'));
+		$this->assertTrue($this->transitionAllowed('Hoorzitting gepland', 'Ingetrokken'));
+		// Not from a terminal/late state.
+		$this->assertFalse($this->transitionAllowed('Beslissing op bezwaar', 'Ingetrokken'));
+	}//end testIntrekkenAcceptedFromOpenStatesOnly()
 
-    /**
-     * The hearing-skip and beslissen transitions declare their guard FQCNs.
-     *
-     * @return void
-     */
-    public function testGuardedTransitionsDeclareRequires(): void
-    {
-        $transitions = ($this->lifecycle['transitions'] ?? []);
-        $this->assertSame(
-            'OCA\\Procest\\Lifecycle\\HoorzittingAfzienGuard',
-            ($transitions['hoorzitting_overslaan']['requires'] ?? null)
-        );
-        $this->assertSame(
-            'OCA\\Procest\\Lifecycle\\BezwaarDeadlineGuard',
-            ($transitions['beslissen']['requires'] ?? null)
-        );
-    }//end testGuardedTransitionsDeclareRequires()
+	/**
+	 * The hearing-skip and beslissen transitions declare their guard FQCNs.
+	 *
+	 * @return void
+	 */
+	public function testGuardedTransitionsDeclareRequires(): void {
+		$transitions = ($this->lifecycle['transitions'] ?? []);
+		$this->assertSame(
+			'OCA\\Procest\\Lifecycle\\HoorzittingAfzienGuard',
+			($transitions['hoorzitting_overslaan']['requires'] ?? null)
+		);
+		$this->assertSame(
+			'OCA\\Procest\\Lifecycle\\BezwaarDeadlineGuard',
+			($transitions['beslissen']['requires'] ?? null)
+		);
+	}//end testGuardedTransitionsDeclareRequires()
 
-    /**
-     * hoorzitting_overslaan guard blocks when the hearing right is not waived.
-     *
-     * @return void
-     */
-    public function testHearingSkipGuardBlocksWhenNotWaived(): void
-    {
-        $guard = new HoorzittingAfzienGuard();
+	/**
+	 * hoorzitting_overslaan guard blocks when the hearing right is not waived.
+	 *
+	 * @return void
+	 */
+	public function testHearingSkipGuardBlocksWhenNotWaived(): void {
+		$guard = new HoorzittingAfzienGuard();
 
-        $denied = $guard->check(['hearingWaived' => false], 'hoorzitting_overslaan', 'alice');
-        $this->assertFalse($denied->isAllowed());
+		$denied = $guard->check(['hearingWaived' => false], 'hoorzitting_overslaan', 'alice');
+		$this->assertFalse($denied->isAllowed());
 
-        $absent = $guard->check([], 'hoorzitting_overslaan', 'alice');
-        $this->assertFalse($absent->isAllowed());
+		$absent = $guard->check([], 'hoorzitting_overslaan', 'alice');
+		$this->assertFalse($absent->isAllowed());
 
-        $allowed = $guard->check(['hearingWaived' => true], 'hoorzitting_overslaan', 'alice');
-        $this->assertTrue($allowed->isAllowed());
-    }//end testHearingSkipGuardBlocksWhenNotWaived()
+		$allowed = $guard->check(['hearingWaived' => true], 'hoorzitting_overslaan', 'alice');
+		$this->assertTrue($allowed->isAllowed());
+	}//end testHearingSkipGuardBlocksWhenNotWaived()
 
-    /**
-     * Deadline guard denies when the statutory deadline has passed.
-     *
-     * @return void
-     */
-    public function testDeadlineGuardBlocksAfterDeadline(): void
-    {
-        $guard = new BezwaarDeadlineGuard();
+	/**
+	 * Deadline guard denies when the statutory deadline has passed.
+	 *
+	 * @return void
+	 */
+	public function testDeadlineGuardBlocksAfterDeadline(): void {
+		$guard = new BezwaarDeadlineGuard();
 
-        $past   = (new \DateTimeImmutable('today'))->modify('-1 day')->format('Y-m-d');
-        $future = (new \DateTimeImmutable('today'))->modify('+30 days')->format('Y-m-d');
+		$past = (new \DateTimeImmutable('today'))->modify('-1 day')->format('Y-m-d');
+		$future = (new \DateTimeImmutable('today'))->modify('+30 days')->format('Y-m-d');
 
-        $this->assertFalse($guard->check(['decisionDeadline' => $past], 'beslissen', 'bob')->isAllowed());
-        $this->assertTrue($guard->check(['decisionDeadline' => $future], 'beslissen', 'bob')->isAllowed());
-        // No deadline recorded — fail open.
-        $this->assertTrue($guard->check([], 'beslissen', 'bob')->isAllowed());
-    }//end testDeadlineGuardBlocksAfterDeadline()
+		$this->assertFalse($guard->check(['decisionDeadline' => $past], 'beslissen', 'bob')->isAllowed());
+		$this->assertTrue($guard->check(['decisionDeadline' => $future], 'beslissen', 'bob')->isAllowed());
+		// No deadline recorded — fail open.
+		$this->assertTrue($guard->check([], 'beslissen', 'bob')->isAllowed());
+	}//end testDeadlineGuardBlocksAfterDeadline()
 }//end class

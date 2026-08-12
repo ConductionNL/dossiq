@@ -36,70 +36,65 @@ use RuntimeException;
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
  */
-class IllegalPlanItemTransitionException extends RuntimeException
-{
-    /**
-     * Constructor.
-     *
-     * @param string $itemId    Plan-item id the transition was attempted on.
-     * @param string $itemType  Plan-item type (`stage`|`humanTask`|`milestone`).
-     * @param string $fromState Current state at the time of the attempt.
-     * @param string $toState   Requested target state.
-     */
-    public function __construct(
-        private readonly string $itemId,
-        private readonly string $itemType,
-        private readonly string $fromState,
-        private readonly string $toState,
-    ) {
-        parent::__construct(message: 'illegal_plan_item_transition');
-    }//end __construct()
+class IllegalPlanItemTransitionException extends RuntimeException {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $itemId Plan-item id the transition was attempted on.
+	 * @param string $itemType Plan-item type (`stage`|`humanTask`|`milestone`).
+	 * @param string $fromState Current state at the time of the attempt.
+	 * @param string $toState Requested target state.
+	 */
+	public function __construct(
+		private readonly string $itemId,
+		private readonly string $itemType,
+		private readonly string $fromState,
+		private readonly string $toState,
+	) {
+		parent::__construct(message: 'illegal_plan_item_transition');
+	}//end __construct()
 
-    /**
-     * The plan-item id the illegal transition was attempted on.
-     *
-     * @return string
-     *
-     * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
-     */
-    public function getItemId(): string
-    {
-        return $this->itemId;
-    }//end getItemId()
+	/**
+	 * The plan-item id the illegal transition was attempted on.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
+	 */
+	public function getItemId(): string {
+		return $this->itemId;
+	}//end getItemId()
 
-    /**
-     * The plan-item type.
-     *
-     * @return string
-     *
-     * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
-     */
-    public function getItemType(): string
-    {
-        return $this->itemType;
-    }//end getItemType()
+	/**
+	 * The plan-item type.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
+	 */
+	public function getItemType(): string {
+		return $this->itemType;
+	}//end getItemType()
 
-    /**
-     * The state the item was in when the illegal transition was attempted.
-     *
-     * @return string
-     *
-     * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
-     */
-    public function getFromState(): string
-    {
-        return $this->fromState;
-    }//end getFromState()
+	/**
+	 * The state the item was in when the illegal transition was attempted.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
+	 */
+	public function getFromState(): string {
+		return $this->fromState;
+	}//end getFromState()
 
-    /**
-     * The illegal target state that was requested.
-     *
-     * @return string
-     *
-     * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
-     */
-    public function getToState(): string
-    {
-        return $this->toState;
-    }//end getToState()
+	/**
+	 * The illegal target state that was requested.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002
+	 */
+	public function getToState(): string {
+		return $this->toState;
+	}//end getToState()
 }//end class

@@ -37,30 +37,28 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class ExternalRegisterRegistrar
-{
-    /**
-     * Register the wave-4 external base-register ports plus the dormant
-     * external-ZGW / ZTC client aliases.
-     *
-     * All ports are dormant log-only by default; flip the matching
-     * `integration.<name>.mode` config tier and, where a downstream deployment
-     * needs a bespoke client, override the alias in its own
-     * Application::register() to activate.
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        (new KvkRegistrar())->register(context: $context);
-        (new BrpRegistrar())->register(context: $context);
-        (new BagRegistrar())->register(context: $context);
-        (new BrkRegistrar())->register(context: $context);
-        (new WozRegistrar())->register(context: $context);
-        (new ExternalZgwRegistrar())->register(context: $context);
-    }//end register()
+class ExternalRegisterRegistrar {
+	/**
+	 * Register the wave-4 external base-register ports plus the dormant
+	 * external-ZGW / ZTC client aliases.
+	 *
+	 * All ports are dormant log-only by default; flip the matching
+	 * `integration.<name>.mode` config tier and, where a downstream deployment
+	 * needs a bespoke client, override the alias in its own
+	 * Application::register() to activate.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		(new KvkRegistrar())->register(context: $context);
+		(new BrpRegistrar())->register(context: $context);
+		(new BagRegistrar())->register(context: $context);
+		(new BrkRegistrar())->register(context: $context);
+		(new WozRegistrar())->register(context: $context);
+		(new ExternalZgwRegistrar())->register(context: $context);
+	}//end register()
 }//end class

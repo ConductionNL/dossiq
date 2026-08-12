@@ -44,57 +44,53 @@ use RuntimeException;
  *
  * @spec openspec/specs/external-integration-test-wiring/spec.md
  */
-final class SimulatorDigidSamlAdapter implements DigidSamlAdapterInterface
-{
-    /**
-     * Decode the simulator "assertion" (a local BSN entry, not SAML).
-     *
-     * @param string $samlResponse JSON `{ "bsn": "..." }` from the simulator form.
-     * @param string $relayState   Original RelayState (correlation only).
-     *
-     * @return BrokerAssertionResult A DigiD result flagged simulator:true.
-     *
-     * @throws RuntimeException When no usable BSN is present in the simulator payload.
-     *
-     * @spec openspec/specs/external-integration-test-wiring/spec.md
-     *
-     * @SuppressWarnings(PHPMD.StaticAccess) BrokerAssertionResult is intentionally built via its named constructor.
-     */
-    public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult
-    {
-        $decoded = json_decode($samlResponse, true);
-        $bsn     = '';
-        if (is_array($decoded) === true) {
-            $bsn = (string) ($decoded['bsn'] ?? '');
-        }
+final class SimulatorDigidSamlAdapter implements DigidSamlAdapterInterface {
+	/**
+	 * Decode the simulator "assertion" (a local BSN entry, not SAML).
+	 *
+	 * @param string $samlResponse JSON `{ "bsn": "..." }` from the simulator form.
+	 * @param string $relayState Original RelayState (correlation only).
+	 *
+	 * @return BrokerAssertionResult A DigiD result flagged simulator:true.
+	 *
+	 * @throws RuntimeException When no usable BSN is present in the simulator payload.
+	 *
+	 * @spec openspec/specs/external-integration-test-wiring/spec.md
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) BrokerAssertionResult is intentionally built via its named constructor.
+	 */
+	public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult {
+		$decoded = json_decode($samlResponse, true);
+		$bsn = '';
+		if (is_array($decoded) === true) {
+			$bsn = (string)($decoded['bsn'] ?? '');
+		}
 
-        if (preg_match('/^[0-9]{9}$/', $bsn) !== 1) {
-            throw new RuntimeException('DigiD simulator requires a 9-digit BSN from the simulator login form.');
-        }
+		if (preg_match('/^[0-9]{9}$/', $bsn) !== 1) {
+			throw new RuntimeException('DigiD simulator requires a 9-digit BSN from the simulator login form.');
+		}
 
-        return BrokerAssertionResult::forDigid(
-            bsn: $bsn,
-            assertionId: 'simulator-'.$relayState,
-            level: 2,
-            issuer: 'procest-digid-simulator',
-            attributes: [
-                'simulator'       => true,
-                'authenticatedBy' => 'simulator',
-                'warning'         => 'SIMULATED DigiD login — not a real SAML assertion. Proves the journey only.',
-            ]
-        );
+		return BrokerAssertionResult::forDigid(
+			bsn: $bsn,
+			assertionId: 'simulator-' . $relayState,
+			level: 2,
+			issuer: 'procest-digid-simulator',
+			attributes: [
+				'simulator' => true,
+				'authenticatedBy' => 'simulator',
+				'warning' => 'SIMULATED DigiD login — not a real SAML assertion. Proves the journey only.',
+			]
+		);
 
-    }//end decodeAssertion()
+	}//end decodeAssertion()
 
-    /**
-     * The simulator is an active (non-dormant) tier, but it is NOT a live
-     * broker — callers surface the simulation label.
-     *
-     * @return bool
-     */
-    public function isActive(): bool
-    {
-        return true;
-
-    }//end isActive()
+	/**
+	 * The simulator is an active (non-dormant) tier, but it is NOT a live
+	 * broker — callers surface the simulation label.
+	 *
+	 * @return bool
+	 */
+	public function isActive(): bool {
+		return true;
+	}//end isActive()
 }//end class

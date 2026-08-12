@@ -36,98 +36,91 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Procest\Service\StateMachineService
  */
-class StateMachineServiceTest extends TestCase
-{
-    /**
-     * The settings service mock.
-     *
-     * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private SettingsService $settingsService;
+class StateMachineServiceTest extends TestCase {
+	/**
+	 * The settings service mock.
+	 *
+	 * @var SettingsService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private SettingsService $settingsService;
 
-    /**
-     * The service under test.
-     *
-     * @var StateMachineService
-     */
-    private StateMachineService $service;
+	/**
+	 * The service under test.
+	 *
+	 * @var StateMachineService
+	 */
+	private StateMachineService $service;
 
-    /**
-     * Set up fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $logger                = $this->createMock(LoggerInterface::class);
-        $this->service         = new StateMachineService($this->settingsService, $logger);
-    }//end setUp()
+	/**
+	 * Set up fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->settingsService = $this->createMock(SettingsService::class);
+		$logger = $this->createMock(LoggerInterface::class);
+		$this->service = new StateMachineService($this->settingsService, $logger);
+	}//end setUp()
 
-    /**
-     * The happy-path forward transitions are all permitted.
-     *
-     * @return void
-     */
-    public function testForwardTransitionsAllowed(): void
-    {
-        $this->assertTrue($this->service->validateTransition('ontwerp', 'akkoord-mandaat'));
-        $this->assertTrue($this->service->validateTransition('akkoord-mandaat', 'ondertekend'));
-        $this->assertTrue($this->service->validateTransition('ondertekend', 'verzonden'));
-        $this->assertTrue($this->service->validateTransition('verzonden', 'ontvangen-bevestiging'));
-        $this->assertTrue($this->service->validateTransition('verzonden', 'gearchiveerd'));
-        $this->assertTrue($this->service->validateTransition('ontvangen-bevestiging', 'gearchiveerd'));
-    }//end testForwardTransitionsAllowed()
+	/**
+	 * The happy-path forward transitions are all permitted.
+	 *
+	 * @return void
+	 */
+	public function testForwardTransitionsAllowed(): void {
+		$this->assertTrue($this->service->validateTransition('ontwerp', 'akkoord-mandaat'));
+		$this->assertTrue($this->service->validateTransition('akkoord-mandaat', 'ondertekend'));
+		$this->assertTrue($this->service->validateTransition('ondertekend', 'verzonden'));
+		$this->assertTrue($this->service->validateTransition('verzonden', 'ontvangen-bevestiging'));
+		$this->assertTrue($this->service->validateTransition('verzonden', 'gearchiveerd'));
+		$this->assertTrue($this->service->validateTransition('ontvangen-bevestiging', 'gearchiveerd'));
+	}//end testForwardTransitionsAllowed()
 
-    /**
-     * The single back-edge (akkoord-mandaat -> ontwerp) is permitted.
-     *
-     * @return void
-     */
-    public function testBackEdgeAllowed(): void
-    {
-        $this->assertTrue($this->service->validateTransition('akkoord-mandaat', 'ontwerp'));
-    }//end testBackEdgeAllowed()
+	/**
+	 * The single back-edge (akkoord-mandaat -> ontwerp) is permitted.
+	 *
+	 * @return void
+	 */
+	public function testBackEdgeAllowed(): void {
+		$this->assertTrue($this->service->validateTransition('akkoord-mandaat', 'ontwerp'));
+	}//end testBackEdgeAllowed()
 
-    /**
-     * Skipping a state or reversing the machine is rejected.
-     *
-     * @return void
-     */
-    public function testInvalidTransitionsRejected(): void
-    {
-        $this->assertFalse($this->service->validateTransition('ontwerp', 'ondertekend'));
-        $this->assertFalse($this->service->validateTransition('verzonden', 'ontwerp'));
-        $this->assertFalse($this->service->validateTransition('gearchiveerd', 'verzonden'));
-        $this->assertFalse($this->service->validateTransition('ondertekend', 'ontwerp'));
-        $this->assertFalse($this->service->validateTransition('onbekend', 'ontwerp'));
-    }//end testInvalidTransitionsRejected()
+	/**
+	 * Skipping a state or reversing the machine is rejected.
+	 *
+	 * @return void
+	 */
+	public function testInvalidTransitionsRejected(): void {
+		$this->assertFalse($this->service->validateTransition('ontwerp', 'ondertekend'));
+		$this->assertFalse($this->service->validateTransition('verzonden', 'ontwerp'));
+		$this->assertFalse($this->service->validateTransition('gearchiveerd', 'verzonden'));
+		$this->assertFalse($this->service->validateTransition('ondertekend', 'ontwerp'));
+		$this->assertFalse($this->service->validateTransition('onbekend', 'ontwerp'));
+	}//end testInvalidTransitionsRejected()
 
-    /**
-     * Immutability begins at ondertekend.
-     *
-     * @return void
-     */
-    public function testImmutabilityBoundary(): void
-    {
-        $this->assertFalse($this->service->isImmutable('ontwerp'));
-        $this->assertFalse($this->service->isImmutable('akkoord-mandaat'));
-        $this->assertTrue($this->service->isImmutable('ondertekend'));
-        $this->assertTrue($this->service->isImmutable('verzonden'));
-        $this->assertTrue($this->service->isImmutable('gearchiveerd'));
-    }//end testImmutabilityBoundary()
+	/**
+	 * Immutability begins at ondertekend.
+	 *
+	 * @return void
+	 */
+	public function testImmutabilityBoundary(): void {
+		$this->assertFalse($this->service->isImmutable('ontwerp'));
+		$this->assertFalse($this->service->isImmutable('akkoord-mandaat'));
+		$this->assertTrue($this->service->isImmutable('ondertekend'));
+		$this->assertTrue($this->service->isImmutable('verzonden'));
+		$this->assertTrue($this->service->isImmutable('gearchiveerd'));
+	}//end testImmutabilityBoundary()
 
-    /**
-     * logTransition returns an empty array when storage is unavailable.
-     *
-     * @return void
-     */
-    public function testLogTransitionWithoutStorage(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
+	/**
+	 * logTransition returns an empty array when storage is unavailable.
+	 *
+	 * @return void
+	 */
+	public function testLogTransitionWithoutStorage(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
 
-        $result = $this->service->logTransition('besch-1', 'ontwerp', 'akkoord-mandaat');
+		$result = $this->service->logTransition('besch-1', 'ontwerp', 'akkoord-mandaat');
 
-        $this->assertSame([], $result);
-    }//end testLogTransitionWithoutStorage()
+		$this->assertSame([], $result);
+	}//end testLogTransitionWithoutStorage()
 }//end class

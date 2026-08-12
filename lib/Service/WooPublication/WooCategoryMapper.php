@@ -39,44 +39,42 @@ namespace OCA\Procest\Service\WooPublication;
  *
  * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d3
  */
-class WooCategoryMapper
-{
+class WooCategoryMapper {
 
-    /**
-     * The default/fallback informatiecategorie: every WOO besluit is
-     * definitionally in "Woo-verzoeken en -besluiten". Values verbatim from
-     * OpenCatalogi's `TooiVocabularyService::INFORMATIECATEGORIEEN['infocat014']`.
-     */
-    private const DEFAULT_CATEGORY = [
-        'code'  => 'infocat014',
-        'label' => 'Woo-verzoeken en -besluiten',
-        'uri'   => 'https://identifier.overheid.nl/tooi/def/thes/kern/c_3baef532',
-    ];
+	/**
+	 * The default/fallback informatiecategorie: every WOO besluit is
+	 * definitionally in "Woo-verzoeken en -besluiten". Values verbatim from
+	 * OpenCatalogi's `TooiVocabularyService::INFORMATIECATEGORIEEN['infocat014']`.
+	 */
+	private const DEFAULT_CATEGORY = [
+		'code' => 'infocat014',
+		'label' => 'Woo-verzoeken en -besluiten',
+		'uri' => 'https://identifier.overheid.nl/tooi/def/thes/kern/c_3baef532',
+	];
 
-    /**
-     * Lookup table keyed by `decision.decisionType`. Every entry not present
-     * here falls back to {@see self::DEFAULT_CATEGORY}.
-     *
-     * @var array<string, array{code: string, label: string, uri: string}>
-     */
-    private const DECISION_TYPE_MAP = [
-        'WOO-besluit' => self::DEFAULT_CATEGORY,
-    ];
+	/**
+	 * Lookup table keyed by `decision.decisionType`. Every entry not present
+	 * here falls back to {@see self::DEFAULT_CATEGORY}.
+	 *
+	 * @var array<string, array{code: string, label: string, uri: string}>
+	 */
+	private const DECISION_TYPE_MAP = [
+		'WOO-besluit' => self::DEFAULT_CATEGORY,
+	];
 
-    /**
-     * Resolve the DIWOO informatiecategorie for a WOO decision.
-     *
-     * @param array<string, mixed> $decision The decision object as an array
-     *                                       (expects `decisionType`, optional).
-     *
-     * @return array{code: string, label: string, uri: string} The resolved category.
-     *
-     * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d3
-     */
-    public function forDecision(array $decision): array
-    {
-        $decisionType = (string) ($decision['decisionType'] ?? '');
+	/**
+	 * Resolve the DIWOO informatiecategorie for a WOO decision.
+	 *
+	 * @param array<string, mixed> $decision The decision object as an array
+	 *                                       (expects `decisionType`, optional).
+	 *
+	 * @return array{code: string, label: string, uri: string} The resolved category.
+	 *
+	 * @spec openspec/changes/woo-publication-via-opencatalogi/design.md#d3
+	 */
+	public function forDecision(array $decision): array {
+		$decisionType = (string)($decision['decisionType'] ?? '');
 
-        return (self::DECISION_TYPE_MAP[$decisionType] ?? self::DEFAULT_CATEGORY);
-    }//end forDecision()
+		return (self::DECISION_TYPE_MAP[$decisionType] ?? self::DEFAULT_CATEGORY);
+	}//end forDecision()
 }//end class

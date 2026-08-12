@@ -28,23 +28,21 @@ namespace OCA\OpenRegister\Db;
 /**
  * Stub of OpenRegister's AuditTrailMapper for unit tests.
  */
-class AuditTrailMapper
-{
-    /**
-     * Create a custom audit trail entry.
-     *
-     * @param ObjectEntity         $object  The object the entry relates to
-     * @param string               $action  The action string
-     * @param array<string, mixed> $context Additional context data
-     *
-     * @return object A lightweight audit-trail-like object
-     */
-    public function createAuditTrailEntry(ObjectEntity $object, string $action, array $context = []): object
-    {
-        return (object) [
-            'objectUuid' => $object->getUuid(),
-            'action'     => $action,
-            'changed'    => $context,
-        ];
-    }//end createAuditTrailEntry()
+class AuditTrailMapper {
+	/**
+	 * Create a custom audit trail entry.
+	 *
+	 * @param ObjectEntity $object The object the entry relates to
+	 * @param string $action The action string
+	 * @param array<string, mixed> $context Additional context data
+	 *
+	 * @return object A lightweight audit-trail-like object
+	 */
+	public function createAuditTrailEntry(ObjectEntity $object, string $action, array $context = []): object {
+		return (object)[
+			'objectUuid' => $object->getUuid(),
+			'action' => $action,
+			'changed' => $context,
+		];
+	}//end createAuditTrailEntry()
 }//end class

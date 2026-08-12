@@ -44,117 +44,112 @@ namespace OCA\Procest\Service\Email;
  *
  * @spec openspec/specs/case-management/spec.md
  */
-class CaseContactDirectory
-{
-    /**
-     * Collect the normalised (lowercased) email addresses of all contacts on a case.
-     *
-     * Inspects the following fields (all optional): `betrokkenen`, `contacts`,
-     * `initiator`, and the top-level `email` field. Returns an empty array when
-     * no contacts are registered; the caller treats an empty array as "no restriction".
-     *
-     * @param array<string, mixed> $caseData The case data array
-     *
-     * @return array<string> Lowercase email addresses
-     *
-     * @spec openspec/specs/case-management/spec.md
-     */
-    public function collectAddresses(array $caseData): array
-    {
-        $emails = array_merge(
-            $this->collectPrimaryContactEmails(caseData: $caseData),
-            $this->collectContactListEmails(caseData: $caseData),
-        );
+class CaseContactDirectory {
+	/**
+	 * Collect the normalised (lowercased) email addresses of all contacts on a case.
+	 *
+	 * Inspects the following fields (all optional): `betrokkenen`, `contacts`,
+	 * `initiator`, and the top-level `email` field. Returns an empty array when
+	 * no contacts are registered; the caller treats an empty array as "no restriction".
+	 *
+	 * @param array<string, mixed> $caseData The case data array
+	 *
+	 * @return array<string> Lowercase email addresses
+	 *
+	 * @spec openspec/specs/case-management/spec.md
+	 */
+	public function collectAddresses(array $caseData): array {
+		$emails = array_merge(
+			$this->collectPrimaryContactEmails(caseData: $caseData),
+			$this->collectContactListEmails(caseData: $caseData),
+		);
 
-        return array_unique($emails);
-    }//end collectAddresses()
+		return array_unique($emails);
+	}//end collectAddresses()
 
-    /**
-     * Collect the single-valued contact addresses on a case.
-     *
-     * Covers the top-level `email` field and the `initiator` contact object, in
-     * that order.
-     *
-     * @param array<string, mixed> $caseData The case data array
-     *
-     * @return array<string> Lowercase email addresses
-     */
-    private function collectPrimaryContactEmails(array $caseData): array
-    {
-        $emails = [];
+	/**
+	 * Collect the single-valued contact addresses on a case.
+	 *
+	 * Covers the top-level `email` field and the `initiator` contact object, in
+	 * that order.
+	 *
+	 * @param array<string, mixed> $caseData The case data array
+	 *
+	 * @return array<string> Lowercase email addresses
+	 */
+	private function collectPrimaryContactEmails(array $caseData): array {
+		$emails = [];
 
-        // Top-level email field.
-        $topEmail = $this->normalizeContactEmail(value: (string) ($caseData['email'] ?? ''));
-        if ($topEmail !== null) {
-            $emails[] = $topEmail;
-        }
+		// Top-level email field.
+		$topEmail = $this->normalizeContactEmail(value: (string)($caseData['email'] ?? ''));
+		if ($topEmail !== null) {
+			$emails[] = $topEmail;
+		}
 
-        // Initiator field (single contact object or email string).
-        $initiator = ($caseData['initiator'] ?? null);
-        if (is_array($initiator) === true) {
-            $addr = $this->normalizeContactEmail(value: (string) ($initiator['email'] ?? ''));
-            if ($addr !== null) {
-                $emails[] = $addr;
-            }
-        }
+		// Initiator field (single contact object or email string).
+		$initiator = ($caseData['initiator'] ?? null);
+		if (is_array($initiator) === true) {
+			$addr = $this->normalizeContactEmail(value: (string)($initiator['email'] ?? ''));
+			if ($addr !== null) {
+				$emails[] = $addr;
+			}
+		}
 
-        return $emails;
-    }//end collectPrimaryContactEmails()
+		return $emails;
+	}//end collectPrimaryContactEmails()
 
-    /**
-     * Collect the addresses held in a case's contact collections.
-     *
-     * Covers `betrokkenen` and `contacts`, in that order; each entry may carry
-     * either an `email` or an `emailadres` key.
-     *
-     * @param array<string, mixed> $caseData The case data array
-     *
-     * @return array<string> Lowercase email addresses
-     */
-    private function collectContactListEmails(array $caseData): array
-    {
-        $contactArrays = [];
-        if (is_array($caseData['betrokkenen'] ?? null) === true) {
-            $contactArrays[] = $caseData['betrokkenen'];
-        }
+	/**
+	 * Collect the addresses held in a case's contact collections.
+	 *
+	 * Covers `betrokkenen` and `contacts`, in that order; each entry may carry
+	 * either an `email` or an `emailadres` key.
+	 *
+	 * @param array<string, mixed> $caseData The case data array
+	 *
+	 * @return array<string> Lowercase email addresses
+	 */
+	private function collectContactListEmails(array $caseData): array {
+		$contactArrays = [];
+		if (is_array($caseData['betrokkenen'] ?? null) === true) {
+			$contactArrays[] = $caseData['betrokkenen'];
+		}
 
-        if (is_array($caseData['contacts'] ?? null) === true) {
-            $contactArrays[] = $caseData['contacts'];
-        }
+		if (is_array($caseData['contacts'] ?? null) === true) {
+			$contactArrays[] = $caseData['contacts'];
+		}
 
-        $emails = [];
-        foreach ($contactArrays as $contacts) {
-            foreach ($contacts as $contact) {
-                if (is_array($contact) === false) {
-                    continue;
-                }
+		$emails = [];
+		foreach ($contactArrays as $contacts) {
+			foreach ($contacts as $contact) {
+				if (is_array($contact) === false) {
+					continue;
+				}
 
-                $addr = $this->normalizeContactEmail(
-                    value: (string) ($contact['email'] ?? ($contact['emailadres'] ?? ''))
-                );
-                if ($addr !== null) {
-                    $emails[] = $addr;
-                }
-            }
-        }
+				$addr = $this->normalizeContactEmail(
+					value: (string)($contact['email'] ?? ($contact['emailadres'] ?? ''))
+				);
+				if ($addr !== null) {
+					$emails[] = $addr;
+				}
+			}
+		}
 
-        return $emails;
-    }//end collectContactListEmails()
+		return $emails;
+	}//end collectContactListEmails()
 
-    /**
-     * Normalise a raw contact value to a lowercase, validated email address.
-     *
-     * @param string $value The raw contact value
-     *
-     * @return string|null The lowercase address, or null when absent/invalid
-     */
-    private function normalizeContactEmail(string $value): ?string
-    {
-        $addr = strtolower(trim($value));
-        if ($addr === '' || filter_var($addr, FILTER_VALIDATE_EMAIL) === false) {
-            return null;
-        }
+	/**
+	 * Normalise a raw contact value to a lowercase, validated email address.
+	 *
+	 * @param string $value The raw contact value
+	 *
+	 * @return string|null The lowercase address, or null when absent/invalid
+	 */
+	private function normalizeContactEmail(string $value): ?string {
+		$addr = strtolower(trim($value));
+		if ($addr === '' || filter_var($addr, FILTER_VALIDATE_EMAIL) === false) {
+			return null;
+		}
 
-        return $addr;
-    }//end normalizeContactEmail()
+		return $addr;
+	}//end normalizeContactEmail()
 }//end class

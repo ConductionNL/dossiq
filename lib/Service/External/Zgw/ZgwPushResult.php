@@ -33,35 +33,34 @@ namespace OCA\Procest\Service\External\Zgw;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-final class ZgwPushResult
-{
-    /**
-     * Construct the result value-object.
-     *
-     * @param string              $pushStatus    PUSHED / REJECTED /
-     *                                           PUSH_DEFERRED /
-     *                                           PUSH_ERROR.
-     * @param string              $receiverUrl   Receiver-side canonical
-     *                                           URL of the created
-     *                                           resource (empty for
-     *                                           non- PUSHED).
-     * @param string              $correlationId Echoed input
-     *                                           correlation id; empty
-     *                                           if caller did not
-     *                                           supply one.
-     * @param bool                $dormant       TRUE when the adapter was
-     *                                           dormant.
-     * @param array<string,mixed> $extras        Provider-specific extras
-     *                                           — receiverSourceSlug,
-     *                                           rejectionReason,
-     *                                           autorisatieScope.
-     */
-    public function __construct(
-        public readonly string $pushStatus,
-        public readonly string $receiverUrl,
-        public readonly string $correlationId,
-        public readonly bool $dormant,
-        public readonly array $extras=[],
-    ) {
-    }//end __construct()
+final class ZgwPushResult {
+	/**
+	 * Construct the result value-object.
+	 *
+	 * @param string $pushStatus PUSHED / REJECTED /
+	 *                           PUSH_DEFERRED /
+	 *                           PUSH_ERROR.
+	 * @param string $receiverUrl Receiver-side canonical
+	 *                            URL of the created
+	 *                            resource (empty for
+	 *                            non- PUSHED).
+	 * @param string $correlationId Echoed input
+	 *                              correlation id; empty
+	 *                              if caller did not
+	 *                              supply one.
+	 * @param bool $dormant TRUE when the adapter was
+	 *                      dormant.
+	 * @param array<string,mixed> $extras Provider-specific extras
+	 *                                    — receiverSourceSlug,
+	 *                                    rejectionReason,
+	 *                                    autorisatieScope.
+	 */
+	public function __construct(
+		public readonly string $pushStatus,
+		public readonly string $receiverUrl,
+		public readonly string $correlationId,
+		public readonly bool $dormant,
+		public readonly array $extras = [],
+	) {
+	}//end __construct()
 }//end class

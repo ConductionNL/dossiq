@@ -34,63 +34,57 @@ namespace OCA\Procest\Tests\Unit\Stubs;
  * KpiAggregationService only calls getQueryBuilder() on the connection, so that
  * is the only method that needs a real implementation.
  */
-class StubDbConnection
-{
+class StubDbConnection {
 
-    /**
-     * The query builder stub to return.
-     *
-     * @var StubQueryBuilder
-     */
-    private StubQueryBuilder $qb;
+	/**
+	 * The query builder stub to return.
+	 *
+	 * @var StubQueryBuilder
+	 */
+	private StubQueryBuilder $qb;
 
-    /**
-     * Number of times getQueryBuilder() has been called.
-     *
-     * @var int
-     */
-    public int $getQueryBuilderCallCount = 0;
+	/**
+	 * Number of times getQueryBuilder() has been called.
+	 *
+	 * @var int
+	 */
+	public int $getQueryBuilderCallCount = 0;
 
-    /**
-     * Whether to throw on getQueryBuilder().
-     *
-     * @var bool
-     */
-    private bool $fail;
+	/**
+	 * Whether to throw on getQueryBuilder().
+	 *
+	 * @var bool
+	 */
+	private bool $fail;
 
+	/**
+	 * Constructor.
+	 *
+	 * @param StubDbResult $result The result to return from queries
+	 * @param bool $fail Whether to throw on getQueryBuilder()
+	 *
+	 * @return void
+	 */
+	public function __construct(StubDbResult $result, bool $fail = false) {
+		$this->fail = $fail;
+		$this->qb = new StubQueryBuilder($result);
+	}//end __construct()
 
-    /**
-     * Constructor.
-     *
-     * @param StubDbResult $result The result to return from queries
-     * @param bool         $fail   Whether to throw on getQueryBuilder()
-     *
-     * @return void
-     */
-    public function __construct(StubDbResult $result, bool $fail = false)
-    {
-        $this->fail = $fail;
-        $this->qb   = new StubQueryBuilder($result);
-    }//end __construct()
+	/**
+	 * Return the stub query builder.
+	 *
+	 * @return StubQueryBuilder The stub query builder
+	 *
+	 * @throws \RuntimeException When $fail is true
+	 */
+	public function getQueryBuilder(): StubQueryBuilder {
+		$this->getQueryBuilderCallCount++;
 
+		if ($this->fail === true) {
+			throw new \RuntimeException('DB not available');
+		}
 
-    /**
-     * Return the stub query builder.
-     *
-     * @return StubQueryBuilder The stub query builder
-     *
-     * @throws \RuntimeException When $fail is true
-     */
-    public function getQueryBuilder(): StubQueryBuilder
-    {
-        $this->getQueryBuilderCallCount++;
-
-        if ($this->fail === true) {
-            throw new \RuntimeException('DB not available');
-        }
-
-        return $this->qb;
-    }//end getQueryBuilder()
-
+		return $this->qb;
+	}//end getQueryBuilder()
 
 }//end class

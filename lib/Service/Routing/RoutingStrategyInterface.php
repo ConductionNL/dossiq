@@ -32,33 +32,32 @@ namespace OCA\Procest\Service\Routing;
  *
  * @spec openspec/changes/role-based-step-routing/tasks.md#T03
  */
-interface RoutingStrategyInterface
-{
-    /**
-     * The unique strategy name as referenced by `routingRule.strategy`.
-     *
-     * @return string The strategy key (e.g. "single-role")
+interface RoutingStrategyInterface {
+	/**
+	 * The unique strategy name as referenced by `routingRule.strategy`.
+	 *
+	 * @return string The strategy key (e.g. "single-role")
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function name(): string;
 
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function name(): string;
-
-    /**
-     * Resolve a routing rule against a case to a list of participant refs.
-     *
-     * The returned array contains the raw participant references
-     * (Nextcloud user IDs or contact UUIDs) in the order callers may choose
-     * to assign. An empty array means "no eligible assignee" — callers MUST
-     * surface this to the case admin.
-     *
-     * @param array<string, mixed>             $rule  The routing rule (strategy + parameters)
-     * @param array<string, mixed>             $case  The case object (id, caseType,
-     *                                                …)
-     * @param array<int, array<string, mixed>> $roles Role objects bound to the case
-     *
-     * @return array<int, string> Ordered participant references
-
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function resolve(array $rule, array $case, array $roles): array;
+	/**
+	 * Resolve a routing rule against a case to a list of participant refs.
+	 *
+	 * The returned array contains the raw participant references
+	 * (Nextcloud user IDs or contact UUIDs) in the order callers may choose
+	 * to assign. An empty array means "no eligible assignee" — callers MUST
+	 * surface this to the case admin.
+	 *
+	 * @param array<string, mixed> $rule The routing rule (strategy + parameters)
+	 * @param array<string, mixed> $case The case object (id, caseType,
+	 *                                   …)
+	 * @param array<int, array<string, mixed>> $roles Role objects bound to the case
+	 *
+	 * @return array<int, string> Ordered participant references
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function resolve(array $rule, array $case, array $roles): array;
 }//end interface

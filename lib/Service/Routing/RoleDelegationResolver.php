@@ -49,104 +49,101 @@ use Throwable;
  *
  * @spec openspec/specs/role-based-step-routing/spec.md
  */
-class RoleDelegationResolver
-{
-    /**
-     * Constructor.
-     *
-     * @param LoggerInterface $logger Logger (records refused delegation cycles).
-     */
-    public function __construct(
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class RoleDelegationResolver {
+	/**
+	 * Constructor.
+	 *
+	 * @param LoggerInterface $logger Logger (records refused delegation cycles).
+	 */
+	public function __construct(
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Substitute delegates inside an active delegation window; break cycles.
-     *
-     * @param array<int, string>               $participants Raw resolver output.
-     * @param array<int, array<string, mixed>> $roles        All case roles.
-     *
-     * @return array<int, string> The participants with active delegates substituted in.
-     *
-     * @spec openspec/specs/role-based-step-routing/spec.md
-     */
-    public function apply(array $participants, array $roles): array
-    {
-        $now    = new DateTimeImmutable('now');
-        $byUser = [];
-        foreach ($roles as $role) {
-            $participant = (string) ($role['participant'] ?? '');
-            if ($participant !== '') {
-                $byUser[$participant] = $role;
-            }
-        }
+	/**
+	 * Substitute delegates inside an active delegation window; break cycles.
+	 *
+	 * @param array<int, string> $participants Raw resolver output.
+	 * @param array<int, array<string, mixed>> $roles All case roles.
+	 *
+	 * @return array<int, string> The participants with active delegates substituted in.
+	 *
+	 * @spec openspec/specs/role-based-step-routing/spec.md
+	 */
+	public function apply(array $participants, array $roles): array {
+		$now = new DateTimeImmutable('now');
+		$byUser = [];
+		foreach ($roles as $role) {
+			$participant = (string)($role['participant'] ?? '');
+			if ($participant !== '') {
+				$byUser[$participant] = $role;
+			}
+		}
 
-        $result = [];
-        foreach ($participants as $participant) {
-            $result[] = $this->resolveDelegate(
-                participant: $participant,
-                byUser: $byUser,
-                now: $now,
-            );
-        }
+		$result = [];
+		foreach ($participants as $participant) {
+			$result[] = $this->resolveDelegate(
+				participant: $participant,
+				byUser: $byUser,
+				now: $now,
+			);
+		}
 
-        return $result;
-    }//end apply()
+		return $result;
+	}//end apply()
 
-    /**
-     * Resolve one participant to its active delegate (single hop, cycle-safe).
-     *
-     * @param string                              $participant The original participant.
-     * @param array<string, array<string, mixed>> $byUser      Case roles indexed by participant.
-     * @param DateTimeImmutable                   $now         The evaluation moment.
-     *
-     * @return string The delegate when an active window applies, else the participant.
-     */
-    private function resolveDelegate(string $participant, array $byUser, DateTimeImmutable $now): string
-    {
-        $resolved = $participant;
-        $visited  = [$participant => true];
-        while (isset($byUser[$resolved]) === true) {
-            $role     = $byUser[$resolved];
-            $from     = (string) ($role['delegateFrom'] ?? '');
-            $until    = (string) ($role['delegateUntil'] ?? '');
-            $delegate = (string) ($role['delegate'] ?? '');
-            if ($delegate === '' || $from === '' || $until === '') {
-                break;
-            }
+	/**
+	 * Resolve one participant to its active delegate (single hop, cycle-safe).
+	 *
+	 * @param string $participant The original participant.
+	 * @param array<string, array<string, mixed>> $byUser Case roles indexed by participant.
+	 * @param DateTimeImmutable $now The evaluation moment.
+	 *
+	 * @return string The delegate when an active window applies, else the participant.
+	 */
+	private function resolveDelegate(string $participant, array $byUser, DateTimeImmutable $now): string {
+		$resolved = $participant;
+		$visited = [$participant => true];
+		while (isset($byUser[$resolved]) === true) {
+			$role = $byUser[$resolved];
+			$from = (string)($role['delegateFrom'] ?? '');
+			$until = (string)($role['delegateUntil'] ?? '');
+			$delegate = (string)($role['delegate'] ?? '');
+			if ($delegate === '' || $from === '' || $until === '') {
+				break;
+			}
 
-            try {
-                $fromAt  = new DateTimeImmutable($from);
-                $untilAt = new DateTimeImmutable($until);
-            } catch (Throwable $e) {
-                break;
-            }
+			try {
+				$fromAt = new DateTimeImmutable($from);
+				$untilAt = new DateTimeImmutable($until);
+			} catch (Throwable $e) {
+				break;
+			}
 
-            if ($now < $fromAt || $now > $untilAt) {
-                break;
-            }
+			if ($now < $fromAt || $now > $untilAt) {
+				break;
+			}
 
-            if (isset($visited[$delegate]) === true) {
-                $this->logger->warning(
-                    'Procest: delegation cycle detected',
-                    [
-                        'event'    => 'RoleRoutingDelegationCycle',
-                        'original' => $participant,
-                        'delegate' => $delegate,
-                        'app'      => Application::APP_ID,
-                    ],
-                );
-                break;
-            }
+			if (isset($visited[$delegate]) === true) {
+				$this->logger->warning(
+					'Procest: delegation cycle detected',
+					[
+						'event' => 'RoleRoutingDelegationCycle',
+						'original' => $participant,
+						'delegate' => $delegate,
+						'app' => Application::APP_ID,
+					],
+				);
+				break;
+			}
 
-            $visited[$delegate] = true;
-            $resolved           = $delegate;
+			$visited[$delegate] = true;
+			$resolved = $delegate;
 
-            // Per spec: break after exactly one hop.
-            break;
-        }//end while
+			// Per spec: break after exactly one hop.
+			break;
+		}//end while
 
-        return $resolved;
-    }//end resolveDelegate()
+		return $resolved;
+	}//end resolveDelegate()
 }//end class

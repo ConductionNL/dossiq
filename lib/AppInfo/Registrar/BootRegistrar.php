@@ -37,21 +37,19 @@ use OCP\EventDispatcher\IEventDispatcher;
  *
  * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
-class BootRegistrar
-{
-    /**
-     * Run the boot-time registrations.
-     *
-     * @param IEventDispatcher $dispatcher The live event dispatcher.
-     * @param mixed            $server     Server container (passed in from boot()).
-     *
-     * @return void
-     *
-     * @spec openspec/specs/bezwaar-lifecycle/spec.md
-     */
-    public function boot(IEventDispatcher $dispatcher, $server): void
-    {
-        (new BezwaarSubscriptionRegistrar())->subscribe(dispatcher: $dispatcher);
-        (new MapCspRegistrar())->register(server: $server);
-    }//end boot()
+class BootRegistrar {
+	/**
+	 * Run the boot-time registrations.
+	 *
+	 * @param IEventDispatcher $dispatcher The live event dispatcher.
+	 * @param mixed $server Server container (passed in from boot()).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/bezwaar-lifecycle/spec.md
+	 */
+	public function boot(IEventDispatcher $dispatcher, $server): void {
+		(new BezwaarSubscriptionRegistrar())->subscribe(dispatcher: $dispatcher);
+		(new MapCspRegistrar())->register(server: $server);
+	}//end boot()
 }//end class

@@ -34,116 +34,108 @@ use OCP\EventDispatcher\Event;
 use Psr\EventDispatcher\StoppableEventInterface;
 
 if (class_exists(ObjectDeletingEvent::class) === false) {
-    /**
-     * Stub class for ObjectDeletingEvent — used only in standalone unit
-     * tests.
-     */
-    class ObjectDeletingEvent extends Event implements StoppableEventInterface
-    {
-        /**
-         * Whether event propagation has been stopped.
-         *
-         * @var bool
-         */
-        private bool $propagationStopped = false;
+	/**
+	 * Stub class for ObjectDeletingEvent — used only in standalone unit
+	 * tests.
+	 */
+	class ObjectDeletingEvent extends Event implements StoppableEventInterface {
+		/**
+		 * Whether event propagation has been stopped.
+		 *
+		 * @var bool
+		 */
+		private bool $propagationStopped = false;
 
-        /**
-         * Errors set by a hook that stopped propagation.
-         *
-         * @var array<string, mixed>
-         */
-        private array $errors = [];
+		/**
+		 * Errors set by a hook that stopped propagation.
+		 *
+		 * @var array<string, mixed>
+		 */
+		private array $errors = [];
 
-        /**
-         * Modified data set by a hook.
-         *
-         * @var array<string, mixed>
-         */
-        private array $modifiedData = [];
+		/**
+		 * Modified data set by a hook.
+		 *
+		 * @var array<string, mixed>
+		 */
+		private array $modifiedData = [];
 
-        /**
-         * Constructor.
-         *
-         * @param ObjectEntity $object The entity being deleted.
-         */
-        public function __construct(
-            private readonly ObjectEntity $object,
-        ) {
-            parent::__construct();
-        }//end __construct()
+		/**
+		 * Constructor.
+		 *
+		 * @param ObjectEntity $object The entity being deleted.
+		 */
+		public function __construct(
+			private readonly ObjectEntity $object,
+		) {
+			parent::__construct();
+		}//end __construct()
 
-        /**
-         * Get the entity being deleted.
-         *
-         * @return ObjectEntity
-         */
-        public function getObject(): ObjectEntity
-        {
-            return $this->object;
-        }//end getObject()
+		/**
+		 * Get the entity being deleted.
+		 *
+		 * @return ObjectEntity
+		 */
+		public function getObject(): ObjectEntity {
+			return $this->object;
+		}//end getObject()
 
-        /**
-         * Whether propagation has been stopped by a hook.
-         *
-         * @return bool
-         */
-        public function isPropagationStopped(): bool
-        {
-            return $this->propagationStopped;
-        }//end isPropagationStopped()
+		/**
+		 * Whether propagation has been stopped by a hook.
+		 *
+		 * @return bool
+		 */
+		public function isPropagationStopped(): bool {
+			return $this->propagationStopped;
+		}//end isPropagationStopped()
 
-        /**
-         * Stop event propagation (used by hooks to reject the deletion).
-         *
-         * @return void
-         */
-        public function stopPropagation(): void
-        {
-            $this->propagationStopped = true;
-        }//end stopPropagation()
+		/**
+		 * Stop event propagation (used by hooks to reject the deletion).
+		 *
+		 * @return void
+		 */
+		public function stopPropagation(): void {
+			$this->propagationStopped = true;
+		}//end stopPropagation()
 
-        /**
-         * Set errors from a hook.
-         *
-         * @param array<string, mixed> $errors Error details
-         *
-         * @return void
-         */
-        public function setErrors(array $errors): void
-        {
-            $this->errors = $errors;
-        }//end setErrors()
+		/**
+		 * Set errors from a hook.
+		 *
+		 * @param array<string, mixed> $errors Error details
+		 *
+		 * @return void
+		 */
+		public function setErrors(array $errors): void {
+			$this->errors = $errors;
+		}//end setErrors()
 
-        /**
-         * Get errors set by a hook.
-         *
-         * @return array<string, mixed>
-         */
-        public function getErrors(): array
-        {
-            return $this->errors;
-        }//end getErrors()
+		/**
+		 * Get errors set by a hook.
+		 *
+		 * @return array<string, mixed>
+		 */
+		public function getErrors(): array {
+			return $this->errors;
+		}//end getErrors()
 
-        /**
-         * Set modified data from a hook.
-         *
-         * @param array<string, mixed> $data Modified data
-         *
-         * @return void
-         */
-        public function setModifiedData(array $data): void
-        {
-            $this->modifiedData = $data;
-        }//end setModifiedData()
+		/**
+		 * Set modified data from a hook.
+		 *
+		 * @param array<string, mixed> $data Modified data
+		 *
+		 * @return void
+		 */
+		public function setModifiedData(array $data): void {
+			$this->modifiedData = $data;
+		}//end setModifiedData()
 
-        /**
-         * Get modified data set by a hook.
-         *
-         * @return array<string, mixed>
-         */
-        public function getModifiedData(): array
-        {
-            return $this->modifiedData;
-        }//end getModifiedData()
-    }//end class
+		/**
+		 * Get modified data set by a hook.
+		 *
+		 * @return array<string, mixed>
+		 */
+		public function getModifiedData(): array {
+			return $this->modifiedData;
+		}//end getModifiedData()
+	}//end class
 }//end if

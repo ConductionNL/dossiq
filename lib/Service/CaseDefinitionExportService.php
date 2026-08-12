@@ -45,273 +45,267 @@ use ZipArchive;
  *
  * @psalm-suppress UnusedClass
  */
-class CaseDefinitionExportService
-{
-    /**
-     * Version format for manifest.
-     */
-    private const VERSION_FORMAT = '%d.%d';
+class CaseDefinitionExportService {
+	/**
+	 * Version format for manifest.
+	 */
+	private const VERSION_FORMAT = '%d.%d';
 
-    /**
-     * Available export components.
-     *
-     * @var string[]
-     */
-    public const COMPONENTS = [
-        'schema',
-        'statuses',
-        'permissions',
-        'documents',
-        'metadata',
-        'workflows',
-    ];
+	/**
+	 * Available export components.
+	 *
+	 * @var string[]
+	 */
+	public const COMPONENTS = [
+		'schema',
+		'statuses',
+		'permissions',
+		'documents',
+		'metadata',
+		'workflows',
+	];
 
-    /**
-     * Constructor.
-     *
-     * @param IAppConfig      $appConfig The Nextcloud app config service.
-     * @param LoggerInterface $logger    The logger instance.
-     */
-    public function __construct(
-        private readonly IAppConfig $appConfig,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IAppConfig $appConfig The Nextcloud app config service.
+	 * @param LoggerInterface $logger The logger instance.
+	 */
+	public function __construct(
+		private readonly IAppConfig $appConfig,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Export a case definition as a ZIP archive.
-     *
-     * @param string   $caseTypeId The OpenRegister ID of the case type to export.
-     * @param string[] $components List of components to include (defaults to all).
-     *
-     * @return array{path: string, filename: string} Temporary file path and suggested filename.
-     *
-     * @throws \RuntimeException If export fails.
-     *
-     * @psalm-suppress PossiblyUnusedMethod
+	/**
+	 * Export a case definition as a ZIP archive.
+	 *
+	 * @param string $caseTypeId The OpenRegister ID of the case type to export.
+	 * @param string[] $components List of components to include (defaults to all).
+	 *
+	 * @return array{path: string, filename: string} Temporary file path and suggested filename.
+	 *
+	 * @throws \RuntimeException If export fails.
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function exportCaseDefinition(
+		string $caseTypeId,
+		array $components = [],
+	): array {
+		if (empty($components) === true) {
+			$components = self::COMPONENTS;
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function exportCaseDefinition(
-        string $caseTypeId,
-        array $components=[],
-    ): array {
-        if (empty($components) === true) {
-            $components = self::COMPONENTS;
-        }
+		// Validate requested components.
+		$invalidComponents = array_diff($components, self::COMPONENTS);
+		if (empty($invalidComponents) === false) {
+			throw new InvalidArgumentException(
+				'Invalid export components: ' . implode(', ', $invalidComponents)
+			);
+		}
 
-        // Validate requested components.
-        $invalidComponents = array_diff($components, self::COMPONENTS);
-        if (empty($invalidComponents) === false) {
-            throw new InvalidArgumentException(
-                'Invalid export components: '.implode(', ', $invalidComponents)
-            );
-        }
+		$this->logger->info(
+			'Exporting case definition {caseTypeId} with components: {components}',
+			[
+				'caseTypeId' => $caseTypeId,
+				'components' => implode(', ', $components),
+			]
+		);
 
-        $this->logger->info(
-            'Exporting case definition {caseTypeId} with components: {components}',
-            [
-                'caseTypeId' => $caseTypeId,
-                'components' => implode(', ', $components),
-            ]
-        );
+		// Build the manifest.
+		$manifest = $this->buildManifest(caseTypeId: $caseTypeId, components: $components);
 
-        // Build the manifest.
-        $manifest = $this->buildManifest(caseTypeId: $caseTypeId, components: $components);
+		// Create temporary ZIP file.
+		$tempPath = tempnam(sys_get_temp_dir(), 'procest_export_');
+		if ($tempPath === false) {
+			throw new RuntimeException('Failed to create temporary file for export');
+		}
 
-        // Create temporary ZIP file.
-        $tempPath = tempnam(sys_get_temp_dir(), 'procest_export_');
-        if ($tempPath === false) {
-            throw new RuntimeException('Failed to create temporary file for export');
-        }
+		$this->writeArchive(
+			tempPath: $tempPath,
+			caseTypeId: $caseTypeId,
+			manifest: $manifest,
+			components: $components
+		);
 
-        $this->writeArchive(
-            tempPath: $tempPath,
-            caseTypeId: $caseTypeId,
-            manifest: $manifest,
-            components: $components
-        );
+		$slug = $manifest['caseType']['slug'] ?? 'unknown';
+		$version = $manifest['version'] ?? '1.0';
 
-        $slug    = $manifest['caseType']['slug'] ?? 'unknown';
-        $version = $manifest['version'] ?? '1.0';
+		return [
+			'path' => $tempPath,
+			'filename' => "case-definition-{$slug}-v{$version}.zip",
+		];
+	}//end exportCaseDefinition()
 
-        return [
-            'path'     => $tempPath,
-            'filename' => "case-definition-{$slug}-v{$version}.zip",
-        ];
-    }//end exportCaseDefinition()
+	/**
+	 * Write the manifest and the selected components into the export archive.
+	 *
+	 * @param string $tempPath Path of the temporary ZIP file to write.
+	 * @param string $caseTypeId The case type ID being exported.
+	 * @param array<string, mixed> $manifest The manifest to store as manifest.json.
+	 * @param string[] $components The components to include.
+	 *
+	 * @return void
+	 *
+	 * @throws \RuntimeException If the ZIP archive cannot be created.
+	 */
+	private function writeArchive(string $tempPath, string $caseTypeId, array $manifest, array $components): void {
+		$zip = new ZipArchive();
+		$result = $zip->open($tempPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+		if ($result !== true) {
+			throw new RuntimeException('Failed to create ZIP archive: error code ' . $result);
+		}
 
-    /**
-     * Write the manifest and the selected components into the export archive.
-     *
-     * @param string               $tempPath   Path of the temporary ZIP file to write.
-     * @param string               $caseTypeId The case type ID being exported.
-     * @param array<string, mixed> $manifest   The manifest to store as manifest.json.
-     * @param string[]             $components The components to include.
-     *
-     * @return void
-     *
-     * @throws \RuntimeException If the ZIP archive cannot be created.
-     */
-    private function writeArchive(string $tempPath, string $caseTypeId, array $manifest, array $components): void
-    {
-        $zip    = new ZipArchive();
-        $result = $zip->open($tempPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-        if ($result !== true) {
-            throw new RuntimeException('Failed to create ZIP archive: error code '.$result);
-        }
+		// Add manifest.
+		$zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-        // Add manifest.
-        $zip->addFromString('manifest.json', json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+		// Add selected components.
+		foreach ($components as $component) {
+			$data = $this->exportComponent(caseTypeId: $caseTypeId, component: $component);
+			if ($data === null) {
+				continue;
+			}
 
-        // Add selected components.
-        foreach ($components as $component) {
-            $data = $this->exportComponent(caseTypeId: $caseTypeId, component: $component);
-            if ($data === null) {
-                continue;
-            }
+			if ($component === 'workflows' && is_array($data) === true) {
+				$this->addWorkflowEntries(zip: $zip, workflows: $data);
+				continue;
+			}
 
-            if ($component === 'workflows' && is_array($data) === true) {
-                $this->addWorkflowEntries(zip: $zip, workflows: $data);
-                continue;
-            }
+			$zip->addFromString(
+				$component . '.json',
+				json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+			);
+		}//end foreach
 
-            $zip->addFromString(
-                $component.'.json',
-                json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-            );
-        }//end foreach
+		$zip->close();
+	}//end writeArchive()
 
-        $zip->close();
-    }//end writeArchive()
+	/**
+	 * Add one JSON entry per workflow under the archive's workflows/ directory.
+	 *
+	 * @param ZipArchive $zip The opened ZIP archive.
+	 * @param array<string, mixed> $workflows The workflow data keyed by workflow name.
+	 *
+	 * @return void
+	 */
+	private function addWorkflowEntries(ZipArchive $zip, array $workflows): void {
+		foreach ($workflows as $workflowName => $workflowData) {
+			$zip->addFromString(
+				'workflows/' . $workflowName . '.json',
+				json_encode($workflowData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+			);
+		}
+	}//end addWorkflowEntries()
 
-    /**
-     * Add one JSON entry per workflow under the archive's workflows/ directory.
-     *
-     * @param ZipArchive           $zip       The opened ZIP archive.
-     * @param array<string, mixed> $workflows The workflow data keyed by workflow name.
-     *
-     * @return void
-     */
-    private function addWorkflowEntries(ZipArchive $zip, array $workflows): void
-    {
-        foreach ($workflows as $workflowName => $workflowData) {
-            $zip->addFromString(
-                'workflows/'.$workflowName.'.json',
-                json_encode($workflowData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-            );
-        }
-    }//end addWorkflowEntries()
+	/**
+	 * Build the manifest for a case definition export.
+	 *
+	 * @param string $caseTypeId The case type ID.
+	 * @param string[] $components The components included in this export.
+	 *
+	 * @return array<string, mixed> The manifest data.
+	 */
+	private function buildManifest(string $caseTypeId, array $components): array {
+		$previousVersion = $this->appConfig->getValueString(
+			Application::APP_ID,
+			'export_version_' . $caseTypeId,
+			'0.0'
+		);
 
-    /**
-     * Build the manifest for a case definition export.
-     *
-     * @param string   $caseTypeId The case type ID.
-     * @param string[] $components The components included in this export.
-     *
-     * @return array<string, mixed> The manifest data.
-     */
-    private function buildManifest(string $caseTypeId, array $components): array
-    {
-        $previousVersion = $this->appConfig->getValueString(
-            Application::APP_ID,
-            'export_version_'.$caseTypeId,
-            '0.0'
-        );
+		$newVersion = $this->incrementVersion(version: $previousVersion);
 
-        $newVersion = $this->incrementVersion(version: $previousVersion);
+		// Store the new version.
+		$this->appConfig->setValueString(
+			Application::APP_ID,
+			'export_version_' . $caseTypeId,
+			$newVersion
+		);
 
-        // Store the new version.
-        $this->appConfig->setValueString(
-            Application::APP_ID,
-            'export_version_'.$caseTypeId,
-            $newVersion
-        );
+		$excludedComponents = array_values(array_diff(self::COMPONENTS, $components));
 
-        $excludedComponents = array_values(array_diff(self::COMPONENTS, $components));
+		$previousVersionValue = null;
+		if ($previousVersion !== '0.0') {
+			$previousVersionValue = $previousVersion;
+		}
 
-        $previousVersionValue = null;
-        if ($previousVersion !== '0.0') {
-            $previousVersionValue = $previousVersion;
-        }
+		return [
+			'version' => $newVersion,
+			'previousVersion' => $previousVersionValue,
+			'exportDate' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
+			'sourceEnvironment' => $this->appConfig->getValueString(
+				Application::APP_ID,
+				'environment_name',
+				'unknown'
+			),
+			'generator' => 'procest/' . $this->appConfig->getValueString(
+				'procest',
+				'installed_version',
+				'unknown'
+			),
+			'caseType' => [
+				'id' => $caseTypeId,
+				'slug' => $caseTypeId,
+			],
+			'components' => $components,
+			'excludedComponents' => $excludedComponents,
+			'dependencies' => [],
+		];
+	}//end buildManifest()
 
-        return [
-            'version'            => $newVersion,
-            'previousVersion'    => $previousVersionValue,
-            'exportDate'         => (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-            'sourceEnvironment'  => $this->appConfig->getValueString(
-                Application::APP_ID,
-                'environment_name',
-                'unknown'
-            ),
-            'generator'          => 'procest/'.$this->appConfig->getValueString(
-                'procest',
-                'installed_version',
-                'unknown'
-            ),
-            'caseType'           => [
-                'id'   => $caseTypeId,
-                'slug' => $caseTypeId,
-            ],
-            'components'         => $components,
-            'excludedComponents' => $excludedComponents,
-            'dependencies'       => [],
-        ];
-    }//end buildManifest()
+	/**
+	 * Export a single component.
+	 *
+	 * @param string $caseTypeId The case type ID.
+	 * @param string $component The component name.
+	 *
+	 * @return array<string, mixed>|null The component data, or null if empty.
+	 */
+	private function exportComponent(string $caseTypeId, string $component): ?array {
+		// Placeholder: in a full implementation, this would query OpenRegister
+		// for the actual data. For now, return structured placeholders that
+		// demonstrate the expected format.
+		return match ($component) {
+			'schema' => [
+				'caseTypeId' => $caseTypeId,
+				'fields' => [],
+				'validations' => [],
+			],
+			'statuses' => [
+				'statusTypes' => [],
+				'transitions' => [],
+			],
+			'permissions' => [
+				'roles' => [],
+				'rules' => [],
+			],
+			'documents' => [
+				'documentTypes' => [],
+				'templates' => [],
+			],
+			'metadata' => [
+				'resultTypes' => [],
+				'decisionTypes' => [],
+			],
+			'workflows' => [],
+			default => null,
+		};//end match
+	}//end exportComponent()
 
-    /**
-     * Export a single component.
-     *
-     * @param string $caseTypeId The case type ID.
-     * @param string $component  The component name.
-     *
-     * @return array<string, mixed>|null The component data, or null if empty.
-     */
-    private function exportComponent(string $caseTypeId, string $component): ?array
-    {
-        // Placeholder: in a full implementation, this would query OpenRegister
-        // for the actual data. For now, return structured placeholders that
-        // demonstrate the expected format.
-        return match ($component) {
-            'schema' => [
-                'caseTypeId'  => $caseTypeId,
-                'fields'      => [],
-                'validations' => [],
-            ],
-            'statuses' => [
-                'statusTypes' => [],
-                'transitions' => [],
-            ],
-            'permissions' => [
-                'roles' => [],
-                'rules' => [],
-            ],
-            'documents' => [
-                'documentTypes' => [],
-                'templates'     => [],
-            ],
-            'metadata' => [
-                'resultTypes'   => [],
-                'decisionTypes' => [],
-            ],
-            'workflows' => [],
-            default => null,
-        };//end match
-    }//end exportComponent()
+	/**
+	 * Increment a version string (e.g., "1.0" -> "1.1").
+	 *
+	 * @param string $version The current version string.
+	 *
+	 * @return string The incremented version string.
+	 */
+	private function incrementVersion(string $version): string {
+		$parts = explode('.', $version);
+		$major = (int)($parts[0] ?? 1);
+		$minor = (int)($parts[1] ?? 0);
 
-    /**
-     * Increment a version string (e.g., "1.0" -> "1.1").
-     *
-     * @param string $version The current version string.
-     *
-     * @return string The incremented version string.
-     */
-    private function incrementVersion(string $version): string
-    {
-        $parts = explode('.', $version);
-        $major = (int) ($parts[0] ?? 1);
-        $minor = (int) ($parts[1] ?? 0);
-
-        return sprintf(self::VERSION_FORMAT, $major, $minor + 1);
-    }//end incrementVersion()
+		return sprintf(self::VERSION_FORMAT, $major, $minor + 1);
+	}//end incrementVersion()
 }//end class

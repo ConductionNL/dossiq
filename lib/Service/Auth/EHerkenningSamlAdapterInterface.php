@@ -55,24 +55,23 @@ use RuntimeException;
  *  4. DI binding for `EHerkenningSamlAdapterInterface` swapped from
  *     {@see LogEHerkenningSamlAdapter} to the active implementation.
  */
-interface EHerkenningSamlAdapterInterface
-{
-    /**
-     * Decode a SAML response from the eHerkenning broker.
-     *
-     * @param string $samlResponse Base64-encoded SAML XML response received from the broker callback.
-     * @param string $relayState   Original RelayState string (CSRF / cross-window correlation).
-     *
-     * @return BrokerAssertionResult Decoded assertion containing the supplier KvK number.
-     *
-     * @throws RuntimeException When the broker is not configured, the signature is invalid, or no KvK claim is present.
-     */
-    public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult;
+interface EHerkenningSamlAdapterInterface {
+	/**
+	 * Decode a SAML response from the eHerkenning broker.
+	 *
+	 * @param string $samlResponse Base64-encoded SAML XML response received from the broker callback.
+	 * @param string $relayState Original RelayState string (CSRF / cross-window correlation).
+	 *
+	 * @return BrokerAssertionResult Decoded assertion containing the supplier KvK number.
+	 *
+	 * @throws RuntimeException When the broker is not configured, the signature is invalid, or no KvK claim is present.
+	 */
+	public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult;
 
-    /**
-     * Whether the live eHerkenning broker is enabled by the operator.
-     *
-     * @return bool True when `eherkenning.feature_flag` is `1`.
-     */
-    public function isActive(): bool;
+	/**
+	 * Whether the live eHerkenning broker is enabled by the operator.
+	 *
+	 * @return bool True when `eherkenning.feature_flag` is `1`.
+	 */
+	public function isActive(): bool;
 }//end interface

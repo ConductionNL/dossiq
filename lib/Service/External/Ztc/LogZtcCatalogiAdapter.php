@@ -38,89 +38,86 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-class LogZtcCatalogiAdapter implements ZtcCatalogiAdapterInterface
-{
-    /**
-     * Construct the log-backed ZTC adapter.
-     *
-     * @param LoggerInterface $logger Structured logger.
-     */
-    public function __construct(private readonly LoggerInterface $logger)
-    {
-    }//end __construct()
+class LogZtcCatalogiAdapter implements ZtcCatalogiAdapterInterface {
+	/**
+	 * Construct the log-backed ZTC adapter.
+	 *
+	 * @param LoggerInterface $logger Structured logger.
+	 */
+	public function __construct(
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Log the resolve intent + synthesise a LOOKUP_DEFERRED result.
-     *
-     * @param string              $zaaktypeId         Receiver-side identifier.
-     * @param string              $receiverSourceSlug openconnector Source slug.
-     * @param array<string,mixed> $context            Lookup context.
-     *
-     * @return ZtcResult The dispatch outcome.
-     */
-    public function resolveZaakType(string $zaaktypeId, string $receiverSourceSlug, array $context=[]): ZtcResult
-    {
-        $this->logger->info(
-            'Procest ZTC resolveZaakType deferred (no outbound connector bound)',
-            [
-                'zaaktypeIdentificatie' => $zaaktypeId,
-                'receiverSourceSlug'    => $receiverSourceSlug,
-                'context'               => $context,
-            ]
-        );
+	/**
+	 * Log the resolve intent + synthesise a LOOKUP_DEFERRED result.
+	 *
+	 * @param string $zaaktypeId Receiver-side identifier.
+	 * @param string $receiverSourceSlug openconnector Source slug.
+	 * @param array<string,mixed> $context Lookup context.
+	 *
+	 * @return ZtcResult The dispatch outcome.
+	 */
+	public function resolveZaakType(string $zaaktypeId, string $receiverSourceSlug, array $context = []): ZtcResult {
+		$this->logger->info(
+			'Procest ZTC resolveZaakType deferred (no outbound connector bound)',
+			[
+				'zaaktypeIdentificatie' => $zaaktypeId,
+				'receiverSourceSlug' => $receiverSourceSlug,
+				'context' => $context,
+			]
+		);
 
-        return new ZtcResult(
-            outcome: 'LOOKUP_DEFERRED',
-            url: '',
-            dormant: true,
-            extras: [
-                'reason'             => 'no-outbound-connector-bound',
-                'note'               => 'Bind openconnector source slug `ztc-catalogi` (per-receiver JWT + catalogi.lezen scope) '
-                    .'and override ZtcCatalogiAdapterInterface in Application::register() to enable real ZaakType resolution.',
-                'receiverSourceSlug' => $receiverSourceSlug,
-            ],
-        );
-    }//end resolveZaakType()
+		return new ZtcResult(
+			outcome: 'LOOKUP_DEFERRED',
+			url: '',
+			dormant: true,
+			extras: [
+				'reason' => 'no-outbound-connector-bound',
+				'note' => 'Bind openconnector source slug `ztc-catalogi` (per-receiver JWT + catalogi.lezen scope) '
+					. 'and override ZtcCatalogiAdapterInterface in Application::register() to enable real ZaakType resolution.',
+				'receiverSourceSlug' => $receiverSourceSlug,
+			],
+		);
+	}//end resolveZaakType()
 
-    /**
-     * Log the import intent + synthesise an IMPORT_DEFERRED result.
-     *
-     * @param string              $zaaktypeUrl Receiver-side URL.
-     * @param array<string,mixed> $context     Import context.
-     *
-     * @return ZtcResult The dispatch outcome.
-     */
-    public function importZaakType(string $zaaktypeUrl, array $context=[]): ZtcResult
-    {
-        $this->logger->info(
-            'Procest ZTC importZaakType deferred (no outbound connector bound)',
-            [
-                'zaaktypeUrl' => $zaaktypeUrl,
-                'context'     => $context,
-            ]
-        );
+	/**
+	 * Log the import intent + synthesise an IMPORT_DEFERRED result.
+	 *
+	 * @param string $zaaktypeUrl Receiver-side URL.
+	 * @param array<string,mixed> $context Import context.
+	 *
+	 * @return ZtcResult The dispatch outcome.
+	 */
+	public function importZaakType(string $zaaktypeUrl, array $context = []): ZtcResult {
+		$this->logger->info(
+			'Procest ZTC importZaakType deferred (no outbound connector bound)',
+			[
+				'zaaktypeUrl' => $zaaktypeUrl,
+				'context' => $context,
+			]
+		);
 
-        return new ZtcResult(
-            outcome: 'IMPORT_DEFERRED',
-            url: '',
-            dormant: true,
-            extras: [
-                'reason' => 'no-outbound-connector-bound',
-                'note'   => 'Bind openconnector source slug `ztc-catalogi` + catalogi.aanmaken scope '
-                    .'on the tenant-local Catalogi-API to enable cross-tenant ZaakType import.',
-            ],
-        );
-    }//end importZaakType()
+		return new ZtcResult(
+			outcome: 'IMPORT_DEFERRED',
+			url: '',
+			dormant: true,
+			extras: [
+				'reason' => 'no-outbound-connector-bound',
+				'note' => 'Bind openconnector source slug `ztc-catalogi` + catalogi.aanmaken scope '
+					. 'on the tenant-local Catalogi-API to enable cross-tenant ZaakType import.',
+			],
+		);
+	}//end importZaakType()
 
-    /**
-     * Whether this adapter is a dormant no-op log adapter.
-     *
-     * @inheritDoc
-     *
-     * @return bool
-     */
-    public function isDormant(): bool
-    {
-        return true;
-    }//end isDormant()
+	/**
+	 * Whether this adapter is a dormant no-op log adapter.
+	 *
+	 * @inheritDoc
+	 *
+	 * @return bool
+	 */
+	public function isDormant(): bool {
+		return true;
+	}//end isDormant()
 }//end class

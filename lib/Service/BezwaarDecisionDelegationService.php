@@ -41,55 +41,53 @@ namespace OCA\Procest\Service;
  *
  * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
-class BezwaarDecisionDelegationService
-{
-    /**
-     * Constructor.
-     *
-     * @param ContractDecisionDelegationService $core Shared event-dispatch raiseDecision core.
-     */
-    public function __construct(
-        private readonly ContractDecisionDelegationService $core,
-    ) {
-    }//end __construct()
+class BezwaarDecisionDelegationService {
+	/**
+	 * Constructor.
+	 *
+	 * @param ContractDecisionDelegationService $core Shared event-dispatch raiseDecision core.
+	 */
+	public function __construct(
+		private readonly ContractDecisionDelegationService $core,
+	) {
+	}//end __construct()
 
-    /**
-     * Raise a decidesk `bezwaar-decision` Decision for a beslissing op bezwaar.
-     *
-     * The caller (Bezwaar/DecisionService) MUST have run the Awb validity
-     * matrix (7:11 disposition set, 7:12 reasoning+legalBasis, proceskosten,
-     * replacement guard) BEFORE invoking this — the domain rules stay in
-     * procest. FAILS CLOSED when decidesk is unavailable.
-     *
-     * @param string              $bezwaarId The bezwaar/case reference (UUID) persisted on the decidesk Decision.
-     * @param array<string,mixed> $payload   Decision payload: disposition, reasoning, legalBasis,
-     *                                       replacementDecision, subjectLabel, subjectRegister,
-     *                                       subjectSchema, subjectId.
-     *
-     * @return string The decidesk decisionRef (UUID) to persist on the case.
-     *
-     * @throws \RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
-     *
-     * @spec openspec/specs/remaining-decision-delegation/spec.md
-     * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
-     */
-    public function raiseBezwaarDecision(string $bezwaarId, array $payload): string
-    {
-        return $this->core->raiseDecision(
-            decisionType: ContractDecisionDelegationService::DECISION_TYPE_BEZWAAR_DECISION,
-            externalReference: $bezwaarId,
-            subject: [
-                'subjectRegister' => (string) ($payload['subjectRegister'] ?? ''),
-                'subjectSchema'   => (string) ($payload['subjectSchema'] ?? 'bezwaarDecision'),
-                'subjectId'       => (string) ($payload['subjectId'] ?? $bezwaarId),
-                'subjectLabel'    => (string) ($payload['subjectLabel'] ?? ''),
-            ],
-            context: [
-                'disposition'         => (string) ($payload['dispositionType'] ?? ($payload['disposition'] ?? '')),
-                'reasoning'           => (string) ($payload['reasoning'] ?? ''),
-                'legalBasis'          => (string) ($payload['legalBasis'] ?? ''),
-                'replacementDecision' => (string) ($payload['replacementDecision'] ?? ''),
-            ],
-        );
-    }//end raiseBezwaarDecision()
+	/**
+	 * Raise a decidesk `bezwaar-decision` Decision for a beslissing op bezwaar.
+	 *
+	 * The caller (Bezwaar/DecisionService) MUST have run the Awb validity
+	 * matrix (7:11 disposition set, 7:12 reasoning+legalBasis, proceskosten,
+	 * replacement guard) BEFORE invoking this — the domain rules stay in
+	 * procest. FAILS CLOSED when decidesk is unavailable.
+	 *
+	 * @param string $bezwaarId The bezwaar/case reference (UUID) persisted on the decidesk Decision.
+	 * @param array<string,mixed> $payload Decision payload: disposition, reasoning, legalBasis,
+	 *                                     replacementDecision, subjectLabel, subjectRegister,
+	 *                                     subjectSchema, subjectId.
+	 *
+	 * @return string The decidesk decisionRef (UUID) to persist on the case.
+	 *
+	 * @throws \RuntimeException When the decidesk leaf is unavailable or the Decision could not be created.
+	 *
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md
+	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
+	 */
+	public function raiseBezwaarDecision(string $bezwaarId, array $payload): string {
+		return $this->core->raiseDecision(
+			decisionType: ContractDecisionDelegationService::DECISION_TYPE_BEZWAAR_DECISION,
+			externalReference: $bezwaarId,
+			subject: [
+				'subjectRegister' => (string)($payload['subjectRegister'] ?? ''),
+				'subjectSchema' => (string)($payload['subjectSchema'] ?? 'bezwaarDecision'),
+				'subjectId' => (string)($payload['subjectId'] ?? $bezwaarId),
+				'subjectLabel' => (string)($payload['subjectLabel'] ?? ''),
+			],
+			context: [
+				'disposition' => (string)($payload['dispositionType'] ?? ($payload['disposition'] ?? '')),
+				'reasoning' => (string)($payload['reasoning'] ?? ''),
+				'legalBasis' => (string)($payload['legalBasis'] ?? ''),
+				'replacementDecision' => (string)($payload['replacementDecision'] ?? ''),
+			],
+		);
+	}//end raiseBezwaarDecision()
 }//end class

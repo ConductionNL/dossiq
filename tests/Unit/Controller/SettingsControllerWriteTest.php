@@ -47,139 +47,127 @@ use Psr\Container\ContainerInterface;
  *
  * @covers \OCA\Procest\Controller\SettingsController
  */
-class SettingsControllerWriteTest extends TestCase
-{
+class SettingsControllerWriteTest extends TestCase {
 
-    /**
-     * The mocked request.
-     *
-     * @var IRequest|MockObject
-     */
-    private IRequest $request;
+	/**
+	 * The mocked request.
+	 *
+	 * @var IRequest|MockObject
+	 */
+	private IRequest $request;
 
-    /**
-     * The mocked settings service.
-     *
-     * @var SettingsService|MockObject
-     */
-    private SettingsService $settingsService;
+	/**
+	 * The mocked settings service.
+	 *
+	 * @var SettingsService|MockObject
+	 */
+	private SettingsService $settingsService;
 
+	/**
+	 * Build the controller under test with the collaborators mocked.
+	 *
+	 * @return SettingsController The controller under test.
+	 */
+	private function controller(): SettingsController {
+		return new SettingsController(
+			request: $this->request,
+			container: $this->createMock(ContainerInterface::class),
+			appManager: $this->createMock(IAppManager::class),
+			settingsService: $this->settingsService,
+			groupManager: $this->createMock(IGroupManager::class),
+			userSession: $this->createMock(IUserSession::class),
+			l10n: $this->createMock(IL10N::class)
+		);
+	}//end controller()
 
-    /**
-     * Build the controller under test with the collaborators mocked.
-     *
-     * @return SettingsController The controller under test.
-     */
-    private function controller(): SettingsController
-    {
-        return new SettingsController(
-            request: $this->request,
-            container: $this->createMock(ContainerInterface::class),
-            appManager: $this->createMock(IAppManager::class),
-            settingsService: $this->settingsService,
-            groupManager: $this->createMock(IGroupManager::class),
-            userSession: $this->createMock(IUserSession::class),
-            l10n: $this->createMock(IL10N::class)
-        );
-    }//end controller()
+	/**
+	 * Set up the mocks shared by every test.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
 
+		$this->request = $this->createMock(IRequest::class);
+		$this->settingsService = $this->createMock(SettingsService::class);
+	}//end setUp()
 
-    /**
-     * Set up the mocks shared by every test.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
+	/**
+	 * PUT /api/settings must persist the request parameters and return them.
+	 *
+	 * @return void
+	 */
+	public function testUpdatePersistsTheRequestParametersAndReturnsTheStoredConfig(): void {
+		$submitted = ['lhsMatrix' => '{"a":1}'];
+		$stored = ['lhsMatrix' => '{"a":1}', 'other' => 'untouched'];
 
-        $this->request         = $this->createMock(IRequest::class);
-        $this->settingsService = $this->createMock(SettingsService::class);
-    }//end setUp()
+		$this->request->method('getParams')->willReturn($submitted);
 
+		// The ITEM: the write reaches the service, with the submitted params.
+		$this->settingsService->expects($this->once())
+			->method('updateSettings')
+			->with($submitted)
+			->willReturn($stored);
 
-    /**
-     * PUT /api/settings must persist the request parameters and return them.
-     *
-     * @return void
-     */
-    public function testUpdatePersistsTheRequestParametersAndReturnsTheStoredConfig(): void
-    {
-        $submitted = ['lhsMatrix' => '{"a":1}'];
-        $stored    = ['lhsMatrix' => '{"a":1}', 'other' => 'untouched'];
+		$response = $this->controller()->update();
 
-        $this->request->method('getParams')->willReturn($submitted);
+		$this->assertSame(
+			['success' => true, 'config' => $stored],
+			$response->getData(),
+			'update() must return the config the service actually stored, not the submission'
+		);
+	}//end testUpdatePersistsTheRequestParametersAndReturnsTheStoredConfig()
 
-        // The ITEM: the write reaches the service, with the submitted params.
-        $this->settingsService->expects($this->once())
-            ->method('updateSettings')
-            ->with($submitted)
-            ->willReturn($stored);
+	/**
+	 * POST /api/settings is a legacy alias and must write identically.
+	 *
+	 * Three procest views still POST to this route, so the alias staying a
+	 * real write — not an empty success — is load-bearing.
+	 *
+	 * @return void
+	 */
+	public function testCreateDelegatesToUpdateAndStillWrites(): void {
+		$submitted = ['kccEnabled' => true];
+		$stored = ['kccEnabled' => true];
 
-        $response = $this->controller()->update();
+		$this->request->method('getParams')->willReturn($submitted);
 
-        $this->assertSame(
-            ['success' => true, 'config' => $stored],
-            $response->getData(),
-            'update() must return the config the service actually stored, not the submission'
-        );
-    }//end testUpdatePersistsTheRequestParametersAndReturnsTheStoredConfig()
+		$this->settingsService->expects($this->once())
+			->method('updateSettings')
+			->with($submitted)
+			->willReturn($stored);
 
+		$response = $this->controller()->create();
 
-    /**
-     * POST /api/settings is a legacy alias and must write identically.
-     *
-     * Three procest views still POST to this route, so the alias staying a
-     * real write — not an empty success — is load-bearing.
-     *
-     * @return void
-     */
-    public function testCreateDelegatesToUpdateAndStillWrites(): void
-    {
-        $submitted = ['kccEnabled' => true];
-        $stored    = ['kccEnabled' => true];
+		$this->assertSame(
+			['success' => true, 'config' => $stored],
+			$response->getData(),
+			'create() must produce the same written result as update()'
+		);
+	}//end testCreateDelegatesToUpdateAndStillWrites()
 
-        $this->request->method('getParams')->willReturn($submitted);
+	/**
+	 * The write must not be skipped when the submission is empty.
+	 *
+	 * An early return on an empty payload would look identical to a
+	 * successful no-op write from the caller's side.
+	 *
+	 * @return void
+	 */
+	public function testEmptySubmissionStillReachesTheService(): void {
+		$this->request->method('getParams')->willReturn([]);
 
-        $this->settingsService->expects($this->once())
-            ->method('updateSettings')
-            ->with($submitted)
-            ->willReturn($stored);
+		$this->settingsService->expects($this->once())
+			->method('updateSettings')
+			->with([])
+			->willReturn(['unchanged' => true]);
 
-        $response = $this->controller()->create();
+		$response = $this->controller()->update();
 
-        $this->assertSame(
-            ['success' => true, 'config' => $stored],
-            $response->getData(),
-            'create() must produce the same written result as update()'
-        );
-    }//end testCreateDelegatesToUpdateAndStillWrites()
-
-
-    /**
-     * The write must not be skipped when the submission is empty.
-     *
-     * An early return on an empty payload would look identical to a
-     * successful no-op write from the caller's side.
-     *
-     * @return void
-     */
-    public function testEmptySubmissionStillReachesTheService(): void
-    {
-        $this->request->method('getParams')->willReturn([]);
-
-        $this->settingsService->expects($this->once())
-            ->method('updateSettings')
-            ->with([])
-            ->willReturn(['unchanged' => true]);
-
-        $response = $this->controller()->update();
-
-        $this->assertSame(
-            ['success' => true, 'config' => ['unchanged' => true]],
-            $response->getData()
-        );
-    }//end testEmptySubmissionStillReachesTheService()
-
+		$this->assertSame(
+			['success' => true, 'config' => ['unchanged' => true]],
+			$response->getData()
+		);
+	}//end testEmptySubmissionStillReachesTheService()
 
 }//end class

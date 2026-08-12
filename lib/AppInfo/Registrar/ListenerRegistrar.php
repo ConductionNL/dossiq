@@ -38,28 +38,26 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @spec openspec/specs/bezwaar-lifecycle/spec.md
  */
-class ListenerRegistrar
-{
-    /**
-     * Register every procest event listener.
-     *
-     * The bezwaar listeners that declare a register/schema interest are NOT
-     * registered here — they are subscribed from boot() by
-     * {@see BezwaarSubscriptionRegistrar}, because the OpenRegister
-     * `ObjectEventSubscription` guard only resolves once every app's register()
-     * has run.
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/bezwaar-lifecycle/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        (new ObjectListenerRegistrar())->register(context: $context);
-        (new ImmutabilityListenerRegistrar())->register(context: $context);
-        (new BezwaarListenerRegistrar())->register(context: $context);
-        (new WorkflowListenerRegistrar())->register(context: $context);
-    }//end register()
+class ListenerRegistrar {
+	/**
+	 * Register every procest event listener.
+	 *
+	 * The bezwaar listeners that declare a register/schema interest are NOT
+	 * registered here — they are subscribed from boot() by
+	 * {@see BezwaarSubscriptionRegistrar}, because the OpenRegister
+	 * `ObjectEventSubscription` guard only resolves once every app's register()
+	 * has run.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/bezwaar-lifecycle/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		(new ObjectListenerRegistrar())->register(context: $context);
+		(new ImmutabilityListenerRegistrar())->register(context: $context);
+		(new BezwaarListenerRegistrar())->register(context: $context);
+		(new WorkflowListenerRegistrar())->register(context: $context);
+	}//end register()
 }//end class

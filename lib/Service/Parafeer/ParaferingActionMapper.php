@@ -42,124 +42,120 @@ namespace OCA\Procest\Service\Parafeer;
  *
  * @psalm-suppress UnusedClass
  */
-class ParaferingActionMapper
-{
-    /**
-     * Normalize the request payload into the five action inputs.
-     *
-     * @param array<string, mixed> $data Request payload (action, comment, advice, onBehalfOf, mandate).
-     *
-     * @return array<string, mixed> {action, comment, advice, onBehalfOf, mandate}
-     *
-     * @spec openspec/specs/parafering-actions/spec.md
-     */
-    public function parseActionInput(array $data): array
-    {
-        $onBehalfOf = null;
-        if (isset($data['onBehalfOf']) === true && $data['onBehalfOf'] !== '') {
-            $onBehalfOf = (string) $data['onBehalfOf'];
-        }
+class ParaferingActionMapper {
+	/**
+	 * Normalize the request payload into the five action inputs.
+	 *
+	 * @param array<string, mixed> $data Request payload (action, comment, advice, onBehalfOf, mandate).
+	 *
+	 * @return array<string, mixed> {action, comment, advice, onBehalfOf, mandate}
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function parseActionInput(array $data): array {
+		$onBehalfOf = null;
+		if (isset($data['onBehalfOf']) === true && $data['onBehalfOf'] !== '') {
+			$onBehalfOf = (string)$data['onBehalfOf'];
+		}
 
-        $mandate = null;
-        if (isset($data['mandate']) === true && $data['mandate'] !== '') {
-            $mandate = (string) $data['mandate'];
-        }
+		$mandate = null;
+		if (isset($data['mandate']) === true && $data['mandate'] !== '') {
+			$mandate = (string)$data['mandate'];
+		}
 
-        return [
-            'action'     => (string) ($data['action'] ?? ''),
-            'comment'    => trim((string) ($data['comment'] ?? '')),
-            'advice'     => trim((string) ($data['advice'] ?? '')),
-            'onBehalfOf' => $onBehalfOf,
-            'mandate'    => $mandate,
-        ];
-    }//end parseActionInput()
+		return [
+			'action' => (string)($data['action'] ?? ''),
+			'comment' => trim((string)($data['comment'] ?? '')),
+			'advice' => trim((string)($data['advice'] ?? '')),
+			'onBehalfOf' => $onBehalfOf,
+			'mandate' => $mandate,
+		];
+	}//end parseActionInput()
 
-    /**
-     * Build the parafeeractie payload, omitting the optional fields that are unset.
-     *
-     * @param string               $voorstelId The voorstel UUID.
-     * @param int                  $stepOrder  The step order this action applies to.
-     * @param string               $actor      The acting user id (from IUserSession, never the body).
-     * @param array<string, mixed> $input      The parsed action inputs.
-     *
-     * @return array<string, mixed> The parafeeractie object payload.
-     *
-     * @spec openspec/specs/parafering-actions/spec.md
-     */
-    public function buildActieData(string $voorstelId, int $stepOrder, string $actor, array $input): array
-    {
-        $actieData = [
-            'voorstel'  => $voorstelId,
-            'step'      => $stepOrder,
-            'actor'     => $actor,
-            'actorType' => 'user',
-            'action'    => (string) $input['action'],
-        ];
+	/**
+	 * Build the parafeeractie payload, omitting the optional fields that are unset.
+	 *
+	 * @param string $voorstelId The voorstel UUID.
+	 * @param int $stepOrder The step order this action applies to.
+	 * @param string $actor The acting user id (from IUserSession, never the body).
+	 * @param array<string, mixed> $input The parsed action inputs.
+	 *
+	 * @return array<string, mixed> The parafeeractie object payload.
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function buildActieData(string $voorstelId, int $stepOrder, string $actor, array $input): array {
+		$actieData = [
+			'voorstel' => $voorstelId,
+			'step' => $stepOrder,
+			'actor' => $actor,
+			'actorType' => 'user',
+			'action' => (string)$input['action'],
+		];
 
-        if ($input['onBehalfOf'] !== null) {
-            $actieData['actorType']  = 'delegate';
-            $actieData['onBehalfOf'] = $input['onBehalfOf'];
-        }
+		if ($input['onBehalfOf'] !== null) {
+			$actieData['actorType'] = 'delegate';
+			$actieData['onBehalfOf'] = $input['onBehalfOf'];
+		}
 
-        if ($input['mandate'] !== null) {
-            $actieData['mandate'] = $input['mandate'];
-        }
+		if ($input['mandate'] !== null) {
+			$actieData['mandate'] = $input['mandate'];
+		}
 
-        if ($input['comment'] !== '') {
-            $actieData['comment'] = $input['comment'];
-        }
+		if ($input['comment'] !== '') {
+			$actieData['comment'] = $input['comment'];
+		}
 
-        if ($input['advice'] !== '') {
-            $actieData['advice'] = $input['advice'];
-        }
+		if ($input['advice'] !== '') {
+			$actieData['advice'] = $input['advice'];
+		}
 
-        return $actieData;
-    }//end buildActieData()
+		return $actieData;
+	}//end buildActieData()
 
-    /**
-     * Find the lowest-ordered route step after the current one.
-     *
-     * Accepts the raw routeSnapshot (JSON string or array) and normalizes it.
-     *
-     * @param mixed $snapshotRaw The raw routeSnapshot value.
-     * @param int   $currentStep The current step order.
-     *
-     * @return array<string, mixed>|null {order, type}, or null when the route is finished.
-     *
-     * @spec openspec/specs/parafering-actions/spec.md
-     */
-    public function findNextRouteStep(mixed $snapshotRaw, int $currentStep): ?array
-    {
-        $steps = $snapshotRaw;
-        if (is_string($snapshotRaw) === true) {
-            $steps = json_decode($snapshotRaw, true);
-        }
+	/**
+	 * Find the lowest-ordered route step after the current one.
+	 *
+	 * Accepts the raw routeSnapshot (JSON string or array) and normalizes it.
+	 *
+	 * @param mixed $snapshotRaw The raw routeSnapshot value.
+	 * @param int $currentStep The current step order.
+	 *
+	 * @return array<string, mixed>|null {order, type}, or null when the route is finished.
+	 *
+	 * @spec openspec/specs/parafering-actions/spec.md
+	 */
+	public function findNextRouteStep(mixed $snapshotRaw, int $currentStep): ?array {
+		$steps = $snapshotRaw;
+		if (is_string($snapshotRaw) === true) {
+			$steps = json_decode($snapshotRaw, true);
+		}
 
-        if (is_array($steps) === false) {
-            $steps = [];
-        }
+		if (is_array($steps) === false) {
+			$steps = [];
+		}
 
-        $nextStep     = null;
-        $nextStepType = null;
-        foreach ($steps as $step) {
-            if (is_array($step) === false) {
-                continue;
-            }
+		$nextStep = null;
+		$nextStepType = null;
+		foreach ($steps as $step) {
+			if (is_array($step) === false) {
+				continue;
+			}
 
-            $order = (int) ($step['order'] ?? 0);
-            if ($order > $currentStep && ($nextStep === null || $order < $nextStep)) {
-                $nextStep     = $order;
-                $nextStepType = (string) ($step['type'] ?? '');
-            }
-        }
+			$order = (int)($step['order'] ?? 0);
+			if ($order > $currentStep && ($nextStep === null || $order < $nextStep)) {
+				$nextStep = $order;
+				$nextStepType = (string)($step['type'] ?? '');
+			}
+		}
 
-        if ($nextStep === null) {
-            return null;
-        }
+		if ($nextStep === null) {
+			return null;
+		}
 
-        return [
-            'order' => $nextStep,
-            'type'  => $nextStepType,
-        ];
-    }//end findNextRouteStep()
+		return [
+			'order' => $nextStep,
+			'type' => $nextStepType,
+		];
+	}//end findNextRouteStep()
 }//end class

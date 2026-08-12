@@ -46,184 +46,177 @@ use RuntimeException;
  *
  * @spec openspec/changes/case-email-integration/tasks.md#T04
  */
-class EmailTemplateRepository
-{
+class EmailTemplateRepository {
 
-    use SearchesObjects;
+	use SearchesObjects;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Shared OR/settings resolver.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Shared OR/settings resolver.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+	) {
+	}//end __construct()
 
-    /**
-     * List the active templates for a caseType.
-     *
-     * @param string $caseTypeId CaseType id/slug.
-     *
-     * @return array<int, array<string, mixed>>
-     *
-     * @spec openspec/changes/case-email-integration/tasks.md#T04
-     */
-    public function findActiveByCaseType(string $caseTypeId): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return [];
-        }
+	/**
+	 * List the active templates for a caseType.
+	 *
+	 * @param string $caseTypeId CaseType id/slug.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 */
+	public function findActiveByCaseType(string $caseTypeId): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return [];
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_template_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            return [];
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('email_template_schema');
+		if (empty($register) === true || empty($schema) === true) {
+			return [];
+		}
 
-        $rows = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $schema,
-            filters: [
-                'caseType' => $caseTypeId,
-                '_limit'   => 100,
-            ],
-        );
+		$rows = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $schema,
+			filters: [
+				'caseType' => $caseTypeId,
+				'_limit' => 100,
+			],
+		);
 
-        return array_values(
-            array_filter(
-                $rows,
-                static fn (array $row): bool => ($row['isActive'] ?? true) === true
-            )
-        );
-    }//end findActiveByCaseType()
+		return array_values(
+			array_filter(
+				$rows,
+				static fn (array $row): bool => ($row['isActive'] ?? true) === true
+			)
+		);
+	}//end findActiveByCaseType()
 
-    /**
-     * Persist (insert OR update) a template payload via OpenRegister.
-     *
-     * @param array<string, mixed> $payload Template fields.
-     *
-     * @return array<string, mixed> The saved object, or the payload when OR
-     *                              returns an unusable shape.
-     *
-     * @throws RuntimeException When OpenRegister is unavailable or the
-     *                          emailTemplate schema is not configured.
-     *
-     * @spec openspec/changes/case-email-integration/tasks.md#T04
-     */
-    public function saveTemplate(array $payload): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('ObjectService unavailable');
-        }
+	/**
+	 * Persist (insert OR update) a template payload via OpenRegister.
+	 *
+	 * @param array<string, mixed> $payload Template fields.
+	 *
+	 * @return array<string, mixed> The saved object, or the payload when OR
+	 *                              returns an unusable shape.
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable or the
+	 *                          emailTemplate schema is not configured.
+	 *
+	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 */
+	public function saveTemplate(array $payload): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('ObjectService unavailable');
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('email_template_schema');
-        if (empty($register) === true || empty($schema) === true) {
-            throw new RuntimeException('emailTemplate schema is not configured');
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('email_template_schema');
+		if (empty($register) === true || empty($schema) === true) {
+			throw new RuntimeException('emailTemplate schema is not configured');
+		}
 
-        $saved = $objectService->saveObject(
-            object: $payload,
-            register: $register,
-            schema: $schema,
-        );
+		$saved = $objectService->saveObject(
+			object: $payload,
+			register: $register,
+			schema: $schema,
+		);
 
-        $saved = $this->toArrayOrNull(value: $saved);
-        if ($saved === null) {
-            return $payload;
-        }
+		$saved = $this->toArrayOrNull(value: $saved);
+		if ($saved === null) {
+			return $payload;
+		}
 
-        return $saved;
-    }//end saveTemplate()
+		return $saved;
+	}//end saveTemplate()
 
-    /**
-     * Load a template by id/slug.
-     *
-     * @param string $templateId Template id.
-     *
-     * @return array<string, mixed>|null Null when unconfigured, unavailable or unknown.
-     *
-     * @spec openspec/changes/case-email-integration/tasks.md#T04
-     */
-    public function findTemplate(string $templateId): ?array
-    {
-        return $this->findIn(configKey: 'email_template_schema', id: $templateId);
-    }//end findTemplate()
+	/**
+	 * Load a template by id/slug.
+	 *
+	 * @param string $templateId Template id.
+	 *
+	 * @return array<string, mixed>|null Null when unconfigured, unavailable or unknown.
+	 *
+	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 */
+	public function findTemplate(string $templateId): ?array {
+		return $this->findIn(configKey: 'email_template_schema', id: $templateId);
+	}//end findTemplate()
 
-    /**
-     * Load a case, with the derived `_isFinal` flag merged in.
-     *
-     * @param string $caseId Case UUID.
-     *
-     * @return array<string, mixed>|null Null when unconfigured, unavailable or unknown.
-     *
-     * @spec openspec/changes/case-email-integration/tasks.md#T04
-     */
-    public function findCase(string $caseId): ?array
-    {
-        $case = $this->findIn(configKey: 'case_schema', id: $caseId);
-        if ($case === null) {
-            return null;
-        }
+	/**
+	 * Load a case, with the derived `_isFinal` flag merged in.
+	 *
+	 * @param string $caseId Case UUID.
+	 *
+	 * @return array<string, mixed>|null Null when unconfigured, unavailable or unknown.
+	 *
+	 * @spec openspec/changes/case-email-integration/tasks.md#T04
+	 */
+	public function findCase(string $caseId): ?array {
+		$case = $this->findIn(configKey: 'case_schema', id: $caseId);
+		if ($case === null) {
+			return null;
+		}
 
-        $case['_isFinal'] = (empty($case['endDate']) === false);
+		$case['_isFinal'] = (empty($case['endDate']) === false);
 
-        return $case;
-    }//end findCase()
+		return $case;
+	}//end findCase()
 
-    /**
-     * Fetch one object from the register schema behind the given config key.
-     *
-     * @param string $configKey The settings key naming the schema.
-     * @param string $id        The object id/slug.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function findIn(string $configKey, string $id): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
+	/**
+	 * Fetch one object from the register schema behind the given config key.
+	 *
+	 * @param string $configKey The settings key naming the schema.
+	 * @param string $id The object id/slug.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function findIn(string $configKey, string $id): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue($configKey);
-        if (empty($register) === true || empty($schema) === true) {
-            return null;
-        }
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue($configKey);
+		if (empty($register) === true || empty($schema) === true) {
+			return null;
+		}
 
-        try {
-            $obj = $objectService->find($id, register: $register, schema: $schema);
-        } catch (\Throwable) {
-            return null;
-        }
+		try {
+			$obj = $objectService->find($id, register: $register, schema: $schema);
+		} catch (\Throwable) {
+			return null;
+		}
 
-        return $this->toArrayOrNull(value: $obj);
-    }//end findIn()
+		return $this->toArrayOrNull(value: $obj);
+	}//end findIn()
 
-    /**
-     * Collapse OpenRegister's entity-or-array return shape into a plain array.
-     *
-     * @param mixed $value The value returned by the ObjectService.
-     *
-     * @return array<string, mixed>|null Null when the value is neither an array
-     *                                   nor a JSON-serialisable entity.
-     */
-    private function toArrayOrNull(mixed $value): ?array
-    {
-        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-            $value = $value->jsonSerialize();
-        }
+	/**
+	 * Collapse OpenRegister's entity-or-array return shape into a plain array.
+	 *
+	 * @param mixed $value The value returned by the ObjectService.
+	 *
+	 * @return array<string, mixed>|null Null when the value is neither an array
+	 *                                   nor a JSON-serialisable entity.
+	 */
+	private function toArrayOrNull(mixed $value): ?array {
+		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+			$value = $value->jsonSerialize();
+		}
 
-        if (is_array($value) === true) {
-            return $value;
-        }
+		if (is_array($value) === true) {
+			return $value;
+		}
 
-        return null;
-    }//end toArrayOrNull()
+		return null;
+	}//end toArrayOrNull()
 }//end class

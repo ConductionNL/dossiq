@@ -48,174 +48,167 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/avg-verwerkingenlogging/spec.md
  */
-class SeedVerwerkingsactiviteiten implements IRepairStep
-{
-    /**
-     * Path of the catalogue JSON, relative to this file.
-     *
-     * @var string
-     */
-    private const CATALOGUE_PATH = __DIR__.'/../Settings/verwerkingsactiviteiten.json';
+class SeedVerwerkingsactiviteiten implements IRepairStep {
+	/**
+	 * Path of the catalogue JSON, relative to this file.
+	 *
+	 * @var string
+	 */
+	private const CATALOGUE_PATH = __DIR__ . '/../Settings/verwerkingsactiviteiten.json';
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService    $settingsService OpenRegister availability check.
-     * @param ContainerInterface $container       DI container (lazy OR mapper resolution).
-     * @param LoggerInterface    $logger          Logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private SettingsService $settingsService,
-        private ContainerInterface $container,
-        private LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService OpenRegister availability check.
+	 * @param ContainerInterface $container DI container (lazy OR mapper resolution).
+	 * @param LoggerInterface $logger Logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private SettingsService $settingsService,
+		private ContainerInterface $container,
+		private LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Get the name of this repair step.
-     *
-     * @return string
-     *
-     * @spec openspec/specs/avg-verwerkingenlogging/spec.md
-     */
-    public function getName(): string
-    {
-        return 'Seed procest verwerkingsactiviteiten catalogue into OpenRegister (draft, upsert-by-code)';
+	/**
+	 * Get the name of this repair step.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/avg-verwerkingenlogging/spec.md
+	 */
+	public function getName(): string {
+		return 'Seed procest verwerkingsactiviteiten catalogue into OpenRegister (draft, upsert-by-code)';
+	}//end getName()
 
-    }//end getName()
+	/**
+	 * Seed the catalogue.
+	 *
+	 * @param IOutput $output Progress reporting.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/avg-verwerkingenlogging/spec.md
+	 */
+	public function run(IOutput $output): void {
+		if ($this->settingsService->isOpenRegisterAvailable() === false) {
+			$output->warning('OpenRegister is not installed or enabled. Skipping verwerkingsactiviteiten seed.');
+			$this->logger->warning('Procest: OpenRegister not available, skipping verwerkingsactiviteiten seed');
+			return;
+		}
 
-    /**
-     * Seed the catalogue.
-     *
-     * @param IOutput $output Progress reporting.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/avg-verwerkingenlogging/spec.md
-     */
-    public function run(IOutput $output): void
-    {
-        if ($this->settingsService->isOpenRegisterAvailable() === false) {
-            $output->warning('OpenRegister is not installed or enabled. Skipping verwerkingsactiviteiten seed.');
-            $this->logger->warning('Procest: OpenRegister not available, skipping verwerkingsactiviteiten seed');
-            return;
-        }
+		$activities = $this->loadCatalogue();
+		if ($activities === []) {
+			$output->warning('Procest verwerkingsactiviteiten catalogue is empty or unreadable; nothing seeded.');
+			return;
+		}
 
-        $activities = $this->loadCatalogue();
-        if ($activities === []) {
-            $output->warning('Procest verwerkingsactiviteiten catalogue is empty or unreadable; nothing seeded.');
-            return;
-        }
+		try {
+			$mapper = $this->container->get(VerwerkingsactiviteitMapper::class);
+		} catch (\Throwable $e) {
+			// Deployed OR predates the verwerkingsregister (< 0.2.16): skip
+			// gracefully — the seed re-runs on the next upgrade.
+			$output->warning('OpenRegister verwerkingsregister not available (OR < 0.2.16?); skipping seed.');
+			$this->logger->warning(
+				'Procest: VerwerkingsactiviteitMapper unavailable, skipping catalogue seed',
+				['exception' => $e->getMessage()]
+			);
+			return;
+		}
 
-        try {
-            $mapper = $this->container->get(VerwerkingsactiviteitMapper::class);
-        } catch (\Throwable $e) {
-            // Deployed OR predates the verwerkingsregister (< 0.2.16): skip
-            // gracefully — the seed re-runs on the next upgrade.
-            $output->warning('OpenRegister verwerkingsregister not available (OR < 0.2.16?); skipping seed.');
-            $this->logger->warning(
-                'Procest: VerwerkingsactiviteitMapper unavailable, skipping catalogue seed',
-                ['exception' => $e->getMessage()]
-            );
-            return;
-        }
+		$created = 0;
+		$updated = 0;
+		foreach ($activities as $definition) {
+			$code = (string)($definition['code'] ?? '');
+			if ($code === '') {
+				continue;
+			}
 
-        $created = 0;
-        $updated = 0;
-        foreach ($activities as $definition) {
-            $code = (string) ($definition['code'] ?? '');
-            if ($code === '') {
-                continue;
-            }
+			try {
+				$existing = $mapper->findByCode(code: $code);
+				if ($existing === null) {
+					$entity = new Verwerkingsactiviteit();
+					$entity->setCode($code);
+					$this->hydrate(entity: $entity, definition: $definition);
+					// Draft for FG review: OR defaults blank status to `concept`.
+					$mapper->insert(entity: $entity);
+					$created++;
+					continue;
+				}
 
-            try {
-                $existing = $mapper->findByCode(code: $code);
-                if ($existing === null) {
-                    $entity = new Verwerkingsactiviteit();
-                    $entity->setCode($code);
-                    $this->hydrate(entity: $entity, definition: $definition);
-                    // Draft for FG review: OR defaults blank status to `concept`.
-                    $mapper->insert(entity: $entity);
-                    $created++;
-                    continue;
-                }
+				// Refresh descriptive fields; NEVER touch lifecycle status —
+				// FG activation in OpenRegister survives procest upgrades.
+				$this->hydrate(entity: $existing, definition: $definition);
+				$mapper->update(entity: $existing);
+				$updated++;
+			} catch (\Throwable $e) {
+				$this->logger->error(
+					'Procest: failed to seed verwerkingsactiviteit',
+					['code' => $code, 'exception' => $e->getMessage()]
+				);
+			}//end try
+		}//end foreach
 
-                // Refresh descriptive fields; NEVER touch lifecycle status —
-                // FG activation in OpenRegister survives procest upgrades.
-                $this->hydrate(entity: $existing, definition: $definition);
-                $mapper->update(entity: $existing);
-                $updated++;
-            } catch (\Throwable $e) {
-                $this->logger->error(
-                    'Procest: failed to seed verwerkingsactiviteit',
-                    ['code' => $code, 'exception' => $e->getMessage()]
-                );
-            }//end try
-        }//end foreach
+		$output->info(sprintf('Verwerkingsactiviteiten catalogue seeded: %d created (draft), %d refreshed.', $created, $updated));
 
-        $output->info(sprintf('Verwerkingsactiviteiten catalogue seeded: %d created (draft), %d refreshed.', $created, $updated));
+	}//end run()
 
-    }//end run()
+	/**
+	 * Read and validate the catalogue JSON.
+	 *
+	 * @return array<int, array<string, mixed>> Activity definitions ([] on failure).
+	 */
+	private function loadCatalogue(): array {
+		$content = file_get_contents(self::CATALOGUE_PATH);
+		if ($content === false) {
+			return [];
+		}
 
-    /**
-     * Read and validate the catalogue JSON.
-     *
-     * @return array<int, array<string, mixed>> Activity definitions ([] on failure).
-     */
-    private function loadCatalogue(): array
-    {
-        $content = file_get_contents(self::CATALOGUE_PATH);
-        if ($content === false) {
-            return [];
-        }
+		$decoded = json_decode($content, true);
+		if (is_array($decoded) === false || is_array($decoded['activities'] ?? null) === false) {
+			return [];
+		}
 
-        $decoded = json_decode($content, true);
-        if (is_array($decoded) === false || is_array($decoded['activities'] ?? null) === false) {
-            return [];
-        }
+		return array_values(array_filter($decoded['activities'], 'is_array'));
+	}//end loadCatalogue()
 
-        return array_values(array_filter($decoded['activities'], 'is_array'));
+	/**
+	 * Copy the catalogue definition's descriptive fields onto the entity.
+	 *
+	 * Lifecycle `status` and identity (`uuid`) are intentionally NOT set
+	 * here — status is FG-owned in OpenRegister after the initial insert.
+	 *
+	 * @param object $entity OR Verwerkingsactiviteit entity.
+	 * @param array<string, mixed> $definition Catalogue definition.
+	 *
+	 * @return void
+	 */
+	private function hydrate(object $entity, array $definition): void {
+		$stringFields = [
+			'naam' => 'setNaam',
+			'beschrijving' => 'setBeschrijving',
+			'doelbinding' => 'setDoelbinding',
+			'rechtsgrond' => 'setRechtsgrond',
+			'bewaartermijn' => 'setBewaartermijn',
+		];
+		foreach ($stringFields as $field => $setter) {
+			if (isset($definition[$field]) === true && is_string($definition[$field]) === true) {
+				$entity->{$setter}($definition[$field]);
+			}
+		}
 
-    }//end loadCatalogue()
+		$arrayFields = [
+			'categorieenBetrokkenen' => 'setCategorieenBetrokkenen',
+			'categorieenPersoonsgegevens' => 'setCategorieenPersoonsgegevens',
+			'ontvangers' => 'setOntvangers',
+		];
+		foreach ($arrayFields as $field => $setter) {
+			if (isset($definition[$field]) === true && is_array($definition[$field]) === true) {
+				$entity->{$setter}($definition[$field]);
+			}
+		}
 
-    /**
-     * Copy the catalogue definition's descriptive fields onto the entity.
-     *
-     * Lifecycle `status` and identity (`uuid`) are intentionally NOT set
-     * here — status is FG-owned in OpenRegister after the initial insert.
-     *
-     * @param object               $entity     OR Verwerkingsactiviteit entity.
-     * @param array<string, mixed> $definition Catalogue definition.
-     *
-     * @return void
-     */
-    private function hydrate(object $entity, array $definition): void
-    {
-        $stringFields = [
-            'naam'          => 'setNaam',
-            'beschrijving'  => 'setBeschrijving',
-            'doelbinding'   => 'setDoelbinding',
-            'rechtsgrond'   => 'setRechtsgrond',
-            'bewaartermijn' => 'setBewaartermijn',
-        ];
-        foreach ($stringFields as $field => $setter) {
-            if (isset($definition[$field]) === true && is_string($definition[$field]) === true) {
-                $entity->{$setter}($definition[$field]);
-            }
-        }
-
-        $arrayFields = [
-            'categorieenBetrokkenen'      => 'setCategorieenBetrokkenen',
-            'categorieenPersoonsgegevens' => 'setCategorieenPersoonsgegevens',
-            'ontvangers'                  => 'setOntvangers',
-        ];
-        foreach ($arrayFields as $field => $setter) {
-            if (isset($definition[$field]) === true && is_array($definition[$field]) === true) {
-                $entity->{$setter}($definition[$field]);
-            }
-        }
-
-    }//end hydrate()
+	}//end hydrate()
 }//end class

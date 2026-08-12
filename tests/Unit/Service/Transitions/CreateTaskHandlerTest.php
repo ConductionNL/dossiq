@@ -36,144 +36,135 @@ use RuntimeException;
  *
  * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
-class CreateTaskHandlerTest extends TestCase
-{
-    /**
-     * @return void
-     */
-    public function testFailsWhenObjectServiceUnavailable(): void
-    {
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn(null);
+class CreateTaskHandlerTest extends TestCase {
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenObjectServiceUnavailable(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
 
-        $handler = new CreateTaskHandler($settings, new NullLogger());
+		$handler = new CreateTaskHandler($settings, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'createTask', 'title' => 'Doe X'],
-            case: ['id' => 'case-1'],
-            transitionContext: ['transitionLabel' => 'Approve'],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'createTask', 'title' => 'Doe X'],
+			case: ['id' => 'case-1'],
+			transitionContext: ['transitionLabel' => 'Approve'],
+		);
 
-        self::assertFalse($result->succeeded);
-        self::assertSame('storage_unavailable', $result->error);
-    }//end testFailsWhenObjectServiceUnavailable()
+		self::assertFalse($result->succeeded);
+		self::assertSame('storage_unavailable', $result->error);
+	}//end testFailsWhenObjectServiceUnavailable()
 
-    /**
-     * @return void
-     */
-    public function testFailsWhenTaskSchemaNotConfigured(): void
-    {
-        $objectService = new class {
-            public function saveObject(array $object, string $register, string $schema): array
-            {
-                return ['id' => 'unreachable'];
-            }
-        };
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenTaskSchemaNotConfigured(): void {
+		$objectService = new class {
+			public function saveObject(array $object, string $register, string $schema): array {
+				return ['id' => 'unreachable'];
+			}
+		};
 
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn($objectService);
-        $settings->method('getConfigValue')->willReturnCallback(
-            function (string $key): string {
-                return $key === 'register' ? 'reg-1' : '';
-            }
-        );
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			function (string $key): string {
+				return $key === 'register' ? 'reg-1' : '';
+			}
+		);
 
-        $handler = new CreateTaskHandler($settings, new NullLogger());
+		$handler = new CreateTaskHandler($settings, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'createTask'],
-            case: ['id' => 'c'],
-            transitionContext: [],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'createTask'],
+			case: ['id' => 'c'],
+			transitionContext: [],
+		);
 
-        self::assertFalse($result->succeeded);
-        self::assertSame('task_schema_not_configured', $result->error);
-    }//end testFailsWhenTaskSchemaNotConfigured()
+		self::assertFalse($result->succeeded);
+		self::assertSame('task_schema_not_configured', $result->error);
+	}//end testFailsWhenTaskSchemaNotConfigured()
 
-    /**
-     * @return void
-     */
-    public function testCreatesTaskWithCaseLinkAndAssigneeOnSuccess(): void
-    {
-        $recorded = null;
+	/**
+	 * @return void
+	 */
+	public function testCreatesTaskWithCaseLinkAndAssigneeOnSuccess(): void {
+		$recorded = null;
 
-        $objectService = new class($recorded) {
-            /** @var mixed */
-            public $recorded;
+		$objectService = new class($recorded) {
+			/** @var mixed */
+			public $recorded;
 
-            public function __construct(&$recorded)
-            {
-                $this->recorded = &$recorded;
-            }
+			public function __construct(&$recorded) {
+				$this->recorded = &$recorded;
+			}
 
-            public function saveObject(array $object, string $register, string $schema): array
-            {
-                $this->recorded = ['object' => $object, 'register' => $register, 'schema' => $schema];
-                return ['id' => 'task-uuid'];
-            }
-        };
+			public function saveObject(array $object, string $register, string $schema): array {
+				$this->recorded = ['object' => $object, 'register' => $register, 'schema' => $schema];
+				return ['id' => 'task-uuid'];
+			}
+		};
 
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn($objectService);
-        $settings->method('getConfigValue')->willReturnCallback(
-            function (string $key): string {
-                return [
-                    'register'    => 'reg-1',
-                    'task_schema' => 'task-schema',
-                ][$key] ?? '';
-            }
-        );
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			function (string $key): string {
+				return [
+					'register' => 'reg-1',
+					'task_schema' => 'task-schema',
+				][$key] ?? '';
+			}
+		);
 
-        $handler = new CreateTaskHandler($settings, new NullLogger());
+		$handler = new CreateTaskHandler($settings, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'createTask', 'title' => 'Review docs', 'assignee' => 'alice'],
-            case: ['id' => 'case-9'],
-            transitionContext: ['transitionLabel' => 'In Review'],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'createTask', 'title' => 'Review docs', 'assignee' => 'alice'],
+			case: ['id' => 'case-9'],
+			transitionContext: ['transitionLabel' => 'In Review'],
+		);
 
-        self::assertTrue($result->succeeded);
-        self::assertSame('task-uuid', $result->data['taskId']);
-        self::assertSame('Review docs', $recorded['object']['title']);
-        self::assertSame('case-9', $recorded['object']['case']);
-        self::assertSame('alice', $recorded['object']['assignee']);
-        self::assertSame('open', $recorded['object']['status']);
-        self::assertSame('reg-1', $recorded['register']);
-        self::assertSame('task-schema', $recorded['schema']);
-    }//end testCreatesTaskWithCaseLinkAndAssigneeOnSuccess()
+		self::assertTrue($result->succeeded);
+		self::assertSame('task-uuid', $result->data['taskId']);
+		self::assertSame('Review docs', $recorded['object']['title']);
+		self::assertSame('case-9', $recorded['object']['case']);
+		self::assertSame('alice', $recorded['object']['assignee']);
+		self::assertSame('open', $recorded['object']['status']);
+		self::assertSame('reg-1', $recorded['register']);
+		self::assertSame('task-schema', $recorded['schema']);
+	}//end testCreatesTaskWithCaseLinkAndAssigneeOnSuccess()
 
-    /**
-     * @return void
-     */
-    public function testCatchesExceptionFromObjectService(): void
-    {
-        $objectService = new class {
-            public function saveObject(array $object, string $register, string $schema): array
-            {
-                throw new RuntimeException('storage went away');
-            }
-        };
+	/**
+	 * @return void
+	 */
+	public function testCatchesExceptionFromObjectService(): void {
+		$objectService = new class {
+			public function saveObject(array $object, string $register, string $schema): array {
+				throw new RuntimeException('storage went away');
+			}
+		};
 
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn($objectService);
-        $settings->method('getConfigValue')->willReturnCallback(
-            function (string $key): string {
-                return [
-                    'register'    => 'reg-1',
-                    'task_schema' => 'task-schema',
-                ][$key] ?? '';
-            }
-        );
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			function (string $key): string {
+				return [
+					'register' => 'reg-1',
+					'task_schema' => 'task-schema',
+				][$key] ?? '';
+			}
+		);
 
-        $handler = new CreateTaskHandler($settings, new NullLogger());
+		$handler = new CreateTaskHandler($settings, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'createTask'],
-            case: ['id' => 'c'],
-            transitionContext: [],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'createTask'],
+			case: ['id' => 'c'],
+			transitionContext: [],
+		);
 
-        self::assertFalse($result->succeeded);
-        self::assertSame('create_task_failed', $result->error);
-    }//end testCatchesExceptionFromObjectService()
+		self::assertFalse($result->succeeded);
+		self::assertSame('create_task_failed', $result->error);
+	}//end testCatchesExceptionFromObjectService()
 }//end class

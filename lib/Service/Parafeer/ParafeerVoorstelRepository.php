@@ -45,107 +45,103 @@ use RuntimeException;
  *
  * @spec openspec/changes/parafering-actions/tasks.md#T02
  */
-class ParafeerVoorstelRepository
-{
-    /**
-     * Constructor.
-     *
-     * @param SettingsService       $settingsService The settings/config bridge to OpenRegister.
-     * @param ObjectArrayNormalizer $normalizer      Collapses OpenRegister's array-or-entity shape.
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly ObjectArrayNormalizer $normalizer,
-    ) {
-    }//end __construct()
+class ParafeerVoorstelRepository {
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService The settings/config bridge to OpenRegister.
+	 * @param ObjectArrayNormalizer $normalizer Collapses OpenRegister's array-or-entity shape.
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly ObjectArrayNormalizer $normalizer,
+	) {
+	}//end __construct()
 
-    /**
-     * Resolve the OpenRegister ObjectService, or null when OpenRegister is absent.
-     *
-     * Callers that can degrade (read paths) test for null; callers that cannot
-     * use {@see self::requireObjectService()}.
-     *
-     * @return object|null The ObjectService, or null.
-     *
-     * @spec openspec/changes/parafering-actions/tasks.md#T02
-     */
-    public function objectServiceOrNull(): ?object
-    {
-        return $this->settingsService->getObjectService();
-    }//end objectServiceOrNull()
+	/**
+	 * Resolve the OpenRegister ObjectService, or null when OpenRegister is absent.
+	 *
+	 * Callers that can degrade (read paths) test for null; callers that cannot
+	 * use {@see self::requireObjectService()}.
+	 *
+	 * @return object|null The ObjectService, or null.
+	 *
+	 * @spec openspec/changes/parafering-actions/tasks.md#T02
+	 */
+	public function objectServiceOrNull(): ?object {
+		return $this->settingsService->getObjectService();
+	}//end objectServiceOrNull()
 
-    /**
-     * Resolve the OpenRegister ObjectService, throwing when it is unavailable.
-     *
-     * @return object The ObjectService.
-     *
-     * @throws RuntimeException When OpenRegister is not available.
-     *
-     * @spec openspec/changes/parafering-actions/tasks.md#T02
-     */
-    public function requireObjectService(): object
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
+	/**
+	 * Resolve the OpenRegister ObjectService, throwing when it is unavailable.
+	 *
+	 * @return object The ObjectService.
+	 *
+	 * @throws RuntimeException When OpenRegister is not available.
+	 *
+	 * @spec openspec/changes/parafering-actions/tasks.md#T02
+	 */
+	public function requireObjectService(): object {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
 
-        return $objectService;
-    }//end requireObjectService()
+		return $objectService;
+	}//end requireObjectService()
 
-    /**
-     * Resolve the OpenRegister register and schemas from settings.
-     *
-     * @return array{0: string, 1: string, 2: string} [register, voorstelSchema, parafeeractieSchema]
-     *
-     * @throws RuntimeException When register/schemas are not configured.
-     *
-     * @spec openspec/changes/parafering-actions/tasks.md#T02
-     */
-    public function resolveSchemas(): array
-    {
-        $register       = $this->settingsService->getConfigValue('register');
-        $voorstelSchema = $this->settingsService->getConfigValue('voorstel_schema');
-        $actieSchema    = $this->settingsService->getConfigValue('parafeeractie_schema');
+	/**
+	 * Resolve the OpenRegister register and schemas from settings.
+	 *
+	 * @return array{0: string, 1: string, 2: string} [register, voorstelSchema, parafeeractieSchema]
+	 *
+	 * @throws RuntimeException When register/schemas are not configured.
+	 *
+	 * @spec openspec/changes/parafering-actions/tasks.md#T02
+	 */
+	public function resolveSchemas(): array {
+		$register = $this->settingsService->getConfigValue('register');
+		$voorstelSchema = $this->settingsService->getConfigValue('voorstel_schema');
+		$actieSchema = $this->settingsService->getConfigValue('parafeeractie_schema');
 
-        if (empty($register) === true || empty($voorstelSchema) === true || empty($actieSchema) === true) {
-            throw new RuntimeException('Procest register/schemas not configured');
-        }
+		if (empty($register) === true || empty($voorstelSchema) === true || empty($actieSchema) === true) {
+			throw new RuntimeException('Procest register/schemas not configured');
+		}
 
-        return [(string) $register, (string) $voorstelSchema, (string) $actieSchema];
-    }//end resolveSchemas()
+		return [(string)$register, (string)$voorstelSchema, (string)$actieSchema];
+	}//end resolveSchemas()
 
-    /**
-     * Fetch a voorstel by UUID.
-     *
-     * @param object $objectService The OpenRegister ObjectService.
-     * @param string $register      The register identifier.
-     * @param string $schema        The voorstel schema identifier.
-     * @param string $voorstelId    The voorstel UUID.
-     *
-     * @return array<string, mixed> The voorstel as an associative array.
-     *
-     * @throws OCSBadRequestException When the voorstel cannot be located.
-     *
-     * @spec openspec/changes/parafering-actions/tasks.md#T02
-     */
-    public function findVoorstel(
-        object $objectService,
-        string $register,
-        string $schema,
-        string $voorstelId,
-    ): array {
-        try {
-            $voorstel = $objectService->find($voorstelId, register: $register, schema: $schema);
-        } catch (\Throwable $e) {
-            throw new OCSBadRequestException('Voorstel not found');
-        }
+	/**
+	 * Fetch a voorstel by UUID.
+	 *
+	 * @param object $objectService The OpenRegister ObjectService.
+	 * @param string $register The register identifier.
+	 * @param string $schema The voorstel schema identifier.
+	 * @param string $voorstelId The voorstel UUID.
+	 *
+	 * @return array<string, mixed> The voorstel as an associative array.
+	 *
+	 * @throws OCSBadRequestException When the voorstel cannot be located.
+	 *
+	 * @spec openspec/changes/parafering-actions/tasks.md#T02
+	 */
+	public function findVoorstel(
+		object $objectService,
+		string $register,
+		string $schema,
+		string $voorstelId,
+	): array {
+		try {
+			$voorstel = $objectService->find($voorstelId, register: $register, schema: $schema);
+		} catch (\Throwable $e) {
+			throw new OCSBadRequestException('Voorstel not found');
+		}
 
-        $array = $this->normalizer->toArray(value: $voorstel);
-        if (empty($array) === true) {
-            throw new OCSBadRequestException('Voorstel not found');
-        }
+		$array = $this->normalizer->toArray(value: $voorstel);
+		if (empty($array) === true) {
+			throw new OCSBadRequestException('Voorstel not found');
+		}
 
-        return $array;
-    }//end findVoorstel()
+		return $array;
+	}//end findVoorstel()
 }//end class

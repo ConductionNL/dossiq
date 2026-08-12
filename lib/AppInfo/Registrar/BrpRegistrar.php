@@ -44,47 +44,45 @@ use Psr\Container\ContainerInterface;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class BrpRegistrar
-{
-    /**
-     * Register the BRP / Haal Centraal adapter.
-     *
-     * Used by citizen zaak intake (DigiD BSN → persoon envelope), briefcode
-     * resolution and the register-set seed. Selected by `integration.brp.mode`
-     * (external-integrations-test-environments). DEFAULT `log` = dormant (no
-     * external call); `mock`/`test` binds the HaalCentraalBrpAdapter (mock =
-     * ghcr.io/brp-api/personen-mock offline; test = proefomgeving once the
-     * X-API-KEY is granted).
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        $context->registerService(
-            BrpHaalCentraalAdapterInterface::class,
-            static function (ContainerInterface $c): BrpHaalCentraalAdapterInterface {
-                $modeService = $c->get(IntegrationMode::class);
-                $mode        = $modeService->resolve(
-                    'brp',
-                    [
-                        IntegrationMode::MOCK,
-                        IntegrationMode::TEST,
-                    ]
-                );
-                if ($mode !== IntegrationMode::LOG) {
-                    return new HaalCentraalBrpAdapter(
-                        clientService: $c->get('OCP\\Http\\Client\\IClientService'),
-                        mode: $modeService,
-                        logger: $c->get('Psr\\Log\\LoggerInterface'),
-                    );
-                }
+class BrpRegistrar {
+	/**
+	 * Register the BRP / Haal Centraal adapter.
+	 *
+	 * Used by citizen zaak intake (DigiD BSN → persoon envelope), briefcode
+	 * resolution and the register-set seed. Selected by `integration.brp.mode`
+	 * (external-integrations-test-environments). DEFAULT `log` = dormant (no
+	 * external call); `mock`/`test` binds the HaalCentraalBrpAdapter (mock =
+	 * ghcr.io/brp-api/personen-mock offline; test = proefomgeving once the
+	 * X-API-KEY is granted).
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		$context->registerService(
+			BrpHaalCentraalAdapterInterface::class,
+			static function (ContainerInterface $c): BrpHaalCentraalAdapterInterface {
+				$modeService = $c->get(IntegrationMode::class);
+				$mode = $modeService->resolve(
+					'brp',
+					[
+						IntegrationMode::MOCK,
+						IntegrationMode::TEST,
+					]
+				);
+				if ($mode !== IntegrationMode::LOG) {
+					return new HaalCentraalBrpAdapter(
+						clientService: $c->get('OCP\\Http\\Client\\IClientService'),
+						mode: $modeService,
+						logger: $c->get('Psr\\Log\\LoggerInterface'),
+					);
+				}
 
-                return $c->get(LogBrpHaalCentraalAdapter::class);
-            }
-        );
-    }//end register()
+				return $c->get(LogBrpHaalCentraalAdapter::class);
+			}
+		);
+	}//end register()
 }//end class

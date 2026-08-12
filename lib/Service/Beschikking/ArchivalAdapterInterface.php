@@ -35,18 +35,17 @@ namespace OCA\Procest\Service\Beschikking;
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T25
  */
-interface ArchivalAdapterInterface
-{
-    /**
-     * Ingest a beschikking with its metadata into the archief.
-     *
-     * @param string               $beschikkingId The beschikking UUID.
-     * @param string               $bestandId     The Nextcloud file id of the signed PDF/A-3.
-     * @param array<string, mixed> $tmloMetadata  The TMLO-1.2 or MDTO metadata block.
-     *
-     * @return array{archiefId: string, vernietigingsdatum: string} The archival result.
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T25
-     */
-    public function ingest(string $beschikkingId, string $bestandId, array $tmloMetadata): array;
+interface ArchivalAdapterInterface {
+	/**
+	 * Ingest a beschikking with its metadata into the archief.
+	 *
+	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $bestandId The Nextcloud file id of the signed PDF/A-3.
+	 * @param array<string, mixed> $tmloMetadata The TMLO-1.2 or MDTO metadata block.
+	 *
+	 * @return array{archiefId: string, vernietigingsdatum: string} The archival result.
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T25
+	 */
+	public function ingest(string $beschikkingId, string $bestandId, array $tmloMetadata): array;
 }//end interface

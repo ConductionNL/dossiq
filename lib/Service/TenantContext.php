@@ -36,139 +36,130 @@ use RuntimeException;
  * scope by the NC DI container (request-scoped via `IRequest` is sufficient
  * — every HTTP request gets a fresh container child).
  */
-class TenantContext
-{
+class TenantContext {
 
-    /**
-     * Resolved tenant UUID.
-     *
-     * @var string|null
-     */
-    private ?string $tenantId = null;
+	/**
+	 * Resolved tenant UUID.
+	 *
+	 * @var string|null
+	 */
+	private ?string $tenantId = null;
 
-    /**
-     * Resolved tenant slug.
-     *
-     * @var string|null
-     */
-    private ?string $slug = null;
+	/**
+	 * Resolved tenant slug.
+	 *
+	 * @var string|null
+	 */
+	private ?string $slug = null;
 
-    /**
-     * Resolved Postgres schema name.
-     *
-     * @var string|null
-     */
-    private ?string $schemaName = null;
+	/**
+	 * Resolved Postgres schema name.
+	 *
+	 * @var string|null
+	 */
+	private ?string $schemaName = null;
 
-    /**
-     * Full tenant row as resolved from OR.
-     *
-     * @var array<string,mixed>|null
-     */
-    private ?array $tenant = null;
+	/**
+	 * Full tenant row as resolved from OR.
+	 *
+	 * @var array<string,mixed>|null
+	 */
+	private ?array $tenant = null;
 
-    /**
-     * Bind a resolved tenant to the current request.
-     *
-     * @param array<string,mixed> $tenant     Tenant row.
-     * @param string              $schemaName Tenant schema name.
-     *
-     * @return void
-     */
-    public function bind(array $tenant, string $schemaName): void
-    {
-        $this->tenant     = $tenant;
-        $this->tenantId   = (string) ($tenant['uuid'] ?? $tenant['id'] ?? '');
-        $this->slug       = (string) ($tenant['slug'] ?? '');
-        $this->schemaName = $schemaName;
-    }//end bind()
+	/**
+	 * Bind a resolved tenant to the current request.
+	 *
+	 * @param array<string,mixed> $tenant Tenant row.
+	 * @param string $schemaName Tenant schema name.
+	 *
+	 * @return void
+	 */
+	public function bind(array $tenant, string $schemaName): void {
+		$this->tenant = $tenant;
+		$this->tenantId = (string)($tenant['uuid'] ?? $tenant['id'] ?? '');
+		$this->slug = (string)($tenant['slug'] ?? '');
+		$this->schemaName = $schemaName;
+	}//end bind()
 
-    /**
-     * Whether a tenant has been bound to the request.
-     *
-     * @return bool
-     */
-    public function isBound(): bool
-    {
-        return $this->tenant !== null;
-    }//end isBound()
+	/**
+	 * Whether a tenant has been bound to the request.
+	 *
+	 * @return bool
+	 */
+	public function isBound(): bool {
+		return $this->tenant !== null;
+	}//end isBound()
 
-    /**
-     * Get the bound tenant row.
-     *
-     * @return array<string,mixed>
-     *
-     * @throws RuntimeException When no tenant is bound.
-     */
-    public function getTenant(): array
-    {
-        $this->assertBound();
-        return $this->tenant ?? [];
-    }//end getTenant()
+	/**
+	 * Get the bound tenant row.
+	 *
+	 * @return array<string,mixed>
+	 *
+	 * @throws RuntimeException When no tenant is bound.
+	 */
+	public function getTenant(): array {
+		$this->assertBound();
+		return $this->tenant ?? [];
+	}//end getTenant()
 
-    /**
-     * Get the resolved tenant UUID.
-     *
-     * @return string
-     *
-     * @throws RuntimeException When no tenant is bound.
-     */
-    public function getTenantId(): string
-    {
-        $this->assertBound();
-        return (string) $this->tenantId;
-    }//end getTenantId()
+	/**
+	 * Get the resolved tenant UUID.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When no tenant is bound.
+	 */
+	public function getTenantId(): string {
+		$this->assertBound();
+		return (string)$this->tenantId;
+	}//end getTenantId()
 
-    /**
-     * Get the resolved tenant slug.
-     *
-     * @return string
-     *
-     * @throws RuntimeException When no tenant is bound.
-     */
-    public function getSlug(): string
-    {
-        $this->assertBound();
-        return (string) $this->slug;
-    }//end getSlug()
+	/**
+	 * Get the resolved tenant slug.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When no tenant is bound.
+	 */
+	public function getSlug(): string {
+		$this->assertBound();
+		return (string)$this->slug;
+	}//end getSlug()
 
-    /**
-     * Get the resolved Postgres schema name.
-     *
-     * @return string
-     *
-     * @throws RuntimeException When no tenant is bound.
-     */
-    public function getSchemaName(): string
-    {
-        $this->assertBound();
-        return (string) $this->schemaName;
-    }//end getSchemaName()
+	/**
+	 * Get the resolved Postgres schema name.
+	 *
+	 * @return string
+	 *
+	 * @throws RuntimeException When no tenant is bound.
+	 */
+	public function getSchemaName(): string {
+		$this->assertBound();
+		return (string)$this->schemaName;
+	}//end getSchemaName()
 
-    /**
-     * Reset the context. Used in tests + at the end of each request.
-     *
-     * @return void
-     */
-    public function reset(): void
-    {
-        $this->tenant     = null;
-        $this->tenantId   = null;
-        $this->slug       = null;
-        $this->schemaName = null;
-    }//end reset()
+	/**
+	 * Reset the context. Used in tests + at the end of each request.
+	 *
+	 * @return void
+	 */
+	public function reset(): void {
+		$this->tenant = null;
+		$this->tenantId = null;
+		$this->slug = null;
+		$this->schemaName = null;
+	}//end reset()
 
-    /**
-     * Throw when no tenant is bound.
-     *
-     * @return void
-     *
-     * @throws RuntimeException
-     */
-    private function assertBound(): void
-    {
-        if ($this->tenant === null) {
-            throw new RuntimeException('No tenant bound to the current request');
-        }
-    }//end assertBound()
+	/**
+	 * Throw when no tenant is bound.
+	 *
+	 * @return void
+	 *
+	 * @throws RuntimeException
+	 */
+	private function assertBound(): void {
+		if ($this->tenant === null) {
+			throw new RuntimeException('No tenant bound to the current request');
+		}
+	}//end assertBound()
 }//end class

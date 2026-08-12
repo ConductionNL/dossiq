@@ -30,6 +30,5 @@ namespace OCA\Procest\Service\Stuf;
 /**
  * Synchronous vraag/antwoord exceeded the configured timeout.
  */
-class TimeoutException extends StufException
-{
+class TimeoutException extends StufException {
 }//end class

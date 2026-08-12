@@ -49,65 +49,62 @@ use OCP\IUserSession;
  *
  * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
  */
-class AdvisoryBodyController extends Controller
-{
-    /**
-     * Constructor.
-     *
-     * @param string              $appName             The app name
-     * @param IRequest            $request             The request
-     * @param AdvisoryBodyService $advisoryBodyService The advisory body service
-     * @param IUserSession        $userSession         The user session
-     *
-     * @return void
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly AdvisoryBodyService $advisoryBodyService,
-        private readonly IUserSession $userSession,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class AdvisoryBodyController extends Controller {
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name
+	 * @param IRequest $request The request
+	 * @param AdvisoryBodyService $advisoryBodyService The advisory body service
+	 * @param IUserSession $userSession The user session
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly AdvisoryBodyService $advisoryBodyService,
+		private readonly IUserSession $userSession,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * List all advisory bodies.
-     *
-     * @return JSONResponse List of advisory bodies
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
-     */
-    public function listAdvisoryBodies(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * List all advisory bodies.
+	 *
+	 * @return JSONResponse List of advisory bodies
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 */
+	public function listAdvisoryBodies(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $bodies = $this->advisoryBodyService->findAll();
-        return new JSONResponse(['results' => $bodies]);
-    }//end listAdvisoryBodies()
+		$bodies = $this->advisoryBodyService->findAll();
+		return new JSONResponse(['results' => $bodies]);
+	}//end listAdvisoryBodies()
 
-    /**
-     * Search advisory bodies by specialization tag.
-     *
-     * @return JSONResponse Ranked list of advisory bodies
-     *
-     * @NoAdminRequired
-     *
-     * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
-     */
-    public function searchAdvisoryBodies(): JSONResponse
-    {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
-        }
+	/**
+	 * Search advisory bodies by specialization tag.
+	 *
+	 * @return JSONResponse Ranked list of advisory bodies
+	 *
+	 * @NoAdminRequired
+	 *
+	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
+	 */
+	public function searchAdvisoryBodies(): JSONResponse {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+		}
 
-        $query  = (string) ($this->request->getParam('q') ?? '');
-        $bodies = $this->advisoryBodyService->searchBySpecialization(query: $query);
-        return new JSONResponse(['results' => $bodies]);
-    }//end searchAdvisoryBodies()
+		$query = (string)($this->request->getParam('q') ?? '');
+		$bodies = $this->advisoryBodyService->searchBySpecialization(query: $query);
+		return new JSONResponse(['results' => $bodies]);
+	}//end searchAdvisoryBodies()
 }//end class

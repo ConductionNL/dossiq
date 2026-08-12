@@ -33,30 +33,29 @@ namespace OCA\Procest\Service\External\Ztc;
  *
  * @spec openspec/specs/zgw-api-mapping/spec.md
  */
-final class ZtcResult
-{
-    /**
-     * Construct the result value-object.
-     *
-     * @param string              $outcome FOUND / IMPORTED / NOT_FOUND /
-     *                                     LOOKUP_DEFERRED / IMPORT_DEFERRED /
-     *                                     ZTC_ERROR.
-     * @param string              $url     Resolved or imported canonical
-     *                                     URL (receiver-side for FOUND,
-     *                                     tenant-local for IMPORTED;
-     *                                     empty for non-FOUND/IMPORTED).
-     * @param bool                $dormant TRUE when the adapter was
-     *                                     dormant.
-     * @param array<string,mixed> $extras  Provider-specific extras —
-     *                                     receiverSourceSlug,
-     *                                     zaaktypeOmschrijving,
-     *                                     catalogusUrl, errorBody.
-     */
-    public function __construct(
-        public readonly string $outcome,
-        public readonly string $url,
-        public readonly bool $dormant,
-        public readonly array $extras=[],
-    ) {
-    }//end __construct()
+final class ZtcResult {
+	/**
+	 * Construct the result value-object.
+	 *
+	 * @param string $outcome FOUND / IMPORTED / NOT_FOUND /
+	 *                        LOOKUP_DEFERRED / IMPORT_DEFERRED /
+	 *                        ZTC_ERROR.
+	 * @param string $url Resolved or imported canonical
+	 *                    URL (receiver-side for FOUND,
+	 *                    tenant-local for IMPORTED;
+	 *                    empty for non-FOUND/IMPORTED).
+	 * @param bool $dormant TRUE when the adapter was
+	 *                      dormant.
+	 * @param array<string,mixed> $extras Provider-specific extras —
+	 *                                    receiverSourceSlug,
+	 *                                    zaaktypeOmschrijving,
+	 *                                    catalogusUrl, errorBody.
+	 */
+	public function __construct(
+		public readonly string $outcome,
+		public readonly string $url,
+		public readonly bool $dormant,
+		public readonly array $extras = [],
+	) {
+	}//end __construct()
 }//end class

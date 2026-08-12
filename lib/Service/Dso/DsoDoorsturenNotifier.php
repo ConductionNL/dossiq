@@ -38,60 +38,59 @@ use OCP\EventDispatcher\IEventDispatcher;
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
  */
-class DsoDoorsturenNotifier
-{
-    /**
-     * The event name downstream listeners bind to.
-     *
-     * @var string
-     */
-    private const EVENT_NAME = 'OCA\Procest\Event\VergunningDoorgestuurd';
+class DsoDoorsturenNotifier {
+	/**
+	 * The event name downstream listeners bind to.
+	 *
+	 * @var string
+	 */
+	private const EVENT_NAME = 'OCA\Procest\Event\VergunningDoorgestuurd';
 
-    /**
-     * Constructor.
-     *
-     * @param IEventDispatcher $eventDispatcher The event dispatcher.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly IEventDispatcher $eventDispatcher,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param IEventDispatcher $eventDispatcher The event dispatcher.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly IEventDispatcher $eventDispatcher,
+	) {
+	}//end __construct()
 
-    /**
-     * Dispatch the VergunningDoorgestuurd event for a forwarded case.
-     *
-     * @param array<string,mixed> $zaak               The zaak being forwarded.
-     * @param string              $caseId             The zaak UUID.
-     * @param string              $targetBevoegdGezag The receiving bevoegd gezag.
-     * @param string              $reden              The reason for forwarding.
-     * @param string              $userId             The acting user id.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
-     */
-    public function dispatchDoorgestuurd(
-        array $zaak,
-        string $caseId,
-        string $targetBevoegdGezag,
-        string $reden,
-        string $userId
-    ): void {
-        $event = new GenericEvent(
-            subject: $zaak,
-            arguments: [
-                'caseId'             => $caseId,
-                'targetBevoegdGezag' => $targetBevoegdGezag,
-                'reden'              => $reden,
-                'userId'             => $userId,
-            ]
-        );
+	/**
+	 * Dispatch the VergunningDoorgestuurd event for a forwarded case.
+	 *
+	 * @param array<string,mixed> $zaak The zaak being forwarded.
+	 * @param string $caseId The zaak UUID.
+	 * @param string $targetBevoegdGezag The receiving bevoegd gezag.
+	 * @param string $reden The reason for forwarding.
+	 * @param string $userId The acting user id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 */
+	public function dispatchDoorgestuurd(
+		array $zaak,
+		string $caseId,
+		string $targetBevoegdGezag,
+		string $reden,
+		string $userId,
+	): void {
+		$event = new GenericEvent(
+			subject: $zaak,
+			arguments: [
+				'caseId' => $caseId,
+				'targetBevoegdGezag' => $targetBevoegdGezag,
+				'reden' => $reden,
+				'userId' => $userId,
+			]
+		);
 
-        $this->eventDispatcher->dispatch(
-            eventName: self::EVENT_NAME,
-            event: $event
-        );
-    }//end dispatchDoorgestuurd()
+		$this->eventDispatcher->dispatch(
+			eventName: self::EVENT_NAME,
+			event: $event
+		);
+	}//end dispatchDoorgestuurd()
 }//end class

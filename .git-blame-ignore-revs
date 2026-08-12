@@ -1,4 +1,16 @@
-# Retrofit annotation commit (opsx-annotate, 2026-05-24)
-2ca28029190dc145dca72d2cebbc0ab9c9a6aeb4
-# Retrofit annotation commit (reverse-spec zgw-autorisaties-api, 2026-05-25)
-ebc717f3838aa18224acc69887a71f867017f35a
+# Revisions to skip in `git blame`.
+#
+# Enable locally, once:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+#
+# GitHub reads this file automatically. Your terminal does not, until you run
+# the line above.
+#
+# Only ever add commits that change formatting and NOTHING else. A commit listed
+# here becomes invisible to blame, so a behaviour change hidden inside one would
+# be very hard to find later.
+
+# style: reformat with nextcloud/coding-standard — whitespace only
+# The fleet-wide move from a PEAR-derived PHPCS ruleset (4 spaces, next-line
+# braces) to Nextcloud's own standard (tabs, same-line braces).
+6fd54630c350013ee643493e79272bf75f58cb07

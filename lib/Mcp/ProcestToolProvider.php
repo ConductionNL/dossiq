@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Procest MCP Tool Provider
  *
@@ -55,344 +56,328 @@ use OCA\Procest\Mcp\Tool\ProcestCaseReader;
  * - A non-admin caller may read a case only when they are its assignee
  *   (primary handler) or hold a role record linking them to the case.
  */
-class ProcestToolProvider implements IMcpToolProvider
-{
+class ProcestToolProvider implements IMcpToolProvider {
 
-    /**
-     * Hard upper bound for the listProcesses limit argument.
-     *
-     * @var int
-     */
-    private const LIMIT_MAX = 50;
+	/**
+	 * Hard upper bound for the listProcesses limit argument.
+	 *
+	 * @var int
+	 */
+	private const LIMIT_MAX = 50;
 
-    /**
-     * Tool catalogue — hard-coded so unit tests can assert it as a fixture.
-     *
-     * Exactly 2 read-only tools for the MVP skeleton.
-     *
-     * @var array<int, array<string, mixed>>
-     */
-    private const TOOL_DESCRIPTORS = [
-        [
-            'id'          => 'procest.listProcesses',
-            'name'        => 'List processes',
-            'description' => 'List running process instances (cases). Optionally filter by status'
-                .' type id (status) and cap the result with limit (1-50, default 20).',
-            'inputSchema' => [
-                'type'       => 'object',
-                'properties' => [
-                    'limit'  => [
-                        'type'    => 'integer',
-                        'minimum' => 1,
-                        'maximum' => 50,
-                        'default' => 20,
-                    ],
-                    'status' => [
-                        'type'        => 'string',
-                        'description' => 'Optional status type id or slug to filter by.',
-                    ],
-                ],
-                'required'   => [],
-            ],
-        ],
-        [
-            'id'          => 'procest.getProcessDetails',
-            'name'        => 'Get process details',
-            'description' => 'Get one process instance (case) by id or uuid, including its'
-                .' current step (status) and chronological transition history.',
-            'inputSchema' => [
-                'type'       => 'object',
-                'properties' => [
-                    'id'   => [
-                        'type'        => 'string',
-                        'description' => 'The process instance (case) id or uuid.',
-                    ],
-                    'uuid' => [
-                        'type'        => 'string',
-                        'description' => 'Alias for id — the process instance (case) uuid.',
-                    ],
-                ],
-                'required'   => [],
-            ],
-        ],
-    ];
+	/**
+	 * Tool catalogue — hard-coded so unit tests can assert it as a fixture.
+	 *
+	 * Exactly 2 read-only tools for the MVP skeleton.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const TOOL_DESCRIPTORS = [
+		[
+			'id' => 'procest.listProcesses',
+			'name' => 'List processes',
+			'description' => 'List running process instances (cases). Optionally filter by status'
+				. ' type id (status) and cap the result with limit (1-50, default 20).',
+			'inputSchema' => [
+				'type' => 'object',
+				'properties' => [
+					'limit' => [
+						'type' => 'integer',
+						'minimum' => 1,
+						'maximum' => 50,
+						'default' => 20,
+					],
+					'status' => [
+						'type' => 'string',
+						'description' => 'Optional status type id or slug to filter by.',
+					],
+				],
+				'required' => [],
+			],
+		],
+		[
+			'id' => 'procest.getProcessDetails',
+			'name' => 'Get process details',
+			'description' => 'Get one process instance (case) by id or uuid, including its'
+				. ' current step (status) and chronological transition history.',
+			'inputSchema' => [
+				'type' => 'object',
+				'properties' => [
+					'id' => [
+						'type' => 'string',
+						'description' => 'The process instance (case) id or uuid.',
+					],
+					'uuid' => [
+						'type' => 'string',
+						'description' => 'Alias for id — the process instance (case) uuid.',
+					],
+				],
+				'required' => [],
+			],
+		],
+	];
 
-    /**
-     * Constructor for ProcestToolProvider.
-     *
-     * @param ProcestCaseReader     $caseReader The OpenRegister case reader (lookup + shape normalisation)
-     * @param ProcestCaseAuthorizer $authorizer The per-object read authorisation check
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly ProcestCaseReader $caseReader,
-        private readonly ProcestCaseAuthorizer $authorizer,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor for ProcestToolProvider.
+	 *
+	 * @param ProcestCaseReader $caseReader The OpenRegister case reader (lookup + shape normalisation)
+	 * @param ProcestCaseAuthorizer $authorizer The per-object read authorisation check
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly ProcestCaseReader $caseReader,
+		private readonly ProcestCaseAuthorizer $authorizer,
+	) {
+	}//end __construct()
 
-    /**
-     * Returns the app ID that namespaces every tool id.
-     *
-     * @return string "procest"
-     */
-    public function getAppId(): string
-    {
-        return 'procest';
+	/**
+	 * Returns the app ID that namespaces every tool id.
+	 *
+	 * @return string "procest"
+	 */
+	public function getAppId(): string {
+		return 'procest';
+	}//end getAppId()
 
-    }//end getAppId()
+	/**
+	 * Returns the full tool catalogue (2 tools, always).
+	 *
+	 * The full catalogue is returned regardless of caller permissions.
+	 * Per-object authorisation runs in invokeTool().
+	 *
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function getTools(): array {
+		return self::TOOL_DESCRIPTORS;
+	}//end getTools()
 
-    /**
-     * Returns the full tool catalogue (2 tools, always).
-     *
-     * The full catalogue is returned regardless of caller permissions.
-     * Per-object authorisation runs in invokeTool().
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    public function getTools(): array
-    {
-        return self::TOOL_DESCRIPTORS;
+	/**
+	 * Dispatch a tool call by id.
+	 *
+	 * Argument validation runs BEFORE authorisation, which runs BEFORE
+	 * business logic. Unknown tool ids return a structured error; no
+	 * exception is thrown.
+	 *
+	 * @param string $toolId The tool id (e.g. "procest.listProcesses")
+	 * @param array<string, mixed> $arguments Tool arguments from the LLM call
+	 *
+	 * @return array<string, mixed>
+	 */
+	public function invokeTool(string $toolId, array $arguments): array {
+		switch ($toolId) {
+			case 'procest.listProcesses':
+				return $this->handleListProcesses(args: $arguments);
+			case 'procest.getProcessDetails':
+				return $this->handleGetProcessDetails(args: $arguments);
+			default:
+				return $this->errorEnvelope(
+					code: 'unknown_tool',
+					message: "Unknown tool id '{$toolId}'. Available tools: "
+						. implode(', ', array_column(self::TOOL_DESCRIPTORS, 'id')) . '.'
+				);
+		}//end switch
 
-    }//end getTools()
+	}//end invokeTool()
 
-    /**
-     * Dispatch a tool call by id.
-     *
-     * Argument validation runs BEFORE authorisation, which runs BEFORE
-     * business logic. Unknown tool ids return a structured error; no
-     * exception is thrown.
-     *
-     * @param string               $toolId    The tool id (e.g. "procest.listProcesses")
-     * @param array<string, mixed> $arguments Tool arguments from the LLM call
-     *
-     * @return array<string, mixed>
-     */
-    public function invokeTool(string $toolId, array $arguments): array
-    {
-        switch ($toolId) {
-            case 'procest.listProcesses':
-                return $this->handleListProcesses(args: $arguments);
-            case 'procest.getProcessDetails':
-                return $this->handleGetProcessDetails(args: $arguments);
-            default:
-                return $this->errorEnvelope(
-                    code: 'unknown_tool',
-                    message: "Unknown tool id '{$toolId}'. Available tools: "
-                        .implode(', ', array_column(self::TOOL_DESCRIPTORS, 'id')).'.'
-                );
-        }//end switch
+	// =========================================================================
+	// Private tool handlers
+	// =========================================================================
 
-    }//end invokeTool()
+	/**
+	 * Handle procest.listProcesses.
+	 *
+	 * Lists running process instances (cases) the caller may read.
+	 *
+	 * @param array<string, mixed> $args Tool arguments
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function handleListProcesses(array $args): array {
+		$limit = $this->parseLimit(args: $args);
+		if ($limit === null) {
+			return $this->errorEnvelope(code: 'invalid_arguments', message: 'Invalid limit. Must be an integer between 1 and 50.');
+		}
 
-    // =========================================================================
-    // Private tool handlers
-    // =========================================================================
+		$store = $this->caseReader->resolveCaseStore();
+		if ($store['ok'] === false) {
+			return $this->errorEnvelope(code: $store['code'], message: $store['message']);
+		}
 
-    /**
-     * Handle procest.listProcesses.
-     *
-     * Lists running process instances (cases) the caller may read.
-     *
-     * @param array<string, mixed> $args Tool arguments
-     *
-     * @return array<string, mixed>
-     */
-    private function handleListProcesses(array $args): array
-    {
-        $limit = $this->parseLimit(args: $args);
-        if ($limit === null) {
-            return $this->errorEnvelope(code: 'invalid_arguments', message: 'Invalid limit. Must be an integer between 1 and 50.');
-        }
+		$filters = $this->buildListFilters(args: $args);
+		$rawCases = $this->caseReader->findCases(store: $store, filters: $filters, limit: $limit);
+		if ($rawCases === null) {
+			return $this->errorEnvelope(code: 'internal_error', message: 'Failed to list processes. See server log for details.');
+		}
 
-        $store = $this->caseReader->resolveCaseStore();
-        if ($store['ok'] === false) {
-            return $this->errorEnvelope(code: $store['code'], message: $store['message']);
-        }
+		$items = [];
+		$sources = [];
+		foreach ($rawCases as $raw) {
+			$case = $this->caseReader->toArray(value: $raw);
+			if ($this->mayRead(case: $case) === false) {
+				continue;
+			}
 
-        $filters  = $this->buildListFilters(args: $args);
-        $rawCases = $this->caseReader->findCases(store: $store, filters: $filters, limit: $limit);
-        if ($rawCases === null) {
-            return $this->errorEnvelope(code: 'internal_error', message: 'Failed to list processes. See server log for details.');
-        }
+			$items[] = $case;
+			$sources[] = $this->caseReader->buildCaseSource(case: $case);
+		}
 
-        $items   = [];
-        $sources = [];
-        foreach ($rawCases as $raw) {
-            $case = $this->caseReader->toArray(value: $raw);
-            if ($this->mayRead(case: $case) === false) {
-                continue;
-            }
+		return [
+			'success' => true,
+			'processes' => array_slice($items, 0, ProcestCaseReader::ITEMS_CAP),
+			'sources' => array_slice($sources, 0, ProcestCaseReader::ITEMS_CAP),
+		];
 
-            $items[]   = $case;
-            $sources[] = $this->caseReader->buildCaseSource(case: $case);
-        }
+	}//end handleListProcesses()
 
-        return [
-            'success'   => true,
-            'processes' => array_slice($items, 0, ProcestCaseReader::ITEMS_CAP),
-            'sources'   => array_slice($sources, 0, ProcestCaseReader::ITEMS_CAP),
-        ];
+	/**
+	 * Handle procest.getProcessDetails.
+	 *
+	 * Fetches one process instance (case) with its current step (status) and
+	 * chronological transition history.
+	 *
+	 * @param array<string, mixed> $args Tool arguments
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function handleGetProcessDetails(array $args): array {
+		$caseId = $this->parseCaseId(args: $args);
+		if ($caseId === null) {
+			return $this->errorEnvelope(code: 'invalid_arguments', message: 'Required argument id (or uuid) is missing.');
+		}
 
-    }//end handleListProcesses()
+		$store = $this->caseReader->resolveCaseStore();
+		if ($store['ok'] === false) {
+			return $this->errorEnvelope(code: $store['code'], message: $store['message']);
+		}
 
-    /**
-     * Handle procest.getProcessDetails.
-     *
-     * Fetches one process instance (case) with its current step (status) and
-     * chronological transition history.
-     *
-     * @param array<string, mixed> $args Tool arguments
-     *
-     * @return array<string, mixed>
-     */
-    private function handleGetProcessDetails(array $args): array
-    {
-        $caseId = $this->parseCaseId(args: $args);
-        if ($caseId === null) {
-            return $this->errorEnvelope(code: 'invalid_arguments', message: 'Required argument id (or uuid) is missing.');
-        }
+		$case = $this->caseReader->findCase(store: $store, caseId: $caseId);
+		if ($case === null) {
+			return $this->errorEnvelope(code: 'internal_error', message: 'Failed to load the process. See server log for details.');
+		}
 
-        $store = $this->caseReader->resolveCaseStore();
-        if ($store['ok'] === false) {
-            return $this->errorEnvelope(code: $store['code'], message: $store['message']);
-        }
+		if ($case === []) {
+			return $this->errorEnvelope(code: 'not_found', message: 'Process not found.');
+		}
 
-        $case = $this->caseReader->findCase(store: $store, caseId: $caseId);
-        if ($case === null) {
-            return $this->errorEnvelope(code: 'internal_error', message: 'Failed to load the process. See server log for details.');
-        }
+		// Authorisation BEFORE business logic — actually runs, not wrapped in catch.
+		if ($this->mayRead(case: $case) === false) {
+			return $this->errorEnvelope(code: 'forbidden', message: 'You are not authorised to read this process.');
+		}
 
-        if ($case === []) {
-            return $this->errorEnvelope(code: 'not_found', message: 'Process not found.');
-        }
+		$caseUuid = $this->caseReader->extractUuid(item: $case);
+		$history = $this->caseReader->loadHistory(store: $store, caseUuid: $caseUuid);
 
-        // Authorisation BEFORE business logic — actually runs, not wrapped in catch.
-        if ($this->mayRead(case: $case) === false) {
-            return $this->errorEnvelope(code: 'forbidden', message: 'You are not authorised to read this process.');
-        }
+		return [
+			'success' => true,
+			'process' => $case,
+			'currentStep' => ($case['status'] ?? null),
+			'history' => array_slice($history, 0, ProcestCaseReader::ITEMS_CAP),
+			'sources' => [$this->caseReader->buildCaseSource(case: $case)],
+		];
 
-        $caseUuid = $this->caseReader->extractUuid(item: $case);
-        $history  = $this->caseReader->loadHistory(store: $store, caseUuid: $caseUuid);
+	}//end handleGetProcessDetails()
 
-        return [
-            'success'     => true,
-            'process'     => $case,
-            'currentStep' => ($case['status'] ?? null),
-            'history'     => array_slice($history, 0, ProcestCaseReader::ITEMS_CAP),
-            'sources'     => [$this->caseReader->buildCaseSource(case: $case)],
-        ];
+	// =========================================================================
+	// Private helpers — argument parsing
+	// =========================================================================
 
-    }//end handleGetProcessDetails()
+	/**
+	 * Parse and validate the optional `limit` argument.
+	 *
+	 * @param array<string, mixed> $args Tool arguments
+	 *
+	 * @return int|null The clamped limit, or null when the supplied value is out of range.
+	 */
+	private function parseLimit(array $args): ?int {
+		if (isset($args['limit']) === false) {
+			return ProcestCaseReader::ITEMS_CAP;
+		}
 
-    // =========================================================================
-    // Private helpers — argument parsing
-    // =========================================================================
+		$limit = (int)$args['limit'];
+		if ($limit < 1 || $limit > self::LIMIT_MAX) {
+			return null;
+		}
 
-    /**
-     * Parse and validate the optional `limit` argument.
-     *
-     * @param array<string, mixed> $args Tool arguments
-     *
-     * @return int|null The clamped limit, or null when the supplied value is out of range.
-     */
-    private function parseLimit(array $args): ?int
-    {
-        if (isset($args['limit']) === false) {
-            return ProcestCaseReader::ITEMS_CAP;
-        }
+		return $limit;
+	}//end parseLimit()
 
-        $limit = (int) $args['limit'];
-        if ($limit < 1 || $limit > self::LIMIT_MAX) {
-            return null;
-        }
+	/**
+	 * Build the OpenRegister filter map for procest.listProcesses.
+	 *
+	 * @param array<string, mixed> $args Tool arguments
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function buildListFilters(array $args): array {
+		$filters = [];
+		if (isset($args['status']) === true && $args['status'] !== '') {
+			$filters['status'] = (string)$args['status'];
+		}
 
-        return $limit;
+		return $filters;
+	}//end buildListFilters()
 
-    }//end parseLimit()
+	/**
+	 * Resolve the case id from either the `id` or `uuid` argument.
+	 *
+	 * @param array<string, mixed> $args Tool arguments
+	 *
+	 * @return string|null The case id, or null when neither argument is supplied.
+	 */
+	private function parseCaseId(array $args): ?string {
+		if (isset($args['id']) === true && $args['id'] !== '') {
+			return (string)$args['id'];
+		}
 
-    /**
-     * Build the OpenRegister filter map for procest.listProcesses.
-     *
-     * @param array<string, mixed> $args Tool arguments
-     *
-     * @return array<string, mixed>
-     */
-    private function buildListFilters(array $args): array
-    {
-        $filters = [];
-        if (isset($args['status']) === true && $args['status'] !== '') {
-            $filters['status'] = (string) $args['status'];
-        }
+		if (isset($args['uuid']) === true && $args['uuid'] !== '') {
+			return (string)$args['uuid'];
+		}
 
-        return $filters;
+		return null;
+	}//end parseCaseId()
 
-    }//end buildListFilters()
+	// =========================================================================
+	// Private helpers — authorisation
+	// =========================================================================
 
-    /**
-     * Resolve the case id from either the `id` or `uuid` argument.
-     *
-     * @param array<string, mixed> $args Tool arguments
-     *
-     * @return string|null The case id, or null when neither argument is supplied.
-     */
-    private function parseCaseId(array $args): ?string
-    {
-        if (isset($args['id']) === true && $args['id'] !== '') {
-            return (string) $args['id'];
-        }
+	/**
+	 * Ask the authorizer whether the calling user may read a case.
+	 *
+	 * Authorisation is delegated, not skipped: the check actually runs and is
+	 * not wrapped in catch(\Throwable) anywhere along this path.
+	 *
+	 * @param array<string, mixed> $case The case object as an associative array
+	 *
+	 * @return bool True when the caller may read the case.
+	 */
+	private function mayRead(array $case): bool {
+		return $this->authorizer->canReadCase(
+			case: $case,
+			caseUuid: $this->caseReader->extractUuid(item: $case)
+		);
 
-        if (isset($args['uuid']) === true && $args['uuid'] !== '') {
-            return (string) $args['uuid'];
-        }
+	}//end mayRead()
 
-        return null;
+	// =========================================================================
+	// Private helpers — shaping
+	// =========================================================================
 
-    }//end parseCaseId()
+	/**
+	 * Build a structured error envelope (never thrown).
+	 *
+	 * @param string $code Machine-readable error code
+	 * @param string $message Human-readable message
+	 *
+	 * @return array{error: array{code: string, message: string}}
+	 */
+	private function errorEnvelope(string $code, string $message): array {
+		return [
+			'error' => [
+				'code' => $code,
+				'message' => $message,
+			],
+		];
 
-    // =========================================================================
-    // Private helpers — authorisation
-    // =========================================================================
-
-    /**
-     * Ask the authorizer whether the calling user may read a case.
-     *
-     * Authorisation is delegated, not skipped: the check actually runs and is
-     * not wrapped in catch(\Throwable) anywhere along this path.
-     *
-     * @param array<string, mixed> $case The case object as an associative array
-     *
-     * @return bool True when the caller may read the case.
-     */
-    private function mayRead(array $case): bool
-    {
-        return $this->authorizer->canReadCase(
-            case: $case,
-            caseUuid: $this->caseReader->extractUuid(item: $case)
-        );
-
-    }//end mayRead()
-
-    // =========================================================================
-    // Private helpers — shaping
-    // =========================================================================
-
-    /**
-     * Build a structured error envelope (never thrown).
-     *
-     * @param string $code    Machine-readable error code
-     * @param string $message Human-readable message
-     *
-     * @return array{error: array{code: string, message: string}}
-     */
-    private function errorEnvelope(string $code, string $message): array
-    {
-        return [
-            'error' => [
-                'code'    => $code,
-                'message' => $message,
-            ],
-        ];
-
-    }//end errorEnvelope()
+	}//end errorEnvelope()
 }//end class

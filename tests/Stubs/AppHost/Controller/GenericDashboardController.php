@@ -26,41 +26,37 @@ use OCP\AppFramework\Http\TemplateResponse;
 use OCP\IRequest;
 
 if (class_exists(GenericDashboardController::class) === false) {
-    /**
-     * Stub for the AppHost generic dashboard controller — analysis/tests only.
-     */
-    class GenericDashboardController extends Controller
-    {
+	/**
+	 * Stub for the AppHost generic dashboard controller — analysis/tests only.
+	 */
+	class GenericDashboardController extends Controller {
 
-        /**
-         * Constructor.
-         *
-         * @param string   $appName The leaf app id.
-         * @param IRequest $request HTTP request.
-         */
-        public function __construct(string $appName, IRequest $request)
-        {
-            parent::__construct(appName: $appName, request: $request);
-        }//end __construct()
+		/**
+		 * Constructor.
+		 *
+		 * @param string $appName The leaf app id.
+		 * @param IRequest $request HTTP request.
+		 */
+		public function __construct(string $appName, IRequest $request) {
+			parent::__construct(appName: $appName, request: $request);
+		}//end __construct()
 
-        /**
-         * Render the main SPA page.
-         *
-         * @return TemplateResponse The rendered template.
-         */
-        public function page(): TemplateResponse
-        {
-            return new TemplateResponse($this->appName, 'index');
-        }//end page()
+		/**
+		 * Render the main SPA page.
+		 *
+		 * @return TemplateResponse The rendered template.
+		 */
+		public function page(): TemplateResponse {
+			return new TemplateResponse($this->appName, 'index');
+		}//end page()
 
-        /**
-         * Serve the SPA for deep links (Vue history mode).
-         *
-         * @return TemplateResponse The rendered template.
-         */
-        public function catchAll(): TemplateResponse
-        {
-            return $this->page();
-        }//end catchAll()
-    }//end class
+		/**
+		 * Serve the SPA for deep links (Vue history mode).
+		 *
+		 * @return TemplateResponse The rendered template.
+		 */
+		public function catchAll(): TemplateResponse {
+			return $this->page();
+		}//end catchAll()
+	}//end class
 }//end if

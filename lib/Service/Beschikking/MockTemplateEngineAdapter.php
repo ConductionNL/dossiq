@@ -34,49 +34,46 @@ namespace OCA\Procest\Service\Beschikking;
  *
  * @spec openspec/changes/beschikking-generatie/tasks.md#T26
  */
-class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface
-{
-    /**
-     * {@inheritDoc}
-     *
-     * @param string               $templateId The template identifier.
-     * @param array<string, mixed> $context    The render context.
-     *
-     * @return array{format: string, bestandId: string, checksumSha256: string, paginas: int}
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T26
-     */
-    public function render(string $templateId, array $context): array
-    {
-        $payload = json_encode([$templateId, $context], JSON_UNESCAPED_UNICODE);
-        if ($payload === false) {
-            $payload = $templateId;
-        }
+class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @param string $templateId The template identifier.
+	 * @param array<string, mixed> $context The render context.
+	 *
+	 * @return array{format: string, bestandId: string, checksumSha256: string, paginas: int}
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
+	 */
+	public function render(string $templateId, array $context): array {
+		$payload = json_encode([$templateId, $context], JSON_UNESCAPED_UNICODE);
+		if ($payload === false) {
+			$payload = $templateId;
+		}
 
-        return [
-            'format'         => 'pdf-a3',
-            'bestandId'      => 'doc-'.substr(hash('sha256', $payload), 0, 12),
-            'checksumSha256' => hash('sha256', $payload),
-            'paginas'        => 4,
-        ];
-    }//end render()
+		return [
+			'format' => 'pdf-a3',
+			'bestandId' => 'doc-' . substr(hash('sha256', $payload), 0, 12),
+			'checksumSha256' => hash('sha256', $payload),
+			'paginas' => 4,
+		];
+	}//end render()
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param string $templateId    The template identifier.
-     * @param string $effectiveDate The effective date.
-     *
-     * @return array{templateId: string, version: string, ingangsdatum: string}
-     *
-     * @spec openspec/changes/beschikking-generatie/tasks.md#T26
-     */
-    public function resolveVersion(string $templateId, string $effectiveDate): array
-    {
-        return [
-            'templateId'   => $templateId,
-            'version'      => 'v1',
-            'ingangsdatum' => $effectiveDate,
-        ];
-    }//end resolveVersion()
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @param string $templateId The template identifier.
+	 * @param string $effectiveDate The effective date.
+	 *
+	 * @return array{templateId: string, version: string, ingangsdatum: string}
+	 *
+	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
+	 */
+	public function resolveVersion(string $templateId, string $effectiveDate): array {
+		return [
+			'templateId' => $templateId,
+			'version' => 'v1',
+			'ingangsdatum' => $effectiveDate,
+		];
+	}//end resolveVersion()
 }//end class

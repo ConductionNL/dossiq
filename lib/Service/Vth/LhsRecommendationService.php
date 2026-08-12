@@ -49,380 +49,374 @@ use Throwable;
  *
  * @psalm-suppress UnusedClass
  */
-class LhsRecommendationService
-{
-    /**
-     * Severity ordering of the `interventie` enum, lowest -> highest.
-     *
-     * Used by override() to determine whether an inspector is overriding
-     * "up" (harsher, manager-only) or "down" (lighter, any inspector).
-     *
-     * @var array<string, int>
-     */
-    private const INTERVENTIE_SEVERITY = [
-        'waarschuwing'          => 1,
-        'herstelactie'          => 2,
-        'last_onder_dwangsom'   => 3,
-        'last_plus_pv'          => 4,
-        'bestuursdwang'         => 5,
-        'pv_plus_bestuursdwang' => 6,
-    ];
+class LhsRecommendationService {
+	/**
+	 * Severity ordering of the `interventie` enum, lowest -> highest.
+	 *
+	 * Used by override() to determine whether an inspector is overriding
+	 * "up" (harsher, manager-only) or "down" (lighter, any inspector).
+	 *
+	 * @var array<string, int>
+	 */
+	private const INTERVENTIE_SEVERITY = [
+		'waarschuwing' => 1,
+		'herstelactie' => 2,
+		'last_onder_dwangsom' => 3,
+		'last_plus_pv' => 4,
+		'bestuursdwang' => 5,
+		'pv_plus_bestuursdwang' => 6,
+	];
 
-    /**
-     * Minimum length of override justification (non-whitespace chars).
-     */
-    private const MIN_JUSTIFICATION_LENGTH = 20;
+	/**
+	 * Minimum length of override justification (non-whitespace chars).
+	 */
+	private const MIN_JUSTIFICATION_LENGTH = 20;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Settings bridge
-     * @param IUserSession    $userSession     Authenticated user session
-     * @param LoggerInterface $logger          Logger
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly IUserSession $userSession,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Settings bridge
+	 * @param IUserSession $userSession Authenticated user session
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly IUserSession $userSession,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Recommend an intervention for the given (ernst, gedrag, actorType).
-     *
-     * Loads the matrix (active by default, or the explicitly requested
-     * version), maps cells into an in-memory dictionary keyed
-     * "ernst:gedrag:actorType", and persists an `lhsRecommendation` row
-     * carrying the lookup result. Identity is always derived from the
-     * session — never from caller-supplied data.
-     *
-     * @param string      $caseId     The parent case UUID
-     * @param string      $ernst      Severity axis value
-     * @param string      $gedrag     Behaviour axis value
-     * @param string      $actorType  Actor-type axis value
-     * @param int|null    $lhsVersion Optional explicit matrix version; null = active
-     * @param string|null $inspection Optional inspection rapport UUID for traceability
-     *
-     * @return array<string, mixed> The persisted recommendation row
-     *
-     * @throws RuntimeException When OpenRegister is unavailable, no matching
-     *                          matrix exists, or no cell matches the triple.
+	/**
+	 * Recommend an intervention for the given (ernst, gedrag, actorType).
+	 *
+	 * Loads the matrix (active by default, or the explicitly requested
+	 * version), maps cells into an in-memory dictionary keyed
+	 * "ernst:gedrag:actorType", and persists an `lhsRecommendation` row
+	 * carrying the lookup result. Identity is always derived from the
+	 * session — never from caller-supplied data.
+	 *
+	 * @param string $caseId The parent case UUID
+	 * @param string $ernst Severity axis value
+	 * @param string $gedrag Behaviour axis value
+	 * @param string $actorType Actor-type axis value
+	 * @param int|null $lhsVersion Optional explicit matrix version; null = active
+	 * @param string|null $inspection Optional inspection rapport UUID for traceability
+	 *
+	 * @return array<string, mixed> The persisted recommendation row
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable, no matching
+	 *                          matrix exists, or no cell matches the triple.
+	 *
+	 * @spec openspec/specs/enforcement-lhs/spec.md
+	 */
+	public function recommend(
+		string $caseId,
+		string $ernst,
+		string $gedrag,
+		string $actorType,
+		?int $lhsVersion = null,
+		?string $inspection = null,
+	): array {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			throw new RuntimeException('Authenticatie vereist voor LHS-aanbeveling');
+		}
 
-     * @spec openspec/specs/enforcement-lhs/spec.md
-     */
-    public function recommend(
-        string $caseId,
-        string $ernst,
-        string $gedrag,
-        string $actorType,
-        ?int $lhsVersion=null,
-        ?string $inspection=null,
-    ): array {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            throw new RuntimeException('Authenticatie vereist voor LHS-aanbeveling');
-        }
+		$matrix = $this->loadMatrix(version: $lhsVersion);
+		$cellIndex = $this->indexCells(cells: ($matrix['cells'] ?? []));
+		$key = $ernst . ':' . $gedrag . ':' . $actorType;
 
-        $matrix    = $this->loadMatrix(version: $lhsVersion);
-        $cellIndex = $this->indexCells(cells: ($matrix['cells'] ?? []));
-        $key       = $ernst.':'.$gedrag.':'.$actorType;
+		if (isset($cellIndex[$key]) === false) {
+			throw new RuntimeException(
+				'Geen LHS-cel gevonden voor combinatie ' . $key
+			);
+		}
 
-        if (isset($cellIndex[$key]) === false) {
-            throw new RuntimeException(
-                'Geen LHS-cel gevonden voor combinatie '.$key
-            );
-        }
+		$cell = $cellIndex[$key];
+		$recommendation = [
+			'case' => $caseId,
+			'inspection' => $inspection,
+			'ernst' => $ernst,
+			'gedrag' => $gedrag,
+			'actorType' => $actorType,
+			'matrixVersion' => (int)($matrix['version'] ?? 1),
+			'recommendedInterventie' => (string)($cell['interventie'] ?? ''),
+			'finalIntervention' => (string)($cell['interventie'] ?? ''),
+			'override' => false,
+			'recommendedBy' => $user->getUID(),
+		];
 
-        $cell           = $cellIndex[$key];
-        $recommendation = [
-            'case'                   => $caseId,
-            'inspection'             => $inspection,
-            'ernst'                  => $ernst,
-            'gedrag'                 => $gedrag,
-            'actorType'              => $actorType,
-            'matrixVersion'          => (int) ($matrix['version'] ?? 1),
-            'recommendedInterventie' => (string) ($cell['interventie'] ?? ''),
-            'finalIntervention'      => (string) ($cell['interventie'] ?? ''),
-            'override'               => false,
-            'recommendedBy'          => $user->getUID(),
-        ];
+		if ($inspection === null) {
+			unset($recommendation['inspection']);
+		}
 
-        if ($inspection === null) {
-            unset($recommendation['inspection']);
-        }
+		return $this->persistRecommendation(row: $recommendation);
+	}//end recommend()
 
-        return $this->persistRecommendation(row: $recommendation);
-    }//end recommend()
+	/**
+	 * Apply an override to an existing LHS recommendation.
+	 *
+	 * Override-down (selecting an intervention of equal or lower severity than
+	 * the recommendation) is allowed for any inspector with a justification of
+	 * at least 20 non-whitespace characters. Override-up (harsher than the
+	 * recommendation) requires the caller to declare the manager role and is
+	 * persisted with `overrideAuthority = "manager"`.
+	 *
+	 * @param array<string, mixed> $recommendation Original recommendation row
+	 *                                             (must include id, recommendedInterventie)
+	 * @param string $intervention Chosen intervention (enum value)
+	 * @param string $justification Mandatory justification (>= 20 chars)
+	 * @param string $userRole Caller role: "inspector" or "manager"
+	 *
+	 * @return array<string, mixed> The updated recommendation row
+	 *
+	 * @throws RuntimeException When validation fails (HTTP-mapped by controller).
+	 *
+	 * @spec openspec/specs/enforcement-lhs/spec.md
+	 */
+	public function override(
+		array $recommendation,
+		string $intervention,
+		string $justification,
+		string $userRole,
+	): array {
+		$user = $this->userSession->getUser();
+		if ($user === null) {
+			throw new RuntimeException('Authenticatie vereist voor override');
+		}
 
-    /**
-     * Apply an override to an existing LHS recommendation.
-     *
-     * Override-down (selecting an intervention of equal or lower severity than
-     * the recommendation) is allowed for any inspector with a justification of
-     * at least 20 non-whitespace characters. Override-up (harsher than the
-     * recommendation) requires the caller to declare the manager role and is
-     * persisted with `overrideAuthority = "manager"`.
-     *
-     * @param array<string, mixed> $recommendation Original recommendation row
-     *                                             (must include id, recommendedInterventie)
-     * @param string               $intervention   Chosen intervention (enum value)
-     * @param string               $justification  Mandatory justification (>= 20 chars)
-     * @param string               $userRole       Caller role: "inspector" or "manager"
-     *
-     * @return array<string, mixed> The updated recommendation row
-     *
-     * @throws RuntimeException When validation fails (HTTP-mapped by controller).
+		$trimmed = preg_replace('/\s+/u', '', $justification) ?? '';
+		if (mb_strlen($trimmed) < self::MIN_JUSTIFICATION_LENGTH) {
+			throw new RuntimeException(
+				'Motivatie afwijking moet minimaal 20 tekens bevatten'
+			);
+		}
 
-     * @spec openspec/specs/enforcement-lhs/spec.md
-     */
-    public function override(
-        array $recommendation,
-        string $intervention,
-        string $justification,
-        string $userRole,
-    ): array {
-        $user = $this->userSession->getUser();
-        if ($user === null) {
-            throw new RuntimeException('Authenticatie vereist voor override');
-        }
+		$recommended = (string)($recommendation['recommendedInterventie'] ?? '');
+		$recSeverity = self::INTERVENTIE_SEVERITY[$recommended] ?? 0;
+		$newSeverity = self::INTERVENTIE_SEVERITY[$intervention] ?? 0;
+		if ($newSeverity === 0) {
+			throw new RuntimeException(
+				'Ongeldige interventie: ' . $intervention
+			);
+		}
 
-        $trimmed = preg_replace('/\s+/u', '', $justification) ?? '';
-        if (mb_strlen($trimmed) < self::MIN_JUSTIFICATION_LENGTH) {
-            throw new RuntimeException(
-                'Motivatie afwijking moet minimaal 20 tekens bevatten'
-            );
-        }
+		$overrideUp = ($newSeverity > $recSeverity);
+		$authority = 'inspector';
+		if ($userRole === 'manager') {
+			$authority = 'manager';
+		}
 
-        $recommended = (string) ($recommendation['recommendedInterventie'] ?? '');
-        $recSeverity = self::INTERVENTIE_SEVERITY[$recommended] ?? 0;
-        $newSeverity = self::INTERVENTIE_SEVERITY[$intervention] ?? 0;
-        if ($newSeverity === 0) {
-            throw new RuntimeException(
-                'Ongeldige interventie: '.$intervention
-            );
-        }
+		if ($overrideUp === true && $authority !== 'manager') {
+			throw new RuntimeException('Verzwaring vereist managerrol');
+		}
 
-        $overrideUp = ($newSeverity > $recSeverity);
-        $authority  = 'inspector';
-        if ($userRole === 'manager') {
-            $authority = 'manager';
-        }
+		$recommendationId = (string)($recommendation['id'] ?? ($recommendation['@self']['id'] ?? ''));
+		if ($recommendationId === '') {
+			throw new RuntimeException('Recommendation ID ontbreekt voor override');
+		}
 
-        if ($overrideUp === true && $authority !== 'manager') {
-            throw new RuntimeException('Verzwaring vereist managerrol');
-        }
+		$updated = array_merge(
+			$recommendation,
+			[
+				'override' => true,
+				'overrideJustification' => $justification,
+				'overrideBy' => $user->getUID(),
+				'overrideAuthority' => $authority,
+				'finalIntervention' => $intervention,
+			]
+		);
 
-        $recommendationId = (string) ($recommendation['id'] ?? ($recommendation['@self']['id'] ?? ''));
-        if ($recommendationId === '') {
-            throw new RuntimeException('Recommendation ID ontbreekt voor override');
-        }
+		return $this->persistRecommendation(row: $updated, id: $recommendationId);
+	}//end override()
 
-        $updated = array_merge(
-            $recommendation,
-            [
-                'override'              => true,
-                'overrideJustification' => $justification,
-                'overrideBy'            => $user->getUID(),
-                'overrideAuthority'     => $authority,
-                'finalIntervention'     => $intervention,
-            ]
-        );
+	/**
+	 * Load the LHS matrix to use for the lookup.
+	 *
+	 * Without an explicit version, returns the matrix flagged `active = true`.
+	 * With an explicit version, returns the matching versioned snapshot —
+	 * used by historical recommendations that must remain stable across
+	 * subsequent matrix edits (REQ-LHS-8).
+	 *
+	 * @param int|null $version Explicit matrix version, or null for active
+	 *
+	 * @return array<string, mixed> The matrix row
+	 *
+	 * @throws RuntimeException When no matrix is available.
+	 */
+	private function loadMatrix(?int $version): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is niet beschikbaar');
+		}
 
-        return $this->persistRecommendation(row: $updated, id: $recommendationId);
-    }//end override()
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('lhs_matrix_schema');
+		if ($register === '' || $schema === '') {
+			throw new RuntimeException('LHS-matrix register/schema is niet geconfigureerd');
+		}
 
-    /**
-     * Load the LHS matrix to use for the lookup.
-     *
-     * Without an explicit version, returns the matrix flagged `active = true`.
-     * With an explicit version, returns the matching versioned snapshot —
-     * used by historical recommendations that must remain stable across
-     * subsequent matrix edits (REQ-LHS-8).
-     *
-     * @param int|null $version Explicit matrix version, or null for active
-     *
-     * @return array<string, mixed> The matrix row
-     *
-     * @throws RuntimeException When no matrix is available.
-     */
-    private function loadMatrix(?int $version): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is niet beschikbaar');
-        }
+		$filters = ['active' => true];
+		if ($version !== null) {
+			$filters = ['version' => $version];
+		}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('lhs_matrix_schema');
-        if ($register === '' || $schema === '') {
-            throw new RuntimeException('LHS-matrix register/schema is niet geconfigureerd');
-        }
+		try {
+			$results = $objectService->findAll(
+				[
+					'filters' => (['register' => $register, 'schema' => $schema] + $filters),
+					'limit' => 1,
+				],
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest LHS: matrix lookup failed: ' . $e->getMessage(),
+			);
+			throw new RuntimeException('LHS-matrix lookup mislukt');
+		}
 
-        $filters = ['active' => true];
-        if ($version !== null) {
-            $filters = ['version' => $version];
-        }
+		$row = $this->firstRow(results: $results);
+		if ($row === null) {
+			throw new RuntimeException('Geen actieve LHS-matrix gevonden');
+		}
 
-        try {
-            $results = $objectService->findAll(
-                [
-                    'filters' => (['register' => $register, 'schema' => $schema] + $filters),
-                    'limit'   => 1,
-                ],
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest LHS: matrix lookup failed: '.$e->getMessage(),
-            );
-            throw new RuntimeException('LHS-matrix lookup mislukt');
-        }
+		return $this->toArray(value: $row);
+	}//end loadMatrix()
 
-        $row = $this->firstRow(results: $results);
-        if ($row === null) {
-            throw new RuntimeException('Geen actieve LHS-matrix gevonden');
-        }
+	/**
+	 * Persist an lhsRecommendation row through ObjectService.
+	 *
+	 * @param array<string, mixed> $row Row to persist
+	 * @param string|null $id Existing id when updating; null for create
+	 *
+	 * @return array<string, mixed> Persisted row
+	 *
+	 * @throws RuntimeException On save failure.
+	 */
+	private function persistRecommendation(array $row, ?string $id = null): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is niet beschikbaar');
+		}
 
-        return $this->toArray(value: $row);
-    }//end loadMatrix()
+		$register = $this->settingsService->getConfigValue('register');
+		$schema = $this->settingsService->getConfigValue('lhs_recommendation_schema');
+		if ($register === '' || $schema === '') {
+			throw new RuntimeException('LHS-recommendation register/schema is niet geconfigureerd');
+		}
 
-    /**
-     * Persist an lhsRecommendation row through ObjectService.
-     *
-     * @param array<string, mixed> $row Row to persist
-     * @param string|null          $id  Existing id when updating; null for create
-     *
-     * @return array<string, mixed> Persisted row
-     *
-     * @throws RuntimeException On save failure.
-     */
-    private function persistRecommendation(array $row, ?string $id=null): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is niet beschikbaar');
-        }
+		try {
+			if ($id !== null) {
+				$row['id'] = $id;
+			}
 
-        $register = $this->settingsService->getConfigValue('register');
-        $schema   = $this->settingsService->getConfigValue('lhs_recommendation_schema');
-        if ($register === '' || $schema === '') {
-            throw new RuntimeException('LHS-recommendation register/schema is niet geconfigureerd');
-        }
+			$saved = $objectService->saveObject(
+				register: $register,
+				schema: $schema,
+				object: $row,
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest LHS: failed to save lhsRecommendation: ' . $e->getMessage(),
+			);
+			throw new RuntimeException('Opslaan LHS-aanbeveling mislukt');
+		}
 
-        try {
-            if ($id !== null) {
-                $row['id'] = $id;
-            }
+		return $this->toArray(value: $saved);
+	}//end persistRecommendation()
 
-            $saved = $objectService->saveObject(
-                register: $register,
-                schema: $schema,
-                object: $row,
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest LHS: failed to save lhsRecommendation: '.$e->getMessage(),
-            );
-            throw new RuntimeException('Opslaan LHS-aanbeveling mislukt');
-        }
+	/**
+	 * Build an in-memory dictionary of cells keyed `ernst:gedrag:actorType`.
+	 *
+	 * Accepts both a JSON-encoded string (as stored on some legacy rows)
+	 * and a native array.
+	 *
+	 * @param mixed $cells The cells field of the matrix row
+	 *
+	 * @return array<string, array<string, mixed>>
+	 */
+	private function indexCells(mixed $cells): array {
+		if (is_string($cells) === true) {
+			$decoded = json_decode($cells, true);
+			$cells = [];
+			if (is_array($decoded) === true) {
+				$cells = $decoded;
+			}
+		}
 
-        return $this->toArray(value: $saved);
-    }//end persistRecommendation()
+		if (is_array($cells) === false) {
+			return [];
+		}
 
-    /**
-     * Build an in-memory dictionary of cells keyed `ernst:gedrag:actorType`.
-     *
-     * Accepts both a JSON-encoded string (as stored on some legacy rows)
-     * and a native array.
-     *
-     * @param mixed $cells The cells field of the matrix row
-     *
-     * @return array<string, array<string, mixed>>
-     */
-    private function indexCells(mixed $cells): array
-    {
-        if (is_string($cells) === true) {
-            $decoded = json_decode($cells, true);
-            $cells   = [];
-            if (is_array($decoded) === true) {
-                $cells = $decoded;
-            }
-        }
+		$index = [];
+		foreach ($cells as $cell) {
+			if (is_array($cell) === false) {
+				continue;
+			}
 
-        if (is_array($cells) === false) {
-            return [];
-        }
+			$key = ((string)($cell['ernst'] ?? ''))
+				. ':' . ((string)($cell['gedrag'] ?? ''))
+				. ':' . ((string)($cell['actorType'] ?? ''));
+			$index[$key] = $cell;
+		}
 
-        $index = [];
-        foreach ($cells as $cell) {
-            if (is_array($cell) === false) {
-                continue;
-            }
+		return $index;
+	}//end indexCells()
 
-            $key         = ((string) ($cell['ernst'] ?? ''))
-                .':'.((string) ($cell['gedrag'] ?? ''))
-                .':'.((string) ($cell['actorType'] ?? ''));
-            $index[$key] = $cell;
-        }
+	/**
+	 * Pluck the first row from any ObjectService result shape.
+	 *
+	 * @param mixed $results ObjectService::getObjects() return
+	 *
+	 * @return mixed|null
+	 */
+	private function firstRow(mixed $results): mixed {
+		if (is_array($results) === true) {
+			if (isset($results[0]) === true) {
+				return $results[0];
+			}
 
-        return $index;
-    }//end indexCells()
+			if (isset($results['results']) === true
+				&& is_array($results['results']) === true
+				&& count($results['results']) > 0
+			) {
+				return $results['results'][0];
+			}
+		}
 
-    /**
-     * Pluck the first row from any ObjectService result shape.
-     *
-     * @param mixed $results ObjectService::getObjects() return
-     *
-     * @return mixed|null
-     */
-    private function firstRow(mixed $results): mixed
-    {
-        if (is_array($results) === true) {
-            if (isset($results[0]) === true) {
-                return $results[0];
-            }
+		return null;
+	}//end firstRow()
 
-            if (isset($results['results']) === true
-                && is_array($results['results']) === true
-                && count($results['results']) > 0
-            ) {
-                return $results['results'][0];
-            }
-        }
+	/**
+	 * Coerce an ObjectService return value to an associative array.
+	 *
+	 * @param mixed $value The value
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function toArray(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
 
-        return null;
-    }//end firstRow()
+		if (is_object($value) === true) {
+			if (method_exists($value, 'jsonSerialize') === true) {
+				$serialised = $value->jsonSerialize();
+				if (is_array($serialised) === true) {
+					return $serialised;
+				}
+			}
 
-    /**
-     * Coerce an ObjectService return value to an associative array.
-     *
-     * @param mixed $value The value
-     *
-     * @return array<string, mixed>
-     */
-    private function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
+			if (method_exists($value, 'toArray') === true) {
+				$arr = $value->toArray();
+				if (is_array($arr) === true) {
+					return $arr;
+				}
+			}
 
-        if (is_object($value) === true) {
-            if (method_exists($value, 'jsonSerialize') === true) {
-                $serialised = $value->jsonSerialize();
-                if (is_array($serialised) === true) {
-                    return $serialised;
-                }
-            }
+			return (array)$value;
+		}
 
-            if (method_exists($value, 'toArray') === true) {
-                $arr = $value->toArray();
-                if (is_array($arr) === true) {
-                    return $arr;
-                }
-            }
-
-            return (array) $value;
-        }
-
-        return [];
-    }//end toArray()
+		return [];
+	}//end toArray()
 }//end class

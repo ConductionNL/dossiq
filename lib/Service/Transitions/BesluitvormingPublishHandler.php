@@ -40,60 +40,58 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/specs/besluitvorming-workflow/spec.md
  */
-class BesluitvormingPublishHandler implements ActionHandlerInterface
-{
-    /**
-     * Constructor.
-     *
-     * @param PublicationService $publicationService The DROP/LVBB dispatcher.
-     * @param LoggerInterface    $logger             Logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly PublicationService $publicationService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class BesluitvormingPublishHandler implements ActionHandlerInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param PublicationService $publicationService The DROP/LVBB dispatcher.
+	 * @param LoggerInterface $logger Logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly PublicationService $publicationService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle the besluitvormingPublish action.
-     *
-     * @param array<string, mixed> $actionConfig      Action configuration.
-     * @param array<string, mixed> $case              Case object.
-     * @param array<string, mixed> $transitionContext Transition context.
-     *
-     * @return ActionResult
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     *
-     * @spec openspec/specs/besluitvorming-workflow/spec.md
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
-    {
-        try {
-            $caseId = (string) ($case['id'] ?? $case['uuid'] ?? '');
-            if ($caseId === '') {
-                return new ActionResult(succeeded: false, error: 'no_case_id');
-            }
+	/**
+	 * Handle the besluitvormingPublish action.
+	 *
+	 * @param array<string, mixed> $actionConfig Action configuration.
+	 * @param array<string, mixed> $case Case object.
+	 * @param array<string, mixed> $transitionContext Transition context.
+	 *
+	 * @return ActionResult
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/besluitvorming-workflow/spec.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$caseId = (string)($case['id'] ?? $case['uuid'] ?? '');
+			if ($caseId === '') {
+				return new ActionResult(succeeded: false, error: 'no_case_id');
+			}
 
-            $result = $this->publicationService->publish($caseId, ['channel' => 'website']);
-            if (($result['ok'] ?? false) === true) {
-                return new ActionResult(succeeded: true, data: $result);
-            }
+			$result = $this->publicationService->publish($caseId, ['channel' => 'website']);
+			if (($result['ok'] ?? false) === true) {
+				return new ActionResult(succeeded: true, data: $result);
+			}
 
-            // Failure does not block the transition; surface for manual retry.
-            return new ActionResult(
-                succeeded: false,
-                error: (string) ($result['error'] ?? 'publication_failed'),
-                data: $result,
-            );
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'BesluitvormingPublishHandler failed',
-                ['exception' => $e->getMessage(), 'context' => $transitionContext],
-            );
-            return new ActionResult(succeeded: false, error: 'publication_failed');
-        }//end try
-    }//end handle()
+			// Failure does not block the transition; surface for manual retry.
+			return new ActionResult(
+				succeeded: false,
+				error: (string)($result['error'] ?? 'publication_failed'),
+				data: $result,
+			);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'BesluitvormingPublishHandler failed',
+				['exception' => $e->getMessage(), 'context' => $transitionContext],
+			);
+			return new ActionResult(succeeded: false, error: 'publication_failed');
+		}//end try
+	}//end handle()
 }//end class

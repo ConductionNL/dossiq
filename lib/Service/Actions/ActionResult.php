@@ -37,44 +37,42 @@ namespace OCA\Procest\Service\Actions;
  * `$e->getMessage()` or raw exception text here — log the exception via
  * `LoggerInterface::error()` instead.
  */
-final class ActionResult
-{
-    /**
-     * Constructor for ActionResult.
-     *
-     * @param bool        $succeeded Whether the action completed successfully.
-     * @param string|null $error     Static error code on failure, null on success.
-     * @param array       $data      Handler-specific data (messageId, documentId,
-     *                               rendered preview payload, etc.).
-     *
-     * @return void
-     */
-    public function __construct(
-        public readonly bool $succeeded,
-        public readonly ?string $error=null,
-        public readonly array $data=[],
-    ) {
-    }//end __construct()
+final class ActionResult {
+	/**
+	 * Constructor for ActionResult.
+	 *
+	 * @param bool $succeeded Whether the action completed successfully.
+	 * @param string|null $error Static error code on failure, null on success.
+	 * @param array $data Handler-specific data (messageId, documentId,
+	 *                    rendered preview payload, etc.).
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		public readonly bool $succeeded,
+		public readonly ?string $error = null,
+		public readonly array $data = [],
+	) {
+	}//end __construct()
 
-    /**
-     * Convert this result to a primitive array for persistence on
-     * `statusRecord.dispatchedActions[]`.
-     *
-     * @return array
+	/**
+	 * Convert this result to a primitive array for persistence on
+	 * `statusRecord.dispatchedActions[]`.
+	 *
+	 * @return array
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function toArray(): array {
+		$out = ['ok' => $this->succeeded];
+		if ($this->error !== null) {
+			$out['error'] = $this->error;
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function toArray(): array
-    {
-        $out = ['ok' => $this->succeeded];
-        if ($this->error !== null) {
-            $out['error'] = $this->error;
-        }
+		if ($this->data !== []) {
+			$out['data'] = $this->data;
+		}
 
-        if ($this->data !== []) {
-            $out['data'] = $this->data;
-        }
-
-        return $out;
-    }//end toArray()
+		return $out;
+	}//end toArray()
 }//end class

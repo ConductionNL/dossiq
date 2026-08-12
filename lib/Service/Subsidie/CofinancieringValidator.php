@@ -36,90 +36,85 @@ namespace OCA\Procest\Service\Subsidie;
  *
  * @spec openspec/changes/subsidieverlening-keten/specs.md
  */
-class CofinancieringValidator
-{
-    /**
-     * EU co-financing party markers (case-insensitive substring match).
-     *
-     * @var array<int, string>
-     */
-    private const EU_MARKERS = ['efro', 'esf', 'eu', 'europ', 'interreg', 'horizon'];
+class CofinancieringValidator {
+	/**
+	 * EU co-financing party markers (case-insensitive substring match).
+	 *
+	 * @var array<int, string>
+	 */
+	private const EU_MARKERS = ['efro', 'esf', 'eu', 'europ', 'interreg', 'horizon'];
 
-    /**
-     * Sum a list of contribution rows by their "bedrag" field.
-     *
-     * @param array<int, array<string, mixed>> $rows The contribution rows.
-     *
-     * @return float The total in EUR.
-     */
-    public function sumBedragen(array $rows): float
-    {
-        $sum = 0.0;
-        foreach ($rows as $row) {
-            $sum += (float) ($row['bedrag'] ?? 0);
-        }
+	/**
+	 * Sum a list of contribution rows by their "bedrag" field.
+	 *
+	 * @param array<int, array<string, mixed>> $rows The contribution rows.
+	 *
+	 * @return float The total in EUR.
+	 */
+	public function sumBedragen(array $rows): float {
+		$sum = 0.0;
+		foreach ($rows as $row) {
+			$sum += (float)($row['bedrag'] ?? 0);
+		}
 
-        return round($sum, 2);
-    }//end sumBedragen()
+		return round($sum, 2);
+	}//end sumBedragen()
 
-    /**
-     * Whether subsidy + co-financing reconcile to the project total
-     * (REQ-SUB-008). Tolerates sub-cent floating-point drift.
-     *
-     * @param float                            $subsidieBedrag The requested/granted subsidy.
-     * @param array<int, array<string, mixed>> $cofinanciering The co-financing rows.
-     * @param float                            $projectTotaal  The project total.
-     *
-     * @return bool True when the funding sources reconcile to the total.
-     */
-    public function reconciles(float $subsidieBedrag, array $cofinanciering, float $projectTotaal): bool
-    {
-        $total = ($subsidieBedrag + $this->sumBedragen(rows: $cofinanciering));
-        return abs($total - $projectTotaal) < 0.01;
-    }//end reconciles()
+	/**
+	 * Whether subsidy + co-financing reconcile to the project total
+	 * (REQ-SUB-008). Tolerates sub-cent floating-point drift.
+	 *
+	 * @param float $subsidieBedrag The requested/granted subsidy.
+	 * @param array<int, array<string, mixed>> $cofinanciering The co-financing rows.
+	 * @param float $projectTotaal The project total.
+	 *
+	 * @return bool True when the funding sources reconcile to the total.
+	 */
+	public function reconciles(float $subsidieBedrag, array $cofinanciering, float $projectTotaal): bool {
+		$total = ($subsidieBedrag + $this->sumBedragen(rows: $cofinanciering));
+		return abs($total - $projectTotaal) < 0.01;
+	}//end reconciles()
 
-    /**
-     * Whether any co-financing party is an EU source (REQ-SUB-008).
-     *
-     * @param array<int, array<string, mixed>> $cofinanciering The co-financing rows.
-     *
-     * @return bool True when EU co-financing is present.
-     */
-    public function hasEuCofinanciering(array $cofinanciering): bool
-    {
-        foreach ($cofinanciering as $row) {
-            $partij = strtolower((string) ($row['partij'] ?? ''));
-            foreach (self::EU_MARKERS as $marker) {
-                if ($partij !== '' && str_contains($partij, $marker) === true) {
-                    return true;
-                }
-            }
-        }
+	/**
+	 * Whether any co-financing party is an EU source (REQ-SUB-008).
+	 *
+	 * @param array<int, array<string, mixed>> $cofinanciering The co-financing rows.
+	 *
+	 * @return bool True when EU co-financing is present.
+	 */
+	public function hasEuCofinanciering(array $cofinanciering): bool {
+		foreach ($cofinanciering as $row) {
+			$partij = strtolower((string)($row['partij'] ?? ''));
+			foreach (self::EU_MARKERS as $marker) {
+				if ($partij !== '' && str_contains($partij, $marker) === true) {
+					return true;
+				}
+			}
+		}
 
-        return false;
-    }//end hasEuCofinanciering()
+		return false;
+	}//end hasEuCofinanciering()
 
-    /**
-     * Validate a co-financing breakdown, returning a structured result with
-     * a machine-readable error code on failure (REQ-SUB-008).
-     *
-     * @param float                            $subsidieBedrag The requested/granted subsidy.
-     * @param array<int, array<string, mixed>> $cofinanciering The co-financing rows.
-     * @param float                            $projectTotaal  The project total.
-     *
-     * @return array{valid: bool, error: string|null, euCofinanciering: bool}
-     */
-    public function validate(float $subsidieBedrag, array $cofinanciering, float $projectTotaal): array
-    {
-        if ($projectTotaal <= 0.0) {
-            return ['valid' => false, 'error' => 'COFIN_PROJECT_TOTAL_INVALID', 'euCofinanciering' => false];
-        }
+	/**
+	 * Validate a co-financing breakdown, returning a structured result with
+	 * a machine-readable error code on failure (REQ-SUB-008).
+	 *
+	 * @param float $subsidieBedrag The requested/granted subsidy.
+	 * @param array<int, array<string, mixed>> $cofinanciering The co-financing rows.
+	 * @param float $projectTotaal The project total.
+	 *
+	 * @return array{valid: bool, error: string|null, euCofinanciering: bool}
+	 */
+	public function validate(float $subsidieBedrag, array $cofinanciering, float $projectTotaal): array {
+		if ($projectTotaal <= 0.0) {
+			return ['valid' => false, 'error' => 'COFIN_PROJECT_TOTAL_INVALID', 'euCofinanciering' => false];
+		}
 
-        $euCofin = $this->hasEuCofinanciering(cofinanciering: $cofinanciering);
-        if ($this->reconciles(subsidieBedrag: $subsidieBedrag, cofinanciering: $cofinanciering, projectTotaal: $projectTotaal) === false) {
-            return ['valid' => false, 'error' => 'COFIN_SUM_MISMATCH', 'euCofinanciering' => $euCofin];
-        }
+		$euCofin = $this->hasEuCofinanciering(cofinanciering: $cofinanciering);
+		if ($this->reconciles(subsidieBedrag: $subsidieBedrag, cofinanciering: $cofinanciering, projectTotaal: $projectTotaal) === false) {
+			return ['valid' => false, 'error' => 'COFIN_SUM_MISMATCH', 'euCofinanciering' => $euCofin];
+		}
 
-        return ['valid' => true, 'error' => null, 'euCofinanciering' => $euCofin];
-    }//end validate()
+		return ['valid' => true, 'error' => null, 'euCofinanciering' => $euCofin];
+	}//end validate()
 }//end class

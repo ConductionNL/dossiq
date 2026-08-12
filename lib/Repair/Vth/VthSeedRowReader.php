@@ -37,111 +37,106 @@ namespace OCA\Procest\Repair\Vth;
  *
  * @spec openspec/specs/vth-workflow-templates/spec.md
  */
-class VthSeedRowReader
-{
-    /**
-     * Extract the first row id from an OpenRegister result set.
-     *
-     * @param mixed $rows Raw result from searchObjectsAsArrays()
-     *
-     * @return string The first id or empty string
-     *
-     * @spec openspec/specs/vth-workflow-templates/spec.md
-     */
-    public function firstId(mixed $rows): string
-    {
-        if (is_array($rows) === false) {
-            return '';
-        }
+class VthSeedRowReader {
+	/**
+	 * Extract the first row id from an OpenRegister result set.
+	 *
+	 * @param mixed $rows Raw result from searchObjectsAsArrays()
+	 *
+	 * @return string The first id or empty string
+	 *
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
+	 */
+	public function firstId(mixed $rows): string {
+		if (is_array($rows) === false) {
+			return '';
+		}
 
-        // Handle paginated `{ results: [...] }` shape.
-        if (isset($rows['results']) === true && is_array($rows['results']) === true) {
-            $rows = $rows['results'];
-        }
+		// Handle paginated `{ results: [...] }` shape.
+		if (isset($rows['results']) === true && is_array($rows['results']) === true) {
+			$rows = $rows['results'];
+		}
 
-        foreach ($rows as $row) {
-            $id = $this->rowId(row: $row);
-            if ($id !== '') {
-                return $id;
-            }
-        }
+		foreach ($rows as $row) {
+			$id = $this->rowId(row: $row);
+			if ($id !== '') {
+				return $id;
+			}
+		}
 
-        return '';
-    }//end firstId()
+		return '';
+	}//end firstId()
 
-    /**
-     * Reduce statusType rows to a name → UUID map, dropping unusable rows.
-     *
-     * @param array<int, mixed> $rows The raw statusType rows
-     *
-     * @return array<string, string> Map of statusType name to UUID
-     *
-     * @spec openspec/specs/vth-workflow-templates/spec.md
-     */
-    public function statusMap(array $rows): array
-    {
-        $map = [];
-        foreach ($rows as $row) {
-            $normalized = $this->normalizeRow(row: $row);
-            if ($normalized === null) {
-                continue;
-            }
+	/**
+	 * Reduce statusType rows to a name → UUID map, dropping unusable rows.
+	 *
+	 * @param array<int, mixed> $rows The raw statusType rows
+	 *
+	 * @return array<string, string> Map of statusType name to UUID
+	 *
+	 * @spec openspec/specs/vth-workflow-templates/spec.md
+	 */
+	public function statusMap(array $rows): array {
+		$map = [];
+		foreach ($rows as $row) {
+			$normalized = $this->normalizeRow(row: $row);
+			if ($normalized === null) {
+				continue;
+			}
 
-            $name = (string) ($normalized['name'] ?? '');
-            $id   = $this->rowId(row: $normalized);
-            if ($name !== '' && $id !== '') {
-                $map[$name] = $id;
-            }
-        }
+			$name = (string)($normalized['name'] ?? '');
+			$id = $this->rowId(row: $normalized);
+			if ($name !== '' && $id !== '') {
+				$map[$name] = $id;
+			}
+		}
 
-        return $map;
-    }//end statusMap()
+		return $map;
+	}//end statusMap()
 
-    /**
-     * Read the identifier off one result row, whatever shape it arrives in.
-     *
-     * @param mixed $row Result row from ObjectService.
-     *
-     * @return string The row id / uuid, or empty string when unusable.
-     */
-    private function rowId(mixed $row): string
-    {
-        $normalized = $this->normalizeRow(row: $row);
-        if ($normalized === null) {
-            return '';
-        }
+	/**
+	 * Read the identifier off one result row, whatever shape it arrives in.
+	 *
+	 * @param mixed $row Result row from ObjectService.
+	 *
+	 * @return string The row id / uuid, or empty string when unusable.
+	 */
+	private function rowId(mixed $row): string {
+		$normalized = $this->normalizeRow(row: $row);
+		if ($normalized === null) {
+			return '';
+		}
 
-        return (string) ($normalized['id'] ?? ($normalized['uuid'] ?? ''));
-    }//end rowId()
+		return (string)($normalized['id'] ?? ($normalized['uuid'] ?? ''));
+	}//end rowId()
 
-    /**
-     * Coerce an OpenRegister result row to an associative array.
-     *
-     * @param mixed $row Result row from ObjectService
-     *
-     * @return array<string, mixed>|null
-     */
-    private function normalizeRow(mixed $row): ?array
-    {
-        if (is_array($row) === true) {
-            return $row;
-        }
+	/**
+	 * Coerce an OpenRegister result row to an associative array.
+	 *
+	 * @param mixed $row Result row from ObjectService
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function normalizeRow(mixed $row): ?array {
+		if (is_array($row) === true) {
+			return $row;
+		}
 
-        if (is_object($row) === false) {
-            return null;
-        }
+		if (is_object($row) === false) {
+			return null;
+		}
 
-        if (method_exists($row, 'jsonSerialize') === true) {
-            $serialized = $row->jsonSerialize();
-            if (is_array($serialized) === true) {
-                return $serialized;
-            }
-        }
+		if (method_exists($row, 'jsonSerialize') === true) {
+			$serialized = $row->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
+		}
 
-        if (method_exists($row, 'getId') === true) {
-            return ['id' => (string) $row->getId()];
-        }
+		if (method_exists($row, 'getId') === true) {
+			return ['id' => (string)$row->getId()];
+		}
 
-        return null;
-    }//end normalizeRow()
+		return null;
+	}//end normalizeRow()
 }//end class

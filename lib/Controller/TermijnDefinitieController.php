@@ -60,126 +60,121 @@ use Throwable;
  *
  * @spec openspec/specs/termijn-verification-admin/spec.md
  */
-class TermijnDefinitieController extends Controller
-{
+class TermijnDefinitieController extends Controller {
 
-    /**
-     * Config key naming the TermijnDefinitie schema.
-     *
-     * @var string
-     */
-    private const SCHEMA_DEFINITIE = 'termijn_definitie_schema';
+	/**
+	 * Config key naming the TermijnDefinitie schema.
+	 *
+	 * @var string
+	 */
+	private const SCHEMA_DEFINITIE = 'termijn_definitie_schema';
 
-    /**
-     * Constructor.
-     *
-     * @param string                    $appName  The app name.
-     * @param IRequest                  $request  The request.
-     * @param ConfiguredRegistryService $registry Generic configured-schema registry CRUD.
-     * @param LoggerInterface           $logger   Logger.
-     *
-     * @spec openspec/specs/termijn-verification-admin/spec.md
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private readonly ConfiguredRegistryService $registry,
-        private readonly LoggerInterface $logger,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param string $appName The app name.
+	 * @param IRequest $request The request.
+	 * @param ConfiguredRegistryService $registry Generic configured-schema registry CRUD.
+	 * @param LoggerInterface $logger Logger.
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private readonly ConfiguredRegistryService $registry,
+		private readonly LoggerInterface $logger,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * List every TermijnDefinitie, all versions.
-     *
-     * The admin tab shows the full version history and decides for itself which
-     * rows are currently in force, so this deliberately does not filter by
-     * validity — unlike `TermijnService::getTermijnDefinitie()`, which resolves
-     * the one version active on a given day.
-     *
-     * @return JSONResponse The definitions as a JSON array.
-     *
-     * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
-     *
-     * @spec openspec/specs/termijn-verification-admin/spec.md
-     */
-    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
-    public function index(): JSONResponse
-    {
-        return new JSONResponse(
-            data: $this->registry->list(schemaConfigKey: self::SCHEMA_DEFINITIE),
-            statusCode: Http::STATUS_OK
-        );
-    }//end index()
+	/**
+	 * List every TermijnDefinitie, all versions.
+	 *
+	 * The admin tab shows the full version history and decides for itself which
+	 * rows are currently in force, so this deliberately does not filter by
+	 * validity — unlike `TermijnService::getTermijnDefinitie()`, which resolves
+	 * the one version active on a given day.
+	 *
+	 * @return JSONResponse The definitions as a JSON array.
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function index(): JSONResponse {
+		return new JSONResponse(
+			data: $this->registry->list(schemaConfigKey: self::SCHEMA_DEFINITIE),
+			statusCode: Http::STATUS_OK
+		);
+	}//end index()
 
-    /**
-     * Create a TermijnDefinitie version.
-     *
-     * @return JSONResponse The created definition.
-     *
-     * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
-     *
-     * @spec openspec/specs/termijn-verification-admin/spec.md
-     */
-    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
-    public function create(): JSONResponse
-    {
-        return $this->persist(id: null, statusCode: Http::STATUS_CREATED);
-    }//end create()
+	/**
+	 * Create a TermijnDefinitie version.
+	 *
+	 * @return JSONResponse The created definition.
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function create(): JSONResponse {
+		return $this->persist(id: null, statusCode: Http::STATUS_CREATED);
+	}//end create()
 
-    /**
-     * Update a TermijnDefinitie — in practice, closing a prior version.
-     *
-     * @param string $id The definition id.
-     *
-     * @return JSONResponse The updated definition.
-     *
-     * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
-     *
-     * @spec openspec/specs/termijn-verification-admin/spec.md
-     */
-    #[AuthorizedAdminSetting(settings: AdminSettings::class)]
-    public function update(string $id): JSONResponse
-    {
-        return $this->persist(id: $id, statusCode: Http::STATUS_OK);
-    }//end update()
+	/**
+	 * Update a TermijnDefinitie — in practice, closing a prior version.
+	 *
+	 * @param string $id The definition id.
+	 *
+	 * @return JSONResponse The updated definition.
+	 *
+	 * @AuthorizedAdminSetting(settings=OCA\Procest\Settings\AdminSettings::class)
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
+	public function update(string $id): JSONResponse {
+		return $this->persist(id: $id, statusCode: Http::STATUS_OK);
+	}//end update()
 
-    /**
-     * Save a definition from the request body.
-     *
-     * @param string|null $id         Existing id, or null to create.
-     * @param int         $statusCode Status to return on success.
-     *
-     * @return JSONResponse The saved definition, or an error.
-     *
-     * @spec openspec/specs/termijn-verification-admin/spec.md
-     */
-    private function persist(?string $id, int $statusCode): JSONResponse
-    {
-        $data = $this->request->getParams();
-        unset($data['_route'], $data['id']);
+	/**
+	 * Save a definition from the request body.
+	 *
+	 * @param string|null $id Existing id, or null to create.
+	 * @param int $statusCode Status to return on success.
+	 *
+	 * @return JSONResponse The saved definition, or an error.
+	 *
+	 * @spec openspec/specs/termijn-verification-admin/spec.md
+	 */
+	private function persist(?string $id, int $statusCode): JSONResponse {
+		$data = $this->request->getParams();
+		unset($data['_route'], $data['id']);
 
-        try {
-            $saved = $this->registry->save(
-                schemaConfigKey: self::SCHEMA_DEFINITIE,
-                data: $data,
-                id: $id
-            );
-            return new JSONResponse(data: $saved, statusCode: $statusCode);
-        } catch (RuntimeException $e) {
-            return new JSONResponse(
-                ['message' => $e->getMessage()],
-                Http::STATUS_UNPROCESSABLE_ENTITY
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Failed to save TermijnDefinitie: '.$e->getMessage(),
-                ['app' => Application::APP_ID]
-            );
-            return new JSONResponse(
-                ['message' => 'Failed to save term definition: '.$e->getMessage()],
-                Http::STATUS_INTERNAL_SERVER_ERROR
-            );
-        }//end try
-    }//end persist()
+		try {
+			$saved = $this->registry->save(
+				schemaConfigKey: self::SCHEMA_DEFINITIE,
+				data: $data,
+				id: $id
+			);
+			return new JSONResponse(data: $saved, statusCode: $statusCode);
+		} catch (RuntimeException $e) {
+			return new JSONResponse(
+				['message' => $e->getMessage()],
+				Http::STATUS_UNPROCESSABLE_ENTITY
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Failed to save TermijnDefinitie: ' . $e->getMessage(),
+				['app' => Application::APP_ID]
+			);
+			return new JSONResponse(
+				['message' => 'Failed to save term definition: ' . $e->getMessage()],
+				Http::STATUS_INTERNAL_SERVER_ERROR
+			);
+		}//end try
+	}//end persist()
 }//end class

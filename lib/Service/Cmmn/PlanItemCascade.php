@@ -53,182 +53,178 @@ namespace OCA\Procest\Service\Cmmn;
  *
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-003
  */
-class PlanItemCascade
-{
+class PlanItemCascade {
 
-    /**
-     * Bound on cascade fixed-point iterations per mutation — protects against
-     * an authoring cycle in the case model (e.g. two plan items whose entry
-     * sentries reference each other's completion) looping forever. Reaching
-     * the bound is a defensive stop, not expected in a well-formed model.
-     */
-    private const MAX_CASCADE_DEPTH = 50;
+	/**
+	 * Bound on cascade fixed-point iterations per mutation — protects against
+	 * an authoring cycle in the case model (e.g. two plan items whose entry
+	 * sentries reference each other's completion) looping forever. Reaching
+	 * the bound is a defensive stop, not expected in a well-formed model.
+	 */
+	private const MAX_CASCADE_DEPTH = 50;
 
-    /**
-     * Constructor.
-     *
-     * @param PlanItemTransitions  $transitions  Legal plan-item transition table.
-     * @param SentryEvaluator      $sentries     Pure sentry-firing evaluator.
-     * @param PlanItemTree         $tree         Structural queries over the plan-item hierarchy.
-     * @param PlanItemStateMachine $stateMachine Single-transition application.
-     */
-    public function __construct(
-        private readonly PlanItemTransitions $transitions,
-        private readonly SentryEvaluator $sentries,
-        private readonly PlanItemTree $tree,
-        private readonly PlanItemStateMachine $stateMachine,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param PlanItemTransitions $transitions Legal plan-item transition table.
+	 * @param SentryEvaluator $sentries Pure sentry-firing evaluator.
+	 * @param PlanItemTree $tree Structural queries over the plan-item hierarchy.
+	 * @param PlanItemStateMachine $stateMachine Single-transition application.
+	 */
+	public function __construct(
+		private readonly PlanItemTransitions $transitions,
+		private readonly SentryEvaluator $sentries,
+		private readonly PlanItemTree $tree,
+		private readonly PlanItemStateMachine $stateMachine,
+	) {
+	}//end __construct()
 
-    /**
-     * Run cascade passes to a fixed point (or MAX_CASCADE_DEPTH).
-     *
-     * @param array<string, array<string, mixed>> $itemsById   Plan items by id.
-     * @param array<string, mixed>                $state       Runtime state, mutated in place.
-     * @param array<int, string>                  $touchedKeys Case-file keys touched this call.
-     * @param array<int, string>                  $changedKeys Subset of touchedKeys whose value changed.
-     *
-     * @return bool Whether any transition occurred across all passes.
-     *
-     * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-003
-     */
-    public function run(array &$itemsById, array &$state, array $touchedKeys, array $changedKeys): bool
-    {
-        $anyChanged = false;
-        for ($depth = 0; $depth < self::MAX_CASCADE_DEPTH; $depth++) {
-            $passChanged = $this->cascadePass(itemsById: $itemsById, state: $state, touchedKeys: $touchedKeys, changedKeys: $changedKeys);
-            if ($passChanged === false) {
-                break;
-            }
+	/**
+	 * Run cascade passes to a fixed point (or MAX_CASCADE_DEPTH).
+	 *
+	 * @param array<string, array<string, mixed>> $itemsById Plan items by id.
+	 * @param array<string, mixed> $state Runtime state, mutated in place.
+	 * @param array<int, string> $touchedKeys Case-file keys touched this call.
+	 * @param array<int, string> $changedKeys Subset of touchedKeys whose value changed.
+	 *
+	 * @return bool Whether any transition occurred across all passes.
+	 *
+	 * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-003
+	 */
+	public function run(array &$itemsById, array &$state, array $touchedKeys, array $changedKeys): bool {
+		$anyChanged = false;
+		for ($depth = 0; $depth < self::MAX_CASCADE_DEPTH; $depth++) {
+			$passChanged = $this->cascadePass(itemsById: $itemsById, state: $state, touchedKeys: $touchedKeys, changedKeys: $changedKeys);
+			if ($passChanged === false) {
+				break;
+			}
 
-            $anyChanged = true;
-        }
+			$anyChanged = true;
+		}
 
-        return $anyChanged;
-    }//end run()
+		return $anyChanged;
+	}//end run()
 
-    /**
-     * One evaluation pass over every non-terminal item, against a snapshot
-     * taken at the start of the pass (so results are independent of item
-     * iteration order — a later pass picks up anything this pass changed).
-     *
-     * @param array<string, array<string, mixed>> $itemsById   Plan items by id.
-     * @param array<string, mixed>                $state       Runtime state, mutated in place.
-     * @param array<int, string>                  $touchedKeys Case-file keys touched this call.
-     * @param array<int, string>                  $changedKeys Subset of touchedKeys whose value changed.
-     *
-     * @return bool Whether this pass changed any item's state.
-     *
-     * @SuppressWarnings(PHPMD.CyclomaticComplexity) — one evaluation pass over the state machine's
-     *   own branches (exit sentry, entry sentry, mandatory-cascade, stage auto-complete); splitting
-     *   it would scatter one pass across several methods that all need the same $context snapshot.
-     */
-    private function cascadePass(array &$itemsById, array &$state, array $touchedKeys, array $changedKeys): bool
-    {
-        $changed = false;
-        $context = [
-            'planItemStates' => $state['planItemStates'],
-            'caseFile'       => $state['caseFile'],
-            'touchedKeys'    => $touchedKeys,
-            'changedKeys'    => $changedKeys,
-        ];
+	/**
+	 * One evaluation pass over every non-terminal item, against a snapshot
+	 * taken at the start of the pass (so results are independent of item
+	 * iteration order — a later pass picks up anything this pass changed).
+	 *
+	 * @param array<string, array<string, mixed>> $itemsById Plan items by id.
+	 * @param array<string, mixed> $state Runtime state, mutated in place.
+	 * @param array<int, string> $touchedKeys Case-file keys touched this call.
+	 * @param array<int, string> $changedKeys Subset of touchedKeys whose value changed.
+	 *
+	 * @return bool Whether this pass changed any item's state.
+	 *
+	 * @SuppressWarnings(PHPMD.CyclomaticComplexity) — one evaluation pass over the state machine's
+	 *   own branches (exit sentry, entry sentry, mandatory-cascade, stage auto-complete); splitting
+	 *   it would scatter one pass across several methods that all need the same $context snapshot.
+	 */
+	private function cascadePass(array &$itemsById, array &$state, array $touchedKeys, array $changedKeys): bool {
+		$changed = false;
+		$context = [
+			'planItemStates' => $state['planItemStates'],
+			'caseFile' => $state['caseFile'],
+			'touchedKeys' => $touchedKeys,
+			'changedKeys' => $changedKeys,
+		];
 
-        foreach ($itemsById as $id => $item) {
-            $current = $state['planItemStates'][$id] ?? $this->transitions->initialState();
-            if ($this->transitions->isTerminal(state: $current) === true) {
-                continue;
-            }
+		foreach ($itemsById as $id => $item) {
+			$current = $state['planItemStates'][$id] ?? $this->transitions->initialState();
+			if ($this->transitions->isTerminal(state: $current) === true) {
+				continue;
+			}
 
-            if ($this->tree->isParentActive(item: $item, state: $state) === false) {
-                continue;
-            }
+			if ($this->tree->isParentActive(item: $item, state: $state) === false) {
+				continue;
+			}
 
-            $exitCriteria = $item['exitCriteria'] ?? [];
-            if (is_array($exitCriteria) === true && count($exitCriteria) > 0
-                && $this->sentries->anyFires(sentries: $exitCriteria, context: $context) === true
-            ) {
-                $this->stateMachine->transition(
-                    item: $item,
-                    from: $current,
-                    to: PlanItemTransitions::STATE_TERMINATED,
-                    itemsById: $itemsById,
-                    state: $state,
-                );
-                $changed = true;
-                continue;
-            }
+			$exitCriteria = $item['exitCriteria'] ?? [];
+			if (is_array($exitCriteria) === true && count($exitCriteria) > 0
+				&& $this->sentries->anyFires(sentries: $exitCriteria, context: $context) === true
+			) {
+				$this->stateMachine->transition(
+					item: $item,
+					from: $current,
+					to: PlanItemTransitions::STATE_TERMINATED,
+					itemsById: $itemsById,
+					state: $state,
+				);
+				$changed = true;
+				continue;
+			}
 
-            if ($current === PlanItemTransitions::STATE_AVAILABLE) {
-                $entryCriteria = $item['entryCriteria'] ?? [];
-                $hasNoCriteria = (is_array($entryCriteria) === false || count($entryCriteria) === 0);
-                $satisfied     = $hasNoCriteria || $this->sentries->anyFires(sentries: $entryCriteria, context: $context);
+			if ($current === PlanItemTransitions::STATE_AVAILABLE) {
+				$entryCriteria = $item['entryCriteria'] ?? [];
+				$hasNoCriteria = (is_array($entryCriteria) === false || count($entryCriteria) === 0);
+				$satisfied = $hasNoCriteria || $this->sentries->anyFires(sentries: $entryCriteria, context: $context);
 
-                if ($satisfied === true) {
-                    $this->advanceFromAvailable(item: $item, current: $current, itemsById: $itemsById, state: $state);
-                    $changed = true;
-                }
+				if ($satisfied === true) {
+					$this->advanceFromAvailable(item: $item, current: $current, itemsById: $itemsById, state: $state);
+					$changed = true;
+				}
 
-                continue;
-            }
+				continue;
+			}
 
-            if ($current === PlanItemTransitions::STATE_ACTIVE && $item['type'] === PlanItemTransitions::TYPE_STAGE) {
-                if ($this->tree->stageMandatoryChildrenAllTerminal(stageId: $id, itemsById: $itemsById, state: $state) === true) {
-                    $this->stateMachine->transition(
-                        item: $item,
-                        from: $current,
-                        to: PlanItemTransitions::STATE_COMPLETED,
-                        itemsById: $itemsById,
-                        state: $state,
-                    );
-                    $changed = true;
-                }
-            }//end if
-        }//end foreach
+			if ($current === PlanItemTransitions::STATE_ACTIVE && $item['type'] === PlanItemTransitions::TYPE_STAGE) {
+				if ($this->tree->stageMandatoryChildrenAllTerminal(stageId: $id, itemsById: $itemsById, state: $state) === true) {
+					$this->stateMachine->transition(
+						item: $item,
+						from: $current,
+						to: PlanItemTransitions::STATE_COMPLETED,
+						itemsById: $itemsById,
+						state: $state,
+					);
+					$changed = true;
+				}
+			}//end if
+		}//end foreach
 
-        return $changed;
-    }//end cascadePass()
+		return $changed;
+	}//end cascadePass()
 
-    /**
-     * Advance a plan item whose entry criteria just became satisfied: a
-     * milestone completes directly; a stage/humanTask enables, then
-     * auto-cascades straight to `active` unless it is discretionary (which
-     * stops at `enabled`, pending the worker's opt-in).
-     *
-     * @param array<string, mixed>                $item      The plan item (state `available`).
-     * @param string                              $current   Current state (`available`).
-     * @param array<string, array<string, mixed>> $itemsById Plan items by id.
-     * @param array<string, mixed>                $state     Runtime state, mutated in place.
-     *
-     * @return void
-     */
-    private function advanceFromAvailable(array $item, string $current, array &$itemsById, array &$state): void
-    {
-        if ($item['type'] === PlanItemTransitions::TYPE_MILESTONE) {
-            $this->stateMachine->transition(
-                item: $item,
-                from: $current,
-                to: PlanItemTransitions::STATE_COMPLETED,
-                itemsById: $itemsById,
-                state: $state,
-            );
-            return;
-        }
+	/**
+	 * Advance a plan item whose entry criteria just became satisfied: a
+	 * milestone completes directly; a stage/humanTask enables, then
+	 * auto-cascades straight to `active` unless it is discretionary (which
+	 * stops at `enabled`, pending the worker's opt-in).
+	 *
+	 * @param array<string, mixed> $item The plan item (state `available`).
+	 * @param string $current Current state (`available`).
+	 * @param array<string, array<string, mixed>> $itemsById Plan items by id.
+	 * @param array<string, mixed> $state Runtime state, mutated in place.
+	 *
+	 * @return void
+	 */
+	private function advanceFromAvailable(array $item, string $current, array &$itemsById, array &$state): void {
+		if ($item['type'] === PlanItemTransitions::TYPE_MILESTONE) {
+			$this->stateMachine->transition(
+				item: $item,
+				from: $current,
+				to: PlanItemTransitions::STATE_COMPLETED,
+				itemsById: $itemsById,
+				state: $state,
+			);
+			return;
+		}
 
-        $this->stateMachine->transition(
-            item: $item,
-            from: $current,
-            to: PlanItemTransitions::STATE_ENABLED,
-            itemsById: $itemsById,
-            state: $state,
-        );
-        if (($item['discretionary'] ?? false) !== true) {
-            $this->stateMachine->transition(
-                item: $item,
-                from: PlanItemTransitions::STATE_ENABLED,
-                to: PlanItemTransitions::STATE_ACTIVE,
-                itemsById: $itemsById,
-                state: $state,
-            );
-        }
-    }//end advanceFromAvailable()
+		$this->stateMachine->transition(
+			item: $item,
+			from: $current,
+			to: PlanItemTransitions::STATE_ENABLED,
+			itemsById: $itemsById,
+			state: $state,
+		);
+		if (($item['discretionary'] ?? false) !== true) {
+			$this->stateMachine->transition(
+				item: $item,
+				from: PlanItemTransitions::STATE_ENABLED,
+				to: PlanItemTransitions::STATE_ACTIVE,
+				itemsById: $itemsById,
+				state: $state,
+			);
+		}
+	}//end advanceFromAvailable()
 }//end class

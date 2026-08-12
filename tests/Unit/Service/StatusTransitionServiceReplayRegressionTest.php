@@ -43,9 +43,8 @@ use Psr\Log\LoggerInterface;
  * The lack of a `findObjects()` method here is intentional — it documents the
  * Phase-0 root cause (that method never existed on the real ObjectService).
  */
-interface ReplayObjectServiceStub
-{
-    public function searchObjects(array $query): array;
+interface ReplayObjectServiceStub {
+	public function searchObjects(array $query): array;
 }//end interface
 
 /**
@@ -56,157 +55,150 @@ interface ReplayObjectServiceStub
  * @uses \OCA\Procest\Service\Transitions\CaseStatusStore
  * @uses \OCA\Procest\Service\Transitions\TransitionAuthorizer
  */
-class StatusTransitionServiceReplayRegressionTest extends TestCase
-{
+class StatusTransitionServiceReplayRegressionTest extends TestCase {
 
-    /**
-     * @var SettingsService&MockObject
-     */
-    private SettingsService $settingsService;
+	/**
+	 * @var SettingsService&MockObject
+	 */
+	private SettingsService $settingsService;
 
-    /**
-     * @var LoggerInterface&MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * @var LoggerInterface&MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * The service under test.
-     *
-     * @var StatusTransitionService
-     */
-    private StatusTransitionService $service;
+	/**
+	 * The service under test.
+	 *
+	 * @var StatusTransitionService
+	 */
+	private StatusTransitionService $service;
 
-    /**
-     * Set up the test environment.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->settingsService = $this->createMock(SettingsService::class);
-        $this->logger          = $this->createMock(LoggerInterface::class);
+	/**
+	 * Set up the test environment.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->settingsService = $this->createMock(SettingsService::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-        $this->service = new StatusTransitionService(
-            $this->createMock(WorkflowTemplateLoader::class),
-            $this->createMock(GuardRegistry::class),
-            $this->createMock(SideEffectDispatcher::class),
-            new CaseStatusStore($this->settingsService, $this->logger),
-            new TransitionAuthorizer($this->createMock(IGroupManager::class), $this->logger),
-            new TransitionSpecReader(),
-            $this->createMock(IUserSession::class),
-            $this->logger,
-        );
+		$this->service = new StatusTransitionService(
+			$this->createMock(WorkflowTemplateLoader::class),
+			$this->createMock(GuardRegistry::class),
+			$this->createMock(SideEffectDispatcher::class),
+			new CaseStatusStore($this->settingsService, $this->logger),
+			new TransitionAuthorizer($this->createMock(IGroupManager::class), $this->logger),
+			new TransitionSpecReader(),
+			$this->createMock(IUserSession::class),
+			$this->logger,
+		);
 
-    }//end setUp()
+	}//end setUp()
 
-    /**
-     * Configure the SettingsService mock with register + status_record_schema IDs.
-     *
-     * @param object $objectService The ObjectService mock to return.
-     *
-     * @return void
-     */
-    private function withObjectService(object $objectService): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn($objectService);
-        $this->settingsService->method('getConfigValue')->willReturnMap(
-            [
-                ['register', '', '7'],
-                ['status_record_schema', '', '99'],
-            ]
-        );
+	/**
+	 * Configure the SettingsService mock with register + status_record_schema IDs.
+	 *
+	 * @param object $objectService The ObjectService mock to return.
+	 *
+	 * @return void
+	 */
+	private function withObjectService(object $objectService): void {
+		$this->settingsService->method('getObjectService')->willReturn($objectService);
+		$this->settingsService->method('getConfigValue')->willReturnMap(
+			[
+				['register', '', '7'],
+				['status_record_schema', '', '99'],
+			]
+		);
 
-    }//end withObjectService()
+	}//end withObjectService()
 
-    /**
-     * replay() must call searchObjects() with the @self register/schema context
-     * and a top-level `case` equality filter — the Phase-0 query shape.
-     *
-     * @return void
-     */
-    public function testReplayUsesSearchObjectsWithSelfBlock(): void
-    {
-        $objectService = $this->createMock(ReplayObjectServiceStub::class);
-        $this->withObjectService($objectService);
+	/**
+	 * replay() must call searchObjects() with the @self register/schema context
+	 * and a top-level `case` equality filter — the Phase-0 query shape.
+	 *
+	 * @return void
+	 */
+	public function testReplayUsesSearchObjectsWithSelfBlock(): void {
+		$objectService = $this->createMock(ReplayObjectServiceStub::class);
+		$this->withObjectService($objectService);
 
-        $objectService->expects($this->once())
-            ->method('searchObjects')
-            ->with(
-                $this->callback(
-                    static function (array $query): bool {
-                        return ($query['@self']['register'] ?? null) === 7
-                            && ($query['@self']['schema'] ?? null) === 99
-                            && ($query['case'] ?? null) === 'case-1';
-                    }
-                )
-            )
-            ->willReturn([]);
+		$objectService->expects($this->once())
+			->method('searchObjects')
+			->with(
+				$this->callback(
+					static function (array $query): bool {
+						return ($query['@self']['register'] ?? null) === 7
+							&& ($query['@self']['schema'] ?? null) === 99
+							&& ($query['case'] ?? null) === 'case-1';
+					}
+				)
+			)
+			->willReturn([]);
 
-        $result = $this->service->replay('case-1');
+		$result = $this->service->replay('case-1');
 
-        $this->assertSame([], $result['history']);
-        $this->assertTrue($result['replayable']);
+		$this->assertSame([], $result['history']);
+		$this->assertTrue($result['replayable']);
 
-    }//end testReplayUsesSearchObjectsWithSelfBlock()
+	}//end testReplayUsesSearchObjectsWithSelfBlock()
 
-    /**
-     * replay() orders records chronologically by createdAt.
-     *
-     * @return void
-     */
-    public function testReplaySortsHistoryChronologically(): void
-    {
-        $objectService = $this->createMock(ReplayObjectServiceStub::class);
-        $this->withObjectService($objectService);
+	/**
+	 * replay() orders records chronologically by createdAt.
+	 *
+	 * @return void
+	 */
+	public function testReplaySortsHistoryChronologically(): void {
+		$objectService = $this->createMock(ReplayObjectServiceStub::class);
+		$this->withObjectService($objectService);
 
-        $objectService->method('searchObjects')->willReturn(
-            [
-                ['id' => 'later', 'createdAt' => '2026-06-02T10:00:00+00:00'],
-                ['id' => 'earlier', 'createdAt' => '2026-06-01T10:00:00+00:00'],
-            ]
-        );
+		$objectService->method('searchObjects')->willReturn(
+			[
+				['id' => 'later', 'createdAt' => '2026-06-02T10:00:00+00:00'],
+				['id' => 'earlier', 'createdAt' => '2026-06-01T10:00:00+00:00'],
+			]
+		);
 
-        $result = $this->service->replay('case-2');
+		$result = $this->service->replay('case-2');
 
-        $this->assertTrue($result['replayable']);
-        $this->assertSame('earlier', $result['history'][0]['id']);
-        $this->assertSame('later', $result['history'][1]['id']);
+		$this->assertTrue($result['replayable']);
+		$this->assertSame('earlier', $result['history'][0]['id']);
+		$this->assertSame('later', $result['history'][1]['id']);
 
-    }//end testReplaySortsHistoryChronologically()
+	}//end testReplaySortsHistoryChronologically()
 
-    /**
-     * A throwing searchObjects() is caught and yields a non-replayable empty set.
-     *
-     * @return void
-     */
-    public function testReplaySwallowsSearchObjectsFailure(): void
-    {
-        $objectService = $this->createMock(ReplayObjectServiceStub::class);
-        $this->withObjectService($objectService);
+	/**
+	 * A throwing searchObjects() is caught and yields a non-replayable empty set.
+	 *
+	 * @return void
+	 */
+	public function testReplaySwallowsSearchObjectsFailure(): void {
+		$objectService = $this->createMock(ReplayObjectServiceStub::class);
+		$this->withObjectService($objectService);
 
-        $objectService->method('searchObjects')
-            ->willThrowException(new \RuntimeException('boom'));
+		$objectService->method('searchObjects')
+			->willThrowException(new \RuntimeException('boom'));
 
-        $result = $this->service->replay('case-err');
+		$result = $this->service->replay('case-err');
 
-        $this->assertSame([], $result['history']);
-        $this->assertFalse($result['replayable']);
+		$this->assertSame([], $result['history']);
+		$this->assertFalse($result['replayable']);
 
-    }//end testReplaySwallowsSearchObjectsFailure()
+	}//end testReplaySwallowsSearchObjectsFailure()
 
-    /**
-     * No ObjectService (OpenRegister absent) returns a non-replayable empty set.
-     *
-     * @return void
-     */
-    public function testReplayReturnsEmptyWithoutObjectService(): void
-    {
-        $this->settingsService->method('getObjectService')->willReturn(null);
+	/**
+	 * No ObjectService (OpenRegister absent) returns a non-replayable empty set.
+	 *
+	 * @return void
+	 */
+	public function testReplayReturnsEmptyWithoutObjectService(): void {
+		$this->settingsService->method('getObjectService')->willReturn(null);
 
-        $result = $this->service->replay('case-x');
+		$result = $this->service->replay('case-x');
 
-        $this->assertSame([], $result['history']);
-        $this->assertFalse($result['replayable']);
+		$this->assertSame([], $result['history']);
+		$this->assertFalse($result['replayable']);
 
-    }//end testReplayReturnsEmptyWithoutObjectService()
+	}//end testReplayReturnsEmptyWithoutObjectService()
 }//end class

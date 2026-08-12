@@ -33,87 +33,83 @@ namespace OCA\Procest\Service\Transitions;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T09
  */
-class ActionHandlerRegistry
-{
+class ActionHandlerRegistry {
 
-    /**
-     * Registered handlers keyed by action type.
-     *
-     * @var array<string, ActionHandlerInterface>
-     */
-    private array $handlers = [];
+	/**
+	 * Registered handlers keyed by action type.
+	 *
+	 * @var array<string, ActionHandlerInterface>
+	 */
+	private array $handlers = [];
 
-    /**
-     * Constructor — wires the built-in handlers.
-     *
-     * @param SendEmailHandler              $sendEmail        Built-in email handler
-     * @param CreateTaskHandler             $createTask       Built-in task handler
-     * @param CreateSubCaseHandler          $createSubCase    Built-in sub-case handler
-     * @param WebhookHandler                $webhook          Built-in webhook handler
-     * @param SetFieldHandler               $setField         Built-in field-set handler
-     * @param NotifyHandler                 $notify           Built-in notification handler
-     * @param BesluitvormingActivateHandler $besluitActivate  Parafering-chain activation handler
-     * @param BesluitvormingPublishHandler  $besluitPublish   DROP/LVBB publication handler
-     * @param EvaluateDecisionHandler       $evaluateDecision DMN decision-evaluation handler
-     */
-    public function __construct(
-        SendEmailHandler $sendEmail,
-        CreateTaskHandler $createTask,
-        CreateSubCaseHandler $createSubCase,
-        WebhookHandler $webhook,
-        SetFieldHandler $setField,
-        NotifyHandler $notify,
-        BesluitvormingActivateHandler $besluitActivate,
-        BesluitvormingPublishHandler $besluitPublish,
-        EvaluateDecisionHandler $evaluateDecision,
-    ) {
-        $this->handlers = [
-            'sendEmail'              => $sendEmail,
-            'createTask'             => $createTask,
-            'createSubCase'          => $createSubCase,
-            'webhook'                => $webhook,
-            'setField'               => $setField,
-            'notify'                 => $notify,
-            'besluitvormingActivate' => $besluitActivate,
-            'besluitvormingPublish'  => $besluitPublish,
-            'evaluateDecision'       => $evaluateDecision,
-        ];
-    }//end __construct()
+	/**
+	 * Constructor — wires the built-in handlers.
+	 *
+	 * @param SendEmailHandler $sendEmail Built-in email handler
+	 * @param CreateTaskHandler $createTask Built-in task handler
+	 * @param CreateSubCaseHandler $createSubCase Built-in sub-case handler
+	 * @param WebhookHandler $webhook Built-in webhook handler
+	 * @param SetFieldHandler $setField Built-in field-set handler
+	 * @param NotifyHandler $notify Built-in notification handler
+	 * @param BesluitvormingActivateHandler $besluitActivate Parafering-chain activation handler
+	 * @param BesluitvormingPublishHandler $besluitPublish DROP/LVBB publication handler
+	 * @param EvaluateDecisionHandler $evaluateDecision DMN decision-evaluation handler
+	 */
+	public function __construct(
+		SendEmailHandler $sendEmail,
+		CreateTaskHandler $createTask,
+		CreateSubCaseHandler $createSubCase,
+		WebhookHandler $webhook,
+		SetFieldHandler $setField,
+		NotifyHandler $notify,
+		BesluitvormingActivateHandler $besluitActivate,
+		BesluitvormingPublishHandler $besluitPublish,
+		EvaluateDecisionHandler $evaluateDecision,
+	) {
+		$this->handlers = [
+			'sendEmail' => $sendEmail,
+			'createTask' => $createTask,
+			'createSubCase' => $createSubCase,
+			'webhook' => $webhook,
+			'setField' => $setField,
+			'notify' => $notify,
+			'besluitvormingActivate' => $besluitActivate,
+			'besluitvormingPublish' => $besluitPublish,
+			'evaluateDecision' => $evaluateDecision,
+		];
+	}//end __construct()
 
-    /**
-     * Register an additional handler (DI extension point).
-     *
-     * @param string                 $type    Action type identifier
-     * @param ActionHandlerInterface $handler Handler implementation
-     *
-     * @return void
+	/**
+	 * Register an additional handler (DI extension point).
+	 *
+	 * @param string $type Action type identifier
+	 * @param ActionHandlerInterface $handler Handler implementation
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function registerHandler(string $type, ActionHandlerInterface $handler): void {
+		$this->handlers[$type] = $handler;
+	}//end registerHandler()
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function registerHandler(string $type, ActionHandlerInterface $handler): void
-    {
-        $this->handlers[$type] = $handler;
-    }//end registerHandler()
+	/**
+	 * Look up a handler by type.
+	 *
+	 * @param string $type Action type
+	 *
+	 * @return ActionHandlerInterface|null
+	 */
+	public function getHandler(string $type): ?ActionHandlerInterface {
+		return ($this->handlers[$type] ?? null);
+	}//end getHandler()
 
-    /**
-     * Look up a handler by type.
-     *
-     * @param string $type Action type
-     *
-     * @return ActionHandlerInterface|null
-     */
-    public function getHandler(string $type): ?ActionHandlerInterface
-    {
-        return ($this->handlers[$type] ?? null);
-    }//end getHandler()
-
-    /**
-     * Get all registered action types.
-     *
-     * @return array<int, string>
-     */
-    public function getRegisteredTypes(): array
-    {
-        return array_keys($this->handlers);
-    }//end getRegisteredTypes()
+	/**
+	 * Get all registered action types.
+	 *
+	 * @return array<int, string>
+	 */
+	public function getRegisteredTypes(): array {
+		return array_keys($this->handlers);
+	}//end getRegisteredTypes()
 }//end class

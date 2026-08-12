@@ -39,31 +39,29 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class ServiceRegistrar
-{
-    /**
-     * Register every procest service binding.
-     *
-     * Order matters at exactly one point: the AppHost engine aliases procest's
-     * Settings plumbing to its generics, so BespokeServiceRegistrar must run
-     * after it to override those keys back onto the concrete procest classes.
-     *
-     * @param IRegistrationContext $context The registration context.
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        (new AppHostRegistrar())->register(context: $context);
-        (new BespokeServiceRegistrar())->register(context: $context);
+class ServiceRegistrar {
+	/**
+	 * Register every procest service binding.
+	 *
+	 * Order matters at exactly one point: the AppHost engine aliases procest's
+	 * Settings plumbing to its generics, so BespokeServiceRegistrar must run
+	 * after it to override those keys back onto the concrete procest classes.
+	 *
+	 * @param IRegistrationContext $context The registration context.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		(new AppHostRegistrar())->register(context: $context);
+		(new BespokeServiceRegistrar())->register(context: $context);
 
-        (new MiddlewareRegistrar())->register(context: $context);
-        (new SaasServiceRegistrar())->register(context: $context);
+		(new MiddlewareRegistrar())->register(context: $context);
+		(new SaasServiceRegistrar())->register(context: $context);
 
-        (new BeschikkingAdapterRegistrar())->register(context: $context);
-        (new AuthAdapterRegistrar())->register(context: $context);
-        (new ExternalRegisterRegistrar())->register(context: $context);
-    }//end register()
+		(new BeschikkingAdapterRegistrar())->register(context: $context);
+		(new AuthAdapterRegistrar())->register(context: $context);
+		(new ExternalRegisterRegistrar())->register(context: $context);
+	}//end register()
 }//end class

@@ -66,57 +66,56 @@ namespace OCA\Procest\Service\External\Brk;
  *
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
-interface BrkAdapterInterface
-{
-    /**
-     * Look up a kadastraal onroerende zaak (parcel) by its kadastrale
-     * aanduiding (gemeentecode + sectie + perceelnummer, optionally an
-     * appartementsrecht volgnummer).
-     *
-     * @param string              $kadastraleGemeenteCode      Kadastrale gemeentecode.
-     * @param string              $sectie                      Sectie (1-2 uppercase letters).
-     * @param string              $perceelnummer               Perceelnummer (1-5 digits).
-     * @param string|null         $appartementsrechtVolgnummer Optional appartementsrecht
-     *                                                         volgnummer (`A` + 1-4 digits).
-     * @param array<string,mixed> $context                     Optional context —
-     *                                                         caseId, lookupReason,
-     *                                                         correlationId.
-     *
-     * @return BrkLookupResult The lookup outcome (status + normalized
-     *                         parcel envelope, empty unless FOUND).
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function lookupByKadastraleAanduiding(
-        string $kadastraleGemeenteCode,
-        string $sectie,
-        string $perceelnummer,
-        ?string $appartementsrechtVolgnummer=null,
-        array $context=[]
-    ): BrkLookupResult;
+interface BrkAdapterInterface {
+	/**
+	 * Look up a kadastraal onroerende zaak (parcel) by its kadastrale
+	 * aanduiding (gemeentecode + sectie + perceelnummer, optionally an
+	 * appartementsrecht volgnummer).
+	 *
+	 * @param string $kadastraleGemeenteCode Kadastrale gemeentecode.
+	 * @param string $sectie Sectie (1-2 uppercase letters).
+	 * @param string $perceelnummer Perceelnummer (1-5 digits).
+	 * @param string|null $appartementsrechtVolgnummer Optional appartementsrecht
+	 *                                                 volgnummer (`A` + 1-4 digits).
+	 * @param array<string,mixed> $context Optional context —
+	 *                                     caseId, lookupReason,
+	 *                                     correlationId.
+	 *
+	 * @return BrkLookupResult The lookup outcome (status + normalized
+	 *                         parcel envelope, empty unless FOUND).
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function lookupByKadastraleAanduiding(
+		string $kadastraleGemeenteCode,
+		string $sectie,
+		string $perceelnummer,
+		?string $appartementsrechtVolgnummer = null,
+		array $context = [],
+	): BrkLookupResult;
 
-    /**
-     * Look up a kadastraal onroerende zaak (parcel) by its Kadaster
-     * identificatie.
-     *
-     * @param string              $id      BRK kadastraalOnroerendeZaak identificatie.
-     * @param array<string,mixed> $context Optional context — caseId,
-     *                                     lookupReason, correlationId.
-     *
-     * @return BrkLookupResult The lookup outcome (status + normalized
-     *                         envelope, empty unless FOUND).
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function lookupObject(string $id, array $context=[]): BrkLookupResult;
+	/**
+	 * Look up a kadastraal onroerende zaak (parcel) by its Kadaster
+	 * identificatie.
+	 *
+	 * @param string $id BRK kadastraalOnroerendeZaak identificatie.
+	 * @param array<string,mixed> $context Optional context — caseId,
+	 *                                     lookupReason, correlationId.
+	 *
+	 * @return BrkLookupResult The lookup outcome (status + normalized
+	 *                         envelope, empty unless FOUND).
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function lookupObject(string $id, array $context = []): BrkLookupResult;
 
-    /**
-     * Whether the adapter is dormant — i.e. wired but not contacting
-     * Kadaster.
-     *
-     * @return bool TRUE when the adapter is a log-only stub.
-     *
-     * @spec openspec/changes/brk-woz-register-adapters/proposal.md
-     */
-    public function isDormant(): bool;
+	/**
+	 * Whether the adapter is dormant — i.e. wired but not contacting
+	 * Kadaster.
+	 *
+	 * @return bool TRUE when the adapter is a log-only stub.
+	 *
+	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
+	 */
+	public function isDormant(): bool;
 }//end interface

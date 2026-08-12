@@ -43,80 +43,76 @@ namespace OCA\Procest\Service\Support;
  *
  * @spec openspec/changes/parafering-actions/tasks.md#T02
  */
-class ObjectArrayNormalizer
-{
-    /**
-     * Normalise a return value to an array, answering `[]` for anything that
-     * cannot be serialised.
-     *
-     * @param mixed $value The value to normalise.
-     *
-     * @return array<string, mixed> The associative array, or `[]`.
-     *
-     * @spec openspec/changes/parafering-actions/tasks.md#T02
-     */
-    public function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
+class ObjectArrayNormalizer {
+	/**
+	 * Normalise a return value to an array, answering `[]` for anything that
+	 * cannot be serialised.
+	 *
+	 * @param mixed $value The value to normalise.
+	 *
+	 * @return array<string, mixed> The associative array, or `[]`.
+	 *
+	 * @spec openspec/changes/parafering-actions/tasks.md#T02
+	 */
+	public function toArray(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
 
-        return ($this->serialiseObject(value: $value) ?? []);
-    }//end toArray()
+		return ($this->serialiseObject(value: $value) ?? []);
+	}//end toArray()
 
-    /**
-     * Normalise a return value to an array, falling back to an object cast.
-     *
-     * Use where the caller previously relied on an un-serialisable object
-     * still yielding its public properties rather than an empty array.
-     *
-     * @param mixed $value The value to normalise.
-     *
-     * @return array<string, mixed> The associative array, or `[]` for scalars/null.
-     *
-     * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
-     */
-    public function toArrayWithCast(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
+	/**
+	 * Normalise a return value to an array, falling back to an object cast.
+	 *
+	 * Use where the caller previously relied on an un-serialisable object
+	 * still yielding its public properties rather than an empty array.
+	 *
+	 * @param mixed $value The value to normalise.
+	 *
+	 * @return array<string, mixed> The associative array, or `[]` for scalars/null.
+	 *
+	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
+	 */
+	public function toArrayWithCast(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
 
-        if (is_object($value) === false) {
-            return [];
-        }
+		if (is_object($value) === false) {
+			return [];
+		}
 
-        return ($this->serialiseObject(value: $value) ?? (array) $value);
-    }//end toArrayWithCast()
+		return ($this->serialiseObject(value: $value) ?? (array)$value);
+	}//end toArrayWithCast()
 
-    /**
-     * Try the two serialisation methods OpenRegister entities expose.
-     *
-     * @param mixed $value The candidate object.
-     *
-     * @return array<string, mixed>|null The serialised array, or null when the
-     *                                   value is not a serialisable object.
-     */
-    private function serialiseObject(mixed $value): ?array
-    {
-        if (is_object($value) === false) {
-            return null;
-        }
+	/**
+	 * Try the two serialisation methods OpenRegister entities expose.
+	 *
+	 * @param mixed $value The candidate object.
+	 *
+	 * @return array<string, mixed>|null The serialised array, or null when the
+	 *                                   value is not a serialisable object.
+	 */
+	private function serialiseObject(mixed $value): ?array {
+		if (is_object($value) === false) {
+			return null;
+		}
 
-        if (method_exists($value, 'jsonSerialize') === true) {
-            $serialized = $value->jsonSerialize();
-            if (is_array($serialized) === true) {
-                return $serialized;
-            }
-        }
+		if (method_exists($value, 'jsonSerialize') === true) {
+			$serialized = $value->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
+		}
 
-        if (method_exists($value, 'toArray') === true) {
-            $converted = $value->toArray();
-            if (is_array($converted) === true) {
-                return $converted;
-            }
-        }
+		if (method_exists($value, 'toArray') === true) {
+			$converted = $value->toArray();
+			if (is_array($converted) === true) {
+				return $converted;
+			}
+		}
 
-        return null;
-    }//end serialiseObject()
+		return null;
+	}//end serialiseObject()
 }//end class

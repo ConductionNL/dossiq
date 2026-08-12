@@ -35,136 +35,131 @@ use Psr\Log\LoggerInterface;
 /**
  * Threshold-aware escalation dispatcher for the daily termijn scan.
  */
-class DeadlineEscalationService
-{
-    /**
-     * Default escalation matrix.
-     *
-     * Maps threshold-in-days → {recipients, priority, template}.
-     *
-     * @var array<int, array<string, mixed>>
-     */
-    private const DEFAULT_MATRIX = [
-        14 => ['recipients' => ['handler'],                        'priority' => 'low',      'template' => 'termijn-14d'],
-        7  => ['recipients' => ['handler', 'teamleader'],          'priority' => 'medium',   'template' => 'termijn-7d'],
-        2  => ['recipients' => ['handler', 'teamleader', 'manager'], 'priority' => 'high',     'template' => 'termijn-2d'],
-        0  => ['recipients' => ['handler', 'teamleader', 'manager'], 'priority' => 'critical', 'template' => 'termijn-overschreden'],
-    ];
+class DeadlineEscalationService {
+	/**
+	 * Default escalation matrix.
+	 *
+	 * Maps threshold-in-days → {recipients, priority, template}.
+	 *
+	 * @var array<int, array<string, mixed>>
+	 */
+	private const DEFAULT_MATRIX = [
+		14 => ['recipients' => ['handler'],                        'priority' => 'low',      'template' => 'termijn-14d'],
+		7 => ['recipients' => ['handler', 'teamleader'],          'priority' => 'medium',   'template' => 'termijn-7d'],
+		2 => ['recipients' => ['handler', 'teamleader', 'manager'], 'priority' => 'high',     'template' => 'termijn-2d'],
+		0 => ['recipients' => ['handler', 'teamleader', 'manager'], 'priority' => 'critical', 'template' => 'termijn-overschreden'],
+	];
 
-    /**
-     * Constructor.
-     *
-     * @param TermijnService  $termijnService TermijnService for instance lookup/update.
-     * @param LoggerInterface $logger         Logger.
-     */
-    public function __construct(
-        private readonly TermijnService $termijnService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param TermijnService $termijnService TermijnService for instance lookup/update.
+	 * @param LoggerInterface $logger Logger.
+	 */
+	public function __construct(
+		private readonly TermijnService $termijnService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Available threshold buckets, sorted descending so the earliest first.
-     *
-     * @return array<int, int>
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
-     */
-    public function thresholds(): array
-    {
-        $keys = array_keys(self::DEFAULT_MATRIX);
-        rsort($keys);
-        return $keys;
-    }//end thresholds()
+	/**
+	 * Available threshold buckets, sorted descending so the earliest first.
+	 *
+	 * @return array<int, int>
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+	 */
+	public function thresholds(): array {
+		$keys = array_keys(self::DEFAULT_MATRIX);
+		rsort($keys);
+		return $keys;
+	}//end thresholds()
 
-    /**
-     * Compute the threshold bucket for a number of days remaining.
-     *
-     * Returns null when above the highest threshold, 0 when zero/negative.
-     *
-     * @param int $daysToDeadline Days to deadline (negative = overschreden).
-     *
-     * @return int|null
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
-     */
-    public function bucketFor(int $daysToDeadline): ?int
-    {
-        if ($daysToDeadline <= 0) {
-            return 0;
-        }
+	/**
+	 * Compute the threshold bucket for a number of days remaining.
+	 *
+	 * Returns null when above the highest threshold, 0 when zero/negative.
+	 *
+	 * @param int $daysToDeadline Days to deadline (negative = overschreden).
+	 *
+	 * @return int|null
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+	 */
+	public function bucketFor(int $daysToDeadline): ?int {
+		if ($daysToDeadline <= 0) {
+			return 0;
+		}
 
-        // Walk ascending so the *tightest* matching threshold wins
-        // (7 days remaining → bucket 7, not 14).
-        $buckets = $this->thresholds();
-        sort($buckets);
-        foreach ($buckets as $bucket) {
-            if ($bucket > 0 && $daysToDeadline <= $bucket) {
-                return $bucket;
-            }
-        }
+		// Walk ascending so the *tightest* matching threshold wins
+		// (7 days remaining → bucket 7, not 14).
+		$buckets = $this->thresholds();
+		sort($buckets);
+		foreach ($buckets as $bucket) {
+			if ($bucket > 0 && $daysToDeadline <= $bucket) {
+				return $bucket;
+			}
+		}
 
-        return null;
-    }//end bucketFor()
+		return null;
+	}//end bucketFor()
 
-    /**
-     * Notify a threshold for a TermijnInstance (idempotent on duplicates).
-     *
-     * @param array<string, mixed> $instance  TermijnInstance row.
-     * @param int                  $threshold Threshold bucket (14/7/2/0).
-     *
-     * @return bool True if a notification was sent (i.e. not a duplicate).
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
-     */
-    public function notifyThreshold(array $instance, int $threshold): bool
-    {
-        $instanceId = (string) ($instance['id'] ?? '');
-        if ($instanceId === '') {
-            return false;
-        }
+	/**
+	 * Notify a threshold for a TermijnInstance (idempotent on duplicates).
+	 *
+	 * @param array<string, mixed> $instance TermijnInstance row.
+	 * @param int $threshold Threshold bucket (14/7/2/0).
+	 *
+	 * @return bool True if a notification was sent (i.e. not a duplicate).
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+	 */
+	public function notifyThreshold(array $instance, int $threshold): bool {
+		$instanceId = (string)($instance['id'] ?? '');
+		if ($instanceId === '') {
+			return false;
+		}
 
-        $alreadySent = (array) ($instance['notificatiesVerstuurd'] ?? []);
-        if (in_array($threshold, array_map(static fn ($v): int => (int) $v, $alreadySent), true) === true) {
-            return false;
-        }
+		$alreadySent = (array)($instance['notificatiesVerstuurd'] ?? []);
+		if (in_array($threshold, array_map(static fn ($v): int => (int)$v, $alreadySent), true) === true) {
+			return false;
+		}
 
-        $config = self::DEFAULT_MATRIX[$threshold] ?? null;
-        if ($config === null) {
-            return false;
-        }
+		$config = self::DEFAULT_MATRIX[$threshold] ?? null;
+		if ($config === null) {
+			return false;
+		}
 
-        $payload = [
-            'threshold'  => $threshold,
-            'template'   => $config['template'],
-            'priority'   => $config['priority'],
-            'recipients' => $config['recipients'],
-            'instanceId' => $instanceId,
-            'zaakId'     => (string) ($instance['zaak'] ?? ''),
-            'deadline'   => (string) ($instance['einddatumActueel'] ?? ''),
-        ];
+		$payload = [
+			'threshold' => $threshold,
+			'template' => $config['template'],
+			'priority' => $config['priority'],
+			'recipients' => $config['recipients'],
+			'instanceId' => $instanceId,
+			'zaakId' => (string)($instance['zaak'] ?? ''),
+			'deadline' => (string)($instance['einddatumActueel'] ?? ''),
+		];
 
-        $this->logger->info('Procest termijn escalation dispatched', $payload);
+		$this->logger->info('Procest termijn escalation dispatched', $payload);
 
-        // Mark threshold as sent (duplicate suppression).
-        $alreadySent[] = $threshold;
-        $this->termijnService->updateTermijnInstance(
-            $instanceId,
-            ['notificatiesVerstuurd' => array_values(array_unique(array_map('intval', $alreadySent)))]
-        );
+		// Mark threshold as sent (duplicate suppression).
+		$alreadySent[] = $threshold;
+		$this->termijnService->updateTermijnInstance(
+			$instanceId,
+			['notificatiesVerstuurd' => array_values(array_unique(array_map('intval', $alreadySent)))]
+		);
 
-        return true;
-    }//end notifyThreshold()
+		return true;
+	}//end notifyThreshold()
 
-    /**
-     * Get the full escalation matrix (for admin UI rendering).
-     *
-     * @return array<int, array<string, mixed>>
-     *
-     * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
-     */
-    public function matrix(): array
-    {
-        return self::DEFAULT_MATRIX;
-    }//end matrix()
+	/**
+	 * Get the full escalation matrix (for admin UI rendering).
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-04-daily-scan-escalation/tasks.md
+	 */
+	public function matrix(): array {
+		return self::DEFAULT_MATRIX;
+	}//end matrix()
 }//end class

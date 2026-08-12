@@ -44,57 +44,55 @@ use OCA\Procest\Service\WorkflowStepAuthorizationResolver;
  *
  * @spec openspec/specs/workflow-definition-model/spec.md
  */
-class TransitionAuthorizationStamper
-{
-    /**
-     * Constructor.
-     *
-     * @param WorkflowStepAuthorizationResolver $authResolver Resolves step/transition
-     *                                                        roles to NC group ids.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly WorkflowStepAuthorizationResolver $authResolver,
-    ) {
-    }//end __construct()
+class TransitionAuthorizationStamper {
+	/**
+	 * Constructor.
+	 *
+	 * @param WorkflowStepAuthorizationResolver $authResolver Resolves step/transition
+	 *                                                        roles to NC group ids.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly WorkflowStepAuthorizationResolver $authResolver,
+	) {
+	}//end __construct()
 
-    /**
-     * Resolve role routing to OR-enforceable group authorization for every
-     * transition of a definition.
-     *
-     * @param array<int, mixed> $transitions The definition's decoded transitions.
-     *
-     * @return array<int, mixed>|null The enriched transitions, or null when the
-     *                                definition declares none.
-     *
-     * @spec openspec/specs/workflow-definition-model/spec.md
-     */
-    public function stamp(array $transitions): ?array
-    {
-        if ($transitions === []) {
-            return null;
-        }
+	/**
+	 * Resolve role routing to OR-enforceable group authorization for every
+	 * transition of a definition.
+	 *
+	 * @param array<int, mixed> $transitions The definition's decoded transitions.
+	 *
+	 * @return array<int, mixed>|null The enriched transitions, or null when the
+	 *                                definition declares none.
+	 *
+	 * @spec openspec/specs/workflow-definition-model/spec.md
+	 */
+	public function stamp(array $transitions): ?array {
+		if ($transitions === []) {
+			return null;
+		}
 
-        $authored = [];
-        foreach ($transitions as $transition) {
-            if (is_array($transition) === false) {
-                $authored[] = $transition;
-                continue;
-            }
+		$authored = [];
+		foreach ($transitions as $transition) {
+			if (is_array($transition) === false) {
+				$authored[] = $transition;
+				continue;
+			}
 
-            // Drop any stale authorization first so an unmapped role reverts
-            // to open access rather than keeping a group resolved under a
-            // previous mapping; re-stamp only when a group id resolves.
-            unset($transition['authorization']);
-            $groupIds = $this->authResolver->resolveGroupIds(entry: $transition);
-            if ($groupIds !== []) {
-                $transition['authorization'] = array_values($groupIds);
-            }
+			// Drop any stale authorization first so an unmapped role reverts
+			// to open access rather than keeping a group resolved under a
+			// previous mapping; re-stamp only when a group id resolves.
+			unset($transition['authorization']);
+			$groupIds = $this->authResolver->resolveGroupIds(entry: $transition);
+			if ($groupIds !== []) {
+				$transition['authorization'] = array_values($groupIds);
+			}
 
-            $authored[] = $transition;
-        }//end foreach
+			$authored[] = $transition;
+		}//end foreach
 
-        return $authored;
-    }//end stamp()
+		return $authored;
+	}//end stamp()
 }//end class

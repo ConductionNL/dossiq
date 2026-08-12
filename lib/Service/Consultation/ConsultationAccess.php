@@ -37,19 +37,18 @@ use OCP\AppFramework\Http\JSONResponse;
  *
  * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
  */
-class ConsultationAccess
-{
-    /**
-     * Constructor.
-     *
-     * @param JSONResponse|null    $error        The denial response, or null when authorized.
-     * @param array<string, mixed> $consultation The resolved consultation when authorized.
-     *
-     * @return void
-     */
-    public function __construct(
-        public readonly ?JSONResponse $error=null,
-        public readonly array $consultation=[],
-    ) {
-    }//end __construct()
+class ConsultationAccess {
+	/**
+	 * Constructor.
+	 *
+	 * @param JSONResponse|null $error The denial response, or null when authorized.
+	 * @param array<string, mixed> $consultation The resolved consultation when authorized.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		public readonly ?JSONResponse $error = null,
+		public readonly array $consultation = [],
+	) {
+	}//end __construct()
 }//end class

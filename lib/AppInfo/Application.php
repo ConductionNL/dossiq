@@ -44,51 +44,47 @@ use OCP\EventDispatcher\IEventDispatcher;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class Application extends App implements IBootstrap
-{
-    public const APP_ID = 'procest';
+class Application extends App implements IBootstrap {
+	public const APP_ID = 'procest';
 
-    /**
-     * Constructor for the Application class.
-     *
-     * @return void
-     */
-    public function __construct()
-    {
-        parent::__construct(appName: self::APP_ID);
-    }//end __construct()
+	/**
+	 * Constructor for the Application class.
+	 *
+	 * @return void
+	 */
+	public function __construct() {
+		parent::__construct(appName: self::APP_ID);
+	}//end __construct()
 
-    /**
-     * Register event listeners and services.
-     *
-     * @param IRegistrationContext $context The registration context
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function register(IRegistrationContext $context): void
-    {
-        (new ServiceRegistrar())->register(context: $context);
-        (new ListenerRegistrar())->register(context: $context);
-    }//end register()
+	/**
+	 * Register event listeners and services.
+	 *
+	 * @param IRegistrationContext $context The registration context
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function register(IRegistrationContext $context): void {
+		(new ServiceRegistrar())->register(context: $context);
+		(new ListenerRegistrar())->register(context: $context);
+	}//end register()
 
-    /**
-     * Boot the application.
-     *
-     * @param IBootContext $context The boot context
-     *
-     * @return void
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function boot(IBootContext $context): void
-    {
-        $container = $context->getServerContainer();
+	/**
+	 * Boot the application.
+	 *
+	 * @param IBootContext $context The boot context
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function boot(IBootContext $context): void {
+		$container = $context->getServerContainer();
 
-        (new BootRegistrar())->boot(
-            dispatcher: $container->get(IEventDispatcher::class),
-            server: $container
-        );
-    }//end boot()
+		(new BootRegistrar())->boot(
+			dispatcher: $container->get(IEventDispatcher::class),
+			server: $container
+		);
+	}//end boot()
 }//end class

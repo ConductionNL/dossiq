@@ -32,51 +32,49 @@ namespace OCA\Procest\Service\Transitions;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T05
  */
-class RequiredDocumentGuard implements GuardEvaluatorInterface
-{
-    /**
-     * Evaluate the required-document guard.
-     *
-     * @param array<string, mixed> $guardConfig Guard configuration
-     * @param array<string, mixed> $case        Case object
-     * @param string               $userId      Current user UID (unused)
-     *
-     * @return GuardResult
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+class RequiredDocumentGuard implements GuardEvaluatorInterface {
+	/**
+	 * Evaluate the required-document guard.
+	 *
+	 * @param array<string, mixed> $guardConfig Guard configuration
+	 * @param array<string, mixed> $case Case object
+	 * @param string $userId Current user UID (unused)
+	 *
+	 * @return GuardResult
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function evaluate(array $guardConfig, array $case, string $userId): GuardResult {
+		$required = (string)($guardConfig['documentType'] ?? '');
+		if ($required === '') {
+			return new GuardResult(passed: false, failureMessage: 'Required-document guard missing documentType');
+		}
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function evaluate(array $guardConfig, array $case, string $userId): GuardResult
-    {
-        $required = (string) ($guardConfig['documentType'] ?? '');
-        if ($required === '') {
-            return new GuardResult(passed: false, failureMessage: 'Required-document guard missing documentType');
-        }
+		$candidates = [];
+		foreach (['documents', 'files', 'caseDocuments', 'attachments'] as $field) {
+			$value = $case[$field] ?? null;
+			if (is_array($value) === true) {
+				$candidates = array_merge($candidates, $value);
+			}
+		}
 
-        $candidates = [];
-        foreach (['documents', 'files', 'caseDocuments', 'attachments'] as $field) {
-            $value = $case[$field] ?? null;
-            if (is_array($value) === true) {
-                $candidates = array_merge($candidates, $value);
-            }
-        }
+		foreach ($candidates as $doc) {
+			if (is_array($doc) === false) {
+				continue;
+			}
 
-        foreach ($candidates as $doc) {
-            if (is_array($doc) === false) {
-                continue;
-            }
+			$type = (string)($doc['documentType'] ?? ($doc['type'] ?? ''));
+			if ($type === $required) {
+				return new GuardResult(passed: true, details: ['documentType' => $required]);
+			}
+		}
 
-            $type = (string) ($doc['documentType'] ?? ($doc['type'] ?? ''));
-            if ($type === $required) {
-                return new GuardResult(passed: true, details: ['documentType' => $required]);
-            }
-        }
-
-        return new GuardResult(
-            passed: false,
-            failureMessage: sprintf('Vereist document ontbreekt: %s', $required),
-            details: ['documentType' => $required],
-        );
-    }//end evaluate()
+		return new GuardResult(
+			passed: false,
+			failureMessage: sprintf('Vereist document ontbreekt: %s', $required),
+			details: ['documentType' => $required],
+		);
+	}//end evaluate()
 }//end class

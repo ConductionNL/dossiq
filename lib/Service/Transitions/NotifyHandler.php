@@ -33,52 +33,50 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T08
  */
-class NotifyHandler implements ActionHandlerInterface
-{
-    /**
-     * Constructor.
-     *
-     * @param NotificatieService $notificatieService Notification dispatcher
-     * @param LoggerInterface    $logger             Logger
-     */
-    public function __construct(
-        private readonly NotificatieService $notificatieService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class NotifyHandler implements ActionHandlerInterface {
+	/**
+	 * Constructor.
+	 *
+	 * @param NotificatieService $notificatieService Notification dispatcher
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly NotificatieService $notificatieService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Handle the notify action.
-     *
-     * @param array<string, mixed> $actionConfig      Action configuration
-     * @param array<string, mixed> $case              Case object
-     * @param array<string, mixed> $transitionContext Transition context
-     *
-     * @return ActionResult
+	/**
+	 * Handle the notify action.
+	 *
+	 * @param array<string, mixed> $actionConfig Action configuration
+	 * @param array<string, mixed> $case Case object
+	 * @param array<string, mixed> $transitionContext Transition context
+	 *
+	 * @return ActionResult
+	 *
+	 * @spec openspec/specs/status-transition-engine/spec.md
+	 */
+	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
+		try {
+			$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+			$recipient = (string)($actionConfig['userId'] ?? ($case['assignee'] ?? ''));
+			$message = (string)($actionConfig['message'] ?? sprintf('Status gewijzigd: %s', $transitionContext['transitionLabel'] ?? ''));
 
-     * @spec openspec/specs/status-transition-engine/spec.md
-     */
-    public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult
-    {
-        try {
-            $caseId    = (string) ($case['id'] ?? ($case['uuid'] ?? ''));
-            $recipient = (string) ($actionConfig['userId'] ?? ($case['assignee'] ?? ''));
-            $message   = (string) ($actionConfig['message'] ?? sprintf('Status gewijzigd: %s', $transitionContext['transitionLabel'] ?? ''));
+			if (method_exists($this->notificatieService, 'notifyUser') === true && $recipient !== '') {
+				$this->notificatieService->notifyUser($recipient, $message, ['caseId' => $caseId]);
+				return new ActionResult(succeeded: true, data: ['userId' => $recipient]);
+			}
 
-            if (method_exists($this->notificatieService, 'notifyUser') === true && $recipient !== '') {
-                $this->notificatieService->notifyUser($recipient, $message, ['caseId' => $caseId]);
-                return new ActionResult(succeeded: true, data: ['userId' => $recipient]);
-            }
-
-            // Fall back to logging — non-fatal.
-            $this->logger->warning('NotifyHandler: NotificatieService::notifyUser missing or recipient empty');
-            return new ActionResult(succeeded: true, data: ['skipped' => true]);
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'NotifyHandler failed',
-                ['exception' => $e->getMessage(), 'context' => $transitionContext],
-            );
-            return new ActionResult(succeeded: false, error: 'notify_failed');
-        }
-    }//end handle()
+			// Fall back to logging — non-fatal.
+			$this->logger->warning('NotifyHandler: NotificatieService::notifyUser missing or recipient empty');
+			return new ActionResult(succeeded: true, data: ['skipped' => true]);
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'NotifyHandler failed',
+				['exception' => $e->getMessage(), 'context' => $transitionContext],
+			);
+			return new ActionResult(succeeded: false, error: 'notify_failed');
+		}
+	}//end handle()
 }//end class

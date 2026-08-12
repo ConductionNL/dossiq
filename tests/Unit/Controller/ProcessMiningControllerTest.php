@@ -42,210 +42,203 @@ use Psr\Log\LoggerInterface;
 /**
  * @covers \OCA\Procest\Controller\ProcessMiningController
  */
-class ProcessMiningControllerTest extends TestCase
-{
-    /**
-     * @return void
-     */
-    public function testReportReturns401WhenUnauthenticated(): void
-    {
-        $userSession = $this->createMock(IUserSession::class);
-        $userSession->method('getUser')->willReturn(null);
+class ProcessMiningControllerTest extends TestCase {
+	/**
+	 * @return void
+	 */
+	public function testReportReturns401WhenUnauthenticated(): void {
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn(null);
 
-        $controller = new ProcessMiningController(
-            appName: 'procest',
-            request: $this->createMock(IRequest::class),
-            userSession: $userSession,
-            groupManager: $this->createMock(IGroupManager::class),
-            processMiningService: $this->createMock(ProcessMiningService::class),
-            logger: $this->createMock(LoggerInterface::class),
-        );
+		$controller = new ProcessMiningController(
+			appName: 'procest',
+			request: $this->createMock(IRequest::class),
+			userSession: $userSession,
+			groupManager: $this->createMock(IGroupManager::class),
+			processMiningService: $this->createMock(ProcessMiningService::class),
+			logger: $this->createMock(LoggerInterface::class),
+		);
 
-        $response = $controller->report();
+		$response = $controller->report();
 
-        self::assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-    }//end testReportReturns401WhenUnauthenticated()
+		self::assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}//end testReportReturns401WhenUnauthenticated()
 
-    /**
-     * @return void
-     */
-    public function testReportReturns403WhenOutsideAllowedGroups(): void
-    {
-        $user = $this->createMock(IUser::class);
-        $user->method('getUID')->willReturn('regular-user');
+	/**
+	 * @return void
+	 */
+	public function testReportReturns403WhenOutsideAllowedGroups(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('regular-user');
 
-        $userSession = $this->createMock(IUserSession::class);
-        $userSession->method('getUser')->willReturn($user);
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
 
-        $groupManager = $this->createMock(IGroupManager::class);
-        $groupManager->method('isInGroup')->willReturn(false);
-        $groupManager->method('isAdmin')->with('regular-user')->willReturn(false);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('isInGroup')->willReturn(false);
+		$groupManager->method('isAdmin')->with('regular-user')->willReturn(false);
 
-        $controller = new ProcessMiningController(
-            appName: 'procest',
-            request: $this->createMock(IRequest::class),
-            userSession: $userSession,
-            groupManager: $groupManager,
-            processMiningService: $this->createMock(ProcessMiningService::class),
-            logger: $this->createMock(LoggerInterface::class),
-        );
+		$controller = new ProcessMiningController(
+			appName: 'procest',
+			request: $this->createMock(IRequest::class),
+			userSession: $userSession,
+			groupManager: $groupManager,
+			processMiningService: $this->createMock(ProcessMiningService::class),
+			logger: $this->createMock(LoggerInterface::class),
+		);
 
-        $response = $controller->report();
+		$response = $controller->report();
 
-        self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
-    }//end testReportReturns403WhenOutsideAllowedGroups()
+		self::assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testReportReturns403WhenOutsideAllowedGroups()
 
-    /**
-     * A member of the 'controllers' group (not an NC admin) is allowed.
-     *
-     * @return void
-     */
-    public function testReportAllowsControllersGroupMember(): void
-    {
-        $user = $this->createMock(IUser::class);
-        $user->method('getUID')->willReturn('controller-user');
+	/**
+	 * A member of the 'controllers' group (not an NC admin) is allowed.
+	 *
+	 * @return void
+	 */
+	public function testReportAllowsControllersGroupMember(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('controller-user');
 
-        $userSession = $this->createMock(IUserSession::class);
-        $userSession->method('getUser')->willReturn($user);
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
 
-        $groupManager = $this->createMock(IGroupManager::class);
-        $groupManager->method('isInGroup')->willReturnCallback(
-            static fn (string $uid, string $group) => ($group === 'controllers')
-        );
-        $groupManager->method('isAdmin')->willReturn(false);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('isInGroup')->willReturnCallback(
+			static fn (string $uid, string $group) => ($group === 'controllers')
+		);
+		$groupManager->method('isAdmin')->willReturn(false);
 
-        $service = $this->createMock(ProcessMiningService::class);
-        $service->method('getReport')->willReturn(['period' => [], 'caseTypes' => []]);
+		$service = $this->createMock(ProcessMiningService::class);
+		$service->method('getReport')->willReturn(['period' => [], 'caseTypes' => []]);
 
-        $controller = new ProcessMiningController(
-            appName: 'procest',
-            request: $this->createMock(IRequest::class),
-            userSession: $userSession,
-            groupManager: $groupManager,
-            processMiningService: $service,
-            logger: $this->createMock(LoggerInterface::class),
-        );
+		$controller = new ProcessMiningController(
+			appName: 'procest',
+			request: $this->createMock(IRequest::class),
+			userSession: $userSession,
+			groupManager: $groupManager,
+			processMiningService: $service,
+			logger: $this->createMock(LoggerInterface::class),
+		);
 
-        $response = $controller->report();
+		$response = $controller->report();
 
-        self::assertSame(Http::STATUS_OK, $response->getStatus());
-    }//end testReportAllowsControllersGroupMember()
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+	}//end testReportAllowsControllersGroupMember()
 
-    /**
-     * @return void
-     */
-    public function testReportRejectsInvalidFromDate(): void
-    {
-        $user = $this->createMock(IUser::class);
-        $user->method('getUID')->willReturn('admin-user');
+	/**
+	 * @return void
+	 */
+	public function testReportRejectsInvalidFromDate(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('admin-user');
 
-        $userSession = $this->createMock(IUserSession::class);
-        $userSession->method('getUser')->willReturn($user);
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
 
-        $groupManager = $this->createMock(IGroupManager::class);
-        $groupManager->method('isInGroup')->willReturn(false);
-        $groupManager->method('isAdmin')->willReturn(true);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('isInGroup')->willReturn(false);
+		$groupManager->method('isAdmin')->willReturn(true);
 
-        $request = $this->createMock(IRequest::class);
-        $request->method('getParam')->willReturnCallback(
-            static fn (string $key) => ($key === 'from' ? 'not-a-date' : null)
-        );
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static fn (string $key) => ($key === 'from' ? 'not-a-date' : null)
+		);
 
-        $controller = new ProcessMiningController(
-            appName: 'procest',
-            request: $request,
-            userSession: $userSession,
-            groupManager: $groupManager,
-            processMiningService: $this->createMock(ProcessMiningService::class),
-            logger: $this->createMock(LoggerInterface::class),
-        );
+		$controller = new ProcessMiningController(
+			appName: 'procest',
+			request: $request,
+			userSession: $userSession,
+			groupManager: $groupManager,
+			processMiningService: $this->createMock(ProcessMiningService::class),
+			logger: $this->createMock(LoggerInterface::class),
+		);
 
-        $response = $controller->report();
+		$response = $controller->report();
 
-        self::assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-    }//end testReportRejectsInvalidFromDate()
+		self::assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+	}//end testReportRejectsInvalidFromDate()
 
-    /**
-     * @return void
-     */
-    public function testReportDelegatesToServiceForAdmin(): void
-    {
-        $user = $this->createMock(IUser::class);
-        $user->method('getUID')->willReturn('admin-user');
+	/**
+	 * @return void
+	 */
+	public function testReportDelegatesToServiceForAdmin(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('admin-user');
 
-        $userSession = $this->createMock(IUserSession::class);
-        $userSession->method('getUser')->willReturn($user);
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
 
-        $groupManager = $this->createMock(IGroupManager::class);
-        $groupManager->method('isInGroup')->willReturn(false);
-        $groupManager->method('isAdmin')->willReturn(true);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('isInGroup')->willReturn(false);
+		$groupManager->method('isAdmin')->willReturn(true);
 
-        $request = $this->createMock(IRequest::class);
-        $request->method('getParam')->willReturnCallback(
-            static function (string $key) {
-                return match ($key) {
-                    'from'     => '2026-01-01',
-                    'to'       => '2026-12-31',
-                    'caseType' => 'ct-1',
-                    default    => null,
-                };
-            }
-        );
+		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(
+			static function (string $key) {
+				return match ($key) {
+					'from' => '2026-01-01',
+					'to' => '2026-12-31',
+					'caseType' => 'ct-1',
+					default => null,
+				};
+			}
+		);
 
-        $service = $this->createMock(ProcessMiningService::class);
-        $service->expects(self::once())
-            ->method('getReport')
-            ->with(['from' => '2026-01-01', 'to' => '2026-12-31', 'caseType' => 'ct-1'])
-            ->willReturn(['period' => ['from' => '2026-01-01', 'to' => '2026-12-31'], 'caseTypes' => []]);
+		$service = $this->createMock(ProcessMiningService::class);
+		$service->expects(self::once())
+			->method('getReport')
+			->with(['from' => '2026-01-01', 'to' => '2026-12-31', 'caseType' => 'ct-1'])
+			->willReturn(['period' => ['from' => '2026-01-01', 'to' => '2026-12-31'], 'caseTypes' => []]);
 
-        $controller = new ProcessMiningController(
-            appName: 'procest',
-            request: $request,
-            userSession: $userSession,
-            groupManager: $groupManager,
-            processMiningService: $service,
-            logger: $this->createMock(LoggerInterface::class),
-        );
+		$controller = new ProcessMiningController(
+			appName: 'procest',
+			request: $request,
+			userSession: $userSession,
+			groupManager: $groupManager,
+			processMiningService: $service,
+			logger: $this->createMock(LoggerInterface::class),
+		);
 
-        $response = $controller->report();
+		$response = $controller->report();
 
-        self::assertSame(Http::STATUS_OK, $response->getStatus());
-        self::assertSame(['period' => ['from' => '2026-01-01', 'to' => '2026-12-31'], 'caseTypes' => []], $response->getData());
-    }//end testReportDelegatesToServiceForAdmin()
+		self::assertSame(Http::STATUS_OK, $response->getStatus());
+		self::assertSame(['period' => ['from' => '2026-01-01', 'to' => '2026-12-31'], 'caseTypes' => []], $response->getData());
+	}//end testReportDelegatesToServiceForAdmin()
 
-    /**
-     * A service exception is caught and translated into a static 500 —
-     * `$e->getMessage()` must never reach the response body.
-     *
-     * @return void
-     */
-    public function testReportTranslatesServiceExceptionTo500(): void
-    {
-        $user = $this->createMock(IUser::class);
-        $user->method('getUID')->willReturn('admin-user');
+	/**
+	 * A service exception is caught and translated into a static 500 —
+	 * `$e->getMessage()` must never reach the response body.
+	 *
+	 * @return void
+	 */
+	public function testReportTranslatesServiceExceptionTo500(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('admin-user');
 
-        $userSession = $this->createMock(IUserSession::class);
-        $userSession->method('getUser')->willReturn($user);
+		$userSession = $this->createMock(IUserSession::class);
+		$userSession->method('getUser')->willReturn($user);
 
-        $groupManager = $this->createMock(IGroupManager::class);
-        $groupManager->method('isInGroup')->willReturn(false);
-        $groupManager->method('isAdmin')->willReturn(true);
+		$groupManager = $this->createMock(IGroupManager::class);
+		$groupManager->method('isInGroup')->willReturn(false);
+		$groupManager->method('isAdmin')->willReturn(true);
 
-        $service = $this->createMock(ProcessMiningService::class);
-        $service->method('getReport')->willThrowException(new \RuntimeException('secret internal detail'));
+		$service = $this->createMock(ProcessMiningService::class);
+		$service->method('getReport')->willThrowException(new \RuntimeException('secret internal detail'));
 
-        $controller = new ProcessMiningController(
-            appName: 'procest',
-            request: $this->createMock(IRequest::class),
-            userSession: $userSession,
-            groupManager: $groupManager,
-            processMiningService: $service,
-            logger: $this->createMock(LoggerInterface::class),
-        );
+		$controller = new ProcessMiningController(
+			appName: 'procest',
+			request: $this->createMock(IRequest::class),
+			userSession: $userSession,
+			groupManager: $groupManager,
+			processMiningService: $service,
+			logger: $this->createMock(LoggerInterface::class),
+		);
 
-        $response = $controller->report();
+		$response = $controller->report();
 
-        self::assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
-        self::assertStringNotContainsString('secret internal detail', json_encode($response->getData()));
-    }//end testReportTranslatesServiceExceptionTo500()
+		self::assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
+		self::assertStringNotContainsString('secret internal detail', json_encode($response->getData()));
+	}//end testReportTranslatesServiceExceptionTo500()
 }//end class

@@ -71,520 +71,515 @@ use Throwable;
  *
  * @spec openspec/specs/beroep-escalation/spec.md
  */
-class BeroepService
-{
-    /**
-     * Allowed judgment outcomes per REQ-BE-5.
-     */
-    private const VALID_OUTCOMES = [
-        'vernietigd',
-        'in_stand_gelaten',
-        'niet_ontvankelijk',
-        'ongegrond',
-        'gegrond_rechtsgevolgen_in_stand',
-        'ingetrokken',
-        'schikking',
-    ];
+class BeroepService {
+	/**
+	 * Allowed judgment outcomes per REQ-BE-5.
+	 */
+	private const VALID_OUTCOMES = [
+		'vernietigd',
+		'in_stand_gelaten',
+		'niet_ontvankelijk',
+		'ongegrond',
+		'gegrond_rechtsgevolgen_in_stand',
+		'ingetrokken',
+		'schikking',
+	];
 
-    /**
-     * Allowed cascade actions per REQ-BE-6.
-     */
-    private const VALID_CASCADES = [
-        'reopen_bezwaar',
-        'new_primary_decision',
-        'none',
-    ];
+	/**
+	 * Allowed cascade actions per REQ-BE-6.
+	 */
+	private const VALID_CASCADES = [
+		'reopen_bezwaar',
+		'new_primary_decision',
+		'none',
+	];
 
-    /**
-     * Filing-window length: 6 weeks (Awb 6:7).
-     */
-    private const FILING_WINDOW = '+42 days';
+	/**
+	 * Filing-window length: 6 weeks (Awb 6:7).
+	 */
+	private const FILING_WINDOW = '+42 days';
 
-    /**
-     * File-inspection deadline: 4 weeks (Awb 8:42).
-     */
-    private const FILE_INSPECTION_WINDOW = '+28 days';
+	/**
+	 * File-inspection deadline: 4 weeks (Awb 8:42).
+	 */
+	private const FILE_INSPECTION_WINDOW = '+28 days';
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService         $settingsService Schema/register bridge
-     * @param StatusTransitionService $transitions     Engine used by
-     *                                                 executeCascade() to
-     *                                                 re-open the source
-     *                                                 bezwaar without
-     *                                                 bespoke transition
-     *                                                 logic
-     * @param LoggerInterface         $logger          Logger
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly StatusTransitionService $transitions,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Schema/register bridge
+	 * @param StatusTransitionService $transitions Engine used by
+	 *                                             executeCascade() to
+	 *                                             re-open the source
+	 *                                             bezwaar without
+	 *                                             bespoke transition
+	 *                                             logic
+	 * @param LoggerInterface $logger Logger
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly StatusTransitionService $transitions,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Register a beroep against a beslissing op bezwaar.
-     *
-     * Computes filingDeadline from the contested appealDecision.effectiveDate
-     * + P6W (Awb 6:7), flags latefilingNotice when the appellant filed past
-     * the deadline (informational only — only the rechtbank weighs
-     * verschoonbare termijnoverschrijding), and persists the new beroep
-     * record. The OpenRegister audit trail captures actor + change diff
-     * automatically; this method writes no bespoke audit entries.
-     *
-     * @param string               $caseId              UUID of the procest case
-     *                                                  wrapping the beroep
-     * @param string               $sourceBezwaarId     UUID of the bezwaar
-     *                                                  lifecycle record
-     *                                                  being escalated
-     * @param string               $contestedDecisionId UUID of the
-     *                                                  appealDecision being
-     *                                                  contested
-     * @param string               $filingDate          ISO date the
-     *                                                  beroepschrift
-     *                                                  was filed at
-     *                                                  the court
-     * @param array<string, mixed> $payload             Optional extra fields
-     *                                                  (courtReference,
-     *                                                  competentCourt,
-     *                                                  responsibleChamber,
-     *                                                  voorzieningRequested)
-     *
-     * @return array<string, mixed> The created beroep record
-     *
-     * @throws RuntimeException When OpenRegister is unavailable, schemas
-     *                          are unconfigured, or the contested decision
-     *                          cannot be loaded.
+	/**
+	 * Register a beroep against a beslissing op bezwaar.
+	 *
+	 * Computes filingDeadline from the contested appealDecision.effectiveDate
+	 * + P6W (Awb 6:7), flags latefilingNotice when the appellant filed past
+	 * the deadline (informational only — only the rechtbank weighs
+	 * verschoonbare termijnoverschrijding), and persists the new beroep
+	 * record. The OpenRegister audit trail captures actor + change diff
+	 * automatically; this method writes no bespoke audit entries.
+	 *
+	 * @param string $caseId UUID of the procest case
+	 *                       wrapping the beroep
+	 * @param string $sourceBezwaarId UUID of the bezwaar
+	 *                                lifecycle record
+	 *                                being escalated
+	 * @param string $contestedDecisionId UUID of the
+	 *                                    appealDecision being
+	 *                                    contested
+	 * @param string $filingDate ISO date the
+	 *                           beroepschrift
+	 *                           was filed at
+	 *                           the court
+	 * @param array<string, mixed> $payload Optional extra fields
+	 *                                      (courtReference,
+	 *                                      competentCourt,
+	 *                                      responsibleChamber,
+	 *                                      voorzieningRequested)
+	 *
+	 * @return array<string, mixed> The created beroep record
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable, schemas
+	 *                          are unconfigured, or the contested decision
+	 *                          cannot be loaded.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function register(
+		string $caseId,
+		string $sourceBezwaarId,
+		string $contestedDecisionId,
+		string $filingDate,
+		array $payload = [],
+	): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function register(
-        string $caseId,
-        string $sourceBezwaarId,
-        string $contestedDecisionId,
-        string $filingDate,
-        array $payload=[]
-    ): array {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$beroepSchema = $this->settingsService->getConfigValue(
+			key: 'beroep_schema'
+		);
+		$appealDecisionSchema = $this->settingsService->getConfigValue(
+			key: 'appeal_decision_schema'
+		);
 
-        $register     = $this->settingsService->getConfigValue(key: 'register');
-        $beroepSchema = $this->settingsService->getConfigValue(
-            key: 'beroep_schema'
-        );
-        $appealDecisionSchema = $this->settingsService->getConfigValue(
-            key: 'appeal_decision_schema'
-        );
+		if ($register === '' || $beroepSchema === ''
+			|| $appealDecisionSchema === ''
+		) {
+			throw new RuntimeException(
+				'Beroep schemas are not configured'
+			);
+		}
 
-        if ($register === '' || $beroepSchema === ''
-            || $appealDecisionSchema === ''
-        ) {
-            throw new RuntimeException(
-                'Beroep schemas are not configured'
-            );
-        }
+		$contested = $objectService->find($contestedDecisionId, register: $register, schema: $appealDecisionSchema);
+		if (is_array($contested) === false) {
+			throw new RuntimeException('Contested beslissing not found');
+		}
 
-        $contested = $objectService->find($contestedDecisionId, register: $register, schema: $appealDecisionSchema);
-        if (is_array($contested) === false) {
-            throw new RuntimeException('Contested beslissing not found');
-        }
+		$effective = (string)($contested['effectiveDate'] ?? '');
+		$deadline = $this->computeFilingDeadline(effective: $effective);
+		$late = $this->isLateFiling(
+			filingDate: $filingDate,
+			deadline: $deadline,
+		);
 
-        $effective = (string) ($contested['effectiveDate'] ?? '');
-        $deadline  = $this->computeFilingDeadline(effective: $effective);
-        $late      = $this->isLateFiling(
-            filingDate: $filingDate,
-            deadline: $deadline,
-        );
+		$record = array_merge(
+			[
+				'responsibleChamber' => 'enkelvoudig',
+				'voorzieningRequested' => false,
+			],
+			$payload,
+			[
+				'case' => $caseId,
+				'sourceBezwaar' => $sourceBezwaarId,
+				'contestedDecision' => $contestedDecisionId,
+				'appellantFilingDate' => $filingDate,
+				'filingDeadline' => $deadline,
+				'latefilingNotice' => $late,
+			]
+		);
 
-        $record = array_merge(
-            [
-                'responsibleChamber'   => 'enkelvoudig',
-                'voorzieningRequested' => false,
-            ],
-            $payload,
-            [
-                'case'                => $caseId,
-                'sourceBezwaar'       => $sourceBezwaarId,
-                'contestedDecision'   => $contestedDecisionId,
-                'appellantFilingDate' => $filingDate,
-                'filingDeadline'      => $deadline,
-                'latefilingNotice'    => $late,
-            ]
-        );
+		try {
+			return $objectService->saveObject(object: $record, register: $register, schema: $beroepSchema);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest beroep: failed to register: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not register beroep');
+		}
+	}//end register()
 
-        try {
-            return $objectService->saveObject(object: $record, register: $register, schema: $beroepSchema);
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest beroep: failed to register: '.$e->getMessage()
-            );
-            throw new RuntimeException('Could not register beroep');
-        }
-    }//end register()
+	/**
+	 * Append a file-inspection request (Awb 8:42) sub-record.
+	 *
+	 * The system NEVER generates the bundle itself — Juridische Zaken
+	 * curates it via existing dossier tooling; this method records the
+	 * linkage with a computed deadline of requestedAt + P4W.
+	 *
+	 * @param string $beroepId UUID of the beroep
+	 * @param string $requestedAt ISO date the rechtbank issued the request
+	 * @param string|null $dossierBundle Optional NC file ID / dossier ref
+	 *
+	 * @return array<string, mixed> The updated beroep record
+	 *
+	 * @throws RuntimeException When OpenRegister is unavailable or the
+	 *                          beroep cannot be loaded.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function addFileInspectionRequest(
+		string $beroepId,
+		string $requestedAt,
+		?string $dossierBundle = null,
+	): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
 
-    /**
-     * Append a file-inspection request (Awb 8:42) sub-record.
-     *
-     * The system NEVER generates the bundle itself — Juridische Zaken
-     * curates it via existing dossier tooling; this method records the
-     * linkage with a computed deadline of requestedAt + P4W.
-     *
-     * @param string      $beroepId      UUID of the beroep
-     * @param string      $requestedAt   ISO date the rechtbank issued the request
-     * @param string|null $dossierBundle Optional NC file ID / dossier ref
-     *
-     * @return array<string, mixed> The updated beroep record
-     *
-     * @throws RuntimeException When OpenRegister is unavailable or the
-     *                          beroep cannot be loaded.
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$beroepSchema = $this->settingsService->getConfigValue(
+			key: 'beroep_schema'
+		);
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function addFileInspectionRequest(
-        string $beroepId,
-        string $requestedAt,
-        ?string $dossierBundle=null
-    ): array {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
+		$current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
+		if (is_array($current) === false) {
+			throw new RuntimeException('Beroep not found');
+		}
 
-        $register     = $this->settingsService->getConfigValue(key: 'register');
-        $beroepSchema = $this->settingsService->getConfigValue(
-            key: 'beroep_schema'
-        );
+		$deadline = $this->shiftDate(
+			base: $requestedAt,
+			modifier: self::FILE_INSPECTION_WINDOW,
+		);
 
-        $current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
-        if (is_array($current) === false) {
-            throw new RuntimeException('Beroep not found');
-        }
+		$entry = [
+			'requestedAt' => $requestedAt,
+			'deadline' => $deadline,
+		];
+		if ($dossierBundle !== null && $dossierBundle !== '') {
+			$entry['dossierBundle'] = $dossierBundle;
+		}
 
-        $deadline = $this->shiftDate(
-            base: $requestedAt,
-            modifier: self::FILE_INSPECTION_WINDOW,
-        );
+		$requests = (array)($current['fileInspectionRequests'] ?? []);
+		$requests[] = $entry;
 
-        $entry = [
-            'requestedAt' => $requestedAt,
-            'deadline'    => $deadline,
-        ];
-        if ($dossierBundle !== null && $dossierBundle !== '') {
-            $entry['dossierBundle'] = $dossierBundle;
-        }
+		try {
+			return $objectService->saveObject(
+				object: ['fileInspectionRequests' => $requests],
+				register: $register,
+				schema: $beroepSchema,
+				uuid: (string)$beroepId
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest beroep: failed to add file-inspection request: '
+				. $e->getMessage()
+			);
+			throw new RuntimeException(
+				'Could not add file-inspection request'
+			);
+		}
+	}//end addFileInspectionRequest()
 
-        $requests   = (array) ($current['fileInspectionRequests'] ?? []);
-        $requests[] = $entry;
+	/**
+	 * Record the rechtbank's uitspraak on a beroep.
+	 *
+	 * Persists the categorical outcome plus judgmentDate and (optional)
+	 * judgmentDocument. Does NOT interpret or paraphrase the ruling.
+	 *
+	 * @param string $beroepId UUID of the beroep
+	 * @param string $outcome One of self::VALID_OUTCOMES
+	 * @param string $judgmentDate ISO date of the uitspraak
+	 * @param string|null $judgmentDocument Optional NC file ID of the
+	 *                                      ruling document
+	 *
+	 * @return array<string, mixed> The updated beroep record
+	 *
+	 * @throws RuntimeException When the outcome is invalid, OpenRegister
+	 *                          is unavailable, or the beroep cannot be
+	 *                          loaded.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function recordJudgment(
+		string $beroepId,
+		string $outcome,
+		string $judgmentDate,
+		?string $judgmentDocument = null,
+	): array {
+		if (in_array($outcome, self::VALID_OUTCOMES, true) === false) {
+			throw new RuntimeException('Invalid judgment outcome');
+		}
 
-        try {
-            return $objectService->saveObject(
-                object: ['fileInspectionRequests' => $requests],
-                register: $register,
-                schema: $beroepSchema,
-                uuid: (string) $beroepId
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest beroep: failed to add file-inspection request: '
-                .$e->getMessage()
-            );
-            throw new RuntimeException(
-                'Could not add file-inspection request'
-            );
-        }
-    }//end addFileInspectionRequest()
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
 
-    /**
-     * Record the rechtbank's uitspraak on a beroep.
-     *
-     * Persists the categorical outcome plus judgmentDate and (optional)
-     * judgmentDocument. Does NOT interpret or paraphrase the ruling.
-     *
-     * @param string      $beroepId         UUID of the beroep
-     * @param string      $outcome          One of self::VALID_OUTCOMES
-     * @param string      $judgmentDate     ISO date of the uitspraak
-     * @param string|null $judgmentDocument Optional NC file ID of the
-     *                                      ruling document
-     *
-     * @return array<string, mixed> The updated beroep record
-     *
-     * @throws RuntimeException When the outcome is invalid, OpenRegister
-     *                          is unavailable, or the beroep cannot be
-     *                          loaded.
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$beroepSchema = $this->settingsService->getConfigValue(
+			key: 'beroep_schema'
+		);
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function recordJudgment(
-        string $beroepId,
-        string $outcome,
-        string $judgmentDate,
-        ?string $judgmentDocument=null
-    ): array {
-        if (in_array($outcome, self::VALID_OUTCOMES, true) === false) {
-            throw new RuntimeException('Invalid judgment outcome');
-        }
+		$current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
+		if (is_array($current) === false) {
+			throw new RuntimeException('Beroep not found');
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
+		$patch = [
+			'judgmentOutcome' => $outcome,
+			'judgmentDate' => $judgmentDate,
+		];
+		if ($judgmentDocument !== null && $judgmentDocument !== '') {
+			$patch['judgmentDocument'] = $judgmentDocument;
+		}
 
-        $register     = $this->settingsService->getConfigValue(key: 'register');
-        $beroepSchema = $this->settingsService->getConfigValue(
-            key: 'beroep_schema'
-        );
+		try {
+			return $objectService->saveObject(
+				object: $patch,
+				register: $register,
+				schema: $beroepSchema,
+				uuid: (string)$beroepId
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest beroep: failed to record judgment: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not record judgment');
+		}
+	}//end recordJudgment()
 
-        $current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
-        if (is_array($current) === false) {
-            throw new RuntimeException('Beroep not found');
-        }
+	/**
+	 * Execute the post-uitspraak cascade on the linked bezwaar workflow.
+	 *
+	 *  - reopen_bezwaar       — fork a new bezwaar case from the source via
+	 *                           StatusTransitionService and link both ways.
+	 *  - new_primary_decision — open a fresh decision case (follow-up task
+	 *                           on the original primary case).
+	 *  - none                 — clear the dwingende marker on the source
+	 *                           bezwaar so it returns to its terminal
+	 *                           status.
+	 *
+	 * Cascade is intentionally idempotent: re-running with the same action
+	 * is a no-op once the corresponding side effect is already recorded.
+	 *
+	 * @param string $beroepId UUID of the beroep
+	 * @param string $action One of self::VALID_CASCADES
+	 *
+	 * @return array<string, mixed> The updated beroep record
+	 *
+	 * @throws RuntimeException When the action is invalid, OpenRegister
+	 *                          is unavailable, or the beroep cannot be
+	 *                          loaded.
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	public function executeCascade(string $beroepId, string $action): array {
+		if (in_array($action, self::VALID_CASCADES, true) === false) {
+			throw new RuntimeException('Invalid cascade action');
+		}
 
-        $patch = [
-            'judgmentOutcome' => $outcome,
-            'judgmentDate'    => $judgmentDate,
-        ];
-        if ($judgmentDocument !== null && $judgmentDocument !== '') {
-            $patch['judgmentDocument'] = $judgmentDocument;
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('OpenRegister is not available');
+		}
 
-        try {
-            return $objectService->saveObject(
-                object: $patch,
-                register: $register,
-                schema: $beroepSchema,
-                uuid: (string) $beroepId
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest beroep: failed to record judgment: '.$e->getMessage()
-            );
-            throw new RuntimeException('Could not record judgment');
-        }
-    }//end recordJudgment()
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$beroepSchema = $this->settingsService->getConfigValue(
+			key: 'beroep_schema'
+		);
+		$bezwaarSchema = $this->settingsService->getConfigValue(
+			key: 'bezwaar_schema'
+		);
 
-    /**
-     * Execute the post-uitspraak cascade on the linked bezwaar workflow.
-     *
-     *  - reopen_bezwaar       — fork a new bezwaar case from the source via
-     *                           StatusTransitionService and link both ways.
-     *  - new_primary_decision — open a fresh decision case (follow-up task
-     *                           on the original primary case).
-     *  - none                 — clear the dwingende marker on the source
-     *                           bezwaar so it returns to its terminal
-     *                           status.
-     *
-     * Cascade is intentionally idempotent: re-running with the same action
-     * is a no-op once the corresponding side effect is already recorded.
-     *
-     * @param string $beroepId UUID of the beroep
-     * @param string $action   One of self::VALID_CASCADES
-     *
-     * @return array<string, mixed> The updated beroep record
-     *
-     * @throws RuntimeException When the action is invalid, OpenRegister
-     *                          is unavailable, or the beroep cannot be
-     *                          loaded.
+		$current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
+		if (is_array($current) === false) {
+			throw new RuntimeException('Beroep not found');
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    public function executeCascade(string $beroepId, string $action): array
-    {
-        if (in_array($action, self::VALID_CASCADES, true) === false) {
-            throw new RuntimeException('Invalid cascade action');
-        }
+		$patch = ['cascadeAction' => $action];
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('OpenRegister is not available');
-        }
+		if ($action === 'reopen_bezwaar') {
+			// Defer to the status-transition-engine to re-open the source
+			// bezwaar. The engine owns the transition + guards; this
+			// service only triggers it and links the resulting case back
+			// to the beroep.
+			$reopenedCaseId = $this->reopenSourceBezwaarCase(
+				objectService: $objectService,
+				register: $register,
+				bezwaarSchema: $bezwaarSchema,
+				current: $current,
+				beroepId: $beroepId,
+			);
+			if ($reopenedCaseId !== null) {
+				// Link the (newly reopened) bezwaar case back to the beroep.
+				// The engine returns the updated case; we surface the link on
+				// the beroep record.
+				$patch['cascadeBezwaarCase'] = $reopenedCaseId;
+			}
+		}//end if
 
-        $register      = $this->settingsService->getConfigValue(key: 'register');
-        $beroepSchema  = $this->settingsService->getConfigValue(
-            key: 'beroep_schema'
-        );
-        $bezwaarSchema = $this->settingsService->getConfigValue(
-            key: 'bezwaar_schema'
-        );
+		if ($action === 'new_primary_decision') {
+			// The follow-up primary-decision case is opened via the
+			// status-transition-engine on the original primary case. The
+			// engine + workflow template own the new-case fork; we only
+			// record the chosen cascade on the beroep for traceability.
+			$this->logger->info(
+				'Procest beroep: new_primary_decision cascade requested',
+				['beroepId' => $beroepId]
+			);
+		}
 
-        $current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
-        if (is_array($current) === false) {
-            throw new RuntimeException('Beroep not found');
-        }
+		try {
+			return $objectService->saveObject(
+				object: $patch,
+				register: $register,
+				schema: $beroepSchema,
+				uuid: (string)$beroepId
+			);
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest beroep: failed to persist cascade: ' . $e->getMessage()
+			);
+			throw new RuntimeException('Could not persist cascade');
+		}
+	}//end executeCascade()
 
-        $patch = ['cascadeAction' => $action];
+	/**
+	 * Ask the status-transition-engine to re-open the bezwaar case behind a beroep.
+	 *
+	 * Returns the re-opened case UUID when the transition ran, and null when there is nothing to
+	 * re-open (no source bezwaar, no bezwaar schema, missing source, no case) or the transition
+	 * failed — a failure is logged, never raised, exactly as before.
+	 *
+	 * @param object $objectService The OpenRegister object service
+	 * @param string $register The register slug
+	 * @param string $bezwaarSchema The bezwaar schema slug
+	 * @param array<string, mixed> $current The beroep record
+	 * @param string $beroepId UUID of the beroep
+	 *
+	 * @return string|null The re-opened bezwaar case UUID, or null.
+	 */
+	private function reopenSourceBezwaarCase(
+		object $objectService,
+		string $register,
+		string $bezwaarSchema,
+		array $current,
+		string $beroepId,
+	): ?string {
+		$sourceBezwaarId = (string)($current['sourceBezwaar'] ?? '');
+		if ($sourceBezwaarId === '' || $bezwaarSchema === '') {
+			return null;
+		}
 
-        if ($action === 'reopen_bezwaar') {
-            // Defer to the status-transition-engine to re-open the source
-            // bezwaar. The engine owns the transition + guards; this
-            // service only triggers it and links the resulting case back
-            // to the beroep.
-            $reopenedCaseId = $this->reopenSourceBezwaarCase(
-                objectService: $objectService,
-                register: $register,
-                bezwaarSchema: $bezwaarSchema,
-                current: $current,
-                beroepId: $beroepId,
-            );
-            if ($reopenedCaseId !== null) {
-                // Link the (newly reopened) bezwaar case back to the beroep.
-                // The engine returns the updated case; we surface the link on
-                // the beroep record.
-                $patch['cascadeBezwaarCase'] = $reopenedCaseId;
-            }
-        }//end if
+		$sourceBezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
+		if (is_array($sourceBezwaar) === false) {
+			return null;
+		}
 
-        if ($action === 'new_primary_decision') {
-            // The follow-up primary-decision case is opened via the
-            // status-transition-engine on the original primary case. The
-            // engine + workflow template own the new-case fork; we only
-            // record the chosen cascade on the beroep for traceability.
-            $this->logger->info(
-                'Procest beroep: new_primary_decision cascade requested',
-                ['beroepId' => $beroepId]
-            );
-        }
+		$sourceCaseId = (string)($sourceBezwaar['case'] ?? '');
+		if ($sourceCaseId === '') {
+			return null;
+		}
 
-        try {
-            return $objectService->saveObject(
-                object: $patch,
-                register: $register,
-                schema: $beroepSchema,
-                uuid: (string) $beroepId
-            );
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest beroep: failed to persist cascade: '.$e->getMessage()
-            );
-            throw new RuntimeException('Could not persist cascade');
-        }
-    }//end executeCascade()
+		try {
+			$this->transitions->execute(
+				caseId: $sourceCaseId,
+				transitionId: 'beroep-reopen',
+				comment: 'Reopened via beroep ' . $beroepId,
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning(
+				'Procest beroep: reopen transition failed: '
+				. $e->getMessage()
+			);
+			return null;
+		}
 
-    /**
-     * Ask the status-transition-engine to re-open the bezwaar case behind a beroep.
-     *
-     * Returns the re-opened case UUID when the transition ran, and null when there is nothing to
-     * re-open (no source bezwaar, no bezwaar schema, missing source, no case) or the transition
-     * failed — a failure is logged, never raised, exactly as before.
-     *
-     * @param object               $objectService The OpenRegister object service
-     * @param string               $register      The register slug
-     * @param string               $bezwaarSchema The bezwaar schema slug
-     * @param array<string, mixed> $current       The beroep record
-     * @param string               $beroepId      UUID of the beroep
-     *
-     * @return string|null The re-opened bezwaar case UUID, or null.
-     */
-    private function reopenSourceBezwaarCase(
-        object $objectService,
-        string $register,
-        string $bezwaarSchema,
-        array $current,
-        string $beroepId,
-    ): ?string {
-        $sourceBezwaarId = (string) ($current['sourceBezwaar'] ?? '');
-        if ($sourceBezwaarId === '' || $bezwaarSchema === '') {
-            return null;
-        }
+		return $sourceCaseId;
+	}//end reopenSourceBezwaarCase()
 
-        $sourceBezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
-        if (is_array($sourceBezwaar) === false) {
-            return null;
-        }
+	/**
+	 * Compute the 6-week filing deadline (Awb 6:7, 6:8).
+	 *
+	 * @param string $effective ISO date of the contested decision's
+	 *                          effectiveDate
+	 *
+	 * @return string ISO date of the deadline (empty when effective is empty)
+	 */
+	private function computeFilingDeadline(string $effective): string {
+		if ($effective === '') {
+			return '';
+		}
 
-        $sourceCaseId = (string) ($sourceBezwaar['case'] ?? '');
-        if ($sourceCaseId === '') {
-            return null;
-        }
+		return $this->shiftDate(
+			base: $effective,
+			modifier: self::FILING_WINDOW,
+		);
+	}//end computeFilingDeadline()
 
-        try {
-            $this->transitions->execute(
-                caseId: $sourceCaseId,
-                transitionId: 'beroep-reopen',
-                comment: 'Reopened via beroep '.$beroepId,
-            );
-        } catch (Throwable $e) {
-            $this->logger->warning(
-                'Procest beroep: reopen transition failed: '
-                .$e->getMessage()
-            );
-            return null;
-        }
+	/**
+	 * Decide whether the appellant filed past the 6-week window.
+	 *
+	 * Informational only — Procest never refuses or auto-closes a beroep
+	 * on timeliness; only the rechtbank weighs verschoonbare
+	 * termijnoverschrijding.
+	 *
+	 * @param string $filingDate ISO date the beroepschrift was filed
+	 * @param string $deadline ISO date of the filing deadline
+	 *
+	 * @return bool True when filingDate > deadline.
+	 */
+	private function isLateFiling(string $filingDate, string $deadline): bool {
+		if ($filingDate === '' || $deadline === '') {
+			return false;
+		}
 
-        return $sourceCaseId;
-    }//end reopenSourceBezwaarCase()
+		try {
+			$filed = new DateTimeImmutable($filingDate);
+			$end = new DateTimeImmutable($deadline);
+		} catch (Throwable $e) {
+			return false;
+		}
 
-    /**
-     * Compute the 6-week filing deadline (Awb 6:7, 6:8).
-     *
-     * @param string $effective ISO date of the contested decision's
-     *                          effectiveDate
-     *
-     * @return string ISO date of the deadline (empty when effective is empty)
-     */
-    private function computeFilingDeadline(string $effective): string
-    {
-        if ($effective === '') {
-            return '';
-        }
+		return $filed > $end;
+	}//end isLateFiling()
 
-        return $this->shiftDate(
-            base: $effective,
-            modifier: self::FILING_WINDOW,
-        );
-    }//end computeFilingDeadline()
+	/**
+	 * Shift an ISO date by a DateTime modifier (e.g. "+42 days").
+	 *
+	 * @param string $base ISO date
+	 * @param string $modifier DateTime modifier expression
+	 *
+	 * @return string Shifted ISO date (empty on parse failure)
+	 */
+	private function shiftDate(string $base, string $modifier): string {
+		if ($base === '') {
+			return '';
+		}
 
-    /**
-     * Decide whether the appellant filed past the 6-week window.
-     *
-     * Informational only — Procest never refuses or auto-closes a beroep
-     * on timeliness; only the rechtbank weighs verschoonbare
-     * termijnoverschrijding.
-     *
-     * @param string $filingDate ISO date the beroepschrift was filed
-     * @param string $deadline   ISO date of the filing deadline
-     *
-     * @return bool True when filingDate > deadline.
-     */
-    private function isLateFiling(string $filingDate, string $deadline): bool
-    {
-        if ($filingDate === '' || $deadline === '') {
-            return false;
-        }
-
-        try {
-            $filed = new DateTimeImmutable($filingDate);
-            $end   = new DateTimeImmutable($deadline);
-        } catch (Throwable $e) {
-            return false;
-        }
-
-        return $filed > $end;
-    }//end isLateFiling()
-
-    /**
-     * Shift an ISO date by a DateTime modifier (e.g. "+42 days").
-     *
-     * @param string $base     ISO date
-     * @param string $modifier DateTime modifier expression
-     *
-     * @return string Shifted ISO date (empty on parse failure)
-     */
-    private function shiftDate(string $base, string $modifier): string
-    {
-        if ($base === '') {
-            return '';
-        }
-
-        try {
-            return (new DateTimeImmutable($base))
-                ->modify($modifier)
-                ->format('Y-m-d');
-        } catch (Throwable $e) {
-            return '';
-        }
-    }//end shiftDate()
+		try {
+			return (new DateTimeImmutable($base))
+				->modify($modifier)
+				->format('Y-m-d');
+		} catch (Throwable $e) {
+			return '';
+		}
+	}//end shiftDate()
 }//end class

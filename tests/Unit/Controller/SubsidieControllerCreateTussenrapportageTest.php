@@ -45,190 +45,175 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Procest\Controller\SubsidieController
  */
-final class SubsidieControllerCreateTussenrapportageTest extends TestCase
-{
+final class SubsidieControllerCreateTussenrapportageTest extends TestCase {
 
-    /**
-     * Inbound request.
-     *
-     * @var IRequest|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IRequest $request;
+	/**
+	 * Inbound request.
+	 *
+	 * @var IRequest|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IRequest $request;
 
-    /**
-     * Interim-report service under the endpoint.
-     *
-     * @var TussenrapportageService|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private TussenrapportageService $tussenrapportage;
+	/**
+	 * Interim-report service under the endpoint.
+	 *
+	 * @var TussenrapportageService|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private TussenrapportageService $tussenrapportage;
 
-    /**
-     * Current user session.
-     *
-     * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
-     */
-    private IUserSession $userSession;
+	/**
+	 * Current user session.
+	 *
+	 * @var IUserSession|\PHPUnit\Framework\MockObject\MockObject
+	 */
+	private IUserSession $userSession;
 
-    /**
-     * The controller under test.
-     *
-     * @var SubsidieController
-     */
-    private SubsidieController $controller;
+	/**
+	 * The controller under test.
+	 *
+	 * @var SubsidieController
+	 */
+	private SubsidieController $controller;
 
+	/**
+	 * Set up fixtures.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->request = $this->createMock(IRequest::class);
+		$this->tussenrapportage = $this->createMock(TussenrapportageService::class);
+		$this->userSession = $this->createMock(IUserSession::class);
 
-    /**
-     * Set up fixtures.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->request          = $this->createMock(IRequest::class);
-        $this->tussenrapportage = $this->createMock(TussenrapportageService::class);
-        $this->userSession      = $this->createMock(IUserSession::class);
+		$this->controller = new SubsidieController(
+			request: $this->request,
+			subsidieService: $this->createMock(SubsidieService::class),
+			beschikkingService: $this->createMock(BeschikkingService::class),
+			tussenrapportage: $this->tussenrapportage,
+			vaststellingService: $this->createMock(VaststellingService::class),
+			userSession: $this->userSession,
+		);
+	}//end setUp()
 
-        $this->controller = new SubsidieController(
-            request: $this->request,
-            subsidieService: $this->createMock(SubsidieService::class),
-            beschikkingService: $this->createMock(BeschikkingService::class),
-            tussenrapportage: $this->tussenrapportage,
-            vaststellingService: $this->createMock(VaststellingService::class),
-            userSession: $this->userSession,
-        );
-    }//end setUp()
+	/**
+	 * Mark the session as authenticated for user `alice`.
+	 *
+	 * @return void
+	 */
+	private function authenticate(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('alice');
+		$this->userSession->method('getUser')->willReturn($user);
+	}//end authenticate()
 
+	/**
+	 * Feed the request parameter bag.
+	 *
+	 * @param array<string, mixed> $params The request parameters.
+	 *
+	 * @return void
+	 */
+	private function withParams(array $params): void {
+		$this->request->method('getParams')->willReturn($params);
+	}//end withParams()
 
-    /**
-     * Mark the session as authenticated for user `alice`.
-     *
-     * @return void
-     */
-    private function authenticate(): void
-    {
-        $user = $this->createMock(IUser::class);
-        $user->method('getUID')->willReturn('alice');
-        $this->userSession->method('getUser')->willReturn($user);
-    }//end authenticate()
+	/**
+	 * An anonymous caller is rejected before the service is consulted.
+	 *
+	 * @return void
+	 */
+	public function testAnonymousCallerIsRejectedAndServiceNeverRuns(): void {
+		$this->userSession->method('getUser')->willReturn(null);
+		$this->tussenrapportage->expects($this->never())->method('createExpected');
 
+		$response = $this->controller->createTussenrapportage(uitvoeringId: 'U/2026/1');
 
-    /**
-     * Feed the request parameter bag.
-     *
-     * @param array<string, mixed> $params The request parameters.
-     *
-     * @return void
-     */
-    private function withParams(array $params): void
-    {
-        $this->request->method('getParams')->willReturn($params);
-    }//end withParams()
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+		$this->assertSame(['error' => 'Authenticatie vereist'], $response->getData());
+	}//end testAnonymousCallerIsRejectedAndServiceNeverRuns()
 
+	/**
+	 * The report is created and returned with 201.
+	 *
+	 * @return void
+	 */
+	public function testCreatesExpectedReportAndReturnsCreated(): void {
+		$this->authenticate();
+		$this->withParams(
+			[
+				'periodeStart' => '2026-01-01',
+				'periodeEind' => '2026-06-30',
+				'_route' => 'procest.subsidie.createTussenrapportage',
+				'uitvoeringId' => 'U/2026/1',
+			]
+		);
 
-    /**
-     * An anonymous caller is rejected before the service is consulted.
-     *
-     * @return void
-     */
-    public function testAnonymousCallerIsRejectedAndServiceNeverRuns(): void
-    {
-        $this->userSession->method('getUser')->willReturn(null);
-        $this->tussenrapportage->expects($this->never())->method('createExpected');
+		$created = [
+			'id' => 'TR/1',
+			'subsidieuitvoering' => 'U/2026/1',
+			'status' => 'verwacht',
+		];
 
-        $response = $this->controller->createTussenrapportage(uitvoeringId: 'U/2026/1');
+		$this->tussenrapportage->expects($this->once())
+			->method('createExpected')
+			->with(
+				'U/2026/1',
+				[
+					'periodeStart' => '2026-01-01',
+					'periodeEind' => '2026-06-30',
+				]
+			)
+			->willReturn($created);
 
-        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-        $this->assertSame(['error' => 'Authenticatie vereist'], $response->getData());
-    }//end testAnonymousCallerIsRejectedAndServiceNeverRuns()
+		$response = $this->controller->createTussenrapportage(uitvoeringId: 'U/2026/1');
 
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+		$this->assertSame($created, $response->getData());
+	}//end testCreatesExpectedReportAndReturnsCreated()
 
-    /**
-     * The report is created and returned with 201.
-     *
-     * @return void
-     */
-    public function testCreatesExpectedReportAndReturnsCreated(): void
-    {
-        $this->authenticate();
-        $this->withParams(
-            [
-                'periodeStart' => '2026-01-01',
-                'periodeEind'  => '2026-06-30',
-                '_route'       => 'procest.subsidie.createTussenrapportage',
-                'uitvoeringId' => 'U/2026/1',
-            ]
-        );
+	/**
+	 * Routing parameters never leak into the persisted payload.
+	 *
+	 * `uitvoeringId` arrives on the URL and is passed as its own argument; if it
+	 * also reached the payload the record would carry a stray property.
+	 *
+	 * @return void
+	 */
+	public function testRoutingParametersAreStrippedFromThePayload(): void {
+		$this->authenticate();
+		$this->withParams(
+			[
+				'uitvoeringId' => 'U/2026/2',
+				'_route' => 'procest.subsidie.createTussenrapportage',
+				'frequentie' => 'halfjaarlijks',
+			]
+		);
 
-        $created = [
-            'id'                 => 'TR/1',
-            'subsidieuitvoering' => 'U/2026/1',
-            'status'             => 'verwacht',
-        ];
+		$this->tussenrapportage->expects($this->once())
+			->method('createExpected')
+			->with('U/2026/2', ['frequentie' => 'halfjaarlijks'])
+			->willReturn(['status' => 'verwacht']);
 
-        $this->tussenrapportage->expects($this->once())
-            ->method('createExpected')
-            ->with(
-                'U/2026/1',
-                [
-                    'periodeStart' => '2026-01-01',
-                    'periodeEind'  => '2026-06-30',
-                ]
-            )
-            ->willReturn($created);
+		$response = $this->controller->createTussenrapportage(uitvoeringId: 'U/2026/2');
 
-        $response = $this->controller->createTussenrapportage(uitvoeringId: 'U/2026/1');
+		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
+	}//end testRoutingParametersAreStrippedFromThePayload()
 
-        $this->assertSame(Http::STATUS_CREATED, $response->getStatus());
-        $this->assertSame($created, $response->getData());
-    }//end testCreatesExpectedReportAndReturnsCreated()
+	/**
+	 * A persistence failure becomes a 400, not a 500.
+	 *
+	 * @return void
+	 */
+	public function testBadRequestExceptionBecomesBadRequest(): void {
+		$this->authenticate();
+		$this->withParams([]);
 
+		$this->tussenrapportage->method('createExpected')
+			->willThrowException(new OCSBadRequestException('Kon tussenrapportage niet aanmaken'));
 
-    /**
-     * Routing parameters never leak into the persisted payload.
-     *
-     * `uitvoeringId` arrives on the URL and is passed as its own argument; if it
-     * also reached the payload the record would carry a stray property.
-     *
-     * @return void
-     */
-    public function testRoutingParametersAreStrippedFromThePayload(): void
-    {
-        $this->authenticate();
-        $this->withParams(
-            [
-                'uitvoeringId' => 'U/2026/2',
-                '_route'       => 'procest.subsidie.createTussenrapportage',
-                'frequentie'   => 'halfjaarlijks',
-            ]
-        );
+		$response = $this->controller->createTussenrapportage(uitvoeringId: 'U/2026/3');
 
-        $this->tussenrapportage->expects($this->once())
-            ->method('createExpected')
-            ->with('U/2026/2', ['frequentie' => 'halfjaarlijks'])
-            ->willReturn(['status' => 'verwacht']);
-
-        $response = $this->controller->createTussenrapportage(uitvoeringId: 'U/2026/2');
-
-        $this->assertSame(Http::STATUS_CREATED, $response->getStatus());
-    }//end testRoutingParametersAreStrippedFromThePayload()
-
-
-    /**
-     * A persistence failure becomes a 400, not a 500.
-     *
-     * @return void
-     */
-    public function testBadRequestExceptionBecomesBadRequest(): void
-    {
-        $this->authenticate();
-        $this->withParams([]);
-
-        $this->tussenrapportage->method('createExpected')
-            ->willThrowException(new OCSBadRequestException('Kon tussenrapportage niet aanmaken'));
-
-        $response = $this->controller->createTussenrapportage(uitvoeringId: 'U/2026/3');
-
-        $this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
-        $this->assertSame(['error' => 'Kon tussenrapportage niet aanmaken'], $response->getData());
-    }//end testBadRequestExceptionBecomesBadRequest()
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+		$this->assertSame(['error' => 'Kon tussenrapportage niet aanmaken'], $response->getData());
+	}//end testBadRequestExceptionBecomesBadRequest()
 }//end class

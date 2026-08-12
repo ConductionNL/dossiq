@@ -35,67 +35,63 @@ use Psr\Log\NullLogger;
  *
  * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
-class NotifyHandlerTest extends TestCase
-{
-    /**
-     * @return void
-     */
-    public function testSucceedsButSkipsWhenNotifyUserMethodMissing(): void
-    {
-        // NotificatieService only exposes publish() today; notifyUser is gated
-        // by method_exists. Handler must report success with skipped flag.
-        $handler = new NotifyHandler(
-            notificatieService: $this->createMock(NotificatieService::class),
-            logger: new NullLogger(),
-        );
+class NotifyHandlerTest extends TestCase {
+	/**
+	 * @return void
+	 */
+	public function testSucceedsButSkipsWhenNotifyUserMethodMissing(): void {
+		// NotificatieService only exposes publish() today; notifyUser is gated
+		// by method_exists. Handler must report success with skipped flag.
+		$handler = new NotifyHandler(
+			notificatieService: $this->createMock(NotificatieService::class),
+			logger: new NullLogger(),
+		);
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'notify', 'userId' => 'alice', 'message' => 'Klaar'],
-            case: ['id' => 'c'],
-            transitionContext: ['transitionLabel' => 'Done'],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'notify', 'userId' => 'alice', 'message' => 'Klaar'],
+			case: ['id' => 'c'],
+			transitionContext: ['transitionLabel' => 'Done'],
+		);
 
-        self::assertTrue($result->succeeded);
-        self::assertTrue($result->data['skipped']);
-    }//end testSucceedsButSkipsWhenNotifyUserMethodMissing()
+		self::assertTrue($result->succeeded);
+		self::assertTrue($result->data['skipped']);
+	}//end testSucceedsButSkipsWhenNotifyUserMethodMissing()
 
-    /**
-     * @return void
-     */
-    public function testFallsBackToCaseAssigneeWhenUserIdMissing(): void
-    {
-        $handler = new NotifyHandler(
-            notificatieService: $this->createMock(NotificatieService::class),
-            logger: new NullLogger(),
-        );
+	/**
+	 * @return void
+	 */
+	public function testFallsBackToCaseAssigneeWhenUserIdMissing(): void {
+		$handler = new NotifyHandler(
+			notificatieService: $this->createMock(NotificatieService::class),
+			logger: new NullLogger(),
+		);
 
-        // Empty recipient + no notifyUser method → still success-skip envelope.
-        $result = $handler->handle(
-            actionConfig: ['type' => 'notify'],
-            case: ['id' => 'c', 'assignee' => 'bob'],
-            transitionContext: ['transitionLabel' => 'Approved'],
-        );
+		// Empty recipient + no notifyUser method → still success-skip envelope.
+		$result = $handler->handle(
+			actionConfig: ['type' => 'notify'],
+			case: ['id' => 'c', 'assignee' => 'bob'],
+			transitionContext: ['transitionLabel' => 'Approved'],
+		);
 
-        self::assertTrue($result->succeeded);
-    }//end testFallsBackToCaseAssigneeWhenUserIdMissing()
+		self::assertTrue($result->succeeded);
+	}//end testFallsBackToCaseAssigneeWhenUserIdMissing()
 
-    /**
-     * @return void
-     */
-    public function testReturnsSkippedWhenNoRecipientAndNoAssignee(): void
-    {
-        $handler = new NotifyHandler(
-            notificatieService: $this->createMock(NotificatieService::class),
-            logger: new NullLogger(),
-        );
+	/**
+	 * @return void
+	 */
+	public function testReturnsSkippedWhenNoRecipientAndNoAssignee(): void {
+		$handler = new NotifyHandler(
+			notificatieService: $this->createMock(NotificatieService::class),
+			logger: new NullLogger(),
+		);
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'notify'],
-            case: ['id' => 'c'],
-            transitionContext: [],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'notify'],
+			case: ['id' => 'c'],
+			transitionContext: [],
+		);
 
-        self::assertTrue($result->succeeded);
-        self::assertTrue($result->data['skipped']);
-    }//end testReturnsSkippedWhenNoRecipientAndNoAssignee()
+		self::assertTrue($result->succeeded);
+		self::assertTrue($result->data['skipped']);
+	}//end testReturnsSkippedWhenNoRecipientAndNoAssignee()
 }//end class

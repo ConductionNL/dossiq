@@ -81,9 +81,14 @@ jobs:
       # `fromJSON(inputs.nextcloud-test-refs)[0]`, so the FIRST entry has to be a
       # version openregister can load.
       #
-      # stable33 is deliberately NOT added: this removes an impossible leg, it
-      # does not widen the matrix.
-      nextcloud-test-refs: '["stable32"]'
+      # THE LIST IS THE WHOLE DECLARED RANGE. An earlier revision of this comment
+      # said "stable33 is deliberately NOT added: this removes an impossible leg,
+      # it does not widen the matrix" — but the same change also dropped stable32,
+      # which was NOT impossible, it was the declared floor. appinfo/info.xml
+      # declares <nextcloud min-version="32" max-version="34"/>, so 32, 33 and 34
+      # each get a leg. tests/Unit/AppInfo/NextcloudFloorMatrixTest.php is what
+      # holds this list and that floor in sync.
+      nextcloud-test-refs: '["stable34", "stable32", "stable33"]'
       enable-psalm: true
       enable-phpstan: true
       enable-phpmetrics: false

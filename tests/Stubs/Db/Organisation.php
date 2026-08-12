@@ -27,111 +27,95 @@ namespace OCA\OpenRegister\Db;
 /**
  * Stub of OpenRegister's Organisation for unit tests.
  */
-class Organisation
-{
-    /** @var string|null */
-    private ?string $uuid = null;
+class Organisation {
+	/** @var string|null */
+	private ?string $uuid = null;
 
-    /** @var string|null */
-    private ?string $slug = null;
+	/** @var string|null */
+	private ?string $slug = null;
 
-    /** @var string|null */
-    private ?string $name = null;
+	/** @var string|null */
+	private ?string $name = null;
 
-    /** @var string|null */
-    private ?string $status = 'active';
+	/** @var string|null */
+	private ?string $status = 'active';
 
-    /** @var array<int, string> */
-    private array $groups = [];
+	/** @var array<int, string> */
+	private array $groups = [];
 
-    /** @var bool */
-    private bool $active = true;
+	/** @var bool */
+	private bool $active = true;
 
-    /** @var int|null */
-    private ?int $storageQuota = null;
+	/** @var int|null */
+	private ?int $storageQuota = null;
 
-    // phpcs:disable Squiz.Commenting.FunctionComment.Missing
+	// phpcs:disable Squiz.Commenting.FunctionComment.Missing
 
-    public function getUuid(): ?string
-    {
-        return $this->uuid;
-    }
+	public function getUuid(): ?string {
+		return $this->uuid;
+	}
 
-    public function setUuid(?string $uuid): void
-    {
-        $this->uuid = $uuid;
-    }
+	public function setUuid(?string $uuid): void {
+		$this->uuid = $uuid;
+	}
 
-    public function getSlug(): ?string
-    {
-        return $this->slug;
-    }
+	public function getSlug(): ?string {
+		return $this->slug;
+	}
 
-    public function setSlug(?string $slug): void
-    {
-        $this->slug = $slug;
-    }
+	public function setSlug(?string $slug): void {
+		$this->slug = $slug;
+	}
 
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
+	public function getName(): ?string {
+		return $this->name;
+	}
 
-    public function setName(?string $name): void
-    {
-        $this->name = $name;
-    }
+	public function setName(?string $name): void {
+		$this->name = $name;
+	}
 
-    public function getStatus(): ?string
-    {
-        return $this->status;
-    }
+	public function getStatus(): ?string {
+		return $this->status;
+	}
 
-    public function setStatus(?string $status): void
-    {
-        $this->status = $status;
-    }
+	public function setStatus(?string $status): void {
+		$this->status = $status;
+	}
 
-    /**
-     * @return array<int, string>
-     */
-    public function getGroups(): array
-    {
-        return $this->groups;
-    }
+	/**
+	 * @return array<int, string>
+	 */
+	public function getGroups(): array {
+		return $this->groups;
+	}
 
-    /**
-     * @param array<int, string>|null $groups Groups list.
-     */
-    public function setGroups(?array $groups): void
-    {
-        $this->groups = ($groups ?? []);
-    }
+	/**
+	 * @param array<int, string>|null $groups Groups list.
+	 */
+	public function setGroups(?array $groups): void {
+		$this->groups = ($groups ?? []);
+	}
 
-    public function getActive(): bool
-    {
-        return $this->active;
-    }
+	public function getActive(): bool {
+		return $this->active;
+	}
 
-    public function isActive(): bool
-    {
-        return $this->active;
-    }
+	public function isActive(): bool {
+		return $this->active;
+	}
 
-    public function setActive(mixed $active): void
-    {
-        $this->active = (bool) $active;
-    }
+	public function setActive(mixed $active): void {
+		$this->active = (bool)$active;
+	}
 
-    public function getStorageQuota(): ?int
-    {
-        return $this->storageQuota;
-    }
+	public function getStorageQuota(): ?int {
+		return $this->storageQuota;
+	}
 
-    public function setStorageQuota(?int $storageQuota): void
-    {
-        $this->storageQuota = $storageQuota;
-    }
+	public function setStorageQuota(?int $storageQuota): void {
+		$this->storageQuota = $storageQuota;
+	}
 
-    // phpcs:enable
+	// phpcs:enable
 }//end class

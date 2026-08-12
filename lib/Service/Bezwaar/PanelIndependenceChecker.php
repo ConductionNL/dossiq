@@ -50,193 +50,190 @@ use Throwable;
  *
  * @spec openspec/specs/bezwaar-advisory-committee/spec.md
  */
-class PanelIndependenceChecker
-{
+class PanelIndependenceChecker {
 
-    use SearchesObjects;
+	use SearchesObjects;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService Schema/register bridge.
-     * @param LoggerInterface $logger          Logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService Schema/register bridge.
+	 * @param LoggerInterface $logger Logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Member-independence check per Awb Art. 7:13(3).
-     *
-     * Compares each panel member UID against the `createdBy` (steller) of
-     * the contested primair besluit.
-     *
-     * @param string        $bezwaarId The bezwaar (lifecycle) UUID.
-     * @param array<string> $panel     Panel member UIDs.
-     *
-     * @return array{ok: bool, member: ?string, reason: ?string} The verdict.
-     *
-     * @spec openspec/specs/bezwaar-advisory-committee/spec.md
-     */
-    public function check(string $bezwaarId, array $panel): array
-    {
-        $clear = [
-            'ok'     => true,
-            'member' => null,
-            'reason' => null,
-        ];
+	/**
+	 * Member-independence check per Awb Art. 7:13(3).
+	 *
+	 * Compares each panel member UID against the `createdBy` (steller) of
+	 * the contested primair besluit.
+	 *
+	 * @param string $bezwaarId The bezwaar (lifecycle) UUID.
+	 * @param array<string> $panel Panel member UIDs.
+	 *
+	 * @return array{ok: bool, member: ?string, reason: ?string} The verdict.
+	 *
+	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+	 */
+	public function check(string $bezwaarId, array $panel): array {
+		$clear = [
+			'ok' => true,
+			'member' => null,
+			'reason' => null,
+		];
 
-        if ($bezwaarId === '' || $panel === []) {
-            return $clear;
-        }
+		if ($bezwaarId === '' || $panel === []) {
+			return $clear;
+		}
 
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return $clear;
-        }
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return $clear;
+		}
 
-        $register        = $this->settingsService->getConfigValue(key: 'register');
-        $bezwaarSchema   = $this->settingsService->getConfigValue(
-            key: 'bezwaar_schema'
-        );
-        $objectionSchema = $this->settingsService->getConfigValue(
-            key: 'objection_schema'
-        );
-        $decisionSchema  = $this->settingsService->getConfigValue(
-            key: 'decision_schema'
-        );
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$bezwaarSchema = $this->settingsService->getConfigValue(
+			key: 'bezwaar_schema'
+		);
+		$objectionSchema = $this->settingsService->getConfigValue(
+			key: 'objection_schema'
+		);
+		$decisionSchema = $this->settingsService->getConfigValue(
+			key: 'decision_schema'
+		);
 
-        if (in_array('', [$objectionSchema, $decisionSchema], true) === true) {
-            // Unable to resolve; do not block the transition, but log.
-            $this->logger->info(
-                'Procest BAC: objection/decision schemas not configured; '
-                .'skipping independence check'
-            );
-            return $clear;
-        }
+		if (in_array('', [$objectionSchema, $decisionSchema], true) === true) {
+			// Unable to resolve; do not block the transition, but log.
+			$this->logger->info(
+				'Procest BAC: objection/decision schemas not configured; '
+				. 'skipping independence check'
+			);
+			return $clear;
+		}
 
-        try {
-            $steller = $this->resolveContestedDecisionAuthor(
-                objectService: $objectService,
-                bezwaarId: $bezwaarId,
-                register: $register,
-                bezwaarSchema: $bezwaarSchema,
-                objectionSchema: $objectionSchema,
-                decisionSchema: $decisionSchema,
-            );
-            if ($steller === '') {
-                return $clear;
-            }
+		try {
+			$steller = $this->resolveContestedDecisionAuthor(
+				objectService: $objectService,
+				bezwaarId: $bezwaarId,
+				register: $register,
+				bezwaarSchema: $bezwaarSchema,
+				objectionSchema: $objectionSchema,
+				decisionSchema: $decisionSchema,
+			);
+			if ($steller === '') {
+				return $clear;
+			}
 
-            $conflicting = $this->findConflictingPanelMember(
-                panel: $panel,
-                steller: $steller,
-            );
-            if ($conflicting !== null) {
-                return [
-                    'ok'     => false,
-                    'member' => $conflicting,
-                    'reason' => 'Lid was betrokken bij het bestreden '
-                                .'besluit (Awb Art. 7:13 lid 3)',
-                ];
-            }
-        } catch (Throwable $e) {
-            $this->logger->error(
-                'Procest BAC: independence check error: '.$e->getMessage()
-            );
-            // Fail-open here is intentional: do not block on infra issues.
-        }//end try
+			$conflicting = $this->findConflictingPanelMember(
+				panel: $panel,
+				steller: $steller,
+			);
+			if ($conflicting !== null) {
+				return [
+					'ok' => false,
+					'member' => $conflicting,
+					'reason' => 'Lid was betrokken bij het bestreden '
+								. 'besluit (Awb Art. 7:13 lid 3)',
+				];
+			}
+		} catch (Throwable $e) {
+			$this->logger->error(
+				'Procest BAC: independence check error: ' . $e->getMessage()
+			);
+			// Fail-open here is intentional: do not block on infra issues.
+		}//end try
 
-        return $clear;
-    }//end check()
+		return $clear;
+	}//end check()
 
-    /**
-     * Resolve the steller (author) of the primair besluit contested by the
-     * objection filed on the bezwaar's underlying procest case.
-     *
-     * @param object $objectService   OpenRegister object service.
-     * @param string $bezwaarId       The bezwaar (lifecycle) UUID.
-     * @param string $register        Register identifier.
-     * @param string $bezwaarSchema   Bezwaar schema identifier, may be ''.
-     * @param string $objectionSchema Objection schema identifier.
-     * @param string $decisionSchema  Decision schema identifier.
-     *
-     * @return string The steller UID, or '' when it cannot be resolved.
-     *
-     * @spec openspec/specs/bezwaar-advisory-committee/spec.md
-     */
-    private function resolveContestedDecisionAuthor(
-        object $objectService,
-        string $bezwaarId,
-        string $register,
-        string $bezwaarSchema,
-        string $objectionSchema,
-        string $decisionSchema
-    ): string {
-        // Resolve the underlying procest case via the bezwaar entity
-        // when the bezwaar_schema is registered. When unavailable
-        // (e.g. legacy callers passing a case UUID directly), fall back
-        // to treating the input as the case id.
-        $caseId = $bezwaarId;
-        if ($bezwaarSchema !== '') {
-            $bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
-            if (is_array($bezwaar) === true) {
-                $caseId = (string) ($bezwaar['case'] ?? $bezwaarId);
-            }
-        }
+	/**
+	 * Resolve the steller (author) of the primair besluit contested by the
+	 * objection filed on the bezwaar's underlying procest case.
+	 *
+	 * @param object $objectService OpenRegister object service.
+	 * @param string $bezwaarId The bezwaar (lifecycle) UUID.
+	 * @param string $register Register identifier.
+	 * @param string $bezwaarSchema Bezwaar schema identifier, may be ''.
+	 * @param string $objectionSchema Objection schema identifier.
+	 * @param string $decisionSchema Decision schema identifier.
+	 *
+	 * @return string The steller UID, or '' when it cannot be resolved.
+	 *
+	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+	 */
+	private function resolveContestedDecisionAuthor(
+		object $objectService,
+		string $bezwaarId,
+		string $register,
+		string $bezwaarSchema,
+		string $objectionSchema,
+		string $decisionSchema,
+	): string {
+		// Resolve the underlying procest case via the bezwaar entity
+		// when the bezwaar_schema is registered. When unavailable
+		// (e.g. legacy callers passing a case UUID directly), fall back
+		// to treating the input as the case id.
+		$caseId = $bezwaarId;
+		if ($bezwaarSchema !== '') {
+			$bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
+			if (is_array($bezwaar) === true) {
+				$caseId = (string)($bezwaar['case'] ?? $bezwaarId);
+			}
+		}
 
-        $objections = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $objectionSchema,
-            filters: ['case' => $caseId]
-        );
-        $objection  = null;
-        if (is_array($objections) === true && $objections !== []) {
-            $objection = $objections[0];
-        }
+		$objections = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $objectionSchema,
+			filters: ['case' => $caseId]
+		);
+		$objection = null;
+		if (is_array($objections) === true && $objections !== []) {
+			$objection = $objections[0];
+		}
 
-        if (is_array($objection) === false) {
-            return '';
-        }
+		if (is_array($objection) === false) {
+			return '';
+		}
 
-        $contestedId = (string) ($objection['contestedDecision'] ?? '');
-        if ($contestedId === '') {
-            return '';
-        }
+		$contestedId = (string)($objection['contestedDecision'] ?? '');
+		if ($contestedId === '') {
+			return '';
+		}
 
-        $decision = $objectService->find($contestedId, register: $register, schema: $decisionSchema);
-        if (is_array($decision) === false) {
-            return '';
-        }
+		$decision = $objectService->find($contestedId, register: $register, schema: $decisionSchema);
+		if (is_array($decision) === false) {
+			return '';
+		}
 
-        return (string) (
-            $decision['@self']['owner'] ?? ($decision['createdBy'] ?? ($decision['steller'] ?? ''))
-        );
-    }//end resolveContestedDecisionAuthor()
+		return (string)(
+			$decision['@self']['owner'] ?? ($decision['createdBy'] ?? ($decision['steller'] ?? ''))
+		);
+	}//end resolveContestedDecisionAuthor()
 
-    /**
-     * Find the first panel member that is not independent from the steller.
-     *
-     * @param array<string> $panel   Panel member UIDs.
-     * @param string        $steller UID of the contested decision's author.
-     *
-     * @return string|null The conflicting member UID, or null when the panel is independent.
-     *
-     * @spec openspec/specs/bezwaar-advisory-committee/spec.md
-     */
-    private function findConflictingPanelMember(array $panel, string $steller): ?string
-    {
-        foreach ($panel as $memberUid) {
-            if ((string) $memberUid === $steller) {
-                return (string) $memberUid;
-            }
-        }
+	/**
+	 * Find the first panel member that is not independent from the steller.
+	 *
+	 * @param array<string> $panel Panel member UIDs.
+	 * @param string $steller UID of the contested decision's author.
+	 *
+	 * @return string|null The conflicting member UID, or null when the panel is independent.
+	 *
+	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
+	 */
+	private function findConflictingPanelMember(array $panel, string $steller): ?string {
+		foreach ($panel as $memberUid) {
+			if ((string)$memberUid === $steller) {
+				return (string)$memberUid;
+			}
+		}
 
-        return null;
-    }//end findConflictingPanelMember()
+		return null;
+	}//end findConflictingPanelMember()
 }//end class

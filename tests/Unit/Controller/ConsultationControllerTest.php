@@ -50,253 +50,235 @@ use Psr\Log\LoggerInterface;
  *
  * @uses \OCA\Procest\Service\Consultation\ConsultationAccessGuard
  */
-class ConsultationControllerTest extends TestCase
-{
+class ConsultationControllerTest extends TestCase {
 
-    /**
-     * Mocked IRequest.
-     *
-     * @var IRequest|MockObject
-     */
-    private IRequest $request;
+	/**
+	 * Mocked IRequest.
+	 *
+	 * @var IRequest|MockObject
+	 */
+	private IRequest $request;
 
-    /**
-     * Mocked ConsultationService.
-     *
-     * @var ConsultationService|MockObject
-     */
-    private ConsultationService $consultationService;
+	/**
+	 * Mocked ConsultationService.
+	 *
+	 * @var ConsultationService|MockObject
+	 */
+	private ConsultationService $consultationService;
 
-    /**
-     * Mocked AdvisoryBodyService.
-     *
-     * @var AdvisoryBodyService|MockObject
-     */
-    private AdvisoryBodyService $advisoryBodyService;
+	/**
+	 * Mocked AdvisoryBodyService.
+	 *
+	 * @var AdvisoryBodyService|MockObject
+	 */
+	private AdvisoryBodyService $advisoryBodyService;
 
-    /**
-     * Mocked IUserSession.
-     *
-     * @var IUserSession|MockObject
-     */
-    private IUserSession $userSession;
+	/**
+	 * Mocked IUserSession.
+	 *
+	 * @var IUserSession|MockObject
+	 */
+	private IUserSession $userSession;
 
-    /**
-     * Mocked IGroupManager.
-     *
-     * @var IGroupManager|MockObject
-     */
-    private IGroupManager $groupManager;
+	/**
+	 * Mocked IGroupManager.
+	 *
+	 * @var IGroupManager|MockObject
+	 */
+	private IGroupManager $groupManager;
 
-    /**
-     * Mocked LoggerInterface.
-     *
-     * @var LoggerInterface|MockObject
-     */
-    private LoggerInterface $logger;
+	/**
+	 * Mocked LoggerInterface.
+	 *
+	 * @var LoggerInterface|MockObject
+	 */
+	private LoggerInterface $logger;
 
-    /**
-     * Controller under test.
-     *
-     * @var ConsultationController
-     */
-    private ConsultationController $controller;
+	/**
+	 * Controller under test.
+	 *
+	 * @var ConsultationController
+	 */
+	private ConsultationController $controller;
 
-    /**
-     * Advisory body controller under test.
-     *
-     * @var AdvisoryBodyController
-     */
-    private AdvisoryBodyController $advisoryBodyController;
+	/**
+	 * Advisory body controller under test.
+	 *
+	 * @var AdvisoryBodyController
+	 */
+	private AdvisoryBodyController $advisoryBodyController;
 
-    /**
-     * Public (token) consultation controller under test.
-     *
-     * @var ConsultationPublicController
-     */
-    private ConsultationPublicController $publicController;
+	/**
+	 * Public (token) consultation controller under test.
+	 *
+	 * @var ConsultationPublicController
+	 */
+	private ConsultationPublicController $publicController;
 
+	/**
+	 * Set up test fixtures.
+	 *
+	 * The access guard is a real collaborator over mocked dependencies, not a
+	 * mock: stubbing it would make the authorization assertions below assert
+	 * on the stub rather than on the guard's actual rules.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		$this->request = $this->createMock(IRequest::class);
+		$this->consultationService = $this->createMock(ConsultationService::class);
+		$this->advisoryBodyService = $this->createMock(AdvisoryBodyService::class);
+		$this->userSession = $this->createMock(IUserSession::class);
+		$this->groupManager = $this->createMock(IGroupManager::class);
+		$this->logger = $this->createMock(LoggerInterface::class);
 
-    /**
-     * Set up test fixtures.
-     *
-     * The access guard is a real collaborator over mocked dependencies, not a
-     * mock: stubbing it would make the authorization assertions below assert
-     * on the stub rather than on the guard's actual rules.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        $this->request             = $this->createMock(IRequest::class);
-        $this->consultationService = $this->createMock(ConsultationService::class);
-        $this->advisoryBodyService = $this->createMock(AdvisoryBodyService::class);
-        $this->userSession         = $this->createMock(IUserSession::class);
-        $this->groupManager        = $this->createMock(IGroupManager::class);
-        $this->logger              = $this->createMock(LoggerInterface::class);
+		$accessGuard = new ConsultationAccessGuard(
+			request: $this->request,
+			consultationService: $this->consultationService,
+			userSession: $this->userSession,
+			groupManager: $this->groupManager,
+		);
 
-        $accessGuard = new ConsultationAccessGuard(
-            request: $this->request,
-            consultationService: $this->consultationService,
-            userSession: $this->userSession,
-            groupManager: $this->groupManager,
-        );
+		$this->controller = new ConsultationController(
+			appName: Application::APP_ID,
+			request: $this->request,
+			consultationService: $this->consultationService,
+			accessGuard: $accessGuard,
+		);
 
-        $this->controller = new ConsultationController(
-            appName: Application::APP_ID,
-            request: $this->request,
-            consultationService: $this->consultationService,
-            accessGuard: $accessGuard,
-        );
+		$this->advisoryBodyController = new AdvisoryBodyController(
+			appName: Application::APP_ID,
+			request: $this->request,
+			advisoryBodyService: $this->advisoryBodyService,
+			userSession: $this->userSession,
+		);
 
-        $this->advisoryBodyController = new AdvisoryBodyController(
-            appName: Application::APP_ID,
-            request: $this->request,
-            advisoryBodyService: $this->advisoryBodyService,
-            userSession: $this->userSession,
-        );
+		$this->publicController = new ConsultationPublicController(
+			appName: Application::APP_ID,
+			request: $this->request,
+			consultationService: $this->consultationService,
+			logger: $this->logger,
+		);
 
-        $this->publicController = new ConsultationPublicController(
-            appName: Application::APP_ID,
-            request: $this->request,
-            consultationService: $this->consultationService,
-            logger: $this->logger,
-        );
+	}//end setUp()
 
-    }//end setUp()
+	/**
+	 * index returns 401 when user is not authenticated.
+	 *
+	 * @return void
+	 */
+	public function testIndexReturns401WhenNotAuthenticated(): void {
+		$this->userSession->method('getUser')->willReturn(null);
 
+		$response = $this->controller->index(caseId: 'zaak-uuid');
 
-    /**
-     * index returns 401 when user is not authenticated.
-     *
-     * @return void
-     */
-    public function testIndexReturns401WhenNotAuthenticated(): void
-    {
-        $this->userSession->method('getUser')->willReturn(null);
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 
-        $response = $this->controller->index(caseId: 'zaak-uuid');
+	}//end testIndexReturns401WhenNotAuthenticated()
 
-        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	/**
+	 * index returns the list of consultations for the authenticated user.
+	 *
+	 * @return void
+	 */
+	public function testIndexReturnsConsultations(): void {
+		$user = $this->createMock(IUser::class);
+		$user->method('getUID')->willReturn('user1');
+		$this->userSession->method('getUser')->willReturn($user);
 
-    }//end testIndexReturns401WhenNotAuthenticated()
+		$consultations = [
+			['id' => 'c1', 'status' => 'open'],
+			['id' => 'c2', 'status' => 'in_behandeling'],
+		];
+		$this->consultationService->method('getConsultationsForCase')
+			->with(caseId: 'zaak-uuid')
+			->willReturn($consultations);
 
+		$response = $this->controller->index(caseId: 'zaak-uuid');
+		$data = $response->getData();
 
-    /**
-     * index returns the list of consultations for the authenticated user.
-     *
-     * @return void
-     */
-    public function testIndexReturnsConsultations(): void
-    {
-        $user = $this->createMock(IUser::class);
-        $user->method('getUID')->willReturn('user1');
-        $this->userSession->method('getUser')->willReturn($user);
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertCount(2, $data['results']);
 
-        $consultations = [
-            ['id' => 'c1', 'status' => 'open'],
-            ['id' => 'c2', 'status' => 'in_behandeling'],
-        ];
-        $this->consultationService->method('getConsultationsForCase')
-            ->with(caseId: 'zaak-uuid')
-            ->willReturn($consultations);
+	}//end testIndexReturnsConsultations()
 
-        $response = $this->controller->index(caseId: 'zaak-uuid');
-        $data     = $response->getData();
+	/**
+	 * create returns 401 when user is not authenticated.
+	 *
+	 * @return void
+	 */
+	public function testCreateReturns401WhenNotAuthenticated(): void {
+		$this->userSession->method('getUser')->willReturn(null);
 
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
-        $this->assertCount(2, $data['results']);
+		$response = $this->controller->create();
 
-    }//end testIndexReturnsConsultations()
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 
+	}//end testCreateReturns401WhenNotAuthenticated()
 
-    /**
-     * create returns 401 when user is not authenticated.
-     *
-     * @return void
-     */
-    public function testCreateReturns401WhenNotAuthenticated(): void
-    {
-        $this->userSession->method('getUser')->willReturn(null);
+	/**
+	 * publicResponseGet returns 400 when token is empty.
+	 *
+	 * @return void
+	 */
+	public function testPublicResponseGetReturns400ForEmptyToken(): void {
+		$response = $this->publicController->publicResponseGet(token:'');
 
-        $response = $this->controller->create();
+		$this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
 
-        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
+	}//end testPublicResponseGetReturns400ForEmptyToken()
 
-    }//end testCreateReturns401WhenNotAuthenticated()
+	/**
+	 * publicResponseGet returns 404 when token is invalid.
+	 *
+	 * @return void
+	 */
+	public function testPublicResponseGetReturns404ForInvalidToken(): void {
+		$this->consultationService->method('findBySecureToken')
+			->willReturn(null);
 
+		$response = $this->publicController->publicResponseGet(token:'invalid-token-value');
 
-    /**
-     * publicResponseGet returns 400 when token is empty.
-     *
-     * @return void
-     */
-    public function testPublicResponseGetReturns400ForEmptyToken(): void
-    {
-        $response = $this->publicController->publicResponseGet(token:'');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
 
-        $this->assertSame(Http::STATUS_BAD_REQUEST, $response->getStatus());
+	}//end testPublicResponseGetReturns404ForInvalidToken()
 
-    }//end testPublicResponseGetReturns400ForEmptyToken()
+	/**
+	 * publicResponseGet returns consultation data for a valid token.
+	 *
+	 * @return void
+	 */
+	public function testPublicResponseGetReturnsConsultationForValidToken(): void {
+		$consultation = [
+			'id' => 'con-uuid',
+			'status' => 'in_behandeling',
+			'onderwerp' => 'Brandveiligheidsadvies',
+			'uiterlijkeReactiedatum' => '2026-08-01',
+		];
 
+		$this->consultationService->method('findBySecureToken')
+			->willReturn($consultation);
 
-    /**
-     * publicResponseGet returns 404 when token is invalid.
-     *
-     * @return void
-     */
-    public function testPublicResponseGetReturns404ForInvalidToken(): void
-    {
-        $this->consultationService->method('findBySecureToken')
-            ->willReturn(null);
+		$response = $this->publicController->publicResponseGet(token:str_repeat('a', 64));
+		$data = $response->getData();
 
-        $response = $this->publicController->publicResponseGet(token:'invalid-token-value');
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('con-uuid', $data['id']);
 
-        $this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+	}//end testPublicResponseGetReturnsConsultationForValidToken()
 
-    }//end testPublicResponseGetReturns404ForInvalidToken()
+	/**
+	 * listAdvisoryBodies returns 401 when user is not authenticated.
+	 *
+	 * @return void
+	 */
+	public function testListAdvisoryBodiesReturns401WhenNotAuthenticated(): void {
+		$this->userSession->method('getUser')->willReturn(null);
 
+		$response = $this->advisoryBodyController->listAdvisoryBodies();
 
-    /**
-     * publicResponseGet returns consultation data for a valid token.
-     *
-     * @return void
-     */
-    public function testPublicResponseGetReturnsConsultationForValidToken(): void
-    {
-        $consultation = [
-            'id'                     => 'con-uuid',
-            'status'                 => 'in_behandeling',
-            'onderwerp'              => 'Brandveiligheidsadvies',
-            'uiterlijkeReactiedatum' => '2026-08-01',
-        ];
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 
-        $this->consultationService->method('findBySecureToken')
-            ->willReturn($consultation);
-
-        $response = $this->publicController->publicResponseGet(token:str_repeat('a', 64));
-        $data     = $response->getData();
-
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
-        $this->assertSame('con-uuid', $data['id']);
-
-    }//end testPublicResponseGetReturnsConsultationForValidToken()
-
-
-    /**
-     * listAdvisoryBodies returns 401 when user is not authenticated.
-     *
-     * @return void
-     */
-    public function testListAdvisoryBodiesReturns401WhenNotAuthenticated(): void
-    {
-        $this->userSession->method('getUser')->willReturn(null);
-
-        $response = $this->advisoryBodyController->listAdvisoryBodies();
-
-        $this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
-
-    }//end testListAdvisoryBodiesReturns401WhenNotAuthenticated()
-
+	}//end testListAdvisoryBodiesReturns401WhenNotAuthenticated()
 
 }//end class

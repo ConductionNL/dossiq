@@ -27,154 +27,143 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
-use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\DeadlineMonitoringSeedDataService;
+use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
  * @covers \OCA\Procest\Service\DeadlineMonitoringSeedDataService
  */
-class DeadlineMonitoringSeedDataServiceTest extends TestCase
-{
-    private FakeTermijnObjectService $objects;
+class DeadlineMonitoringSeedDataServiceTest extends TestCase {
+	private FakeTermijnObjectService $objects;
 
-    private DeadlineMonitoringSeedDataService $service;
+	private DeadlineMonitoringSeedDataService $service;
 
-    protected function setUp(): void
-    {
-        $this->objects = new FakeTermijnObjectService();
-        $settings      = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn($this->objects);
-        $settings->method('getConfigValue')->willReturnCallback(
-            static function (string $key): string {
-                return match ($key) {
-                    'register'                 => 'procest',
-                    'termijn_definitie_schema' => 'termijnDefinitie',
-                    default                    => '',
-                };
-            },
-        );
+	protected function setUp(): void {
+		$this->objects = new FakeTermijnObjectService();
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($this->objects);
+		$settings->method('getConfigValue')->willReturnCallback(
+			static function (string $key): string {
+				return match ($key) {
+					'register' => 'procest',
+					'termijn_definitie_schema' => 'termijnDefinitie',
+					default => '',
+				};
+			},
+		);
 
-        $this->service = new DeadlineMonitoringSeedDataService(
-            $settings,
-            $this->createMock(LoggerInterface::class),
-        );
-    }
+		$this->service = new DeadlineMonitoringSeedDataService(
+			$settings,
+			$this->createMock(LoggerInterface::class),
+		);
+	}
 
-    /**
-     * @return void
-     */
-    public function testSeedCreatesThreeDefinitions(): void
-    {
-        $result = $this->service->seed();
+	/**
+	 * @return void
+	 */
+	public function testSeedCreatesThreeDefinitions(): void {
+		$result = $this->service->seed();
 
-        self::assertSame(true, $result['success']);
-        self::assertSame(3, $result['definities']);
-        self::assertSame(0, $result['skipped']);
-        self::assertCount(3, $this->objects->store['termijnDefinitie']);
-    }
+		self::assertSame(true, $result['success']);
+		self::assertSame(3, $result['definities']);
+		self::assertSame(0, $result['skipped']);
+		self::assertCount(3, $this->objects->store['termijnDefinitie']);
+	}
 
-    /**
-     * @return void
-     */
-    public function testSeedIsIdempotent(): void
-    {
-        $this->service->seed();
-        $second = $this->service->seed();
+	/**
+	 * @return void
+	 */
+	public function testSeedIsIdempotent(): void {
+		$this->service->seed();
+		$second = $this->service->seed();
 
-        self::assertSame(true, $second['success']);
-        self::assertSame(0, $second['definities']);
-        self::assertSame(3, $second['skipped']);
-        self::assertCount(3, $this->objects->store['termijnDefinitie']);
-    }
+		self::assertSame(true, $second['success']);
+		self::assertSame(0, $second['definities']);
+		self::assertSame(3, $second['skipped']);
+		self::assertCount(3, $this->objects->store['termijnDefinitie']);
+	}
 
-    /**
-     * @return void
-     */
-    public function testWooSeedHasCustomRegime(): void
-    {
-        $this->service->seed();
+	/**
+	 * @return void
+	 */
+	public function testWooSeedHasCustomRegime(): void {
+		$this->service->seed();
 
-        $woo = $this->objects->store['termijnDefinitie']['td-woo-verzoek'];
-        self::assertSame('woo-verzoek', $woo['zaaktype']);
-        self::assertSame(28, $woo['standaardDuurDagen']);
-        self::assertSame(1500, $woo['afwijkendDwangsomRegime']['dailyTariff']);
-        self::assertSame(50000, $woo['afwijkendDwangsomRegime']['plafond']);
-    }
+		$woo = $this->objects->store['termijnDefinitie']['td-woo-verzoek'];
+		self::assertSame('woo-verzoek', $woo['zaaktype']);
+		self::assertSame(28, $woo['standaardDuurDagen']);
+		self::assertSame(1500, $woo['afwijkendDwangsomRegime']['dailyTariff']);
+		self::assertSame(50000, $woo['afwijkendDwangsomRegime']['plafond']);
+	}
 
-    /**
-     * @return void
-     */
-    public function testWmoSeedHas42DayDuration(): void
-    {
-        $this->service->seed();
+	/**
+	 * @return void
+	 */
+	public function testWmoSeedHas42DayDuration(): void {
+		$this->service->seed();
 
-        $wmo = $this->objects->store['termijnDefinitie']['td-wmo-aanvraag'];
-        self::assertSame('wmo-melding', $wmo['zaaktype']);
-        self::assertSame(42, $wmo['standaardDuurDagen']);
-        self::assertSame(0, $wmo['aantalVerlengingen']);
-    }
+		$wmo = $this->objects->store['termijnDefinitie']['td-wmo-aanvraag'];
+		self::assertSame('wmo-melding', $wmo['zaaktype']);
+		self::assertSame(42, $wmo['standaardDuurDagen']);
+		self::assertSame(0, $wmo['aantalVerlengingen']);
+	}
 }
 
 /**
  * In-memory ObjectService fake supporting only the calls the seed pipeline needs.
  */
-class FakeTermijnObjectService
-{
-    /** @var array<string, array<string, array<string, mixed>>> */
-    public array $store = [];
+class FakeTermijnObjectService {
+	/** @var array<string, array<string, array<string, mixed>>> */
+	public array $store = [];
 
-    /**
-     * @param string               $register Register id.
-     * @param string               $schema   Schema id.
-     * @param array<string, mixed> $object   Object.
-     * @return array<string, mixed>
-     */
-    public function saveObject(string $register, string $schema, array $object): array
-    {
-        $id = (string) ($object['id'] ?? ('row-'.count($this->store[$schema] ?? [])));
-        $object['id'] = $id;
-        $this->store[$schema][$id] = $object;
-        return $object;
-    }
+	/**
+	 * @param string $register Register id.
+	 * @param string $schema Schema id.
+	 * @param array<string, mixed> $object Object.
+	 * @return array<string, mixed>
+	 */
+	public function saveObject(string $register, string $schema, array $object): array {
+		$id = (string)($object['id'] ?? ('row-' . count($this->store[$schema] ?? [])));
+		$object['id'] = $id;
+		$this->store[$schema][$id] = $object;
+		return $object;
+	}
 
-    /**
-     * @param string               $register Register id.
-     * @param string               $schema   Schema id.
-     * @param array<string, mixed> $filters  Filters.
-     * @return array<int, array<string, mixed>>
-     */
-    public function findObjects(string $register, string $schema, array $filters = []): array
-    {
-        return array_values($this->store[$schema] ?? []);
-    }
+	/**
+	 * @param string $register Register id.
+	 * @param string $schema Schema id.
+	 * @param array<string, mixed> $filters Filters.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function findObjects(string $register, string $schema, array $filters = []): array {
+		return array_values($this->store[$schema] ?? []);
+	}
 
-    /**
-     * Slug-aware search bridge mirroring ObjectService::searchObjectsBySlug().
-     *
-     * The seed service routes idempotency lookups through the SearchesObjects
-     * trait, which calls this method for slug-form register/schema config.
-     *
-     * @param string               $registerSlug Register slug.
-     * @param string               $schemaSlug   Schema slug.
-     * @param array<string, mixed> $filters      Filters.
-     * @return array<int, array<string, mixed>>
-     */
-    public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array
-    {
-        return $this->findObjects($registerSlug, $schemaSlug, $filters);
-    }
+	/**
+	 * Slug-aware search bridge mirroring ObjectService::searchObjectsBySlug().
+	 *
+	 * The seed service routes idempotency lookups through the SearchesObjects
+	 * trait, which calls this method for slug-form register/schema config.
+	 *
+	 * @param string $registerSlug Register slug.
+	 * @param string $schemaSlug Schema slug.
+	 * @param array<string, mixed> $filters Filters.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function searchObjectsBySlug(string $registerSlug, string $schemaSlug, array $filters = []): array {
+		return $this->findObjects($registerSlug, $schemaSlug, $filters);
+	}
 
-    /**
-     * Numeric-ID search bridge mirroring ObjectService::searchObjects().
-     *
-     * @param array<string, mixed> $query Query carrying `@self` register/schema.
-     * @return array<int, array<string, mixed>>
-     */
-    public function searchObjects(array $query = []): array
-    {
-        $schema = (string) (($query['@self'] ?? [])['schema'] ?? '');
-        return $this->findObjects('', $schema);
-    }
+	/**
+	 * Numeric-ID search bridge mirroring ObjectService::searchObjects().
+	 *
+	 * @param array<string, mixed> $query Query carrying `@self` register/schema.
+	 * @return array<int, array<string, mixed>>
+	 */
+	public function searchObjects(array $query = []): array {
+		$schema = (string)(($query['@self'] ?? [])['schema'] ?? '');
+		return $this->findObjects('', $schema);
+	}
 }

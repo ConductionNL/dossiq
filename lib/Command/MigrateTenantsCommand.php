@@ -40,67 +40,64 @@ use Symfony\Component\Console\Output\OutputInterface;
  *
  * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
  */
-class MigrateTenantsCommand extends Command
-{
-    /**
-     * Wire the command against the migration service.
-     *
-     * @param TenantMigrationService $migrationService Tenant → Organisation migrator.
-     */
-    public function __construct(
-        private readonly TenantMigrationService $migrationService,
-    ) {
-        parent::__construct();
-    }//end __construct()
+class MigrateTenantsCommand extends Command {
+	/**
+	 * Wire the command against the migration service.
+	 *
+	 * @param TenantMigrationService $migrationService Tenant → Organisation migrator.
+	 */
+	public function __construct(
+		private readonly TenantMigrationService $migrationService,
+	) {
+		parent::__construct();
+	}//end __construct()
 
-    /**
-     * Define command name + description.
-     *
-     * @return void
-     *
-     * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
-     */
-    protected function configure(): void
-    {
-        $this->setName(name: 'procest:migrate-tenants')
-            ->setDescription('Migrate legacy procest tenant objects to OpenRegister Organisations (idempotent).');
-    }//end configure()
+	/**
+	 * Define command name + description.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+	 */
+	protected function configure(): void {
+		$this->setName(name: 'procest:migrate-tenants')
+			->setDescription('Migrate legacy procest tenant objects to OpenRegister Organisations (idempotent).');
+	}//end configure()
 
-    /**
-     * Execute the migration and report counts.
-     *
-     * @param InputInterface  $input  Console input.
-     * @param OutputInterface $output Console output.
-     *
-     * @return int Symfony command exit code.
-     *
-     * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
-     *
-     * @SuppressWarnings(PHPMD.UnusedFormalParameter)
-     */
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        try {
-            $summary = $this->migrationService->migrate();
-        } catch (\Throwable $e) {
-            $output->writeln('<error>Tenant migration failed: '.$e->getMessage().'</error>');
-            return Command::FAILURE;
-        }
+	/**
+	 * Execute the migration and report counts.
+	 *
+	 * @param InputInterface $input Console input.
+	 * @param OutputInterface $output Console output.
+	 *
+	 * @return int Symfony command exit code.
+	 *
+	 * @spec openspec/changes/migrate-tenant-to-or-tenant/tasks.md
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 */
+	protected function execute(InputInterface $input, OutputInterface $output): int {
+		try {
+			$summary = $this->migrationService->migrate();
+		} catch (\Throwable $e) {
+			$output->writeln('<error>Tenant migration failed: ' . $e->getMessage() . '</error>');
+			return Command::FAILURE;
+		}
 
-        $output->writeln('<info>procest:migrate-tenants done</info>');
-        $output->writeln('  total    = '.$summary['total']);
-        $output->writeln('  migrated = '.$summary['migrated']);
-        $output->writeln('  skipped  = '.$summary['skipped']);
-        $output->writeln('  failed   = '.$summary['failed']);
+		$output->writeln('<info>procest:migrate-tenants done</info>');
+		$output->writeln('  total    = ' . $summary['total']);
+		$output->writeln('  migrated = ' . $summary['migrated']);
+		$output->writeln('  skipped  = ' . $summary['skipped']);
+		$output->writeln('  failed   = ' . $summary['failed']);
 
-        foreach ($summary['mappings'] as $mapping) {
-            $output->writeln('  '.$mapping['tenant'].' -> '.$mapping['organisation']);
-        }
+		foreach ($summary['mappings'] as $mapping) {
+			$output->writeln('  ' . $mapping['tenant'] . ' -> ' . $mapping['organisation']);
+		}
 
-        if ($summary['failed'] > 0) {
-            return Command::FAILURE;
-        }
+		if ($summary['failed'] > 0) {
+			return Command::FAILURE;
+		}
 
-        return Command::SUCCESS;
-    }//end execute()
+		return Command::SUCCESS;
+	}//end execute()
 }//end class

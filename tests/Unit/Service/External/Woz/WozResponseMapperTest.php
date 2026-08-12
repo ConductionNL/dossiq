@@ -29,150 +29,141 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers \OCA\Procest\Service\External\Woz\WozResponseMapper
  */
-class WozResponseMapperTest extends TestCase
-{
-    /**
-     * A full record maps every field, selecting the MOST RECENT valuation
-     * from `vastgesteldeWaarden[]` regardless of input order.
-     *
-     * @return void
-     */
-    public function testFullRecordSelectsMostRecentValuation(): void
-    {
-        $mapper = new WozResponseMapper();
-        $mapped = $mapper->map(
-            [
-                'wozobjectnummer'               => '05180000001234',
-                'nummeraanduidingIdentificatie' => '0518010000123456',
-                'grondoppervlakte'              => 250,
-                'gebruiksdoelen'                => ['woonfunctie'],
-                'vastgesteldeWaarden'            => [
-                    ['waardepeildatum' => '2024-01-01', 'vastgesteldeWaarde' => 362000],
-                    ['waardepeildatum' => '2025-01-01', 'vastgesteldeWaarde' => 385000],
-                ],
-            ]
-        );
+class WozResponseMapperTest extends TestCase {
+	/**
+	 * A full record maps every field, selecting the MOST RECENT valuation
+	 * from `vastgesteldeWaarden[]` regardless of input order.
+	 *
+	 * @return void
+	 */
+	public function testFullRecordSelectsMostRecentValuation(): void {
+		$mapper = new WozResponseMapper();
+		$mapped = $mapper->map(
+			[
+				'wozobjectnummer' => '05180000001234',
+				'nummeraanduidingIdentificatie' => '0518010000123456',
+				'grondoppervlakte' => 250,
+				'gebruiksdoelen' => ['woonfunctie'],
+				'vastgesteldeWaarden' => [
+					['waardepeildatum' => '2024-01-01', 'vastgesteldeWaarde' => 362000],
+					['waardepeildatum' => '2025-01-01', 'vastgesteldeWaarde' => 385000],
+				],
+			]
+		);
 
-        $this->assertSame('05180000001234', $mapped['wozobjectnummer']);
-        $this->assertSame('0518010000123456', $mapped['nummeraanduidingId']);
-        $this->assertSame(250, $mapped['grondoppervlakte']);
-        $this->assertSame(['woonfunctie'], $mapped['gebruiksdoel']);
-        $this->assertSame(385000, $mapped['waarde'], 'must select the 2025 (most recent) value, not the first array entry');
-        $this->assertSame('2025-01-01', $mapped['waardepeildatum']);
-    }//end testFullRecordSelectsMostRecentValuation()
+		$this->assertSame('05180000001234', $mapped['wozobjectnummer']);
+		$this->assertSame('0518010000123456', $mapped['nummeraanduidingId']);
+		$this->assertSame(250, $mapped['grondoppervlakte']);
+		$this->assertSame(['woonfunctie'], $mapped['gebruiksdoel']);
+		$this->assertSame(385000, $mapped['waarde'], 'must select the 2025 (most recent) value, not the first array entry');
+		$this->assertSame('2025-01-01', $mapped['waardepeildatum']);
+	}//end testFullRecordSelectsMostRecentValuation()
 
-    /**
-     * A partial record maps missing numeric/valuation fields to null,
-     * never `0`.
-     *
-     * @return void
-     */
-    public function testPartialRecordMapsMissingFieldsToNull(): void
-    {
-        $mapper = new WozResponseMapper();
-        $mapped = $mapper->map(['wozobjectnummer' => '05180000009999']);
+	/**
+	 * A partial record maps missing numeric/valuation fields to null,
+	 * never `0`.
+	 *
+	 * @return void
+	 */
+	public function testPartialRecordMapsMissingFieldsToNull(): void {
+		$mapper = new WozResponseMapper();
+		$mapped = $mapper->map(['wozobjectnummer' => '05180000009999']);
 
-        $this->assertNull($mapped['waarde']);
-        $this->assertNull($mapped['waardepeildatum']);
-        $this->assertNull($mapped['grondoppervlakte']);
-        $this->assertNull($mapped['nummeraanduidingId']);
-        $this->assertSame([], $mapped['gebruiksdoel'], 'missing gebruiksdoel must map to an empty array, not null');
-    }//end testPartialRecordMapsMissingFieldsToNull()
+		$this->assertNull($mapped['waarde']);
+		$this->assertNull($mapped['waardepeildatum']);
+		$this->assertNull($mapped['grondoppervlakte']);
+		$this->assertNull($mapped['nummeraanduidingId']);
+		$this->assertSame([], $mapped['gebruiksdoel'], 'missing gebruiksdoel must map to an empty array, not null');
+	}//end testPartialRecordMapsMissingFieldsToNull()
 
-    /**
-     * An empty fragment maps to a fully-null/empty DTO without throwing.
-     *
-     * @return void
-     */
-    public function testEmptyRecordMapsWithoutError(): void
-    {
-        $mapper = new WozResponseMapper();
-        $mapped = $mapper->map([]);
+	/**
+	 * An empty fragment maps to a fully-null/empty DTO without throwing.
+	 *
+	 * @return void
+	 */
+	public function testEmptyRecordMapsWithoutError(): void {
+		$mapper = new WozResponseMapper();
+		$mapped = $mapper->map([]);
 
-        $this->assertNull($mapped['wozobjectnummer']);
-        $this->assertNull($mapped['waarde']);
-        $this->assertNull($mapped['waardepeildatum']);
-        $this->assertSame([], $mapped['gebruiksdoel']);
-    }//end testEmptyRecordMapsWithoutError()
+		$this->assertNull($mapped['wozobjectnummer']);
+		$this->assertNull($mapped['waarde']);
+		$this->assertNull($mapped['waardepeildatum']);
+		$this->assertSame([], $mapped['gebruiksdoel']);
+	}//end testEmptyRecordMapsWithoutError()
 
-    /**
-     * A single-string gebruiksdoel is wrapped into a one-element array.
-     *
-     * @return void
-     */
-    public function testSingleStringGebruiksdoelBecomesArray(): void
-    {
-        $mapper = new WozResponseMapper();
-        $mapped = $mapper->map(['gebruiksdoel' => 'kantoorfunctie']);
+	/**
+	 * A single-string gebruiksdoel is wrapped into a one-element array.
+	 *
+	 * @return void
+	 */
+	public function testSingleStringGebruiksdoelBecomesArray(): void {
+		$mapper = new WozResponseMapper();
+		$mapped = $mapper->map(['gebruiksdoel' => 'kantoorfunctie']);
 
-        $this->assertSame(['kantoorfunctie'], $mapped['gebruiksdoel']);
-    }//end testSingleStringGebruiksdoelBecomesArray()
+		$this->assertSame(['kantoorfunctie'], $mapped['gebruiksdoel']);
+	}//end testSingleStringGebruiksdoelBecomesArray()
 
-    /**
-     * A flat `waarde`/`waardepeildatum` shape (no `vastgesteldeWaarden`
-     * history array) is still mapped — some Kadaster responses carry the
-     * current value flat rather than as a one-element history.
-     *
-     * @return void
-     */
-    public function testFlatValuationShapeIsMapped(): void
-    {
-        $mapper = new WozResponseMapper();
-        $mapped = $mapper->map(['waarde' => 250000, 'waardepeildatum' => '2025-01-01']);
+	/**
+	 * A flat `waarde`/`waardepeildatum` shape (no `vastgesteldeWaarden`
+	 * history array) is still mapped — some Kadaster responses carry the
+	 * current value flat rather than as a one-element history.
+	 *
+	 * @return void
+	 */
+	public function testFlatValuationShapeIsMapped(): void {
+		$mapper = new WozResponseMapper();
+		$mapped = $mapper->map(['waarde' => 250000, 'waardepeildatum' => '2025-01-01']);
 
-        $this->assertSame(250000, $mapped['waarde']);
-        $this->assertSame('2025-01-01', $mapped['waardepeildatum']);
-    }//end testFlatValuationShapeIsMapped()
+		$this->assertSame(250000, $mapped['waarde']);
+		$this->assertSame('2025-01-01', $mapped['waardepeildatum']);
+	}//end testFlatValuationShapeIsMapped()
 
-    /**
-     * `mapMany` normalizes a list of fragments, preserving order, and
-     * skips non-array entries defensively.
-     *
-     * @return void
-     */
-    public function testMapManyNormalizesListInOrder(): void
-    {
-        $mapper = new WozResponseMapper();
-        $mapped = $mapper->mapMany(
-            [
-                ['wozobjectnummer' => '1111'],
-                ['wozobjectnummer' => '2222'],
-                'not-an-array',
-            ]
-        );
+	/**
+	 * `mapMany` normalizes a list of fragments, preserving order, and
+	 * skips non-array entries defensively.
+	 *
+	 * @return void
+	 */
+	public function testMapManyNormalizesListInOrder(): void {
+		$mapper = new WozResponseMapper();
+		$mapped = $mapper->mapMany(
+			[
+				['wozobjectnummer' => '1111'],
+				['wozobjectnummer' => '2222'],
+				'not-an-array',
+			]
+		);
 
-        $this->assertCount(2, $mapped);
-        $this->assertSame('1111', $mapped[0]['wozobjectnummer']);
-        $this->assertSame('2222', $mapped[1]['wozobjectnummer']);
-    }//end testMapManyNormalizesListInOrder()
+		$this->assertCount(2, $mapped);
+		$this->assertSame('1111', $mapped[0]['wozobjectnummer']);
+		$this->assertSame('2222', $mapped[1]['wozobjectnummer']);
+	}//end testMapManyNormalizesListInOrder()
 
-    /**
-     * A numeric-string grondoppervlakte/waarde (as query-parsed JSON may
-     * carry) is coerced to an int.
-     *
-     * @return void
-     */
-    public function testNumericStringFieldsAreCoercedToInt(): void
-    {
-        $mapper = new WozResponseMapper();
-        $mapped = $mapper->map(['grondoppervlakte' => '99', 'waarde' => '250000']);
+	/**
+	 * A numeric-string grondoppervlakte/waarde (as query-parsed JSON may
+	 * carry) is coerced to an int.
+	 *
+	 * @return void
+	 */
+	public function testNumericStringFieldsAreCoercedToInt(): void {
+		$mapper = new WozResponseMapper();
+		$mapped = $mapper->map(['grondoppervlakte' => '99', 'waarde' => '250000']);
 
-        $this->assertSame(99, $mapped['grondoppervlakte']);
-        $this->assertSame(250000, $mapped['waarde']);
-    }//end testNumericStringFieldsAreCoercedToInt()
+		$this->assertSame(99, $mapped['grondoppervlakte']);
+		$this->assertSame(250000, $mapped['waarde']);
+	}//end testNumericStringFieldsAreCoercedToInt()
 
-    /**
-     * `adresseerbaarObjectIdentificatie` is accepted as a fallback source
-     * for `nummeraanduidingId` when `nummeraanduidingIdentificatie` is
-     * absent.
-     *
-     * @return void
-     */
-    public function testAdresseerbaarObjectIdentificatieFallsBackToNummeraanduidingId(): void
-    {
-        $mapper = new WozResponseMapper();
-        $mapped = $mapper->map(['adresseerbaarObjectIdentificatie' => '0518010000999999']);
+	/**
+	 * `adresseerbaarObjectIdentificatie` is accepted as a fallback source
+	 * for `nummeraanduidingId` when `nummeraanduidingIdentificatie` is
+	 * absent.
+	 *
+	 * @return void
+	 */
+	public function testAdresseerbaarObjectIdentificatieFallsBackToNummeraanduidingId(): void {
+		$mapper = new WozResponseMapper();
+		$mapped = $mapper->map(['adresseerbaarObjectIdentificatie' => '0518010000999999']);
 
-        $this->assertSame('0518010000999999', $mapped['nummeraanduidingId']);
-    }//end testAdresseerbaarObjectIdentificatieFallsBackToNummeraanduidingId()
+		$this->assertSame('0518010000999999', $mapped['nummeraanduidingId']);
+	}//end testAdresseerbaarObjectIdentificatieFallsBackToNummeraanduidingId()
 }//end class

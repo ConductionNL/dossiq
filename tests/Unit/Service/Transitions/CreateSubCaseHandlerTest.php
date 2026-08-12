@@ -37,136 +37,127 @@ use RuntimeException;
  *
  * @uses \OCA\Procest\Service\Transitions\ActionResult
  */
-class CreateSubCaseHandlerTest extends TestCase
-{
-    /**
-     * @return void
-     */
-    public function testFailsWhenObjectServiceUnavailable(): void
-    {
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn(null);
+class CreateSubCaseHandlerTest extends TestCase {
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenObjectServiceUnavailable(): void {
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn(null);
 
-        $handler = new CreateSubCaseHandler($settings, new NullLogger());
+		$handler = new CreateSubCaseHandler($settings, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'createSubCase', 'caseType' => 'ct-2'],
-            case: ['id' => 'parent-1'],
-            transitionContext: [],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'createSubCase', 'caseType' => 'ct-2'],
+			case: ['id' => 'parent-1'],
+			transitionContext: [],
+		);
 
-        self::assertFalse($result->succeeded);
-        self::assertSame('storage_unavailable', $result->error);
-    }//end testFailsWhenObjectServiceUnavailable()
+		self::assertFalse($result->succeeded);
+		self::assertSame('storage_unavailable', $result->error);
+	}//end testFailsWhenObjectServiceUnavailable()
 
-    /**
-     * @return void
-     */
-    public function testFailsWhenCaseSchemaNotConfigured(): void
-    {
-        $objectService = new class {
-            public function saveObject(array $object, string $register, string $schema): array
-            {
-                return ['id' => 'unreachable'];
-            }
-        };
+	/**
+	 * @return void
+	 */
+	public function testFailsWhenCaseSchemaNotConfigured(): void {
+		$objectService = new class {
+			public function saveObject(array $object, string $register, string $schema): array {
+				return ['id' => 'unreachable'];
+			}
+		};
 
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn($objectService);
-        $settings->method('getConfigValue')->willReturn('');
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturn('');
 
-        $handler = new CreateSubCaseHandler($settings, new NullLogger());
+		$handler = new CreateSubCaseHandler($settings, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'createSubCase'],
-            case: ['id' => 'parent'],
-            transitionContext: [],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'createSubCase'],
+			case: ['id' => 'parent'],
+			transitionContext: [],
+		);
 
-        self::assertFalse($result->succeeded);
-        self::assertSame('case_schema_not_configured', $result->error);
-    }//end testFailsWhenCaseSchemaNotConfigured()
+		self::assertFalse($result->succeeded);
+		self::assertSame('case_schema_not_configured', $result->error);
+	}//end testFailsWhenCaseSchemaNotConfigured()
 
-    /**
-     * @return void
-     */
-    public function testLinksSubCaseToParentViaHoofdzaak(): void
-    {
-        $recorded = null;
-        $objectService = new class($recorded) {
-            /** @var mixed */
-            public $recorded;
+	/**
+	 * @return void
+	 */
+	public function testLinksSubCaseToParentViaHoofdzaak(): void {
+		$recorded = null;
+		$objectService = new class($recorded) {
+			/** @var mixed */
+			public $recorded;
 
-            public function __construct(&$recorded)
-            {
-                $this->recorded = &$recorded;
-            }
+			public function __construct(&$recorded) {
+				$this->recorded = &$recorded;
+			}
 
-            public function saveObject(array $object, string $register, string $schema): array
-            {
-                $this->recorded = $object;
-                return ['id' => 'sub-uuid'];
-            }
-        };
+			public function saveObject(array $object, string $register, string $schema): array {
+				$this->recorded = $object;
+				return ['id' => 'sub-uuid'];
+			}
+		};
 
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn($objectService);
-        $settings->method('getConfigValue')->willReturnCallback(
-            function (string $key): string {
-                return [
-                    'register'    => 'reg-1',
-                    'case_schema' => 'case-schema',
-                ][$key] ?? '';
-            }
-        );
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			function (string $key): string {
+				return [
+					'register' => 'reg-1',
+					'case_schema' => 'case-schema',
+				][$key] ?? '';
+			}
+		);
 
-        $handler = new CreateSubCaseHandler($settings, new NullLogger());
+		$handler = new CreateSubCaseHandler($settings, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'createSubCase', 'caseType' => 'ct-9', 'title' => 'Onderzoek BAG'],
-            case: ['id' => 'parent-42'],
-            transitionContext: ['transitionLabel' => 'In Behandeling'],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'createSubCase', 'caseType' => 'ct-9', 'title' => 'Onderzoek BAG'],
+			case: ['id' => 'parent-42'],
+			transitionContext: ['transitionLabel' => 'In Behandeling'],
+		);
 
-        self::assertTrue($result->succeeded);
-        self::assertSame('sub-uuid', $result->data['subCaseId']);
-        self::assertSame('parent-42', $recorded['hoofdzaak']);
-        self::assertSame('ct-9', $recorded['caseType']);
-        self::assertSame('Onderzoek BAG', $recorded['title']);
-    }//end testLinksSubCaseToParentViaHoofdzaak()
+		self::assertTrue($result->succeeded);
+		self::assertSame('sub-uuid', $result->data['subCaseId']);
+		self::assertSame('parent-42', $recorded['hoofdzaak']);
+		self::assertSame('ct-9', $recorded['caseType']);
+		self::assertSame('Onderzoek BAG', $recorded['title']);
+	}//end testLinksSubCaseToParentViaHoofdzaak()
 
-    /**
-     * @return void
-     */
-    public function testCatchesExceptionFromObjectService(): void
-    {
-        $objectService = new class {
-            public function saveObject(array $object, string $register, string $schema): array
-            {
-                throw new RuntimeException('boom');
-            }
-        };
+	/**
+	 * @return void
+	 */
+	public function testCatchesExceptionFromObjectService(): void {
+		$objectService = new class {
+			public function saveObject(array $object, string $register, string $schema): array {
+				throw new RuntimeException('boom');
+			}
+		};
 
-        $settings = $this->createMock(SettingsService::class);
-        $settings->method('getObjectService')->willReturn($objectService);
-        $settings->method('getConfigValue')->willReturnCallback(
-            function (string $key): string {
-                return [
-                    'register'    => 'reg-1',
-                    'case_schema' => 'case-schema',
-                ][$key] ?? '';
-            }
-        );
+		$settings = $this->createMock(SettingsService::class);
+		$settings->method('getObjectService')->willReturn($objectService);
+		$settings->method('getConfigValue')->willReturnCallback(
+			function (string $key): string {
+				return [
+					'register' => 'reg-1',
+					'case_schema' => 'case-schema',
+				][$key] ?? '';
+			}
+		);
 
-        $handler = new CreateSubCaseHandler($settings, new NullLogger());
+		$handler = new CreateSubCaseHandler($settings, new NullLogger());
 
-        $result = $handler->handle(
-            actionConfig: ['type' => 'createSubCase'],
-            case: ['id' => 'p'],
-            transitionContext: [],
-        );
+		$result = $handler->handle(
+			actionConfig: ['type' => 'createSubCase'],
+			case: ['id' => 'p'],
+			transitionContext: [],
+		);
 
-        self::assertFalse($result->succeeded);
-        self::assertSame('create_sub_case_failed', $result->error);
-    }//end testCatchesExceptionFromObjectService()
+		self::assertFalse($result->succeeded);
+		self::assertSame('create_sub_case_failed', $result->error);
+	}//end testCatchesExceptionFromObjectService()
 }//end class

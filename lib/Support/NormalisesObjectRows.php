@@ -43,38 +43,36 @@ namespace OCA\Procest\Support;
 /**
  * Normalise a single OpenRegister result row to an associative array.
  */
-trait NormalisesObjectRows
-{
-    /**
-     * Flatten one OpenRegister result row into an associative array.
-     *
-     * Declared `protected` rather than `private`: the trait is composed into
-     * the abstract {@see \OCA\Procest\Controller\ZgwController} and the call
-     * sites live in its concrete subclasses (Drc/Zrc/Ztc/BrcController). A
-     * private trait method composed into a parent is not visible to a child.
-     *
-     * @param mixed $row An array, an ObjectEntity, any other object, or null.
-     *
-     * @return array<string, mixed> The row as an associative array; `[]` when
-     *                              the row carries nothing usable.
-     */
-    protected function objectToArray(mixed $row): array
-    {
-        if (is_array($row) === true) {
-            return $row;
-        }
+trait NormalisesObjectRows {
+	/**
+	 * Flatten one OpenRegister result row into an associative array.
+	 *
+	 * Declared `protected` rather than `private`: the trait is composed into
+	 * the abstract {@see \OCA\Procest\Controller\ZgwController} and the call
+	 * sites live in its concrete subclasses (Drc/Zrc/Ztc/BrcController). A
+	 * private trait method composed into a parent is not visible to a child.
+	 *
+	 * @param mixed $row An array, an ObjectEntity, any other object, or null.
+	 *
+	 * @return array<string, mixed> The row as an associative array; `[]` when
+	 *                              the row carries nothing usable.
+	 */
+	protected function objectToArray(mixed $row): array {
+		if (is_array($row) === true) {
+			return $row;
+		}
 
-        if (is_object($row) === false) {
-            return [];
-        }
+		if (is_object($row) === false) {
+			return [];
+		}
 
-        if (method_exists($row, 'jsonSerialize') === true) {
-            $serialised = $row->jsonSerialize();
-            if (is_array($serialised) === true) {
-                return $serialised;
-            }
-        }
+		if (method_exists($row, 'jsonSerialize') === true) {
+			$serialised = $row->jsonSerialize();
+			if (is_array($serialised) === true) {
+				return $serialised;
+			}
+		}
 
-        return (array) $row;
-    }//end objectToArray()
+		return (array)$row;
+	}//end objectToArray()
 }//end trait

@@ -46,70 +46,66 @@ use OCP\IRequest;
  *
  * @spec openspec/specs/ai-assistance/spec.md
  */
-class AiSettingsController extends Controller
-{
-    /**
-     * Constructor for AiSettingsController.
-     *
-     * @param string          $appName         The application name
-     * @param IRequest        $request         The request object
-     * @param AiService       $aiService       The AI service
-     * @param SettingsService $settingsService The settings service
-     *
-     * @return void
-     */
-    public function __construct(
-        string $appName,
-        IRequest $request,
-        private AiService $aiService,
-        private SettingsService $settingsService,
-    ) {
-        parent::__construct(appName: $appName, request: $request);
-    }//end __construct()
+class AiSettingsController extends Controller {
+	/**
+	 * Constructor for AiSettingsController.
+	 *
+	 * @param string $appName The application name
+	 * @param IRequest $request The request object
+	 * @param AiService $aiService The AI service
+	 * @param SettingsService $settingsService The settings service
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		string $appName,
+		IRequest $request,
+		private AiService $aiService,
+		private SettingsService $settingsService,
+	) {
+		parent::__construct(appName: $appName, request: $request);
+	}//end __construct()
 
-    /**
-     * Get AI settings.
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function getSettings(): JSONResponse
-    {
-        $settings = $this->aiService->getAiSettings();
+	/**
+	 * Get AI settings.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function getSettings(): JSONResponse {
+		$settings = $this->aiService->getAiSettings();
 
-        return new JSONResponse($settings);
-    }//end getSettings()
+		return new JSONResponse($settings);
+	}//end getSettings()
 
-    /**
-     * Update AI settings.
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function updateSettings(): JSONResponse
-    {
-        $data   = $this->request->getParams();
-        $result = $this->settingsService->updateSettings($data);
+	/**
+	 * Update AI settings.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function updateSettings(): JSONResponse {
+		$data = $this->request->getParams();
+		$result = $this->settingsService->updateSettings($data);
 
-        return new JSONResponse($result);
-    }//end updateSettings()
+		return new JSONResponse($result);
+	}//end updateSettings()
 
-    /**
-     * Test AI model health/connectivity.
-     *
-     * @return JSONResponse
-     *
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    #[AuthorizedAdminSetting(AdminSettings::class)]
-    public function healthCheck(): JSONResponse
-    {
-        $result = $this->aiService->testHealth();
+	/**
+	 * Test AI model health/connectivity.
+	 *
+	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	#[AuthorizedAdminSetting(AdminSettings::class)]
+	public function healthCheck(): JSONResponse {
+		$result = $this->aiService->testHealth();
 
-        return new JSONResponse($result);
-    }//end healthCheck()
+		return new JSONResponse($result);
+	}//end healthCheck()
 }//end class

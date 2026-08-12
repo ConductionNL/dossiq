@@ -40,77 +40,72 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Procest\Controller\DashboardController
  */
-class DashboardControllerServiceWorkerTest extends TestCase
-{
+class DashboardControllerServiceWorkerTest extends TestCase {
 
-    /**
-     * Controller under test.
-     *
-     * @var DashboardController
-     */
-    private DashboardController $controller;
+	/**
+	 * Controller under test.
+	 *
+	 * @var DashboardController
+	 */
+	private DashboardController $controller;
 
-    /**
-     * Build the controller with a mocked request.
-     *
-     * @return void
-     */
-    protected function setUp(): void
-    {
-        parent::setUp();
-        $request          = $this->createMock(IRequest::class);
-        $this->controller = new DashboardController($request);
-    }//end setUp()
+	/**
+	 * Build the controller with a mocked request.
+	 *
+	 * @return void
+	 */
+	protected function setUp(): void {
+		parent::setUp();
+		$request = $this->createMock(IRequest::class);
+		$this->controller = new DashboardController($request);
+	}//end setUp()
 
-    /**
-     * The worker script is served, and served as JavaScript.
-     *
-     * @return void
-     */
-    public function testServiceWorkerScriptIsServed(): void
-    {
-        $response = $this->controller->serviceWorker();
+	/**
+	 * The worker script is served, and served as JavaScript.
+	 *
+	 * @return void
+	 */
+	public function testServiceWorkerScriptIsServed(): void {
+		$response = $this->controller->serviceWorker();
 
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
-        $this->assertSame('/', $response->getHeaders()['Service-Worker-Allowed']);
-    }//end testServiceWorkerScriptIsServed()
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('/', $response->getHeaders()['Service-Worker-Allowed']);
+	}//end testServiceWorkerScriptIsServed()
 
-    /**
-     * The script response MUST carry a connect-src the worker can use.
-     *
-     * Asserting the DIRECTIVE, not merely that some policy exists: the broken
-     * header was a perfectly well-formed policy that happened to forbid every
-     * network call the worker makes.
-     *
-     * @return void
-     */
-    public function testServiceWorkerScriptGrantsConnectSrc(): void
-    {
-        $policy = $this->controller->serviceWorker()->getContentSecurityPolicy();
+	/**
+	 * The script response MUST carry a connect-src the worker can use.
+	 *
+	 * Asserting the DIRECTIVE, not merely that some policy exists: the broken
+	 * header was a perfectly well-formed policy that happened to forbid every
+	 * network call the worker makes.
+	 *
+	 * @return void
+	 */
+	public function testServiceWorkerScriptGrantsConnectSrc(): void {
+		$policy = $this->controller->serviceWorker()->getContentSecurityPolicy();
 
-        $this->assertNotNull(
-            $policy,
-            'serviceWorker() must set an explicit CSP; without one Nextcloud applies '
-            .'default-src \'none\' and the worker cannot fetch anything at all.'
-        );
+		$this->assertNotNull(
+			$policy,
+			'serviceWorker() must set an explicit CSP; without one Nextcloud applies '
+			. 'default-src \'none\' and the worker cannot fetch anything at all.'
+		);
 
-        $header = $policy->buildPolicy();
-        $this->assertStringContainsString('connect-src', $header);
-        // The offline sync strategy talks back to this Nextcloud.
-        $this->assertStringContainsString('\'self\'', $header);
-        // The tile strategy talks to the BRT achtergrondkaart WMTS host.
-        $this->assertStringContainsString('https://service.pdok.nl', $header);
-    }//end testServiceWorkerScriptGrantsConnectSrc()
+		$header = $policy->buildPolicy();
+		$this->assertStringContainsString('connect-src', $header);
+		// The offline sync strategy talks back to this Nextcloud.
+		$this->assertStringContainsString('\'self\'', $header);
+		// The tile strategy talks to the BRT achtergrondkaart WMTS host.
+		$this->assertStringContainsString('https://service.pdok.nl', $header);
+	}//end testServiceWorkerScriptGrantsConnectSrc()
 
-    /**
-     * The web manifest endpoint is unaffected by the CSP change.
-     *
-     * @return void
-     */
-    public function testWebManifestIsStillServed(): void
-    {
-        $response = $this->controller->webManifest();
+	/**
+	 * The web manifest endpoint is unaffected by the CSP change.
+	 *
+	 * @return void
+	 */
+	public function testWebManifestIsStillServed(): void {
+		$response = $this->controller->webManifest();
 
-        $this->assertSame(Http::STATUS_OK, $response->getStatus());
-    }//end testWebManifestIsStillServed()
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+	}//end testWebManifestIsStillServed()
 }//end class

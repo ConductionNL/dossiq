@@ -31,19 +31,18 @@ namespace OCA\Procest\Service\Transitions;
  *
  * @spec openspec/changes/status-transition-engine/tasks.md#T04
  */
-final class GuardResult
-{
-    /**
-     * Constructor.
-     *
-     * @param bool                 $passed         Whether the guard passed
-     * @param string|null          $failureMessage Optional user-facing failure message
-     * @param array<string, mixed> $details        Structured guard details (e.g. silent role hide)
-     */
-    public function __construct(
-        public readonly bool $passed,
-        public readonly ?string $failureMessage=null,
-        public readonly array $details=[],
-    ) {
-    }//end __construct()
+final class GuardResult {
+	/**
+	 * Constructor.
+	 *
+	 * @param bool $passed Whether the guard passed
+	 * @param string|null $failureMessage Optional user-facing failure message
+	 * @param array<string, mixed> $details Structured guard details (e.g. silent role hide)
+	 */
+	public function __construct(
+		public readonly bool $passed,
+		public readonly ?string $failureMessage = null,
+		public readonly array $details = [],
+	) {
+	}//end __construct()
 }//end class

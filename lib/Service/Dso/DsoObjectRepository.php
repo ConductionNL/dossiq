@@ -40,189 +40,186 @@ use Psr\Log\LoggerInterface;
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
  */
-class DsoObjectRepository
-{
-    use SearchesObjects;
+class DsoObjectRepository {
+	use SearchesObjects;
 
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService The settings service (config + ObjectService bridge).
-     * @param LoggerInterface $logger          The logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService The settings service (config + ObjectService bridge).
+	 * @param LoggerInterface $logger The logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Load a zaak by ID from the ObjectService.
-     *
-     * Returns null when the zaak does not exist or the service is unavailable.
-     *
-     * @param string $caseId The zaak UUID.
-     *
-     * @return array<string,mixed>|null The zaak, or null when unresolvable.
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
-     */
-    public function findZaak(string $caseId): ?array
-    {
-        try {
-            $objectService = $this->settingsService->getObjectService();
-            if ($objectService === null) {
-                return null;
-            }
+	/**
+	 * Load a zaak by ID from the ObjectService.
+	 *
+	 * Returns null when the zaak does not exist or the service is unavailable.
+	 *
+	 * @param string $caseId The zaak UUID.
+	 *
+	 * @return array<string,mixed>|null The zaak, or null when unresolvable.
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 */
+	public function findZaak(string $caseId): ?array {
+		try {
+			$objectService = $this->settingsService->getObjectService();
+			if ($objectService === null) {
+				return null;
+			}
 
-            $register   = $this->settingsService->getConfigValue(key: 'register');
-            $caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
+			$register = $this->settingsService->getConfigValue(key: 'register');
+			$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
 
-            if ($register === '' || $caseSchema === '') {
-                return null;
-            }
+			if ($register === '' || $caseSchema === '') {
+				return null;
+			}
 
-            return $this->findObjectAsArray(
-                objectService: $objectService,
-                register: $register,
-                schema: $caseSchema,
-                id: $caseId
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Procest DsoObjectRepository: could not load zaak '.$caseId.': '.$e->getMessage()
-            );
-            return null;
-        }//end try
-    }//end findZaak()
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $caseSchema,
+				id: $caseId
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Procest DsoObjectRepository: could not load zaak ' . $caseId . ': ' . $e->getMessage()
+			);
+			return null;
+		}//end try
+	}//end findZaak()
 
-    /**
-     * Load a samenwerkverzoek by ID from the ObjectService.
-     *
-     * @param string $samenwerkId The samenwerkverzoek UUID.
-     *
-     * @return array<string,mixed>|null The samenwerkverzoek, or null when unresolvable.
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
-     */
-    public function findSamenwerkverzoek(string $samenwerkId): ?array
-    {
-        try {
-            $objectService = $this->settingsService->getObjectService();
-            if ($objectService === null) {
-                return null;
-            }
+	/**
+	 * Load a samenwerkverzoek by ID from the ObjectService.
+	 *
+	 * @param string $samenwerkId The samenwerkverzoek UUID.
+	 *
+	 * @return array<string,mixed>|null The samenwerkverzoek, or null when unresolvable.
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 */
+	public function findSamenwerkverzoek(string $samenwerkId): ?array {
+		try {
+			$objectService = $this->settingsService->getObjectService();
+			if ($objectService === null) {
+				return null;
+			}
 
-            $register        = $this->settingsService->getConfigValue(key: 'register');
-            $samenwerkSchema = $this->settingsService->getConfigValue(key: 'dso_samenwerkverzoek_schema');
+			$register = $this->settingsService->getConfigValue(key: 'register');
+			$samenwerkSchema = $this->settingsService->getConfigValue(key: 'dso_samenwerkverzoek_schema');
 
-            if ($register === '' || $samenwerkSchema === '') {
-                $samenwerkSchema = 'samenwerkverzoek';
-            }
+			if ($register === '' || $samenwerkSchema === '') {
+				$samenwerkSchema = 'samenwerkverzoek';
+			}
 
-            return $this->findObjectAsArray(
-                objectService: $objectService,
-                register: $register,
-                schema: $samenwerkSchema,
-                id: $samenwerkId
-            );
-        } catch (\Throwable $e) {
-            $this->logger->warning(
-                'Procest DsoObjectRepository: could not load samenwerkverzoek '.$samenwerkId.': '.$e->getMessage()
-            );
-            return null;
-        }//end try
-    }//end findSamenwerkverzoek()
+			return $this->findObjectAsArray(
+				objectService: $objectService,
+				register: $register,
+				schema: $samenwerkSchema,
+				id: $samenwerkId
+			);
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Procest DsoObjectRepository: could not load samenwerkverzoek ' . $samenwerkId . ': ' . $e->getMessage()
+			);
+			return null;
+		}//end try
+	}//end findSamenwerkverzoek()
 
-    /**
-     * Run the dashboard query and apply the in-memory filters.
-     *
-     * Returns an `error` string when the backing register cannot be reached or
-     * is not configured; the caller maps that onto a 503. Any other failure is
-     * allowed to propagate so the caller can log and return a 500.
-     *
-     * @param array<string,mixed> $params            Filters pushed to ObjectService.
-     * @param string              $activiteitgroep   Filter by activiteitgroep.
-     * @param string              $regelkwalificatie Filter by regelkwalificatie.
-     * @param string              $locatie           Filter by locatie substring.
-     *
-     * @return array{error: string|null, results: array<int,array<string,mixed>>} The query outcome.
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
-     */
-    public function fetchDashboard(
-        array $params,
-        string $activiteitgroep,
-        string $regelkwalificatie,
-        string $locatie
-    ): array {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return ['error' => 'OpenRegister not available', 'results' => []];
-        }
+	/**
+	 * Run the dashboard query and apply the in-memory filters.
+	 *
+	 * Returns an `error` string when the backing register cannot be reached or
+	 * is not configured; the caller maps that onto a 503. Any other failure is
+	 * allowed to propagate so the caller can log and return a 500.
+	 *
+	 * @param array<string,mixed> $params Filters pushed to ObjectService.
+	 * @param string $activiteitgroep Filter by activiteitgroep.
+	 * @param string $regelkwalificatie Filter by regelkwalificatie.
+	 * @param string $locatie Filter by locatie substring.
+	 *
+	 * @return array{error: string|null, results: array<int,array<string,mixed>>} The query outcome.
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 */
+	public function fetchDashboard(
+		array $params,
+		string $activiteitgroep,
+		string $regelkwalificatie,
+		string $locatie,
+	): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return ['error' => 'OpenRegister not available', 'results' => []];
+		}
 
-        $register   = $this->settingsService->getConfigValue(key: 'register');
-        $caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
+		$register = $this->settingsService->getConfigValue(key: 'register');
+		$caseSchema = $this->settingsService->getConfigValue(key: 'case_schema');
 
-        if ($register === '' || $caseSchema === '') {
-            return ['error' => 'Case register not configured', 'results' => []];
-        }
+		if ($register === '' || $caseSchema === '') {
+			return ['error' => 'Case register not configured', 'results' => []];
+		}
 
-        $zakenList = $this->searchObjectsAsArrays(
-            objectService: $objectService,
-            register: $register,
-            schema: $caseSchema,
-            filters: $params
-        );
+		$zakenList = $this->searchObjectsAsArrays(
+			objectService: $objectService,
+			register: $register,
+			schema: $caseSchema,
+			filters: $params
+		);
 
-        return [
-            'error'   => null,
-            'results' => $this->applyInMemoryFilters(
-                zaken: $zakenList,
-                activiteitgroep: $activiteitgroep,
-                regelkwalificatie: $regelkwalificatie,
-                locatie: $locatie
-            ),
-        ];
-    }//end fetchDashboard()
+		return [
+			'error' => null,
+			'results' => $this->applyInMemoryFilters(
+				zaken: $zakenList,
+				activiteitgroep: $activiteitgroep,
+				regelkwalificatie: $regelkwalificatie,
+				locatie: $locatie
+			),
+		];
+	}//end fetchDashboard()
 
-    /**
-     * Apply in-memory filters that cannot be pushed to ObjectService params.
-     *
-     * @param array<int,mixed> $zaken             The zaken array (elements come from ObjectService and are not guaranteed to be arrays)
-     * @param string           $activiteitgroep   Filter by activiteitgroep
-     * @param string           $regelkwalificatie Filter by regelkwalificatie
-     * @param string           $locatie           Filter by locatie substring
-     *
-     * @return array<int,array<string,mixed>> The filtered zaken.
-     *
-     * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
-     */
-    private function applyInMemoryFilters(
-        array $zaken,
-        string $activiteitgroep,
-        string $regelkwalificatie,
-        string $locatie,
-    ): array {
-        if ($activiteitgroep === '' && $regelkwalificatie === '' && $locatie === '') {
-            return $zaken;
-        }
+	/**
+	 * Apply in-memory filters that cannot be pushed to ObjectService params.
+	 *
+	 * @param array<int,mixed> $zaken The zaken array (elements come from ObjectService and are not guaranteed to be arrays)
+	 * @param string $activiteitgroep Filter by activiteitgroep
+	 * @param string $regelkwalificatie Filter by regelkwalificatie
+	 * @param string $locatie Filter by locatie substring
+	 *
+	 * @return array<int,array<string,mixed>> The filtered zaken.
+	 *
+	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
+	 */
+	private function applyInMemoryFilters(
+		array $zaken,
+		string $activiteitgroep,
+		string $regelkwalificatie,
+		string $locatie,
+	): array {
+		if ($activiteitgroep === '' && $regelkwalificatie === '' && $locatie === '') {
+			return $zaken;
+		}
 
-        $result = [];
-        foreach ($zaken as $zaak) {
-            if (is_array($zaak) === false) {
-                continue;
-            }
+		$result = [];
+		foreach ($zaken as $zaak) {
+			if (is_array($zaak) === false) {
+				continue;
+			}
 
-            if ($locatie !== '' && str_contains((string) ($zaak['locatie'] ?? ''), $locatie) === false) {
-                continue;
-            }
+			if ($locatie !== '' && str_contains((string)($zaak['locatie'] ?? ''), $locatie) === false) {
+				continue;
+			}
 
-            $result[] = $zaak;
-        }
+			$result[] = $zaak;
+		}
 
-        return $result;
-    }//end applyInMemoryFilters()
+		return $result;
+	}//end applyInMemoryFilters()
 }//end class

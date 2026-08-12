@@ -33,92 +33,89 @@ namespace OCA\Procest\Service\Actions;
 /**
  * Shared template + recipient resolution helpers.
  */
-trait HandlesTemplates
-{
-    /**
-     * Render a `{{path}}` template against a case context.
-     *
-     * Variable lookups are dotted (`case.indiener.naam`). Unknown paths are
-     * replaced with an empty string — never the original placeholder — to
-     * avoid leaking template syntax into user-facing output.
-     *
-     * @param string $template Raw template string.
-     * @param array  $case     The case object — exposed under the `case`
-     *                         root scope.
-     *
-     * @return string
+trait HandlesTemplates {
+	/**
+	 * Render a `{{path}}` template against a case context.
+	 *
+	 * Variable lookups are dotted (`case.indiener.naam`). Unknown paths are
+	 * replaced with an empty string — never the original placeholder — to
+	 * avoid leaking template syntax into user-facing output.
+	 *
+	 * @param string $template Raw template string.
+	 * @param array $case The case object — exposed under the `case`
+	 *                    root scope.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	protected function renderTemplate(string $template, array $case): string {
+		if ($template === '' || str_contains($template, '{{') === false) {
+			return $template;
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    protected function renderTemplate(string $template, array $case): string
-    {
-        if ($template === '' || str_contains($template, '{{') === false) {
-            return $template;
-        }
+		$context = ['case' => $case];
 
-        $context = ['case' => $case];
+		return (string)preg_replace_callback(
+			'/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/',
+			static function (array $match) use ($context): string {
+				$path = explode('.', $match[1]);
+				$cursor = $context;
+				foreach ($path as $segment) {
+					if (is_array($cursor) === true && array_key_exists($segment, $cursor) === true) {
+						$cursor = $cursor[$segment];
+						continue;
+					}
 
-        return (string) preg_replace_callback(
-            '/\{\{\s*([a-zA-Z0-9_.]+)\s*\}\}/',
-            static function (array $match) use ($context): string {
-                $path   = explode('.', $match[1]);
-                $cursor = $context;
-                foreach ($path as $segment) {
-                    if (is_array($cursor) === true && array_key_exists($segment, $cursor) === true) {
-                        $cursor = $cursor[$segment];
-                        continue;
-                    }
+					return '';
+				}
 
-                    return '';
-                }
+				if (is_scalar($cursor) === true) {
+					return (string)$cursor;
+				}
 
-                if (is_scalar($cursor) === true) {
-                    return (string) $cursor;
-                }
+				return '';
+			},
+			$template
+		);
+	}//end renderTemplate()
 
-                return '';
-            },
-            $template
-        );
-    }//end renderTemplate()
+	/**
+	 * Resolve a recipient reference to an email address or user identifier.
+	 *
+	 * Two reference shapes are supported in V1:
+	 *  - `indiener` / `behandelaar` / `<role-slug>` — a role-style key
+	 *    looked up under `case.<key>.email` first, then `case.<key>`.
+	 *  - `email:<address>` — a literal email address.
+	 *
+	 * Unknown references return an empty string. Callers MUST treat an empty
+	 * result as a missing recipient and return a static error.
+	 *
+	 * @param string $recipientRef Reference key or `email:foo@bar` literal.
+	 * @param array $case Case object used for role-based lookup.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 */
+	protected function resolveRecipient(string $recipientRef, array $case): string {
+		if ($recipientRef === '') {
+			return '';
+		}
 
-    /**
-     * Resolve a recipient reference to an email address or user identifier.
-     *
-     * Two reference shapes are supported in V1:
-     *  - `indiener` / `behandelaar` / `<role-slug>` — a role-style key
-     *    looked up under `case.<key>.email` first, then `case.<key>`.
-     *  - `email:<address>` — a literal email address.
-     *
-     * Unknown references return an empty string. Callers MUST treat an empty
-     * result as a missing recipient and return a static error.
-     *
-     * @param string $recipientRef Reference key or `email:foo@bar` literal.
-     * @param array  $case         Case object used for role-based lookup.
-     *
-     * @return string
+		if (str_starts_with($recipientRef, 'email:') === true) {
+			return substr($recipientRef, 6);
+		}
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
-     */
-    protected function resolveRecipient(string $recipientRef, array $case): string
-    {
-        if ($recipientRef === '') {
-            return '';
-        }
+		$value = ($case[$recipientRef] ?? null);
+		if (is_array($value) === true) {
+			return (string)($value['email'] ?? '');
+		}
 
-        if (str_starts_with($recipientRef, 'email:') === true) {
-            return substr($recipientRef, 6);
-        }
+		if (is_scalar($value) === true) {
+			return (string)$value;
+		}
 
-        $value = ($case[$recipientRef] ?? null);
-        if (is_array($value) === true) {
-            return (string) ($value['email'] ?? '');
-        }
-
-        if (is_scalar($value) === true) {
-            return (string) $value;
-        }
-
-        return '';
-    }//end resolveRecipient()
+		return '';
+	}//end resolveRecipient()
 }//end trait

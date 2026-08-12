@@ -44,143 +44,137 @@ use RuntimeException;
  *
  * @spec openspec/specs/beschikking-generatie/spec.md
  */
-class BeschikkingRepository
-{
-    /**
-     * Constructor.
-     *
-     * @param SettingsService $settingsService The settings/config service.
-     * @param LoggerInterface $logger          The logger.
-     *
-     * @return void
-     */
-    public function __construct(
-        private readonly SettingsService $settingsService,
-        private readonly LoggerInterface $logger,
-    ) {
-    }//end __construct()
+class BeschikkingRepository {
+	/**
+	 * Constructor.
+	 *
+	 * @param SettingsService $settingsService The settings/config service.
+	 * @param LoggerInterface $logger The logger.
+	 *
+	 * @return void
+	 */
+	public function __construct(
+		private readonly SettingsService $settingsService,
+		private readonly LoggerInterface $logger,
+	) {
+	}//end __construct()
 
-    /**
-     * Load a single beschikking by id. [T06]
-     *
-     * @param string $beschikkingId The beschikking UUID.
-     *
-     * @return array<string, mixed>|null
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function find(string $beschikkingId): ?array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            return null;
-        }
+	/**
+	 * Load a single beschikking by id. [T06]
+	 *
+	 * @param string $beschikkingId The beschikking UUID.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function find(string $beschikkingId): ?array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			return null;
+		}
 
-        [$register, $schema] = $this->resolveRegisterSchema();
-        if ($register === '' || $schema === '') {
-            return null;
-        }
+		[$register, $schema] = $this->resolveRegisterSchema();
+		if ($register === '' || $schema === '') {
+			return null;
+		}
 
-        try {
-            return $this->toArray(value: $objectService->find($beschikkingId, register: $register, schema: $schema));
-        } catch (\Throwable $e) {
-            $this->logger->error(
-                'BeschikkingService: find failed',
-                ['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
-            );
-            return null;
-        }
-    }//end find()
+		try {
+			return $this->toArray(value: $objectService->find($beschikkingId, register: $register, schema: $schema));
+		} catch (\Throwable $e) {
+			$this->logger->error(
+				'BeschikkingService: find failed',
+				['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
+			);
+			return null;
+		}
+	}//end find()
 
-    /**
-     * Load a beschikking or throw.
-     *
-     * @param string $beschikkingId The beschikking UUID.
-     *
-     * @return array<string, mixed>
-     *
-     * @throws RuntimeException 'not_found' when absent.
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function requireBeschikking(string $beschikkingId): array
-    {
-        $beschikking = $this->find(beschikkingId: $beschikkingId);
-        if ($beschikking === null) {
-            throw new RuntimeException('not_found');
-        }
+	/**
+	 * Load a beschikking or throw.
+	 *
+	 * @param string $beschikkingId The beschikking UUID.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException 'not_found' when absent.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function requireBeschikking(string $beschikkingId): array {
+		$beschikking = $this->find(beschikkingId: $beschikkingId);
+		if ($beschikking === null) {
+			throw new RuntimeException('not_found');
+		}
 
-        // Preserve the id for downstream save() calls.
-        if (isset($beschikking['id']) === false) {
-            $beschikking['id'] = $beschikkingId;
-        }
+		// Preserve the id for downstream save() calls.
+		if (isset($beschikking['id']) === false) {
+			$beschikking['id'] = $beschikkingId;
+		}
 
-        return $beschikking;
-    }//end requireBeschikking()
+		return $beschikking;
+	}//end requireBeschikking()
 
-    /**
-     * Persist a beschikking via ObjectService.
-     *
-     * @param array<string, mixed> $beschikking The beschikking payload.
-     *
-     * @return array<string, mixed>
-     *
-     * @throws RuntimeException When storage is unavailable or unconfigured.
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    public function save(array $beschikking): array
-    {
-        $objectService = $this->settingsService->getObjectService();
-        if ($objectService === null) {
-            throw new RuntimeException('storage_unavailable');
-        }
+	/**
+	 * Persist a beschikking via ObjectService.
+	 *
+	 * @param array<string, mixed> $beschikking The beschikking payload.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @throws RuntimeException When storage is unavailable or unconfigured.
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	public function save(array $beschikking): array {
+		$objectService = $this->settingsService->getObjectService();
+		if ($objectService === null) {
+			throw new RuntimeException('storage_unavailable');
+		}
 
-        [$register, $schema] = $this->resolveRegisterSchema();
-        if ($register === '' || $schema === '') {
-            throw new RuntimeException('beschikking_schema_not_configured');
-        }
+		[$register, $schema] = $this->resolveRegisterSchema();
+		if ($register === '' || $schema === '') {
+			throw new RuntimeException('beschikking_schema_not_configured');
+		}
 
-        return $this->toArray(value: $objectService->saveObject(object: $beschikking, register: $register, schema: $schema));
-    }//end save()
+		return $this->toArray(value: $objectService->saveObject(object: $beschikking, register: $register, schema: $schema));
+	}//end save()
 
-    /**
-     * Resolve the register id and beschikking schema id from config.
-     *
-     * @return array{0: string, 1: string}
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    private function resolveRegisterSchema(): array
-    {
-        return [
-            $this->settingsService->getConfigValue(key: 'register'),
-            $this->settingsService->getConfigValue(key: 'beschikking_schema'),
-        ];
-    }//end resolveRegisterSchema()
+	/**
+	 * Resolve the register id and beschikking schema id from config.
+	 *
+	 * @return array{0: string, 1: string}
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function resolveRegisterSchema(): array {
+		return [
+			$this->settingsService->getConfigValue(key: 'register'),
+			$this->settingsService->getConfigValue(key: 'beschikking_schema'),
+		];
+	}//end resolveRegisterSchema()
 
-    /**
-     * Normalise an ObjectService return value to an array.
-     *
-     * @param mixed $value The entity, array, or JsonSerializable.
-     *
-     * @return array<string, mixed>
-     *
-     * @spec openspec/specs/beschikking-generatie/spec.md
-     */
-    private function toArray(mixed $value): array
-    {
-        if (is_array($value) === true) {
-            return $value;
-        }
+	/**
+	 * Normalise an ObjectService return value to an array.
+	 *
+	 * @param mixed $value The entity, array, or JsonSerializable.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/specs/beschikking-generatie/spec.md
+	 */
+	private function toArray(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
 
-        if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
-            $serialised = $value->jsonSerialize();
-            if (is_array($serialised) === true) {
-                return $serialised;
-            }
-        }
+		if (is_object($value) === true && method_exists($value, 'jsonSerialize') === true) {
+			$serialised = $value->jsonSerialize();
+			if (is_array($serialised) === true) {
+				return $serialised;
+			}
+		}
 
-        return [];
-    }//end toArray()
+		return [];
+	}//end toArray()
 }//end class
