@@ -73,7 +73,10 @@ class MandaatEscalatieService
             'decisionType'    => $decisionType,
             'initiatorId'     => $initiatorId,
             'escalatieReden'  => $escalatieReden,
-            'targetMandaatId' => $path['mandaatId'],
+            // Key = schema property (renamed). Value = an INTERNAL array key
+            // returned by resolveEscalationPath() in this same class, which is
+            // not a schema property and does not move here.
+            'targetMandateId' => $path['mandaatId'],
             'targetUserId'    => $path['userId'],
             'status'          => 'open',
             'createdAt'       => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),

@@ -84,12 +84,12 @@ class MandaatGebruikService
         $row = [
             'zaakId'                => $zaakId,
             'decisionId'            => $decisionId,
-            'mandaatId'             => $mandaatId,
+            'mandateId'             => $mandaatId,
             'userId'                => $userId,
             'tijdstip'              => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
             'rolOpMomentVanBesluit' => $roleSnapshot,
             'gebruikteVoorwaarden'  => $conditionsApplied,
-            'mandaatVersieId'       => $mandaatId,
+            'mandateVersionId'      => $mandaatId,
         ];
 
         try {
@@ -155,7 +155,7 @@ class MandaatGebruikService
                 objectService: $objectService,
                 register: $register,
                 schema: $schema,
-                filters: ['mandaatId' => $mandaatId]
+                filters: ['mandateId' => $mandaatId]
             );
         } catch (\Throwable $e) {
             return [];

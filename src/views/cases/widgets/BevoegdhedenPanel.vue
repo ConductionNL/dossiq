@@ -30,7 +30,7 @@
 			</thead>
 			<tbody>
 				<tr v-for="row in filteredRows" :key="row.id" class="bevoegdheden-panel__row">
-					<td>{{ row.mandaatNummer }}</td>
+					<td>{{ row.mandateNumber }}</td>
 					<td>{{ row.omschrijving }}</td>
 					<td>{{ row.bevoegdheidType || '-' }}</td>
 					<td>{{ formatCeiling(row) }}</td>
