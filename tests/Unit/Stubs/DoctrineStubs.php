@@ -104,7 +104,39 @@ namespace Doctrine\DBAL\Platforms {
 
 namespace Doctrine\DBAL\Logging {
 	if (interface_exists(\Doctrine\DBAL\Logging\SQLLogger::class) === false) {
+		/**
+		 * An EMPTY body here is a fatal error from Nextcloud 34 onwards, and it
+		 * is this file that causes it — not the app and not the server.
+		 *
+		 * `OCP\Diagnostics\IQueryLogger extends SQLLogger`, and NC 34 added
+		 * `#[\Override]` to its `startQuery()` and `stopQuery()`. PHP validates
+		 * that attribute against whatever `SQLLogger` is actually loaded. This
+		 * stub is loaded FIRST, on purpose, so it is the one PHP checks — and an
+		 * interface declaring neither method makes both attributes unmatched:
+		 *
+		 *   PHP Fatal error: OCP\Diagnostics\IQueryLogger::startQuery() has
+		 *   #[\Override] attribute, but no matching parent method exists
+		 *
+		 * PHPUnit died at bootstrap, before a single test, so the whole leg went
+		 * red with no failing test named. Silent on stable32/33 only because the
+		 * attribute did not exist there yet; the stub was already wrong.
+		 *
+		 * Signatures are doctrine/dbal 3.x's SQLLogger verbatim.
+		 */
 		interface SQLLogger {
+			/**
+			 * @param string $sql
+			 * @param array|null $params
+			 * @param array|null $types
+			 *
+			 * @return void
+			 */
+			public function startQuery($sql, ?array $params = null, ?array $types = null);
+
+			/**
+			 * @return void
+			 */
+			public function stopQuery();
 		}
 	}
 }
