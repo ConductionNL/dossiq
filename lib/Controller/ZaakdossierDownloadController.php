@@ -46,7 +46,6 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
@@ -192,13 +191,13 @@ class ZaakdossierDownloadController extends Controller {
 	 *
 	 * @param string $uuid The informatieobject (enkelvoudiginformatieobject) UUID.
 	 *
-	 * @return Response|JSONResponse Full (200) or partial (206) content, or an error status.
+	 * @return RangeStreamResponse|JSONResponse Full (200) or partial (206) content, or an error status.
 	 *
 	 * @NoAdminRequired
 	 *
 	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
 	 */
-	public function downloadZgwDocumenten(string $uuid): Response|JSONResponse {
+	public function downloadZgwDocumenten(string $uuid): RangeStreamResponse|JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
