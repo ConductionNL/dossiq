@@ -1,7 +1,7 @@
 <template>
 	<aside class="mandaat-widget">
 		<header class="mandaat-widget__header">
-			<h4>{{ mandaat.omschrijving || mandaat.mandateNumber }}</h4>
+			<h4>{{ mandaat.description || mandaat.mandateNumber }}</h4>
 			<button type="button"
 				class="mandaat-widget__close"
 				:aria-label="t('procest', 'Close mandate details')"

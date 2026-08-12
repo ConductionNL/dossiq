@@ -118,7 +118,7 @@ class ComplaintService
      */
     public function createComplaint(array $data): array
     {
-        $this->validateRequired(data: $data, required: ['onderwerp', 'omschrijving', 'ontvangstdatum']);
+        $this->validateRequired(data: $data, required: ['onderwerp', 'description', 'ontvangstdatum']);
 
         $objectService = $this->settingsService->getObjectService();
         if ($objectService === null) {

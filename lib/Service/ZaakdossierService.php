@@ -148,7 +148,7 @@ class ZaakdossierService
             'creatiedatum'                => (string) ($metadata['creatiedatum'] ?? date('Y-m-d')),
             'bronorganisatie'             => (string) ($metadata['bronorganisatie'] ?? ''),
             'taal'                        => (string) ($metadata['taal'] ?? 'nld'),
-            'beschrijving'                => (string) ($metadata['beschrijving'] ?? ''),
+            'description'                 => (string) ($metadata['description'] ?? $metadata['beschrijving'] ?? ''),
             'integriteit'                 => [
                 'algoritme' => 'sha256',
                 'waarde'    => $hash,
@@ -429,7 +429,7 @@ class ZaakdossierService
             throw new DomainException('Definitieve documenten kunnen niet worden gewijzigd');
         }
 
-        $allowed    = ['titel', 'beschrijving', 'informatieobjecttype', 'vertrouwelijkheidaanduiding'];
+        $allowed    = ['titel', 'description', 'informatieobjecttype', 'vertrouwelijkheidaanduiding'];
         $updateData = [];
         foreach ($allowed as $field) {
             if (array_key_exists($field, $metadata) === true) {

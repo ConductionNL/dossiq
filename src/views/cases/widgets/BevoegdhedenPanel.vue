@@ -31,7 +31,7 @@
 			<tbody>
 				<tr v-for="row in filteredRows" :key="row.id" class="bevoegdheden-panel__row">
 					<td>{{ row.mandateNumber }}</td>
-					<td>{{ row.omschrijving }}</td>
+					<td>{{ row.description }}</td>
 					<td>{{ row.bevoegdheidType || '-' }}</td>
 					<td>{{ formatCeiling(row) }}</td>
 					<td>{{ row.subdelegatie ? t('procest', 'Yes') : t('procest', 'No') }}</td>

@@ -41,7 +41,7 @@
 				:placeholder="t('procest', 'Document title')" />
 
 			<NcTextArea
-				v-model="beschrijving"
+				v-model="description"
 				:label="t('procest', 'Description')"
 				:placeholder="t('procest', 'Optional description')" />
 
@@ -73,7 +73,7 @@ import {
 /**
  * Upload metadata dialog. Collects the required informatieobjecttype and
  * vertrouwelijkheidaanduiding (with the type's default), an editable titel and
- * an optional beschrijving, shared across all dropped/selected files, and
+ * an optional description, shared across all dropped/selected files, and
  * surfaces a per-file upload progress bar.
  *
  * @spec openspec/changes/document-zaakdossier/tasks.md#T07
@@ -120,7 +120,7 @@ export default {
 			selectedType: '',
 			selectedClassification: '',
 			titel: '',
-			beschrijving: '',
+			description: '',
 		}
 	},
 	computed: {
@@ -133,7 +133,7 @@ export default {
 		typeOptions() {
 			return this.types.map(type => ({
 				id: type.id || type.uuid,
-				label: type.omschrijving || type.id,
+				label: type.description || type.id,
 				vertrouwelijkheidaanduiding: type.vertrouwelijkheidaanduiding || 'intern',
 			}))
 		},
@@ -204,7 +204,7 @@ export default {
 				informatieobjecttype: this.selectedType,
 				vertrouwelijkheidaanduiding: this.selectedClassification,
 				titel: this.titel,
-				beschrijving: this.beschrijving,
+				description: this.description,
 			})
 		},
 	},
