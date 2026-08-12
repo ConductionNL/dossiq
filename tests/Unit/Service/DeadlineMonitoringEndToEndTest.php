@@ -34,7 +34,7 @@ use OCA\Procest\Service\BerichtenboxRoutingService;
 use OCA\Procest\Service\DwangsomBezwaarService;
 use OCA\Procest\Service\DwangsomCalculationService;
 use OCA\Procest\Service\DwangsomUitbetalingService;
-use OCA\Procest\Service\IngebrekestellingService;
+use OCA\Procest\Service\NoticeOfDefaultService;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\DeadlineDailyScanService;
 use OCA\Procest\Service\DeadlineEscalationService;
@@ -55,7 +55,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase
     private TermijnService $termijnService;
     private DeadlinePauseService $pauseService;
     private DeadlineExtensionService $extService;
-    private IngebrekestellingService $ingService;
+    private NoticeOfDefaultService $ingService;
     private DwangsomCalculationService $calcService;
     private DwangsomUitbetalingService $uitService;
     private DwangsomBezwaarService $bezService;
@@ -87,7 +87,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase
         $this->termijnService = new TermijnService($settings, $logger);
         $this->pauseService   = new DeadlinePauseService($this->termijnService);
         $this->extService     = new DeadlineExtensionService($this->termijnService);
-        $this->ingService     = new IngebrekestellingService($settings, $this->termijnService, $logger);
+        $this->ingService     = new NoticeOfDefaultService($settings, $this->termijnService, $logger);
         $this->calcService    = new DwangsomCalculationService($settings, $logger);
         $this->uitService     = new DwangsomUitbetalingService($settings);
         $this->bezService     = new DwangsomBezwaarService($settings, $this->termijnService, $logger);
@@ -210,7 +210,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase
         $instanceId = (string) $instance['id'];
 
         // Register ingebrekestelling (after deadline).
-        $row = $this->ingService->registerIngebrekestelling(
+        $row = $this->ingService->registerNoticeOfDefault(
             $instanceId,
             new DateTimeImmutable('2026-03-15'),
             'email',
