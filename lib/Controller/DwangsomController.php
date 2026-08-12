@@ -38,6 +38,7 @@ use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 use Throwable;
 
@@ -45,6 +46,8 @@ use Throwable;
  * REST surface for DwangsomBerekening state + bezwaar.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/authz-bypass-fixes/spec.md
  */
 class DwangsomController extends Controller
 {
@@ -113,13 +116,10 @@ class DwangsomController extends Controller
             caseField: 'zaak'
         );
 
-        if ($caseId !== null) {
-            $granted = $mutation === true
-                ? $this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user)
-                : $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user);
-            if ($granted === true) {
-                return null;
-            }
+        if ($caseId !== null
+            && $this->mayAccessCase(caseId: $caseId, user: $user, mutation: $mutation) === true
+        ) {
+            return null;
         }
 
         return new JSONResponse(
@@ -127,6 +127,30 @@ class DwangsomController extends Controller
             Http::STATUS_FORBIDDEN
         );
     }//end denyUnlessMayAccess()
+
+    /**
+     * Apply the verb-appropriate case check.
+     *
+     * Writes need mutation access; reads take the slightly wider read access
+     * that also honours the `assignees` array. Kept separate so the read check
+     * is never consulted on a write verb.
+     *
+     * @param string $caseId   The owning case UUID.
+     * @param IUser  $user     The authenticated user.
+     * @param bool   $mutation True for write verbs, false for reads.
+     *
+     * @return bool True when the user may proceed.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private function mayAccessCase(string $caseId, IUser $user, bool $mutation): bool
+    {
+        if ($mutation === true) {
+            return $this->caseAccess->hasCaseMutationAccess(caseId: $caseId, user: $user);
+        }
+
+        return $this->caseAccess->hasCaseReadAccess(caseId: $caseId, user: $user);
+    }//end mayAccessCase()
 
     /**
      * Get a DwangsomBerekening by id.
@@ -159,12 +183,49 @@ class DwangsomController extends Controller
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
 
-        if (is_array($row) === false) {
+        $berekening = $this->normalise(value: $row);
+        if ($berekening === null) {
             return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
         }
 
-        return new JSONResponse($row);
+        return new JSONResponse($berekening);
     }//end show()
+
+    /**
+     * Normalise an OpenRegister result into a plain array.
+     *
+     * `ObjectService::find()` is declared `: ?ObjectEntity` and never returns an
+     * array, so the previous `is_array($row) === false` test was true for every
+     * existing berekening and `show()` answered 404 to everyone, its own case
+     * assignee included. Normalise instead of testing.
+     *
+     * `is_callable()` rather than `method_exists()`: ObjectEntity reaches
+     * several accessors through `Entity::__call()`, for which `method_exists()`
+     * is false.
+     *
+     * @param mixed $value The value returned by ObjectService.
+     *
+     * @return array<string, mixed>|null The array form, or null when absent.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private function normalise(mixed $value): ?array
+    {
+        if (is_array($value) === true) {
+            return $value;
+        }
+
+        if (is_object($value) === false || is_callable([$value, 'jsonSerialize']) === false) {
+            return null;
+        }
+
+        $serialised = $value->jsonSerialize();
+        if (is_array($serialised) === false) {
+            return null;
+        }
+
+        return $serialised;
+    }//end normalise()
 
     /**
      * Stop the berekening because a beschikking was filed.
