@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for TermijnDailyScanService + TermijnEscalationService.
+ * Unit tests for DeadlineDailyScanService + DeadlineEscalationService.
  *
  * Drives the daily sweep through bucketing, overdue flips, pause-expiry,
  * and duplicate-suppression scenarios against an in-memory store.
@@ -28,26 +28,26 @@ namespace OCA\Procest\Tests\Unit\Service;
 use DateTimeImmutable;
 use OCA\Procest\Service\DwangsomCalculationService;
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnDailyScanService;
-use OCA\Procest\Service\TermijnEscalationService;
+use OCA\Procest\Service\DeadlineDailyScanService;
+use OCA\Procest\Service\DeadlineEscalationService;
 use OCA\Procest\Service\TermijnService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TermijnDailyScanService
- * @covers \OCA\Procest\Service\TermijnEscalationService
+ * @covers \OCA\Procest\Service\DeadlineDailyScanService
+ * @covers \OCA\Procest\Service\DeadlineEscalationService
  *
  * @uses \OCA\Procest\Service\DwangsomCalculationService
  * @uses \OCA\Procest\Service\TermijnService
  */
-class TermijnDailyScanServiceTest extends TestCase
+class DeadlineDailyScanServiceTest extends TestCase
 {
     private FakeTermijnStore $objects;
     private SettingsService $settings;
     private TermijnService $termijnService;
-    private TermijnEscalationService $escalation;
-    private TermijnDailyScanService $scan;
+    private DeadlineEscalationService $escalation;
+    private DeadlineDailyScanService $scan;
 
     protected function setUp(): void
     {
@@ -69,8 +69,8 @@ class TermijnDailyScanServiceTest extends TestCase
         $this->settings        = $settings;
         $logger                = $this->createMock(LoggerInterface::class);
         $this->termijnService  = new TermijnService($settings, $logger);
-        $this->escalation      = new TermijnEscalationService($this->termijnService, $logger);
-        $this->scan            = new TermijnDailyScanService(
+        $this->escalation      = new DeadlineEscalationService($this->termijnService, $logger);
+        $this->scan            = new DeadlineDailyScanService(
             $settings,
             $this->termijnService,
             $this->escalation,
@@ -178,7 +178,7 @@ class TermijnDailyScanServiceTest extends TestCase
 
     /**
      * Dwangsom accrual sweep: every `lopend` dwangsomBerekening row is
-     * advanced by exactly one day per `TermijnDailyScanService::run()`
+     * advanced by exactly one day per `DeadlineDailyScanService::run()`
      * pass. The scan does NOT recalculate retroactively — yesterday's
      * cumulatievBedrag is the floor and the current tier-day adds on top.
      * Closes the
@@ -207,10 +207,10 @@ class TermijnDailyScanServiceTest extends TestCase
         );
         $logger = $this->createMock(LoggerInterface::class);
         $calc   = new DwangsomCalculationService($settings, $logger);
-        $scan   = new TermijnDailyScanService(
+        $scan   = new DeadlineDailyScanService(
             $settings,
             new TermijnService($settings, $logger),
-            new TermijnEscalationService(new TermijnService($settings, $logger), $logger),
+            new DeadlineEscalationService(new TermijnService($settings, $logger), $logger),
             $logger,
             $calc
         );

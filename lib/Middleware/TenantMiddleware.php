@@ -28,7 +28,6 @@ use Exception;
 use OCA\Procest\Service\TenantService;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Middleware;
-use OCP\IRequest;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
@@ -59,7 +58,6 @@ class TenantMiddleware extends Middleware
      *
      * @param TenantService   $tenantService The tenant service
      * @param IUserSession    $userSession   The user session
-     * @param IRequest        $request       The request object
      * @param LoggerInterface $logger        The logger
      *
      * @return void
@@ -67,7 +65,6 @@ class TenantMiddleware extends Middleware
     public function __construct(
         private TenantService $tenantService,
         private IUserSession $userSession,
-        private IRequest $request,
         private LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -128,10 +125,24 @@ class TenantMiddleware extends Middleware
             throw new Exception('Organisation is '.$status, 403);
         }
 
-        // Store tenant context for controllers to use.
-        $this->request->setParameter('_tenantId', $tenantUuid);
-        $this->request->setParameter('_tenantRegisterId', $tenant['registerId'] ?? '');
-        $this->request->setParameter('_tenantSlug', $tenant['slug'] ?? '');
+        // No tenant context is published onto the request here.
+        //
+        // This block used to call `$this->request->setParameter(...)`. That
+        // method does not exist on `OCP\IRequest` nor on the concrete
+        // `OC\AppFramework\Http\Request`, so every request that reached this
+        // point died with `Error: Call to undefined method
+        // OC\AppFramework\Http\Request::setParameter()` and Nextcloud answered
+        // HTTP 500 with an HTML error page. In other words: for any user who
+        // DID have a tenant, every non-exempt Procest endpoint was a 500 —
+        // while the single-tenant deployments that CI and the e2e rig exercise
+        // return at the `$tenant === null` branch above and never reached it.
+        //
+        // Nothing ever read the three keys back (`_tenantId`,
+        // `_tenantRegisterId`, `_tenantSlug` have no reader anywhere in `lib/`
+        // or `src/`), so they are removed rather than re-homed: adding a
+        // request-scoped context service with no consumer would be dead code
+        // in a different shape. Tenant *enforcement* — the lifecycle check
+        // above — is unaffected and still runs.
     }//end beforeController()
 
     /**

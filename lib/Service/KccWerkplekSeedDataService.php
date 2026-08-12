@@ -94,7 +94,7 @@ class KccWerkplekSeedDataService
         $counts = ['quickActions' => 0, 'belplannen' => 0, 'skipped' => 0];
 
         // This service is only ever invoked from boot-time repair steps
-        // (SeedKccWerkplekData, SeedTermijnbewakingData) — never from a live
+        // (SeedKccWerkplekData, SeedDeadlineMonitoringData) — never from a live
         // user request — so it is safe to elevate the whole seed for the
         // duration of this call. Anonymous callers are otherwise fail-closed
         // by OpenRegister RBAC (#1955) on every boot.

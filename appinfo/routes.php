@@ -674,9 +674,14 @@ $extra = [
         ['name' => 'dwangsom#bezwaar',      'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
         ['name' => 'dwangsom#bezwaarHeroverweging', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
         // Reporting (manager / accountant).
-        ['name' => 'termijnReporting#dashboard',         'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
-        ['name' => 'termijnReporting#kwartaalrapport',   'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
-        ['name' => 'termijnReporting#jaarrekening',      'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+        // The route NAMES follow the renamed controller and its methods; the
+        // URLs deliberately do NOT. /api/termijn/* is the published contract and
+        // moving it is a breaking change for every consumer, so it is a separate
+        // decision from this rename. Nothing references these route names — the
+        // frontend calls the URLs directly.
+        ['name' => 'deadlineReporting#dashboard',        'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
+        ['name' => 'deadlineReporting#quarterlyReport',  'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
+        ['name' => 'deadlineReporting#annualStatement',  'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
         // IV3/BBV taakveld reference list, for the case-type classification
         // picker. The quarterly IV3 cost report that used to sit alongside it
         // is gone under ADR-081 — Shillinq is the only statutory reporter. The

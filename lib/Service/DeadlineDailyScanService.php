@@ -1,11 +1,11 @@
 <?php
 
 /**
- * Procest TermijnDailyScanService.
+ * Procest DeadlineDailyScanService.
  *
  * Server-authoritative service that performs the daily sweep over all
  * active TermijnInstance rows: computes days-to-deadline, buckets into
- * 14/7/2/0, dispatches escalation through {@see TermijnEscalationService},
+ * 14/7/2/0, dispatches escalation through {@see DeadlineEscalationService},
  * and flips overdue instances to `overschreden`. Job-level error
  * handling: one bad row never aborts the sweep.
  *
@@ -42,8 +42,10 @@ use Psr\Log\LoggerInterface;
  * Daily sweep over active TermijnInstance rows.
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects)
+ *
+ * @spec openspec/specs/termijn-escalation/spec.md
  */
-class TermijnDailyScanService
+class DeadlineDailyScanService
 {
     use SearchesObjects;
 
@@ -52,14 +54,14 @@ class TermijnDailyScanService
      *
      * @param SettingsService                 $settingsService   Settings service.
      * @param TermijnService                  $termijnService    TermijnService.
-     * @param TermijnEscalationService        $escalationService Escalation service.
+     * @param DeadlineEscalationService       $escalationService Escalation service.
      * @param LoggerInterface                 $logger            Logger.
      * @param DwangsomCalculationService|null $dwangsomService   Dwangsom calculation service.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
         private readonly TermijnService $termijnService,
-        private readonly TermijnEscalationService $escalationService,
+        private readonly DeadlineEscalationService $escalationService,
         private readonly LoggerInterface $logger,
         private readonly ?DwangsomCalculationService $dwangsomService=null,
     ) {

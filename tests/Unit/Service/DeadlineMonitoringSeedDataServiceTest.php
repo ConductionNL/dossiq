@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for TermijnbewakingSeedDataService.
+ * Unit tests for DeadlineMonitoringSeedDataService.
  *
  * Exercises the seed pipeline against an in-memory ObjectService fake,
  * asserts idempotency, and verifies the documented seed shape
@@ -28,18 +28,18 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnbewakingSeedDataService;
+use OCA\Procest\Service\DeadlineMonitoringSeedDataService;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 
 /**
- * @covers \OCA\Procest\Service\TermijnbewakingSeedDataService
+ * @covers \OCA\Procest\Service\DeadlineMonitoringSeedDataService
  */
-class TermijnbewakingSeedDataServiceTest extends TestCase
+class DeadlineMonitoringSeedDataServiceTest extends TestCase
 {
     private FakeTermijnObjectService $objects;
 
-    private TermijnbewakingSeedDataService $service;
+    private DeadlineMonitoringSeedDataService $service;
 
     protected function setUp(): void
     {
@@ -56,7 +56,7 @@ class TermijnbewakingSeedDataServiceTest extends TestCase
             },
         );
 
-        $this->service = new TermijnbewakingSeedDataService(
+        $this->service = new DeadlineMonitoringSeedDataService(
             $settings,
             $this->createMock(LoggerInterface::class),
         );

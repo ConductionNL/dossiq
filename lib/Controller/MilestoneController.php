@@ -26,6 +26,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\MilestoneService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -45,12 +46,14 @@ class MilestoneController extends Controller
      * @param IRequest         $request          The request
      * @param MilestoneService $milestoneService The milestone service
      * @param IUserSession     $userSession      The user session
+     * @param CaseAccessGuard  $caseAccessGuard  Per-case authorization (fails closed)
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly MilestoneService $milestoneService,
         private readonly IUserSession $userSession,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -69,8 +72,13 @@ class MilestoneController extends Controller
      */
     public function progress(string $caseId, string $caseTypeId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         try {

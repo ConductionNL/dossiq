@@ -26,6 +26,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\BerichtenboxService;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -43,11 +44,13 @@ class BerichtenboxController extends Controller
      * @param IRequest            $request             The request object.
      * @param BerichtenboxService $berichtenboxService The Berichtenbox service.
      * @param IUserSession        $userSession         The user session.
+     * @param CaseAccessGuard     $caseAccessGuard     Per-case authorization (fails closed).
      */
     public function __construct(
         IRequest $request,
         private BerichtenboxService $berichtenboxService,
         private IUserSession $userSession,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -63,7 +66,8 @@ class BerichtenboxController extends Controller
      */
     public function send(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
@@ -76,6 +80,16 @@ class BerichtenboxController extends Controller
 
         if (empty($caseId) === true) {
             return new JSONResponse(['success' => false, 'error' => 'caseId is required'], 400);
+        }
+
+        // Dispatches an official government message, with attachment, into a
+        // citizen's statutory message box. Externally visible and not
+        // undoable, so this is the strictest guard in the file.
+        if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: (string) $caseId, user: $user) === false) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Not authorized'],
+                Http::STATUS_FORBIDDEN
+            );
         }
 
         $result = $this->berichtenboxService->sendMessage(
@@ -105,11 +119,24 @@ class BerichtenboxController extends Controller
      */
     public function messages(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
-        $caseId   = $this->request->getParam('caseId', '');
+        $caseId = (string) $this->request->getParam('caseId', '');
+        if ($caseId === '') {
+            return new JSONResponse(['success' => false, 'error' => 'caseId is required'], Http::STATUS_BAD_REQUEST);
+        }
+
+        // Official correspondence with a citizen about this case.
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Not authorized'],
+                Http::STATUS_FORBIDDEN
+            );
+        }
+
         $messages = $this->berichtenboxService->getMessagesForCase($caseId);
         return new JSONResponse(['success' => true, 'messages' => $messages]);
     }//end messages()
@@ -127,8 +154,22 @@ class BerichtenboxController extends Controller
      */
     public function poll(string $messageId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['success' => false, 'error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // The route carries only a message id, so the owning case is resolved
+        // first and the same per-case guard applied. An unresolvable message
+        // denies, so this is not an existence oracle.
+        $caseId = $this->berichtenboxService->getCaseIdForMessage($messageId);
+        if ($caseId === null
+            || $this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false
+        ) {
+            return new JSONResponse(
+                ['success' => false, 'error' => 'Not authorized'],
+                Http::STATUS_FORBIDDEN
+            );
         }
 
         $result = $this->berichtenboxService->pollReadStatus($messageId);

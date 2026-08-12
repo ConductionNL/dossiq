@@ -5,7 +5,7 @@
  *
  * Seeds the three demo `TermijnDefinitie` rows
  * (Omgevingsvergunning-regulier, Wmo-aanvraag, Woo-verzoek) into
- * OpenRegister via {@see TermijnbewakingSeedDataService}.
+ * OpenRegister via {@see DeadlineMonitoringSeedDataService}.
  * Idempotent: existing definitions are skipped.
  *
  * @category Repair
@@ -30,25 +30,27 @@ declare(strict_types=1);
 namespace OCA\Procest\Repair;
 
 use OCA\Procest\Service\SettingsService;
-use OCA\Procest\Service\TermijnbewakingSeedDataService;
+use OCA\Procest\Service\DeadlineMonitoringSeedDataService;
 use OCP\Migration\IOutput;
 use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
 
 /**
  * Repair step that seeds termijnbewaking demo data into OpenRegister.
+ *
+ * @spec openspec/specs/termijnbewaking-schemas/spec.md
  */
-class SeedTermijnbewakingData implements IRepairStep
+class SeedDeadlineMonitoringData implements IRepairStep
 {
     /**
      * Constructor.
      *
-     * @param TermijnbewakingSeedDataService $seedService     Seed service.
-     * @param SettingsService                $settingsService Settings service.
-     * @param LoggerInterface                $logger          Logger.
+     * @param DeadlineMonitoringSeedDataService $seedService     Seed service.
+     * @param SettingsService                   $settingsService Settings service.
+     * @param LoggerInterface                   $logger          Logger.
      */
     public function __construct(
-        private readonly TermijnbewakingSeedDataService $seedService,
+        private readonly DeadlineMonitoringSeedDataService $seedService,
         private readonly SettingsService $settingsService,
         private readonly LoggerInterface $logger,
     ) {
@@ -58,6 +60,8 @@ class SeedTermijnbewakingData implements IRepairStep
      * Get the repair-step display name.
      *
      * @return string
+     *
+     * @spec openspec/specs/termijnbewaking-schemas/spec.md
      */
     public function getName(): string
     {
