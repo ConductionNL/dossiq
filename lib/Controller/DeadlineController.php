@@ -60,18 +60,18 @@ class DeadlineController extends Controller
     /**
      * Constructor.
      *
-     * @param string                   $appName     App id.
-     * @param IRequest                 $request     Request.
-     * @param DeadlineService          $termijn     Termijn service.
-     * @param DeadlinePauseService     $pause       Pause service.
-     * @param DeadlineExtensionService $extension   Extension service.
-     * @param IUserSession             $userSession User session.
-     * @param LoggerInterface          $logger      Logger.
+     * @param string                   $appName         App id.
+     * @param IRequest                 $request         Request.
+     * @param DeadlineService          $deadlineService Deadline service.
+     * @param DeadlinePauseService     $pause           Pause service.
+     * @param DeadlineExtensionService $extension       Extension service.
+     * @param IUserSession             $userSession     User session.
+     * @param LoggerInterface          $logger          Logger.
      */
     public function __construct(
         string $appName,
         IRequest $request,
-        private readonly DeadlineService $termijn,
+        private readonly DeadlineService $deadlineService,
         private readonly DeadlinePauseService $pause,
         private readonly DeadlineExtensionService $extension,
         private readonly IUserSession $userSession,
@@ -127,7 +127,7 @@ class DeadlineController extends Controller
         }
 
         try {
-            $row = $this->termijn->createTermijnInstance($zaakId, $zaaktype);
+            $row = $this->deadlineService->createTermijnInstance($zaakId, $zaaktype);
             return new JSONResponse($row, Http::STATUS_CREATED);
         } catch (Throwable $e) {
             return $this->error(e: $e, log: 'Termijn create failed');
@@ -152,7 +152,7 @@ class DeadlineController extends Controller
             return $denied;
         }
 
-        $row = $this->termijn->getTermijnInstance($id);
+        $row = $this->deadlineService->getTermijnInstance($id);
         if ($row === null) {
             return $this->notFound(msg: 'TermijnInstance not found: '.$id);
         }
@@ -293,7 +293,7 @@ class DeadlineController extends Controller
         }
 
         try {
-            $row = $this->termijn->markTermijnCompleted(
+            $row = $this->deadlineService->markTermijnCompleted(
                 $id,
                 $completedAt,
                 $documentLink

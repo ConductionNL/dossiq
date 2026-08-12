@@ -54,11 +54,11 @@ class DeadlineEscalationService
     /**
      * Constructor.
      *
-     * @param DeadlineService $termijnService DeadlineService for instance lookup/update.
-     * @param LoggerInterface $logger         Logger.
+     * @param DeadlineService $deadlineService DeadlineService for instance lookup/update.
+     * @param LoggerInterface $logger          Logger.
      */
     public function __construct(
-        private readonly DeadlineService $termijnService,
+        private readonly DeadlineService $deadlineService,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -148,7 +148,7 @@ class DeadlineEscalationService
 
         // Mark threshold as sent (duplicate suppression).
         $alreadySent[] = $threshold;
-        $this->termijnService->updateTermijnInstance(
+        $this->deadlineService->updateTermijnInstance(
             $instanceId,
             ['notificatiesVerstuurd' => array_values(array_unique(array_map('intval', $alreadySent)))]
         );

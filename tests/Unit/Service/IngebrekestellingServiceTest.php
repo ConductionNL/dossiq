@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
 class IngebrekestellingServiceTest extends TestCase
 {
     private FakeTermijnStore $objects;
-    private DeadlineService $termijnService;
+    private DeadlineService $deadlineService;
     private IngebrekestellingService $service;
 
     protected function setUp(): void
@@ -64,8 +64,8 @@ class IngebrekestellingServiceTest extends TestCase
         );
 
         $logger               = $this->createMock(LoggerInterface::class);
-        $this->termijnService = new DeadlineService($settings, $logger);
-        $this->service        = new IngebrekestellingService($settings, $this->termijnService, $logger);
+        $this->deadlineService = new DeadlineService($settings, $logger);
+        $this->service        = new IngebrekestellingService($settings, $this->deadlineService, $logger);
 
         // Seed an AWB-default definition.
         $this->objects->saveObject('procest', 'termijnDefinitie', [

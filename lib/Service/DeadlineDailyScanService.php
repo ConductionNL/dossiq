@@ -53,14 +53,14 @@ class DeadlineDailyScanService
      * Constructor.
      *
      * @param SettingsService                 $settingsService   Settings service.
-     * @param DeadlineService                 $termijnService    DeadlineService.
+     * @param DeadlineService                 $deadlineService   DeadlineService.
      * @param DeadlineEscalationService       $escalationService Escalation service.
      * @param LoggerInterface                 $logger            Logger.
      * @param DwangsomCalculationService|null $dwangsomService   Dwangsom calculation service.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly DeadlineService $termijnService,
+        private readonly DeadlineService $deadlineService,
         private readonly DeadlineEscalationService $escalationService,
         private readonly LoggerInterface $logger,
         private readonly ?DwangsomCalculationService $dwangsomService=null,
@@ -228,7 +228,7 @@ class DeadlineDailyScanService
         $pauseEnd = (string) ($row['pauzeDeadline'] ?? '');
         if ($pauseEnd !== '' && $pauseEnd < $now->format('Y-m-d')) {
             $counts['pauseExpired']++;
-            $this->termijnService->recordEvent(
+            $this->deadlineService->recordEvent(
                 termijnInstanceId: $rowId,
                 type: 'pauze-verlopen',
                 grondslag: 'AWB 4:5',
@@ -271,8 +271,8 @@ class DeadlineDailyScanService
     private function recordOverschrijding(string $rowId, DateTimeImmutable $now, array &$counts): void
     {
         $counts['overschreden']++;
-        $this->termijnService->updateTermijnInstance($rowId, ['status' => 'overschreden']);
-        $this->termijnService->recordEvent(
+        $this->deadlineService->updateTermijnInstance($rowId, ['status' => 'overschreden']);
+        $this->deadlineService->recordEvent(
             termijnInstanceId: $rowId,
             type: 'overschreden',
             grondslag: 'AWB 4:13',
@@ -299,7 +299,7 @@ class DeadlineDailyScanService
         }
 
         // Re-read instance to pick up the just-updated status/notificatiesVerstuurd.
-        $latest = $this->termijnService->getTermijnInstance($rowId);
+        $latest = $this->deadlineService->getTermijnInstance($rowId);
         if ($latest === null) {
             return;
         }

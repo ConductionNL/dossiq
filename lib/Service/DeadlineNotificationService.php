@@ -50,13 +50,13 @@ class DeadlineNotificationService
     /**
      * Constructor.
      *
-     * @param DeadlineService            $termijnService Termijn service.
-     * @param BerichtenboxRoutingService $router         Router (procest notification-router).
-     * @param LoggerInterface            $logger         Logger.
-     * @param IJobList|null              $jobList        Optional job list for async dispatch.
+     * @param DeadlineService            $deadlineService Termijn service.
+     * @param BerichtenboxRoutingService $router          Router (procest notification-router).
+     * @param LoggerInterface            $logger          Logger.
+     * @param IJobList|null              $jobList         Optional job list for async dispatch.
      */
     public function __construct(
-        private readonly DeadlineService $termijnService,
+        private readonly DeadlineService $deadlineService,
         private readonly BerichtenboxRoutingService $router,
         private readonly LoggerInterface $logger,
         private readonly ?IJobList $jobList=null,
@@ -132,7 +132,7 @@ class DeadlineNotificationService
             throw new InvalidArgumentException('Unknown template: '.$type);
         }
 
-        $instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+        $instance = $this->deadlineService->getTermijnInstance($termijnInstanceId);
         $payload  = $this->renderTemplate(type: $type, instance: $instance ?? [], context: $context);
 
         $payload['recipient']       = $recipientUserId;

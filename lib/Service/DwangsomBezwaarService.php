@@ -47,12 +47,12 @@ class DwangsomBezwaarService
      * Constructor.
      *
      * @param SettingsService $settingsService Settings.
-     * @param DeadlineService $termijnService  Termijn service for events.
+     * @param DeadlineService $deadlineService Termijn service for events.
      * @param LoggerInterface $logger          Logger.
      */
     public function __construct(
         private readonly SettingsService $settingsService,
-        private readonly DeadlineService $termijnService,
+        private readonly DeadlineService $deadlineService,
         private readonly LoggerInterface $logger,
     ) {
     }//end __construct()
@@ -123,7 +123,7 @@ class DwangsomBezwaarService
         // Record event on termijn.
         $instanceId = (string) ($berekening['termijnInstance'] ?? '');
         if ($instanceId !== '') {
-            $this->termijnService->recordEvent(
+            $this->deadlineService->recordEvent(
                 termijnInstanceId: $instanceId,
                 type: 'bezwaar-ingediend',
                 grondslag: $grondslag,
@@ -207,7 +207,7 @@ class DwangsomBezwaarService
 
         $instanceId = (string) ($berekening['termijnInstance'] ?? '');
         if ($instanceId !== '') {
-            $this->termijnService->recordEvent(
+            $this->deadlineService->recordEvent(
                 termijnInstanceId: $instanceId,
                 type: 'bezwaar-opgelost',
                 grondslag: $grondslag,

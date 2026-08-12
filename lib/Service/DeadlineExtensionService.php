@@ -58,10 +58,10 @@ class DeadlineExtensionService
     /**
      * Constructor.
      *
-     * @param DeadlineService $termijnService DeadlineService.
+     * @param DeadlineService $deadlineService DeadlineService.
      */
     public function __construct(
-        private readonly DeadlineService $termijnService,
+        private readonly DeadlineService $deadlineService,
     ) {
     }//end __construct()
 
@@ -152,7 +152,7 @@ class DeadlineExtensionService
     ): array {
         $this->assertExtensionInput(motivering: $motivering, newEinddatum: $newEinddatum);
 
-        $instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+        $instance = $this->deadlineService->getTermijnInstance($termijnInstanceId);
         if ($instance === null) {
             throw new RuntimeException('TermijnInstance not found: '.$termijnInstanceId);
         }
@@ -163,7 +163,7 @@ class DeadlineExtensionService
         $consumed    = (int) ($instance['aantalVerlengingen'] ?? 0);
         $dagenImpact = $this->calculateDagenImpact(current: $current, newEinddatum: $newEinddatum);
 
-        $updated = $this->termijnService->updateTermijnInstance(
+        $updated = $this->deadlineService->updateTermijnInstance(
             $termijnInstanceId,
             [
                 'einddatumActueel'   => $newEinddatum,
@@ -174,7 +174,7 @@ class DeadlineExtensionService
 
         $context = $this->resolveExtensionContext(mode: $mode);
 
-        $this->termijnService->recordEvent(
+        $this->deadlineService->recordEvent(
             termijnInstanceId: $termijnInstanceId,
             type: 'verleng',
             grondslag: $context['grondslag'],
@@ -301,10 +301,10 @@ class DeadlineExtensionService
         // is the data we actually need.
         $svcDef = null;
         try {
-            $reflection = new ReflectionClass($this->termijnService);
+            $reflection = new ReflectionClass($this->deadlineService);
             if ($reflection->hasProperty('definitieCache') === true) {
                 $prop  = $reflection->getProperty('definitieCache');
-                $cache = $prop->getValue($this->termijnService);
+                $cache = $prop->getValue($this->deadlineService);
                 if (is_array($cache) === true) {
                     foreach ($cache as $row) {
                         if (is_array($row) === true && (string) ($row['id'] ?? '') === $defId) {

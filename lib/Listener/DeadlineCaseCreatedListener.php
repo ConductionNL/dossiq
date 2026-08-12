@@ -47,12 +47,12 @@ class DeadlineCaseCreatedListener implements IEventListener
     /**
      * Constructor.
      *
-     * @param DeadlineService          $termijnService DeadlineService.
-     * @param ObjectSchemaSlugResolver $slugResolver   Schema id-to-slug resolver.
-     * @param LoggerInterface          $logger         Logger.
+     * @param DeadlineService          $deadlineService DeadlineService.
+     * @param ObjectSchemaSlugResolver $slugResolver    Schema id-to-slug resolver.
+     * @param LoggerInterface          $logger          Logger.
      */
     public function __construct(
-        private readonly DeadlineService $termijnService,
+        private readonly DeadlineService $deadlineService,
         private readonly ObjectSchemaSlugResolver $slugResolver,
         private readonly LoggerInterface $logger,
     ) {
@@ -89,7 +89,7 @@ class DeadlineCaseCreatedListener implements IEventListener
         }
 
         try {
-            $this->termijnService->createTermijnInstance($caseId, $zaaktype);
+            $this->deadlineService->createTermijnInstance($caseId, $zaaktype);
         } catch (\Throwable $e) {
             // A case without a coupled definition is permissible — debug log only.
             $this->logger->debug(
