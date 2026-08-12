@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest IngebrekestellingService.
+ * Procest NoticeOfDefaultService.
  *
  * Handles AWB 4:17 ingebrekestelling registration: validates the notice
  * against the lapsed TermijnInstance, sets gevalideerd + geldigheidStatus,
@@ -40,7 +40,7 @@ use RuntimeException;
 /**
  * AWB 4:17 ingebrekestelling registration + DwangsomBerekening creation.
  */
-class IngebrekestellingService
+class NoticeOfDefaultService
 {
     public const TARIFF_AWB_PLAFOND = 144200;
     public const TARIFF_AWB_GRACE   = 14;
@@ -73,7 +73,7 @@ class IngebrekestellingService
      *
      * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
      */
-    public function registerIngebrekestelling(
+    public function registerNoticeOfDefault(
         string $termijnInstanceId,
         DateTimeImmutable $ontvangstDatum,
         string $kanaal,
@@ -136,7 +136,7 @@ class IngebrekestellingService
         );
 
         return $row;
-    }//end registerIngebrekestelling()
+    }//end registerNoticeOfDefault()
 
     /**
      * Link the first valid notice to its instance and open the DwangsomBerekening.
@@ -279,7 +279,7 @@ class IngebrekestellingService
             return $object;
         } catch (\Throwable $e) {
             $this->logger->error(
-                'IngebrekestellingService persist failed',
+                'NoticeOfDefaultService persist failed',
                 ['schemaConfigKey' => $schemaConfigKey, 'error' => $e->getMessage()]
             );
             return $object;
