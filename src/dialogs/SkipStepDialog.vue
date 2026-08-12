@@ -21,7 +21,7 @@
 
 			<NcTextArea v-else
 				:model-value="reason"
-				:label="t('procest', 'Reden voor overslaan')"
+				:label="t('procest', 'Reason for skipping')"
 				:placeholder="t('procest', 'Give a reason why this step is being skipped...')"
 				required
 				@update:model-value="v => reason = v" />

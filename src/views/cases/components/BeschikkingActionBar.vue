@@ -102,7 +102,7 @@ export default {
 				link.click()
 				window.URL.revokeObjectURL(url)
 			} catch (e) {
-				this.error = t('procest', 'Het audit-pakket kon niet worden geexporteerd.')
+				this.error = t('procest', 'The audit package could not be exported.')
 			} finally {
 				this.busy = false
 			}
