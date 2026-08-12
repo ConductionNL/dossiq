@@ -85,7 +85,7 @@ export default {
 				const updated = await fn()
 				this.$emit('updated', updated)
 			} catch (e) {
-				this.error = t('procest', 'De actie kon niet worden uitgevoerd.')
+				this.error = t('procest', 'The action could not be performed.')
 			} finally {
 				this.busy = false
 			}
