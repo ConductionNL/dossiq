@@ -195,7 +195,7 @@
                 "required": ["titel", "bewijsstukType", "gekoppeldAan"],
                 "properties": {
                     "titel": { "title": "Title", "type": "string", "maxLength": 255, "description": "Document title" },
-                    "beschrijving": { "title": "Description", "type": "string", "description": "Optional description" },
+                    "description": { "title": "Description", "type": "string", "description": "Optional description" },
                     "bewijsstukType": { "title": "Evidence Document Type", "type": "string", "enum": ["aanvraagdocument", "begroting", "projectplan", "cofinancieringsverklaring", "voortgangsrapport", "urenstaat", "factuur", "bankafschrift", "accountantsverklaring", "eindrapport", "deelnemerslijst", "ander"], "description": "Evidence type", "facetable": true },
                     "gekoppeldAan": { "title": "Linked To", "type": "string", "enum": ["aanvraag", "tussenrapportage", "vaststelling", "verplichtingsbewijs"], "description": "Source phase", "facetable": true },
                     "gekoppeldObjectRef": { "title": "Linked Object Reference", "type": "string", "format": "uuid", "description": "Actual Aanvraag/Tussenrapportage/Vaststelling reference" },

@@ -44,7 +44,7 @@
         "properties": {
           "mandaatNummer":         {"type": "string", "title": "Mandate Number", "description": "Unique number identifying this mandate.", "facetable": true, "maxLength": 64},
           "mandateDecision":       {"type": "string", "title": "Mandate Decision", "description": "Reference to the mandate decision that issued this mandate."},
-          "omschrijving":          {"type": "string", "title": "Description", "description": "Description of this mandate."},
+          "description":           {"type": "string", "title": "Description", "description": "Description of this mandate."},
           "bevoegdheidType":       {"type": "string", "title": "Authority Type", "description": "Type classification of the authority granted by this mandate.", "enum": ["mandaat", "volmacht", "machtiging"], "default": "mandaat", "facetable": true},
           "gemandateerdeRol":      {"type": "string", "title": "Delegated Role", "description": "OrganisatieRol id"},
           "legalBasis":            {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate.", "maxLength": 255},
