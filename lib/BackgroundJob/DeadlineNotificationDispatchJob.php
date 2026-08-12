@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @psalm-suppress UnusedClass
  */
-class TermijnNotificationDispatchJob extends QueuedJob
+class DeadlineNotificationDispatchJob extends QueuedJob
 {
     /**
      * Constructor.
@@ -66,11 +66,13 @@ class TermijnNotificationDispatchJob extends QueuedJob
      *                        `type`, `termijnInstanceId`, `recipientUserId`, `context`.
      *
      * @return void
+     *
+     * @spec openspec/specs/burger-notifications/spec.md
      */
     protected function run($argument): void
     {
         if (is_array($argument) === false) {
-            $this->logger->warning('TermijnNotificationDispatchJob: invalid argument');
+            $this->logger->warning('DeadlineNotificationDispatchJob: invalid argument');
             return;
         }
 
@@ -80,7 +82,7 @@ class TermijnNotificationDispatchJob extends QueuedJob
         $context           = (array) ($argument['context'] ?? []);
 
         if ($type === '' || $termijnInstanceId === '' || $recipientUserId === '') {
-            $this->logger->warning('TermijnNotificationDispatchJob: missing required argument keys', $argument);
+            $this->logger->warning('DeadlineNotificationDispatchJob: missing required argument keys', $argument);
             return;
         }
 
@@ -92,12 +94,12 @@ class TermijnNotificationDispatchJob extends QueuedJob
                 $context,
             );
             $this->logger->info(
-                'TermijnNotificationDispatchJob: delivered',
+                'DeadlineNotificationDispatchJob: delivered',
                 ['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termijnInstanceId]
             );
         } catch (\Throwable $e) {
             $this->logger->error(
-                'TermijnNotificationDispatchJob: delivery failed',
+                'DeadlineNotificationDispatchJob: delivery failed',
                 ['error' => $e->getMessage(), 'type' => $type, 'recipient' => $recipientUserId]
             );
         }

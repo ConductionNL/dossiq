@@ -28,6 +28,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Controller;
 
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\LhsLookupService;
 use OCA\Procest\Service\Vth\LhsRecommendationService;
 use OCP\AppFramework\Controller;
@@ -60,6 +61,7 @@ class LhsController extends Controller
      * @param IUserSession             $userSession      User session
      * @param IGroupManager            $groupManager     Group manager
      * @param LoggerInterface          $logger           Logger
+     * @param CaseAccessGuard          $caseAccessGuard  Per-case authorization (fails closed)
      */
     public function __construct(
         string $appName,
@@ -69,6 +71,7 @@ class LhsController extends Controller
         private readonly IUserSession $userSession,
         private readonly IGroupManager $groupManager,
         private readonly LoggerInterface $logger,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -110,6 +113,16 @@ class LhsController extends Controller
             return new JSONResponse(
                 ['error' => 'caseId, ernst, gedrag en actorType zijn verplicht'],
                 Http::STATUS_BAD_REQUEST,
+            );
+        }
+
+        // This endpoint reads as a query but PERSISTS an `lhsRecommendation`
+        // (an enforcement-sanction record) against the named case, so it is
+        // guarded as a mutation.
+        if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(
+                ['error' => 'Not authorized'],
+                Http::STATUS_FORBIDDEN,
             );
         }
 

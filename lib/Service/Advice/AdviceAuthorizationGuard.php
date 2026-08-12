@@ -113,6 +113,53 @@ class AdviceAuthorizationGuard
     }//end assertTransitionAuthorized()
 
     /**
+     * Assert that the caller may dispatch a manual reminder for this advice.
+     *
+     * `POST /api/advice/{id}/remind` sends a notification to the adviseur named
+     * on an advice record the caller picks by UUID. It had no guard at all,
+     * while `assertTransitionAuthorized()` — in this same class, reached from
+     * the same service — guarded the transition path. Anyone could spam any
+     * adviseur, and the response distinguished a real advice UUID from a
+     * fabricated one.
+     *
+     * Same relationship model as an `aangevraagd` transition: the adviseur
+     * themselves, the handler of the linked case, or an admin. Fails closed —
+     * an unauthenticated caller or an unresolvable case denies.
+     *
+     * @param array<string, mixed> $advice The current advice record.
+     *
+     * @return void
+     *
+     * @throws RuntimeException When the caller is not authenticated or not authorized.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function assertReminderAuthorized(array $advice): void
+    {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
+            throw new RuntimeException('Not authenticated');
+        }
+
+        $uid = $user->getUID();
+
+        if ($this->groupManager->isAdmin($uid) === true) {
+            return;
+        }
+
+        $adviseur = (string) ($advice['adviseur'] ?? '');
+        if ($adviseur !== '' && $adviseur === $uid) {
+            return;
+        }
+
+        if ($this->isHandlerOfLinkedCase(advice: $advice, uid: $uid) === true) {
+            return;
+        }
+
+        throw new RuntimeException('Advice request not accessible');
+    }//end assertReminderAuthorized()
+
+    /**
      * Whether a non-admin caller may perform the given advice transition.
      *
      * Returns false for `verlopen` (system-only) and for any unknown

@@ -27,10 +27,12 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\EmailTemplateController;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\EmailTemplateService;
 use OCA\Procest\Service\SettingsService;
 use OCP\AppFramework\Http;
 use OCP\IAppConfig;
+use OCP\IGroupManager;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
@@ -67,6 +69,13 @@ final class EmailTemplateControllerSeedDefaultsTest extends TestCase
     private IUserSession $userSession;
 
     /**
+     * Group manager (admin check on config writes).
+     *
+     * @var IGroupManager|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private IGroupManager $groupManager;
+
+    /**
      * The controller under test.
      *
      * @var EmailTemplateController
@@ -85,14 +94,59 @@ final class EmailTemplateControllerSeedDefaultsTest extends TestCase
         $this->templateService = $this->createMock(EmailTemplateService::class);
         $this->userSession     = $this->createMock(IUserSession::class);
 
+        $this->groupManager = $this->createMock(IGroupManager::class);
+        // Seeding default templates is a config write, so the default caller
+        // in these fixtures is an admin. `testNonAdminIsRejected()` below is
+        // the arm that proves the check can refuse.
+        $this->groupManager->method('isAdmin')->willReturn(true);
+
         $this->controller = new EmailTemplateController(
             request: $this->request,
             templateService: $this->templateService,
             settingsService: $this->createMock(SettingsService::class),
             appConfig: $this->createMock(IAppConfig::class),
             userSession: $this->userSession,
+            groupManager: $this->groupManager,
+            caseAccessGuard: $this->createMock(CaseAccessGuard::class),
         );
     }//end setUp()
+
+
+    /**
+     * A non-admin authenticated caller cannot seed templates, and the service
+     * is never reached.
+     *
+     * An email template's body is mailed to citizens; before this it could be
+     * created by every authenticated account.
+     *
+     * @return void
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function testNonAdminIsRejected(): void
+    {
+        $this->authenticate();
+
+        $groupManager = $this->createMock(IGroupManager::class);
+        $groupManager->method('isAdmin')->willReturn(false);
+
+        $templateService = $this->createMock(EmailTemplateService::class);
+        $templateService->expects($this->never())->method('seedDefaultTemplates');
+
+        $controller = new EmailTemplateController(
+            request: $this->request,
+            templateService: $templateService,
+            settingsService: $this->createMock(SettingsService::class),
+            appConfig: $this->createMock(IAppConfig::class),
+            userSession: $this->userSession,
+            groupManager: $groupManager,
+            caseAccessGuard: $this->createMock(CaseAccessGuard::class),
+        );
+
+        $response = $controller->seedDefaults(caseTypeId: 'ct-1');
+
+        $this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+    }//end testNonAdminIsRejected()
 
 
     /**

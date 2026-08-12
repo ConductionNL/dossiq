@@ -5,8 +5,8 @@
  *
  * REST surface for TermijnInstance lifecycle (create, get, pauze,
  * hervat, verleng, voltooi). Defers all business logic to
- * {@see TermijnService}, {@see TermijnPauseService} and
- * {@see TermijnExtensionService} (ADR-022).
+ * {@see TermijnService}, {@see DeadlinePauseService} and
+ * {@see DeadlineExtensionService} (ADR-022).
  *
  * Auth: @NoAdminRequired — handler / caseworker calls only. Per-object
  * IDOR guard is enforced by re-fetching the instance and verifying the
@@ -36,8 +36,8 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use DateTimeImmutable;
-use OCA\Procest\Service\TermijnExtensionService;
-use OCA\Procest\Service\TermijnPauseService;
+use OCA\Procest\Service\DeadlineExtensionService;
+use OCA\Procest\Service\DeadlinePauseService;
 use OCA\Procest\Service\TermijnService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -51,26 +51,29 @@ use Throwable;
  * REST surface for TermijnInstance lifecycle.
  *
  * @psalm-suppress UnusedClass
+ *
+ * @spec openspec/specs/termijn-binding/spec.md
+ * @spec openspec/specs/termijn-pause-extension/spec.md
  */
 class TermijnController extends Controller
 {
     /**
      * Constructor.
      *
-     * @param string                  $appName     App id.
-     * @param IRequest                $request     Request.
-     * @param TermijnService          $termijn     Termijn service.
-     * @param TermijnPauseService     $pause       Pause service.
-     * @param TermijnExtensionService $extension   Extension service.
-     * @param IUserSession            $userSession User session.
-     * @param LoggerInterface         $logger      Logger.
+     * @param string                   $appName     App id.
+     * @param IRequest                 $request     Request.
+     * @param TermijnService           $termijn     Termijn service.
+     * @param DeadlinePauseService     $pause       Pause service.
+     * @param DeadlineExtensionService $extension   Extension service.
+     * @param IUserSession             $userSession User session.
+     * @param LoggerInterface          $logger      Logger.
      */
     public function __construct(
         string $appName,
         IRequest $request,
         private readonly TermijnService $termijn,
-        private readonly TermijnPauseService $pause,
-        private readonly TermijnExtensionService $extension,
+        private readonly DeadlinePauseService $pause,
+        private readonly DeadlineExtensionService $extension,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
     ) {

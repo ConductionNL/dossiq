@@ -42,7 +42,7 @@ use Psr\Log\LoggerInterface;
  *
  * @template-implements IEventListener<Event>
  */
-class TermijnCaseCreatedListener implements IEventListener
+class DeadlineCaseCreatedListener implements IEventListener
 {
     /**
      * Constructor.

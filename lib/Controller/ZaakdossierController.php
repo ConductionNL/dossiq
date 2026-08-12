@@ -117,13 +117,22 @@ class ZaakdossierController extends Controller
      *
      * @NoAdminRequired
      *
-     * @spec openspec/changes/document-zaakdossier/tasks.md#T05
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function uploadDocument(string $caseId): JSONResponse
     {
         $user = $this->userSession->getUser();
         if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // Its sibling `linkExisting()` below already guards, via
+        // `InformatieobjectReader::guardReadable()` — but that guard is about
+        // the DOCUMENT, and upload has no existing document to check. The
+        // missing half is the CASE, so this endpoint wrote attachments into
+        // any case on the instance.
+        if ($this->uploadHandler->hasCaseUploadAccess(user: $user, caseId: $caseId) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         $metadata = $this->uploadHandler->decodeMetadata(raw: $this->request->getParam('metadata', '{}'));

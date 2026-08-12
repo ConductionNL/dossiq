@@ -163,15 +163,53 @@ class AdviceService
     }//end applyTransition()
 
     /**
-     * Dispatch a reminder notification to the adviseur.
+     * Dispatch a reminder on behalf of the authenticated caller.
      *
-     * Called by the manual remind endpoint and by the daily deadline cron.
+     * The HTTP seam. `POST /api/advice/{id}/remind` used to call
+     * {@see self::dispatchReminder()} directly, which has no authorization —
+     * so any authenticated user could make any adviseur receive a reminder for
+     * any advice request, and the endpoint doubled as an existence oracle for
+     * advice UUIDs. This mirrors the split that already exists in this class
+     * between `transitionStatus()` (authorizes, then delegates) and
+     * `applyTransition()` (the system/cron seam).
      *
      * @param string $adviceId The advice UUID
      *
      * @return void
+     *
+     * @throws RuntimeException When the advice is not accessible to the caller.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function dispatchReminderAsUser(string $adviceId): void
+    {
+        $advice = $this->repository->find(adviceId: $adviceId);
+        if ($advice === null) {
+            // Collapsed with denied, as in transitionStatus(): no existence
+            // oracle for advice UUIDs.
+            throw new RuntimeException('Advice request not accessible');
+        }
 
-     * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+        $this->guard->assertReminderAuthorized(advice: $advice);
+
+        $this->dispatchReminder(adviceId: $adviceId);
+    }//end dispatchReminderAsUser()
+
+    /**
+     * Dispatch a reminder notification to the adviseur WITHOUT an
+     * authorization check.
+     *
+     * TRUST BOUNDARY: this is the system/cron seam (`AdviceDeadlineJob`), which
+     * runs with no user session. It must only be called from
+     * {@see self::dispatchReminderAsUser()} (which authorizes first) or from a
+     * code-driven background job. Never call it with user-supplied intent that
+     * has not been through `assertReminderAuthorized()`.
+     *
+     * @param string $adviceId The advice UUID
+     *
+     * @return void
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function dispatchReminder(string $adviceId): void
     {

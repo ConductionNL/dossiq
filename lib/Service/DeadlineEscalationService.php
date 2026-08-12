@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Procest TermijnEscalationService.
+ * Procest DeadlineEscalationService.
  *
  * Resolves per-threshold escalation recipients and dispatches escalation
  * notifications when a TermijnInstance reaches a configured proximity
@@ -35,7 +35,7 @@ use Psr\Log\LoggerInterface;
 /**
  * Threshold-aware escalation dispatcher for the daily termijn scan.
  */
-class TermijnEscalationService
+class DeadlineEscalationService
 {
     /**
      * Default escalation matrix.

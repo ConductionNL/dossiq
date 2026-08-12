@@ -37,6 +37,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\BeroepDossierExport;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -54,11 +55,12 @@ class DossierExportController extends Controller
     /**
      * Constructor.
      *
-     * @param string              $appName       The app name.
-     * @param IRequest            $request       The HTTP request.
-     * @param BeroepDossierExport $dossierExport The export service.
-     * @param IUserSession        $userSession   The current session.
-     * @param LoggerInterface     $logger        The logger.
+     * @param string              $appName         The app name.
+     * @param IRequest            $request         The HTTP request.
+     * @param BeroepDossierExport $dossierExport   The export service.
+     * @param IUserSession        $userSession     The current session.
+     * @param LoggerInterface     $logger          The logger.
+     * @param CaseAccessGuard     $caseAccessGuard Per-case authorization (fails closed).
      *
      * @return void
      */
@@ -68,6 +70,7 @@ class DossierExportController extends Controller
         private readonly BeroepDossierExport $dossierExport,
         private readonly IUserSession $userSession,
         private readonly LoggerInterface $logger,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -85,12 +88,19 @@ class DossierExportController extends Controller
      */
     public function export(string $caseId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
         if (trim($caseId) === '') {
             return new JSONResponse(['error' => 'A case id is required'], Http::STATUS_BAD_REQUEST);
+        }
+
+        // The plan spans every case linked via `_sourceCase`, so one
+        // unauthorised export walks a whole bezwaar/beroep chain.
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         try {

@@ -6,7 +6,7 @@
  * Daily background job that drives the AWB termijnbewaking sweep:
  * computes days-to-deadline for every active TermijnInstance, flips
  * overdue rows to `overschreden`, raises pause-expiry events, and
- * dispatches threshold escalation via {@see TermijnEscalationService}.
+ * dispatches threshold escalation via {@see DeadlineEscalationService}.
  *
  * @category BackgroundJob
  * @package  OCA\Procest\BackgroundJob
@@ -29,7 +29,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\BackgroundJob;
 
-use OCA\Procest\Service\TermijnDailyScanService;
+use OCA\Procest\Service\DeadlineDailyScanService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
@@ -37,20 +37,22 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Daily timed job: AWB termijnbewaking sweep + escalation.
+ *
+ * @spec openspec/specs/termijn-escalation/spec.md
  */
-class DailyTermijnScanJob extends TimedJob
+class DailyDeadlineScanJob extends TimedJob
 {
     /**
      * Constructor.
      *
-     * @param ITimeFactory            $time       Time factory.
-     * @param TermijnDailyScanService $scan       Scan service.
-     * @param IAppManager             $appManager App manager.
-     * @param LoggerInterface         $logger     Logger.
+     * @param ITimeFactory             $time       Time factory.
+     * @param DeadlineDailyScanService $scan       Scan service.
+     * @param IAppManager              $appManager App manager.
+     * @param LoggerInterface          $logger     Logger.
      */
     public function __construct(
         ITimeFactory $time,
-        private readonly TermijnDailyScanService $scan,
+        private readonly DeadlineDailyScanService $scan,
         private readonly IAppManager $appManager,
         private readonly LoggerInterface $logger,
     ) {
