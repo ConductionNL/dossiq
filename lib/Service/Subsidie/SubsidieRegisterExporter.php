@@ -91,7 +91,7 @@ class SubsidieRegisterExporter
             ],
             'doel'      => (string) ($regeling['doelgroep'] ?? ''),
             'status'    => $status,
-            'grondslag' => (string) ($beschikking['wettelijkeGrondslag'] ?? ''),
+            'grondslag' => (string) ($beschikking['legalBasis'] ?? ''),
         ];
     }//end toFeedEntry()
 

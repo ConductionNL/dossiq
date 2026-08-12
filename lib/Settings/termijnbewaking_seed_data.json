@@ -3,7 +3,7 @@
     {
       "id": "td-omgevingsvergunning-regulier",
       "zaaktype": "omgevingsvergunning-regulier",
-      "wettelijkeGrondslag": "Wabo 3.9 lid 1",
+      "legalBasis": "Wabo 3.9 lid 1",
       "standaardDuurDagen": 56,
       "standaardDuurWeken": 8,
       "verlengingsRuimte": 42,
@@ -14,7 +14,7 @@
     {
       "id": "td-wmo-aanvraag",
       "zaaktype": "wmo-melding",
-      "wettelijkeGrondslag": "Wmo 2015 art 2.3.5",
+      "legalBasis": "Wmo 2015 art 2.3.5",
       "standaardDuurDagen": 42,
       "standaardDuurWeken": 6,
       "verlengingsRuimte": 0,
@@ -25,7 +25,7 @@
     {
       "id": "td-woo-verzoek",
       "zaaktype": "woo-verzoek",
-      "wettelijkeGrondslag": "Woo art 4.4",
+      "legalBasis": "Woo art 4.4",
       "standaardDuurDagen": 28,
       "standaardDuurWeken": 4,
       "verlengingsRuimte": 14,

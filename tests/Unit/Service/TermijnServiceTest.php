@@ -37,6 +37,7 @@ use RuntimeException;
  */
 class TermijnServiceTest extends TestCase
 {
+
     private FakeTermijnStore $objects;
 
     private TermijnService $service;
@@ -61,23 +62,31 @@ class TermijnServiceTest extends TestCase
         $this->service = new TermijnService($settings, $this->createMock(LoggerInterface::class));
 
         // Seed two definitions: omgevingsvergunning 56d (active) + Wmo 42d (active).
-        $this->objects->saveObject('procest', 'termijnDefinitie', [
-            'id'                  => 'td-omgevingsvergunning-regulier',
-            'zaaktype'            => 'omgevingsvergunning-regulier',
-            'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
-            'standaardDuurDagen'  => 56,
-            'aantalVerlengingen'  => 1,
-            'validFrom'           => '2026-01-01',
-        ]);
-        $this->objects->saveObject('procest', 'termijnDefinitie', [
-            'id'                  => 'td-wmo-aanvraag',
-            'zaaktype'            => 'wmo-melding',
-            'wettelijkeGrondslag' => 'Wmo 2015 art 2.3.5',
-            'standaardDuurDagen'  => 42,
-            'aantalVerlengingen'  => 0,
-            'validFrom'           => '2026-01-01',
-        ]);
-    }
+        $this->objects->saveObject(
+                'procest',
+                'termijnDefinitie',
+                [
+                    'id'                 => 'td-omgevingsvergunning-regulier',
+                    'zaaktype'           => 'omgevingsvergunning-regulier',
+                    'legalBasis'         => 'Wabo 3.9 lid 1',
+                    'standaardDuurDagen' => 56,
+                    'aantalVerlengingen' => 1,
+                    'validFrom'          => '2026-01-01',
+                ]
+                );
+        $this->objects->saveObject(
+                'procest',
+                'termijnDefinitie',
+                [
+                    'id'                 => 'td-wmo-aanvraag',
+                    'zaaktype'           => 'wmo-melding',
+                    'legalBasis'         => 'Wmo 2015 art 2.3.5',
+                    'standaardDuurDagen' => 42,
+                    'aantalVerlengingen' => 0,
+                    'validFrom'          => '2026-01-01',
+                ]
+                );
+    }//end setUp()
 
     /**
      * @return void
@@ -100,7 +109,7 @@ class TermijnServiceTest extends TestCase
         self::assertSame('start', $event['type']);
         self::assertSame(56, $event['dagenImpact']);
         self::assertSame('Wabo 3.9 lid 1', $event['grondslag']);
-    }
+    }//end testCreateTermijnInstanceForOmgevingsvergunningHas56DayDeadline()
 
     /**
      * @return void
@@ -111,7 +120,7 @@ class TermijnServiceTest extends TestCase
         $instance = $this->service->createTermijnInstance('Z/2026/124', 'wmo-melding', $start);
 
         self::assertSame('2026-07-13', $instance['einddatumBerekend']);
-    }
+    }//end testCreateTermijnInstanceForWmoHas42DayDeadline()
 
     /**
      * @return void
@@ -122,7 +131,7 @@ class TermijnServiceTest extends TestCase
         $this->expectExceptionMessage('REQ-TERM-001-A');
 
         $this->service->createTermijnInstance('Z/2026/125', 'unknown-zaaktype');
-    }
+    }//end testCreateTermijnInstanceFailsWithoutMatchingDefinition()
 
     /**
      * @return void
@@ -130,13 +139,17 @@ class TermijnServiceTest extends TestCase
     public function testGetTermijnDefinitieReturnsLatestActiveVersion(): void
     {
         // Add a newer version of the omgevingsvergunning definition.
-        $this->objects->saveObject('procest', 'termijnDefinitie', [
-            'id'                  => 'td-omgevingsvergunning-regulier-v2',
-            'zaaktype'            => 'omgevingsvergunning-regulier',
-            'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
-            'standaardDuurDagen'  => 70,
-            'validFrom'           => '2026-03-01',
-        ]);
+        $this->objects->saveObject(
+                'procest',
+                'termijnDefinitie',
+                [
+                    'id'                 => 'td-omgevingsvergunning-regulier-v2',
+                    'zaaktype'           => 'omgevingsvergunning-regulier',
+                    'legalBasis'         => 'Wabo 3.9 lid 1',
+                    'standaardDuurDagen' => 70,
+                    'validFrom'          => '2026-03-01',
+                ]
+                );
 
         // Reset cache by creating a new service.
         $settings = $this->createMock(SettingsService::class);
@@ -158,7 +171,7 @@ class TermijnServiceTest extends TestCase
         self::assertNotNull($resolved);
         self::assertSame('td-omgevingsvergunning-regulier-v2', $resolved['id']);
         self::assertSame(70, $resolved['standaardDuurDagen']);
-    }
+    }//end testGetTermijnDefinitieReturnsLatestActiveVersion()
 
     /**
      * @return void
@@ -176,14 +189,14 @@ class TermijnServiceTest extends TestCase
         $events    = array_values($this->objects->store['termijnGebeurtenis'] ?? []);
         $voltooiEv = array_values(array_filter($events, static fn (array $e): bool => $e['type'] === 'voltooi'));
         self::assertCount(1, $voltooiEv);
-    }
+    }//end testMarkTermijnCompletedRecordsVoltooiEvent()
 
     /**
      * @return void
      */
     public function testGetTermijnInstanceForZaakReturnsLatest(): void
     {
-        $first = $this->service->createTermijnInstance(
+        $first  = $this->service->createTermijnInstance(
             'Z/2026/127',
             'wmo-melding',
             new DateTimeImmutable('2026-05-01T10:00:00+00:00')
@@ -197,7 +210,7 @@ class TermijnServiceTest extends TestCase
         $resolved = $this->service->getTermijnInstanceForZaak('Z/2026/127');
         self::assertNotNull($resolved);
         self::assertSame($second['id'], $resolved['id']);
-    }
+    }//end testGetTermijnInstanceForZaakReturnsLatest()
 
     /**
      * Version-pinning: an existing TermijnInstance keeps its original
@@ -224,13 +237,17 @@ class TermijnServiceTest extends TestCase
         self::assertSame('2026-03-12', $existing['einddatumBerekend']);
 
         // Phase 2 — publish a new v2 (70 days) for the same zaaktype.
-        $this->objects->saveObject('procest', 'termijnDefinitie', [
-            'id'                  => 'td-omgevingsvergunning-regulier-v2',
-            'zaaktype'            => 'omgevingsvergunning-regulier',
-            'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
-            'standaardDuurDagen'  => 70,
-            'validFrom'           => '2026-03-01',
-        ]);
+        $this->objects->saveObject(
+                'procest',
+                'termijnDefinitie',
+                [
+                    'id'                 => 'td-omgevingsvergunning-regulier-v2',
+                    'zaaktype'           => 'omgevingsvergunning-regulier',
+                    'legalBasis'         => 'Wabo 3.9 lid 1',
+                    'standaardDuurDagen' => 70,
+                    'validFrom'          => '2026-03-01',
+                ]
+                );
 
         // Phase 3 — re-fetch the same instance: definitie reference is
         // the v1 row, NOT v2. The instance row was persisted with the v1 id
@@ -266,8 +283,8 @@ class TermijnServiceTest extends TestCase
         self::assertSame('td-omgevingsvergunning-regulier-v2', $fresh['termijnDefinitie']);
         // 2026-04-01 + 70 days = 2026-06-10.
         self::assertSame('2026-06-10', $fresh['einddatumBerekend']);
-    }
-}
+    }//end testExistingTermijnInstanceRetainsOriginalDefinitieAfterVersionBump()
+}//end class
 
 // `FakeTermijnStore` is now declared in tests/Unit/Fixtures/FakeTermijnStore.php
 // and loaded by tests/bootstrap.php so every termijnbewaking + archief-edepot

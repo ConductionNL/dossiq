@@ -217,7 +217,10 @@ class MandaatImportService
             'mandateDecision'     => $besluitId,
             'omschrijving'        => (string) ($row['omschrijving'] ?? ''),
             'gemandateerdeRol'    => (string) $row['gemandateerdeRol'],
-            'wettelijkeGrondslag' => (string) ($row['wettelijkeGrondslag'] ?? ''),
+            // Key = the schema property (renamed). Value = a CSV COLUMN HEADER,
+            // which is an external input format the operator's file already
+            // uses, so both spellings are read.
+            'legalBasis'          => (string) ($row['legalBasis'] ?? $row['wettelijkeGrondslag'] ?? ''),
             'voorwaarden'         => [
                 'plafondCents'  => (int) ($row['plafondCents'] ?? 0),
                 'subdelegatie'  => $this->csvParser->parseBool(value: (string) ($row['subdelegatie'] ?? 'false')),
@@ -257,7 +260,7 @@ class MandaatImportService
     private function collectChangedFields(array $existing, array $payload): array
     {
         $changedFields = [];
-        foreach (['omschrijving', 'gemandateerdeRol', 'wettelijkeGrondslag'] as $f) {
+        foreach (['omschrijving', 'gemandateerdeRol', 'legalBasis'] as $f) {
             if ((string) ($existing[$f] ?? '') !== (string) $payload[$f]) {
                 $changedFields[] = $f;
             }

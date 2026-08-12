@@ -45,10 +45,10 @@
 				<label class="required" for="me-grond">{{ t('procest', 'Legal basis') }}</label>
 				<NcTextField
 					id="me-grond"
-					:model-value="form.wettelijkeGrondslag"
-					:error="!!errors.wettelijkeGrondslag"
-					:helper-text="errors.wettelijkeGrondslag"
-					@update:model-value="v => form.wettelijkeGrondslag = v" />
+					:model-value="form.legalBasis"
+					:error="!!errors.legalBasis"
+					:helper-text="errors.legalBasis"
+					@update:model-value="v => form.legalBasis = v" />
 			</div>
 
 			<div class="form-group">
@@ -143,7 +143,7 @@ export default {
 				mandaatNummer: this.mandaat?.mandaatNummer || '',
 				omschrijving: this.mandaat?.omschrijving || '',
 				bevoegdheidType: this.mandaat?.bevoegdheidType || 'beslissingsbevoegdheid',
-				wettelijkeGrondslag: this.mandaat?.wettelijkeGrondslag || '',
+				legalBasis: this.mandaat?.legalBasis || '',
 				inWerkingtreding: this.mandaat?.inWerkingtreding || new Date().toISOString().slice(0, 10),
 				vervaldatum: this.mandaat?.vervaldatum || '',
 				toegewezenRol: this.mandaat?.toegewezenRol || '',
@@ -185,7 +185,7 @@ export default {
 			if (!this.form.mandaatNummer) errs.mandaatNummer = t('procest', 'Mandaatnummer is required')
 			if (!this.form.omschrijving) errs.omschrijving = t('procest', 'Omschrijving is required')
 			if (!this.form.bevoegdheidType) errs.bevoegdheidType = t('procest', 'Bevoegdheidstype is required')
-			if (!this.form.wettelijkeGrondslag) errs.wettelijkeGrondslag = t('procest', 'Wettelijke grondslag is required')
+			if (!this.form.legalBasis) errs.legalBasis = t('procest', 'Wettelijke grondslag is required')
 			try {
 				this.form.voorwaarden = this.voorwaardenJson.trim() ? JSON.parse(this.voorwaardenJson) : {}
 			} catch (e) {
