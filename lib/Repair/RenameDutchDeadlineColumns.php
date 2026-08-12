@@ -136,6 +136,29 @@ class RenameDutchDeadlineColumns implements IRepairStep
         'verval_datum'         => 'expiry_date',
         'vorig_besluit'        => 'previous_decision',
         'mandaterings_besluit' => 'mandate_decision',
+
+        // mandaat -> mandate. All four owning schemas (mandaat, mandaatGebruik,
+        // mandaatEscalatie, mandaatRegeling) are renamed in this same change and
+        // all four live in the `procest` register, so this map's scope covers
+        // every owner — no declaration is left pointing at a Dutch column.
+        //
+        // Ownership was checked per property first: each of these is declared by
+        // exactly ONE schema. That check is what keeps a shared column out of a
+        // register-scoped map.
+        //
+        // NOT here: `mandaatregeling_id` and the `mandaat_niveau` inside
+        // `mandateGranted`. Those are NESTED under an object property, so they
+        // live in the JSON of that column rather than as columns of their own.
+        // A column rename cannot reach them; they need a JSON-rewrite migration,
+        // which is a different mechanism and a separate change.
+        'mandaat_nummer'       => 'mandate_number',
+        'mandaat_id'           => 'mandate_id',
+        'mandaat_versie_id'    => 'mandate_version_id',
+        'target_mandaat_id'    => 'target_mandate_id',
+        'mandaat_groepen'      => 'mandate_groups',
+        'ondermandaat_toegestaan' => 'sub_mandate_allowed',
+        'mandaat_niveau'       => 'mandate_level',
+        'mandaat_gegeven'      => 'mandate_granted',
     ];
 
     /**
