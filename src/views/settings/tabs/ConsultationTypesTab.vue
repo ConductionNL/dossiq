@@ -15,7 +15,7 @@
 			<NcSelect
 				v-model="selectedCaseTypeId"
 				:options="caseTypeOptions"
-				:aria-label-combobox="t('procest', 'Selecteer zaaktype')"
+				:aria-label-combobox="t('procest', 'Select case type')"
 				label="label"
 				:reduce="opt => opt.value"
 				:placeholder="t('procest', 'Select a case type')" />
@@ -55,7 +55,7 @@
 					<NcCheckboxRadioSwitch
 						:model-value="ct.mandatory"
 						@update:model-value="v => ct.mandatory = v">
-						{{ t('procest', 'Verplicht') }}
+						{{ t('procest', 'Required') }}
 					</NcCheckboxRadioSwitch>
 
 					<NcButton type="tertiary-no-background" @click="removeType(idx)">

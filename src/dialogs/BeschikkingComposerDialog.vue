@@ -14,7 +14,7 @@
 						:input-label="t('procest', 'Sjabloon')"
 						label="label"
 						:reduce="opt => opt.value"
-						:placeholder="t('procest', 'Selecteer een sjabloon')" />
+						:placeholder="t('procest', 'Select a template')" />
 				</div>
 				<div class="beschikking-composer__field">
 					<NcTextField :model-value="geadresseerdeNaam"

@@ -26,7 +26,7 @@
 						:id="'stem-' + agendaCase.id"
 						v-model="forms[agendaCase.id].stemuitslag"
 						type="text"
-						:placeholder="t('procest', 'bijv. Unaniem of 23 voor / 8 tegen')">
+						:placeholder="t('procest', 'e.g. Unanimous or 23 for / 8 against')">
 
 					<label :for="'leden-' + agendaCase.id">{{ t('procest', 'Aanwezige leden (komma-gescheiden)') }}</label>
 					<input

@@ -3,7 +3,7 @@
 <template>
 	<div class="parafeer-stap-editor">
 		<div v-if="!steps.length" class="parafeer-stap-editor__empty">
-			{{ t('procest', 'Nog geen stappen. Voeg een stap toe om te beginnen.') }}
+			{{ t('procest', 'No steps yet. Add a step to get started.') }}
 		</div>
 		<div v-for="(step, idx) in steps"
 			:key="idx"
@@ -34,7 +34,7 @@
 				:model-value="step.mandatory"
 				class="parafeer-stap-editor__mandatory"
 				@update:model-value="v => updateStep(idx, 'mandatory', v)">
-				{{ t('procest', 'Verplicht') }}
+				{{ t('procest', 'Required') }}
 			</NcCheckboxRadioSwitch>
 			<div class="parafeer-stap-editor__actions">
 				<NcButton :disabled="idx === 0"
