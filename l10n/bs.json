@@ -2008,14 +2008,14 @@
         "Besluit vastleggen": "Evidentiraj odluku",
         "Aanhouden": "Odgodi",
         "Gepubliceerd": "Objavljeno",
-        "Bekijk publicatie in DROP/LVBB": "Pogledaj objavu u DROP/LVBB",
+        "View publication in DROP/LVBB": "Pogledaj objavu u DROP/LVBB",
         "Publicatie mislukt": "Objava nije uspjela",
-        "De publicatie kon niet worden verstuurd.": "Objava nije mogla biti poslana.",
+        "The publication could not be sent.": "Objava nije mogla biti poslana.",
         "Opnieuw proberen": "Pokušaj ponovo",
         "Publicatie in behandeling": "Objava u obradi",
         "Nu publiceren": "Objavi sada",
-        "Er is geen DROP/LVBB-endpoint geconfigureerd.": "Nije konfigurisan DROP/LVBB endpoint.",
-        "Er is nog geen besluit vastgelegd om te publiceren.": "Još nije evidentirana nijedna odluka za objavu."
+        "No DROP/LVBB endpoint has been configured.": "Nije konfigurisan DROP/LVBB endpoint.",
+        "No decision has been recorded to publish yet.": "Još nije evidentirana nijedna odluka za objavu."
     },
     "plurals": ""
 }

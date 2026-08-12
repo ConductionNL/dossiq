@@ -2008,14 +2008,14 @@
         "Besluit vastleggen": "Registrar la decisiun",
         "Aanhouden": "Suspender",
         "Gepubliceerd": "Publitgà",
-        "Bekijk publicatie in DROP/LVBB": "Vesair la publicaziun en DROP/LVBB",
+        "View publication in DROP/LVBB": "Vesair la publicaziun en DROP/LVBB",
         "Publicatie mislukt": "Publicaziun betg reussida",
-        "De publicatie kon niet worden verstuurd.": "La publicaziun n'ha betg pudì vegnir tramessa.",
+        "The publication could not be sent.": "La publicaziun n'ha betg pudì vegnir tramessa.",
         "Opnieuw proberen": "Empruvar danovamain",
         "Publicatie in behandeling": "Publicaziun en elavuraziun",
         "Nu publiceren": "Publitgar ussa",
-        "Er is geen DROP/LVBB-endpoint geconfigureerd.": "Nagin endpoint DROP/LVBB n'è configurà.",
-        "Er is nog geen besluit vastgelegd om te publiceren.": "I n'è anc registrada nagina decisiun per publitgar."
+        "No DROP/LVBB endpoint has been configured.": "Nagin endpoint DROP/LVBB n'è configurà.",
+        "No decision has been recorded to publish yet.": "I n'è anc registrada nagina decisiun per publitgar."
     },
     "plurals": ""
 }

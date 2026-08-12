@@ -2008,14 +2008,14 @@
         "Besluit vastleggen": "Запиши одлука",
         "Aanhouden": "Одложи",
         "Gepubliceerd": "Објавено",
-        "Bekijk publicatie in DROP/LVBB": "Прегледај ја објавата во DROP/LVBB",
+        "View publication in DROP/LVBB": "Прегледај ја објавата во DROP/LVBB",
         "Publicatie mislukt": "Објавувањето не успеа",
-        "De publicatie kon niet worden verstuurd.": "Објавата не можеше да се испрати.",
+        "The publication could not be sent.": "Објавата не можеше да се испрати.",
         "Opnieuw proberen": "Обиди се повторно",
         "Publicatie in behandeling": "Објавата е во обработка",
         "Nu publiceren": "Објави сега",
-        "Er is geen DROP/LVBB-endpoint geconfigureerd.": "Не е конфигурирана крајна точка за DROP/LVBB.",
-        "Er is nog geen besluit vastgelegd om te publiceren.": "Сè уште нема запишана одлука за објавување."
+        "No DROP/LVBB endpoint has been configured.": "Не е конфигурирана крајна точка за DROP/LVBB.",
+        "No decision has been recorded to publish yet.": "Сè уште нема запишана одлука за објавување."
     },
     "plurals": ""
 }
