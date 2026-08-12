@@ -165,17 +165,17 @@ describe('deelzaak store', () => {
 	})
 
 	describe('unlinkSubCases', () => {
-		it('returns the unlinked count and evicts the stale cache entry for the parent', async () => {
+		it('returns the full unlink result and evicts the stale cache entry for the parent', async () => {
 			// Warm the cache first.
 			apiFetchSubCaseCounts.mockResolvedValueOnce({ p1: 4, p2: 1 })
 			await store.fetchSubCaseCounts(['p1', 'p2'])
 			expect(store.getSubCaseCount('p1')).toBe(4)
 
-			apiUnlinkSubCases.mockResolvedValueOnce(4)
-			const unlinked = await store.unlinkSubCases('p1')
+			apiUnlinkSubCases.mockResolvedValueOnce({ unlinked: 4, failed: 0, total: 4, complete: true })
+			const result = await store.unlinkSubCases('p1')
 
 			expect(apiUnlinkSubCases).toHaveBeenCalledWith('p1')
-			expect(unlinked).toBe(4)
+			expect(result).toEqual({ unlinked: 4, failed: 0, total: 4, complete: true })
 			// p1's cached count is dropped so the UI re-reads fresh; p2 untouched.
 			expect(store.getSubCaseCount('p1')).toBe(0)
 			expect(store.getSubCaseCount('p2')).toBe(1)
@@ -183,10 +183,22 @@ describe('deelzaak store', () => {
 		})
 
 		it('is a no-op on the cache when the parent had no cached count', async () => {
-			apiUnlinkSubCases.mockResolvedValueOnce(0)
-			const unlinked = await store.unlinkSubCases('never-cached')
-			expect(unlinked).toBe(0)
+			apiUnlinkSubCases.mockResolvedValueOnce({ unlinked: 0, failed: 0, total: 0, complete: true })
+			const result = await store.unlinkSubCases('never-cached')
+			expect(result.unlinked).toBe(0)
 			expect(store.subCaseCounts).toEqual({})
+		})
+
+		// procest#793: a partial unlink must surface as complete:false so the
+		// caller refuses to delete the parent. The store must pass it through
+		// untouched — swallowing it here would restore the silent-orphan bug.
+		it('passes an incomplete unlink through so the caller can abort the delete', async () => {
+			apiUnlinkSubCases.mockResolvedValueOnce({ unlinked: 197, failed: 3, total: 200, complete: false })
+			const result = await store.unlinkSubCases('p1')
+
+			expect(result.complete).toBe(false)
+			expect(result.failed).toBe(3)
+			expect(result.total).toBe(200)
 		})
 	})
 })

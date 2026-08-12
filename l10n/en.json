@@ -3124,7 +3124,8 @@
         "Select field {field}": "Select field {field}",
         "Select redaction candidate {category}": "Select redaction candidate {category}",
         "Saving failed": "Saving failed",
-        "Saving failed ({status})": "Saving failed ({status})"
+        "Saving failed ({status})": "Saving failed ({status})",
+        "{failed} of {total} sub-cases could not be detached, so the case was not deleted. Detach them first, then try again.": "{failed} of {total} sub-cases could not be detached, so the case was not deleted. Detach them first, then try again."
     },
     "plurals": ""
 }
