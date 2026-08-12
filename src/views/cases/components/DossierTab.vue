@@ -257,7 +257,7 @@ export default {
 			}
 		},
 		/**
-		 * Resolve a type id to its omschrijving label.
+		 * Resolve a type id to its description label.
 		 *
 		 * @param {string} typeId The type id.
 		 * @return {string} The label.
@@ -265,7 +265,7 @@ export default {
 		 */
 		typeLabel(typeId) {
 			const match = this.types.find(type => (type.id || type.uuid) === typeId)
-			return match ? (match.omschrijving || typeId) : (typeId || this.t('procest', 'Unknown type'))
+			return match ? (match.description || typeId) : (typeId || this.t('procest', 'Unknown type'))
 		},
 		/**
 		 * Open the native file picker.

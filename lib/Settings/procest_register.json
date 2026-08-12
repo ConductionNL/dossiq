@@ -7471,7 +7471,7 @@
                 "type": "object",
                 "required": [
                     "onderwerp",
-                    "omschrijving",
+                    "description",
                     "ontvangstdatum"
                 ],
                 "properties": {
@@ -7516,7 +7516,7 @@
                         "x-translatable": true,
                         "title": "Subject"
                     },
-                    "omschrijving": {
+                    "description": {
                         "type": "string",
                         "description": "Detailed description of the complaint",
                         "title": "Description"

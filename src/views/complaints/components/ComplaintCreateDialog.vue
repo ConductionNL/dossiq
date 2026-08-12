@@ -21,14 +21,14 @@
 			</div>
 
 			<div class="form-group">
-				<label for="complaint-create-omschrijving">{{ t('procest', 'Description') }} *</label>
+				<label for="complaint-create-description">{{ t('procest', 'Description') }} *</label>
 				<textarea
-					id="complaint-create-omschrijving"
-					v-model="form.omschrijving"
+					id="complaint-create-description"
+					v-model="form.description"
 					rows="4"
-					:class="{ 'input--error': errors.omschrijving }" />
-				<p v-if="errors.omschrijving" class="form-error">
-					{{ errors.omschrijving }}
+					:class="{ 'input--error': errors.description }" />
+				<p v-if="errors.description" class="form-error">
+					{{ errors.description }}
 				</p>
 			</div>
 
@@ -116,7 +116,7 @@ export default {
 			saving: false,
 			form: {
 				onderwerp: '',
-				omschrijving: '',
+				description: '',
 				klagerNaam: '',
 				klagerEmail: '',
 				ontvangstkanaal: null,
@@ -155,8 +155,8 @@ export default {
 			if (!this.form.onderwerp.trim()) {
 				this.errors.onderwerp = this.t('procest', 'Subject is required')
 			}
-			if (!this.form.omschrijving.trim()) {
-				this.errors.omschrijving = this.t('procest', 'Description is required')
+			if (!this.form.description.trim()) {
+				this.errors.description = this.t('procest', 'Description is required')
 			}
 			return Object.keys(this.errors).length === 0
 		},

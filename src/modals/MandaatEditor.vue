@@ -24,10 +24,10 @@
 				<label class="required" for="me-omschr">{{ t('procest', 'Description') }}</label>
 				<textarea
 					id="me-omschr"
-					v-model="form.omschrijving"
+					v-model="form.description"
 					class="mandaat-editor__textarea"
 					rows="3" />
-				<span v-if="errors.omschrijving" class="field-error">{{ errors.omschrijving }}</span>
+				<span v-if="errors.description" class="field-error">{{ errors.description }}</span>
 			</div>
 
 			<div class="form-group">
@@ -141,7 +141,7 @@ export default {
 			errors: {},
 			form: {
 				mandateNumber: this.mandaat?.mandateNumber || '',
-				omschrijving: this.mandaat?.omschrijving || '',
+				description: this.mandaat?.description || '',
 				bevoegdheidType: this.mandaat?.bevoegdheidType || 'beslissingsbevoegdheid',
 				legalBasis: this.mandaat?.legalBasis || '',
 				inWerkingtreding: this.mandaat?.inWerkingtreding || new Date().toISOString().slice(0, 10),
@@ -183,7 +183,7 @@ export default {
 		validate() {
 			const errs = {}
 			if (!this.form.mandateNumber) errs.mandateNumber = t('procest', 'Mandaatnummer is required')
-			if (!this.form.omschrijving) errs.omschrijving = t('procest', 'Omschrijving is required')
+			if (!this.form.description) errs.description = t('procest', 'Omschrijving is required')
 			if (!this.form.bevoegdheidType) errs.bevoegdheidType = t('procest', 'Bevoegdheidstype is required')
 			if (!this.form.legalBasis) errs.legalBasis = t('procest', 'Wettelijke grondslag is required')
 			try {

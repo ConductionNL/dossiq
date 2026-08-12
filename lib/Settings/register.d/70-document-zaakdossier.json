@@ -54,7 +54,7 @@
           "creatiedatum":         {"type": "string", "title": "Creation Date", "format": "date", "description": "Creation date (ISO 8601)"},
           "bronorganisatie":      {"type": "string", "title": "Source Organization", "maxLength": 64, "description": "RSIN of the source organization"},
           "taal":                 {"type": "string", "title": "Language", "maxLength": 3, "default": "nld", "description": "ISO 639-2/B language code"},
-          "beschrijving":         {"type": "string", "title": "Description", "description": "Free-text description"},
+          "description":          {"type": "string", "title": "Description", "description": "Free-text description"},
           "link":                 {"type": "string", "title": "Link", "maxLength": 2048, "description": "External URI reference"},
           "integriteit": {
             "type": "object",
@@ -111,9 +111,9 @@
         "title": "Informatieobjecttype",
         "description": "ZGW DRC document type catalog entry. Defines the default confidentiality classification per document category.",
         "type": "object",
-        "required": ["omschrijving"],
+        "required": ["description"],
         "properties": {
-          "omschrijving":             {"type": "string", "title": "Description", "facetable": true, "maxLength": 255, "description": "Type name (e.g. Advies)"},
+          "description":              {"type": "string", "title": "Description", "facetable": true, "maxLength": 255, "description": "Type name (e.g. Advies)"},
           "informatieobjectcategorie": {"type": "string", "title": "Category", "maxLength": 255, "description": "Category grouping"},
           "vertrouwelijkheidaanduiding": {
             "type": "string",
