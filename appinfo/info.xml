@@ -146,6 +146,39 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Procest\Repair\LinkInFlightRemainingDecisionsRepair</step>
             <step>OCA\Procest\Repair\SeedVerwerkingsactiviteiten</step>
         </post-migration>
+        <!--
+            FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:
+            `Installer::installAppLastSteps()` guards both the pre-migration and
+            post-migration blocks with `if ($previousVersion !== '')`, and only
+            `repair-steps/install` runs unconditionally afterwards. Until this block
+            existed a brand-new Procest install ran NONE of the steps above — the
+            register was never imported and not one of the twelve seed steps ran, so
+            a fresh instance had no ZGW mappings, no bezwaar/beroep data, no LHS or
+            VTH matrices and no workflow templates.
+
+            Only baseline-CREATING steps are listed. Deliberately EXCLUDED, because
+            each operates on data a fresh install does not have:
+              MigrateWorkflowDefinitions        one-way migration
+              RenameDutchDeadlineColumns        rename over existing rows
+              MigrateArchivalToOpenRegister     one-way migration
+              BackfillInformatieobjectMetadata  backfill over existing documents
+              LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet
+        -->
+        <install>
+            <step>OCA\Procest\Repair\InitializeSettings</step>
+            <step>OCA\Procest\Repair\LoadDefaultZgwMappings</step>
+            <step>OCA\Procest\Repair\SeedBezwaarBeroepData</step>
+            <step>OCA\Procest\Repair\SeedBezwaarWorkflowDefinition</step>
+            <step>OCA\Procest\Repair\SeedBesluitvormingTemplates</step>
+            <step>OCA\Procest\Repair\RegisterOriRegister</step>
+            <step>OCA\Procest\Repair\SeedLhsMatrix</step>
+            <step>OCA\Procest\Repair\SeedVthMatrixCells</step>
+            <step>OCA\Procest\Repair\SeedVthWorkflowTemplates</step>
+            <step>OCA\Procest\Repair\VthSeedDataRepairStep</step>
+            <step>OCA\Procest\Repair\SeedDeadlineMonitoringData</step>
+            <step>OCA\Procest\Repair\SeedKccWerkplekData</step>
+            <step>OCA\Procest\Repair\SeedVerwerkingsactiviteiten</step>
+        </install>
     </repair-steps>
 
     <commands>
