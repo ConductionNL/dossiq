@@ -71,22 +71,22 @@ class MandaatImportService
     }//end __construct()
 
     /**
-     * Import a MandateringsBesluit from CSV text.
+     * Import a mandate decision from CSV text.
      *
-     * @param string $besluitNummer Besluit identifier.
-     * @param string $besluitNaam   Besluit name.
-     * @param string $decideskUuid  Source Decidesk besluit id.
-     * @param string $csvContents   The CSV payload (RFC 4180; first row is header).
+     * @param string $decisionNumber Decision identifier.
+     * @param string $decisionName   Decision name.
+     * @param string $decideskUuid   Source Decidesk decision id.
+     * @param string $csvContents    The CSV payload (RFC 4180; first row is header).
      *
-     * @return array<string, mixed> {mandateringsBesluitId, totalMandaten, newCount, changedCount, removedCount, diff}
+     * @return array<string, mixed> {mandateDecisionId, totalMandaten, newCount, changedCount, removedCount, diff}
      *
      * @throws RuntimeException When the CSV is malformed or a rol cannot be resolved.
      *
      * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
      */
     public function importFromCsv(
-        string $besluitNummer,
-        string $besluitNaam,
+        string $decisionNumber,
+        string $decisionName,
         string $decideskUuid,
         string $csvContents
     ): array {
@@ -98,19 +98,21 @@ class MandaatImportService
         // Resolve rol-name → rolId.
         $resolved = $this->resolveRolReferences(rows: $rows);
 
-        // Create the besluit (concept).
+        // Create the decision (concept). The schemaConfigKey stays
+        // 'mandaterings_besluit_schema': it is the app-config key the schema id
+        // is already stored under on existing installs, not a display name.
         $besluit = $this->repository->save(
             schemaConfigKey: 'mandaterings_besluit_schema',
             object: [
-                'besluitNummer' => $besluitNummer,
-                'besluitNaam'   => $besluitNaam,
-                'status'        => 'concept',
-                'decideskUuid'  => $decideskUuid,
+                'decisionNumber' => $decisionNumber,
+                'decisionName'   => $decisionName,
+                'status'         => 'concept',
+                'decideskUuid'   => $decideskUuid,
             ]
         );
 
-        // Find the prior besluit version (by besluitNummer) for diff.
-        $prior         = $this->repository->findPriorBesluit(besluitNummer: $besluitNummer);
+        // Find the prior decision version (by decisionNumber) for diff.
+        $prior         = $this->repository->findPriorDecision(decisionNumber: $decisionNumber);
         $priorMandaten = [];
         if ($prior !== null) {
             $priorMandaten = $this->repository->findMandatenForBesluit(
@@ -161,13 +163,13 @@ class MandaatImportService
         $diff         = array_merge($diff, $removed);
 
         return [
-            'mandateringsBesluitId' => (string) $besluit['id'],
-            'totalMandaten'         => count($resolved),
-            'newCount'              => $newCount,
-            'changedCount'          => $changedCount,
-            'removedCount'          => $removedCount,
-            'unchangedCount'        => $unchangedCount,
-            'diff'                  => $diff,
+            'mandateDecisionId' => (string) $besluit['id'],
+            'totalMandaten'     => count($resolved),
+            'newCount'          => $newCount,
+            'changedCount'      => $changedCount,
+            'removedCount'      => $removedCount,
+            'unchangedCount'    => $unchangedCount,
+            'diff'              => $diff,
         ];
     }//end importFromCsv()
 
@@ -212,7 +214,7 @@ class MandaatImportService
     {
         return [
             'mandaatNummer'       => (string) $row['mandaatNummer'],
-            'mandateringsBesluit' => $besluitId,
+            'mandateDecision'     => $besluitId,
             'omschrijving'        => (string) ($row['omschrijving'] ?? ''),
             'gemandateerdeRol'    => (string) $row['gemandateerdeRol'],
             'wettelijkeGrondslag' => (string) ($row['wettelijkeGrondslag'] ?? ''),
@@ -320,8 +322,8 @@ class MandaatImportService
         }
 
         $now = (new DateTimeImmutable())->format('Y-m-d');
-        $besluit['status']           = 'vastgesteld';
-        $besluit['inWerkingtreding'] = ($besluit['inWerkingtreding'] ?? $now);
+        $besluit['status']        = 'vastgesteld';
+        $besluit['effectiveFrom'] = ($besluit['effectiveFrom'] ?? $now);
         $besluit = $objectService->saveObject($register, $bSchema, $besluit);
 
         // Flip mandaten to active.
@@ -334,13 +336,13 @@ class MandaatImportService
         );
 
         // Expire prior besluit.
-        $prior = $this->repository->findPriorBesluit(
-            besluitNummer: (string) $besluit['besluitNummer'],
+        $prior = $this->repository->findPriorDecision(
+            decisionNumber: (string) $besluit['decisionNumber'],
             excludeId: $besluitId
         );
         if ($prior !== null) {
-            $prior['status']      = 'vervallen';
-            $prior['vervalDatum'] = $now;
+            $prior['status']     = 'vervallen';
+            $prior['expiryDate'] = $now;
             $objectService->saveObject($register, $bSchema, $prior);
         }
 
