@@ -182,11 +182,18 @@ class InspectionChecklistService
     /**
      * Delete an inspection checklist.
      *
+     * ⚠️ The identifier parameter on `ObjectService::deleteObject()` is named
+     * `$uuid`, not `$id`. This method shipped passing `id:` as a named argument,
+     * so every call raised `Unknown named parameter $id`, was swallowed by the
+     * catch below, and returned false — the admin Delete button 500'd on every
+     * checklist and no checklist has ever been deleted through the UI. Verified
+     * against a live instance before and after this change.
+     *
      * @param string $id UUID of the checklist to delete
      *
      * @return bool True on success
      *
-     * @spec openspec/changes/vth-module/tasks.md#task-4
+     * @spec openspec/specs/inspection-checklists/spec.md
      */
     public function deleteChecklist(string $id): bool
     {
@@ -199,9 +206,9 @@ class InspectionChecklistService
 
         try {
             $objectService->deleteObject(
+                uuid: $id,
                 register: $register,
-                schema: 'inspectionChecklist',
-                id: $id
+                schema: 'inspectionChecklist'
             );
             return true;
         } catch (Throwable $e) {

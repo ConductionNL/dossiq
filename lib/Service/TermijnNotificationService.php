@@ -31,7 +31,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Service;
 
 use InvalidArgumentException;
-use OCA\Procest\BackgroundJob\TermijnNotificationDispatchJob;
+use OCA\Procest\BackgroundJob\DeadlineNotificationDispatchJob;
 use OCP\BackgroundJob\IJobList;
 use Psr\Log\LoggerInterface;
 
@@ -94,7 +94,7 @@ class TermijnNotificationService
         }
 
         $this->jobList->add(
-                TermijnNotificationDispatchJob::class,
+                DeadlineNotificationDispatchJob::class,
                 [
                     'type'              => $type,
                     'termijnInstanceId' => $termijnInstanceId,

@@ -27,6 +27,7 @@ namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\StatusTransitionController;
 use OCA\Procest\Service\BulkStatusTransitionService;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\StatusTransitionService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
@@ -74,6 +75,11 @@ final class StatusTransitionControllerBulkTest extends TestCase
     private LoggerInterface $logger;
 
     /**
+     * @var CaseAccessGuard&MockObject
+     */
+    private CaseAccessGuard $caseAccessGuard;
+
+    /**
      * The controller under test.
      *
      * @var StatusTransitionController
@@ -92,6 +98,8 @@ final class StatusTransitionControllerBulkTest extends TestCase
         $this->bulkEngine       = $this->createMock(BulkStatusTransitionService::class);
         $this->userSession      = $this->createMock(IUserSession::class);
         $this->logger           = $this->createMock(LoggerInterface::class);
+        $this->caseAccessGuard  = $this->createMock(CaseAccessGuard::class);
+        $this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
 
         $this->controller = new StatusTransitionController(
             'procest',
@@ -100,6 +108,7 @@ final class StatusTransitionControllerBulkTest extends TestCase
             $this->bulkEngine,
             $this->userSession,
             $this->logger,
+            $this->caseAccessGuard,
         );
 
         $user = $this->createMock(IUser::class);
@@ -123,6 +132,7 @@ final class StatusTransitionControllerBulkTest extends TestCase
             $this->bulkEngine,
             $this->userSession,
             $this->logger,
+            $this->caseAccessGuard,
         );
 
         $this->bulkEngine->expects($this->never())->method('preview');
@@ -148,6 +158,7 @@ final class StatusTransitionControllerBulkTest extends TestCase
             $this->bulkEngine,
             $this->userSession,
             $this->logger,
+            $this->caseAccessGuard,
         );
 
         $this->bulkEngine->expects($this->never())->method('execute');

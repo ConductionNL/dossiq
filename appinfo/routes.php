@@ -646,6 +646,24 @@ $extra = [
         ['name' => 'mandaatMatrix#auditTrail',      'url' => '/api/mandate/cases/{caseId}/audit-trail',   'verb' => 'GET'],
         ['name' => 'mandaatMatrix#applicable',      'url' => '/api/mandate/cases/{caseId}/applicable',    'verb' => 'GET'],
 
+        // Mandate-matrix ADMIN registries (procest#794). The settings panel has
+        // always called these four collections; nothing declared them, so every
+        // request was answered by Nextcloud's own HTML page under HTTP 200 and
+        // four admin tabs rendered silently empty. Every target method carries
+        // #[AuthorizedAdminSetting] — repointing the frontend at OpenRegister's
+        // generic object route also resolves and also removes the symptom, and
+        // would bypass that guard (the retracted first fix for procest#784).
+        ['name' => 'mandaatRegistry#besluiten',          'url' => '/api/mandate/besluiten',           'verb' => 'GET'],
+        ['name' => 'mandaatRegistry#mandatenCreate',     'url' => '/api/mandate/mandaten',            'verb' => 'POST'],
+        ['name' => 'mandaatRegistry#mandatenUpdate',     'url' => '/api/mandate/mandaten/{id}',       'verb' => 'PATCH'],
+        ['name' => 'organisatieRol#rollenIndex',         'url' => '/api/mandate/rollen',              'verb' => 'GET'],
+        ['name' => 'organisatieRol#rollenCreate',        'url' => '/api/mandate/rollen',              'verb' => 'POST'],
+        ['name' => 'organisatieRol#rollenUpdate',        'url' => '/api/mandate/rollen/{id}',         'verb' => 'PATCH'],
+        ['name' => 'organisatieRol#rollenDestroy',       'url' => '/api/mandate/rollen/{id}',         'verb' => 'DELETE'],
+        ['name' => 'organisatieRol#toewijzingenIndex',   'url' => '/api/mandate/toewijzingen',        'verb' => 'GET'],
+        ['name' => 'organisatieRol#toewijzingenCreate',  'url' => '/api/mandate/toewijzingen',        'verb' => 'POST'],
+        ['name' => 'organisatieRol#toewijzingenUpdate',  'url' => '/api/mandate/toewijzingen/{id}',   'verb' => 'PATCH'],
+
         // ── Handler vervanging/waarneming + bulk reassignment (handler-vervanging-waarneming) ──
         ['name' => 'substitution#index',           'url' => '/api/substitutions',                 'verb' => 'GET'],
         ['name' => 'substitution#create',          'url' => '/api/substitutions',                 'verb' => 'POST'],
@@ -665,6 +683,12 @@ $extra = [
         ['name' => 'termijn#hervat',     'url' => '/api/termijn/instances/{id}/hervat',      'verb' => 'POST'],
         ['name' => 'termijn#verleng',    'url' => '/api/termijn/instances/{id}/verleng',     'verb' => 'POST'],
         ['name' => 'termijn#voltooi',    'url' => '/api/termijn/instances/{id}/voltooi',     'verb' => 'POST'],
+        // TermijnDefinitie ADMIN registry (REQ-TERM-ADMIN-001, procest#794).
+        // TermijnDefinitiesTab.vue has always called this collection; only
+        // /api/termijn/instances* was declared, so the tab rendered empty.
+        ['name' => 'termijnDefinitie#index',  'url' => '/api/termijn/definities',      'verb' => 'GET'],
+        ['name' => 'termijnDefinitie#create', 'url' => '/api/termijn/definities',      'verb' => 'POST'],
+        ['name' => 'termijnDefinitie#update', 'url' => '/api/termijn/definities/{id}', 'verb' => 'PATCH'],
         // Ingebrekestelling registration.
         ['name' => 'ingebrekestelling#register', 'url' => '/api/termijn/ingebrekestellingen',       'verb' => 'POST'],
         ['name' => 'ingebrekestelling#show',     'url' => '/api/termijn/ingebrekestellingen/{id}',  'verb' => 'GET'],
@@ -674,9 +698,14 @@ $extra = [
         ['name' => 'dwangsom#bezwaar',      'url' => '/api/termijn/dwangsom/{id}/bezwaar',     'verb' => 'POST'],
         ['name' => 'dwangsom#bezwaarHeroverweging', 'url' => '/api/termijn/dwangsom/{id}/bezwaar/heroverweging', 'verb' => 'POST'],
         // Reporting (manager / accountant).
-        ['name' => 'termijnReporting#dashboard',         'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
-        ['name' => 'termijnReporting#kwartaalrapport',   'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
-        ['name' => 'termijnReporting#jaarrekening',      'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
+        // The route NAMES follow the renamed controller and its methods; the
+        // URLs deliberately do NOT. /api/termijn/* is the published contract and
+        // moving it is a breaking change for every consumer, so it is a separate
+        // decision from this rename. Nothing references these route names — the
+        // frontend calls the URLs directly.
+        ['name' => 'deadlineReporting#dashboard',        'url' => '/api/termijn/dashboard/kpi',            'verb' => 'GET'],
+        ['name' => 'deadlineReporting#quarterlyReport',  'url' => '/api/termijn/reports/kwartaal',         'verb' => 'GET'],
+        ['name' => 'deadlineReporting#annualStatement',  'url' => '/api/termijn/reports/jaarrekening',     'verb' => 'GET'],
         // IV3/BBV taakveld reference list, for the case-type classification
         // picker. The quarterly IV3 cost report that used to sit alongside it
         // is gone under ADR-081 — Shillinq is the only statutory reporter. The

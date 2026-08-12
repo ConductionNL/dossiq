@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\DeelzaakService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -46,11 +47,13 @@ class DeelzaakController extends Controller
      * @param IRequest        $request         Inbound request.
      * @param DeelzaakService $deelzaakService Backend service.
      * @param IUserSession    $userSession     Current user session.
+     * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
      */
     public function __construct(
         IRequest $request,
         private readonly DeelzaakService $deelzaakService,
         private readonly IUserSession $userSession,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -64,12 +67,17 @@ class DeelzaakController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/deelzaak-support/tasks.md#T01
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function list(string $caseId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
         return new JSONResponse(
@@ -88,12 +96,20 @@ class DeelzaakController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/deelzaak-support/tasks.md#T02
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function parent(string $caseId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // Authorised on the CHILD case the caller names, not on the parent it
+        // resolves to: the parent is the answer, so guarding on it would be
+        // circular and would still let an unrelated caller walk the hierarchy.
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
         $parent = $this->deelzaakService->getParentCase(childCaseUuid: $caseId);
@@ -148,11 +164,12 @@ class DeelzaakController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/changes/deelzaak-support/tasks.md#T08
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function validate(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
@@ -165,6 +182,13 @@ class DeelzaakController extends Controller
                     ],
                     Http::STATUS_BAD_REQUEST
                     );
+        }
+
+        // Without this the endpoint is an existence-and-type oracle over every
+        // case on the instance: it answers whether an arbitrary parent uuid
+        // exists and whether a given child type may hang off it.
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $parent, user: $user) === false) {
+            return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
         $result = $this->deelzaakService->validateCreate(
@@ -197,12 +221,20 @@ class DeelzaakController extends Controller
      *
      * @return JSONResponse
      *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      * @spec openspec/specs/deelzaak-support/spec.md
      */
     public function unlink(string $caseId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // Mass-detaches every sub-case of the named parent. Mutation access,
+        // not read access: this is the most destructive endpoint in the file.
+        if ($this->caseAccessGuard->hasCaseMutationAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(['message' => 'forbidden'], Http::STATUS_FORBIDDEN);
         }
 
         $result = $this->deelzaakService->unlinkSubCases(parentCaseUuid: $caseId);

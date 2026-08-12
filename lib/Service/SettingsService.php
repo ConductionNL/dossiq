@@ -236,6 +236,13 @@ class SettingsService
         'medewerker_rol_toewijzing_schema',
         'mandaat_gebruik_schema',
         'mandaat_escalatie_schema',
+        // Mandate-matrix behaviour knobs edited by MandaatMatrixSettingsTab.vue.
+        // ⚠️ Same measured caveat as the consultation_* block above: nothing
+        // reads these three yet. They are registered so the admin's save
+        // persists rather than being dropped by the CONFIG_KEYS allowlist.
+        'mandaat_decidesk_connection',
+        'mandaat_default_extension_days',
+        'mandaat_auto_finalize_approved',
         // Handler vervanging/waarneming (handler-vervanging-waarneming spec).
         'substitution_schema',
         // Archief / e-Depot SIP handover engine.
@@ -263,6 +270,22 @@ class SettingsService
         'consultation_schema',
         'advice_response_schema',
         'advisory_body_schema',
+        // Consultation behaviour knobs edited by ConsultationSettingsTab.vue.
+        // ⚠️ Registered here because updateSettings() is an ALLOWLIST: a key
+        // absent from CONFIG_KEYS is silently dropped on save — the same
+        // silent-discard failure as the dead route these fields used to POST to
+        // (procest#794), just one layer deeper.
+        // ⚠️ MEASURED, not assumed: as of this commit NOTHING reads these four
+        // values. A repo-wide grep finds them only in the Vue tab and in this
+        // list; the n8n consultation workflows (n8n/consultation-deadline-
+        // monitor.json, n8n/consultation-bottleneck-detection.json) do not
+        // reference them either. Registering them makes the admin's save
+        // round-trip honestly instead of vanishing; wiring a consumer is
+        // tracked separately and must not be inferred from their presence here.
+        'consultation_default_deadline_days',
+        'consultation_warning_offset_days',
+        'consultation_external_response_url',
+        'consultation_bottleneck_threshold',
         // Besluitvorming workflow integration endpoints (besluitvorming-workflow spec).
         // Official publication (DROP / LVBB) — empty disables dispatch.
         'drop_lvbb_endpoint',

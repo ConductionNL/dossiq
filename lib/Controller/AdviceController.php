@@ -137,8 +137,12 @@ class AdviceController extends Controller
         }
 
         try {
-            $this->adviceService->dispatchReminder($id);
+            // Authorized seam. The unguarded `dispatchReminder()` behind it is
+            // the cron's, and is not reachable from HTTP.
+            $this->adviceService->dispatchReminderAsUser($id);
             return new JSONResponse(['status' => 'reminded']);
+        } catch (\RuntimeException $e) {
+            return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_FORBIDDEN);
         } catch (\Throwable $e) {
             $this->logger->error('Procest: advice dispatchReminder failed: '.$e->getMessage());
             return new JSONResponse(

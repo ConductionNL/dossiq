@@ -31,9 +31,11 @@ namespace OCA\Procest\Service;
 use DateTime;
 use OCA\Procest\Service\BerichtenboxAdapter\BerichtenboxAdapterInterface;
 use OCA\Procest\Service\BerichtenboxAdapter\MockAdapter;
+use OCA\Procest\Service\Support\OwningCaseResolver;
 use OCP\App\IAppManager;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
+use Throwable;
 
 /**
  * Service for sending messages to Mijn Overheid Berichtenbox.
@@ -49,12 +51,14 @@ class BerichtenboxService
      * @param IAppManager        $appManager      The Nextcloud app manager.
      * @param ContainerInterface $container       The DI container.
      * @param LoggerInterface    $logger          The logger.
+     * @param OwningCaseResolver $owningCase      Resolves a message's owning case.
      */
     public function __construct(
         private SettingsService $settingsService,
         private IAppManager $appManager,
         private ContainerInterface $container,
         private LoggerInterface $logger,
+        private readonly OwningCaseResolver $owningCase,
     ) {
     }//end __construct()
 
@@ -190,6 +194,30 @@ class BerichtenboxService
 
         return array_merge($sent, $flagged);
     }//end getPendingMessages()
+
+    /**
+     * Resolve the case a stored message belongs to.
+     *
+     * `poll()` takes only a message id, so there is nothing in its signature to
+     * authorise against. This resolves the owning case so the controller can
+     * apply the same per-case guard as the rest of the file. It returns null —
+     * which the caller treats as DENY — whenever the message cannot be
+     * resolved, so an unknown id is not an existence oracle either.
+     *
+     * @param string $messageId The OpenRegister message UUID.
+     *
+     * @return string|null The owning case UUID, or null when unresolvable.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    public function getCaseIdForMessage(string $messageId): ?string
+    {
+        return $this->owningCase->resolve(
+            objectId: $messageId,
+            schemaKey: 'berichtenbox_message_schema',
+            caseField: 'caseId',
+        );
+    }//end getCaseIdForMessage()
 
     /**
      * Poll read status for a message.

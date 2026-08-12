@@ -9,7 +9,7 @@
  * module specs. Re-runs are safe — existing slugs are skipped.
  *
  * Listed in `appinfo/info.xml` between `SeedVthWorkflowTemplates` and
- * `SeedTermijnbewakingData`; runs as `post-migration` after
+ * `SeedDeadlineMonitoringData`; runs as `post-migration` after
  * `InitializeSettings` has populated the `case_type_schema` /
  * `status_type_schema` / `role_type_schema` / `document_type_schema` /
  * `property_definition_schema` / `inspection_checklist_template_schema`

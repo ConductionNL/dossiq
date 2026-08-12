@@ -31,6 +31,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\BurgerIdentificationService;
 use OCA\Procest\Service\CaseVoorbladService;
+use OCA\Procest\Service\CitizenLookupGuard;
 use OCA\Procest\Service\ContactMomentService;
 use OCA\Procest\Service\DoorverbindingService;
 use OCA\Procest\Service\QuickActionService;
@@ -59,6 +60,7 @@ class ContactMomentController extends Controller
      * @param DoorverbindingService       $transferService      The doorverbinding service.
      * @param BurgerIdentificationService $burgerService        The burger identification service.
      * @param IUserSession                $userSession          The user session.
+     * @param CitizenLookupGuard          $citizenLookupGuard   The citizen-lookup role guard.
      */
     public function __construct(
         string $appName,
@@ -69,6 +71,7 @@ class ContactMomentController extends Controller
         private readonly DoorverbindingService $transferService,
         private readonly BurgerIdentificationService $burgerService,
         private readonly IUserSession $userSession,
+        private readonly CitizenLookupGuard $citizenLookupGuard,
     ) {
         parent::__construct(appName: $appName, request: $request);
     }//end __construct()
@@ -87,6 +90,13 @@ class ContactMomentController extends Controller
         $user = $this->userSession->getUser();
         if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // This method both writes a contactmoment against a caller-supplied
+        // citizen identifier and returns that citizen's voorblad, so it is the
+        // same exposure as `voorblad()` with a write attached.
+        if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         $data = [
@@ -146,8 +156,16 @@ class ContactMomentController extends Controller
      */
     public function index(string $burgerId='', int $limit=50): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // `$burgerId` is a citizen identifier taken straight off the query
+        // string; without this the whole contact history of any citizen was
+        // readable by every authenticated account (PROC-IDOR-01).
+        if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         if ($burgerId === '') {
@@ -171,8 +189,17 @@ class ContactMomentController extends Controller
      */
     public function voorblad(string $burgerId=''): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // The voorblad resolves a raw citizen identifier into that citizen's
+        // open cases and recent contact history. Reproduced live at HTTP 200
+        // for an unrelated authenticated account before this guard existed
+        // (PROC-IDOR-01) — iterating BSN-shaped ids walked the population.
+        if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         if ($burgerId === '') {
@@ -231,8 +258,14 @@ class ContactMomentController extends Controller
      */
     public function nieuweZaak(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // Creates a municipal case bound to a caller-supplied citizen id.
+        if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         $zaaktype = (string) $this->request->getParam('zaaktype', '');
@@ -259,8 +292,14 @@ class ContactMomentController extends Controller
      */
     public function klachtRegistreren(): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        // Takes an arbitrary `caseId` AND an arbitrary `burgerId`.
+        if ($this->citizenLookupGuard->isCitizenLookupAllowed(user: $user) === false) {
+            return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
         }
 
         $caseId       = (string) $this->request->getParam('caseId', '');

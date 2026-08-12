@@ -110,7 +110,8 @@ class BespokeServiceRegistrar
             static function (ContainerInterface $c): AdminSettings {
                 return new AdminSettings(
                     appManager: $c->get('OCP\\App\\IAppManager'),
-                    initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState')
+                    initialState: $c->get('OCP\\AppFramework\\Services\\IInitialState'),
+                    settingsService: $c->get('OCA\\Procest\\Service\\SettingsService')
                 );
             }
         );

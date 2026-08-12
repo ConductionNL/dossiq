@@ -144,14 +144,28 @@ export default {
 			} catch (e) { /* dialog stays open */ }
 		},
 		/**
-		 * @param endDate
-		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
+		 * End an assignment by setting its end date.
+		 *
+		 * ⚠️ Two corrections here, both verified against the shipped
+		 * `medewerker_rol_toewijzing_schema` (`userId, rolId, toewijzingType,
+		 * validFrom, validUntil`):
+		 *
+		 * 1. The end date is `validUntil`. This used to send `totEnMet`, which
+		 *    is not a property of the schema at all.
+		 * 2. OpenRegister's `saveObject()` is PUT-semantic — keys omitted from
+		 *    the payload are NULLED, not left alone. Sending the end date on its
+		 *    own would therefore have wiped `userId`, `rolId`, `toewijzingType`
+		 *    and `validFrom` off the record. The whole assignment is spread in
+		 *    and only `validUntil` overridden.
+		 *
+		 * @param {string} endDate The last day the assignment is in force.
+		 * @spec openspec/specs/mandaat-matrix/spec.md
 		 */
 		async onEnd(endDate) {
 			try {
 				await axios.patch(
 					generateUrl('/apps/procest/api/mandate/toewijzingen/' + encodeURIComponent(this.ending.id)),
-					{ totEnMet: endDate },
+					{ ...this.ending, validUntil: endDate },
 				)
 				this.ending = null
 				this.$emit('reload')

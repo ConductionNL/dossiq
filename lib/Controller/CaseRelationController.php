@@ -35,11 +35,13 @@ declare(strict_types=1);
 namespace OCA\Procest\Controller;
 
 use OCA\Procest\AppInfo\Application;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\CaseRelationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCP\IUser;
 use OCP\IUserSession;
 
 /**
@@ -70,11 +72,13 @@ class CaseRelationController extends Controller
      * @param IRequest            $request             Inbound request.
      * @param CaseRelationService $caseRelationService Backend service.
      * @param IUserSession        $userSession         Current user session.
+     * @param CaseAccessGuard     $caseAccessGuard     Per-case authorization (fails closed).
      */
     public function __construct(
         IRequest $request,
         private readonly CaseRelationService $caseRelationService,
         private readonly IUserSession $userSession,
+        private readonly CaseAccessGuard $caseAccessGuard,
     ) {
         parent::__construct(appName: Application::APP_ID, request: $request);
     }//end __construct()
@@ -82,8 +86,17 @@ class CaseRelationController extends Controller
     /**
      * List the typed peer relations of a case.
      *
-     * Per-object guard: the service resolves the case through OR RBAC; an
-     * unreadable case yields an empty list (its content never leaks).
+     * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()`.
+     *
+     * This docblock used to read *"the service resolves the case through OR
+     * RBAC; an unreadable case yields an empty list"*. That was false. The
+     * refusal in `CaseRelationService` is correctly shaped but INERT: it keys
+     * off `find()` returning null, and OpenRegister's `PermissionHandler`
+     * returns `true` for a schema with no `authorization` block
+     * (`enforce_default_closed` defaults false) — and none of procest's 85
+     * schemas declares one. `find()` therefore never returned null for an
+     * existing case, so `access_denied` was unreachable. See
+     * ConductionNL/.github#372.
      *
      * @param string $caseId Case UUID.
      *
@@ -91,12 +104,20 @@ class CaseRelationController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/specs/related-case-linking/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function list(string $caseId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return new JSONResponse(
+                ['ok' => false, 'reason' => 'access_denied'],
+                Http::STATUS_FORBIDDEN
+            );
         }
 
         return new JSONResponse(
@@ -111,8 +132,10 @@ class CaseRelationController extends Controller
      *
      * Expects JSON body `{ targetId, aardRelatie, toelichting? }`.
      *
-     * Per-object guard: the service requires OR read access to BOTH the origin
-     * case (`$caseId`) and the target case before writing — no IDOR.
+     * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()` on BOTH the
+     * origin case (`$caseId`) and the target case, which is what this docblock
+     * always claimed the service did. It did not — see `list()` above for why
+     * the service-level refusal was inert.
      *
      * @param string $caseId Origin case UUID.
      *
@@ -120,11 +143,12 @@ class CaseRelationController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/specs/related-case-linking/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function create(string $caseId): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
         }
 
@@ -139,6 +163,13 @@ class CaseRelationController extends Controller
             return new JSONResponse(
                 ['ok' => false, 'reason' => 'missing_case_id', 'message' => 'targetId and aardRelatie are required'],
                 Http::STATUS_BAD_REQUEST
+            );
+        }
+
+        if ($this->bothCasesReadable(caseId: $caseId, targetId: $targetId, user: $user) === false) {
+            return new JSONResponse(
+                ['ok' => false, 'reason' => 'access_denied'],
+                Http::STATUS_FORBIDDEN
             );
         }
 
@@ -160,7 +191,7 @@ class CaseRelationController extends Controller
     /**
      * Remove a typed peer relation between two cases (two-sided).
      *
-     * Per-object guard: the service requires OR read access to both cases.
+     * Per-object guard: `CaseAccessGuard::hasCaseReadAccess()` on both cases.
      *
      * @param string $caseId      Origin case UUID.
      * @param string $targetId    Target case UUID.
@@ -170,12 +201,20 @@ class CaseRelationController extends Controller
      *
      * @return JSONResponse
      *
-     * @spec openspec/specs/related-case-linking/spec.md
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
      */
     public function destroy(string $caseId, string $targetId, string $aardRelatie): JSONResponse
     {
-        if ($this->userSession->getUser() === null) {
+        $user = $this->userSession->getUser();
+        if ($user === null) {
             return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
+        }
+
+        if ($this->bothCasesReadable(caseId: $caseId, targetId: $targetId, user: $user) === false) {
+            return new JSONResponse(
+                ['ok' => false, 'reason' => 'access_denied'],
+                Http::STATUS_FORBIDDEN
+            );
         }
 
         $result = $this->caseRelationService->removeRelation(
@@ -191,4 +230,28 @@ class CaseRelationController extends Controller
 
         return new JSONResponse($result);
     }//end destroy()
+
+    /**
+     * Whether the caller may read both ends of a relation.
+     *
+     * A relation is two-sided: writing or removing it touches both cases, so
+     * holding access to only one end is not enough. Both checks are evaluated
+     * against the same fail-closed guard.
+     *
+     * @param string $caseId   Origin case UUID.
+     * @param string $targetId Target case UUID.
+     * @param IUser  $user     The authenticated user.
+     *
+     * @return bool True when both cases are readable by this user.
+     *
+     * @spec openspec/specs/authz-bypass-fixes/spec.md
+     */
+    private function bothCasesReadable(string $caseId, string $targetId, IUser $user): bool
+    {
+        if ($this->caseAccessGuard->hasCaseReadAccess(caseId: $caseId, user: $user) === false) {
+            return false;
+        }
+
+        return $this->caseAccessGuard->hasCaseReadAccess(caseId: $targetId, user: $user);
+    }//end bothCasesReadable()
 }//end class

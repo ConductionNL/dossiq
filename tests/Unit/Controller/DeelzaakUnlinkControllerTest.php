@@ -28,6 +28,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Controller;
 
 use OCA\Procest\Controller\DeelzaakController;
+use OCA\Procest\Service\CaseAccessGuard;
 use OCA\Procest\Service\DeelzaakService;
 use OCP\AppFramework\Http;
 use OCP\IRequest;
@@ -70,15 +71,29 @@ class DeelzaakUnlinkControllerTest extends TestCase
     private IUserSession $userSession;
 
     /**
+     * Per-case authorization guard, mocked.
+     *
+     * Added when #805 gave `unlink()` a real mutation check. These cases are
+     * about the partial-unlink REPORTING, so the guard grants throughout and
+     * the refusal path is covered by the authorization tests next to it.
+     *
+     * @var CaseAccessGuard|\PHPUnit\Framework\MockObject\MockObject
+     */
+    private CaseAccessGuard $caseAccessGuard;
+
+    /**
      * Set up mocks.
      *
      * @return void
      */
     protected function setUp(): void
     {
-        $this->request     = $this->createMock(IRequest::class);
-        $this->service     = $this->createMock(DeelzaakService::class);
-        $this->userSession = $this->createMock(IUserSession::class);
+        $this->request         = $this->createMock(IRequest::class);
+        $this->service         = $this->createMock(DeelzaakService::class);
+        $this->userSession     = $this->createMock(IUserSession::class);
+        $this->caseAccessGuard = $this->createMock(CaseAccessGuard::class);
+        $this->caseAccessGuard->method('hasCaseMutationAccess')->willReturn(true);
+        $this->caseAccessGuard->method('hasCaseReadAccess')->willReturn(true);
     }//end setUp()
 
     /**
@@ -97,7 +112,12 @@ class DeelzaakUnlinkControllerTest extends TestCase
 
         $this->userSession->method('getUser')->willReturn($user);
 
-        return new DeelzaakController($this->request, $this->service, $this->userSession);
+        return new DeelzaakController(
+            $this->request,
+            $this->service,
+            $this->userSession,
+            $this->caseAccessGuard
+        );
     }//end controller()
 
     /**
