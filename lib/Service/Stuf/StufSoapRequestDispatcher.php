@@ -58,6 +58,8 @@ class StufSoapRequestDispatcher {
 	 *
 	 * @param StufResponseBuilder $responses The inbound response builder.
 	 * @param StufZknMessageResponder $responder The per-message-type responder.
+	 * @param StufEnvelopeInspector $inspector Resolves the sending endpoint and
+	 *                                        verifies its WSSE UsernameToken.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
@@ -65,6 +67,7 @@ class StufSoapRequestDispatcher {
 	public function __construct(
 		private readonly StufResponseBuilder $responses,
 		private readonly StufZknMessageResponder $responder,
+		private readonly StufEnvelopeInspector $inspector,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -92,6 +95,11 @@ class StufSoapRequestDispatcher {
 			);
 		}
 
+		$authFault = $this->authenticateSender(rawBody: $rawBody, service: $service);
+		if ($authFault instanceof DataDisplayResponse) {
+			return $authFault;
+		}
+
 		$parsed = $this->parseSoapDocument(rawBody: $rawBody, service: $service);
 		if ($parsed instanceof DataDisplayResponse) {
 			return $parsed;
@@ -109,6 +117,76 @@ class StufSoapRequestDispatcher {
 
 		return $this->responder->respond(message: $messageElement);
 	}//end dispatch()
+
+	/**
+	 * Authenticate the sending zaaksysteem before any message is interpreted.
+	 *
+	 * WHY THIS EXISTS. `StufController::zaken()` and `::personen()` carry
+	 * `#[PublicPage]` + `#[NoCSRFRequired]` — correctly, because the caller is a
+	 * municipal zaaksysteem with no Nextcloud session — and until now that was
+	 * the ONLY thing standing between an anonymous HTTP client and
+	 * {@see StufZknMessageResponder::respond()}, which dispatches `zakLk01`
+	 * (case create/update), `zakLv01` (case query), `npsLv01` (person query by
+	 * BSN) and `edcLk01` (document create/update).
+	 *
+	 * Today every one of those four handlers is a stub that answers with an
+	 * empty `zakLa01` / `npsLa01` / `Bv01` and reaches no storage, so nothing
+	 * currently leaks — and that is exactly why the guard belongs here NOW.
+	 * The handlers carry the comment "In a full implementation, query
+	 * OpenRegister…"; the day someone writes that body, an unauthenticated
+	 * caller would be reading zaken and persons by BSN. A missing check that is
+	 * masked by an unfinished body is not a check.
+	 *
+	 * `inkomend()` — the third public StUF route on this controller — already
+	 * verifies a WSSE UsernameToken against the sending endpoint's stored
+	 * credentials. This applies the same predicate to the other two, so all
+	 * three inbound routes share one posture.
+	 *
+	 * FAIL-CLOSED IN BOTH DIRECTIONS: an envelope whose `stuf:zender` matches no
+	 * configured `StufEndpoint` is refused, and {@see
+	 * StufEnvelopeInspector::verifyWsse()} itself returns false when the matched
+	 * endpoint has no username or no resolvable password in the vault. An
+	 * unconfigured instance therefore refuses rather than admits.
+	 *
+	 * The refusal is a SOAP Fault, not an HTTP error page, for the same reason
+	 * every other refusal in this class is: the caller only speaks SOAP. It
+	 * deliberately does not distinguish "unknown sender" from "bad password",
+	 * so the endpoint is not an oracle for which zaaksystemen are configured.
+	 *
+	 * @param string $rawBody The raw inbound envelope.
+	 * @param string $service The service type ('zaken' or 'personen').
+	 *
+	 * @return DataDisplayResponse|null A SOAP Fault when refused, null when the
+	 *                                  sender is authenticated.
+	 *
+	 * @spec openspec/specs/stuf-integration/spec.md
+	 */
+	private function authenticateSender(string $rawBody, string $service): ?DataDisplayResponse {
+		$endpoint = $this->inspector->resolveEndpoint(envelopeXml: $rawBody);
+		if ($endpoint === null) {
+			$this->logger->warning(
+				'StUF inbound refused at {service}: could not resolve a configured endpoint from the envelope zender',
+				['service' => $service]
+			);
+			return $this->fault(
+				message: 'Authenticatie mislukt',
+				statusCode: Http::STATUS_UNAUTHORIZED
+			);
+		}
+
+		if ($this->inspector->verifyWsse(envelopeXml: $rawBody, endpoint: $endpoint) === false) {
+			$this->logger->warning(
+				'StUF inbound refused at {service}: WSSE signature mismatch for endpoint {id}',
+				['service' => $service, 'id' => ($endpoint['id'] ?? '')]
+			);
+			return $this->fault(
+				message: 'Authenticatie mislukt',
+				statusCode: Http::STATUS_UNAUTHORIZED
+			);
+		}
+
+		return null;
+	}//end authenticateSender()
 
 	/**
 	 * Parse an inbound SOAP envelope with XXE/DTD protections.
