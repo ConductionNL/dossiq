@@ -189,7 +189,7 @@ class BeschikkingService
             throw new RuntimeException('mandaat_insufficient');
         }
 
-        $beschikking['mandaatGegeven'] = [
+        $beschikking['mandateGranted'] = [
             'mandaatregelingId' => (string) ($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
             'mandaatNiveau'     => $niveau,
             'akkoordDoor'       => $akkoordDoor,
@@ -426,7 +426,7 @@ class BeschikkingService
             'schema'               => 'TMLO-1.2',
             'identificatieKenmerk' => (string) ($beschikking['kenmerk'] ?? ''),
             'aggregatieniveau'     => 'Archiefstuk',
-            'creatieDatum'         => (string) (($beschikking['mandaatGegeven']['akkoordDatum'] ?? '')),
+            'creatieDatum'         => (string) (($beschikking['mandateGranted']['akkoordDatum'] ?? '')),
             'bekendmakingDatum'    => (string) ($beschikking['bekendmakingDatum'] ?? ''),
             'vertrouwelijkheid'    => 'vertrouwelijk',
             'bewaartermijn'        => 'P15Y',

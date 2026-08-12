@@ -84,7 +84,7 @@ class MandaatVerifier
         string $beschikkingType,
         string $zaaktype,
     ): bool {
-        foreach ((array) ($regeling['mandaatGroepen'] ?? []) as $groep) {
+        foreach ((array) ($regeling['mandateGroups'] ?? []) as $groep) {
             if ((string) ($groep['niveau'] ?? '') !== $niveau) {
                 continue;
             }
@@ -148,7 +148,7 @@ class MandaatVerifier
 
         foreach ((array) $regelingen as $regeling) {
             $arr = $this->toArray(value: $regeling);
-            foreach ((array) ($arr['mandaatGroepen'] ?? []) as $groep) {
+            foreach ((array) ($arr['mandateGroups'] ?? []) as $groep) {
                 $zaaktypes = (array) ($groep['zaaktypes'] ?? []);
                 if ($zaaktype === '' || in_array($zaaktype, $zaaktypes, true) === true) {
                     return $arr;
@@ -181,7 +181,7 @@ class MandaatVerifier
         $beschikkingType = (string) ($beschikking['beschikkingType'] ?? '');
         $zaaktype        = (string) ($beschikking['zaaktype'] ?? '');
 
-        foreach ((array) ($regeling['mandaatGroepen'] ?? []) as $groep) {
+        foreach ((array) ($regeling['mandateGroups'] ?? []) as $groep) {
             $niveau = (string) ($groep['niveau'] ?? '');
             if ($niveau === '' || str_starts_with($akkoordDoor, $niveau) === false) {
                 continue;
