@@ -14,10 +14,10 @@
 				<label class="required" for="me-num">{{ t('procest', 'Mandate number') }}</label>
 				<NcTextField
 					id="me-num"
-					:model-value="form.mandaatNummer"
-					:error="!!errors.mandaatNummer"
-					:helper-text="errors.mandaatNummer"
-					@update:model-value="v => form.mandaatNummer = v" />
+					:model-value="form.mandateNumber"
+					:error="!!errors.mandateNumber"
+					:helper-text="errors.mandateNumber"
+					@update:model-value="v => form.mandateNumber = v" />
 			</div>
 
 			<div class="form-group">
@@ -140,7 +140,7 @@ export default {
 			saving: false,
 			errors: {},
 			form: {
-				mandaatNummer: this.mandaat?.mandaatNummer || '',
+				mandateNumber: this.mandaat?.mandateNumber || '',
 				omschrijving: this.mandaat?.omschrijving || '',
 				bevoegdheidType: this.mandaat?.bevoegdheidType || 'beslissingsbevoegdheid',
 				legalBasis: this.mandaat?.legalBasis || '',
@@ -182,7 +182,7 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
-			if (!this.form.mandaatNummer) errs.mandaatNummer = t('procest', 'Mandaatnummer is required')
+			if (!this.form.mandateNumber) errs.mandateNumber = t('procest', 'Mandaatnummer is required')
 			if (!this.form.omschrijving) errs.omschrijving = t('procest', 'Omschrijving is required')
 			if (!this.form.bevoegdheidType) errs.bevoegdheidType = t('procest', 'Bevoegdheidstype is required')
 			if (!this.form.legalBasis) errs.legalBasis = t('procest', 'Wettelijke grondslag is required')

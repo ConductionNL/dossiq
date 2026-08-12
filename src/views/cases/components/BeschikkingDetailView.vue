@@ -36,9 +36,12 @@
 				<h4>{{ t('procest', 'Mandaat') }}</h4>
 				<dl class="beschikking-detail__meta">
 					<dt>{{ t('procest', 'Niveau') }}</dt>
-					<dd>{{ beschikking.mandaatGegeven.mandaatNiveau }}</dd>
+					<!-- Outer key renamed; `mandaatNiveau` is NESTED inside it, so it
+					     lives in that column's JSON rather than as a column of its own
+					     and is deliberately not renamed here. -->
+					<dd>{{ beschikking.mandateGranted.mandaatNiveau }}</dd>
 					<dt>{{ t('procest', 'Akkoord door') }}</dt>
-					<dd>{{ beschikking.mandaatGegeven.akkoordDoor }}</dd>
+					<dd>{{ beschikking.mandateGranted.akkoordDoor }}</dd>
 				</dl>
 			</section>
 
@@ -114,7 +117,7 @@ export default {
 			return t('procest', STATUS_LABELS[status] || status)
 		},
 		hasMandaat() {
-			return !!(this.beschikking && this.beschikking.mandaatGegeven && this.beschikking.mandaatGegeven.akkoordDoor)
+			return !!(this.beschikking && this.beschikking.mandateGranted && this.beschikking.mandateGranted.akkoordDoor)
 		},
 		hasHandtekening() {
 			return !!(this.beschikking && this.beschikking.handtekening && this.beschikking.handtekening.tspProvider)

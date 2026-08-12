@@ -6,7 +6,7 @@
           "beschikking",
           "stateMachineLog",
           "bezwaarTrigger",
-          "mandaatRegeling"
+          "mandateArrangement"
         ]
       }
     },
@@ -152,7 +152,7 @@
               "einddatum": { "type": "string", "title": "End Date", "description": "Date on which the decision expires", "format": "date" }
             }
           },
-          "mandaatGegeven": {
+          "mandateGranted": {
             "type": "object",
             "title": "Mandate Granted",
             "description": "Point-in-time mandaat record captured at the akkoord step (ADR design D3)",
@@ -291,8 +291,8 @@
           }
         }
       },
-      "mandaatRegeling": {
-        "slug": "mandaatRegeling",
+      "mandateArrangement": {
+        "slug": "mandateArrangement",
         "icon": "AccountTieOutline",
         "version": "1.0.0",
         "x-schema-org": "schema:Legislation",
@@ -301,15 +301,15 @@
         "type": "object",
         "required": [
           "naam",
-          "mandaatGroepen"
+          "mandateGroups"
         ],
         "properties": {
           "naam": { "type": "string", "title": "Name", "description": "Human-readable name of the mandate regulation", "maxLength": 255 },
           "verleendDoor": { "type": "string", "title": "Granted By", "description": "Body that granted the mandate, e.g. college-bw" },
           "verleendDatum": { "type": "string", "title": "Grant Date", "description": "Date on which the mandate was granted", "format": "date" },
           "intrekkingsDatum": { "type": "string", "title": "Revocation Date", "description": "Date on which the mandate was revoked, if applicable", "format": "date" },
-          "ondermandaatToegestaan": { "type": "boolean", "title": "Sub-mandate Permitted", "description": "Whether delegation to a lower level is permitted", "default": false },
-          "mandaatGroepen": {
+          "subMandateAllowed": { "type": "boolean", "title": "Sub-mandate Permitted", "description": "Whether delegation to a lower level is permitted", "default": false },
+          "mandateGroups": {
             "type": "array",
             "title": "Mandate Groups",
             "description": "Authorization groups within this regeling",
@@ -330,15 +330,15 @@
       {
         "@self": {
           "register": "procest",
-          "schema": "mandaatRegeling",
+          "schema": "mandateArrangement",
           "slug": "mr-2024-007-wmo"
         },
         "naam": "Mandaatregeling WMO toekenningen",
         "verleendDoor": "college-bw",
         "verleendDatum": "2024-03-15",
         "intrekkingsDatum": null,
-        "ondermandaatToegestaan": true,
-        "mandaatGroepen": [
+        "subMandateAllowed": true,
+        "mandateGroups": [
           { "niveau": "consulent", "tot_bedrag": 5000, "zaaktypes": ["wmo-melding"], "beschikkingTypes": ["toekenning"] },
           { "niveau": "afdelingsmanager", "tot_bedrag": 25000, "zaaktypes": ["wmo-melding"], "beschikkingTypes": ["toekenning", "afwijzing"] },
           { "niveau": "directeur", "tot_bedrag": null, "zaaktypes": ["wmo-melding"], "beschikkingTypes": ["toekenning", "afwijzing", "wijziging"] }
@@ -375,7 +375,7 @@
           "einddatum": "2027-04-01"
         },
         "motivering": "Op basis van het onderzoek van 28 maart 2026 is vastgesteld dat client recht heeft op huishoudelijke ondersteuning.",
-        "mandaatGegeven": {
+        "mandateGranted": {
           "mandaatregelingId": "mr-2024-007-wmo",
           "mandaatNiveau": "afdelingsmanager",
           "akkoordDoor": "afdelingsmanager-wmo-15",

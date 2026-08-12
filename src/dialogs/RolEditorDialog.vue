@@ -62,8 +62,8 @@
 				<NcTextField
 					id="rol-niveau"
 					type="number"
-					:model-value="String(form.mandaatNiveau)"
-					@update:model-value="v => form.mandaatNiveau = Number(v) || 0" />
+					:model-value="String(form.mandateLevel)"
+					@update:model-value="v => form.mandateLevel = Number(v) || 0" />
 			</div>
 		</div>
 
@@ -99,7 +99,7 @@ export default {
 				parentRole: this.role?.parentRole || '',
 				afdeling: this.role?.afdeling || '',
 				team: this.role?.team || '',
-				mandaatNiveau: this.role?.mandaatNiveau || 1,
+				mandateLevel: this.role?.mandateLevel || 1,
 			},
 		}
 	},
