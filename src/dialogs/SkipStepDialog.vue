@@ -16,13 +16,13 @@
 			</div>
 
 			<NcNoteCard v-if="step && step.mandatory" type="warning">
-				{{ t('procest', 'Deze stap is verplicht en kan niet worden overgeslagen.') }}
+				{{ t('procest', 'This step is mandatory and cannot be skipped.') }}
 			</NcNoteCard>
 
 			<NcTextArea v-else
 				:model-value="reason"
 				:label="t('procest', 'Reden voor overslaan')"
-				:placeholder="t('procest', 'Geef een reden waarom deze stap wordt overgeslagen...')"
+				:placeholder="t('procest', 'Give a reason why this step is being skipped...')"
 				required
 				@update:model-value="v => reason = v" />
 

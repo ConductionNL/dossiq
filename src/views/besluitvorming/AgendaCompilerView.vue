@@ -39,11 +39,11 @@
 			</CnDetailCard>
 
 			<div class="agenda-compiler__panels">
-				<CnDetailCard :title="t('procest', 'Beschikbaar voor agendering')" class="agenda-compiler__panel">
+				<CnDetailCard :title="t('procest', 'Available for scheduling')" class="agenda-compiler__panel">
 					<NcEmptyContent
 						v-if="available.length === 0"
-						:name="t('procest', 'Geen beschikbare items')"
-						:description="t('procest', 'Er zijn geen besluiten gereed voor agendering voor dit gremium.')" />
+						:name="t('procest', 'No available items')"
+						:description="t('procest', 'No decisions are ready for scheduling for this body.')" />
 					<div
 						v-for="item in available"
 						:key="item.id"
