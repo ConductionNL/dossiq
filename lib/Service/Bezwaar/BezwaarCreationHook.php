@@ -112,14 +112,14 @@ class BezwaarCreationHook {
 			throw new RuntimeException('Contested decision not found');
 		}
 
-		$primairDecisionCaseId = $this->extractUuid(value: ($decision['case'] ?? ''));
+		$primaryDecisionCase = $this->extractUuid(value: ($decision['case'] ?? ''));
 
 		$this->linkPrimairDecision(
 			objectService: $objectService,
 			register: $schemas['register'],
 			caseSchema: $schemas['case'],
 			objectionCaseId: $objectionCaseId,
-			primairDecisionCaseId: $primairDecisionCaseId,
+			primaryDecisionCase: $primaryDecisionCase,
 			contestedDecisionId: $contestedDecisionId
 		);
 
@@ -168,7 +168,7 @@ class BezwaarCreationHook {
 	 * @param string $register Register id.
 	 * @param string $caseSchema case schema id.
 	 * @param string $objectionCaseId The bezwaar case to update.
-	 * @param string $primairDecisionCaseId The primair besluit case (may be '').
+	 * @param string $primaryDecisionCase The primair besluit case (may be '').
 	 * @param string $contestedDecisionId The contested decision (for logging).
 	 *
 	 * @return void
@@ -178,10 +178,10 @@ class BezwaarCreationHook {
 		string $register,
 		string $caseSchema,
 		string $objectionCaseId,
-		string $primairDecisionCaseId,
+		string $primaryDecisionCase,
 		string $contestedDecisionId,
 	): void {
-		if ($primairDecisionCaseId === '') {
+		if ($primaryDecisionCase === '') {
 			$this->logger->info(
 				'BezwaarCreationHook: contested decision has no parent case; '
 				. 'skipping relatedCases link',
@@ -195,7 +195,7 @@ class BezwaarCreationHook {
 			register: $register,
 			caseSchema: $caseSchema,
 			objectionCaseId: $objectionCaseId,
-			relatedCaseId: $primairDecisionCaseId
+			relatedCaseId: $primaryDecisionCase
 		);
 	}//end linkPrimairBesluit()
 

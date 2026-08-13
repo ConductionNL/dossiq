@@ -55,14 +55,14 @@ class DeadlineDailyScanService {
 	 * @param TermijnService $termService TermijnService.
 	 * @param DeadlineEscalationService $escalationService Escalation service.
 	 * @param LoggerInterface $logger Logger.
-	 * @param DwangsomCalculationService|null $penaltyPaymentService Dwangsom calculation service.
+	 * @param DwangsomCalculationService|null $penaltyService Dwangsom calculation service.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
 		private readonly TermijnService $termService,
 		private readonly DeadlineEscalationService $escalationService,
 		private readonly LoggerInterface $logger,
-		private readonly ?DwangsomCalculationService $penaltyPaymentService = null,
+		private readonly ?DwangsomCalculationService $penaltyService = null,
 	) {
 	}//end __construct()
 
@@ -129,7 +129,7 @@ class DeadlineDailyScanService {
 	 * @return int Number of berekeningen accrued.
 	 */
 	private function accrueLopendPenaltyPaymentBerekeningen(): int {
-		if ($this->penaltyPaymentService === null) {
+		if ($this->penaltyService === null) {
 			return 0;
 		}
 
@@ -159,7 +159,7 @@ class DeadlineDailyScanService {
 			}
 
 			try {
-				$this->penaltyPaymentService->calculateDaily($id);
+				$this->penaltyService->calculateDaily($id);
 				$accrued++;
 			} catch (\Throwable $e) {
 				$this->logger->warning('Dwangsom accrual row failed', ['id' => $id, 'error' => $e->getMessage()]);

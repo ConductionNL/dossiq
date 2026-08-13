@@ -102,7 +102,7 @@ class PanelIndependenceChecker {
 		// one name would be a real bug. The config KEY stays `bezwaar_schema`:
 		// it is stored app config, so renaming it is a data migration, not a
 		// code change, and belongs in its own step.
-		$legacyObjectionSchema = $this->settingsService->getConfigValue(
+		$legacyObjSchema = $this->settingsService->getConfigValue(
 			key: 'bezwaar_schema'
 		);
 		$objectionSchema = $this->settingsService->getConfigValue(
@@ -126,7 +126,7 @@ class PanelIndependenceChecker {
 				objectService: $objectService,
 				objectionId: $objectionId,
 				register: $register,
-				legacyObjectionSchema: $legacyObjectionSchema,
+				legacyObjSchema: $legacyObjSchema,
 				objectionSchema: $objectionSchema,
 				decisionSchema: $decisionSchema,
 			);
@@ -163,7 +163,7 @@ class PanelIndependenceChecker {
 	 * @param object $objectService OpenRegister object service.
 	 * @param string $objectionId The bezwaar (lifecycle) UUID.
 	 * @param string $register Register identifier.
-	 * @param string $legacyObjectionSchema Legacy objection schema (config key `bezwaar_schema`), may be ''.
+	 * @param string $legacyObjSchema Legacy objection schema (config key `bezwaar_schema`), may be ''.
 	 * @param string $objectionSchema Objection schema identifier.
 	 * @param string $decisionSchema Decision schema identifier.
 	 *
@@ -175,7 +175,7 @@ class PanelIndependenceChecker {
 		object $objectService,
 		string $objectionId,
 		string $register,
-		string $legacyObjectionSchema,
+		string $legacyObjSchema,
 		string $objectionSchema,
 		string $decisionSchema,
 	): string {
@@ -184,8 +184,8 @@ class PanelIndependenceChecker {
 		// (e.g. legacy callers passing a case UUID directly), fall back
 		// to treating the input as the case id.
 		$caseId = $objectionId;
-		if ($legacyObjectionSchema !== '') {
-			$bezwaar = $objectService->find($objectionId, register: $register, schema: $legacyObjectionSchema);
+		if ($legacyObjSchema !== '') {
+			$bezwaar = $objectService->find($objectionId, register: $register, schema: $legacyObjSchema);
 			if (is_array($bezwaar) === true) {
 				$caseId = (string)($bezwaar['case'] ?? $objectionId);
 			}

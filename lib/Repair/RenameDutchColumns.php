@@ -536,23 +536,63 @@ class RenameDutchColumns implements IRepairStep {
 	 * @return array<int, string>
 	 */
 	private function shardTables(): array {
+		$ids = $this->registerIds();
+		if ($ids === []) {
+			return [];
+		}
+
+		$names = $this->openRegisterTableNames();
+		if ($names === []) {
+			return [];
+		}
+
+		$markers = [];
+		foreach ($ids as $id) {
+			$markers[] = 'openregister_table_' . ((int)$id) . '_';
+		}
+
+		$tables = [];
+		foreach ($names as $name) {
+			foreach ($markers as $marker) {
+				$offset = strpos($name, $marker);
+				if ($offset !== false && ctype_digit(substr($name, ($offset + strlen($marker)))) === true) {
+					$tables[] = $name;
+				}
+			}
+		}
+
+		return array_values(array_unique($tables));
+	}
+
+	/**
+	 * Ids of every register whose slug starts with the prefix.
+	 *
+	 * Split out of shardTables() only to keep that method under phpmd's
+	 * cyclomatic-complexity limit; the behaviour is unchanged.
+	 *
+	 * @return array<int, mixed>
+	 */
+	private function registerIds(): array {
 		try {
-			$ids = $this->db->executeQuery(
+			return $this->db->executeQuery(
 				'SELECT id FROM `*PREFIX*openregister_registers` WHERE slug LIKE ?',
 				[self::REGISTER_SLUG_PREFIX . '%']
 			)->fetchAll(\PDO::FETCH_COLUMN);
 		} catch (Exception $e) {
 			$this->logger->warning(
-				'RenameDutchColumns: could not resolve the procest registers; skipping.',
+				'RenameDutchColumns: could not resolve the registers; skipping.',
 				['exception' => $e->getMessage()]
 			);
 			return [];
 		}
+	}
 
-		if ($ids === []) {
-			return [];
-		}
-
+	/**
+	 * Every table name containing the openregister shard marker.
+	 *
+	 * @return array<int, string>
+	 */
+	private function openRegisterTableNames(): array {
 		try {
 			$stmt = $this->db->prepare(
 				'SELECT table_name FROM information_schema.tables WHERE table_name LIKE :pattern'
@@ -567,27 +607,15 @@ class RenameDutchColumns implements IRepairStep {
 			return [];
 		}
 
-		$wanted = [];
-		foreach ($ids as $id) {
-			$wanted[] = 'openregister_table_' . ((int)$id) . '_';
-		}
-
-		$tables = [];
+		$names = [];
 		while (($row = $stmt->fetch(\PDO::FETCH_ASSOC)) !== false) {
 			$name = (string)($row['table_name'] ?? '');
-			if ($name === '') {
-				continue;
-			}
-
-			foreach ($wanted as $marker) {
-				$offset = strpos($name, $marker);
-				if ($offset !== false && ctype_digit(substr($name, ($offset + strlen($marker)))) === true) {
-					$tables[] = $name;
-				}
+			if ($name !== '') {
+				$names[] = $name;
 			}
 		}
 
-		return array_values(array_unique($tables));
+		return $names;
 	}//end shardTables()
 
 	/**

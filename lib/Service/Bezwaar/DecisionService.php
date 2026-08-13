@@ -381,9 +381,9 @@ class DecisionService {
 			$recipients[] = 'bezwaarmaker:' . $bezwaarmaker;
 		}
 
-		$authorisedRepresentative = (string)($decision['gemachtigde'] ?? '');
-		if ($authorisedRepresentative !== '') {
-			$recipients[] = 'gemachtigde:' . $authorisedRepresentative;
+		$representative = (string)($decision['gemachtigde'] ?? '');
+		if ($representative !== '') {
+			$recipients[] = 'gemachtigde:' . $representative;
 		}
 
 		$primairBeslisser = (string)($decision['primairBeslisser'] ?? '');

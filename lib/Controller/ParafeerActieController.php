@@ -53,14 +53,14 @@ class ParafeerActieController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request object.
-	 * @param ParafeerActieService $parafeerActionService The parafering action service.
+	 * @param ParafeerActieService $signOffService The parafering action service.
 	 * @param IUserSession $userSession The user session (for actor identity).
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ParafeerActieService $parafeerActionService,
+		private readonly ParafeerActieService $signOffService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -96,7 +96,7 @@ class ParafeerActieController extends Controller {
 				);
 			}
 
-			$result = $this->parafeerActionService->recordAction($proposalId, $data, $user);
+			$result = $this->signOffService->recordAction($proposalId, $data, $user);
 
 			return new JSONResponse($result, Http::STATUS_CREATED);
 		} catch (OCSForbiddenException $e) {
@@ -148,7 +148,7 @@ class ParafeerActieController extends Controller {
 				);
 			}
 
-			$results = $this->parafeerActionService->listActions($proposalId);
+			$results = $this->signOffService->listActions($proposalId);
 
 			return new JSONResponse($results, Http::STATUS_OK);
 		} catch (\Throwable $e) {
