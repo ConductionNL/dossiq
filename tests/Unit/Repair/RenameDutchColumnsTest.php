@@ -218,6 +218,56 @@ final class RenameDutchColumnsTest extends TestCase {
 		self::assertTrue($this->call('exec', ['ALTER TABLE x RENAME COLUMN a TO b']));
 	}//end testSuccessfulStatementReportsSuccess()
 
+
+	/**
+	 * run() renames a Dutch column it finds on a real shard table.
+	 *
+	 * This is the path that actually moves customer data, so it is the one worth
+	 * exercising: registers resolve, the shard table matches the marker, the old
+	 * column is present and the new one is not, therefore ALTER ... RENAME.
+	 *
+	 * @return void
+	 */
+	public function testRunRenamesAnExistingDutchColumn(): void {
+		$map = $this->map();
+		$old = (string)array_key_first($map);
+		$new = $map[$old];
+
+		$registers = $this->createMock(\OCP\DB\IResult::class);
+		$registers->method('fetchAll')->willReturn([7]);
+		$this->db->method('executeQuery')->willReturn($registers);
+
+		$tables = $this->createMock(\OCP\DB\IPreparedStatement::class);
+		$columns = $this->createMock(\OCP\DB\IPreparedStatement::class);
+		$tables->method('fetch')->willReturnOnConsecutiveCalls(
+			['table_name' => 'oc_openregister_table_7_42'], false
+		);
+		$columns->method('fetch')->willReturnOnConsecutiveCalls(
+			['column_name' => $old], false
+		);
+		$this->db->method('prepare')->willReturnOnConsecutiveCalls($tables, $columns);
+
+		$platform = $this->getMockBuilder(\stdClass::class)
+			->addMethods(['quoteSingleIdentifier'])->getMock();
+		$platform->method('quoteSingleIdentifier')->willReturnArgument(0);
+		$this->db->method('getDatabasePlatform')->willReturn($platform);
+
+		$statements = [];
+		$this->db->method('executeStatement')->willReturnCallback(
+			static function (string $sql) use (&$statements): int {
+				$statements[] = $sql;
+				return 1;
+			}
+		);
+
+		$this->step->run($this->createMock(IOutput::class));
+
+		self::assertNotSame([], $statements, 'the migration issued no statement at all');
+		self::assertStringContainsString('RENAME COLUMN', $statements[0]);
+		self::assertStringContainsString($old, $statements[0]);
+		self::assertStringContainsString($new, $statements[0]);
+	}//end testRunRenamesAnExistingDutchColumn()
+
 	/**
 	 * The step names itself for the repair log.
 	 *
