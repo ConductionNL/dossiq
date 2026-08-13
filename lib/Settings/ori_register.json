@@ -316,7 +316,7 @@
             "minimum": 0,
             "title": "Abstentions"
           },
-          "factionResults": {
+          "politicalGroupResults": {
             "type": "array",
             "description": "Per-party voting results",
             "items": {
@@ -378,7 +378,7 @@
           },
           "fractie": {
             "type": "string",
-            "description": "Reference (slug) to the party/faction this member belongs to",
+            "description": "Reference (slug) to the party/politicalGroup this member belongs to",
             "facetable": true,
             "title": "Party"
           },
@@ -415,8 +415,8 @@
         "title": "Fractie",
         "version": "1.0.0",
         "published": "2025-01-01T00:00:00+00:00",
-        "summary": "A political party or faction in the municipal council",
-        "description": "Represents a political party or faction with seats in the municipal council. Contains the party name, number of seats, and coalition/opposition classification.",
+        "summary": "A political party or politicalGroup in the municipal council",
+        "description": "Represents a political party or politicalGroup with seats in the municipal council. Contains the party name, number of seats, and coalition/opposition classification.",
         "required": [
           "name",
           "zetels"
@@ -424,7 +424,7 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Name of the party or faction",
+            "description": "Name of the party or politicalGroup",
             "maxLength": 255,
             "facetable": true,
             "title": "Name"
@@ -1765,7 +1765,7 @@
         "stemmenFor": 19,
         "stemmenTegen": 16,
         "onthoudingen": 0,
-        "factionResults": [
+        "politicalGroupResults": [
           {
             "fractie": "Voorbeeldstad Vooruit",
             "stem": "voor",
@@ -1821,7 +1821,7 @@
         "stemmenFor": 25,
         "stemmenTegen": 10,
         "onthoudingen": 0,
-        "factionResults": [
+        "politicalGroupResults": [
           {
             "fractie": "Voorbeeldstad Vooruit",
             "stem": "voor",
@@ -1877,7 +1877,7 @@
         "stemmenFor": 23,
         "stemmenTegen": 12,
         "onthoudingen": 0,
-        "factionResults": [
+        "politicalGroupResults": [
           {
             "fractie": "Voorbeeldstad Vooruit",
             "stem": "voor",
@@ -1933,7 +1933,7 @@
         "stemmenFor": 10,
         "stemmenTegen": 25,
         "onthoudingen": 0,
-        "factionResults": [
+        "politicalGroupResults": [
           {
             "fractie": "Voorbeeldstad Vooruit",
             "stem": "tegen",
@@ -1989,7 +1989,7 @@
         "stemmenFor": 35,
         "stemmenTegen": 0,
         "onthoudingen": 0,
-        "factionResults": [
+        "politicalGroupResults": [
           {
             "fractie": "Voorbeeldstad Vooruit",
             "stem": "voor",
@@ -2045,7 +2045,7 @@
         "stemmenFor": 27,
         "stemmenTegen": 8,
         "onthoudingen": 0,
-        "factionResults": [
+        "politicalGroupResults": [
           {
             "fractie": "Voorbeeldstad Vooruit",
             "stem": "voor",

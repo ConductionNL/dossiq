@@ -197,7 +197,7 @@ class RenameDutchColumns implements IRepairStep {
 		'financiele_toets_oordeel' => 'financiele_toets_opinion',
 		'financiele_verantwoording' => 'financiele_accountability',
 		'formaat' => 'format',
-		'fractie_resultaten' => 'faction_results',
+		'fractie_resultaten' => 'politicalGroup_results',
 		'functie' => 'role',
 		'gearchiveerd_op' => 'gearchiveerd_on',
 		'geboorte' => 'birth',
