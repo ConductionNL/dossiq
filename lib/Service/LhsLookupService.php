@@ -135,7 +135,7 @@ class LhsLookupService {
 		return [
 			'gedragRow' => $gedrag,
 			'gevolgColumn' => $gevolg,
-			'interventieStep' => $intervention,
+			'interventionStep' => $intervention,
 			'description' => '',
 			'source' => 'fallback',
 		];

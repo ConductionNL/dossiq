@@ -317,9 +317,9 @@ class MandaatMatrixController extends Controller {
 			return $denied;
 		}
 
-		$caseId = (string)$this->request->getParam('zaakId', '');
+		$caseId = (string)$this->request->getParam('caseId', '');
 		$decisionType = (string)$this->request->getParam('decisionType', '');
-		$escalationReason = (string)$this->request->getParam('escalatieReden', '');
+		$escalationReason = (string)$this->request->getParam('escalationReason', '');
 		if ($caseId === '' || $decisionType === '' || $escalationReason === '') {
 			return $this->badRequest(msg: 'zaakId, decisionType and escalatieReden are required');
 		}

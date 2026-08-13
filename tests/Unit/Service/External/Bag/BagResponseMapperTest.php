@@ -39,7 +39,7 @@ class BagResponseMapperTest extends TestCase {
 		$mapped = $mapper->map(
 			[
 				'openbareRuimteNaam' => 'Voorstraat',
-				'huisnummer' => 10,
+				'houseNumber' => 10,
 				'huisletter' => 'A',
 				'huisnummertoevoeging' => 'II',
 				'postcode' => '1234AB',
@@ -74,7 +74,7 @@ class BagResponseMapperTest extends TestCase {
 		$mapped = $mapper->map(
 			[
 				'openbareRuimteNaam' => 'Kade',
-				'huisnummer' => 1,
+				'houseNumber' => 1,
 				'postcode' => '5678CD',
 			]
 		);
@@ -149,8 +149,8 @@ class BagResponseMapperTest extends TestCase {
 		$mapper = new BagResponseMapper();
 		$mapped = $mapper->mapMany(
 			[
-				['postcode' => '1111AA', 'huisnummer' => 1],
-				['postcode' => '2222BB', 'huisnummer' => 2],
+				['postcode' => '1111AA', 'houseNumber' => 1],
+				['postcode' => '2222BB', 'houseNumber' => 2],
 				'not-an-array',
 			]
 		);
@@ -168,7 +168,7 @@ class BagResponseMapperTest extends TestCase {
 	 */
 	public function testNumericStringFieldsAreCoercedToInt(): void {
 		$mapper = new BagResponseMapper();
-		$mapped = $mapper->map(['huisnummer' => '42', 'oppervlakte' => '85']);
+		$mapped = $mapper->map(['houseNumber' => '42', 'oppervlakte' => '85']);
 
 		$this->assertSame(42, $mapped['houseNumber']);
 		$this->assertSame(85, $mapped['oppervlakte']);

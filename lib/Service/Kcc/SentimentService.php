@@ -134,7 +134,7 @@ class SentimentService {
 			'label' => $label,
 			'triggers' => $triggers,
 			'escalatieAanbevolen' => $escalatieAanbevolen,
-			'escalatieLevel' => $escalationLevel,
+			'escalationLevel' => $escalationLevel,
 		];
 	}//end analyzeSentiment()
 

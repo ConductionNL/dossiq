@@ -14,7 +14,7 @@
 				<span class="beschikking-detail__status">{{ statusLabel }}</span>
 			</header>
 
-			<BeschikkingActionBar :beschikking-id="beschikkingId"
+			<BeschikkingActionBar :beschikking-id="decisionId"
 				:status="beschikking.huidigeStatus"
 				@updated="onUpdated" />
 

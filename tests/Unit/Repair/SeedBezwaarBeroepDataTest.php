@@ -113,8 +113,8 @@ class SeedBezwaarBeroepDataTest extends TestCase {
 
 		// The name should mention bezwaar/beroep so it is recognizable in logs.
 		$this->assertTrue(
-			stripos($name, 'bezwaar') !== false || stripos($name, 'beroep') !== false,
-			"Repair step name should mention 'bezwaar' or 'beroep', got: {$name}"
+			stripos($name, 'objection') !== false || stripos($name, 'beroep') !== false,
+			"Repair step name should mention 'objection' or 'beroep', got: {$name}"
 		);
 
 	}//end testGetNameDescribesBezwaarBeroep()

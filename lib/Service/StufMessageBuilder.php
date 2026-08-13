@@ -303,7 +303,7 @@ class StufMessageBuilder {
 		$templates = ($endpoint['vrijeBerichtenTemplates'] ?? []);
 		$template = null;
 		foreach ($templates as $candidate) {
-			if (($candidate['naam'] ?? '') === $name) {
+			if (($candidate['name'] ?? '') === $name) {
 				$template = $candidate;
 				break;
 			}
@@ -490,7 +490,7 @@ class StufMessageBuilder {
 		$involvedParties = '';
 		foreach (($case['betrokkenen'] ?? []) as $bet) {
 			$bsn = (string)($bet['bsn'] ?? '');
-			$role = $this->escape(value: (string)($bet['rol'] ?? 'heeftAlsInitiator'));
+			$role = $this->escape(value: (string)($bet['role'] ?? 'heeftAlsInitiator'));
 			$body = '<zkn:gerelateerde stuf:entiteittype="NPS">'
 				. '<bg:inp.bsn>' . $this->escape(value: $bsn) . '</bg:inp.bsn>'
 				. '</zkn:gerelateerde>';
@@ -532,7 +532,7 @@ class StufMessageBuilder {
 	 */
 	private function renderCaseMovementElements(array $case): string {
 		$out = '';
-		foreach (['omschrijving', 'einddatum', 'resultaattoelichting'] as $field) {
+		foreach (['omschrijving', 'endDate', 'resultaattoelichting'] as $field) {
 			if (array_key_exists(key: $field, array: $case) === true && $case[$field] !== null) {
 				$out .= '<zkn:' . $field . '>' . $this->escape(value: (string)$case[$field]) . '</zkn:' . $field . '>';
 			}

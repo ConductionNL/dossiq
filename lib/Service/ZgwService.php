@@ -56,8 +56,8 @@ class ZgwService {
 		'zaken' => [
 			'zaken' => 'zaak',
 			'statussen' => 'status',
-			'resultaten' => 'resultaat',
-			'rollen' => 'rol',
+			'resultaten' => 'result',
+			'rollen' => 'role',
 			'zaakeigenschappen' => 'zaakeigenschap',
 			'zaakinformatieobjecten' => 'zaakinformatieobject',
 			'zaakobjecten' => 'zaakobject',
@@ -65,7 +65,7 @@ class ZgwService {
 		],
 		'catalogi' => [
 			'catalogussen' => 'catalogus',
-			'zaaktypen' => 'zaaktype',
+			'zaaktypen' => 'caseType',
 			'statustypen' => 'statustype',
 			'resultaattypen' => 'resultaattype',
 			'roltypen' => 'roltype',
@@ -75,7 +75,7 @@ class ZgwService {
 			'zaaktype-informatieobjecttypen' => 'zaaktypeinformatieobjecttype',
 		],
 		'besluiten' => [
-			'besluiten' => 'besluit',
+			'besluiten' => 'decision',
 			'besluittypen' => 'besluittype',
 			'besluitinformatieobjecten' => 'besluitinformatieobject',
 		],
@@ -89,7 +89,7 @@ class ZgwService {
 			'verzendingen' => 'verzending',
 		],
 		'notificaties' => [
-			'kanaal' => 'kanaal',
+			'channel' => 'channel',
 			'abonnement' => 'abonnement',
 		],
 	];
@@ -440,7 +440,7 @@ class ZgwService {
 			'archiveNomination',
 			'archiveActionDate',
 			'paymentIndication',
-			'lastPaymentDate',
+			'orderPaymentDate',
 			'communicationChannel',
 			'archiveStatus',
 			'parentCase',
@@ -1487,9 +1487,9 @@ class ZgwService {
 				'bron' => 'procest',
 				'applicatieId' => 'procest',
 				'applicatieWeergave' => 'Procest',
-				'actie' => 'create',
+				'action' => 'create',
 				'actieWeergave' => 'Object aangemaakt',
-				'resultaat' => 200,
+				'result' => 200,
 				'hoofdObject' => $resourceUrl,
 				'resource' => $resource,
 				'resourceUrl' => $resourceUrl,
@@ -1557,9 +1557,9 @@ class ZgwService {
 				'bron' => 'procest',
 				'applicatieId' => 'procest',
 				'applicatieWeergave' => 'Procest',
-				'actie' => 'create',
+				'action' => 'create',
 				'actieWeergave' => 'Object aangemaakt',
-				'resultaat' => 200,
+				'result' => 200,
 				'hoofdObject' => $resourceUrl,
 				'resource' => $resource,
 				'resourceUrl' => $resourceUrl,
@@ -1620,9 +1620,9 @@ class ZgwService {
 			'bron' => 'procest',
 			'applicatieId' => $logData['user'] ?? 'procest',
 			'applicatieWeergave' => $logData['userName'] ?? 'Procest',
-			'actie' => $zgwAction,
+			'action' => $zgwAction,
 			'actieWeergave' => $weergave,
-			'resultaat' => 200,
+			'result' => 200,
 			'hoofdObject' => $resourceUrl,
 			'resource' => $resource,
 			'resourceUrl' => $resourceUrl,
@@ -1646,7 +1646,7 @@ class ZgwService {
 	 */
 	public function resolveZaakClosed(string $resource, array $existingData): ?bool {
 		if ($resource === 'zaken') {
-			$endDate = $existingData['endDate'] ?? ($existingData['einddatum'] ?? null);
+			$endDate = $existingData['endDate'] ?? ($existingData['endDate'] ?? null);
 			return $endDate !== null && $endDate !== '';
 		}
 
@@ -1697,7 +1697,7 @@ class ZgwService {
 				$caseData = $case->jsonSerialize();
 			}
 
-			$endDate = $caseData['endDate'] ?? ($caseData['einddatum'] ?? null);
+			$endDate = $caseData['endDate'] ?? ($caseData['endDate'] ?? null);
 
 			return $endDate !== null && $endDate !== '';
 		} catch (\Throwable $e) {
@@ -1783,7 +1783,7 @@ class ZgwService {
 				$caseData = $case->jsonSerialize();
 			}
 
-			$endDate = $caseData['endDate'] ?? ($caseData['einddatum'] ?? null);
+			$endDate = $caseData['endDate'] ?? ($caseData['endDate'] ?? null);
 
 			return $endDate !== null && $endDate !== '';
 		} catch (\Throwable $e) {
@@ -1824,7 +1824,7 @@ class ZgwService {
 			return null;
 		}
 
-		$zaaktypeUuid = $existingData['caseType'] ?? ($existingData['zaaktype'] ?? null);
+		$zaaktypeUuid = $existingData['caseType'] ?? ($existingData['caseType'] ?? null);
 		if ($zaaktypeUuid === null || $zaaktypeUuid === '') {
 			return null;
 		}
@@ -1839,7 +1839,7 @@ class ZgwService {
 		}
 
 		try {
-			$caseTypeConfig = $this->zgwMappingService->getMapping('zaaktype');
+			$caseTypeConfig = $this->zgwMappingService->getMapping('caseType');
 			if ($caseTypeConfig === null) {
 				return null;
 			}
@@ -1902,7 +1902,7 @@ class ZgwService {
 			return null;
 		}
 
-		$caseTypeRef = $body['zaaktype'] ?? null;
+		$caseTypeRef = $body['caseType'] ?? null;
 		if ($caseTypeRef === null || $caseTypeRef === '') {
 			return null;
 		}
@@ -1920,7 +1920,7 @@ class ZgwService {
 		$zaaktypeUuid = $matches[1];
 
 		try {
-			$caseTypeConfig = $this->zgwMappingService->getMapping('zaaktype');
+			$caseTypeConfig = $this->zgwMappingService->getMapping('caseType');
 			if ($caseTypeConfig === null) {
 				return null;
 			}

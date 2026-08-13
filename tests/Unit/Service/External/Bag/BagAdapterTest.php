@@ -164,7 +164,7 @@ class BagAdapterTest extends TestCase {
 			[
 				'_embedded' => [
 					'adressen' => [
-						['postcode' => '1234AB', 'huisnummer' => 10, 'openbareRuimteNaam' => 'Voorstraat', 'woonplaatsNaam' => 'Voorbeeldstad'],
+						['postcode' => '1234AB', 'houseNumber' => 10, 'openbareRuimteNaam' => 'Voorstraat', 'woonplaatsNaam' => 'Voorbeeldstad'],
 					],
 				],
 			]
@@ -182,7 +182,7 @@ class BagAdapterTest extends TestCase {
 
 		$this->assertStringEndsWith('/adressen', $captured['url']);
 		$this->assertSame('1234AB', $captured['options']['query']['postcode'], 'postcode must be normalized to uppercase, no spaces');
-		$this->assertSame('10', $captured['options']['query']['huisnummer']);
+		$this->assertSame('10', $captured['options']['query']['houseNumber']);
 		$this->assertSame('secret-key', $captured['options']['headers']['X-Api-Key']);
 		$this->assertSame('epsg:4326', $captured['options']['headers']['Accept-Crs']);
 		$this->assertSame('application/hal+json', $captured['options']['headers']['Accept']);

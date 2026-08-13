@@ -90,15 +90,15 @@
 
 			<!-- Sub-dialogs -->
 			<BeschikkingDialog v-if="showBeschikkingDialog"
-				:zaak-id="zaakId"
+				:zaak-id="caseId"
 				@close="showBeschikkingDialog = false"
 				@generated="onBeschikkingGenerated" />
 			<SamenwerkverzoekDialog v-if="showSamenwerkDialog"
-				:zaak-id="zaakId"
+				:zaak-id="caseId"
 				@close="showSamenwerkDialog = false"
 				@initiated="onSamenwerkInitiated" />
 			<DoorstuurDialog v-if="showDoorstuurDialog"
-				:zaak-id="zaakId"
+				:zaak-id="caseId"
 				@close="showDoorstuurDialog = false" />
 
 			<!-- Inline transition form -->
@@ -171,7 +171,7 @@ export default {
 				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
 				{ label: t('procest', 'Granted'), value: 'verleend' },
 				{ label: t('procest', 'Refused'), value: 'geweigerd' },
-				{ label: t('procest', 'Withdrawn'), value: 'ingetrokken' },
+				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
 			],
 		}
 	},

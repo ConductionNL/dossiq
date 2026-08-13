@@ -133,10 +133,10 @@ class BezwaarTermijnJobTest extends TestCase {
 		$yesterday = (new \DateTimeImmutable('-1 day'))->format('Y-m-d');
 		$this->objects->saveObject('procest', 'bezwaarTrigger', [
 			'id' => 'trig-1',
-			'beschikkingId' => 'besch-1',
-			'bezwaarOntvangen' => false,
+			'decisionId' => 'besch-1',
+			'objectionOntvangen' => false,
 			'archiefTriggerActief' => true,
-			'archiefDatum' => $yesterday,
+			'archiefDate' => $yesterday,
 		]);
 
 		$this->decisionService->expects($this->once())
@@ -161,10 +161,10 @@ class BezwaarTermijnJobTest extends TestCase {
 		$yesterday = (new \DateTimeImmutable('-1 day'))->format('Y-m-d');
 		$this->objects->saveObject('procest', 'bezwaarTrigger', [
 			'id' => 'trig-2',
-			'beschikkingId' => 'besch-2',
-			'bezwaarOntvangen' => true,
+			'decisionId' => 'besch-2',
+			'objectionOntvangen' => true,
 			'archiefTriggerActief' => true,
-			'archiefDatum' => $yesterday,
+			'archiefDate' => $yesterday,
 		]);
 
 		$this->decisionService->expects($this->never())->method('archive');
@@ -186,10 +186,10 @@ class BezwaarTermijnJobTest extends TestCase {
 		$tomorrow = (new \DateTimeImmutable('+10 days'))->format('Y-m-d');
 		$this->objects->saveObject('procest', 'bezwaarTrigger', [
 			'id' => 'trig-3',
-			'beschikkingId' => 'besch-3',
-			'bezwaarOntvangen' => false,
+			'decisionId' => 'besch-3',
+			'objectionOntvangen' => false,
 			'archiefTriggerActief' => true,
-			'archiefDatum' => $tomorrow,
+			'archiefDate' => $tomorrow,
 		]);
 
 		$this->decisionService->expects($this->never())->method('archive');

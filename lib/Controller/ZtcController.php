@@ -810,7 +810,7 @@ class ZtcController extends ZgwController {
 		) {
 			$expanded = [];
 			foreach ($relatedRaw as $rel) {
-				$ztRef = $rel['zaaktype'] ?? '';
+				$ztRef = $rel['caseType'] ?? '';
 				if (is_string($ztRef) === false || $ztRef === '') {
 					continue;
 				}
@@ -845,13 +845,13 @@ class ZtcController extends ZgwController {
 							$mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
 							if ($mId !== '') {
 								$entry = $rel;
-								$entry['zaaktype'] = $baseUrl . '/zaaktypen/' . $mId;
+								$entry['caseType'] = $baseUrl . '/zaaktypen/' . $mId;
 								$expanded[] = $entry;
 							}
 						}
 					}//end if
 				} catch (\Throwable $e) {
-					$rel['zaaktype'] = $baseUrl . '/zaaktypen/' . $ztRef;
+					$rel['caseType'] = $baseUrl . '/zaaktypen/' . $ztRef;
 					$expanded[] = $rel;
 				}//end try
 			}//end foreach
@@ -860,7 +860,7 @@ class ZtcController extends ZgwController {
 			$seen = [];
 			$unique = [];
 			foreach ($expanded as $entry) {
-				$ztUrl = $entry['zaaktype'] ?? '';
+				$ztUrl = $entry['caseType'] ?? '';
 				if (isset($seen[$ztUrl]) === false) {
 					$seen[$ztUrl] = true;
 					$unique[] = $entry;
@@ -878,7 +878,7 @@ class ZtcController extends ZgwController {
 		if ($ziotMapping !== null && $iotMapping !== null) {
 			try {
 				$query = $objectService->buildSearchQuery(
-					requestParams: ['zaaktype' => $uuid, '_limit' => 100],
+					requestParams: ['caseType' => $uuid, '_limit' => 100],
 					register: $ziotMapping['sourceRegister'],
 					schema: $ziotMapping['sourceSchema']
 				);
@@ -1026,8 +1026,8 @@ class ZtcController extends ZgwController {
 	private function filterByDateValidity(array $results, string $dateValidity): array {
 		$filtered = [];
 		foreach ($results as $item) {
-			$start = $item['beginGeldigheid'] ?? null;
-			$end = $item['eindeGeldigheid'] ?? null;
+			$start = $item['startValidity'] ?? null;
+			$end = $item['endValidity'] ?? null;
 
 			// BeginGeldigheid must be present and <= datumGeldigheid.
 			if ($start !== null && $start !== '' && $start > $dateValidity) {
@@ -1076,8 +1076,8 @@ class ZtcController extends ZgwController {
 			$filtered = [];
 			foreach ($data[$field] as $item) {
 				if ($nested === true) {
-					// GerelateerdeZaaktypen: array of objects with 'zaaktype' URL field.
-					$url = $item['zaaktype'] ?? '';
+					// GerelateerdeZaaktypen: array of objects with 'caseType' URL field.
+					$url = $item['caseType'] ?? '';
 					if ($this->isUrlValid(url: $url, schemaKey: $schemaKey, today: $today) === true) {
 						$filtered[] = $item;
 					}
@@ -1162,13 +1162,13 @@ class ZtcController extends ZgwController {
 			}
 
 			// Check date validity: beginGeldigheid <= today.
-			$start = $objectData['validFrom'] ?? ($objectData['beginGeldigheid'] ?? null);
+			$start = $objectData['validFrom'] ?? ($objectData['startValidity'] ?? null);
 			if ($start !== null && $start !== '' && $start > $today) {
 				return false;
 			}
 
 			// Check date validity: eindeGeldigheid >= today (or no end date).
-			$end = $objectData['validUntil'] ?? ($objectData['eindeGeldigheid'] ?? null);
+			$end = $objectData['validUntil'] ?? ($objectData['endValidity'] ?? null);
 			if ($end !== null && $end !== '' && $end < $today) {
 				return false;
 			}

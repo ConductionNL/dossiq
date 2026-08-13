@@ -137,11 +137,11 @@ class OriDataQualityCheck extends TimedJob {
 		foreach ($vergaderingen as $v) {
 			$slug = (string)($v['@self']['slug'] ?? ($v['id'] ?? '?'));
 
-			if (empty($v['locatie']) === true) {
+			if (empty($v['location']) === true) {
 				$issues[] = [
 					'schema' => 'vergadering',
 					'slug' => $slug,
-					'field' => 'locatie',
+					'field' => 'location',
 					'severity' => 'warning',
 					'message' => 'Vergadering "' . $slug . '" is missing recommended field: locatie',
 				];
@@ -239,7 +239,7 @@ class OriDataQualityCheck extends TimedJob {
 
 		foreach ($raadsleden as $rl) {
 			$rlSlug = (string)($rl['@self']['slug'] ?? ($rl['id'] ?? '?'));
-			$factionRef = (string)($rl['fractie'] ?? '');
+			$factionRef = (string)($rl['faction'] ?? '');
 
 			if (empty($factionRef) === true) {
 				continue;
@@ -249,7 +249,7 @@ class OriDataQualityCheck extends TimedJob {
 				$faction = $this->findObjectAsArray(
 					objectService: $objectService,
 					register: 'ori',
-					schema: 'fractie',
+					schema: 'faction',
 					id: $factionRef
 				);
 
@@ -257,7 +257,7 @@ class OriDataQualityCheck extends TimedJob {
 					$issues[] = [
 						'schema' => 'raadslid',
 						'slug' => $rlSlug,
-						'field' => 'fractie',
+						'field' => 'faction',
 						'severity' => 'warning',
 						'message' => 'Raadslid references non-existent fractie: ' . $factionRef,
 					];
@@ -300,7 +300,7 @@ class OriDataQualityCheck extends TimedJob {
 		// Build a set of all document slugs that are referenced by agendapunten.
 		$referenced = [];
 		foreach ($agendapunten as $ap) {
-			$attachments = ($ap['bijlagen'] ?? []);
+			$attachments = ($ap['attachments'] ?? []);
 			if (is_array(value: $attachments) === true) {
 				foreach ($attachments as $docSlug) {
 					$referenced[$docSlug] = true;
@@ -314,7 +314,7 @@ class OriDataQualityCheck extends TimedJob {
 				$issues[] = [
 					'schema' => 'raadsdocument',
 					'slug' => $slug,
-					'field' => 'bijlagen',
+					'field' => 'attachments',
 					'severity' => 'info',
 					'message' => 'Raadsdocument "' . $slug . '" is not referenced by any agendapunt',
 				];

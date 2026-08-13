@@ -37,7 +37,7 @@
             { "name": "portefeuillehouder", "propertyType": "string", "isRequired": true, "description": "Nextcloud-gebruiker van de verantwoordelijk wethouder" },
             { "name": "vergadergremium", "propertyType": "string", "isRequired": true, "description": "Het besluitvormend orgaan (College B&W / Gemeenteraad / Commissie)" },
             { "name": "agendanummer", "propertyType": "string", "isRequired": false, "description": "Nummer op de vergaderagenda (bijv. '5.3')" },
-            { "name": "behandeling", "propertyType": "string", "isRequired": false, "description": "Classificatie als hamerstuk of bespreekstuk" },
+            { "name": "handling", "propertyType": "string", "isRequired": false, "description": "Classificatie als hamerstuk of bespreekstuk" },
             { "name": "publicatieReferentie", "propertyType": "string", "isRequired": false, "description": "Referentie-URI van de publicatie in DROP of LVBB" }
         ],
         "documentTypes": [
@@ -99,7 +99,7 @@
         },
         "parafeerroute": {
             "name": "Collegeadvies standaard - 3 stappen",
-            "voorstelType": "collegeadvies",
+            "proposalType": "collegeadvies",
             "isDefault": true,
             "description": "Standaard parafeerketen voor collegeadviezen: beleidsadviseur -> afdelingshoofd -> gemeentesecretaris",
             "steps": [

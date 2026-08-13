@@ -89,7 +89,7 @@ class BeschikkingController extends Controller {
 		}
 
 		$body = $this->readJsonBody();
-		$caseId = (string)($body['zaakId'] ?? '');
+		$caseId = (string)($body['caseId'] ?? '');
 		$templateId = null;
 		if (isset($body['templateId']) === true) {
 			$templateId = (string)$body['templateId'];
@@ -107,7 +107,7 @@ class BeschikkingController extends Controller {
 			$merged['geadresseerde'] = $overrides;
 		}
 
-		foreach (['beschikkingType', 'motivering', 'beslissing'] as $field) {
+		foreach (['decisionType', 'rationale', 'beslissing'] as $field) {
 			if (isset($payload[$field]) === true) {
 				$merged[$field] = $payload[$field];
 			}
@@ -201,9 +201,9 @@ class BeschikkingController extends Controller {
 			$result = $this->decisionService->akkoord($id, $approvedBy);
 			return new JSONResponse($result);
 		} catch (RuntimeException $e) {
-			return $this->mapRuntime(op: 'akkoord', e: $e);
+			return $this->mapRuntime(op: 'approved', e: $e);
 		} catch (\Throwable $e) {
-			return $this->fail(op: 'akkoord', e: $e);
+			return $this->fail(op: 'approved', e: $e);
 		}
 	}//end akkoord()
 
@@ -288,7 +288,7 @@ class BeschikkingController extends Controller {
 			$zip = $this->decisionService->exportAuditPacket($id);
 			$this->logger->info(
 				'BeschikkingController: audit-pakket export',
-				['beschikkingId' => $id, 'door' => $uid],
+				['decisionId' => $id, 'door' => $uid],
 			);
 			return new DataDownloadResponse(
 				$zip,

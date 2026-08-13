@@ -140,7 +140,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 
 		$case = [
 			'id' => 'zaak-uuid-1',
-			'vergunningaanvraagRef' => 'aanvraag-uuid-1',
+			'permitApplicationRef' => 'aanvraag-uuid-1',
 		];
 
 		$objectServiceMock

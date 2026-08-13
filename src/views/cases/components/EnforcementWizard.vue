@@ -57,7 +57,7 @@
 				<div class="enforcement-wizard__field">
 					<label for="enforcement-intervention-type">{{ t('procest', 'Intervention type') }}</label>
 					<input id="enforcement-intervention-type"
-						v-model="interventie"
+						v-model="intervention"
 						type="text"
 						class="enforcement-wizard__input">
 				</div>
@@ -66,7 +66,7 @@
 					<div class="enforcement-wizard__field">
 						<label for="enforcement-penalty-amount">{{ t('procest', 'Penalty per violation (EUR)') }}</label>
 						<input id="enforcement-penalty-amount"
-							v-model.number="dwangsomBedrag"
+							v-model.number="penaltyPaymentAmount"
 							type="number"
 							class="enforcement-wizard__input"
 							min="0">
@@ -74,7 +74,7 @@
 					<div class="enforcement-wizard__field">
 						<label for="enforcement-penalty-maximum">{{ t('procest', 'Maximum penalty (EUR)') }}</label>
 						<input id="enforcement-penalty-maximum"
-							v-model.number="dwangsomMaximaal"
+							v-model.number="penaltyPaymentMaximum"
 							type="number"
 							class="enforcement-wizard__input"
 							min="0">
@@ -82,7 +82,7 @@
 					<div class="enforcement-wizard__field">
 						<label for="enforcement-grace-period">{{ t('procest', 'Grace period (days)') }}</label>
 						<input id="enforcement-grace-period"
-							v-model.number="begunstigingstermijn"
+							v-model.number="compliancePeriod"
 							type="number"
 							class="enforcement-wizard__input"
 							min="1">
@@ -93,7 +93,7 @@
 					<div class="enforcement-wizard__field">
 						<label for="enforcement-execution-date">{{ t('procest', 'Execution date') }}</label>
 						<input id="enforcement-execution-date"
-							v-model="effectueringsDatum"
+							v-model="effectueringsDate"
 							type="date"
 							class="enforcement-wizard__input">
 					</div>
@@ -130,7 +130,7 @@
 						<strong>{{ t('procest', 'Penalty:') }}</strong>
 						EUR {{ dwangsomBedrag }} {{ t('procest', 'per violation, max') }} EUR {{ dwangsomMaximaal }}
 					</p>
-					<p v-if="begunstigingstermijn">
+					<p v-if="compliancePeriod">
 						<strong>{{ t('procest', 'Grace period:') }}</strong> {{ begunstigingstermijn }} {{ t('procest', 'days') }}
 					</p>
 				</div>
@@ -232,7 +232,7 @@ export default {
 		},
 
 		isDwangsom() {
-			return this.interventie?.toLowerCase().includes('dwangsom')
+			return this.interventie?.toLowerCase().includes('penaltyPayment')
 		},
 
 		isBestuursdwang() {
@@ -302,7 +302,7 @@ export default {
 			if (lower.includes('bestuursdwang')) {
 				return 'bestuursdwang'
 			}
-			if (lower.includes('dwangsom')) {
+			if (lower.includes('penaltyPayment')) {
 				return 'last_onder_dwangsom'
 			}
 			if (lower.includes('pv') || lower.includes('proces')) {

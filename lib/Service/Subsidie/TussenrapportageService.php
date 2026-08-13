@@ -180,7 +180,7 @@ class TussenrapportageService {
 		}
 
 		if ($ingekeurdeAmount !== null) {
-			$patch['ingekeurdeBedrag'] = $ingekeurdeAmount;
+			$patch['ingekeurdeAmount'] = $ingekeurdeAmount;
 		}
 
 		try {

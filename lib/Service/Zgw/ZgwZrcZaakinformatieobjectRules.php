@@ -84,8 +84,8 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 		}
 
 		// Zrc-004: Set aardRelatieWeergave and registratiedatum.
-		$body['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
-		$body['registratiedatum'] = date('Y-m-d');
+		$body['natureRelationshipWeergave'] = 'Hoort bij, omgekeerd: kent';
+		$body['registrationDate'] = date('Y-m-d');
 
 		return $this->isValid(body: $body);
 	}//end rulesZaakinformatieobjectenCreate()
@@ -112,7 +112,7 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 		}
 
 		$body = $result['enrichedBody'];
-		$body['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
+		$body['natureRelationshipWeergave'] = 'Hoort bij, omgekeerd: kent';
 
 		return $this->isValid(body: $body);
 	}//end rulesZaakinformatieobjectenUpdate()
@@ -265,7 +265,7 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 
 		try {
 			$query = $this->objectService->buildSearchQuery(
-				requestParams: ['zaaktype' => $zaaktypeUuid, 'informatieobjecttype' => $docTypeUuid, '_limit' => 1],
+				requestParams: ['caseType' => $zaaktypeUuid, 'informatieobjecttype' => $docTypeUuid, '_limit' => 1],
 				register: $register,
 				schema: $ziotSchemaId
 			);

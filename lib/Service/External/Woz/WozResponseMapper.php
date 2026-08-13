@@ -70,12 +70,12 @@ final class WozResponseMapper {
 
 		return [
 			'wozobjectnummer' => $this->stringOrNull(value: $raw['wozobjectnummer'] ?? null),
-			'waarde' => $this->intOrNull(value: $current['vastgesteldeWaarde'] ?? $raw['waarde'] ?? null),
+			'value' => $this->intOrNull(value: $current['vastgesteldeWaarde'] ?? $raw['value'] ?? null),
 			'waardepeildatum' => $this->stringOrNull(value: $current['waardepeildatum'] ?? $raw['waardepeildatum'] ?? null),
 			'grondoppervlakte' => $this->intOrNull(value: $raw['grondoppervlakte'] ?? null),
 			'gebruiksdoel' => $this->toStringArray(value: $raw['gebruiksdoelen'] ?? $raw['gebruiksdoel'] ?? []),
-			'nummeraanduidingId' => $this->stringOrNull(
-				value: $raw['nummeraanduidingIdentificatie'] ?? $raw['adresseerbaarObjectIdentificatie'] ?? $raw['nummeraanduidingId'] ?? null
+			'addressDesignationId' => $this->stringOrNull(
+				value: $raw['nummeraanduidingIdentificatie'] ?? $raw['adresseerbaarObjectIdentificatie'] ?? $raw['addressDesignationId'] ?? null
 			),
 		];
 	}//end map()

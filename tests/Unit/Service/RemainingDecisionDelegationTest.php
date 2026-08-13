@@ -147,7 +147,7 @@ class RemainingDecisionDelegationTest extends TestCase {
 			'ra-1',
 			function (DecisionRequestedEvent $event): void {
 				$this->assertSame('report-adoption', $event->getDecisionType());
-				$this->assertSame('voorstel', $event->getSubjectSchema());
+				$this->assertSame('proposal', $event->getSubjectSchema());
 			}
 		);
 

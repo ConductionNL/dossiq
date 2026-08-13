@@ -83,7 +83,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 */
 	public function rulesZakenCreate(array $body): array {
 		// Zrc-001: Validate zaaktype URL.
-		$caseTypeUrl = $body['zaaktype'] ?? '';
+		$caseTypeUrl = $body['caseType'] ?? '';
 		$error = $this->validateCaseTypeReference(caseTypeUrl: $caseTypeUrl);
 		if ($error !== null) {
 			return $error;
@@ -147,7 +147,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 
 		return $this->validateTypeUrl(
 			typeUrl: $caseTypeUrl,
-			fieldName: 'zaaktype',
+			fieldName: 'caseType',
 			schemaKey: 'case_type_schema'
 		);
 	}//end validateZaaktypeReference()
@@ -251,7 +251,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype — always override.
-		$caseTypeUrl = $body['zaaktype'] ?? '';
+		$caseTypeUrl = $body['caseType'] ?? '';
 		if (empty($caseTypeUrl) === false) {
 			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
 		}
@@ -276,7 +276,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	public function rulesZakenPatch(array $body, ?array $existingObject = null): array {
 		// Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype if not set.
 		// For PATCH, the zaaktype might not be in the body — check existing object.
-		$caseTypeUrl = $body['zaaktype'] ?? '';
+		$caseTypeUrl = $body['caseType'] ?? '';
 		if ($caseTypeUrl === '' && $existingObject !== null) {
 			$caseType = $existingObject['caseType'] ?? '';
 			if ($caseType !== '') {
@@ -286,8 +286,8 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 
 		// Ensure zaaktype is available in body for downstream validations
 		// (zrc-010, zrc-015) that need the zaaktype URL from the existing object.
-		if (($body['zaaktype'] ?? '') === '' && $caseTypeUrl !== '') {
-			$body['zaaktype'] = $caseTypeUrl;
+		if (($body['caseType'] ?? '') === '' && $caseTypeUrl !== '') {
+			$body['caseType'] = $caseTypeUrl;
 		}
 
 		// Zrc-009: Always override from zaaktype to prevent template leakage.
@@ -658,7 +658,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Zrc-012: Validate opschorting.
-		$suspension = $body['opschorting'] ?? null;
+		$suspension = $body['suspension'] ?? null;
 		if (is_array($suspension) === true) {
 			$errors = [];
 			if (($suspension['indicatie'] ?? null) === null) {
@@ -669,7 +669,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 				);
 			}
 
-			if (($suspension['reden'] ?? '') === '') {
+			if (($suspension['reason'] ?? '') === '') {
 				$errors[] = $this->fieldError(
 					fieldName: 'opschorting.reden',
 					code: 'required',
@@ -690,7 +690,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		$extension = $body['verlenging'] ?? null;
 		if (is_array($extension) === true) {
 			$errors = [];
-			if (($extension['reden'] ?? '') === '') {
+			if (($extension['reason'] ?? '') === '') {
 				$errors[] = $this->fieldError(
 					fieldName: 'verlenging.reden',
 					code: 'required',
@@ -763,7 +763,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		if ($lastPaid === null && $existingObject !== null) {
-			$lastPaid = $existingObject['lastPaymentDate'] ?? ($existingObject['laatsteBetaaldatum'] ?? null);
+			$lastPaid = $existingObject['orderPaymentDate'] ?? ($existingObject['laatsteBetaaldatum'] ?? null);
 		}
 
 		if ($betalingsindicatie === 'nvt' && $lastPaid !== null && $lastPaid !== '') {
@@ -902,7 +902,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 			return null;
 		}
 
-		$caseTypeUrl = $body['zaaktype'] ?? '';
+		$caseTypeUrl = $body['caseType'] ?? '';
 		if (empty($caseTypeUrl) === true) {
 			return null;
 		}
@@ -1041,7 +1041,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 					$data = $obj->jsonSerialize();
 				}
 
-				$sequenceNumber = (int)($data['sequenceNumber'] ?? ($data['volgnummer'] ?? 0));
+				$sequenceNumber = (int)($data['sequenceNumber'] ?? ($data['sequenceNumber'] ?? 0));
 				$objId = $data['id'] ?? ($data['@self']['id'] ?? null);
 				if ($sequenceNumber > $maxSequenceNumber) {
 					$maxSequenceNumber = $sequenceNumber;
@@ -1084,7 +1084,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		// Build lookup: zaaktype UUID → max vertrouwelijkheidaanduiding level.
 		$allowedZaaktypen = [];
 		foreach ($authorizations as $auth) {
-			$caseTypeUrl = $auth['zaaktype'] ?? ($auth['zaaktypeUrl'] ?? '');
+			$caseTypeUrl = $auth['caseType'] ?? ($auth['zaaktypeUrl'] ?? '');
 			if (empty($caseTypeUrl) === true) {
 				continue;
 			}
@@ -1109,7 +1109,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 			array_filter(
 				$cases,
 				function (array $case) use ($allowedZaaktypen): bool {
-					$caseTypeId = $case['zaaktype'] ?? ($case['caseType'] ?? '');
+					$caseTypeId = $case['caseType'] ?? ($case['caseType'] ?? '');
 					$zaaktypeUuid = $this->extractUuid(url: (string)$caseTypeId);
 
 					if ($zaaktypeUuid === null || isset($allowedZaaktypen[$zaaktypeUuid]) === false) {

@@ -18,7 +18,7 @@ import path from 'path'
 const REGISTER_PATH = path.resolve(__dirname, '../../lib/Settings/procest_register.json')
 const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 
-const EXPECTED_SEARCHABLE_SLUGS = ['case', 'task', 'bezwaar', 'voorstel', 'beroep']
+const EXPECTED_SEARCHABLE_SLUGS = ['case', 'task', 'objection', 'proposal', 'beroep']
 
 const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 

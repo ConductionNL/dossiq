@@ -102,7 +102,7 @@ class SubsidieFragmentTest extends TestCase {
 	public function testBaseSchemasPreserved(): void {
 		$schemas = $this->merged['components']['schemas'];
 		$this->assertArrayHasKey('case', $schemas);
-		$this->assertArrayHasKey('voorstel', $schemas);
+		$this->assertArrayHasKey('proposal', $schemas);
 	}//end testBaseSchemasPreserved()
 
 	/**
@@ -112,7 +112,7 @@ class SubsidieFragmentTest extends TestCase {
 	 */
 	public function testNoApplicantSchemaInvented(): void {
 		$schemas = $this->merged['components']['schemas'];
-		$this->assertArrayNotHasKey('aanvrager', $schemas);
+		$this->assertArrayNotHasKey('applicant', $schemas);
 		$this->assertArrayNotHasKey('subsidieContact', $schemas);
 		$this->assertArrayNotHasKey('subsidiePersoon', $schemas);
 	}//end testNoApplicantSchemaInvented()
@@ -157,10 +157,10 @@ class SubsidieFragmentTest extends TestCase {
 	 */
 	public function testBsnIsMaskedReference(): void {
 		$request = $this->merged['components']['schemas']['subsidieAanvraag']['properties'];
-		$this->assertArrayHasKey('aanvragerBsnRef', $request);
+		$this->assertArrayHasKey('applicantBsnRef', $request);
 		$this->assertStringContainsStringIgnoringCase(
 			'never stored raw',
-			(string)$request['aanvragerBsnRef']['description']
+			(string)$request['applicantBsnRef']['description']
 		);
 	}//end testBsnIsMaskedReference()
 }//end class

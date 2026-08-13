@@ -50,14 +50,14 @@ class SubsidieRegisterExporterTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnonymisation(): void {
-		$legal = ['aanvragerKvkRef' => '12345678', 'aanvragerNaam' => 'Stichting X'];
+		$legal = ['applicantKvkRef' => '12345678', 'aanvragerNaam' => 'Stichting X'];
 		$this->assertSame('Stichting X', $this->exporter->publicOntvanger($legal));
 
-		$legalNoName = ['aanvragerKvkRef' => '12345678'];
+		$legalNoName = ['applicantKvkRef' => '12345678'];
 		$this->assertSame('KvK 12345678', $this->exporter->publicOntvanger($legalNoName));
 
 		// No KvK -> natural person -> anonymised, never leaking name/BSN.
-		$natural = ['aanvragerNaam' => 'Jan Jansen', 'aanvragerBsnRef' => '******789'];
+		$natural = ['aanvragerNaam' => 'Jan Jansen', 'applicantBsnRef' => '******789'];
 		$this->assertSame('Particulier', $this->exporter->publicOntvanger($natural));
 	}//end testAnonymisation()
 
@@ -65,20 +65,20 @@ class SubsidieRegisterExporterTest extends TestCase {
 	 * @return void
 	 */
 	public function testFeedEntryMapping(): void {
-		$request = ['aanvragerKvkRef' => '999', 'aanvragerNaam' => 'BV Y'];
-		$regeling = ['regelingNaam' => 'Innovatiefonds 2026', 'doelgroep' => 'MKB'];
+		$request = ['applicantKvkRef' => '999', 'aanvragerNaam' => 'BV Y'];
+		$regeling = ['regelingName' => 'Innovatiefonds 2026', 'doelgroep' => 'MKB'];
 		$decision = [
 			'beschikkingtype' => 'verleningsbeschikking',
-			'verleendBedrag' => 450000,
-			'looptijdStart' => '2026-01-01',
-			'looptijdEind' => '2028-12-31',
+			'grantedAmount' => 450000,
+			'termStart' => '2026-01-01',
+			'termEnd' => '2028-12-31',
 			'wettelijkeGrondslag' => 'AWB titel 4.2',
 		];
 
 		$entry = $this->exporter->toFeedEntry($request, $regeling, $decision);
 		$this->assertSame('Innovatiefonds 2026', $entry['regeling']);
 		$this->assertSame('BV Y', $entry['ontvanger']);
-		$this->assertSame(450000.0, $entry['bedrag']);
+		$this->assertSame(450000.0, $entry['amount']);
 		$this->assertSame('verleend', $entry['status']);
 		$this->assertSame('2028-12-31', $entry['looptijd']['eind']);
 	}//end testFeedEntryMapping()

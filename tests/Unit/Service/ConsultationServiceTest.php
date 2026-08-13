@@ -168,10 +168,10 @@ class ConsultationServiceTest extends TestCase {
 		$this->expectExceptionMessage('OpenRegister is not available');
 
 		$this->service->createConsultation(data: [
-			'parentZaak' => 'zaak-uuid',
-			'adviesInstantie' => 'Brandweer',
-			'vraagstelling' => 'Is het brandveilig?',
-			'uiterlijkeReactiedatum' => '2026-07-01',
+			'parentCase' => 'zaak-uuid',
+			'adviesAuthority' => 'Brandweer',
+			'questionFormulation' => 'Is het brandveilig?',
+			'latestResponseDate' => '2026-07-01',
 		]);
 
 	}//end testCreateConsultationFailsWithoutObjectService()
@@ -194,10 +194,10 @@ class ConsultationServiceTest extends TestCase {
 		$this->expectExceptionMessage('Consultation schema not configured');
 
 		$this->service->createConsultation(data: [
-			'parentZaak' => 'zaak-uuid',
-			'adviesInstantie' => 'Brandweer',
-			'vraagstelling' => 'Is het brandveilig?',
-			'uiterlijkeReactiedatum' => '2026-07-01',
+			'parentCase' => 'zaak-uuid',
+			'adviesAuthority' => 'Brandweer',
+			'questionFormulation' => 'Is het brandveilig?',
+			'latestResponseDate' => '2026-07-01',
 		]);
 
 	}//end testCreateConsultationFailsWhenSchemaNotConfigured()
@@ -216,9 +216,9 @@ class ConsultationServiceTest extends TestCase {
 		$this->expectExceptionMessage('parentZaak is required');
 
 		$this->service->createConsultation(data: [
-			'adviesInstantie' => 'Brandweer',
-			'vraagstelling' => 'Is het brandveilig?',
-			'uiterlijkeReactiedatum' => '2026-07-01',
+			'adviesAuthority' => 'Brandweer',
+			'questionFormulation' => 'Is het brandveilig?',
+			'latestResponseDate' => '2026-07-01',
 		]);
 
 	}//end testCreateConsultationFailsWhenParentZaakMissing()

@@ -81,15 +81,15 @@ class AuditPacketBuilder {
 	 */
 	public function build(string $decisionId, array $decision): string {
 		$logs = $this->findStateMachineLogs(decisionId: $decisionId);
-		$rapportId = (string)(($decision['handtekening']['validatieRapportId'] ?? ''));
+		$rapportId = (string)(($decision['signature']['validationRapportId'] ?? ''));
 		$validationReport = [];
 		if ($rapportId !== '') {
 			$validationReport = $this->signingAdapter->fetchValidationReport($rapportId);
 		}
 
 		$manifest = [
-			'beschikkingId' => $decisionId,
-			'kenmerk' => (string)($decision['kenmerk'] ?? ''),
+			'decisionId' => $decisionId,
+			'reference' => (string)($decision['reference'] ?? ''),
 			'gegenereerdOp' => (new DateTimeImmutable())->format('c'),
 			'inhoud' => ['beschikking.json', 'state-machine-log.json', 'validatierapport.json', 'manifest.json'],
 		];
@@ -111,7 +111,7 @@ class AuditPacketBuilder {
 
 		$this->logger->info(
 			'BeschikkingService: audit-pakket geexporteerd',
-			['beschikkingId' => $decisionId, 'kenmerk' => (string)($decision['kenmerk'] ?? '')],
+			['decisionId' => $decisionId, 'reference' => (string)($decision['reference'] ?? '')],
 		);
 
 		return $this->buildZip(entries: $entries);
@@ -143,7 +143,7 @@ class AuditPacketBuilder {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['beschikkingId' => $decisionId]
+				filters: ['decisionId' => $decisionId]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error('BeschikkingService: findStateMachineLogs failed', ['exception' => $e->getMessage()]);

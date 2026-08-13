@@ -114,7 +114,7 @@ class DsoControllerRequestStub implements IRequest {
 		return match ($key) {
 			'newStatus' => 'in_behandeling',
 			'besluitdatum' => null,
-			'toelichting' => null,
+			'notes' => null,
 			default => $default,
 		};
 	}//end getParam()

@@ -269,7 +269,7 @@ class ComplaintControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testTransitionReturns400ForInvalidTransition(): void {
-		$complaint = ['id' => 'uuid-1', 'status' => 'ontvangen', 'behandelaar' => 'test-user'];
+		$complaint = ['id' => 'uuid-1', 'status' => 'ontvangen', 'handler' => 'test-user'];
 		$this->complaintService->method('getComplaint')->willReturn($complaint);
 		$this->complaintService
 			->method('transitionStatus')

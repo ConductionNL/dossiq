@@ -123,7 +123,7 @@ class WozApiAdapter implements WozAdapterInterface {
 			return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-huisnummer']);
 		}
 
-		$query = ['postcode' => $normalizedPostcode, 'huisnummer' => $houseNumber];
+		$query = ['postcode' => $normalizedPostcode, 'houseNumber' => $houseNumber];
 		if ($huisletter !== null && $huisletter !== '') {
 			$query['huisletter'] = $huisletter;
 		}

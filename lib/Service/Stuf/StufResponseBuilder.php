@@ -253,11 +253,11 @@ class StufResponseBuilder {
 	 */
 	private function renderParties(array $zender, array $ontvanger): string {
 		$xml = '<stuf:zender>';
-		$xml .= '<stuf:organisatie>' . htmlspecialchars($zender['organisatie'] ?? '') . '</stuf:organisatie>';
+		$xml .= '<stuf:organisatie>' . htmlspecialchars($zender['organisation'] ?? '') . '</stuf:organisatie>';
 		$xml .= '<stuf:applicatie>' . htmlspecialchars($zender['applicatie'] ?? '') . '</stuf:applicatie>';
 		$xml .= '</stuf:zender>';
 		$xml .= '<stuf:ontvanger>';
-		$xml .= '<stuf:organisatie>' . htmlspecialchars($ontvanger['organisatie'] ?? '') . '</stuf:organisatie>';
+		$xml .= '<stuf:organisatie>' . htmlspecialchars($ontvanger['organisation'] ?? '') . '</stuf:organisatie>';
 		$xml .= '<stuf:applicatie>' . htmlspecialchars($ontvanger['applicatie'] ?? '') . '</stuf:applicatie>';
 		$xml .= '</stuf:ontvanger>';
 

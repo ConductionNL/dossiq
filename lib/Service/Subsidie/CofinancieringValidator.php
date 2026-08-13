@@ -45,7 +45,7 @@ class CofinancieringValidator {
 	private const EU_MARKERS = ['efro', 'esf', 'eu', 'europ', 'interreg', 'horizon'];
 
 	/**
-	 * Sum a list of contribution rows by their "bedrag" field.
+	 * Sum a list of contribution rows by their "amount" field.
 	 *
 	 * @param array<int, array<string, mixed>> $rows The contribution rows.
 	 *
@@ -54,7 +54,7 @@ class CofinancieringValidator {
 	public function sumBedragen(array $rows): float {
 		$sum = 0.0;
 		foreach ($rows as $row) {
-			$sum += (float)($row['bedrag'] ?? 0);
+			$sum += (float)($row['amount'] ?? 0);
 		}
 
 		return round($sum, 2);

@@ -70,8 +70,8 @@ class MandaatCheckServiceTest extends TestCase {
 		$this->objects->saveObject('procest', 'mandaat', [
 			'id' => 'm-consulent',
 			'mandaatNummer' => 'WMO-1',
-			'gemandateerdeRol' => 'rol-consulent',
-			'voorwaarden' => [
+			'gemandateerdeRole' => 'rol-consulent',
+			'terms' => [
 				'plafondCents' => 500000,
 				'decisionTypes' => ['wmo-toekenning'],
 			],
@@ -81,8 +81,8 @@ class MandaatCheckServiceTest extends TestCase {
 		$this->objects->saveObject('procest', 'mandaat', [
 			'id' => 'm-manager',
 			'mandaatNummer' => 'WMO-2',
-			'gemandateerdeRol' => 'rol-afdelingsmanager',
-			'voorwaarden' => [
+			'gemandateerdeRole' => 'rol-afdelingsmanager',
+			'terms' => [
 				'plafondCents' => 2500000,
 				'subdelegatie' => true,
 				'decisionTypes' => ['wmo-toekenning'],
@@ -94,20 +94,20 @@ class MandaatCheckServiceTest extends TestCase {
 		// Seed users: alice = consulent (primair), bob = consulent (waarnemer), eve = nobody.
 		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
 			'userId' => 'alice',
-			'rolId' => 'rol-consulent',
+			'roleId' => 'rol-consulent',
 			'toewijzingType' => 'primair',
 			'validFrom' => '2026-01-01',
 		]);
 		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
 			'userId' => 'bob',
-			'rolId' => 'rol-consulent',
+			'roleId' => 'rol-consulent',
 			'toewijzingType' => 'waarnemer',
 			'validFrom' => '2026-01-01',
 			'waarnemerVoor' => 'alice',
 		]);
 		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
 			'userId' => 'carol',
-			'rolId' => 'rol-afdelingsmanager',
+			'roleId' => 'rol-afdelingsmanager',
 			'toewijzingType' => 'primair',
 			'validFrom' => '2026-01-01',
 		]);
@@ -128,7 +128,7 @@ class MandaatCheckServiceTest extends TestCase {
 	public function testNotAuthorizedWhenRoleDoesNotHold(): void {
 		$r = $this->service->isAuthorized('eve', 'wmo-toekenning', 'Z/2026/2');
 		self::assertFalse($r['authorized']);
-		self::assertSame(MandaatCheckService::REDEN_NIET_BEVOEGD, $r['reden']);
+		self::assertSame(MandaatCheckService::REDEN_NIET_BEVOEGD, $r['reason']);
 	}
 
 	/**
@@ -137,7 +137,7 @@ class MandaatCheckServiceTest extends TestCase {
 	public function testPlafondOverschreden(): void {
 		$r = $this->service->isAuthorized('alice', 'wmo-toekenning', 'Z/2026/3', ['bedragCents' => 1000000]);
 		self::assertFalse($r['authorized']);
-		self::assertSame(MandaatCheckService::REDEN_PLAFOND_OVERSCHREDEN, $r['reden']);
+		self::assertSame(MandaatCheckService::REDEN_PLAFOND_OVERSCHREDEN, $r['reason']);
 	}
 
 	/**
@@ -149,7 +149,7 @@ class MandaatCheckServiceTest extends TestCase {
 			'subdelegatieRequested' => true,
 		]);
 		self::assertFalse($r['authorized']);
-		self::assertSame(MandaatCheckService::REDEN_SUBDELEGATIE_NIET_TOEGESTAAN, $r['reden']);
+		self::assertSame(MandaatCheckService::REDEN_SUBDELEGATIE_NIET_TOEGESTAAN, $r['reason']);
 	}
 
 	/**
@@ -225,7 +225,7 @@ class MandaatCheckServiceTest extends TestCase {
 		$denied = $unbound->isAuthorized('alice', 'wmo-toekenning', 'Z/2026/7', ['bedragCents' => 100000]);
 
 		self::assertFalse($denied['authorized']);
-		self::assertSame(MandaatCheckService::REDEN_BELANGENCONFLICT, $denied['reden']);
+		self::assertSame(MandaatCheckService::REDEN_BELANGENCONFLICT, $denied['reason']);
 		self::assertSame(
 			ConflictOfInterestService::REASON_IDENTITY_INDETERMINATE,
 			$denied['conflictReason'],

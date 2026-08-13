@@ -135,7 +135,7 @@ class CaseVoorbladService {
 				'titel' => (string)($case['title'] ?? ($case['titel'] ?? '')),
 				'status' => (string)($case['status'] ?? ''),
 				'laatsteActie' => (string)($case['lastActionDate'] ?? ($case['updated'] ?? '')),
-				'zaaktype' => (string)($case['caseType'] ?? ''),
+				'caseType' => (string)($case['caseType'] ?? ''),
 			];
 		}
 
@@ -164,7 +164,7 @@ class CaseVoorbladService {
 		$first = $openCases[0];
 		$titel = trim((string)($first['titel'] ?? ''));
 		if ($titel === '') {
-			$titel = trim((string)($first['zaaktype'] ?? 'lopende zaak'));
+			$titel = trim((string)($first['caseType'] ?? 'lopende zaak'));
 		}
 
 		return 'Waarschijnlijk statusvraag over ' . $titel;

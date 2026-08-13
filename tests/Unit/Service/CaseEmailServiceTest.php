@@ -211,7 +211,7 @@ class CaseEmailServiceTest extends TestCase {
 	public function testResolveVariablesEscapesHtml(): void {
 		$template = 'Beste {{naam}}, uw zaak: {{omschrijving}}';
 		$data = [
-			'naam' => 'Jan <script>alert(1)</script>',
+			'name' => 'Jan <script>alert(1)</script>',
 			'omschrijving' => '<img src=x onerror="steal()">',
 		];
 
@@ -231,7 +231,7 @@ class CaseEmailServiceTest extends TestCase {
 	 */
 	public function testResolveVariablesPlaintextContextSkipsEscape(): void {
 		$template = 'Beste {{naam}}';
-		$data = ['naam' => 'Jan & Piet'];
+		$data = ['name' => 'Jan & Piet'];
 
 		$result = $this->service->resolveVariablesRaw($template, $data);
 
@@ -246,7 +246,7 @@ class CaseEmailServiceTest extends TestCase {
 	 */
 	public function testResolveVariablesLeavesUnresolvedUnchanged(): void {
 		$template = 'Zaak {{nummer}} van {{naam}}';
-		$data = ['naam' => 'Henk'];
+		$data = ['name' => 'Henk'];
 
 		$result = $this->service->resolveVariables($template, $data);
 

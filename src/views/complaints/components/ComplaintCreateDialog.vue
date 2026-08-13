@@ -131,7 +131,7 @@ export default {
 		channelOptions() {
 			return [
 				{ id: 'balie', label: this.t('procest', 'Counter') },
-				{ id: 'telefoon', label: this.t('procest', 'Phone') },
+				{ id: 'phone', label: this.t('procest', 'Phone') },
 				{ id: 'email', label: this.t('procest', 'Email') },
 				{ id: 'brief', label: this.t('procest', 'Letter') },
 				{ id: 'website', label: this.t('procest', 'Website') },

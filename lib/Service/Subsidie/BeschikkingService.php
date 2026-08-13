@@ -86,7 +86,7 @@ class BeschikkingService {
 	 * @throws OCSBadRequestException When validation fails.
 	 */
 	public function assertDraftValid(array $payload): void {
-		$granted = (float)($payload['verleendBedrag'] ?? 0);
+		$granted = (float)($payload['grantedAmount'] ?? 0);
 		if ($granted <= 0.0) {
 			throw new OCSBadRequestException('verleendBedrag moet positief zijn');
 		}
@@ -129,7 +129,7 @@ class BeschikkingService {
 				'status' => 'concept',
 			]
 		);
-		unset($record['ondertekendDoor'], $record['ondertekendOp'], $record['publicatiedatum']);
+		unset($record['ondertekendBy'], $record['ondertekendOn'], $record['publicationDate']);
 
 		try {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
@@ -159,8 +159,8 @@ class BeschikkingService {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$patch = [
-			'ondertekendDoor' => $user->getUID(),
-			'ondertekendOp' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
+			'ondertekendBy' => $user->getUID(),
+			'ondertekendOn' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
 		];
 
 		try {
@@ -188,15 +188,15 @@ class BeschikkingService {
 			throw new OCSBadRequestException('Beschikking niet gevonden');
 		}
 
-		if (((string)($current['ondertekendDoor'] ?? '')) === '') {
+		if (((string)($current['ondertekendBy'] ?? '')) === '') {
 			throw new OCSBadRequestException('Beschikking moet eerst worden ondertekend');
 		}
 
 		$now = new DateTimeImmutable();
 		$patch = [
 			'status' => 'verleend',
-			'publicatiedatum' => $now->format('Y-m-d'),
-			'bezwaartermijnEinde' => $this->computeBezwaartermijn(publication: $now)->format('Y-m-d'),
+			'publicationDate' => $now->format('Y-m-d'),
+			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $now)->format('Y-m-d'),
 		];
 
 		try {

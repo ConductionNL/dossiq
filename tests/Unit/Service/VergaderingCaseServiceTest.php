@@ -124,7 +124,7 @@ class VergaderingCaseServiceTest extends TestCase {
 			->willReturn(null);
 
 		$result = $this->service->createForVergadering(
-			vergadering: ['naam' => 'Test', 'startDatum' => '2026-06-15T19:00:00+02:00']
+			vergadering: ['name' => 'Test', 'startDate' => '2026-06-15T19:00:00+02:00']
 		);
 
 		$this->assertSame([], $result);
@@ -144,7 +144,7 @@ class VergaderingCaseServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('');
 
 		$result = $this->service->createForVergadering(
-			vergadering: ['naam' => 'Test', 'startDatum' => '2026-06-15T19:00:00+02:00']
+			vergadering: ['name' => 'Test', 'startDate' => '2026-06-15T19:00:00+02:00']
 		);
 
 		$this->assertSame([], $result);
@@ -178,10 +178,10 @@ class VergaderingCaseServiceTest extends TestCase {
 
 		$vergadering = [
 			'@self' => ['slug' => 'raadsvergadering-2026-06-15'],
-			'naam' => 'Raadsvergadering 15 juni 2026',
-			'startDatum' => '2026-06-15T19:00:00+02:00',
+			'name' => 'Raadsvergadering 15 juni 2026',
+			'startDate' => '2026-06-15T19:00:00+02:00',
 			'type' => 'raadsvergadering',
-			'organisatie' => 'Gemeente Voorbeeldstad',
+			'organisation' => 'Gemeente Voorbeeldstad',
 		];
 
 		$result = $this->service->createForVergadering(vergadering: $vergadering);

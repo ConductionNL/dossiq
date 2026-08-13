@@ -99,11 +99,11 @@ class DwangsomUitbetalingService {
 		$uiterlijk = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days')->format('Y-m-d');
 
 		$row = [
-			'dwangsomBerekening' => $calculationId,
-			'bedrag' => $final,
-			'rekeninghouderNaam' => $rekeninghouderName,
+			'penaltyPaymentCalculation' => $calculationId,
+			'amount' => $final,
+			'rekeninghouderName' => $rekeninghouderName,
 			'iban' => strtoupper(str_replace(' ', '', $iban)),
-			'referentie' => $this->buildReference(calculationId: $calculationId),
+			'reference' => $this->buildReference(calculationId: $calculationId),
 			'legalBasis' => 'AWB 4:17',
 			'betaaldatumUiterlijk' => $uiterlijk,
 			'status' => 'voorbereid',
@@ -165,7 +165,7 @@ class DwangsomUitbetalingService {
 			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
-		$final = (int)($calculation['definitievBedrag'] ?? $calculation['cumulatievBedrag'] ?? 0);
+		$final = (int)($calculation['definitievAmount'] ?? $calculation['cumulatievAmount'] ?? 0);
 		if ($final <= 0) {
 			throw new RuntimeException('DwangsomBerekening has no payable amount');
 		}
@@ -275,7 +275,7 @@ class DwangsomUitbetalingService {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['referentie' => $reference],
+				filters: ['reference' => $reference],
 			);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomUitbetaling lookup failed: ' . $e->getMessage());
@@ -315,7 +315,7 @@ class DwangsomUitbetalingService {
 		}
 
 		if ($paymentDate !== null) {
-			$row['werkelijkeBetaaldatum'] = $paymentDate->format('Y-m-d');
+			$row['actualPaymentDate'] = $paymentDate->format('Y-m-d');
 		}
 
 		return $row;

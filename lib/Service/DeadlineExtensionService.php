@@ -158,16 +158,16 @@ class DeadlineExtensionService {
 
 		$this->assertExtensionPermitted(instance: $instance, newEndDate: $newEndDate, mode: $mode);
 
-		$current = (string)($instance['einddatumActueel'] ?? '');
-		$consumed = (int)($instance['aantalVerlengingen'] ?? 0);
+		$current = (string)($instance['endDateActueel'] ?? '');
+		$consumed = (int)($instance['countVerlengingen'] ?? 0);
 		$daysImpact = $this->calculateDaysImpact(current: $current, newEndDate: $newEndDate);
 
 		$updated = $this->termService->updateTermijnInstance(
 			$termInstanceId,
 			[
-				'einddatumActueel' => $newEndDate,
+				'endDateActueel' => $newEndDate,
 				'status' => 'verlengd',
-				'aantalVerlengingen' => ($consumed + 1),
+				'countVerlengingen' => ($consumed + 1),
 			]
 		);
 
@@ -176,7 +176,7 @@ class DeadlineExtensionService {
 		$this->termService->recordEvent(
 			termInstanceId: $termInstanceId,
 			type: 'verleng',
-			basis: $context['grondslag'],
+			basis: $context['basis'],
 			rationale: $rationale,
 			daysImpact: $daysImpact,
 			documentLink: $documentLink,
@@ -218,12 +218,12 @@ class DeadlineExtensionService {
 	 * @throws RuntimeException When the deadline does not move forward or the ceiling is exhausted.
 	 */
 	private function assertExtensionPermitted(array $instance, string $newEndDate, string $mode): void {
-		$current = (string)($instance['einddatumActueel'] ?? '');
+		$current = (string)($instance['endDateActueel'] ?? '');
 		if ($current !== '' && $newEndDate <= $current) {
 			throw new RuntimeException('newEinddatum must be later than current einddatumActueel');
 		}
 
-		$consumed = (int)($instance['aantalVerlengingen'] ?? 0);
+		$consumed = (int)($instance['countVerlengingen'] ?? 0);
 		$maxExt = $this->resolveMaxExtensions(instance: $instance);
 		if ($mode !== self::MODE_SUPERVISOR && $consumed >= $maxExt) {
 			throw new RuntimeException('AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt (' . $maxExt . ')');
@@ -260,13 +260,13 @@ class DeadlineExtensionService {
 	private function resolveExtensionContext(string $mode): array {
 		if ($mode === self::MODE_SUPERVISOR) {
 			return [
-				'grondslag' => 'AWB 4:14 lid 3 (supervisor)',
+				'basis' => 'AWB 4:14 lid 3 (supervisor)',
 				'actor' => 'supervisor',
 			];
 		}
 
 		return [
-			'grondslag' => 'AWB 4:14 lid 1',
+			'basis' => 'AWB 4:14 lid 1',
 			'actor' => 'system',
 		];
 	}//end resolveExtensionContext()
@@ -313,7 +313,7 @@ class DeadlineExtensionService {
 		}
 
 		if (is_array($svcDef) === true) {
-			return (int)($svcDef['aantalVerlengingen'] ?? 1);
+			return (int)($svcDef['countVerlengingen'] ?? 1);
 		}
 
 		return 1;

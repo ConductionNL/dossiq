@@ -101,8 +101,8 @@ class NoticeOfDefaultController extends Controller {
 		}
 
 		$instanceId = (string)($body['termijnInstanceId'] ?? '');
-		$channel = (string)($body['kanaal'] ?? '');
-		$whenStr = (string)($body['ontvangstDatum'] ?? '');
+		$channel = (string)($body['channel'] ?? '');
+		$whenStr = (string)($body['receiptDate'] ?? '');
 		$documentLink = (string)($body['documentLink'] ?? '');
 		if ($instanceId === '' || $channel === '' || $whenStr === '') {
 			return new JSONResponse(

@@ -213,7 +213,7 @@ class DsoObjectRepository {
 				continue;
 			}
 
-			if ($location !== '' && str_contains((string)($case['locatie'] ?? ''), $location) === false) {
+			if ($location !== '' && str_contains((string)($case['location'] ?? ''), $location) === false) {
 				continue;
 			}
 

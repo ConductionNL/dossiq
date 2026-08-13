@@ -183,7 +183,7 @@ class ConflictOfInterestService {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	public function checkConflict(string $userId, string $caseId, array $caseProperties = []): array {
-		$this->logger->debug('Conflict-of-interest probe', ['userId' => $userId, 'zaakId' => $caseId]);
+		$this->logger->debug('Conflict-of-interest probe', ['userId' => $userId, 'caseId' => $caseId]);
 
 		// Manual registration trumps automatic detection.
 		if (isset($this->registered[$caseId]) === true) {
@@ -213,7 +213,7 @@ class ConflictOfInterestService {
 			// check that cannot run MUST NOT report "no conflict" — fail closed.
 			$this->logger->warning(
 				'Belangenconflict check is indeterminate — blocking',
-				['userId' => $userId, 'zaakId' => $caseId]
+				['userId' => $userId, 'caseId' => $caseId]
 			);
 			return ['conflict' => true, 'reason' => self::REASON_IDENTITY_INDETERMINATE];
 		}
@@ -304,7 +304,7 @@ class ConflictOfInterestService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'BRP relationship lookup failed',
-				['zaakId' => $caseId, 'error' => $e->getMessage()]
+				['caseId' => $caseId, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -319,7 +319,7 @@ class ConflictOfInterestService {
 				continue;
 			}
 
-			$relatedBsn = (string)($relation['burgerservicenummer'] ?? '');
+			$relatedBsn = (string)($relation['citizenServiceNumber'] ?? '');
 			if ($relatedBsn === '' || $relatedBsn !== $applicantBsn) {
 				continue;
 			}

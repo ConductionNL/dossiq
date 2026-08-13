@@ -109,7 +109,7 @@ class SamenwerkverzoekService {
 			throw new RuntimeException('Zaak not found: ' . $caseId);
 		}
 
-		$requestRef = (string)($case['vergunningaanvraagRef'] ?? '');
+		$requestRef = (string)($case['permitApplicationRef'] ?? '');
 
 		$requestSchema = $this->appConfig->getValueString(
 			app: Application::APP_ID,
@@ -118,12 +118,12 @@ class SamenwerkverzoekService {
 		);
 
 		$samenwerkverzoek = [
-			'zaakId' => $caseId,
-			'vergunningaanvraagRef' => $requestRef,
+			'caseId' => $caseId,
+			'permitApplicationRef' => $requestRef,
 			'aangezochtBevoegdGezag' => $aangezochtGezag,
 			'rationale' => $rationale,
 			'status' => 'aangevraagd',
-			'aangevraagdOp' => date('c'),
+			'requestedOn' => date('c'),
 		];
 
 		$created = $objectService->saveObject(
@@ -135,8 +135,8 @@ class SamenwerkverzoekService {
 		$event = new GenericEvent(
 			subject: $created,
 			arguments: [
-				'zaakId' => $caseId,
-				'vergunningaanvraagRef' => $requestRef,
+				'caseId' => $caseId,
+				'permitApplicationRef' => $requestRef,
 				'aangezochtBevoegdGezag' => $aangezochtGezag,
 			]
 		);
@@ -149,7 +149,7 @@ class SamenwerkverzoekService {
 			'Procest SamenwerkverzoekService: samenwerking initiated',
 			[
 				'app' => Application::APP_ID,
-				'zaakId' => $caseId,
+				'caseId' => $caseId,
 				'aangezochtBevoegdGezag' => $aangezochtGezag,
 			]
 		);
@@ -211,7 +211,7 @@ class SamenwerkverzoekService {
 		}
 
 		$request['advies'] = $advies;
-		$request['gereageerdOp'] = date('c');
+		$request['gereageerdOn'] = date('c');
 
 		$updated = $objectService->saveObject(
 			register: $register,

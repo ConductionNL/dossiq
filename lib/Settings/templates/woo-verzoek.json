@@ -121,7 +121,7 @@
       "isRequired": false
     },
     {
-      "name": "ontvangstdatum",
+      "name": "receiptDate",
       "definition": "Ontvangstdatum",
       "description": "Datum waarop het WOO-verzoek is ontvangen (voor termijnberekening)",
       "propertyType": "date",

@@ -61,7 +61,7 @@ class StalledCaseDetector {
 		'afgesloten',
 		'afgehandeld',
 		'geweigerd',
-		'ingetrokken',
+		'withdrawn',
 		'gearchiveerd',
 	];
 

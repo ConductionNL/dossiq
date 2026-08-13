@@ -313,10 +313,10 @@ class LibresignSigningAdapterTest extends TestCase {
 		$result = $adapter->sign('12345', 'medewerker1', 'nvt');
 
 		$this->assertSame('67890', $result['signedBestandId']);
-		$this->assertSame('req-1', $result['validatieRapportId']);
+		$this->assertSame('req-1', $result['validationRapportId']);
 		$this->assertSame('LibreSign', $result['tspProviderEidasId']);
-		$this->assertNotEmpty($result['ondertekeningTijdstip']);
-		$this->assertNotEmpty($result['certificaatSerienummer']);
+		$this->assertNotEmpty($result['ondertekeningMoment']);
+		$this->assertNotEmpty($result['certificateSerialNumber']);
 	}//end testSignedStatusStoresFileViaExistingDocumentServiceAndReturnsContract()
 
 	/**
@@ -332,7 +332,7 @@ class LibresignSigningAdapterTest extends TestCase {
 
 		$report = $adapter->fetchValidationReport('req-1');
 
-		$this->assertSame('req-1', $report['validatieRapportId']);
+		$this->assertSame('req-1', $report['validationRapportId']);
 		$this->assertFalse($report['geldig']);
 	}//end testFetchValidationReportDegradesOnFailure()
 
@@ -350,6 +350,6 @@ class LibresignSigningAdapterTest extends TestCase {
 		$report = $adapter->fetchValidationReport('req-1');
 
 		$this->assertTrue($report['geldig']);
-		$this->assertSame('req-1', $report['validatieRapportId']);
+		$this->assertSame('req-1', $report['validationRapportId']);
 	}//end testFetchValidationReportReportsValidForSignedRequest()
 }//end class

@@ -151,7 +151,7 @@
 
 		<BesluitRegistration
 			v-if="showBesluitDialog"
-			:voorstel="voorstel"
+			:voorstel="proposal"
 			@close="showBesluitDialog = false"
 			@registered="onBesluitRegistered" />
 	</div>
@@ -282,7 +282,7 @@ export default {
 	/** @spec openspec/specs/parafering-actions/spec.md */
 	async created() {
 		// Widgets can mount before App.vue's initializeStores() resolves the
-		// app-config — await it (idempotent) so 'voorstel'/'parafeeractie'
+		// app-config — await it (idempotent) so 'proposal'/'parafeeractie'
 		// are registered before the first fetch.
 		await initializeStores()
 		await Promise.all([
@@ -295,7 +295,7 @@ export default {
 		async loadVoorstel() {
 			this.loading = true
 			try {
-				this.voorstel = await this.objectStore.fetchObject('voorstel', this.voorstelId)
+				this.voorstel = await this.objectStore.fetchObject('proposal', this.voorstelId)
 			} catch (error) {
 				console.error('Failed to load voorstel:', error)
 			} finally {
@@ -367,7 +367,7 @@ export default {
 		async resubmit() {
 			try {
 				const resumeStep = this.voorstel.returnedFromStep || 1
-				await this.objectStore.saveObject('voorstel', {
+				await this.objectStore.saveObject('proposal', {
 					...this.voorstel,
 					status: 'in_parafering',
 					currentStep: resumeStep,

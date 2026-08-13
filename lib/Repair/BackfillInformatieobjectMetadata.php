@@ -205,9 +205,9 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 
 		$informatieobject = [
 			'titel' => $file->getName(),
-			'bestandsnaam' => $file->getName(),
+			'fileName' => $file->getName(),
 			'bestandsomvang' => $file->getSize(),
-			'formaat' => $file->getMimeType(),
+			'format' => $file->getMimeType(),
 			'vertrouwelijkheidaanduiding' => 'intern',
 			'auteur' => $author,
 			'status' => 'concept',
@@ -217,8 +217,8 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			'fileId' => $file->getId(),
 			'integriteit' => [
 				'algoritme' => 'sha256',
-				'waarde' => hash('sha256', $content),
-				'datum' => date('Y-m-d\TH:i:s'),
+				'value' => hash('sha256', $content),
+				'date' => date('Y-m-d\TH:i:s'),
 			],
 		];
 
@@ -234,8 +234,8 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 				object: [
 					'zaak' => $folderUuid,
 					'informatieobject' => $infoId,
-					'aardRelatieWeergave' => 'Hoort bij, omgekeerd',
-					'registratiedatum' => date('Y-m-d\TH:i:s\Z'),
+					'natureRelationshipWeergave' => 'Hoort bij, omgekeerd',
+					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 				],
 				register: $register,
 				schema: $joinSchema,
@@ -262,7 +262,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 
 		$names = [];
 		foreach ($rows as $row) {
-			$name = (string)($row['bestandsnaam'] ?? '');
+			$name = (string)($row['fileName'] ?? '');
 			if ($name !== '') {
 				$names[] = $name;
 			}

@@ -81,13 +81,13 @@ class MandaatGebruikService {
 		}
 
 		$row = [
-			'zaakId' => $caseId,
+			'caseId' => $caseId,
 			'decisionId' => $decisionId,
 			'mandateId' => $mandateId,
 			'userId' => $userId,
-			'tijdstip' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
-			'rolOpMomentVanBesluit' => $roleSnapshot,
-			'gebruikteVoorwaarden' => $conditionsApplied,
+			'moment' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
+			'roleOnMomentFromDecision' => $roleSnapshot,
+			'gebruikteTerms' => $conditionsApplied,
 			'mandateVersionId' => $mandateId,
 		];
 
@@ -99,7 +99,7 @@ class MandaatGebruikService {
 
 			return $row;
 		} catch (\Throwable $e) {
-			$this->logger->error('MandaatGebruik log failed', ['zaakId' => $caseId, 'error' => $e->getMessage()]);
+			$this->logger->error('MandaatGebruik log failed', ['caseId' => $caseId, 'error' => $e->getMessage()]);
 			return $row;
 		}
 	}//end logMandaatGebruik()
@@ -122,7 +122,7 @@ class MandaatGebruikService {
 		}
 
 		try {
-			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaakId' => $caseId]);
+			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['caseId' => $caseId]);
 		} catch (\Throwable $e) {
 			return [];
 		}
@@ -179,7 +179,7 @@ class MandaatGebruikService {
 	private function filterByDateRange(array $rows, ?DateTimeImmutable $from, ?DateTimeImmutable $until): array {
 		$out = [];
 		foreach ($rows as $row) {
-			$when = substr((string)($row['tijdstip'] ?? ''), 0, 10);
+			$when = substr((string)($row['moment'] ?? ''), 0, 10);
 			if ($from !== null && $when < $from->format('Y-m-d')) {
 				continue;
 			}

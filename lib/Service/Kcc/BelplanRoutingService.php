@@ -67,7 +67,7 @@ class BelplanRoutingService {
 				continue;
 			}
 
-			$trigger = $this->normalisePhone(phoneNumber: (string)($bp['triggerNummer'] ?? ''));
+			$trigger = $this->normalisePhone(phoneNumber: (string)($bp['triggerNumber'] ?? ''));
 			if ($trigger === '') {
 				continue;
 			}
@@ -91,7 +91,7 @@ class BelplanRoutingService {
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function resolveVaardigheid(array $belplan, string|int $menuSelection): string {
-		$steps = $belplan['routeringStappen'] ?? [];
+		$steps = $belplan['routeringSteps'] ?? [];
 		if (is_array($steps) === false) {
 			return '';
 		}
@@ -198,26 +198,26 @@ class BelplanRoutingService {
 		usort(
 			$available,
 			static function (array $a, array $b): int {
-				$queueA = (int)($a['huidigeWachtrijLengte'] ?? 0);
-				$queueB = (int)($b['huidigeWachtrijLengte'] ?? 0);
+				$queueA = (int)($a['huidigeQueueLengte'] ?? 0);
+				$queueB = (int)($b['huidigeQueueLengte'] ?? 0);
 				if ($queueA !== $queueB) {
 					return $queueA <=> $queueB;
 				}
 
-				$durationA = (int)($a['gemiddeldeBehandelduur'] ?? 0);
-				$durationB = (int)($b['gemiddeldeBehandelduur'] ?? 0);
+				$durationA = (int)($a['gemiddeldeHandlingDuration'] ?? 0);
+				$durationB = (int)($b['gemiddeldeHandlingDuration'] ?? 0);
 				return $durationA <=> $durationB;
 			}
 		);
 
 		$picked = $available[0];
-		$picked['huidigeWachtrijLengte'] = (int)($picked['huidigeWachtrijLengte'] ?? 0);
-		$picked['gemiddeldeBehandelduur'] = (int)($picked['gemiddeldeBehandelduur'] ?? 0);
+		$picked['huidigeQueueLengte'] = (int)($picked['huidigeQueueLengte'] ?? 0);
+		$picked['gemiddeldeHandlingDuration'] = (int)($picked['gemiddeldeHandlingDuration'] ?? 0);
 
 		return [
-			'destinationSpecialistId' => (string)($picked['medewerkerId'] ?? ($picked['id'] ?? '')),
+			'destinationSpecialistId' => (string)($picked['employeeId'] ?? ($picked['id'] ?? '')),
 			'escalatieFlag' => false,
-			'estimatedWaitTime' => $picked['huidigeWachtrijLengte'] * $picked['gemiddeldeBehandelduur'],
+			'estimatedWaitTime' => $picked['huidigeQueueLengte'] * $picked['gemiddeldeHandlingDuration'],
 			'vaardigheid' => $vaardigheid,
 			'candidatePool' => count($candidates),
 		];
@@ -273,7 +273,7 @@ class BelplanRoutingService {
 	private function minQueueLength(array $pool): int {
 		$min = PHP_INT_MAX;
 		foreach ($pool as $sp) {
-			$queue = (int)($sp['huidigeWachtrijLengte'] ?? 0);
+			$queue = (int)($sp['huidigeQueueLengte'] ?? 0);
 			if ($queue < $min) {
 				$min = $queue;
 			}
@@ -300,7 +300,7 @@ class BelplanRoutingService {
 
 		$sum = 0;
 		foreach ($pool as $sp) {
-			$sum += (int)($sp['gemiddeldeBehandelduur'] ?? 0);
+			$sum += (int)($sp['gemiddeldeHandlingDuration'] ?? 0);
 		}
 
 		return (int)round($sum / count($pool));

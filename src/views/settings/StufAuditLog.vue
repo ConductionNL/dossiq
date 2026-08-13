@@ -194,7 +194,7 @@ export default {
 		 * @spec exclude presentational client-side CSV export — no business logic
 		 */
 		exportCsv() {
-			const headers = ['verzondenOp', 'richting', 'berichtSoort', 'functie', 'status', 'httpStatus', 'duurMs', 'referentienummer', 'zaakIdentificatie']
+			const headers = ['verzondenOn', 'direction', 'berichtSoort', 'role', 'status', 'httpStatus', 'duurMs', 'referentienummer', 'zaakIdentificatie']
 			const lines = [headers.join(',')]
 			for (const row of this.messages) {
 				lines.push(headers.map((h) => JSON.stringify(row[h] == null ? '' : row[h])).join(','))

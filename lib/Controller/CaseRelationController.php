@@ -151,7 +151,7 @@ class CaseRelationController extends Controller {
 
 		$targetId = (string)$this->request->getParam('targetId', '');
 		$natureRelationship = (string)$this->request->getParam('aardRelatie', '');
-		$notes = $this->request->getParam('toelichting', null);
+		$notes = $this->request->getParam('notes', null);
 		if ($notes !== null) {
 			$notes = (string)$notes;
 		}

@@ -322,7 +322,7 @@ class CaseRelationControllerTest extends TestCase {
 		$this->request->method('getParam')->willReturnMap([
 			['targetId', '', 'b'],
 			['aardRelatie', '', 'onderwerp'],
-			['toelichting', null, null],
+			['notes', null, null],
 		]);
 		$this->service->expects($this->never())->method('addRelation');
 
@@ -344,7 +344,7 @@ class CaseRelationControllerTest extends TestCase {
 		$this->request->method('getParam')->willReturnMap([
 			['targetId', '', 'b'],
 			['aardRelatie', '', 'onderwerp'],
-			['toelichting', null, null],
+			['notes', null, null],
 		]);
 		$this->service->expects($this->never())->method('addRelation');
 

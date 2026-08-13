@@ -96,7 +96,7 @@ class MandaatRegistryService {
 	 *
 	 * @var string[]
 	 */
-	private const ROLE_REFERENCE_FIELDS = ['gemandateerdeRol', 'rolId'];
+	private const ROLE_REFERENCE_FIELDS = ['gemandateerdeRole', 'roleId'];
 
 	/**
 	 * Constructor.

@@ -184,8 +184,8 @@ class DwangsomCalculationService {
 	 */
 	private function applyDailyAccrual(array $row): array {
 		$currentDay = (int)($row['huidigeDag'] ?? 0);
-		$cumulative = (int)($row['cumulatievBedrag'] ?? 0);
-		$plafond = (int)($row['plafondBerekend'] ?? self::AWB_PLAFOND_CENTS);
+		$cumulative = (int)($row['cumulatievAmount'] ?? 0);
+		$plafond = (int)($row['plafondCalculated'] ?? self::AWB_PLAFOND_CENTS);
 		$regime = (string)($row['regime'] ?? 'awb-default');
 
 		$nextDay = ($currentDay + 1);
@@ -203,7 +203,7 @@ class DwangsomCalculationService {
 
 		$row['huidigeDag'] = $nextDay;
 		$row['dagtarief'] = $tariff;
-		$row['cumulatievBedrag'] = $newCumul;
+		$row['cumulatievAmount'] = $newCumul;
 		$row['plafondBereikt'] = $plafondHit;
 
 		return $row;
@@ -273,7 +273,7 @@ class DwangsomCalculationService {
 		}
 
 		$row['status'] = 'gestopt-wegens-beschikking';
-		$row['definitievBedrag'] = (int)($row['cumulatievBedrag'] ?? 0);
+		$row['definitievAmount'] = (int)($row['cumulatievAmount'] ?? 0);
 
 		try {
 			$saved = $objectService->saveObject($register, $schema, $row);
@@ -295,7 +295,7 @@ class DwangsomCalculationService {
 	 * @return int Cents.
 	 */
 	private function resolveCustomDailyTariff(array $calculation): int {
-		$instanceId = (string)($calculation['termijnInstance'] ?? '');
+		$instanceId = (string)($calculation['termInstance'] ?? '');
 		if ($instanceId === '') {
 			return self::AWB_TIER_1_CENTS;
 		}

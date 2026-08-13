@@ -74,15 +74,15 @@ class StufMessageHandler {
 		$data = [
 			'id' => $this->newId(prefix: 'stuf-msg'),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
-			'richting' => 'uitgaand',
+			'direction' => 'uitgaand',
 			'berichtSoort' => $messageKind,
-			'functie' => $role,
+			'role' => $role,
 			'entiteittype' => 'ZAK',
 			'referentienummer' => $referentienummer,
 			'zaakIdentificatie' => ($caseId ?? ''),
 			'gerelateerdeZaakId' => ($caseId ?? ''),
 			'envelopeXml' => $envelopeXml,
-			'verzondenOp' => $this->isoNow(),
+			'verzondenOn' => $this->isoNow(),
 			'bronEntiteit' => ($bronEntiteit ?? ''),
 			'bronId' => ($sourceId ?? ''),
 			'status' => 'verzonden',
@@ -116,15 +116,15 @@ class StufMessageHandler {
 		$data = [
 			'id' => $this->newId(prefix: 'stuf-msg'),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
-			'richting' => 'inkomend',
+			'direction' => 'inkomend',
 			'berichtSoort' => $messageKind,
-			'functie' => ($role ?? ''),
+			'role' => ($role ?? ''),
 			'entiteittype' => 'ZAK',
 			'crossRefnummer' => $crossRefnummer,
 			'zaakIdentificatie' => ($caseId ?? ''),
 			'gerelateerdeZaakId' => ($caseId ?? ''),
 			'envelopeXml' => $responseXml,
-			'verzondenOp' => $this->isoNow(),
+			'verzondenOn' => $this->isoNow(),
 			'ontvangenOp' => $this->isoNow(),
 			'status' => 'bevestigd',
 		];
@@ -195,7 +195,7 @@ class StufMessageHandler {
 	public function findOutboundByReferentienummer(string $referentienummer): ?array {
 		return $this->register->findOne(
 			schema: StufRegisterAccess::SCHEMA_MESSAGE,
-			filters: ['referentienummer' => $referentienummer, 'richting' => 'uitgaand']
+			filters: ['referentienummer' => $referentienummer, 'direction' => 'uitgaand']
 		);
 	}//end findOutboundByReferentienummer()
 

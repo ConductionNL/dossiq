@@ -158,7 +158,7 @@ class MandaatRepository {
 
 		$out = [];
 		foreach ($rows as $row) {
-			$roleName = (string)($row['rolNaam'] ?? '');
+			$roleName = (string)($row['roleName'] ?? '');
 			if ($roleName !== '') {
 				$out[$roleName] = (string)($row['id'] ?? '');
 			}

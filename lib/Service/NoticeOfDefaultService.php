@@ -84,22 +84,22 @@ class NoticeOfDefaultService {
 		}
 
 		$status = (string)($instance['status'] ?? '');
-		$deadline = (string)($instance['einddatumActueel'] ?? '');
+		$deadline = (string)($instance['endDateActueel'] ?? '');
 		$receipt = $receiptDate->format('Y-m-d');
 
 		$isValid = ($status === 'overschreden' && $deadline !== '' && $deadline < $receipt);
 
 		$row = [
-			'termijnInstance' => $termInstanceId,
-			'ontvangstDatum' => $receipt,
-			'kanaal' => $channel,
+			'termInstance' => $termInstanceId,
+			'receiptDate' => $receipt,
+			'channel' => $channel,
 			'gevalideerd' => $isValid,
 			'documentLink' => $documentLink,
 		];
 
-		$row['geldigheidStatus'] = 'premaat';
+		$row['validityStatus'] = 'premaat';
 		if ($isValid === true) {
-			$row['geldigheidStatus'] = 'geldig';
+			$row['validityStatus'] = 'geldig';
 		}
 
 		$saved = $this->saveSchema(schemaConfigKey: 'ingebrekestelling_schema', object: $row);
@@ -108,7 +108,7 @@ class NoticeOfDefaultService {
 		if ($isValid === false) {
 			$this->logger->info(
 				'Premature ingebrekestelling rejected',
-				['termijnInstance' => $termInstanceId, 'ontvangstDatum' => $receipt]
+				['termInstance' => $termInstanceId, 'receiptDate' => $receipt]
 			);
 			return $row;
 		}
@@ -119,13 +119,13 @@ class NoticeOfDefaultService {
 		if ($existing !== '') {
 			$this->logger->info(
 				'Additional ingebrekestelling recorded; first remains the dwangsom basis',
-				['termijnInstance' => $termInstanceId, 'firstNotice' => $existing]
+				['termInstance' => $termInstanceId, 'firstNotice' => $existing]
 			);
 			return $row;
 		}
 
 		// First valid notice: link it and start a DwangsomBerekening.
-		$row['dwangsomBerekening'] = $this->startPenaltyPaymentCalculation(
+		$row['penaltyPaymentCalculation'] = $this->startPenaltyPaymentCalculation(
 			termInstanceId: $termInstanceId,
 			instance: $instance,
 			ingebrekestellingId: (string)$row['id'],
@@ -174,12 +174,12 @@ class NoticeOfDefaultService {
 			schemaConfigKey: 'dwangsom_berekening_schema',
 			object: [
 				'ingebrekestelling' => $ingebrekestellingId,
-				'termijnInstance' => $termInstanceId,
-				'startDatum' => $startAt,
+				'termInstance' => $termInstanceId,
+				'startDate' => $startAt,
 				'huidigeDag' => 0,
 				'dagtarief' => 0,
-				'cumulatievBedrag' => 0,
-				'plafondBerekend' => (int)$regime['plafond'],
+				'cumulatievAmount' => 0,
+				'plafondCalculated' => (int)$regime['plafond'],
 				'plafondBereikt' => false,
 				'status' => 'lopend',
 				'regime' => $regimeLabel,

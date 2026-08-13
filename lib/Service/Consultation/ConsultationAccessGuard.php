@@ -147,7 +147,7 @@ class ConsultationAccessGuard {
 			return true;
 		}
 
-		$applicant = $consultation['aanvrager'] ?? '';
+		$applicant = $consultation['applicant'] ?? '';
 		$assignee = $consultation['assignee'] ?? '';
 
 		return ($uid === $applicant || ($assignee !== '' && $uid === $assignee));

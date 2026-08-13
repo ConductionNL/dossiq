@@ -78,7 +78,7 @@ class LogBagAdapter implements BagAdapterInterface {
 			'Procest BAG lookup deferred (no outbound connector bound)',
 			[
 				'postcode' => $postcode,
-				'huisnummer' => $houseNumber,
+				'houseNumber' => $houseNumber,
 				'huisletter' => $huisletter,
 				'toevoeging' => $toevoeging,
 				'context' => $context,

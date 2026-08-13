@@ -696,7 +696,7 @@ class AcController extends ZgwController {
 
 			// Ac-003a/003b: ZRC with zaken-related scope.
 			if ($component === 'zrc' && $hasCasesScope === true) {
-				$caseType = $autorisatie['zaaktype'] ?? null;
+				$caseType = $autorisatie['caseType'] ?? null;
 				$maxVertr = $autorisatie['maxVertrouwelijkheidaanduiding'] ?? null;
 
 				if ($caseType === null || $caseType === '') {

@@ -154,7 +154,7 @@ class StufOutboundTransport {
 
 		$fout = $this->classifyFailure(transportFout: ($response['fout'] ?? null), body: $body);
 
-		$isTransient = ($this->isTransientHttp(httpStatus: $httpStatus) === true || ($fout['soort'] ?? '') === 'transient');
+		$isTransient = ($this->isTransientHttp(httpStatus: $httpStatus) === true || ($fout['kind'] ?? '') === 'transient');
 		if ($isTransient === true && $attempt < (count(value: self::RETRY_BACKOFF_SECONDS) + 1)) {
 			$this->messageHandler->recordRetry(
 				msg: $message,
@@ -186,7 +186,7 @@ class StufOutboundTransport {
 				'endpointId' => (string)($endpoint['id'] ?? ''),
 				'stufMessageId' => $messageId,
 				'fout' => ($fout ?? []),
-				'functie' => $role,
+				'role' => $role,
 			]
 		);
 
@@ -262,7 +262,7 @@ class StufOutboundTransport {
 			'code' => $parsed['code'],
 			'omschrijving' => $parsed['omschrijving'],
 			'details' => $parsed['details'],
-			'soort' => $parsed['soort'],
+			'kind' => $parsed['kind'],
 		];
 	}//end classifyFailure()
 

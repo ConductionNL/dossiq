@@ -88,7 +88,7 @@ class ParafeerActieController extends Controller {
 
 		try {
 			$data = $this->getRequestBody();
-			$proposalId = (string)($data['voorstel'] ?? '');
+			$proposalId = (string)($data['proposal'] ?? '');
 			if ($proposalId === '') {
 				return new JSONResponse(
 					['message' => 'voorstel is required'],
@@ -140,7 +140,7 @@ class ParafeerActieController extends Controller {
 		}
 
 		try {
-			$proposalId = (string)($this->request->getParam('voorstel') ?? '');
+			$proposalId = (string)($this->request->getParam('proposal') ?? '');
 			if ($proposalId === '') {
 				return new JSONResponse(
 					['message' => 'voorstel is required'],

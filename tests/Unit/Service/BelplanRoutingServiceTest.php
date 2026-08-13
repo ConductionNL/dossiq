@@ -106,10 +106,10 @@ class BelplanRoutingServiceTest extends TestCase {
 
 		$this->objectService->belplannen = [
 			[
-				'naam' => 'Algemeen',
+				'name' => 'Algemeen',
 				'isActive' => true,
-				'triggerNummer' => ['14000'],
-				'routeringStappen' => [
+				'triggerNumber' => ['14000'],
+				'routeringSteps' => [
 					['type' => 'vaardigheid_match', 'zaaktype_to_vaardigheid' => ['omgevingsvergunning' => 'omgevingsvergunningen']],
 					['type' => 'wachtrij_overflow', 'threshold_wachttijd_sec' => 180, 'fallback_rol' => 'generalist'],
 				],
@@ -152,18 +152,18 @@ class BelplanRoutingServiceTest extends TestCase {
 	public function testRoutesToShortestQueueSpecialist(): void {
 		$this->objectService->specialisten = [
 			[
-				'medewerkerId' => 'busy',
+				'employeeId' => 'busy',
 				'status' => 'beschikbaar',
 				'expertises' => ['omgevingsvergunningen'],
-				'huidigeWachtrijLengte' => 3,
-				'gemiddeldeBehandelduur' => 100,
+				'huidigeQueueLengte' => 3,
+				'gemiddeldeHandlingDuration' => 100,
 			],
 			[
-				'medewerkerId' => 'free',
+				'employeeId' => 'free',
 				'status' => 'beschikbaar',
 				'expertises' => ['omgevingsvergunningen'],
-				'huidigeWachtrijLengte' => 0,
-				'gemiddeldeBehandelduur' => 120,
+				'huidigeQueueLengte' => 0,
+				'gemiddeldeHandlingDuration' => 120,
 			],
 		];
 
@@ -181,8 +181,8 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testOverflowToGeneralistWhenAllBusy(): void {
 		$this->objectService->specialisten = [
-			['medewerkerId' => 'a', 'status' => 'in_gesprek', 'expertises' => ['omgevingsvergunningen'], 'huidigeWachtrijLengte' => 2],
-			['medewerkerId' => 'b', 'status' => 'wrap_up', 'expertises' => ['omgevingsvergunningen'], 'huidigeWachtrijLengte' => 1],
+			['employeeId' => 'a', 'status' => 'in_gesprek', 'expertises' => ['omgevingsvergunningen'], 'huidigeQueueLengte' => 2],
+			['employeeId' => 'b', 'status' => 'wrap_up', 'expertises' => ['omgevingsvergunningen'], 'huidigeQueueLengte' => 1],
 		];
 
 		$result = $this->service->routeCall('14000', 'omgevingsvergunning');
@@ -209,13 +209,13 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testAvailabilityFiltersByVaardigheid(): void {
 		$this->objectService->specialisten = [
-			['medewerkerId' => 'a', 'status' => 'beschikbaar', 'expertises' => ['omgevingsvergunningen']],
-			['medewerkerId' => 'b', 'status' => 'beschikbaar', 'expertises' => ['bouwtoezicht']],
+			['employeeId' => 'a', 'status' => 'beschikbaar', 'expertises' => ['omgevingsvergunningen']],
+			['employeeId' => 'b', 'status' => 'beschikbaar', 'expertises' => ['bouwtoezicht']],
 		];
 
 		$matched = $this->service->getSpecialistBeschikbaarheid('bouwtoezicht');
 
 		$this->assertCount(expectedCount: 1, haystack: $matched);
-		$this->assertSame(expected: 'b', actual: $matched[0]['medewerkerId']);
+		$this->assertSame(expected: 'b', actual: $matched[0]['employeeId']);
 	}//end testAvailabilityFiltersByVaardigheid()
 }//end class

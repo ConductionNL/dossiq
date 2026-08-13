@@ -88,17 +88,17 @@ class MandaatVerifier {
 				continue;
 			}
 
-			$caseTypes = (array)($groep['zaaktypes'] ?? []);
+			$caseTypes = (array)($groep['caseTypes'] ?? []);
 			if (empty($caseTypes) === false && in_array($caseType, $caseTypes, true) === false) {
 				continue;
 			}
 
-			$types = (array)($groep['beschikkingTypes'] ?? []);
+			$types = (array)($groep['decisionTypes'] ?? []);
 			if (empty($types) === false && in_array($decisionType, $types, true) === false) {
 				continue;
 			}
 
-			$limit = ($groep['tot_bedrag'] ?? null);
+			$limit = ($groep['to_amount'] ?? null);
 			if ($limit === null) {
 				return true;
 			}
@@ -147,7 +147,7 @@ class MandaatVerifier {
 		foreach ((array)$regelingen as $regeling) {
 			$arr = $this->toArray(value: $regeling);
 			foreach ((array)($arr['mandateGroups'] ?? []) as $groep) {
-				$caseTypes = (array)($groep['zaaktypes'] ?? []);
+				$caseTypes = (array)($groep['caseTypes'] ?? []);
 				if ($caseType === '' || in_array($caseType, $caseTypes, true) === true) {
 					return $arr;
 				}
@@ -174,9 +174,9 @@ class MandaatVerifier {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function resolveNiveauForUser(array $regeling, array $decision, string $approvedBy): ?string {
-		$amount = (float)($decision['legesbedrag'] ?? 0);
-		$decisionType = (string)($decision['beschikkingType'] ?? '');
-		$caseType = (string)($decision['zaaktype'] ?? '');
+		$amount = (float)($decision['feeAmount'] ?? 0);
+		$decisionType = (string)($decision['decisionType'] ?? '');
+		$caseType = (string)($decision['caseType'] ?? '');
 
 		foreach ((array)($regeling['mandateGroups'] ?? []) as $groep) {
 			$niveau = (string)($groep['niveau'] ?? '');

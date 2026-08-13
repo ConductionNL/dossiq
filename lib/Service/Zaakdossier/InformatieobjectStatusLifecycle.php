@@ -148,7 +148,7 @@ class InformatieobjectStatusLifecycle {
 
 		$updateData = ['status' => $newStatus];
 		if ($newStatus === 'definitief') {
-			$updateData['vergrendeldOp'] = date('Y-m-d\TH:i:s');
+			$updateData['vergrendeldOn'] = date('Y-m-d\TH:i:s');
 		}
 
 		$objectService->saveObject(object: $updateData, register: $register, schema: $infoSchema, uuid: $infoObjectId);
@@ -163,8 +163,8 @@ class InformatieobjectStatusLifecycle {
 		// array_intersect_key(), which would also carry an explicitly-null
 		// value through and write a null back over the stored field.
 		$vergrendeldOn = [];
-		if (isset($updateData['vergrendeldOp']) === true) {
-			$vergrendeldOn = ['vergrendeldOp' => $updateData['vergrendeldOp']];
+		if (isset($updateData['vergrendeldOn']) === true) {
+			$vergrendeldOn = ['vergrendeldOn' => $updateData['vergrendeldOn']];
 		}
 
 		return array_merge(

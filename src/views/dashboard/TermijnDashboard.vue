@@ -281,7 +281,7 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		downloadQuarterCsv() {
 			if (!this.quarterly || !this.quarterly.perType) return
-			const headers = ['zaaktype', 'totaal', 'binnenTermijnPercent', 'overschrijdingen', 'gemDoorlooptijd', 'verlengingen', 'ingebrekestellingen', 'dwangsomTotal']
+			const headers = ['caseType', 'totaal', 'binnenTermijnPercent', 'overschrijdingen', 'gemDoorlooptijd', 'verlengingen', 'ingebrekestellingen', 'dwangsomTotal']
 			const lines = [headers.join(',')]
 			for (const [k, row] of Object.entries(this.quarterly.perType)) {
 				lines.push([

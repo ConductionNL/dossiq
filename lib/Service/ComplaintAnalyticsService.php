@@ -66,7 +66,7 @@ class ComplaintAnalyticsService {
 	/**
 	 * Aggregate complaint frequency by a given dimension for a date range.
 	 *
-	 * @param string $dimension Grouping dimension: 'categorie', 'betrokkenAfdeling', 'ontvangstkanaal'
+	 * @param string $dimension Grouping dimension: 'category', 'betrokkenDepartment', 'receiptChannel'
 	 * @param string $dateFrom ISO date string (Y-m-d) for range start
 	 * @param string $dateTo ISO date string (Y-m-d) for range end
 	 *
@@ -90,7 +90,7 @@ class ComplaintAnalyticsService {
 		// Privacy: when slicing by an employee-identifying dimension, suppress
 		// slices below the minimum threshold so individual employees cannot be
 		// re-identified from low-count buckets.
-		if (in_array($dimension, ['betrokkenMedewerker', 'behandelaar'], true) === true) {
+		if (in_array($dimension, ['betrokkenEmployee', 'handler'], true) === true) {
 			$frequency = array_filter(
 				$frequency,
 				static fn (int $count): bool => $count >= self::MIN_THRESHOLD_FOR_EMPLOYEE_DATA
@@ -116,7 +116,7 @@ class ComplaintAnalyticsService {
 		$trend = [];
 
 		foreach ($complaints as $complaint) {
-			$date = $complaint['ontvangstdatum'] ?? '';
+			$date = $complaint['receiptDate'] ?? '';
 			$month = substr($date, 0, 7);
 			// 'YYYY-MM'
 			if (empty($month) === true) {
@@ -154,8 +154,8 @@ class ComplaintAnalyticsService {
 				continue;
 			}
 
-			$category = (string)($complaint['categorie'] ?? 'onbekend');
-			$receipt = $complaint['ontvangstdatum'] ?? null;
+			$category = (string)($complaint['category'] ?? 'onbekend');
+			$receipt = $complaint['receiptDate'] ?? null;
 			$afhandelDeadline = $complaint['afhandelDeadline'] ?? null;
 
 			if ($receipt === null || $afhandelDeadline === null) {
@@ -200,8 +200,8 @@ class ComplaintAnalyticsService {
 
 		[$prevFrom, $prevTo] = $this->getQuarterRange(year: $prevYear, quarter: $prevQuarter);
 
-		$current = $this->getFrequencyByDimension(dimension: 'categorie', dateFrom: $currentFrom, dateTo: $currentTo);
-		$previous = $this->getFrequencyByDimension(dimension: 'categorie', dateFrom: $prevFrom, dateTo: $prevTo);
+		$current = $this->getFrequencyByDimension(dimension: 'category', dateFrom: $currentFrom, dateTo: $currentTo);
+		$previous = $this->getFrequencyByDimension(dimension: 'category', dateFrom: $prevFrom, dateTo: $prevTo);
 
 		$systemicIssues = [];
 
@@ -216,7 +216,7 @@ class ComplaintAnalyticsService {
 
 			if ($increasePercent > self::SYSTEMIC_ISSUE_QOQ_THRESHOLD) {
 				$systemicIssues[] = [
-					'categorie' => $category,
+					'category' => $category,
 					'currentCount' => $currentCount,
 					'previousCount' => $previousCount,
 					'increasePercent' => round($increasePercent, 1),
@@ -252,15 +252,15 @@ class ComplaintAnalyticsService {
 		$employeeDetails = [];
 
 		foreach ($complaints as $complaint) {
-			$employee = $complaint['betrokkenMedewerker'] ?? null;
+			$employee = $complaint['betrokkenEmployee'] ?? null;
 			if ($employee === null || $employee === '') {
 				continue;
 			}
 
 			$employeeCounts[$employee] = ($employeeCounts[$employee] ?? 0) + 1;
 			$employeeDetails[$employee][] = [
-				'categorie' => $complaint['categorie'] ?? 'onbekend',
-				'ontvangstdatum' => $complaint['ontvangstdatum'] ?? '',
+				'category' => $complaint['category'] ?? 'onbekend',
+				'receiptDate' => $complaint['receiptDate'] ?? '',
 			];
 		}
 
@@ -271,7 +271,7 @@ class ComplaintAnalyticsService {
 			}
 
 			// Anonymize: only include count, categories, and periods — not the employee ID.
-			$categories = array_unique(array_column($employeeDetails[$employee], 'categorie'));
+			$categories = array_unique(array_column($employeeDetails[$employee], 'category'));
 
 			$alerts[] = [
 				'count' => $count,

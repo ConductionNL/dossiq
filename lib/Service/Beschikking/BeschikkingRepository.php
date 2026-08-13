@@ -84,7 +84,7 @@ class BeschikkingRepository {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BeschikkingService: find failed',
-				['exception' => $e->getMessage(), 'beschikkingId' => $decisionId],
+				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
 			);
 			return null;
 		}

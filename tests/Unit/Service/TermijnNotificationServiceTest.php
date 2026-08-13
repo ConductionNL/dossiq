@@ -49,16 +49,16 @@ class TermijnNotificationServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_instance_schema' => 'termInstance',
 					default => '',
 				};
 			},
 		);
 
-		$objects->saveObject('procest', 'termijnInstance', [
+		$objects->saveObject('procest', 'termInstance', [
 			'id' => 'ti-1',
 			'zaak' => 'Z/2026/300',
-			'einddatumActueel' => '2026-07-27',
+			'endDateActueel' => '2026-07-27',
 			'status' => 'lopend',
 		]);
 
@@ -78,7 +78,7 @@ class TermijnNotificationServiceTest extends TestCase {
 		self::assertSame('Ontvangstbevestiging zaak Z/2026/300', $payload['subject']);
 		self::assertStringContainsString('2026-07-27', $payload['body']);
 		self::assertSame('burger-1', $payload['recipient']);
-		self::assertSame('ti-1', $payload['termijnInstance']);
+		self::assertSame('ti-1', $payload['termInstance']);
 	}
 
 	/**

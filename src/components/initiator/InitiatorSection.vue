@@ -198,7 +198,7 @@ export default {
 			if (!this.typeSchema || !this.caseObject.initiatorSourceId) {
 				return
 			}
-			const keyField = this.caseObject.initiatorType === 'person' ? 'burgerservicenummer' : 'kvkNummer'
+			const keyField = this.caseObject.initiatorType === 'person' ? 'citizenServiceNumber' : 'kvkNumber'
 			try {
 				const rows = await this.objectStore.fetchCollection(this.typeSchema, {
 					[keyField]: this.caseObject.initiatorSourceId,

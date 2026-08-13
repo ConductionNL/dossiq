@@ -109,7 +109,7 @@ class DwangsomController extends Controller {
 		$caseId = $this->owningCase->resolveVia(
 			objectId: $calculationId,
 			schemaKey: 'dwangsom_berekening_schema',
-			linkField: 'termijnInstance',
+			linkField: 'termInstance',
 			viaSchemaKey: 'termijn_instance_schema',
 			caseField: 'zaak'
 		);
@@ -265,8 +265,8 @@ class DwangsomController extends Controller {
 		}
 
 		$body = $this->jsonBody();
-		$basis = (string)($body['grondslag'] ?? 'AWB 7:1');
-		$rationale = (string)($body['motivering'] ?? '');
+		$basis = (string)($body['basis'] ?? 'AWB 7:1');
+		$rationale = (string)($body['rationale'] ?? '');
 
 		try {
 			$row = $this->objection->registerBezwaar($id, $basis, $rationale);
@@ -295,7 +295,7 @@ class DwangsomController extends Controller {
 
 		$body = $this->jsonBody();
 		$newAmount = (int)($body['newBedragCents'] ?? -1);
-		$basis = (string)($body['grondslag'] ?? 'AWB 7:11');
+		$basis = (string)($body['basis'] ?? 'AWB 7:11');
 		if ($newAmount < 0) {
 			return new JSONResponse(['message' => 'newBedragCents required and must be >= 0'], Http::STATUS_BAD_REQUEST);
 		}

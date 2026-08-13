@@ -221,7 +221,7 @@ class ParafeerActieService {
 			$this->logger->warning(
 				'Procest: ParafeerTransitionEvent dispatch failed',
 				[
-					'voorstel' => $proposalId,
+					'proposal' => $proposalId,
 					'action' => $action,
 					'exception' => $e->getMessage(),
 				],
@@ -260,7 +260,7 @@ class ParafeerActieService {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ParafeerActieService::recordAction failed',
-				['voorstel' => $proposalId, 'exception' => $e->getMessage()]
+				['proposal' => $proposalId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('Operation failed');
 		}//end try
@@ -342,7 +342,7 @@ class ParafeerActieService {
 
 			return [
 				'parafeeractie' => $this->normalizer->toArray(value: $savedAction),
-				'voorstel' => ['id' => $proposalId, 'status' => self::STATUS_TERUGGESTUURD],
+				'proposal' => ['id' => $proposalId, 'status' => self::STATUS_TERUGGESTUURD],
 			];
 		}
 
@@ -366,7 +366,7 @@ class ParafeerActieService {
 
 		return [
 			'parafeeractie' => $this->normalizer->toArray(value: $savedAction),
-			'voorstel' => $this->normalizer->toArray(value: $updatedProposal),
+			'proposal' => $this->normalizer->toArray(value: $updatedProposal),
 		];
 	}//end performRecordAction()
 
@@ -477,7 +477,7 @@ class ParafeerActieService {
 			} catch (\Throwable $e) {
 				$this->logger->warning(
 					'Failed to send accordering notification to steller',
-					['voorstel' => $proposalId, 'exception' => $e->getMessage()]
+					['proposal' => $proposalId, 'exception' => $e->getMessage()]
 				);
 			}
 		}
@@ -567,7 +567,7 @@ class ParafeerActieService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Procest: approval-workflow delegation failed; legacy path governs',
-				['voorstel' => $proposalId, 'action' => $action, 'exception' => $e->getMessage()]
+				['proposal' => $proposalId, 'action' => $action, 'exception' => $e->getMessage()]
 			);
 		}//end try
 	}//end delegateToApprovalWorkflow()
@@ -593,7 +593,7 @@ class ParafeerActieService {
 				objectService: $objectService,
 				register: $register,
 				schema: $actionSchema,
-				filters: ['voorstel' => $proposalId, '_limit' => 500],
+				filters: ['proposal' => $proposalId, '_limit' => 500],
 			);
 
 			$rows = [];
@@ -617,7 +617,7 @@ class ParafeerActieService {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ParafeerActieService::listActions failed',
-				['voorstel' => $proposalId, 'exception' => $e->getMessage()]
+				['proposal' => $proposalId, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}//end try
@@ -652,7 +652,7 @@ class ParafeerActieService {
 			if (count($nodes) === 0) {
 				$this->logger->warning(
 					'ParafeerActieService: voorstel document not found for PDF signing',
-					['voorstel' => $proposalId, 'file' => $fileId]
+					['proposal' => $proposalId, 'file' => $fileId]
 				);
 				return;
 			}
@@ -661,7 +661,7 @@ class ParafeerActieService {
 			if (($file instanceof File) === false) {
 				$this->logger->warning(
 					'ParafeerActieService: voorstel node is not a writable file',
-					['voorstel' => $proposalId, 'file' => $fileId]
+					['proposal' => $proposalId, 'file' => $fileId]
 				);
 				return;
 			}
@@ -684,7 +684,7 @@ class ParafeerActieService {
 			$this->logger->info(
 				'ParafeerActieService: PDF signature annotation applied',
 				[
-					'voorstel' => $proposalId,
+					'proposal' => $proposalId,
 					'file' => $fileId,
 					'actor' => $actor->getUID(),
 				]
@@ -692,12 +692,12 @@ class ParafeerActieService {
 		} catch (NotFoundException $e) {
 			$this->logger->warning(
 				'ParafeerActieService: PDF signing skipped — file not found',
-				['voorstel' => $proposalId, 'file' => $fileId]
+				['proposal' => $proposalId, 'file' => $fileId]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'ParafeerActieService: PDF signature could not be applied',
-				['voorstel' => $proposalId, 'file' => $fileId, 'exception' => $e->getMessage()]
+				['proposal' => $proposalId, 'file' => $fileId, 'exception' => $e->getMessage()]
 			);
 		}//end try
 	}//end applyPdfSignature()
@@ -746,7 +746,7 @@ class ParafeerActieService {
 			} catch (\Throwable $e) {
 				$this->logger->warning(
 					'Failed to send teruggestuurd notification',
-					['voorstel' => $proposalId, 'exception' => $e->getMessage()]
+					['proposal' => $proposalId, 'exception' => $e->getMessage()]
 				);
 			}
 		}

@@ -50,7 +50,7 @@ class BewijsstukService {
 	 * @var array<string, array<int, string>>
 	 */
 	public const TYPE_WHITELIST = [
-		'aanvraag' => ['aanvraagdocument', 'begroting', 'projectplan', 'cofinancieringsverklaring', 'ander'],
+		'aanvraag' => ['aanvraagdocument', 'budget', 'projectplan', 'cofinancieringsverklaring', 'ander'],
 		'tussenrapportage' => ['voortgangsrapport', 'urenstaat', 'factuur', 'bankafschrift', 'deelnemerslijst', 'ander'],
 		'vaststelling' => ['eindrapport', 'accountantsverklaring', 'factuur', 'bankafschrift', 'ander'],
 		'verplichtingsbewijs' => ['deelnemerslijst', 'urenstaat', 'factuur', 'ander'],
@@ -162,7 +162,7 @@ class BewijsstukService {
 	 * @throws OCSBadRequestException When validation/persistence fails.
 	 */
 	public function create(array $payload, ?string $contents = null, ?int $regelingRetention = null): array {
-		$gekoppeldIn = (string)($payload['gekoppeldAan'] ?? '');
+		$gekoppeldIn = (string)($payload['gekoppeldIn'] ?? '');
 		$type = (string)($payload['bewijsstukType'] ?? '');
 		if ($this->isTypeAllowed(gekoppeldIn: $gekoppeldIn, type: $type) === false) {
 			throw new OCSBadRequestException('Bewijsstuktype "' . $type . '" is niet toegestaan voor fase "' . $gekoppeldIn . '"');
@@ -175,14 +175,14 @@ class BewijsstukService {
 		$record = array_merge(
 			$payload,
 			[
-				'bewaartermijnJaren' => $jaren,
-				'bewaartermijnEinde' => $this->bewaartermijnEinde(from: $now, jaren: $jaren)->format('Y-m-d'),
+				'retentionPeriodJaren' => $jaren,
+				'retentionPeriodEnd' => $this->bewaartermijnEinde(from: $now, jaren: $jaren)->format('Y-m-d'),
 				'archiefStatus' => 'actief',
 				'immutable' => ($gekoppeldIn === 'vaststelling'),
 			]
 		);
 		if ($contents !== null) {
-			$record['bestandHashSha256'] = $this->computeHash(contents: $contents);
+			$record['fileHashSha256'] = $this->computeHash(contents: $contents);
 		}
 
 		try {

@@ -83,17 +83,17 @@ class ComplaintAnalyticsController extends Controller {
 		$dateTo = $this->request->getParam('dateTo') ?? date('Y-m-d');
 
 		$byCategory = $this->analyticsService->getFrequencyByDimension(
-			dimension: 'categorie',
+			dimension: 'category',
 			dateFrom: $dateFrom,
 			dateTo: $dateTo,
 		);
 		$byDepartment = $this->analyticsService->getFrequencyByDimension(
-			dimension: 'betrokkenAfdeling',
+			dimension: 'betrokkenDepartment',
 			dateFrom: $dateFrom,
 			dateTo: $dateTo,
 		);
 		$byChannel = $this->analyticsService->getFrequencyByDimension(
-			dimension: 'ontvangstkanaal',
+			dimension: 'receiptChannel',
 			dateFrom: $dateFrom,
 			dateTo: $dateTo,
 		);

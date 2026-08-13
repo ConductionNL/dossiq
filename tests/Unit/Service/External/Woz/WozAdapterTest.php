@@ -178,7 +178,7 @@ class WozAdapterTest extends TestCase {
 
 		$this->assertStringEndsWith('/wozobjecten', $captured['url']);
 		$this->assertSame('1234AB', $captured['options']['query']['postcode'], 'postcode must be normalized to uppercase, no spaces');
-		$this->assertSame('10', $captured['options']['query']['huisnummer']);
+		$this->assertSame('10', $captured['options']['query']['houseNumber']);
 		$this->assertSame('secret-key', $captured['options']['headers']['X-Api-Key']);
 
 		$this->assertSame('FOUND', $result->lookupStatus);

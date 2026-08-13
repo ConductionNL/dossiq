@@ -98,7 +98,7 @@ class BagController extends Controller {
 		}
 
 		$postcode = (string)$this->request->getParam('postcode', '');
-		$houseNumber = (string)$this->request->getParam('huisnummer', '');
+		$houseNumber = (string)$this->request->getParam('houseNumber', '');
 		if ($postcode === '' || $houseNumber === '') {
 			return new JSONResponse(
 				['error' => 'postcode and huisnummer are required'],

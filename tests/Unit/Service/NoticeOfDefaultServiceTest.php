@@ -52,10 +52,10 @@ class NoticeOfDefaultServiceTest extends TestCase {
 				return match ($key) {
 					'register' => 'procest',
 					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_instance_schema' => 'termInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
 					'ingebrekestelling_schema' => 'ingebrekestelling',
-					'dwangsom_berekening_schema' => 'dwangsomBerekening',
+					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
 					default => '',
 				};
 			},
@@ -68,21 +68,21 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		// Seed an AWB-default definition.
 		$this->objects->saveObject('procest', 'termijnDefinitie', [
 			'id' => 'td-ov',
-			'zaaktype' => 'omgevingsvergunning-regulier',
+			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
-			'standaardDuurDagen' => 56,
-			'aantalVerlengingen' => 1,
+			'standardDurationDays' => 56,
+			'countVerlengingen' => 1,
 			'validFrom' => '2026-01-01',
 		]);
 
 		// Seed an overdue TermijnInstance.
-		$this->objects->saveObject('procest', 'termijnInstance', [
+		$this->objects->saveObject('procest', 'termInstance', [
 			'id' => 'ti-1',
 			'zaak' => 'Z/2026/300',
 			'termijnDefinitie' => 'td-ov',
-			'startDatum' => '2026-01-01T10:00:00+00:00',
-			'einddatumBerekend' => '2026-02-25',
-			'einddatumActueel' => '2026-02-25',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-02-25',
+			'endDateActueel' => '2026-02-25',
 			'status' => 'overschreden',
 			'notificatiesVerstuurd' => [],
 		]);
@@ -100,17 +100,17 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		);
 
 		self::assertTrue($row['gevalideerd']);
-		self::assertSame('geldig', $row['geldigheidStatus']);
-		self::assertArrayHasKey('dwangsomBerekening', $row);
+		self::assertSame('geldig', $row['validityStatus']);
+		self::assertArrayHasKey('penaltyPaymentCalculation', $row);
 
-		$b = $row['dwangsomBerekening'];
-		self::assertSame('2026-03-29', $b['startDatum']);
-		self::assertSame(144200, $b['plafondBerekend']);
+		$b = $row['penaltyPaymentCalculation'];
+		self::assertSame('2026-03-29', $b['startDate']);
+		self::assertSame(144200, $b['plafondCalculated']);
 		self::assertSame('awb-default', $b['regime']);
 		self::assertSame('lopend', $b['status']);
 
 		// Instance has the notice linked.
-		$updated = $this->objects->store['termijnInstance']['ti-1'];
+		$updated = $this->objects->store['termInstance']['ti-1'];
 		self::assertSame((string)$row['id'], $updated['relevantIngbrekes']);
 	}
 
@@ -119,13 +119,13 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	 */
 	public function testPrematureNoticeIsRejected(): void {
 		// Use a different instance still in lopend (not overschreden).
-		$this->objects->saveObject('procest', 'termijnInstance', [
+		$this->objects->saveObject('procest', 'termInstance', [
 			'id' => 'ti-lopend',
 			'zaak' => 'Z/2026/301',
 			'termijnDefinitie' => 'td-ov',
-			'startDatum' => '2026-01-01T10:00:00+00:00',
-			'einddatumBerekend' => '2026-12-31',
-			'einddatumActueel' => '2026-12-31',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-12-31',
+			'endDateActueel' => '2026-12-31',
 			'status' => 'lopend',
 			'notificatiesVerstuurd' => [],
 		]);
@@ -137,8 +137,8 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		);
 
 		self::assertFalse($row['gevalideerd']);
-		self::assertSame('premaat', $row['geldigheidStatus']);
-		self::assertArrayNotHasKey('dwangsomBerekening', $row);
+		self::assertSame('premaat', $row['validityStatus']);
+		self::assertArrayNotHasKey('penaltyPaymentCalculation', $row);
 	}
 
 	/**
@@ -150,7 +150,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			new DateTimeImmutable('2026-03-15'),
 			'email'
 		);
-		self::assertArrayHasKey('dwangsomBerekening', $first);
+		self::assertArrayHasKey('penaltyPaymentCalculation', $first);
 
 		$second = $this->service->registerNoticeOfDefault(
 			'ti-1',
@@ -158,10 +158,10 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'post'
 		);
 		self::assertTrue($second['gevalideerd']);
-		self::assertArrayNotHasKey('dwangsomBerekening', $second);
+		self::assertArrayNotHasKey('penaltyPaymentCalculation', $second);
 
 		// Only one berekening in the store.
-		self::assertCount(1, $this->objects->store['dwangsomBerekening'] ?? []);
+		self::assertCount(1, $this->objects->store['penaltyPaymentCalculation'] ?? []);
 	}
 
 	/**
@@ -170,20 +170,20 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	public function testCustomRegimeIsResolvedFromDefinition(): void {
 		$this->objects->saveObject('procest', 'termijnDefinitie', [
 			'id' => 'td-woo',
-			'zaaktype' => 'woo-verzoek',
+			'caseType' => 'woo-verzoek',
 			'wettelijkeGrondslag' => 'Woo art 4.4',
-			'standaardDuurDagen' => 28,
-			'aantalVerlengingen' => 1,
+			'standardDurationDays' => 28,
+			'countVerlengingen' => 1,
 			'afwijkendDwangsomRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
-		$this->objects->saveObject('procest', 'termijnInstance', [
+		$this->objects->saveObject('procest', 'termInstance', [
 			'id' => 'ti-woo',
 			'zaak' => 'Z/2026/302',
 			'termijnDefinitie' => 'td-woo',
-			'startDatum' => '2026-01-01T10:00:00+00:00',
-			'einddatumBerekend' => '2026-01-29',
-			'einddatumActueel' => '2026-01-29',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-01-29',
+			'endDateActueel' => '2026-01-29',
 			'status' => 'overschreden',
 			'notificatiesVerstuurd' => [],
 		]);
@@ -193,8 +193,8 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			new DateTimeImmutable('2026-02-15'),
 			'post'
 		);
-		$b = $row['dwangsomBerekening'];
+		$b = $row['penaltyPaymentCalculation'];
 		self::assertSame('afwijkend', $b['regime']);
-		self::assertSame(50000, $b['plafondBerekend']);
+		self::assertSame(50000, $b['plafondCalculated']);
 	}
 }

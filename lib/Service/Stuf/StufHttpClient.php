@@ -152,7 +152,7 @@ class StufHttpClient {
 					'code' => $code,
 					'omschrijving' => 'Transport error',
 					'details' => $e->getMessage(),
-					'soort' => 'transient',
+					'kind' => 'transient',
 				],
 			];
 		}//end try
@@ -175,7 +175,7 @@ class StufHttpClient {
 				'code' => $code,
 				'omschrijving' => $omschrijving,
 				'details' => '',
-				'soort' => 'permanent',
+				'kind' => 'permanent',
 			],
 		];
 	}//end permanentFailure()

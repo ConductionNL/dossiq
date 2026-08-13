@@ -145,7 +145,7 @@ final class BrokerAssertionResult {
 	public function toArray(): array {
 		return [
 			'dialect' => $this->dialect,
-			'kvkNummer' => $this->kvkNumber,
+			'kvkNumber' => $this->kvkNumber,
 			'bsn' => $this->bsn,
 			'assertionId' => $this->assertionId,
 			'issuer' => $this->issuer,

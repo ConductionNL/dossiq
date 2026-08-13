@@ -102,7 +102,7 @@
 					"if (!pm.collectionVariables.get('info_id')) { pm.test.skip('no document created'); return }",
 					"pm.test('200 OK transition', function () { pm.expect(pm.response.code).to.be.oneOf([200, 503]) })",
 					"if (pm.response.code === 200) {",
-					"  pm.test('vergrendeldOp set on definitief', function () { pm.expect(pm.response.json()).to.have.property('vergrendeldOp') })",
+					"  pm.test('vergrendeldOp set on definitief', function () { pm.expect(pm.response.json()).to.have.property('vergrendeldOn') })",
 					"}"
 				]}}
 			]

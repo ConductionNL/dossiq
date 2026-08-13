@@ -52,10 +52,10 @@ class WozResponseMapperTest extends TestCase {
 		);
 
 		$this->assertSame('05180000001234', $mapped['wozobjectnummer']);
-		$this->assertSame('0518010000123456', $mapped['nummeraanduidingId']);
+		$this->assertSame('0518010000123456', $mapped['addressDesignationId']);
 		$this->assertSame(250, $mapped['grondoppervlakte']);
 		$this->assertSame(['woonfunctie'], $mapped['gebruiksdoel']);
-		$this->assertSame(385000, $mapped['waarde'], 'must select the 2025 (most recent) value, not the first array entry');
+		$this->assertSame(385000, $mapped['value'], 'must select the 2025 (most recent) value, not the first array entry');
 		$this->assertSame('2025-01-01', $mapped['waardepeildatum']);
 	}//end testFullRecordSelectsMostRecentValuation()
 
@@ -69,10 +69,10 @@ class WozResponseMapperTest extends TestCase {
 		$mapper = new WozResponseMapper();
 		$mapped = $mapper->map(['wozobjectnummer' => '05180000009999']);
 
-		$this->assertNull($mapped['waarde']);
+		$this->assertNull($mapped['value']);
 		$this->assertNull($mapped['waardepeildatum']);
 		$this->assertNull($mapped['grondoppervlakte']);
-		$this->assertNull($mapped['nummeraanduidingId']);
+		$this->assertNull($mapped['addressDesignationId']);
 		$this->assertSame([], $mapped['gebruiksdoel'], 'missing gebruiksdoel must map to an empty array, not null');
 	}//end testPartialRecordMapsMissingFieldsToNull()
 
@@ -86,7 +86,7 @@ class WozResponseMapperTest extends TestCase {
 		$mapped = $mapper->map([]);
 
 		$this->assertNull($mapped['wozobjectnummer']);
-		$this->assertNull($mapped['waarde']);
+		$this->assertNull($mapped['value']);
 		$this->assertNull($mapped['waardepeildatum']);
 		$this->assertSame([], $mapped['gebruiksdoel']);
 	}//end testEmptyRecordMapsWithoutError()
@@ -112,9 +112,9 @@ class WozResponseMapperTest extends TestCase {
 	 */
 	public function testFlatValuationShapeIsMapped(): void {
 		$mapper = new WozResponseMapper();
-		$mapped = $mapper->map(['waarde' => 250000, 'waardepeildatum' => '2025-01-01']);
+		$mapped = $mapper->map(['value' => 250000, 'waardepeildatum' => '2025-01-01']);
 
-		$this->assertSame(250000, $mapped['waarde']);
+		$this->assertSame(250000, $mapped['value']);
 		$this->assertSame('2025-01-01', $mapped['waardepeildatum']);
 	}//end testFlatValuationShapeIsMapped()
 
@@ -147,10 +147,10 @@ class WozResponseMapperTest extends TestCase {
 	 */
 	public function testNumericStringFieldsAreCoercedToInt(): void {
 		$mapper = new WozResponseMapper();
-		$mapped = $mapper->map(['grondoppervlakte' => '99', 'waarde' => '250000']);
+		$mapped = $mapper->map(['grondoppervlakte' => '99', 'value' => '250000']);
 
 		$this->assertSame(99, $mapped['grondoppervlakte']);
-		$this->assertSame(250000, $mapped['waarde']);
+		$this->assertSame(250000, $mapped['value']);
 	}//end testNumericStringFieldsAreCoercedToInt()
 
 	/**
@@ -164,6 +164,6 @@ class WozResponseMapperTest extends TestCase {
 		$mapper = new WozResponseMapper();
 		$mapped = $mapper->map(['adresseerbaarObjectIdentificatie' => '0518010000999999']);
 
-		$this->assertSame('0518010000999999', $mapped['nummeraanduidingId']);
+		$this->assertSame('0518010000999999', $mapped['addressDesignationId']);
 	}//end testAdresseerbaarObjectIdentificatieFallsBackToNummeraanduidingId()
 }//end class

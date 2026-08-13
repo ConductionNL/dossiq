@@ -268,7 +268,7 @@ class ZaakdossierServiceTest extends TestCase {
 		$this->assertSame('inf-1', $result['id']);
 		$this->assertSame('concept', $result['status']);
 		$this->assertSame('intern', $result['vertrouwelijkheidaanduiding']);
-		$this->assertSame(hash('sha256', $content), $result['integriteit']['waarde']);
+		$this->assertSame(hash('sha256', $content), $result['integriteit']['value']);
 		$this->assertSame('sha256', $result['integriteit']['algoritme']);
 
 		// Both schemas were written.
@@ -391,8 +391,8 @@ class ZaakdossierServiceTest extends TestCase {
 		$result = $this->service->transitionStatus('inf-1', 'definitief');
 
 		$this->assertSame('definitief', $result['status']);
-		$this->assertArrayHasKey('vergrendeldOp', $result);
-		$this->assertArrayHasKey('vergrendeldOp', (array)$captured);
+		$this->assertArrayHasKey('vergrendeldOn', $result);
+		$this->assertArrayHasKey('vergrendeldOn', (array)$captured);
 
 	}//end testTransitionToDefinitiefLocks()
 

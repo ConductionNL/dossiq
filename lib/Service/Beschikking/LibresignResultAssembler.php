@@ -165,10 +165,10 @@ class LibresignResultAssembler {
 
 		return [
 			'signedBestandId' => (string)$newFileId,
-			'validatieRapportId' => $uuid,
-			'certificaatSerienummer' => (string)($status['certificateSerialNumber'] ?? ('libresign-' . $uuid)),
+			'validationRapportId' => $uuid,
+			'certificateSerialNumber' => (string)($status['certificateSerialNumber'] ?? ('libresign-' . $uuid)),
 			'tspProviderEidasId' => 'LibreSign',
-			'ondertekeningTijdstip' => (new DateTimeImmutable())->format('c'),
+			'ondertekeningMoment' => (new DateTimeImmutable())->format('c'),
 		];
 	}//end assembleSignedResult()
 
@@ -189,8 +189,8 @@ class LibresignResultAssembler {
 		$mappedStatus = $this->mapStatus(status: $status);
 
 		return [
-			'validatieRapportId' => $validationRapportId,
-			'soort' => self::REPORT_SOORT,
+			'validationRapportId' => $validationRapportId,
+			'kind' => self::REPORT_SOORT,
 			'norm' => self::REPORT_NORM,
 			'geldig' => ($mappedStatus === self::SIGNED),
 			'status' => $mappedStatus,
@@ -215,8 +215,8 @@ class LibresignResultAssembler {
 	 */
 	public function assembleFailedValidationReport(string $validationRapportId): array {
 		return [
-			'validatieRapportId' => $validationRapportId,
-			'soort' => self::REPORT_SOORT,
+			'validationRapportId' => $validationRapportId,
+			'kind' => self::REPORT_SOORT,
 			'norm' => self::REPORT_NORM,
 			'geldig' => false,
 			'foutmelding' => 'libresign_api_error',

@@ -51,15 +51,15 @@ class ZgwMappingService {
 	private const RESOURCE_KEYS = [
 		'catalogus',
 		'zaak',
-		'zaaktype',
+		'caseType',
 		'status',
 		'statustype',
-		'resultaat',
+		'result',
 		'resultaattype',
-		'rol',
+		'role',
 		'roltype',
 		'eigenschap',
-		'besluit',
+		'decision',
 		'besluittype',
 		'informatieobjecttype',
 		'zaaktypeinformatieobjecttype',
@@ -73,7 +73,7 @@ class ZgwMappingService {
 		'enkelvoudiginformatieobject',
 		'objectinformatieobject',
 		'gebruiksrechten',
-		'kanaal',
+		'channel',
 		'abonnement',
 	];
 
@@ -94,7 +94,7 @@ class ZgwMappingService {
 	/**
 	 * Get the mapping configuration for a specific ZGW resource.
 	 *
-	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
+	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'caseType')
 	 *
 	 * @return array|null The mapping configuration or null if not found
 	 *
@@ -122,7 +122,7 @@ class ZgwMappingService {
 	/**
 	 * Save the mapping configuration for a specific ZGW resource.
 	 *
-	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
+	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'caseType')
 	 * @param array $config The mapping configuration
 	 *
 	 * @return void
@@ -167,7 +167,7 @@ class ZgwMappingService {
 	/**
 	 * Delete the mapping configuration for a specific ZGW resource.
 	 *
-	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'zaaktype')
+	 * @param string $resourceKey The ZGW resource key (e.g., 'zaak', 'caseType')
 	 *
 	 * @return void
 	 *

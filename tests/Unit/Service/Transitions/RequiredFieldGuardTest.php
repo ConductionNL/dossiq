@@ -51,13 +51,13 @@ class RequiredFieldGuardTest extends TestCase {
 	public function testFailsWhenFieldIsNull(): void {
 		$guard = new RequiredFieldGuard();
 		$result = $guard->evaluate(
-			guardConfig: ['field' => 'resultaat'],
+			guardConfig: ['field' => 'result'],
 			case: ['id' => 'c'],
 			userId: 'u',
 		);
 
 		self::assertFalse($result->passed);
-		self::assertSame('resultaat', $result->details['field']);
+		self::assertSame('result', $result->details['field']);
 	}//end testFailsWhenFieldIsNull()
 
 	/**
@@ -66,8 +66,8 @@ class RequiredFieldGuardTest extends TestCase {
 	public function testFailsWhenFieldIsEmptyString(): void {
 		$guard = new RequiredFieldGuard();
 		$result = $guard->evaluate(
-			guardConfig: ['field' => 'resultaat'],
-			case: ['resultaat' => ''],
+			guardConfig: ['field' => 'result'],
+			case: ['result' => ''],
 			userId: 'u',
 		);
 
@@ -94,13 +94,13 @@ class RequiredFieldGuardTest extends TestCase {
 	public function testPassesWhenFieldHasValue(): void {
 		$guard = new RequiredFieldGuard();
 		$result = $guard->evaluate(
-			guardConfig: ['field' => 'resultaat'],
-			case: ['resultaat' => 'toegewezen'],
+			guardConfig: ['field' => 'result'],
+			case: ['result' => 'toegewezen'],
 			userId: 'u',
 		);
 
 		self::assertTrue($result->passed);
-		self::assertSame('resultaat', $result->details['field']);
+		self::assertSame('result', $result->details['field']);
 	}//end testPassesWhenFieldHasValue()
 
 	/**
@@ -110,8 +110,8 @@ class RequiredFieldGuardTest extends TestCase {
 		// 0 is a legitimate value, not "empty".
 		$guard = new RequiredFieldGuard();
 		$result = $guard->evaluate(
-			guardConfig: ['field' => 'bedrag'],
-			case: ['bedrag' => 0],
+			guardConfig: ['field' => 'amount'],
+			case: ['amount' => 0],
 			userId: 'u',
 		);
 

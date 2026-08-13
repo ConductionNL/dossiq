@@ -80,10 +80,10 @@ final class BrkResponseMapper {
 			$kadastraleAanduidingRaw = [];
 		}
 
-		$municipalityNameRaw = ($kadastraleAanduidingRaw['kadastraleGemeente']['waarde'] ?? $raw['kadastraleGemeenteNaam'] ?? null);
-		$municipalityCodeRaw = ($kadastraleAanduidingRaw['kadastraleGemeentecode']['waarde'] ?? $raw['kadastraleGemeenteCode'] ?? null);
+		$municipalityNameRaw = ($kadastraleAanduidingRaw['kadastraleGemeente']['value'] ?? $raw['kadastraleGemeenteNaam'] ?? null);
+		$municipalityCodeRaw = ($kadastraleAanduidingRaw['kadastraleGemeentecode']['value'] ?? $raw['kadastraleGemeenteCode'] ?? null);
 		$sequenceNumberRaw = ($kadastraleAanduidingRaw['appartementsrechtvolgnummer'] ?? $raw['appartementsrechtVolgnummer'] ?? null);
-		$grootteRaw = ($raw['kadastraleGrootte']['waarde'] ?? $raw['kadastraleGrootte'] ?? null);
+		$grootteRaw = ($raw['kadastraleGrootte']['value'] ?? $raw['kadastraleGrootte'] ?? null);
 		$gerechtigdenRaw = ($raw['zakelijkGerechtigdheid'] ?? $raw['zakelijkGerechtigden'] ?? []);
 
 		return [
@@ -148,7 +148,7 @@ final class BrkResponseMapper {
 
 			$out[] = [
 				'identificatie' => $this->stringOrNull(value: $entry['identificatie'] ?? null),
-				'aardZakelijkRecht' => $this->stringOrNull(value: $entry['aardZakelijkRecht']['waarde'] ?? $entry['aardZakelijkRecht'] ?? null),
+				'aardZakelijkRecht' => $this->stringOrNull(value: $entry['aardZakelijkRecht']['value'] ?? $entry['aardZakelijkRecht'] ?? null),
 			];
 		}
 

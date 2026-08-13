@@ -171,7 +171,7 @@ class BeschikkingControllerTest extends TestCase {
 	 */
 	public function testCreateSuccess(): void {
 		$this->authenticate();
-		$this->request->method('getContent')->willReturn('{"zaakId":"zaak-1"}');
+		$this->request->method('getContent')->willReturn('{"caseId":"zaak-1"}');
 		$this->service->method('compose')->willReturn(['id' => 'besch-1', 'huidigeStatus' => 'ontwerp']);
 
 		$response = $this->controller->create();
@@ -186,8 +186,8 @@ class BeschikkingControllerTest extends TestCase {
 	 */
 	public function testAkkoordMandaatForbidden(): void {
 		$this->authenticate();
-		$this->request->method('getContent')->willReturn('{"akkoordDoor":"consulent-1"}');
-		$this->service->method('akkoord')->willThrowException(new RuntimeException('mandaat_insufficient'));
+		$this->request->method('getContent')->willReturn('{"approvedBy":"consulent-1"}');
+		$this->service->method('approved')->willThrowException(new RuntimeException('mandaat_insufficient'));
 
 		$response = $this->controller->akkoord('besch-1');
 
@@ -201,7 +201,7 @@ class BeschikkingControllerTest extends TestCase {
 	 */
 	public function testUpdateImmutableConflict(): void {
 		$this->authenticate();
-		$this->request->method('getContent')->willReturn('{"motivering":"x"}');
+		$this->request->method('getContent')->willReturn('{"rationale":"x"}');
 		$this->service->method('updateFields')->willThrowException(new RuntimeException('immutable'));
 
 		$response = $this->controller->update('besch-1');

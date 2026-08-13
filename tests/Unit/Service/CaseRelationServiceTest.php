@@ -192,7 +192,7 @@ class CaseRelationServiceTest extends TestCase {
 		$this->assertCount(1, $aRel);
 		$this->assertSame('b', $aRel[0]['caseId']);
 		$this->assertSame('onderwerp', $aRel[0]['aardRelatie']);
-		$this->assertSame('Bezwaar over besluit', $aRel[0]['toelichting']);
+		$this->assertSame('Bezwaar over besluit', $aRel[0]['notes']);
 		$this->assertCount(1, $bRel);
 		$this->assertSame('a', $bRel[0]['caseId']);
 		$this->assertSame('onderwerp', $bRel[0]['aardRelatie']);
@@ -373,7 +373,7 @@ class CaseRelationServiceTest extends TestCase {
 	 */
 	public function testListRelationsDecodes(): void {
 		$store = [
-			'a' => ['id' => 'a', 'relatedCases' => json_encode([['caseId' => 'b', 'aardRelatie' => 'vervolg', 'toelichting' => 't']])],
+			'a' => ['id' => 'a', 'relatedCases' => json_encode([['caseId' => 'b', 'aardRelatie' => 'vervolg', 'notes' => 't']])],
 		];
 		$service = $this->makeService($store);
 
@@ -381,6 +381,6 @@ class CaseRelationServiceTest extends TestCase {
 		$this->assertCount(1, $rel);
 		$this->assertSame('b', $rel[0]['caseId']);
 		$this->assertSame('vervolg', $rel[0]['aardRelatie']);
-		$this->assertSame('t', $rel[0]['toelichting']);
+		$this->assertSame('t', $rel[0]['notes']);
 	}//end testListRelationsDecodes()
 }//end class

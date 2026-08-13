@@ -78,9 +78,9 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		resourceKeys() {
 			return [
-				'zaak', 'zaaktype', 'status', 'statustype',
-				'resultaat', 'resultaattype', 'rol', 'roltype',
-				'eigenschap', 'besluit', 'besluittype', 'informatieobjecttype',
+				'zaak', 'caseType', 'status', 'statustype',
+				'result', 'resultaattype', 'role', 'roltype',
+				'eigenschap', 'decision', 'besluittype', 'informatieobjecttype',
 			]
 		},
 	},

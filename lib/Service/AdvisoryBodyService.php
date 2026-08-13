@@ -320,7 +320,7 @@ class AdvisoryBodyService {
 		string $token,
 	): void {
 		$number = $consultationData['consultationNumber'] ?? $consultationId;
-		$bodyName = $consultationData['adviesInstantie'] ?? 'unknown';
+		$bodyName = $consultationData['adviesAuthority'] ?? 'unknown';
 
 		$this->logger->info(
 			'External notification attempt for consultation ' . $number

@@ -53,10 +53,10 @@ class MockSigningAdapter implements SigningAdapterInterface {
 
 		return [
 			'signedBestandId' => 'signed-' . substr(hash('sha256', $seed), 0, 12),
-			'validatieRapportId' => 'val-' . substr(hash('sha256', 'rapport' . $seed), 0, 12),
-			'certificaatSerienummer' => '0x' . substr(hash('sha256', 'cert' . $seed), 0, 16),
+			'validationRapportId' => 'val-' . substr(hash('sha256', 'rapport' . $seed), 0, 12),
+			'certificateSerialNumber' => '0x' . substr(hash('sha256', 'cert' . $seed), 0, 16),
 			'tspProviderEidasId' => 'NL-TSP-0001',
-			'ondertekeningTijdstip' => (new DateTimeImmutable())->format('c'),
+			'ondertekeningMoment' => (new DateTimeImmutable())->format('c'),
 		];
 	}//end sign()
 
@@ -71,8 +71,8 @@ class MockSigningAdapter implements SigningAdapterInterface {
 	 */
 	public function fetchValidationReport(string $validationRapportId): array {
 		return [
-			'validatieRapportId' => $validationRapportId,
-			'soort' => 'tsp-handtekening-rapport',
+			'validationRapportId' => $validationRapportId,
+			'kind' => 'tsp-handtekening-rapport',
 			'norm' => 'ETSI EN 319 102-1',
 			'geldig' => true,
 			'gegenereerdOp' => (new DateTimeImmutable())->format('c'),

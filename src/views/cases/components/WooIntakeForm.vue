@@ -106,7 +106,7 @@
 				:disabled="isReadOnly"
 				:error="!!errors.ontvangstdatum"
 				type="date"
-				@update:model-value="v => update('ontvangstdatum', v)" />
+				@update:model-value="v => update('receiptDate', v)" />
 			<p v-if="errors.ontvangstdatum" class="form-error">
 				{{ errors.ontvangstdatum }}
 			</p>
@@ -158,7 +158,7 @@ export default {
 	},
 	data() {
 		return {
-			requesterTypes: ['burger', 'journalist', 'organisatie'],
+			requesterTypes: ['burger', 'journalist', 'organisation'],
 			formatOptions: ['digitaal', 'papier', 'inzage'],
 		}
 	},

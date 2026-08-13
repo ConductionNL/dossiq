@@ -22,7 +22,7 @@
 						@update:model-value="v => geadresseerdeNaam = v" />
 				</div>
 				<div class="beschikking-composer__field">
-					<NcTextArea :model-value="motivering"
+					<NcTextArea :model-value="rationale"
 						:label="t('procest', 'Motivering')"
 						@update:model-value="v => motivering = v" />
 				</div>

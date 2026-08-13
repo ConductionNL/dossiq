@@ -127,8 +127,8 @@ class StufMessageParser {
 			'identificatie' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:identificatie', '//zkn:identificatie']),
 			'omschrijving' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:omschrijving', '//zkn:omschrijving']),
 			'startdatum' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:startdatum']),
-			'einddatum' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:einddatum']),
-			'zaaktype' => [
+			'endDate' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:einddatum']),
+			'caseType' => [
 				'omschrijving' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:zaaktype/zkn:omschrijving']),
 			],
 			'statussen' => [],
@@ -145,7 +145,7 @@ class StufMessageParser {
 
 		foreach ($xml->xpath(expression: '//zkn:heeftAlsInitiator|//zkn:heeftAlsBelanghebbende|//zkn:heeftAlsGemachtigde') as $roleNode) {
 			$case['betrokkenen'][] = [
-				'rol' => $roleNode->getName(),
+				'role' => $roleNode->getName(),
 				'bsn' => $this->extractDescendantText(node: $roleNode, localName: 'inp.bsn'),
 			];
 		}
@@ -174,7 +174,7 @@ class StufMessageParser {
 	public function parseError(string $responseXml): array {
 		$xml = $this->safeLoadXml(responseXml: $responseXml);
 		if ($xml === null) {
-			return ['code' => 'PARSE_ERROR', 'omschrijving' => 'Antwoord-envelop niet leesbaar', 'details' => '', 'soort' => 'permanent'];
+			return ['code' => 'PARSE_ERROR', 'omschrijving' => 'Antwoord-envelop niet leesbaar', 'details' => '', 'kind' => 'permanent'];
 		}
 
 		$code = $this->firstTextValue(xml: $xml, paths: ['//stuf:fout/stuf:code', '//stuf:code']);
@@ -185,7 +185,7 @@ class StufMessageParser {
 			'code' => $code,
 			'omschrijving' => $omschrijving,
 			'details' => $details,
-			'soort' => $this->classifyStufFault(code: $code),
+			'kind' => $this->classifyStufFault(code: $code),
 		];
 	}//end parseError()
 

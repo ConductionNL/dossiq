@@ -72,7 +72,7 @@ class BeroepEscalationListener implements IEventListener {
 		'in_stand_gelaten',
 		'ongegrond',
 		'niet_ontvankelijk',
-		'ingetrokken',
+		'withdrawn',
 		'schikking',
 	];
 
@@ -137,7 +137,7 @@ class BeroepEscalationListener implements IEventListener {
 			return;
 		}
 
-		$sourceObjectionId = (string)($object['sourceBezwaar'] ?? '');
+		$sourceObjectionId = (string)($object['sourceObjection'] ?? '');
 		if ($sourceObjectionId === '') {
 			return;
 		}

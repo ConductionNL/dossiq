@@ -154,7 +154,7 @@ class BagApiAdapter implements BagAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest BAG address lookup failed',
-				['postcode' => $normalizedPostcode, 'huisnummer' => $houseNumber, 'error' => $e->getMessage(), 'context' => $context]
+				['postcode' => $normalizedPostcode, 'houseNumber' => $houseNumber, 'error' => $e->getMessage(), 'context' => $context]
 			);
 
 			return new BagLookupResult(lookupStatus: 'LOOKUP_ERROR', address: [], dormant: false, extras: ['reason' => 'transport-error']);
@@ -205,7 +205,7 @@ class BagApiAdapter implements BagAdapterInterface {
 	 * @return array<string,string>
 	 */
 	private function buildAddressQuery(string $postcode, string $houseNumber, ?string $huisletter, ?string $toevoeging): array {
-		$query = ['postcode' => $postcode, 'huisnummer' => $houseNumber];
+		$query = ['postcode' => $postcode, 'houseNumber' => $houseNumber];
 		if ($huisletter !== null && $huisletter !== '') {
 			$query['huisletter'] = $huisletter;
 		}

@@ -285,7 +285,7 @@ class ConfiguredRegistryServiceTest extends TestCase {
 		$stub = $this->objectService();
 		$service = $this->subject($stub);
 
-		$service->save('organisatie_rol_schema', ['rolNaam' => 'X']);
+		$service->save('organisatie_rol_schema', ['roleName' => 'X']);
 
 		$this->assertSame('save', $stub->calls[0][0]);
 		$this->assertArrayNotHasKey('id', $stub->calls[0][3]);
@@ -301,7 +301,7 @@ class ConfiguredRegistryServiceTest extends TestCase {
 		$stub = $this->objectService();
 		$service = $this->subject($stub);
 
-		$service->save('organisatie_rol_schema', ['rolNaam' => 'X'], 'role-9');
+		$service->save('organisatie_rol_schema', ['roleName' => 'X'], 'role-9');
 
 		$this->assertSame('role-9', $stub->calls[0][3]['id']);
 	}//end testSaveWithAnIdUpdatesInPlace()
@@ -321,7 +321,7 @@ class ConfiguredRegistryServiceTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Not configured/');
 
-		$service->save('organisatie_rol_schema', ['rolNaam' => 'X']);
+		$service->save('organisatie_rol_schema', ['roleName' => 'X']);
 	}//end testSaveThrowsWhenTheRegistryIsUnconfigured()
 
 	/**

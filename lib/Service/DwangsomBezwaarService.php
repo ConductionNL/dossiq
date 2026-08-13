@@ -119,7 +119,7 @@ class DwangsomBezwaarService {
 		}
 
 		// Record event on termijn.
-		$instanceId = (string)($calculation['termijnInstance'] ?? '');
+		$instanceId = (string)($calculation['termInstance'] ?? '');
 		if ($instanceId !== '') {
 			$this->termService->recordEvent(
 				termInstanceId: $instanceId,
@@ -177,7 +177,7 @@ class DwangsomBezwaarService {
 			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
-		$calculation['definitievBedrag'] = $newAmountCents;
+		$calculation['definitievAmount'] = $newAmountCents;
 		$calculation['status'] = 'voltooid';
 		try {
 			$calculation = $objectService->saveObject($register, $bSchema, $calculation);
@@ -193,7 +193,7 @@ class DwangsomBezwaarService {
 		);
 
 		foreach ($uitbetalingen as $u) {
-			$u['bedrag'] = $newAmountCents;
+			$u['amount'] = $newAmountCents;
 			$u['status'] = 'voorbereid';
 			try {
 				$objectService->saveObject($register, $uSchema, $u);
@@ -202,7 +202,7 @@ class DwangsomBezwaarService {
 			}
 		}
 
-		$instanceId = (string)($calculation['termijnInstance'] ?? '');
+		$instanceId = (string)($calculation['termInstance'] ?? '');
 		if ($instanceId !== '') {
 			$this->termService->recordEvent(
 				termInstanceId: $instanceId,
@@ -268,7 +268,7 @@ class DwangsomBezwaarService {
 				objectService: $objectService,
 				register: $register,
 				schema: $uSchema,
-				filters: ['dwangsomBerekening' => $calculationId]
+				filters: ['penaltyPaymentCalculation' => $calculationId]
 			);
 		} catch (\Throwable $e) {
 			// Lookup failures must not block the bezwaar transition.

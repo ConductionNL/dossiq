@@ -113,7 +113,7 @@ class SentimentService {
 			'label' => $this->labelFor(score: $score, triggers: $foundTriggers),
 			'triggers' => $foundTriggers,
 			'escalatieAanbevolen' => $escalate,
-			'escalatieLevel' => $this->getEscalationLevel(score: $score, triggers: $foundTriggers),
+			'escalationLevel' => $this->getEscalationLevel(score: $score, triggers: $foundTriggers),
 			'snippet' => $this->extractSnippet(text: $text, triggers: $foundTriggers),
 		];
 	}//end analyzeSentiment()

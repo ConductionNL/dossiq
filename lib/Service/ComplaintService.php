@@ -48,20 +48,20 @@ class ComplaintService {
 		'hoorgesprek_gepland',
 		'hoorgesprek_afgerond',
 		'afgehandeld',
-		'ingetrokken',
+		'withdrawn',
 	];
 
 	/**
 	 * Allowed status transitions (from => [to, ...]).
 	 */
 	private const TRANSITIONS = [
-		'ontvangen' => ['ontvangst_bevestigd', 'ingetrokken'],
-		'ontvangst_bevestigd' => ['in_behandeling', 'ingetrokken'],
-		'in_behandeling' => ['hoorgesprek_gepland', 'afgehandeld', 'ingetrokken'],
-		'hoorgesprek_gepland' => ['hoorgesprek_afgerond', 'ingetrokken'],
-		'hoorgesprek_afgerond' => ['afgehandeld', 'ingetrokken'],
+		'ontvangen' => ['ontvangst_bevestigd', 'withdrawn'],
+		'ontvangst_bevestigd' => ['in_behandeling', 'withdrawn'],
+		'in_behandeling' => ['hoorgesprek_gepland', 'afgehandeld', 'withdrawn'],
+		'hoorgesprek_gepland' => ['hoorgesprek_afgerond', 'withdrawn'],
+		'hoorgesprek_afgerond' => ['afgehandeld', 'withdrawn'],
 		'afgehandeld' => [],
-		'ingetrokken' => [],
+		'withdrawn' => [],
 	];
 
 	/**
@@ -115,7 +115,7 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function createComplaint(array $data): array {
-		$this->validateRequired(data: $data, required: ['onderwerp', 'description', 'ontvangstdatum']);
+		$this->validateRequired(data: $data, required: ['onderwerp', 'description', 'receiptDate']);
 
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -129,22 +129,22 @@ class ComplaintService {
 			throw new RuntimeException('Complaint schema not configured');
 		}
 
-		$receiptDate = $data['ontvangstdatum'];
+		$receiptDate = $data['receiptDate'];
 
 		// Generate klachtnummer.
-		$data['klachtnummer'] = $this->generateComplaintNumber();
+		$data['complaintNumber'] = $this->generateComplaintNumber();
 		$data['status'] = 'ontvangen';
-		$data['prioriteit'] = $data['prioriteit'] ?? 'normaal';
-		$data['verdagingMogelijk'] = true;
+		$data['priority'] = $data['priority'] ?? 'normaal';
+		$data['verdagingPossible'] = true;
 
 		// Compute Awb deadlines.
-		$data['ontvangstbevestigingDeadline'] = $this->addWorkingDays(startDate: $receiptDate, days: self::AWB_ACK_WORKING_DAYS);
+		$data['acknowledgementOfReceiptDeadline'] = $this->addWorkingDays(startDate: $receiptDate, days: self::AWB_ACK_WORKING_DAYS);
 		$data['afhandelDeadline'] = $this->addCalendarWeeks(startDate: $receiptDate, weeks: self::AWB_RESOLUTION_WEEKS);
 
 		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
 		$this->logger->info(
-			'Complaint created: ' . $data['klachtnummer'],
+			'Complaint created: ' . $data['complaintNumber'],
 			['app' => Application::APP_ID],
 		);
 
@@ -299,7 +299,7 @@ class ComplaintService {
 			throw new RuntimeException('Complaint not found: ' . $id);
 		}
 
-		if (($complaint['verdagingMogelijk'] ?? false) === false) {
+		if (($complaint['verdagingPossible'] ?? false) === false) {
 			throw new RuntimeException('Verdaging is not available — already used or not applicable');
 		}
 
@@ -312,8 +312,8 @@ class ComplaintService {
 
 		$updateData = [
 			'afhandelDeadline' => $newDeadline,
-			'verdagingMogelijk' => false,
-			'verdagingJustificatie' => $justification,
+			'verdagingPossible' => false,
+			'verdagingJustification' => $justification,
 		];
 
 		$this->logger->info(
@@ -342,7 +342,7 @@ class ComplaintService {
 			throw new RuntimeException('Complaint not found: ' . $complaintId);
 		}
 
-		return $this->updateComplaint(id: $complaintId, data: ['geescaleerdeZaak' => $caseId]);
+		return $this->updateComplaint(id: $complaintId, data: ['escalatedCase' => $caseId]);
 	}//end linkEscalatedCase()
 
 	/**

@@ -76,7 +76,7 @@ class LogWozAdapter implements WozAdapterInterface {
 			'Procest WOZ lookup deferred (no outbound connector bound)',
 			[
 				'postcode' => $postcode,
-				'huisnummer' => $houseNumber,
+				'houseNumber' => $houseNumber,
 				'huisletter' => $huisletter,
 				'toevoeging' => $toevoeging,
 				'context' => $context,
@@ -99,7 +99,7 @@ class LogWozAdapter implements WozAdapterInterface {
 	public function lookupByNummeraanduiding(string $addressDesignationId, array $context = []): WozLookupResult {
 		$this->logger->info(
 			'Procest WOZ lookup deferred (no outbound connector bound)',
-			['nummeraanduidingId' => $addressDesignationId, 'context' => $context]
+			['addressDesignationId' => $addressDesignationId, 'context' => $context]
 		);
 
 		return $this->deferred();

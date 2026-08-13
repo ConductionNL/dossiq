@@ -175,7 +175,7 @@ class AdvisoryCommitteeService {
 			],
 			$payload,
 			[
-				'bezwaar' => $objectionId,
+				'objection' => $objectionId,
 				'commissie' => $commissieId,
 				'status' => 'assigned',
 				'assignedAt' => $now,
@@ -189,7 +189,7 @@ class AdvisoryCommitteeService {
 			payload: [
 				'panel' => $record['panel'],
 				'commissieId' => $commissieId,
-				'bezwaar' => $objectionId,
+				'objection' => $objectionId,
 			],
 		);
 
@@ -377,7 +377,7 @@ class AdvisoryCommitteeService {
 				existing: (array)($current['auditTrail'] ?? []),
 				event: 'council-deviation-recorded',
 				payload: [
-					'besluit' => $decisionId,
+					'decision' => $decisionId,
 					'motivatie' => $rationaleRef,
 				],
 			);
@@ -448,7 +448,7 @@ class AdvisoryCommitteeService {
 		}
 
 		$independence = $this->independence->check(
-			objectionId: (string)($current['bezwaar'] ?? ''),
+			objectionId: (string)($current['objection'] ?? ''),
 			panel: $panel,
 		);
 
@@ -528,7 +528,7 @@ class AdvisoryCommitteeService {
 				subjectId: (string)$requestId,
 				payload: [
 					'subjectRegister' => $register,
-					'externalReference' => (string)($current['bezwaar'] ?? $requestId),
+					'externalReference' => (string)($current['objection'] ?? $requestId),
 					'subjectLabel' => (string)($merged['conclusion'] ?? 'BAC-advies'),
 					'adviceType' => (string)($merged['recommendation'] ?? ''),
 					'question' => (string)($merged['conclusion'] ?? ''),

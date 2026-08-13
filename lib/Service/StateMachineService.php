@@ -140,15 +140,15 @@ class StateMachineService {
 		}
 
 		$record = [
-			'beschikkingId' => $decisionId,
+			'decisionId' => $decisionId,
 			'overgang' => [
 				'van' => $from,
 				'naar' => $naar,
-				'tijdstip' => (new DateTimeImmutable())->format('c'),
+				'moment' => (new DateTimeImmutable())->format('c'),
 				'actor' => (string)($metadata['actor'] ?? 'systeem'),
 				'actorType' => (string)($metadata['actorType'] ?? 'systeem'),
 				'trigger' => (string)($metadata['trigger'] ?? 'automatisch'),
-				'bewijsMateriaal' => ($metadata['bewijsMateriaal'] ?? null),
+				'evidenceMaterial' => ($metadata['evidenceMaterial'] ?? null),
 			],
 		];
 
@@ -158,7 +158,7 @@ class StateMachineService {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'StateMachineService: failed to persist transition log',
-				['exception' => $e->getMessage(), 'beschikkingId' => $decisionId],
+				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
 			);
 			return [];
 		}

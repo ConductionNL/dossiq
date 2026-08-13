@@ -185,7 +185,7 @@ class MandaatImportService {
 		$roleIndex = $this->repository->loadRoleIndex();
 		$resolved = [];
 		foreach ($rows as $idx => $row) {
-			$roleName = (string)($row['rolNaam'] ?? '');
+			$roleName = (string)($row['roleName'] ?? '');
 			if ($roleName === '') {
 				throw new RuntimeException('Row ' . ($idx + 1) . ' missing rolNaam');
 			}
@@ -194,7 +194,7 @@ class MandaatImportService {
 				throw new RuntimeException('Unknown OrganisatieRol "' . $roleName . '" at row ' . ($idx + 1));
 			}
 
-			$resolved[] = $row + ['gemandateerdeRol' => $roleIndex[$roleName]];
+			$resolved[] = $row + ['gemandateerdeRole' => $roleIndex[$roleName]];
 		}
 
 		return $resolved;
@@ -219,12 +219,12 @@ class MandaatImportService {
 			// Key = schema property (renamed). Value = CSV column header, an
 			// external input contract that stays as operators' files write it.
 			'description' => (string)($row['description'] ?? $row['omschrijving'] ?? ''),
-			'gemandateerdeRol' => (string)$row['gemandateerdeRol'],
+			'gemandateerdeRole' => (string)$row['gemandateerdeRole'],
 			// Key = the schema property (renamed). Value = a CSV COLUMN HEADER,
 			// which is an external input format the operator's file already
 			// uses, so both spellings are read.
 			'legalBasis' => (string)($row['legalBasis'] ?? $row['wettelijkeGrondslag'] ?? ''),
-			'voorwaarden' => [
+			'terms' => [
 				'plafondCents' => (int)($row['plafondCents'] ?? 0),
 				'subdelegatie' => $this->csvParser->parseBool(value: (string)($row['subdelegatie'] ?? 'false')),
 				'decisionTypes' => $this->csvParser->parseList(value: (string)($row['decisionTypes'] ?? '')),
@@ -263,14 +263,14 @@ class MandaatImportService {
 	 */
 	private function collectChangedFields(array $existing, array $payload): array {
 		$changedFields = [];
-		foreach (['description', 'gemandateerdeRol', 'legalBasis'] as $f) {
+		foreach (['description', 'gemandateerdeRole', 'legalBasis'] as $f) {
 			if ((string)($existing[$f] ?? '') !== (string)$payload[$f]) {
 				$changedFields[] = $f;
 			}
 		}
 
-		$exPlafond = (int)(($existing['voorwaarden'] ?? [])['plafondCents'] ?? 0);
-		if ($exPlafond !== (int)$payload['voorwaarden']['plafondCents']) {
+		$exPlafond = (int)(($existing['terms'] ?? [])['plafondCents'] ?? 0);
+		if ($exPlafond !== (int)$payload['terms']['plafondCents']) {
 			$changedFields[] = 'plafondCents';
 		}
 

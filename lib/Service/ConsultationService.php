@@ -49,7 +49,7 @@ class ConsultationService {
 		'in_behandeling',
 		'advies_uitgebracht',
 		'afgesloten',
-		'ingetrokken',
+		'withdrawn',
 	];
 
 	/**
@@ -66,12 +66,12 @@ class ConsultationService {
 	 * Allowed status transitions (from => [allowed-to, ...]).
 	 */
 	private const STATUS_TRANSITIONS = [
-		'open' => ['ontvangen', 'ingetrokken'],
-		'ontvangen' => ['in_behandeling', 'ingetrokken'],
-		'in_behandeling' => ['advies_uitgebracht', 'ingetrokken'],
+		'open' => ['ontvangen', 'withdrawn'],
+		'ontvangen' => ['in_behandeling', 'withdrawn'],
+		'in_behandeling' => ['advies_uitgebracht', 'withdrawn'],
 		'advies_uitgebracht' => ['afgesloten'],
 		'afgesloten' => [],
-		'ingetrokken' => [],
+		'withdrawn' => [],
 	];
 
 	/**
@@ -155,7 +155,7 @@ class ConsultationService {
 
 		$this->logger->info(
 			'Consultation created: ' . $consultationId
-			. ' (' . $data['consultationNumber'] . ') for case ' . $data['parentZaak'],
+			. ' (' . $data['consultationNumber'] . ') for case ' . $data['parentCase'],
 			['app' => Application::APP_ID],
 		);
 
@@ -276,13 +276,13 @@ class ConsultationService {
 
 		$updateData = [
 			'advies' => $advies,
-			'toelichting' => $response['toelichting'] ?? '',
+			'notes' => $response['notes'] ?? '',
 			'adviesDatum' => date('Y-m-d'),
 			'status' => 'advies_uitgebracht',
 		];
 
-		if (isset($response['voorwaarden']) === true) {
-			$updateData['voorwaarden'] = $response['voorwaarden'];
+		if (isset($response['terms']) === true) {
+			$updateData['terms'] = $response['terms'];
 		}
 
 		$objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$consultationId);
@@ -448,7 +448,7 @@ class ConsultationService {
 		$schema = $this->settingsService->getConfigValue('consultation_schema');
 
 		$updateData = [
-			'uiterlijkeReactiedatum' => $newDeadline,
+			'latestResponseDate' => $newDeadline,
 			'extensionApproved' => true,
 		];
 
@@ -461,7 +461,7 @@ class ConsultationService {
 
 		return [
 			'id' => $consultationId,
-			'uiterlijkeReactiedatum' => $newDeadline,
+			'latestResponseDate' => $newDeadline,
 			'extensionApproved' => true,
 		];
 	}//end approveExtension()
@@ -476,19 +476,19 @@ class ConsultationService {
 	 * @throws \RuntimeException If any required field is missing or empty
 	 */
 	private function assertRequiredConsultationFields(array $data): void {
-		if (empty($data['parentZaak']) === true) {
+		if (empty($data['parentCase']) === true) {
 			throw new RuntimeException('parentZaak is required');
 		}
 
-		if (empty($data['adviesInstantie']) === true) {
+		if (empty($data['adviesAuthority']) === true) {
 			throw new RuntimeException('adviesInstantie is required');
 		}
 
-		if (empty($data['vraagstelling']) === true) {
+		if (empty($data['questionFormulation']) === true) {
 			throw new RuntimeException('vraagstelling is required');
 		}
 
-		if (empty($data['uiterlijkeReactiedatum']) === true) {
+		if (empty($data['latestResponseDate']) === true) {
 			throw new RuntimeException('uiterlijkeReactiedatum is required');
 		}
 	}//end assertRequiredConsultationFields()
@@ -521,9 +521,9 @@ class ConsultationService {
 				subjectId: $consultationId,
 				payload: [
 					'subjectRegister' => $register,
-					'externalReference' => (string)$data['parentZaak'],
+					'externalReference' => (string)$data['parentCase'],
 					'subjectLabel' => (string)$data['consultationNumber'],
-					'question' => (string)$data['vraagstelling'],
+					'question' => (string)$data['questionFormulation'],
 				],
 			);
 

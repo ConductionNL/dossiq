@@ -99,7 +99,7 @@ class DsoController extends Controller {
 
 		$activiteitgroep = $this->request->getParam('activiteitgroep', '');
 		$regelkwalificatie = $this->request->getParam('regelkwalificatie', '');
-		$location = $this->request->getParam('locatie', '');
+		$location = $this->request->getParam('location', '');
 
 		$params = ['caseType' => 'omgevingsvergunning'];
 
@@ -161,7 +161,7 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'newStatus is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$allowedStatuses = ['ingediend', 'in_behandeling', 'verleend', 'geweigerd', 'ingetrokken'];
+		$allowedStatuses = ['ingediend', 'in_behandeling', 'verleend', 'geweigerd', 'withdrawn'];
 		if (in_array(needle: $newStatus, haystack: $allowedStatuses, strict: true) === false) {
 			return new JSONResponse(['error' => 'Invalid status value'], Http::STATUS_BAD_REQUEST);
 		}
@@ -178,7 +178,7 @@ class DsoController extends Controller {
 				caseId: $caseId,
 				newStatus: $newStatus,
 				besluitdatum: $this->optionalString(body: $body, key: 'besluitdatum'),
-				notes: $this->optionalString(body: $body, key: 'toelichting'),
+				notes: $this->optionalString(body: $body, key: 'notes'),
 				userId: $user->getUID()
 			);
 
@@ -378,7 +378,7 @@ class DsoController extends Controller {
 
 		$body = $this->readJsonBody();
 		$targetBevoegdGezag = (string)($body['targetBevoegdGezag'] ?? '');
-		$reason = (string)($body['reden'] ?? '');
+		$reason = (string)($body['reason'] ?? '');
 
 		if ($targetBevoegdGezag === '') {
 			return new JSONResponse(

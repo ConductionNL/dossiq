@@ -63,7 +63,7 @@ class SentimentServiceTest extends TestCase {
 
 		self::assertGreaterThan(0.3, $result['score']);
 		self::assertSame('positief', $result['label']);
-		self::assertSame('geen', $result['escalatieLevel']);
+		self::assertSame('geen', $result['escalationLevel']);
 	}//end testPositiveTextScoresAboveZero()
 
 	/**
@@ -90,7 +90,7 @@ class SentimentServiceTest extends TestCase {
 		self::assertContains('advocaat', $result['triggers']);
 		self::assertContains('krant', $result['triggers']);
 		self::assertTrue($result['escalatieAanbevolen']);
-		self::assertSame('rood', $result['escalatieLevel']);
+		self::assertSame('rood', $result['escalationLevel']);
 	}//end testSeriousTriggerEscalatesImmediately()
 
 	/**
@@ -103,7 +103,7 @@ class SentimentServiceTest extends TestCase {
 
 		self::assertContains('klacht', $result['triggers']);
 		self::assertTrue($result['escalatieAanbevolen']);
-		self::assertContains($result['escalatieLevel'], ['oranje', 'rood']);
+		self::assertContains($result['escalationLevel'], ['oranje', 'rood']);
 	}//end testKlachtTriggerIsDetectedButRedOnlyIfNegativeEnough()
 
 	/**

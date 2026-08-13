@@ -92,7 +92,7 @@ class SubsidieController extends Controller {
 		$filters = [
 			'status' => $this->request->getParam('status', ''),
 			'subsidieregeling' => $this->request->getParam('regeling', ''),
-			'behandelaar' => $this->request->getParam('behandelaar', ''),
+			'handler' => $this->request->getParam('handler', ''),
 		];
 
 		try {
@@ -123,8 +123,8 @@ class SubsidieController extends Controller {
 
 		$body = $this->bodyParams();
 		// The behandelaar is the acting user unless explicitly assigned.
-		if (((string)($body['behandelaar'] ?? '')) === '') {
-			$body['behandelaar'] = $userId;
+		if (((string)($body['handler'] ?? '')) === '') {
+			$body['handler'] = $userId;
 		}
 
 		$term = (int)($body['termijnWeken'] ?? SubsidieService::DEFAULT_AANVRAAG_TERMIJN_WEKEN);
@@ -311,7 +311,7 @@ class SubsidieController extends Controller {
 		}
 
 		$opinion = $this->request->getParam('beoordelingsoordeel', null);
-		$amount = $this->request->getParam('ingekeurdeBedrag', null);
+		$amount = $this->request->getParam('ingekeurdeAmount', null);
 
 		$opinionArg = null;
 		if ($opinion !== null) {
@@ -354,7 +354,7 @@ class SubsidieController extends Controller {
 			return $this->unauthorized();
 		}
 
-		$granted = (float)$this->request->getParam('verleendBedrag', 0);
+		$granted = (float)$this->request->getParam('grantedAmount', 0);
 		$actual = (float)$this->request->getParam('werkelijkeKosten', 0);
 		$advances = (float)$this->request->getParam('totaalVoorschotten', 0);
 
@@ -390,7 +390,7 @@ class SubsidieController extends Controller {
 		$params = $this->request->getParams();
 		unset(
 			$params['id'],
-			$params['beschikkingId'],
+			$params['decisionId'],
 			$params['reportId'],
 			$params['uitvoeringId'],
 			$params['vaststellingId'],

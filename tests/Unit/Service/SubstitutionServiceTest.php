@@ -208,7 +208,7 @@ class SubstitutionServiceTest extends TestCase {
 			startDate: '2026-07-01',
 			endDate: '2026-07-21',
 			scope: 'caseTypes',
-			scopeRefs: ['bezwaar']
+			scopeRefs: ['objection']
 		);
 
 		$this->assertSame('jan', $result['absentee']);
@@ -284,7 +284,7 @@ class SubstitutionServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testGetSubstitutedWorkScopeFilter(): void {
-		$sub = ['id' => 'sub-2', 'absentee' => 'jan', 'substitute' => 'marieke', 'scope' => 'caseTypes', 'scopeRefs' => ['bezwaar'], 'status' => 'active', 'startDate' => '2026-07-01', 'endDate' => '2026-07-21'];
+		$sub = ['id' => 'sub-2', 'absentee' => 'jan', 'substitute' => 'marieke', 'scope' => 'caseTypes', 'scopeRefs' => ['objection'], 'status' => 'active', 'startDate' => '2026-07-01', 'endDate' => '2026-07-21'];
 
 		$os = $this->objectServiceMock();
 		$os->method('searchObjectsBySlug')->willReturnCallback(
@@ -297,9 +297,9 @@ class SubstitutionServiceTest extends TestCase {
 				}
 				if ($schema === 'case') {
 					return [
-						['id' => 'case-a', 'caseType' => 'bezwaar', 'assignee' => 'jan', 'status' => 'st-open'],
+						['id' => 'case-a', 'caseType' => 'objection', 'assignee' => 'jan', 'status' => 'st-open'],
 						['id' => 'case-b', 'caseType' => 'vergunning', 'assignee' => 'jan', 'status' => 'st-open'],
-						['id' => 'case-c', 'caseType' => 'bezwaar', 'assignee' => 'jan', 'status' => 'st-final'],
+						['id' => 'case-c', 'caseType' => 'objection', 'assignee' => 'jan', 'status' => 'st-final'],
 					];
 				}
 				if ($schema === 'task') {
@@ -329,7 +329,7 @@ class SubstitutionServiceTest extends TestCase {
 		$os->method('searchObjectsBySlug')->willReturn([$sub]);
 		$service = $this->makeService($os);
 
-		$cap = $service->resolveActingCapacity('marieke', 'jan', 'case-x', 'bezwaar', new DateTimeImmutable('2026-07-10'));
+		$cap = $service->resolveActingCapacity('marieke', 'jan', 'case-x', 'objection', new DateTimeImmutable('2026-07-10'));
 		$this->assertNotNull($cap);
 		$this->assertSame('sub-3', $cap['id']);
 

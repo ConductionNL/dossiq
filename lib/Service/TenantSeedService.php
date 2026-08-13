@@ -105,7 +105,7 @@ class TenantSeedService {
 	 * @return array<int, string>
 	 */
 	private function resolveTemplatesForTier(string $tier): array {
-		$base = ['bezwaar', 'beroep', 'klacht'];
+		$base = ['objection', 'beroep', 'klacht'];
 		if ($tier === 'standard') {
 			return array_merge($base, ['vergunning_bouw', 'vergunning_apv', 'subsidieaanvraag']);
 		}

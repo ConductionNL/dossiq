@@ -123,18 +123,18 @@ class BelplanController extends Controller {
 			return new JSONResponse(['error' => 'Belplan schema not configured'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$name = (string)$this->request->getParam('naam', '');
+		$name = (string)$this->request->getParam('name', '');
 		if (trim($name) === '') {
 			return new JSONResponse(['error' => 'naam is required'], Http::STATUS_BAD_REQUEST);
 		}
 
 		$record = [
-			'naam' => $name,
-			'triggerNummer' => (array)$this->request->getParam('triggerNummer', []),
-			'routeringStappen' => (array)$this->request->getParam('routeringStappen', []),
-			'openingstijden' => (string)$this->request->getParam('openingstijden', ''),
-			'terugvalActie' => (string)$this->request->getParam('terugvalActie', 'voicemail'),
-			'prioriteit' => (int)$this->request->getParam('prioriteit', 0),
+			'name' => $name,
+			'triggerNumber' => (array)$this->request->getParam('triggerNumber', []),
+			'routeringSteps' => (array)$this->request->getParam('routeringSteps', []),
+			'openingHours' => (string)$this->request->getParam('openingHours', ''),
+			'terugvalAction' => (string)$this->request->getParam('terugvalAction', 'voicemail'),
+			'priority' => (int)$this->request->getParam('priority', 0),
 			'isActive' => (bool)$this->request->getParam('isActive', true),
 		];
 
@@ -170,7 +170,7 @@ class BelplanController extends Controller {
 		}
 
 		$patch = [];
-		foreach (['naam', 'triggerNummer', 'routeringStappen', 'openingstijden', 'terugvalActie', 'prioriteit', 'isActive'] as $field) {
+		foreach (['name', 'triggerNumber', 'routeringSteps', 'openingHours', 'terugvalAction', 'priority', 'isActive'] as $field) {
 			$value = $this->request->getParam($field, null);
 			if ($value !== null) {
 				$patch[$field] = $value;

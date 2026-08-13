@@ -128,7 +128,7 @@ class HearingServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessageMatches('/type/i');
 
-		$this->service->scheduleHearing('complaint-uuid', ['datum' => '2026-04-01T10:00:00']);
+		$this->service->scheduleHearing('complaint-uuid', ['date' => '2026-04-01T10:00:00']);
 	}//end testScheduleHearingThrowsWhenTypeMissing()
 
 	/**
@@ -143,7 +143,7 @@ class HearingServiceTest extends TestCase {
 		$this->expectExceptionMessageMatches('/OpenRegister/i');
 
 		$this->service->scheduleHearing('complaint-uuid', [
-			'datum' => '2026-04-01T10:00:00',
+			'date' => '2026-04-01T10:00:00',
 			'type' => 'fysiek',
 		]);
 	}//end testScheduleHearingThrowsWhenOpenRegisterUnavailable()
@@ -165,17 +165,17 @@ class HearingServiceTest extends TestCase {
 
 		$savedHearing = [
 			'complaint' => 'complaint-uuid',
-			'datum' => '2026-04-01T10:00:00',
+			'date' => '2026-04-01T10:00:00',
 			'type' => 'fysiek',
-			'locatie' => 'Stadhuis kamer 12',
+			'location' => 'Stadhuis kamer 12',
 		];
 
 		$objectServiceMock->method('saveObject')->willReturn($savedHearing);
 
 		$result = $this->service->scheduleHearing('complaint-uuid', [
-			'datum' => '2026-04-01T10:00:00',
+			'date' => '2026-04-01T10:00:00',
 			'type' => 'fysiek',
-			'locatie' => 'Stadhuis kamer 12',
+			'location' => 'Stadhuis kamer 12',
 		]);
 
 		$this->assertSame('complaint-uuid', $result['complaint']);
@@ -207,7 +207,7 @@ class HearingServiceTest extends TestCase {
 		$outcome = [
 			'verslag' => 'Klager heeft zijn standpunt toegelicht.',
 			'conclusie' => 'Klacht gegrond',
-			'datumAfgerond' => '2026-04-01',
+			'dateAfgerond' => '2026-04-01',
 		];
 
 		$objectServiceMock->method('saveObject')->willReturn($outcome);

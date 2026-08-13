@@ -153,7 +153,7 @@ export default {
 				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
 				{ label: t('procest', 'Granted'), value: 'verleend' },
 				{ label: t('procest', 'Refused'), value: 'geweigerd' },
-				{ label: t('procest', 'Withdrawn'), value: 'ingetrokken' },
+				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
 			],
 			procedureTypeOptions: [
 				{ label: t('procest', 'Regular procedure (8 weeks)'), value: 'reguliere' },

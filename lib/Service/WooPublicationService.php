@@ -189,7 +189,7 @@ class WooPublicationService {
 			'title' => (string)($case['title'] ?? $decision['title'] ?? 'WOO-besluit ' . $caseId),
 			'summary' => (string)($decision['description'] ?? ''),
 			'description' => (string)($decision['explanation'] ?? $decision['description'] ?? ''),
-			'publicatiedatum' => (string)($decision['decisionDate'] ?? date('Y-m-d')),
+			'publicationDate' => (string)($decision['decisionDate'] ?? date('Y-m-d')),
 			'tooiCategorieUri' => $category['uri'],
 			'tooiCategorieNaam' => $category['label'],
 			'status' => 'published',

@@ -321,7 +321,7 @@ class BesluitvormingParafeerService {
 				objectService: $objectService,
 				register: $register,
 				schema: $actionSchema,
-				filters: ['voorstel' => $proposalId]
+				filters: ['proposal' => $proposalId]
 			);
 
 			if (empty($acties) === true) {

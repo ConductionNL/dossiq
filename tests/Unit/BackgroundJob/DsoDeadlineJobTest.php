@@ -205,7 +205,7 @@ class DsoDeadlineJobTest extends TestCase {
 				'id' => 'zaak-overdue-1',
 				'status' => 'ingediend',
 				'caseType' => 'omgevingsvergunning',
-				'deadlineDatum' => $pastDeadline,
+				'deadlineDate' => $pastDeadline,
 				'assigneeUserId' => '',
 				'deadlineOverdue' => false,
 				'activityLog' => [],

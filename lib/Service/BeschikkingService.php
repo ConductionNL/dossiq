@@ -61,12 +61,12 @@ class BeschikkingService {
 	 * @var array<int, string>
 	 */
 	private const CONTENT_FIELDS = [
-		'motivering',
+		'rationale',
 		'beslissing',
 		'geadresseerde',
-		'beschikkingType',
+		'decisionType',
 		'rechtsmiddelenClausule',
-		'legesbedrag',
+		'feeAmount',
 		'templateId',
 	];
 
@@ -120,19 +120,19 @@ class BeschikkingService {
 
 		$composition = $this->templateAdapter->render(
 			$version['templateId'],
-			['zaakId' => $caseId, 'overrides' => $overrides],
+			['caseId' => $caseId, 'overrides' => $overrides],
 		);
 
 		$decision = [
-			'zaakId' => $caseId,
-			'beschikkingType' => (string)($overrides['beschikkingType'] ?? 'toekenning'),
+			'caseId' => $caseId,
+			'decisionType' => (string)($overrides['decisionType'] ?? 'toekenning'),
 			'templateId' => $version['templateId'],
-			'ontwerpVersie' => 1,
+			'ontwerpVersion' => 1,
 			'huidigeStatus' => 'ontwerp',
 			'samengesteldeInhoud' => $composition,
 			'geadresseerde' => (array)($overrides['geadresseerde'] ?? []),
 			'beslissing' => (array)($overrides['beslissing'] ?? []),
-			'motivering' => ($overrides['motivering'] ?? null),
+			'rationale' => ($overrides['rationale'] ?? null),
 		];
 
 		$saved = $this->repository->save(decision: $decision);
@@ -174,7 +174,7 @@ class BeschikkingService {
 			throw new RuntimeException('invalid_transition');
 		}
 
-		$regeling = $this->mandateVerifier->resolveMandaatRegeling(caseType: (string)($decision['zaaktype'] ?? ''));
+		$regeling = $this->mandateVerifier->resolveMandaatRegeling(caseType: (string)($decision['caseType'] ?? ''));
 		$niveau = $this->mandateVerifier->resolveNiveauForUser(
 			regeling: $regeling,
 			decision: $decision,
@@ -186,10 +186,10 @@ class BeschikkingService {
 		}
 
 		$decision['mandateGranted'] = [
-			'mandaatregelingId' => (string)($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
-			'mandaatNiveau' => $niveau,
-			'akkoordDoor' => $approvedBy,
-			'akkoordDatum' => (new DateTimeImmutable())->format('c'),
+			'mandateSchemeId' => (string)($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
+			'mandateNiveau' => $niveau,
+			'approvedBy' => $approvedBy,
+			'approvedDate' => (new DateTimeImmutable())->format('c'),
 		];
 		$decision['huidigeStatus'] = 'akkoord-mandaat';
 
@@ -225,19 +225,19 @@ class BeschikkingService {
 			throw new RuntimeException('invalid_transition');
 		}
 
-		$fileId = (string)(($decision['samengesteldeInhoud']['bestandId'] ?? ''));
+		$fileId = (string)(($decision['samengesteldeInhoud']['fileId'] ?? ''));
 		$signature = $this->signingAdapter->sign($fileId, $signatory, $tspProvider);
 
-		$decision['handtekening'] = [
+		$decision['signature'] = [
 			'tspProvider' => $tspProvider,
 			'tspProviderEidasId' => (string)($signature['tspProviderEidasId'] ?? ''),
-			'ondertekenaar' => $signatory,
-			'ondertekeningTijdstip' => (string)($signature['ondertekeningTijdstip'] ?? ''),
-			'soort' => 'gekwalificeerde-elektronische-handtekening',
-			'certificaatSerienummer' => (string)($signature['certificaatSerienummer'] ?? ''),
-			'validatieRapportId' => (string)($signature['validatieRapportId'] ?? ''),
+			'signatory' => $signatory,
+			'ondertekeningMoment' => (string)($signature['ondertekeningMoment'] ?? ''),
+			'kind' => 'gekwalificeerde-elektronische-handtekening',
+			'certificateSerialNumber' => (string)($signature['certificateSerialNumber'] ?? ''),
+			'validationRapportId' => (string)($signature['validationRapportId'] ?? ''),
 		];
-		$decision['samengesteldeInhoud']['bestandId'] = (string)($signature['signedBestandId'] ?? $fileId);
+		$decision['samengesteldeInhoud']['fileId'] = (string)($signature['signedBestandId'] ?? $fileId);
 		$decision['huidigeStatus'] = 'ondertekend';
 
 		$saved = $this->repository->save(decision: $decision);
@@ -249,9 +249,9 @@ class BeschikkingService {
 				'actor' => $signatory,
 				'actorType' => 'medewerker',
 				'trigger' => 'handmatig',
-				'bewijsMateriaal' => [
-					'soort' => 'tsp-handtekening-rapport',
-					'rapportId' => (string)($signature['validatieRapportId'] ?? ''),
+				'evidenceMaterial' => [
+					'kind' => 'tsp-handtekening-rapport',
+					'rapportId' => (string)($signature['validationRapportId'] ?? ''),
 				],
 			],
 		);
@@ -287,9 +287,9 @@ class BeschikkingService {
 		$term = $this->bezwaarScheduler->computeTermijn(bekendmaking: $bekendmaking);
 
 		$decision['verzending'] = $verzending;
-		$decision['bekendmakingDatum'] = $bekendmaking;
-		$decision['bezwaarTermijnEindDatum'] = $term['eindDatum'];
-		$decision['herinneringDatum'] = $term['herinnering'];
+		$decision['bekendmakingDate'] = $bekendmaking;
+		$decision['objectionTermEndDate'] = $term['endDate'];
+		$decision['herinneringDate'] = $term['herinnering'];
 		$decision['huidigeStatus'] = 'verzonden';
 
 		$saved = $this->repository->save(decision: $decision);
@@ -297,7 +297,7 @@ class BeschikkingService {
 		$this->bezwaarScheduler->createBezwaarTrigger(
 			decisionId: $decisionId,
 			bekendmaking: $bekendmaking,
-			endDate: $term['eindDatum'],
+			endDate: $term['endDate'],
 			herinnering: $term['herinnering'],
 		);
 
@@ -339,7 +339,7 @@ class BeschikkingService {
 			$decision[$field] = $value;
 		}
 
-		$decision['ontwerpVersie'] = ((int)($decision['ontwerpVersie'] ?? 1)) + 1;
+		$decision['ontwerpVersion'] = ((int)($decision['ontwerpVersion'] ?? 1)) + 1;
 
 		return $this->repository->save(decision: $decision);
 	}//end updateFields()
@@ -415,22 +415,22 @@ class BeschikkingService {
 
 		$metadata = [
 			'schema' => 'TMLO-1.2',
-			'identificatieKenmerk' => (string)($decision['kenmerk'] ?? ''),
+			'identificatieKenmerk' => (string)($decision['reference'] ?? ''),
 			'aggregatieniveau' => 'Archiefstuk',
-			'creatieDatum' => (string)(($decision['mandateGranted']['akkoordDatum'] ?? '')),
-			'bekendmakingDatum' => (string)($decision['bekendmakingDatum'] ?? ''),
+			'creatieDatum' => (string)(($decision['mandateGranted']['approvedDate'] ?? '')),
+			'bekendmakingDate' => (string)($decision['bekendmakingDate'] ?? ''),
 			'vertrouwelijkheid' => 'vertrouwelijk',
 			'bewaartermijn' => 'P15Y',
 		];
 
-		$fileId = (string)(($decision['samengesteldeInhoud']['bestandId'] ?? ''));
+		$fileId = (string)(($decision['samengesteldeInhoud']['fileId'] ?? ''));
 		$result = $this->archivalAdapter->ingest($decisionId, $fileId, $metadata);
 
 		$decision['archief'] = [
-			'gearchiveerdOp' => (new DateTimeImmutable())->format('c'),
+			'gearchiveerdOn' => (new DateTimeImmutable())->format('c'),
 			'archiefId' => (string)$result['archiefId'],
 			'tmloMetadata' => $metadata,
-			'vernietigingsdatum' => (string)$result['vernietigingsdatum'],
+			'destructionDate' => (string)$result['destructionDate'],
 		];
 		$decision['huidigeStatus'] = 'gearchiveerd';
 
@@ -453,12 +453,12 @@ class BeschikkingService {
 	 * @return array<string, mixed>
 	 */
 	private function markRequiredFields(array $decision): array {
-		if (($decision['motivering'] ?? null) === null || $decision['motivering'] === '') {
+		if (($decision['rationale'] ?? null) === null || $decision['rationale'] === '') {
 			$decision['motivering_required'] = true;
 		}
 
 		$geadresseerde = (array)($decision['geadresseerde'] ?? []);
-		if (($geadresseerde['naam'] ?? '') === '') {
+		if (($geadresseerde['name'] ?? '') === '') {
 			$decision['geadresseerde_required'] = true;
 		}
 

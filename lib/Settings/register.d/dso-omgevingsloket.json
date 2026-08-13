@@ -3,7 +3,7 @@
     "schemas": {
       "case": {
         "properties": {
-          "vergunningaanvraagRef": {
+          "permitApplicationRef": {
             "type": "string",
             "title": "Permit Application Reference",
             "description": "Reference to the DSO vergunningaanvraag object in OpenRegister",
@@ -16,7 +16,7 @@
             "description": "DSO procedure type: reguliere (8 wk) or uitgebreide (26 wk)",
             "visible": false
           },
-          "deadlineDatum": {
+          "deadlineDate": {
             "type": "string",
             "title": "Deadline Date",
             "format": "date",
@@ -29,7 +29,7 @@
             "description": "OIN or organization name of the bevoegd gezag",
             "visible": false
           },
-          "samenwerkverzoeken": {
+          "collaborationRequests": {
             "type": "array",
             "title": "Collaboration Requests",
             "items": { "type": "string" },
@@ -39,7 +39,7 @@
           "dsoStatus": {
             "type": "string",
             "title": "DSO Status",
-            "enum": ["ingediend", "in_behandeling", "verleend", "geweigerd", "ingetrokken"],
+            "enum": ["ingediend", "in_behandeling", "verleend", "geweigerd", "withdrawn"],
             "description": "DSO-LV status value mirrored from the vergunningaanvraag",
             "visible": false
           },
@@ -50,7 +50,7 @@
             "description": "Date the decision was made (set when dsoStatus = verleend/geweigerd)",
             "visible": false
           },
-          "dsoToelichting": {
+          "dsoNotes": {
             "type": "string",
             "title": "DSO Explanation",
             "description": "Decision motivation or rejection reasoning for DSO transparency",
@@ -68,7 +68,7 @@
         "required": [
           "initiatorBevoegdGezag",
           "aangezochtBevoegdGezag",
-          "vergunningaanvraagRef",
+          "permitApplicationRef",
           "status"
         ],
         "properties": {
@@ -82,7 +82,7 @@
             "title": "Requested Competent Authority",
             "description": "OIN or organization name of the receiving bevoegd gezag"
           },
-          "vergunningaanvraagRef": {
+          "permitApplicationRef": {
             "type": "string",
             "title": "Permit Application Reference",
             "description": "Reference to the linked vergunningaanvraag object"
@@ -104,19 +104,19 @@
             "title": "Advice",
             "description": "Advice given by the aangezochte bevoegd gezag"
           },
-          "aangevraagdOp": {
+          "requestedOn": {
             "type": "string",
             "title": "Requested On",
             "format": "date-time",
             "description": "Timestamp when the samenwerkverzoek was initiated"
           },
-          "gereageerdOp": {
+          "gereageerdOn": {
             "type": "string",
             "title": "Responded On",
             "format": "date-time",
             "description": "Timestamp when the aangezochte bevoegd gezag responded"
           },
-          "zaakId": {
+          "caseId": {
             "type": "string",
             "title": "Case ID",
             "format": "uuid",
@@ -135,12 +135,12 @@
         },
         "initiatorBevoegdGezag": "Gemeente Amsterdam",
         "aangezochtBevoegdGezag": "Waterschap Amstel, Gooi en Vecht",
-        "vergunningaanvraagRef": "nl.dso.aanvraag.2026-AMS-001",
+        "permitApplicationRef": "nl.dso.aanvraag.2026-AMS-001",
         "rationale": "Aanvraag betreft activiteiten nabij waterkering, afstemming waterschap vereist.",
         "status": "geaccepteerd",
         "advies": "Waterschap heeft geen bezwaar mits geluidsnormen worden nageleefd.",
-        "aangevraagdOp": "2026-03-20T09:00:00+01:00",
-        "gereageerdOp": "2026-03-28T14:30:00+01:00"
+        "requestedOn": "2026-03-20T09:00:00+01:00",
+        "gereageerdOn": "2026-03-28T14:30:00+01:00"
       },
       {
         "@self": {
@@ -150,10 +150,10 @@
         },
         "initiatorBevoegdGezag": "Gemeente Rotterdam",
         "aangezochtBevoegdGezag": "Provincie Zuid-Holland",
-        "vergunningaanvraagRef": "nl.dso.aanvraag.2026-RTD-007",
+        "permitApplicationRef": "nl.dso.aanvraag.2026-RTD-007",
         "rationale": "Grootschalig bouwproject raakt provinciaal belang omgevingsvisie.",
         "status": "aangevraagd",
-        "aangevraagdOp": "2026-04-10T10:15:00+02:00"
+        "requestedOn": "2026-04-10T10:15:00+02:00"
       },
       {
         "@self": {
@@ -163,12 +163,12 @@
         },
         "initiatorBevoegdGezag": "Gemeente Utrecht",
         "aangezochtBevoegdGezag": "Rijkswaterstaat",
-        "vergunningaanvraagRef": "nl.dso.aanvraag.2026-UTR-014",
+        "permitApplicationRef": "nl.dso.aanvraag.2026-UTR-014",
         "rationale": "Activiteit vindt plaats binnen rijkszone langs snelweg A12.",
         "status": "geweigerd",
         "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
-        "aangevraagdOp": "2026-02-15T08:00:00+01:00",
-        "gereageerdOp": "2026-02-22T16:45:00+01:00"
+        "requestedOn": "2026-02-15T08:00:00+01:00",
+        "gereageerdOn": "2026-02-22T16:45:00+01:00"
       }
     ]
   }

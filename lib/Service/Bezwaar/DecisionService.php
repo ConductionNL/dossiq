@@ -162,7 +162,7 @@ class DecisionService {
 		$record = array_merge(
 			$payload,
 			[
-				'bezwaar' => $objectionId,
+				'objection' => $objectionId,
 				'status' => 'draft',
 			]
 		);
@@ -235,7 +235,7 @@ class DecisionService {
 		// raised on an Awb-invalid payload.
 		$this->validator->assertPublishable(decision: $current);
 
-		$objectionId = (string)($current['bezwaar'] ?? '');
+		$objectionId = (string)($current['objection'] ?? '');
 
 		// REQ-PDRD-001 / REQ-PDRD-002: delegate the deciding to decidesk via the
 		// decidesk DecisionRequestedEvent. Fail closed — never author the besluit
@@ -280,9 +280,9 @@ class DecisionService {
 
 		$totalAmount = $this->validator->computeProceskostenTotal(decision: $current);
 		if ($totalAmount !== null) {
-			$proceskosten = (array)($current['proceskostenvergoeding'] ?? []);
+			$proceskosten = (array)($current['legalCostsCompensation'] ?? []);
 			$proceskosten['totalAmount'] = $totalAmount;
-			$patch['proceskostenvergoeding'] = $proceskosten;
+			$patch['legalCostsCompensation'] = $proceskosten;
 		}
 
 		try {

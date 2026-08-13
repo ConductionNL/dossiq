@@ -116,9 +116,9 @@ class IntegrationTierTest extends TestCase {
 			[
 				'personen' => [
 					[
-						'burgerservicenummer' => '999990627',
-						'naam' => ['voornamen' => 'Stephan', 'geslachtsnaam' => 'Janssen'],
-						'geboorte' => ['datum' => '1975-04-06'],
+						'citizenServiceNumber' => '999990627',
+						'name' => ['givenNames' => 'Stephan', 'surname' => 'Janssen'],
+						'birth' => ['date' => '1975-04-06'],
 					],
 				],
 			]
@@ -133,8 +133,8 @@ class IntegrationTierTest extends TestCase {
 		$result = $adapter->lookup(bsn: '999990627');
 		$this->assertSame('FOUND', $result->lookupStatus);
 		$this->assertFalse($adapter->isDormant());
-		$this->assertArrayNotHasKey('burgerservicenummer', $result->persoon, 'BSN must not persist in the result envelope');
-		$this->assertSame('Janssen', $result->persoon['naam']['geslachtsnaam']);
+		$this->assertArrayNotHasKey('citizenServiceNumber', $result->persoon, 'BSN must not persist in the result envelope');
+		$this->assertSame('Janssen', $result->persoon['name']['surname']);
 	}//end testBrpAdapterShapesFoundAndStripsBsn()
 
 	/**
@@ -164,8 +164,8 @@ class IntegrationTierTest extends TestCase {
 		$body = json_encode(
 			[
 				'resultaten' => [
-					['kvkNummer' => '69599084', 'naam' => 'Test EMZ Nevenvestiging', 'type' => 'nevenvestiging'],
-					['kvkNummer' => '69599084', 'naam' => 'Test EMZ Dagobert', 'type' => 'hoofdvestiging'],
+					['kvkNumber' => '69599084', 'name' => 'Test EMZ Nevenvestiging', 'type' => 'nevenvestiging'],
+					['kvkNumber' => '69599084', 'name' => 'Test EMZ Dagobert', 'type' => 'hoofdvestiging'],
 				],
 			]
 		);
@@ -178,7 +178,7 @@ class IntegrationTierTest extends TestCase {
 
 		$result = $adapter->lookup(kvkNumber: '69599084');
 		$this->assertSame('FOUND', $result->lookupStatus);
-		$this->assertSame('Test EMZ Dagobert', $result->entity['naam']);
+		$this->assertSame('Test EMZ Dagobert', $result->entity['name']);
 		$this->assertFalse($adapter->isDormant());
 	}//end testKvkAdapterPrefersHoofdvestiging()
 
@@ -209,11 +209,11 @@ class IntegrationTierTest extends TestCase {
 	 */
 	public function testEHerkenningSimulatorFlagsItselfAndValidatesKvk(): void {
 		$adapter = new SimulatorEHerkenningSamlAdapter();
-		$assertion = $adapter->decodeAssertion(json_encode(['kvkNummer' => '69599084']), 'relay-3');
+		$assertion = $adapter->decodeAssertion(json_encode(['kvkNumber' => '69599084']), 'relay-3');
 		$this->assertSame('69599084', $assertion->kvkNumber);
 		$this->assertTrue($assertion->attributes['simulator']);
 
 		$this->expectException(RuntimeException::class);
-		$adapter->decodeAssertion(json_encode(['kvkNummer' => '123']), 'relay-4');
+		$adapter->decodeAssertion(json_encode(['kvkNumber' => '123']), 'relay-4');
 	}//end testEHerkenningSimulatorFlagsItselfAndValidatesKvk()
 }//end class

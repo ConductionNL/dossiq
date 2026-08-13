@@ -73,7 +73,7 @@ class MandaatGuard implements GuardEvaluatorInterface {
 		}
 
 		$caseId = (string)($case['id'] ?? $case['uuid'] ?? '');
-		$signingId = (string)($case['ondertekenaar'] ?? $userId);
+		$signingId = (string)($case['signatory'] ?? $userId);
 
 		$result = $this->validationService->validate(caseId: $caseId, signingUserId: $signingId);
 

@@ -33,7 +33,7 @@
   "propertyDefinitions": [
     { "name": "dsoZaaknummer", "definition": "DSO zaaknummer", "propertyType": "string", "isRequired": false },
     { "name": "activiteiten", "definition": "Aangevraagde activiteiten", "propertyType": "string", "isRequired": false },
-    { "name": "locatie", "definition": "Locatie (BAG/kadaster referentie)", "propertyType": "string", "isRequired": false },
+    { "name": "location", "definition": "Locatie (BAG/kadaster referentie)", "propertyType": "string", "isRequired": false },
     { "name": "bouwkosten", "definition": "Opgegeven bouwkosten", "propertyType": "number", "isRequired": false },
     { "name": "procedureType", "definition": "Procedure type (regulier/uitgebreid)", "propertyType": "string", "isRequired": false, "defaultValue": "regulier" },
     { "name": "aanvragerNaam", "definition": "Naam aanvrager", "propertyType": "string", "isRequired": true },

@@ -61,7 +61,7 @@ class SubsidieService {
 		'beschikking_opgesteld',
 		'verleend',
 		'afgewezen',
-		'ingetrokken',
+		'withdrawn',
 	];
 
 	/**
@@ -70,13 +70,13 @@ class SubsidieService {
 	 * @var array<string, array<int, string>>
 	 */
 	public const TRANSITIONS = [
-		'ontvangen' => ['in_beoordeling', 'ingetrokken'],
-		'in_beoordeling' => ['beoordeeld', 'afgewezen', 'ingetrokken'],
-		'beoordeeld' => ['beschikking_opgesteld', 'afgewezen', 'ingetrokken'],
-		'beschikking_opgesteld' => ['verleend', 'afgewezen', 'ingetrokken'],
-		'verleend' => ['ingetrokken'],
+		'ontvangen' => ['in_beoordeling', 'withdrawn'],
+		'in_beoordeling' => ['beoordeeld', 'afgewezen', 'withdrawn'],
+		'beoordeeld' => ['beschikking_opgesteld', 'afgewezen', 'withdrawn'],
+		'beschikking_opgesteld' => ['verleend', 'afgewezen', 'withdrawn'],
+		'verleend' => ['withdrawn'],
 		'afgewezen' => [],
-		'ingetrokken' => [],
+		'withdrawn' => [],
 	];
 
 	/**
@@ -153,7 +153,7 @@ class SubsidieService {
 	public function voorschotSchemaReconciles(array $voorschotSchema, float $grantedAmount): bool {
 		$sum = 0.0;
 		foreach ($voorschotSchema as $voorschot) {
-			$sum += (float)($voorschot['bedrag'] ?? 0);
+			$sum += (float)($voorschot['amount'] ?? 0);
 		}
 
 		return abs($sum - $grantedAmount) < 0.01;
@@ -233,8 +233,8 @@ class SubsidieService {
 			]
 		);
 		// The aanvrager BSN is special-category data and is never persisted raw.
-		if (isset($record['aanvragerBsnRef']) === true) {
-			$record['aanvragerBsnRef'] = $this->maskBsn(bsn: (string)$record['aanvragerBsnRef']);
+		if (isset($record['applicantBsnRef']) === true) {
+			$record['applicantBsnRef'] = $this->maskBsn(bsn: (string)$record['applicantBsnRef']);
 		}
 
 		try {
@@ -293,7 +293,7 @@ class SubsidieService {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');
 
 		$query = ['register' => (int)$register, 'schema' => (int)$schema];
-		foreach (['status', 'subsidieregeling', 'behandelaar'] as $field) {
+		foreach (['status', 'subsidieregeling', 'handler'] as $field) {
 			if (isset($filters[$field]) === true && $filters[$field] !== '') {
 				$query[$field] = (string)$filters[$field];
 			}

@@ -132,7 +132,7 @@ export default {
 			switch (type) {
 			case 'adres': return '\uD83C\uDFE0'
 			case 'weg': return '\uD83D\uDEB6'
-			case 'woonplaats': return '\uD83C\uDFD9'
+			case 'city': return '\uD83C\uDFD9'
 			case 'postcode': return '\uD83D\uDCEE'
 			default: return '\uD83D\uDCCD'
 			}

@@ -81,7 +81,7 @@ class BeroepService {
 		'niet_ontvankelijk',
 		'ongegrond',
 		'gegrond_rechtsgevolgen_in_stand',
-		'ingetrokken',
+		'withdrawn',
 		'schikking',
 	];
 
@@ -202,12 +202,12 @@ class BeroepService {
 		$record = array_merge(
 			[
 				'responsibleChamber' => 'enkelvoudig',
-				'voorzieningRequested' => false,
+				'provisionRequested' => false,
 			],
 			$payload,
 			[
 				'case' => $caseId,
-				'sourceBezwaar' => $sourceObjectionId,
+				'sourceObjection' => $sourceObjectionId,
 				'contestedDecision' => $contestedDecisionId,
 				'appellantFilingDate' => $filingDate,
 				'filingDeadline' => $deadline,
@@ -273,7 +273,7 @@ class BeroepService {
 			'deadline' => $deadline,
 		];
 		if ($fileBundle !== null && $fileBundle !== '') {
-			$entry['dossierBundle'] = $fileBundle;
+			$entry['fileBundle'] = $fileBundle;
 		}
 
 		$requests = (array)($current['fileInspectionRequests'] ?? []);
@@ -431,7 +431,7 @@ class BeroepService {
 				// Link the (newly reopened) bezwaar case back to the beroep.
 				// The engine returns the updated case; we surface the link on
 				// the beroep record.
-				$patch['cascadeBezwaarCase'] = $reopenedCaseId;
+				$patch['cascadeObjectionCase'] = $reopenedCaseId;
 			}
 		}//end if
 
@@ -483,7 +483,7 @@ class BeroepService {
 		array $current,
 		string $appealId,
 	): ?string {
-		$sourceObjectionId = (string)($current['sourceBezwaar'] ?? '');
+		$sourceObjectionId = (string)($current['sourceObjection'] ?? '');
 		if ($sourceObjectionId === '' || $objectionSchema === '') {
 			return null;
 		}

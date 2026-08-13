@@ -291,7 +291,7 @@ class DsoCaseServiceTest extends TestCase {
 			'titel' => 'Bouwen van een aanbouw',
 			'indieningsdatum' => '2026-03-01',
 			'activiteiten' => [
-				['naam' => 'bouwen', 'regelkwalificatie' => 'reguliere'],
+				['name' => 'bouwen', 'regelkwalificatie' => 'reguliere'],
 			],
 		];
 

@@ -87,7 +87,7 @@ class DsoIntakeService {
 		return array_map(
 			static function ($act) {
 				if (is_array($act) === true) {
-					return $act['naam'] ?? '';
+					return $act['name'] ?? '';
 				}
 
 				return (string)$act;
@@ -155,12 +155,12 @@ class DsoIntakeService {
 	 */
 	public function map(array $dsoMessage): array {
 		$activiteiten = $dsoMessage['activiteiten'] ?? [];
-		$location = $dsoMessage['locatie'] ?? '';
-		$applicant = $dsoMessage['aanvrager'] ?? [];
+		$location = $dsoMessage['location'] ?? '';
+		$applicant = $dsoMessage['applicant'] ?? [];
 		$bouwkosten = $dsoMessage['bouwkosten'] ?? 0;
 		$procedureType = $dsoMessage['procedureType'] ?? 'regulier';
 		$dsoZaaknummer = $dsoMessage['zaaknummer'] ?? '';
-		$attachments = $dsoMessage['bijlagen'] ?? [];
+		$attachments = $dsoMessage['attachments'] ?? [];
 
 		$activityNames = $this->extractActivityNames(activiteiten: $activiteiten);
 		$activityStr = implode(', ', array_filter($activityNames));
@@ -194,12 +194,12 @@ class DsoIntakeService {
 			'dsoZaaknummer' => $dsoZaaknummer,
 			'activiteiten' => $activityStr,
 			'activityNames' => $activityNames,
-			'locatie' => $locationStr,
+			'location' => $locationStr,
 			'bouwkosten' => (string)$bouwkosten,
 			'procedureType' => $procedureType,
-			'aanvragerNaam' => $applicant['naam'] ?? '',
+			'aanvragerNaam' => $applicant['name'] ?? '',
 			'deadline' => $deadline,
-			'bijlagen' => $attachments,
+			'attachments' => $attachments,
 		];
 	}//end map()
 
@@ -251,7 +251,7 @@ class DsoIntakeService {
 			properties: [
 				'dsoZaaknummer' => $dsoZaaknummer,
 				'activiteiten' => $mappedData['activiteiten'] ?? '',
-				'locatie' => $mappedData['locatie'] ?? '',
+				'location' => $mappedData['location'] ?? '',
 				'bouwkosten' => $mappedData['bouwkosten'] ?? '',
 				'procedureType' => $mappedData['procedureType'] ?? '',
 				'aanvragerNaam' => $mappedData['aanvragerNaam'] ?? '',

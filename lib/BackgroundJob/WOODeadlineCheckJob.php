@@ -130,7 +130,7 @@ class WOODeadlineCheckJob extends TimedJob {
 		$warned = 0;
 		foreach ($cases as $case) {
 			$caseId = $case['id'] ?? $case['uuid'] ?? null;
-			$handler = $case['behandelaar'] ?? $case['assignedUser'] ?? null;
+			$handler = $case['handler'] ?? $case['assignedUser'] ?? null;
 
 			if ($caseId === null || $handler === null) {
 				continue;

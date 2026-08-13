@@ -96,13 +96,13 @@ class WozController extends Controller {
 
 		// A nummeraanduidingId takes precedence over an address search (the
 		// preferred composition path — see design.md Decision 3).
-		$addressDesignationId = (string)$this->request->getParam('nummeraanduidingId', '');
+		$addressDesignationId = (string)$this->request->getParam('addressDesignationId', '');
 		if ($addressDesignationId !== '') {
 			return $this->addressDesignationLookup(addressDesignationId: $addressDesignationId);
 		}
 
 		$postcode = (string)$this->request->getParam('postcode', '');
-		$houseNumber = (string)$this->request->getParam('huisnummer', '');
+		$houseNumber = (string)$this->request->getParam('houseNumber', '');
 		if ($postcode === '' || $houseNumber === '') {
 			return new JSONResponse(
 				['error' => 'nummeraanduidingId, or postcode and huisnummer, are required'],

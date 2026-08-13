@@ -52,7 +52,7 @@ class SubsidieRegisterExporter {
 	 * @return string The display name for the public register.
 	 */
 	public function publicOntvanger(array $request): string {
-		$kvk = (string)($request['aanvragerKvkRef'] ?? '');
+		$kvk = (string)($request['applicantKvkRef'] ?? '');
 		if ($kvk !== '') {
 			return (string)($request['aanvragerNaam'] ?? ('KvK ' . $kvk));
 		}
@@ -79,16 +79,16 @@ class SubsidieRegisterExporter {
 
 		return [
 			'@type' => 'Subsidie',
-			'regeling' => (string)($regeling['regelingNaam'] ?? ''),
+			'regeling' => (string)($regeling['regelingName'] ?? ''),
 			'ontvanger' => $this->publicOntvanger(request: $request),
-			'bedrag' => (float)($decision['verleendBedrag'] ?? 0),
+			'amount' => (float)($decision['grantedAmount'] ?? 0),
 			'looptijd' => [
-				'start' => (string)($decision['looptijdStart'] ?? ''),
-				'eind' => (string)($decision['looptijdEind'] ?? ''),
+				'start' => (string)($decision['termStart'] ?? ''),
+				'eind' => (string)($decision['termEnd'] ?? ''),
 			],
 			'doel' => (string)($regeling['doelgroep'] ?? ''),
 			'status' => $status,
-			'grondslag' => (string)($decision['legalBasis'] ?? ''),
+			'basis' => (string)($decision['legalBasis'] ?? ''),
 		];
 	}//end toFeedEntry()
 

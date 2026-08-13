@@ -187,7 +187,7 @@
                         "default": 0,
                         "description": "Number of open contacts assigned to the agent"
                     },
-                    "lastContactCustomerRef": {
+                    "orderContactCustomerRef": {
                         "title": "Last Contact Customer Reference",
                         "type": "string",
                         "description": "Customer reference of the most recent contact handled (continuity hint)"
@@ -289,7 +289,7 @@
                 "priority": 2,
                 "matchConditions": [
                     { "type": "keyword", "value": "lantaarnpaal" },
-                    { "type": "keyword", "value": "straat" },
+                    { "type": "keyword", "value": "street" },
                     { "type": "keyword", "value": "stoep" }
                 ],
                 "assignedDomain": "openbare_werken",

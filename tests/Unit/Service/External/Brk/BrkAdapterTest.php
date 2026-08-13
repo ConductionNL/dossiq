@@ -163,7 +163,7 @@ class BrkAdapterTest extends TestCase {
 			[
 				'_embedded' => [
 					'kadastraalOnroerendeZaken' => [
-						['kadastraleAanduiding' => ['sectie' => 'A', 'perceelnummer' => 1234], 'kadastraleGrootte' => ['waarde' => 350]],
+						['kadastraleAanduiding' => ['sectie' => 'A', 'perceelnummer' => 1234], 'kadastraleGrootte' => ['value' => 350]],
 					],
 				],
 			]

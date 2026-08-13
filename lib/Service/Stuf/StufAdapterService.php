@@ -181,7 +181,7 @@ class StufAdapterService {
 					'code' => 'NO_MAPPING',
 					'omschrijving' => 'Geen mapping voor case',
 					'details' => '',
-					'soort' => 'permanent',
+					'kind' => 'permanent',
 				],
 			];
 		}
@@ -398,7 +398,7 @@ class StufAdapterService {
 			return;
 		}
 
-		$role = (string)($msg['functie'] ?? '');
+		$role = (string)($msg['role'] ?? '');
 
 		$this->transport->handleResponse(
 			endpoint: $endpoint,

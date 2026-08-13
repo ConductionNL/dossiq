@@ -45,8 +45,8 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testGetActiveBelplanMatchesByTriggerNummer(): void {
 		$belplannen = [
-			['triggerNummer' => '+31201234567', 'naam' => 'Amsterdam', 'isActive' => true],
-			['triggerNummer' => '+31301234567', 'naam' => 'Utrecht',   'isActive' => true],
+			['triggerNumber' => '+31201234567', 'name' => 'Amsterdam', 'isActive' => true],
+			['triggerNumber' => '+31301234567', 'name' => 'Utrecht',   'isActive' => true],
 		];
 
 		$matched = $this->service->getActiveBelplan(
@@ -55,7 +55,7 @@ class BelplanRoutingServiceTest extends TestCase {
 		);
 
 		self::assertIsArray($matched);
-		self::assertSame('Utrecht', $matched['naam']);
+		self::assertSame('Utrecht', $matched['name']);
 	}//end testGetActiveBelplanMatchesByTriggerNummer()
 
 	/**
@@ -63,8 +63,8 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testGetActiveBelplanSkipsInactive(): void {
 		$belplannen = [
-			['triggerNummer' => '+31201234567', 'naam' => 'Amsterdam', 'isActive' => false],
-			['triggerNummer' => '+31201234567', 'naam' => 'Amsterdam-DR', 'isActive' => true],
+			['triggerNumber' => '+31201234567', 'name' => 'Amsterdam', 'isActive' => false],
+			['triggerNumber' => '+31201234567', 'name' => 'Amsterdam-DR', 'isActive' => true],
 		];
 
 		$matched = $this->service->getActiveBelplan(
@@ -72,7 +72,7 @@ class BelplanRoutingServiceTest extends TestCase {
 			belplannen: $belplannen
 		);
 
-		self::assertSame('Amsterdam-DR', $matched['naam']);
+		self::assertSame('Amsterdam-DR', $matched['name']);
 	}//end testGetActiveBelplanSkipsInactive()
 
 	/**
@@ -81,7 +81,7 @@ class BelplanRoutingServiceTest extends TestCase {
 	public function testGetActiveBelplanReturnsNullWhenNoMatch(): void {
 		$matched = $this->service->getActiveBelplan(
 			phoneNumber: '+31501234567',
-			belplannen: [['triggerNummer' => '+31201234567', 'isActive' => true]]
+			belplannen: [['triggerNumber' => '+31201234567', 'isActive' => true]]
 		);
 
 		self::assertNull($matched);
@@ -92,7 +92,7 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testResolveVaardigheidByNumericIndex(): void {
 		$belplan = [
-			'routeringStappen' => [
+			'routeringSteps' => [
 				['label' => 'Omgevingsvergunning', 'vaardigheid' => 'omgevingsvergunning'],
 				['label' => 'Bouwtoezicht',        'vaardigheid' => 'bouwtoezicht'],
 			],
@@ -107,7 +107,7 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testResolveVaardigheidByLabel(): void {
 		$belplan = [
-			'routeringStappen' => [
+			'routeringSteps' => [
 				['label' => 'Omgevingsvergunning', 'vaardigheid' => 'omgevingsvergunning'],
 				['label' => 'Bouwtoezicht',        'vaardigheid' => 'bouwtoezicht'],
 			],
@@ -125,18 +125,18 @@ class BelplanRoutingServiceTest extends TestCase {
 	public function testRouteCallPicksLowestQueueAvailableSpecialist(): void {
 		$pool = [
 			[
-				'medewerkerId' => 'sp-1',
+				'employeeId' => 'sp-1',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'beschikbaar',
-				'huidigeWachtrijLengte' => 3,
-				'gemiddeldeBehandelduur' => 240,
+				'huidigeQueueLengte' => 3,
+				'gemiddeldeHandlingDuration' => 240,
 			],
 			[
-				'medewerkerId' => 'sp-2',
+				'employeeId' => 'sp-2',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'beschikbaar',
-				'huidigeWachtrijLengte' => 1,
-				'gemiddeldeBehandelduur' => 300,
+				'huidigeQueueLengte' => 1,
+				'gemiddeldeHandlingDuration' => 300,
 			],
 		];
 
@@ -153,7 +153,7 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testRouteCallEscalatesWhenNoCandidates(): void {
 		$pool = [
-			['medewerkerId' => 'sp-x', 'expertises' => ['omgevingsvergunning'], 'status' => 'beschikbaar'],
+			['employeeId' => 'sp-x', 'expertises' => ['omgevingsvergunning'], 'status' => 'beschikbaar'],
 		];
 
 		$decision = $this->service->routeCall(vaardigheid: 'bouwtoezicht', pool: $pool);
@@ -169,11 +169,11 @@ class BelplanRoutingServiceTest extends TestCase {
 	public function testRouteCallOverflowsWhenQueueExceedsThreshold(): void {
 		$pool = [
 			[
-				'medewerkerId' => 'sp-1',
+				'employeeId' => 'sp-1',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'in_gesprek',
-				'huidigeWachtrijLengte' => 7,
-				'gemiddeldeBehandelduur' => 60,
+				'huidigeQueueLengte' => 7,
+				'gemiddeldeHandlingDuration' => 60,
 			],
 		];
 
@@ -195,11 +195,11 @@ class BelplanRoutingServiceTest extends TestCase {
 	public function testRouteCallDoesNotOverflowWhenQueueShortAndWaitLow(): void {
 		$pool = [
 			[
-				'medewerkerId' => 'sp-1',
+				'employeeId' => 'sp-1',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'in_gesprek',
-				'huidigeWachtrijLengte' => 1,
-				'gemiddeldeBehandelduur' => 30,
+				'huidigeQueueLengte' => 1,
+				'gemiddeldeHandlingDuration' => 30,
 			],
 		];
 

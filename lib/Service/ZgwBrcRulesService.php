@@ -229,7 +229,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 		}
 
 		// Brc-008: Validate informatieobjecttype in besluittype.informatieobjecttypen.
-		$decisionUrl = $body['besluit'] ?? '';
+		$decisionUrl = $body['decision'] ?? '';
 		if ($decisionUrl !== '' && $ioUrl !== '' && $this->objectService !== null) {
 			$iotError = $this->validateBioInformatieobjecttype(
 				decisionUrl: $decisionUrl,
@@ -241,7 +241,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 		}
 
 		// Brc-004: Set aardRelatieWeergave automatically.
-		$body['aardRelatieWeergave'] = 'Legt vast, omgekeerd: wordt vastgelegd door';
+		$body['natureRelationshipWeergave'] = 'Legt vast, omgekeerd: wordt vastgelegd door';
 
 		return $this->isValid(body: $body);
 	}//end rulesBesluitinformatieobjectenCreate()

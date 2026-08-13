@@ -136,8 +136,8 @@ class DeadlineEscalationService {
 			'priority' => $config['priority'],
 			'recipients' => $config['recipients'],
 			'instanceId' => $instanceId,
-			'zaakId' => (string)($instance['zaak'] ?? ''),
-			'deadline' => (string)($instance['einddatumActueel'] ?? ''),
+			'caseId' => (string)($instance['zaak'] ?? ''),
+			'deadline' => (string)($instance['endDateActueel'] ?? ''),
 		];
 
 		$this->logger->info('Procest termijn escalation dispatched', $payload);

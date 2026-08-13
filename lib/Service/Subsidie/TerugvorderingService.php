@@ -165,11 +165,11 @@ class TerugvorderingService {
 		$publication = ($publication ?? new DateTimeImmutable());
 		$record = [
 			'subsidieuitvoering' => $uitvoeringId,
-			'bedrag' => round($amount, 2),
+			'amount' => round($amount, 2),
 			'legalBasis' => 'AWB 4:57',
-			'bezwaartermijnEinde' => $this->computeBezwaartermijn(publication: $publication)->format('Y-m-d'),
+			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $publication)->format('Y-m-d'),
 			'betaaltermijnEinde' => $this->computeBetaaltermijn(publication: $publication)->format('Y-m-d'),
-			'betaaldBedrag' => 0,
+			'paidAmount' => 0,
 			'managerGoedgekeurd' => false,
 			'status' => 'concept',
 		];

@@ -53,7 +53,7 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 
 		return [
 			'format' => 'pdf-a3',
-			'bestandId' => 'doc-' . substr(hash('sha256', $payload), 0, 12),
+			'fileId' => 'doc-' . substr(hash('sha256', $payload), 0, 12),
 			'checksumSha256' => hash('sha256', $payload),
 			'paginas' => 4,
 		];
@@ -73,7 +73,7 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		return [
 			'templateId' => $templateId,
 			'version' => 'v1',
-			'ingangsdatum' => $effectiveDate,
+			'effectiveDate' => $effectiveDate,
 		];
 	}//end resolveVersion()
 }//end class

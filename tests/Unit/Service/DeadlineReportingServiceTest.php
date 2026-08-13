@@ -41,7 +41,7 @@ class DeadlineReportingServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_instance_schema' => 'termInstance',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -52,14 +52,14 @@ class DeadlineReportingServiceTest extends TestCase {
 
 		// Seed 5 instances spread across Q2-2026 for one zaaktype.
 		for ($i = 1; $i <= 5; $i++) {
-			$this->objects->saveObject('procest', 'termijnInstance', [
+			$this->objects->saveObject('procest', 'termInstance', [
 				'id' => 'ti-q2-' . $i,
-				'zaaktype' => 'omgevingsvergunning-regulier',
+				'caseType' => 'omgevingsvergunning-regulier',
 				'zaak' => 'Z/2026/' . (400 + $i),
-				'startDatum' => '2026-05-0' . $i . 'T10:00:00+00:00',
-				'einddatumActueel' => '2026-07-0' . $i,
+				'startDate' => '2026-05-0' . $i . 'T10:00:00+00:00',
+				'endDateActueel' => '2026-07-0' . $i,
 				'status' => ($i <= 3 ? 'voltooid' : ($i === 4 ? 'overschreden' : 'lopend')),
-				'aantalVerlengingen' => ($i === 5 ? 1 : 0),
+				'countVerlengingen' => ($i === 5 ? 1 : 0),
 			]);
 		}
 	}
@@ -115,9 +115,9 @@ class DeadlineReportingServiceTest extends TestCase {
 		// Seed two uitbetalingen, one in 2026 one in 2025.
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
 			'id' => 'u-1',
-			'referentie' => 'REF-1',
-			'bedrag' => 35700,
-			'werkelijkeBetaaldatum' => '2026-04-20',
+			'reference' => 'REF-1',
+			'amount' => 35700,
+			'actualPaymentDate' => '2026-04-20',
 			'betalingsreferentie' => 'ERP-1',
 			'status' => 'betaald',
 			'wettelijkeGrondslag' => 'AWB 4:17',
@@ -125,9 +125,9 @@ class DeadlineReportingServiceTest extends TestCase {
 		]);
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
 			'id' => 'u-2',
-			'referentie' => 'REF-2',
-			'bedrag' => 50000,
-			'werkelijkeBetaaldatum' => '2025-12-31',
+			'reference' => 'REF-2',
+			'amount' => 50000,
+			'actualPaymentDate' => '2025-12-31',
 			'betalingsreferentie' => 'ERP-2',
 			'status' => 'betaald',
 		]);

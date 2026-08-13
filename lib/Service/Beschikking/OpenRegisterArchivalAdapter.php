@@ -96,7 +96,7 @@ class OpenRegisterArchivalAdapter implements ArchivalAdapterInterface {
 
 		return [
 			'archiefId' => 'openregister-' . substr(hash('sha256', $decisionId . $fileId), 0, 12),
-			'vernietigingsdatum' => $destructionDate,
+			'destructionDate' => $destructionDate,
 		];
 	}//end ingest()
 
@@ -110,7 +110,7 @@ class OpenRegisterArchivalAdapter implements ArchivalAdapterInterface {
 	 * @return string The vernietigingsdatum (Y-m-d), or '' when uncomputable.
 	 */
 	private function computeDestructionDate(array $metadata, string $retentionPeriod): string {
-		$creatie = (string)($metadata['creatieDatum'] ?? ($metadata['bekendmakingDatum'] ?? ''));
+		$creatie = (string)($metadata['creatieDatum'] ?? ($metadata['bekendmakingDate'] ?? ''));
 
 		try {
 			$base = new DateTimeImmutable();

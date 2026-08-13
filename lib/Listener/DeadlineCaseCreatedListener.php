@@ -81,7 +81,7 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		}
 
 		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
-		$caseType = (string)($payload['caseType'] ?? ($payload['zaaktype'] ?? ''));
+		$caseType = (string)($payload['caseType'] ?? ($payload['caseType'] ?? ''));
 		if ($caseId === '' || $caseType === '') {
 			return;
 		}

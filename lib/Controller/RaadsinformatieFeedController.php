@@ -182,7 +182,7 @@ class RaadsinformatieFeedController extends Controller {
 		];
 
 		if (empty($organisation) === false) {
-			$params['organisatie'] = $organisation;
+			$params['organisation'] = $organisation;
 		}
 
 		try {
@@ -272,10 +272,10 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	private function extractTitle(string $schema, array $object): string {
 		return match ($schema) {
-			'vergadering' => (string)($object['naam'] ?? ''),
+			'vergadering' => (string)($object['name'] ?? ''),
 			'agendapunt' => (string)($object['onderwerp'] ?? ''),
 			'raadsdocument' => (string)($object['titel'] ?? ''),
-			default => (string)($object['naam'] ?? ($object['titel'] ?? $schema)),
+			default => (string)($object['name'] ?? ($object['titel'] ?? $schema)),
 		};
 
 	}//end extractTitle()
@@ -291,12 +291,12 @@ class RaadsinformatieFeedController extends Controller {
 	private function extractSummary(string $schema, array $object): string {
 		if ($schema === 'vergadering') {
 			$parts = [];
-			if (empty($object['startDatum']) === false) {
-				$parts[] = 'Datum: ' . $object['startDatum'];
+			if (empty($object['startDate']) === false) {
+				$parts[] = 'Datum: ' . $object['startDate'];
 			}
 
-			if (empty($object['locatie']) === false) {
-				$parts[] = 'Locatie: ' . $object['locatie'];
+			if (empty($object['location']) === false) {
+				$parts[] = 'Locatie: ' . $object['location'];
 			}
 
 			if (empty($object['status']) === false) {
@@ -316,8 +316,8 @@ class RaadsinformatieFeedController extends Controller {
 				$parts[] = 'Type: ' . $object['type'];
 			}
 
-			if (empty($object['classificatie']) === false) {
-				$parts[] = 'Classificatie: ' . $object['classificatie'];
+			if (empty($object['classification']) === false) {
+				$parts[] = 'Classificatie: ' . $object['classification'];
 			}
 
 			return implode(separator: ' | ', array: $parts);

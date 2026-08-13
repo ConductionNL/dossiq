@@ -84,7 +84,7 @@ class BeschikkingGenerationService {
 				'Procest BeschikkingGenerationService: Docudesk unavailable or template unconfigured; creating stub bijlage.',
 				[
 					'app' => Application::APP_ID,
-					'zaakId' => $caseId,
+					'caseId' => $caseId,
 					'outcome' => $outcome,
 					'templateId' => $templateId,
 				]
@@ -107,10 +107,10 @@ class BeschikkingGenerationService {
 			$generated = $documentService->generateFromTemplate(
 				templateId: $templateId,
 				context: [
-					'zaakId' => $caseId,
+					'caseId' => $caseId,
 					'outcome' => $outcome,
 					'motivation' => $motivation,
-					'datum' => date('Y-m-d'),
+					'date' => date('Y-m-d'),
 				]
 			);
 
@@ -130,7 +130,7 @@ class BeschikkingGenerationService {
 				'Procest BeschikkingGenerationService: Docudesk generation failed: ' . $e->getMessage(),
 				[
 					'app' => Application::APP_ID,
-					'zaakId' => $caseId,
+					'caseId' => $caseId,
 				]
 			);
 
@@ -196,7 +196,7 @@ class BeschikkingGenerationService {
 				register: $register,
 				schema: 'beschikking_bijlage',
 				object: [
-					'zaakId' => $caseId,
+					'caseId' => $caseId,
 					'type' => 'beschikking',
 					'outcome' => $outcome,
 					'motivation' => $motivation,
@@ -238,7 +238,7 @@ class BeschikkingGenerationService {
 				register: $register,
 				schema: 'beschikking_bijlage',
 				object: [
-					'zaakId' => $caseId,
+					'caseId' => $caseId,
 					'type' => 'beschikking',
 					'outcome' => $outcome,
 					'fileId' => $generated['fileId'] ?? '',

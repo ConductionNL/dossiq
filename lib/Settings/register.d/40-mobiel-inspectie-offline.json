@@ -304,13 +304,13 @@
             "title": "Attempt Count",
             "description": "Number of replay attempts made"
           },
-          "lastAttemptAt": {
+          "orderAttemptAt": {
             "type": "string",
             "format": "date-time",
             "title": "Last Attempt At",
             "description": "Timestamp of the most recent sync attempt"
           },
-          "lastError": {
+          "orderError": {
             "type": "string",
             "title": "Last Error",
             "description": "Last error message recorded on failure"

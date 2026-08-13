@@ -101,7 +101,7 @@ class MandaatCheckService {
 			);
 			return [
 				'authorized' => false,
-				'reden' => self::REDEN_BELANGENCONFLICT,
+				'reason' => self::REDEN_BELANGENCONFLICT,
 				'conflictReason' => ConflictOfInterestService::REASON_IDENTITY_INDETERMINATE,
 			];
 		}
@@ -110,14 +110,14 @@ class MandaatCheckService {
 		if ($conflict['conflict'] === true) {
 			return [
 				'authorized' => false,
-				'reden' => self::REDEN_BELANGENCONFLICT,
+				'reason' => self::REDEN_BELANGENCONFLICT,
 				'conflictReason' => (string)($conflict['reason'] ?? ''),
 			];
 		}
 
 		$role = $this->resolveUserRole(userId: $userId, date: $decisionDate);
 		if ($role === null) {
-			return ['authorized' => false, 'reden' => self::REDEN_NIET_BEVOEGD];
+			return ['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD];
 		}
 
 		$caseType = (string)($caseProperties['caseType'] ?? '');
@@ -126,36 +126,36 @@ class MandaatCheckService {
 		$relevant = array_values(
 			array_filter(
 				$mandaten,
-				static fn (array $row): bool => (string)($row['gemandateerdeRol'] ?? '') === (string)$role['rolId']
+				static fn (array $row): bool => (string)($row['gemandateerdeRole'] ?? '') === (string)$role['roleId']
 			)
 		);
 
 		if (count($relevant) === 0) {
-			return ['authorized' => false, 'reden' => self::REDEN_NIET_BEVOEGD];
+			return ['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD];
 		}
 
 		// Pick the first mandaat whose voorwaarden pass; surface the most-specific
 		// failure reason when none pass.
-		$orderFailure = ['reden' => self::REDEN_NIET_BEVOEGD, 'failedConditions' => []];
+		$orderFailure = ['reason' => self::REDEN_NIET_BEVOEGD, 'failedConditions' => []];
 		foreach ($relevant as $m) {
 			$eval = $this->evaluateConditions(mandate: $m, caseProperties: $caseProperties);
 			if ($eval['passed'] === true) {
 				return [
 					'authorized' => true,
 					'mandaatId' => (string)($m['id'] ?? ''),
-					'reden' => null,
+					'reason' => null,
 				];
 			}
 
 			$orderFailure = [
-				'reden' => $eval['reden'],
+				'reason' => $eval['reason'],
 				'failedConditions' => $eval['failedConditions'],
 			];
 		}
 
 		return [
 			'authorized' => false,
-			'reden' => $orderFailure['reden'],
+			'reason' => $orderFailure['reason'],
 			'failedConditions' => $orderFailure['failedConditions'],
 		];
 	}//end isAuthorized()
@@ -244,7 +244,7 @@ class MandaatCheckService {
 	 * @return bool True when the mandaat applies to the pair.
 	 */
 	private function matchesTypeTerms(array $row, string $decisionType, string $caseType): bool {
-		$voorw = (array)($row['voorwaarden'] ?? []);
+		$voorw = (array)($row['terms'] ?? []);
 		$decTypes = (array)($voorw['decisionTypes'] ?? []);
 		if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
 			return false;
@@ -281,7 +281,7 @@ class MandaatCheckService {
 			return [];
 		}
 
-		$roleId = (string)($role['rolId'] ?? '');
+		$roleId = (string)($role['roleId'] ?? '');
 		if ($roleId === '') {
 			return [];
 		}
@@ -290,7 +290,7 @@ class MandaatCheckService {
 
 		$out = [];
 		foreach ($rows as $row) {
-			$mandateRoleId = (string)($row['gemandateerdeRol'] ?? '');
+			$mandateRoleId = (string)($row['gemandateerdeRole'] ?? '');
 			if ($mandateRoleId !== '' && $mandateRoleId !== $roleId) {
 				continue;
 			}
@@ -369,7 +369,7 @@ class MandaatCheckService {
 	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
 	 */
 	public function evaluateConditions(array $mandate, array $caseProperties): array {
-		$voorw = (array)($mandate['voorwaarden'] ?? []);
+		$voorw = (array)($mandate['terms'] ?? []);
 		$failed = [];
 		$redenen = [];
 
@@ -386,14 +386,14 @@ class MandaatCheckService {
 		}
 
 		if (count($failed) === 0) {
-			return ['passed' => true, 'reden' => '', 'failedConditions' => []];
+			return ['passed' => true, 'reason' => '', 'failedConditions' => []];
 		}
 
 		// The most-specific failure wins; plafond is evaluated first and so
 		// takes precedence over subdelegatie.
 		$effectiveReason = ($redenen[0] ?? self::REDEN_NIET_BEVOEGD);
 
-		return ['passed' => false, 'reden' => $effectiveReason, 'failedConditions' => $failed];
+		return ['passed' => false, 'reason' => $effectiveReason, 'failedConditions' => $failed];
 	}//end evaluateConditions()
 
 	/**

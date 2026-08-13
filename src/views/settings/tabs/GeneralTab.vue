@@ -142,7 +142,7 @@
 				:loading="iv3TaakveldenLoading"
 				:placeholder="t('procest', 'No IV3 classification')"
 				:aria-label-combobox="t('procest', 'IV3 taakveld')"
-				@update:model-value="v => $emit('update', 'iv3Taakveld', v ? v.id : '')" />
+				@update:model-value="v => $emit('update', 'iv3TaskField', v ? v.id : '')" />
 			<p class="general-tab__hint">
 				{{ t('procest', 'Classifies cases of this type for the quarterly IV3 (Informatie voor Derden) cost report to CBS. Leave empty if this case type has no taakveld — such cases are reported as uncategorized.') }}
 			</p>

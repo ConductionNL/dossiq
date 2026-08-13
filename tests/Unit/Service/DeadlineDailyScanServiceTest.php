@@ -57,7 +57,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 				return match ($key) {
 					'register' => 'procest',
 					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_instance_schema' => 'termInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
 					default => '',
 				};
@@ -82,12 +82,12 @@ class DeadlineDailyScanServiceTest extends TestCase {
 	 * @return array<string, mixed>
 	 */
 	private function seedInstance(string $deadline, string $status = 'lopend'): array {
-		return $this->objects->saveObject('procest', 'termijnInstance', [
+		return $this->objects->saveObject('procest', 'termInstance', [
 			'zaak' => 'Z/2026/X',
 			'termijnDefinitie' => 'td-ov',
-			'startDatum' => '2026-01-01T10:00:00+00:00',
-			'einddatumBerekend' => $deadline,
-			'einddatumActueel' => $deadline,
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => $deadline,
+			'endDateActueel' => $deadline,
 			'status' => $status,
 			'notificatiesVerstuurd' => [],
 		]);
@@ -134,7 +134,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 		self::assertSame(1, $counts['overschreden']);
 		self::assertSame(1, $counts['escalated']);
 
-		$rows = array_values($this->objects->store['termijnInstance']);
+		$rows = array_values($this->objects->store['termInstance']);
 		self::assertSame('overschreden', $rows[0]['status']);
 
 		$events = array_values($this->objects->store['termijnGebeurtenis'] ?? []);
@@ -148,7 +148,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 	public function testScanRaisesPauseExpiredEvent(): void {
 		$row = $this->seedInstance('2026-07-01', 'gepauzeerd');
 		$row['pauzeDeadline'] = '2026-05-30';
-		$this->objects->store['termijnInstance'][$row['id']] = $row;
+		$this->objects->store['termInstance'][$row['id']] = $row;
 
 		$counts = $this->scan->run(new DateTimeImmutable('2026-06-01T10:00:00+00:00'));
 		self::assertSame(1, $counts['pauseExpired']);
@@ -189,9 +189,9 @@ class DeadlineDailyScanServiceTest extends TestCase {
 				return match ($key) {
 					'register' => 'procest',
 					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_instance_schema' => 'termInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
-					'dwangsom_berekening_schema' => 'dwangsomBerekening',
+					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
 					default => '',
 				};
 			},
@@ -208,21 +208,21 @@ class DeadlineDailyScanServiceTest extends TestCase {
 
 		// Three lopend rows on day 0 — tier-1 increment is €23 (2300 cents).
 		foreach (['b1', 'b2', 'b3'] as $id) {
-			$this->objects->saveObject('procest', 'dwangsomBerekening', [
+			$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
 				'id' => $id,
-				'termijnInstance' => 'ti-' . $id,
+				'termInstance' => 'ti-' . $id,
 				'huidigeDag' => 0,
-				'cumulatievBedrag' => 0,
+				'cumulatievAmount' => 0,
 				'plafondBereikt' => false,
 				'status' => 'lopend',
 			]);
 		}
 		// One stopped row must be skipped.
-		$this->objects->saveObject('procest', 'dwangsomBerekening', [
+		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
 			'id' => 'b-stopped',
-			'termijnInstance' => 'ti-stopped',
+			'termInstance' => 'ti-stopped',
 			'huidigeDag' => 99,
-			'cumulatievBedrag' => 999999,
+			'cumulatievAmount' => 999999,
 			'plafondBereikt' => false,
 			'status' => 'gestopt-wegens-beschikking',
 		]);
@@ -233,12 +233,12 @@ class DeadlineDailyScanServiceTest extends TestCase {
 
 		// Verify each lopend row advanced one tier-1 day; stopped row untouched.
 		foreach (['b1', 'b2', 'b3'] as $id) {
-			$row = $this->objects->store['dwangsomBerekening'][$id];
+			$row = $this->objects->store['penaltyPaymentCalculation'][$id];
 			self::assertSame(1, $row['huidigeDag'], $id . ' must advance huidigeDag by 1.');
-			self::assertSame(2300, $row['cumulatievBedrag'], $id . ' must add tier-1 (2300 cents) once.');
+			self::assertSame(2300, $row['cumulatievAmount'], $id . ' must add tier-1 (2300 cents) once.');
 		}
-		$stopped = $this->objects->store['dwangsomBerekening']['b-stopped'];
+		$stopped = $this->objects->store['penaltyPaymentCalculation']['b-stopped'];
 		self::assertSame(99, $stopped['huidigeDag'], 'stopped row must not advance.');
-		self::assertSame(999999, $stopped['cumulatievBedrag'], 'stopped row must not accrue.');
+		self::assertSame(999999, $stopped['cumulatievAmount'], 'stopped row must not accrue.');
 	}
 }

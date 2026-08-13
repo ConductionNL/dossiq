@@ -616,7 +616,7 @@ class BrcController extends ZgwController {
 			);
 
 			// Brc-005a: Create OIO in DRC.
-			$decisionUrl = $enrichedBody['besluit'] ?? '';
+			$decisionUrl = $enrichedBody['decision'] ?? '';
 			$ioUrl = $enrichedBody['informatieobject'] ?? '';
 			if ($decisionUrl !== '' && $ioUrl !== '') {
 				$this->createOioInDrc(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
@@ -665,7 +665,7 @@ class BrcController extends ZgwController {
 			$oioData = [
 				'document' => $ioUrl,
 				'object' => $decisionUrl,
-				'objectType' => 'besluit',
+				'objectType' => 'decision',
 			];
 
 			$objectService->saveObject(

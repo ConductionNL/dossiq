@@ -83,7 +83,7 @@ class DsoDoorsturenNotifier {
 			arguments: [
 				'caseId' => $caseId,
 				'targetBevoegdGezag' => $targetBevoegdGezag,
-				'reden' => $reason,
+				'reason' => $reason,
 				'userId' => $userId,
 			]
 		);

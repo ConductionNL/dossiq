@@ -98,7 +98,7 @@ class ConsultationRepository {
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			filters: ['parentZaak' => $caseId, '_limit' => 100],
+			filters: ['parentCase' => $caseId, '_limit' => 100],
 		);
 	}//end getConsultationsForCase()
 
@@ -205,7 +205,7 @@ class ConsultationRepository {
 		$overdue = [];
 
 		foreach ($all as $consultation) {
-			$deadline = $consultation['uiterlijkeReactiedatum'] ?? '';
+			$deadline = $consultation['latestResponseDate'] ?? '';
 			if ($deadline !== '' && $deadline < $today) {
 				$overdue[] = $consultation;
 			}
@@ -265,7 +265,7 @@ class ConsultationRepository {
 		$consultation = $results[0];
 		$status = $consultation['status'] ?? '';
 
-		if ($status === 'afgesloten' || $status === 'ingetrokken') {
+		if ($status === 'afgesloten' || $status === 'withdrawn') {
 			return null;
 		}
 

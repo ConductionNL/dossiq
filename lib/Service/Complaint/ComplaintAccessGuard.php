@@ -143,7 +143,7 @@ class ComplaintAccessGuard {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-06
 	 */
 	public function authorizeMutation(array $complaint, string $userId): void {
-		$handler = $complaint['behandelaar'] ?? null;
+		$handler = $complaint['handler'] ?? null;
 
 		// The behandelaar or any admin may mutate.
 		if ($handler !== null && $handler === $userId) {

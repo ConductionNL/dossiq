@@ -70,6 +70,6 @@ class ShillinqIntegrationServiceTest extends TestCase {
 	public function testExportInvoiceReturnsFailureWhenNotConfigured(): void {
 		$r = $this->svc->exportInvoice(['tenant_id' => 't-1']);
 		$this->assertFalse($r['success']);
-		$this->assertSame('Shillinq not configured', $r['lastError']);
+		$this->assertSame('Shillinq not configured', $r['orderError']);
 	}
 }

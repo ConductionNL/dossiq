@@ -109,7 +109,7 @@ class VergaderingCaseService {
 			return [];
 		}
 
-		$startDate = ($vergadering['startDatum'] ?? '');
+		$startDate = ($vergadering['startDate'] ?? '');
 		$deadline = '';
 
 		if (empty($startDate) === false) {
@@ -119,19 +119,19 @@ class VergaderingCaseService {
 			} catch (\Exception $e) {
 				$this->logger->warning(
 					'Procest: could not parse vergadering startDatum for deadline calculation',
-					['startDatum' => $startDate, 'error' => $e->getMessage()]
+					['startDate' => $startDate, 'error' => $e->getMessage()]
 				);
 			}
 		}
 
 		$caseData = [
-			'title' => ($vergadering['naam'] ?? 'Vergadering'),
+			'title' => ($vergadering['name'] ?? 'Vergadering'),
 			'status' => 'gepland',
 			'deadline' => $deadline,
 			'oriVergaderingId' => ($vergadering['@self']['slug'] ?? ''),
 			'oriRegister' => 'ori',
 			'type' => ($vergadering['type'] ?? ''),
-			'organisatie' => ($vergadering['organisatie'] ?? ''),
+			'organisation' => ($vergadering['organisation'] ?? ''),
 		];
 
 		try {

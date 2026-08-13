@@ -73,9 +73,9 @@ class BeschikkingServiceTest extends TestCase {
 	public function testDraftRejectsMismatchedVoorschot(): void {
 		$this->expectException(OCSBadRequestException::class);
 		$this->service->assertDraftValid([
-			'verleendBedrag' => 450000,
+			'grantedAmount' => 450000,
 			'voorschotSchema' => [
-				['datum' => '2026-01-15', 'bedrag' => 100000],
+				['date' => '2026-01-15', 'amount' => 100000],
 			],
 		]);
 	}//end testDraftRejectsMismatchedVoorschot()
@@ -88,10 +88,10 @@ class BeschikkingServiceTest extends TestCase {
 	 */
 	public function testDraftAcceptsReconcilingVoorschot(): void {
 		$this->service->assertDraftValid([
-			'verleendBedrag' => 240000,
+			'grantedAmount' => 240000,
 			'voorschotSchema' => json_encode([
-				['datum' => '2026-01-15', 'bedrag' => 120000],
-				['datum' => '2027-01-15', 'bedrag' => 120000],
+				['date' => '2026-01-15', 'amount' => 120000],
+				['date' => '2027-01-15', 'amount' => 120000],
 			]),
 		]);
 		$this->addToAssertionCount(1);
@@ -104,7 +104,7 @@ class BeschikkingServiceTest extends TestCase {
 	 */
 	public function testDraftRejectsNonPositiveAmount(): void {
 		$this->expectException(OCSBadRequestException::class);
-		$this->service->assertDraftValid(['verleendBedrag' => 0]);
+		$this->service->assertDraftValid(['grantedAmount' => 0]);
 	}//end testDraftRejectsNonPositiveAmount()
 
 	/**
@@ -113,7 +113,7 @@ class BeschikkingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testDraftAllowsNoVoorschot(): void {
-		$this->service->assertDraftValid(['verleendBedrag' => 10000]);
+		$this->service->assertDraftValid(['grantedAmount' => 10000]);
 		$this->addToAssertionCount(1);
 	}//end testDraftAllowsNoVoorschot()
 }//end class

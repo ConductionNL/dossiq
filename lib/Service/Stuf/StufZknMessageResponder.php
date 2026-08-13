@@ -53,7 +53,7 @@ class StufZknMessageResponder {
 	 * @var array<string, string>
 	 */
 	private const DEFAULT_ZENDER = [
-		'organisatie' => 'Procest',
+		'organisation' => 'Procest',
 		'applicatie' => 'Procest',
 	];
 
@@ -140,9 +140,9 @@ class StufZknMessageResponder {
 			fieldNames: [
 				'identificatie',
 				'omschrijving',
-				'toelichting',
+				'notes',
 				'startdatum',
-				'einddatum',
+				'endDate',
 				'einddatumGepland',
 				'uiterlijkeEinddatumAfdoening',
 				'vertrouwelijkAanduiding',

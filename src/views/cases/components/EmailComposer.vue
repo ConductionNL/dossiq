@@ -149,7 +149,7 @@ export default {
 			previewBody: '',
 			availableVariables: [
 				'zaakNummer', 'titel', 'startdatum', 'deadline',
-				'status', 'behandelaar', 'aanvragerNaam',
+				'status', 'handler', 'aanvragerNaam',
 			],
 		}
 	},

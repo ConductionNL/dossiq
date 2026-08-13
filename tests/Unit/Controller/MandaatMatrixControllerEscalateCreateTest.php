@@ -153,14 +153,14 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 		$this->authenticate();
 		$this->withBody(
 			[
-				'zaakId' => 'Z/2026/1',
+				'caseId' => 'Z/2026/1',
 				'decisionType' => 'wmo-toekenning',
-				'escalatieReden' => 'plafond_overschreden',
+				'escalationReason' => 'plafond_overschreden',
 			]
 		);
 
 		$created = [
-			'zaakId' => 'Z/2026/1',
+			'caseId' => 'Z/2026/1',
 			'status' => 'open',
 			'targetUserId' => 'bob',
 		];
@@ -188,9 +188,9 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 		$this->authenticate();
 		$this->withBody(
 			[
-				'zaakId' => 'Z/2026/2',
+				'caseId' => 'Z/2026/2',
 				'decisionType' => 'wmo-toekenning',
-				'escalatieReden' => 'niet_bevoegd',
+				'escalationReason' => 'niet_bevoegd',
 				'initiatorId' => 'mallory',
 			]
 		);
@@ -212,7 +212,7 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 	 */
 	public function testMissingRequiredFieldIsBadRequest(): void {
 		$this->authenticate();
-		$this->withBody(['zaakId' => 'Z/2026/3']);
+		$this->withBody(['caseId' => 'Z/2026/3']);
 		$this->escalation->expects($this->never())->method('createEscalatie');
 
 		$response = $this->controller->escalateCreate();
@@ -233,9 +233,9 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 		$this->authenticate();
 		$this->withBody(
 			[
-				'zaakId' => 'Z/2026/4',
+				'caseId' => 'Z/2026/4',
 				'decisionType' => 'wmo-toekenning',
-				'escalatieReden' => 'niet_bevoegd',
+				'escalationReason' => 'niet_bevoegd',
 			]
 		);
 

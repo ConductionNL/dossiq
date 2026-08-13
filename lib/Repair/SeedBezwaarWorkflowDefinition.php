@@ -203,7 +203,7 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 				objectService: $objectService,
 				register: $register,
 				schema: $caseTypeSchema,
-				filters: ['identifier' => 'bezwaar', '_limit' => 5],
+				filters: ['identifier' => 'objection', '_limit' => 5],
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(

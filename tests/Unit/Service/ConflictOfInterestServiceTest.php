@@ -315,7 +315,7 @@ class ConflictOfInterestServiceTest extends TestCase {
 				lookupStatus: 'FOUND',
 				persoon: [
 					'relaties' => [
-						['burgerservicenummer' => '222', 'relatie' => 'partner'],
+						['citizenServiceNumber' => '222', 'relatie' => 'partner'],
 					],
 				],
 				dormant: false,
@@ -346,7 +346,7 @@ class ConflictOfInterestServiceTest extends TestCase {
 				lookupStatus: 'FOUND',
 				persoon: [
 					'relaties' => [
-						['burgerservicenummer' => '999', 'relatie' => 'parent'],
+						['citizenServiceNumber' => '999', 'relatie' => 'parent'],
 					],
 				],
 				dormant: false,

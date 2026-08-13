@@ -3,7 +3,7 @@
 /**
  * Procest setField action handler.
  *
- * Action config shape: `{type: 'setField', field: 'einddatum', value: '<value-or-now>'}`.
+ * Action config shape: `{type: 'setField', field: 'endDate', value: '<value-or-now>'}`.
  * Writes the named field on the case via OpenRegister ObjectService. Special
  * `value` macros: `__now__` becomes the current ISO-8601 timestamp.
  *

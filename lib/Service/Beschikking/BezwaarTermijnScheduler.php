@@ -77,7 +77,7 @@ class BezwaarTermijnScheduler {
 		$herinnering = $endDate->sub(new DateInterval('P1W'));
 
 		return [
-			'eindDatum' => $endDate->format('Y-m-d'),
+			'endDate' => $endDate->format('Y-m-d'),
 			'herinnering' => $herinnering->format('Y-m-d'),
 		];
 	}//end computeTermijn()
@@ -118,19 +118,19 @@ class BezwaarTermijnScheduler {
 				register: $register,
 				schema: $schema,
 				object: [
-					'beschikkingId' => $decisionId,
-					'bekendmakingDatum' => $bekendmaking,
-					'bezwaarTermijnEindDatum' => $endDate,
-					'herinneringDatum' => $herinnering,
-					'bezwaarOntvangen' => false,
+					'decisionId' => $decisionId,
+					'bekendmakingDate' => $bekendmaking,
+					'objectionTermEndDate' => $endDate,
+					'herinneringDate' => $herinnering,
+					'objectionOntvangen' => false,
 					'archiefTriggerActief' => true,
-					'archiefDatum' => $archiefDate,
+					'archiefDate' => $archiefDate,
 				],
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BeschikkingService: createBezwaarTrigger failed',
-				['exception' => $e->getMessage(), 'beschikkingId' => $decisionId],
+				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
 			);
 		}
 	}//end createBezwaarTrigger()

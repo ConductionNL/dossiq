@@ -43,7 +43,7 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'dwangsom_berekening_schema' => 'dwangsomBerekening',
+					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -53,12 +53,12 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 		$this->service = new DwangsomUitbetalingService($settings);
 
 		// Seed a stopped berekening.
-		$this->objects->saveObject('procest', 'dwangsomBerekening', [
+		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
 			'id' => 'b-stopped',
 			'ingebrekestelling' => 'ig-1',
-			'termijnInstance' => 'ti-1',
+			'termInstance' => 'ti-1',
 			'status' => 'gestopt-wegens-beschikking',
-			'definitievBedrag' => 35700,
+			'definitievAmount' => 35700,
 		]);
 	}
 
@@ -92,12 +92,12 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 			new DateTimeImmutable('2026-04-01')
 		);
 
-		self::assertSame(35700, $row['bedrag']);
+		self::assertSame(35700, $row['amount']);
 		self::assertSame('voorbereid', $row['status']);
 		self::assertSame('NL91ABNA0417164300', $row['iban']);
 		self::assertSame('2026-04-29', $row['betaaldatumUiterlijk']);
 		self::assertSame('AWB 4:17', $row['legalBasis']);
-		self::assertStringStartsWith('PROC-DWS-', $row['referentie']);
+		self::assertStringStartsWith('PROC-DWS-', $row['reference']);
 	}
 
 	/**
@@ -112,11 +112,11 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testPrepareBetalingRejectsZeroAmount(): void {
-		$this->objects->saveObject('procest', 'dwangsomBerekening', [
+		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
 			'id' => 'b-zero',
 			'status' => 'gestopt-wegens-beschikking',
-			'definitievBedrag' => 0,
-			'cumulatievBedrag' => 0,
+			'definitievAmount' => 0,
+			'cumulatievAmount' => 0,
 		]);
 
 		$this->expectException(RuntimeException::class);
@@ -135,14 +135,14 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 		);
 
 		$updated = $this->service->handleCallback(
-			(string)$created['referentie'],
+			(string)$created['reference'],
 			'betaald',
 			new DateTimeImmutable('2026-04-20'),
 			'ERP-XYZ-987'
 		);
 
 		self::assertSame('betaald', $updated['status']);
-		self::assertSame('2026-04-20', $updated['werkelijkeBetaaldatum']);
+		self::assertSame('2026-04-20', $updated['actualPaymentDate']);
 		self::assertSame('ERP-XYZ-987', $updated['betalingsreferentie']);
 	}
 

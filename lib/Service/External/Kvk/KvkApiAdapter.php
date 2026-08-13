@@ -92,7 +92,7 @@ class KvkApiAdapter implements KvkHandelsregisterAdapterInterface {
 				rtrim($baseUrl, '/') . '/v2/zoeken',
 				[
 					'timeout' => 10,
-					'query' => ['kvkNummer' => $kvkNumber],
+					'query' => ['kvkNumber' => $kvkNumber],
 					'headers' => ['apikey' => $apiKey, 'Accept' => 'application/json'],
 				]
 			);

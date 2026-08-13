@@ -151,7 +151,7 @@ class StaatssteunClassifier {
 			'register' => 'TAM',
 			'beschikkingnummer' => $beschikkingnummer,
 			'rechtsgrond' => 'AGVV 651/2014 ' . $agvvArtikel,
-			'bedrag' => round($amount, 2),
+			'amount' => round($amount, 2),
 		];
 	}//end buildTamMelding()
 }//end class

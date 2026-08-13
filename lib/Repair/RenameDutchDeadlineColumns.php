@@ -103,13 +103,13 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 	 * @var array<string, string>
 	 */
 	private const COLUMN_MAP = [
-		'naam' => 'name',
+		'name' => 'name',
 		'onderwerp' => 'subject',
 		'omschrijving' => 'description',
 		'beschrijving' => 'description',
-		'toelichting' => 'notes',
-		'motivering' => 'rationale',
-		'afdeling' => 'department',
+		'notes' => 'notes',
+		'rationale' => 'rationale',
+		'department' => 'department',
 		'aantal_verlengingen' => 'extension_count',
 		'einddatum_actueel' => 'end_date_actual',
 		'pauze_deadline' => 'pause_deadline',

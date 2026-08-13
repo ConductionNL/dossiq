@@ -249,7 +249,7 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function validateProcestypeMatch(array $body, array $selectielijstData): ?array {
-		$caseTypeUrl = $body['zaaktype'] ?? '';
+		$caseTypeUrl = $body['caseType'] ?? '';
 		if (empty($caseTypeUrl) === true || $this->objectService === null) {
 			return null;
 		}

@@ -180,7 +180,7 @@ class DeadlineDailyScanService {
 	 */
 	private function processInstance(array $row, DateTimeImmutable $now, array &$counts): void {
 		$status = (string)($row['status'] ?? '');
-		if (in_array($status, ['voltooid', 'overschreden', 'ingetrokken'], true) === true) {
+		if (in_array($status, ['voltooid', 'overschreden', 'withdrawn'], true) === true) {
 			return;
 		}
 
@@ -192,7 +192,7 @@ class DeadlineDailyScanService {
 			return;
 		}
 
-		$deadline = (string)($row['einddatumActueel'] ?? '');
+		$deadline = (string)($row['endDateActueel'] ?? '');
 		if ($deadline === '') {
 			return;
 		}

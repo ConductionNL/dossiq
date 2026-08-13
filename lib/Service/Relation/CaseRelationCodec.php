@@ -61,7 +61,7 @@ class CaseRelationCodec {
 	public function buildEntry(string $caseId, string $natureRelationship, ?string $notes): array {
 		$entry = ['caseId' => $caseId, 'aardRelatie' => $natureRelationship];
 		if ($notes !== null && $notes !== '') {
-			$entry['toelichting'] = $notes;
+			$entry['notes'] = $notes;
 		}
 
 		return $entry;
@@ -202,8 +202,8 @@ class CaseRelationCodec {
 			'caseId' => $targetId,
 			'aardRelatie' => (string)($item['aardRelatie'] ?? ''),
 		];
-		if (isset($item['toelichting']) === true && (string)$item['toelichting'] !== '') {
-			$entry['toelichting'] = (string)$item['toelichting'];
+		if (isset($item['notes']) === true && (string)$item['notes'] !== '') {
+			$entry['notes'] = (string)$item['notes'];
 		}
 
 		return $entry;

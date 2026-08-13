@@ -67,10 +67,10 @@ class MandaatEscalatieService {
 	public function createEscalatie(string $caseId, string $decisionType, string $initiatorId, string $escalationReason): array {
 		$path = $this->resolveEscalatiePath(decisionType: $decisionType, escalationReason: $escalationReason);
 		$row = [
-			'zaakId' => $caseId,
+			'caseId' => $caseId,
 			'decisionType' => $decisionType,
 			'initiatorId' => $initiatorId,
-			'escalatieReden' => $escalationReason,
+			'escalationReason' => $escalationReason,
 			// Key = schema property (renamed). Value = an INTERNAL array key
 			// returned by resolveEscalationPath() in this same class, which is
 			// not a schema property and does not move here.
@@ -84,8 +84,8 @@ class MandaatEscalatieService {
 		$this->logger->info(
 			'Mandaat escalation created',
 			[
-				'zaakId' => $caseId,
-				'reden' => $escalationReason,
+				'caseId' => $caseId,
+				'reason' => $escalationReason,
 				'target' => $row['targetUserId'],
 			]
 		);
@@ -135,7 +135,7 @@ class MandaatEscalatieService {
 		);
 
 		foreach ($matching as $m) {
-			$roleId = (string)($m['gemandateerdeRol'] ?? '');
+			$roleId = (string)($m['gemandateerdeRole'] ?? '');
 			if ($roleId === '') {
 				continue;
 			}
@@ -145,7 +145,7 @@ class MandaatEscalatieService {
 					objectService: $objectService,
 					register: $register,
 					schema: $assignSchema,
-					filters: ['rolId' => $roleId]
+					filters: ['roleId' => $roleId]
 				);
 			} catch (\Throwable $e) {
 				continue;
@@ -179,7 +179,7 @@ class MandaatEscalatieService {
 		// traceable in the log rather than only visible as an empty target.
 		$this->logger->warning(
 			'Mandaat escalation path unresolved',
-			['decisionType' => $decisionType, 'reden' => $escalationReason]
+			['decisionType' => $decisionType, 'reason' => $escalationReason]
 		);
 
 		return ['mandaatId' => '', 'userId' => ''];
@@ -196,7 +196,7 @@ class MandaatEscalatieService {
 	private function rankMandatenForDecisionType(array $mandaten, string $decisionType): array {
 		$matching = [];
 		foreach ($mandaten as $m) {
-			$decTypes = (array)(($m['voorwaarden'] ?? [])['decisionTypes'] ?? []);
+			$decTypes = (array)(($m['terms'] ?? [])['decisionTypes'] ?? []);
 			if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
 				continue;
 			}
@@ -208,7 +208,7 @@ class MandaatEscalatieService {
 		usort(
 			$matching,
 			static fn (array $a, array $b): int
-				=> ((int)(($b['voorwaarden'] ?? [])['plafondCents'] ?? 0)) <=> ((int)(($a['voorwaarden'] ?? [])['plafondCents'] ?? 0))
+				=> ((int)(($b['terms'] ?? [])['plafondCents'] ?? 0)) <=> ((int)(($a['terms'] ?? [])['plafondCents'] ?? 0))
 		);
 
 		return $matching;
@@ -268,7 +268,7 @@ class MandaatEscalatieService {
 		}
 
 		$escalation['status'] = 'afgewezen';
-		$escalation['afgewezenReden'] = $reason;
+		$escalation['rejectedReason'] = $reason;
 		$escalation['resolvedAt'] = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
 		return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalation);
 	}//end rejectEscalatie()

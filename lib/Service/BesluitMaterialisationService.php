@@ -80,7 +80,7 @@ class BesluitMaterialisationService {
 		$register = $this->settingsService->getConfigValue('register');
 		$schema = $this->settingsService->getConfigValue('besluit_schema');
 		if ($schema === '') {
-			$schema = 'besluit';
+			$schema = 'decision';
 		}
 
 		// Build the ZGW Besluit payload from the decidesk outcome (REQ-PDCD-003).
@@ -145,7 +145,7 @@ class BesluitMaterialisationService {
 		$outcome = [
 			'result' => $result,
 			'decidedAt' => (string)($event['decidedAt'] ?? ''),
-			'motivering' => (string)($event['motivering'] ?? ''),
+			'rationale' => (string)($event['rationale'] ?? ''),
 			'signer' => (string)($event['signer'] ?? ''),
 			'method' => (string)($event['method'] ?? ''),
 			'raw' => $event,
@@ -167,7 +167,7 @@ class BesluitMaterialisationService {
 	public function buildBesluitPayload(string $caseId, array $outcome): array {
 		$result = (string)($outcome['result'] ?? '');
 		$decidedAt = (string)($outcome['decidedAt'] ?? date('c'));
-		$rationale = (string)($outcome['motivering'] ?? '');
+		$rationale = (string)($outcome['rationale'] ?? '');
 		$signer = (string)($outcome['signer'] ?? '');
 		$method = (string)($outcome['method'] ?? '');
 
@@ -175,8 +175,8 @@ class BesluitMaterialisationService {
 		return [
 			'zaakRef' => $caseId,
 			'result' => $result,
-			'datum' => $decidedAt,
-			'toelichting' => $rationale,
+			'date' => $decidedAt,
+			'notes' => $rationale,
 			// Audit fields: decision-origin provenance for the zaak dossier.
 			'mandaathouder' => $signer,
 			'besluitMethode' => $method,

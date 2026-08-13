@@ -97,7 +97,7 @@ class WOODeadlineService {
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
 	 */
 	public function calculate(string $receiptDate): array {
-		$receipt = $this->requireIsoDate(value: $receiptDate, label: 'ontvangstdatum');
+		$receipt = $this->requireIsoDate(value: $receiptDate, label: 'receiptDate');
 		$deadline = $receipt->modify('+' . self::INITIAL_PERIOD_DAYS . ' days');
 
 		return [
@@ -159,7 +159,7 @@ class WOODeadlineService {
 		$currentDeadline = $caseData['expectedResolution'] ?? null;
 		if (empty($currentDeadline) === true) {
 			// Derive from ontvangstdatum if not set.
-			$receiptDate = $caseData['ontvangstdatum'] ?? null;
+			$receiptDate = $caseData['receiptDate'] ?? null;
 			if (empty($receiptDate) === true) {
 				throw new RuntimeException('Case has no ontvangstdatum to calculate deadline from');
 			}

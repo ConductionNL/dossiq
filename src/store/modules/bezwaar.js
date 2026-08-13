@@ -56,7 +56,7 @@ function daysDifference(dateA, dateB) {
 	return Math.ceil((dateB.getTime() - dateA.getTime()) / msPerDay)
 }
 
-export const useBezwaarStore = defineStore('bezwaar', {
+export const useBezwaarStore = defineStore('objection', {
 	state: () => ({
 		/** @type {object|null} Current objection object */
 		currentObjection: null,

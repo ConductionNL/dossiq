@@ -102,7 +102,7 @@ class RoleGuardTest extends TestCase {
 
 		$groupManager = $this->createMock(IGroupManager::class);
 		$groupManager->method('isInGroup')->willReturnCallback(
-			fn (string $uid, string $gid): bool => $uid === 'alice' && $gid === 'behandelaar'
+			fn (string $uid, string $gid): bool => $uid === 'alice' && $gid === 'handler'
 		);
 
 		$guard = new RoleGuard(

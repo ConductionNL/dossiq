@@ -424,9 +424,9 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 			// Ztc-009c/g/k: PATCH with only geldigheid fields is allowed on published types.
 			if ($action === 'patch') {
 				$metadataKeys = ['_route', 'zgwApi', 'resource', 'uuid', 'concept'];
-				$allowedKeys = ['eindeGeldigheid', 'beginGeldigheid', 'beginObject'];
+				$allowedKeys = ['endValidity', 'startValidity', 'beginObject'];
 				$contentKeys = array_values(array_diff(array_keys($body), $metadataKeys, $allowedKeys));
-				if (count($contentKeys) === 0 && array_key_exists('eindeGeldigheid', $body) === true) {
+				if (count($contentKeys) === 0 && array_key_exists('endValidity', $body) === true) {
 					return null;
 				}
 			}
@@ -568,7 +568,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 
 		$resolved = [];
 		foreach ($body['gerelateerdeZaaktypen'] as $rel) {
-			$caseTypeRef = $rel['zaaktype'] ?? '';
+			$caseTypeRef = $rel['caseType'] ?? '';
 			if ($caseTypeRef === '' || is_string($caseTypeRef) === false) {
 				continue;
 			}
@@ -588,7 +588,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 			);
 			foreach ($foundIds as $id) {
 				$entry = $rel;
-				$entry['zaaktype'] = $id;
+				$entry['caseType'] = $id;
 				$resolved[] = $entry;
 			}
 		}//end foreach

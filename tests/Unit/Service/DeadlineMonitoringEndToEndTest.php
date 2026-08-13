@@ -70,10 +70,10 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 				return match ($key) {
 					'register' => 'procest',
 					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_instance_schema' => 'termInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
 					'ingebrekestelling_schema' => 'ingebrekestelling',
-					'dwangsom_berekening_schema' => 'dwangsomBerekening',
+					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -105,10 +105,10 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		// Seed AWB-default Wmo definition.
 		$this->objects->saveObject('procest', 'termijnDefinitie', [
 			'id' => 'td-ov',
-			'zaaktype' => 'omgevingsvergunning-regulier',
+			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
-			'standaardDuurDagen' => 56,
-			'aantalVerlengingen' => 1,
+			'standardDurationDays' => 56,
+			'countVerlengingen' => 1,
 			'validFrom' => '2026-01-01',
 		]);
 	}
@@ -150,13 +150,13 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 
 		$paused = $this->pauseService->registerPauze($id, 14, 'Aanvulling vereist');
 		self::assertSame('gepauzeerd', $paused['status']);
-		self::assertSame('2026-08-10', $paused['einddatumActueel']);
+		self::assertSame('2026-08-10', $paused['endDateActueel']);
 
 		// Resume 7 days into the pause (7 days unused).
 		$pauseStart = new DateTimeImmutable($paused['pauzeStartDatum']);
 		$resumed = $this->pauseService->resumeAfterPauze($id, $pauseStart->modify('+7 days'));
 		self::assertSame('lopend', $resumed['status']);
-		self::assertSame('2026-08-03', $resumed['einddatumActueel']);
+		self::assertSame('2026-08-03', $resumed['endDateActueel']);
 	}
 
 	/**
@@ -179,7 +179,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			'2026-09-30'
 		);
 		self::assertSame('verlengd', $extended['status']);
-		self::assertSame(1, $extended['aantalVerlengingen']);
+		self::assertSame(1, $extended['countVerlengingen']);
 
 		$voltooid = $this->termService->markTermijnCompleted($id, new DateTimeImmutable('2026-09-20'));
 		self::assertSame('voltooid', $voltooid['status']);
@@ -192,12 +192,12 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 */
 	public function testScenario4OverschrijdingAndDwangsom(): void {
 		// Seed overdue instance directly to simulate elapsed time without sleeping.
-		$instance = $this->objects->saveObject('procest', 'termijnInstance', [
+		$instance = $this->objects->saveObject('procest', 'termInstance', [
 			'zaak' => 'Z/2026/S4',
 			'termijnDefinitie' => 'td-ov',
-			'startDatum' => '2026-01-01T10:00:00+00:00',
-			'einddatumBerekend' => '2026-02-26',
-			'einddatumActueel' => '2026-02-26',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-02-26',
+			'endDateActueel' => '2026-02-26',
 			'status' => 'overschreden',
 			'notificatiesVerstuurd' => [],
 		]);
@@ -211,21 +211,21 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			'doc:notice'
 		);
 		self::assertTrue($row['gevalideerd']);
-		self::assertArrayHasKey('dwangsomBerekening', $row);
-		$calculationId = (string)$row['dwangsomBerekening']['id'];
+		self::assertArrayHasKey('penaltyPaymentCalculation', $row);
+		$calculationId = (string)$row['penaltyPaymentCalculation']['id'];
 
 		// Accrue 5 days.
 		for ($i = 0; $i < 5; $i++) {
 			$this->calcService->calculateDaily($calculationId);
 		}
-		$accrued = $this->objects->store['dwangsomBerekening'][$calculationId];
+		$accrued = $this->objects->store['penaltyPaymentCalculation'][$calculationId];
 		self::assertSame(5, $accrued['huidigeDag']);
-		self::assertSame(11500, $accrued['cumulatievBedrag']);
+		self::assertSame(11500, $accrued['cumulatievAmount']);
 
 		// Beschikking arrives — stop.
 		$stopped = $this->calcService->stopForBeschikking($calculationId);
 		self::assertSame('gestopt-wegens-beschikking', $stopped['status']);
-		self::assertSame(11500, $stopped['definitievBedrag']);
+		self::assertSame(11500, $stopped['definitievAmount']);
 
 		// Prepare payment.
 		$uitb = $this->outService->prepareBetaling(
@@ -234,12 +234,12 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			'NL91ABNA0417164300',
 			new DateTimeImmutable('2026-03-15')
 		);
-		self::assertSame(11500, $uitb['bedrag']);
+		self::assertSame(11500, $uitb['amount']);
 		self::assertSame('voorbereid', $uitb['status']);
 
 		// Callback arrives confirming payment.
 		$paid = $this->outService->handleCallback(
-			(string)$uitb['referentie'],
+			(string)$uitb['reference'],
 			'betaald',
 			new DateTimeImmutable('2026-04-05'),
 			'ERP-S4-001'
@@ -254,16 +254,16 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 */
 	public function testScenario5Bezwaar(): void {
 		// Stand up a stopped berekening + linked uitbetaling.
-		$this->objects->saveObject('procest', 'dwangsomBerekening', [
+		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
 			'id' => 'b-s5',
-			'termijnInstance' => 'ti-s5',
+			'termInstance' => 'ti-s5',
 			'status' => 'gestopt-wegens-beschikking',
-			'definitievBedrag' => 50000,
+			'definitievAmount' => 50000,
 		]);
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
 			'id' => 'u-s5',
-			'dwangsomBerekening' => 'b-s5',
-			'bedrag' => 50000,
+			'penaltyPaymentCalculation' => 'b-s5',
+			'amount' => 50000,
 			'status' => 'voorbereid',
 		]);
 
@@ -274,10 +274,10 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 
 		// Heroverweging halves the amount.
 		$resolved = $this->bezService->resolveBezwaar('b-s5', 25000, 'AWB 7:11');
-		self::assertSame(25000, $resolved['definitievBedrag']);
+		self::assertSame(25000, $resolved['definitievAmount']);
 		self::assertSame('voltooid', $resolved['status']);
 		$outResumed = $this->objects->store['dwangsomUitbetaling']['u-s5'];
-		self::assertSame(25000, $outResumed['bedrag']);
+		self::assertSame(25000, $outResumed['amount']);
 		self::assertSame('voorbereid', $outResumed['status']);
 	}
 }

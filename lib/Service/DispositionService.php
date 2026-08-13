@@ -44,7 +44,7 @@ class DispositionService {
 		'gegrond',
 		'deels_gegrond',
 		'ongegrond',
-		'ingetrokken',
+		'withdrawn',
 		'niet_ontvankelijk',
 	];
 
@@ -147,7 +147,7 @@ class DispositionService {
 		}
 
 		$data['complaint'] = $complaintId;
-		$data['afsluitdatum'] = $data['afsluitdatum'] ?? date('Y-m-d');
+		$data['closureDate'] = $data['closureDate'] ?? date('Y-m-d');
 
 		if ($approval === self::APPROVAL_REQUIRED) {
 			$data['goedkeuringStatus'] = 'wacht_op_goedkeuring';
@@ -156,7 +156,7 @@ class DispositionService {
 		$disposition = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
 		$this->logger->info(
-			'Disposition submitted for complaint ' . $complaintId . ' with oordeel: ' . $data['oordeel'],
+			'Disposition submitted for complaint ' . $complaintId . ' with oordeel: ' . $data['opinion'],
 			['app' => Application::APP_ID],
 		);
 
@@ -325,12 +325,12 @@ class DispositionService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	private function validateDisposition(array $data): void {
-		$opinion = $data['oordeel'] ?? '';
+		$opinion = $data['opinion'] ?? '';
 		if (in_array($opinion, self::VALID_OORDELEN, true) === false) {
 			throw new RuntimeException('Invalid oordeel: ' . $opinion . '. Must be one of: ' . implode(', ', self::VALID_OORDELEN));
 		}
 
-		if (in_array($opinion, self::REQUIRES_TOELICHTING, true) === true && empty($data['toelichting']) === true) {
+		if (in_array($opinion, self::REQUIRES_TOELICHTING, true) === true && empty($data['notes']) === true) {
 			throw new RuntimeException('Toelichting is required for oordeel: ' . $opinion);
 		}
 	}//end validateDisposition()

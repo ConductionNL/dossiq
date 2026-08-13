@@ -47,9 +47,9 @@ class DwangsomBezwaarServiceTest extends TestCase {
 				return match ($key) {
 					'register' => 'procest',
 					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_instance_schema' => 'termInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
-					'dwangsom_berekening_schema' => 'dwangsomBerekening',
+					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -64,16 +64,16 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		);
 
 		// Seed berekening + uitbetaling.
-		$this->objects->saveObject('procest', 'dwangsomBerekening', [
+		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
 			'id' => 'b-1',
-			'termijnInstance' => 'ti-1',
+			'termInstance' => 'ti-1',
 			'status' => 'gestopt-wegens-beschikking',
-			'definitievBedrag' => 50000,
+			'definitievAmount' => 50000,
 		]);
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
 			'id' => 'u-1',
-			'dwangsomBerekening' => 'b-1',
-			'bedrag' => 50000,
+			'penaltyPaymentCalculation' => 'b-1',
+			'amount' => 50000,
 			'status' => 'voorbereid',
 		]);
 	}
@@ -101,11 +101,11 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		$this->service->registerBezwaar('b-1', 'AWB 7:1', 'foo');
 		$b = $this->service->resolveBezwaar('b-1', 30000, 'AWB 7:11');
 
-		self::assertSame(30000, $b['definitievBedrag']);
+		self::assertSame(30000, $b['definitievAmount']);
 		self::assertSame('voltooid', $b['status']);
 
 		$u = $this->objects->store['dwangsomUitbetaling']['u-1'];
-		self::assertSame(30000, $u['bedrag']);
+		self::assertSame(30000, $u['amount']);
 		self::assertSame('voorbereid', $u['status']);
 	}
 

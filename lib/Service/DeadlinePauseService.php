@@ -85,14 +85,14 @@ class DeadlinePauseService {
 		}
 
 		$now = new DateTimeImmutable();
-		$current = new DateTimeImmutable((string)($instance['einddatumActueel'] ?? $now->format('Y-m-d')));
+		$current = new DateTimeImmutable((string)($instance['endDateActueel'] ?? $now->format('Y-m-d')));
 		$newEnd = $current->modify('+' . $durationDays . ' days')->format('Y-m-d');
 		$pauseEnd = $now->modify('+' . $durationDays . ' days')->format('Y-m-d');
 
 		$updated = $this->termService->updateTermijnInstance(
 			$termInstanceId,
 			[
-				'einddatumActueel' => $newEnd,
+				'endDateActueel' => $newEnd,
 				'status' => 'gepauzeerd',
 				'pauzeDeadline' => $pauseEnd,
 				'pauzeStartDatum' => $now->format('Y-m-d'),
@@ -150,13 +150,13 @@ class DeadlinePauseService {
 		$unused = $durationDays - $consumed;
 
 		// Pull back the unused portion of einddatumActueel.
-		$current = new DateTimeImmutable((string)($instance['einddatumActueel'] ?? $aanvullingDatum->format('Y-m-d')));
+		$current = new DateTimeImmutable((string)($instance['endDateActueel'] ?? $aanvullingDatum->format('Y-m-d')));
 		$newEnd = $current->modify('-' . $unused . ' days')->format('Y-m-d');
 
 		$updated = $this->termService->updateTermijnInstance(
 			$termInstanceId,
 			[
-				'einddatumActueel' => $newEnd,
+				'endDateActueel' => $newEnd,
 				'status' => 'lopend',
 				'pauzeDeadline' => null,
 			]

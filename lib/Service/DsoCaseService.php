@@ -153,9 +153,9 @@ class DsoCaseService {
 			'status' => 'ingediend',
 			'caseType' => 'omgevingsvergunning',
 			'procedureType' => $procedureType,
-			'vergunningaanvraagRef' => $permitApplicationId,
+			'permitApplicationRef' => $permitApplicationId,
 			'indieningsdatum' => $submissionDate,
-			'deadlineDatum' => $deadlineDate,
+			'deadlineDate' => $deadlineDate,
 			'activiteiten' => $activiteiten,
 			'activityLog' => [
 				[
@@ -178,7 +178,7 @@ class DsoCaseService {
 				'app' => Application::APP_ID,
 				'vergunningaanvraagId' => $permitApplicationId,
 				'procedureType' => $procedureType,
-				'deadlineDatum' => $deadlineDate,
+				'deadlineDate' => $deadlineDate,
 			]
 		);
 
@@ -238,7 +238,7 @@ class DsoCaseService {
 		$case = $this->normalizeToArray(value: $case);
 
 		$oldStatus = (string)($case['status'] ?? '');
-		$requestRef = (string)($case['vergunningaanvraagRef'] ?? '');
+		$requestRef = (string)($case['permitApplicationRef'] ?? '');
 
 		$case['status'] = $newStatus;
 		if ($besluitdatum !== null) {
@@ -246,7 +246,7 @@ class DsoCaseService {
 		}
 
 		if ($notes !== null) {
-			$case['toelichting'] = $notes;
+			$case['notes'] = $notes;
 		}
 
 		$logEntry = [
@@ -344,7 +344,7 @@ class DsoCaseService {
 	 */
 	public function authorizeZaakMutation(array $case, IUser $user): void {
 		$uid = $user->getUID();
-		$assignee = (string)($case['assigneeUserId'] ?? ($case['behandelaar'] ?? ''));
+		$assignee = (string)($case['assigneeUserId'] ?? ($case['handler'] ?? ''));
 
 		if ($uid === $assignee) {
 			return;
@@ -539,7 +539,7 @@ class DsoCaseService {
 				'Procest DsoCaseService: could not sync vergunningaanvraag status: ' . $e->getMessage(),
 				[
 					'app' => Application::APP_ID,
-					'vergunningaanvraagRef' => $requestRef,
+					'permitApplicationRef' => $requestRef,
 				]
 			);
 		}//end try

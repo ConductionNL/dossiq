@@ -1397,7 +1397,7 @@ class DrcController extends ZgwController {
 			}
 
 			// Get volgnummer from query parameter or request body.
-			$sequenceNumber = (int)($this->request->getParam('volgnummer') ?? 0);
+			$sequenceNumber = (int)($this->request->getParam('sequenceNumber') ?? 0);
 			if ($sequenceNumber <= 0 || $sequenceNumber > $totalParts) {
 				return new JSONResponse(
 					data: ['detail' => $this->l10n->t('Invalid sequence number. Expected 1-%s.', [$totalParts])],
@@ -1456,7 +1456,7 @@ class DrcController extends ZgwController {
 
 				return new JSONResponse(
 					data: [
-						'volgnummer' => $sequenceNumber,
+						'sequenceNumber' => $sequenceNumber,
 						'omvang' => $chunkSize,
 						'uploadComplete' => true,
 						'bestandsomvang' => $mergedSize,
@@ -1469,7 +1469,7 @@ class DrcController extends ZgwController {
 
 			return new JSONResponse(
 				data: [
-					'volgnummer' => $sequenceNumber,
+					'sequenceNumber' => $sequenceNumber,
 					'omvang' => $chunkSize,
 					'uploadComplete' => false,
 					'uploadedParts' => count($uploaded),
@@ -1587,7 +1587,7 @@ class DrcController extends ZgwController {
 
 			$bestandsdelen[] = [
 				'url' => $baseUrl . '/' . $uuid . '?volgnummer=' . $i,
-				'volgnummer' => $i,
+				'sequenceNumber' => $i,
 				'omvang' => $chunkSize,
 				'lock' => '',
 			];

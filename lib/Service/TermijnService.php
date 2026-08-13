@@ -93,17 +93,17 @@ class TermijnService {
 			);
 		}
 
-		$durationDays = (int)($definitie['standaardDuurDagen'] ?? 0);
+		$durationDays = (int)($definitie['standardDurationDays'] ?? 0);
 		$endDate = $startDate->modify('+' . $durationDays . ' days')->format('Y-m-d');
 
 		$instance = [
 			'zaak' => $caseId,
 			'termijnDefinitie' => (string)($definitie['id'] ?? ''),
-			'startDatum' => $startDate->format('Y-m-d\TH:i:sP'),
-			'einddatumBerekend' => $endDate,
-			'einddatumActueel' => $endDate,
+			'startDate' => $startDate->format('Y-m-d\TH:i:sP'),
+			'endDateCalculated' => $endDate,
+			'endDateActueel' => $endDate,
 			'status' => 'lopend',
-			'aantalVerlengingen' => 0,
+			'countVerlengingen' => 0,
 			'notificatiesVerstuurd' => [],
 		];
 
@@ -197,7 +197,7 @@ class TermijnService {
 		usort(
 			$rows,
 			static fn (array $a, array $b): int
-				=> strcmp((string)($b['startDatum'] ?? ''), (string)($a['startDatum'] ?? ''))
+				=> strcmp((string)($b['startDate'] ?? ''), (string)($a['startDate'] ?? ''))
 		);
 
 		return $rows[0];
@@ -257,12 +257,12 @@ class TermijnService {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['zaaktype' => $caseType]
+				filters: ['caseType' => $caseType]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'TermijnService.getTermijnDefinitie lookup failed',
-				['zaaktype' => $caseType, 'error' => $e->getMessage()]
+				['caseType' => $caseType, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -371,13 +371,13 @@ class TermijnService {
 	): ?array {
 		$moment = ($moment ?? new DateTimeImmutable());
 		$event = [
-			'termijnInstance' => $termInstanceId,
+			'termInstance' => $termInstanceId,
 			'type' => $type,
-			'tijdstip' => $moment->format('Y-m-d\TH:i:sP'),
+			'moment' => $moment->format('Y-m-d\TH:i:sP'),
 			'actor' => $actor,
-			'grondslag' => $basis,
-			'motivering' => $rationale,
-			'dagenImpact' => $daysImpact,
+			'basis' => $basis,
+			'rationale' => $rationale,
+			'daysImpact' => $daysImpact,
 		];
 		if ($documentLink !== '') {
 			$event['documentLink'] = $documentLink;

@@ -93,7 +93,7 @@ class AuditTrailService {
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			filters: ['voorstel' => $proposalId, '_limit' => 5000],
+			filters: ['proposal' => $proposalId, '_limit' => 5000],
 		);
 
 		$entries = [];
@@ -131,7 +131,7 @@ class AuditTrailService {
 				'exportedAt' => (new DateTimeImmutable('now'))
 					->setTimezone(new DateTimeZone('UTC'))
 					->format('Y-m-d\TH:i:s\Z'),
-				'voorstel' => $proposalId,
+				'proposal' => $proposalId,
 				'voorstelOnderwerp' => $proposalOnderwerp,
 				'retentionUntil' => $retentionUntil,
 				'selectielijstCategory' => $selectielijst,

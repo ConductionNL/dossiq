@@ -185,7 +185,7 @@ class LocationBagValidationListener implements IEventListener {
 			return [];
 		}
 
-		$id = trim((string)($payload['nummeraanduidingId'] ?? ''));
+		$id = trim((string)($payload['addressDesignationId'] ?? ''));
 		if ($id === '') {
 			return ['nummeraanduidingId.required'];
 		}
@@ -224,7 +224,7 @@ class LocationBagValidationListener implements IEventListener {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest: BAG existence check for nummeraanduidingId failed, accepting with warning',
-				['nummeraanduidingId' => $id, 'error' => $e->getMessage()]
+				['addressDesignationId' => $id, 'error' => $e->getMessage()]
 			);
 			return false;
 		}//end try
@@ -236,7 +236,7 @@ class LocationBagValidationListener implements IEventListener {
 		if ($result->lookupStatus !== 'FOUND') {
 			$this->logger->info(
 				'Procest: BAG existence check for nummeraanduidingId inconclusive, accepting with warning',
-				['nummeraanduidingId' => $id, 'lookupStatus' => $result->lookupStatus]
+				['addressDesignationId' => $id, 'lookupStatus' => $result->lookupStatus]
 			);
 		}
 

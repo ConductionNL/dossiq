@@ -3,7 +3,7 @@
 /**
  * Procest Required Field Guard evaluator.
  *
- * Guard config shape: `{type: 'requiredField', field: 'resultaat'}`.
+ * Guard config shape: `{type: 'requiredField', field: 'result'}`.
  * Passes when `case[field]` is non-null, non-empty-string, non-empty-array.
  *
  * @category Service

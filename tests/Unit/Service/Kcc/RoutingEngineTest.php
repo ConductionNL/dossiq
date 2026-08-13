@@ -178,8 +178,8 @@ class RoutingEngineTest extends TestCase {
 			],
 		];
 
-		$business = ['customerRef' => '12345678', 'subject' => 'vraag'];
-		$citizen = ['customerRef' => '123456789', 'subject' => 'vraag'];
+		$business = ['customerRef' => '12345678', 'subject' => 'question'];
+		$citizen = ['customerRef' => '123456789', 'subject' => 'question'];
 
 		$this->assertNotNull($this->engine->evaluate($rules, $business));
 		$this->assertNull($this->engine->evaluate($rules, $citizen));

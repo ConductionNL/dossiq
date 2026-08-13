@@ -184,7 +184,7 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 		$codes = [];
 		foreach ($decoded['activities'] as $activity) {
 			$this->assertNotEmpty($activity['code']);
-			$this->assertNotEmpty($activity['naam'], "{$activity['code']}: naam required (Art 30 §1(a))");
+			$this->assertNotEmpty($activity['name'], "{$activity['code']}: naam required (Art 30 §1(a))");
 			$this->assertNotEmpty($activity['doelbinding'], "{$activity['code']}: doelbinding required (Art 30 §1(b))");
 			$this->assertContains(
 				$activity['rechtsgrond'],

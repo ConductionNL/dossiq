@@ -66,10 +66,10 @@ class DoorverbindingService {
 	public function createContextSnapshot(array $contact, array $cases, array $sentiment): string {
 		$snapshot = [
 			'capturedAt' => date('c'),
-			'bellerIdentificatie' => (string)($contact['bellerIdentificatie'] ?? ''),
+			'bellerIdentification' => (string)($contact['bellerIdentification'] ?? ''),
 			'geidentificeerdeBurgerId' => ($contact['geidentificeerdeBurgerId'] ?? null),
-			'samenvatting' => (string)($contact['samenvatting'] ?? ''),
-			'gerelateerdeZaken' => array_values($cases),
+			'summary' => (string)($contact['summary'] ?? ''),
+			'gerelateerdeCases' => array_values($cases),
 			'sentiment' => $sentiment,
 		];
 
@@ -89,7 +89,7 @@ class DoorverbindingService {
 	 */
 	public function initiateWarmTransfer(array $data): array {
 		$contactmomentId = trim((string)($data['contactmomentId'] ?? ''));
-		$fromEmployeeId = trim((string)($data['vanMedewerkerId'] ?? ''));
+		$fromEmployeeId = trim((string)($data['fromEmployeeId'] ?? ''));
 		if ($contactmomentId === '' || $fromEmployeeId === '') {
 			throw new RuntimeException('contactmomentId and vanMedewerkerId are required');
 		}
@@ -98,10 +98,10 @@ class DoorverbindingService {
 
 		$record = [
 			'contactmomentId' => $contactmomentId,
-			'vanMedewerkerId' => $fromEmployeeId,
-			'naarMedewerkerId' => ($data['naarMedewerkerId'] ?? null),
-			'naarWachtrij' => ($data['naarWachtrij'] ?? null),
-			'doorverbindingsReden' => (string)($data['doorverbindingsReden'] ?? ''),
+			'fromEmployeeId' => $fromEmployeeId,
+			'toEmployeeId' => ($data['toEmployeeId'] ?? null),
+			'toQueue' => ($data['toQueue'] ?? null),
+			'transferReason' => (string)($data['transferReason'] ?? ''),
 			'contextOverdracht' => (string)($data['contextOverdracht'] ?? ''),
 			'contextSnapshot' => (string)($data['contextSnapshot'] ?? '{}'),
 			'geaccepteerd' => null,
@@ -139,7 +139,7 @@ class DoorverbindingService {
 			throw new RuntimeException('Doorverbinding already answered');
 		}
 
-		$assignedTo = ($current['naarMedewerkerId'] ?? null);
+		$assignedTo = ($current['toEmployeeId'] ?? null);
 		if ($assignedTo !== null && $callerUid !== '' && $assignedTo !== $callerUid) {
 			throw new RuntimeException('Not authorized to answer this doorverbinding');
 		}
@@ -148,7 +148,7 @@ class DoorverbindingService {
 			doorverbindingId: $doorverbindingId,
 			patch: [
 				'geaccepteerd' => true,
-				'acceptatieTijd' => date('c'),
+				'acceptanceTime' => date('c'),
 			],
 		);
 	}//end acceptTransfer()
@@ -177,7 +177,7 @@ class DoorverbindingService {
 			throw new RuntimeException('Doorverbinding already answered');
 		}
 
-		$assignedTo = ($current['naarMedewerkerId'] ?? null);
+		$assignedTo = ($current['toEmployeeId'] ?? null);
 		if ($assignedTo !== null && $callerUid !== '' && $assignedTo !== $callerUid) {
 			throw new RuntimeException('Not authorized to answer this doorverbinding');
 		}
@@ -186,7 +186,7 @@ class DoorverbindingService {
 			doorverbindingId: $doorverbindingId,
 			patch: [
 				'geaccepteerd' => false,
-				'afgekeurdReden' => $reason,
+				'afgekeurdReason' => $reason,
 			],
 		);
 	}//end rejectTransfer()

@@ -115,7 +115,7 @@ class DossierUploadHandler {
 
 			$meta = $metadata;
 			if (isset($file['type']) === true && $file['type'] !== '') {
-				$meta['formaat'] = $file['type'];
+				$meta['format'] = $file['type'];
 			}
 
 			$created = $this->fileService->uploadDocument(

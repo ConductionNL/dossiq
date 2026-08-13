@@ -277,7 +277,7 @@ class RoutingEngine {
 		}
 
 		$continuity = ($customerRef !== ''
-			&& ((string)($agent['lastContactCustomerRef'] ?? '')) === $customerRef);
+			&& ((string)($agent['orderContactCustomerRef'] ?? '')) === $customerRef);
 
 		$workload = (int)($agent['currentWorkload'] ?? 0);
 

@@ -187,7 +187,7 @@ class SeedVerwerkingsactiviteiten implements IRepairStep {
 	 */
 	private function hydrate(object $entity, array $definition): void {
 		$stringFields = [
-			'naam' => 'setNaam',
+			'name' => 'setNaam',
 			'beschrijving' => 'setBeschrijving',
 			'doelbinding' => 'setDoelbinding',
 			'rechtsgrond' => 'setRechtsgrond',

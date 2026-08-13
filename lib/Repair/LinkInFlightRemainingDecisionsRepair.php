@@ -70,7 +70,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 		'cancelled',
 		'advies_uitgebracht',
 		'afgesloten',
-		'ingetrokken',
+		'withdrawn',
 		'besloten',
 		'closed',
 		'afgehandeld',
@@ -166,7 +166,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 		return [
 			'bezwaar_decision_schema' => function (array $obj): string {
 				return $this->objectionDelegation->raiseBezwaarDecision(
-					objectionId: (string)($obj['bezwaar'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
+					objectionId: (string)($obj['objection'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
 					payload: [
 						'subjectSchema' => 'bezwaarDecision',
 						'subjectId' => (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
@@ -183,8 +183,8 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 					subjectId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
 					payload: [
 						'externalReference' => (string)($obj['caseRef'] ?? ($obj['case'] ?? '')),
-						'subjectLabel' => (string)($obj['vraag'] ?? 'Adviesaanvraag'),
-						'question' => (string)($obj['vraag'] ?? ''),
+						'subjectLabel' => (string)($obj['question'] ?? 'Adviesaanvraag'),
+						'question' => (string)($obj['question'] ?? ''),
 					],
 				);
 			},
@@ -193,9 +193,9 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 					subjectSchema: 'consultation',
 					subjectId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
 					payload: [
-						'externalReference' => (string)($obj['parentZaak'] ?? ''),
+						'externalReference' => (string)($obj['parentCase'] ?? ''),
 						'subjectLabel' => (string)($obj['consultationNumber'] ?? 'Consultatie'),
-						'question' => (string)($obj['vraagstelling'] ?? ''),
+						'question' => (string)($obj['questionFormulation'] ?? ''),
 					],
 				);
 			},

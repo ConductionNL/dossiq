@@ -162,10 +162,10 @@
         {"name": "overtredingstype", "type": "string", "description": "Type overtreding"},
         {"name": "ernst", "type": "string", "description": "Ernst van de overtreding (LHS)", "enum": ["gering", "aanzienlijk", "ernstig"]},
         {"name": "gedrag", "type": "string", "description": "Gedrag van de overtreder (LHS)", "enum": ["goedwillend", "onverschillig", "calculerend", "crimineel"]},
-        {"name": "interventie", "type": "string", "description": "Gekozen interventie (uit LHS matrix)"},
-        {"name": "dwangsomBedrag", "type": "number", "description": "Dwangsom per overtreding (EUR)"},
-        {"name": "dwangsomMaximaal", "type": "number", "description": "Maximale dwangsom (EUR)"},
-        {"name": "begunstigingstermijn", "type": "integer", "description": "Begunstigingstermijn in dagen"},
+        {"name": "intervention", "type": "string", "description": "Gekozen interventie (uit LHS matrix)"},
+        {"name": "penaltyPaymentAmount", "type": "number", "description": "Dwangsom per overtreding (EUR)"},
+        {"name": "penaltyPaymentMaximum", "type": "number", "description": "Maximale dwangsom (EUR)"},
+        {"name": "compliancePeriod", "type": "integer", "description": "Begunstigingstermijn in dagen"},
         {"name": "bronInspectie", "type": "string", "description": "Referentie naar de toezichtzaak"}
       ]
     },

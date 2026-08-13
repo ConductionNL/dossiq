@@ -135,7 +135,7 @@ class TermijnNotificationService {
 		$payload = $this->renderTemplate(type: $type, instance: $instance ?? [], context: $context);
 
 		$payload['recipient'] = $recipientUserId;
-		$payload['termijnInstance'] = $termInstanceId;
+		$payload['termInstance'] = $termInstanceId;
 		$payload['template'] = $type;
 
 		// Route the rendered notification through the procest notification
@@ -144,7 +144,7 @@ class TermijnNotificationService {
 		// and is what the caller persists as proof of dispatch.
 		$payload['verzending'] = $this->router->routeToBerichtenbox(
 			[
-				'kenmerk' => $termInstanceId,
+				'reference' => $termInstanceId,
 				'geadresseerde' => (array)($context['geadresseerde'] ?? []),
 			]
 		);
@@ -155,7 +155,7 @@ class TermijnNotificationService {
 				'type' => $type,
 				'recipient' => $recipientUserId,
 				'instance' => $termInstanceId,
-				'kanaal' => $payload['verzending']['kanaal'],
+				'channel' => $payload['verzending']['channel'],
 			]
 		);
 
@@ -176,7 +176,7 @@ class TermijnNotificationService {
 	public function renderTemplate(string $type, array $instance, array $context): array {
 		$locale = (string)($context['locale'] ?? 'nl');
 		$case = (string)($instance['zaak'] ?? ($context['zaak'] ?? '–'));
-		$end = (string)($instance['einddatumActueel'] ?? ($context['einddatum'] ?? '–'));
+		$end = (string)($instance['endDateActueel'] ?? ($context['endDate'] ?? '–'));
 
 		$subject = '';
 		$body = '';

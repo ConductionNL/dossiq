@@ -190,7 +190,7 @@ class VoorstelBesluitController extends Controller {
 		}
 
 		$owner = (string)($proposal['@self']['owner'] ?? '');
-		$assignee = (string)($proposal['assignee'] ?? ($proposal['behandelaar'] ?? ''));
+		$assignee = (string)($proposal['assignee'] ?? ($proposal['handler'] ?? ''));
 
 		return ($owner !== '' && $owner === $uid) || ($assignee !== '' && $assignee === $uid);
 	}//end callerMayRegister()

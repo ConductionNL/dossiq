@@ -56,7 +56,7 @@ class MandaatCsvParser {
 	 *
 	 * @var string[]
 	 */
-	public const REQUIRED_COLUMNS = ['mandaatNummer', 'omschrijving', 'rolNaam', 'plafondCents'];
+	public const REQUIRED_COLUMNS = ['mandaatNummer', 'omschrijving', 'roleName', 'plafondCents'];
 
 	/**
 	 * Values a boolean CSV cell may carry for "true".

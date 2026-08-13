@@ -223,7 +223,7 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'LibresignSigningAdapter: fetchValidationReport degraded to an invalid report',
-				['app' => Application::APP_ID, 'validatieRapportId' => $validationRapportId, 'error' => $e->getMessage()],
+				['app' => Application::APP_ID, 'validationRapportId' => $validationRapportId, 'error' => $e->getMessage()],
 			);
 
 			return $this->assembler->assembleFailedValidationReport(validationRapportId: $validationRapportId);

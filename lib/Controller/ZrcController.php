@@ -1068,7 +1068,7 @@ class ZrcController extends ZgwController {
 				&& empty($producten) === false
 				&& $this->zgwService->getObjectService() !== null
 			) {
-				$caseTypeUrl = $body['zaaktype'] ?? '';
+				$caseTypeUrl = $body['caseType'] ?? '';
 				if (empty($caseTypeUrl) === false) {
 					$error = $this->preValidateProductenOfDiensten(
 						producten: $producten,
@@ -1106,7 +1106,7 @@ class ZrcController extends ZgwController {
 			return null;
 		}
 
-		$ztConfig = $this->zgwService->getZgwMappingService()->getMapping('zaaktype');
+		$ztConfig = $this->zgwService->getZgwMappingService()->getMapping('caseType');
 		if ($ztConfig === null) {
 			return null;
 		}
@@ -1523,7 +1523,7 @@ class ZrcController extends ZgwController {
 				if ($caseObj !== null) {
 					$caseData = $this->objectToArray(row: $caseObj);
 
-					$endDate = $caseData['endDate'] ?? ($caseData['einddatum'] ?? null);
+					$endDate = $caseData['endDate'] ?? ($caseData['endDate'] ?? null);
 					$caseAlreadyClosed = ($endDate !== null && $endDate !== '');
 				}
 			}
@@ -1607,7 +1607,7 @@ class ZrcController extends ZgwController {
 			$caseTypeUuid = $ctMatches[1];
 		}
 
-		$thisOrder = (int)($stData['order'] ?? ($stData['volgnummer'] ?? 0));
+		$thisOrder = (int)($stData['order'] ?? ($stData['sequenceNumber'] ?? 0));
 		if ($caseTypeUuid === '' || $thisOrder <= 0) {
 			return false;
 		}
@@ -1635,7 +1635,7 @@ class ZrcController extends ZgwController {
 		foreach (($result['results'] ?? []) as $st) {
 			$stObj = $this->objectToArray(row: $st);
 
-			$order = (int)($stObj['order'] ?? ($stObj['volgnummer'] ?? 0));
+			$order = (int)($stObj['order'] ?? ($stObj['sequenceNumber'] ?? 0));
 			if ($order > $maxOrder) {
 				$maxOrder = $order;
 			}
@@ -1704,7 +1704,7 @@ class ZrcController extends ZgwController {
 					$caseTypeUuid = $ctMatches[1];
 				}
 
-				$thisOrder = (int)($stData['order'] ?? ($stData['volgnummer'] ?? 0));
+				$thisOrder = (int)($stData['order'] ?? ($stData['sequenceNumber'] ?? 0));
 				if ($caseTypeUuid !== '' && $thisOrder > 0) {
 					// Search for all statustypen of this zaaktype.
 					try {
@@ -1731,7 +1731,7 @@ class ZrcController extends ZgwController {
 					foreach (($result['results'] ?? []) as $st) {
 						$stObj = $this->objectToArray(row: $st);
 
-						$order = (int)($stObj['order'] ?? ($stObj['volgnummer'] ?? 0));
+						$order = (int)($stObj['order'] ?? ($stObj['sequenceNumber'] ?? 0));
 						if ($order > $maxOrder) {
 							$maxOrder = $order;
 						}
@@ -2030,7 +2030,7 @@ class ZrcController extends ZgwController {
 				return $caseData;
 			}
 
-			$resultConfig = $this->zgwService->getZgwMappingService()->getMapping('resultaat');
+			$resultConfig = $this->zgwService->getZgwMappingService()->getMapping('result');
 			if ($resultConfig === null) {
 				return $caseData;
 			}
@@ -2214,7 +2214,7 @@ class ZrcController extends ZgwController {
 				return $this->resolveDecisionDate(
 					caseData: $caseData,
 					englishField: 'effectiveDate',
-					dutchField: 'ingangsdatum'
+					dutchField: 'effectiveDate'
 				) ?? $endDate;
 
 			case 'vervaldatum_besluit':
@@ -2261,7 +2261,7 @@ class ZrcController extends ZgwController {
 				$propObj = $results[0];
 				$propData = $this->objectToArray(row: $propObj);
 
-				$value = $propData['value'] ?? ($propData['waarde'] ?? '');
+				$value = $propData['value'] ?? ($propData['value'] ?? '');
 				if ($value !== '' && strtotime($value) !== false) {
 					return substr($value, 0, 10);
 				}
@@ -2288,7 +2288,7 @@ class ZrcController extends ZgwController {
 			return null;
 		}
 
-		$decisionConfig = $this->zgwService->getZgwMappingService()->getMapping('besluit');
+		$decisionConfig = $this->zgwService->getZgwMappingService()->getMapping('decision');
 		if ($decisionConfig === null) {
 			return null;
 		}
@@ -2338,13 +2338,13 @@ class ZrcController extends ZgwController {
 	 */
 	private function enrichZioResponse(array $mapped, array $body): array {
 		// Zrc-004a: aardRelatieWeergave is always "Hoort bij, omgekeerd: kent".
-		$mapped['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
+		$mapped['natureRelationshipWeergave'] = 'Hoort bij, omgekeerd: kent';
 
 		// Zrc-004a: registratiedatum from the enriched body (set by business rules).
-		if (isset($body['registratiedatum']) === true
-			&& isset($mapped['registratiedatum']) === false
+		if (isset($body['registrationDate']) === true
+			&& isset($mapped['registrationDate']) === false
 		) {
-			$mapped['registratiedatum'] = $body['registratiedatum'];
+			$mapped['registrationDate'] = $body['registrationDate'];
 		}
 
 		return $mapped;
@@ -2362,7 +2362,7 @@ class ZrcController extends ZgwController {
 	private function enrichZioJsonResponse(JSONResponse $response): JSONResponse {
 		$data = $response->getData();
 		if (is_array($data) === true) {
-			$data['aardRelatieWeergave'] = 'Hoort bij, omgekeerd: kent';
+			$data['natureRelationshipWeergave'] = 'Hoort bij, omgekeerd: kent';
 			$response->setData($data);
 		}
 

@@ -181,7 +181,7 @@ class BezwaarDecisionListener implements IEventListener {
 					'filters' => [
 						'register' => $register,
 						'schema' => $decisionSchema,
-						'bezwaar' => $objectionId,
+						'objection' => $objectionId,
 					],
 					'limit' => self::DECISION_PROBE_LIMIT,
 				]

@@ -77,7 +77,7 @@ class ComplaintController extends Controller {
 		}
 
 		$filters = [];
-		foreach (['status', 'behandelaar', 'categorie'] as $key) {
+		foreach (['status', 'handler', 'category'] as $key) {
 			$value = $this->request->getParam($key);
 			if ($value !== null) {
 				$filters[$key] = $value;

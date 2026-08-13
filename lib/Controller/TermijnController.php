@@ -117,8 +117,8 @@ class TermijnController extends Controller {
 		}
 
 		$body = $this->jsonBody();
-		$caseId = (string)($body['zaakId'] ?? '');
-		$caseType = (string)($body['zaaktype'] ?? '');
+		$caseId = (string)($body['caseId'] ?? '');
+		$caseType = (string)($body['caseType'] ?? '');
 		if ($caseId === '' || $caseType === '') {
 			return $this->badRequest(msg: 'zaakId and zaaktype are required');
 		}
@@ -175,7 +175,7 @@ class TermijnController extends Controller {
 
 		$body = $this->jsonBody();
 		$durationDays = (int)($body['duurDagen'] ?? 0);
-		$rationale = (string)($body['motivering'] ?? '');
+		$rationale = (string)($body['rationale'] ?? '');
 		$documentLink = (string)($body['documentLink'] ?? '');
 
 		try {
@@ -236,7 +236,7 @@ class TermijnController extends Controller {
 		}
 
 		$body = $this->jsonBody();
-		$rationale = (string)($body['motivering'] ?? '');
+		$rationale = (string)($body['rationale'] ?? '');
 		$newEndDate = (string)($body['newEinddatum'] ?? '');
 		$documentLink = (string)($body['documentLink'] ?? '');
 		$isSupervisor = (bool)($body['supervisorOverride'] ?? false);

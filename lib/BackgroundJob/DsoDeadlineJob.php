@@ -159,7 +159,7 @@ class DsoDeadlineJob extends TimedJob {
 					'Procest DsoDeadlineJob: error processing zaak ' . $caseId . ': ' . $e->getMessage(),
 					[
 						'app' => Application::APP_ID,
-						'zaakId' => $caseId,
+						'caseId' => $caseId,
 					]
 				);
 			}
@@ -261,13 +261,13 @@ class DsoDeadlineJob extends TimedJob {
 		int $warningWeeks,
 		int $criticalWeeks,
 	): void {
-		$deadlineDate = (string)($case['deadlineDatum'] ?? '');
+		$deadlineDate = (string)($case['deadlineDate'] ?? '');
 		if ($deadlineDate === '') {
 			return;
 		}
 
 		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
-		$assignee = (string)($case['assigneeUserId'] ?? ($case['behandelaar'] ?? ''));
+		$assignee = (string)($case['assigneeUserId'] ?? ($case['handler'] ?? ''));
 		$remaining = $this->getRemainingWorkingDays(deadlineDate: $deadlineDate);
 
 		if ($remaining <= 0) {
@@ -333,7 +333,7 @@ class DsoDeadlineJob extends TimedJob {
 			$notification = $this->notificationManager->createNotification();
 			$notification->setApp(app: Application::APP_ID);
 			$notification->setUser(user: $assignee);
-			$notification->setSubject(subject: $subject, parameters: ['zaakId' => $caseId]);
+			$notification->setSubject(subject: $subject, parameters: ['caseId' => $caseId]);
 			$notification->setObject(type: 'case', id: $caseId);
 			$notification->setDateTime(dateTime: new DateTime());
 			$this->notificationManager->notify(notification: $notification);
@@ -342,7 +342,7 @@ class DsoDeadlineJob extends TimedJob {
 				'Procest DsoDeadlineJob: could not send notification: ' . $e->getMessage(),
 				[
 					'app' => Application::APP_ID,
-					'zaakId' => $caseId,
+					'caseId' => $caseId,
 					'subject' => $subject,
 				]
 			);

@@ -105,8 +105,8 @@ class KccWerkplekSeedDataServiceTest extends TestCase {
 			'kopie_document_sturen',
 		];
 		foreach ($this->objects->store['kccQuickAction'] as $row) {
-			self::assertContains($row['actieType'], $allowed);
-			self::assertNotSame('', (string)$row['naam']);
+			self::assertContains($row['actionType'], $allowed);
+			self::assertNotSame('', (string)$row['name']);
 		}
 	}
 
@@ -117,11 +117,11 @@ class KccWerkplekSeedDataServiceTest extends TestCase {
 		$this->service->seed();
 
 		$belplan = $this->objects->store['belplan']['kcc-belplan-algemeen'];
-		$types = array_map(static fn (array $step): string => (string)$step['type'], $belplan['routeringStappen']);
+		$types = array_map(static fn (array $step): string => (string)$step['type'], $belplan['routeringSteps']);
 		self::assertContains('keuzemenu', $types);
 		self::assertContains('vaardigheid_match', $types);
 		self::assertContains('wachtrij_overflow', $types);
-		self::assertSame('voicemail', $belplan['terugvalActie']);
+		self::assertSame('voicemail', $belplan['terugvalAction']);
 	}
 
 	/**

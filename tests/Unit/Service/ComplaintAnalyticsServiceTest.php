@@ -72,7 +72,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 	public function testGetFrequencyByDimensionReturnsEmptyWhenUnavailable(): void {
 		$this->settingsService->method('getObjectService')->willReturn(null);
 
-		$result = $this->service->getFrequencyByDimension('categorie', '2026-01-01', '2026-12-31');
+		$result = $this->service->getFrequencyByDimension('category', '2026-01-01', '2026-12-31');
 		$this->assertSame([], $result);
 	}//end testGetFrequencyByDimensionReturnsEmptyWhenUnavailable()
 
@@ -83,9 +83,9 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 	 */
 	public function testGetFrequencyByDimensionGroupsByCategorie(): void {
 		$complaints = [
-			['categorie' => 'Bejegening', 'ontvangstdatum' => '2026-03-01'],
-			['categorie' => 'Bejegening', 'ontvangstdatum' => '2026-03-15'],
-			['categorie' => 'Wachttijd', 'ontvangstdatum' => '2026-03-10'],
+			['category' => 'Bejegening', 'receiptDate' => '2026-03-01'],
+			['category' => 'Bejegening', 'receiptDate' => '2026-03-15'],
+			['category' => 'Wachttijd', 'receiptDate' => '2026-03-10'],
 		];
 
 		$objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
@@ -93,7 +93,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
 
-		$result = $this->service->getFrequencyByDimension('categorie', '2026-01-01', '2026-12-31');
+		$result = $this->service->getFrequencyByDimension('category', '2026-01-01', '2026-12-31');
 
 		$this->assertSame(2, $result['Bejegening']);
 		$this->assertSame(1, $result['Wachttijd']);
@@ -106,9 +106,9 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 	 */
 	public function testGetMonthlyTrendGroupsByMonth(): void {
 		$complaints = [
-			['ontvangstdatum' => '2026-01-05'],
-			['ontvangstdatum' => '2026-01-20'],
-			['ontvangstdatum' => '2026-02-10'],
+			['receiptDate' => '2026-01-05'],
+			['receiptDate' => '2026-01-20'],
+			['receiptDate' => '2026-02-10'],
 		];
 
 		$objectServiceMock = $this->getMockBuilder(\stdClass::class)->addMethods(['searchObjects', 'searchObjectsBySlug', 'saveObject'])->getMock();
@@ -133,8 +133,8 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 
 		// Q1 2026 has 6 Wachttijd complaints, Q4 2025 had 3 => 100% increase.
-		$currentComplaints = array_fill(0, 6, ['categorie' => 'Wachttijd', 'ontvangstdatum' => '2026-01-15']);
-		$prevComplaints = array_fill(0, 3, ['categorie' => 'Wachttijd', 'ontvangstdatum' => '2025-10-15']);
+		$currentComplaints = array_fill(0, 6, ['category' => 'Wachttijd', 'receiptDate' => '2026-01-15']);
+		$prevComplaints = array_fill(0, 3, ['category' => 'Wachttijd', 'receiptDate' => '2025-10-15']);
 
 		$callCount = 0;
 		$objectServiceMock
@@ -149,7 +149,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$result = $this->service->detectSystemicIssues(2026, 1);
 
 		$this->assertNotEmpty($result);
-		$this->assertSame('Wachttijd', $result[0]['categorie']);
+		$this->assertSame('Wachttijd', $result[0]['category']);
 		$this->assertGreaterThan(50, $result[0]['increasePercent']);
 	}//end testDetectSystemicIssuesFlagsHighIncreaseCategories()
 
@@ -164,8 +164,8 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 
 		// 10 current, 8 previous => 25% increase — below threshold.
-		$currentComplaints = array_fill(0, 10, ['categorie' => 'Dienstverlening', 'ontvangstdatum' => '2026-01-10']);
-		$prevComplaints = array_fill(0, 8, ['categorie' => 'Dienstverlening', 'ontvangstdatum' => '2025-10-10']);
+		$currentComplaints = array_fill(0, 10, ['category' => 'Dienstverlening', 'receiptDate' => '2026-01-10']);
+		$prevComplaints = array_fill(0, 8, ['category' => 'Dienstverlening', 'receiptDate' => '2025-10-10']);
 
 		$callCount = 0;
 		$objectServiceMock
@@ -192,9 +192,9 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 
 		$complaints = [
-			['betrokkenMedewerker' => 'medewerker-A', 'categorie' => 'Bejegening', 'ontvangstdatum' => '2026-01-10'],
-			['betrokkenMedewerker' => 'medewerker-A', 'categorie' => 'Bejegening', 'ontvangstdatum' => '2026-02-10'],
-			['betrokkenMedewerker' => 'medewerker-A', 'categorie' => 'Wachttijd', 'ontvangstdatum' => '2026-03-10'],
+			['betrokkenEmployee' => 'medewerker-A', 'category' => 'Bejegening', 'receiptDate' => '2026-01-10'],
+			['betrokkenEmployee' => 'medewerker-A', 'category' => 'Bejegening', 'receiptDate' => '2026-02-10'],
+			['betrokkenEmployee' => 'medewerker-A', 'category' => 'Wachttijd', 'receiptDate' => '2026-03-10'],
 		];
 
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
@@ -205,7 +205,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->assertNotEmpty($alerts);
 		$this->assertSame(3, $alerts[0]['count']);
 		foreach ($alerts as $alert) {
-			$this->assertArrayNotHasKey('betrokkenMedewerker', $alert);
+			$this->assertArrayNotHasKey('betrokkenEmployee', $alert);
 		}
 	}//end testCheckEmployeeThresholdAlertsReturnsAlertsAboveThreshold()
 
@@ -220,8 +220,8 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 
 		$complaints = [
-			['betrokkenMedewerker' => 'medewerker-B', 'categorie' => 'Wachttijd', 'ontvangstdatum' => '2026-01-10'],
-			['betrokkenMedewerker' => 'medewerker-B', 'categorie' => 'Wachttijd', 'ontvangstdatum' => '2026-02-10'],
+			['betrokkenEmployee' => 'medewerker-B', 'category' => 'Wachttijd', 'receiptDate' => '2026-01-10'],
+			['betrokkenEmployee' => 'medewerker-B', 'category' => 'Wachttijd', 'receiptDate' => '2026-02-10'],
 		];
 
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
@@ -241,8 +241,8 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 
 		$complaints = [
-			['status' => 'afgehandeld', 'afhandelDeadline' => '2026-04-12', 'ontvangstdatum' => '2026-03-01'],
-			['status' => 'in_behandeling', 'ontvangstdatum' => '2026-03-15'],
+			['status' => 'afgehandeld', 'afhandelDeadline' => '2026-04-12', 'receiptDate' => '2026-03-01'],
+			['status' => 'in_behandeling', 'receiptDate' => '2026-03-15'],
 		];
 
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);

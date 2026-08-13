@@ -96,11 +96,11 @@ class StufMessageParserTest extends TestCase {
 		$case = $this->parser->parseZaakDetails($xml);
 		$this->assertSame('ZAAK-2026-0008812', $case['identificatie']);
 		$this->assertSame('Tour de Amersfoort', $case['omschrijving']);
-		$this->assertSame('Evenementenvergunning', $case['zaaktype']['omschrijving']);
+		$this->assertSame('Evenementenvergunning', $case['caseType']['omschrijving']);
 		$this->assertCount(1, $case['statussen']);
 		$this->assertSame('in_behandeling', $case['statussen'][0]['statustype']);
 		$this->assertCount(1, $case['betrokkenen']);
-		$this->assertSame('heeftAlsInitiator', $case['betrokkenen'][0]['rol']);
+		$this->assertSame('heeftAlsInitiator', $case['betrokkenen'][0]['role']);
 		$this->assertSame('123456789', $case['betrokkenen'][0]['bsn']);
 	}//end testParseZaakDetailsReturnsHydratedObject()
 
@@ -123,7 +123,7 @@ class StufMessageParserTest extends TestCase {
 		$this->assertSame('StUF064', $err['code']);
 		$this->assertSame('Entiteit niet aanwezig', $err['omschrijving']);
 		$this->assertSame('Zaak ZAAK-2026-0009999 niet gevonden', $err['details']);
-		$this->assertSame('permanent', $err['soort']);
+		$this->assertSame('permanent', $err['kind']);
 	}//end testParseErrorExtractsCodeOmschrijvingDetails()
 
 	/**
@@ -134,7 +134,7 @@ class StufMessageParserTest extends TestCase {
 
 		$err = $this->parser->parseError($xml);
 		$this->assertSame('StUF067', $err['code']);
-		$this->assertSame('transient', $err['soort']);
+		$this->assertSame('transient', $err['kind']);
 	}//end testParseErrorClassifiesTransientStuf067()
 
 	/**

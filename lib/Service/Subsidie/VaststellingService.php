@@ -156,7 +156,7 @@ class VaststellingService {
 		$trigger = ($overpayment > 0.0);
 
 		$patch = [
-			'vastgesteldBedrag' => $determined,
+			'determinedAmount' => $determined,
 			'triggerTerugvordering' => $trigger,
 			'vaststellingsbeschikkingGenerated' => true,
 			'status' => 'vastgesteld',

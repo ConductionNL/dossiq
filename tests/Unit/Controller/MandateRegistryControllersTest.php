@@ -162,14 +162,14 @@ class MandateRegistryControllersTest extends TestCase {
 	 */
 	public function testCreateAnswers201AndStripsRoutingParams(): void {
 		$this->request->method('getParams')->willReturn(
-			['rolNaam' => 'Vergunningverlener', '_route' => 'procest.organisatieRol.rollenCreate', 'id' => 'spoofed']
+			['roleName' => 'Vergunningverlener', '_route' => 'procest.organisatieRol.rollenCreate', 'id' => 'spoofed']
 		);
 
 		$this->registry->expects($this->once())
 			->method('save')
 			->with(
 				MandaatRegistryService::SCHEMA_ROL,
-				['rolNaam' => 'Vergunningverlener'],
+				['roleName' => 'Vergunningverlener'],
 				null
 			)
 			->willReturn(['id' => 'new']);
@@ -188,11 +188,11 @@ class MandateRegistryControllersTest extends TestCase {
 	 * @return void
 	 */
 	public function testTheRoutedIdWinsOverAClientSuppliedOne(): void {
-		$this->request->method('getParams')->willReturn(['rolNaam' => 'X', 'id' => 'attacker-choice']);
+		$this->request->method('getParams')->willReturn(['roleName' => 'X', 'id' => 'attacker-choice']);
 
 		$this->registry->expects($this->once())
 			->method('save')
-			->with(MandaatRegistryService::SCHEMA_ROL, ['rolNaam' => 'X'], 'routed-id')
+			->with(MandaatRegistryService::SCHEMA_ROL, ['roleName' => 'X'], 'routed-id')
 			->willReturn([]);
 
 		$this->roleController()->rollenUpdate('routed-id');
@@ -204,7 +204,7 @@ class MandateRegistryControllersTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnconfiguredRegistryAnswers422(): void {
-		$this->request->method('getParams')->willReturn(['rolNaam' => 'X']);
+		$this->request->method('getParams')->willReturn(['roleName' => 'X']);
 		$this->registry->method('save')->willThrowException(new RuntimeException('Not configured: no register'));
 
 		$response = $this->roleController()->rollenCreate();
@@ -218,7 +218,7 @@ class MandateRegistryControllersTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnUnexpectedFailureAnswers500(): void {
-		$this->request->method('getParams')->willReturn(['rolNaam' => 'X']);
+		$this->request->method('getParams')->willReturn(['roleName' => 'X']);
 		$this->registry->method('save')->willThrowException(new \LogicException('boom'));
 		$this->logger->expects($this->once())->method('error');
 

@@ -216,11 +216,11 @@ class DsoIntakeServiceTest extends TestCase {
 		return [
 			'zaaknummer' => 'DSO-2026-0042',
 			'activiteiten' => [
-				['naam' => 'Bouwactiviteit'],
-				['naam' => 'Kapactiviteit'],
+				['name' => 'Bouwactiviteit'],
+				['name' => 'Kapactiviteit'],
 			],
-			'locatie' => 'Dorpsstraat 1, Utrecht',
-			'aanvrager' => ['naam' => 'Jan de Vries'],
+			'location' => 'Dorpsstraat 1, Utrecht',
+			'applicant' => ['name' => 'Jan de Vries'],
 			'bouwkosten' => 125000,
 			'procedureType' => 'uitgebreid',
 		];
@@ -299,7 +299,7 @@ class DsoIntakeServiceTest extends TestCase {
 		$expected = [
 			['dsoZaaknummer', 'DSO-2026-0042'],
 			['activiteiten', 'Bouwactiviteit, Kapactiviteit'],
-			['locatie', 'Dorpsstraat 1, Utrecht'],
+			['location', 'Dorpsstraat 1, Utrecht'],
 			['bouwkosten', '125000'],
 			['procedureType', 'uitgebreid'],
 			['aanvragerNaam', 'Jan de Vries'],
@@ -379,9 +379,9 @@ class DsoIntakeServiceTest extends TestCase {
 
 		$this->service->processAanvraag(
 			dsoMessage: [
-				'locatie' => [
-					'straat' => 'Dorpsstraat',
-					'huisnummer' => 1,
+				'location' => [
+					'street' => 'Dorpsstraat',
+					'houseNumber' => 1,
 				],
 			]
 		);
@@ -389,13 +389,13 @@ class DsoIntakeServiceTest extends TestCase {
 		$locationRows = array_values(
 			array_filter(
 				$recorder->calls,
-				static fn (array $call): bool => ($call['object']['name'] ?? '') === 'locatie'
+				static fn (array $call): bool => ($call['object']['name'] ?? '') === 'location'
 			)
 		);
 
 		$this->assertCount(1, $locationRows);
 		$this->assertSame(
-			'{"straat":"Dorpsstraat","huisnummer":1}',
+			'{"street":"Dorpsstraat","houseNumber":1}',
 			$locationRows[0]['object']['value']
 		);
 	}//end testProcessAanvraagJsonEncodesStructuredLocatie()

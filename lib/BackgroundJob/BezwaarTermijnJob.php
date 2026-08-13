@@ -151,9 +151,9 @@ class BezwaarTermijnJob extends TimedJob {
 		string $today,
 	): bool {
 		$arr = $this->toArray(value: $trigger);
-		$archiefDate = (string)($arr['archiefDatum'] ?? '');
-		$objection = ($arr['bezwaarOntvangen'] ?? false) === true;
-		$decisionId = (string)($arr['beschikkingId'] ?? '');
+		$archiefDate = (string)($arr['archiefDate'] ?? '');
+		$objection = ($arr['objectionOntvangen'] ?? false) === true;
+		$decisionId = (string)($arr['decisionId'] ?? '');
 
 		if ($decisionId === '' || $archiefDate === '' || $archiefDate > $today) {
 			return false;
@@ -171,7 +171,7 @@ class BezwaarTermijnJob extends TimedJob {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BezwaarTermijnJob: archival failed',
-				['exception' => $e->getMessage(), 'beschikkingId' => $decisionId],
+				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
 			);
 		}//end try
 

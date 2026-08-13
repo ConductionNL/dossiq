@@ -12,7 +12,7 @@
 import { describe, it, expect } from 'vitest'
 import { collectUnresolved, renderPreview } from '../../src/utils/emailTemplatePreview.js'
 
-const KNOWN = ['zaakNummer', 'contactNaam', 'behandelaar', 'startDatum']
+const KNOWN = ['zaakNummer', 'contactNaam', 'handler', 'startDate']
 
 describe('collectUnresolved', () => {
 	it('returns no unresolved names when all placeholders are known', () => {
