@@ -209,7 +209,7 @@ class CaseEmailServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testResolveVariablesEscapesHtml(): void {
-		$template = 'Beste {{naam}}, uw zaak: {{omschrijving}}';
+		$template = 'Beste {{name}}, uw zaak: {{omschrijving}}';
 		$data = [
 			'name' => 'Jan <script>alert(1)</script>',
 			'omschrijving' => '<img src=x onerror="steal()">',
@@ -230,7 +230,7 @@ class CaseEmailServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testResolveVariablesPlaintextContextSkipsEscape(): void {
-		$template = 'Beste {{naam}}';
+		$template = 'Beste {{name}}';
 		$data = ['name' => 'Jan & Piet'];
 
 		$result = $this->service->resolveVariablesRaw($template, $data);
@@ -245,7 +245,7 @@ class CaseEmailServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testResolveVariablesLeavesUnresolvedUnchanged(): void {
-		$template = 'Zaak {{nummer}} van {{naam}}';
+		$template = 'Zaak {{nummer}} van {{name}}';
 		$data = ['name' => 'Henk'];
 
 		$result = $this->service->resolveVariables($template, $data);

@@ -78,7 +78,7 @@ export async function initializeStores() {
 			objectStore.registerObjectType('workflowTemplate', config.workflow_template_schema, config.register)
 		}
 		if (config.register && config.voorstel_schema) {
-			objectStore.registerObjectType('proposal', config.voorstel_schema, config.register)
+			objectStore.registerObjectType('voorstel', config.voorstel_schema, config.register)
 		}
 		if (config.register && config.parafeerroute_schema) {
 			objectStore.registerObjectType('parafeerroute', config.parafeerroute_schema, config.register)

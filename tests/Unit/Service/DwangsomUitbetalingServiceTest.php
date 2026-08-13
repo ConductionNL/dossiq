@@ -43,7 +43,7 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
+					'dwangsom_berekening_schema' => 'dwangsomBerekening',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -53,10 +53,10 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 		$this->service = new DwangsomUitbetalingService($settings);
 
 		// Seed a stopped berekening.
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b-stopped',
 			'ingebrekestelling' => 'ig-1',
-			'termInstance' => 'ti-1',
+			'termijnInstance' => 'ti-1',
 			'status' => 'gestopt-wegens-beschikking',
 			'definitievAmount' => 35700,
 		]);
@@ -112,7 +112,7 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testPrepareBetalingRejectsZeroAmount(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b-zero',
 			'status' => 'gestopt-wegens-beschikking',
 			'definitievAmount' => 0,

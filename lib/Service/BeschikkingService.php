@@ -128,7 +128,7 @@ class BeschikkingService {
 			'decisionType' => (string)($overrides['decisionType'] ?? 'toekenning'),
 			'templateId' => $version['templateId'],
 			'ontwerpVersion' => 1,
-			'huidigeStatus' => 'ontwerp',
+			'currentStatus' => 'ontwerp',
 			'samengesteldeInhoud' => $composition,
 			'geadresseerde' => (array)($overrides['geadresseerde'] ?? []),
 			'beslissing' => (array)($overrides['beslissing'] ?? []),
@@ -168,7 +168,7 @@ class BeschikkingService {
 	 */
 	public function akkoord(string $decisionId, string $approvedBy): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
-		$current = (string)($decision['huidigeStatus'] ?? '');
+		$current = (string)($decision['currentStatus'] ?? '');
 
 		if ($this->stateMachine->validateTransition($current, 'akkoord-mandaat') === false) {
 			throw new RuntimeException('invalid_transition');
@@ -191,7 +191,7 @@ class BeschikkingService {
 			'approvedBy' => $approvedBy,
 			'approvedDate' => (new DateTimeImmutable())->format('c'),
 		];
-		$decision['huidigeStatus'] = 'akkoord-mandaat';
+		$decision['currentStatus'] = 'akkoord-mandaat';
 
 		$saved = $this->repository->save(decision: $decision);
 		$this->stateMachine->logTransition(
@@ -219,7 +219,7 @@ class BeschikkingService {
 	 */
 	public function onderteken(string $decisionId, string $tspProvider, string $signatory): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
-		$current = (string)($decision['huidigeStatus'] ?? '');
+		$current = (string)($decision['currentStatus'] ?? '');
 
 		if ($this->stateMachine->validateTransition($current, 'ondertekend') === false) {
 			throw new RuntimeException('invalid_transition');
@@ -238,7 +238,7 @@ class BeschikkingService {
 			'validationRapportId' => (string)($signature['validationRapportId'] ?? ''),
 		];
 		$decision['samengesteldeInhoud']['fileId'] = (string)($signature['signedBestandId'] ?? $fileId);
-		$decision['huidigeStatus'] = 'ondertekend';
+		$decision['currentStatus'] = 'ondertekend';
 
 		$saved = $this->repository->save(decision: $decision);
 		$this->stateMachine->logTransition(
@@ -275,7 +275,7 @@ class BeschikkingService {
 	 */
 	public function verzend(string $decisionId, string $actor): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
-		$current = (string)($decision['huidigeStatus'] ?? '');
+		$current = (string)($decision['currentStatus'] ?? '');
 
 		if ($this->stateMachine->validateTransition($current, 'verzonden') === false) {
 			throw new RuntimeException('invalid_transition');
@@ -290,7 +290,7 @@ class BeschikkingService {
 		$decision['bekendmakingDate'] = $bekendmaking;
 		$decision['objectionTermEndDate'] = $term['endDate'];
 		$decision['herinneringDate'] = $term['herinnering'];
-		$decision['huidigeStatus'] = 'verzonden';
+		$decision['currentStatus'] = 'verzonden';
 
 		$saved = $this->repository->save(decision: $decision);
 
@@ -325,7 +325,7 @@ class BeschikkingService {
 	 */
 	public function updateFields(string $decisionId, array $updates): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
-		$status = (string)($decision['huidigeStatus'] ?? '');
+		$status = (string)($decision['currentStatus'] ?? '');
 
 		if ($this->stateMachine->isImmutable($status) === true) {
 			foreach (array_keys($updates) as $field) {
@@ -407,7 +407,7 @@ class BeschikkingService {
 	 */
 	public function archive(string $decisionId): array {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
-		$current = (string)($decision['huidigeStatus'] ?? '');
+		$current = (string)($decision['currentStatus'] ?? '');
 
 		if ($this->stateMachine->validateTransition($current, 'gearchiveerd') === false) {
 			throw new RuntimeException('invalid_transition');
@@ -432,7 +432,7 @@ class BeschikkingService {
 			'tmloMetadata' => $metadata,
 			'destructionDate' => (string)$result['destructionDate'],
 		];
-		$decision['huidigeStatus'] = 'gearchiveerd';
+		$decision['currentStatus'] = 'gearchiveerd';
 
 		$saved = $this->repository->save(decision: $decision);
 		$this->stateMachine->logTransition(

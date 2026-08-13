@@ -84,7 +84,7 @@ class ContactMomentService {
 		$now = date('c');
 
 		$record = [
-			'channel' => (string)$data['channel'],
+			'kanaal' => (string)$data['kanaal'],
 			'direction' => (string)($data['direction'] ?? 'inkomend'),
 			'startTime' => (string)($data['startTime'] ?? $now),
 			'endTime' => ($data['endTime'] ?? null),
@@ -131,7 +131,7 @@ class ContactMomentService {
 	 * @throws RuntimeException When a required field is missing or invalid.
 	 */
 	private function validateInput(array $data): void {
-		$channel = (string)($data['channel'] ?? '');
+		$channel = (string)($data['kanaal'] ?? '');
 		if (in_array($channel, self::VALID_KANALEN, true) === false) {
 			throw new RuntimeException('Invalid kanaal');
 		}

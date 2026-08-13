@@ -56,11 +56,11 @@ final class WozResponseMapper {
 	 *
 	 * @return array{
 	 *     wozobjectnummer: string|null,
-	 *     waarde: int|null,
+	 *     value: int|null,
 	 *     waardepeildatum: string|null,
 	 *     grondoppervlakte: int|null,
 	 *     gebruiksdoel: array<int,string>,
-	 *     nummeraanduidingId: string|null,
+	 *     addressDesignationId: string|null,
 	 * }
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md

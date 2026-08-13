@@ -161,7 +161,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 		$this->settings->method('getObjectService')->willReturn($objectService);
 		$this->settings->method('getConfigValue')->willReturnCallback(
 			static function (string $key): string {
-				return $key === 'register' ? 'reg' : 'proposal';
+				return $key === 'register' ? 'reg' : 'voorstel';
 			}
 		);
 	}//end stubVoorstel()

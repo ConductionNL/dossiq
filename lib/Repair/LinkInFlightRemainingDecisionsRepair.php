@@ -166,7 +166,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 		return [
 			'bezwaar_decision_schema' => function (array $obj): string {
 				return $this->objectionDelegation->raiseBezwaarDecision(
-					objectionId: (string)($obj['objection'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
+					objectionId: (string)($obj['bezwaar'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
 					payload: [
 						'subjectSchema' => 'bezwaarDecision',
 						'subjectId' => (string)($obj['uuid'] ?? ($obj['id'] ?? '')),

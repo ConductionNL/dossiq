@@ -142,7 +142,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->decisionService->expects($this->once())
 			->method('archive')
 			->with('besch-1')
-			->willReturn(['id' => 'besch-1', 'huidigeStatus' => 'gearchiveerd']);
+			->willReturn(['id' => 'besch-1', 'currentStatus' => 'gearchiveerd']);
 
 		$this->runJob();
 

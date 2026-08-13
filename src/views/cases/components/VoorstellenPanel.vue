@@ -114,7 +114,7 @@ export default {
 		async loadVoorstellen() {
 			this.loading = true
 			try {
-				const results = await this.objectStore.fetchCollection('proposal', {
+				const results = await this.objectStore.fetchCollection('voorstel', {
 					'_filters[case]': this.caseId,
 					_limit: 50,
 				})

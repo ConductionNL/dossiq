@@ -56,7 +56,7 @@ final class BezwaarLifecycleTest extends TestCase {
 	protected function setUp(): void {
 		$registerPath = __DIR__ . '/../../../lib/Settings/procest_register.json';
 		$register = json_decode((string)file_get_contents($registerPath), true);
-		$objection = $register['components']['schemas']['objection'] ?? [];
+		$objection = $register['components']['schemas']['bezwaar'] ?? [];
 		$this->lifecycle = ($objection['configuration']['x-openregister-lifecycle'] ?? []);
 	}//end setUp()
 

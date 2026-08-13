@@ -136,7 +136,7 @@ class MandaatCheckService {
 
 		// Pick the first mandaat whose voorwaarden pass; surface the most-specific
 		// failure reason when none pass.
-		$orderFailure = ['reason' => self::REDEN_NIET_BEVOEGD, 'failedConditions' => []];
+		$lastFailure = ['reason' => self::REDEN_NIET_BEVOEGD, 'failedConditions' => []];
 		foreach ($relevant as $m) {
 			$eval = $this->evaluateConditions(mandate: $m, caseProperties: $caseProperties);
 			if ($eval['passed'] === true) {
@@ -147,7 +147,7 @@ class MandaatCheckService {
 				];
 			}
 
-			$orderFailure = [
+			$lastFailure = [
 				'reason' => $eval['reason'],
 				'failedConditions' => $eval['failedConditions'],
 			];
@@ -155,8 +155,8 @@ class MandaatCheckService {
 
 		return [
 			'authorized' => false,
-			'reason' => $orderFailure['reason'],
-			'failedConditions' => $orderFailure['failedConditions'],
+			'reason' => $lastFailure['reason'],
+			'failedConditions' => $lastFailure['failedConditions'],
 		];
 	}//end isAuthorized()
 
@@ -364,7 +364,7 @@ class MandaatCheckService {
 	 * @param array<string, mixed> $mandate Mandaat row.
 	 * @param array<string, mixed> $caseProperties Case properties (e.g. bedragCents, subdelegatieRequested).
 	 *
-	 * @return array{passed:bool, reden:string, failedConditions:array<int,string>}
+	 * @return array{passed:bool, reason:string, failedConditions:array<int,string>}
 	 *
 	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
 	 */

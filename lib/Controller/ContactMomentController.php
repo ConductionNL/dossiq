@@ -98,7 +98,7 @@ class ContactMomentController extends Controller {
 		}
 
 		$data = [
-			'channel' => (string)$this->request->getParam('channel', ''),
+			'kanaal' => (string)$this->request->getParam('kanaal', ''),
 			'direction' => (string)$this->request->getParam('direction', 'inkomend'),
 			'bellerIdentification' => (string)$this->request->getParam('bellerIdentification', ''),
 			'nature' => (string)$this->request->getParam('nature', 'informatieverzoek'),

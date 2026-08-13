@@ -245,7 +245,7 @@ class BeschikkingServiceTest extends TestCase {
 	public function testComposeCreatesDraft(): void {
 		$decision = $this->composeWmo();
 
-		$this->assertSame('ontwerp', $decision['huidigeStatus']);
+		$this->assertSame('ontwerp', $decision['currentStatus']);
 		$this->assertSame('pdf-a3', $decision['samengesteldeInhoud']['format']);
 		$this->assertNotEmpty($decision['samengesteldeInhoud']['fileId']);
 	}//end testComposeCreatesDraft()
@@ -260,17 +260,17 @@ class BeschikkingServiceTest extends TestCase {
 		$id = $decision['id'];
 
 		$afterApproved = $this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->assertSame('akkoord-mandaat', $afterApproved['huidigeStatus']);
+		$this->assertSame('akkoord-mandaat', $afterApproved['currentStatus']);
 		// Outer key renamed; the inner `mandaatNiveau` is nested JSON and is
 		// deliberately left Dutch until the JSON-rewrite migration.
 		$this->assertSame('afdelingsmanager', $afterApproved['mandateGranted']['mandateNiveau']);
 
 		$afterSign = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
-		$this->assertSame('ondertekend', $afterSign['huidigeStatus']);
+		$this->assertSame('ondertekend', $afterSign['currentStatus']);
 		$this->assertNotEmpty($afterSign['signature']['validationRapportId']);
 
 		$afterSend = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
-		$this->assertSame('verzonden', $afterSend['huidigeStatus']);
+		$this->assertSame('verzonden', $afterSend['currentStatus']);
 		$this->assertNotEmpty($afterSend['objectionTermEndDate']);
 
 		// A BezwaarTrigger was created with a 6-week termijn. [V08]
@@ -279,7 +279,7 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertTrue($triggers[0]['archiefTriggerActief']);
 
 		$afterArchive = $this->service->archive($id);
-		$this->assertSame('gearchiveerd', $afterArchive['huidigeStatus']);
+		$this->assertSame('gearchiveerd', $afterArchive['currentStatus']);
 		$this->assertNotEmpty($afterArchive['archief']['archiefId']);
 		$this->assertNotEmpty($afterArchive['archief']['destructionDate']);
 

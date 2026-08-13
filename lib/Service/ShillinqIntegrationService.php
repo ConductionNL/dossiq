@@ -123,12 +123,12 @@ class ShillinqIntegrationService {
 	 */
 	public function exportInvoice(array $payload): array {
 		if ($this->shillinqBaseUrl === '' || $this->shillinqApiKey === '') {
-			return ['success' => false, 'attempts' => 0, 'orderError' => 'Shillinq not configured'];
+			return ['success' => false, 'attempts' => 0, 'lastError' => 'Shillinq not configured'];
 		}
 
 		$client = $this->httpClientService->newClient();
 		$attempt = 0;
-		$orderErr = '';
+		$lastErr = '';
 		while ($attempt < self::MAX_RETRIES) {
 			$attempt++;
 			try {
@@ -150,14 +150,14 @@ class ShillinqIntegrationService {
 					return ['success' => true, 'invoiceRef' => $ref, 'attempts' => $attempt];
 				}
 			} catch (Throwable $e) {
-				$orderErr = $e->getMessage();
+				$lastErr = $e->getMessage();
 				if ($attempt < self::MAX_RETRIES) {
 					sleep(self::BACKOFF_BASE_SECONDS ** $attempt);
 				}
 			}//end try
 		}//end while
 
-		$this->logger->error('Procest: Shillinq export failed after retries', ['attempts' => $attempt, 'orderError' => $orderErr]);
-		return ['success' => false, 'attempts' => $attempt, 'orderError' => $orderErr];
+		$this->logger->error('Procest: Shillinq export failed after retries', ['attempts' => $attempt, 'lastError' => $lastErr]);
+		return ['success' => false, 'attempts' => $attempt, 'lastError' => $lastErr];
 	}//end exportInvoice()
 }//end class

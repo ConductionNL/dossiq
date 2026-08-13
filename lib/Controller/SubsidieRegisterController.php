@@ -136,7 +136,8 @@ class SubsidieRegisterController extends Controller {
 	 * Resolve and validate the register/schema configuration for the feed.
 	 *
 	 * @return array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string}|null
-	 *                                                                                                                 The validated config, or null when a required
+	 *                                                                                                                 The validated config, or null
+	 *                                   when a required
 	 *                                   value is unset.
 	 */
 	private function resolveRegisterConfig(): ?array {

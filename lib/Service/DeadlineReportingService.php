@@ -393,8 +393,8 @@ class DeadlineReportingService {
 		$startM = (($quarter - 1) * 3) + 1;
 		$endM = $startM + 2;
 		$from = sprintf('%04d-%02d-01', $year, $startM);
-		$orderDay = (int)(new DateTimeImmutable(sprintf('%04d-%02d-01', $year, $endM)))->format('t');
-		$until = sprintf('%04d-%02d-%02d', $year, $endM, $orderDay);
+		$lastDay = (int)(new DateTimeImmutable(sprintf('%04d-%02d-01', $year, $endM)))->format('t');
+		$until = sprintf('%04d-%02d-%02d', $year, $endM, $lastDay);
 		return ['from' => $from, 'until' => $until];
 	}//end resolveQuarter()
 

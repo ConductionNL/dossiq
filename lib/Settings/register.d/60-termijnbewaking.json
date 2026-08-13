@@ -4,10 +4,10 @@
       "procest": {
         "schemas": [
           "termijnDefinitie",
-          "termInstance",
+          "termijnInstance",
           "termijnGebeurtenis",
           "ingebrekestelling",
-          "penaltyPaymentCalculation",
+          "dwangsomBerekening",
           "dwangsomUitbetaling"
         ]
       }
@@ -108,8 +108,8 @@
           }
         }
       },
-      "termInstance": {
-        "slug": "termInstance",
+      "termijnInstance": {
+        "slug": "termijnInstance",
         "icon": "TimerSandFull",
         "version": "1.0.0",
         "x-schema-org": "schema:Action",
@@ -203,12 +203,12 @@
         "description": "Immutable append-only audit log entry for any termijn lifecycle event. Once written, never updated.",
         "type": "object",
         "required": [
-          "termInstance",
+          "termijnInstance",
           "type",
           "moment"
         ],
         "properties": {
-          "termInstance": {
+          "termijnInstance": {
             "type": "string",
             "title": "Deadline Instance Reference",
             "description": "TermijnInstance reference",
@@ -275,12 +275,12 @@
         "description": "Burger notice that the deadline has lapsed (AWB 4:17). Validated against the TermijnInstance to start a DwangsomBerekening.",
         "type": "object",
         "required": [
-          "termInstance",
+          "termijnInstance",
           "receiptDate",
-          "channel"
+          "kanaal"
         ],
         "properties": {
-          "termInstance": {
+          "termijnInstance": {
             "type": "string",
             "title": "Deadline Instance Reference",
             "description": "TermijnInstance the notice relates to",
@@ -292,7 +292,7 @@
             "title": "Receipt Date",
             "description": "Date the notice arrived"
           },
-          "channel": {
+          "kanaal": {
             "type": "string",
             "enum": ["post", "email", "portaal", "balie", "phone"],
             "title": "Channel",
@@ -324,8 +324,8 @@
           }
         }
       },
-      "penaltyPaymentCalculation": {
-        "slug": "penaltyPaymentCalculation",
+      "dwangsomBerekening": {
+        "slug": "dwangsomBerekening",
         "icon": "Calculator",
         "version": "1.0.0",
         "x-schema-org": "schema:MonetaryAmount",
@@ -343,7 +343,7 @@
             "description": "Ingebrekestelling that started the calculation",
             "facetable": true
           },
-          "termInstance": {
+          "termijnInstance": {
             "type": "string",
             "title": "Deadline Instance Reference",
             "description": "Convenience back-reference to the termijn"
@@ -354,7 +354,7 @@
             "title": "Start Date",
             "description": "First accrual day (= ontvangstDatum + 14d grace, unless regime overrides)"
           },
-          "huidigeDag": {
+          "currentDag": {
             "type": "integer",
             "default": 0,
             "title": "Current Day",
@@ -419,12 +419,12 @@
         "description": "Payment signal towards the burger after the dwangsom is locked.",
         "type": "object",
         "required": [
-          "penaltyPaymentCalculation",
+          "dwangsomBerekening",
           "amount",
           "reference"
         ],
         "properties": {
-          "penaltyPaymentCalculation": {
+          "dwangsomBerekening": {
             "type": "string",
             "title": "Penalty Calculation Reference",
             "description": "Berekening reference",

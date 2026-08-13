@@ -142,7 +142,7 @@ class BeschikkingControllerTest extends TestCase {
 	 */
 	public function testShowSuccess(): void {
 		$this->authenticate();
-		$this->service->method('find')->willReturn(['id' => 'besch-1', 'huidigeStatus' => 'ontwerp']);
+		$this->service->method('find')->willReturn(['id' => 'besch-1', 'currentStatus' => 'ontwerp']);
 
 		$response = $this->controller->show('besch-1');
 
@@ -172,7 +172,7 @@ class BeschikkingControllerTest extends TestCase {
 	public function testCreateSuccess(): void {
 		$this->authenticate();
 		$this->request->method('getContent')->willReturn('{"caseId":"zaak-1"}');
-		$this->service->method('compose')->willReturn(['id' => 'besch-1', 'huidigeStatus' => 'ontwerp']);
+		$this->service->method('compose')->willReturn(['id' => 'besch-1', 'currentStatus' => 'ontwerp']);
 
 		$response = $this->controller->create();
 
@@ -187,7 +187,7 @@ class BeschikkingControllerTest extends TestCase {
 	public function testAkkoordMandaatForbidden(): void {
 		$this->authenticate();
 		$this->request->method('getContent')->willReturn('{"approvedBy":"consulent-1"}');
-		$this->service->method('approved')->willThrowException(new RuntimeException('mandaat_insufficient'));
+		$this->service->method('akkoord')->willThrowException(new RuntimeException('mandaat_insufficient'));
 
 		$response = $this->controller->akkoord('besch-1');
 

@@ -172,7 +172,7 @@ class CaseReassignmentServiceTest extends TestCase {
 				if ($schema === 'case') {
 					return [
 						['id' => 'c1', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'vth'],
-						['id' => 'c2', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'objection'],
+						['id' => 'c2', 'assignee' => 'jan', 'status' => 'open', 'caseType' => 'bezwaar'],
 					];
 				}
 				if ($schema === 'task') {

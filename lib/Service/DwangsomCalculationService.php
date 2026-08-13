@@ -183,7 +183,7 @@ class DwangsomCalculationService {
 	 * @return array<string, mixed> The row with the new day, tariff and cumulative amount.
 	 */
 	private function applyDailyAccrual(array $row): array {
-		$currentDay = (int)($row['huidigeDag'] ?? 0);
+		$currentDay = (int)($row['currentDag'] ?? 0);
 		$cumulative = (int)($row['cumulatievAmount'] ?? 0);
 		$plafond = (int)($row['plafondCalculated'] ?? self::AWB_PLAFOND_CENTS);
 		$regime = (string)($row['regime'] ?? 'awb-default');
@@ -201,7 +201,7 @@ class DwangsomCalculationService {
 			$plafondHit = true;
 		}
 
-		$row['huidigeDag'] = $nextDay;
+		$row['currentDag'] = $nextDay;
 		$row['dagtarief'] = $tariff;
 		$row['cumulatievAmount'] = $newCumul;
 		$row['plafondBereikt'] = $plafondHit;
@@ -295,7 +295,7 @@ class DwangsomCalculationService {
 	 * @return int Cents.
 	 */
 	private function resolveCustomDailyTariff(array $calculation): int {
-		$instanceId = (string)($calculation['termInstance'] ?? '');
+		$instanceId = (string)($calculation['termijnInstance'] ?? '');
 		if ($instanceId === '') {
 			return self::AWB_TIER_1_CENTS;
 		}

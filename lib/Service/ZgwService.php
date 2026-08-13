@@ -89,7 +89,7 @@ class ZgwService {
 			'verzendingen' => 'verzending',
 		],
 		'notificaties' => [
-			'channel' => 'channel',
+			'kanaal' => 'kanaal',
 			'abonnement' => 'abonnement',
 		],
 	];
@@ -440,7 +440,7 @@ class ZgwService {
 			'archiveNomination',
 			'archiveActionDate',
 			'paymentIndication',
-			'orderPaymentDate',
+			'lastPaymentDate',
 			'communicationChannel',
 			'archiveStatus',
 			'parentCase',
@@ -1646,7 +1646,7 @@ class ZgwService {
 	 */
 	public function resolveZaakClosed(string $resource, array $existingData): ?bool {
 		if ($resource === 'zaken') {
-			$endDate = $existingData['endDate'] ?? ($existingData['endDate'] ?? null);
+			$endDate = $existingData['endDate'] ?? null;
 			return $endDate !== null && $endDate !== '';
 		}
 
@@ -1697,7 +1697,7 @@ class ZgwService {
 				$caseData = $case->jsonSerialize();
 			}
 
-			$endDate = $caseData['endDate'] ?? ($caseData['endDate'] ?? null);
+			$endDate = $caseData['endDate'] ?? null;
 
 			return $endDate !== null && $endDate !== '';
 		} catch (\Throwable $e) {
@@ -1783,7 +1783,7 @@ class ZgwService {
 				$caseData = $case->jsonSerialize();
 			}
 
-			$endDate = $caseData['endDate'] ?? ($caseData['endDate'] ?? null);
+			$endDate = $caseData['endDate'] ?? null;
 
 			return $endDate !== null && $endDate !== '';
 		} catch (\Throwable $e) {
@@ -1824,7 +1824,7 @@ class ZgwService {
 			return null;
 		}
 
-		$zaaktypeUuid = $existingData['caseType'] ?? ($existingData['caseType'] ?? null);
+		$zaaktypeUuid = $existingData['caseType'] ?? null;
 		if ($zaaktypeUuid === null || $zaaktypeUuid === '') {
 			return null;
 		}

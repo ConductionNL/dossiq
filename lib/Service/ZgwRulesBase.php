@@ -450,12 +450,12 @@ abstract class ZgwRulesBase {
 
 		$path = parse_url($url, PHP_URL_PATH) ?? '';
 		$segments = array_filter(explode('/', $path));
-		$orderSegment = end($segments);
-		if ($orderSegment === false) {
-			$orderSegment = '';
+		$lastSegment = end($segments);
+		if ($lastSegment === false) {
+			$lastSegment = '';
 		}
 
-		if ($this->fieldValidator->isUuid($orderSegment) === false) {
+		if ($this->fieldValidator->isUuid($lastSegment) === false) {
 			return $this->error(
 				status: 400,
 				detail: "De {$fieldName} URL wijst niet naar een geldig object.",
@@ -556,7 +556,7 @@ abstract class ZgwRulesBase {
 		if ($records === false || count($records) === 0) {
 			$this->logger->warning(
 				'fetchExternalUrl SSRF: DNS resolution returned no records',
-				['host' => $host, 'detail' => $this->orderSuppressedWarning()]
+				['host' => $host, 'detail' => $this->lastSuppressedWarning()]
 			);
 			return false;
 		}

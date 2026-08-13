@@ -239,7 +239,7 @@ class OriDataQualityCheck extends TimedJob {
 
 		foreach ($raadsleden as $rl) {
 			$rlSlug = (string)($rl['@self']['slug'] ?? ($rl['id'] ?? '?'));
-			$factionRef = (string)($rl['faction'] ?? '');
+			$factionRef = (string)($rl['fractie'] ?? '');
 
 			if (empty($factionRef) === true) {
 				continue;
@@ -249,7 +249,7 @@ class OriDataQualityCheck extends TimedJob {
 				$faction = $this->findObjectAsArray(
 					objectService: $objectService,
 					register: 'ori',
-					schema: 'faction',
+					schema: 'fractie',
 					id: $factionRef
 				);
 
@@ -257,7 +257,7 @@ class OriDataQualityCheck extends TimedJob {
 					$issues[] = [
 						'schema' => 'raadslid',
 						'slug' => $rlSlug,
-						'field' => 'faction',
+						'field' => 'fractie',
 						'severity' => 'warning',
 						'message' => 'Raadslid references non-existent fractie: ' . $factionRef,
 					];

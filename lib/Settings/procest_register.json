@@ -1252,7 +1252,7 @@
                         "visible": false,
                         "title": "Payment Indication"
                     },
-                    "orderPaymentDate": {
+                    "lastPaymentDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date of the last payment",
@@ -2195,8 +2195,8 @@
                     }
                 }
             },
-            "channel": {
-                "slug": "channel",
+            "kanaal": {
+                "slug": "kanaal",
                 "icon": "BellRingOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:BroadcastChannel",
@@ -2668,8 +2668,8 @@
                     }
                 }
             },
-            "proposal": {
-                "slug": "proposal",
+            "voorstel": {
+                "slug": "voorstel",
                 "icon": "FileDocumentEditOutline",
                 "version": "1.1.0",
                 "x-schema-org": "schema:CreativeWork",
@@ -2990,16 +2990,16 @@
                 "description": "An immutable record of a parafering action on a voorstel step",
                 "type": "object",
                 "required": [
-                    "proposal",
+                    "voorstel",
                     "step",
                     "actor",
                     "action"
                 ],
                 "properties": {
-                    "proposal": {
+                    "voorstel": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "proposal",
+                        "$ref": "voorstel",
                         "onDelete": "CASCADE",
                         "description": "Reference to the voorstel",
                         "title": "Proposal"
@@ -3156,7 +3156,7 @@
                 "description": "DEPRECATED (migrate-parafering-to-or-audit): historical append-only audit entries for parafeerroute transitions. New transitions are recorded via OR's native audit trail instead of this schema. Existing rows remain readable for one major release. Originally: regulator-grade entry per transition (started, paraferd, advised, terugsturen, route-changed, completed) with actor, role, timestamp, reason, content snapshot, redacted IP, and SHA-256 tamper-detection hash.",
                 "type": "object",
                 "required": [
-                    "proposal",
+                    "voorstel",
                     "action",
                     "actor",
                     "actorRole",
@@ -3165,10 +3165,10 @@
                     "auditEntryHash"
                 ],
                 "properties": {
-                    "proposal": {
+                    "voorstel": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "proposal",
+                        "$ref": "voorstel",
                         "onDelete": "CASCADE",
                         "description": "Reference to the voorstel that this transition occurred on",
                         "title": "Proposal"
@@ -3308,8 +3308,8 @@
                     }
                 }
             },
-            "objection": {
-                "slug": "objection",
+            "bezwaar": {
+                "slug": "bezwaar",
                 "icon": "Gavel",
                 "version": "1.0.0",
                 "x-schema-org": "schema:LegalCase",
@@ -4207,16 +4207,16 @@
                 "description": "Beslissing op bezwaar — canonical decision entity per Awb art. 7:11/7:12 with the 5-value disposition enum, structured rechtsmiddelenclausule, proceskostenvergoeding, and publication flow",
                 "type": "object",
                 "required": [
-                    "objection",
+                    "bezwaar",
                     "dispositionType",
                     "reasoning",
                     "legalBasis"
                 ],
                 "properties": {
-                    "objection": {
+                    "bezwaar": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "objection",
+                        "$ref": "bezwaar",
                         "onDelete": "CASCADE",
                         "description": "The bezwaar case this decision belongs to",
                         "title": "Objection"
@@ -4445,7 +4445,7 @@
                     "sourceObjection": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "objection",
+                        "$ref": "bezwaar",
                         "description": "The bezwaar lifecycle record that escalated to beroep — immutable after appellantFilingDate is set",
                         "title": "Source Objection"
                     },
@@ -6739,7 +6739,7 @@
                         "description": "User ID of the share creator",
                         "title": "Created By"
                     },
-                    "orderAccessedAt": {
+                    "lastAccessedAt": {
                         "type": "string",
                         "format": "date-time",
                         "description": "Last external access datetime in ISO 8601",
@@ -6907,7 +6907,7 @@
                         "description": "Append-only activity entries; never edited or removed",
                         "title": "Entries"
                     },
-                    "orderActivityAt": {
+                    "lastActivityAt": {
                         "type": "string",
                         "format": "date-time",
                         "description": "Timestamp of the most recent entry",
@@ -7303,15 +7303,15 @@
                 "description": "Per-bezwaar referral of an objection case to a bezwaaradviescommissie. Tracks the advice deliverable through the assigned -> in-deliberation -> advice-issued lifecycle (Awb Art. 7:13). One-way transitions; withdrawn bezwaaren leave the request in its last state for audit.",
                 "type": "object",
                 "required": [
-                    "objection",
+                    "bezwaar",
                     "commissie",
                     "status"
                 ],
                 "properties": {
-                    "objection": {
+                    "bezwaar": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "objection",
+                        "$ref": "bezwaar",
                         "onDelete": "CASCADE",
                         "description": "The bezwaar (lifecycle record) being reviewed; the wrapped procest case is resolved via bezwaar.case",
                         "title": "Objection"
@@ -8093,7 +8093,7 @@
                         "description": "Membership creation timestamp",
                         "title": "Joined At"
                     },
-                    "orderActiveAt": {
+                    "lastActiveAt": {
                         "type": "string",
                         "format": "date-time",
                         "description": "Last activity timestamp",
@@ -8453,7 +8453,7 @@
                         "title": "Added At",
                         "description": "Timestamp when this supplier user was added"
                     },
-                    "orderLoginAt": {
+                    "lastLoginAt": {
                         "type": "string",
                         "format": "date-time",
                         "title": "Last Login At",
@@ -9251,13 +9251,13 @@
                     "dispatch",
                     "usageRights",
                     "workflowTemplate",
-                    "channel",
+                    "kanaal",
                     "abonnement",
                     "objection",
                     "hearingSession",
                     "advisoryReport",
                     "appealDecision",
-                    "proposal",
+                    "voorstel",
                     "parafeerroute",
                     "parafeeractie",
                     "paraferingAuditEntry",
@@ -9319,7 +9319,7 @@
                             "type": "string"
                         },
                         {
-                            "field": "proposal",
+                            "field": "voorstel",
                             "type": "string"
                         },
                         {
@@ -9345,7 +9345,7 @@
                             "label": "Actor role"
                         },
                         {
-                            "field": "proposal",
+                            "field": "voorstel",
                             "label": "Voorstel"
                         },
                         {

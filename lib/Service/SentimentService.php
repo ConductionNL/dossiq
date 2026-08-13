@@ -71,7 +71,7 @@ class SentimentService {
 	 * @param string $text The transcription / message text.
 	 * @param array<int, string> $triggerWords Configured trigger words to detect.
 	 *
-	 * @return array{score: float, label: string, triggers: array<int, string>, escalatieAanbevolen: bool, escalatieLevel: string, snippet: string}
+	 * @return array{score: float, label: string, triggers: array<int, string>, escalatieAanbevolen: bool, escalationLevel: string, snippet: string}
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */

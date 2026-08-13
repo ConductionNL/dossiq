@@ -763,7 +763,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		if ($lastPaid === null && $existingObject !== null) {
-			$lastPaid = $existingObject['orderPaymentDate'] ?? ($existingObject['laatsteBetaaldatum'] ?? null);
+			$lastPaid = $existingObject['lastPaymentDate'] ?? ($existingObject['laatsteBetaaldatum'] ?? null);
 		}
 
 		if ($betalingsindicatie === 'nvt' && $lastPaid !== null && $lastPaid !== '') {
@@ -1041,7 +1041,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 					$data = $obj->jsonSerialize();
 				}
 
-				$sequenceNumber = (int)($data['sequenceNumber'] ?? ($data['sequenceNumber'] ?? 0));
+				$sequenceNumber = (int)($data['sequenceNumber'] ?? 0);
 				$objId = $data['id'] ?? ($data['@self']['id'] ?? null);
 				if ($sequenceNumber > $maxSequenceNumber) {
 					$maxSequenceNumber = $sequenceNumber;
@@ -1109,7 +1109,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 			array_filter(
 				$cases,
 				function (array $case) use ($allowedZaaktypen): bool {
-					$caseTypeId = $case['caseType'] ?? ($case['caseType'] ?? '');
+					$caseTypeId = $case['caseType'] ?? '';
 					$zaaktypeUuid = $this->extractUuid(url: (string)$caseTypeId);
 
 					if ($zaaktypeUuid === null || isset($allowedZaaktypen[$zaaktypeUuid]) === false) {

@@ -113,7 +113,7 @@ class SentimentService {
 	 *                                              DEFAULT_TRIGGER_WORDS.
 	 *
 	 * @return array{score: float, label: string, triggers: array<int, string>,
-	 *               escalatieAanbevolen: bool, escalatieLevel: string}
+	 *               escalatieAanbevolen: bool, escalationLevel: string}
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */

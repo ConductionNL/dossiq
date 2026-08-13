@@ -136,7 +136,7 @@ class ParaferingAuditListenerTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnMap(
 			[
 				['register', '', 'procest'],
-				['voorstel_schema', '', 'proposal'],
+				['voorstel_schema', '', 'voorstel'],
 			]
 		);
 
@@ -186,7 +186,7 @@ class ParaferingAuditListenerTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnMap(
 			[
 				['register', '', 'procest'],
-				['voorstel_schema', '', 'proposal'],
+				['voorstel_schema', '', 'voorstel'],
 			]
 		);
 
@@ -230,7 +230,7 @@ class ParaferingAuditListenerTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnMap(
 			[
 				['register', '', 'procest'],
-				['voorstel_schema', '', 'proposal'],
+				['voorstel_schema', '', 'voorstel'],
 			]
 		);
 
@@ -262,7 +262,7 @@ class ParaferingAuditListenerTest extends TestCase {
 		$this->settings->method('getConfigValue')->willReturnMap(
 			[
 				['register', '', 'procest'],
-				['voorstel_schema', '', 'proposal'],
+				['voorstel_schema', '', 'voorstel'],
 			]
 		);
 

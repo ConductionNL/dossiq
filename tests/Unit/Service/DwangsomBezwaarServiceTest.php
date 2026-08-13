@@ -47,9 +47,9 @@ class DwangsomBezwaarServiceTest extends TestCase {
 				return match ($key) {
 					'register' => 'procest',
 					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termInstance',
+					'termijn_instance_schema' => 'termijnInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
+					'dwangsom_berekening_schema' => 'dwangsomBerekening',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -64,15 +64,15 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		);
 
 		// Seed berekening + uitbetaling.
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b-1',
-			'termInstance' => 'ti-1',
+			'termijnInstance' => 'ti-1',
 			'status' => 'gestopt-wegens-beschikking',
 			'definitievAmount' => 50000,
 		]);
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
 			'id' => 'u-1',
-			'penaltyPaymentCalculation' => 'b-1',
+			'dwangsomBerekening' => 'b-1',
 			'amount' => 50000,
 			'status' => 'voorbereid',
 		]);

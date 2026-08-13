@@ -142,7 +142,7 @@ class ParafeerRouteService {
 			$this->logger->warning(
 				'Procest: ParafeerTransitionEvent dispatch failed',
 				[
-					'proposal' => $proposalId,
+					'voorstel' => $proposalId,
 					'action' => $action,
 					'exception' => $e->getMessage(),
 				],
@@ -243,7 +243,7 @@ class ParafeerRouteService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest: ApprovalChain creation failed, falling back to in-array routing',
-				['proposal' => $voorstelUuid, 'exception' => $e->getMessage()]
+				['voorstel' => $voorstelUuid, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -281,7 +281,7 @@ class ParafeerRouteService {
 		}
 
 		$actieData = [
-			'proposal' => $proposal['id'] ?? $proposal['uuid'] ?? $proposalId,
+			'voorstel' => $proposal['id'] ?? $proposal['uuid'] ?? $proposalId,
 			'step' => $currentStep,
 			'actor' => $this->requireUserId(),
 			'actorType' => (string)($actionData['actorType'] ?? 'user'),
@@ -372,7 +372,7 @@ class ParafeerRouteService {
 
 		$objectService->saveObject(
 			object: [
-				'proposal' => $proposal['id'] ?? $proposal['uuid'] ?? $proposalId,
+				'voorstel' => $proposal['id'] ?? $proposal['uuid'] ?? $proposalId,
 				'step' => $step,
 				'actor' => $userId,
 				'actorType' => 'user',

@@ -285,7 +285,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				settings: $settings
 			),
 			'applicatie' => $this->getApplicatieMapping(),
-			'channel' => $this->getChannelMapping(
+			'kanaal' => $this->getChannelMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -353,7 +353,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'archiveActionDate' => '{{ archiefactiedatum }}',
 				'archiveStatus' => '{{ archiefstatus }}',
 				'paymentIndication' => '{{ betalingsindicatie }}',
-				'orderPaymentDate' => '{{ laatsteBetaaldatum }}',
+				'lastPaymentDate' => '{{ laatsteBetaaldatum }}',
 				'parentCase' => '{{ hoofdzaak | zgw_extract_uuid }}',
 			],
 			'valueMapping' => [
@@ -1261,7 +1261,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function getChannelMapping(string $registerId, array $settings): array {
 		return [
-			'zgwResource' => 'channel',
+			'zgwResource' => 'kanaal',
 			'zgwApiVersion' => '1',
 			'sourceRegister' => $registerId,
 			'sourceSchema' => ($settings['kanaal_schema'] ?? ''),
@@ -1565,7 +1565,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function createDefaultKanalen(IOutput $output): void {
 		$channelMapping = $this->zgwMappingService->getMapping(
-			resourceKey: 'channel'
+			resourceKey: 'kanaal'
 		);
 		if ($channelMapping === null) {
 			$output->info('Kanaal mapping not configured. Skipping default channels.');
@@ -1814,7 +1814,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					varName: 'case'
 				),
 				'datumtijd' => '{{ contactDateTime }}',
-				'channel' => '{{ channel }}',
+				'kanaal' => '{{ channel }}',
 				'onderwerp' => '{{ subject }}',
 				'initiator' => '{{ initiator }}',
 			],

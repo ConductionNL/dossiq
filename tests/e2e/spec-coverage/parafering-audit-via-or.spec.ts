@@ -32,7 +32,7 @@ const REPO_ROOT = resolve(__dirname, '../../..')
  * even when the dev instance has not seeded data.
  */
 function registerConfig(): { register: string; voorstelSchema: string } {
-	return { register: 'procest', voorstelSchema: 'proposal' }
+	return { register: 'procest', voorstelSchema: 'voorstel' }
 }
 
 test.describe('Parafering audit via OR — spec coverage', () => {

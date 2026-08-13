@@ -155,14 +155,14 @@ class BelplanRoutingServiceTest extends TestCase {
 				'employeeId' => 'busy',
 				'status' => 'beschikbaar',
 				'expertises' => ['omgevingsvergunningen'],
-				'huidigeQueueLengte' => 3,
+				'currentQueueLengte' => 3,
 				'gemiddeldeHandlingDuration' => 100,
 			],
 			[
 				'employeeId' => 'free',
 				'status' => 'beschikbaar',
 				'expertises' => ['omgevingsvergunningen'],
-				'huidigeQueueLengte' => 0,
+				'currentQueueLengte' => 0,
 				'gemiddeldeHandlingDuration' => 120,
 			],
 		];
@@ -181,8 +181,8 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testOverflowToGeneralistWhenAllBusy(): void {
 		$this->objectService->specialisten = [
-			['employeeId' => 'a', 'status' => 'in_gesprek', 'expertises' => ['omgevingsvergunningen'], 'huidigeQueueLengte' => 2],
-			['employeeId' => 'b', 'status' => 'wrap_up', 'expertises' => ['omgevingsvergunningen'], 'huidigeQueueLengte' => 1],
+			['employeeId' => 'a', 'status' => 'in_gesprek', 'expertises' => ['omgevingsvergunningen'], 'currentQueueLengte' => 2],
+			['employeeId' => 'b', 'status' => 'wrap_up', 'expertises' => ['omgevingsvergunningen'], 'currentQueueLengte' => 1],
 		];
 
 		$result = $this->service->routeCall('14000', 'omgevingsvergunning');

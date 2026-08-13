@@ -145,7 +145,7 @@ class TenantBillingService {
 		$payload = $this->shillinq->buildInvoicePayload(tenantId: $tenantId, month: $month, events: $unbilled);
 		$exportRc = $this->shillinq->exportInvoice(payload: $payload);
 		if ($exportRc['success'] !== true) {
-			$result['error'] = (string)($exportRc['orderError'] ?? 'export failed');
+			$result['error'] = (string)($exportRc['lastError'] ?? 'export failed');
 			return $result;
 		}
 

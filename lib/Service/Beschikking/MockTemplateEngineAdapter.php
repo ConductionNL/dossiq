@@ -41,7 +41,7 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @param string $templateId The template identifier.
 	 * @param array<string, mixed> $context The render context.
 	 *
-	 * @return array{format: string, bestandId: string, checksumSha256: string, paginas: int}
+	 * @return array{format: string, fileId: string, checksumSha256: string, paginas: int}
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
 	 */
@@ -65,7 +65,7 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @param string $templateId The template identifier.
 	 * @param string $effectiveDate The effective date.
 	 *
-	 * @return array{templateId: string, version: string, ingangsdatum: string}
+	 * @return array{templateId: string, version: string, effectiveDate: string}
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
 	 */

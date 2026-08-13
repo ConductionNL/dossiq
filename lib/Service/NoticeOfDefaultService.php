@@ -90,9 +90,9 @@ class NoticeOfDefaultService {
 		$isValid = ($status === 'overschreden' && $deadline !== '' && $deadline < $receipt);
 
 		$row = [
-			'termInstance' => $termInstanceId,
+			'termijnInstance' => $termInstanceId,
 			'receiptDate' => $receipt,
-			'channel' => $channel,
+			'kanaal' => $channel,
 			'gevalideerd' => $isValid,
 			'documentLink' => $documentLink,
 		];
@@ -108,7 +108,7 @@ class NoticeOfDefaultService {
 		if ($isValid === false) {
 			$this->logger->info(
 				'Premature ingebrekestelling rejected',
-				['termInstance' => $termInstanceId, 'receiptDate' => $receipt]
+				['termijnInstance' => $termInstanceId, 'receiptDate' => $receipt]
 			);
 			return $row;
 		}
@@ -119,13 +119,13 @@ class NoticeOfDefaultService {
 		if ($existing !== '') {
 			$this->logger->info(
 				'Additional ingebrekestelling recorded; first remains the dwangsom basis',
-				['termInstance' => $termInstanceId, 'firstNotice' => $existing]
+				['termijnInstance' => $termInstanceId, 'firstNotice' => $existing]
 			);
 			return $row;
 		}
 
 		// First valid notice: link it and start a DwangsomBerekening.
-		$row['penaltyPaymentCalculation'] = $this->startPenaltyPaymentCalculation(
+		$row['dwangsomBerekening'] = $this->startPenaltyPaymentCalculation(
 			termInstanceId: $termInstanceId,
 			instance: $instance,
 			ingebrekestellingId: (string)$row['id'],
@@ -174,9 +174,9 @@ class NoticeOfDefaultService {
 			schemaConfigKey: 'dwangsom_berekening_schema',
 			object: [
 				'ingebrekestelling' => $ingebrekestellingId,
-				'termInstance' => $termInstanceId,
+				'termijnInstance' => $termInstanceId,
 				'startDate' => $startAt,
-				'huidigeDag' => 0,
+				'currentDag' => 0,
 				'dagtarief' => 0,
 				'cumulatievAmount' => 0,
 				'plafondCalculated' => (int)$regime['plafond'],

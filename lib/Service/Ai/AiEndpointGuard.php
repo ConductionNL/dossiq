@@ -168,7 +168,7 @@ class AiEndpointGuard {
 		if ($records === false || count($records) === 0) {
 			$this->logger->warning(
 				'AI SSRF: DNS resolution returned no records',
-				['host' => $host, 'detail' => $this->orderSuppressedWarning()]
+				['host' => $host, 'detail' => $this->lastSuppressedWarning()]
 			);
 			return false;
 		}//end if

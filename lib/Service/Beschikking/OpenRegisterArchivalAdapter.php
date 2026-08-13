@@ -79,7 +79,7 @@ class OpenRegisterArchivalAdapter implements ArchivalAdapterInterface {
 	 * @param string $fileId The signed PDF/A-3 file id.
 	 * @param array<string, mixed> $tmloMetadata The TMLO-1.2/MDTO metadata block.
 	 *
-	 * @return array{archiefId: string, vernietigingsdatum: string}
+	 * @return array{archiefId: string, destructionDate: string}
 	 *
 	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */

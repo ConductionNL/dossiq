@@ -116,7 +116,7 @@ class AdviceDelegationService {
 			externalReference: (string)($payload['externalReference'] ?? $proposalId),
 			subject: [
 				'subjectRegister' => (string)($payload['subjectRegister'] ?? ''),
-				'subjectSchema' => 'proposal',
+				'subjectSchema' => 'voorstel',
 				'subjectId' => $proposalId,
 				'subjectLabel' => (string)($payload['subjectLabel'] ?? ($payload['title'] ?? '')),
 			],

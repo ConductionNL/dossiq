@@ -51,15 +51,15 @@ class ZgwMappingService {
 	private const RESOURCE_KEYS = [
 		'catalogus',
 		'zaak',
-		'caseType',
+		'zaaktype',
 		'status',
 		'statustype',
-		'result',
+		'resultaat',
 		'resultaattype',
-		'role',
+		'rol',
 		'roltype',
 		'eigenschap',
-		'decision',
+		'besluit',
 		'besluittype',
 		'informatieobjecttype',
 		'zaaktypeinformatieobjecttype',
@@ -73,7 +73,7 @@ class ZgwMappingService {
 		'enkelvoudiginformatieobject',
 		'objectinformatieobject',
 		'gebruiksrechten',
-		'channel',
+		'kanaal',
 		'abonnement',
 	];
 

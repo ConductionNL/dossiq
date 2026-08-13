@@ -223,7 +223,7 @@ class ApprovalStepNotificationListener implements IEventListener {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest: could not load voorstel for approval notification',
-				['proposal' => $objectUuid, 'exception' => $e->getMessage()]
+				['voorstel' => $objectUuid, 'exception' => $e->getMessage()]
 			);
 		}
 

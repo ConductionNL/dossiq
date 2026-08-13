@@ -189,7 +189,7 @@ export default {
 					voorstelData.parafeerroute = routeId
 				}
 
-				await this.objectStore.saveObject('proposal', voorstelData)
+				await this.objectStore.saveObject('voorstel', voorstelData)
 				this.$emit('created')
 			} catch (error) {
 				console.error('Failed to create voorstel:', error)

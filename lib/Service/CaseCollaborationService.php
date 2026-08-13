@@ -201,7 +201,7 @@ class CaseCollaborationService {
 		$entries = (array)($activity['entries'] ?? []);
 		$entries[] = $entry;
 		$activity['entries'] = $entries;
-		$activity['orderActivityAt'] = $entry['createdAt'];
+		$activity['lastActivityAt'] = $entry['createdAt'];
 
 		$result = $objectService->saveObject(object: $activity, register: (int)$register, schema: (int)$activitySchema);
 		$resultData = $this->asArray(value: $result);

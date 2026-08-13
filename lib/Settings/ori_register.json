@@ -26,7 +26,7 @@
           "raadsdocument",
           "stemming",
           "raadslid",
-          "faction"
+          "fractie"
         ],
         "folder": "Open Registers/ORI"
       }
@@ -322,7 +322,7 @@
             "items": {
               "type": "object",
               "properties": {
-                "faction": {
+                "fractie": {
                   "type": "string",
                   "description": "Party name",
                   "title": "Party"
@@ -365,7 +365,7 @@
         "description": "Represents a person serving in the municipal council, college, or council administration. Includes council members, aldermen, the mayor, and the clerk.",
         "required": [
           "name",
-          "faction",
+          "fractie",
           "role"
         ],
         "properties": {
@@ -376,7 +376,7 @@
             "facetable": true,
             "title": "Name"
           },
-          "faction": {
+          "fractie": {
             "type": "string",
             "description": "Reference (slug) to the party/faction this member belongs to",
             "facetable": true,
@@ -409,8 +409,8 @@
           ]
         }
       },
-      "faction": {
-        "slug": "faction",
+      "fractie": {
+        "slug": "fractie",
         "x-schema-org": "schema:Organization",
         "title": "Fractie",
         "version": "1.0.0",
@@ -459,7 +459,7 @@
       {
         "@self": {
           "register": "ori",
-          "schema": "faction",
+          "schema": "fractie",
           "slug": "voorbeeldstad-vooruit"
         },
         "name": "Voorbeeldstad Vooruit",
@@ -469,7 +469,7 @@
       {
         "@self": {
           "register": "ori",
-          "schema": "faction",
+          "schema": "fractie",
           "slug": "groen-links-voorbeeldstad"
         },
         "name": "Groen Links Voorbeeldstad",
@@ -479,7 +479,7 @@
       {
         "@self": {
           "register": "ori",
-          "schema": "faction",
+          "schema": "fractie",
           "slug": "democraten-voorbeeldstad"
         },
         "name": "Democraten Voorbeeldstad",
@@ -489,7 +489,7 @@
       {
         "@self": {
           "register": "ori",
-          "schema": "faction",
+          "schema": "fractie",
           "slug": "lokaal-belang"
         },
         "name": "Lokaal Belang",
@@ -499,7 +499,7 @@
       {
         "@self": {
           "register": "ori",
-          "schema": "faction",
+          "schema": "fractie",
           "slug": "pvda-voorbeeldstad"
         },
         "name": "PvdA Voorbeeldstad",
@@ -509,7 +509,7 @@
       {
         "@self": {
           "register": "ori",
-          "schema": "faction",
+          "schema": "fractie",
           "slug": "vvd-voorbeeldstad"
         },
         "name": "VVD Voorbeeldstad",
@@ -519,7 +519,7 @@
       {
         "@self": {
           "register": "ori",
-          "schema": "faction",
+          "schema": "fractie",
           "slug": "sp-voorbeeldstad"
         },
         "name": "SP Voorbeeldstad",
@@ -529,7 +529,7 @@
       {
         "@self": {
           "register": "ori",
-          "schema": "faction",
+          "schema": "fractie",
           "slug": "forum-voorbeeldstad"
         },
         "name": "Forum Voorbeeldstad",
@@ -543,7 +543,7 @@
           "slug": "jan-willem-van-doesburg"
         },
         "name": "Jan-Willem van Doesburg",
-        "faction": "voorbeeldstad-vooruit",
+        "fractie": "voorbeeldstad-vooruit",
         "role": "burgemeester",
         "actief": true
       },
@@ -554,7 +554,7 @@
           "slug": "maria-bakker-de-wit"
         },
         "name": "Maria Bakker-de Wit",
-        "faction": "groen-links-voorbeeldstad",
+        "fractie": "groen-links-voorbeeldstad",
         "role": "wethouder",
         "actief": true
       },
@@ -565,7 +565,7 @@
           "slug": "ahmed-el-mansouri"
         },
         "name": "Ahmed El-Mansouri",
-        "faction": "democraten-voorbeeldstad",
+        "fractie": "democraten-voorbeeldstad",
         "role": "wethouder",
         "actief": true
       },
@@ -576,7 +576,7 @@
           "slug": "petra-koopmans"
         },
         "name": "Petra Koopmans",
-        "faction": "voorbeeldstad-vooruit",
+        "fractie": "voorbeeldstad-vooruit",
         "role": "wethouder",
         "actief": true
       },
@@ -587,7 +587,7 @@
           "slug": "henk-van-der-berg"
         },
         "name": "Henk van der Berg",
-        "faction": "voorbeeldstad-vooruit",
+        "fractie": "voorbeeldstad-vooruit",
         "role": "griffier",
         "actief": true
       },
@@ -598,7 +598,7 @@
           "slug": "klaas-de-vries"
         },
         "name": "Klaas de Vries",
-        "faction": "voorbeeldstad-vooruit",
+        "fractie": "voorbeeldstad-vooruit",
         "role": "raadslid",
         "actief": true
       },
@@ -609,7 +609,7 @@
           "slug": "sandra-jansen"
         },
         "name": "Sandra Jansen",
-        "faction": "voorbeeldstad-vooruit",
+        "fractie": "voorbeeldstad-vooruit",
         "role": "raadslid",
         "actief": true
       },
@@ -620,7 +620,7 @@
           "slug": "tom-willems"
         },
         "name": "Tom Willems",
-        "faction": "voorbeeldstad-vooruit",
+        "fractie": "voorbeeldstad-vooruit",
         "role": "raadslid",
         "actief": true
       },
@@ -631,7 +631,7 @@
           "slug": "annemiek-van-rijn"
         },
         "name": "Annemiek van Rijn",
-        "faction": "voorbeeldstad-vooruit",
+        "fractie": "voorbeeldstad-vooruit",
         "role": "raadslid",
         "actief": true
       },
@@ -642,7 +642,7 @@
           "slug": "bas-vermeulen"
         },
         "name": "Bas Vermeulen",
-        "faction": "voorbeeldstad-vooruit",
+        "fractie": "voorbeeldstad-vooruit",
         "role": "raadslid",
         "actief": true
       },
@@ -653,7 +653,7 @@
           "slug": "lisa-de-groot"
         },
         "name": "Lisa de Groot",
-        "faction": "groen-links-voorbeeldstad",
+        "fractie": "groen-links-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -664,7 +664,7 @@
           "slug": "robin-smit"
         },
         "name": "Robin Smit",
-        "faction": "groen-links-voorbeeldstad",
+        "fractie": "groen-links-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -675,7 +675,7 @@
           "slug": "fatima-bouazza"
         },
         "name": "Fatima Bouazza",
-        "faction": "groen-links-voorbeeldstad",
+        "fractie": "groen-links-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -686,7 +686,7 @@
           "slug": "jeroen-bos"
         },
         "name": "Jeroen Bos",
-        "faction": "groen-links-voorbeeldstad",
+        "fractie": "groen-links-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -697,7 +697,7 @@
           "slug": "marieke-scholten"
         },
         "name": "Marieke Scholten",
-        "faction": "democraten-voorbeeldstad",
+        "fractie": "democraten-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -708,7 +708,7 @@
           "slug": "pieter-van-dijk"
         },
         "name": "Pieter van Dijk",
-        "faction": "democraten-voorbeeldstad",
+        "fractie": "democraten-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -719,7 +719,7 @@
           "slug": "eva-mulder"
         },
         "name": "Eva Mulder",
-        "faction": "democraten-voorbeeldstad",
+        "fractie": "democraten-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -730,7 +730,7 @@
           "slug": "dirk-van-leeuwen"
         },
         "name": "Dirk van Leeuwen",
-        "faction": "lokaal-belang",
+        "fractie": "lokaal-belang",
         "role": "raadslid",
         "actief": true
       },
@@ -741,7 +741,7 @@
           "slug": "ria-ter-horst"
         },
         "name": "Ria ter Horst",
-        "faction": "lokaal-belang",
+        "fractie": "lokaal-belang",
         "role": "raadslid",
         "actief": true
       },
@@ -752,7 +752,7 @@
           "slug": "jan-kramer"
         },
         "name": "Jan Kramer",
-        "faction": "lokaal-belang",
+        "fractie": "lokaal-belang",
         "role": "raadslid",
         "actief": true
       },
@@ -763,7 +763,7 @@
           "slug": "nienke-brouwer"
         },
         "name": "Nienke Brouwer",
-        "faction": "lokaal-belang",
+        "fractie": "lokaal-belang",
         "role": "raadslid",
         "actief": true
       },
@@ -774,7 +774,7 @@
           "slug": "gerard-visser"
         },
         "name": "Gerard Visser",
-        "faction": "lokaal-belang",
+        "fractie": "lokaal-belang",
         "role": "raadslid",
         "actief": true
       },
@@ -785,7 +785,7 @@
           "slug": "monique-peters"
         },
         "name": "Monique Peters",
-        "faction": "pvda-voorbeeldstad",
+        "fractie": "pvda-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -796,7 +796,7 @@
           "slug": "willem-hendriks"
         },
         "name": "Willem Hendriks",
-        "faction": "pvda-voorbeeldstad",
+        "fractie": "pvda-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -807,7 +807,7 @@
           "slug": "denise-van-dam"
         },
         "name": "Denise van Dam",
-        "faction": "pvda-voorbeeldstad",
+        "fractie": "pvda-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -818,7 +818,7 @@
           "slug": "frank-de-boer"
         },
         "name": "Frank de Boer",
-        "faction": "pvda-voorbeeldstad",
+        "fractie": "pvda-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -829,7 +829,7 @@
           "slug": "caroline-van-den-heuvel"
         },
         "name": "Caroline van den Heuvel",
-        "faction": "vvd-voorbeeldstad",
+        "fractie": "vvd-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -840,7 +840,7 @@
           "slug": "robert-dekker"
         },
         "name": "Robert Dekker",
-        "faction": "vvd-voorbeeldstad",
+        "fractie": "vvd-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -851,7 +851,7 @@
           "slug": "els-van-der-linden"
         },
         "name": "Els van der Linden",
-        "faction": "vvd-voorbeeldstad",
+        "fractie": "vvd-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -862,7 +862,7 @@
           "slug": "marco-kuijpers"
         },
         "name": "Marco Kuijpers",
-        "faction": "sp-voorbeeldstad",
+        "fractie": "sp-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -873,7 +873,7 @@
           "slug": "ingrid-wolf"
         },
         "name": "Ingrid Wolf",
-        "faction": "sp-voorbeeldstad",
+        "fractie": "sp-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -884,7 +884,7 @@
           "slug": "hans-van-beek"
         },
         "name": "Hans van Beek",
-        "faction": "forum-voorbeeldstad",
+        "fractie": "forum-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -895,7 +895,7 @@
           "slug": "tineke-groen"
         },
         "name": "Tineke Groen",
-        "faction": "forum-voorbeeldstad",
+        "fractie": "forum-voorbeeldstad",
         "role": "raadslid",
         "actief": true
       },
@@ -906,7 +906,7 @@
           "slug": "wim-van-houten"
         },
         "name": "Wim van Houten",
-        "faction": "voorbeeldstad-vooruit",
+        "fractie": "voorbeeldstad-vooruit",
         "role": "raadslid",
         "actief": false
       },
@@ -917,7 +917,7 @@
           "slug": "joke-meijer"
         },
         "name": "Joke Meijer",
-        "faction": "lokaal-belang",
+        "fractie": "lokaal-belang",
         "role": "raadslid",
         "actief": false
       },
@@ -1759,7 +1759,7 @@
           "slug": "stemming-herinrichting-marktplein"
         },
         "onderwerp": "Voorstel: Herinrichting marktplein Voorbeeldstad",
-        "type": "proposal",
+        "type": "voorstel",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-04-herinrichting-marktplein",
         "stemmenFor": 19,
@@ -1767,42 +1767,42 @@
         "onthoudingen": 0,
         "factionResults": [
           {
-            "faction": "Voorbeeldstad Vooruit",
+            "fractie": "Voorbeeldstad Vooruit",
             "stem": "voor",
             "zetels": 8
           },
           {
-            "faction": "Groen Links Voorbeeldstad",
+            "fractie": "Groen Links Voorbeeldstad",
             "stem": "voor",
             "zetels": 6
           },
           {
-            "faction": "Democraten Voorbeeldstad",
+            "fractie": "Democraten Voorbeeldstad",
             "stem": "voor",
             "zetels": 5
           },
           {
-            "faction": "Lokaal Belang",
+            "fractie": "Lokaal Belang",
             "stem": "tegen",
             "zetels": 5
           },
           {
-            "faction": "PvdA Voorbeeldstad",
+            "fractie": "PvdA Voorbeeldstad",
             "stem": "tegen",
             "zetels": 4
           },
           {
-            "faction": "VVD Voorbeeldstad",
+            "fractie": "VVD Voorbeeldstad",
             "stem": "tegen",
             "zetels": 3
           },
           {
-            "faction": "SP Voorbeeldstad",
+            "fractie": "SP Voorbeeldstad",
             "stem": "tegen",
             "zetels": 2
           },
           {
-            "faction": "Forum Voorbeeldstad",
+            "fractie": "Forum Voorbeeldstad",
             "stem": "tegen",
             "zetels": 2
           }
@@ -1815,7 +1815,7 @@
           "slug": "stemming-subsidieregeling-duurzame-energie"
         },
         "onderwerp": "Voorstel: Subsidieregeling duurzame energie 2025-2026",
-        "type": "proposal",
+        "type": "voorstel",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-05-subsidie-duurzame-energie",
         "stemmenFor": 25,
@@ -1823,42 +1823,42 @@
         "onthoudingen": 0,
         "factionResults": [
           {
-            "faction": "Voorbeeldstad Vooruit",
+            "fractie": "Voorbeeldstad Vooruit",
             "stem": "voor",
             "zetels": 8
           },
           {
-            "faction": "Groen Links Voorbeeldstad",
+            "fractie": "Groen Links Voorbeeldstad",
             "stem": "voor",
             "zetels": 6
           },
           {
-            "faction": "Democraten Voorbeeldstad",
+            "fractie": "Democraten Voorbeeldstad",
             "stem": "voor",
             "zetels": 5
           },
           {
-            "faction": "Lokaal Belang",
+            "fractie": "Lokaal Belang",
             "stem": "tegen",
             "zetels": 5
           },
           {
-            "faction": "PvdA Voorbeeldstad",
+            "fractie": "PvdA Voorbeeldstad",
             "stem": "voor",
             "zetels": 4
           },
           {
-            "faction": "VVD Voorbeeldstad",
+            "fractie": "VVD Voorbeeldstad",
             "stem": "tegen",
             "zetels": 3
           },
           {
-            "faction": "SP Voorbeeldstad",
+            "fractie": "SP Voorbeeldstad",
             "stem": "voor",
             "zetels": 2
           },
           {
-            "faction": "Forum Voorbeeldstad",
+            "fractie": "Forum Voorbeeldstad",
             "stem": "tegen",
             "zetels": 2
           }
@@ -1879,42 +1879,42 @@
         "onthoudingen": 0,
         "factionResults": [
           {
-            "faction": "Voorbeeldstad Vooruit",
+            "fractie": "Voorbeeldstad Vooruit",
             "stem": "voor",
             "zetels": 8
           },
           {
-            "faction": "Groen Links Voorbeeldstad",
+            "fractie": "Groen Links Voorbeeldstad",
             "stem": "voor",
             "zetels": 6
           },
           {
-            "faction": "Democraten Voorbeeldstad",
+            "fractie": "Democraten Voorbeeldstad",
             "stem": "voor",
             "zetels": 5
           },
           {
-            "faction": "Lokaal Belang",
+            "fractie": "Lokaal Belang",
             "stem": "tegen",
             "zetels": 5
           },
           {
-            "faction": "PvdA Voorbeeldstad",
+            "fractie": "PvdA Voorbeeldstad",
             "stem": "voor",
             "zetels": 4
           },
           {
-            "faction": "VVD Voorbeeldstad",
+            "fractie": "VVD Voorbeeldstad",
             "stem": "tegen",
             "zetels": 3
           },
           {
-            "faction": "SP Voorbeeldstad",
+            "fractie": "SP Voorbeeldstad",
             "stem": "tegen",
             "zetels": 2
           },
           {
-            "faction": "Forum Voorbeeldstad",
+            "fractie": "Forum Voorbeeldstad",
             "stem": "tegen",
             "zetels": 2
           }
@@ -1935,42 +1935,42 @@
         "onthoudingen": 0,
         "factionResults": [
           {
-            "faction": "Voorbeeldstad Vooruit",
+            "fractie": "Voorbeeldstad Vooruit",
             "stem": "tegen",
             "zetels": 8
           },
           {
-            "faction": "Groen Links Voorbeeldstad",
+            "fractie": "Groen Links Voorbeeldstad",
             "stem": "tegen",
             "zetels": 6
           },
           {
-            "faction": "Democraten Voorbeeldstad",
+            "fractie": "Democraten Voorbeeldstad",
             "stem": "tegen",
             "zetels": 5
           },
           {
-            "faction": "Lokaal Belang",
+            "fractie": "Lokaal Belang",
             "stem": "voor",
             "zetels": 5
           },
           {
-            "faction": "PvdA Voorbeeldstad",
+            "fractie": "PvdA Voorbeeldstad",
             "stem": "tegen",
             "zetels": 4
           },
           {
-            "faction": "VVD Voorbeeldstad",
+            "fractie": "VVD Voorbeeldstad",
             "stem": "voor",
             "zetels": 3
           },
           {
-            "faction": "SP Voorbeeldstad",
+            "fractie": "SP Voorbeeldstad",
             "stem": "tegen",
             "zetels": 2
           },
           {
-            "faction": "Forum Voorbeeldstad",
+            "fractie": "Forum Voorbeeldstad",
             "stem": "voor",
             "zetels": 2
           }
@@ -1991,42 +1991,42 @@
         "onthoudingen": 0,
         "factionResults": [
           {
-            "faction": "Voorbeeldstad Vooruit",
+            "fractie": "Voorbeeldstad Vooruit",
             "stem": "voor",
             "zetels": 8
           },
           {
-            "faction": "Groen Links Voorbeeldstad",
+            "fractie": "Groen Links Voorbeeldstad",
             "stem": "voor",
             "zetels": 6
           },
           {
-            "faction": "Democraten Voorbeeldstad",
+            "fractie": "Democraten Voorbeeldstad",
             "stem": "voor",
             "zetels": 5
           },
           {
-            "faction": "Lokaal Belang",
+            "fractie": "Lokaal Belang",
             "stem": "voor",
             "zetels": 5
           },
           {
-            "faction": "PvdA Voorbeeldstad",
+            "fractie": "PvdA Voorbeeldstad",
             "stem": "voor",
             "zetels": 4
           },
           {
-            "faction": "VVD Voorbeeldstad",
+            "fractie": "VVD Voorbeeldstad",
             "stem": "voor",
             "zetels": 3
           },
           {
-            "faction": "SP Voorbeeldstad",
+            "fractie": "SP Voorbeeldstad",
             "stem": "voor",
             "zetels": 2
           },
           {
-            "faction": "Forum Voorbeeldstad",
+            "fractie": "Forum Voorbeeldstad",
             "stem": "voor",
             "zetels": 2
           }
@@ -2039,7 +2039,7 @@
           "slug": "stemming-bestemmingsplan-buitengebied"
         },
         "onderwerp": "Voorstel: Bestemmingsplan buitengebied Voorbeeldstad",
-        "type": "proposal",
+        "type": "voorstel",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-06-bestemmingsplan",
         "stemmenFor": 27,
@@ -2047,42 +2047,42 @@
         "onthoudingen": 0,
         "factionResults": [
           {
-            "faction": "Voorbeeldstad Vooruit",
+            "fractie": "Voorbeeldstad Vooruit",
             "stem": "voor",
             "zetels": 8
           },
           {
-            "faction": "Groen Links Voorbeeldstad",
+            "fractie": "Groen Links Voorbeeldstad",
             "stem": "voor",
             "zetels": 6
           },
           {
-            "faction": "Democraten Voorbeeldstad",
+            "fractie": "Democraten Voorbeeldstad",
             "stem": "voor",
             "zetels": 5
           },
           {
-            "faction": "Lokaal Belang",
+            "fractie": "Lokaal Belang",
             "stem": "tegen",
             "zetels": 5
           },
           {
-            "faction": "PvdA Voorbeeldstad",
+            "fractie": "PvdA Voorbeeldstad",
             "stem": "voor",
             "zetels": 4
           },
           {
-            "faction": "VVD Voorbeeldstad",
+            "fractie": "VVD Voorbeeldstad",
             "stem": "voor",
             "zetels": 3
           },
           {
-            "faction": "SP Voorbeeldstad",
+            "fractie": "SP Voorbeeldstad",
             "stem": "tegen",
             "zetels": 2
           },
           {
-            "faction": "Forum Voorbeeldstad",
+            "fractie": "Forum Voorbeeldstad",
             "stem": "tegen",
             "zetels": 1
           }

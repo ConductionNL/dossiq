@@ -166,7 +166,7 @@ class BeschikkingController extends Controller {
 		}
 
 		$updates = $this->readJsonBody();
-		unset($updates['id'], $updates['huidigeStatus']);
+		unset($updates['id'], $updates['currentStatus']);
 
 		try {
 			$result = $this->decisionService->updateFields($id, $updates);

@@ -303,7 +303,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 
 		$exported = 0;
 		foreach ($proofs as $proof) {
-			$caseId = (string)($proof['caseId'] ?? ($proof['caseId'] ?? ''));
+			$caseId = (string)($proof['caseId'] ?? '');
 			if ($caseId === '') {
 				continue;
 			}

@@ -255,7 +255,7 @@ class DeadlineExtensionService {
 	 *
 	 * @param string $mode One of self::MODE_STANDARD or self::MODE_SUPERVISOR.
 	 *
-	 * @return array{grondslag: string, actor: string} Event grondslag and actor for the mode.
+	 * @return array{basis: string, actor: string} Event grondslag and actor for the mode.
 	 */
 	private function resolveExtensionContext(string $mode): array {
 		if ($mode === self::MODE_SUPERVISOR) {

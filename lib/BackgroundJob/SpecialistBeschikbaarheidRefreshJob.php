@@ -142,12 +142,12 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 			return;
 		}
 
-		$orderUpdate = strtotime((string)($record['lastUpdate'] ?? ''));
-		if ($orderUpdate === false) {
+		$lastUpdate = strtotime((string)($record['lastUpdate'] ?? ''));
+		if ($lastUpdate === false) {
 			return;
 		}
 
-		if (($now - $orderUpdate) < $staleSeconds) {
+		if (($now - $lastUpdate) < $staleSeconds) {
 			return;
 		}
 

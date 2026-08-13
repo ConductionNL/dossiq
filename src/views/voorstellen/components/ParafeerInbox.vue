@@ -85,7 +85,7 @@ export default {
 		async loadVoorstellen() {
 			this.loading = true
 			try {
-				const results = await this.objectStore.fetchCollection('proposal', {
+				const results = await this.objectStore.fetchCollection('voorstel', {
 					_limit: 200,
 				})
 				this.voorstellen = Array.isArray(results) ? results : (results?.results || [])

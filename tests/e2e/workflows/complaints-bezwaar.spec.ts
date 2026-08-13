@@ -57,7 +57,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 	})
 
 	test.afterAll(async () => {
-		await cleanupRunObjects(api, token, ['objection', 'case'])
+		await cleanupRunObjects(api, token, ['bezwaar', 'case'])
 		if (caseTypeSeeded) await deleteObject(api, token, 'caseType', caseTypeId)
 		await api.dispose()
 	})
@@ -68,7 +68,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 	 * @param status The initial workflow status.
 	 */
 	async function seedBezwaar(awb: string, status = 'Ontvangen'): Promise<any> {
-		return createObject(api, token, 'objection', {
+		return createObject(api, token, 'bezwaar', {
 			case: caseId,
 			ontvangstdatum: '2026-06-01',
 			status,
@@ -114,10 +114,10 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		const bzId = objectId(bz)
 
 		// Advance the workflow status (a valid value from the bezwaar enum).
-		await updateObject(api, token, 'objection', bzId, { status: 'In behandeling' })
+		await updateObject(api, token, 'bezwaar', bzId, { status: 'In behandeling' })
 
 		// PERSISTENCE: re-read confirms the new status was written.
-		await expect.poll(async () => String((await showObject(api, 'objection', bzId)).status ?? ''), {
+		await expect.poll(async () => String((await showObject(api, 'bezwaar', bzId)).status ?? ''), {
 			timeout: 15000, message: 'bezwaar status persisted',
 		}).toBe('In behandeling')
 

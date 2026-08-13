@@ -141,14 +141,14 @@ class ParaferingApprovalBridge {
 			$chainUuid = (string)($chain->getUuid() ?? '');
 			$this->logger->info(
 				'Procest: parafering ApprovalChain created in OpenRegister',
-				['proposal' => $voorstelUuid, 'chain' => $chainUuid, 'steps' => count($chainSteps)]
+				['voorstel' => $voorstelUuid, 'chain' => $chainUuid, 'steps' => count($chainSteps)]
 			);
 
 			return $chainUuid;
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Procest: failed to create parafering ApprovalChain',
-				['proposal' => $voorstelUuid, 'exception' => $e->getMessage()]
+				['voorstel' => $voorstelUuid, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('Approval chain creation failed');
 		}//end try
@@ -190,7 +190,7 @@ class ParaferingApprovalBridge {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Procest: ApprovalService::approveStep failed',
-				['proposal' => $voorstelUuid, 'step' => $stepId, 'exception' => $e->getMessage()]
+				['voorstel' => $voorstelUuid, 'step' => $stepId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('Approval step transition failed');
 		}
@@ -226,7 +226,7 @@ class ParaferingApprovalBridge {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Procest: ApprovalService::rejectStep failed',
-				['proposal' => $voorstelUuid, 'step' => $stepId, 'exception' => $e->getMessage()]
+				['voorstel' => $voorstelUuid, 'step' => $stepId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('Rejection step transition failed');
 		}
@@ -288,7 +288,7 @@ class ParaferingApprovalBridge {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest: could not resolve pending approval step',
-				['proposal' => $voorstelUuid, 'exception' => $e->getMessage()]
+				['voorstel' => $voorstelUuid, 'exception' => $e->getMessage()]
 			);
 		}
 

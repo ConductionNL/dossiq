@@ -70,10 +70,10 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 				return match ($key) {
 					'register' => 'procest',
 					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termInstance',
+					'termijn_instance_schema' => 'termijnInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
 					'ingebrekestelling_schema' => 'ingebrekestelling',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
+					'dwangsom_berekening_schema' => 'dwangsomBerekening',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -192,7 +192,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 */
 	public function testScenario4OverschrijdingAndDwangsom(): void {
 		// Seed overdue instance directly to simulate elapsed time without sleeping.
-		$instance = $this->objects->saveObject('procest', 'termInstance', [
+		$instance = $this->objects->saveObject('procest', 'termijnInstance', [
 			'zaak' => 'Z/2026/S4',
 			'termijnDefinitie' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
@@ -211,15 +211,15 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			'doc:notice'
 		);
 		self::assertTrue($row['gevalideerd']);
-		self::assertArrayHasKey('penaltyPaymentCalculation', $row);
-		$calculationId = (string)$row['penaltyPaymentCalculation']['id'];
+		self::assertArrayHasKey('dwangsomBerekening', $row);
+		$calculationId = (string)$row['dwangsomBerekening']['id'];
 
 		// Accrue 5 days.
 		for ($i = 0; $i < 5; $i++) {
 			$this->calcService->calculateDaily($calculationId);
 		}
-		$accrued = $this->objects->store['penaltyPaymentCalculation'][$calculationId];
-		self::assertSame(5, $accrued['huidigeDag']);
+		$accrued = $this->objects->store['dwangsomBerekening'][$calculationId];
+		self::assertSame(5, $accrued['currentDag']);
 		self::assertSame(11500, $accrued['cumulatievAmount']);
 
 		// Beschikking arrives — stop.
@@ -254,15 +254,15 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 */
 	public function testScenario5Bezwaar(): void {
 		// Stand up a stopped berekening + linked uitbetaling.
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b-s5',
-			'termInstance' => 'ti-s5',
+			'termijnInstance' => 'ti-s5',
 			'status' => 'gestopt-wegens-beschikking',
 			'definitievAmount' => 50000,
 		]);
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
 			'id' => 'u-s5',
-			'penaltyPaymentCalculation' => 'b-s5',
+			'dwangsomBerekening' => 'b-s5',
 			'amount' => 50000,
 			'status' => 'voorbereid',
 		]);

@@ -79,7 +79,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 *
 	 * @var array<int, string>
 	 */
-	private const PROCEEDING_OPENED_SCHEMAS = ['objection', 'objection', 'beroep'];
+	private const PROCEEDING_OPENED_SCHEMAS = ['objection', 'bezwaar', 'beroep'];
 
 	/**
 	 * Schemas whose creation ends an Awb proceeding (releases a hold).
@@ -287,7 +287,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 */
 	private function resolveCaseId(string $schemaSlug, array $payload): string {
 		if ($schemaSlug === 'bezwaarDecision') {
-			$objectionId = (string)($payload['objection'] ?? '');
+			$objectionId = (string)($payload['bezwaar'] ?? '');
 			if ($objectionId === '') {
 				return '';
 			}

@@ -69,7 +69,7 @@ class ParaferingNotificationService {
 			$notification->setApp(Application::APP_ID)
 				->setUser($actorUserId)
 				->setDateTime(new DateTime())
-				->setObject('proposal', $proposalId)
+				->setObject('voorstel', $proposalId)
 				->setSubject(
 					'parafering_step_activated',
 					[
@@ -84,7 +84,7 @@ class ParaferingNotificationService {
 				'Failed to send parafering step notification',
 				[
 					'actor' => $actorUserId,
-					'proposal' => $proposalId,
+					'voorstel' => $proposalId,
 					'exception' => $e->getMessage(),
 				]
 			);
@@ -116,7 +116,7 @@ class ParaferingNotificationService {
 			$notification->setApp(Application::APP_ID)
 				->setUser($stellerUserId)
 				->setDateTime(new DateTime())
-				->setObject('proposal', $proposalId)
+				->setObject('voorstel', $proposalId)
 				->setSubject(
 					'voorstel_returned',
 					[
@@ -132,7 +132,7 @@ class ParaferingNotificationService {
 				'Failed to send voorstel return notification',
 				[
 					'steller' => $stellerUserId,
-					'proposal' => $proposalId,
+					'voorstel' => $proposalId,
 					'exception' => $e->getMessage(),
 				]
 			);
@@ -162,7 +162,7 @@ class ParaferingNotificationService {
 			$notification->setApp(Application::APP_ID)
 				->setUser($actorUserId)
 				->setDateTime(new DateTime())
-				->setObject('proposal', $proposalId)
+				->setObject('voorstel', $proposalId)
 				->setSubject(
 					'parafering_reminder',
 					[
@@ -177,7 +177,7 @@ class ParaferingNotificationService {
 				'Failed to send parafering reminder notification',
 				[
 					'actor' => $actorUserId,
-					'proposal' => $proposalId,
+					'voorstel' => $proposalId,
 					'exception' => $e->getMessage(),
 				]
 			);

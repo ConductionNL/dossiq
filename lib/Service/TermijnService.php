@@ -371,7 +371,7 @@ class TermijnService {
 	): ?array {
 		$moment = ($moment ?? new DateTimeImmutable());
 		$event = [
-			'termInstance' => $termInstanceId,
+			'termijnInstance' => $termInstanceId,
 			'type' => $type,
 			'moment' => $moment->format('Y-m-d\TH:i:sP'),
 			'actor' => $actor,

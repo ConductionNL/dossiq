@@ -143,7 +143,7 @@ class ZgwMappingServiceTest extends TestCase {
 			->expects($this->once())
 			->method('info');
 
-		$this->service->saveMapping('caseType', $config);
+		$this->service->saveMapping('zaaktype', $config);
 
 	}//end testSaveMappingPersistsJson()
 
@@ -199,9 +199,9 @@ class ZgwMappingServiceTest extends TestCase {
 		$keys = $this->service->getResourceKeys();
 
 		$this->assertContains('zaak', $keys);
-		$this->assertContains('caseType', $keys);
+		$this->assertContains('zaaktype', $keys);
 		$this->assertContains('status', $keys);
-		$this->assertContains('decision', $keys);
+		$this->assertContains('besluit', $keys);
 		$this->assertContains('enkelvoudiginformatieobject', $keys);
 		$this->assertCount(26, $keys);
 
@@ -228,7 +228,7 @@ class ZgwMappingServiceTest extends TestCase {
 		$mappings = $this->service->listMappings();
 
 		$this->assertArrayHasKey('zaak', $mappings);
-		$this->assertArrayHasKey('caseType', $mappings);
+		$this->assertArrayHasKey('zaaktype', $mappings);
 		$this->assertSame(['title' => 'omschrijving'], $mappings['zaak']);
 		$this->assertNull($mappings['caseType']);
 

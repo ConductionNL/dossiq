@@ -22,7 +22,7 @@
         "required": [
           "caseId",
           "decisionType",
-          "huidigeStatus"
+          "currentStatus"
         ],
         "properties": {
           "caseId": {
@@ -66,7 +66,7 @@
             "default": 1,
             "description": "Auto-increment as the draft is re-rendered or field-edited"
           },
-          "huidigeStatus": {
+          "currentStatus": {
             "type": "string",
             "title": "Current Status",
             "enum": [
@@ -182,7 +182,7 @@
             "title": "Dispatch",
             "description": "Berichtenbox delivery record",
             "properties": {
-              "channel": { "type": "string", "title": "Dispatch Channel", "description": "Channel used for dispatch, e.g. berichtenbox-mijnoverheid" },
+              "kanaal": { "type": "string", "title": "Dispatch Channel", "description": "Channel used for dispatch, e.g. berichtenbox-mijnoverheid" },
               "verzondenOn": { "type": "string", "title": "Sent On", "description": "Timestamp at which the beschikking was sent", "format": "date-time" },
               "verzondenBy": { "type": "string", "title": "Sent By", "description": "Actor who sent the beschikking (user id or 'systeem')" },
               "messageId": { "type": "string", "title": "Message ID", "description": "Berichtenbox message identifier" },
@@ -356,7 +356,7 @@
         "reference": "Z/2026/04832/B01",
         "templateId": "tpl-wmo-toekenning-huishoudelijke-hulp-v4",
         "ontwerpVersion": 1,
-        "huidigeStatus": "gearchiveerd",
+        "currentStatus": "gearchiveerd",
         "bekendmakingDate": "2026-04-02",
         "objectionTermEndDate": "2026-05-14",
         "herinneringDate": "2026-05-07",
@@ -389,7 +389,7 @@
           "validationRapportId": "val-2026-99231"
         },
         "verzending": {
-          "channel": "berichtenbox-mijnoverheid",
+          "kanaal": "berichtenbox-mijnoverheid",
           "verzondenOn": "2026-04-02T09:00:00+02:00",
           "verzondenBy": "systeem",
           "messageId": "MO-2026-04-02-771234"
@@ -412,7 +412,7 @@
         "reference": "Z/2026/00156/B01",
         "templateId": "tpl-omgevingsvergunning-reguliere-procedure-v3",
         "ontwerpVersion": 1,
-        "huidigeStatus": "ondertekend",
+        "currentStatus": "ondertekend",
         "geadresseerde": {
           "type": "bedrijf",
           "oin": "00000001234567890000",
@@ -446,7 +446,7 @@
         "reference": "Z/2026/00489/B01",
         "templateId": "tpl-subsidie-v2",
         "ontwerpVersion": 1,
-        "huidigeStatus": "ontwerp",
+        "currentStatus": "ontwerp",
         "geadresseerde": {
           "type": "burger",
           "bsn": "987654321",

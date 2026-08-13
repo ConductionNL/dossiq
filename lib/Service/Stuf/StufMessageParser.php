@@ -167,7 +167,7 @@ class StufMessageParser {
 	 *
 	 * @param string $responseXml The full SOAP envelope XML.
 	 *
-	 * @return array{code:string,omschrijving:string,details:string,soort:string}
+	 * @return array{code:string,omschrijving:string,details:string,kind:string}
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
 	 */

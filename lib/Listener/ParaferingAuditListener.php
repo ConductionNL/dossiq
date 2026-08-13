@@ -84,7 +84,7 @@ class ParaferingAuditListener implements IEventListener {
 			if ($object === null) {
 				$this->logger->warning(
 					'Procest: ParaferingAuditListener could not resolve voorstel ObjectEntity; audit entry skipped',
-					['proposal' => $event->getVoorstelId()],
+					['voorstel' => $event->getVoorstelId()],
 				);
 				return;
 			}
@@ -104,7 +104,7 @@ class ParaferingAuditListener implements IEventListener {
 			$this->logger->error(
 				'Procest: ParaferingAuditListener failed',
 				[
-					'proposal' => $event->getVoorstelId(),
+					'voorstel' => $event->getVoorstelId(),
 					'action' => $event->getAction(),
 					'exception' => $e->getMessage(),
 				],

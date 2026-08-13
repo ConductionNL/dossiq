@@ -1,12 +1,12 @@
 {
   "_format": "procest-vth-workflow-template-v1",
-  "slug": "objection",
+  "slug": "bezwaar",
   "title": "Bezwaar (VTH cross-link)",
   "description": "Cross-link entry: VTH-bezwaar volgt de canonieke bezwaar-lifecycle workflow (zie SeedBezwaarBeroepData). Deze entry voegt VTH-specifieke guards toe voor sectorale niet-ontvankelijkheidsgronden, maar redefinieert de bezwaar-workflow NIET.",
   "version": 1,
   "crossLink": true,
-  "targetWorkflowIdentifier": "objection",
-  "caseTypeSlug": "objection",
+  "targetWorkflowIdentifier": "bezwaar",
+  "caseTypeSlug": "bezwaar",
   "statutoryFramework": "Awb hoofdstuk 7",
   "extraGuards": [
     {

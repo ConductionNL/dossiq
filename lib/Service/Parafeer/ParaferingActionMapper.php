@@ -86,7 +86,7 @@ class ParaferingActionMapper {
 	 */
 	public function buildActieData(string $proposalId, int $stepOrder, string $actor, array $input): array {
 		$actionData = [
-			'proposal' => $proposalId,
+			'voorstel' => $proposalId,
 			'step' => $stepOrder,
 			'actor' => $actor,
 			'actorType' => 'user',

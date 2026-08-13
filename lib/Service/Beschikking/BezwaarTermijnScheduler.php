@@ -68,7 +68,7 @@ class BezwaarTermijnScheduler {
 	 *
 	 * @param string $bekendmaking The bekendmaking date (Y-m-d).
 	 *
-	 * @return array{eindDatum: string, herinnering: string} Both as `Y-m-d`.
+	 * @return array{endDate: string, herinnering: string} Both as `Y-m-d`.
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */

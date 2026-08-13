@@ -159,7 +159,7 @@ export default {
 				// Advance voorstel
 				const nextStep = getNextStep(this.voorstel)
 				const newStatus = getStatusAfterAdvance(this.voorstel)
-				await this.objectStore.saveObject('proposal', {
+				await this.objectStore.saveObject('voorstel', {
 					...this.voorstel,
 					currentStep: nextStep || this.voorstel.currentStep,
 					status: newStatus,
@@ -189,7 +189,7 @@ export default {
 
 				const nextStep = getNextStep(this.voorstel)
 				const newStatus = getStatusAfterAdvance(this.voorstel)
-				await this.objectStore.saveObject('proposal', {
+				await this.objectStore.saveObject('voorstel', {
 					...this.voorstel,
 					currentStep: nextStep || this.voorstel.currentStep,
 					status: newStatus,
@@ -222,7 +222,7 @@ export default {
 					comment: this.returnComment.trim(),
 				})
 
-				await this.objectStore.saveObject('proposal', {
+				await this.objectStore.saveObject('voorstel', {
 					...this.voorstel,
 					status: 'teruggestuurd',
 					returnedFromStep: this.voorstel.currentStep,

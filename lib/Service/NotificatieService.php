@@ -121,7 +121,7 @@ class NotificatieService {
 		array $characteristics = [],
 	): void {
 		$notification = [
-			'channel' => $channel,
+			'kanaal' => $channel,
 			'hoofdObject' => $hoofdObject,
 			'resource' => $resource,
 			'resourceUrl' => $resourceUrl,
@@ -136,7 +136,7 @@ class NotificatieService {
 			$this->logger->warning(
 				'Failed to deliver notification',
 				[
-					'channel' => $channel,
+					'kanaal' => $channel,
 					'action' => $action,
 					'exception' => $e->getMessage(),
 				]
@@ -206,7 +206,7 @@ class NotificatieService {
 		// Check if this subscription listens to the notification channel.
 		$matches = false;
 		foreach ($kanalen as $channelConfig) {
-			if (($channelConfig['name'] ?? '') === $notification['channel']) {
+			if (($channelConfig['name'] ?? '') === $notification['kanaal']) {
 				$matches = true;
 				break;
 			}
@@ -249,7 +249,7 @@ class NotificatieService {
 			$this->logger->info(
 				'Notification delivered',
 				[
-					'channel' => $notification['channel'],
+					'kanaal' => $notification['kanaal'],
 					'callbackUrl' => $callbackUrl,
 				]
 			);
@@ -298,7 +298,7 @@ class NotificatieService {
 		if ($records === false || count($records) === 0) {
 			$this->logger->warning(
 				'NRC callback SSRF: DNS resolution returned no records',
-				['host' => $host, 'detail' => $this->orderSuppressedWarning()]
+				['host' => $host, 'detail' => $this->lastSuppressedWarning()]
 			);
 			return false;
 		}

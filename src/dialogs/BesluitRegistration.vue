@@ -156,7 +156,7 @@ export default {
 
 				// Reflect the awaiting-decidesk state on the voorstel (projection;
 				// the decided besluit lands when decidesk posts the outcome).
-				await this.objectStore.saveObject('proposal', {
+				await this.objectStore.saveObject('voorstel', {
 					...this.voorstel,
 					status: 'awaiting-decidesk',
 				})

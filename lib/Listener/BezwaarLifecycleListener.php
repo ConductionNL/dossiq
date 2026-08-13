@@ -58,7 +58,7 @@ class BezwaarLifecycleListener implements IEventListener {
 	 * @var array<int, string>
 	 */
 	private const RELEVANT_SCHEMAS = [
-		'objection',
+		'bezwaar',
 		'objection',
 		'hearingSession',
 		'advisoryReport',

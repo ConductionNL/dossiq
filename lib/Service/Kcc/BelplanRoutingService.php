@@ -198,8 +198,8 @@ class BelplanRoutingService {
 		usort(
 			$available,
 			static function (array $a, array $b): int {
-				$queueA = (int)($a['huidigeQueueLengte'] ?? 0);
-				$queueB = (int)($b['huidigeQueueLengte'] ?? 0);
+				$queueA = (int)($a['currentQueueLengte'] ?? 0);
+				$queueB = (int)($b['currentQueueLengte'] ?? 0);
 				if ($queueA !== $queueB) {
 					return $queueA <=> $queueB;
 				}
@@ -211,13 +211,13 @@ class BelplanRoutingService {
 		);
 
 		$picked = $available[0];
-		$picked['huidigeQueueLengte'] = (int)($picked['huidigeQueueLengte'] ?? 0);
+		$picked['currentQueueLengte'] = (int)($picked['currentQueueLengte'] ?? 0);
 		$picked['gemiddeldeHandlingDuration'] = (int)($picked['gemiddeldeHandlingDuration'] ?? 0);
 
 		return [
 			'destinationSpecialistId' => (string)($picked['employeeId'] ?? ($picked['id'] ?? '')),
 			'escalatieFlag' => false,
-			'estimatedWaitTime' => $picked['huidigeQueueLengte'] * $picked['gemiddeldeHandlingDuration'],
+			'estimatedWaitTime' => $picked['currentQueueLengte'] * $picked['gemiddeldeHandlingDuration'],
 			'vaardigheid' => $vaardigheid,
 			'candidatePool' => count($candidates),
 		];
@@ -273,7 +273,7 @@ class BelplanRoutingService {
 	private function minQueueLength(array $pool): int {
 		$min = PHP_INT_MAX;
 		foreach ($pool as $sp) {
-			$queue = (int)($sp['huidigeQueueLengte'] ?? 0);
+			$queue = (int)($sp['currentQueueLengte'] ?? 0);
 			if ($queue < $min) {
 				$min = $queue;
 			}

@@ -10,7 +10,7 @@
  * key on `@self` and never has been.
  *
  * Listeners that read `@self.schema` and compared it against a slug literal
- * (`'objection'`, `'case'`, …) therefore never matched, so their handler bodies
+ * (`'bezwaar'`, `'case'`, …) therefore never matched, so their handler bodies
  * had never executed once — silently, with no exception and no log line. This
  * service is the single place that turns the id the payload actually carries
  * into the slug the handlers are written against, so the fix is one shared

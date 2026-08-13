@@ -1039,8 +1039,8 @@ class ZrcController extends ZgwController {
 				if ($hasUuid === false) {
 					// Determine error code: garbled UUID → bad-url, collection endpoint → invalid-resource.
 					$segments = array_filter(explode('/', trim($path, '/')));
-					$order = end($segments);
-					$looksLikeUuid = preg_match('/[0-9a-f]{4,}-/i', (string)$order) === 1;
+					$last = end($segments);
+					$looksLikeUuid = preg_match('/[0-9a-f]{4,}-/i', (string)$last) === 1;
 					$code = 'invalid-resource';
 					if ($looksLikeUuid === true) {
 						$code = 'bad-url';
@@ -1523,7 +1523,7 @@ class ZrcController extends ZgwController {
 				if ($caseObj !== null) {
 					$caseData = $this->objectToArray(row: $caseObj);
 
-					$endDate = $caseData['endDate'] ?? ($caseData['endDate'] ?? null);
+					$endDate = $caseData['endDate'] ?? null;
 					$caseAlreadyClosed = ($endDate !== null && $endDate !== '');
 				}
 			}
@@ -2261,7 +2261,7 @@ class ZrcController extends ZgwController {
 				$propObj = $results[0];
 				$propData = $this->objectToArray(row: $propObj);
 
-				$value = $propData['value'] ?? ($propData['value'] ?? '');
+				$value = $propData['value'] ?? '';
 				if ($value !== '' && strtotime($value) !== false) {
 					return substr($value, 0, 10);
 				}

@@ -58,7 +58,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 				return match ($key) {
 					'register' => 'procest',
 					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termInstance',
+					'termijn_instance_schema' => 'termijnInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
 					default => '',
 				};

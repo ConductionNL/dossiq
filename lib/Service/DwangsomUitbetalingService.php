@@ -99,7 +99,7 @@ class DwangsomUitbetalingService {
 		$uiterlijk = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days')->format('Y-m-d');
 
 		$row = [
-			'penaltyPaymentCalculation' => $calculationId,
+			'dwangsomBerekening' => $calculationId,
 			'amount' => $final,
 			'rekeninghouderName' => $rekeninghouderName,
 			'iban' => strtoupper(str_replace(' ', '', $iban)),

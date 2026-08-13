@@ -41,7 +41,7 @@ class DeadlineReportingServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'termijn_instance_schema' => 'termInstance',
+					'termijn_instance_schema' => 'termijnInstance',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -52,7 +52,7 @@ class DeadlineReportingServiceTest extends TestCase {
 
 		// Seed 5 instances spread across Q2-2026 for one zaaktype.
 		for ($i = 1; $i <= 5; $i++) {
-			$this->objects->saveObject('procest', 'termInstance', [
+			$this->objects->saveObject('procest', 'termijnInstance', [
 				'id' => 'ti-q2-' . $i,
 				'caseType' => 'omgevingsvergunning-regulier',
 				'zaak' => 'Z/2026/' . (400 + $i),
@@ -86,7 +86,7 @@ class DeadlineReportingServiceTest extends TestCase {
 		$report = $this->service->generateQuarterlyReport('2026-Q2');
 		$csv = $this->service->quarterlyReportAsCsv($report);
 		$lines = explode("\n", $csv);
-		self::assertStringStartsWith('zaaktype,totaal,binnenTermijnPct', $lines[0]);
+		self::assertStringStartsWith('caseType,totaal,binnenTermijnPct', $lines[0]);
 		self::assertStringStartsWith('omgevingsvergunning-regulier,5,60', $lines[1]);
 	}
 

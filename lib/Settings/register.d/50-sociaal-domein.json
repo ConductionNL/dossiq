@@ -8,7 +8,7 @@
                 "title": "WMO Zaak",
                 "description": "Sociaal-domein zaaktype wmo-melding (Wmo 2015, art. 2.3.2-2.3.6). Maatschappelijke ondersteuning voor volwassenen. Volledig OpenRegister-backed; status-lifecycle als configuratie, geen custom state machine.",
                 "type": "object",
-                "required": ["caseType", "bsn", "wijkteam", "avgClassification"],
+                "required": ["caseType", "bsn", "wijkteam", "avgClassificatie"],
                 "properties": {
                     "caseType": {
                         "title": "Case Type",
@@ -117,7 +117,7 @@
                         "type": "string",
                         "description": "Referentie naar de bijbehorende Indicatiestelling"
                     },
-                    "avgClassification": {
+                    "avgClassificatie": {
                         "$ref": "#/components/schemas/avgClassificatie"
                     }
                 }
@@ -210,7 +210,7 @@
                 "title": "Jeugdwet Zaak",
                 "description": "Sociaal-domein zaaktype jeugdwet-melding (Jeugdwet 2015, art. 2.3, 6.1.2, 7.3). Gezinsgerichte, multi-agency jeugdhulp. OpenRegister-backed.",
                 "type": "object",
-                "required": ["caseType", "jeugdigeBsn", "wijkteam", "avgClassification"],
+                "required": ["caseType", "jeugdigeBsn", "wijkteam", "avgClassificatie"],
                 "properties": {
                     "caseType": {
                         "title": "Case Type",
@@ -304,7 +304,7 @@
                         "items": {"type": "string"},
                         "description": "Historie van eerdere gezinsplannen (verlengingen)"
                     },
-                    "avgClassification": {
+                    "avgClassificatie": {
                         "$ref": "#/components/schemas/avgClassificatie"
                     }
                 }
@@ -482,7 +482,7 @@
                 "title": "Participatiewet Zaak",
                 "description": "Sociaal-domein zaaktype bijstandsaanvraag (Participatiewet 2015, art. 18, 31-34, 9). Inkomens- en werkgerichte ondersteuning met vermogens-/inkomenstoets. OpenRegister-backed.",
                 "type": "object",
-                "required": ["caseType", "bsn", "avgClassification"],
+                "required": ["caseType", "bsn", "avgClassificatie"],
                 "properties": {
                     "caseType": {
                         "title": "Case Type",
@@ -513,7 +513,7 @@
                         "format": "date",
                         "description": "Datum van aanvraag"
                     },
-                    "effectiveDateGewenst": {
+                    "effectiveDateDesired": {
                         "title": "Desired Effective Date",
                         "type": "string",
                         "format": "date",
@@ -612,7 +612,7 @@
                         "type": "boolean",
                         "description": "True bij vermogen boven vrijstelling (auto-afwijzing)"
                     },
-                    "avgClassification": {
+                    "avgClassificatie": {
                         "$ref": "#/components/schemas/avgClassificatie"
                     }
                 }
@@ -814,8 +814,8 @@
                     }
                 }
             },
-            "avgClassification": {
-                "slug": "avgClassification",
+            "avgClassificatie": {
+                "slug": "avgClassificatie",
                 "icon": "ShieldLockOutline",
                 "version": "1.0.0",
                 "title": "AVG Classificatie",
@@ -998,7 +998,7 @@
                     "participatiewetZaak",
                     "reIntegratieTraject",
                     "toestemming",
-                    "avgClassification",
+                    "avgClassificatie",
                     "sociaalDomeinAuditLog",
                     "avgIncident"
                 ]
@@ -1023,7 +1023,7 @@
                 "handlerId": "consulent-wmo-211",
                 "status": "beschikking-verleend",
                 "leadTimeStatutory": {"onderzoekWeken": 6, "decisionWeken": 2, "totalWeken": 8},
-                "avgClassification": {
+                "avgClassificatie": {
                     "categories": ["medisch"],
                     "bijzonderePersoonsgegevens": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1053,7 +1053,7 @@
                 "handlerId": "consulent-wmo-211",
                 "status": "uitvoering",
                 "leadTimeStatutory": {"onderzoekWeken": 6, "decisionWeken": 2, "totalWeken": 8},
-                "avgClassification": {
+                "avgClassificatie": {
                     "categories": ["medisch", "gezinssituatie"],
                     "bijzonderePersoonsgegevens": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1083,7 +1083,7 @@
                 "handlerId": "consulent-wmo-188",
                 "status": "beschikking-voorbereiding",
                 "leadTimeStatutory": {"onderzoekWeken": 6, "decisionWeken": 2, "totalWeken": 8},
-                "avgClassification": {
+                "avgClassificatie": {
                     "categories": ["medisch", "gezinssituatie"],
                     "bijzonderePersoonsgegevens": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1112,7 +1112,7 @@
                 "wijkteam": "jeugdteam-noord",
                 "handlerId": "jeugdconsulent-340",
                 "status": "ondersteuning-loopt",
-                "avgClassification": {
+                "avgClassificatie": {
                     "categories": ["gezinssituatie", "medisch"],
                     "bijzonderePersoonsgegevens": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1141,7 +1141,7 @@
                 "wijkteam": "jeugdteam-zuid",
                 "handlerId": "jeugdconsulent-355",
                 "status": "gezinsplan-gereed",
-                "avgClassification": {
+                "avgClassificatie": {
                     "categories": ["medisch", "gezinssituatie"],
                     "bijzonderePersoonsgegevens": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1170,7 +1170,7 @@
                 "wijkteam": "jeugdteam-west",
                 "handlerId": "jeugdconsulent-362",
                 "status": "ondersteuning-gestart",
-                "avgClassification": {
+                "avgClassificatie": {
                     "categories": ["medisch", "gezinssituatie"],
                     "bijzonderePersoonsgegevens": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1192,7 +1192,7 @@
                 "bsn": "***maskeren***",
                 "requestKind": "algemene-bijstand",
                 "requestDate": "2026-01-15",
-                "effectiveDateGewenst": "2026-02-01",
+                "effectiveDateDesired": "2026-02-01",
                 "leeftijdsgroep": "18-26",
                 "huishoudensSituatie": "alleenstaand-met-kinderen",
                 "vermogensToets": {"uitgevoerd": true, "vermogen": 2400, "assetExemption": 6505, "bovenAssetExemption": false},
@@ -1200,7 +1200,7 @@
                 "handlerId": "klantmanager-477",
                 "wijkteam": "werk-en-inkomenteam-oost",
                 "status": "re-integratie-loopt",
-                "avgClassification": {
+                "avgClassificatie": {
                     "categories": ["financieel", "gezinssituatie"],
                     "bijzonderePersoonsgegevens": true,
                     "justification": "artikel-9-2-b-avg",
@@ -1222,7 +1222,7 @@
                 "bsn": "***maskeren***",
                 "requestKind": "bijstand-werkloze-uitkeringontvangers",
                 "requestDate": "2026-01-22",
-                "effectiveDateGewenst": "2026-02-15",
+                "effectiveDateDesired": "2026-02-15",
                 "leeftijdsgroep": "55-67",
                 "huishoudensSituatie": "alleenstaand",
                 "vermogensToets": {"uitgevoerd": true, "vermogen": 3100, "assetExemption": 6505, "bovenAssetExemption": false},
@@ -1230,7 +1230,7 @@
                 "handlerId": "klantmanager-501",
                 "wijkteam": "werk-en-inkomenteam-west",
                 "status": "re-integratie-loopt",
-                "avgClassification": {
+                "avgClassificatie": {
                     "categories": ["financieel", "medisch"],
                     "bijzonderePersoonsgegevens": true,
                     "justification": "artikel-9-2-b-avg",
@@ -1252,7 +1252,7 @@
                 "bsn": "***maskeren***",
                 "requestKind": "inburgering-gerelateerde-bijstand",
                 "requestDate": "2026-02-08",
-                "effectiveDateGewenst": "2026-03-01",
+                "effectiveDateDesired": "2026-03-01",
                 "leeftijdsgroep": "27-44",
                 "huishoudensSituatie": "gehuwd-met-kinderen",
                 "vermogensToets": {"uitgevoerd": true, "vermogen": 800, "assetExemption": 13010, "bovenAssetExemption": false},
@@ -1260,7 +1260,7 @@
                 "handlerId": "klantmanager-512",
                 "wijkteam": "werk-en-inkomenteam-centrum",
                 "status": "beschikking-voorbereiding",
-                "avgClassification": {
+                "avgClassificatie": {
                     "categories": ["financieel", "gezinssituatie"],
                     "bijzonderePersoonsgegevens": true,
                     "justification": "artikel-9-2-b-avg",

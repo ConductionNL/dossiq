@@ -128,14 +128,14 @@ class BelplanRoutingServiceTest extends TestCase {
 				'employeeId' => 'sp-1',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'beschikbaar',
-				'huidigeQueueLengte' => 3,
+				'currentQueueLengte' => 3,
 				'gemiddeldeHandlingDuration' => 240,
 			],
 			[
 				'employeeId' => 'sp-2',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'beschikbaar',
-				'huidigeQueueLengte' => 1,
+				'currentQueueLengte' => 1,
 				'gemiddeldeHandlingDuration' => 300,
 			],
 		];
@@ -172,7 +172,7 @@ class BelplanRoutingServiceTest extends TestCase {
 				'employeeId' => 'sp-1',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'in_gesprek',
-				'huidigeQueueLengte' => 7,
+				'currentQueueLengte' => 7,
 				'gemiddeldeHandlingDuration' => 60,
 			],
 		];
@@ -198,7 +198,7 @@ class BelplanRoutingServiceTest extends TestCase {
 				'employeeId' => 'sp-1',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'in_gesprek',
-				'huidigeQueueLengte' => 1,
+				'currentQueueLengte' => 1,
 				'gemiddeldeHandlingDuration' => 30,
 			],
 		];

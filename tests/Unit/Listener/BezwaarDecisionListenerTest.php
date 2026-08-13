@@ -98,7 +98,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 			static function (string $key, string $default = ''): string {
 				return match ($key) {
 					'register' => 'procest-register',
-					'bezwaar_schema' => 'objection',
+					'bezwaar_schema' => 'bezwaar',
 					'bezwaar_decision_schema' => 'bezwaardecision',
 					default => $default,
 				};
@@ -216,7 +216,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 	private function objectionOnProtectedStatus(): array {
 		return [
 			'id' => 'bezwaar-1',
-			'@self' => ['schema' => 'objection'],
+			'@self' => ['schema' => 'bezwaar'],
 			'status' => self::PROTECTED_STATUS,
 		];
 	}//end bezwaarOnProtectedStatus()
@@ -260,7 +260,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 			[
 				'register' => 'procest-register',
 				'schema' => 'bezwaardecision',
-				'objection' => 'bezwaar-1',
+				'bezwaar' => 'bezwaar-1',
 			],
 			$this->capturedFindAllConfig['filters'],
 			'the probe must filter by register, schema and bezwaar id'
@@ -310,7 +310,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 		$this->assertNotNull($this->capturedSave, 'the guard did not revert');
 		$this->assertSame(['status' => 'In behandeling'], $this->capturedSave['object']);
 		$this->assertSame('bezwaar-1', $this->capturedSave['uuid']);
-		$this->assertSame('objection', $this->capturedSave['schema']);
+		$this->assertSame('bezwaar', $this->capturedSave['schema']);
 	}//end testRevertsWhenNoDecidedDecisionExists()
 
 	/**
@@ -368,7 +368,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 			$this->event(
 				[
 					'id' => 'bezwaar-1',
-					'@self' => ['schema' => 'objection'],
+					'@self' => ['schema' => 'bezwaar'],
 					'status' => 'In behandeling',
 				],
 				['status' => 'Ontvangen']

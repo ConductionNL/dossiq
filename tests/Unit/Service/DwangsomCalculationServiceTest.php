@@ -46,8 +46,8 @@ class DwangsomCalculationServiceTest extends TestCase {
 				return match ($key) {
 					'register' => 'procest',
 					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termInstance',
-					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
+					'termijn_instance_schema' => 'termijnInstance',
+					'dwangsom_berekening_schema' => 'dwangsomBerekening',
 					default => '',
 				};
 			},
@@ -72,12 +72,12 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCalculateDailyAdvancesOneDayAtTier1(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b1',
 			'ingebrekestelling' => 'ig-1',
-			'termInstance' => 'ti-1',
+			'termijnInstance' => 'ti-1',
 			'startDate' => '2026-03-29',
-			'huidigeDag' => 0,
+			'currentDag' => 0,
 			'cumulatievAmount' => 0,
 			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
@@ -86,7 +86,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		]);
 
 		$row = $this->service->calculateDaily('b1');
-		self::assertSame(1, $row['huidigeDag']);
+		self::assertSame(1, $row['currentDag']);
 		self::assertSame(2300, $row['dagtarief']);
 		self::assertSame(2300, $row['cumulatievAmount']);
 		self::assertFalse($row['plafondBereikt']);
@@ -96,12 +96,12 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCalculateDailyTransitionsToTier2OnDay15(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b2',
 			'ingebrekestelling' => 'ig-1',
-			'termInstance' => 'ti-1',
+			'termijnInstance' => 'ti-1',
 			'startDate' => '2026-03-29',
-			'huidigeDag' => 14,
+			'currentDag' => 14,
 			'cumulatievAmount' => 32200,
 			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
@@ -110,7 +110,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		]);
 
 		$row = $this->service->calculateDaily('b2');
-		self::assertSame(15, $row['huidigeDag']);
+		self::assertSame(15, $row['currentDag']);
 		self::assertSame(3500, $row['dagtarief']);
 		self::assertSame(35700, $row['cumulatievAmount']);
 	}
@@ -119,12 +119,12 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCalculateDailyTransitionsToTier3OnDay29(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b3',
 			'ingebrekestelling' => 'ig-1',
-			'termInstance' => 'ti-1',
+			'termijnInstance' => 'ti-1',
 			'startDate' => '2026-03-29',
-			'huidigeDag' => 28,
+			'currentDag' => 28,
 			'cumulatievAmount' => 81200,
 			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
@@ -133,7 +133,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		]);
 
 		$row = $this->service->calculateDaily('b3');
-		self::assertSame(29, $row['huidigeDag']);
+		self::assertSame(29, $row['currentDag']);
 		self::assertSame(4500, $row['dagtarief']);
 		self::assertSame(85700, $row['cumulatievAmount']);
 	}
@@ -142,12 +142,12 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCalculateDailyCapsAtPlafond(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b4',
 			'ingebrekestelling' => 'ig-1',
-			'termInstance' => 'ti-1',
+			'termijnInstance' => 'ti-1',
 			'startDate' => '2026-03-29',
-			'huidigeDag' => 41,
+			'currentDag' => 41,
 			'cumulatievAmount' => 142000,
 			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
@@ -168,12 +168,12 @@ class DwangsomCalculationServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testStopForBeschikkingLocksDefinitievBedrag(): void {
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b5',
 			'ingebrekestelling' => 'ig-1',
-			'termInstance' => 'ti-1',
+			'termijnInstance' => 'ti-1',
 			'startDate' => '2026-03-29',
-			'huidigeDag' => 5,
+			'currentDag' => 5,
 			'cumulatievAmount' => 11500,
 			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
@@ -186,7 +186,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 
 		// Further calculateDaily is a no-op on stopped berekeningen.
 		$row = $this->service->calculateDaily('b5');
-		self::assertSame(5, $row['huidigeDag']);
+		self::assertSame(5, $row['currentDag']);
 	}
 
 	/**
@@ -200,16 +200,16 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'afwijkendDwangsomRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
-		$this->objects->saveObject('procest', 'termInstance', [
+		$this->objects->saveObject('procest', 'termijnInstance', [
 			'id' => 'ti-woo',
 			'termijnDefinitie' => 'td-woo',
 		]);
-		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
+		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b-woo',
 			'ingebrekestelling' => 'ig-woo',
-			'termInstance' => 'ti-woo',
+			'termijnInstance' => 'ti-woo',
 			'startDate' => '2026-03-29',
-			'huidigeDag' => 0,
+			'currentDag' => 0,
 			'cumulatievAmount' => 0,
 			'plafondCalculated' => 50000,
 			'plafondBereikt' => false,

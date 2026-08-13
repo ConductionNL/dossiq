@@ -206,7 +206,7 @@
 				"url": {
 					"raw": "{{base_url}}/api/termijn/dwangsom/00000000-0000-0000-0000-000000000000/bezwaar/heroverweging",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "penaltyPayment", "00000000-0000-0000-0000-000000000000", "objection", "heroverweging"]
+					"path": ["api", "termijn", "penaltyPayment", "00000000-0000-0000-0000-000000000000", "bezwaar", "heroverweging"]
 				}
 			},
 			"event": [
@@ -228,7 +228,7 @@
 				"url": {
 					"raw": "{{base_url}}/api/termijn/dwangsom/00000000-0000-0000-0000-000000000000/bezwaar",
 					"host": ["{{base_url}}"],
-					"path": ["api", "termijn", "penaltyPayment", "00000000-0000-0000-0000-000000000000", "objection"]
+					"path": ["api", "termijn", "penaltyPayment", "00000000-0000-0000-0000-000000000000", "bezwaar"]
 				}
 			},
 			"event": [

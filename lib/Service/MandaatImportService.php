@@ -185,7 +185,7 @@ class MandaatImportService {
 		$roleIndex = $this->repository->loadRoleIndex();
 		$resolved = [];
 		foreach ($rows as $idx => $row) {
-			$roleName = (string)($row['roleName'] ?? '');
+			$roleName = (string)($row['rolNaam'] ?? '');
 			if ($roleName === '') {
 				throw new RuntimeException('Row ' . ($idx + 1) . ' missing rolNaam');
 			}

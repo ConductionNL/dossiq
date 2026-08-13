@@ -98,10 +98,6 @@ class PanelIndependenceChecker {
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		// Two DIFFERENT config keys, so two distinct schemas — merging them onto
-		// one name would be a real bug. The config KEY stays `bezwaar_schema`:
-		// it is stored app config, so renaming it is a data migration, not a
-		// code change, and belongs in its own step.
 		$legacyObjSchema = $this->settingsService->getConfigValue(
 			key: 'bezwaar_schema'
 		);

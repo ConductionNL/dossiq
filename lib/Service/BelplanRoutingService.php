@@ -118,13 +118,13 @@ class BelplanRoutingService {
 		usort(
 			$available,
 			static function (array $a, array $b): int {
-				return ((int)($a['huidigeQueueLengte'] ?? 0) <=> (int)($b['huidigeQueueLengte'] ?? 0));
+				return ((int)($a['currentQueueLengte'] ?? 0) <=> (int)($b['currentQueueLengte'] ?? 0));
 			}
 		);
 
 		$overflow = $this->overflowConfig(belplan: $belplan);
 
-		if (empty($available) === true || (int)($available[0]['huidigeQueueLengte'] ?? 0) > $overflow['wachtrij']) {
+		if (empty($available) === true || (int)($available[0]['currentQueueLengte'] ?? 0) > $overflow['wachtrij']) {
 			// All busy or queue too long → overflow to generalist with escalatie.
 			return [
 				'destinationSpecialistId' => null,
@@ -141,7 +141,7 @@ class BelplanRoutingService {
 			'destinationSpecialistId' => (string)($chosen['employeeId'] ?? ''),
 			'vaardigheid' => $vaardigheid,
 			'escalatieFlag' => false,
-			'estimatedWaitTime' => ((int)($chosen['huidigeQueueLengte'] ?? 0) * (int)($chosen['gemiddeldeHandlingDuration'] ?? 0)),
+			'estimatedWaitTime' => ((int)($chosen['currentQueueLengte'] ?? 0) * (int)($chosen['gemiddeldeHandlingDuration'] ?? 0)),
 			'fallbackRol' => null,
 		];
 	}//end routeCall()
@@ -262,7 +262,7 @@ class BelplanRoutingService {
 		$totalQueue = 0;
 		$totalDur = 0;
 		foreach ($specialists as $specialist) {
-			$totalQueue += (int)($specialist['huidigeQueueLengte'] ?? 0);
+			$totalQueue += (int)($specialist['currentQueueLengte'] ?? 0);
 			$totalDur += (int)($specialist['gemiddeldeHandlingDuration'] ?? 0);
 		}
 

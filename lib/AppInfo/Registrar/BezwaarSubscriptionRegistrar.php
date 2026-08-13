@@ -55,7 +55,7 @@ class BezwaarSubscriptionRegistrar {
 	 * @var array<int,string>
 	 */
 	private const LIFECYCLE_SCHEMAS = [
-		'objection',
+		'bezwaar',
 		'objection',
 		'hearingSession',
 		'advisoryReport',
@@ -70,7 +70,7 @@ class BezwaarSubscriptionRegistrar {
 	 */
 	private const LEGAL_HOLD_SCHEMAS = [
 		'objection',
-		'objection',
+		'bezwaar',
 		'beroep',
 		'bezwaarDecision',
 		'appealDecision',
