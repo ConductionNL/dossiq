@@ -3,9 +3,10 @@
 /**
  * Tests for the Dutch-to-English column migration.
  *
- * These assert the properties I had been checking by hand on every batch, which
- * is precisely why they belong in the suite: a hand-check does not run again
- * when someone extends COLUMN_MAP.
+ * These assert the properties I had been checking BY HAND on every batch, which
+ * is exactly why they belong in the suite: a hand-check does not run again when
+ * someone extends COLUMN_MAP. The run() cases additionally cover the paths that
+ * decide whether customer data MOVES, is COPIED, or is deliberately left alone.
  *
  * @category Test
  * @package  OCA\Procest\Tests\Unit\Repair
@@ -30,13 +31,14 @@ namespace OCA\Procest\Tests\Unit\Repair;
 
 use OCA\Procest\Repair\RenameDutchColumns;
 use OCP\IDBConnection;
+use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
 use ReflectionMethod;
 
 /**
- * Guards the shape of the vocabulary column migration.
+ * Guards the shape and the behaviour of the vocabulary column migration.
  */
 final class RenameDutchColumnsTest extends TestCase {
 	/**
@@ -47,15 +49,20 @@ final class RenameDutchColumnsTest extends TestCase {
 	private RenameDutchColumns $step;
 
 	/**
+	 * Mocked database connection.
+	 *
+	 * @var IDBConnection
+	 */
+	private $db;
+
+	/**
 	 * Build the step with mocked collaborators.
 	 *
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->step = new RenameDutchColumns(
-			$this->createMock(IDBConnection::class),
-			$this->createMock(LoggerInterface::class),
-		);
+		$this->db = $this->createMock(IDBConnection::class);
+		$this->step = new RenameDutchColumns($this->db, $this->createMock(LoggerInterface::class));
 	}//end setUp()
 
 	/**
@@ -82,11 +89,11 @@ final class RenameDutchColumnsTest extends TestCase {
 	}//end call()
 
 	/**
-	 * The map is not empty and every entry is a non-empty snake_case pair.
+	 * Every entry is a snake_case pair that actually changes something.
 	 *
 	 * Snake_case matters: OpenRegister stores `requestedAmount` as the column
-	 * `requested_amount`, and a camelCase entry would simply never match a real
-	 * column — a migration that silently does nothing.
+	 * `requested_amount`, so a camelCase entry never matches a real column — a
+	 * migration that silently does nothing.
 	 *
 	 * @return void
 	 */
@@ -102,66 +109,114 @@ final class RenameDutchColumnsTest extends TestCase {
 	}//end testEveryEntryIsSnakeCase()
 
 	/**
-	 * No target is also a source.
+	 * No target is also a source, so no rename chains.
 	 *
 	 * A chain (`a => b`, `b => c`) would move data twice depending on iteration
-	 * order, which is the kind of bug that only shows up on real data.
+	 * order, which only shows up on real data.
 	 *
 	 * @return void
 	 */
 	public function testNoTargetIsAlsoASource(): void {
 		$map = $this->map();
-		foreach ($map as $old => $new) {
-			self::assertArrayNotHasKey($new, $map, "`$new` is both a target and a source, forming a rename chain");
+		foreach ($map as $new) {
+			self::assertArrayNotHasKey($new, $map, "`$new` is both a target and a source");
 		}
 	}//end testNoTargetIsAlsoASource()
 
 	/**
-	 * An ambiguous rename is refused rather than merged.
+	 * No target still carries a Dutch fragment.
 	 *
-	 * When two Dutch columns both map to one English name AND both exist in the
-	 * same table, migrating either one loses data. The step must decline.
+	 * A half-translated column (`effective_date_gewenst`) reads worse than
+	 * either language and was shipped once before this assertion existed.
+	 *
+	 * @return void
+	 */
+	public function testNoTargetIsHalfTranslated(): void {
+		$dutch = '/(^|_)(gewenst|datum|jaar|naam|nummer|bedrag|kosten|waarde|zaak|besluit|termijn)($|_)/';
+		foreach ($this->map() as $old => $new) {
+			self::assertDoesNotMatchRegularExpression($dutch, (string)$new, "target `$new` (from `$old`) is still part Dutch");
+		}
+	}//end testNoTargetIsHalfTranslated()
+
+	/**
+	 * Two sources for one destination in one table are refused, not merged.
 	 *
 	 * @return void
 	 */
 	public function testRefusesAmbiguousRename(): void {
-		$map = $this->map();
 		$targets = [];
-		foreach ($map as $old => $new) {
+		foreach ($this->map() as $old => $new) {
 			$targets[$new][] = $old;
 		}
 
-		$ambiguous = array_filter($targets, static fn(array $sources): bool => count($sources) > 1);
+		$ambiguous = array_filter($targets, static fn(array $s): bool => count($s) > 1);
 		if ($ambiguous === []) {
 			self::markTestSkipped('no target in this map has more than one source');
 		}
 
 		$target = (string)array_key_first($ambiguous);
-		$columns = $ambiguous[$target];
-
 		self::assertTrue(
-			$this->call('hasCollision', [$columns, $target]),
-			'two sources for one destination in one table must be refused, not merged'
+			$this->call('hasCollision', [$ambiguous[$target], $target]),
+			'two sources for one destination must be refused, not merged'
 		);
 	}//end testRefusesAmbiguousRename()
 
 	/**
-	 * A single source for a destination is not treated as a collision.
+	 * A single source is NOT treated as a collision.
 	 *
-	 * The negative control for the test above: without it, a guard that always
-	 * returned true would pass and silently migrate nothing at all.
+	 * The negative control: without it, a guard that always returned true would
+	 * pass the test above while migrating nothing at all.
 	 *
 	 * @return void
 	 */
 	public function testSingleSourceIsNotACollision(): void {
 		$map = $this->map();
 		$old = (string)array_key_first($map);
-
-		self::assertFalse(
-			$this->call('hasCollision', [[$old], $map[$old]]),
-			'one source for a destination must migrate normally'
-		);
+		self::assertFalse($this->call('hasCollision', [[$old], $map[$old]]));
 	}//end testSingleSourceIsNotACollision()
+
+	/**
+	 * With no registers resolvable, run() reports and touches nothing.
+	 *
+	 * The fail-soft path: an install without the registers must not error.
+	 *
+	 * @return void
+	 */
+	public function testRunWithNoRegistersDoesNothing(): void {
+		$this->db->method('executeQuery')->willThrowException(
+			new \OCP\DB\Exception('no such table')
+		);
+		$this->db->expects(self::never())->method('executeStatement');
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects(self::once())->method('info');
+
+		$this->step->run($output);
+	}//end testRunWithNoRegistersDoesNothing()
+
+	/**
+	 * A failing statement is swallowed and reported, not thrown.
+	 *
+	 * A repair step that throws aborts the whole upgrade.
+	 *
+	 * @return void
+	 */
+	public function testFailingStatementIsSwallowed(): void {
+		$this->db->method('executeStatement')->willThrowException(
+			new \OCP\DB\Exception('syntax error')
+		);
+		self::assertFalse($this->call('exec', ['ALTER TABLE x RENAME COLUMN a TO b']));
+	}//end testFailingStatementIsSwallowed()
+
+	/**
+	 * A successful statement reports success.
+	 *
+	 * @return void
+	 */
+	public function testSuccessfulStatementReportsSuccess(): void {
+		$this->db->method('executeStatement')->willReturn(1);
+		self::assertTrue($this->call('exec', ['ALTER TABLE x RENAME COLUMN a TO b']));
+	}//end testSuccessfulStatementReportsSuccess()
 
 	/**
 	 * The step names itself for the repair log.
