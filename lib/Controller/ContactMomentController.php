@@ -262,12 +262,12 @@ class ContactMomentController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$zaaktype = (string)$this->request->getParam('zaaktype', '');
+		$caseType = (string)$this->request->getParam('zaaktype', '');
 		$burgerId = (string)$this->request->getParam('burgerId', '');
 		$details = (array)$this->request->getParam('details', []);
 
 		try {
-			$result = $this->quickActionService->executeNieuweZaak($zaaktype, $burgerId, $details);
+			$result = $this->quickActionService->executeNieuweZaak($caseType, $burgerId, $details);
 		} catch (RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
@@ -296,11 +296,11 @@ class ContactMomentController extends Controller {
 		}
 
 		$caseId = (string)$this->request->getParam('caseId', '');
-		$samenvatting = (string)$this->request->getParam('samenvatting', '');
+		$summary = (string)$this->request->getParam('samenvatting', '');
 		$burgerId = (string)$this->request->getParam('burgerId', '');
 
 		try {
-			$result = $this->quickActionService->executeKlachtRegistreren($caseId, $samenvatting, $burgerId);
+			$result = $this->quickActionService->executeKlachtRegistreren($caseId, $summary, $burgerId);
 		} catch (RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}

@@ -65,9 +65,9 @@ class SubsidieRegisterExporterTest extends TestCase {
 	 * @return void
 	 */
 	public function testFeedEntryMapping(): void {
-		$aanvraag = ['aanvragerKvkRef' => '999', 'aanvragerNaam' => 'BV Y'];
+		$request = ['aanvragerKvkRef' => '999', 'aanvragerNaam' => 'BV Y'];
 		$regeling = ['regelingNaam' => 'Innovatiefonds 2026', 'doelgroep' => 'MKB'];
-		$beschikking = [
+		$decision = [
 			'beschikkingtype' => 'verleningsbeschikking',
 			'verleendBedrag' => 450000,
 			'looptijdStart' => '2026-01-01',
@@ -75,7 +75,7 @@ class SubsidieRegisterExporterTest extends TestCase {
 			'wettelijkeGrondslag' => 'AWB titel 4.2',
 		];
 
-		$entry = $this->exporter->toFeedEntry($aanvraag, $regeling, $beschikking);
+		$entry = $this->exporter->toFeedEntry($request, $regeling, $decision);
 		$this->assertSame('Innovatiefonds 2026', $entry['regeling']);
 		$this->assertSame('BV Y', $entry['ontvanger']);
 		$this->assertSame(450000.0, $entry['bedrag']);

@@ -109,7 +109,7 @@ class BrkContractTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleGemeenteCode: 'VBSTD', sectie: 'A', perceelnummer: '1234');
+		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'A', perceelnummer: '1234');
 		$this->assertSame('FOUND', $result->lookupStatus);
 		$this->assertSame('Voorbeeldstad', $result->parcel['kadastraleGemeente']);
 		$this->assertSame('VBSTD', $result->parcel['kadastraleGemeenteCode']);

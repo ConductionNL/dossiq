@@ -78,7 +78,7 @@ class MandaatValidationService {
 			];
 		}
 
-		$category = $this->resolveMandaatCategory(caseId: $caseId);
+		$category = $this->resolveMandateCategory(caseId: $caseId);
 
 		try {
 			$headers = ['Accept' => 'application/json'];
@@ -160,7 +160,7 @@ class MandaatValidationService {
 	 *
 	 * @return string The mandate category (empty when not set).
 	 */
-	private function resolveMandaatCategory(string $caseId): string {
+	private function resolveMandateCategory(string $caseId): string {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return '';

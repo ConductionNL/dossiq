@@ -143,13 +143,13 @@ class DsoCaseServiceTest extends TestCase {
 	 */
 	public function testComputeDeadlineReguliere(): void {
 		// Use 2026-01-05 (Monday) as a clean start.
-		$indieningsdatum = '2026-01-05';
+		$submissionDate = '2026-01-05';
 		$result = $this->service->computeDeadline(
-			indieningsdatum: $indieningsdatum,
+			submissionDate: $submissionDate,
 			procedureType: 'reguliere'
 		);
 
-		$start = new \DateTimeImmutable($indieningsdatum);
+		$start = new \DateTimeImmutable($submissionDate);
 		$deadline = new \DateTimeImmutable($result);
 
 		// Deadline must be after the start date.
@@ -179,13 +179,13 @@ class DsoCaseServiceTest extends TestCase {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
 	 */
 	public function testComputeDeadlineUitgebreide(): void {
-		$indieningsdatum = '2026-01-05';
+		$submissionDate = '2026-01-05';
 		$result = $this->service->computeDeadline(
-			indieningsdatum: $indieningsdatum,
+			submissionDate: $submissionDate,
 			procedureType: 'uitgebreide'
 		);
 
-		$start = new \DateTimeImmutable($indieningsdatum);
+		$start = new \DateTimeImmutable($submissionDate);
 		$deadline = new \DateTimeImmutable($result);
 
 		// Deadline must be after the start date.
@@ -208,12 +208,12 @@ class DsoCaseServiceTest extends TestCase {
 	 */
 	public function testComputeDeadlineSkipsWeekends(): void {
 		// 2026-01-02 is a Friday.
-		$indieningsdatum = '2026-01-02';
+		$submissionDate = '2026-01-02';
 
 		// We compute only a 1-working-day deadline to isolate the weekend skip.
 		// We'll compute reguliere (40 days) and check the result is NOT a weekend.
 		$result = $this->service->computeDeadline(
-			indieningsdatum: $indieningsdatum,
+			submissionDate: $submissionDate,
 			procedureType: 'reguliere'
 		);
 		$deadline = new \DateTimeImmutable($result);
@@ -237,9 +237,9 @@ class DsoCaseServiceTest extends TestCase {
 	 */
 	public function testComputeDeadlineSkipsEasterHolidays(): void {
 		// Easter Sunday 2026 = 2026-04-05; variable holidays fall in April–May.
-		$indieningsdatum = '2026-04-01';
+		$submissionDate = '2026-04-01';
 		$result = $this->service->computeDeadline(
-			indieningsdatum: $indieningsdatum,
+			submissionDate: $submissionDate,
 			procedureType: 'reguliere'
 		);
 
@@ -268,7 +268,7 @@ class DsoCaseServiceTest extends TestCase {
 
 		// With Easter holidays skipped the deadline is pushed at least 40 calendar
 		// days past the start (working days + holiday padding).
-		$start = new \DateTimeImmutable($indieningsdatum);
+		$start = new \DateTimeImmutable($submissionDate);
 		$this->assertGreaterThan(
 			$start->modify('+40 days'),
 			$deadline,
@@ -286,7 +286,7 @@ class DsoCaseServiceTest extends TestCase {
 	public function testCreateZaakFromVergunningaanvraagCallsObjectService(): void {
 		$objectServiceMock = $this->createMock(DsoCaseObjectServiceStub::class);
 
-		$aanvraag = [
+		$request = [
 			'id' => 'aanvraag-uuid-1',
 			'titel' => 'Bouwen van een aanbouw',
 			'indieningsdatum' => '2026-03-01',
@@ -298,14 +298,14 @@ class DsoCaseServiceTest extends TestCase {
 		$objectServiceMock
 			->expects($this->once())
 			->method('find')
-			->willReturn($aanvraag);
+			->willReturn($request);
 
-		$savedZaak = ['id' => 'zaak-uuid-1', 'status' => 'ingediend'];
+		$savedCase = ['id' => 'zaak-uuid-1', 'status' => 'ingediend'];
 
 		$objectServiceMock
 			->expects($this->once())
 			->method('saveObject')
-			->willReturn($savedZaak);
+			->willReturn($savedCase);
 
 		$this->container
 			->method('get')
@@ -335,7 +335,7 @@ class DsoCaseServiceTest extends TestCase {
 		$this->logger->expects($this->once())->method('info');
 
 		$result = $this->service->createZaakFromVergunningaanvraag(
-			vergunningaanvraagId: 'aanvraag-uuid-1'
+			permitApplicationId: 'aanvraag-uuid-1'
 		);
 
 		$this->assertSame('zaak-uuid-1', $result['id']);

@@ -46,12 +46,12 @@ class DwangsomBezwaarService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings.
-	 * @param TermijnService $termijnService Termijn service for events.
+	 * @param TermijnService $termService Termijn service for events.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly TermijnService $termijnService,
+		private readonly TermijnService $termService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -62,9 +62,9 @@ class DwangsomBezwaarService {
 	 * Freezes the berekening (status=bezwaar-bevroren) and puts the
 	 * linked uitbetaling on hold.
 	 *
-	 * @param string $berekeningId DwangsomBerekening id.
-	 * @param string $grondslag Legal basis citation.
-	 * @param string $motivering Reasoning.
+	 * @param string $calculationId DwangsomBerekening id.
+	 * @param string $basis Legal basis citation.
+	 * @param string $rationale Reasoning.
 	 *
 	 * @return array<string, mixed> The frozen berekening row.
 	 *
@@ -72,12 +72,12 @@ class DwangsomBezwaarService {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
-	public function registerBezwaar(string $berekeningId, string $grondslag, string $motivering): array {
+	public function registerBezwaar(string $calculationId, string $basis, string $rationale): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$bSchema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
 		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
-		$objectService = $this->requireDwangsomObjectService(
+		$objectService = $this->requirePenaltyPaymentObjectService(
 			objectService: $objectService,
 			register: $register,
 			bSchema: $bSchema,
@@ -85,18 +85,18 @@ class DwangsomBezwaarService {
 		);
 
 		try {
-			$berekening = $objectService->find($berekeningId, register: $register, schema: $bSchema);
+			$calculation = $objectService->find($calculationId, register: $register, schema: $bSchema);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
 		}
 
-		if (is_array($berekening) === false) {
-			throw new RuntimeException('DwangsomBerekening not found: ' . $berekeningId);
+		if (is_array($calculation) === false) {
+			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
-		$berekening['status'] = 'bezwaar-bevroren';
+		$calculation['status'] = 'bezwaar-bevroren';
 		try {
-			$berekening = $objectService->saveObject($register, $bSchema, $berekening);
+			$calculation = $objectService->saveObject($register, $bSchema, $calculation);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomBerekening persist failed: ' . $e->getMessage());
 		}
@@ -106,7 +106,7 @@ class DwangsomBezwaarService {
 			objectService: $objectService,
 			register: $register,
 			uSchema: $uSchema,
-			berekeningId: $berekeningId,
+			calculationId: $calculationId,
 		);
 
 		foreach ($uitbetalingen as $u) {
@@ -119,20 +119,20 @@ class DwangsomBezwaarService {
 		}
 
 		// Record event on termijn.
-		$instanceId = (string)($berekening['termijnInstance'] ?? '');
+		$instanceId = (string)($calculation['termijnInstance'] ?? '');
 		if ($instanceId !== '') {
-			$this->termijnService->recordEvent(
-				termijnInstanceId: $instanceId,
+			$this->termService->recordEvent(
+				termInstanceId: $instanceId,
 				type: 'bezwaar-ingediend',
-				grondslag: $grondslag,
-				motivering: $motivering,
-				dagenImpact: 0,
+				basis: $basis,
+				rationale: $rationale,
+				daysImpact: 0,
 			);
 		}
 
-		$this->logger->info('Dwangsom bezwaar registered', ['berekening' => $berekeningId]);
-		if (is_array($berekening) === true) {
-			return $berekening;
+		$this->logger->info('Dwangsom bezwaar registered', ['berekening' => $calculationId]);
+		if (is_array($calculation) === true) {
+			return $calculation;
 		}
 
 		return [];
@@ -141,9 +141,9 @@ class DwangsomBezwaarService {
 	/**
 	 * Resolve a bezwaar with a corrected amount.
 	 *
-	 * @param string $berekeningId Berekening id.
-	 * @param int $newBedragCents Corrected amount in EUR cents.
-	 * @param string $grondslag Legal basis.
+	 * @param string $calculationId Berekening id.
+	 * @param int $newAmountCents Corrected amount in EUR cents.
+	 * @param string $basis Legal basis.
 	 *
 	 * @return array<string, mixed>
 	 *
@@ -151,8 +151,8 @@ class DwangsomBezwaarService {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
-	public function resolveBezwaar(string $berekeningId, int $newBedragCents, string $grondslag): array {
-		if ($newBedragCents < 0) {
+	public function resolveBezwaar(string $calculationId, int $newAmountCents, string $basis): array {
+		if ($newAmountCents < 0) {
 			throw new RuntimeException('newBedragCents must be >= 0');
 		}
 
@@ -160,7 +160,7 @@ class DwangsomBezwaarService {
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$bSchema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
 		$uSchema = (string)$this->settingsService->getConfigValue('dwangsom_uitbetaling_schema');
-		$objectService = $this->requireDwangsomObjectService(
+		$objectService = $this->requirePenaltyPaymentObjectService(
 			objectService: $objectService,
 			register: $register,
 			bSchema: $bSchema,
@@ -168,19 +168,19 @@ class DwangsomBezwaarService {
 		);
 
 		try {
-			$berekening = $objectService->find($berekeningId, register: $register, schema: $bSchema);
+			$calculation = $objectService->find($calculationId, register: $register, schema: $bSchema);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
 		}
 
-		if (is_array($berekening) === false) {
-			throw new RuntimeException('DwangsomBerekening not found: ' . $berekeningId);
+		if (is_array($calculation) === false) {
+			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
-		$berekening['definitievBedrag'] = $newBedragCents;
-		$berekening['status'] = 'voltooid';
+		$calculation['definitievBedrag'] = $newAmountCents;
+		$calculation['status'] = 'voltooid';
 		try {
-			$berekening = $objectService->saveObject($register, $bSchema, $berekening);
+			$calculation = $objectService->saveObject($register, $bSchema, $calculation);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomBerekening persist failed: ' . $e->getMessage());
 		}
@@ -189,11 +189,11 @@ class DwangsomBezwaarService {
 			objectService: $objectService,
 			register: $register,
 			uSchema: $uSchema,
-			berekeningId: $berekeningId,
+			calculationId: $calculationId,
 		);
 
 		foreach ($uitbetalingen as $u) {
-			$u['bedrag'] = $newBedragCents;
+			$u['bedrag'] = $newAmountCents;
 			$u['status'] = 'voorbereid';
 			try {
 				$objectService->saveObject($register, $uSchema, $u);
@@ -202,20 +202,20 @@ class DwangsomBezwaarService {
 			}
 		}
 
-		$instanceId = (string)($berekening['termijnInstance'] ?? '');
+		$instanceId = (string)($calculation['termijnInstance'] ?? '');
 		if ($instanceId !== '') {
-			$this->termijnService->recordEvent(
-				termijnInstanceId: $instanceId,
+			$this->termService->recordEvent(
+				termInstanceId: $instanceId,
 				type: 'bezwaar-opgelost',
-				grondslag: $grondslag,
-				motivering: 'Bezwaar opgelost; bedrag herzien',
-				dagenImpact: 0,
+				basis: $basis,
+				rationale: 'Bezwaar opgelost; bedrag herzien',
+				daysImpact: 0,
 			);
 		}
 
-		$this->logger->info('Dwangsom bezwaar resolved', ['berekening' => $berekeningId, 'newBedrag' => $newBedragCents]);
-		if (is_array($berekening) === true) {
-			return $berekening;
+		$this->logger->info('Dwangsom bezwaar resolved', ['berekening' => $calculationId, 'newBedrag' => $newAmountCents]);
+		if (is_array($calculation) === true) {
+			return $calculation;
 		}
 
 		return [];
@@ -234,7 +234,7 @@ class DwangsomBezwaarService {
 	 *
 	 * @throws RuntimeException When any part of the configuration is missing.
 	 */
-	private function requireDwangsomObjectService(
+	private function requirePenaltyPaymentObjectService(
 		?object $objectService,
 		string $register,
 		string $bSchema,
@@ -253,7 +253,7 @@ class DwangsomBezwaarService {
 	 * @param object $objectService OpenRegister object service.
 	 * @param string $register Register identifier.
 	 * @param string $uSchema DwangsomUitbetaling schema identifier.
-	 * @param string $berekeningId DwangsomBerekening id.
+	 * @param string $calculationId DwangsomBerekening id.
 	 *
 	 * @return array<int, array<string, mixed>> The linked uitbetalingen.
 	 */
@@ -261,14 +261,14 @@ class DwangsomBezwaarService {
 		object $objectService,
 		string $register,
 		string $uSchema,
-		string $berekeningId,
+		string $calculationId,
 	): array {
 		try {
 			return $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
 				schema: $uSchema,
-				filters: ['dwangsomBerekening' => $berekeningId]
+				filters: ['dwangsomBerekening' => $calculationId]
 			);
 		} catch (\Throwable $e) {
 			// Lookup failures must not block the bezwaar transition.

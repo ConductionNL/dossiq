@@ -115,16 +115,16 @@ class SociaalDomeinFragmentTest extends TestCase {
 	public function testZaaktypesRequireAvgClassificatie(): void {
 		$schemas = $this->merged['components']['schemas'];
 
-		foreach (['wmoZaak', 'jeugdwetZaak', 'participatiewetZaak'] as $zaaktype) {
+		foreach (['wmoZaak', 'jeugdwetZaak', 'participatiewetZaak'] as $caseType) {
 			$this->assertContains(
 				'avgClassificatie',
-				$schemas[$zaaktype]['required'],
-				$zaaktype . ' must require an avgClassificatie block'
+				$schemas[$caseType]['required'],
+				$caseType . ' must require an avgClassificatie block'
 			);
 			$this->assertArrayHasKey(
 				'avgClassificatie',
-				$schemas[$zaaktype]['properties'],
-				$zaaktype . ' must expose the avgClassificatie property'
+				$schemas[$caseType]['properties'],
+				$caseType . ' must expose the avgClassificatie property'
 			);
 		}
 	}//end testZaaktypesRequireAvgClassificatie()

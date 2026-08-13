@@ -92,7 +92,7 @@ class MandateRegistryControllersTest extends TestCase {
 	 *
 	 * @return MandaatRegistryController The controller.
 	 */
-	private function mandaatController(): MandaatRegistryController {
+	private function mandateController(): MandaatRegistryController {
 		return new MandaatRegistryController('procest', $this->request, $this->registry, $this->logger);
 	}//end mandaatController()
 
@@ -101,7 +101,7 @@ class MandateRegistryControllersTest extends TestCase {
 	 *
 	 * @return OrganisatieRolController The controller.
 	 */
-	private function rolController(): OrganisatieRolController {
+	private function roleController(): OrganisatieRolController {
 		return new OrganisatieRolController('procest', $this->request, $this->registry, $this->logger);
 	}//end rolController()
 
@@ -110,7 +110,7 @@ class MandateRegistryControllersTest extends TestCase {
 	 *
 	 * @return TermijnDefinitieController The controller.
 	 */
-	private function termijnController(): TermijnDefinitieController {
+	private function termController(): TermijnDefinitieController {
 		return new TermijnDefinitieController('procest', $this->request, $this->generic, $this->logger);
 	}//end termijnController()
 
@@ -125,7 +125,7 @@ class MandateRegistryControllersTest extends TestCase {
 			->with(MandaatRegistryService::SCHEMA_BESLUIT)
 			->willReturn([['id' => 'b1']]);
 
-		$response = $this->mandaatController()->besluiten();
+		$response = $this->mandateController()->besluiten();
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$this->assertSame([['id' => 'b1']], $response->getData());
@@ -145,7 +145,7 @@ class MandateRegistryControllersTest extends TestCase {
 			}
 		);
 
-		$controller = $this->rolController();
+		$controller = $this->roleController();
 		$controller->rollenIndex();
 		$controller->toewijzingenIndex();
 
@@ -174,7 +174,7 @@ class MandateRegistryControllersTest extends TestCase {
 			)
 			->willReturn(['id' => 'new']);
 
-		$response = $this->rolController()->rollenCreate();
+		$response = $this->roleController()->rollenCreate();
 
 		$this->assertSame(Http::STATUS_CREATED, $response->getStatus());
 	}//end testCreateAnswers201AndStripsRoutingParams()
@@ -195,7 +195,7 @@ class MandateRegistryControllersTest extends TestCase {
 			->with(MandaatRegistryService::SCHEMA_ROL, ['rolNaam' => 'X'], 'routed-id')
 			->willReturn([]);
 
-		$this->rolController()->rollenUpdate('routed-id');
+		$this->roleController()->rollenUpdate('routed-id');
 	}//end testTheRoutedIdWinsOverAClientSuppliedOne()
 
 	/**
@@ -207,7 +207,7 @@ class MandateRegistryControllersTest extends TestCase {
 		$this->request->method('getParams')->willReturn(['rolNaam' => 'X']);
 		$this->registry->method('save')->willThrowException(new RuntimeException('Not configured: no register'));
 
-		$response = $this->rolController()->rollenCreate();
+		$response = $this->roleController()->rollenCreate();
 
 		$this->assertSame(Http::STATUS_UNPROCESSABLE_ENTITY, $response->getStatus());
 	}//end testAnUnconfiguredRegistryAnswers422()
@@ -222,7 +222,7 @@ class MandateRegistryControllersTest extends TestCase {
 		$this->registry->method('save')->willThrowException(new \LogicException('boom'));
 		$this->logger->expects($this->once())->method('error');
 
-		$response = $this->rolController()->rollenCreate();
+		$response = $this->roleController()->rollenCreate();
 
 		$this->assertSame(Http::STATUS_INTERNAL_SERVER_ERROR, $response->getStatus());
 	}//end testAnUnexpectedFailureAnswers500()
@@ -237,7 +237,7 @@ class MandateRegistryControllersTest extends TestCase {
 	public function testDeletingAnUnreferencedRoleAnswers200(): void {
 		$this->registry->expects($this->once())->method('deleteRole')->with('role-1');
 
-		$response = $this->rolController()->rollenDestroy('role-1');
+		$response = $this->roleController()->rollenDestroy('role-1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 	}//end testDeletingAnUnreferencedRoleAnswers200()
@@ -252,7 +252,7 @@ class MandateRegistryControllersTest extends TestCase {
 			new RuntimeException('This role cannot be deleted while it is still referenced by 2 mandaat(en)')
 		);
 
-		$response = $this->rolController()->rollenDestroy('role-1');
+		$response = $this->roleController()->rollenDestroy('role-1');
 
 		$this->assertSame(Http::STATUS_CONFLICT, $response->getStatus());
 		$this->assertStringContainsString('2 mandaat(en)', $response->getData()['message']);
@@ -269,7 +269,7 @@ class MandateRegistryControllersTest extends TestCase {
 			->with('termijn_definitie_schema')
 			->willReturn([['version' => 1], ['version' => 2]]);
 
-		$response = $this->termijnController()->index();
+		$response = $this->termController()->index();
 
 		$this->assertCount(2, $response->getData());
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
@@ -288,7 +288,7 @@ class MandateRegistryControllersTest extends TestCase {
 			->with('termijn_definitie_schema', ['validUntil' => '2026-08-11'], 'def-3')
 			->willReturn([]);
 
-		$response = $this->termijnController()->update('def-3');
+		$response = $this->termController()->update('def-3');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 	}//end testTermijnDefinitieUpdateTargetsTheRoutedId()
@@ -309,7 +309,7 @@ class MandateRegistryControllersTest extends TestCase {
 			}
 		);
 
-		$controller = $this->mandaatController();
+		$controller = $this->mandateController();
 		$controller->mandatenCreate();
 		$controller->mandatenUpdate('m-9');
 

@@ -222,16 +222,16 @@ class ZgwDocumentService {
 	 * in the document folder until all parts are uploaded and merged.
 	 *
 	 * @param string $uuid The document UUID
-	 * @param int $volgnummer The chunk sequence number (1-based)
+	 * @param int $sequenceNumber The chunk sequence number (1-based)
 	 * @param string $content The raw binary chunk content
 	 *
 	 * @return int The chunk size in bytes
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function storeChunk(string $uuid, int $volgnummer, string $content): int {
+	public function storeChunk(string $uuid, int $sequenceNumber, string $content): int {
 		$folder = $this->getDocumentFolder(uuid: $uuid);
-		$partName = '_part_' . $volgnummer;
+		$partName = '_part_' . $sequenceNumber;
 		$file = $folder->newFile(path: $partName);
 		$file->putContent(data: $content);
 

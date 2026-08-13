@@ -56,7 +56,7 @@ class DwangsomController extends Controller {
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
 	 * @param DwangsomCalculationService $calc Calculation service.
-	 * @param DwangsomBezwaarService $bezwaar Bezwaar service.
+	 * @param DwangsomBezwaarService $objection Bezwaar service.
 	 * @param SettingsService $settings Settings.
 	 * @param IUserSession $userSession User session.
 	 * @param CaseAccessGuard $caseAccess Per-case authorization guard.
@@ -66,7 +66,7 @@ class DwangsomController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly DwangsomCalculationService $calc,
-		private readonly DwangsomBezwaarService $bezwaar,
+		private readonly DwangsomBezwaarService $objection,
 		private readonly SettingsService $settings,
 		private readonly IUserSession $userSession,
 		private readonly CaseAccessGuard $caseAccess,
@@ -93,21 +93,21 @@ class DwangsomController extends Controller {
 	 * OpenRegister, or an unconfigured schema all DENY. A berekening whose
 	 * owning case cannot be established is not a berekening anyone may act on.
 	 *
-	 * @param string $berekeningId The DwangsomBerekening UUID.
+	 * @param string $calculationId The DwangsomBerekening UUID.
 	 * @param bool $mutation True for write verbs, false for reads.
 	 *
 	 * @return JSONResponse|null A refusal, or null when access is granted.
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	private function denyUnlessMayAccess(string $berekeningId, bool $mutation): ?JSONResponse {
+	private function denyUnlessMayAccess(string $calculationId, bool $mutation): ?JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['message' => 'Not authenticated'], Http::STATUS_FORBIDDEN);
 		}
 
 		$caseId = $this->owningCase->resolveVia(
-			objectId: $berekeningId,
+			objectId: $calculationId,
 			schemaKey: 'dwangsom_berekening_schema',
 			linkField: 'termijnInstance',
 			viaSchemaKey: 'termijn_instance_schema',
@@ -121,7 +121,7 @@ class DwangsomController extends Controller {
 		}
 
 		return new JSONResponse(
-			['message' => 'Not authorized for dwangsom berekening ' . $berekeningId],
+			['message' => 'Not authorized for dwangsom berekening ' . $calculationId],
 			Http::STATUS_FORBIDDEN
 		);
 	}//end denyUnlessMayAccess()
@@ -161,7 +161,7 @@ class DwangsomController extends Controller {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function show(string $id): JSONResponse {
-		$denied = $this->denyUnlessMayAccess(berekeningId: $id, mutation: false);
+		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: false);
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -179,12 +179,12 @@ class DwangsomController extends Controller {
 			return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$berekening = $this->normalise(value: $row);
-		if ($berekening === null) {
+		$calculation = $this->normalise(value: $row);
+		if ($calculation === null) {
 			return new JSONResponse(['message' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		return new JSONResponse($berekening);
+		return new JSONResponse($calculation);
 	}//end show()
 
 	/**
@@ -234,7 +234,7 @@ class DwangsomController extends Controller {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function beschikking(string $id): JSONResponse {
-		$denied = $this->denyUnlessMayAccess(berekeningId: $id, mutation: true);
+		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: true);
 		if ($denied !== null) {
 			return $denied;
 		}
@@ -259,17 +259,17 @@ class DwangsomController extends Controller {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function bezwaar(string $id): JSONResponse {
-		$denied = $this->denyUnlessMayAccess(berekeningId: $id, mutation: true);
+		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: true);
 		if ($denied !== null) {
 			return $denied;
 		}
 
 		$body = $this->jsonBody();
-		$grondslag = (string)($body['grondslag'] ?? 'AWB 7:1');
-		$motivering = (string)($body['motivering'] ?? '');
+		$basis = (string)($body['grondslag'] ?? 'AWB 7:1');
+		$rationale = (string)($body['motivering'] ?? '');
 
 		try {
-			$row = $this->bezwaar->registerBezwaar($id, $grondslag, $motivering);
+			$row = $this->objection->registerBezwaar($id, $basis, $rationale);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
@@ -288,20 +288,20 @@ class DwangsomController extends Controller {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-10-bezwaar-rest-api/tasks.md
 	 */
 	public function bezwaarHeroverweging(string $id): JSONResponse {
-		$denied = $this->denyUnlessMayAccess(berekeningId: $id, mutation: true);
+		$denied = $this->denyUnlessMayAccess(calculationId: $id, mutation: true);
 		if ($denied !== null) {
 			return $denied;
 		}
 
 		$body = $this->jsonBody();
-		$newBedrag = (int)($body['newBedragCents'] ?? -1);
-		$grondslag = (string)($body['grondslag'] ?? 'AWB 7:11');
-		if ($newBedrag < 0) {
+		$newAmount = (int)($body['newBedragCents'] ?? -1);
+		$basis = (string)($body['grondslag'] ?? 'AWB 7:11');
+		if ($newAmount < 0) {
 			return new JSONResponse(['message' => 'newBedragCents required and must be >= 0'], Http::STATUS_BAD_REQUEST);
 		}
 
 		try {
-			$row = $this->bezwaar->resolveBezwaar($id, $newBedrag, $grondslag);
+			$row = $this->objection->resolveBezwaar($id, $newAmount, $basis);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);

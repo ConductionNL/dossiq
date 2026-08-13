@@ -79,7 +79,7 @@ interface WozAdapterInterface {
 	 * Look up WOZ object(s) by postcode + huisnummer.
 	 *
 	 * @param string $postcode Dutch postcode.
-	 * @param string $huisnummer House number.
+	 * @param string $houseNumber House number.
 	 * @param string|null $huisletter Optional house letter.
 	 * @param string|null $toevoeging Optional house number
 	 *                                addition.
@@ -93,7 +93,7 @@ interface WozAdapterInterface {
 	 */
 	public function lookupAddress(
 		string $postcode,
-		string $huisnummer,
+		string $houseNumber,
 		?string $huisletter = null,
 		?string $toevoeging = null,
 		array $context = [],
@@ -104,14 +104,14 @@ interface WozAdapterInterface {
 	 * preferred lookup when a caller already holds one (avoids
 	 * re-implementing BAG's address resolution here).
 	 *
-	 * @param string $nummeraanduidingId BAG nummeraanduiding identificatie.
+	 * @param string $addressDesignationId BAG nummeraanduiding identificatie.
 	 * @param array<string,mixed> $context Optional context.
 	 *
 	 * @return WozLookupResult
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
-	public function lookupByNummeraanduiding(string $nummeraanduidingId, array $context = []): WozLookupResult;
+	public function lookupByNummeraanduiding(string $addressDesignationId, array $context = []): WozLookupResult;
 
 	/**
 	 * Look up a single WOZ object by its wozobjectnummer.

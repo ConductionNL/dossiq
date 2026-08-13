@@ -280,7 +280,7 @@ class ConsultationServiceTest extends TestCase {
 		$this->settings->method('getObjectService')->willReturn($objectService);
 		$this->settings->method('getConfigValue')->willReturn('some-id');
 
-		$blocking = $this->service->getBlockingConsultations(zaakId: 'zaak-uuid');
+		$blocking = $this->service->getBlockingConsultations(caseId: 'zaak-uuid');
 
 		$this->assertCount(1, $blocking);
 		$this->assertSame('c1', $blocking[0]['id']);

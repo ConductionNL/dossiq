@@ -129,17 +129,17 @@ class ComplaintService {
 			throw new RuntimeException('Complaint schema not configured');
 		}
 
-		$ontvangstdatum = $data['ontvangstdatum'];
+		$receiptDate = $data['ontvangstdatum'];
 
 		// Generate klachtnummer.
-		$data['klachtnummer'] = $this->generateKlachtnummer();
+		$data['klachtnummer'] = $this->generateComplaintNumber();
 		$data['status'] = 'ontvangen';
 		$data['prioriteit'] = $data['prioriteit'] ?? 'normaal';
 		$data['verdagingMogelijk'] = true;
 
 		// Compute Awb deadlines.
-		$data['ontvangstbevestigingDeadline'] = $this->addWorkingDays(startDate: $ontvangstdatum, days: self::AWB_ACK_WORKING_DAYS);
-		$data['afhandelDeadline'] = $this->addCalendarWeeks(startDate: $ontvangstdatum, weeks: self::AWB_RESOLUTION_WEEKS);
+		$data['ontvangstbevestigingDeadline'] = $this->addWorkingDays(startDate: $receiptDate, days: self::AWB_ACK_WORKING_DAYS);
+		$data['afhandelDeadline'] = $this->addCalendarWeeks(startDate: $receiptDate, weeks: self::AWB_RESOLUTION_WEEKS);
 
 		$complaint = $objectService->saveObject(object: $data, register: $register, schema: $schema);
 
@@ -285,7 +285,7 @@ class ComplaintService {
 	 * Request a verdaging (deadline extension) per Awb chapter 9.
 	 *
 	 * @param string $id Complaint UUID
-	 * @param string $justificatie Written justification (required by Awb)
+	 * @param string $justification Written justification (required by Awb)
 	 *
 	 * @return array<string, mixed> Updated complaint
 	 *
@@ -293,7 +293,7 @@ class ComplaintService {
 	 *
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
-	public function requestVerdaging(string $id, string $justificatie): array {
+	public function requestVerdaging(string $id, string $justification): array {
 		$complaint = $this->getComplaint(id: $id);
 		if ($complaint === null) {
 			throw new RuntimeException('Complaint not found: ' . $id);
@@ -303,7 +303,7 @@ class ComplaintService {
 			throw new RuntimeException('Verdaging is not available — already used or not applicable');
 		}
 
-		if (empty($justificatie) === true) {
+		if (empty($justification) === true) {
 			throw new RuntimeException('Justificatie is required for verdaging per Awb chapter 9');
 		}
 
@@ -313,7 +313,7 @@ class ComplaintService {
 		$updateData = [
 			'afhandelDeadline' => $newDeadline,
 			'verdagingMogelijk' => false,
-			'verdagingJustificatie' => $justificatie,
+			'verdagingJustificatie' => $justification,
 		];
 
 		$this->logger->info(
@@ -468,7 +468,7 @@ class ComplaintService {
 	 *
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
-	private function generateKlachtnummer(): string {
+	private function generateComplaintNumber(): string {
 		$year = date('Y');
 		$objectService = $this->settingsService->getObjectService();
 

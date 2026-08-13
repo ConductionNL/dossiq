@@ -61,8 +61,8 @@ class BeschikkingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testBezwaartermijnSixWeeks(): void {
-		$publicatie = new DateTimeImmutable('2026-06-01');
-		$this->assertSame('2026-07-13', $this->service->computeBezwaartermijn($publicatie)->format('Y-m-d'));
+		$publication = new DateTimeImmutable('2026-06-01');
+		$this->assertSame('2026-07-13', $this->service->computeBezwaartermijn($publication)->format('Y-m-d'));
 	}//end testBezwaartermijnSixWeeks()
 
 	/**

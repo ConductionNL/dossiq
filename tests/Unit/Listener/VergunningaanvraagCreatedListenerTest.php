@@ -171,7 +171,7 @@ class VergunningaanvraagCreatedListenerTest extends TestCase {
 		$this->dsoCaseService
 			->expects($this->once())
 			->method('createZaakFromVergunningaanvraag')
-			->with(vergunningaanvraagId: $objectId);
+			->with(permitApplicationId: $objectId);
 
 		$this->logger->expects($this->once())->method('info');
 

@@ -56,20 +56,20 @@ class DoorverbindingService {
 	 * Build an immutable context snapshot for a transfer.
 	 *
 	 * @param array<string, mixed> $contact The originating contactmoment data.
-	 * @param array<int, mixed> $zaken The related case summaries.
+	 * @param array<int, mixed> $cases The related case summaries.
 	 * @param array<string, mixed> $sentiment The sentiment data, if any.
 	 *
 	 * @return string A JSON-encoded immutable snapshot.
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
 	 */
-	public function createContextSnapshot(array $contact, array $zaken, array $sentiment): string {
+	public function createContextSnapshot(array $contact, array $cases, array $sentiment): string {
 		$snapshot = [
 			'capturedAt' => date('c'),
 			'bellerIdentificatie' => (string)($contact['bellerIdentificatie'] ?? ''),
 			'geidentificeerdeBurgerId' => ($contact['geidentificeerdeBurgerId'] ?? null),
 			'samenvatting' => (string)($contact['samenvatting'] ?? ''),
-			'gerelateerdeZaken' => array_values($zaken),
+			'gerelateerdeZaken' => array_values($cases),
 			'sentiment' => $sentiment,
 		];
 
@@ -89,8 +89,8 @@ class DoorverbindingService {
 	 */
 	public function initiateWarmTransfer(array $data): array {
 		$contactmomentId = trim((string)($data['contactmomentId'] ?? ''));
-		$vanMedewerkerId = trim((string)($data['vanMedewerkerId'] ?? ''));
-		if ($contactmomentId === '' || $vanMedewerkerId === '') {
+		$fromEmployeeId = trim((string)($data['vanMedewerkerId'] ?? ''));
+		if ($contactmomentId === '' || $fromEmployeeId === '') {
 			throw new RuntimeException('contactmomentId and vanMedewerkerId are required');
 		}
 
@@ -98,7 +98,7 @@ class DoorverbindingService {
 
 		$record = [
 			'contactmomentId' => $contactmomentId,
-			'vanMedewerkerId' => $vanMedewerkerId,
+			'vanMedewerkerId' => $fromEmployeeId,
 			'naarMedewerkerId' => ($data['naarMedewerkerId'] ?? null),
 			'naarWachtrij' => ($data['naarWachtrij'] ?? null),
 			'doorverbindingsReden' => (string)($data['doorverbindingsReden'] ?? ''),
@@ -157,7 +157,7 @@ class DoorverbindingService {
 	 * Mark a doorverbinding as rejected with a reason.
 	 *
 	 * @param string $doorverbindingId The doorverbinding UUID.
-	 * @param string $reden The rejection reason.
+	 * @param string $reason The rejection reason.
 	 * @param string $callerUid The UID of the medewerker answering this transfer.
 	 *
 	 * @return array<string, mixed> The updated record.
@@ -166,9 +166,9 @@ class DoorverbindingService {
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
 	 */
-	public function rejectTransfer(string $doorverbindingId, string $reden, string $callerUid = ''): array {
-		$reden = trim($reden);
-		if ($reden === '') {
+	public function rejectTransfer(string $doorverbindingId, string $reason, string $callerUid = ''): array {
+		$reason = trim($reason);
+		if ($reason === '') {
 			throw new RuntimeException('Rejection reason is required');
 		}
 
@@ -186,7 +186,7 @@ class DoorverbindingService {
 			doorverbindingId: $doorverbindingId,
 			patch: [
 				'geaccepteerd' => false,
-				'afgekeurdReden' => $reden,
+				'afgekeurdReden' => $reason,
 			],
 		);
 	}//end rejectTransfer()

@@ -101,8 +101,8 @@ class BrondatumArchiefValidator extends ZgwRulesBase {
 		);
 
 		// Ztc-005: einddatumBekend must be false for afgehandeld/termijn.
-		$einddatumBekend = $archief['einddatumBekend'] ?? false;
-		if (($einddatumBekend === true || $einddatumBekend === 'true')
+		$endDateBekend = $archief['einddatumBekend'] ?? false;
+		if (($endDateBekend === true || $endDateBekend === 'true')
 			&& in_array($afleidingswijze, self::AFLEIDINGSWIJZE_FORBIDS_EINDDATUM_BEKEND, true) === true
 		) {
 			$errors[] = $this->fieldError(

@@ -75,9 +75,9 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 		}
 
 		// Zrc-017: Validate informatieobjecttype belongs to zaak's zaaktype.
-		$zaakUrl = $body['zaak'] ?? '';
-		if ($ioUrl !== '' && $zaakUrl !== '' && $this->objectService !== null) {
-			$error = $this->validateZioInformatieobjecttype(zaakUrl: $zaakUrl, ioUrl: $ioUrl);
+		$caseUrl = $body['zaak'] ?? '';
+		if ($ioUrl !== '' && $caseUrl !== '' && $this->objectService !== null) {
+			$error = $this->validateZioInformatieobjecttype(caseUrl: $caseUrl, ioUrl: $ioUrl);
 			if ($error !== null) {
 				return $error;
 			}
@@ -139,7 +139,7 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 	 * The informatieobjecttype of the linked informatieobject must appear
 	 * in Zaak.zaaktype.informatieobjecttypen.
 	 *
-	 * @param string $zaakUrl The zaak URL
+	 * @param string $caseUrl The zaak URL
 	 * @param string $ioUrl The informatieobject URL
 	 *
 	 * @return array|null Validation error, or null if valid
@@ -148,7 +148,7 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function validateZioInformatieobjecttype(string $zaakUrl, string $ioUrl): ?array {
+	private function validateZioInformatieobjecttype(string $caseUrl, string $ioUrl): ?array {
 		// Get the informatieobject to find its informatieobjecttype.
 		$docTypeId = $this->resolveDocumentTypeId(ioUrl: $ioUrl);
 		if ($docTypeId === null) {
@@ -156,7 +156,7 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 		}
 
 		// Get the zaak's zaaktype.
-		$zaaktypeUuid = $this->resolveCaseTypeUuid(zaakUrl: $zaakUrl);
+		$zaaktypeUuid = $this->resolveCaseTypeUuid(caseUrl: $caseUrl);
 		if ($zaaktypeUuid === null) {
 			return null;
 		}
@@ -168,7 +168,7 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 			return null;
 		}
 
-		$isMissing = $this->isZaaktypeInformatieobjecttypeMissing(
+		$isMissing = $this->isCaseTypeInformatieobjecttypeMissing(
 			zaaktypeUuid: $zaaktypeUuid,
 			docTypeUuid: $docTypeUuid
 		);
@@ -220,25 +220,25 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 	/**
 	 * Resolve the zaaktype UUID a zaak is registered under.
 	 *
-	 * @param string $zaakUrl The zaak URL
+	 * @param string $caseUrl The zaak URL
 	 *
 	 * @return string|null The zaaktype UUID, or null if unresolvable
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function resolveCaseTypeUuid(string $zaakUrl): ?string {
-		$zaakUuid = $this->extractUuid(url: $zaakUrl);
+	private function resolveCaseTypeUuid(string $caseUrl): ?string {
+		$zaakUuid = $this->extractUuid(url: $caseUrl);
 		if ($zaakUuid === null) {
 			return null;
 		}
 
-		$zaakData = $this->findBySchemaKey(uuid: $zaakUuid, schemaKey: 'case_schema');
-		if ($zaakData === null) {
+		$caseData = $this->findBySchemaKey(uuid: $zaakUuid, schemaKey: 'case_schema');
+		if ($caseData === null) {
 			return null;
 		}
 
-		$zaaktypeId = $zaakData['caseType'] ?? '';
-		return $this->extractUuid(url: (string)$zaaktypeId);
+		$caseTypeId = $caseData['caseType'] ?? '';
+		return $this->extractUuid(url: (string)$caseTypeId);
 	}//end resolveCaseTypeUuid()
 
 	/**
@@ -256,7 +256,7 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	private function isZaaktypeInformatieobjecttypeMissing(string $zaaktypeUuid, string $docTypeUuid): bool {
+	private function isCaseTypeInformatieobjecttypeMissing(string $zaaktypeUuid, string $docTypeUuid): bool {
 		$ziotSchemaId = $this->settingsService->getConfigValue(key: 'zaaktype_informatieobjecttype_schema');
 		$register = $this->settingsService->getConfigValue(key: 'register');
 		if ($ziotSchemaId === '' || $register === '') {
@@ -300,13 +300,13 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 		$body = $result['enrichedBody'];
 
 		// Zrc-004: zaak is immutable.
-		$zaakChanged = $this->isRelationFieldChanged(
+		$caseChanged = $this->isRelationFieldChanged(
 			body: $body,
 			existingObject: $existingObject,
 			field: 'zaak',
 			storedKey: 'case'
 		);
-		if ($zaakChanged === true) {
+		if ($caseChanged === true) {
 			return $this->fieldImmutableError(fieldName: 'zaak');
 		}
 

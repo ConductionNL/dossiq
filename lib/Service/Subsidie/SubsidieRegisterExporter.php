@@ -47,14 +47,14 @@ class SubsidieRegisterExporter {
 	 * persons (with a KvK reference) keep their name; natuurlijke personen
 	 * are reduced to "Particulier".
 	 *
-	 * @param array<string, mixed> $aanvraag The application record.
+	 * @param array<string, mixed> $request The application record.
 	 *
 	 * @return string The display name for the public register.
 	 */
-	public function publicOntvanger(array $aanvraag): string {
-		$kvk = (string)($aanvraag['aanvragerKvkRef'] ?? '');
+	public function publicOntvanger(array $request): string {
+		$kvk = (string)($request['aanvragerKvkRef'] ?? '');
 		if ($kvk !== '') {
-			return (string)($aanvraag['aanvragerNaam'] ?? ('KvK ' . $kvk));
+			return (string)($request['aanvragerNaam'] ?? ('KvK ' . $kvk));
 		}
 
 		// No KvK -> treated as a natural person and anonymised.
@@ -64,31 +64,31 @@ class SubsidieRegisterExporter {
 	/**
 	 * Map one subsidy dossier into a feed entry (REQ-SUB-006).
 	 *
-	 * @param array<string, mixed> $aanvraag The application record.
+	 * @param array<string, mixed> $request The application record.
 	 * @param array<string, mixed> $regeling The regeling record.
-	 * @param array<string, mixed> $beschikking The (latest) decision record.
+	 * @param array<string, mixed> $decision The (latest) decision record.
 	 *
 	 * @return array<string, mixed> The feed entry.
 	 */
-	public function toFeedEntry(array $aanvraag, array $regeling, array $beschikking): array {
-		$vastgesteld = (string)($beschikking['beschikkingtype'] ?? '') === 'vaststellingsbeschikking';
+	public function toFeedEntry(array $request, array $regeling, array $decision): array {
+		$determined = (string)($decision['beschikkingtype'] ?? '') === 'vaststellingsbeschikking';
 		$status = 'verleend';
-		if ($vastgesteld === true) {
+		if ($determined === true) {
 			$status = 'vastgesteld';
 		}
 
 		return [
 			'@type' => 'Subsidie',
 			'regeling' => (string)($regeling['regelingNaam'] ?? ''),
-			'ontvanger' => $this->publicOntvanger(aanvraag: $aanvraag),
-			'bedrag' => (float)($beschikking['verleendBedrag'] ?? 0),
+			'ontvanger' => $this->publicOntvanger(request: $request),
+			'bedrag' => (float)($decision['verleendBedrag'] ?? 0),
 			'looptijd' => [
-				'start' => (string)($beschikking['looptijdStart'] ?? ''),
-				'eind' => (string)($beschikking['looptijdEind'] ?? ''),
+				'start' => (string)($decision['looptijdStart'] ?? ''),
+				'eind' => (string)($decision['looptijdEind'] ?? ''),
 			],
 			'doel' => (string)($regeling['doelgroep'] ?? ''),
 			'status' => $status,
-			'grondslag' => (string)($beschikking['legalBasis'] ?? ''),
+			'grondslag' => (string)($decision['legalBasis'] ?? ''),
 		];
 	}//end toFeedEntry()
 

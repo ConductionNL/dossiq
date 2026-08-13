@@ -54,35 +54,35 @@ class BerichtenboxRoutingService {
 	/**
 	 * Route a beschikking to the appropriate Berichtenbox channel.
 	 *
-	 * @param array<string, mixed> $beschikking The beschikking object.
+	 * @param array<string, mixed> $decision The beschikking object.
 	 *
 	 * @return array{kanaal: string, verzondenOp: string, verzondenDoor: string, berichtId: string} The verzending record.
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T15
 	 */
-	public function routeToBerichtenbox(array $beschikking): array {
-		$geadresseerde = (array)($beschikking['geadresseerde'] ?? []);
-		$kanaal = $this->resolveChannel(geadresseerde: $geadresseerde);
+	public function routeToBerichtenbox(array $decision): array {
+		$geadresseerde = (array)($decision['geadresseerde'] ?? []);
+		$channel = $this->resolveChannel(geadresseerde: $geadresseerde);
 
 		// The berichtId is assigned by the downstream Berichtenbox provider; in
 		// the absence of a live channel we derive a stable, non-identifying id
 		// from the beschikking kenmerk so the delivery record is reproducible.
-		$kenmerk = (string)($beschikking['kenmerk'] ?? ($beschikking['id'] ?? 'onbekend'));
-		$berichtId = strtoupper(substr($kanaal, 0, 2)) . '-' . substr(hash('sha256', $kenmerk . $kanaal), 0, 12);
+		$reference = (string)($decision['kenmerk'] ?? ($decision['id'] ?? 'onbekend'));
+		$messageId = strtoupper(substr($channel, 0, 2)) . '-' . substr(hash('sha256', $reference . $channel), 0, 12);
 
 		$this->logger->info(
 			'BerichtenboxRoutingService: beschikking gerouteerd',
 			[
-				'kenmerk' => $kenmerk,
-				'kanaal' => $kanaal,
+				'kenmerk' => $reference,
+				'kanaal' => $channel,
 			],
 		);
 
 		return [
-			'kanaal' => $kanaal,
+			'kanaal' => $channel,
 			'verzondenOp' => (new DateTimeImmutable())->format('c'),
 			'verzondenDoor' => 'systeem',
-			'berichtId' => $berichtId,
+			'berichtId' => $messageId,
 		];
 	}//end routeToBerichtenbox()
 

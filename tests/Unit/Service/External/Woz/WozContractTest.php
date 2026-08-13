@@ -108,7 +108,7 @@ class WozContractTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupAddress(postcode: '1234AB', huisnummer: '10');
+		$result = $adapter->lookupAddress(postcode: '1234AB', houseNumber: '10');
 		$this->assertSame('FOUND', $result->lookupStatus);
 		$this->assertSame('05180000001234', $result->wozObject['wozobjectnummer']);
 		$this->assertSame('0518010000123456', $result->wozObject['nummeraanduidingId']);

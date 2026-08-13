@@ -99,7 +99,7 @@ class BagApiAdapter implements BagAdapterInterface {
 	 * configured tier.
 	 *
 	 * @param string $postcode Dutch postcode.
-	 * @param string $huisnummer House number.
+	 * @param string $houseNumber House number.
 	 * @param string|null $huisletter Optional house letter.
 	 * @param string|null $toevoeging Optional house number
 	 *                                addition.
@@ -111,20 +111,20 @@ class BagApiAdapter implements BagAdapterInterface {
 	 */
 	public function lookupAddress(
 		string $postcode,
-		string $huisnummer,
+		string $houseNumber,
 		?string $huisletter = null,
 		?string $toevoeging = null,
 		array $context = [],
 	): BagLookupResult {
 		$normalizedPostcode = $this->normalizePostcode(postcode: $postcode);
-		$invalidInput = $this->validateAddressInput(postcode: $normalizedPostcode, huisnummer: $huisnummer);
+		$invalidInput = $this->validateAddressInput(postcode: $normalizedPostcode, houseNumber: $houseNumber);
 		if ($invalidInput !== null) {
 			return $invalidInput;
 		}
 
 		$query = $this->buildAddressQuery(
 			postcode: $normalizedPostcode,
-			huisnummer: $huisnummer,
+			houseNumber: $houseNumber,
 			huisletter: $huisletter,
 			toevoeging: $toevoeging
 		);
@@ -154,7 +154,7 @@ class BagApiAdapter implements BagAdapterInterface {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest BAG address lookup failed',
-				['postcode' => $normalizedPostcode, 'huisnummer' => $huisnummer, 'error' => $e->getMessage(), 'context' => $context]
+				['postcode' => $normalizedPostcode, 'huisnummer' => $houseNumber, 'error' => $e->getMessage(), 'context' => $context]
 			);
 
 			return new BagLookupResult(lookupStatus: 'LOOKUP_ERROR', address: [], dormant: false, extras: ['reason' => 'transport-error']);
@@ -177,16 +177,16 @@ class BagApiAdapter implements BagAdapterInterface {
 	 * when malformed, or null when valid.
 	 *
 	 * @param string $postcode Already-normalized postcode.
-	 * @param string $huisnummer House number.
+	 * @param string $houseNumber House number.
 	 *
 	 * @return BagLookupResult|null
 	 */
-	private function validateAddressInput(string $postcode, string $huisnummer): ?BagLookupResult {
+	private function validateAddressInput(string $postcode, string $houseNumber): ?BagLookupResult {
 		if (preg_match(self::POSTCODE_PATTERN, $postcode) !== 1) {
 			return new BagLookupResult(lookupStatus: 'INVALID_INPUT', address: [], dormant: false, extras: ['reason' => 'invalid-postcode']);
 		}
 
-		if ($huisnummer === '' || ctype_digit($huisnummer) === false) {
+		if ($houseNumber === '' || ctype_digit($houseNumber) === false) {
 			return new BagLookupResult(lookupStatus: 'INVALID_INPUT', address: [], dormant: false, extras: ['reason' => 'invalid-huisnummer']);
 		}
 
@@ -198,14 +198,14 @@ class BagApiAdapter implements BagAdapterInterface {
 	 * huisletter/huisnummertoevoeging when present.
 	 *
 	 * @param string $postcode Already-normalized postcode.
-	 * @param string $huisnummer House number.
+	 * @param string $houseNumber House number.
 	 * @param string|null $huisletter Optional house letter.
 	 * @param string|null $toevoeging Optional house number addition.
 	 *
 	 * @return array<string,string>
 	 */
-	private function buildAddressQuery(string $postcode, string $huisnummer, ?string $huisletter, ?string $toevoeging): array {
-		$query = ['postcode' => $postcode, 'huisnummer' => $huisnummer];
+	private function buildAddressQuery(string $postcode, string $houseNumber, ?string $huisletter, ?string $toevoeging): array {
+		$query = ['postcode' => $postcode, 'huisnummer' => $houseNumber];
 		if ($huisletter !== null && $huisletter !== '') {
 			$query['huisletter'] = $huisletter;
 		}

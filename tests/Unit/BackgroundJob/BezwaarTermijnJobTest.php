@@ -55,7 +55,7 @@ class BezwaarTermijnJobTest extends TestCase {
 	 *
 	 * @var BeschikkingService|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private BeschikkingService $beschikkingService;
+	private BeschikkingService $decisionService;
 
 	/**
 	 * The settings service mock.
@@ -85,7 +85,7 @@ class BezwaarTermijnJobTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->objects = new FakeObjectService();
-		$this->beschikkingService = $this->createMock(BeschikkingService::class);
+		$this->decisionService = $this->createMock(BeschikkingService::class);
 		$this->settings = $this->createMock(SettingsService::class);
 		$this->appManager = $this->createMock(IAppManager::class);
 		$timeFactory = $this->createMock(ITimeFactory::class);
@@ -104,7 +104,7 @@ class BezwaarTermijnJobTest extends TestCase {
 
 		$this->job = new BezwaarTermijnJob(
 			$timeFactory,
-			$this->beschikkingService,
+			$this->decisionService,
 			$this->settings,
 			$this->appManager,
 			$logger,
@@ -139,7 +139,7 @@ class BezwaarTermijnJobTest extends TestCase {
 			'archiefDatum' => $yesterday,
 		]);
 
-		$this->beschikkingService->expects($this->once())
+		$this->decisionService->expects($this->once())
 			->method('archive')
 			->with('besch-1')
 			->willReturn(['id' => 'besch-1', 'huidigeStatus' => 'gearchiveerd']);
@@ -167,7 +167,7 @@ class BezwaarTermijnJobTest extends TestCase {
 			'archiefDatum' => $yesterday,
 		]);
 
-		$this->beschikkingService->expects($this->never())->method('archive');
+		$this->decisionService->expects($this->never())->method('archive');
 
 		$this->runJob();
 
@@ -192,7 +192,7 @@ class BezwaarTermijnJobTest extends TestCase {
 			'archiefDatum' => $tomorrow,
 		]);
 
-		$this->beschikkingService->expects($this->never())->method('archive');
+		$this->decisionService->expects($this->never())->method('archive');
 
 		$this->runJob();
 
@@ -207,7 +207,7 @@ class BezwaarTermijnJobTest extends TestCase {
 	 */
 	public function testNoOpWithoutOpenRegister(): void {
 		$this->appManager->method('getInstalledApps')->willReturn(['procest']);
-		$this->beschikkingService->expects($this->never())->method('archive');
+		$this->decisionService->expects($this->never())->method('archive');
 
 		$this->runJob();
 

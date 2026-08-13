@@ -73,11 +73,11 @@ class BezwaarTermijnScheduler {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function computeTermijn(string $bekendmaking): array {
-		$eindDatum = (new DateTimeImmutable($bekendmaking))->add(new DateInterval('P6W'));
-		$herinnering = $eindDatum->sub(new DateInterval('P1W'));
+		$endDate = (new DateTimeImmutable($bekendmaking))->add(new DateInterval('P6W'));
+		$herinnering = $endDate->sub(new DateInterval('P1W'));
 
 		return [
-			'eindDatum' => $eindDatum->format('Y-m-d'),
+			'eindDatum' => $endDate->format('Y-m-d'),
 			'herinnering' => $herinnering->format('Y-m-d'),
 		];
 	}//end computeTermijn()
@@ -85,9 +85,9 @@ class BezwaarTermijnScheduler {
 	/**
 	 * Create the BezwaarTrigger scheduling record on verzending.
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $decisionId The beschikking UUID.
 	 * @param string $bekendmaking The bekendmaking date.
-	 * @param string $eindDatum The bezwaartermijn end date.
+	 * @param string $endDate The bezwaartermijn end date.
 	 * @param string $herinnering The reminder date.
 	 *
 	 * @return void
@@ -95,9 +95,9 @@ class BezwaarTermijnScheduler {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function createBezwaarTrigger(
-		string $beschikkingId,
+		string $decisionId,
 		string $bekendmaking,
-		string $eindDatum,
+		string $endDate,
 		string $herinnering,
 	): void {
 		$objectService = $this->settingsService->getObjectService();
@@ -111,26 +111,26 @@ class BezwaarTermijnScheduler {
 			return;
 		}
 
-		$archiefDatum = (new DateTimeImmutable($eindDatum))->add(new DateInterval('P1D'))->format('Y-m-d');
+		$archiefDate = (new DateTimeImmutable($endDate))->add(new DateInterval('P1D'))->format('Y-m-d');
 
 		try {
 			$objectService->saveObject(
 				register: $register,
 				schema: $schema,
 				object: [
-					'beschikkingId' => $beschikkingId,
+					'beschikkingId' => $decisionId,
 					'bekendmakingDatum' => $bekendmaking,
-					'bezwaarTermijnEindDatum' => $eindDatum,
+					'bezwaarTermijnEindDatum' => $endDate,
 					'herinneringDatum' => $herinnering,
 					'bezwaarOntvangen' => false,
 					'archiefTriggerActief' => true,
-					'archiefDatum' => $archiefDatum,
+					'archiefDatum' => $archiefDate,
 				],
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BeschikkingService: createBezwaarTrigger failed',
-				['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
+				['exception' => $e->getMessage(), 'beschikkingId' => $decisionId],
 			);
 		}
 	}//end createBezwaarTrigger()

@@ -70,7 +70,7 @@ class BezwaarCreationHook {
 	/**
 	 * Link a bezwaar case to its primair besluit and create the objection.
 	 *
-	 * @param string $bezwaarCaseId UUID of the bezwaar case.
+	 * @param string $objectionCaseId UUID of the bezwaar case.
 	 * @param string $contestedDecisionId UUID of the contested
 	 *                                    primair besluit decision.
 	 * @param array<string, mixed> $objectionPayload Optional extra objection
@@ -86,11 +86,11 @@ class BezwaarCreationHook {
 	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
 	 */
 	public function onBezwaarCreated(
-		string $bezwaarCaseId,
+		string $objectionCaseId,
 		string $contestedDecisionId,
 		array $objectionPayload = [],
 	): array {
-		if (trim($bezwaarCaseId) === '' || trim($contestedDecisionId) === '') {
+		if (trim($objectionCaseId) === '' || trim($contestedDecisionId) === '') {
 			throw new RuntimeException(
 				'bezwaar case id and contested decision id are required'
 			);
@@ -112,19 +112,19 @@ class BezwaarCreationHook {
 			throw new RuntimeException('Contested decision not found');
 		}
 
-		$primairBesluitCaseId = $this->extractUuid(value: ($decision['case'] ?? ''));
+		$primairDecisionCaseId = $this->extractUuid(value: ($decision['case'] ?? ''));
 
-		$this->linkPrimairBesluit(
+		$this->linkPrimairDecision(
 			objectService: $objectService,
 			register: $schemas['register'],
 			caseSchema: $schemas['case'],
-			bezwaarCaseId: $bezwaarCaseId,
-			primairBesluitCaseId: $primairBesluitCaseId,
+			objectionCaseId: $objectionCaseId,
+			primairDecisionCaseId: $primairDecisionCaseId,
 			contestedDecisionId: $contestedDecisionId
 		);
 
 		$objection = $this->buildObjection(
-			bezwaarCaseId: $bezwaarCaseId,
+			objectionCaseId: $objectionCaseId,
 			contestedDecisionId: $contestedDecisionId,
 			payload: $objectionPayload
 		);
@@ -167,21 +167,21 @@ class BezwaarCreationHook {
 	 * @param object $objectService The OpenRegister ObjectService.
 	 * @param string $register Register id.
 	 * @param string $caseSchema case schema id.
-	 * @param string $bezwaarCaseId The bezwaar case to update.
-	 * @param string $primairBesluitCaseId The primair besluit case (may be '').
+	 * @param string $objectionCaseId The bezwaar case to update.
+	 * @param string $primairDecisionCaseId The primair besluit case (may be '').
 	 * @param string $contestedDecisionId The contested decision (for logging).
 	 *
 	 * @return void
 	 */
-	private function linkPrimairBesluit(
+	private function linkPrimairDecision(
 		object $objectService,
 		string $register,
 		string $caseSchema,
-		string $bezwaarCaseId,
-		string $primairBesluitCaseId,
+		string $objectionCaseId,
+		string $primairDecisionCaseId,
 		string $contestedDecisionId,
 	): void {
-		if ($primairBesluitCaseId === '') {
+		if ($primairDecisionCaseId === '') {
 			$this->logger->info(
 				'BezwaarCreationHook: contested decision has no parent case; '
 				. 'skipping relatedCases link',
@@ -194,8 +194,8 @@ class BezwaarCreationHook {
 			objectService: $objectService,
 			register: $register,
 			caseSchema: $caseSchema,
-			bezwaarCaseId: $bezwaarCaseId,
-			relatedCaseId: $primairBesluitCaseId
+			objectionCaseId: $objectionCaseId,
+			relatedCaseId: $primairDecisionCaseId
 		);
 	}//end linkPrimairBesluit()
 
@@ -208,7 +208,7 @@ class BezwaarCreationHook {
 	 * @param object $objectService The OpenRegister ObjectService.
 	 * @param string $register Register id.
 	 * @param string $caseSchema case schema id.
-	 * @param string $bezwaarCaseId The bezwaar case to update.
+	 * @param string $objectionCaseId The bezwaar case to update.
 	 * @param string $relatedCaseId The primair besluit case to link.
 	 *
 	 * @return void
@@ -217,11 +217,11 @@ class BezwaarCreationHook {
 		object $objectService,
 		string $register,
 		string $caseSchema,
-		string $bezwaarCaseId,
+		string $objectionCaseId,
 		string $relatedCaseId,
 	): void {
 		$case = $objectService->find(
-			$bezwaarCaseId,
+			$objectionCaseId,
 			register: $register,
 			schema: $caseSchema
 		);
@@ -254,14 +254,14 @@ class BezwaarCreationHook {
 	/**
 	 * Build the objection record payload.
 	 *
-	 * @param string $bezwaarCaseId The bezwaar case UUID.
+	 * @param string $objectionCaseId The bezwaar case UUID.
 	 * @param string $contestedDecisionId The contested decision UUID.
 	 * @param array<string, mixed> $payload Caller-supplied fields.
 	 *
 	 * @return array<string, mixed> The objection record.
 	 */
 	private function buildObjection(
-		string $bezwaarCaseId,
+		string $objectionCaseId,
 		string $contestedDecisionId,
 		array $payload,
 	): array {
@@ -269,7 +269,7 @@ class BezwaarCreationHook {
 		// server-derived registrar so a caller can never point the objection
 		// at a different case/decision nor forge who registered it.
 		$objection = $payload;
-		$objection['case'] = $bezwaarCaseId;
+		$objection['case'] = $objectionCaseId;
 		$objection['contestedDecision'] = $contestedDecisionId;
 		$objection['registeredBy'] = $this->resolveUserId();
 

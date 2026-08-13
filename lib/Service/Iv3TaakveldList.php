@@ -86,8 +86,8 @@ class Iv3TaakveldList {
 		foreach ((array)($bundle['categories'] ?? []) as $category) {
 			$categoryCode = (string)($category['code'] ?? '');
 			$categoryLabel = (string)($category['label'] ?? '');
-			foreach ((array)($category['taakvelden'] ?? []) as $taakveld) {
-				$out[] = $this->flattenTaakveld(taakveld: $taakveld, categoryCode: $categoryCode, categoryLabel: $categoryLabel);
+			foreach ((array)($category['taakvelden'] ?? []) as $taskField) {
+				$out[] = $this->flattenTaskField(taskField: $taskField, categoryCode: $categoryCode, categoryLabel: $categoryLabel);
 			}
 		}
 
@@ -98,24 +98,24 @@ class Iv3TaakveldList {
 	/**
 	 * Flatten one raw JSON taakveld entry into its public shape.
 	 *
-	 * @param array<string, mixed> $taakveld Raw taakveld entry.
+	 * @param array<string, mixed> $taskField Raw taakveld entry.
 	 * @param string $categoryCode Owning category code.
 	 * @param string $categoryLabel Owning category label.
 	 *
 	 * @return array{code: string, label: string, categoryCode: string, categoryLabel: string, deprecated: bool, aggregatesUnder: string|null}
 	 */
-	private function flattenTaakveld(array $taakveld, string $categoryCode, string $categoryLabel): array {
-		$aggregatesUnder = ($taakveld['aggregatesUnder'] ?? null);
+	private function flattenTaskField(array $taskField, string $categoryCode, string $categoryLabel): array {
+		$aggregatesUnder = ($taskField['aggregatesUnder'] ?? null);
 		if (is_string($aggregatesUnder) === false || $aggregatesUnder === '') {
 			$aggregatesUnder = null;
 		}
 
 		return [
-			'code' => (string)($taakveld['code'] ?? ''),
-			'label' => (string)($taakveld['label'] ?? ''),
+			'code' => (string)($taskField['code'] ?? ''),
+			'label' => (string)($taskField['label'] ?? ''),
 			'categoryCode' => $categoryCode,
 			'categoryLabel' => $categoryLabel,
-			'deprecated' => (bool)($taakveld['deprecated'] ?? false),
+			'deprecated' => (bool)($taskField['deprecated'] ?? false),
 			'aggregatesUnder' => $aggregatesUnder,
 		];
 	}//end flattenTaakveld()
@@ -133,9 +133,9 @@ class Iv3TaakveldList {
 	 * @spec openspec/changes/archive/2026-07-14-iv3-taakveld-2023-refinement/specs/iv3-taakveld-2023-refinement/spec.md
 	 */
 	public function isDeprecated(string $code): bool {
-		foreach ($this->allTaakvelden() as $taakveld) {
-			if ($taakveld['code'] === $code) {
-				return $taakveld['deprecated'];
+		foreach ($this->allTaakvelden() as $taskField) {
+			if ($taskField['code'] === $code) {
+				return $taskField['deprecated'];
 			}
 		}
 
@@ -163,9 +163,9 @@ class Iv3TaakveldList {
 	 * @spec openspec/changes/archive/2026-07-14-iv3-taakveld-2023-refinement/specs/iv3-taakveld-2023-refinement/spec.md
 	 */
 	public function aggregationKeyFor(string $code): string {
-		foreach ($this->allTaakvelden() as $taakveld) {
-			if ($taakveld['code'] === $code) {
-				return ($taakveld['aggregatesUnder'] ?? $code);
+		foreach ($this->allTaakvelden() as $taskField) {
+			if ($taskField['code'] === $code) {
+				return ($taskField['aggregatesUnder'] ?? $code);
 			}
 		}
 
@@ -182,8 +182,8 @@ class Iv3TaakveldList {
 	 * @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/specs/iv3-case-cost-reporting/spec.md
 	 */
 	public function isValidCode(string $code): bool {
-		foreach ($this->allTaakvelden() as $taakveld) {
-			if ($taakveld['code'] === $code) {
+		foreach ($this->allTaakvelden() as $taskField) {
+			if ($taskField['code'] === $code) {
 				return true;
 			}
 		}
@@ -201,9 +201,9 @@ class Iv3TaakveldList {
 	 * @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/specs/iv3-case-cost-reporting/spec.md
 	 */
 	public function labelFor(string $code): ?string {
-		foreach ($this->allTaakvelden() as $taakveld) {
-			if ($taakveld['code'] === $code) {
-				return $taakveld['label'];
+		foreach ($this->allTaakvelden() as $taskField) {
+			if ($taskField['code'] === $code) {
+				return $taskField['label'];
 			}
 		}
 

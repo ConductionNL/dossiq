@@ -83,13 +83,13 @@ class BewijsstukService {
 	/**
 	 * Whether a bewijsstuk type is allowed for a source phase (REQ-SUB-007).
 	 *
-	 * @param string $gekoppeldAan The source phase.
+	 * @param string $gekoppeldIn The source phase.
 	 * @param string $type The bewijsstuk type.
 	 *
 	 * @return bool True when the combination is on the whitelist.
 	 */
-	public function isTypeAllowed(string $gekoppeldAan, string $type): bool {
-		$allowed = self::TYPE_WHITELIST[$gekoppeldAan] ?? null;
+	public function isTypeAllowed(string $gekoppeldIn, string $type): bool {
+		$allowed = self::TYPE_WHITELIST[$gekoppeldIn] ?? null;
 		if ($allowed === null) {
 			return false;
 		}
@@ -101,29 +101,29 @@ class BewijsstukService {
 	 * Resolve the retention years for a source phase, preferring a
 	 * regeling-configured override (REQ-SUB-007).
 	 *
-	 * @param string $gekoppeldAan The source phase.
+	 * @param string $gekoppeldIn The source phase.
 	 * @param int|null $override Regeling-configured retention, if any.
 	 *
 	 * @return int The retention years.
 	 */
-	public function bewaartermijnJaren(string $gekoppeldAan, ?int $override = null): int {
+	public function bewaartermijnJaren(string $gekoppeldIn, ?int $override = null): int {
 		if ($override !== null && $override > 0) {
 			return $override;
 		}
 
-		return (self::DEFAULT_BEWAARTERMIJN[$gekoppeldAan] ?? 7);
+		return (self::DEFAULT_BEWAARTERMIJN[$gekoppeldIn] ?? 7);
 	}//end bewaartermijnJaren()
 
 	/**
 	 * Compute the retention end date.
 	 *
-	 * @param DateTimeImmutable $vanaf The reference date.
+	 * @param DateTimeImmutable $from The reference date.
 	 * @param int $jaren The retention years.
 	 *
 	 * @return DateTimeImmutable The retention end date.
 	 */
-	public function bewaartermijnEinde(DateTimeImmutable $vanaf, int $jaren): DateTimeImmutable {
-		return $vanaf->add(new DateInterval('P' . max(1, $jaren) . 'Y'));
+	public function bewaartermijnEinde(DateTimeImmutable $from, int $jaren): DateTimeImmutable {
+		return $from->add(new DateInterval('P' . max(1, $jaren) . 'Y'));
 	}//end bewaartermijnEinde()
 
 	/**
@@ -155,30 +155,30 @@ class BewijsstukService {
 	 *
 	 * @param array<string, mixed> $payload The bewijsstuk metadata.
 	 * @param string|null $contents Raw file contents to hash, if available.
-	 * @param int|null $regelingRetentie Regeling-configured retention override.
+	 * @param int|null $regelingRetention Regeling-configured retention override.
 	 *
 	 * @return array<string, mixed> The created bewijsstuk record.
 	 *
 	 * @throws OCSBadRequestException When validation/persistence fails.
 	 */
-	public function create(array $payload, ?string $contents = null, ?int $regelingRetentie = null): array {
-		$gekoppeldAan = (string)($payload['gekoppeldAan'] ?? '');
+	public function create(array $payload, ?string $contents = null, ?int $regelingRetention = null): array {
+		$gekoppeldIn = (string)($payload['gekoppeldAan'] ?? '');
 		$type = (string)($payload['bewijsstukType'] ?? '');
-		if ($this->isTypeAllowed(gekoppeldAan: $gekoppeldAan, type: $type) === false) {
-			throw new OCSBadRequestException('Bewijsstuktype "' . $type . '" is niet toegestaan voor fase "' . $gekoppeldAan . '"');
+		if ($this->isTypeAllowed(gekoppeldIn: $gekoppeldIn, type: $type) === false) {
+			throw new OCSBadRequestException('Bewijsstuktype "' . $type . '" is niet toegestaan voor fase "' . $gekoppeldIn . '"');
 		}
 
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$now = new DateTimeImmutable();
-		$jaren = $this->bewaartermijnJaren(gekoppeldAan: $gekoppeldAan, override: $regelingRetentie);
+		$jaren = $this->bewaartermijnJaren(gekoppeldIn: $gekoppeldIn, override: $regelingRetention);
 		$record = array_merge(
 			$payload,
 			[
 				'bewaartermijnJaren' => $jaren,
-				'bewaartermijnEinde' => $this->bewaartermijnEinde(vanaf: $now, jaren: $jaren)->format('Y-m-d'),
+				'bewaartermijnEinde' => $this->bewaartermijnEinde(from: $now, jaren: $jaren)->format('Y-m-d'),
 				'archiefStatus' => 'actief',
-				'immutable' => ($gekoppeldAan === 'vaststelling'),
+				'immutable' => ($gekoppeldIn === 'vaststelling'),
 			]
 		);
 		if ($contents !== null) {

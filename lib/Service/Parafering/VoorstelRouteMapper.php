@@ -46,15 +46,15 @@ class VoorstelRouteMapper {
 	/**
 	 * Append an entry to the voorstel auditTrail field.
 	 *
-	 * @param array<string, mixed> $voorstel The voorstel.
+	 * @param array<string, mixed> $proposal The voorstel.
 	 * @param array<string, mixed> $entry The entry to append.
 	 *
 	 * @return array<string, mixed> The voorstel with the entry appended.
 	 *
 	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
 	 */
-	public function appendAuditTrail(array $voorstel, array $entry): array {
-		$trail = $voorstel['auditTrail'] ?? [];
+	public function appendAuditTrail(array $proposal, array $entry): array {
+		$trail = $proposal['auditTrail'] ?? [];
 		if (is_string($trail) === true) {
 			$decoded = json_decode($trail, true);
 			$trail = [];
@@ -68,9 +68,9 @@ class VoorstelRouteMapper {
 		}
 
 		$trail[] = $entry;
-		$voorstel['auditTrail'] = $trail;
+		$proposal['auditTrail'] = $trail;
 
-		return $voorstel;
+		return $proposal;
 	}//end appendAuditTrail()
 
 	/**

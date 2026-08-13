@@ -84,7 +84,7 @@ class PdokService {
 	 *
 	 * @var array{messageKey:string,status:int}|null
 	 */
-	private ?array $lastWarning = null;
+	private ?array $orderWarning = null;
 
 	/**
 	 * HTTP client created lazily.
@@ -127,7 +127,7 @@ class PdokService {
 	 * @return array<int, array<string,mixed>> Normalised suggestion list.
 	 */
 	public function searchAddress(string $query, array $filters = [], int $rows = 10): array {
-		$this->lastWarning = null;
+		$this->orderWarning = null;
 		if (strlen(trim($query)) < 3) {
 			return [];
 		}
@@ -156,7 +156,7 @@ class PdokService {
 	 *                                  or null when not found / degraded.
 	 */
 	public function lookupAddress(string $id): ?array {
-		$this->lastWarning = null;
+		$this->orderWarning = null;
 		if ($id === '') {
 			return null;
 		}
@@ -190,7 +190,7 @@ class PdokService {
 	 *       branch on a `string`-typed value; no behavioural or contractual change.
 	 */
 	public function searchParcel(array $criteria): array {
-		$this->lastWarning = null;
+		$this->orderWarning = null;
 		if ($this->appManager->isInstalled(self::OPENCONNECTOR_APP) === false) {
 			$this->recordWarning(messageKey: 'pdok.openconnector_missing', status: 404);
 			return [];
@@ -238,7 +238,7 @@ class PdokService {
 		return [
 			'openconnectorInstalled' => $this->appManager->isInstalled(self::OPENCONNECTOR_APP),
 			'featureFlagActive' => $this->isFlagActive(),
-			'lastWarning' => $this->lastWarning,
+			'lastWarning' => $this->orderWarning,
 		];
 	}//end getServiceStatus()
 
@@ -249,7 +249,7 @@ class PdokService {
 	 * @return array{messageKey:string,status:int}|null
 	 */
 	public function lastWarning(): ?array {
-		return $this->lastWarning;
+		return $this->orderWarning;
 	}//end lastWarning()
 
 	/**
@@ -325,6 +325,6 @@ class PdokService {
 	 * @return void
 	 */
 	private function recordWarning(string $messageKey, int $status): void {
-		$this->lastWarning = ['messageKey' => $messageKey, 'status' => $status];
+		$this->orderWarning = ['messageKey' => $messageKey, 'status' => $status];
 	}//end recordWarning()
 }//end class

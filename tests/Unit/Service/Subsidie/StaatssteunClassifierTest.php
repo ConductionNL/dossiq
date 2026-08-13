@@ -96,10 +96,10 @@ class StaatssteunClassifierTest extends TestCase {
 	 * @return void
 	 */
 	public function testTamMelding(): void {
-		$melding = $this->classifier->buildTamMelding('SUB-2026-000001', 'art14', 60000.0);
-		$this->assertSame('TAM', $melding['register']);
-		$this->assertSame('SUB-2026-000001', $melding['beschikkingnummer']);
-		$this->assertStringContainsString('art14', (string)$melding['rechtsgrond']);
-		$this->assertSame(60000.0, $melding['bedrag']);
+		$report = $this->classifier->buildTamMelding('SUB-2026-000001', 'art14', 60000.0);
+		$this->assertSame('TAM', $report['register']);
+		$this->assertSame('SUB-2026-000001', $report['beschikkingnummer']);
+		$this->assertStringContainsString('art14', (string)$report['rechtsgrond']);
+		$this->assertSame(60000.0, $report['bedrag']);
 	}//end testTamMelding()
 }//end class

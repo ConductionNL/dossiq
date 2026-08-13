@@ -62,7 +62,7 @@ class BesluitMaterialisationService {
 	 * values changes (decidesk outcome rather than the local besluit engine).
 	 *
 	 * @param string $caseId The case UUID.
-	 * @param string $besluitId The existing ZGW Besluit UUID on the case (or empty for new).
+	 * @param string $decisionId The existing ZGW Besluit UUID on the case (or empty for new).
 	 * @param array<string,mixed> $outcome Normalised outcome (result, decidedAt, motivering, signer, method).
 	 *
 	 * @return array<string,mixed> The persisted Besluit record.
@@ -71,7 +71,7 @@ class BesluitMaterialisationService {
 	 *
 	 * @spec openspec/specs/contract-decision-delegation/spec.md
 	 */
-	public function materialise(string $caseId, string $besluitId, array $outcome): array {
+	public function materialise(string $caseId, string $decisionId, array $outcome): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available; cannot materialise Besluit');
@@ -84,18 +84,18 @@ class BesluitMaterialisationService {
 		}
 
 		// Build the ZGW Besluit payload from the decidesk outcome (REQ-PDCD-003).
-		$besluit = $this->buildBesluitPayload(caseId: $caseId, outcome: $outcome);
+		$decision = $this->buildBesluitPayload(caseId: $caseId, outcome: $outcome);
 
 		// Merge with existing Besluit when updating (non-empty UUID), otherwise create.
 		$uuid = null;
-		if ($besluitId !== '') {
-			$besluit['uuid'] = $besluitId;
-			$uuid = $besluitId;
+		if ($decisionId !== '') {
+			$decision['uuid'] = $decisionId;
+			$uuid = $decisionId;
 		}
 
 		try {
 			$saved = $objectService->saveObject(
-				object: $besluit,
+				object: $decision,
 				register: $register,
 				schema: $schema,
 				uuid: $uuid,
@@ -127,7 +127,7 @@ class BesluitMaterialisationService {
 	 * falling back to `getStatus()` (approved/rejected/withdrawn/pending).
 	 *
 	 * @param string $caseId The case UUID.
-	 * @param string $besluitId The existing ZGW Besluit UUID on the case (or empty for new).
+	 * @param string $decisionId The existing ZGW Besluit UUID on the case (or empty for new).
 	 * @param array<string,mixed> $event The event projection: status, outcome, decidedAt, motivering, signer, method.
 	 *
 	 * @return array<string,mixed> The persisted Besluit record.
@@ -136,7 +136,7 @@ class BesluitMaterialisationService {
 	 *
 	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
-	public function materialiseFromConcludedEvent(string $caseId, string $besluitId, array $event): array {
+	public function materialiseFromConcludedEvent(string $caseId, string $decisionId, array $event): array {
 		$result = (string)($event['outcome'] ?? '');
 		if ($result === '') {
 			$result = (string)($event['status'] ?? '');
@@ -151,7 +151,7 @@ class BesluitMaterialisationService {
 			'raw' => $event,
 		];
 
-		return $this->materialise(caseId: $caseId, besluitId: $besluitId, outcome: $outcome);
+		return $this->materialise(caseId: $caseId, decisionId: $decisionId, outcome: $outcome);
 	}//end materialiseFromConcludedEvent()
 
 	/**
@@ -167,7 +167,7 @@ class BesluitMaterialisationService {
 	public function buildBesluitPayload(string $caseId, array $outcome): array {
 		$result = (string)($outcome['result'] ?? '');
 		$decidedAt = (string)($outcome['decidedAt'] ?? date('c'));
-		$motivering = (string)($outcome['motivering'] ?? '');
+		$rationale = (string)($outcome['motivering'] ?? '');
 		$signer = (string)($outcome['signer'] ?? '');
 		$method = (string)($outcome['method'] ?? '');
 
@@ -176,7 +176,7 @@ class BesluitMaterialisationService {
 			'zaakRef' => $caseId,
 			'result' => $result,
 			'datum' => $decidedAt,
-			'toelichting' => $motivering,
+			'toelichting' => $rationale,
 			// Audit fields: decision-origin provenance for the zaak dossier.
 			'mandaathouder' => $signer,
 			'besluitMethode' => $method,

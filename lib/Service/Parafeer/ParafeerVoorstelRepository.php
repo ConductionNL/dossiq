@@ -101,14 +101,14 @@ class ParafeerVoorstelRepository {
 	 */
 	public function resolveSchemas(): array {
 		$register = $this->settingsService->getConfigValue('register');
-		$voorstelSchema = $this->settingsService->getConfigValue('voorstel_schema');
-		$actieSchema = $this->settingsService->getConfigValue('parafeeractie_schema');
+		$proposalSchema = $this->settingsService->getConfigValue('voorstel_schema');
+		$actionSchema = $this->settingsService->getConfigValue('parafeeractie_schema');
 
-		if (empty($register) === true || empty($voorstelSchema) === true || empty($actieSchema) === true) {
+		if (empty($register) === true || empty($proposalSchema) === true || empty($actionSchema) === true) {
 			throw new RuntimeException('Procest register/schemas not configured');
 		}
 
-		return [(string)$register, (string)$voorstelSchema, (string)$actieSchema];
+		return [(string)$register, (string)$proposalSchema, (string)$actionSchema];
 	}//end resolveSchemas()
 
 	/**
@@ -117,7 +117,7 @@ class ParafeerVoorstelRepository {
 	 * @param object $objectService The OpenRegister ObjectService.
 	 * @param string $register The register identifier.
 	 * @param string $schema The voorstel schema identifier.
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param string $proposalId The voorstel UUID.
 	 *
 	 * @return array<string, mixed> The voorstel as an associative array.
 	 *
@@ -129,15 +129,15 @@ class ParafeerVoorstelRepository {
 		object $objectService,
 		string $register,
 		string $schema,
-		string $voorstelId,
+		string $proposalId,
 	): array {
 		try {
-			$voorstel = $objectService->find($voorstelId, register: $register, schema: $schema);
+			$proposal = $objectService->find($proposalId, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
 			throw new OCSBadRequestException('Voorstel not found');
 		}
 
-		$array = $this->normalizer->toArray(value: $voorstel);
+		$array = $this->normalizer->toArray(value: $proposal);
 		if (empty($array) === true) {
 			throw new OCSBadRequestException('Voorstel not found');
 		}

@@ -103,13 +103,13 @@ class DwangsomCalculationService {
 	 * Reads the berekening, computes the next day's tariff (per regime),
 	 * adds it to cumulatievBedrag (capped at plafond), and persists.
 	 *
-	 * @param string $berekeningId Berekening id.
+	 * @param string $calculationId Berekening id.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
 	 */
-	public function calculateDaily(string $berekeningId): ?array {
+	public function calculateDaily(string $calculationId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
@@ -117,11 +117,11 @@ class DwangsomCalculationService {
 			return null;
 		}
 
-		$row = $this->fetchBerekeningRow(
+		$row = $this->fetchCalculationRow(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			berekeningId: $berekeningId
+			calculationId: $calculationId
 		);
 		if ($row === null) {
 			return null;
@@ -133,12 +133,12 @@ class DwangsomCalculationService {
 
 		$row = $this->applyDailyAccrual(row: $row);
 
-		return $this->persistBerekening(
+		return $this->persistCalculation(
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
 			row: $row,
-			berekeningId: $berekeningId
+			calculationId: $calculationId
 		);
 	}//end calculateDaily()
 
@@ -148,22 +148,22 @@ class DwangsomCalculationService {
 	 * @param object $objectService OpenRegister object service.
 	 * @param string $register Register identifier.
 	 * @param string $schema Schema identifier.
-	 * @param string $berekeningId Berekening id.
+	 * @param string $calculationId Berekening id.
 	 *
 	 * @return array<string, mixed>|null The row, or null when unavailable.
 	 */
-	private function fetchBerekeningRow(
+	private function fetchCalculationRow(
 		object $objectService,
 		string $register,
 		string $schema,
-		string $berekeningId,
+		string $calculationId,
 	): ?array {
 		try {
-			$row = $objectService->find($berekeningId, register: $register, schema: $schema);
+			$row = $objectService->find($calculationId, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'DwangsomCalculation lookup failed',
-				['id' => $berekeningId, 'error' => $e->getMessage()]
+				['id' => $calculationId, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -191,7 +191,7 @@ class DwangsomCalculationService {
 		$nextDay = ($currentDay + 1);
 		$tariff = $this->dailyTariffAwb(dayNumber: $nextDay);
 		if ($regime === 'afwijkend') {
-			$tariff = $this->resolveCustomDailyTariff(berekening: $row);
+			$tariff = $this->resolveCustomDailyTariff(calculation: $row);
 		}
 
 		$newCumul = ($cumulative + $tariff);
@@ -216,16 +216,16 @@ class DwangsomCalculationService {
 	 * @param string $register Register identifier.
 	 * @param string $schema Schema identifier.
 	 * @param array<string, mixed> $row Berekening row to persist.
-	 * @param string $berekeningId Berekening id (for logging).
+	 * @param string $calculationId Berekening id (for logging).
 	 *
 	 * @return array<string, mixed> The saved row, or the supplied row.
 	 */
-	private function persistBerekening(
+	private function persistCalculation(
 		object $objectService,
 		string $register,
 		string $schema,
 		array $row,
-		string $berekeningId,
+		string $calculationId,
 	): array {
 		try {
 			$saved = $objectService->saveObject($register, $schema, $row);
@@ -237,7 +237,7 @@ class DwangsomCalculationService {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'DwangsomCalculation persist failed',
-				['id' => $berekeningId, 'error' => $e->getMessage()]
+				['id' => $calculationId, 'error' => $e->getMessage()]
 			);
 			return $row;
 		}
@@ -248,13 +248,13 @@ class DwangsomCalculationService {
 	 *
 	 * Sets status=gestopt-wegens-beschikking and locks definitievBedrag.
 	 *
-	 * @param string $berekeningId Berekening id.
+	 * @param string $calculationId Berekening id.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
 	 */
-	public function stopForBeschikking(string $berekeningId): ?array {
+	public function stopForBeschikking(string $calculationId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('dwangsom_berekening_schema');
@@ -263,7 +263,7 @@ class DwangsomCalculationService {
 		}
 
 		try {
-			$row = $objectService->find($berekeningId, register: $register, schema: $schema);
+			$row = $objectService->find($calculationId, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
 			return null;
 		}
@@ -290,12 +290,12 @@ class DwangsomCalculationService {
 	/**
 	 * Resolve the custom daily tariff from the linked TermijnDefinitie.
 	 *
-	 * @param array<string, mixed> $berekening Berekening row.
+	 * @param array<string, mixed> $calculation Berekening row.
 	 *
 	 * @return int Cents.
 	 */
-	private function resolveCustomDailyTariff(array $berekening): int {
-		$instanceId = (string)($berekening['termijnInstance'] ?? '');
+	private function resolveCustomDailyTariff(array $calculation): int {
+		$instanceId = (string)($calculation['termijnInstance'] ?? '');
 		if ($instanceId === '') {
 			return self::AWB_TIER_1_CENTS;
 		}

@@ -60,13 +60,13 @@ class StaatssteunClassifier {
 	 * Whether a new grant fits under the de-minimis ceiling given the
 	 * cumulative prior de-minimis aid to the same onderneming (REQ-SUB-008).
 	 *
-	 * @param float $nieuwBedrag The proposed grant amount.
+	 * @param float $newAmount The proposed grant amount.
 	 * @param float $eerdereDeMinimis The cumulative prior de-minimis aid in the window.
 	 *
 	 * @return bool True when the cumulative total stays within the ceiling.
 	 */
-	public function fitsDeMinimis(float $nieuwBedrag, float $eerdereDeMinimis): bool {
-		return ($eerdereDeMinimis + $nieuwBedrag) <= self::DE_MINIMIS_PLAFOND;
+	public function fitsDeMinimis(float $newAmount, float $eerdereDeMinimis): bool {
+		return ($eerdereDeMinimis + $newAmount) <= self::DE_MINIMIS_PLAFOND;
 	}//end fitsDeMinimis()
 
 	/**
@@ -84,13 +84,13 @@ class StaatssteunClassifier {
 	 * Whether a state-aid ground is required for an amount: any aid above
 	 * the de-minimis ceiling needs an explicit ground (REQ-SUB-008).
 	 *
-	 * @param float $bedrag The proposed grant amount.
+	 * @param float $amount The proposed grant amount.
 	 * @param float $eerdereDeMinimis The cumulative prior de-minimis aid.
 	 *
 	 * @return bool True when a state-aid ground must be recorded.
 	 */
-	public function requiresStaatssteunGrondslag(float $bedrag, float $eerdereDeMinimis): bool {
-		return $this->fitsDeMinimis(nieuwBedrag: $bedrag, eerdereDeMinimis: $eerdereDeMinimis) === false;
+	public function requiresStaatssteunGrondslag(float $amount, float $eerdereDeMinimis): bool {
+		return $this->fitsDeMinimis(newAmount: $amount, eerdereDeMinimis: $eerdereDeMinimis) === false;
 	}//end requiresStaatssteunGrondslag()
 
 	/**
@@ -107,7 +107,7 @@ class StaatssteunClassifier {
 	/**
 	 * Classify a grant into a state-aid category (REQ-SUB-008).
 	 *
-	 * @param float $bedrag The proposed grant amount.
+	 * @param float $amount The proposed grant amount.
 	 * @param float $eerdereDeMinimis The cumulative prior de-minimis aid.
 	 * @param string|null $agvvArtikel An AGVV article, when the handler asserts AGVV cover.
 	 * @param bool $isDaeb Whether the activity is a DAEB.
@@ -117,13 +117,13 @@ class StaatssteunClassifier {
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) — $isDaeb is a classification
 	 * input (the activity either is or is not a DAEB), not a behaviour switch.
 	 */
-	public function classify(float $bedrag, float $eerdereDeMinimis, ?string $agvvArtikel = null, bool $isDaeb = false): string {
+	public function classify(float $amount, float $eerdereDeMinimis, ?string $agvvArtikel = null, bool $isDaeb = false): string {
 		if ($isDaeb === true) {
 			return 'daeb';
 		}
 
-		if ($this->fitsDeMinimis(nieuwBedrag: $bedrag, eerdereDeMinimis: $eerdereDeMinimis) === true) {
-			if ($bedrag <= 0.0) {
+		if ($this->fitsDeMinimis(newAmount: $amount, eerdereDeMinimis: $eerdereDeMinimis) === true) {
+			if ($amount <= 0.0) {
 				return 'geen';
 			}
 
@@ -142,16 +142,16 @@ class StaatssteunClassifier {
 	 *
 	 * @param string $beschikkingnummer The decision number.
 	 * @param string $agvvArtikel The AGVV article.
-	 * @param float $bedrag The granted amount.
+	 * @param float $amount The granted amount.
 	 *
 	 * @return array<string, mixed> The melding payload for async transmission.
 	 */
-	public function buildTamMelding(string $beschikkingnummer, string $agvvArtikel, float $bedrag): array {
+	public function buildTamMelding(string $beschikkingnummer, string $agvvArtikel, float $amount): array {
 		return [
 			'register' => 'TAM',
 			'beschikkingnummer' => $beschikkingnummer,
 			'rechtsgrond' => 'AGVV 651/2014 ' . $agvvArtikel,
-			'bedrag' => round($bedrag, 2),
+			'bedrag' => round($amount, 2),
 		];
 	}//end buildTamMelding()
 }//end class

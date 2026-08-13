@@ -49,13 +49,13 @@ class TermijnNotificationService {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termijnService Termijn service.
+	 * @param TermijnService $termService Termijn service.
 	 * @param BerichtenboxRoutingService $router Router (procest notification-router).
 	 * @param LoggerInterface $logger Logger.
 	 * @param IJobList|null $jobList Optional job list for async dispatch.
 	 */
 	public function __construct(
-		private readonly TermijnService $termijnService,
+		private readonly TermijnService $termService,
 		private readonly BerichtenboxRoutingService $router,
 		private readonly LoggerInterface $logger,
 		private readonly ?IJobList $jobList = null,
@@ -69,7 +69,7 @@ class TermijnNotificationService {
 	 * runner retries automatically.
 	 *
 	 * @param string $type Template type.
-	 * @param string $termijnInstanceId Instance id.
+	 * @param string $termInstanceId Instance id.
 	 * @param string $recipientUserId Recipient user id.
 	 * @param array<string, mixed> $context Extra context.
 	 *
@@ -80,7 +80,7 @@ class TermijnNotificationService {
 	 */
 	public function queueTermijnNotification(
 		string $type,
-		string $termijnInstanceId,
+		string $termInstanceId,
 		string $recipientUserId,
 		array $context = [],
 	): bool {
@@ -96,14 +96,14 @@ class TermijnNotificationService {
 			DeadlineNotificationDispatchJob::class,
 			[
 				'type' => $type,
-				'termijnInstanceId' => $termijnInstanceId,
+				'termijnInstanceId' => $termInstanceId,
 				'recipientUserId' => $recipientUserId,
 				'context' => $context,
 			]
 		);
 		$this->logger->info(
 			'TermijnNotification queued',
-			['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termijnInstanceId]
+			['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termInstanceId]
 		);
 		return true;
 	}//end queueTermijnNotification()
@@ -112,7 +112,7 @@ class TermijnNotificationService {
 	 * Send a templated termijnbewaking notification.
 	 *
 	 * @param string $type Template type.
-	 * @param string $termijnInstanceId Instance id.
+	 * @param string $termInstanceId Instance id.
 	 * @param string $recipientUserId Recipient user id.
 	 * @param array<string, mixed> $context Extra context (zaak ref, dates, amounts).
 	 *
@@ -123,7 +123,7 @@ class TermijnNotificationService {
 	 */
 	public function sendTermijnNotification(
 		string $type,
-		string $termijnInstanceId,
+		string $termInstanceId,
 		string $recipientUserId,
 		array $context = [],
 	): array {
@@ -131,11 +131,11 @@ class TermijnNotificationService {
 			throw new InvalidArgumentException('Unknown template: ' . $type);
 		}
 
-		$instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+		$instance = $this->termService->getTermijnInstance($termInstanceId);
 		$payload = $this->renderTemplate(type: $type, instance: $instance ?? [], context: $context);
 
 		$payload['recipient'] = $recipientUserId;
-		$payload['termijnInstance'] = $termijnInstanceId;
+		$payload['termijnInstance'] = $termInstanceId;
 		$payload['template'] = $type;
 
 		// Route the rendered notification through the procest notification
@@ -144,7 +144,7 @@ class TermijnNotificationService {
 		// and is what the caller persists as proof of dispatch.
 		$payload['verzending'] = $this->router->routeToBerichtenbox(
 			[
-				'kenmerk' => $termijnInstanceId,
+				'kenmerk' => $termInstanceId,
 				'geadresseerde' => (array)($context['geadresseerde'] ?? []),
 			]
 		);
@@ -154,7 +154,7 @@ class TermijnNotificationService {
 			[
 				'type' => $type,
 				'recipient' => $recipientUserId,
-				'instance' => $termijnInstanceId,
+				'instance' => $termInstanceId,
 				'kanaal' => $payload['verzending']['kanaal'],
 			]
 		);
@@ -175,7 +175,7 @@ class TermijnNotificationService {
 	 */
 	public function renderTemplate(string $type, array $instance, array $context): array {
 		$locale = (string)($context['locale'] ?? 'nl');
-		$zaak = (string)($instance['zaak'] ?? ($context['zaak'] ?? '–'));
+		$case = (string)($instance['zaak'] ?? ($context['zaak'] ?? '–'));
 		$end = (string)($instance['einddatumActueel'] ?? ($context['einddatum'] ?? '–'));
 
 		$subject = '';
@@ -183,34 +183,34 @@ class TermijnNotificationService {
 
 		switch ($type) {
 			case 'ontvangstbevestiging':
-				$subject = 'Ontvangstbevestiging zaak ' . $zaak;
+				$subject = 'Ontvangstbevestiging zaak ' . $case;
 				$body = "Beste aanvrager,\n\n"
-					. 'Wij hebben uw aanvraag ontvangen onder zaaknummer ' . $zaak . ".\n"
+					. 'Wij hebben uw aanvraag ontvangen onder zaaknummer ' . $case . ".\n"
 					. 'De wettelijke termijn loopt af op ' . $end . ".\n"
 					. 'Volg uw zaak via het burgerportaal of neem contact op met de gemeente.';
 				break;
 			case 'extension':
 				$newEnd = (string)($context['newEinddatum'] ?? $end);
-				$subject = 'Verlenging termijn zaak ' . $zaak;
+				$subject = 'Verlenging termijn zaak ' . $case;
 				$body = "Beste aanvrager,\n\n"
-					. 'De termijn voor zaak ' . $zaak . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n"
+					. 'De termijn voor zaak ' . $case . ' is verlengd. De nieuwe deadline is ' . $newEnd . ".\n"
 					. 'U vindt de officiele verlengingsbrief in uw burgerportaal.';
 				break;
 			case 'ingebrekestelling-receipt':
 				$graceEnd = (string)($context['graceEnd'] ?? '–');
-				$subject = 'Bevestiging ingebrekestelling zaak ' . $zaak;
+				$subject = 'Bevestiging ingebrekestelling zaak ' . $case;
 				$body = "Beste aanvrager,\n\n"
-					. 'Wij hebben uw ingebrekestelling voor zaak ' . $zaak . " ontvangen.\n"
+					. 'Wij hebben uw ingebrekestelling voor zaak ' . $case . " ontvangen.\n"
 					. 'De wettelijke begunstigingstermijn (AWB 4:17) eindigt op ' . $graceEnd . ".\n"
 					. 'Indien er voor dat moment een beschikking is afgegeven, vervalt de dwangsom.';
 				break;
 			case 'dwangsom-payment':
-				$bedragCents = (int)($context['bedragCents'] ?? 0);
-				$bedragEur = number_format($bedragCents / 100, 2, ',', '.');
+				$amountCents = (int)($context['bedragCents'] ?? 0);
+				$amountEur = number_format($amountCents / 100, 2, ',', '.');
 				$ref = (string)($context['betalingsreferentie'] ?? '–');
-				$subject = 'Uitbetaling dwangsom zaak ' . $zaak;
+				$subject = 'Uitbetaling dwangsom zaak ' . $case;
 				$body = "Beste aanvrager,\n\n"
-					. 'De dwangsom van EUR ' . $bedragEur . ' voor zaak ' . $zaak . " is overgemaakt.\n"
+					. 'De dwangsom van EUR ' . $amountEur . ' voor zaak ' . $case . " is overgemaakt.\n"
 					. 'Onder betalingsreferentie ' . $ref . '.';
 				break;
 		}//end switch

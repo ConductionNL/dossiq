@@ -279,8 +279,8 @@ class HearingService {
 			return;
 		}
 
-		$datum = $data['datum'] ?? '';
-		$locatie = $data['locatie'] ?? '';
+		$date = $data['datum'] ?? '';
+		$location = $data['locatie'] ?? '';
 
 		// `is_callable()` rather than `method_exists()`: ObjectEntity exposes
 		// getUuid() through OCP\AppFramework\Db\Entity::__call(), which
@@ -294,7 +294,7 @@ class HearingService {
 		// Calendar integration — log attempt; actual calendar write is
 		// delegated to NC Calendar IManager search/find calendars per participant.
 		$this->logger->info(
-			'Calendar invitations queued for hearing on ' . $datum . ' at ' . $locatie
+			'Calendar invitations queued for hearing on ' . $date . ' at ' . $location
 			. ' for ' . count($participants) . ' participants',
 			['app' => Application::APP_ID, 'hearingId' => $hearingId],
 		);

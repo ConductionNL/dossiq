@@ -366,7 +366,7 @@ class DsoControllerTest extends TestCase {
 	 *
 	 * @var BeschikkingGenerationService|MockObject
 	 */
-	private BeschikkingGenerationService $beschikkingService;
+	private BeschikkingGenerationService $decisionService;
 
 	/**
 	 * The SamenwerkverzoekService mock.
@@ -427,7 +427,7 @@ class DsoControllerTest extends TestCase {
 
 		$this->request = new DsoControllerRequestStub();
 		$this->dsoCaseService = $this->createMock(DsoCaseService::class);
-		$this->beschikkingService = $this->createMock(BeschikkingGenerationService::class);
+		$this->decisionService = $this->createMock(BeschikkingGenerationService::class);
 		$this->samenwerkService = $this->createMock(SamenwerkverzoekService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->settingsService = $this->createMock(SettingsService::class);
@@ -439,7 +439,7 @@ class DsoControllerTest extends TestCase {
 			appName: 'procest',
 			request: $this->request,
 			dsoCaseService: $this->dsoCaseService,
-			beschikkingService: $this->beschikkingService,
+			decisionService: $this->decisionService,
 			samenwerkService: $this->samenwerkService,
 			repository: new DsoObjectRepository(
 				settingsService: $this->settingsService,
@@ -516,7 +516,7 @@ class DsoControllerTest extends TestCase {
 			appName: 'procest',
 			request: $requestStub,
 			dsoCaseService: $this->dsoCaseService,
-			beschikkingService: $this->beschikkingService,
+			decisionService: $this->decisionService,
 			samenwerkService: $this->samenwerkService,
 			repository: new DsoObjectRepository(
 				settingsService: $settingsServiceMock,
@@ -554,7 +554,7 @@ class DsoControllerTest extends TestCase {
 			appName: 'procest',
 			request: $requestStub,
 			dsoCaseService: $this->dsoCaseService,
-			beschikkingService: $this->beschikkingService,
+			decisionService: $this->decisionService,
 			samenwerkService: $this->samenwerkService,
 			repository: new DsoObjectRepository(
 				settingsService: $this->settingsService,

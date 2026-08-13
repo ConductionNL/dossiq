@@ -75,11 +75,11 @@ class DeadlineNotificationDispatchJob extends QueuedJob {
 		}
 
 		$type = (string)($argument['type'] ?? '');
-		$termijnInstanceId = (string)($argument['termijnInstanceId'] ?? '');
+		$termInstanceId = (string)($argument['termijnInstanceId'] ?? '');
 		$recipientUserId = (string)($argument['recipientUserId'] ?? '');
 		$context = (array)($argument['context'] ?? []);
 
-		if ($type === '' || $termijnInstanceId === '' || $recipientUserId === '') {
+		if ($type === '' || $termInstanceId === '' || $recipientUserId === '') {
 			$this->logger->warning('DeadlineNotificationDispatchJob: missing required argument keys', $argument);
 			return;
 		}
@@ -87,13 +87,13 @@ class DeadlineNotificationDispatchJob extends QueuedJob {
 		try {
 			$this->notificationService->sendTermijnNotification(
 				$type,
-				$termijnInstanceId,
+				$termInstanceId,
 				$recipientUserId,
 				$context,
 			);
 			$this->logger->info(
 				'DeadlineNotificationDispatchJob: delivered',
-				['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termijnInstanceId]
+				['type' => $type, 'recipient' => $recipientUserId, 'instance' => $termInstanceId]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(

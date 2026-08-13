@@ -150,11 +150,11 @@ class DeadlineReportingService {
 		}
 
 		$start = (string)($row['startDatum'] ?? '');
-		$eind = (string)($row['einddatumActueel'] ?? '');
-		if ($start !== '' && $eind !== '') {
+		$end = (string)($row['einddatumActueel'] ?? '');
+		if ($start !== '' && $end !== '') {
 			$startD = new DateTimeImmutable(substr($start, 0, 10));
-			$eindD = new DateTimeImmutable($eind);
-			$bucket['doorlooptijdenDagen'][] = (int)$startD->diff($eindD)->days;
+			$endD = new DateTimeImmutable($end);
+			$bucket['doorlooptijdenDagen'][] = (int)$startD->diff($endD)->days;
 		}
 	}//end accumulateRow()
 
@@ -170,8 +170,8 @@ class DeadlineReportingService {
 		foreach ($byType as $type => $b) {
 			// $byType entries are only created when a row is counted, so
 			// 'totaal' is always >= 1 here.
-			$totaal = $b['totaal'];
-			$binnenPct = round(($b['binnenTermijn'] / $totaal) * 100, 1);
+			$total = $b['totaal'];
+			$binnenPct = round(($b['binnenTermijn'] / $total) * 100, 1);
 
 			$avgDur = 0.0;
 
@@ -181,7 +181,7 @@ class DeadlineReportingService {
 			}
 
 			$perType[$type] = [
-				'totaal' => $totaal,
+				'totaal' => $total,
 				'binnenTermijnPct' => $binnenPct,
 				'gemiddeldeDoorlooptijdDagen' => $avgDur,
 				'verlengingen' => $b['verlengingen'],
@@ -219,17 +219,17 @@ class DeadlineReportingService {
 
 		$yearPrefix = (string)$year;
 		$outRows = [];
-		$totaal = 0;
+		$total = 0;
 		$warnings = [];
 
 		foreach ($rows as $row) {
-			$betaal = (string)($row['werkelijkeBetaaldatum'] ?? '');
-			if (str_starts_with($betaal, $yearPrefix) === false) {
+			$payment = (string)($row['werkelijkeBetaaldatum'] ?? '');
+			if (str_starts_with($payment, $yearPrefix) === false) {
 				continue;
 			}
 
-			$bedrag = (int)($row['bedrag'] ?? 0);
-			$totaal += $bedrag;
+			$amount = (int)($row['bedrag'] ?? 0);
+			$total += $amount;
 
 			if (($row['betalingsreferentie'] ?? '') === '') {
 				$warnings[] = 'Missing betalingsreferentie for ' . ((string)($row['referentie'] ?? ''));
@@ -237,8 +237,8 @@ class DeadlineReportingService {
 
 			$outRows[] = [
 				'referentie' => (string)($row['referentie'] ?? ''),
-				'bedragCents' => $bedrag,
-				'werkelijkeBetaaldatum' => $betaal,
+				'bedragCents' => $amount,
+				'werkelijkeBetaaldatum' => $payment,
 				'betalingsreferentie' => (string)($row['betalingsreferentie'] ?? ''),
 				'status' => (string)($row['status'] ?? ''),
 				'legalBasis' => (string)($row['legalBasis'] ?? ''),
@@ -249,7 +249,7 @@ class DeadlineReportingService {
 		return [
 			'jaar' => $year,
 			'rows' => $outRows,
-			'summary' => ['count' => count($outRows), 'totalCents' => $totaal],
+			'summary' => ['count' => count($outRows), 'totalCents' => $total],
 			'warnings' => $warnings,
 		];
 	}//end generateDwangsomAuditReport()
@@ -274,9 +274,9 @@ class DeadlineReportingService {
 		$overrun = $totals['overrun'];
 		$durations = $totals['durations'];
 
-		$withinTermijnPercent = 0.0;
+		$withinTermPercent = 0.0;
 		if ($total > 0) {
-			$withinTermijnPercent = round(($within / $total) * 100, 1);
+			$withinTermPercent = round(($within / $total) * 100, 1);
 		}
 
 		$aantalDuraties = count($durations);
@@ -287,7 +287,7 @@ class DeadlineReportingService {
 
 		return [
 			'totalZaken' => $total,
-			'withinTermijnPercent' => $withinTermijnPercent,
+			'withinTermijnPercent' => $withinTermPercent,
 			'avgDurationDays' => $avgDurationDays,
 			'overrunCount' => $overrun,
 			'dwangsomTotalCents' => $dwTotal,
@@ -324,9 +324,9 @@ class DeadlineReportingService {
 			}
 
 			$start = (string)($row['startDatum'] ?? '');
-			$eind = (string)($row['einddatumActueel'] ?? '');
-			if ($start !== '' && $eind !== '') {
-				$durations[] = (int)(new DateTimeImmutable(substr($start, 0, 10)))->diff(new DateTimeImmutable($eind))->days;
+			$end = (string)($row['einddatumActueel'] ?? '');
+			if ($start !== '' && $end !== '') {
+				$durations[] = (int)(new DateTimeImmutable(substr($start, 0, 10)))->diff(new DateTimeImmutable($end))->days;
 			}
 		}//end foreach
 
@@ -393,8 +393,8 @@ class DeadlineReportingService {
 		$startM = (($quarter - 1) * 3) + 1;
 		$endM = $startM + 2;
 		$from = sprintf('%04d-%02d-01', $year, $startM);
-		$lastDay = (int)(new DateTimeImmutable(sprintf('%04d-%02d-01', $year, $endM)))->format('t');
-		$until = sprintf('%04d-%02d-%02d', $year, $endM, $lastDay);
+		$orderDay = (int)(new DateTimeImmutable(sprintf('%04d-%02d-01', $year, $endM)))->format('t');
+		$until = sprintf('%04d-%02d-%02d', $year, $endM, $orderDay);
 		return ['from' => $from, 'until' => $until];
 	}//end resolveQuarter()
 

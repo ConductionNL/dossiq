@@ -131,7 +131,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 	 * @param OwningCaseResolver $owningCase The owning-case resolver.
 	 * @param CaseAccessGuard $caseAccess The per-case guard.
 	 * @param DwangsomCalculationService $calc The calculation service.
-	 * @param DwangsomBezwaarService $bezwaar The bezwaar service.
+	 * @param DwangsomBezwaarService $objection The bezwaar service.
 	 * @param mixed $found What ObjectService::find() returns.
 	 *
 	 * @return DwangsomController The controller under test.
@@ -140,7 +140,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 		OwningCaseResolver $owningCase,
 		CaseAccessGuard $caseAccess,
 		DwangsomCalculationService $calc,
-		DwangsomBezwaarService $bezwaar,
+		DwangsomBezwaarService $objection,
 		mixed $found = null,
 	): DwangsomController {
 		$user = $this->createMock(IUser::class);
@@ -164,7 +164,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 			'procest',
 			$this->createMock(IRequest::class),
 			$calc,
-			$bezwaar,
+			$objection,
 			$settings,
 			$session,
 			$caseAccess,
@@ -189,15 +189,15 @@ class DwangsomControllerAuthzTest extends TestCase {
 		$calc = $this->createMock(DwangsomCalculationService::class);
 		$calc->expects($this->never())->method('stopForBeschikking');
 
-		$bezwaar = $this->createMock(DwangsomBezwaarService::class);
-		$bezwaar->expects($this->never())->method('registerBezwaar');
-		$bezwaar->expects($this->never())->method('resolveBezwaar');
+		$objection = $this->createMock(DwangsomBezwaarService::class);
+		$objection->expects($this->never())->method('registerBezwaar');
+		$objection->expects($this->never())->method('resolveBezwaar');
 
 		$controller = $this->makeController(
 			$owningCase,
 			$caseAccess,
 			$calc,
-			$bezwaar,
+			$objection,
 			new DwangsomBerekeningEntityDouble(['id' => self::BEREKENING_ID])
 		);
 

@@ -76,8 +76,8 @@ class SubsidieServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testBeslistermijnMultiYear(): void {
-		$registratie = new DateTimeImmutable('2026-01-01');
-		$deadline = $this->service->computeBeslistermijn($registratie, 13);
+		$registration = new DateTimeImmutable('2026-01-01');
+		$deadline = $this->service->computeBeslistermijn($registration, 13);
 		$this->assertSame('2026-04-02', $deadline->format('Y-m-d'));
 	}//end testBeslistermijnMultiYear()
 

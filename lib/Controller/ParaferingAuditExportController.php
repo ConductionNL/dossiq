@@ -107,8 +107,8 @@ class ParaferingAuditExportController extends Controller {
 				);
 			}
 
-			$voorstelOnderwerp = $this->resolveVoorstelOnderwerp(voorstelId: $id);
-			if ($voorstelOnderwerp === null) {
+			$proposalOnderwerp = $this->resolveProposalOnderwerp(proposalId: $id);
+			if ($proposalOnderwerp === null) {
 				return new JSONResponse(
 					['message' => 'Voorstel not found'],
 					Http::STATUS_NOT_FOUND,
@@ -116,8 +116,8 @@ class ParaferingAuditExportController extends Controller {
 			}
 
 			$envelope = $this->auditTrailService->export(
-				voorstelId: $id,
-				voorstelOnderwerp: $voorstelOnderwerp,
+				proposalId: $id,
+				proposalOnderwerp: $proposalOnderwerp,
 				exportedBy: $uid,
 			);
 
@@ -196,11 +196,11 @@ class ParaferingAuditExportController extends Controller {
 	/**
 	 * Resolve the voorstel onderwerp (or null when not found).
 	 *
-	 * @param string $voorstelId The voorstel UUID/slug
+	 * @param string $proposalId The voorstel UUID/slug
 	 *
 	 * @return string|null
 	 */
-	private function resolveVoorstelOnderwerp(string $voorstelId): ?string {
+	private function resolveProposalOnderwerp(string $proposalId): ?string {
 		try {
 			$objectService = $this->settingsService->getObjectService();
 			if ($objectService === null) {
@@ -213,18 +213,18 @@ class ParaferingAuditExportController extends Controller {
 				return null;
 			}
 
-			$voorstel = $objectService->find($voorstelId, register: $register, schema: $schema);
-			if ($voorstel === null) {
+			$proposal = $objectService->find($proposalId, register: $register, schema: $schema);
+			if ($proposal === null) {
 				return null;
 			}
 
-			$array = $this->coerceToArray(value: $voorstel);
+			$array = $this->coerceToArray(value: $proposal);
 
 			return (string)($array['onderwerp'] ?? '');
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest: failed to resolve voorstel onderwerp for export',
-				['voorstel' => $voorstelId, 'exception' => $e->getMessage()],
+				['voorstel' => $proposalId, 'exception' => $e->getMessage()],
 			);
 
 			return null;

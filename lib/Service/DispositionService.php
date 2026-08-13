@@ -325,13 +325,13 @@ class DispositionService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-04
 	 */
 	private function validateDisposition(array $data): void {
-		$oordeel = $data['oordeel'] ?? '';
-		if (in_array($oordeel, self::VALID_OORDELEN, true) === false) {
-			throw new RuntimeException('Invalid oordeel: ' . $oordeel . '. Must be one of: ' . implode(', ', self::VALID_OORDELEN));
+		$opinion = $data['oordeel'] ?? '';
+		if (in_array($opinion, self::VALID_OORDELEN, true) === false) {
+			throw new RuntimeException('Invalid oordeel: ' . $opinion . '. Must be one of: ' . implode(', ', self::VALID_OORDELEN));
 		}
 
-		if (in_array($oordeel, self::REQUIRES_TOELICHTING, true) === true && empty($data['toelichting']) === true) {
-			throw new RuntimeException('Toelichting is required for oordeel: ' . $oordeel);
+		if (in_array($opinion, self::REQUIRES_TOELICHTING, true) === true && empty($data['toelichting']) === true) {
+			throw new RuntimeException('Toelichting is required for oordeel: ' . $opinion);
 		}
 	}//end validateDisposition()
 }//end class

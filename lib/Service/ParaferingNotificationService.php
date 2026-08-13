@@ -51,7 +51,7 @@ class ParaferingNotificationService {
 	 *
 	 * @param string $actorUserId The user who should act on the step
 	 * @param string $onderwerp The voorstel subject
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 * @param string $stepLabel The step label (e.g. 'Afdelingshoofd')
 	 *
 	 * @return void
@@ -61,7 +61,7 @@ class ParaferingNotificationService {
 	public function notifyStepActivated(
 		string $actorUserId,
 		string $onderwerp,
-		string $voorstelId,
+		string $proposalId,
 		string $stepLabel,
 	): void {
 		try {
@@ -69,7 +69,7 @@ class ParaferingNotificationService {
 			$notification->setApp(Application::APP_ID)
 				->setUser($actorUserId)
 				->setDateTime(new DateTime())
-				->setObject('voorstel', $voorstelId)
+				->setObject('voorstel', $proposalId)
 				->setSubject(
 					'parafering_step_activated',
 					[
@@ -84,7 +84,7 @@ class ParaferingNotificationService {
 				'Failed to send parafering step notification',
 				[
 					'actor' => $actorUserId,
-					'voorstel' => $voorstelId,
+					'voorstel' => $proposalId,
 					'exception' => $e->getMessage(),
 				]
 			);
@@ -96,7 +96,7 @@ class ParaferingNotificationService {
 	 *
 	 * @param string $stellerUserId The steller user who should receive the notification
 	 * @param string $onderwerp The voorstel subject
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 * @param string $returnedBy The actor who returned it
 	 * @param string $comment The return comment
 	 *
@@ -107,7 +107,7 @@ class ParaferingNotificationService {
 	public function notifyVoorstelReturned(
 		string $stellerUserId,
 		string $onderwerp,
-		string $voorstelId,
+		string $proposalId,
 		string $returnedBy,
 		string $comment,
 	): void {
@@ -116,7 +116,7 @@ class ParaferingNotificationService {
 			$notification->setApp(Application::APP_ID)
 				->setUser($stellerUserId)
 				->setDateTime(new DateTime())
-				->setObject('voorstel', $voorstelId)
+				->setObject('voorstel', $proposalId)
 				->setSubject(
 					'voorstel_returned',
 					[
@@ -132,7 +132,7 @@ class ParaferingNotificationService {
 				'Failed to send voorstel return notification',
 				[
 					'steller' => $stellerUserId,
-					'voorstel' => $voorstelId,
+					'voorstel' => $proposalId,
 					'exception' => $e->getMessage(),
 				]
 			);
@@ -144,7 +144,7 @@ class ParaferingNotificationService {
 	 *
 	 * @param string $actorUserId The user who should act
 	 * @param string $onderwerp The voorstel subject
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 * @param int $daysWaiting Number of days the step has been waiting
 	 *
 	 * @return void
@@ -154,7 +154,7 @@ class ParaferingNotificationService {
 	public function notifyParaferingReminder(
 		string $actorUserId,
 		string $onderwerp,
-		string $voorstelId,
+		string $proposalId,
 		int $daysWaiting,
 	): void {
 		try {
@@ -162,7 +162,7 @@ class ParaferingNotificationService {
 			$notification->setApp(Application::APP_ID)
 				->setUser($actorUserId)
 				->setDateTime(new DateTime())
-				->setObject('voorstel', $voorstelId)
+				->setObject('voorstel', $proposalId)
 				->setSubject(
 					'parafering_reminder',
 					[
@@ -177,7 +177,7 @@ class ParaferingNotificationService {
 				'Failed to send parafering reminder notification',
 				[
 					'actor' => $actorUserId,
-					'voorstel' => $voorstelId,
+					'voorstel' => $proposalId,
 					'exception' => $e->getMessage(),
 				]
 			);

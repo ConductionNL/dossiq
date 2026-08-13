@@ -147,10 +147,10 @@ class ConsultationAccessGuard {
 			return true;
 		}
 
-		$aanvrager = $consultation['aanvrager'] ?? '';
+		$applicant = $consultation['aanvrager'] ?? '';
 		$assignee = $consultation['assignee'] ?? '';
 
-		return ($uid === $aanvrager || ($assignee !== '' && $uid === $assignee));
+		return ($uid === $applicant || ($assignee !== '' && $uid === $assignee));
 	}//end isPermitted()
 
 	/**

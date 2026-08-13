@@ -321,7 +321,7 @@ class PdokBagService {
 		if ($body === false) {
 			$this->logger->warning(
 				'PDOK BAG WFS request failed',
-				['detail' => $this->lastSuppressedWarning()]
+				['detail' => $this->orderSuppressedWarning()]
 			);
 			throw new RuntimeException('Network error contacting PDOK BAG WFS', 0);
 		}

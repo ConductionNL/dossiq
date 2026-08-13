@@ -95,7 +95,7 @@ class MandaatMatrixControllerIdentityTest extends TestCase {
 			request: $this->createMock(IRequest::class),
 			userSession: $this->createMock(IUserSession::class),
 			check: $this->createMock(MandaatCheckService::class),
-			escalatie: $this->createMock(MandaatEscalatieService::class),
+			escalation: $this->createMock(MandaatEscalatieService::class),
 			gebruik: $this->createMock(MandaatGebruikService::class),
 			import: $this->createMock(MandaatImportService::class),
 			settings: $settings,

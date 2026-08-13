@@ -54,14 +54,14 @@ class BezwaarTermijnJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The time factory.
-	 * @param BeschikkingService $beschikkingService The beschikking service.
+	 * @param BeschikkingService $decisionService The beschikking service.
 	 * @param SettingsService $settingsService The settings service.
 	 * @param IAppManager $appManager The app manager.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly BeschikkingService $beschikkingService,
+		private readonly BeschikkingService $decisionService,
 		private readonly SettingsService $settingsService,
 		private readonly IAppManager $appManager,
 		private readonly LoggerInterface $logger,
@@ -151,27 +151,27 @@ class BezwaarTermijnJob extends TimedJob {
 		string $today,
 	): bool {
 		$arr = $this->toArray(value: $trigger);
-		$archiefDatum = (string)($arr['archiefDatum'] ?? '');
-		$bezwaar = ($arr['bezwaarOntvangen'] ?? false) === true;
-		$beschikkingId = (string)($arr['beschikkingId'] ?? '');
+		$archiefDate = (string)($arr['archiefDatum'] ?? '');
+		$objection = ($arr['bezwaarOntvangen'] ?? false) === true;
+		$decisionId = (string)($arr['beschikkingId'] ?? '');
 
-		if ($beschikkingId === '' || $archiefDatum === '' || $archiefDatum > $today) {
+		if ($decisionId === '' || $archiefDate === '' || $archiefDate > $today) {
 			return false;
 		}
 
-		if ($bezwaar === true) {
+		if ($objection === true) {
 			$this->deactivateTrigger(objectService: $objectService, register: $register, schema: $schema, trigger: $arr);
 			return false;
 		}
 
 		try {
-			$this->beschikkingService->archive($beschikkingId);
+			$this->decisionService->archive($decisionId);
 			$this->deactivateTrigger(objectService: $objectService, register: $register, schema: $schema, trigger: $arr);
 			return true;
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BezwaarTermijnJob: archival failed',
-				['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
+				['exception' => $e->getMessage(), 'beschikkingId' => $decisionId],
 			);
 		}//end try
 

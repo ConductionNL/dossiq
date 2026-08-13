@@ -84,17 +84,17 @@ class StufOutboundTransport {
 	 *
 	 * @param array $endpoint The StufEndpoint.
 	 * @param string $envelope The envelope XML.
-	 * @param string $functie The functie for SOAPAction.
+	 * @param string $role The functie for SOAPAction.
 	 *
 	 * @return array The raw httpClient response.
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
 	 */
-	public function send(array $endpoint, string $envelope, string $functie): array {
+	public function send(array $endpoint, string $envelope, string $role): array {
 		return $this->httpClient->send(
 			endpoint: $endpoint,
 			envelopeXml: $envelope,
-			soapActionFunc: $functie,
+			soapActionFunc: $role,
 			timeoutSeconds: StufHttpClient::DEFAULT_TIMEOUT_SECONDS
 		);
 	}//end send()
@@ -106,18 +106,18 @@ class StufOutboundTransport {
 	 * @param array $endpoint The StufEndpoint.
 	 * @param string $envelope The envelope XML.
 	 * @param array $message The persisted StufMessage row.
-	 * @param string $functie The functie for SOAPAction.
+	 * @param string $role The functie for SOAPAction.
 	 *
 	 * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
 	 */
-	public function dispatch(array $endpoint, string $envelope, array $message, string $functie): array {
+	public function dispatch(array $endpoint, string $envelope, array $message, string $role): array {
 		return $this->handleResponse(
 			endpoint: $endpoint,
-			response: $this->send(endpoint: $endpoint, envelope: $envelope, functie: $functie),
+			response: $this->send(endpoint: $endpoint, envelope: $envelope, role: $role),
 			message: $message,
-			functie: $functie,
+			role: $role,
 			attempt: 1
 		);
 	}//end dispatch()
@@ -128,21 +128,21 @@ class StufOutboundTransport {
 	 * @param array $endpoint The StufEndpoint.
 	 * @param array $response The httpClient response.
 	 * @param array $message The StufMessage row.
-	 * @param string $functie The functie.
+	 * @param string $role The functie.
 	 * @param int $attempt The current attempt number (1-indexed).
 	 *
 	 * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
 	 */
-	public function handleResponse(array $endpoint, array $response, array $message, string $functie, int $attempt): array {
+	public function handleResponse(array $endpoint, array $response, array $message, string $role, int $attempt): array {
 		$messageId = (string)($message['id'] ?? '');
 		$httpStatus = (int)($response['httpStatus'] ?? 0);
 		$duration = (int)($response['durationMs'] ?? 0);
 		$body = (string)($response['responseXml'] ?? '');
 
 		if ($httpStatus >= 200 && $httpStatus < 300) {
-			return $this->acceptBevestiging(
+			return $this->acceptConfirmation(
 				endpoint: $endpoint,
 				message: $message,
 				messageId: $messageId,
@@ -186,7 +186,7 @@ class StufOutboundTransport {
 				'endpointId' => (string)($endpoint['id'] ?? ''),
 				'stufMessageId' => $messageId,
 				'fout' => ($fout ?? []),
-				'functie' => $functie,
+				'functie' => $role,
 			]
 		);
 
@@ -206,7 +206,7 @@ class StufOutboundTransport {
 	 *
 	 * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
 	 */
-	private function acceptBevestiging(
+	private function acceptConfirmation(
 		array $endpoint,
 		array $message,
 		string $messageId,
@@ -214,14 +214,14 @@ class StufOutboundTransport {
 		int $duration,
 		string $body,
 	): array {
-		$bevestiging = $this->parser->parseBevestiging(responseXml: $body);
+		$confirmation = $this->parser->parseBevestiging(responseXml: $body);
 		$extras = [
 			'httpStatus' => $httpStatus,
 			'duurMs' => $duration,
 			'responseEnvelopeXml' => $body,
 		];
-		if (($bevestiging['zaakIdentificatie'] ?? null) !== null) {
-			$extras['zaakIdentificatie'] = $bevestiging['zaakIdentificatie'];
+		if (($confirmation['zaakIdentificatie'] ?? null) !== null) {
+			$extras['zaakIdentificatie'] = $confirmation['zaakIdentificatie'];
 		}
 
 		$this->messageHandler->transitionStatus(msg: $message, newStatus: 'bevestigd', extras: $extras);
@@ -230,7 +230,7 @@ class StufOutboundTransport {
 		return [
 			'success' => true,
 			'messageId' => $messageId,
-			'zaakIdentificatie' => ($bevestiging['zaakIdentificatie'] ?? null),
+			'zaakIdentificatie' => ($confirmation['zaakIdentificatie'] ?? null),
 			'fout' => null,
 		];
 	}//end acceptBevestiging()

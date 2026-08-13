@@ -74,8 +74,8 @@ class TermijnService {
 	 * instance, and writes a `start` TermijnGebeurtenis. Throws if no
 	 * matching definition exists (REQ-TERM-001-A).
 	 *
-	 * @param string $zaakId The case id.
-	 * @param string $zaaktype The zaaktype slug.
+	 * @param string $caseId The case id.
+	 * @param string $caseType The zaaktype slug.
 	 * @param DateTimeImmutable|null $startDate Optional start (defaults to now).
 	 *
 	 * @return array<string, mixed>
@@ -84,24 +84,24 @@ class TermijnService {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
-	public function createTermijnInstance(string $zaakId, string $zaaktype, ?DateTimeImmutable $startDate = null): array {
+	public function createTermijnInstance(string $caseId, string $caseType, ?DateTimeImmutable $startDate = null): array {
 		$startDate = ($startDate ?? new DateTimeImmutable());
-		$definitie = $this->getTermijnDefinitie(zaaktype: $zaaktype);
+		$definitie = $this->getTermijnDefinitie(caseType: $caseType);
 		if ($definitie === null) {
 			throw new RuntimeException(
-				'No active TermijnDefinitie configured for zaaktype "' . $zaaktype . '" (REQ-TERM-001-A)'
+				'No active TermijnDefinitie configured for zaaktype "' . $caseType . '" (REQ-TERM-001-A)'
 			);
 		}
 
 		$durationDays = (int)($definitie['standaardDuurDagen'] ?? 0);
-		$einddatum = $startDate->modify('+' . $durationDays . ' days')->format('Y-m-d');
+		$endDate = $startDate->modify('+' . $durationDays . ' days')->format('Y-m-d');
 
 		$instance = [
-			'zaak' => $zaakId,
+			'zaak' => $caseId,
 			'termijnDefinitie' => (string)($definitie['id'] ?? ''),
 			'startDatum' => $startDate->format('Y-m-d\TH:i:sP'),
-			'einddatumBerekend' => $einddatum,
-			'einddatumActueel' => $einddatum,
+			'einddatumBerekend' => $endDate,
+			'einddatumActueel' => $endDate,
 			'status' => 'lopend',
 			'aantalVerlengingen' => 0,
 			'notificatiesVerstuurd' => [],
@@ -110,17 +110,17 @@ class TermijnService {
 		$saved = $this->save(schemaConfigKey: 'termijn_instance_schema', object: $instance);
 		if ($saved === null) {
 			throw new RuntimeException(
-				'Failed to persist TermijnInstance for zaak "' . $zaakId . '" (persistence unavailable)'
+				'Failed to persist TermijnInstance for zaak "' . $caseId . '" (persistence unavailable)'
 			);
 		}
 
 		$this->recordEvent(
-			termijnInstanceId: (string)($saved['id'] ?? ''),
+			termInstanceId: (string)($saved['id'] ?? ''),
 			type: 'start',
-			grondslag: (string)($definitie['legalBasis'] ?? 'AWB 4:13'),
-			motivering: 'Termijn gestart bij zaak-aanmaak',
-			dagenImpact: $durationDays,
-			tijdstip: $startDate,
+			basis: (string)($definitie['legalBasis'] ?? 'AWB 4:13'),
+			rationale: 'Termijn gestart bij zaak-aanmaak',
+			daysImpact: $durationDays,
+			moment: $startDate,
 		);
 
 		return $saved;
@@ -129,13 +129,13 @@ class TermijnService {
 	/**
 	 * Get TermijnInstance by id.
 	 *
-	 * @param string $termijnInstanceId Instance id.
+	 * @param string $termInstanceId Instance id.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
-	public function getTermijnInstance(string $termijnInstanceId): ?array {
+	public function getTermijnInstance(string $termInstanceId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -148,7 +148,7 @@ class TermijnService {
 		}
 
 		try {
-			$row = $objectService->find($termijnInstanceId, register: $register, schema: $schema);
+			$row = $objectService->find($termInstanceId, register: $register, schema: $schema);
 			if (is_array($row) === true) {
 				return $row;
 			}
@@ -157,7 +157,7 @@ class TermijnService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'TermijnService.getTermijnInstance failed',
-				['id' => $termijnInstanceId, 'error' => $e->getMessage()]
+				['id' => $termInstanceId, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -166,13 +166,13 @@ class TermijnService {
 	/**
 	 * Fetch the active TermijnInstance bound to a zaak (latest by start).
 	 *
-	 * @param string $zaakId Case id.
+	 * @param string $caseId Case id.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
-	public function getTermijnInstanceForZaak(string $zaakId): ?array {
+	public function getTermijnInstanceForZaak(string $caseId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -185,7 +185,7 @@ class TermijnService {
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaak' => $zaakId]);
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaak' => $caseId]);
 		} catch (\Throwable $e) {
 			return null;
 		}
@@ -206,21 +206,21 @@ class TermijnService {
 	/**
 	 * Update a TermijnInstance (partial; merged on top of existing).
 	 *
-	 * @param string $termijnInstanceId Instance id.
+	 * @param string $termInstanceId Instance id.
 	 * @param array<string, mixed> $patch Partial patch.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
-	public function updateTermijnInstance(string $termijnInstanceId, array $patch): ?array {
-		$current = $this->getTermijnInstance(termijnInstanceId: $termijnInstanceId);
+	public function updateTermijnInstance(string $termInstanceId, array $patch): ?array {
+		$current = $this->getTermijnInstance(termInstanceId: $termInstanceId);
 		if ($current === null) {
 			return null;
 		}
 
 		$merged = array_merge($current, $patch);
-		$merged['id'] = $termijnInstanceId;
+		$merged['id'] = $termInstanceId;
 		return $this->save(schemaConfigKey: 'termijn_instance_schema', object: $merged);
 	}//end updateTermijnInstance()
 
@@ -230,15 +230,15 @@ class TermijnService {
 	 * Version-aware: returns the definition with the latest validFrom that
 	 * is <= today, where validUntil is null or > today.
 	 *
-	 * @param string $zaaktype Zaaktype slug.
+	 * @param string $caseType Zaaktype slug.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
-	public function getTermijnDefinitie(string $zaaktype): ?array {
-		if (isset($this->definitieCache[$zaaktype]) === true) {
-			return $this->definitieCache[$zaaktype];
+	public function getTermijnDefinitie(string $caseType): ?array {
+		if (isset($this->definitieCache[$caseType]) === true) {
+			return $this->definitieCache[$caseType];
 		}
 
 		$objectService = $this->settingsService->getObjectService();
@@ -257,12 +257,12 @@ class TermijnService {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['zaaktype' => $zaaktype]
+				filters: ['zaaktype' => $caseType]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'TermijnService.getTermijnDefinitie lookup failed',
-				['zaaktype' => $zaaktype, 'error' => $e->getMessage()]
+				['zaaktype' => $caseType, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -280,7 +280,7 @@ class TermijnService {
 				=> strcmp((string)($b['validFrom'] ?? ''), (string)($a['validFrom'] ?? ''))
 		);
 
-		$this->definitieCache[$zaaktype] = $active[0];
+		$this->definitieCache[$caseType] = $active[0];
 		return $active[0];
 	}//end getTermijnDefinitie()
 
@@ -308,7 +308,7 @@ class TermijnService {
 	/**
 	 * Mark a TermijnInstance as completed.
 	 *
-	 * @param string $termijnInstanceId Instance id.
+	 * @param string $termInstanceId Instance id.
 	 * @param DateTimeImmutable|null $voltooiDatum When completed (default now).
 	 * @param string $documentLink Optional document ref.
 	 *
@@ -317,25 +317,25 @@ class TermijnService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-06-dwangsom-calculation/tasks.md
 	 */
 	public function markTermijnCompleted(
-		string $termijnInstanceId,
+		string $termInstanceId,
 		?DateTimeImmutable $voltooiDatum = null,
 		string $documentLink = '',
 	): ?array {
 		$voltooiDatum = ($voltooiDatum ?? new DateTimeImmutable());
 
 		$updated = $this->updateTermijnInstance(
-			termijnInstanceId: $termijnInstanceId,
+			termInstanceId: $termInstanceId,
 			patch: ['status' => 'voltooid', 'voltooiDatum' => $voltooiDatum->format('Y-m-d')]
 		);
 
 		if ($updated !== null) {
 			$this->recordEvent(
-				termijnInstanceId: $termijnInstanceId,
+				termInstanceId: $termInstanceId,
 				type: 'voltooi',
-				grondslag: 'AWB 4:13',
-				motivering: 'Termijn voltooid door beschikking',
-				dagenImpact: 0,
-				tijdstip: $voltooiDatum,
+				basis: 'AWB 4:13',
+				rationale: 'Termijn voltooid door beschikking',
+				daysImpact: 0,
+				moment: $voltooiDatum,
 				documentLink: $documentLink,
 			);
 		}
@@ -346,12 +346,12 @@ class TermijnService {
 	/**
 	 * Append an immutable TermijnGebeurtenis row.
 	 *
-	 * @param string $termijnInstanceId Instance id.
+	 * @param string $termInstanceId Instance id.
 	 * @param string $type Event type.
-	 * @param string $grondslag Legal basis.
-	 * @param string $motivering Reason.
-	 * @param int $dagenImpact Days impact.
-	 * @param DateTimeImmutable|null $tijdstip When (default now).
+	 * @param string $basis Legal basis.
+	 * @param string $rationale Reason.
+	 * @param int $daysImpact Days impact.
+	 * @param DateTimeImmutable|null $moment When (default now).
 	 * @param string $documentLink Optional document ref.
 	 * @param string $actor Optional actor (default 'system').
 	 *
@@ -360,24 +360,24 @@ class TermijnService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function recordEvent(
-		string $termijnInstanceId,
+		string $termInstanceId,
 		string $type,
-		string $grondslag,
-		string $motivering,
-		int $dagenImpact,
-		?DateTimeImmutable $tijdstip = null,
+		string $basis,
+		string $rationale,
+		int $daysImpact,
+		?DateTimeImmutable $moment = null,
 		string $documentLink = '',
 		string $actor = 'system',
 	): ?array {
-		$tijdstip = ($tijdstip ?? new DateTimeImmutable());
+		$moment = ($moment ?? new DateTimeImmutable());
 		$event = [
-			'termijnInstance' => $termijnInstanceId,
+			'termijnInstance' => $termInstanceId,
 			'type' => $type,
-			'tijdstip' => $tijdstip->format('Y-m-d\TH:i:sP'),
+			'tijdstip' => $moment->format('Y-m-d\TH:i:sP'),
 			'actor' => $actor,
-			'grondslag' => $grondslag,
-			'motivering' => $motivering,
-			'dagenImpact' => $dagenImpact,
+			'grondslag' => $basis,
+			'motivering' => $rationale,
+			'dagenImpact' => $daysImpact,
 		];
 		if ($documentLink !== '') {
 			$event['documentLink'] = $documentLink;

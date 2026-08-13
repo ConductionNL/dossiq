@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
 class DeadlineDailyScanServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
 	private SettingsService $settings;
-	private TermijnService $termijnService;
+	private TermijnService $termService;
 	private DeadlineEscalationService $escalation;
 	private DeadlineDailyScanService $scan;
 
@@ -66,11 +66,11 @@ class DeadlineDailyScanServiceTest extends TestCase {
 
 		$this->settings = $settings;
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->termijnService = new TermijnService($settings, $logger);
-		$this->escalation = new DeadlineEscalationService($this->termijnService, $logger);
+		$this->termService = new TermijnService($settings, $logger);
+		$this->escalation = new DeadlineEscalationService($this->termService, $logger);
 		$this->scan = new DeadlineDailyScanService(
 			$settings,
-			$this->termijnService,
+			$this->termService,
 			$this->escalation,
 			$logger
 		);
@@ -118,7 +118,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 		$sent1 = $this->escalation->notifyThreshold($instance, 14);
 		self::assertTrue($sent1);
 
-		$reloaded = $this->termijnService->getTermijnInstance((string)$instance['id']);
+		$reloaded = $this->termService->getTermijnInstance((string)$instance['id']);
 		$sent2 = $this->escalation->notifyThreshold($reloaded, 14);
 		self::assertFalse($sent2);
 	}

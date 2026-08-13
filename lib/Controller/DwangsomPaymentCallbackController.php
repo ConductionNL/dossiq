@@ -102,22 +102,22 @@ class DwangsomPaymentCallbackController extends Controller {
 			);
 		}
 
-		$referentie = (string)($body['referentie'] ?? '');
+		$reference = (string)($body['referentie'] ?? '');
 		$status = (string)($body['status'] ?? '');
-		if ($referentie === '' || $status === '') {
+		if ($reference === '' || $status === '') {
 			return new JSONResponse(
 				['message' => 'referentie and status are required'],
 				Http::STATUS_BAD_REQUEST
 			);
 		}
 
-		$betaaldatum = $this->parseDate(value: (string)($body['werkelijkeBetaaldatum'] ?? ''));
+		$paymentDate = $this->parseDate(value: (string)($body['werkelijkeBetaaldatum'] ?? ''));
 		$bankRef = (string)($body['betalingsreferentie'] ?? '');
 
 		try {
-			$updated = $this->service->handleCallback($referentie, $status, $betaaldatum, $bankRef);
+			$updated = $this->service->handleCallback($reference, $status, $paymentDate, $bankRef);
 		} catch (RuntimeException $e) {
-			$this->logger->info('Dwangsom callback: unknown referentie', ['referentie' => $referentie]);
+			$this->logger->info('Dwangsom callback: unknown referentie', ['referentie' => $reference]);
 			return new JSONResponse(
 				['message' => $e->getMessage()],
 				Http::STATUS_NOT_FOUND

@@ -55,7 +55,7 @@ class LogWozAdapter implements WozAdapterInterface {
 	 * matching the `LogBagAdapter` precedent.
 	 *
 	 * @param string $postcode Dutch postcode.
-	 * @param string $huisnummer House number.
+	 * @param string $houseNumber House number.
 	 * @param string|null $huisletter Optional house letter.
 	 * @param string|null $toevoeging Optional house number
 	 *                                addition.
@@ -67,7 +67,7 @@ class LogWozAdapter implements WozAdapterInterface {
 	 */
 	public function lookupAddress(
 		string $postcode,
-		string $huisnummer,
+		string $houseNumber,
 		?string $huisletter = null,
 		?string $toevoeging = null,
 		array $context = [],
@@ -76,7 +76,7 @@ class LogWozAdapter implements WozAdapterInterface {
 			'Procest WOZ lookup deferred (no outbound connector bound)',
 			[
 				'postcode' => $postcode,
-				'huisnummer' => $huisnummer,
+				'huisnummer' => $houseNumber,
 				'huisletter' => $huisletter,
 				'toevoeging' => $toevoeging,
 				'context' => $context,
@@ -89,17 +89,17 @@ class LogWozAdapter implements WozAdapterInterface {
 	/**
 	 * Log the intent + synthesise a LOOKUP_DEFERRED result.
 	 *
-	 * @param string $nummeraanduidingId BAG nummeraanduiding identificatie.
+	 * @param string $addressDesignationId BAG nummeraanduiding identificatie.
 	 * @param array<string,mixed> $context Lookup context.
 	 *
 	 * @return WozLookupResult The dispatch outcome.
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
-	public function lookupByNummeraanduiding(string $nummeraanduidingId, array $context = []): WozLookupResult {
+	public function lookupByNummeraanduiding(string $addressDesignationId, array $context = []): WozLookupResult {
 		$this->logger->info(
 			'Procest WOZ lookup deferred (no outbound connector bound)',
-			['nummeraanduidingId' => $nummeraanduidingId, 'context' => $context]
+			['nummeraanduidingId' => $addressDesignationId, 'context' => $context]
 		);
 
 		return $this->deferred();

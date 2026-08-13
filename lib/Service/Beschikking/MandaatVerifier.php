@@ -68,9 +68,9 @@ class MandaatVerifier {
 	 *
 	 * @param array<string, mixed> $regeling The mandaatRegeling object.
 	 * @param string $niveau The proposed approver level.
-	 * @param float $bedrag The decision bedrag.
-	 * @param string $beschikkingType The decision type.
-	 * @param string $zaaktype The case type.
+	 * @param float $amount The decision bedrag.
+	 * @param string $decisionType The decision type.
+	 * @param string $caseType The case type.
 	 *
 	 * @return bool True when the level may sign this decision within its limit.
 	 *
@@ -79,22 +79,22 @@ class MandaatVerifier {
 	public function verifyMandaat(
 		array $regeling,
 		string $niveau,
-		float $bedrag,
-		string $beschikkingType,
-		string $zaaktype,
+		float $amount,
+		string $decisionType,
+		string $caseType,
 	): bool {
 		foreach ((array)($regeling['mandateGroups'] ?? []) as $groep) {
 			if ((string)($groep['niveau'] ?? '') !== $niveau) {
 				continue;
 			}
 
-			$zaaktypes = (array)($groep['zaaktypes'] ?? []);
-			if (empty($zaaktypes) === false && in_array($zaaktype, $zaaktypes, true) === false) {
+			$caseTypes = (array)($groep['zaaktypes'] ?? []);
+			if (empty($caseTypes) === false && in_array($caseType, $caseTypes, true) === false) {
 				continue;
 			}
 
 			$types = (array)($groep['beschikkingTypes'] ?? []);
-			if (empty($types) === false && in_array($beschikkingType, $types, true) === false) {
+			if (empty($types) === false && in_array($decisionType, $types, true) === false) {
 				continue;
 			}
 
@@ -103,7 +103,7 @@ class MandaatVerifier {
 				return true;
 			}
 
-			if ($bedrag <= (float)$limit) {
+			if ($amount <= (float)$limit) {
 				return true;
 			}
 		}//end foreach
@@ -114,13 +114,13 @@ class MandaatVerifier {
 	/**
 	 * Resolve the mandaatRegeling applicable to a zaaktype.
 	 *
-	 * @param string $zaaktype The case type slug.
+	 * @param string $caseType The case type slug.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	public function resolveMandaatRegeling(string $zaaktype): array {
+	public function resolveMandaatRegeling(string $caseType): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return [];
@@ -147,8 +147,8 @@ class MandaatVerifier {
 		foreach ((array)$regelingen as $regeling) {
 			$arr = $this->toArray(value: $regeling);
 			foreach ((array)($arr['mandateGroups'] ?? []) as $groep) {
-				$zaaktypes = (array)($groep['zaaktypes'] ?? []);
-				if ($zaaktype === '' || in_array($zaaktype, $zaaktypes, true) === true) {
+				$caseTypes = (array)($groep['zaaktypes'] ?? []);
+				if ($caseType === '' || in_array($caseType, $caseTypes, true) === true) {
 					return $arr;
 				}
 			}
@@ -166,30 +166,30 @@ class MandaatVerifier {
 	 * the beschikking. Returns null when no covering niveau is found.
 	 *
 	 * @param array<string, mixed> $regeling The mandaatRegeling.
-	 * @param array<string, mixed> $beschikking The beschikking.
-	 * @param string $akkoordDoor The approver UID.
+	 * @param array<string, mixed> $decision The beschikking.
+	 * @param string $approvedBy The approver UID.
 	 *
 	 * @return string|null
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	public function resolveNiveauForUser(array $regeling, array $beschikking, string $akkoordDoor): ?string {
-		$bedrag = (float)($beschikking['legesbedrag'] ?? 0);
-		$beschikkingType = (string)($beschikking['beschikkingType'] ?? '');
-		$zaaktype = (string)($beschikking['zaaktype'] ?? '');
+	public function resolveNiveauForUser(array $regeling, array $decision, string $approvedBy): ?string {
+		$amount = (float)($decision['legesbedrag'] ?? 0);
+		$decisionType = (string)($decision['beschikkingType'] ?? '');
+		$caseType = (string)($decision['zaaktype'] ?? '');
 
 		foreach ((array)($regeling['mandateGroups'] ?? []) as $groep) {
 			$niveau = (string)($groep['niveau'] ?? '');
-			if ($niveau === '' || str_starts_with($akkoordDoor, $niveau) === false) {
+			if ($niveau === '' || str_starts_with($approvedBy, $niveau) === false) {
 				continue;
 			}
 
 			$covered = $this->verifyMandaat(
 				regeling: $regeling,
 				niveau: $niveau,
-				bedrag: $bedrag,
-				beschikkingType: $beschikkingType,
-				zaaktype: $zaaktype,
+				amount: $amount,
+				decisionType: $decisionType,
+				caseType: $caseType,
 			);
 			if ($covered === true) {
 				return $niveau;

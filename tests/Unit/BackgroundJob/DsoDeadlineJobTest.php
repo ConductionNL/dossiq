@@ -200,7 +200,7 @@ class DsoDeadlineJobTest extends TestCase {
 		// Return a zaak with a past deadline so the overdue branch runs,
 		// and inject a sub-call that throws to verify per-zaak isolation.
 		$pastDeadline = (new \DateTimeImmutable('today'))->modify('-10 days')->format('Y-m-d');
-		$zaken = [
+		$cases = [
 			[
 				'id' => 'zaak-overdue-1',
 				'status' => 'ingediend',
@@ -215,7 +215,7 @@ class DsoDeadlineJobTest extends TestCase {
 		$objectServiceMock
 			->expects($this->once())
 			->method('searchObjectsBySlug')
-			->willReturn($zaken);
+			->willReturn($cases);
 
 		// saveObject throws for this zaak — the job must swallow it.
 		$objectServiceMock

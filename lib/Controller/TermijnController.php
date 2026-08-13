@@ -61,7 +61,7 @@ class TermijnController extends Controller {
 	 *
 	 * @param string $appName App id.
 	 * @param IRequest $request Request.
-	 * @param TermijnService $termijn Termijn service.
+	 * @param TermijnService $term Termijn service.
 	 * @param DeadlinePauseService $pause Pause service.
 	 * @param DeadlineExtensionService $extension Extension service.
 	 * @param IUserSession $userSession User session.
@@ -70,7 +70,7 @@ class TermijnController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly TermijnService $termijn,
+		private readonly TermijnService $term,
 		private readonly DeadlinePauseService $pause,
 		private readonly DeadlineExtensionService $extension,
 		private readonly IUserSession $userSession,
@@ -117,14 +117,14 @@ class TermijnController extends Controller {
 		}
 
 		$body = $this->jsonBody();
-		$zaakId = (string)($body['zaakId'] ?? '');
-		$zaaktype = (string)($body['zaaktype'] ?? '');
-		if ($zaakId === '' || $zaaktype === '') {
+		$caseId = (string)($body['zaakId'] ?? '');
+		$caseType = (string)($body['zaaktype'] ?? '');
+		if ($caseId === '' || $caseType === '') {
 			return $this->badRequest(msg: 'zaakId and zaaktype are required');
 		}
 
 		try {
-			$row = $this->termijn->createTermijnInstance($zaakId, $zaaktype);
+			$row = $this->term->createTermijnInstance($caseId, $caseType);
 			return new JSONResponse($row, Http::STATUS_CREATED);
 		} catch (Throwable $e) {
 			return $this->error(e: $e, log: 'Termijn create failed');
@@ -148,7 +148,7 @@ class TermijnController extends Controller {
 			return $denied;
 		}
 
-		$row = $this->termijn->getTermijnInstance($id);
+		$row = $this->term->getTermijnInstance($id);
 		if ($row === null) {
 			return $this->notFound(msg: 'TermijnInstance not found: ' . $id);
 		}
@@ -174,12 +174,12 @@ class TermijnController extends Controller {
 		}
 
 		$body = $this->jsonBody();
-		$duurDagen = (int)($body['duurDagen'] ?? 0);
-		$motivering = (string)($body['motivering'] ?? '');
+		$durationDays = (int)($body['duurDagen'] ?? 0);
+		$rationale = (string)($body['motivering'] ?? '');
 		$documentLink = (string)($body['documentLink'] ?? '');
 
 		try {
-			$row = $this->pause->registerPauze($id, $duurDagen, $motivering, $documentLink);
+			$row = $this->pause->registerPauze($id, $durationDays, $rationale, $documentLink);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			return $this->error(e: $e, log: 'Pauze failed');
@@ -236,8 +236,8 @@ class TermijnController extends Controller {
 		}
 
 		$body = $this->jsonBody();
-		$motivering = (string)($body['motivering'] ?? '');
-		$newEinddatum = (string)($body['newEinddatum'] ?? '');
+		$rationale = (string)($body['motivering'] ?? '');
+		$newEndDate = (string)($body['newEinddatum'] ?? '');
 		$documentLink = (string)($body['documentLink'] ?? '');
 		$isSupervisor = (bool)($body['supervisorOverride'] ?? false);
 
@@ -245,14 +245,14 @@ class TermijnController extends Controller {
 			if ($isSupervisor === true) {
 				$row = $this->extension->requestSupervisorExtension(
 					$id,
-					$motivering,
-					$newEinddatum,
+					$rationale,
+					$newEndDate,
 					$documentLink
 				);
 				return new JSONResponse($row);
 			}
 
-			$row = $this->extension->requestExtension($id, $motivering, $newEinddatum, $documentLink);
+			$row = $this->extension->requestExtension($id, $rationale, $newEndDate, $documentLink);
 			return new JSONResponse($row);
 		} catch (Throwable $e) {
 			return $this->error(e: $e, log: 'Verleng failed');
@@ -285,7 +285,7 @@ class TermijnController extends Controller {
 		}
 
 		try {
-			$row = $this->termijn->markTermijnCompleted(
+			$row = $this->term->markTermijnCompleted(
 				$id,
 				$completedAt,
 				$documentLink

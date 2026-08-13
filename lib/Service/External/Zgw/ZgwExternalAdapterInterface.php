@@ -80,7 +80,7 @@ interface ZgwExternalAdapterInterface {
 	/**
 	 * Push a Zaak envelope to a neighbouring ZGW Zaken-API.
 	 *
-	 * @param array<string,mixed> $zaakEnvelope ZGW-shaped payload —
+	 * @param array<string,mixed> $caseEnvelope ZGW-shaped payload —
 	 *                                          identificatie, bronorganisatie,
 	 *                                          omschrijving, zaaktype (URL
 	 *                                          to the receiver's
@@ -94,7 +94,7 @@ interface ZgwExternalAdapterInterface {
 	 * @return ZgwPushResult The dispatch outcome (status +
 	 *                       receiver-side zaak URL).
 	 */
-	public function submitZaak(array $zaakEnvelope, array $context = []): ZgwPushResult;
+	public function submitZaak(array $caseEnvelope, array $context = []): ZgwPushResult;
 
 	/**
 	 * Push a Document envelope to a neighbouring ZGW Documenten-API.

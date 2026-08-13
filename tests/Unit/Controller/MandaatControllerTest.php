@@ -48,7 +48,7 @@ class MandaatControllerTest extends TestCase {
 	 *
 	 * @var MandaatValidationService|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private MandaatValidationService $mandaatValidator;
+	private MandaatValidationService $mandateValidator;
 
 	/**
 	 * The mocked user session.
@@ -78,7 +78,7 @@ class MandaatControllerTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->request = $this->createMock(IRequest::class);
-		$this->mandaatValidator = $this->createMock(MandaatValidationService::class);
+		$this->mandateValidator = $this->createMock(MandaatValidationService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 		$this->logger = $this->createMock(LoggerInterface::class);
 
@@ -88,7 +88,7 @@ class MandaatControllerTest extends TestCase {
 		$this->controller = new MandaatController(
 			appName: 'procest',
 			request: $this->request,
-			mandaatValidator: $this->mandaatValidator,
+			mandateValidator: $this->mandateValidator,
 			userSession: $this->userSession,
 			logger: $this->logger,
 		);
@@ -106,7 +106,7 @@ class MandaatControllerTest extends TestCase {
 			->with('signingUserId', '')
 			->willReturn('user-1');
 
-		$this->mandaatValidator
+		$this->mandateValidator
 			->expects($this->once())
 			->method('validate')
 			->willReturn(['valid' => true, 'requiresManualConfirmation' => false, 'message' => 'OK.']);
@@ -148,7 +148,7 @@ class MandaatControllerTest extends TestCase {
 		$controller = new MandaatController(
 			appName: 'procest',
 			request: $this->request,
-			mandaatValidator: $this->mandaatValidator,
+			mandateValidator: $this->mandateValidator,
 			userSession: $unauthSession,
 			logger: $this->logger,
 		);

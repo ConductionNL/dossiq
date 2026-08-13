@@ -51,12 +51,12 @@ use Psr\Log\LoggerInterface;
 class DeadlineMonitoringEndToEndTest extends TestCase {
 	private FakeTermijnStore $objects;
 	private SettingsService $settings;
-	private TermijnService $termijnService;
+	private TermijnService $termService;
 	private DeadlinePauseService $pauseService;
 	private DeadlineExtensionService $extService;
 	private NoticeOfDefaultService $ingService;
 	private DwangsomCalculationService $calcService;
-	private DwangsomUitbetalingService $uitService;
+	private DwangsomUitbetalingService $outService;
 	private DwangsomBezwaarService $bezService;
 	private TermijnNotificationService $notifService;
 	private DeadlineDailyScanService $scanService;
@@ -82,22 +82,22 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$this->settings = $settings;
 
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->termijnService = new TermijnService($settings, $logger);
-		$this->pauseService = new DeadlinePauseService($this->termijnService);
-		$this->extService = new DeadlineExtensionService($this->termijnService);
-		$this->ingService = new NoticeOfDefaultService($settings, $this->termijnService, $logger);
+		$this->termService = new TermijnService($settings, $logger);
+		$this->pauseService = new DeadlinePauseService($this->termService);
+		$this->extService = new DeadlineExtensionService($this->termService);
+		$this->ingService = new NoticeOfDefaultService($settings, $this->termService, $logger);
 		$this->calcService = new DwangsomCalculationService($settings, $logger);
-		$this->uitService = new DwangsomUitbetalingService($settings);
-		$this->bezService = new DwangsomBezwaarService($settings, $this->termijnService, $logger);
+		$this->outService = new DwangsomUitbetalingService($settings);
+		$this->bezService = new DwangsomBezwaarService($settings, $this->termService, $logger);
 		$this->notifService = new TermijnNotificationService(
-			$this->termijnService,
+			$this->termService,
 			new BerichtenboxRoutingService($logger),
 			$logger
 		);
 		$this->scanService = new DeadlineDailyScanService(
 			$settings,
-			$this->termijnService,
-			new DeadlineEscalationService($this->termijnService, $logger),
+			$this->termService,
+			new DeadlineEscalationService($this->termService, $logger),
 			$logger,
 			$this->calcService
 		);
@@ -119,13 +119,13 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 * @return void
 	 */
 	public function testScenario1NormalCase(): void {
-		$instance = $this->termijnService->createTermijnInstance(
+		$instance = $this->termService->createTermijnInstance(
 			'Z/2026/S1',
 			'omgevingsvergunning-regulier',
 			new DateTimeImmutable('2026-06-01T10:00:00+00:00')
 		);
 
-		$voltooid = $this->termijnService->markTermijnCompleted(
+		$voltooid = $this->termService->markTermijnCompleted(
 			(string)$instance['id'],
 			new DateTimeImmutable('2026-07-15')
 		);
@@ -140,8 +140,8 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 * @return void
 	 */
 	public function testScenario2PauseCase(): void {
-		$this->termijnService->getTermijnDefinitie('omgevingsvergunning-regulier');
-		$instance = $this->termijnService->createTermijnInstance(
+		$this->termService->getTermijnDefinitie('omgevingsvergunning-regulier');
+		$instance = $this->termService->createTermijnInstance(
 			'Z/2026/S2',
 			'omgevingsvergunning-regulier',
 			new DateTimeImmutable('2026-06-01T10:00:00+00:00')
@@ -165,8 +165,8 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 * @return void
 	 */
 	public function testScenario3ExtensionCase(): void {
-		$this->termijnService->getTermijnDefinitie('omgevingsvergunning-regulier');
-		$instance = $this->termijnService->createTermijnInstance(
+		$this->termService->getTermijnDefinitie('omgevingsvergunning-regulier');
+		$instance = $this->termService->createTermijnInstance(
 			'Z/2026/S3',
 			'omgevingsvergunning-regulier',
 			new DateTimeImmutable('2026-06-01T10:00:00+00:00')
@@ -181,7 +181,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		self::assertSame('verlengd', $extended['status']);
 		self::assertSame(1, $extended['aantalVerlengingen']);
 
-		$voltooid = $this->termijnService->markTermijnCompleted($id, new DateTimeImmutable('2026-09-20'));
+		$voltooid = $this->termService->markTermijnCompleted($id, new DateTimeImmutable('2026-09-20'));
 		self::assertSame('voltooid', $voltooid['status']);
 	}
 
@@ -212,24 +212,24 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		);
 		self::assertTrue($row['gevalideerd']);
 		self::assertArrayHasKey('dwangsomBerekening', $row);
-		$berekeningId = (string)$row['dwangsomBerekening']['id'];
+		$calculationId = (string)$row['dwangsomBerekening']['id'];
 
 		// Accrue 5 days.
 		for ($i = 0; $i < 5; $i++) {
-			$this->calcService->calculateDaily($berekeningId);
+			$this->calcService->calculateDaily($calculationId);
 		}
-		$accrued = $this->objects->store['dwangsomBerekening'][$berekeningId];
+		$accrued = $this->objects->store['dwangsomBerekening'][$calculationId];
 		self::assertSame(5, $accrued['huidigeDag']);
 		self::assertSame(11500, $accrued['cumulatievBedrag']);
 
 		// Beschikking arrives — stop.
-		$stopped = $this->calcService->stopForBeschikking($berekeningId);
+		$stopped = $this->calcService->stopForBeschikking($calculationId);
 		self::assertSame('gestopt-wegens-beschikking', $stopped['status']);
 		self::assertSame(11500, $stopped['definitievBedrag']);
 
 		// Prepare payment.
-		$uitb = $this->uitService->prepareBetaling(
-			$berekeningId,
+		$uitb = $this->outService->prepareBetaling(
+			$calculationId,
 			'J. Burger',
 			'NL91ABNA0417164300',
 			new DateTimeImmutable('2026-03-15')
@@ -238,7 +238,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		self::assertSame('voorbereid', $uitb['status']);
 
 		// Callback arrives confirming payment.
-		$paid = $this->uitService->handleCallback(
+		$paid = $this->outService->handleCallback(
 			(string)$uitb['referentie'],
 			'betaald',
 			new DateTimeImmutable('2026-04-05'),
@@ -269,15 +269,15 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 
 		$frozen = $this->bezService->registerBezwaar('b-s5', 'AWB 7:1', 'Bedrag te hoog');
 		self::assertSame('bezwaar-bevroren', $frozen['status']);
-		$uitFrozen = $this->objects->store['dwangsomUitbetaling']['u-s5'];
-		self::assertSame('on-hold-bezwaar', $uitFrozen['status']);
+		$outFrozen = $this->objects->store['dwangsomUitbetaling']['u-s5'];
+		self::assertSame('on-hold-bezwaar', $outFrozen['status']);
 
 		// Heroverweging halves the amount.
 		$resolved = $this->bezService->resolveBezwaar('b-s5', 25000, 'AWB 7:11');
 		self::assertSame(25000, $resolved['definitievBedrag']);
 		self::assertSame('voltooid', $resolved['status']);
-		$uitResumed = $this->objects->store['dwangsomUitbetaling']['u-s5'];
-		self::assertSame(25000, $uitResumed['bedrag']);
-		self::assertSame('voorbereid', $uitResumed['status']);
+		$outResumed = $this->objects->store['dwangsomUitbetaling']['u-s5'];
+		self::assertSame(25000, $outResumed['bedrag']);
+		self::assertSame('voorbereid', $outResumed['status']);
 	}
 }

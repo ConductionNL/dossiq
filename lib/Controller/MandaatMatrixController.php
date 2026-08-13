@@ -78,7 +78,7 @@ class MandaatMatrixController extends Controller {
 	 * @param IRequest $request Request.
 	 * @param IUserSession $userSession User session (for current user id).
 	 * @param MandaatCheckService $check Check service.
-	 * @param MandaatEscalatieService $escalatie Escalation service.
+	 * @param MandaatEscalatieService $escalation Escalation service.
 	 * @param MandaatGebruikService $gebruik Audit log service.
 	 * @param MandaatImportService $import Import service.
 	 * @param SettingsService $settings Settings (OpenRegister access).
@@ -89,7 +89,7 @@ class MandaatMatrixController extends Controller {
 		IRequest $request,
 		private readonly IUserSession $userSession,
 		private readonly MandaatCheckService $check,
-		private readonly MandaatEscalatieService $escalatie,
+		private readonly MandaatEscalatieService $escalation,
 		private readonly MandaatGebruikService $gebruik,
 		private readonly MandaatImportService $import,
 		private readonly SettingsService $settings,
@@ -317,19 +317,19 @@ class MandaatMatrixController extends Controller {
 			return $denied;
 		}
 
-		$zaakId = (string)$this->request->getParam('zaakId', '');
+		$caseId = (string)$this->request->getParam('zaakId', '');
 		$decisionType = (string)$this->request->getParam('decisionType', '');
-		$escalatieReden = (string)$this->request->getParam('escalatieReden', '');
-		if ($zaakId === '' || $decisionType === '' || $escalatieReden === '') {
+		$escalationReason = (string)$this->request->getParam('escalatieReden', '');
+		if ($caseId === '' || $decisionType === '' || $escalationReason === '') {
 			return $this->badRequest(msg: 'zaakId, decisionType and escalatieReden are required');
 		}
 
 		try {
-			$r = $this->escalatie->createEscalatie(
-				$zaakId,
+			$r = $this->escalation->createEscalatie(
+				$caseId,
 				$decisionType,
 				$this->currentUserId(),
-				$escalatieReden
+				$escalationReason
 			);
 			return new JSONResponse($r, Http::STATUS_CREATED);
 		} catch (Throwable $e) {
@@ -351,7 +351,7 @@ class MandaatMatrixController extends Controller {
 	public function escalateApprove(string $id): JSONResponse {
 		$userId = $this->currentUserId();
 		try {
-			$r = $this->escalatie->approveEscalatie($id, $userId);
+			$r = $this->escalation->approveEscalatie($id, $userId);
 			return new JSONResponse($r);
 		} catch (Throwable $e) {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_FORBIDDEN);
@@ -382,7 +382,7 @@ class MandaatMatrixController extends Controller {
 		}
 
 		try {
-			$r = $this->escalatie->rejectEscalatie($id, $reason);
+			$r = $this->escalation->rejectEscalatie($id, $reason);
 			return new JSONResponse($r);
 		} catch (Throwable $e) {
 			return new JSONResponse(['message' => $e->getMessage()], Http::STATUS_BAD_REQUEST);

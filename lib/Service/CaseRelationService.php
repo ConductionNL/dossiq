@@ -117,8 +117,8 @@ class CaseRelationService {
 	 *
 	 * @param string $caseId Origin case UUID.
 	 * @param string $targetId Target case UUID.
-	 * @param string $aardRelatie Relation type.
-	 * @param string|null $toelichting Optional free-text clarification (procest-local).
+	 * @param string $natureRelationship Relation type.
+	 * @param string|null $notes Optional free-text clarification (procest-local).
 	 *
 	 * @return array{ok: bool, reason?: string, detail?: string}
 	 *
@@ -127,13 +127,13 @@ class CaseRelationService {
 	public function addRelation(
 		string $caseId,
 		string $targetId,
-		string $aardRelatie,
-		?string $toelichting = null,
+		string $natureRelationship,
+		?string $notes = null,
 	): array {
 		$rejection = $this->rejectInvalidRelationInput(
 			caseId: $caseId,
 			targetId: $targetId,
-			aardRelatie: $aardRelatie
+			natureRelationship: $natureRelationship
 		);
 		if ($rejection !== null) {
 			return $rejection;
@@ -157,14 +157,14 @@ class CaseRelationService {
 		}
 
 		$originRelations = $this->codec->decode(case: $origin);
-		if ($this->codec->hasPair(relations: $originRelations, caseId: $targetId, aardRelatie: $aardRelatie) === true) {
+		if ($this->codec->hasPair(relations: $originRelations, caseId: $targetId, natureRelationship: $natureRelationship) === true) {
 			return ['ok' => false, 'reason' => 'duplicate'];
 		}
 
 		$originRelations[] = $this->codec->buildEntry(
 			caseId: $targetId,
-			aardRelatie: $aardRelatie,
-			toelichting: $toelichting
+			natureRelationship: $natureRelationship,
+			notes: $notes
 		);
 		$this->store->persistRelations(case: $origin, relations: $originRelations);
 
@@ -173,8 +173,8 @@ class CaseRelationService {
 		$this->addInverseRelation(
 			target: $target,
 			caseId: $caseId,
-			aardRelatie: $aardRelatie,
-			toelichting: $toelichting
+			natureRelationship: $natureRelationship,
+			notes: $notes
 		);
 
 		return ['ok' => true];
@@ -188,12 +188,12 @@ class CaseRelationService {
 	 *
 	 * @param string $caseId Origin case UUID.
 	 * @param string $targetId Target case UUID.
-	 * @param string $aardRelatie Relation type.
+	 * @param string $natureRelationship Relation type.
 	 *
 	 * @return array{ok: bool, reason?: string}|null
 	 */
-	private function rejectInvalidRelationInput(string $caseId, string $targetId, string $aardRelatie): ?array {
-		if (in_array($aardRelatie, self::RELATION_TYPES, true) === false) {
+	private function rejectInvalidRelationInput(string $caseId, string $targetId, string $natureRelationship): ?array {
+		if (in_array($natureRelationship, self::RELATION_TYPES, true) === false) {
 			return ['ok' => false, 'reason' => 'invalid_aard_relatie'];
 		}
 
@@ -214,23 +214,23 @@ class CaseRelationService {
 	 *
 	 * @param array<string, mixed> $target Target case object.
 	 * @param string $caseId Origin case UUID (the entry's reference).
-	 * @param string $aardRelatie Relation type.
-	 * @param string|null $toelichting Optional free-text clarification.
+	 * @param string $natureRelationship Relation type.
+	 * @param string|null $notes Optional free-text clarification.
 	 *
 	 * @return void
 	 */
 	private function addInverseRelation(
 		array $target,
 		string $caseId,
-		string $aardRelatie,
-		?string $toelichting,
+		string $natureRelationship,
+		?string $notes,
 	): void {
 		$targetRelations = $this->codec->decode(case: $target);
-		if ($this->codec->hasPair(relations: $targetRelations, caseId: $caseId, aardRelatie: $aardRelatie) === false) {
+		if ($this->codec->hasPair(relations: $targetRelations, caseId: $caseId, natureRelationship: $natureRelationship) === false) {
 			$targetRelations[] = $this->codec->buildEntry(
 				caseId: $caseId,
-				aardRelatie: $aardRelatie,
-				toelichting: $toelichting
+				natureRelationship: $natureRelationship,
+				notes: $notes
 			);
 			$this->store->persistRelations(case: $target, relations: $targetRelations);
 		}
@@ -241,13 +241,13 @@ class CaseRelationService {
 	 *
 	 * @param string $caseId Origin case UUID.
 	 * @param string $targetId Target case UUID.
-	 * @param string $aardRelatie Relation type to remove.
+	 * @param string $natureRelationship Relation type to remove.
 	 *
 	 * @return array{ok: bool, reason?: string}
 	 *
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
-	public function removeRelation(string $caseId, string $targetId, string $aardRelatie): array {
+	public function removeRelation(string $caseId, string $targetId, string $natureRelationship): array {
 		if ($caseId === '' || $targetId === '') {
 			return ['ok' => false, 'reason' => 'missing_case_id'];
 		}
@@ -261,14 +261,14 @@ class CaseRelationService {
 		$originRelations = $this->codec->removePair(
 			relations: $this->codec->decode(case: $origin),
 			caseId: $targetId,
-			aardRelatie: $aardRelatie
+			natureRelationship: $natureRelationship
 		);
 		$this->store->persistRelations(case: $origin, relations: $originRelations);
 
 		$targetRelations = $this->codec->removePair(
 			relations: $this->codec->decode(case: $target),
 			caseId: $caseId,
-			aardRelatie: $aardRelatie
+			natureRelationship: $natureRelationship
 		);
 		$this->store->persistRelations(case: $target, relations: $targetRelations);
 
@@ -351,9 +351,9 @@ class CaseRelationService {
 
 		foreach ($this->codec->decode(case: $case) as $relation) {
 			$targetId = (string)($relation['caseId'] ?? '');
-			$aardRelatie = (string)($relation['aardRelatie'] ?? '');
+			$natureRelationship = (string)($relation['aardRelatie'] ?? '');
 			if ($targetId === '' || $targetId === $caseId
-				|| in_array($aardRelatie, self::RELATION_TYPES, true) === false
+				|| in_array($natureRelationship, self::RELATION_TYPES, true) === false
 			) {
 				continue;
 			}
@@ -364,8 +364,8 @@ class CaseRelationService {
 			}
 
 			$targetRelations = $this->codec->decode(case: $target);
-			if ($this->codec->hasPair(relations: $targetRelations, caseId: $caseId, aardRelatie: $aardRelatie) === false) {
-				$targetRelations[] = ['caseId' => $caseId, 'aardRelatie' => $aardRelatie];
+			if ($this->codec->hasPair(relations: $targetRelations, caseId: $caseId, natureRelationship: $natureRelationship) === false) {
+				$targetRelations[] = ['caseId' => $caseId, 'aardRelatie' => $natureRelationship];
 				$this->store->persistRelations(case: $target, relations: $targetRelations);
 			}
 		}//end foreach

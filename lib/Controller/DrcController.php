@@ -215,7 +215,7 @@ class DrcController extends ZgwController {
 		if ($resource === 'gebruiksrechten') {
 			$response = $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
 			if ($response->getStatus() === Http::STATUS_CREATED) {
-				$this->updateIndicatieGebruiksrecht(response: $response);
+				$this->updateIndicationGebruiksrecht(response: $response);
 			}
 
 			return $response;
@@ -500,7 +500,7 @@ class DrcController extends ZgwController {
 			$grData = $this->getGebruiksrechtData(uuid: $uuid);
 			$response = $this->zgwService->handleDestroy($this->request, self::ZGW_API, $resource, $uuid);
 			if ($response->getStatus() === Http::STATUS_NO_CONTENT && $grData !== null) {
-				$this->checkAndClearIndicatieGebruiksrecht(eioUuid: $grData['informatieobjectUuid']);
+				$this->checkAndClearIndicationGebruiksrecht(eioUuid: $grData['informatieobjectUuid']);
 			}
 
 			return $response;
@@ -1171,7 +1171,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @return void
 	 */
-	private function updateIndicatieGebruiksrecht(JSONResponse $response): void {
+	private function updateIndicationGebruiksrecht(JSONResponse $response): void {
 		$data = $response->getData();
 		if (is_array($data) === false) {
 			return;
@@ -1182,7 +1182,7 @@ class DrcController extends ZgwController {
 			return;
 		}
 
-		$this->setIndicatieGebruiksrecht(ioUrl: $ioUrl, value: true);
+		$this->setIndicationGebruiksrecht(ioUrl: $ioUrl, value: true);
 	}//end updateIndicatieGebruiksrecht()
 
 	/**
@@ -1232,7 +1232,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @return void
 	 */
-	private function checkAndClearIndicatieGebruiksrecht(string $eioUuid): void {
+	private function checkAndClearIndicationGebruiksrecht(string $eioUuid): void {
 		$objectService = $this->zgwService->getObjectService();
 		if ($objectService === null) {
 			return;
@@ -1295,7 +1295,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @return void
 	 */
-	private function setIndicatieGebruiksrecht(string $ioUrl, ?bool $value): void {
+	private function setIndicationGebruiksrecht(string $ioUrl, ?bool $value): void {
 		$objectService = $this->zgwService->getObjectService();
 		if ($objectService === null) {
 			return;
@@ -1397,8 +1397,8 @@ class DrcController extends ZgwController {
 			}
 
 			// Get volgnummer from query parameter or request body.
-			$volgnummer = (int)($this->request->getParam('volgnummer') ?? 0);
-			if ($volgnummer <= 0 || $volgnummer > $totalParts) {
+			$sequenceNumber = (int)($this->request->getParam('volgnummer') ?? 0);
+			if ($sequenceNumber <= 0 || $sequenceNumber > $totalParts) {
 				return new JSONResponse(
 					data: ['detail' => $this->l10n->t('Invalid sequence number. Expected 1-%s.', [$totalParts])],
 					statusCode: Http::STATUS_BAD_REQUEST
@@ -1418,7 +1418,7 @@ class DrcController extends ZgwController {
 			$docService = $this->zgwService->getDocumentService();
 			$chunkSize = $docService->storeChunk(
 				uuid: $uuid,
-				volgnummer: $volgnummer,
+				sequenceNumber: $sequenceNumber,
 				content: $content
 			);
 
@@ -1456,7 +1456,7 @@ class DrcController extends ZgwController {
 
 				return new JSONResponse(
 					data: [
-						'volgnummer' => $volgnummer,
+						'volgnummer' => $sequenceNumber,
 						'omvang' => $chunkSize,
 						'uploadComplete' => true,
 						'bestandsomvang' => $mergedSize,
@@ -1469,7 +1469,7 @@ class DrcController extends ZgwController {
 
 			return new JSONResponse(
 				data: [
-					'volgnummer' => $volgnummer,
+					'volgnummer' => $sequenceNumber,
 					'omvang' => $chunkSize,
 					'uploadComplete' => false,
 					'uploadedParts' => count($uploaded),

@@ -95,11 +95,11 @@ class Iv3TaakveldControllerTest extends TestCase {
 	public function testEveryTaakveldCarriesACodeAndLabel(): void {
 		$data = $this->controller(authenticated: true)->taakvelden()->getData();
 
-		foreach ($data['taakvelden'] as $taakveld) {
-			$this->assertArrayHasKey('code', $taakveld);
-			$this->assertArrayHasKey('label', $taakveld);
-			$this->assertNotSame('', trim((string)$taakveld['code']));
-			$this->assertNotSame('', trim((string)$taakveld['label']));
+		foreach ($data['taakvelden'] as $taskField) {
+			$this->assertArrayHasKey('code', $taskField);
+			$this->assertArrayHasKey('label', $taskField);
+			$this->assertNotSame('', trim((string)$taskField['code']));
+			$this->assertNotSame('', trim((string)$taskField['label']));
 		}
 	}//end testEveryTaakveldCarriesACodeAndLabel()
 

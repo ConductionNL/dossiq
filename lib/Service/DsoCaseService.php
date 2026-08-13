@@ -100,7 +100,7 @@ class DsoCaseService {
 	 * from the activiteiten list, computes the statutory deadline, and
 	 * persists a new zaak in the Procest register.
 	 *
-	 * @param string $vergunningaanvraagId The UUID of the vergunningaanvraag object
+	 * @param string $permitApplicationId The UUID of the vergunningaanvraag object
 	 *
 	 * @return array<string,mixed> The created zaak object
 	 *
@@ -108,32 +108,32 @@ class DsoCaseService {
 	 *
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
 	 */
-	public function createZaakFromVergunningaanvraag(string $vergunningaanvraagId): array {
+	public function createZaakFromVergunningaanvraag(string $permitApplicationId): array {
 		$objectService = $this->getObjectService();
 
-		$aanvraagSchema = $this->appConfig->getValueString(
+		$requestSchema = $this->appConfig->getValueString(
 			app: Application::APP_ID,
 			key: 'dso_vergunningaanvraag_schema',
 			default: ''
 		);
 
-		$vergunningaanvraag = $this->findObjectAsArray(
+		$permitApplication = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: 'dso',
-			schema: $aanvraagSchema,
-			id: $vergunningaanvraagId
+			schema: $requestSchema,
+			id: $permitApplicationId
 		);
 
-		if ($vergunningaanvraag === null) {
-			throw new RuntimeException('Vergunningaanvraag not found: ' . $vergunningaanvraagId);
+		if ($permitApplication === null) {
+			throw new RuntimeException('Vergunningaanvraag not found: ' . $permitApplicationId);
 		}
 
-		$activiteiten = $vergunningaanvraag['activiteiten'] ?? [];
+		$activiteiten = $permitApplication['activiteiten'] ?? [];
 		$procedureType = $this->determineProcedureType(activiteiten: $activiteiten);
 
-		$indieningsdatum = (string)($vergunningaanvraag['indieningsdatum'] ?? date('Y-m-d'));
-		$deadlineDatum = $this->computeDeadline(
-			indieningsdatum: $indieningsdatum,
+		$submissionDate = (string)($permitApplication['indieningsdatum'] ?? date('Y-m-d'));
+		$deadlineDate = $this->computeDeadline(
+			submissionDate: $submissionDate,
 			procedureType: $procedureType
 		);
 
@@ -148,14 +148,14 @@ class DsoCaseService {
 			default: ''
 		);
 
-		$zaak = [
-			'title' => 'Omgevingsvergunning: ' . ($vergunningaanvraag['titel'] ?? $vergunningaanvraagId),
+		$case = [
+			'title' => 'Omgevingsvergunning: ' . ($permitApplication['titel'] ?? $permitApplicationId),
 			'status' => 'ingediend',
 			'caseType' => 'omgevingsvergunning',
 			'procedureType' => $procedureType,
-			'vergunningaanvraagRef' => $vergunningaanvraagId,
-			'indieningsdatum' => $indieningsdatum,
-			'deadlineDatum' => $deadlineDatum,
+			'vergunningaanvraagRef' => $permitApplicationId,
+			'indieningsdatum' => $submissionDate,
+			'deadlineDatum' => $deadlineDate,
 			'activiteiten' => $activiteiten,
 			'activityLog' => [
 				[
@@ -169,16 +169,16 @@ class DsoCaseService {
 		$created = $objectService->saveObject(
 			register: $register,
 			schema: $caseSchema,
-			object: $zaak
+			object: $case
 		);
 
 		$this->logger->info(
 			'Procest DsoCaseService: zaak created',
 			[
 				'app' => Application::APP_ID,
-				'vergunningaanvraagId' => $vergunningaanvraagId,
+				'vergunningaanvraagId' => $permitApplicationId,
 				'procedureType' => $procedureType,
-				'deadlineDatum' => $deadlineDatum,
+				'deadlineDatum' => $deadlineDate,
 			]
 		);
 
@@ -192,10 +192,10 @@ class DsoCaseService {
 	 * statuses, appends to the activity log, and dispatches a
 	 * VergunningStatusChangedEvent for downstream listeners.
 	 *
-	 * @param string $zaakId The UUID of the zaak
+	 * @param string $caseId The UUID of the zaak
 	 * @param string $newStatus The target status value
 	 * @param string|null $besluitdatum Optional ISO 8601 decision date
-	 * @param string|null $toelichting Optional explanation text
+	 * @param string|null $notes Optional explanation text
 	 * @param string $userId The Nextcloud user UID performing the action
 	 *
 	 * @return array<string,mixed> The updated zaak object
@@ -205,10 +205,10 @@ class DsoCaseService {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
 	 */
 	public function transitionStatus(
-		string $zaakId,
+		string $caseId,
 		string $newStatus,
 		?string $besluitdatum,
-		?string $toelichting,
+		?string $notes,
 		string $userId,
 	): array {
 		$objectService = $this->getObjectService();
@@ -224,29 +224,29 @@ class DsoCaseService {
 			default: ''
 		);
 
-		$zaak = $this->findObjectAsArray(
+		$case = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,
-			id: $zaakId
+			id: $caseId
 		);
 
-		if ($zaak === null) {
-			throw new RuntimeException('Zaak not found: ' . $zaakId);
+		if ($case === null) {
+			throw new RuntimeException('Zaak not found: ' . $caseId);
 		}
 
-		$zaak = $this->normalizeToArray(value: $zaak);
+		$case = $this->normalizeToArray(value: $case);
 
-		$oldStatus = (string)($zaak['status'] ?? '');
-		$aanvraagRef = (string)($zaak['vergunningaanvraagRef'] ?? '');
+		$oldStatus = (string)($case['status'] ?? '');
+		$requestRef = (string)($case['vergunningaanvraagRef'] ?? '');
 
-		$zaak['status'] = $newStatus;
+		$case['status'] = $newStatus;
 		if ($besluitdatum !== null) {
-			$zaak['besluitdatum'] = $besluitdatum;
+			$case['besluitdatum'] = $besluitdatum;
 		}
 
-		if ($toelichting !== null) {
-			$zaak['toelichting'] = $toelichting;
+		if ($notes !== null) {
+			$case['toelichting'] = $notes;
 		}
 
 		$logEntry = [
@@ -256,40 +256,40 @@ class DsoCaseService {
 			'oldStatus' => $oldStatus,
 			'newStatus' => $newStatus,
 		];
-		if ($toelichting !== null) {
-			$logEntry['note'] = $toelichting;
+		if ($notes !== null) {
+			$logEntry['note'] = $notes;
 		}
 
-		$activityLog = $zaak['activityLog'] ?? [];
+		$activityLog = $case['activityLog'] ?? [];
 		$activityLog[] = $logEntry;
-		$zaak['activityLog'] = $activityLog;
+		$case['activityLog'] = $activityLog;
 
-		$updatedZaak = $objectService->saveObject(
+		$updatedCase = $objectService->saveObject(
 			register: $register,
 			schema: $caseSchema,
-			object: $zaak
+			object: $case
 		);
 
 		// Update the linked vergunningaanvraag status when possible.
-		if ($aanvraagRef !== '') {
-			$this->syncVergunningaanvraagStatus(
+		if ($requestRef !== '') {
+			$this->syncPermitApplicationStatus(
 				objectService: $objectService,
-				aanvraagRef: $aanvraagRef,
+				requestRef: $requestRef,
 				newStatus: $newStatus,
 				besluitdatum: $besluitdatum
 			);
 		}
 
 		$this->notifier->dispatchStatusChanged(
-			aanvraagRef: $aanvraagRef,
+			requestRef: $requestRef,
 			oldStatus: $oldStatus,
 			newStatus: $newStatus,
 			besluitdatum: $besluitdatum,
-			toelichting: $toelichting,
+			notes: $notes,
 			userId: $userId,
 		);
 
-		return $updatedZaak;
+		return $updatedCase;
 	}//end transitionStatus()
 
 	/**
@@ -300,20 +300,20 @@ class DsoCaseService {
 	 * Working days exclude weekends (Saturday = 6, Sunday = 7 per date('N'))
 	 * and a fixed set of Dutch national holidays.
 	 *
-	 * @param string $indieningsdatum ISO 8601 date of submission
+	 * @param string $submissionDate ISO 8601 date of submission
 	 * @param string $procedureType 'reguliere' or 'uitgebreide'
 	 *
 	 * @return string ISO 8601 date string of the computed deadline
 	 *
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
 	 */
-	public function computeDeadline(string $indieningsdatum, string $procedureType): string {
+	public function computeDeadline(string $submissionDate, string $procedureType): string {
 		$workingDaysTarget = 40;
 		if ($procedureType === 'uitgebreide') {
 			$workingDaysTarget = 130;
 		}
 
-		$current = new DateTimeImmutable($indieningsdatum);
+		$current = new DateTimeImmutable($submissionDate);
 		$workingDays = 0;
 
 		while ($workingDays < $workingDaysTarget) {
@@ -333,7 +333,7 @@ class DsoCaseService {
 	 * a Nextcloud administrator. Throws an exception if not authorised so
 	 * that the controller can catch and return a 403 response.
 	 *
-	 * @param array<string,mixed> $zaak The zaak object array
+	 * @param array<string,mixed> $case The zaak object array
 	 * @param IUser $user The authenticated user
 	 *
 	 * @return void
@@ -342,9 +342,9 @@ class DsoCaseService {
 	 *
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
 	 */
-	public function authorizeZaakMutation(array $zaak, IUser $user): void {
+	public function authorizeZaakMutation(array $case, IUser $user): void {
 		$uid = $user->getUID();
-		$assignee = (string)($zaak['assigneeUserId'] ?? ($zaak['behandelaar'] ?? ''));
+		$assignee = (string)($case['assigneeUserId'] ?? ($case['behandelaar'] ?? ''));
 
 		if ($uid === $assignee) {
 			return;
@@ -426,12 +426,12 @@ class DsoCaseService {
 			return 'uitgebreide';
 		}
 
-		foreach ($activiteiten as $activiteit) {
-			if (is_array($activiteit) === false) {
+		foreach ($activiteiten as $activity) {
+			if (is_array($activity) === false) {
 				continue;
 			}
 
-			$kwalificatie = (string)($activiteit['regelkwalificatie'] ?? '');
+			$kwalificatie = (string)($activity['regelkwalificatie'] ?? '');
 			if ($kwalificatie === 'uitgebreide') {
 				return 'uitgebreide';
 			}
@@ -490,56 +490,56 @@ class DsoCaseService {
 	 * Best-effort: errors are logged but do not propagate to the caller.
 	 *
 	 * @param object $objectService The ObjectService instance
-	 * @param string $aanvraagRef The vergunningaanvraag UUID
+	 * @param string $requestRef The vergunningaanvraag UUID
 	 * @param string $newStatus The new status to set
 	 * @param string|null $besluitdatum Optional decision date
 	 *
 	 * @return void
 	 */
-	private function syncVergunningaanvraagStatus(
+	private function syncPermitApplicationStatus(
 		object $objectService,
-		string $aanvraagRef,
+		string $requestRef,
 		string $newStatus,
 		?string $besluitdatum,
 	): void {
 		try {
-			$aanvraagSchema = $this->appConfig->getValueString(
+			$requestSchema = $this->appConfig->getValueString(
 				app: Application::APP_ID,
 				key: 'dso_vergunningaanvraag_schema',
 				default: ''
 			);
 
-			if ($aanvraagSchema === '') {
+			if ($requestSchema === '') {
 				return;
 			}
 
-			$aanvraag = $this->findObjectAsArray(
+			$request = $this->findObjectAsArray(
 				objectService: $objectService,
 				register: 'dso',
-				schema: $aanvraagSchema,
-				id: $aanvraagRef
+				schema: $requestSchema,
+				id: $requestRef
 			);
 
-			if ($aanvraag === null) {
+			if ($request === null) {
 				return;
 			}
 
-			$aanvraag['status'] = $newStatus;
+			$request['status'] = $newStatus;
 			if ($besluitdatum !== null) {
-				$aanvraag['besluitdatum'] = $besluitdatum;
+				$request['besluitdatum'] = $besluitdatum;
 			}
 
 			$objectService->saveObject(
 				register: 'dso',
-				schema: $aanvraagSchema,
-				object: $aanvraag
+				schema: $requestSchema,
+				object: $request
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Procest DsoCaseService: could not sync vergunningaanvraag status: ' . $e->getMessage(),
 				[
 					'app' => Application::APP_ID,
-					'vergunningaanvraagRef' => $aanvraagRef,
+					'vergunningaanvraagRef' => $requestRef,
 				]
 			);
 		}//end try

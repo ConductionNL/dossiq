@@ -80,13 +80,13 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param BezwaarDecisionDelegationService $bezwaarDelegation Bezwaar decision delegation service.
+	 * @param BezwaarDecisionDelegationService $objectionDelegation Bezwaar decision delegation service.
 	 * @param AdviceDelegationService $adviceDelegation Advice/voorstel delegation service.
 	 * @param SettingsService $settingsService Settings / ObjectService resolver.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly BezwaarDecisionDelegationService $bezwaarDelegation,
+		private readonly BezwaarDecisionDelegationService $objectionDelegation,
 		private readonly AdviceDelegationService $adviceDelegation,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
@@ -165,8 +165,8 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	private function buildSurfaceRaisers(): array {
 		return [
 			'bezwaar_decision_schema' => function (array $obj): string {
-				return $this->bezwaarDelegation->raiseBezwaarDecision(
-					bezwaarId: (string)($obj['bezwaar'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
+				return $this->objectionDelegation->raiseBezwaarDecision(
+					objectionId: (string)($obj['bezwaar'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
 					payload: [
 						'subjectSchema' => 'bezwaarDecision',
 						'subjectId' => (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
@@ -201,7 +201,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 			},
 			'voorstel_schema' => function (array $obj): string {
 				return $this->adviceDelegation->raiseVoorstelBesluit(
-					voorstelId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
+					proposalId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
 					payload: [
 						'externalReference' => (string)($obj['case'] ?? ''),
 						'subjectLabel' => (string)($obj['onderwerp'] ?? ''),

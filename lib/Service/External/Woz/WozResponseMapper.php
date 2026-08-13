@@ -66,7 +66,7 @@ final class WozResponseMapper {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function map(array $raw): array {
-		$current = $this->mostRecentWaarde(raw: $raw);
+		$current = $this->mostRecentValue(raw: $raw);
 
 		return [
 			'wozobjectnummer' => $this->stringOrNull(value: $raw['wozobjectnummer'] ?? null),
@@ -112,7 +112,7 @@ final class WozResponseMapper {
 	 * @return array<string,mixed> The most recent entry, or an empty array
 	 *                             when the fragment carries no history.
 	 */
-	private function mostRecentWaarde(array $raw): array {
+	private function mostRecentValue(array $raw): array {
 		$waarden = ($raw['vastgesteldeWaarden'] ?? null);
 		if (is_array($waarden) === false || $waarden === []) {
 			return [];

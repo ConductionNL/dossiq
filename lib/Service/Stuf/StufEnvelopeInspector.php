@@ -144,9 +144,9 @@ class StufEnvelopeInspector {
 			'Bv01' => 'Bv01',
 			'Fo02' => 'Fo02',
 		];
-		foreach ($needles as $needle => $soort) {
+		foreach ($needles as $needle => $kind) {
 			if (str_contains(haystack: $envelopeXml, needle: $needle) === true) {
-				return $soort;
+				return $kind;
 			}
 		}
 

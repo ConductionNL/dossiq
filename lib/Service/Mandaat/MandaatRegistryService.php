@@ -183,15 +183,15 @@ class MandaatRegistryService {
 	public function findRoleReferences(string $roleId): array {
 		$blockers = [];
 
-		$byMandaat = 0;
-		foreach ($this->list(schemaConfigKey: self::SCHEMA_MANDAAT) as $mandaat) {
-			if ($this->referencesRole(row: $mandaat, roleId: $roleId) === true) {
-				$byMandaat++;
+		$byMandate = 0;
+		foreach ($this->list(schemaConfigKey: self::SCHEMA_MANDAAT) as $mandate) {
+			if ($this->referencesRole(row: $mandate, roleId: $roleId) === true) {
+				$byMandate++;
 			}
 		}
 
-		if ($byMandaat > 0) {
-			$blockers[] = $byMandaat . ' mandaat(en)';
+		if ($byMandate > 0) {
+			$blockers[] = $byMandate . ' mandaat(en)';
 		}
 
 		$active = 0;

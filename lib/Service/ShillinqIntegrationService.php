@@ -128,7 +128,7 @@ class ShillinqIntegrationService {
 
 		$client = $this->httpClientService->newClient();
 		$attempt = 0;
-		$lastErr = '';
+		$orderErr = '';
 		while ($attempt < self::MAX_RETRIES) {
 			$attempt++;
 			try {
@@ -150,14 +150,14 @@ class ShillinqIntegrationService {
 					return ['success' => true, 'invoiceRef' => $ref, 'attempts' => $attempt];
 				}
 			} catch (Throwable $e) {
-				$lastErr = $e->getMessage();
+				$orderErr = $e->getMessage();
 				if ($attempt < self::MAX_RETRIES) {
 					sleep(self::BACKOFF_BASE_SECONDS ** $attempt);
 				}
 			}//end try
 		}//end while
 
-		$this->logger->error('Procest: Shillinq export failed after retries', ['attempts' => $attempt, 'lastError' => $lastErr]);
-		return ['success' => false, 'attempts' => $attempt, 'lastError' => $lastErr];
+		$this->logger->error('Procest: Shillinq export failed after retries', ['attempts' => $attempt, 'lastError' => $orderErr]);
+		return ['success' => false, 'attempts' => $attempt, 'lastError' => $orderErr];
 	}//end exportInvoice()
 }//end class

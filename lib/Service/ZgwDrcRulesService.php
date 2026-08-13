@@ -116,7 +116,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 
 		// Drc-006b: If indicatieGebruiksrecht is explicitly true, gebruiksrechten must exist.
 		if ($body['indicatieGebruiksrecht'] === true && $this->objectService !== null) {
-			$error = $this->validateIndicatieGebruiksrechtTrue(body: $body);
+			$error = $this->validateIndicationGebruiksrechtTrue(body: $body);
 			if ($error !== null) {
 				return $error;
 			}
@@ -390,7 +390,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $body reserved for future gebruiksrechten lookup
 	 */
-	private function validateIndicatieGebruiksrechtTrue(array $body): array {
+	private function validateIndicationGebruiksrechtTrue(array $body): array {
 		// On create, the document does not yet exist so there can be no gebruiksrechten.
 		return $this->error(
 			status: 400,

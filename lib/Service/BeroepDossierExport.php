@@ -50,13 +50,13 @@ class BeroepDossierExport {
 	/**
 	 * Constructor.
 	 *
-	 * @param DossierCompiler $dossierCompiler The dossier compiler.
+	 * @param DossierCompiler $fileCompiler The dossier compiler.
 	 * @param LoggerInterface $logger Logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly DossierCompiler $dossierCompiler,
+		private readonly DossierCompiler $fileCompiler,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -83,7 +83,7 @@ class BeroepDossierExport {
 	 * @spec openspec/specs/bezwaar-beroep-workflow/spec.md
 	 */
 	public function buildPlan(string $caseId): array {
-		$documents = $this->dossierCompiler->compile(caseId: $caseId);
+		$documents = $this->fileCompiler->compile(caseId: $caseId);
 
 		$entries = [];
 		$sequence = 0;

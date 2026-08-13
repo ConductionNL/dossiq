@@ -93,15 +93,15 @@ class StufMessageParserTest extends TestCase {
   </zkn:zakLa01>
 </soapenv:Body></soapenv:Envelope>';
 
-		$zaak = $this->parser->parseZaakDetails($xml);
-		$this->assertSame('ZAAK-2026-0008812', $zaak['identificatie']);
-		$this->assertSame('Tour de Amersfoort', $zaak['omschrijving']);
-		$this->assertSame('Evenementenvergunning', $zaak['zaaktype']['omschrijving']);
-		$this->assertCount(1, $zaak['statussen']);
-		$this->assertSame('in_behandeling', $zaak['statussen'][0]['statustype']);
-		$this->assertCount(1, $zaak['betrokkenen']);
-		$this->assertSame('heeftAlsInitiator', $zaak['betrokkenen'][0]['rol']);
-		$this->assertSame('123456789', $zaak['betrokkenen'][0]['bsn']);
+		$case = $this->parser->parseZaakDetails($xml);
+		$this->assertSame('ZAAK-2026-0008812', $case['identificatie']);
+		$this->assertSame('Tour de Amersfoort', $case['omschrijving']);
+		$this->assertSame('Evenementenvergunning', $case['zaaktype']['omschrijving']);
+		$this->assertCount(1, $case['statussen']);
+		$this->assertSame('in_behandeling', $case['statussen'][0]['statustype']);
+		$this->assertCount(1, $case['betrokkenen']);
+		$this->assertSame('heeftAlsInitiator', $case['betrokkenen'][0]['rol']);
+		$this->assertSame('123456789', $case['betrokkenen'][0]['bsn']);
 	}//end testParseZaakDetailsReturnsHydratedObject()
 
 	/**

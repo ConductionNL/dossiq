@@ -196,11 +196,11 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				registerId: $registerId,
 				settings: $settings
 			),
-			'zaak' => $this->getZaakMapping(
+			'zaak' => $this->getCaseMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'zaaktype' => $this->getZaakTypeMapping(
+			'zaaktype' => $this->getCaseTypeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -212,31 +212,31 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				registerId: $registerId,
 				settings: $settings
 			),
-			'resultaat' => $this->getResultaatMapping(
+			'resultaat' => $this->getResultMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'resultaattype' => $this->getResultaatTypeMapping(
+			'resultaattype' => $this->getResultTypeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'rol' => $this->getRolMapping(
+			'rol' => $this->getRoleMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'roltype' => $this->getRolTypeMapping(
+			'roltype' => $this->getRoleTypeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'eigenschap' => $this->getEigenschapMapping(
+			'eigenschap' => $this->getAttributeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'besluit' => $this->getBesluitMapping(
+			'besluit' => $this->getDecisionMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'besluittype' => $this->getBesluitTypeMapping(
+			'besluittype' => $this->getDecisionTypeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -244,7 +244,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				registerId: $registerId,
 				settings: $settings
 			),
-			'zaaktypeinformatieobjecttype' => $this->getZaaktypeInformatieobjecttypeMapping(
+			'zaaktypeinformatieobjecttype' => $this->getCaseTypeInformatieobjecttypeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -285,7 +285,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				settings: $settings
 			),
 			'applicatie' => $this->getApplicatieMapping(),
-			'kanaal' => $this->getKanaalMapping(
+			'kanaal' => $this->getChannelMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -304,7 +304,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getZaakMapping(string $registerId, array $settings): array {
+	private function getCaseMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'zaak',
 			'zgwApiVersion' => '1',
@@ -430,7 +430,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getZaakTypeMapping(string $registerId, array $settings): array {
+	private function getCaseTypeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'zaaktype',
 			'zgwApiVersion' => '1',
@@ -634,7 +634,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getResultaatMapping(string $registerId, array $settings): array {
+	private function getResultMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'resultaat',
 			'zgwApiVersion' => '1',
@@ -680,7 +680,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getResultaatTypeMapping(string $registerId, array $settings): array {
+	private function getResultTypeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'resultaattype',
 			'zgwApiVersion' => '1',
@@ -747,7 +747,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getRolMapping(string $registerId, array $settings): array {
+	private function getRoleMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'rol',
 			'zgwApiVersion' => '1',
@@ -796,7 +796,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getRolTypeMapping(string $registerId, array $settings): array {
+	private function getRoleTypeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'roltype',
 			'zgwApiVersion' => '1',
@@ -837,7 +837,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getEigenschapMapping(string $registerId, array $settings): array {
+	private function getAttributeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'eigenschap',
 			'zgwApiVersion' => '1',
@@ -881,7 +881,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getBesluitMapping(string $registerId, array $settings): array {
+	private function getDecisionMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'besluit',
 			'zgwApiVersion' => '1',
@@ -942,7 +942,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getBesluitTypeMapping(string $registerId, array $settings): array {
+	private function getDecisionTypeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'besluittype',
 			'zgwApiVersion' => '1',
@@ -1259,7 +1259,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getKanaalMapping(string $registerId, array $settings): array {
+	private function getChannelMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'kanaal',
 			'zgwApiVersion' => '1',
@@ -1384,7 +1384,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getZaaktypeInformatieobjecttypeMapping(string $registerId, array $settings): array {
+	private function getCaseTypeInformatieobjecttypeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'zaaktypeinformatieobjecttype',
 			'zgwApiVersion' => '1',
@@ -1564,10 +1564,10 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * @return void
 	 */
 	private function createDefaultKanalen(IOutput $output): void {
-		$kanaalMapping = $this->zgwMappingService->getMapping(
+		$channelMapping = $this->zgwMappingService->getMapping(
 			resourceKey: 'kanaal'
 		);
-		if ($kanaalMapping === null) {
+		if ($channelMapping === null) {
 			$output->info('Kanaal mapping not configured. Skipping default channels.');
 			return;
 		}
@@ -1585,12 +1585,12 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		$defaults = $this->getDefaultKanalen();
 		$created = 0;
 
-		foreach ($defaults as $kanaal) {
+		foreach ($defaults as $channel) {
 			// Check if kanaal already exists.
 			$query = $objectService->buildSearchQuery(
-				requestParams: ['naam' => $kanaal['naam']],
-				register: $kanaalMapping['sourceRegister'],
-				schema: $kanaalMapping['sourceSchema']
+				requestParams: ['naam' => $channel['naam']],
+				register: $channelMapping['sourceRegister'],
+				schema: $channelMapping['sourceSchema']
 			);
 			$existing = $objectService->searchObjectsPaginated(query: $query);
 			if (($existing['total'] ?? 0) > 0) {
@@ -1598,9 +1598,9 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			}
 
 			$objectService->saveObject(
-				register: $kanaalMapping['sourceRegister'],
-				schema: $kanaalMapping['sourceSchema'],
-				object: $kanaal
+				register: $channelMapping['sourceRegister'],
+				schema: $channelMapping['sourceSchema'],
+				object: $channel
 			);
 			$created++;
 		}

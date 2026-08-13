@@ -89,7 +89,7 @@ trait SuppressesWarnings {
 	 *
 	 * @return string The captured message.
 	 */
-	private function lastSuppressedWarning(): string {
+	private function orderSuppressedWarning(): string {
 		return $this->suppressedWarning;
 	}//end lastSuppressedWarning()
 }//end trait

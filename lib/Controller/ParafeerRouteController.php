@@ -74,7 +74,7 @@ class ParafeerRouteController extends Controller {
 	/**
 	 * Start parafering on a voorstel.
 	 *
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 *
 	 * @return JSONResponse
 	 *
@@ -84,7 +84,7 @@ class ParafeerRouteController extends Controller {
 	 *
 	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
 	 */
-	public function start(string $voorstelId): JSONResponse {
+	public function start(string $proposalId): JSONResponse {
 		if ($this->requireUser() === false) {
 			return new JSONResponse(
 				['error' => 'Authenticatie vereist'],
@@ -93,7 +93,7 @@ class ParafeerRouteController extends Controller {
 		}
 
 		try {
-			return new JSONResponse($this->routeService->startParafering($voorstelId));
+			return new JSONResponse($this->routeService->startParafering($proposalId));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Procest: failed to start parafering: ' . $e->getMessage(),
@@ -108,7 +108,7 @@ class ParafeerRouteController extends Controller {
 	/**
 	 * Complete the active step on a voorstel.
 	 *
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 *
 	 * @return JSONResponse
 	 *
@@ -118,7 +118,7 @@ class ParafeerRouteController extends Controller {
 	 *
 	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
 	 */
-	public function completeStep(string $voorstelId): JSONResponse {
+	public function completeStep(string $proposalId): JSONResponse {
 		if ($this->requireUser() === false) {
 			return new JSONResponse(
 				['error' => 'Authenticatie vereist'],
@@ -128,7 +128,7 @@ class ParafeerRouteController extends Controller {
 
 		try {
 			$data = $this->getRequestBody();
-			return new JSONResponse($this->routeService->completeStep($voorstelId, $data));
+			return new JSONResponse($this->routeService->completeStep($proposalId, $data));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Procest: failed to complete parafering step: ' . $e->getMessage(),
@@ -143,7 +143,7 @@ class ParafeerRouteController extends Controller {
 	/**
 	 * Skip a step on a voorstel (manager only; mandatory reason).
 	 *
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 *
 	 * @return JSONResponse
 	 *
@@ -152,7 +152,7 @@ class ParafeerRouteController extends Controller {
 	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
 	 */
 	#[AuthorizedAdminSetting(AdminSettings::class)]
-	public function skipStep(string $voorstelId): JSONResponse {
+	public function skipStep(string $proposalId): JSONResponse {
 		if ($this->requireAdmin() === false) {
 			return new JSONResponse(
 				['error' => 'Manager-rechten vereist'],
@@ -179,7 +179,7 @@ class ParafeerRouteController extends Controller {
 				);
 			}
 
-			return new JSONResponse($this->routeService->skipStep($voorstelId, $step, $reason));
+			return new JSONResponse($this->routeService->skipStep($proposalId, $step, $reason));
 		} catch (RuntimeException $e) {
 			$this->logger->warning(
 				'Procest: parafering skip blocked: ' . $e->getMessage(),
@@ -202,7 +202,7 @@ class ParafeerRouteController extends Controller {
 	/**
 	 * Add an ad-hoc step to a voorstel route snapshot.
 	 *
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 *
 	 * @return JSONResponse
 	 *
@@ -212,7 +212,7 @@ class ParafeerRouteController extends Controller {
 	 *
 	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T05
 	 */
-	public function addStep(string $voorstelId): JSONResponse {
+	public function addStep(string $proposalId): JSONResponse {
 		if ($this->requireUser() === false) {
 			return new JSONResponse(
 				['error' => 'Authenticatie vereist'],
@@ -229,7 +229,7 @@ class ParafeerRouteController extends Controller {
 			}
 
 			return new JSONResponse(
-				$this->routeService->addAdhocStep($voorstelId, $afterStep, $stepData),
+				$this->routeService->addAdhocStep($proposalId, $afterStep, $stepData),
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

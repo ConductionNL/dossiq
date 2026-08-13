@@ -165,7 +165,7 @@ class WorkflowLifecycleGuard {
 		}
 
 		$caseTypeId = (string)($current['caseType'] ?? '');
-		if ($caseTypeId !== '' && $this->isLastPublishedForCaseType(id: $id, caseTypeId: $caseTypeId) === true
+		if ($caseTypeId !== '' && $this->isOrderPublishedForCaseType(id: $id, caseTypeId: $caseTypeId) === true
 			&& $this->repository->hasCasesFor(caseTypeId: $caseTypeId) === true
 		) {
 			$this->logger->warning(
@@ -188,7 +188,7 @@ class WorkflowLifecycleGuard {
 	 *
 	 * @spec openspec/specs/workflow-definition-model/spec.md
 	 */
-	private function isLastPublishedForCaseType(string $id, string $caseTypeId): bool {
+	private function isOrderPublishedForCaseType(string $id, string $caseTypeId): bool {
 		$count = 0;
 		foreach ($this->repository->listVersionsForCaseType(caseTypeId: $caseTypeId) as $row) {
 			if ((string)($row['id'] ?? '') === $id) {

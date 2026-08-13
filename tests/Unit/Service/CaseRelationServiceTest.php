@@ -184,7 +184,7 @@ class CaseRelationServiceTest extends TestCase {
 		];
 		$service = $this->makeService($store);
 
-		$result = $service->addRelation(caseId: 'a', targetId: 'b', aardRelatie: 'onderwerp', toelichting: 'Bezwaar over besluit');
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'onderwerp', notes: 'Bezwaar over besluit');
 		$this->assertTrue($result['ok']);
 
 		$aRel = $this->relationsOf($store, 'a');
@@ -209,7 +209,7 @@ class CaseRelationServiceTest extends TestCase {
 		$store = ['a' => ['id' => 'a']];
 		$service = $this->makeService($store);
 
-		$result = $service->addRelation(caseId: 'a', targetId: 'a', aardRelatie: 'vervolg');
+		$result = $service->addRelation(caseId: 'a', targetId: 'a', natureRelationship: 'vervolg');
 		$this->assertFalse($result['ok']);
 		$this->assertSame('self_relation', $result['reason']);
 	}//end testSelfRelationRejected()
@@ -225,7 +225,7 @@ class CaseRelationServiceTest extends TestCase {
 		$store = ['a' => ['id' => 'a'], 'b' => ['id' => 'b']];
 		$service = $this->makeService($store);
 
-		$result = $service->addRelation(caseId: 'a', targetId: 'b', aardRelatie: 'bogus');
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'bogus');
 		$this->assertFalse($result['ok']);
 		$this->assertSame('invalid_aard_relatie', $result['reason']);
 	}//end testInvalidAardRelatieRejected()
@@ -242,13 +242,13 @@ class CaseRelationServiceTest extends TestCase {
 		$store = ['a' => ['id' => 'a'], 'b' => ['id' => 'b']];
 		$service = $this->makeService($store);
 
-		$this->assertTrue($service->addRelation(caseId: 'a', targetId: 'b', aardRelatie: 'vervolg')['ok']);
+		$this->assertTrue($service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'vervolg')['ok']);
 
-		$dup = $service->addRelation(caseId: 'a', targetId: 'b', aardRelatie: 'vervolg');
+		$dup = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'vervolg');
 		$this->assertFalse($dup['ok']);
 		$this->assertSame('duplicate', $dup['reason']);
 
-		$other = $service->addRelation(caseId: 'a', targetId: 'b', aardRelatie: 'onderwerp');
+		$other = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'onderwerp');
 		$this->assertTrue($other['ok']);
 		$this->assertCount(2, $this->relationsOf($store, 'a'));
 	}//end testDuplicatePairRejectedDifferentTypeAccepted()
@@ -269,7 +269,7 @@ class CaseRelationServiceTest extends TestCase {
 		];
 		$service = $this->makeService($store);
 
-		$result = $service->addRelation(caseId: 'a', targetId: 'b', aardRelatie: 'bijdrage');
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'bijdrage');
 		$this->assertFalse($result['ok']);
 		$this->assertSame('hierarchy_overlap', $result['reason']);
 	}//end testHierarchyOverlapRejected()
@@ -287,7 +287,7 @@ class CaseRelationServiceTest extends TestCase {
 		$store = ['a' => ['id' => 'a']];
 		$service = $this->makeService($store);
 
-		$result = $service->addRelation(caseId: 'a', targetId: 'b', aardRelatie: 'vervolg');
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'vervolg');
 		$this->assertFalse($result['ok']);
 		$this->assertSame('access_denied', $result['reason']);
 	}//end testAccessDeniedWhenTargetUnreadable()
@@ -303,12 +303,12 @@ class CaseRelationServiceTest extends TestCase {
 		$store = ['a' => ['id' => 'a'], 'b' => ['id' => 'b']];
 		$service = $this->makeService($store);
 
-		$service->addRelation(caseId: 'a', targetId: 'b', aardRelatie: 'vervolg');
+		$service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'vervolg');
 		$this->assertCount(1, $this->relationsOf($store, 'a'));
 		$this->assertCount(1, $this->relationsOf($store, 'b'));
 
 		// Remove from b's side.
-		$result = $service->removeRelation(caseId: 'b', targetId: 'a', aardRelatie: 'vervolg');
+		$result = $service->removeRelation(caseId: 'b', targetId: 'a', natureRelationship: 'vervolg');
 		$this->assertTrue($result['ok']);
 		$this->assertCount(0, $this->relationsOf($store, 'a'));
 		$this->assertCount(0, $this->relationsOf($store, 'b'));
@@ -330,9 +330,9 @@ class CaseRelationServiceTest extends TestCase {
 		];
 		$service = $this->makeService($store);
 
-		$service->addRelation(caseId: 'x', targetId: 'p', aardRelatie: 'bijdrage');
-		$service->addRelation(caseId: 'x', targetId: 'q', aardRelatie: 'bijdrage');
-		$service->addRelation(caseId: 'x', targetId: 'r', aardRelatie: 'bijdrage');
+		$service->addRelation(caseId: 'x', targetId: 'p', natureRelationship: 'bijdrage');
+		$service->addRelation(caseId: 'x', targetId: 'q', natureRelationship: 'bijdrage');
+		$service->addRelation(caseId: 'x', targetId: 'r', natureRelationship: 'bijdrage');
 
 		$updated = $service->cleanupForDeletedCase(caseId: 'x');
 		$this->assertSame(3, $updated);

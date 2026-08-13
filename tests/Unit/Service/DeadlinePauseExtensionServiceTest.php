@@ -45,7 +45,7 @@ use RuntimeException;
  */
 class DeadlinePauseExtensionServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
-	private TermijnService $termijnService;
+	private TermijnService $termService;
 	private DeadlinePauseService $pauseService;
 	private DeadlineExtensionService $extService;
 
@@ -66,9 +66,9 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		);
 
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->termijnService = new TermijnService($settings, $logger);
-		$this->pauseService = new DeadlinePauseService($this->termijnService);
-		$this->extService = new DeadlineExtensionService($this->termijnService);
+		$this->termService = new TermijnService($settings, $logger);
+		$this->pauseService = new DeadlinePauseService($this->termService);
+		$this->extService = new DeadlineExtensionService($this->termService);
 
 		// Seed an Omgevingsvergunning definition (max 1 extension).
 		$this->objects->saveObject('procest', 'termijnDefinitie', [
@@ -86,8 +86,8 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 	 */
 	private function newInstance(): array {
 		// Resolve the definition so the cache gets populated.
-		$this->termijnService->getTermijnDefinitie('omgevingsvergunning-regulier');
-		return $this->termijnService->createTermijnInstance(
+		$this->termService->getTermijnDefinitie('omgevingsvergunning-regulier');
+		return $this->termService->createTermijnInstance(
 			'Z/2026/300',
 			'omgevingsvergunning-regulier',
 			new DateTimeImmutable('2026-06-01T10:00:00+00:00')
@@ -127,7 +127,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 
 		// Aanvulling arrives 4 days after pause-start (so 10 days unused).
 		// After resume, deadline should pull back by 10 days → 2026-07-31.
-		$currentInstance = $this->termijnService->getTermijnInstance($id);
+		$currentInstance = $this->termService->getTermijnInstance($id);
 		$pauseStart = new DateTimeImmutable($currentInstance['pauzeStartDatum']);
 		$aanvulling = $pauseStart->modify('+4 days');
 

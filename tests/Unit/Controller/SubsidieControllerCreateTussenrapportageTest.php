@@ -87,10 +87,10 @@ final class SubsidieControllerCreateTussenrapportageTest extends TestCase {
 
 		$this->controller = new SubsidieController(
 			request: $this->request,
-			subsidieService: $this->createMock(SubsidieService::class),
-			beschikkingService: $this->createMock(BeschikkingService::class),
+			subsidyService: $this->createMock(SubsidieService::class),
+			decisionService: $this->createMock(BeschikkingService::class),
 			tussenrapportage: $this->tussenrapportage,
-			vaststellingService: $this->createMock(VaststellingService::class),
+			determinationService: $this->createMock(VaststellingService::class),
 			userSession: $this->userSession,
 		);
 	}//end setUp()

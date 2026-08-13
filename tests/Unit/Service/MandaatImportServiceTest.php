@@ -82,8 +82,8 @@ class MandaatImportServiceTest extends TestCase {
 		self::assertSame(0, $r['changedCount']);
 		self::assertSame(0, $r['removedCount']);
 
-		$besluit = $this->objects->store['mandateDecision'][$r['mandateDecisionId']];
-		self::assertSame('concept', $besluit['status']);
+		$decision = $this->objects->store['mandateDecision'][$r['mandateDecisionId']];
+		self::assertSame('concept', $decision['status']);
 		self::assertCount(2, $this->objects->store['mandaat']);
 
 		$m = array_values($this->objects->store['mandaat'])[0];

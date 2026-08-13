@@ -210,8 +210,8 @@ class BelplanRoutingService {
 			}
 
 			$map = (array)($step['zaaktype_to_vaardigheid'] ?? []);
-			foreach ($map as $zaaktype => $vaardigheid) {
-				if (strtolower((string)$zaaktype) === $normalized) {
+			foreach ($map as $caseType => $vaardigheid) {
+				if (strtolower((string)$caseType) === $normalized) {
 					return (string)$vaardigheid;
 				}
 			}
@@ -234,17 +234,17 @@ class BelplanRoutingService {
 	 */
 	private function overflowConfig(array $belplan): array {
 		$wachttijd = (int)$this->settingsService->getKccConfigValue('belplan_overflow_threshold_wachttijd');
-		$wachtrij = (int)$this->settingsService->getKccConfigValue('belplan_overflow_threshold_wachtrij_lengte');
-		$fallbackRol = 'generalist';
+		$queue = (int)$this->settingsService->getKccConfigValue('belplan_overflow_threshold_wachtrij_lengte');
+		$fallbackRole = 'generalist';
 
 		foreach ((array)($belplan['routeringStappen'] ?? []) as $step) {
 			if (($step['type'] ?? '') === 'wachtrij_overflow') {
 				$wachttijd = (int)($step['threshold_wachttijd_sec'] ?? $wachttijd);
-				$fallbackRol = (string)($step['fallback_rol'] ?? $fallbackRol);
+				$fallbackRole = (string)($step['fallback_rol'] ?? $fallbackRole);
 			}
 		}
 
-		return ['wachttijd' => $wachttijd, 'wachtrij' => $wachtrij, 'fallbackRol' => $fallbackRol];
+		return ['wachttijd' => $wachttijd, 'wachtrij' => $queue, 'fallbackRol' => $fallbackRole];
 	}//end overflowConfig()
 
 	/**

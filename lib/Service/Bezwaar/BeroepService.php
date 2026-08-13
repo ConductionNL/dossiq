@@ -135,7 +135,7 @@ class BeroepService {
 	 *
 	 * @param string $caseId UUID of the procest case
 	 *                       wrapping the beroep
-	 * @param string $sourceBezwaarId UUID of the bezwaar
+	 * @param string $sourceObjectionId UUID of the bezwaar
 	 *                                lifecycle record
 	 *                                being escalated
 	 * @param string $contestedDecisionId UUID of the
@@ -161,7 +161,7 @@ class BeroepService {
 	 */
 	public function register(
 		string $caseId,
-		string $sourceBezwaarId,
+		string $sourceObjectionId,
 		string $contestedDecisionId,
 		string $filingDate,
 		array $payload = [],
@@ -172,14 +172,14 @@ class BeroepService {
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$beroepSchema = $this->settingsService->getConfigValue(
+		$appealSchema = $this->settingsService->getConfigValue(
 			key: 'beroep_schema'
 		);
 		$appealDecisionSchema = $this->settingsService->getConfigValue(
 			key: 'appeal_decision_schema'
 		);
 
-		if ($register === '' || $beroepSchema === ''
+		if ($register === '' || $appealSchema === ''
 			|| $appealDecisionSchema === ''
 		) {
 			throw new RuntimeException(
@@ -207,7 +207,7 @@ class BeroepService {
 			$payload,
 			[
 				'case' => $caseId,
-				'sourceBezwaar' => $sourceBezwaarId,
+				'sourceBezwaar' => $sourceObjectionId,
 				'contestedDecision' => $contestedDecisionId,
 				'appellantFilingDate' => $filingDate,
 				'filingDeadline' => $deadline,
@@ -216,7 +216,7 @@ class BeroepService {
 		);
 
 		try {
-			return $objectService->saveObject(object: $record, register: $register, schema: $beroepSchema);
+			return $objectService->saveObject(object: $record, register: $register, schema: $appealSchema);
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Procest beroep: failed to register: ' . $e->getMessage()
@@ -232,9 +232,9 @@ class BeroepService {
 	 * curates it via existing dossier tooling; this method records the
 	 * linkage with a computed deadline of requestedAt + P4W.
 	 *
-	 * @param string $beroepId UUID of the beroep
+	 * @param string $appealId UUID of the beroep
 	 * @param string $requestedAt ISO date the rechtbank issued the request
-	 * @param string|null $dossierBundle Optional NC file ID / dossier ref
+	 * @param string|null $fileBundle Optional NC file ID / dossier ref
 	 *
 	 * @return array<string, mixed> The updated beroep record
 	 *
@@ -244,9 +244,9 @@ class BeroepService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function addFileInspectionRequest(
-		string $beroepId,
+		string $appealId,
 		string $requestedAt,
-		?string $dossierBundle = null,
+		?string $fileBundle = null,
 	): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -254,11 +254,11 @@ class BeroepService {
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$beroepSchema = $this->settingsService->getConfigValue(
+		$appealSchema = $this->settingsService->getConfigValue(
 			key: 'beroep_schema'
 		);
 
-		$current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
+		$current = $objectService->find($appealId, register: $register, schema: $appealSchema);
 		if (is_array($current) === false) {
 			throw new RuntimeException('Beroep not found');
 		}
@@ -272,8 +272,8 @@ class BeroepService {
 			'requestedAt' => $requestedAt,
 			'deadline' => $deadline,
 		];
-		if ($dossierBundle !== null && $dossierBundle !== '') {
-			$entry['dossierBundle'] = $dossierBundle;
+		if ($fileBundle !== null && $fileBundle !== '') {
+			$entry['dossierBundle'] = $fileBundle;
 		}
 
 		$requests = (array)($current['fileInspectionRequests'] ?? []);
@@ -283,8 +283,8 @@ class BeroepService {
 			return $objectService->saveObject(
 				object: ['fileInspectionRequests' => $requests],
 				register: $register,
-				schema: $beroepSchema,
-				uuid: (string)$beroepId
+				schema: $appealSchema,
+				uuid: (string)$appealId
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -303,7 +303,7 @@ class BeroepService {
 	 * Persists the categorical outcome plus judgmentDate and (optional)
 	 * judgmentDocument. Does NOT interpret or paraphrase the ruling.
 	 *
-	 * @param string $beroepId UUID of the beroep
+	 * @param string $appealId UUID of the beroep
 	 * @param string $outcome One of self::VALID_OUTCOMES
 	 * @param string $judgmentDate ISO date of the uitspraak
 	 * @param string|null $judgmentDocument Optional NC file ID of the
@@ -318,7 +318,7 @@ class BeroepService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function recordJudgment(
-		string $beroepId,
+		string $appealId,
 		string $outcome,
 		string $judgmentDate,
 		?string $judgmentDocument = null,
@@ -333,11 +333,11 @@ class BeroepService {
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$beroepSchema = $this->settingsService->getConfigValue(
+		$appealSchema = $this->settingsService->getConfigValue(
 			key: 'beroep_schema'
 		);
 
-		$current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
+		$current = $objectService->find($appealId, register: $register, schema: $appealSchema);
 		if (is_array($current) === false) {
 			throw new RuntimeException('Beroep not found');
 		}
@@ -354,8 +354,8 @@ class BeroepService {
 			return $objectService->saveObject(
 				object: $patch,
 				register: $register,
-				schema: $beroepSchema,
-				uuid: (string)$beroepId
+				schema: $appealSchema,
+				uuid: (string)$appealId
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -379,7 +379,7 @@ class BeroepService {
 	 * Cascade is intentionally idempotent: re-running with the same action
 	 * is a no-op once the corresponding side effect is already recorded.
 	 *
-	 * @param string $beroepId UUID of the beroep
+	 * @param string $appealId UUID of the beroep
 	 * @param string $action One of self::VALID_CASCADES
 	 *
 	 * @return array<string, mixed> The updated beroep record
@@ -390,7 +390,7 @@ class BeroepService {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function executeCascade(string $beroepId, string $action): array {
+	public function executeCascade(string $appealId, string $action): array {
 		if (in_array($action, self::VALID_CASCADES, true) === false) {
 			throw new RuntimeException('Invalid cascade action');
 		}
@@ -401,14 +401,14 @@ class BeroepService {
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$beroepSchema = $this->settingsService->getConfigValue(
+		$appealSchema = $this->settingsService->getConfigValue(
 			key: 'beroep_schema'
 		);
-		$bezwaarSchema = $this->settingsService->getConfigValue(
+		$objectionSchema = $this->settingsService->getConfigValue(
 			key: 'bezwaar_schema'
 		);
 
-		$current = $objectService->find($beroepId, register: $register, schema: $beroepSchema);
+		$current = $objectService->find($appealId, register: $register, schema: $appealSchema);
 		if (is_array($current) === false) {
 			throw new RuntimeException('Beroep not found');
 		}
@@ -420,12 +420,12 @@ class BeroepService {
 			// bezwaar. The engine owns the transition + guards; this
 			// service only triggers it and links the resulting case back
 			// to the beroep.
-			$reopenedCaseId = $this->reopenSourceBezwaarCase(
+			$reopenedCaseId = $this->reopenSourceObjectionCase(
 				objectService: $objectService,
 				register: $register,
-				bezwaarSchema: $bezwaarSchema,
+				objectionSchema: $objectionSchema,
 				current: $current,
-				beroepId: $beroepId,
+				appealId: $appealId,
 			);
 			if ($reopenedCaseId !== null) {
 				// Link the (newly reopened) bezwaar case back to the beroep.
@@ -442,7 +442,7 @@ class BeroepService {
 			// record the chosen cascade on the beroep for traceability.
 			$this->logger->info(
 				'Procest beroep: new_primary_decision cascade requested',
-				['beroepId' => $beroepId]
+				['beroepId' => $appealId]
 			);
 		}
 
@@ -450,8 +450,8 @@ class BeroepService {
 			return $objectService->saveObject(
 				object: $patch,
 				register: $register,
-				schema: $beroepSchema,
-				uuid: (string)$beroepId
+				schema: $appealSchema,
+				uuid: (string)$appealId
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -470,30 +470,30 @@ class BeroepService {
 	 *
 	 * @param object $objectService The OpenRegister object service
 	 * @param string $register The register slug
-	 * @param string $bezwaarSchema The bezwaar schema slug
+	 * @param string $objectionSchema The bezwaar schema slug
 	 * @param array<string, mixed> $current The beroep record
-	 * @param string $beroepId UUID of the beroep
+	 * @param string $appealId UUID of the beroep
 	 *
 	 * @return string|null The re-opened bezwaar case UUID, or null.
 	 */
-	private function reopenSourceBezwaarCase(
+	private function reopenSourceObjectionCase(
 		object $objectService,
 		string $register,
-		string $bezwaarSchema,
+		string $objectionSchema,
 		array $current,
-		string $beroepId,
+		string $appealId,
 	): ?string {
-		$sourceBezwaarId = (string)($current['sourceBezwaar'] ?? '');
-		if ($sourceBezwaarId === '' || $bezwaarSchema === '') {
+		$sourceObjectionId = (string)($current['sourceBezwaar'] ?? '');
+		if ($sourceObjectionId === '' || $objectionSchema === '') {
 			return null;
 		}
 
-		$sourceBezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
-		if (is_array($sourceBezwaar) === false) {
+		$sourceObjection = $objectService->find($sourceObjectionId, register: $register, schema: $objectionSchema);
+		if (is_array($sourceObjection) === false) {
 			return null;
 		}
 
-		$sourceCaseId = (string)($sourceBezwaar['case'] ?? '');
+		$sourceCaseId = (string)($sourceObjection['case'] ?? '');
 		if ($sourceCaseId === '') {
 			return null;
 		}
@@ -502,7 +502,7 @@ class BeroepService {
 			$this->transitions->execute(
 				caseId: $sourceCaseId,
 				transitionId: 'beroep-reopen',
-				comment: 'Reopened via beroep ' . $beroepId,
+				comment: 'Reopened via beroep ' . $appealId,
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(

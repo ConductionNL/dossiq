@@ -54,7 +54,7 @@ class ZaakdossierController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param ZaakdossierService $dossierService The dossier orchestrator.
+	 * @param ZaakdossierService $fileService The dossier orchestrator.
 	 * @param InformatieobjectReader $reader The clearance-gated document reader.
 	 * @param DossierUploadHandler $uploadHandler The upload decoding/screening collaborator.
 	 * @param IUserSession $userSession The user session.
@@ -62,7 +62,7 @@ class ZaakdossierController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ZaakdossierService $dossierService,
+		private readonly ZaakdossierService $fileService,
 		private readonly InformatieobjectReader $reader,
 		private readonly DossierUploadHandler $uploadHandler,
 		private readonly IUserSession $userSession,
@@ -88,17 +88,17 @@ class ZaakdossierController extends Controller {
 		}
 
 		try {
-			$dossier = $this->dossierService->getDossierForCase(caseId: $caseId);
+			$file = $this->fileService->getDossierForCase(caseId: $caseId);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
 
 		$filtered = $this->reader->filterForUser(
 			user: $user,
-			informatieobjecten: ($dossier['informatieobjecten'] ?? []),
+			informatieobjecten: ($file['informatieobjecten'] ?? []),
 		);
 
-		$regrouped = $this->dossierService->groupByType(documents: $filtered);
+		$regrouped = $this->fileService->groupByType(documents: $filtered);
 
 		return new JSONResponse($regrouped);
 	}//end listDossier()
@@ -178,7 +178,7 @@ class ZaakdossierController extends Controller {
 		}
 
 		try {
-			$result = $this->dossierService->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoObjectId);
+			$result = $this->fileService->linkExistingInformatieobject(caseId: $caseId, infoObjectId: $infoObjectId);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -210,7 +210,7 @@ class ZaakdossierController extends Controller {
 		}
 
 		try {
-			$removed = $this->dossierService->unlinkInformatieobject(caseId: $caseId, infoObjectId: $infoObjectId);
+			$removed = $this->fileService->unlinkInformatieobject(caseId: $caseId, infoObjectId: $infoObjectId);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -252,7 +252,7 @@ class ZaakdossierController extends Controller {
 		$metadata = array_filter($metadata, static fn ($value) => $value !== null);
 
 		try {
-			$result = $this->dossierService->updateMetadata(infoObjectId: $infoObjectId, metadata: $metadata);
+			$result = $this->fileService->updateMetadata(infoObjectId: $infoObjectId, metadata: $metadata);
 		} catch (\DomainException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_CONFLICT);
 		} catch (\RuntimeException $e) {
@@ -287,7 +287,7 @@ class ZaakdossierController extends Controller {
 		$newStatus = (string)$this->request->getParam('status', '');
 
 		try {
-			$result = $this->dossierService->transitionStatus(infoObjectId: $infoObjectId, newStatus: $newStatus);
+			$result = $this->fileService->transitionStatus(infoObjectId: $infoObjectId, newStatus: $newStatus);
 		} catch (\InvalidArgumentException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		} catch (\RuntimeException $e) {
@@ -323,7 +323,7 @@ class ZaakdossierController extends Controller {
 			);
 		}
 
-		$results = $this->dossierService->bulkTransitionStatus(infoObjectIds: $ids, newStatus: $newStatus);
+		$results = $this->fileService->bulkTransitionStatus(infoObjectIds: $ids, newStatus: $newStatus);
 
 		return new JSONResponse(['results' => $results]);
 	}//end bulkTransitionStatus()
@@ -371,7 +371,7 @@ class ZaakdossierController extends Controller {
 		}
 
 		try {
-			$this->dossierService->updateMetadata(infoObjectId: $id, metadata: $metadata);
+			$this->fileService->updateMetadata(infoObjectId: $id, metadata: $metadata);
 			return ['id' => $id, 'success' => true];
 		} catch (\Throwable $e) {
 			return ['id' => $id, 'success' => false, 'error' => $e->getMessage()];

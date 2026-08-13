@@ -123,13 +123,13 @@ class BelplanController extends Controller {
 			return new JSONResponse(['error' => 'Belplan schema not configured'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$naam = (string)$this->request->getParam('naam', '');
-		if (trim($naam) === '') {
+		$name = (string)$this->request->getParam('naam', '');
+		if (trim($name) === '') {
 			return new JSONResponse(['error' => 'naam is required'], Http::STATUS_BAD_REQUEST);
 		}
 
 		$record = [
-			'naam' => $naam,
+			'naam' => $name,
 			'triggerNummer' => (array)$this->request->getParam('triggerNummer', []),
 			'routeringStappen' => (array)$this->request->getParam('routeringStappen', []),
 			'openingstijden' => (string)$this->request->getParam('openingstijden', ''),

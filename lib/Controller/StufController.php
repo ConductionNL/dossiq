@@ -139,10 +139,10 @@ class StufController extends Controller {
 	#[AuthorizedAdminSetting(AdminSettings::class)]
 	public function outbound(): JSONResponse {
 		$endpointId = (string)$this->request->getParam(key: 'endpointId', default: '');
-		$berichtNaam = (string)$this->request->getParam(key: 'berichtNaam', default: '');
+		$messageName = (string)$this->request->getParam(key: 'berichtNaam', default: '');
 		$payload = (array)$this->request->getParam(key: 'payload', default: []);
 
-		if ($endpointId === '' || $berichtNaam === '') {
+		if ($endpointId === '' || $messageName === '') {
 			return new JSONResponse(['error' => $this->l10n->t('endpointId and berichtNaam are required')], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -155,7 +155,7 @@ class StufController extends Controller {
 		}
 
 		try {
-			$result = $this->stuf->adapter->vrijBericht(name: $berichtNaam, payload: $payload, endpoint: $endpoint);
+			$result = $this->stuf->adapter->vrijBericht(name: $messageName, payload: $payload, endpoint: $endpoint);
 			return new JSONResponse($result);
 		} catch (CircuitOpenException $e) {
 			return new JSONResponse(
@@ -214,20 +214,20 @@ class StufController extends Controller {
 			return new DataResponse(data: 'invalid signature', statusCode: Http::STATUS_UNPROCESSABLE_ENTITY);
 		}
 
-		$berichtSoort = $this->inspector->detectBerichtSoort(envelopeXml: $rawXml);
+		$messageKind = $this->inspector->detectBerichtSoort(envelopeXml: $rawXml);
 		$crossRef = $this->inspector->extractCrossRefnummer(envelopeXml: $rawXml);
-		$zaakId = ($this->stuf->parser->parseBevestiging(responseXml: $rawXml)['zaakIdentificatie'] ?? null);
+		$caseId = ($this->stuf->parser->parseBevestiging(responseXml: $rawXml)['zaakIdentificatie'] ?? null);
 
 		$this->stuf->messageHandler->logInbound(
 			endpoint: $endpoint,
 			responseXml: $rawXml,
-			berichtSoort: $berichtSoort,
+			messageKind: $messageKind,
 			crossRefnummer: $crossRef,
-			zaakId: $zaakId,
-			functie: $this->inspector->extractFunctie(envelopeXml: $rawXml)
+			caseId: $caseId,
+			role: $this->inspector->extractFunctie(envelopeXml: $rawXml)
 		);
 
-		$this->confirmOutbound(berichtSoort: $berichtSoort, crossRef: $crossRef, rawXml: $rawXml, zaakId: $zaakId);
+		$this->confirmOutbound(messageKind: $messageKind, crossRef: $crossRef, rawXml: $rawXml, caseId: $caseId);
 
 		return new DataResponse(data: 'ack', statusCode: Http::STATUS_OK);
 	}//end inkomend()
@@ -287,17 +287,17 @@ class StufController extends Controller {
 	/**
 	 * Transition the matching outbound message to "bevestigd" on a Bv01.
 	 *
-	 * @param string $berichtSoort The detected bericht-soort.
+	 * @param string $messageKind The detected bericht-soort.
 	 * @param string $crossRef The cross-reference to the outbound row.
 	 * @param string $rawXml The raw inbound envelope.
-	 * @param string|null $zaakId The zaak identificatie from the bevestiging.
+	 * @param string|null $caseId The zaak identificatie from the bevestiging.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
 	 */
-	private function confirmOutbound(string $berichtSoort, string $crossRef, string $rawXml, ?string $zaakId): void {
-		if ($berichtSoort !== 'Bv01' || $crossRef === '') {
+	private function confirmOutbound(string $messageKind, string $crossRef, string $rawXml, ?string $caseId): void {
+		if ($messageKind !== 'Bv01' || $crossRef === '') {
 			return;
 		}
 
@@ -311,7 +311,7 @@ class StufController extends Controller {
 			newStatus: 'bevestigd',
 			extras: [
 				'responseEnvelopeXml' => $rawXml,
-				'zaakIdentificatie' => ($zaakId ?? ($outbound['zaakIdentificatie'] ?? '')),
+				'zaakIdentificatie' => ($caseId ?? ($outbound['zaakIdentificatie'] ?? '')),
 			]
 		);
 	}//end confirmOutbound()

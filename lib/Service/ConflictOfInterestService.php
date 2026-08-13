@@ -119,7 +119,7 @@ class ConflictOfInterestService {
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	private function resolveMedewerkerBsn(string $userId): ?string {
+	private function resolveEmployeeBsn(string $userId): ?string {
 		if ($this->identityResolver === null || $userId === '') {
 			return null;
 		}
@@ -172,7 +172,7 @@ class ConflictOfInterestService {
 	 *   - BSNs are compared as SHA-256 hashes and never logged (AVG art. 9).
 	 *
 	 * @param string $userId User id.
-	 * @param string $zaakId Case id.
+	 * @param string $caseId Case id.
 	 * @param array<string, mixed> $caseProperties Case properties. Only
 	 *                                             `applicantBsn` is consulted,
 	 *                                             and only when the caller has
@@ -182,12 +182,12 @@ class ConflictOfInterestService {
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	public function checkConflict(string $userId, string $zaakId, array $caseProperties = []): array {
-		$this->logger->debug('Conflict-of-interest probe', ['userId' => $userId, 'zaakId' => $zaakId]);
+	public function checkConflict(string $userId, string $caseId, array $caseProperties = []): array {
+		$this->logger->debug('Conflict-of-interest probe', ['userId' => $userId, 'zaakId' => $caseId]);
 
 		// Manual registration trumps automatic detection.
-		if (isset($this->registered[$zaakId]) === true) {
-			return ['conflict' => true, 'reason' => $this->registered[$zaakId]];
+		if (isset($this->registered[$caseId]) === true) {
+			return ['conflict' => true, 'reason' => $this->registered[$caseId]];
 		}
 
 		// The applicant identity is authoritative ONLY because the caller
@@ -206,14 +206,14 @@ class ConflictOfInterestService {
 		// body, and an authorization input supplied by the requester is not an
 		// authorization input — a caller would simply omit `userBsn` to force
 		// "no conflict" (the bug this replaces).
-		$userBsn = $this->resolveMedewerkerBsn(userId: $userId);
+		$userBsn = $this->resolveEmployeeBsn(userId: $userId);
 		if ($userBsn === null || $userBsn === '') {
 			// INDETERMINATE: the applicant is known but we cannot establish who
 			// the case worker is, so we cannot answer the question. A conflict
 			// check that cannot run MUST NOT report "no conflict" — fail closed.
 			$this->logger->warning(
 				'Belangenconflict check is indeterminate — blocking',
-				['userId' => $userId, 'zaakId' => $zaakId]
+				['userId' => $userId, 'zaakId' => $caseId]
 			);
 			return ['conflict' => true, 'reason' => self::REASON_IDENTITY_INDETERMINATE];
 		}
@@ -223,7 +223,7 @@ class ConflictOfInterestService {
 			return ['conflict' => true, 'reason' => 'self'];
 		}
 
-		return $this->detectRelationConflict(userBsn: $userBsn, applicantBsn: $applicantBsn, zaakId: $zaakId);
+		return $this->detectRelationConflict(userBsn: $userBsn, applicantBsn: $applicantBsn, caseId: $caseId);
 	}//end checkConflict()
 
 	/**
@@ -233,13 +233,13 @@ class ConflictOfInterestService {
 	 *
 	 * @param string $userBsn The case worker's BSN (in memory only).
 	 * @param string $applicantBsn The applicant's BSN (in memory only).
-	 * @param string $zaakId Case id (audit correlation).
+	 * @param string $caseId Case id (audit correlation).
 	 *
 	 * @return array{conflict:bool, reason?:string}
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	private function detectRelationConflict(string $userBsn, string $applicantBsn, string $zaakId): array {
+	private function detectRelationConflict(string $userBsn, string $applicantBsn, string $caseId): array {
 		if ($this->relationshipLookup !== null) {
 			try {
 				$relation = ($this->relationshipLookup)($userBsn, $applicantBsn);
@@ -259,7 +259,7 @@ class ConflictOfInterestService {
 		// BRP adapter fallback — dormant by default; an active binding looks
 		// up the user's relationship to the applicant via Haal Centraal
 		// `relaties` envelope and short-circuits with `belangenconflict`.
-		$brpRelation = $this->lookupRelationViaBrp(userBsn: $userBsn, applicantBsn: $applicantBsn, zaakId: $zaakId);
+		$brpRelation = $this->lookupRelationViaBrp(userBsn: $userBsn, applicantBsn: $applicantBsn, caseId: $caseId);
 		if ($brpRelation !== null && $brpRelation !== '') {
 			return ['conflict' => true, 'reason' => $brpRelation];
 		}
@@ -281,13 +281,13 @@ class ConflictOfInterestService {
 	 *
 	 * @param string $userBsn User BSN.
 	 * @param string $applicantBsn Applicant BSN.
-	 * @param string $zaakId Case id (audit correlation).
+	 * @param string $caseId Case id (audit correlation).
 	 *
 	 * @return string|null Relationship label, or null when unknown / dormant.
 	 *
 	 * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
 	 */
-	private function lookupRelationViaBrp(string $userBsn, string $applicantBsn, string $zaakId): ?string {
+	private function lookupRelationViaBrp(string $userBsn, string $applicantBsn, string $caseId): ?string {
 		if ($this->brpAdapter === null) {
 			return null;
 		}
@@ -297,14 +297,14 @@ class ConflictOfInterestService {
 				$userBsn,
 				[
 					'lookupReason' => 'belangenconflict-detection',
-					'caseId' => $zaakId,
+					'caseId' => $caseId,
 					'comparisonBsnHash' => substr(hash('sha256', $applicantBsn), 0, 16),
 				]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'BRP relationship lookup failed',
-				['zaakId' => $zaakId, 'error' => $e->getMessage()]
+				['zaakId' => $caseId, 'error' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -336,27 +336,27 @@ class ConflictOfInterestService {
 	/**
 	 * Manually register a belangenconflict on a case.
 	 *
-	 * @param string $zaakId Case id.
+	 * @param string $caseId Case id.
 	 * @param string $reason Reason.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
 	 */
-	public function registerConflict(string $zaakId, string $reason): void {
-		$this->registered[$zaakId] = $reason;
+	public function registerConflict(string $caseId, string $reason): void {
+		$this->registered[$caseId] = $reason;
 	}//end registerConflict()
 
 	/**
 	 * Clear a manually-registered conflict.
 	 *
-	 * @param string $zaakId Case id.
+	 * @param string $caseId Case id.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/mandaat-matrix-06-temporal-and-conflict/tasks.md
 	 */
-	public function clearConflict(string $zaakId): void {
-		unset($this->registered[$zaakId]);
+	public function clearConflict(string $caseId): void {
+		unset($this->registered[$caseId]);
 	}//end clearConflict()
 }//end class

@@ -156,11 +156,11 @@ class SubsidieFragmentTest extends TestCase {
 	 * @return void
 	 */
 	public function testBsnIsMaskedReference(): void {
-		$aanvraag = $this->merged['components']['schemas']['subsidieAanvraag']['properties'];
-		$this->assertArrayHasKey('aanvragerBsnRef', $aanvraag);
+		$request = $this->merged['components']['schemas']['subsidieAanvraag']['properties'];
+		$this->assertArrayHasKey('aanvragerBsnRef', $request);
 		$this->assertStringContainsStringIgnoringCase(
 			'never stored raw',
-			(string)$aanvraag['aanvragerBsnRef']['description']
+			(string)$request['aanvragerBsnRef']['description']
 		);
 	}//end testBsnIsMaskedReference()
 }//end class

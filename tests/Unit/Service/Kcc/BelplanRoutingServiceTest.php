@@ -181,7 +181,7 @@ class BelplanRoutingServiceTest extends TestCase {
 			vaardigheid: 'bouwtoezicht',
 			pool: $pool,
 			overflowWachttijd: 120,
-			maxWachtrijLengte: 5
+			maxQueueLengte: 5
 		);
 
 		self::assertNull($decision['destinationSpecialistId']);
@@ -207,7 +207,7 @@ class BelplanRoutingServiceTest extends TestCase {
 			vaardigheid: 'bouwtoezicht',
 			pool: $pool,
 			overflowWachttijd: 120,
-			maxWachtrijLengte: 5
+			maxQueueLengte: 5
 		);
 
 		// Queue is short and est wait < threshold → no overflow.

@@ -144,8 +144,8 @@ class SentimentAnalysisJob extends TimedJob {
 	 * @return void
 	 */
 	private function processContact($objectService, string $register, string $sentimentSchema, array $contact, array $triggerWords): void {
-		$transcriptie = trim((string)($contact['transcriptie'] ?? ''));
-		if ($transcriptie === '') {
+		$transcript = trim((string)($contact['transcriptie'] ?? ''));
+		if ($transcript === '') {
 			return;
 		}
 
@@ -165,7 +165,7 @@ class SentimentAnalysisJob extends TimedJob {
 			return;
 		}
 
-		$analysis = $this->sentimentService->analyzeSentiment($transcriptie, $triggerWords);
+		$analysis = $this->sentimentService->analyzeSentiment($transcript, $triggerWords);
 
 		$objectService->saveObject(
 			$register,

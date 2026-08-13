@@ -155,7 +155,7 @@ class ParaferingAuditListenerTest extends TestCase {
 			);
 
 		$event = new ParafeerTransitionEvent(
-			voorstelId: 'route-001',
+			proposalId: 'route-001',
 			action: 'approved',
 			step: 'step-2',
 			actor: 'user-a',
@@ -205,7 +205,7 @@ class ParaferingAuditListenerTest extends TestCase {
 			);
 
 		$event = new ParafeerTransitionEvent(
-			voorstelId: 'route-002',
+			proposalId: 'route-002',
 			action: 'returned',
 			step: null,
 			actor: 'user-b',
@@ -238,7 +238,7 @@ class ParaferingAuditListenerTest extends TestCase {
 		$this->logger->expects($this->atLeastOnce())->method('warning');
 
 		$event = new ParafeerTransitionEvent(
-			voorstelId: 'missing',
+			proposalId: 'missing',
 			action: 'approved',
 			step: null,
 			actor: 'user-c',
@@ -275,7 +275,7 @@ class ParaferingAuditListenerTest extends TestCase {
 			);
 
 		$event = new ParafeerTransitionEvent(
-			voorstelId: 'route-003',
+			proposalId: 'route-003',
 			action: 'route-changed',
 			step: null,
 			actor: 'user-d',

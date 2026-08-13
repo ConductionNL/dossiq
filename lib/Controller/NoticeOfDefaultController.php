@@ -101,10 +101,10 @@ class NoticeOfDefaultController extends Controller {
 		}
 
 		$instanceId = (string)($body['termijnInstanceId'] ?? '');
-		$kanaal = (string)($body['kanaal'] ?? '');
+		$channel = (string)($body['kanaal'] ?? '');
 		$whenStr = (string)($body['ontvangstDatum'] ?? '');
 		$documentLink = (string)($body['documentLink'] ?? '');
-		if ($instanceId === '' || $kanaal === '' || $whenStr === '') {
+		if ($instanceId === '' || $channel === '' || $whenStr === '') {
 			return new JSONResponse(
 				['message' => 'termijnInstanceId, ontvangstDatum and kanaal are required'],
 				Http::STATUS_BAD_REQUEST
@@ -115,7 +115,7 @@ class NoticeOfDefaultController extends Controller {
 			$row = $this->service->registerNoticeOfDefault(
 				$instanceId,
 				new DateTimeImmutable($whenStr),
-				$kanaal,
+				$channel,
 				$documentLink
 			);
 			return new JSONResponse($row, Http::STATUS_CREATED);

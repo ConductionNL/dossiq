@@ -55,22 +55,22 @@ class MandaatEscalatieService {
 	/**
 	 * Create a new escalation.
 	 *
-	 * @param string $zaakId Case id.
+	 * @param string $caseId Case id.
 	 * @param string $decisionType Decision type.
 	 * @param string $initiatorId Initiating user id.
-	 * @param string $escalatieReden Escalation reason.
+	 * @param string $escalationReason Escalation reason.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
 	 */
-	public function createEscalatie(string $zaakId, string $decisionType, string $initiatorId, string $escalatieReden): array {
-		$path = $this->resolveEscalatiePath(decisionType: $decisionType, escalatieReden: $escalatieReden);
+	public function createEscalatie(string $caseId, string $decisionType, string $initiatorId, string $escalationReason): array {
+		$path = $this->resolveEscalatiePath(decisionType: $decisionType, escalationReason: $escalationReason);
 		$row = [
-			'zaakId' => $zaakId,
+			'zaakId' => $caseId,
 			'decisionType' => $decisionType,
 			'initiatorId' => $initiatorId,
-			'escalatieReden' => $escalatieReden,
+			'escalatieReden' => $escalationReason,
 			// Key = schema property (renamed). Value = an INTERNAL array key
 			// returned by resolveEscalationPath() in this same class, which is
 			// not a schema property and does not move here.
@@ -84,8 +84,8 @@ class MandaatEscalatieService {
 		$this->logger->info(
 			'Mandaat escalation created',
 			[
-				'zaakId' => $zaakId,
-				'reden' => $escalatieReden,
+				'zaakId' => $caseId,
+				'reden' => $escalationReason,
 				'target' => $row['targetUserId'],
 			]
 		);
@@ -100,7 +100,7 @@ class MandaatEscalatieService {
 	 * when none is found.
 	 *
 	 * @param string $decisionType Decision type.
-	 * @param string $escalatieReden Reason, carried into the unresolved-path
+	 * @param string $escalationReason Reason, carried into the unresolved-path
 	 *                               warning so a dead-ended escalation is
 	 *                               traceable.
 	 *
@@ -108,7 +108,7 @@ class MandaatEscalatieService {
 	 *
 	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
 	 */
-	public function resolveEscalatiePath(string $decisionType, string $escalatieReden = ''): array {
+	public function resolveEscalatiePath(string $decisionType, string $escalationReason = ''): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$mSchema = (string)$this->settingsService->getConfigValue('mandaat_schema');
@@ -135,8 +135,8 @@ class MandaatEscalatieService {
 		);
 
 		foreach ($matching as $m) {
-			$rolId = (string)($m['gemandateerdeRol'] ?? '');
-			if ($rolId === '') {
+			$roleId = (string)($m['gemandateerdeRol'] ?? '');
+			if ($roleId === '') {
 				continue;
 			}
 
@@ -145,7 +145,7 @@ class MandaatEscalatieService {
 					objectService: $objectService,
 					register: $register,
 					schema: $assignSchema,
-					filters: ['rolId' => $rolId]
+					filters: ['rolId' => $roleId]
 				);
 			} catch (\Throwable $e) {
 				continue;
@@ -179,7 +179,7 @@ class MandaatEscalatieService {
 		// traceable in the log rather than only visible as an empty target.
 		$this->logger->warning(
 			'Mandaat escalation path unresolved',
-			['decisionType' => $decisionType, 'reden' => $escalatieReden]
+			['decisionType' => $decisionType, 'reden' => $escalationReason]
 		);
 
 		return ['mandaatId' => '', 'userId' => ''];
@@ -217,7 +217,7 @@ class MandaatEscalatieService {
 	/**
 	 * Approve an open escalation.
 	 *
-	 * @param string $escalatieId Escalation id.
+	 * @param string $escalationId Escalation id.
 	 * @param string $mandaathouderUserId Approving user id (must match targetUserId).
 	 *
 	 * @return array<string, mixed>
@@ -226,29 +226,29 @@ class MandaatEscalatieService {
 	 *
 	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
 	 */
-	public function approveEscalatie(string $escalatieId, string $mandaathouderUserId): array {
-		$escalatie = $this->findEscalatie(escalatieId: $escalatieId);
-		if ($escalatie === null) {
-			throw new RuntimeException('Escalation not found: ' . $escalatieId);
+	public function approveEscalatie(string $escalationId, string $mandaathouderUserId): array {
+		$escalation = $this->findEscalation(escalationId: $escalationId);
+		if ($escalation === null) {
+			throw new RuntimeException('Escalation not found: ' . $escalationId);
 		}
 
-		if ((string)($escalatie['targetUserId'] ?? '') !== $mandaathouderUserId) {
+		if ((string)($escalation['targetUserId'] ?? '') !== $mandaathouderUserId) {
 			throw new RuntimeException('Caller is not the resolved mandate holder');
 		}
 
-		if (($escalatie['status'] ?? '') !== 'open') {
+		if (($escalation['status'] ?? '') !== 'open') {
 			throw new RuntimeException('Escalation not in open status');
 		}
 
-		$escalatie['status'] = 'goedgekeurd';
-		$escalatie['resolvedAt'] = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
-		return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalatie);
+		$escalation['status'] = 'goedgekeurd';
+		$escalation['resolvedAt'] = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
+		return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalation);
 	}//end approveEscalatie()
 
 	/**
 	 * Reject an open escalation.
 	 *
-	 * @param string $escalatieId Escalation id.
+	 * @param string $escalationId Escalation id.
 	 * @param string $reason Rejection reason.
 	 *
 	 * @return array<string, mixed>
@@ -257,20 +257,20 @@ class MandaatEscalatieService {
 	 *
 	 * @spec openspec/changes/mandaat-matrix-03-escalation-engine/tasks.md
 	 */
-	public function rejectEscalatie(string $escalatieId, string $reason): array {
-		$escalatie = $this->findEscalatie(escalatieId: $escalatieId);
-		if ($escalatie === null) {
-			throw new RuntimeException('Escalation not found: ' . $escalatieId);
+	public function rejectEscalatie(string $escalationId, string $reason): array {
+		$escalation = $this->findEscalation(escalationId: $escalationId);
+		if ($escalation === null) {
+			throw new RuntimeException('Escalation not found: ' . $escalationId);
 		}
 
-		if (($escalatie['status'] ?? '') !== 'open') {
+		if (($escalation['status'] ?? '') !== 'open') {
 			throw new RuntimeException('Escalation not in open status');
 		}
 
-		$escalatie['status'] = 'afgewezen';
-		$escalatie['afgewezenReden'] = $reason;
-		$escalatie['resolvedAt'] = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
-		return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalatie);
+		$escalation['status'] = 'afgewezen';
+		$escalation['afgewezenReden'] = $reason;
+		$escalation['resolvedAt'] = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
+		return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalation);
 	}//end rejectEscalatie()
 
 	/**
@@ -319,11 +319,11 @@ class MandaatEscalatieService {
 	/**
 	 * Fetch a single escalation row by id.
 	 *
-	 * @param string $escalatieId Id.
+	 * @param string $escalationId Id.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	private function findEscalatie(string $escalatieId): ?array {
+	private function findEscalation(string $escalationId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('mandaat_escalatie_schema');
@@ -332,7 +332,7 @@ class MandaatEscalatieService {
 		}
 
 		try {
-			$row = $objectService->find($escalatieId, register: $register, schema: $schema);
+			$row = $objectService->find($escalationId, register: $register, schema: $schema);
 			if (is_array($row) === true) {
 				return $row;
 			}

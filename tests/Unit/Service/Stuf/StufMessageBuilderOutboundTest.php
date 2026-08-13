@@ -155,7 +155,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 				],
 			],
 			endpoint: $this->endpointFixture(),
-			zaakId: null,
+			caseId: null,
 			opts: ['includeDocuments' => true]
 		);
 		$expected = base64_encode('PDFBYTES');
@@ -179,7 +179,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 				],
 			],
 			endpoint: $this->endpointFixture(),
-			zaakId: null,
+			caseId: null,
 			opts: ['includeDocuments' => true]
 		);
 	}//end testPayloadTooLargeRejectsBeforeSend()
@@ -209,7 +209,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 	 */
 	public function testLv01ContainsScopeElements(): void {
 		$envelope = $this->builder->buildLv01GeefDetails(
-			zaakId: 'ZAAK-2026-0008812',
+			caseId: 'ZAAK-2026-0008812',
 			endpoint: $this->endpointFixture(),
 			gewensteElementen: ['omschrijving', 'startdatum']
 		);

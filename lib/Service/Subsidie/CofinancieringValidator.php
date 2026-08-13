@@ -64,15 +64,15 @@ class CofinancieringValidator {
 	 * Whether subsidy + co-financing reconcile to the project total
 	 * (REQ-SUB-008). Tolerates sub-cent floating-point drift.
 	 *
-	 * @param float $subsidieBedrag The requested/granted subsidy.
+	 * @param float $subsidyAmount The requested/granted subsidy.
 	 * @param array<int, array<string, mixed>> $cofinanciering The co-financing rows.
-	 * @param float $projectTotaal The project total.
+	 * @param float $projectTotal The project total.
 	 *
 	 * @return bool True when the funding sources reconcile to the total.
 	 */
-	public function reconciles(float $subsidieBedrag, array $cofinanciering, float $projectTotaal): bool {
-		$total = ($subsidieBedrag + $this->sumBedragen(rows: $cofinanciering));
-		return abs($total - $projectTotaal) < 0.01;
+	public function reconciles(float $subsidyAmount, array $cofinanciering, float $projectTotal): bool {
+		$total = ($subsidyAmount + $this->sumBedragen(rows: $cofinanciering));
+		return abs($total - $projectTotal) < 0.01;
 	}//end reconciles()
 
 	/**
@@ -99,19 +99,19 @@ class CofinancieringValidator {
 	 * Validate a co-financing breakdown, returning a structured result with
 	 * a machine-readable error code on failure (REQ-SUB-008).
 	 *
-	 * @param float $subsidieBedrag The requested/granted subsidy.
+	 * @param float $subsidyAmount The requested/granted subsidy.
 	 * @param array<int, array<string, mixed>> $cofinanciering The co-financing rows.
-	 * @param float $projectTotaal The project total.
+	 * @param float $projectTotal The project total.
 	 *
 	 * @return array{valid: bool, error: string|null, euCofinanciering: bool}
 	 */
-	public function validate(float $subsidieBedrag, array $cofinanciering, float $projectTotaal): array {
-		if ($projectTotaal <= 0.0) {
+	public function validate(float $subsidyAmount, array $cofinanciering, float $projectTotal): array {
+		if ($projectTotal <= 0.0) {
 			return ['valid' => false, 'error' => 'COFIN_PROJECT_TOTAL_INVALID', 'euCofinanciering' => false];
 		}
 
 		$euCofin = $this->hasEuCofinanciering(cofinanciering: $cofinanciering);
-		if ($this->reconciles(subsidieBedrag: $subsidieBedrag, cofinanciering: $cofinanciering, projectTotaal: $projectTotaal) === false) {
+		if ($this->reconciles(subsidyAmount: $subsidyAmount, cofinanciering: $cofinanciering, projectTotal: $projectTotal) === false) {
 			return ['valid' => false, 'error' => 'COFIN_SUM_MISMATCH', 'euCofinanciering' => $euCofin];
 		}
 

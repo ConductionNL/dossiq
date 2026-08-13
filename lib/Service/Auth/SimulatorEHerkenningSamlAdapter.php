@@ -58,17 +58,17 @@ final class SimulatorEHerkenningSamlAdapter implements EHerkenningSamlAdapterInt
 	 */
 	public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult {
 		$decoded = json_decode($samlResponse, true);
-		$kvkNummer = '';
+		$kvkNumber = '';
 		if (is_array($decoded) === true) {
-			$kvkNummer = (string)($decoded['kvkNummer'] ?? '');
+			$kvkNumber = (string)($decoded['kvkNummer'] ?? '');
 		}
 
-		if (preg_match('/^[0-9]{8}$/', $kvkNummer) !== 1) {
+		if (preg_match('/^[0-9]{8}$/', $kvkNumber) !== 1) {
 			throw new RuntimeException('eHerkenning simulator requires an 8-digit KvK number from the simulator login form.');
 		}
 
 		return BrokerAssertionResult::forEHerkenning(
-			kvkNummer: $kvkNummer,
+			kvkNumber: $kvkNumber,
 			assertionId: 'simulator-' . $relayState,
 			level: 3,
 			issuer: 'procest-eherkenning-simulator',

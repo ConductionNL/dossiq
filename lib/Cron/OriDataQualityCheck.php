@@ -239,27 +239,27 @@ class OriDataQualityCheck extends TimedJob {
 
 		foreach ($raadsleden as $rl) {
 			$rlSlug = (string)($rl['@self']['slug'] ?? ($rl['id'] ?? '?'));
-			$fractieRef = (string)($rl['fractie'] ?? '');
+			$factionRef = (string)($rl['fractie'] ?? '');
 
-			if (empty($fractieRef) === true) {
+			if (empty($factionRef) === true) {
 				continue;
 			}
 
 			try {
-				$fractie = $this->findObjectAsArray(
+				$faction = $this->findObjectAsArray(
 					objectService: $objectService,
 					register: 'ori',
 					schema: 'fractie',
-					id: $fractieRef
+					id: $factionRef
 				);
 
-				if ($fractie === null) {
+				if ($faction === null) {
 					$issues[] = [
 						'schema' => 'raadslid',
 						'slug' => $rlSlug,
 						'field' => 'fractie',
 						'severity' => 'warning',
-						'message' => 'Raadslid references non-existent fractie: ' . $fractieRef,
+						'message' => 'Raadslid references non-existent fractie: ' . $factionRef,
 					];
 				}
 			} catch (\Throwable $e) {
@@ -300,9 +300,9 @@ class OriDataQualityCheck extends TimedJob {
 		// Build a set of all document slugs that are referenced by agendapunten.
 		$referenced = [];
 		foreach ($agendapunten as $ap) {
-			$bijlagen = ($ap['bijlagen'] ?? []);
-			if (is_array(value: $bijlagen) === true) {
-				foreach ($bijlagen as $docSlug) {
+			$attachments = ($ap['bijlagen'] ?? []);
+			if (is_array(value: $attachments) === true) {
+				foreach ($attachments as $docSlug) {
 					$referenced[$docSlug] = true;
 				}
 			}

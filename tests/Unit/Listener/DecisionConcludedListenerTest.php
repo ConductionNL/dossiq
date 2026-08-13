@@ -71,9 +71,9 @@ class DecisionConcludedListenerTest extends TestCase {
 		$materialiser->expects($this->once())
 			->method('materialiseFromConcludedEvent')
 			->willReturnCallback(
-				function (string $caseId, string $besluitId, array $event): array {
+				function (string $caseId, string $decisionId, array $event): array {
 					$this->assertSame('case-9', $caseId);
-					$this->assertSame('bes-2', $besluitId);
+					$this->assertSame('bes-2', $decisionId);
 					$this->assertSame('approved', $event['status']);
 					return ['ok' => true];
 				}

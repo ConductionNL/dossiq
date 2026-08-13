@@ -53,7 +53,7 @@ final class BrokerAssertionResult {
 	 * Constructor — use the named constructors instead of `new` directly.
 	 *
 	 * @param string $dialect Broker dialect (`eherkenning`/`digid`).
-	 * @param string|null $kvkNummer KvK identifier for eHerkenning, null for DigiD.
+	 * @param string|null $kvkNumber KvK identifier for eHerkenning, null for DigiD.
 	 * @param string|null $bsn BSN identifier for DigiD, null for eHerkenning.
 	 * @param string $assertionId Underlying SAML assertion id (for audit + replay-guard).
 	 * @param string|null $issuer EntityID of the issuing broker.
@@ -62,7 +62,7 @@ final class BrokerAssertionResult {
 	 */
 	private function __construct(
 		public readonly string $dialect,
-		public readonly ?string $kvkNummer,
+		public readonly ?string $kvkNumber,
 		public readonly ?string $bsn,
 		public readonly string $assertionId,
 		public readonly ?string $issuer,
@@ -74,7 +74,7 @@ final class BrokerAssertionResult {
 	/**
 	 * Build an eHerkenning result. Requires a non-empty KvK number.
 	 *
-	 * @param string $kvkNummer KvK identifier (digits only — caller validates format).
+	 * @param string $kvkNumber KvK identifier (digits only — caller validates format).
 	 * @param string $assertionId Assertion id for audit.
 	 * @param int $level Assurance level 1..4.
 	 * @param string|null $issuer EntityID of the broker.
@@ -83,19 +83,19 @@ final class BrokerAssertionResult {
 	 * @return self
 	 */
 	public static function forEHerkenning(
-		string $kvkNummer,
+		string $kvkNumber,
 		string $assertionId,
 		int $level = 3,
 		?string $issuer = null,
 		array $attributes = [],
 	): self {
-		if ($kvkNummer === '') {
+		if ($kvkNumber === '') {
 			throw new InvalidArgumentException('forEHerkenning requires a non-empty kvkNummer');
 		}
 
 		return new self(
 			dialect: self::DIALECT_EHERKENNING,
-			kvkNummer: $kvkNummer,
+			kvkNumber: $kvkNumber,
 			bsn: null,
 			assertionId: $assertionId,
 			issuer: $issuer,
@@ -128,7 +128,7 @@ final class BrokerAssertionResult {
 
 		return new self(
 			dialect: self::DIALECT_DIGID,
-			kvkNummer: null,
+			kvkNumber: null,
 			bsn: $bsn,
 			assertionId: $assertionId,
 			issuer: $issuer,
@@ -145,7 +145,7 @@ final class BrokerAssertionResult {
 	public function toArray(): array {
 		return [
 			'dialect' => $this->dialect,
-			'kvkNummer' => $this->kvkNummer,
+			'kvkNummer' => $this->kvkNumber,
 			'bsn' => $this->bsn,
 			'assertionId' => $this->assertionId,
 			'issuer' => $this->issuer,

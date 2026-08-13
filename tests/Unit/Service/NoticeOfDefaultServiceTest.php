@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
  */
 class NoticeOfDefaultServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
-	private TermijnService $termijnService;
+	private TermijnService $termService;
 	private NoticeOfDefaultService $service;
 
 	protected function setUp(): void {
@@ -62,8 +62,8 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		);
 
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->termijnService = new TermijnService($settings, $logger);
-		$this->service = new NoticeOfDefaultService($settings, $this->termijnService, $logger);
+		$this->termService = new TermijnService($settings, $logger);
+		$this->service = new NoticeOfDefaultService($settings, $this->termService, $logger);
 
 		// Seed an AWB-default definition.
 		$this->objects->saveObject('procest', 'termijnDefinitie', [

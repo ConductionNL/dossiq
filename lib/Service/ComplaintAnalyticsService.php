@@ -154,25 +154,25 @@ class ComplaintAnalyticsService {
 				continue;
 			}
 
-			$categorie = (string)($complaint['categorie'] ?? 'onbekend');
-			$ontvangst = $complaint['ontvangstdatum'] ?? null;
+			$category = (string)($complaint['categorie'] ?? 'onbekend');
+			$receipt = $complaint['ontvangstdatum'] ?? null;
 			$afhandelDeadline = $complaint['afhandelDeadline'] ?? null;
 
-			if ($ontvangst === null || $afhandelDeadline === null) {
+			if ($receipt === null || $afhandelDeadline === null) {
 				continue;
 			}
 
-			$start = new DateTimeImmutable($ontvangst);
+			$start = new DateTimeImmutable($receipt);
 			$end = new DateTimeImmutable($afhandelDeadline);
 			$days = (int)$start->diff($end)->days;
 
-			$totals[$categorie] = ($totals[$categorie] ?? 0) + $days;
-			$counts[$categorie] = ($counts[$categorie] ?? 0) + 1;
+			$totals[$category] = ($totals[$category] ?? 0) + $days;
+			$counts[$category] = ($counts[$category] ?? 0) + 1;
 		}
 
 		$averages = [];
-		foreach ($counts as $categorie => $count) {
-			$averages[$categorie] = round($totals[$categorie] / $count, 1);
+		foreach ($counts as $category => $count) {
+			$averages[$category] = round($totals[$category] / $count, 1);
 		}
 
 		return $averages;
@@ -205,8 +205,8 @@ class ComplaintAnalyticsService {
 
 		$systemicIssues = [];
 
-		foreach ($current as $categorie => $currentCount) {
-			$previousCount = $previous[$categorie] ?? 0;
+		foreach ($current as $category => $currentCount) {
+			$previousCount = $previous[$category] ?? 0;
 
 			if ($previousCount === 0) {
 				continue;
@@ -216,7 +216,7 @@ class ComplaintAnalyticsService {
 
 			if ($increasePercent > self::SYSTEMIC_ISSUE_QOQ_THRESHOLD) {
 				$systemicIssues[] = [
-					'categorie' => $categorie,
+					'categorie' => $category,
 					'currentCount' => $currentCount,
 					'previousCount' => $previousCount,
 					'increasePercent' => round($increasePercent, 1),

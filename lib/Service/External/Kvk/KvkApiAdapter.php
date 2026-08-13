@@ -98,18 +98,18 @@ class KvkApiAdapter implements KvkHandelsregisterAdapterInterface {
 			);
 
 			$data = json_decode((string)$response->getBody(), true);
-			$resultaten = [];
+			$results = [];
 			if (is_array($data) === true) {
-				$resultaten = (array)($data['resultaten'] ?? []);
+				$results = (array)($data['resultaten'] ?? []);
 			}
 
-			if ($resultaten === []) {
+			if ($results === []) {
 				return new KvkLookupResult(lookupStatus: 'NOT_FOUND', kvkNumber: $kvkNumber, entity: [], dormant: false);
 			}
 
 			// Prefer the hoofdvestiging (carries the address); else first.
-			$entity = (array)$resultaten[0];
-			foreach ($resultaten as $row) {
+			$entity = (array)$results[0];
+			foreach ($results as $row) {
 				if (is_array($row) === true && ($row['type'] ?? '') === 'hoofdvestiging') {
 					$entity = $row;
 					break;

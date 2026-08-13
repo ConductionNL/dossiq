@@ -88,7 +88,7 @@ class BezwaarAdviceRequestedListener implements IEventListener {
 				return;
 			}
 
-			if ($this->isBezwaarSchema(object: $object) === false) {
+			if ($this->isObjectionSchema(object: $object) === false) {
 				return;
 			}
 
@@ -103,15 +103,15 @@ class BezwaarAdviceRequestedListener implements IEventListener {
 				return;
 			}
 
-			$bezwaarId = (string)(
+			$objectionId = (string)(
 				$object['@self']['id'] ?? ($object['id'] ?? ($object['uuid'] ?? ''))
 			);
-			if ($bezwaarId === '') {
+			if ($objectionId === '') {
 				return;
 			}
 
 			$this->bacService->autoAssignDefaultCommittee(
-				bezwaarId: $bezwaarId
+				objectionId: $objectionId
 			);
 		} catch (Throwable $e) {
 			$this->logger->debug(
@@ -128,7 +128,7 @@ class BezwaarAdviceRequestedListener implements IEventListener {
 	 *
 	 * @return bool
 	 */
-	private function isBezwaarSchema(array $object): bool {
+	private function isObjectionSchema(array $object): bool {
 		$schemaSlug = $this->settingsService->getConfigValue(
 			key: 'bezwaar_schema'
 		);

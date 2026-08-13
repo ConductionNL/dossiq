@@ -133,12 +133,12 @@ class BeroepEscalationListener implements IEventListener {
 			return;
 		}
 
-		if ($this->isBeroepSchema(object: $object) === false) {
+		if ($this->isAppealSchema(object: $object) === false) {
 			return;
 		}
 
-		$sourceBezwaarId = (string)($object['sourceBezwaar'] ?? '');
-		if ($sourceBezwaarId === '') {
+		$sourceObjectionId = (string)($object['sourceBezwaar'] ?? '');
+		if ($sourceObjectionId === '') {
 			return;
 		}
 
@@ -150,25 +150,25 @@ class BeroepEscalationListener implements IEventListener {
 		$register = $this->settingsService->getConfigValue(
 			key: 'register'
 		);
-		$bezwaarSchema = $this->settingsService->getConfigValue(
+		$objectionSchema = $this->settingsService->getConfigValue(
 			key: 'bezwaar_schema'
 		);
-		if ($register === '' || $bezwaarSchema === '') {
+		if ($register === '' || $objectionSchema === '') {
 			return;
 		}
 
-		$bezwaar = $objectService->find($sourceBezwaarId, register: $register, schema: $bezwaarSchema);
-		if (is_array($bezwaar) === false) {
+		$objection = $objectService->find($sourceObjectionId, register: $register, schema: $objectionSchema);
+		if (is_array($objection) === false) {
 			return;
 		}
 
 		$dwingend = $this->shouldFlagDwingend(
-			beroep: $object,
-			bezwaar: $bezwaar,
+			appeal: $object,
+			objection: $objection,
 		);
 
 		// No-op when the derived marker already matches.
-		$current = (bool)($bezwaar['dwingendStatus'] ?? false);
+		$current = (bool)($objection['dwingendStatus'] ?? false);
 		if ($current === $dwingend) {
 			return;
 		}
@@ -176,8 +176,8 @@ class BeroepEscalationListener implements IEventListener {
 		$objectService->saveObject(
 			object: ['dwingendStatus' => $dwingend],
 			register: $register,
-			schema: $bezwaarSchema,
-			uuid: (string)$sourceBezwaarId
+			schema: $objectionSchema,
+			uuid: (string)$sourceObjectionId
 		);
 	}//end deriveDwingendStatus()
 
@@ -195,31 +195,31 @@ class BeroepEscalationListener implements IEventListener {
 	 *    appellantFilingDate (the system never decides timeliness itself
 	 *    but the dwingende marker only applies during the active window).
 	 *
-	 * @param array<string, mixed> $beroep The beroep payload
-	 * @param array<string, mixed> $bezwaar The source bezwaar payload
+	 * @param array<string, mixed> $appeal The beroep payload
+	 * @param array<string, mixed> $objection The source bezwaar payload
 	 *
 	 * @return bool
 	 */
-	private function shouldFlagDwingend(array $beroep, array $bezwaar): bool {
-		$bezwaarStatus = (string)($bezwaar['status'] ?? '');
-		if (in_array($bezwaarStatus, self::TERMINAL_BEZWAAR_STATUSES, true) === false
+	private function shouldFlagDwingend(array $appeal, array $objection): bool {
+		$objectionStatus = (string)($objection['status'] ?? '');
+		if (in_array($objectionStatus, self::TERMINAL_BEZWAAR_STATUSES, true) === false
 		) {
 			return false;
 		}
 
-		$contested = (string)($beroep['contestedDecision'] ?? '');
+		$contested = (string)($appeal['contestedDecision'] ?? '');
 		if ($contested === '') {
 			return false;
 		}
 
-		$outcome = (string)($beroep['judgmentOutcome'] ?? '');
+		$outcome = (string)($appeal['judgmentOutcome'] ?? '');
 		if ($outcome !== ''
 			&& in_array($outcome, self::TERMINAL_BEROEP_OUTCOMES, true) === true
 		) {
 			return false;
 		}
 
-		return $this->withinFilingWindow(beroep: $beroep);
+		return $this->withinFilingWindow(appeal: $appeal);
 	}//end shouldFlagDwingend()
 
 	/**
@@ -227,17 +227,17 @@ class BeroepEscalationListener implements IEventListener {
 	 * decision's effectiveDate. Falls back to true when filingDeadline
 	 * is set and the appellantFilingDate is on/before that date.
 	 *
-	 * @param array<string, mixed> $beroep The beroep payload
+	 * @param array<string, mixed> $appeal The beroep payload
 	 *
 	 * @return bool
 	 */
-	private function withinFilingWindow(array $beroep): bool {
-		$filing = (string)($beroep['appellantFilingDate'] ?? '');
+	private function withinFilingWindow(array $appeal): bool {
+		$filing = (string)($appeal['appellantFilingDate'] ?? '');
 		if ($filing === '') {
 			return false;
 		}
 
-		$deadline = (string)($beroep['filingDeadline'] ?? '');
+		$deadline = (string)($appeal['filingDeadline'] ?? '');
 		if ($deadline !== '') {
 			try {
 				return (new DateTimeImmutable($filing)) <= (new DateTimeImmutable($deadline));
@@ -261,7 +261,7 @@ class BeroepEscalationListener implements IEventListener {
 	 *
 	 * @return bool
 	 */
-	private function isBeroepSchema(array $object): bool {
+	private function isAppealSchema(array $object): bool {
 		$schemaSlug = $this->settingsService->getConfigValue(
 			key: 'beroep_schema'
 		);

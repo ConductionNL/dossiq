@@ -51,17 +51,17 @@ class CaseRelationCodec {
 	 * Build a single relation entry, carrying the optional clarification.
 	 *
 	 * @param string $caseId Referenced case UUID.
-	 * @param string $aardRelatie Relation type.
-	 * @param string|null $toelichting Optional free-text clarification.
+	 * @param string $natureRelationship Relation type.
+	 * @param string|null $notes Optional free-text clarification.
 	 *
 	 * @return array<string, string>
 	 *
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
-	public function buildEntry(string $caseId, string $aardRelatie, ?string $toelichting): array {
-		$entry = ['caseId' => $caseId, 'aardRelatie' => $aardRelatie];
-		if ($toelichting !== null && $toelichting !== '') {
-			$entry['toelichting'] = $toelichting;
+	public function buildEntry(string $caseId, string $natureRelationship, ?string $notes): array {
+		$entry = ['caseId' => $caseId, 'aardRelatie' => $natureRelationship];
+		if ($notes !== null && $notes !== '') {
+			$entry['toelichting'] = $notes;
 		}
 
 		return $entry;
@@ -100,16 +100,16 @@ class CaseRelationCodec {
 	 *
 	 * @param array<int, array<string, mixed>> $relations Relation entries.
 	 * @param string $caseId Target case UUID.
-	 * @param string $aardRelatie Relation type.
+	 * @param string $natureRelationship Relation type.
 	 *
 	 * @return bool
 	 *
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
-	public function hasPair(array $relations, string $caseId, string $aardRelatie): bool {
+	public function hasPair(array $relations, string $caseId, string $natureRelationship): bool {
 		foreach ($relations as $relation) {
 			if ((string)($relation['caseId'] ?? '') === $caseId
-				&& (string)($relation['aardRelatie'] ?? '') === $aardRelatie
+				&& (string)($relation['aardRelatie'] ?? '') === $natureRelationship
 			) {
 				return true;
 			}
@@ -123,19 +123,19 @@ class CaseRelationCodec {
 	 *
 	 * @param array<int, array<string, mixed>> $relations Relation entries.
 	 * @param string $caseId Target case UUID.
-	 * @param string $aardRelatie Relation type.
+	 * @param string $natureRelationship Relation type.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/specs/related-case-linking/spec.md
 	 */
-	public function removePair(array $relations, string $caseId, string $aardRelatie): array {
+	public function removePair(array $relations, string $caseId, string $natureRelationship): array {
 		return array_values(
 			array_filter(
 				$relations,
 				static fn (array $relation): bool => (
 					(string)($relation['caseId'] ?? '') !== $caseId
-					|| (string)($relation['aardRelatie'] ?? '') !== $aardRelatie
+					|| (string)($relation['aardRelatie'] ?? '') !== $natureRelationship
 				)
 			)
 		);

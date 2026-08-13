@@ -103,9 +103,9 @@ class ContactMomentService {
 			'transferNaar' => (string)($data['transferNaar'] ?? ''),
 		];
 
-		$duur = $this->calculateDuration(data: $data);
-		if ($duur !== null) {
-			$record['duurSeconden'] = $duur;
+		$duration = $this->calculateDuration(data: $data);
+		if ($duration !== null) {
+			$record['duurSeconden'] = $duration;
 		}
 
 		try {
@@ -131,13 +131,13 @@ class ContactMomentService {
 	 * @throws RuntimeException When a required field is missing or invalid.
 	 */
 	private function validateInput(array $data): void {
-		$kanaal = (string)($data['kanaal'] ?? '');
-		if (in_array($kanaal, self::VALID_KANALEN, true) === false) {
+		$channel = (string)($data['kanaal'] ?? '');
+		if (in_array($channel, self::VALID_KANALEN, true) === false) {
 			throw new RuntimeException('Invalid kanaal');
 		}
 
-		$aard = (string)($data['aard'] ?? 'informatieverzoek');
-		if (in_array($aard, self::VALID_AARD, true) === false) {
+		$nature = (string)($data['aard'] ?? 'informatieverzoek');
+		if (in_array($nature, self::VALID_AARD, true) === false) {
 			throw new RuntimeException('Invalid aard');
 		}
 
@@ -228,7 +228,7 @@ class ContactMomentService {
 	 * @param string $caseId The case UUID.
 	 * @param string $contactmomentId The contactmoment UUID.
 	 * @param string $type The activity type.
-	 * @param string $medewerkerName The handling medewerker.
+	 * @param string $employeeName The handling medewerker.
 	 * @param string $summary A short summary of the activity.
 	 *
 	 * @return bool True on success.
@@ -239,7 +239,7 @@ class ContactMomentService {
 		string $caseId,
 		string $contactmomentId,
 		string $type,
-		string $medewerkerName,
+		string $employeeName,
 		string $summary,
 	): bool {
 		if ($caseId === '') {
@@ -264,7 +264,7 @@ class ContactMomentService {
 			$activity[] = [
 				'type' => $type,
 				'contactmomentId' => $contactmomentId,
-				'medewerker' => $medewerkerName,
+				'medewerker' => $employeeName,
 				'samenvatting' => $summary,
 				'timestamp' => date('c'),
 			];

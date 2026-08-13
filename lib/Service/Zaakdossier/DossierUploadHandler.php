@@ -55,13 +55,13 @@ class DossierUploadHandler {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZaakdossierService $dossierService The dossier orchestrator.
+	 * @param ZaakdossierService $fileService The dossier orchestrator.
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ZaakdossierService $dossierService,
+		private readonly ZaakdossierService $fileService,
 		private readonly CaseAccessGuard $caseAccessGuard,
 	) {
 	}//end __construct()
@@ -118,7 +118,7 @@ class DossierUploadHandler {
 				$meta['formaat'] = $file['type'];
 			}
 
-			$created = $this->dossierService->uploadDocument(
+			$created = $this->fileService->uploadDocument(
 				caseId: $caseId,
 				fileName: $name,
 				content: $content,

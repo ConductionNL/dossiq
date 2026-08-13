@@ -210,7 +210,7 @@ class InboundEmailJob extends TimedJob {
 		if ($connection === false) {
 			$this->logger->warning(
 				'IMAP connection failed',
-				['host' => $host, 'detail' => $this->lastSuppressedWarning()]
+				['host' => $host, 'detail' => $this->orderSuppressedWarning()]
 			);
 			return [];
 		}

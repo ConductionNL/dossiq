@@ -130,15 +130,15 @@ class WOODeadlineCheckJob extends TimedJob {
 		$warned = 0;
 		foreach ($cases as $case) {
 			$caseId = $case['id'] ?? $case['uuid'] ?? null;
-			$behandelaar = $case['behandelaar'] ?? $case['assignedUser'] ?? null;
+			$handler = $case['behandelaar'] ?? $case['assignedUser'] ?? null;
 
-			if ($caseId === null || $behandelaar === null) {
+			if ($caseId === null || $handler === null) {
 				continue;
 			}
 
 			$result = $this->deadlineService->checkAndWarn(
 				caseId: $caseId,
-				behandelaar: $behandelaar,
+				handler: $handler,
 			);
 
 			if (($result['warned'] ?? false) === true) {

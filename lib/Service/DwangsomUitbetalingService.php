@@ -61,10 +61,10 @@ class DwangsomUitbetalingService {
 	/**
 	 * Prepare a DwangsomUitbetaling row for a locked berekening.
 	 *
-	 * @param string $berekeningId Berekening id.
-	 * @param string $rekeninghouderNaam Account holder name.
+	 * @param string $calculationId Berekening id.
+	 * @param string $rekeninghouderName Account holder name.
 	 * @param string $iban IBAN.
-	 * @param DateTimeImmutable|null $ontvangstDatum Original ingebrekestelling receipt date (default today).
+	 * @param DateTimeImmutable|null $receiptDate Original ingebrekestelling receipt date (default today).
 	 *
 	 * @return array<string, mixed>
 	 *
@@ -73,12 +73,12 @@ class DwangsomUitbetalingService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
 	 */
 	public function prepareBetaling(
-		string $berekeningId,
-		string $rekeninghouderNaam,
+		string $calculationId,
+		string $rekeninghouderName,
 		string $iban,
-		?DateTimeImmutable $ontvangstDatum = null,
+		?DateTimeImmutable $receiptDate = null,
 	): array {
-		$this->assertBetalingInput(iban: $iban, rekeninghouderNaam: $rekeninghouderNaam);
+		$this->assertPaymentInput(iban: $iban, rekeninghouderName: $rekeninghouderName);
 
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
@@ -88,28 +88,28 @@ class DwangsomUitbetalingService {
 			throw new RuntimeException('Dwangsom services not configured');
 		}
 
-		$definitief = $this->resolvePayableAmount(
+		$final = $this->resolvePayableAmount(
 			objectService: $objectService,
 			register: $register,
 			schema: $bSchema,
-			berekeningId: $berekeningId
+			calculationId: $calculationId
 		);
 
-		$ontvangstDatum = ($ontvangstDatum ?? new DateTimeImmutable());
-		$uiterlijk = $ontvangstDatum->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days')->format('Y-m-d');
+		$receiptDate = ($receiptDate ?? new DateTimeImmutable());
+		$uiterlijk = $receiptDate->modify('+' . self::BETALING_UITERLIJK_OFFSET_DAYS . ' days')->format('Y-m-d');
 
 		$row = [
-			'dwangsomBerekening' => $berekeningId,
-			'bedrag' => $definitief,
-			'rekeninghouderNaam' => $rekeninghouderNaam,
+			'dwangsomBerekening' => $calculationId,
+			'bedrag' => $final,
+			'rekeninghouderNaam' => $rekeninghouderName,
 			'iban' => strtoupper(str_replace(' ', '', $iban)),
-			'referentie' => $this->buildReferentie(berekeningId: $berekeningId),
+			'referentie' => $this->buildReference(calculationId: $calculationId),
 			'legalBasis' => 'AWB 4:17',
 			'betaaldatumUiterlijk' => $uiterlijk,
 			'status' => 'voorbereid',
 		];
 
-		return $this->persistUitbetaling(
+		return $this->persistDisbursement(
 			objectService: $objectService,
 			register: $register,
 			schema: $uSchema,
@@ -121,18 +121,18 @@ class DwangsomUitbetalingService {
 	 * Validate the caller-supplied payment input.
 	 *
 	 * @param string $iban IBAN.
-	 * @param string $rekeninghouderNaam Account holder name.
+	 * @param string $rekeninghouderName Account holder name.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When the IBAN or the account holder name is invalid.
 	 */
-	private function assertBetalingInput(string $iban, string $rekeninghouderNaam): void {
+	private function assertPaymentInput(string $iban, string $rekeninghouderName): void {
 		if ($this->isValidIban(iban: $iban) === false) {
 			throw new RuntimeException('Invalid IBAN provided for dwangsom uitbetaling');
 		}
 
-		if (trim($rekeninghouderNaam) === '') {
+		if (trim($rekeninghouderName) === '') {
 			throw new RuntimeException('rekeninghouderNaam is required');
 		}
 	}//end assertBetalingInput()
@@ -143,7 +143,7 @@ class DwangsomUitbetalingService {
 	 * @param object $objectService OpenRegister object service.
 	 * @param string $register Register identifier.
 	 * @param string $schema DwangsomBerekening schema identifier.
-	 * @param string $berekeningId Berekening id.
+	 * @param string $calculationId Berekening id.
 	 *
 	 * @return int Payable amount in EUR cents.
 	 *
@@ -153,24 +153,24 @@ class DwangsomUitbetalingService {
 		object $objectService,
 		string $register,
 		string $schema,
-		string $berekeningId,
+		string $calculationId,
 	): int {
 		try {
-			$berekening = $objectService->find($berekeningId, register: $register, schema: $schema);
+			$calculation = $objectService->find($calculationId, register: $register, schema: $schema);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomBerekening lookup failed: ' . $e->getMessage());
 		}
 
-		if (is_array($berekening) === false) {
-			throw new RuntimeException('DwangsomBerekening not found: ' . $berekeningId);
+		if (is_array($calculation) === false) {
+			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
-		$definitief = (int)($berekening['definitievBedrag'] ?? $berekening['cumulatievBedrag'] ?? 0);
-		if ($definitief <= 0) {
+		$final = (int)($calculation['definitievBedrag'] ?? $calculation['cumulatievBedrag'] ?? 0);
+		if ($final <= 0) {
 			throw new RuntimeException('DwangsomBerekening has no payable amount');
 		}
 
-		return $definitief;
+		return $final;
 	}//end resolvePayableAmount()
 
 	/**
@@ -185,7 +185,7 @@ class DwangsomUitbetalingService {
 	 *
 	 * @throws RuntimeException When persisting fails.
 	 */
-	private function persistUitbetaling(
+	private function persistDisbursement(
 		object $objectService,
 		string $register,
 		string $schema,
@@ -206,9 +206,9 @@ class DwangsomUitbetalingService {
 	/**
 	 * Handle an ERP callback updating the uitbetaling state.
 	 *
-	 * @param string $referentie Payment reference.
+	 * @param string $reference Payment reference.
 	 * @param string $status New status (betaald/afgewezen/in-behandeling).
-	 * @param DateTimeImmutable|null $betaaldatum Actual payment date.
+	 * @param DateTimeImmutable|null $paymentDate Actual payment date.
 	 * @param string $betalingsreferentie ERP/bank reference.
 	 *
 	 * @return array<string, mixed>
@@ -218,9 +218,9 @@ class DwangsomUitbetalingService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-07-financial-integration/tasks.md
 	 */
 	public function handleCallback(
-		string $referentie,
+		string $reference,
 		string $status,
-		?DateTimeImmutable $betaaldatum,
+		?DateTimeImmutable $paymentDate,
 		string $betalingsreferentie = '',
 	): array {
 		$objectService = $this->settingsService->getObjectService();
@@ -230,21 +230,21 @@ class DwangsomUitbetalingService {
 			throw new RuntimeException('Dwangsom services not configured');
 		}
 
-		$row = $this->findUitbetalingByReferentie(
+		$row = $this->findDisbursementByReference(
 			objectService: $objectService,
 			register: $register,
 			schema: $uSchema,
-			referentie: $referentie
+			reference: $reference
 		);
 
 		$row = $this->applyCallbackFields(
 			row: $row,
 			status: $status,
-			betaaldatum: $betaaldatum,
+			paymentDate: $paymentDate,
 			betalingsreferentie: $betalingsreferentie
 		);
 
-		return $this->persistUitbetaling(
+		return $this->persistDisbursement(
 			objectService: $objectService,
 			register: $register,
 			schema: $uSchema,
@@ -258,24 +258,24 @@ class DwangsomUitbetalingService {
 	 * @param object $objectService OpenRegister object service.
 	 * @param string $register Register identifier.
 	 * @param string $schema DwangsomUitbetaling schema identifier.
-	 * @param string $referentie Payment reference.
+	 * @param string $reference Payment reference.
 	 *
 	 * @return array<string, mixed> The matching row.
 	 *
 	 * @throws RuntimeException When the lookup fails or the referentie is unknown.
 	 */
-	private function findUitbetalingByReferentie(
+	private function findDisbursementByReference(
 		object $objectService,
 		string $register,
 		string $schema,
-		string $referentie,
+		string $reference,
 	): array {
 		try {
 			$rows = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['referentie' => $referentie],
+				filters: ['referentie' => $reference],
 			);
 		} catch (\Throwable $e) {
 			throw new RuntimeException('DwangsomUitbetaling lookup failed: ' . $e->getMessage());
@@ -287,7 +287,7 @@ class DwangsomUitbetalingService {
 		}
 
 		if (is_array($row) === false) {
-			throw new RuntimeException('No DwangsomUitbetaling found for referentie ' . $referentie);
+			throw new RuntimeException('No DwangsomUitbetaling found for referentie ' . $reference);
 		}
 
 		return $row;
@@ -298,7 +298,7 @@ class DwangsomUitbetalingService {
 	 *
 	 * @param array<string, mixed> $row Uitbetaling row.
 	 * @param string $status New status.
-	 * @param DateTimeImmutable|null $betaaldatum Actual payment date.
+	 * @param DateTimeImmutable|null $paymentDate Actual payment date.
 	 * @param string $betalingsreferentie ERP/bank reference.
 	 *
 	 * @return array<string, mixed> The updated row.
@@ -306,7 +306,7 @@ class DwangsomUitbetalingService {
 	private function applyCallbackFields(
 		array $row,
 		string $status,
-		?DateTimeImmutable $betaaldatum,
+		?DateTimeImmutable $paymentDate,
 		string $betalingsreferentie,
 	): array {
 		$row['status'] = $status;
@@ -314,8 +314,8 @@ class DwangsomUitbetalingService {
 			$row['betalingsreferentie'] = $betalingsreferentie;
 		}
 
-		if ($betaaldatum !== null) {
-			$row['werkelijkeBetaaldatum'] = $betaaldatum->format('Y-m-d');
+		if ($paymentDate !== null) {
+			$row['werkelijkeBetaaldatum'] = $paymentDate->format('Y-m-d');
 		}
 
 		return $row;
@@ -359,11 +359,11 @@ class DwangsomUitbetalingService {
 	/**
 	 * Build a deterministic reference from a berekening id.
 	 *
-	 * @param string $berekeningId Berekening id.
+	 * @param string $calculationId Berekening id.
 	 *
 	 * @return string
 	 */
-	private function buildReferentie(string $berekeningId): string {
-		return 'PROC-DWS-' . strtoupper(substr(sha1($berekeningId . ':' . microtime(true)), 0, 12));
+	private function buildReference(string $calculationId): string {
+		return 'PROC-DWS-' . strtoupper(substr(sha1($calculationId . ':' . microtime(true)), 0, 12));
 	}//end buildReferentie()
 }//end class

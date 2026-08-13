@@ -70,8 +70,8 @@ class AuditPacketBuilder {
 	/**
 	 * Assemble and sign the verifiable audit-pakket ZIP. [T10]
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
-	 * @param array<string, mixed> $beschikking The already-loaded beschikking.
+	 * @param string $decisionId The beschikking UUID.
+	 * @param array<string, mixed> $decision The already-loaded beschikking.
 	 *
 	 * @return string The ZIP bytes.
 	 *
@@ -79,25 +79,25 @@ class AuditPacketBuilder {
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	public function build(string $beschikkingId, array $beschikking): string {
-		$logs = $this->findStateMachineLogs(beschikkingId: $beschikkingId);
-		$rapportId = (string)(($beschikking['handtekening']['validatieRapportId'] ?? ''));
-		$validatieReport = [];
+	public function build(string $decisionId, array $decision): string {
+		$logs = $this->findStateMachineLogs(decisionId: $decisionId);
+		$rapportId = (string)(($decision['handtekening']['validatieRapportId'] ?? ''));
+		$validationReport = [];
 		if ($rapportId !== '') {
-			$validatieReport = $this->signingAdapter->fetchValidationReport($rapportId);
+			$validationReport = $this->signingAdapter->fetchValidationReport($rapportId);
 		}
 
 		$manifest = [
-			'beschikkingId' => $beschikkingId,
-			'kenmerk' => (string)($beschikking['kenmerk'] ?? ''),
+			'beschikkingId' => $decisionId,
+			'kenmerk' => (string)($decision['kenmerk'] ?? ''),
 			'gegenereerdOp' => (new DateTimeImmutable())->format('c'),
 			'inhoud' => ['beschikking.json', 'state-machine-log.json', 'validatierapport.json', 'manifest.json'],
 		];
 
 		$entries = [
-			'beschikking.json' => json_encode($this->maskBeschikking(beschikking: $beschikking), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+			'beschikking.json' => json_encode($this->maskDecision(decision: $decision), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
 			'state-machine-log.json' => json_encode($logs, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
-			'validatierapport.json' => json_encode($validatieReport, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
+			'validatierapport.json' => json_encode($validationReport, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
 			'manifest.json' => json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE),
 		];
 
@@ -111,7 +111,7 @@ class AuditPacketBuilder {
 
 		$this->logger->info(
 			'BeschikkingService: audit-pakket geexporteerd',
-			['beschikkingId' => $beschikkingId, 'kenmerk' => (string)($beschikking['kenmerk'] ?? '')],
+			['beschikkingId' => $decisionId, 'kenmerk' => (string)($decision['kenmerk'] ?? '')],
 		);
 
 		return $this->buildZip(entries: $entries);
@@ -120,13 +120,13 @@ class AuditPacketBuilder {
 	/**
 	 * Find all stateMachineLog records for a beschikking.
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $decisionId The beschikking UUID.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	private function findStateMachineLogs(string $beschikkingId): array {
+	private function findStateMachineLogs(string $decisionId): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return [];
@@ -143,7 +143,7 @@ class AuditPacketBuilder {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['beschikkingId' => $beschikkingId]
+				filters: ['beschikkingId' => $decisionId]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error('BeschikkingService: findStateMachineLogs failed', ['exception' => $e->getMessage()]);
@@ -161,24 +161,24 @@ class AuditPacketBuilder {
 	/**
 	 * Mask special-category identifiers (BSN) in an exported beschikking.
 	 *
-	 * @param array<string, mixed> $beschikking The beschikking.
+	 * @param array<string, mixed> $decision The beschikking.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	private function maskBeschikking(array $beschikking): array {
-		if (isset($beschikking['geadresseerde']['bsn']) === true) {
-			$bsn = (string)$beschikking['geadresseerde']['bsn'];
+	private function maskDecision(array $decision): array {
+		if (isset($decision['geadresseerde']['bsn']) === true) {
+			$bsn = (string)$decision['geadresseerde']['bsn'];
 			$masked = '***';
 			if (strlen($bsn) > 3) {
 				$masked = str_repeat('*', (strlen($bsn) - 3)) . substr($bsn, -3);
 			}
 
-			$beschikking['geadresseerde']['bsn'] = $masked;
+			$decision['geadresseerde']['bsn'] = $masked;
 		}
 
-		return $beschikking;
+		return $decision;
 	}//end maskBeschikking()
 
 	/**

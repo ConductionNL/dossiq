@@ -97,7 +97,7 @@ class WozApiAdapter implements WozAdapterInterface {
 	 * configured tier.
 	 *
 	 * @param string $postcode Dutch postcode.
-	 * @param string $huisnummer House number.
+	 * @param string $houseNumber House number.
 	 * @param string|null $huisletter Optional house letter.
 	 * @param string|null $toevoeging Optional house number
 	 *                                addition.
@@ -109,7 +109,7 @@ class WozApiAdapter implements WozAdapterInterface {
 	 */
 	public function lookupAddress(
 		string $postcode,
-		string $huisnummer,
+		string $houseNumber,
 		?string $huisletter = null,
 		?string $toevoeging = null,
 		array $context = [],
@@ -119,11 +119,11 @@ class WozApiAdapter implements WozAdapterInterface {
 			return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-postcode']);
 		}
 
-		if ($huisnummer === '' || ctype_digit($huisnummer) === false) {
+		if ($houseNumber === '' || ctype_digit($houseNumber) === false) {
 			return new WozLookupResult(lookupStatus: 'INVALID_INPUT', wozObject: [], dormant: false, extras: ['reason' => 'invalid-huisnummer']);
 		}
 
-		$query = ['postcode' => $normalizedPostcode, 'huisnummer' => $huisnummer];
+		$query = ['postcode' => $normalizedPostcode, 'huisnummer' => $houseNumber];
 		if ($huisletter !== null && $huisletter !== '') {
 			$query['huisletter'] = $huisletter;
 		}
@@ -138,15 +138,15 @@ class WozApiAdapter implements WozAdapterInterface {
 	/**
 	 * Look up WOZ object(s) by BAG nummeraanduiding identificatie.
 	 *
-	 * @param string $nummeraanduidingId BAG nummeraanduiding identificatie.
+	 * @param string $addressDesignationId BAG nummeraanduiding identificatie.
 	 * @param array<string,mixed> $context Lookup context.
 	 *
 	 * @return WozLookupResult
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
-	public function lookupByNummeraanduiding(string $nummeraanduidingId, array $context = []): WozLookupResult {
-		if ($nummeraanduidingId === '') {
+	public function lookupByNummeraanduiding(string $addressDesignationId, array $context = []): WozLookupResult {
+		if ($addressDesignationId === '') {
 			return new WozLookupResult(
 				lookupStatus: 'INVALID_INPUT',
 				wozObject: [],
@@ -155,7 +155,7 @@ class WozApiAdapter implements WozAdapterInterface {
 			);
 		}
 
-		return $this->search(query: ['nummeraanduidingIdentificatie' => $nummeraanduidingId], context: $context);
+		return $this->search(query: ['nummeraanduidingIdentificatie' => $addressDesignationId], context: $context);
 	}//end lookupByNummeraanduiding()
 
 	/**

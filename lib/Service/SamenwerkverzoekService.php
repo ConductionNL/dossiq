@@ -70,7 +70,7 @@ class SamenwerkverzoekService {
 	 * Creates a samenwerkverzoek object with status 'aangevraagd' and
 	 * dispatches a SamenwerkverzoekInitiated event for downstream listeners.
 	 *
-	 * @param string $zaakId The UUID of the zaak
+	 * @param string $caseId The UUID of the zaak
 	 * @param string $aangezochtGezag The requested authority identifier
 	 * @param string $rationale The reason for requesting cooperation
 	 *
@@ -81,7 +81,7 @@ class SamenwerkverzoekService {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
 	 */
 	public function initiateSamenwerking(
-		string $zaakId,
+		string $caseId,
 		string $aangezochtGezag,
 		string $rationale,
 	): array {
@@ -98,28 +98,28 @@ class SamenwerkverzoekService {
 			default: ''
 		);
 
-		$zaak = $this->findObjectAsArray(
+		$case = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,
-			id: $zaakId
+			id: $caseId
 		);
 
-		if ($zaak === null) {
-			throw new RuntimeException('Zaak not found: ' . $zaakId);
+		if ($case === null) {
+			throw new RuntimeException('Zaak not found: ' . $caseId);
 		}
 
-		$aanvraagRef = (string)($zaak['vergunningaanvraagRef'] ?? '');
+		$requestRef = (string)($case['vergunningaanvraagRef'] ?? '');
 
-		$verzoekSchema = $this->appConfig->getValueString(
+		$requestSchema = $this->appConfig->getValueString(
 			app: Application::APP_ID,
 			key: 'dso_samenwerkverzoek_schema',
 			default: 'samenwerkverzoek'
 		);
 
 		$samenwerkverzoek = [
-			'zaakId' => $zaakId,
-			'vergunningaanvraagRef' => $aanvraagRef,
+			'zaakId' => $caseId,
+			'vergunningaanvraagRef' => $requestRef,
 			'aangezochtBevoegdGezag' => $aangezochtGezag,
 			'rationale' => $rationale,
 			'status' => 'aangevraagd',
@@ -128,15 +128,15 @@ class SamenwerkverzoekService {
 
 		$created = $objectService->saveObject(
 			register: $register,
-			schema: $verzoekSchema,
+			schema: $requestSchema,
 			object: $samenwerkverzoek
 		);
 
 		$event = new GenericEvent(
 			subject: $created,
 			arguments: [
-				'zaakId' => $zaakId,
-				'vergunningaanvraagRef' => $aanvraagRef,
+				'zaakId' => $caseId,
+				'vergunningaanvraagRef' => $requestRef,
 				'aangezochtBevoegdGezag' => $aangezochtGezag,
 			]
 		);
@@ -149,7 +149,7 @@ class SamenwerkverzoekService {
 			'Procest SamenwerkverzoekService: samenwerking initiated',
 			[
 				'app' => Application::APP_ID,
-				'zaakId' => $zaakId,
+				'zaakId' => $caseId,
 				'aangezochtBevoegdGezag' => $aangezochtGezag,
 			]
 		);
@@ -181,42 +181,42 @@ class SamenwerkverzoekService {
 			key: 'register',
 			default: ''
 		);
-		$verzoekSchema = $this->appConfig->getValueString(
+		$requestSchema = $this->appConfig->getValueString(
 			app: Application::APP_ID,
 			key: 'dso_samenwerkverzoek_schema',
 			default: 'samenwerkverzoek'
 		);
 
-		$verzoek = $this->findObjectAsArray(
+		$request = $this->findObjectAsArray(
 			objectService: $objectService,
 			register: $register,
-			schema: $verzoekSchema,
+			schema: $requestSchema,
 			id: $samenwerkId
 		);
 
-		if ($verzoek === null) {
+		if ($request === null) {
 			throw new RuntimeException('Samenwerkverzoek not found: ' . $samenwerkId);
 		}
 
-		$currentStatus = (string)($verzoek['status'] ?? '');
+		$currentStatus = (string)($request['status'] ?? '');
 		if ($currentStatus !== 'aangevraagd') {
 			throw new RuntimeException(
 				'Samenwerkverzoek is not in aangevraagd status; current status: ' . $currentStatus
 			);
 		}
 
-		$verzoek['status'] = 'geweigerd';
+		$request['status'] = 'geweigerd';
 		if ($accept === true) {
-			$verzoek['status'] = 'geaccepteerd';
+			$request['status'] = 'geaccepteerd';
 		}
 
-		$verzoek['advies'] = $advies;
-		$verzoek['gereageerdOp'] = date('c');
+		$request['advies'] = $advies;
+		$request['gereageerdOp'] = date('c');
 
 		$updated = $objectService->saveObject(
 			register: $register,
-			schema: $verzoekSchema,
-			object: $verzoek
+			schema: $requestSchema,
+			object: $request
 		);
 
 		$this->logger->info(
@@ -224,7 +224,7 @@ class SamenwerkverzoekService {
 			[
 				'app' => Application::APP_ID,
 				'samenwerkId' => $samenwerkId,
-				'newStatus' => $verzoek['status'],
+				'newStatus' => $request['status'],
 			]
 		);
 

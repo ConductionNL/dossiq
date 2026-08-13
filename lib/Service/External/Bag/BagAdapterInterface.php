@@ -72,7 +72,7 @@ interface BagAdapterInterface {
 	 * @param string $postcode Dutch postcode (`1234AB` shape;
 	 *                         validated by the
 	 *                         implementation).
-	 * @param string $huisnummer House number.
+	 * @param string $houseNumber House number.
 	 * @param string|null $huisletter Optional house letter.
 	 * @param string|null $toevoeging Optional house number addition.
 	 * @param array<string,mixed> $context Optional context —
@@ -86,7 +86,7 @@ interface BagAdapterInterface {
 	 */
 	public function lookupAddress(
 		string $postcode,
-		string $huisnummer,
+		string $houseNumber,
 		?string $huisletter = null,
 		?string $toevoeging = null,
 		array $context = [],

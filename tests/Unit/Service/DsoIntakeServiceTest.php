@@ -386,17 +386,17 @@ class DsoIntakeServiceTest extends TestCase {
 			]
 		);
 
-		$locatieRows = array_values(
+		$locationRows = array_values(
 			array_filter(
 				$recorder->calls,
 				static fn (array $call): bool => ($call['object']['name'] ?? '') === 'locatie'
 			)
 		);
 
-		$this->assertCount(1, $locatieRows);
+		$this->assertCount(1, $locationRows);
 		$this->assertSame(
 			'{"straat":"Dorpsstraat","huisnummer":1}',
-			$locatieRows[0]['object']['value']
+			$locationRows[0]['object']['value']
 		);
 	}//end testProcessAanvraagJsonEncodesStructuredLocatie()
 

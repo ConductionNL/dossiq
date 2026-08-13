@@ -54,9 +54,9 @@ class MandaatGebruikService {
 	/**
 	 * Log a mandate use.
 	 *
-	 * @param string $zaakId Case id.
+	 * @param string $caseId Case id.
 	 * @param string $decisionId Decision id.
-	 * @param string $mandaatId Mandate id.
+	 * @param string $mandateId Mandate id.
 	 * @param string $userId User id.
 	 * @param array<string, mixed> $roleSnapshot Role snapshot at decision time.
 	 * @param array<string, mixed> $conditionsApplied Voorwaarden snapshot.
@@ -66,9 +66,9 @@ class MandaatGebruikService {
 	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
 	public function logMandaatGebruik(
-		string $zaakId,
+		string $caseId,
 		string $decisionId,
-		string $mandaatId,
+		string $mandateId,
 		string $userId,
 		array $roleSnapshot = [],
 		array $conditionsApplied = [],
@@ -81,14 +81,14 @@ class MandaatGebruikService {
 		}
 
 		$row = [
-			'zaakId' => $zaakId,
+			'zaakId' => $caseId,
 			'decisionId' => $decisionId,
-			'mandateId' => $mandaatId,
+			'mandateId' => $mandateId,
 			'userId' => $userId,
 			'tijdstip' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 			'rolOpMomentVanBesluit' => $roleSnapshot,
 			'gebruikteVoorwaarden' => $conditionsApplied,
-			'mandateVersionId' => $mandaatId,
+			'mandateVersionId' => $mandateId,
 		];
 
 		try {
@@ -99,7 +99,7 @@ class MandaatGebruikService {
 
 			return $row;
 		} catch (\Throwable $e) {
-			$this->logger->error('MandaatGebruik log failed', ['zaakId' => $zaakId, 'error' => $e->getMessage()]);
+			$this->logger->error('MandaatGebruik log failed', ['zaakId' => $caseId, 'error' => $e->getMessage()]);
 			return $row;
 		}
 	}//end logMandaatGebruik()
@@ -107,13 +107,13 @@ class MandaatGebruikService {
 	/**
 	 * Retrieve the decision audit trail for a case.
 	 *
-	 * @param string $zaakId Case id.
+	 * @param string $caseId Case id.
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
 	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
-	public function getDecisionAuditTrail(string $zaakId): array {
+	public function getDecisionAuditTrail(string $caseId): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
@@ -122,7 +122,7 @@ class MandaatGebruikService {
 		}
 
 		try {
-			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaakId' => $zaakId]);
+			return $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaakId' => $caseId]);
 		} catch (\Throwable $e) {
 			return [];
 		}
@@ -131,7 +131,7 @@ class MandaatGebruikService {
 	/**
 	 * Retrieve the decisions taken under a mandate in a date range.
 	 *
-	 * @param string $mandaatId Mandate id.
+	 * @param string $mandateId Mandate id.
 	 * @param DateTimeImmutable|null $from From (inclusive).
 	 * @param DateTimeImmutable|null $until Until (inclusive).
 	 *
@@ -139,7 +139,7 @@ class MandaatGebruikService {
 	 *
 	 * @spec openspec/changes/mandaat-matrix-05-case-decision-integration/tasks.md
 	 */
-	public function getDecisionByMandaat(string $mandaatId, ?DateTimeImmutable $from = null, ?DateTimeImmutable $until = null): array {
+	public function getDecisionByMandaat(string $mandateId, ?DateTimeImmutable $from = null, ?DateTimeImmutable $until = null): array {
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
 		$schema = (string)$this->settingsService->getConfigValue('mandaat_gebruik_schema');
@@ -152,7 +152,7 @@ class MandaatGebruikService {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['mandateId' => $mandaatId]
+				filters: ['mandateId' => $mandateId]
 			);
 		} catch (\Throwable $e) {
 			return [];

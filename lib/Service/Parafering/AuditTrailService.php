@@ -67,8 +67,8 @@ class AuditTrailService {
 	 * audit-trail migration. New transitions are discoverable via OR's
 	 * audit-trail-immutable API (`GET /api/audit-trails?objectUuid={voorstelId}`).
 	 *
-	 * @param string $voorstelId The voorstel UUID/slug
-	 * @param string $voorstelOnderwerp Voorstel onderwerp (for the metadata block)
+	 * @param string $proposalId The voorstel UUID/slug
+	 * @param string $proposalOnderwerp Voorstel onderwerp (for the metadata block)
 	 * @param string $exportedBy UID of the auditor performing the export
 	 *
 	 * @return array<string, mixed>
@@ -77,7 +77,7 @@ class AuditTrailService {
 	 *
 	 * @spec openspec/specs/parafering-audit-via-or/spec.md
 	 */
-	public function export(string $voorstelId, string $voorstelOnderwerp, string $exportedBy): array {
+	public function export(string $proposalId, string $proposalOnderwerp, string $exportedBy): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -93,7 +93,7 @@ class AuditTrailService {
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			filters: ['voorstel' => $voorstelId, '_limit' => 5000],
+			filters: ['voorstel' => $proposalId, '_limit' => 5000],
 		);
 
 		$entries = [];
@@ -131,8 +131,8 @@ class AuditTrailService {
 				'exportedAt' => (new DateTimeImmutable('now'))
 					->setTimezone(new DateTimeZone('UTC'))
 					->format('Y-m-d\TH:i:s\Z'),
-				'voorstel' => $voorstelId,
-				'voorstelOnderwerp' => $voorstelOnderwerp,
+				'voorstel' => $proposalId,
+				'voorstelOnderwerp' => $proposalOnderwerp,
 				'retentionUntil' => $retentionUntil,
 				'selectielijstCategory' => $selectielijst,
 				'exportedBy' => $exportedBy,

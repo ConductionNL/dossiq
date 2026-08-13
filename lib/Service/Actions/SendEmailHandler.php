@@ -106,14 +106,14 @@ class SendEmailHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'missing_recipient', data: $preview);
 			}
 
-			$notificatie = $this->resolveNotificatieService();
-			if ($notificatie === null) {
+			$notification = $this->resolveNotificationService();
+			if ($notification === null) {
 				return new ActionResult(succeeded: false, error: 'notificatie_unavailable', data: $preview);
 			}
 
 			// @phpstan-ignore-next-line — NotificatieService::sendEmail is
 			// resolved lazily; signature is owned by the service itself.
-			$notificatie->sendEmail($recipient, $subject, $body);
+			$notification->sendEmail($recipient, $subject, $body);
 
 			return new ActionResult(succeeded: true, data: $preview);
 		} catch (\Throwable $e) {
@@ -134,7 +134,7 @@ class SendEmailHandler implements ActionHandlerInterface {
 	 *
 	 * @return object|null
 	 */
-	private function resolveNotificatieService(): ?object {
+	private function resolveNotificationService(): ?object {
 		try {
 			return $this->container->get('OCA\Procest\Service\NotificatieService');
 		} catch (\Throwable $e) {

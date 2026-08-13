@@ -331,14 +331,14 @@ class ConsultationService {
 	 * Returns consultations where mandatory=true and status is neither
 	 * advies_uitgebracht nor afgesloten.
 	 *
-	 * @param string $zaakId The parent case UUID
+	 * @param string $caseId The parent case UUID
 	 *
 	 * @return array<int, array<string, mixed>> Blocking consultations
 	 *
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-02
 	 */
-	public function getBlockingConsultations(string $zaakId): array {
-		$all = $this->getConsultationsForCase(caseId: $zaakId);
+	public function getBlockingConsultations(string $caseId): array {
+		$all = $this->getConsultationsForCase(caseId: $caseId);
 		$blocking = [];
 
 		foreach ($all as $consultation) {

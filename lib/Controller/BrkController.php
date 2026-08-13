@@ -93,28 +93,28 @@ class BrkController extends Controller {
 			return $unauthorized;
 		}
 
-		$gemeenteCode = (string)$this->request->getParam('kadastraleGemeenteCode', '');
-		$sectie = (string)$this->request->getParam('sectie', '');
+		$municipalityCode = (string)$this->request->getParam('kadastraleGemeenteCode', '');
+		$section = (string)$this->request->getParam('sectie', '');
 		$perceelnummer = (string)$this->request->getParam('perceelnummer', '');
-		if ($gemeenteCode === '' || $sectie === '' || $perceelnummer === '') {
+		if ($municipalityCode === '' || $section === '' || $perceelnummer === '') {
 			return new JSONResponse(
 				['error' => 'kadastraleGemeenteCode, sectie and perceelnummer are required'],
 				Http::STATUS_BAD_REQUEST,
 			);
 		}
 
-		$volgnummerParam = $this->request->getParam('appartementsrechtVolgnummer');
-		$volgnummer = null;
-		if (is_string($volgnummerParam) === true && $volgnummerParam !== '') {
-			$volgnummer = $volgnummerParam;
+		$sequenceNumberParam = $this->request->getParam('appartementsrechtVolgnummer');
+		$sequenceNumber = null;
+		if (is_string($sequenceNumberParam) === true && $sequenceNumberParam !== '') {
+			$sequenceNumber = $sequenceNumberParam;
 		}
 
 		try {
 			$result = $this->brkAdapter->lookupByKadastraleAanduiding(
-				kadastraleGemeenteCode: $gemeenteCode,
-				sectie: $sectie,
+				kadastraleMunicipalityCode: $municipalityCode,
+				section: $section,
 				perceelnummer: $perceelnummer,
-				appartementsrechtVolgnummer: $volgnummer,
+				appartementsrechtSequenceNumber: $sequenceNumber,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error('Procest BRK parcel lookup failed: ' . $e->getMessage());

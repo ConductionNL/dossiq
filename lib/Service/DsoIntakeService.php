@@ -155,12 +155,12 @@ class DsoIntakeService {
 	 */
 	public function map(array $dsoMessage): array {
 		$activiteiten = $dsoMessage['activiteiten'] ?? [];
-		$locatie = $dsoMessage['locatie'] ?? '';
-		$aanvrager = $dsoMessage['aanvrager'] ?? [];
+		$location = $dsoMessage['locatie'] ?? '';
+		$applicant = $dsoMessage['aanvrager'] ?? [];
 		$bouwkosten = $dsoMessage['bouwkosten'] ?? 0;
 		$procedureType = $dsoMessage['procedureType'] ?? 'regulier';
 		$dsoZaaknummer = $dsoMessage['zaaknummer'] ?? '';
-		$bijlagen = $dsoMessage['bijlagen'] ?? [];
+		$attachments = $dsoMessage['bijlagen'] ?? [];
 
 		$activityNames = $this->extractActivityNames(activiteiten: $activiteiten);
 		$activityStr = implode(', ', array_filter($activityNames));
@@ -179,12 +179,12 @@ class DsoIntakeService {
 
 		// Cast only after the array case has been JSON-encoded, so an array
 		// value never reaches the string cast (which would warn).
-		$locatieRaw = $locatie;
-		if (is_array($locatie) === true) {
-			$locatieRaw = json_encode($locatie);
+		$locationRaw = $location;
+		if (is_array($location) === true) {
+			$locationRaw = json_encode($location);
 		}
 
-		$locatieStr = (string)$locatieRaw;
+		$locationStr = (string)$locationRaw;
 
 		return [
 			'title' => $title,
@@ -194,12 +194,12 @@ class DsoIntakeService {
 			'dsoZaaknummer' => $dsoZaaknummer,
 			'activiteiten' => $activityStr,
 			'activityNames' => $activityNames,
-			'locatie' => $locatieStr,
+			'locatie' => $locationStr,
 			'bouwkosten' => (string)$bouwkosten,
 			'procedureType' => $procedureType,
-			'aanvragerNaam' => $aanvrager['naam'] ?? '',
+			'aanvragerNaam' => $applicant['naam'] ?? '',
 			'deadline' => $deadline,
-			'bijlagen' => $bijlagen,
+			'bijlagen' => $attachments,
 		];
 	}//end map()
 

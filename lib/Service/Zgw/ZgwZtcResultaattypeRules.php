@@ -229,9 +229,9 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		}
 
 		if ($selectielijstData !== null && empty($body['archiefactietermijn']) === true) {
-			$bewaartermijn = $selectielijstData['bewaartermijn'] ?? null;
-			if ($bewaartermijn !== null) {
-				$body['archiefactietermijn'] = $bewaartermijn;
+			$retentionPeriod = $selectielijstData['bewaartermijn'] ?? null;
+			if ($retentionPeriod !== null) {
+				$body['archiefactietermijn'] = $retentionPeriod;
 			}
 		}
 
@@ -249,12 +249,12 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
 	private function validateProcestypeMatch(array $body, array $selectielijstData): ?array {
-		$zaaktypeUrl = $body['zaaktype'] ?? '';
-		if (empty($zaaktypeUrl) === true || $this->objectService === null) {
+		$caseTypeUrl = $body['zaaktype'] ?? '';
+		if (empty($caseTypeUrl) === true || $this->objectService === null) {
 			return null;
 		}
 
-		$zaaktypeUuid = $this->extractUuid(url: $zaaktypeUrl);
+		$zaaktypeUuid = $this->extractUuid(url: $caseTypeUrl);
 		if ($zaaktypeUuid === null) {
 			return null;
 		}
@@ -264,14 +264,14 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 			return null;
 		}
 
-		$zaaktypeProcestype = $ztData['selectionListProcessType'] ?? '';
+		$caseTypeProcestype = $ztData['selectionListProcessType'] ?? '';
 		$selectieProcestype = $selectielijstData['procesType'] ?? '';
 
-		if (empty($zaaktypeProcestype) === true || empty($selectieProcestype) === true) {
+		if (empty($caseTypeProcestype) === true || empty($selectieProcestype) === true) {
 			return null;
 		}
 
-		if ($zaaktypeProcestype !== $selectieProcestype) {
+		if ($caseTypeProcestype !== $selectieProcestype) {
 			$detail = 'Het procestype van de selectielijstklasse komt niet overeen met het procestype van het zaaktype.';
 			return $this->error(
 				status: 400,

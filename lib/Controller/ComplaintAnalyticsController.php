@@ -82,17 +82,17 @@ class ComplaintAnalyticsController extends Controller {
 		$dateFrom = $this->request->getParam('dateFrom') ?? date('Y-01-01');
 		$dateTo = $this->request->getParam('dateTo') ?? date('Y-m-d');
 
-		$byCategorie = $this->analyticsService->getFrequencyByDimension(
+		$byCategory = $this->analyticsService->getFrequencyByDimension(
 			dimension: 'categorie',
 			dateFrom: $dateFrom,
 			dateTo: $dateTo,
 		);
-		$byAfdeling = $this->analyticsService->getFrequencyByDimension(
+		$byDepartment = $this->analyticsService->getFrequencyByDimension(
 			dimension: 'betrokkenAfdeling',
 			dateFrom: $dateFrom,
 			dateTo: $dateTo,
 		);
-		$byKanaal = $this->analyticsService->getFrequencyByDimension(
+		$byChannel = $this->analyticsService->getFrequencyByDimension(
 			dimension: 'ontvangstkanaal',
 			dateFrom: $dateFrom,
 			dateTo: $dateTo,
@@ -103,9 +103,9 @@ class ComplaintAnalyticsController extends Controller {
 
 		return new JSONResponse(
 			[
-				'byCategorie' => $byCategorie,
-				'byAfdeling' => $byAfdeling,
-				'byKanaal' => $byKanaal,
+				'byCategorie' => $byCategory,
+				'byAfdeling' => $byDepartment,
+				'byKanaal' => $byChannel,
 				'monthlyTrend' => $monthlyTrend,
 				'avgResolution' => $avgResolution,
 				'employeeAlerts' => $employeeAlerts,

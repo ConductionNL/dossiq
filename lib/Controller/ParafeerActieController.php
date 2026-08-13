@@ -53,14 +53,14 @@ class ParafeerActieController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request object.
-	 * @param ParafeerActieService $parafeerActieService The parafering action service.
+	 * @param ParafeerActieService $parafeerActionService The parafering action service.
 	 * @param IUserSession $userSession The user session (for actor identity).
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly ParafeerActieService $parafeerActieService,
+		private readonly ParafeerActieService $parafeerActionService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -88,15 +88,15 @@ class ParafeerActieController extends Controller {
 
 		try {
 			$data = $this->getRequestBody();
-			$voorstelId = (string)($data['voorstel'] ?? '');
-			if ($voorstelId === '') {
+			$proposalId = (string)($data['voorstel'] ?? '');
+			if ($proposalId === '') {
 				return new JSONResponse(
 					['message' => 'voorstel is required'],
 					Http::STATUS_BAD_REQUEST
 				);
 			}
 
-			$result = $this->parafeerActieService->recordAction($voorstelId, $data, $user);
+			$result = $this->parafeerActionService->recordAction($proposalId, $data, $user);
 
 			return new JSONResponse($result, Http::STATUS_CREATED);
 		} catch (OCSForbiddenException $e) {
@@ -140,15 +140,15 @@ class ParafeerActieController extends Controller {
 		}
 
 		try {
-			$voorstelId = (string)($this->request->getParam('voorstel') ?? '');
-			if ($voorstelId === '') {
+			$proposalId = (string)($this->request->getParam('voorstel') ?? '');
+			if ($proposalId === '') {
 				return new JSONResponse(
 					['message' => 'voorstel is required'],
 					Http::STATUS_BAD_REQUEST
 				);
 			}
 
-			$results = $this->parafeerActieService->listActions($voorstelId);
+			$results = $this->parafeerActionService->listActions($proposalId);
 
 			return new JSONResponse($results, Http::STATUS_OK);
 		} catch (\Throwable $e) {

@@ -114,7 +114,7 @@ class AdvisoryCommitteeService {
 	 * deferred until the advance-to-in-deliberation transition because a
 	 * committee MAY be valid for one bezwaar and invalid for another.
 	 *
-	 * @param string $bezwaarId UUID of the bezwaar (lifecycle)
+	 * @param string $objectionId UUID of the bezwaar (lifecycle)
 	 * @param string $commissieId UUID of the committee
 	 * @param array<string, mixed> $payload Optional extra fields
 	 *                                      (panel, deadline, etc.)
@@ -126,7 +126,7 @@ class AdvisoryCommitteeService {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function assignToCommittee(
-		string $bezwaarId,
+		string $objectionId,
 		string $commissieId,
 		array $payload = [],
 	): array {
@@ -175,7 +175,7 @@ class AdvisoryCommitteeService {
 			],
 			$payload,
 			[
-				'bezwaar' => $bezwaarId,
+				'bezwaar' => $objectionId,
 				'commissie' => $commissieId,
 				'status' => 'assigned',
 				'assignedAt' => $now,
@@ -189,7 +189,7 @@ class AdvisoryCommitteeService {
 			payload: [
 				'panel' => $record['panel'],
 				'commissieId' => $commissieId,
-				'bezwaar' => $bezwaarId,
+				'bezwaar' => $objectionId,
 			],
 		);
 
@@ -305,7 +305,7 @@ class AdvisoryCommitteeService {
 	 * "Hoorzitting gepland", auto-assign the default committee for the
 	 * bezwaar's jurisdiction.
 	 *
-	 * @param string $bezwaarId The bezwaar (lifecycle) UUID
+	 * @param string $objectionId The bezwaar (lifecycle) UUID
 	 *
 	 * @return array<string, mixed>|null The created advice request, or
 	 *                                   null when no default committee
@@ -313,27 +313,27 @@ class AdvisoryCommitteeService {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function autoAssignDefaultCommittee(string $bezwaarId): ?array {
+	public function autoAssignDefaultCommittee(string $objectionId): ?array {
 		$defaultId = $this->settingsService->getConfigValue(
 			key: 'bac_default_committee'
 		);
 		if ($defaultId === '') {
 			$this->logger->info(
 				'Procest BAC: no default committee configured; '
-				. 'skipping auto-assignment for bezwaar ' . $bezwaarId
+				. 'skipping auto-assignment for bezwaar ' . $objectionId
 			);
 			return null;
 		}
 
 		try {
 			return $this->assignToCommittee(
-				bezwaarId: $bezwaarId,
+				objectionId: $objectionId,
 				commissieId: $defaultId,
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Procest BAC: auto-assignment failed for bezwaar '
-				. $bezwaarId . ': ' . $e->getMessage()
+				. $objectionId . ': ' . $e->getMessage()
 			);
 			return null;
 		}
@@ -345,8 +345,8 @@ class AdvisoryCommitteeService {
 	 * `motivatieAfwijkingAdvies` set (REQ-BAC-5).
 	 *
 	 * @param string $requestId Advice request UUID
-	 * @param string $besluitId Besluit op bezwaar UUID
-	 * @param string $motivatieRef Reference / hash of the motivation
+	 * @param string $decisionId Besluit op bezwaar UUID
+	 * @param string $rationaleRef Reference / hash of the motivation
 	 *
 	 * @return void
 	 *
@@ -354,8 +354,8 @@ class AdvisoryCommitteeService {
 	 */
 	public function recordCouncilDeviation(
 		string $requestId,
-		string $besluitId,
-		string $motivatieRef,
+		string $decisionId,
+		string $rationaleRef,
 	): void {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -377,8 +377,8 @@ class AdvisoryCommitteeService {
 				existing: (array)($current['auditTrail'] ?? []),
 				event: 'council-deviation-recorded',
 				payload: [
-					'besluit' => $besluitId,
-					'motivatie' => $motivatieRef,
+					'besluit' => $decisionId,
+					'motivatie' => $rationaleRef,
 				],
 			);
 
@@ -448,7 +448,7 @@ class AdvisoryCommitteeService {
 		}
 
 		$independence = $this->independence->check(
-			bezwaarId: (string)($current['bezwaar'] ?? ''),
+			objectionId: (string)($current['bezwaar'] ?? ''),
 			panel: $panel,
 		);
 

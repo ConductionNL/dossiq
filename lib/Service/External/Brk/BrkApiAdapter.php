@@ -98,10 +98,10 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 * Look up a parcel by kadastrale aanduiding against the configured
 	 * tier.
 	 *
-	 * @param string $kadastraleGemeenteCode Kadastrale gemeentecode.
-	 * @param string $sectie Sectie (1-2 uppercase letters).
+	 * @param string $kadastraleMunicipalityCode Kadastrale gemeentecode.
+	 * @param string $section Sectie (1-2 uppercase letters).
 	 * @param string $perceelnummer Perceelnummer (1-5 digits).
-	 * @param string|null $appartementsrechtVolgnummer Optional appartementsrecht
+	 * @param string|null $appartementsrechtSequenceNumber Optional appartementsrecht
 	 *                                                 volgnummer.
 	 * @param array<string,mixed> $context Lookup context.
 	 *
@@ -110,30 +110,30 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByKadastraleAanduiding(
-		string $kadastraleGemeenteCode,
-		string $sectie,
+		string $kadastraleMunicipalityCode,
+		string $section,
 		string $perceelnummer,
-		?string $appartementsrechtVolgnummer = null,
+		?string $appartementsrechtSequenceNumber = null,
 		array $context = [],
 	): BrkLookupResult {
-		$normalizedSectie = strtoupper($sectie);
+		$normalizedSection = strtoupper($section);
 		$invalidInput = $this->validateKadastraleAanduidingInput(
-			gemeenteCode: $kadastraleGemeenteCode,
-			sectie: $normalizedSectie,
+			municipalityCode: $kadastraleMunicipalityCode,
+			section: $normalizedSection,
 			perceelnummer: $perceelnummer,
-			volgnummer: $appartementsrechtVolgnummer
+			sequenceNumber: $appartementsrechtSequenceNumber
 		);
 		if ($invalidInput !== null) {
 			return $invalidInput;
 		}
 
 		$query = [
-			'kadastraleGemeenteCode' => $kadastraleGemeenteCode,
-			'sectie' => $normalizedSectie,
+			'kadastraleGemeenteCode' => $kadastraleMunicipalityCode,
+			'sectie' => $normalizedSection,
 			'perceelnummer' => $perceelnummer,
 		];
-		if ($appartementsrechtVolgnummer !== null && $appartementsrechtVolgnummer !== '') {
-			$query['appartementsrechtVolgnummer'] = strtoupper($appartementsrechtVolgnummer);
+		if ($appartementsrechtSequenceNumber !== null && $appartementsrechtSequenceNumber !== '') {
+			$query['appartementsrechtVolgnummer'] = strtoupper($appartementsrechtSequenceNumber);
 		}
 
 		$baseUrl = $this->mode->setting(integration: 'brk', key: 'baseUrl', default: self::DEFAULT_BASE_URL);
@@ -163,8 +163,8 @@ class BrkApiAdapter implements BrkAdapterInterface {
 			$this->logger->warning(
 				'Procest BRK kadastrale-aanduiding lookup failed',
 				[
-					'kadastraleGemeenteCode' => $kadastraleGemeenteCode,
-					'sectie' => $normalizedSectie,
+					'kadastraleGemeenteCode' => $kadastraleMunicipalityCode,
+					'sectie' => $normalizedSection,
 					'perceelnummer' => $perceelnummer,
 					'error' => $e->getMessage(),
 					'context' => $context,
@@ -179,24 +179,24 @@ class BrkApiAdapter implements BrkAdapterInterface {
 	 * Validate the kadastrale-aanduiding search input, returning an
 	 * INVALID_INPUT result when malformed, or null when valid.
 	 *
-	 * @param string $gemeenteCode Kadastrale gemeentecode.
-	 * @param string $sectie Already-normalized sectie.
+	 * @param string $municipalityCode Kadastrale gemeentecode.
+	 * @param string $section Already-normalized sectie.
 	 * @param string $perceelnummer Perceelnummer.
-	 * @param string|null $volgnummer Optional appartementsrecht volgnummer.
+	 * @param string|null $sequenceNumber Optional appartementsrecht volgnummer.
 	 *
 	 * @return BrkLookupResult|null
 	 */
 	private function validateKadastraleAanduidingInput(
-		string $gemeenteCode,
-		string $sectie,
+		string $municipalityCode,
+		string $section,
 		string $perceelnummer,
-		?string $volgnummer,
+		?string $sequenceNumber,
 	): ?BrkLookupResult {
-		if ($gemeenteCode === '') {
+		if ($municipalityCode === '') {
 			return new BrkLookupResult(lookupStatus: 'INVALID_INPUT', parcel: [], dormant: false, extras: ['reason' => 'invalid-gemeentecode']);
 		}
 
-		if (preg_match(self::SECTIE_PATTERN, $sectie) !== 1) {
+		if (preg_match(self::SECTIE_PATTERN, $section) !== 1) {
 			return new BrkLookupResult(lookupStatus: 'INVALID_INPUT', parcel: [], dormant: false, extras: ['reason' => 'invalid-sectie']);
 		}
 
@@ -204,7 +204,7 @@ class BrkApiAdapter implements BrkAdapterInterface {
 			return new BrkLookupResult(lookupStatus: 'INVALID_INPUT', parcel: [], dormant: false, extras: ['reason' => 'invalid-perceelnummer']);
 		}
 
-		if ($volgnummer !== null && $volgnummer !== '' && preg_match(self::VOLGNUMMER_PATTERN, strtoupper($volgnummer)) !== 1) {
+		if ($sequenceNumber !== null && $sequenceNumber !== '' && preg_match(self::VOLGNUMMER_PATTERN, strtoupper($sequenceNumber)) !== 1) {
 			return new BrkLookupResult(lookupStatus: 'INVALID_INPUT', parcel: [], dormant: false, extras: ['reason' => 'invalid-volgnummer']);
 		}
 

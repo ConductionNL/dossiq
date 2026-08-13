@@ -109,17 +109,17 @@ class VergaderingCaseService {
 			return [];
 		}
 
-		$startDatum = ($vergadering['startDatum'] ?? '');
+		$startDate = ($vergadering['startDatum'] ?? '');
 		$deadline = '';
 
-		if (empty($startDatum) === false) {
+		if (empty($startDate) === false) {
 			try {
-				$start = new DateTimeImmutable(datetime: $startDatum);
+				$start = new DateTimeImmutable(datetime: $startDate);
 				$deadline = $start->modify('-' . self::AGENDA_DEADLINE_DAYS . ' days')->format('Y-m-d');
 			} catch (\Exception $e) {
 				$this->logger->warning(
 					'Procest: could not parse vergadering startDatum for deadline calculation',
-					['startDatum' => $startDatum, 'error' => $e->getMessage()]
+					['startDatum' => $startDate, 'error' => $e->getMessage()]
 				);
 			}
 		}
@@ -243,7 +243,7 @@ class VergaderingCaseService {
 		$advanced = 0;
 
 		try {
-			$geplandCases = $this->searchObjectsAsArrays(
+			$plannedCases = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
 				schema: $caseSchema,
@@ -254,7 +254,7 @@ class VergaderingCaseService {
 				]
 			);
 
-			foreach ($geplandCases as $case) {
+			foreach ($plannedCases as $case) {
 				$caseId = (string)($case['id'] ?? '');
 				if (empty($caseId) === true) {
 					continue;

@@ -62,14 +62,14 @@ class Iv3TaakveldListTest extends TestCase {
 		$this->assertNotEmpty($all);
 
 		$seenCodes = [];
-		foreach ($all as $taakveld) {
+		foreach ($all as $taskField) {
 			// iv3-taakveld-2023-refinement: refinement codes carry a
 			// trailing lowercase letter (e.g. "6.71a").
-			$this->assertMatchesRegularExpression('/^\d+\.\d{1,3}[a-z]?$/', $taakveld['code']);
-			$this->assertNotSame('', $taakveld['label']);
-			$this->assertContains($taakveld['categoryCode'], ['0', '1', '2', '3', '4', '5', '6', '7', '8']);
-			$this->assertArrayNotHasKey($taakveld['code'], $seenCodes, 'Duplicate taakveld code: ' . $taakveld['code']);
-			$seenCodes[$taakveld['code']] = true;
+			$this->assertMatchesRegularExpression('/^\d+\.\d{1,3}[a-z]?$/', $taskField['code']);
+			$this->assertNotSame('', $taskField['label']);
+			$this->assertContains($taskField['categoryCode'], ['0', '1', '2', '3', '4', '5', '6', '7', '8']);
+			$this->assertArrayNotHasKey($taskField['code'], $seenCodes, 'Duplicate taakveld code: ' . $taskField['code']);
+			$seenCodes[$taskField['code']] = true;
 		}
 	}//end testAllTaakveldenAreWellFormedAndUnique()
 

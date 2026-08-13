@@ -46,12 +46,12 @@ class DeadlineCaseCreatedListener implements IEventListener {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termijnService TermijnService.
+	 * @param TermijnService $termService TermijnService.
 	 * @param ObjectSchemaSlugResolver $slugResolver Schema id-to-slug resolver.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly TermijnService $termijnService,
+		private readonly TermijnService $termService,
 		private readonly ObjectSchemaSlugResolver $slugResolver,
 		private readonly LoggerInterface $logger,
 	) {
@@ -81,13 +81,13 @@ class DeadlineCaseCreatedListener implements IEventListener {
 		}
 
 		$caseId = (string)($payload['id'] ?? ($payload['uuid'] ?? ''));
-		$zaaktype = (string)($payload['caseType'] ?? ($payload['zaaktype'] ?? ''));
-		if ($caseId === '' || $zaaktype === '') {
+		$caseType = (string)($payload['caseType'] ?? ($payload['zaaktype'] ?? ''));
+		if ($caseId === '' || $caseType === '') {
 			return;
 		}
 
 		try {
-			$this->termijnService->createTermijnInstance($caseId, $zaaktype);
+			$this->termService->createTermijnInstance($caseId, $caseType);
 		} catch (\Throwable $e) {
 			// A case without a coupled definition is permissible — debug log only.
 			$this->logger->debug(

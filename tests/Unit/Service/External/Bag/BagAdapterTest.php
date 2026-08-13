@@ -126,7 +126,7 @@ class BagAdapterTest extends TestCase {
 
 		$this->assertTrue($adapter->isDormant());
 
-		$addressResult = $adapter->lookupAddress(postcode: '1234AB', huisnummer: '10');
+		$addressResult = $adapter->lookupAddress(postcode: '1234AB', houseNumber: '10');
 		$this->assertSame('LOOKUP_DEFERRED', $addressResult->lookupStatus);
 		$this->assertTrue($addressResult->dormant);
 		$this->assertSame([], $addressResult->address);
@@ -178,7 +178,7 @@ class BagAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupAddress(postcode: '1234ab', huisnummer: '10');
+		$result = $adapter->lookupAddress(postcode: '1234ab', houseNumber: '10');
 
 		$this->assertStringEndsWith('/adressen', $captured['url']);
 		$this->assertSame('1234AB', $captured['options']['query']['postcode'], 'postcode must be normalized to uppercase, no spaces');
@@ -207,7 +207,7 @@ class BagAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$adapter->lookupAddress(postcode: '1234AB', huisnummer: '10', huisletter: 'A', toevoeging: 'II');
+		$adapter->lookupAddress(postcode: '1234AB', houseNumber: '10', huisletter: 'A', toevoeging: 'II');
 
 		$this->assertSame('A', $captured['options']['query']['huisletter']);
 		$this->assertSame('II', $captured['options']['query']['huisnummertoevoeging']);
@@ -233,7 +233,7 @@ class BagAdapterTest extends TestCase {
 		);
 
 		foreach (['0001AB', '1234A', '1234ABC', '12345A', 'ABCD12', ''] as $badPostcode) {
-			$result = $adapter->lookupAddress(postcode: $badPostcode, huisnummer: '10');
+			$result = $adapter->lookupAddress(postcode: $badPostcode, houseNumber: '10');
 			$this->assertSame('INVALID_INPUT', $result->lookupStatus, "postcode '{$badPostcode}' must be rejected");
 		}
 	}//end testInvalidPostcodeIsRejectedWithoutNetworkCall()
@@ -254,7 +254,7 @@ class BagAdapterTest extends TestCase {
 				logger: $this->createMock(LoggerInterface::class),
 			);
 
-			$result = $adapter->lookupAddress(postcode: $goodPostcode, huisnummer: '10');
+			$result = $adapter->lookupAddress(postcode: $goodPostcode, houseNumber: '10');
 			$this->assertSame('NOT_FOUND', $result->lookupStatus, "postcode '{$goodPostcode}' must be accepted and reach the network");
 		}
 	}//end testWellFormedPostcodeVariantsAreAccepted()
@@ -280,7 +280,7 @@ class BagAdapterTest extends TestCase {
 		$result = $adapter->lookupObject(objectType: 'unknown-type', id: 'x');
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 
-		$result = $adapter->lookupAddress(postcode: '1234AB', huisnummer: 'abc');
+		$result = $adapter->lookupAddress(postcode: '1234AB', houseNumber: 'abc');
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 	}//end testInvalidHuisnummerIsRejected()
 
@@ -298,7 +298,7 @@ class BagAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupAddress(postcode: '9999ZZ', huisnummer: '1');
+		$result = $adapter->lookupAddress(postcode: '9999ZZ', houseNumber: '1');
 		$this->assertSame('NOT_FOUND', $result->lookupStatus);
 	}//end testAddressLookupEmptyResultIsNotFound()
 
@@ -395,7 +395,7 @@ class BagAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$addressResult = $adapter->lookupAddress(postcode: '1234AB', huisnummer: '10');
+		$addressResult = $adapter->lookupAddress(postcode: '1234AB', houseNumber: '10');
 		$this->assertSame('LOOKUP_ERROR', $addressResult->lookupStatus);
 		$this->assertSame('transport-error', $addressResult->extras['reason']);
 

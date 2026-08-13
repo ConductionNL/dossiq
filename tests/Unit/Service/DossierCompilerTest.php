@@ -109,12 +109,12 @@ class DossierCompilerTest extends TestCase {
 	public function testCompileOrdersDocumentsAcrossLinkedCases(): void {
 		$this->configureSchemas();
 
-		$bezwaarCase = [
+		$objectionCase = [
 			'relatedCases' => ['primair-1'],
 		];
 
 		// Bezwaar-own documents (out of AWB order on purpose).
-		$bezwaarDocs = [
+		$objectionDocs = [
 			['title' => 'Beslissing op bezwaar', 'document' => 'nc://b/beslissing.pdf'],
 			['title' => 'Bezwaarschrift van indiener', 'document' => 'nc://b/bezwaar.pdf'],
 			['title' => 'Hoorzittingverslag', 'document' => 'nc://b/verslag.pdf'],
@@ -125,16 +125,16 @@ class DossierCompilerTest extends TestCase {
 			['title' => 'Primair besluit omgevingsvergunning', 'document' => 'nc://p/besluit.pdf'],
 		];
 
-		$objectService = new class($bezwaarCase, $bezwaarDocs, $primairDocs) {
+		$objectService = new class($objectionCase, $objectionDocs, $primairDocs) {
 
 			/**
 			 * @param array<string, mixed> $case
-			 * @param array<int, array<string, mixed>> $bezwaarDocs
+			 * @param array<int, array<string, mixed>> $objectionDocs
 			 * @param array<int, array<string, mixed>> $primairDocs
 			 */
 			public function __construct(
 				private array $case,
-				private array $bezwaarDocs,
+				private array $objectionDocs,
 				private array $primairDocs,
 			) {
 			}
@@ -154,7 +154,7 @@ class DossierCompilerTest extends TestCase {
 					return $this->primairDocs;
 				}
 
-				return $this->bezwaarDocs;
+				return $this->objectionDocs;
 			}
 		};
 
