@@ -239,12 +239,18 @@ class EmailTemplateController extends Controller {
 	/**
 	 * Read the masked IMAP / poller settings.
 	 *
-	 * @NoAdminRequired
+	 * ADMIN-ONLY. These are instance-wide connection settings for the shared
+	 * case mailbox, not per-user preferences: host, port, username, folder and
+	 * the poller cadence. Even with the password masked, the host/username pair
+	 * describes the municipality's mail infrastructure, so it follows the same
+	 * posture as `createTemplate()` above — `#[AuthorizedAdminSetting]` and no
+	 * `@NoAdminRequired` beside it.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/case-email-integration/tasks.md#T06
 	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function getSettings(): JSONResponse {
 		if ($this->userSession->getUser() === null) {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
@@ -270,12 +276,21 @@ class EmailTemplateController extends Controller {
 	 * `setValueString` with the `sensitive` flag so they are masked in
 	 * `occ config:list`.
 	 *
-	 * @NoAdminRequired
+	 * ADMIN-ONLY. Under `@NoAdminRequired` this wrote INSTANCE-WIDE app config
+	 * — `email_imap_host`, `email_imap_user` and the shared-mailbox password —
+	 * behind nothing but a "is anyone logged in" check, so any authenticated
+	 * account could repoint the municipality's case mailbox at a host it
+	 * controls. It also armed `testImap()` below, which dials whatever host is
+	 * stored and reports reachability, into an internal port prober. There is
+	 * no per-object guard to add here: the object IS the instance settings, so
+	 * the correct posture is the admin attribute this controller already uses
+	 * for `createTemplate()` / `updateTemplate()` / `seedDefaults()`.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/case-email-integration/tasks.md#T06
 	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function saveSettings(): JSONResponse {
 		if ($this->userSession->getUser() === null) {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
@@ -313,12 +328,15 @@ class EmailTemplateController extends Controller {
 	 * Returns either `{ok: true}` or `{ok: false, error}` — never blocks the
 	 * UI, never throws transport errors to the caller.
 	 *
-	 * @NoAdminRequired
+	 * ADMIN-ONLY, for the same reason as `saveSettings()`: it opens a socket to
+	 * the configured host:port and reports whether the connect succeeded, which
+	 * is a reachability oracle for whatever address an admin has stored.
 	 *
 	 * @return JSONResponse
 	 *
 	 * @spec openspec/changes/case-email-integration/tasks.md#T06
 	 */
+	#[AuthorizedAdminSetting(settings: AdminSettings::class)]
 	public function testImap(): JSONResponse {
 		if ($this->userSession->getUser() === null) {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
