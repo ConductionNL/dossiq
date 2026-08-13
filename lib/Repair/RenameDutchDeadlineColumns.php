@@ -136,7 +136,7 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 		'vorig_besluit' => 'previous_decision',
 		'mandaterings_besluit' => 'mandate_decision',
 
-		// mandaat -> mandate. All four owning schemas (mandaat, mandaatGebruik,
+		// Mandaat -> mandate. All four owning schemas (mandaat, mandaatGebruik,
 		// mandaatEscalatie, mandaatRegeling) are renamed in this same change and
 		// all four live in the `procest` register, so this map's scope covers
 		// every owner — no declaration is left pointing at a Dutch column.

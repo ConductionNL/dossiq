@@ -210,7 +210,7 @@ class IntegrationTierTest extends TestCase {
 	public function testEHerkenningSimulatorFlagsItselfAndValidatesKvk(): void {
 		$adapter = new SimulatorEHerkenningSamlAdapter();
 		$assertion = $adapter->decodeAssertion(json_encode(['kvkNummer' => '69599084']), 'relay-3');
-		$this->assertSame('69599084', $assertion->kvkNummer);
+		$this->assertSame('69599084', $assertion->kvkNumber);
 		$this->assertTrue($assertion->attributes['simulator']);
 
 		$this->expectException(RuntimeException::class);
