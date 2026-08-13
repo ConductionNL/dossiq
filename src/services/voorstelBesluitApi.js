@@ -25,7 +25,10 @@ import { generateUrl } from '@nextcloud/router'
  * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
 export async function registerBesluit(voorstelId, payload) {
-	const url = generateUrl('/apps/procest/api/voorstellen/{voorstelId}/register-besluit', { voorstelId })
+	const url = generateUrl(
+		'/apps/procest/api/voorstellen/{voorstelId}/register-besluit',
+		{ voorstelId },
+	)
 	const response = await axios.post(url, payload)
 	return response.data
 }

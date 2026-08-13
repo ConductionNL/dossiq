@@ -14,7 +14,8 @@
 				<span class="beschikking-detail__status">{{ statusLabel }}</span>
 			</header>
 
-			<BeschikkingActionBar :beschikking-id="beschikkingId"
+			<BeschikkingActionBar
+				:beschikking-id="beschikkingId"
 				:status="beschikking.huidigeStatus"
 				@updated="onUpdated" />
 
@@ -26,7 +27,13 @@
 					<dt>{{ t('procest', 'Sjabloon') }}</dt>
 					<dd>{{ beschikking.templateId }}</dd>
 					<dt>{{ t('procest', 'Onderwerp') }}</dt>
-					<dd>{{ (beschikking.beslissing && beschikking.beslissing.onderwerp) || '—' }}</dd>
+					<dd>
+						{{
+							(beschikking.beslissing
+								&& beschikking.beslissing.onderwerp)
+							|| '—'
+						}}
+					</dd>
 					<dt>{{ t('procest', 'Motivering') }}</dt>
 					<dd>{{ beschikking.motivering || '—' }}</dd>
 				</dl>
@@ -117,16 +124,32 @@ export default {
 			return t('procest', STATUS_LABELS[status] || status)
 		},
 		hasMandaat() {
-			return !!(this.beschikking && this.beschikking.mandateGranted && this.beschikking.mandateGranted.akkoordDoor)
+			return !!(
+				this.beschikking
+				&& this.beschikking.mandateGranted
+				&& this.beschikking.mandateGranted.akkoordDoor
+			)
 		},
 		hasHandtekening() {
-			return !!(this.beschikking && this.beschikking.handtekening && this.beschikking.handtekening.tspProvider)
+			return !!(
+				this.beschikking
+				&& this.beschikking.handtekening
+				&& this.beschikking.handtekening.tspProvider
+			)
 		},
 		hasVerzending() {
-			return !!(this.beschikking && this.beschikking.verzending && this.beschikking.verzending.kanaal)
+			return !!(
+				this.beschikking
+				&& this.beschikking.verzending
+				&& this.beschikking.verzending.kanaal
+			)
 		},
 		hasArchief() {
-			return !!(this.beschikking && this.beschikking.archief && this.beschikking.archief.archiefId)
+			return !!(
+				this.beschikking
+				&& this.beschikking.archief
+				&& this.beschikking.archief.archiefId
+			)
 		},
 	},
 	async mounted() {

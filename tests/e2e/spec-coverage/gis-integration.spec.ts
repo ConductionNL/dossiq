@@ -23,9 +23,10 @@ import { test, expect } from '@playwright/test'
 import { dismissSupportDialog } from '../helpers/nav'
 
 test.describe('GIS integration spec coverage', () => {
-
 	// @e2e openspec/specs/gis-integration/spec.md#cases-on-map-view-renders-the-map-dashboard
-	test('cases-on-map view renders the map dashboard chrome without a 5xx', async ({ page }) => {
+	test('cases-on-map view renders the map dashboard chrome without a 5xx', async ({
+		page,
+	}) => {
 		const response = await page.goto('/apps/procest/cases-map')
 		await dismissSupportDialog(page)
 
@@ -48,5 +49,4 @@ test.describe('GIS integration spec coverage', () => {
 		// rendering is verified manually. The assertion above already proves
 		// no 5xx, which is the gate-relevant guarantee.
 	})
-
 })

@@ -18,7 +18,12 @@
 		<NcEmptyContent
 			v-if="!loading && roles.length === 0"
 			:name="t('procest', 'No organisational roles')"
-			:description="t('procest', 'Define roles to build a mandate hierarchy. Roles can have parents (afdeling/team) and a mandaat level.')">
+			:description="
+				t(
+					'procest',
+					'Define roles to build a mandate hierarchy. Roles can have parents (afdeling/team) and a mandaat level.',
+				)
+			">
 			<template #icon>
 				<AccountGroup :size="48" />
 			</template>
@@ -64,7 +69,16 @@ import DeleteRolDialog from '../../../dialogs/DeleteRolDialog.vue'
 
 export default {
 	name: 'OrganisatieRolManager',
-	components: { NcButton, NcEmptyContent, NcLoadingIcon, Plus, AccountGroup, RolNode, RolEditorDialog, DeleteRolDialog },
+	components: {
+		NcButton,
+		NcEmptyContent,
+		NcLoadingIcon,
+		Plus,
+		AccountGroup,
+		RolNode,
+		RolEditorDialog,
+		DeleteRolDialog,
+	},
 	props: {
 		roles: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
@@ -90,20 +104,26 @@ export default {
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		roots() {
-			return (this.roles || []).filter(r => !r.parentRole)
+			return (this.roles || []).filter((r) => !r.parentRole)
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		parentOptions() {
 			return [
 				{ id: '', label: t('procest', '(top level)') },
-				...this.roles.map(r => ({ id: r.id, label: r.naam || r.id })),
+				...this.roles.map((r) => ({ id: r.id, label: r.naam || r.id })),
 			]
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		deleteBlockedReason() {
 			if (!this.deleting) return ''
-			const refsAsParent = this.roles.some(r => r.parentRole === this.deleting.id)
-			if (refsAsParent) return t('procest', 'Cannot delete: this role is the parent of other roles. Re-parent them first.')
+			const refsAsParent = this.roles.some(
+				(r) => r.parentRole === this.deleting.id,
+			)
+			if (refsAsParent)
+				return t(
+					'procest',
+					'Cannot delete: this role is the parent of other roles. Re-parent them first.',
+				)
 			return ''
 		},
 	},
@@ -137,11 +157,17 @@ export default {
 			try {
 				if (this.editingRole && this.editingRole.id) {
 					await axios.patch(
-						generateUrl('/apps/procest/api/mandate/rollen/' + encodeURIComponent(this.editingRole.id)),
+						generateUrl(
+							'/apps/procest/api/mandate/rollen/'
+								+ encodeURIComponent(this.editingRole.id),
+						),
 						payload,
 					)
 				} else {
-					await axios.post(generateUrl('/apps/procest/api/mandate/rollen'), payload)
+					await axios.post(
+						generateUrl('/apps/procest/api/mandate/rollen'),
+						payload,
+					)
 				}
 				this.closeEditor()
 				this.$emit('reload')
@@ -153,8 +179,15 @@ export default {
 		async doDelete() {
 			if (!this.deleting) return
 			try {
-				await axios.delete(generateUrl('/apps/procest/api/mandate/rollen/' + encodeURIComponent(this.deleting.id)))
-			} catch (e) { /* silent — user can retry */ }
+				await axios.delete(
+					generateUrl(
+						'/apps/procest/api/mandate/rollen/'
+							+ encodeURIComponent(this.deleting.id),
+					),
+				)
+			} catch (e) {
+				/* silent — user can retry */
+			}
 			this.deleting = null
 			this.$emit('reload')
 		},

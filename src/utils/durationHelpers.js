@@ -99,7 +99,10 @@ export function formatDuration(iso) {
 export function getDurationError(value) {
 	if (!value) return ''
 	if (!isValidDuration(value)) {
-		return t('procest', 'Must be a valid ISO 8601 duration (e.g., P56D for 56 days, P8W for 8 weeks, P2M for 2 months)')
+		return t(
+			'procest',
+			'Must be a valid ISO 8601 duration (e.g., P56D for 56 days, P8W for 8 weeks, P2M for 2 months)',
+		)
 	}
 	return ''
 }

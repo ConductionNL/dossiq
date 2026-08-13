@@ -35,12 +35,23 @@
  *   procest's App.vue now hosting the CnObjectSidebar in CnAppRoot's #sidebar
  *   slot. It is now LIVE + green too.
  */
-import { test, expect, request, type APIRequestContext, type Page } from '@playwright/test'
+import {
+	test,
+	expect,
+	request,
+	type APIRequestContext,
+	type Page,
+} from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth'
 import { dismissSupportDialog } from '../helpers/nav'
 import {
-	RUN_PREFIX, getRequestToken, ensureCaseType, seedCase, objectId,
-	cleanupRunObjects, deleteObject,
+	RUN_PREFIX,
+	getRequestToken,
+	ensureCaseType,
+	seedCase,
+	objectId,
+	cleanupRunObjects,
+	deleteObject,
 } from '../helpers/fixtures'
 
 let api: APIRequestContext
@@ -79,7 +90,8 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 		test.setTimeout(120_000)
 		try {
 			await cleanupRunObjects(api, token, ['case'])
-			if (caseTypeSeeded) await deleteObject(api, token, 'caseType', caseTypeId)
+			if (caseTypeSeeded)
+				await deleteObject(api, token, 'caseType', caseTypeId)
 		} catch {
 			// best-effort cleanup — leftover fixtures are prefixed and inert
 		} finally {
@@ -89,21 +101,36 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 
 	// FIXME(#719): same gap as cases-crud — the case detail page does not
 	// display the assigned zaaknummer anywhere in its rendered text.
-	test.fixme('CaseDetail page renders the case the sub-case + email tabs hang off', async ({ page }) => {
+	test.fixme('CaseDetail page renders the case the sub-case + email tabs hang off', async ({
+		page,
+	}) => {
 		const title = `${RUN_PREFIX} Deelzaak parent`
 		const identifier = `${RUN_PREFIX}-DZP`
-		const parent = await seedCase(api, token, { title, caseType: caseTypeId, identifier, description: 'Parent of a sub-case.' })
+		const parent = await seedCase(api, token, {
+			title,
+			caseType: caseTypeId,
+			identifier,
+			description: 'Parent of a sub-case.',
+		})
 		const parentId = objectId(parent)
 		// procest assigns the zaaknummer itself and ignores the supplied identifier,
 		// so assert the ASSIGNED value the create returned, not the seed input.
-		const assignedIdentifier = String((parent as Record<string, unknown>).identifier ?? identifier)
+		const assignedIdentifier = String(
+			(parent as Record<string, unknown>).identifier ?? identifier,
+		)
 
-		await page.goto(`/index.php/apps/procest/cases/${parentId}`, { waitUntil: 'domcontentloaded' })
+		await page.goto(`/index.php/apps/procest/cases/${parentId}`, {
+			waitUntil: 'domcontentloaded',
+		})
 		await dismissSupportDialog(page)
 
 		// The detail page (history-mode route /cases/:id) mounts + shows the case.
-		await expect(page).toHaveURL(new RegExp(`/cases/${parentId}`), { timeout: 10_000 })
-		await expect(page.getByText(assignedIdentifier, { exact: false }).first()).toBeVisible({ timeout: 15_000 })
+		await expect(page).toHaveURL(new RegExp(`/cases/${parentId}`), {
+			timeout: 10_000,
+		})
+		await expect(
+			page.getByText(assignedIdentifier, { exact: false }).first(),
+		).toBeVisible({ timeout: 15_000 })
 		await expect(page.getByText(title, { exact: false }).first()).toBeVisible()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
@@ -111,7 +138,11 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 	test('a deelzaak (sub-case) persists and round-trips through the DeelzaakList API', async () => {
 		// Seed a parent + a child linked via `parentCase` — exactly the shape
 		// DeelzaakCreateModal.vue persists through the OpenRegister object store.
-		const parent = await seedCase(api, token, { title: `${RUN_PREFIX} DZ Parent`, caseType: caseTypeId, identifier: `${RUN_PREFIX}-DZP2` })
+		const parent = await seedCase(api, token, {
+			title: `${RUN_PREFIX} DZ Parent`,
+			caseType: caseTypeId,
+			identifier: `${RUN_PREFIX}-DZP2`,
+		})
 		const parentId = objectId(parent)
 		const child = await seedCase(api, token, {
 			title: `${RUN_PREFIX} DZ Child`,
@@ -127,26 +158,45 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 		expect(children.status, 'children endpoint reachable').toBe(200)
 		const rows = Array.isArray(children.body?.results)
 			? children.body.results
-			: (Array.isArray(children.body) ? children.body : [])
-		const found = rows.find((r: any) => objectId(r) === childId || r?.identifier === `${RUN_PREFIX}-DZC`)
-		expect(found, 'seeded sub-case is returned by the deelzaken children endpoint').toBeTruthy()
+			: Array.isArray(children.body)
+				? children.body
+				: []
+		const found = rows.find(
+			(r: any) =>
+				objectId(r) === childId || r?.identifier === `${RUN_PREFIX}-DZC`,
+		)
+		expect(
+			found,
+			'seeded sub-case is returned by the deelzaken children endpoint',
+		).toBeTruthy()
 
 		// The parent-of endpoint dereferences the child's `parentCase` field and
 		// returns the PARENT (previously it did a plain find() on the child id and
 		// echoed the child back as its own parent — fixed in
 		// DeelzaakService::getParentCase). Assert it returns the parent, not the
 		// child.
-		const parentLookup = await deelzaken(`/${encodeURIComponent(childId)}/parent`)
+		const parentLookup = await deelzaken(
+			`/${encodeURIComponent(childId)}/parent`,
+		)
 		expect(parentLookup.status, 'parent endpoint reachable').toBe(200)
-		expect(parentLookup.body, 'parent endpoint returns a case object').toBeTruthy()
+		expect(
+			parentLookup.body,
+			'parent endpoint returns a case object',
+		).toBeTruthy()
 		const returnedId = objectId(parentLookup.body)
-		expect(returnedId, 'parent endpoint returns the PARENT, not the child').toBe(parentId)
-		expect(returnedId, 'parent endpoint must not echo the child').not.toBe(childId)
+		expect(returnedId, 'parent endpoint returns the PARENT, not the child').toBe(
+			parentId,
+		)
+		expect(returnedId, 'parent endpoint must not echo the child').not.toBe(
+			childId,
+		)
 
 		// The sub-case COUNT endpoint (case-list badge source) sees the child.
 		const counts = await deelzaken(`/counts?ids=${encodeURIComponent(parentId)}`)
 		expect(counts.status, 'counts endpoint reachable').toBe(200)
-		expect(Number(counts.body?.counts?.[parentId] ?? 0)).toBeGreaterThanOrEqual(1)
+		expect(Number(counts.body?.counts?.[parentId] ?? 0)).toBeGreaterThanOrEqual(
+			1,
+		)
 	})
 
 	test('the case-email backend (email templates) the tab consumes is sound', async () => {
@@ -155,10 +205,15 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 		// degrades to an "unavailable" state when NC Mail (the leaf) is absent
 		// (this dev instance has no Mail) — leaf-first per ADR-022. Assert the
 		// templates endpoint the tab calls answers cleanly rather than 5xx-ing.
-		const probe = await api.get(`/index.php/apps/procest/api/email/templates/${encodeURIComponent(caseTypeId)}`, {
-			headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
-		})
-		expect(probe.status(), `email templates -> ${probe.status()}`).toBeLessThan(500)
+		const probe = await api.get(
+			`/index.php/apps/procest/api/email/templates/${encodeURIComponent(caseTypeId)}`,
+			{
+				headers: { requesttoken: token, 'OCS-APIRequest': 'true' },
+			},
+		)
+		expect(probe.status(), `email templates -> ${probe.status()}`).toBeLessThan(
+			500,
+		)
 	})
 
 	// ----- Rendered tab UI (nc-vue slot-render gap now FIXED) -----------------
@@ -168,8 +223,16 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 	// custom page's `slots.main` (CnObjectSidebar.resolveTabComponent +
 	// CnPageRenderer.resolvedComponent — ADR-036 / nextcloud-vue#459 family),
 	// so these are un-fixmed.
-	test('Sub-cases tab renders DeelzaakList with the seeded child row', async ({ page }: { page: Page }) => {
-		const parent = await seedCase(api, token, { title: `${RUN_PREFIX} Tab parent`, caseType: caseTypeId, identifier: `${RUN_PREFIX}-TAB` })
+	test('Sub-cases tab renders DeelzaakList with the seeded child row', async ({
+		page,
+	}: {
+		page: Page
+	}) => {
+		const parent = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Tab parent`,
+			caseType: caseTypeId,
+			identifier: `${RUN_PREFIX}-TAB`,
+		})
 		const parentId = objectId(parent)
 		await page.goto(`/index.php/apps/procest/cases/${parentId}/deelzaken`)
 		await dismissSupportDialog(page)
@@ -187,13 +250,22 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 	// host #sidebar slot never read. Both fixed in the lib; procest's App.vue
 	// now mounts the host CnObjectSidebar in CnAppRoot's #sidebar slot
 	// (decidesk pattern). The Email tab → CaseEmailTab render is asserted here.
-	test('Email tab renders CaseEmailTab in the sidebar strip', async ({ page }: { page: Page }) => {
-		const parent = await seedCase(api, token, { title: `${RUN_PREFIX} Email parent`, caseType: caseTypeId, identifier: `${RUN_PREFIX}-EML` })
+	test('Email tab renders CaseEmailTab in the sidebar strip', async ({
+		page,
+	}: {
+		page: Page
+	}) => {
+		const parent = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Email parent`,
+			caseType: caseTypeId,
+			identifier: `${RUN_PREFIX}-EML`,
+		})
 		const parentId = objectId(parent)
 		await page.goto(`/index.php/apps/procest/cases/${parentId}`)
 		await dismissSupportDialog(page)
-		await expect(page.getByText(`${RUN_PREFIX} Email parent`, { exact: false }).first())
-			.toBeVisible({ timeout: 15_000 })
+		await expect(
+			page.getByText(`${RUN_PREFIX} Email parent`, { exact: false }).first(),
+		).toBeVisible({ timeout: 15_000 })
 		// The object sidebar (NcAppSidebar) is collapsed by default on CaseDetail —
 		// a toolbar "Open sidebar" toggle reveals it. Open it before asserting the
 		// hosted tab strip mounts (it is not rendered while the aside is closed).
@@ -202,8 +274,11 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 			await openSidebar.click()
 		}
 		// The hosted object sidebar with the manifest tab strip must mount.
-		await expect(page.locator('aside.app-sidebar')).toBeVisible({ timeout: 15_000 })
-		const emailTab = page.locator('[data-testid="cn-object-sidebar-tab-email"]')
+		await expect(page.locator('aside.app-sidebar')).toBeVisible({
+			timeout: 15_000,
+		})
+		const emailTab = page
+			.locator('[data-testid="cn-object-sidebar-tab-email"]')
 			.or(page.getByRole('tab', { name: 'Email' }))
 			.or(page.getByRole('button', { name: 'Email' }))
 			.first()
@@ -214,6 +289,8 @@ test.describe('Procest — deelzaak (sub-case) + case-email', () => {
 		// otherwise it renders the compose surface. Either proves the manifest
 		// `component: CaseEmailTab` tab resolved and mounted — assert the tab
 		// root, then accept whichever leaf-dependent state applies.
-		await expect(page.locator('.case-email-tab')).toBeVisible({ timeout: 15_000 })
+		await expect(page.locator('.case-email-tab')).toBeVisible({
+			timeout: 15_000,
+		})
 	})
 })

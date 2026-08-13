@@ -73,7 +73,7 @@ export default {
 				this.$emit('update:mandate', null)
 				return
 			}
-			const entry = this.mandates.find(m => m.mandateReference === value)
+			const entry = this.mandates.find((m) => m.mandateReference === value)
 			if (entry) {
 				this.$emit('update:onBehalfOf', entry.principalUid)
 				this.$emit('update:mandate', entry.mandateReference)

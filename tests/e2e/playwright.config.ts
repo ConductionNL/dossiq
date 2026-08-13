@@ -111,8 +111,17 @@ export default defineConfig({
 	// margin under the cap.
 	globalTimeout: 38 * 60_000,
 	reporter: [
-		['html', { open: 'never', outputFolder: path.resolve(__dirname, 'playwright-report') }],
-		['junit', { outputFile: path.resolve(__dirname, 'test-results', 'results.xml') }],
+		[
+			'html',
+			{
+				open: 'never',
+				outputFolder: path.resolve(__dirname, 'playwright-report'),
+			},
+		],
+		[
+			'junit',
+			{ outputFile: path.resolve(__dirname, 'test-results', 'results.xml') },
+		],
 		['list'],
 	],
 	outputDir: path.resolve(__dirname, 'test-results'),

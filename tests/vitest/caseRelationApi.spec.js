@@ -49,7 +49,9 @@ describe('relationErrorMessage', () => {
 		expect(relationErrorMessage('duplicate')).toMatch(/already exists/i)
 		expect(relationErrorMessage('hierarchy_overlap')).toMatch(/hierarchy/i)
 		expect(relationErrorMessage('access_denied')).toMatch(/access/i)
-		expect(relationErrorMessage('invalid_aard_relatie')).toMatch(/valid relation type/i)
+		expect(relationErrorMessage('invalid_aard_relatie')).toMatch(
+			/valid relation type/i,
+		)
 	})
 
 	it('falls back to a generic message for an unknown reason', async () => {

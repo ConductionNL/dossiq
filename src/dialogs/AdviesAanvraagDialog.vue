@@ -24,12 +24,16 @@
 
 			<NcTextField
 				v-model="form.adviseur"
-				:label="form.type === 'intern' ? t(appName, 'Adviseur (gebruiker)') : t(appName, 'Adviseur (organisatie)')"
-				:placeholder="form.type === 'intern' ? 'gebruikersnaam' : 'Naam organisatie'" />
+				:label="
+					form.type === 'intern'
+						? t(appName, 'Adviseur (gebruiker)')
+						: t(appName, 'Adviseur (organisatie)')
+				"
+				:placeholder="
+					form.type === 'intern' ? 'gebruikersnaam' : 'Naam organisatie'
+				" />
 
-			<NcTextField
-				v-model="form.onderwerp"
-				:label="t(appName, 'Onderwerp')" />
+			<NcTextField v-model="form.onderwerp" :label="t(appName, 'Onderwerp')" />
 
 			<NcTextField
 				v-model="form.deadline"
@@ -42,7 +46,12 @@
 					v-model="form.questions"
 					class="advies-dialog__textarea"
 					rows="4"
-					:placeholder="t(appName, 'Optioneel — beschrijf welke vragen je beantwoord wilt zien.')" />
+					:placeholder="
+						t(
+							appName,
+							'Optioneel — beschrijf welke vragen je beantwoord wilt zien.',
+						)
+					" />
 			</label>
 
 			<p v-if="errorMessage" class="advies-dialog__error">
@@ -136,7 +145,10 @@ export default {
 				this.$emit('created')
 			} catch (error) {
 				console.error('Procest: failed to create advice', error)
-				this.errorMessage = this.t(this.appName, 'Aanmaken van advies is mislukt. Probeer het opnieuw.')
+				this.errorMessage = this.t(
+					this.appName,
+					'Aanmaken van advies is mislukt. Probeer het opnieuw.',
+				)
 			} finally {
 				this.submitting = false
 			}

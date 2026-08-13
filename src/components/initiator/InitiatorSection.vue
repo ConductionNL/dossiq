@@ -17,15 +17,24 @@
   @spec openspec/specs/semantic-case-intake/spec.md
 -->
 <template>
-	<div v-if="hasInitiator || hasHandoff" class="initiator-section" data-testid="initiator-section">
+	<div
+		v-if="hasInitiator || hasHandoff"
+		class="initiator-section"
+		data-testid="initiator-section">
 		<template v-if="hasInitiator">
 			<div class="initiator-section__row">
-				<component :is="typeIcon" :size="20" class="initiator-section__icon" />
-				<span class="initiator-section__name">{{ caseObject.initiatorDisplayName }}</span>
+				<component
+					:is="typeIcon"
+					:size="20"
+					class="initiator-section__icon" />
+				<span class="initiator-section__name">{{
+					caseObject.initiatorDisplayName
+				}}</span>
 				<span class="initiator-section__type">{{ typeLabel }}</span>
 			</div>
 			<div class="initiator-section__source">
-				<a v-if="sourceLink"
+				<a
+					v-if="sourceLink"
 					:href="sourceLink"
 					target="_blank"
 					rel="noopener noreferrer">
@@ -39,11 +48,19 @@
 		     via the ns#Case handoff it carries a handoffSource back-link to the
 		     originating object; surface the origin badge + the received-at
 		     timestamp (the case's creation time = the handoff moment). -->
-		<div v-if="hasHandoff" class="initiator-section__handoff" data-testid="handoff-provenance">
+		<div
+			v-if="hasHandoff"
+			class="initiator-section__handoff"
+			data-testid="handoff-provenance">
 			<TransitConnectionVariant :size="18" class="initiator-section__icon" />
-			<span class="initiator-section__handoff-label">{{ t('procest', 'Received via handoff') }}</span>
-			<span v-if="handoffReceivedAt" class="initiator-section__type">{{ handoffReceivedAt }}</span>
-			<a class="initiator-section__handoff-link"
+			<span class="initiator-section__handoff-label">{{
+				t('procest', 'Received via handoff')
+			}}</span>
+			<span v-if="handoffReceivedAt" class="initiator-section__type">{{
+				handoffReceivedAt
+			}}</span>
+			<a
+				class="initiator-section__handoff-link"
 				:href="handoffSourceLink"
 				target="_blank"
 				rel="noopener noreferrer">
@@ -83,39 +100,43 @@ export default {
 		},
 		/** @spec openspec/specs/initiator-display/spec.md */
 		hasInitiator() {
-			return !!(this.caseObject && this.caseObject.initiatorType && this.caseObject.initiatorDisplayName)
+			return !!(
+				this.caseObject
+				&& this.caseObject.initiatorType
+				&& this.caseObject.initiatorDisplayName
+			)
 		},
 		/** @spec openspec/specs/initiator-display/spec.md */
 		typeLabel() {
 			switch (this.caseObject.initiatorType) {
-			case 'company':
-				return t('procest', 'Company')
-			case 'contact':
-				return t('procest', 'Contact')
-			default:
-				return t('procest', 'Person')
+				case 'company':
+					return t('procest', 'Company')
+				case 'contact':
+					return t('procest', 'Contact')
+				default:
+					return t('procest', 'Person')
 			}
 		},
 		/** @spec openspec/specs/initiator-display/spec.md */
 		typeIcon() {
 			switch (this.caseObject.initiatorType) {
-			case 'company':
-				return 'Domain'
-			case 'contact':
-				return 'CardAccountMailOutline'
-			default:
-				return 'AccountOutline'
+				case 'company':
+					return 'Domain'
+				case 'contact':
+					return 'CardAccountMailOutline'
+				default:
+					return 'AccountOutline'
 			}
 		},
 		/** @spec openspec/specs/initiator-display/spec.md */
 		typeSchema() {
 			switch (this.caseObject.initiatorType) {
-			case 'person':
-				return 'brpPerson'
-			case 'company':
-				return 'kvkCompany'
-			default:
-				return null
+				case 'person':
+					return 'brpPerson'
+				case 'company':
+					return 'kvkCompany'
+				default:
+					return null
 			}
 		},
 		/** @spec openspec/specs/initiator-display/spec.md */
@@ -123,7 +144,9 @@ export default {
 			if (!this.typeSchema || !this.sourceObjectId) {
 				return null
 			}
-			return generateUrl(`/apps/openregister/#/objects/procest/${this.typeSchema}/${this.sourceObjectId}`)
+			return generateUrl(
+				`/apps/openregister/#/objects/procest/${this.typeSchema}/${this.sourceObjectId}`,
+			)
 		},
 		/** @spec openspec/specs/semantic-case-intake/spec.md */
 		hasHandoff() {
@@ -140,7 +163,9 @@ export default {
 			if (!this.caseObject.handoffSource) {
 				return null
 			}
-			return generateUrl(`/apps/openregister/api/urn/resolve?urn=${encodeURIComponent(this.caseObject.handoffSource)}`)
+			return generateUrl(
+				`/apps/openregister/api/urn/resolve?urn=${encodeURIComponent(this.caseObject.handoffSource)}`,
+			)
 		},
 		/**
 		 * The handoff moment = the case's creation timestamp (the case is
@@ -150,7 +175,10 @@ export default {
 		 * @spec openspec/specs/semantic-case-intake/spec.md
 		 */
 		handoffReceivedAt() {
-			const raw = this.caseObject['@self']?.created || this.caseObject.created || this.caseObject.startDate
+			const raw =
+				this.caseObject['@self']?.created
+				|| this.caseObject.created
+				|| this.caseObject.startDate
 			if (!raw) {
 				return ''
 			}
@@ -179,7 +207,8 @@ export default {
 				return
 			}
 			try {
-				this.caseObject = await this.objectStore.fetchObject('case', caseId) || {}
+				this.caseObject =
+					(await this.objectStore.fetchObject('case', caseId)) || {}
 			} catch (err) {
 				console.error('[InitiatorSection] case load failed', err)
 				this.caseObject = {}
@@ -198,12 +227,18 @@ export default {
 			if (!this.typeSchema || !this.caseObject.initiatorSourceId) {
 				return
 			}
-			const keyField = this.caseObject.initiatorType === 'person' ? 'burgerservicenummer' : 'kvkNummer'
+			const keyField =
+				this.caseObject.initiatorType === 'person'
+					? 'burgerservicenummer'
+					: 'kvkNummer'
 			try {
-				const rows = await this.objectStore.fetchCollection(this.typeSchema, {
-					[keyField]: this.caseObject.initiatorSourceId,
-					_limit: 1,
-				})
+				const rows = await this.objectStore.fetchCollection(
+					this.typeSchema,
+					{
+						[keyField]: this.caseObject.initiatorSourceId,
+						_limit: 1,
+					},
+				)
 				const match = (rows || [])[0]
 				this.sourceObjectId = match?.id || match?.['@self']?.id || null
 			} catch (err) {

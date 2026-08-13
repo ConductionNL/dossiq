@@ -6,7 +6,7 @@
 		<div class="ai-settings-tab__section">
 			<NcCheckboxRadioSwitch
 				:model-value="settings.ai_enabled"
-				@update:model-value="v => updateSetting('ai_enabled', v)">
+				@update:model-value="(v) => updateSetting('ai_enabled', v)">
 				{{ t('procest', 'Enable AI-assisted processing') }}
 			</NcCheckboxRadioSwitch>
 		</div>
@@ -22,27 +22,38 @@
 						:model-value="settings.ai_model_type === 'local'"
 						type="radio"
 						name="model_type"
-						@update:model-value="() => updateSetting('ai_model_type', 'local')">
+						@update:model-value="
+							() => updateSetting('ai_model_type', 'local')
+						">
 						{{ t('procest', 'Local (Ollama)') }}
 					</NcCheckboxRadioSwitch>
 					<NcCheckboxRadioSwitch
 						:model-value="settings.ai_model_type === 'cloud'"
 						type="radio"
 						name="model_type"
-						@update:model-value="() => updateSetting('ai_model_type', 'cloud')">
+						@update:model-value="
+							() => updateSetting('ai_model_type', 'cloud')
+						">
 						{{ t('procest', 'Cloud') }}
 					</NcCheckboxRadioSwitch>
 				</div>
 
 				<NcNoteCard v-if="settings.ai_model_type === 'cloud'" type="warning">
-					{{ t('procest', 'Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.') }}
+					{{
+						t(
+							'procest',
+							'Warning: Case data will be sent to an external service. Ensure this complies with your data processing agreements.',
+						)
+					}}
 				</NcNoteCard>
 
 				<div class="form-group">
 					<NcTextField
 						:model-value="settings.ai_model_url"
 						:label="t('procest', 'Model endpoint URL')"
-						@update:model-value="v => updateSetting('ai_model_url', v)" />
+						@update:model-value="
+							(v) => updateSetting('ai_model_url', v)
+						" />
 				</div>
 
 				<div class="form-group">
@@ -50,14 +61,18 @@
 						:model-value="settings.ai_model_name"
 						:label="t('procest', 'Model name')"
 						:placeholder="'llama3.1'"
-						@update:model-value="v => updateSetting('ai_model_name', v)" />
+						@update:model-value="
+							(v) => updateSetting('ai_model_name', v)
+						" />
 				</div>
 
 				<div v-if="settings.ai_model_type === 'cloud'" class="form-group">
 					<NcPasswordField
 						:model-value="settings.ai_api_key"
 						:label="t('procest', 'API Key')"
-						@update:model-value="v => updateSetting('ai_api_key', v)" />
+						@update:model-value="
+							(v) => updateSetting('ai_api_key', v)
+						" />
 				</div>
 			</div>
 
@@ -68,7 +83,7 @@
 					v-for="feature in featureToggles"
 					:key="feature.key"
 					:model-value="settings[feature.key]"
-					@update:model-value="v => updateSetting(feature.key, v)">
+					@update:model-value="(v) => updateSetting(feature.key, v)">
 					{{ feature.label }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -78,16 +93,35 @@
 				<h3>{{ t('procest', 'Privacy & Compliance') }}</h3>
 				<NcCheckboxRadioSwitch
 					:model-value="settings.ai_pii_stripping"
-					@update:model-value="v => updateSetting('ai_pii_stripping', v)">
-					{{ t('procest', 'Strip PII (BSN, financial data) from AI prompts') }}
+					@update:model-value="
+						(v) => updateSetting('ai_pii_stripping', v)
+					">
+					{{
+						t(
+							'procest',
+							'Strip PII (BSN, financial data) from AI prompts',
+						)
+					}}
 				</NcCheckboxRadioSwitch>
 				<NcCheckboxRadioSwitch
 					:model-value="settings.ai_dpia_acknowledged"
-					@update:model-value="v => updateSetting('ai_dpia_acknowledged', v)">
-					{{ t('procest', 'DPIA (Data Protection Impact Assessment) has been completed') }}
+					@update:model-value="
+						(v) => updateSetting('ai_dpia_acknowledged', v)
+					">
+					{{
+						t(
+							'procest',
+							'DPIA (Data Protection Impact Assessment) has been completed',
+						)
+					}}
 				</NcCheckboxRadioSwitch>
 				<NcNoteCard v-if="!settings.ai_dpia_acknowledged" type="warning">
-					{{ t('procest', 'A DPIA is required before using AI features with personal data. This must be acknowledged before AI features can be activated.') }}
+					{{
+						t(
+							'procest',
+							'A DPIA is required before using AI features with personal data. This must be acknowledged before AI features can be activated.',
+						)
+					}}
 				</NcNoteCard>
 			</div>
 
@@ -98,7 +132,9 @@
 					{{ t('procest', 'Test connection') }}
 				</NcButton>
 				<NcLoadingIcon v-if="healthLoading" :size="20" />
-				<NcNoteCard v-if="healthResult" :type="healthResult.healthy ? 'success' : 'error'">
+				<NcNoteCard
+					v-if="healthResult"
+					:type="healthResult.healthy ? 'success' : 'error'">
 					{{ healthResult.message }}
 					<template v-if="healthResult.responseTimeMs">
 						({{ healthResult.responseTimeMs }}ms)
@@ -110,13 +146,31 @@
 </template>
 
 <script>
-import { NcButton, NcTextField, NcCheckboxRadioSwitch, NcLoadingIcon, NcNoteCard, NcPasswordField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcTextField,
+	NcCheckboxRadioSwitch,
+	NcLoadingIcon,
+	NcNoteCard,
+	NcPasswordField,
+} from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import { getAiSettings, updateAiSettings, testAiHealth } from '../../../services/aiApi.js'
+import {
+	getAiSettings,
+	updateAiSettings,
+	testAiHealth,
+} from '../../../services/aiApi.js'
 
 export default {
 	name: 'AiSettingsTab',
-	components: { NcButton, NcTextField, NcCheckboxRadioSwitch, NcLoadingIcon, NcNoteCard, NcPasswordField },
+	components: {
+		NcButton,
+		NcTextField,
+		NcCheckboxRadioSwitch,
+		NcLoadingIcon,
+		NcNoteCard,
+		NcPasswordField,
+	},
 	data() {
 		return {
 			settings: {
@@ -142,12 +196,27 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		featureToggles() {
 			return [
-				{ key: 'ai_feature_classification', label: t('procest', 'Document classification') },
-				{ key: 'ai_feature_extraction', label: t('procest', 'Data extraction') },
+				{
+					key: 'ai_feature_classification',
+					label: t('procest', 'Document classification'),
+				},
+				{
+					key: 'ai_feature_extraction',
+					label: t('procest', 'Data extraction'),
+				},
 				{ key: 'ai_feature_qa', label: t('procest', 'Knowledge base Q&A') },
-				{ key: 'ai_feature_summary', label: t('procest', 'Auto-summarization') },
-				{ key: 'ai_feature_routing', label: t('procest', 'Routing suggestions') },
-				{ key: 'ai_feature_decision_support', label: t('procest', 'Decision support') },
+				{
+					key: 'ai_feature_summary',
+					label: t('procest', 'Auto-summarization'),
+				},
+				{
+					key: 'ai_feature_routing',
+					label: t('procest', 'Routing suggestions'),
+				},
+				{
+					key: 'ai_feature_decision_support',
+					label: t('procest', 'Decision support'),
+				},
 			]
 		},
 	},
@@ -184,7 +253,8 @@ export default {
 			} catch (e) {
 				this.healthResult = {
 					healthy: false,
-					message: e.response?.data?.error || t('procest', 'Connection failed'),
+					message:
+						e.response?.data?.error || t('procest', 'Connection failed'),
 				}
 			} finally {
 				this.healthLoading = false

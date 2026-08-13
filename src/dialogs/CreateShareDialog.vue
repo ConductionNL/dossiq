@@ -40,11 +40,12 @@
 			<NcButton @click="$emit('update:open', false)">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton
-				type="primary"
-				:disabled="saving"
-				@click="createShare">
-				{{ saving ? t('procest', 'Creating...') : t('procest', 'Create share') }}
+			<NcButton type="primary" :disabled="saving" @click="createShare">
+				{{
+					saving
+						? t('procest', 'Creating...')
+						: t('procest', 'Create share')
+				}}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -79,13 +80,22 @@ export default {
 		return {
 			saving: false,
 			form: {
-				permissionLevel: { value: 'bekijken', label: t('procest', 'View only') },
+				permissionLevel: {
+					value: 'bekijken',
+					label: t('procest', 'View only'),
+				},
 				partnerId: null,
 			},
 			permissionOptions: [
 				{ value: 'bekijken', label: t('procest', 'View only') },
-				{ value: 'bekijken_reageren', label: t('procest', 'View + Comment') },
-				{ value: 'bekijken_bijdragen', label: t('procest', 'View + Contribute') },
+				{
+					value: 'bekijken_reageren',
+					label: t('procest', 'View + Comment'),
+				},
+				{
+					value: 'bekijken_bijdragen',
+					label: t('procest', 'View + Contribute'),
+				},
 			],
 		}
 	},

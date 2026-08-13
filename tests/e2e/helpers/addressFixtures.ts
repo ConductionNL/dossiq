@@ -102,10 +102,15 @@ function writeHeaders(token: string): Record<string, string> {
  * @param api Authenticated request context.
  * @return true only when the listing endpoint answered 2xx.
  */
-export async function addressesRegisterAvailable(api: APIRequestContext): Promise<boolean> {
-	const res = await api.get(`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}?_limit=1`, {
-		headers: { 'OCS-APIRequest': 'true' },
-	})
+export async function addressesRegisterAvailable(
+	api: APIRequestContext,
+): Promise<boolean> {
+	const res = await api.get(
+		`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}?_limit=1`,
+		{
+			headers: { 'OCS-APIRequest': 'true' },
+		},
+	)
 	return res.ok()
 }
 
@@ -116,14 +121,23 @@ export async function addressesRegisterAvailable(api: APIRequestContext): Promis
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
-export async function seedAddressFixtures(api: APIRequestContext, token: string): Promise<string[]> {
+export async function seedAddressFixtures(
+	api: APIRequestContext,
+	token: string,
+): Promise<string[]> {
 	const ids: string[] = []
 	for (const fixture of ADDRESS_FIXTURES) {
-		const res = await api.post(`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}`, {
-			headers: writeHeaders(token),
-			data: fixture,
-		})
-		expect(res.ok(), `seed address -> ${res.status()} ${await res.text()}`).toBeTruthy()
+		const res = await api.post(
+			`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}`,
+			{
+				headers: writeHeaders(token),
+				data: fixture,
+			},
+		)
+		expect(
+			res.ok(),
+			`seed address -> ${res.status()} ${await res.text()}`,
+		).toBeTruthy()
 		const body = await res.json()
 		ids.push(String(body?.['@self']?.id ?? body?.uuid ?? body?.id ?? ''))
 	}
@@ -135,20 +149,31 @@ export async function seedAddressFixtures(api: APIRequestContext, token: string)
  * @param api   Authenticated request context.
  * @param token CSRF request-token.
  */
-export async function cleanupAddressFixtures(api: APIRequestContext, token: string): Promise<void> {
-	const res = await api.get(`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}?_limit=200`, {
-		headers: { 'OCS-APIRequest': 'true' },
-	})
+export async function cleanupAddressFixtures(
+	api: APIRequestContext,
+	token: string,
+): Promise<void> {
+	const res = await api.get(
+		`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}?_limit=200`,
+		{
+			headers: { 'OCS-APIRequest': 'true' },
+		},
+	)
 	if (!res.ok()) return
 	const body = await res.json()
-	const rows: any[] = Array.isArray(body) ? body : (body?.results ?? body?.data ?? [])
+	const rows: any[] = Array.isArray(body)
+		? body
+		: (body?.results ?? body?.data ?? [])
 	for (const row of rows) {
 		if (JSON.stringify(row).includes(ADDRESS_RUN_PREFIX)) {
 			const id = String(row?.['@self']?.id ?? row?.uuid ?? row?.id ?? '')
 			if (id) {
-				await api.delete(`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}/${id}`, {
-					headers: writeHeaders(token),
-				})
+				await api.delete(
+					`${API_BASE}/${ADDRESSES_REGISTER}/${ADDRESS_SCHEMA}/${id}`,
+					{
+						headers: writeHeaders(token),
+					},
+				)
 			}
 		}
 	}

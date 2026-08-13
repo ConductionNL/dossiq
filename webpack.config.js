@@ -71,9 +71,8 @@ webpackConfig.entry = {
 const localLib = process.env.LOCAL_LIB_PATH
 	? path.resolve(process.env.LOCAL_LIB_PATH)
 	: path.resolve(__dirname, '../nextcloud-vue/src')
-const useLocalLib = process.env.USE_LOCAL_LIB === 'false'
-	? false
-	: fs.existsSync(localLib)
+const useLocalLib =
+	process.env.USE_LOCAL_LIB === 'false' ? false : fs.existsSync(localLib)
 
 webpackConfig.resolve = {
 	extensions: ['.vue', '.js'],
@@ -97,23 +96,35 @@ webpackConfig.resolve = {
 		// one copy (dual-copy = two currentRenderingInstance states → CnAppRoot null
 		// crash). The lib + procest source are now compat-construct-free, so no
 		// @vue/compat runtime/compiler is needed.
-		'vue$': path.resolve(__dirname, 'node_modules/vue/dist/vue.runtime.esm-bundler.js'),
-		'pinia$': path.resolve(__dirname, 'node_modules/pinia'),
+		vue$: path.resolve(
+			__dirname,
+			'node_modules/vue/dist/vue.runtime.esm-bundler.js',
+		),
+		pinia$: path.resolve(__dirname, 'node_modules/pinia'),
 		// Dedupe vue-router to ONE copy (absolute file): the aliased lib worktree
 		// ships its own vue-router (a different MAJOR), so a per-importer resolve
 		// gives @nextcloud/vue's RouterLink a different router instance than
 		// app.use(router) provided → NcAppNavigationItem's <router-link> scoped
 		// slot gets undefined props (href destructure crash). One copy = one router.
-		'vue-router$': path.resolve(__dirname, 'node_modules/vue-router/dist/vue-router.mjs'),
+		'vue-router$': path.resolve(
+			__dirname,
+			'node_modules/vue-router/dist/vue-router.mjs',
+		),
 		// v9 is ESM-only: exports maps '.' -> ./dist/index.mjs with no main/module,
 		// so a directory alias can't resolve it. Point at the explicit entry file
 		// (also dedupes the aliased lib worktree's own v9 copy onto this one).
-		'@nextcloud/vue$': path.resolve(__dirname, 'node_modules/@nextcloud/vue/dist/index.mjs'),
+		'@nextcloud/vue$': path.resolve(
+			__dirname,
+			'node_modules/@nextcloud/vue/dist/index.mjs',
+		),
 		// @nextcloud/dialogs v6 ships its stylesheet at dist/style.css and exposes it
 		// via the package "exports" map. When the aliased nextcloud-vue source imports
 		// '@nextcloud/dialogs/style.css', this webpack build resolves the raw subpath
 		// (not the exports condition), so point it at the real file explicitly.
-		'@nextcloud/dialogs/style.css$': path.resolve(__dirname, 'node_modules/@nextcloud/dialogs/dist/style.css'),
+		'@nextcloud/dialogs/style.css$': path.resolve(
+			__dirname,
+			'node_modules/@nextcloud/dialogs/dist/style.css',
+		),
 	},
 }
 
@@ -146,7 +157,9 @@ webpackConfig.module = {
 webpackConfig.plugins = [
 	new VueLoaderPlugin(),
 	new webpack.DefinePlugin({ appName: JSON.stringify(appId) }),
-	new webpack.DefinePlugin({ appVersion: JSON.stringify(process.env.npm_package_version) }),
+	new webpack.DefinePlugin({
+		appVersion: JSON.stringify(process.env.npm_package_version),
+	}),
 ]
 
 // Force @nextcloud/dialogs to resolve from this app's node_modules,
@@ -157,7 +170,10 @@ webpackConfig.plugins = [
 // applies an exports map to a PACKAGE REQUEST, never to an absolutised path —
 // the aliased directory has nothing to resolve against). Use an exact-match `$`
 // alias onto the explicit entry FILE, exactly as `@nextcloud/vue$` does.
-webpackConfig.resolve.alias['@nextcloud/dialogs$'] = path.resolve(__dirname, 'node_modules/@nextcloud/dialogs/dist/index.mjs')
+webpackConfig.resolve.alias['@nextcloud/dialogs$'] = path.resolve(
+	__dirname,
+	'node_modules/@nextcloud/dialogs/dist/index.mjs',
+)
 
 // @nextcloud/axios is pinned to ~2.5.2 (via package.json overrides) which still
 // declares both `import` and `require` exports conditions, so the package can

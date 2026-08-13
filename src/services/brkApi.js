@@ -36,7 +36,12 @@ const BASE_URL = generateUrl('/apps/procest/api/external/brk')
  *   The lookup result envelope.
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
-export async function lookupParcel(kadastraleGemeenteCode, sectie, perceelnummer, options = {}) {
+export async function lookupParcel(
+	kadastraleGemeenteCode,
+	sectie,
+	perceelnummer,
+	options = {},
+) {
 	const params = { kadastraleGemeenteCode, sectie, perceelnummer }
 	if (options.appartementsrechtVolgnummer) {
 		params.appartementsrechtVolgnummer = options.appartementsrechtVolgnummer

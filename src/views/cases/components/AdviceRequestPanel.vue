@@ -12,8 +12,12 @@
 				class="advice-request__item"
 				:class="{ 'advice-request__item--overdue': isOverdue(req) }">
 				<div class="advice-request__item-header">
-					<span class="advice-request__department">{{ req.department }}</span>
-					<span class="advice-request__status" :class="'advice-request__status--' + req.status">
+					<span class="advice-request__department">{{
+						req.department
+					}}</span>
+					<span
+						class="advice-request__status"
+						:class="'advice-request__status--' + req.status">
 						{{ getStatusLabel(req.status) }}
 					</span>
 				</div>
@@ -21,9 +25,17 @@
 					{{ req.subject }}
 				</p>
 				<div class="advice-request__meta">
-					<span>{{ t('procest', 'Deadline: {date}', { date: formatDate(req.deadline) }) }}</span>
+					<span>{{
+						t('procest', 'Deadline: {date}', {
+							date: formatDate(req.deadline),
+						})
+					}}</span>
 					<span v-if="req.response">
-						{{ t('procest', 'Response: {type}', { type: getResponseLabel(req.response) }) }}
+						{{
+							t('procest', 'Response: {type}', {
+								type: getResponseLabel(req.response),
+							})
+						}}
 					</span>
 				</div>
 			</div>
@@ -36,31 +48,44 @@
 		<!-- New request form -->
 		<div v-if="showForm" class="advice-request__form">
 			<div class="form-group">
-				<label for="advice-request-department">{{ t('procest', 'Department / Organization') }} *</label>
+				<label for="advice-request-department"
+					>{{ t('procest', 'Department / Organization') }} *</label
+				>
 				<NcTextField
 					id="advice-request-department"
 					:model-value="form.department"
-					:placeholder="t('procest', 'e.g., Brandweer, Welstandscommissie')"
-					@update:model-value="v => form.department = v" />
+					:placeholder="
+						t('procest', 'e.g., Brandweer, Welstandscommissie')
+					"
+					@update:model-value="(v) => (form.department = v)" />
 			</div>
 			<div class="form-group">
-				<label for="advice-request-subject">{{ t('procest', 'Subject') }} *</label>
+				<label for="advice-request-subject"
+					>{{ t('procest', 'Subject') }} *</label
+				>
 				<NcTextField
 					id="advice-request-subject"
 					:model-value="form.subject"
-					@update:model-value="v => form.subject = v" />
+					@update:model-value="(v) => (form.subject = v)" />
 			</div>
 			<div class="form-group">
-				<label for="advice-request-question">{{ t('procest', 'Question') }}</label>
-				<textarea id="advice-request-question" v-model="form.question" rows="3" />
+				<label for="advice-request-question">{{
+					t('procest', 'Question')
+				}}</label>
+				<textarea
+					id="advice-request-question"
+					v-model="form.question"
+					rows="3" />
 			</div>
 			<div class="form-group">
-				<label for="advice-request-deadline">{{ t('procest', 'Deadline') }} *</label>
+				<label for="advice-request-deadline"
+					>{{ t('procest', 'Deadline') }} *</label
+				>
 				<NcTextField
 					id="advice-request-deadline"
 					:model-value="form.deadline"
 					type="date"
-					@update:model-value="v => form.deadline = v" />
+					@update:model-value="(v) => (form.deadline = v)" />
 			</div>
 			<div class="advice-request__form-actions">
 				<NcButton @click="showForm = false">
@@ -118,9 +143,11 @@ export default {
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		isFormValid() {
-			return this.form.department.trim() !== ''
+			return (
+				this.form.department.trim() !== ''
 				&& this.form.subject.trim() !== ''
 				&& this.form.deadline !== ''
+			)
 		},
 	},
 	methods: {
@@ -144,7 +171,10 @@ export default {
 		getResponseLabel(response) {
 			const labels = {
 				positief: this.t('procest', 'Positive'),
-				positief_met_voorwaarden: this.t('procest', 'Positive with conditions'),
+				positief_met_voorwaarden: this.t(
+					'procest',
+					'Positive with conditions',
+				),
 				negatief: this.t('procest', 'Negative'),
 				niet_van_toepassing: this.t('procest', 'Not applicable'),
 			}
@@ -165,7 +195,11 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		isOverdue(req) {
-			if (!req.deadline || req.status === 'afgesloten' || req.status === 'advies_uitgebracht') {
+			if (
+				!req.deadline
+				|| req.status === 'afgesloten'
+				|| req.status === 'advies_uitgebracht'
+			) {
 				return false
 			}
 			return new Date(req.deadline) < new Date()

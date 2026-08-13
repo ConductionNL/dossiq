@@ -42,17 +42,11 @@ describe('aggregateByStatus', () => {
 	})
 
 	it('buckets null / undefined status under "Unknown" with no statusIds', () => {
-		const openCases = [
-			{ status: null },
-			{ status: undefined },
-			{},
-		]
+		const openCases = [{ status: null }, { status: undefined }, {}]
 
 		const result = aggregateByStatus(openCases, STATUS_TYPES)
 
-		expect(result).toEqual([
-			{ name: 'Unknown', count: 3, statusIds: [] },
-		])
+		expect(result).toEqual([{ name: 'Unknown', count: 3, statusIds: [] }])
 	})
 
 	it('buckets junk / non-resolving status under "Unknown" WITHOUT leaking the raw value', () => {
@@ -64,10 +58,8 @@ describe('aggregateByStatus', () => {
 		const result = aggregateByStatus(openCases, STATUS_TYPES)
 
 		// A single "Unknown" bar — never an "Array" or "not-a-real-id" bar.
-		expect(result).toEqual([
-			{ name: 'Unknown', count: 2, statusIds: [] },
-		])
-		expect(result.some(r => r.name === 'Array')).toBe(false)
+		expect(result).toEqual([{ name: 'Unknown', count: 2, statusIds: [] }])
+		expect(result.some((r) => r.name === 'Array')).toBe(false)
 	})
 
 	it('merges resolved, null and junk statuses into the correct buckets', () => {
@@ -80,11 +72,11 @@ describe('aggregateByStatus', () => {
 		]
 
 		const result = aggregateByStatus(openCases, STATUS_TYPES)
-		const byName = Object.fromEntries(result.map(r => [r.name, r.count]))
+		const byName = Object.fromEntries(result.map((r) => [r.name, r.count]))
 
 		expect(byName).toEqual({ Ontvangen: 2, 'In behandeling': 1, Unknown: 2 })
 		// The Unknown bucket carries no statusIds (null + junk contribute none).
-		expect(result.find(r => r.name === 'Unknown').statusIds).toEqual([])
+		expect(result.find((r) => r.name === 'Unknown').statusIds).toEqual([])
 	})
 
 	it('returns an empty array when there are no open cases', () => {

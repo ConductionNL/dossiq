@@ -75,18 +75,28 @@ export function validateTaskTransition(from, to) {
 		if (to === 'completed' && from === 'available') {
 			return {
 				valid: false,
-				error: t('procest', 'A task must be active before it can be completed. Start the task first.'),
+				error: t(
+					'procest',
+					'A task must be active before it can be completed. Start the task first.',
+				),
 			}
 		}
 		if (from === 'completed' || from === 'terminated' || from === 'disabled') {
 			return {
 				valid: false,
-				error: t('procest', 'Cannot change status of a {status} task. Terminal states cannot be reversed.', { status: from }),
+				error: t(
+					'procest',
+					'Cannot change status of a {status} task. Terminal states cannot be reversed.',
+					{ status: from },
+				),
 			}
 		}
 		return {
 			valid: false,
-			error: t('procest', 'Cannot transition from \'{from}\' to \'{to}\'', { from, to }),
+			error: t('procest', "Cannot transition from '{from}' to '{to}'", {
+				from,
+				to,
+			}),
 		}
 	}
 

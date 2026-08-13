@@ -22,7 +22,9 @@
 				class="parafeer-actie-timeline__entry">
 				<div class="parafeer-actie-timeline__header">
 					<strong>{{ formatStageLabel(actie) }}</strong>
-					<span class="parafeer-actie-timeline__time">{{ formatTimestamp(actie) }}</span>
+					<span class="parafeer-actie-timeline__time">{{
+						formatTimestamp(actie)
+					}}</span>
 				</div>
 				<div class="parafeer-actie-timeline__actor">
 					{{ formatActor(actie) }}

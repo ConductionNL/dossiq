@@ -33,7 +33,10 @@ describe('toggleSelection', () => {
 	it('adds a second case within the same column', () => {
 		const first = toggleSelection(emptySelection(), 'case-1', 'Ontvangen')
 		const second = toggleSelection(first, 'case-2', 'Ontvangen')
-		expect(second).toEqual({ columnId: 'Ontvangen', caseIds: ['case-1', 'case-2'] })
+		expect(second).toEqual({
+			columnId: 'Ontvangen',
+			caseIds: ['case-1', 'case-2'],
+		})
 	})
 
 	it('removes a case already selected within the same column', () => {
@@ -61,8 +64,14 @@ describe('toggleSelection', () => {
 	})
 
 	it('tolerates a null/undefined selection as the starting state', () => {
-		expect(toggleSelection(null, 'case-1', 'Ontvangen')).toEqual({ columnId: 'Ontvangen', caseIds: ['case-1'] })
-		expect(toggleSelection(undefined, 'case-1', 'Ontvangen')).toEqual({ columnId: 'Ontvangen', caseIds: ['case-1'] })
+		expect(toggleSelection(null, 'case-1', 'Ontvangen')).toEqual({
+			columnId: 'Ontvangen',
+			caseIds: ['case-1'],
+		})
+		expect(toggleSelection(undefined, 'case-1', 'Ontvangen')).toEqual({
+			columnId: 'Ontvangen',
+			caseIds: ['case-1'],
+		})
 	})
 })
 
@@ -100,7 +109,10 @@ describe('buildPreviewPayload', () => {
 	})
 
 	it('defaults to an empty caseIds array and empty transitionId for a malformed selection', () => {
-		expect(buildPreviewPayload(null, undefined)).toEqual({ caseIds: [], transitionId: '' })
+		expect(buildPreviewPayload(null, undefined)).toEqual({
+			caseIds: [],
+			transitionId: '',
+		})
 	})
 })
 
@@ -133,7 +145,10 @@ describe('summarizeResults', () => {
 	it('counts statuses and collects non-ready/non-succeeded entries as failed', () => {
 		const results = {
 			'case-1': { status: 'ready', reasons: [] },
-			'case-2': { status: 'blocked', reasons: [{ message: 'missing document' }] },
+			'case-2': {
+				status: 'blocked',
+				reasons: [{ message: 'missing document' }],
+			},
 			'case-3': { status: 'succeeded' },
 			'case-4': { status: 'failed', reasons: [{ message: 'guard failed' }] },
 			'case-5': { status: 'error', reasons: [{ message: 'preview_failed' }] },
@@ -142,17 +157,39 @@ describe('summarizeResults', () => {
 		const summary = summarizeResults(results)
 
 		expect(summary.total).toBe(5)
-		expect(summary.counts).toEqual({ ready: 1, blocked: 1, succeeded: 1, failed: 1, error: 1 })
+		expect(summary.counts).toEqual({
+			ready: 1,
+			blocked: 1,
+			succeeded: 1,
+			failed: 1,
+			error: 1,
+		})
 		expect(summary.failed).toEqual([
-			{ caseId: 'case-2', status: 'blocked', reasons: [{ message: 'missing document' }] },
-			{ caseId: 'case-4', status: 'failed', reasons: [{ message: 'guard failed' }] },
-			{ caseId: 'case-5', status: 'error', reasons: [{ message: 'preview_failed' }] },
+			{
+				caseId: 'case-2',
+				status: 'blocked',
+				reasons: [{ message: 'missing document' }],
+			},
+			{
+				caseId: 'case-4',
+				status: 'failed',
+				reasons: [{ message: 'guard failed' }],
+			},
+			{
+				caseId: 'case-5',
+				status: 'error',
+				reasons: [{ message: 'preview_failed' }],
+			},
 		])
 	})
 
 	it('returns an empty summary for an empty or malformed results map', () => {
 		expect(summarizeResults({})).toEqual({ total: 0, counts: {}, failed: [] })
 		expect(summarizeResults(null)).toEqual({ total: 0, counts: {}, failed: [] })
-		expect(summarizeResults(undefined)).toEqual({ total: 0, counts: {}, failed: [] })
+		expect(summarizeResults(undefined)).toEqual({
+			total: 0,
+			counts: {},
+			failed: [],
+		})
 	})
 })

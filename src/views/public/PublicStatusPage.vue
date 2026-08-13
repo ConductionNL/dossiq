@@ -14,12 +14,19 @@
 			<header class="public-status-page__header">
 				<h1>{{ statusData.title }}</h1>
 				<p v-if="statusData.identifier" class="public-status-page__ref">
-					{{ t('procest', 'Reference: {ref}', { ref: statusData.identifier }) }}
+					{{
+						t('procest', 'Reference: {ref}', {
+							ref: statusData.identifier,
+						})
+					}}
 				</p>
 			</header>
 
 			<!-- Visual status indicator -->
-			<section class="public-status-page__progress" role="progressbar" :aria-label="t('procest', 'Case progress')">
+			<section
+				class="public-status-page__progress"
+				role="progressbar"
+				:aria-label="t('procest', 'Case progress')">
 				<div class="public-status-page__status-label">
 					{{ t('procest', 'Current status') }}
 				</div>
@@ -30,18 +37,37 @@
 
 			<!-- Dates -->
 			<section class="public-status-page__dates">
-				<div v-if="statusData.startDate" class="public-status-page__date-item">
-					<span class="public-status-page__date-label">{{ t('procest', 'Submitted') }}</span>
-					<span class="public-status-page__date-value">{{ formatDate(statusData.startDate) }}</span>
+				<div
+					v-if="statusData.startDate"
+					class="public-status-page__date-item">
+					<span class="public-status-page__date-label">{{
+						t('procest', 'Submitted')
+					}}</span>
+					<span class="public-status-page__date-value">{{
+						formatDate(statusData.startDate)
+					}}</span>
 				</div>
-				<div v-if="statusData.plannedEndDate" class="public-status-page__date-item">
-					<span class="public-status-page__date-label">{{ t('procest', 'Expected completion') }}</span>
-					<span class="public-status-page__date-value">{{ formatDate(statusData.plannedEndDate) }}</span>
+				<div
+					v-if="statusData.plannedEndDate"
+					class="public-status-page__date-item">
+					<span class="public-status-page__date-label">{{
+						t('procest', 'Expected completion')
+					}}</span>
+					<span class="public-status-page__date-value">{{
+						formatDate(statusData.plannedEndDate)
+					}}</span>
 				</div>
 			</section>
 
 			<footer class="public-status-page__footer">
-				<p>{{ t('procest', 'For questions about your case, please contact the municipality.') }}</p>
+				<p>
+					{{
+						t(
+							'procest',
+							'For questions about your case, please contact the municipality.',
+						)
+					}}
+				</p>
 			</footer>
 		</div>
 	</div>
@@ -86,7 +112,9 @@ export default {
 		async loadStatus() {
 			this.loading = true
 			try {
-				const response = await fetch(`/apps/openregister/api/public/case-tokens/${encodeURIComponent(this.token)}`)
+				const response = await fetch(
+					`/apps/openregister/api/public/case-tokens/${encodeURIComponent(this.token)}`,
+				)
 				if (!response.ok) {
 					this.error = t('procest', 'Status unavailable')
 					return

@@ -29,7 +29,9 @@ test.describe('case-email-integration spec coverage', () => {
 	test.slow()
 
 	// @e2e openspec/specs/case-email-integration/spec.md#no-per-user-smtp-send-configuration-is-exposed
-	test('shared-mailbox settings render without per-user SMTP send fields', async ({ page }) => {
+	test('shared-mailbox settings render without per-user SMTP send fields', async ({
+		page,
+	}) => {
 		await page.goto(ADMIN_SETTINGS_URL, { waitUntil: 'domcontentloaded' })
 		await expect(page).not.toHaveURL(/login/, { timeout: 10000 })
 
@@ -37,12 +39,19 @@ test.describe('case-email-integration spec coverage', () => {
 		// Email — Shared Mailbox section is near the bottom, so load all
 		// sections into the DOM before asserting.
 		await loadAllAdminSections(page)
-		const heading = page.getByRole('heading', { name: /Case Email|Shared Mailbox/i })
-		await heading.first().scrollIntoViewIfNeeded({ timeout: 15000 }).catch(() => {})
+		const heading = page.getByRole('heading', {
+			name: /Case Email|Shared Mailbox/i,
+		})
+		await heading
+			.first()
+			.scrollIntoViewIfNeeded({ timeout: 15000 })
+			.catch(() => {})
 		await expect(heading.first()).toBeVisible({ timeout: 15000 })
 
 		// Shared-mailbox IMAP host field is present.
-		await expect(page.locator('#email_imap_host')).toBeVisible({ timeout: 10000 })
+		await expect(page.locator('#email_imap_host')).toBeVisible({
+			timeout: 10000,
+		})
 
 		// There MUST be no SMTP-send credential FIELDS — outbound mail is NC
 		// Mail's. (We assert on the input fields, not on any "SMTP" text: the
@@ -51,20 +60,29 @@ test.describe('case-email-integration spec coverage', () => {
 		// explanatory sentence.)
 		await expect(page.locator('#email_smtp_host')).toHaveCount(0)
 		await expect(page.locator('#email_smtp_password')).toHaveCount(0)
-		await expect(page.locator('input[id*="smtp" i], input[name*="smtp" i]')).toHaveCount(0)
+		await expect(
+			page.locator('input[id*="smtp" i], input[name*="smtp" i]'),
+		).toHaveCount(0)
 	})
 
 	// FIXME(#719): the "Test connection" button exists in EmailSettings.vue
 	// but does not render on the admin page even after every section has been
 	// scrolled in. The sibling test above loads the same page successfully.
 	// @e2e openspec/specs/case-email-integration/spec.md#composer-is-the-leaf-nc-mail-not-a-procest-component
-	test.fixme('settings expose a Test connection control, not an outbound composer', async ({ page }) => {
+	test.fixme('settings expose a Test connection control, not an outbound composer', async ({
+		page,
+	}) => {
 		await page.goto(ADMIN_SETTINGS_URL, { waitUntil: 'domcontentloaded' })
 		await expect(page).not.toHaveURL(/login/, { timeout: 10000 })
 
 		await loadAllAdminSections(page)
-		const heading = page.getByRole('heading', { name: /Case Email|Shared Mailbox/i })
-		await heading.first().scrollIntoViewIfNeeded({ timeout: 15000 }).catch(() => {})
+		const heading = page.getByRole('heading', {
+			name: /Case Email|Shared Mailbox/i,
+		})
+		await heading
+			.first()
+			.scrollIntoViewIfNeeded({ timeout: 15000 })
+			.catch(() => {})
 		await expect(heading.first()).toBeVisible({ timeout: 15000 })
 
 		// The shared-mailbox panel offers a Test-connection action (IMAP smoke
@@ -74,7 +92,8 @@ test.describe('case-email-integration spec coverage', () => {
 		const testConn = page.getByRole('button', { name: 'Test connection' })
 		await testConn.scrollIntoViewIfNeeded({ timeout: 15000 }).catch(() => {})
 		await expect(testConn).toBeVisible({ timeout: 10000 })
-		await expect(page.getByRole('button', { name: 'Save mailbox settings' })).toBeVisible({ timeout: 10000 })
+		await expect(
+			page.getByRole('button', { name: 'Save mailbox settings' }),
+		).toBeVisible({ timeout: 10000 })
 	})
-
 })

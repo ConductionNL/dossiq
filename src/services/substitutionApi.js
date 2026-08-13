@@ -44,7 +44,9 @@ export async function createSubstitution(payload) {
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
 export async function revokeSubstitution(id) {
-	const { data } = await axios.post(base(`/api/substitutions/${encodeURIComponent(id)}/revoke`))
+	const { data } = await axios.post(
+		base(`/api/substitutions/${encodeURIComponent(id)}/revoke`),
+	)
 	return data
 }
 
@@ -67,7 +69,9 @@ export async function fetchSubstitutedWork() {
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
 export async function fetchSubstitutionActions(id) {
-	const { data } = await axios.get(base(`/api/substitutions/${encodeURIComponent(id)}/actions`))
+	const { data } = await axios.get(
+		base(`/api/substitutions/${encodeURIComponent(id)}/actions`),
+	)
 	return (data && data.results) || []
 }
 
@@ -80,7 +84,10 @@ export async function fetchSubstitutionActions(id) {
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
 export async function previewReassignment(fromUser, caseType) {
-	const { data } = await axios.post(base('/api/reassignments/preview'), { fromUser, caseType })
+	const { data } = await axios.post(base('/api/reassignments/preview'), {
+		fromUser,
+		caseType,
+	})
 	return { cases: (data && data.cases) || [], tasks: (data && data.tasks) || [] }
 }
 
@@ -94,6 +101,10 @@ export async function previewReassignment(fromUser, caseType) {
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
 export async function executeReassignment(fromUser, toUser, caseType) {
-	const { data } = await axios.post(base('/api/reassignments/execute'), { fromUser, toUser, caseType })
+	const { data } = await axios.post(base('/api/reassignments/execute'), {
+		fromUser,
+		toUser,
+		caseType,
+	})
 	return data
 }

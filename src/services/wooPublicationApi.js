@@ -11,7 +11,8 @@
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
 
-const base = (caseId, path) => generateUrl('/apps/procest/api/cases/' + caseId + '/woo' + path)
+const base = (caseId, path) =>
+	generateUrl('/apps/procest/api/cases/' + caseId + '/woo' + path)
 
 /**
  * Publish a WOO decision to OpenCatalogi.

@@ -137,7 +137,10 @@ export default {
 		 * @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 		 */
 		unavailableDescription() {
-			return t('procest', 'The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here.')
+			return t(
+				'procest',
+				'The decidesk app provides decision-making for this case. Install or enable decidesk to manage proposals, advice and decisions here.',
+			)
 		},
 	},
 }

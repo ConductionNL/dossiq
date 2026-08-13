@@ -5,13 +5,20 @@
 		@closing="$emit('close')">
 		<div class="voorstel-create">
 			<div class="form-group">
-				<label for="voorstel-create-onderwerp">{{ t('procest', 'Onderwerp') }} *</label>
+				<label for="voorstel-create-onderwerp"
+					>{{ t('procest', 'Onderwerp') }} *</label
+				>
 				<NcTextField
 					id="voorstel-create-onderwerp"
 					:model-value="form.onderwerp"
 					:error="!!errors.onderwerp"
 					:placeholder="t('procest', 'Subject of the proposal...')"
-					@update:model-value="v => { form.onderwerp = v; errors.onderwerp = '' }" />
+					@update:model-value="
+						(v) => {
+							form.onderwerp = v
+							errors.onderwerp = ''
+						}
+					" />
 				<p v-if="errors.onderwerp" class="form-error">
 					{{ errors.onderwerp }}
 				</p>
@@ -39,21 +46,25 @@
 			</div>
 
 			<div class="form-group">
-				<label for="voorstel-create-portfolio-holder">{{ t('procest', 'Portfolio holder') }}</label>
+				<label for="voorstel-create-portfolio-holder">{{
+					t('procest', 'Portfolio holder')
+				}}</label>
 				<NcTextField
 					id="voorstel-create-portfolio-holder"
 					:model-value="form.portefeuillehouder"
 					:placeholder="t('procest', 'Alderman user ID')"
-					@update:model-value="v => form.portefeuillehouder = v" />
+					@update:model-value="(v) => (form.portefeuillehouder = v)" />
 			</div>
 
 			<div class="form-group">
-				<label for="voorstel-create-department">{{ t('procest', 'Department') }}</label>
+				<label for="voorstel-create-department">{{
+					t('procest', 'Department')
+				}}</label>
 				<NcTextField
 					id="voorstel-create-department"
 					:model-value="form.afdeling"
 					:placeholder="t('procest', 'Department')"
-					@update:model-value="v => form.afdeling = v" />
+					@update:model-value="(v) => (form.afdeling = v)" />
 			</div>
 		</div>
 
@@ -72,7 +83,13 @@
 </template>
 
 <script>
-import { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcDialog,
+	NcLoadingIcon,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 import { getCurrentUser } from '@nextcloud/auth'
 import { useObjectStore } from '../store/modules/object.js'
 
@@ -107,11 +124,7 @@ export default {
 				afdeling: '',
 			},
 			errors: {},
-			typeOptions: [
-				'dt_advies',
-				'collegeadvies',
-				'raadsvoorstel',
-			],
+			typeOptions: ['dt_advies', 'collegeadvies', 'raadsvoorstel'],
 		}
 	},
 	computed: {
@@ -124,8 +137,12 @@ export default {
 	async created() {
 		if (!this.caseId) {
 			try {
-				const results = await this.objectStore.fetchCollection('case', { _limit: 200 })
-				this.cases = Array.isArray(results) ? results : (results?.results || [])
+				const results = await this.objectStore.fetchCollection('case', {
+					_limit: 200,
+				})
+				this.cases = Array.isArray(results)
+					? results
+					: results?.results || []
 			} catch (error) {
 				console.error('Failed to load cases:', error)
 			}
@@ -160,12 +177,17 @@ export default {
 				// Try to find a default parafeerroute for this case type and voorstel type
 				let routeId = null
 				try {
-					const routes = await this.objectStore.fetchCollection('parafeerroute', {
-						'_filters[voorstelType]': this.form.type,
-						'_filters[isDefault]': true,
-						_limit: 1,
-					})
-					const routeList = Array.isArray(routes) ? routes : (routes?.results || [])
+					const routes = await this.objectStore.fetchCollection(
+						'parafeerroute',
+						{
+							'_filters[voorstelType]': this.form.type,
+							'_filters[isDefault]': true,
+							_limit: 1,
+						},
+					)
+					const routeList = Array.isArray(routes)
+						? routes
+						: routes?.results || []
 					if (routeList.length > 0) {
 						routeId = routeList[0].id
 					}
@@ -193,7 +215,8 @@ export default {
 				this.$emit('created')
 			} catch (error) {
 				console.error('Failed to create voorstel:', error)
-				this.errors.onderwerp = error.message || t('procest', 'Failed to create')
+				this.errors.onderwerp =
+					error.message || t('procest', 'Failed to create')
 			} finally {
 				this.saving = false
 			}

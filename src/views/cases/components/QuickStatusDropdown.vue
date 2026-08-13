@@ -47,11 +47,14 @@ export default {
 		},
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		statusOptions() {
-			return [...this.statusTypes].sort((a, b) => (a.order || 0) - (b.order || 0))
+			return [...this.statusTypes].sort(
+				(a, b) => (a.order || 0) - (b.order || 0),
+			)
 		},
 	},
 	mounted() {
-		this.selectedStatus = this.statusTypes.find(st => st.id === this.caseObj.status) || null
+		this.selectedStatus =
+			this.statusTypes.find((st) => st.id === this.caseObj.status) || null
 	},
 	methods: {
 		/**
@@ -79,7 +82,9 @@ export default {
 			activity.push({
 				date: now,
 				type: 'status_change',
-				description: t('procest', 'Status changed to \'{status}\'', { status: newStatus.name }),
+				description: t('procest', "Status changed to '{status}'", {
+					status: newStatus.name,
+				}),
 				user: currentUser,
 			})
 

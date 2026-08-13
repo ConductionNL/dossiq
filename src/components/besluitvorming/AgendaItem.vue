@@ -3,10 +3,20 @@
   - SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
   -->
 <template>
-	<div class="agenda-item" :class="{ 'agenda-item--bespreekstuk': item.behandeling === 'bespreekstuk' }">
-		<span class="agenda-item__handle" :title="t('procest', 'Sleep om te herordenen')">⋮⋮</span>
+	<div
+		class="agenda-item"
+		:class="{
+			'agenda-item--bespreekstuk': item.behandeling === 'bespreekstuk',
+		}">
+		<span
+			class="agenda-item__handle"
+			:title="t('procest', 'Sleep om te herordenen')"
+			>⋮⋮</span
+		>
 		<span class="agenda-item__number">{{ item.agendanummer || '–' }}</span>
-		<span class="agenda-item__title">{{ item.title || t('procest', 'Onbenoemd voorstel') }}</span>
+		<span class="agenda-item__title">{{
+			item.title || t('procest', 'Onbenoemd voorstel')
+		}}</span>
 		<div class="agenda-item__toggle">
 			<NcButton
 				:type="item.behandeling === 'hamerstuk' ? 'primary' : 'secondary'"

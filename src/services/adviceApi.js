@@ -138,7 +138,9 @@ export async function dispatchReminder(id) {
  */
 export async function createAdviceWithNotification(data) {
 	const caseId = data.case || data.caseRef || data.zaak
-	const url = generateUrl('/apps/procest/api/vth/cases/{caseId}/advice-requests', { caseId })
+	const url = generateUrl('/apps/procest/api/vth/cases/{caseId}/advice-requests', {
+		caseId,
+	})
 	const created = await axios.post(url, {
 		...data,
 		requestedAt: new Date().toISOString(),

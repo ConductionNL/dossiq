@@ -26,16 +26,28 @@
 		<div v-else class="public-federated-transfer-page__content">
 			<h2>{{ t('procest', 'Case transfer request') }}</h2>
 			<p class="public-federated-transfer-page__description">
-				{{ t('procest', 'Another organisation has requested to transfer custody of a case to your organisation. Review the request with your case handler before accepting.') }}
+				{{
+					t(
+						'procest',
+						'Another organisation has requested to transfer custody of a case to your organisation. Review the request with your case handler before accepting.',
+					)
+				}}
 			</p>
 
 			<div class="form-group">
-				<label for="public-federated-transfer-reason">{{ t('procest', 'Reason (required to reject)') }}</label>
+				<label for="public-federated-transfer-reason">{{
+					t('procest', 'Reason (required to reject)')
+				}}</label>
 				<textarea
 					id="public-federated-transfer-reason"
 					v-model="reason"
 					rows="3"
-					:placeholder="t('procest', 'Explain why this transfer is being rejected...')" />
+					:placeholder="
+						t(
+							'procest',
+							'Explain why this transfer is being rejected...',
+						)
+					" />
 			</div>
 
 			<div class="public-federated-transfer-page__actions">
@@ -86,22 +98,47 @@ export default {
 		async respond(action) {
 			this.submitting = true
 			try {
-				const url = generateUrl(publicFederatedTransferEndpoint(this.shareToken, this.transferId))
-				const response = await axios.put(url, { action, reason: this.reason })
+				const url = generateUrl(
+					publicFederatedTransferEndpoint(
+						this.shareToken,
+						this.transferId,
+					),
+				)
+				const response = await axios.put(url, {
+					action,
+					reason: this.reason,
+				})
 				if (response.data?.success) {
 					this.result = {
 						success: true,
-						message: action === 'accept'
-							? t('procest', 'You have accepted this case transfer.')
-							: t('procest', 'You have rejected this case transfer.'),
+						message:
+							action === 'accept'
+								? t(
+										'procest',
+										'You have accepted this case transfer.',
+									)
+								: t(
+										'procest',
+										'You have rejected this case transfer.',
+									),
 					}
 				} else {
-					this.result = { success: false, message: response.data?.error || t('procest', 'Could not process this transfer.') }
+					this.result = {
+						success: false,
+						message:
+							response.data?.error
+							|| t('procest', 'Could not process this transfer.'),
+					}
 				}
 			} catch (e) {
 				this.result = {
 					success: false,
-					message: e.response?.data?.error || t('procest', 'This transfer link is invalid, expired or already resolved.'),
+					message:
+						e.response?.data?.error
+						|| t(
+							'procest',
+							'This transfer link is invalid, expired or already resolved.',
+						),
 				}
 			} finally {
 				this.submitting = false

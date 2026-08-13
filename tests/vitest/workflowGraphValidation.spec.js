@@ -13,13 +13,18 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { validateWorkflowGraph, RULES } from '../../src/utils/workflowGraphValidation.js'
+import {
+	validateWorkflowGraph,
+	RULES,
+} from '../../src/utils/workflowGraphValidation.js'
 
 const codesOf = (issues) => issues.map((i) => i.code)
 
 describe('validateWorkflowGraph', () => {
 	it('returns no issues for an empty graph (nothing to validate yet)', () => {
-		expect(validateWorkflowGraph({ statusNodes: [], transitions: [] })).toEqual([])
+		expect(validateWorkflowGraph({ statusNodes: [], transitions: [] })).toEqual(
+			[],
+		)
 		expect(validateWorkflowGraph({})).toEqual([])
 	})
 
@@ -44,7 +49,9 @@ describe('validateWorkflowGraph', () => {
 		const transitions = [{ id: 't1', fromStatus: 's1', toStatus: 's2' }]
 		const issues = validateWorkflowGraph({ statusNodes, transitions })
 		expect(codesOf(issues)).toContain(RULES.NO_FINAL_STATUS)
-		expect(issues.find((i) => i.code === RULES.NO_FINAL_STATUS).type).toBe('error')
+		expect(issues.find((i) => i.code === RULES.NO_FINAL_STATUS).type).toBe(
+			'error',
+		)
 	})
 
 	it('UNREACHABLE_FINAL: flags a final status with no path from any clear starting status', () => {
@@ -79,7 +86,14 @@ describe('validateWorkflowGraph', () => {
 			{ id: 's1', name: 'Ontvangen', isFinal: false },
 			{ id: 's2', name: 'Afgehandeld', isFinal: true },
 		]
-		const transitions = [{ id: 't1', fromStatus: 's1', toStatus: 'ghost-status', label: 'Afronden' }]
+		const transitions = [
+			{
+				id: 't1',
+				fromStatus: 's1',
+				toStatus: 'ghost-status',
+				label: 'Afronden',
+			},
+		]
 		const issues = validateWorkflowGraph({ statusNodes, transitions })
 		expect(codesOf(issues)).toContain(RULES.DANGLING_EDGE)
 		expect(issues.find((i) => i.code === RULES.DANGLING_EDGE).type).toBe('error')
@@ -96,7 +110,9 @@ describe('validateWorkflowGraph', () => {
 		]
 		const issues = validateWorkflowGraph({ statusNodes, transitions })
 		expect(codesOf(issues)).toContain(RULES.DUPLICATE_TRANSITION)
-		expect(issues.find((i) => i.code === RULES.DUPLICATE_TRANSITION).type).toBe('warning')
+		expect(issues.find((i) => i.code === RULES.DUPLICATE_TRANSITION).type).toBe(
+			'warning',
+		)
 	})
 
 	it('ORPHAN_NODE: flags a status with no incoming or outgoing transitions', () => {
@@ -132,7 +148,9 @@ describe('validateWorkflowGraph', () => {
 		]
 		const issues = validateWorkflowGraph({ statusNodes, transitions })
 		expect(codesOf(issues)).toContain(RULES.CYCLE_NO_EXIT)
-		expect(issues.find((i) => i.code === RULES.CYCLE_NO_EXIT).type).toBe('warning')
+		expect(issues.find((i) => i.code === RULES.CYCLE_NO_EXIT).type).toBe(
+			'warning',
+		)
 	})
 
 	it('does not flag CYCLE_NO_EXIT when the cycle has an exit to a final status', () => {
@@ -189,6 +207,8 @@ describe('validateWorkflowGraph', () => {
 
 	it('gracefully returns [] for malformed JSON transitions instead of throwing', () => {
 		const statusNodes = [{ id: 's1', name: 'A', isFinal: true }]
-		expect(() => validateWorkflowGraph({ statusNodes, transitions: '{not valid json' })).not.toThrow()
+		expect(() =>
+			validateWorkflowGraph({ statusNodes, transitions: '{not valid json' }),
+		).not.toThrow()
 	})
 })

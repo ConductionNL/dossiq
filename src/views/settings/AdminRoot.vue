@@ -14,91 +14,156 @@
 
 		<CnSettingsSection
 			:name="t('procest', 'ZGW API Mapping')"
-			:description="t('procest', 'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields')"
+			:description="
+				t(
+					'procest',
+					'Configure property mappings between English OpenRegister fields and Dutch ZGW API fields',
+				)
+			"
 			:loading="!storesReady">
 			<ZgwMappingSettings v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'VTH Inspection Checklists')"
-			:description="t('procest', 'Configure reusable inspection checklists for VTH cases (Toezicht). Checklists are versioned and linked to case types.')"
+			:description="
+				t(
+					'procest',
+					'Configure reusable inspection checklists for VTH cases (Toezicht). Checklists are versioned and linked to case types.',
+				)
+			"
 			:loading="!storesReady">
 			<ChecklistsTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'AI-Assisted Processing')"
-			:description="t('procest', 'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support')"
+			:description="
+				t(
+					'procest',
+					'Configure AI features for document classification, data extraction, Q&A, summarization, routing and decision support',
+				)
+			"
 			:loading="!storesReady">
 			<AiSettingsTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'AWB Term Definitions')"
-			:description="t('procest', 'Configure statutory term definitions per zaaktype for AWB termijnbewaking (legal basis, duration, validity). Versioning is enforced on save.')"
+			:description="
+				t(
+					'procest',
+					'Configure statutory term definitions per zaaktype for AWB termijnbewaking (legal basis, duration, validity). Versioning is enforced on save.',
+				)
+			"
 			:loading="!storesReady">
 			<TermijnDefinitiesTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'Mandate Matrix — Administration')"
-			:description="t('procest', 'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports')"
+			:description="
+				t(
+					'procest',
+					'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports',
+				)
+			"
 			:loading="!storesReady">
 			<MandaatMatrixTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'Mandate Matrix — System Settings')"
-			:description="t('procest', 'Awb art. 10:3 mandate administration: Decidesk import, role hierarchy, waarnemer assignments.')"
+			:description="
+				t(
+					'procest',
+					'Awb art. 10:3 mandate administration: Decidesk import, role hierarchy, waarnemer assignments.',
+				)
+			"
 			:loading="!storesReady">
 			<MandaatMatrixSettingsTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'Consultation Management')"
-			:description="t('procest', 'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.')"
+			:description="
+				t(
+					'procest',
+					'Adviesaanvragen: advisory body registry, mandatory-gate config, n8n webhook contracts and external response settings.',
+				)
+			"
 			:loading="!storesReady">
 			<ConsultationSettingsTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'Case Email — Shared Mailbox')"
-			:description="t('procest', 'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.')"
+			:description="
+				t(
+					'procest',
+					'Shared functional mailbox ingest (IMAP) and transport for case correspondence. Outbound mail and per-user accounts are owned by Nextcloud Mail.',
+				)
+			"
 			:loading="!storesReady">
 			<EmailSettings v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'KCC-werkplek Integration')"
-			:description="t('procest', 'Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.')"
+			:description="
+				t(
+					'procest',
+					'Burger identification, case-voorblad limits, sentiment trigger words, and belplan overflow thresholds for the KCC contact-center bridge.',
+				)
+			"
 			:loading="!storesReady">
 			<KccIntegrationSettings v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'Decision Tables (DMN)')"
-			:description="t('procest', 'Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.')"
+			:description="
+				t(
+					'procest',
+					'Configure DMN-style decision tables (inputs, outputs, rules and a hit policy) that domain experts can maintain without a developer. A workflow step can invoke a decision by key, and decisions are also evaluable via the REST API.',
+				)
+			"
 			:loading="!storesReady">
 			<DecisionTablesTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'Financial Integration — Dwangsom Callback')"
-			:description="t('procest', 'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.')"
+			:description="
+				t(
+					'procest',
+					'Configure the shared secret used to validate ERP payment-confirmation callbacks for dwangsom (penalty payment) uitbetalingen.',
+				)
+			"
 			:loading="!storesReady">
 			<FinancialIntegrationTab v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'StUF-ZKN Endpoints')"
-			:description="t('procest', 'Outbound StUF-ZKN/BG zaaksysteem endpoints per gemeente, with per-endpoint circuit-breaker health. Endpoints, WSSE credentials and mTLS certificates are managed by the platform operator.')"
+			:description="
+				t(
+					'procest',
+					'Outbound StUF-ZKN/BG zaaksysteem endpoints per gemeente, with per-endpoint circuit-breaker health. Endpoints, WSSE credentials and mTLS certificates are managed by the platform operator.',
+				)
+			"
 			:loading="!storesReady">
 			<StufEndpoints v-if="storesReady" />
 		</CnSettingsSection>
 
 		<CnSettingsSection
 			:name="t('procest', 'StUF-ZKN Audit Log')"
-			:description="t('procest', 'Per-call audit log for outbound and inbound StUF SOAP envelopes (full XML, HTTP status, duration, retry history).')"
+			:description="
+				t(
+					'procest',
+					'Per-call audit log for outbound and inbound StUF SOAP envelopes (full XML, HTTP status, duration, retry history).',
+				)
+			"
 			:loading="!storesReady">
 			<StufAuditLog v-if="storesReady" />
 		</CnSettingsSection>

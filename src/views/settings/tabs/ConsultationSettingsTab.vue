@@ -1,7 +1,12 @@
 <template>
 	<div class="consultation-settings">
 		<NcNoteCard type="info">
-			{{ t('procest', 'Structured consultation (adviesaanvraag) is being delivered in consultation-management. This panel will host advisory body registry, mandatory-gate config and n8n webhook endpoints.') }}
+			{{
+				t(
+					'procest',
+					'Structured consultation (adviesaanvraag) is being delivered in consultation-management. This panel will host advisory body registry, mandatory-gate config and n8n webhook endpoints.',
+				)
+			}}
 		</NcNoteCard>
 
 		<div class="setting-row">
@@ -15,7 +20,12 @@
 				:disabled="!writable"
 				:placeholder="'28'" />
 			<p class="setting-help">
-				{{ t('procest', 'Used when an advisory body has no explicit defaultDeadlineDays configured.') }}
+				{{
+					t(
+						'procest',
+						'Used when an advisory body has no explicit defaultDeadlineDays configured.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -30,7 +40,12 @@
 				:disabled="!writable"
 				:placeholder="'5'" />
 			<p class="setting-help">
-				{{ t('procest', 'The deadline-monitor n8n workflow uses this offset to send T-X warnings.') }}
+				{{
+					t(
+						'procest',
+						'The deadline-monitor n8n workflow uses this offset to send T-X warnings.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -44,7 +59,12 @@
 				:disabled="!writable"
 				:placeholder="'https://procest.example.org/consultation/respond/'" />
 			<p class="setting-help">
-				{{ t('procest', 'Base URL used in secure response links sent to external advisory bodies. Must be HTTPS.') }}
+				{{
+					t(
+						'procest',
+						'Base URL used in secure response links sent to external advisory bodies. Must be HTTPS.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -59,7 +79,12 @@
 				:disabled="!writable"
 				:placeholder="'0.2'" />
 			<p class="setting-help">
-				{{ t('procest', 'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.') }}
+				{{
+					t(
+						'procest',
+						'When an advisory body exceeds this overdue-rate over the trailing 30 days, the bottleneck workflow notifies coordinators.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -67,19 +92,22 @@
 			{{ error }}
 		</NcNoteCard>
 
-		<NcButton
-			type="primary"
-			:disabled="!writable || saving"
-			@click="save">
+		<NcButton type="primary" :disabled="!writable || saving" @click="save">
 			<template #icon>
 				<NcLoadingIcon v-if="saving" :size="20" />
 			</template>
-			{{ saving ? t('procest', 'Saving...') : t('procest', 'Save consultation settings') }}
+			{{
+				saving
+					? t('procest', 'Saving...')
+					: t('procest', 'Save consultation settings')
+			}}
 		</NcButton>
 
 		<p class="docs-link">
 			<a :href="workflowDocsUrl" target="_blank" rel="noopener">
-				{{ t('procest', 'Read the n8n consultation workflows documentation') }}
+				{{
+					t('procest', 'Read the n8n consultation workflows documentation')
+				}}
 			</a>
 		</p>
 	</div>
@@ -146,14 +174,22 @@ export default {
 						requesttoken: OC.requestToken,
 					},
 					body: JSON.stringify({
-						consultation_default_deadline_days: String(Number(this.defaultDeadlineDays)),
-						consultation_warning_offset_days: String(Number(this.warningOffsetDays)),
+						consultation_default_deadline_days: String(
+							Number(this.defaultDeadlineDays),
+						),
+						consultation_warning_offset_days: String(
+							Number(this.warningOffsetDays),
+						),
 						consultation_external_response_url: this.externalResponseUrl,
-						consultation_bottleneck_threshold: String(Number(this.bottleneckThreshold)),
+						consultation_bottleneck_threshold: String(
+							Number(this.bottleneckThreshold),
+						),
 					}),
 				})
 				if (!res.ok) {
-					this.error = t('procest', 'Saving failed ({status})', { status: res.status })
+					this.error = t('procest', 'Saving failed ({status})', {
+						status: res.status,
+					})
 				}
 			} catch (e) {
 				this.error = e.message || t('procest', 'Saving failed')

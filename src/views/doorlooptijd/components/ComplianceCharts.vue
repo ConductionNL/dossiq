@@ -160,7 +160,7 @@ export default {
 		 * @spec openspec/changes/migrate-sla-dashboard-to-analytics-leaf/tasks.md#P1.1
 		 */
 		donutOptions() {
-			const types = this.slaData.byType.filter(t => t.total > 0)
+			const types = this.slaData.byType.filter((t) => t.total > 0)
 			return {
 				colors: [
 					'var(--color-success)',
@@ -176,7 +176,10 @@ export default {
 						donut: {
 							labels: {
 								show: true,
-								total: { show: true, label: t('procest', 'Within SLA') },
+								total: {
+									show: true,
+									label: t('procest', 'Within SLA'),
+								},
 							},
 						},
 					},
@@ -206,7 +209,7 @@ export default {
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
 		histogramCategories() {
-			return (this.distributionData.bins || []).map(b => b.label)
+			return (this.distributionData.bins || []).map((b) => b.label)
 		},
 		/**
 		 * Histogram render options with the SLA-target annotation line.
@@ -224,7 +227,9 @@ export default {
 					x: bins[targetBinIndex]?.label || '',
 					borderColor: 'var(--color-error)',
 					label: {
-						text: t('procest', 'SLA Target: {days}d', { days: targetDays }),
+						text: t('procest', 'SLA Target: {days}d', {
+							days: targetDays,
+						}),
 						style: {
 							color: 'var(--color-error)',
 							background: 'var(--color-background-hover)',
@@ -264,7 +269,7 @@ export default {
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
 		trendCategories() {
-			return this.trendData.map(d => d.month)
+			return this.trendData.map((d) => d.month)
 		},
 		/**
 		 * Trend render options (0–100% axis, 100%-target annotation, tooltip).
@@ -277,24 +282,26 @@ export default {
 					min: 0,
 					max: 100,
 					title: { text: t('procest', 'Compliance %') },
-					labels: { formatter: (val) => val !== null ? val + '%' : '' },
+					labels: { formatter: (val) => (val !== null ? val + '%' : '') },
 				},
 				colors: ['var(--color-primary)'],
 				stroke: { curve: 'smooth', width: 3 },
 				markers: { size: 5 },
 				annotations: {
-					yaxis: [{
-						y: 100,
-						borderColor: 'var(--color-success)',
-						strokeDashArray: 4,
-						label: {
-							text: t('procest', '100% target'),
-							style: {
-								color: 'var(--color-success)',
-								background: 'var(--color-background-hover)',
+					yaxis: [
+						{
+							y: 100,
+							borderColor: 'var(--color-success)',
+							strokeDashArray: 4,
+							label: {
+								text: t('procest', '100% target'),
+								style: {
+									color: 'var(--color-success)',
+									background: 'var(--color-background-hover)',
+								},
 							},
 						},
-					}],
+					],
 				},
 				tooltip: {
 					y: {
@@ -313,7 +320,10 @@ export default {
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
 		throughputSeries() {
-			return buildThroughputSeries(this.throughputData, t('procest', 'Cases closed'))
+			return buildThroughputSeries(
+				this.throughputData,
+				t('procest', 'Cases closed'),
+			)
 		},
 		/**
 		 * Throughput x-axis categories (ISO week labels).
@@ -321,7 +331,7 @@ export default {
 		 * @spec openspec/specs/doorlooptijd-dashboard/spec.md
 		 */
 		throughputCategories() {
-			return this.throughputData.map(w => w.weekLabel)
+			return this.throughputData.map((w) => w.weekLabel)
 		},
 		/**
 		 * Throughput render options (integer y-axis, smooth line).

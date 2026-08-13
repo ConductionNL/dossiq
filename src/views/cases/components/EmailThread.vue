@@ -19,9 +19,11 @@
 				:class="'email-thread__message--' + msg.direction">
 				<div class="email-thread__message-header">
 					<span class="email-thread__direction">
-						{{ msg.direction === 'outbound'
-							? t('procest', 'Sent')
-							: t('procest', 'Received') }}
+						{{
+							msg.direction === 'outbound'
+								? t('procest', 'Sent')
+								: t('procest', 'Received')
+						}}
 					</span>
 					<span class="email-thread__date">
 						{{ formatDateTime(msg.sentAt || msg.receivedAt) }}
@@ -49,9 +51,11 @@
 					v-if="msg.body && msg.body.length > 200"
 					type="tertiary"
 					@click="toggleExpand(msg.messageId || msg.id)">
-					{{ isExpanded(msg.messageId || msg.id)
-						? t('procest', 'Show less')
-						: t('procest', 'Show more') }}
+					{{
+						isExpanded(msg.messageId || msg.id)
+							? t('procest', 'Show less')
+							: t('procest', 'Show more')
+					}}
 				</NcButton>
 			</div>
 		</div>

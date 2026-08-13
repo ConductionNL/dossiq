@@ -43,10 +43,8 @@ export function collectUnresolved(text, knownNames) {
  */
 export function renderPreview(body, knownNames) {
 	const known = new Set(knownNames || [])
-	const escape = (s) => String(s)
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
+	const escape = (s) =>
+		String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 	const re = new RegExp(PLACEHOLDER_RE.source, 'g')
 	const rendered = escape(body || '').replace(re, (full, name) => {
 		const cls = known.has(name) ? 'etpl-var-ok' : 'etpl-var-bad'

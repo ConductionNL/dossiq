@@ -26,7 +26,9 @@ const base = (path) => generateUrl(`/apps/procest/api/deelzaken${path}`)
  * @return {Promise<Array>} Sub-case rows.
  */
 export async function fetchSubCases(parentCaseUuid) {
-	const { data } = await axios.get(base(`/${encodeURIComponent(parentCaseUuid)}/children`))
+	const { data } = await axios.get(
+		base(`/${encodeURIComponent(parentCaseUuid)}/children`),
+	)
 	return data.results || []
 }
 
@@ -38,7 +40,9 @@ export async function fetchSubCases(parentCaseUuid) {
  */
 export async function fetchParentCase(parentCaseUuid) {
 	try {
-		const { data } = await axios.get(base(`/${encodeURIComponent(parentCaseUuid)}/parent`))
+		const { data } = await axios.get(
+			base(`/${encodeURIComponent(parentCaseUuid)}/parent`),
+		)
 		return data
 	} catch (err) {
 		if (err?.response?.status === 404) {
@@ -74,7 +78,10 @@ export async function fetchSubCaseCounts(caseUuidArray) {
  */
 export async function validateSubCase({ parentCaseUuid, childCaseTypeId }) {
 	try {
-		const { data } = await axios.post(base('/validate'), { parentCaseUuid, childCaseTypeId })
+		const { data } = await axios.post(base('/validate'), {
+			parentCaseUuid,
+			childCaseTypeId,
+		})
 		return data
 	} catch (err) {
 		if (err?.response?.data) {
@@ -107,7 +114,9 @@ export async function validateSubCase({ parentCaseUuid, childCaseTypeId }) {
  * @spec openspec/specs/deelzaak-support/spec.md#requirement-sub-case-deletion-protection
  */
 export async function unlinkSubCases(parentCaseUuid) {
-	const { data } = await axios.post(base(`/${encodeURIComponent(parentCaseUuid)}/unlink`))
+	const { data } = await axios.post(
+		base(`/${encodeURIComponent(parentCaseUuid)}/unlink`),
+	)
 	return {
 		unlinked: data?.unlinked || 0,
 		failed: data?.failed || 0,

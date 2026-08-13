@@ -79,7 +79,11 @@ describe('deelzaak store', () => {
 
 		it('toggles loading true during the in-flight fetch then back to false', async () => {
 			let resolveFn
-			apiFetchSubCases.mockReturnValueOnce(new Promise((resolve) => { resolveFn = resolve }))
+			apiFetchSubCases.mockReturnValueOnce(
+				new Promise((resolve) => {
+					resolveFn = resolve
+				}),
+			)
 
 			const pending = store.fetchSubCases('parent-1')
 			expect(store.loading).toBe(true)
@@ -94,7 +98,9 @@ describe('deelzaak store', () => {
 			const boom = new Error('network down')
 			apiFetchSubCases.mockRejectedValueOnce(boom)
 
-			await expect(store.fetchSubCases('parent-1')).rejects.toThrow('network down')
+			await expect(store.fetchSubCases('parent-1')).rejects.toThrow(
+				'network down',
+			)
 			expect(store.subCases).toEqual([])
 			expect(store.error).toBe(boom)
 			expect(store.loading).toBe(false)
@@ -155,11 +161,20 @@ describe('deelzaak store', () => {
 
 	describe('validateSubCase', () => {
 		it('delegates to the api and returns its verdict verbatim', async () => {
-			apiValidateSubCase.mockResolvedValueOnce({ ok: false, reason: 'not_allowed' })
+			apiValidateSubCase.mockResolvedValueOnce({
+				ok: false,
+				reason: 'not_allowed',
+			})
 
-			const verdict = await store.validateSubCase({ parentCaseUuid: 'p1', childCaseTypeId: 'ct9' })
+			const verdict = await store.validateSubCase({
+				parentCaseUuid: 'p1',
+				childCaseTypeId: 'ct9',
+			})
 
-			expect(apiValidateSubCase).toHaveBeenCalledWith({ parentCaseUuid: 'p1', childCaseTypeId: 'ct9' })
+			expect(apiValidateSubCase).toHaveBeenCalledWith({
+				parentCaseUuid: 'p1',
+				childCaseTypeId: 'ct9',
+			})
 			expect(verdict).toEqual({ ok: false, reason: 'not_allowed' })
 		})
 	})
@@ -171,19 +186,36 @@ describe('deelzaak store', () => {
 			await store.fetchSubCaseCounts(['p1', 'p2'])
 			expect(store.getSubCaseCount('p1')).toBe(4)
 
-			apiUnlinkSubCases.mockResolvedValueOnce({ unlinked: 4, failed: 0, total: 4, complete: true })
+			apiUnlinkSubCases.mockResolvedValueOnce({
+				unlinked: 4,
+				failed: 0,
+				total: 4,
+				complete: true,
+			})
 			const result = await store.unlinkSubCases('p1')
 
 			expect(apiUnlinkSubCases).toHaveBeenCalledWith('p1')
-			expect(result).toEqual({ unlinked: 4, failed: 0, total: 4, complete: true })
+			expect(result).toEqual({
+				unlinked: 4,
+				failed: 0,
+				total: 4,
+				complete: true,
+			})
 			// p1's cached count is dropped so the UI re-reads fresh; p2 untouched.
 			expect(store.getSubCaseCount('p1')).toBe(0)
 			expect(store.getSubCaseCount('p2')).toBe(1)
-			expect(Object.prototype.hasOwnProperty.call(store.subCaseCounts, 'p1')).toBe(false)
+			expect(
+				Object.prototype.hasOwnProperty.call(store.subCaseCounts, 'p1'),
+			).toBe(false)
 		})
 
 		it('is a no-op on the cache when the parent had no cached count', async () => {
-			apiUnlinkSubCases.mockResolvedValueOnce({ unlinked: 0, failed: 0, total: 0, complete: true })
+			apiUnlinkSubCases.mockResolvedValueOnce({
+				unlinked: 0,
+				failed: 0,
+				total: 0,
+				complete: true,
+			})
 			const result = await store.unlinkSubCases('never-cached')
 			expect(result.unlinked).toBe(0)
 			expect(store.subCaseCounts).toEqual({})
@@ -193,7 +225,12 @@ describe('deelzaak store', () => {
 		// caller refuses to delete the parent. The store must pass it through
 		// untouched — swallowing it here would restore the silent-orphan bug.
 		it('passes an incomplete unlink through so the caller can abort the delete', async () => {
-			apiUnlinkSubCases.mockResolvedValueOnce({ unlinked: 197, failed: 3, total: 200, complete: false })
+			apiUnlinkSubCases.mockResolvedValueOnce({
+				unlinked: 197,
+				failed: 3,
+				total: 200,
+				complete: false,
+			})
 			const result = await store.unlinkSubCases('p1')
 
 			expect(result.complete).toBe(false)

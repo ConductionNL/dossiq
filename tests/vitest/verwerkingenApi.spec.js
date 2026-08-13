@@ -37,9 +37,13 @@ describe('verwerkingenApi (thin consumer of OR)', () => {
 	})
 
 	it('lists the catalogue from OpenRegister, never a procest route', async () => {
-		axiosGet.mockResolvedValue({ data: { results: [{ code: 'zaakafhandeling', status: 'concept' }] } })
+		axiosGet.mockResolvedValue({
+			data: { results: [{ code: 'zaakafhandeling', status: 'concept' }] },
+		})
 		const activities = await listVerwerkingsactiviteiten()
-		expect(axiosGet).toHaveBeenCalledWith('/index.php/apps/openregister/api/avg/verwerkingsactiviteiten')
+		expect(axiosGet).toHaveBeenCalledWith(
+			'/index.php/apps/openregister/api/avg/verwerkingsactiviteiten',
+		)
 		expect(activities).toHaveLength(1)
 		expect(activities[0].code).toBe('zaakafhandeling')
 	})
@@ -52,7 +56,10 @@ describe('verwerkingenApi (thin consumer of OR)', () => {
 
 	it('counts log entries via OR with activity + register filters', async () => {
 		axiosGet.mockResolvedValue({ data: { count: 7, results: [] } })
-		const count = await countVerwerkingen({ activity: 'uuid-1', register: 'reg-1' })
+		const count = await countVerwerkingen({
+			activity: 'uuid-1',
+			register: 'reg-1',
+		})
 		expect(axiosGet).toHaveBeenCalledWith(
 			'/index.php/apps/openregister/api/avg/verwerkingen',
 			{ params: { activity: 'uuid-1', register: 'reg-1' } },
@@ -61,8 +68,13 @@ describe('verwerkingenApi (thin consumer of OR)', () => {
 	})
 
 	it('produces the per-betrokkene extract through OR-PA-7', async () => {
-		axiosGet.mockResolvedValue({ data: { subject: { idType: 'BSN' }, count: 2, reads: [] } })
-		const extract = await fetchBetrokkeneExtract({ idType: 'BSN', idValue: '999990011' })
+		axiosGet.mockResolvedValue({
+			data: { subject: { idType: 'BSN' }, count: 2, reads: [] },
+		})
+		const extract = await fetchBetrokkeneExtract({
+			idType: 'BSN',
+			idValue: '999990011',
+		})
 		expect(axiosGet).toHaveBeenCalledWith(
 			'/index.php/apps/openregister/api/avg/verwerkingen/betrokkene',
 			{ params: { subjectIdType: 'BSN', subjectIdValue: '999990011' } },

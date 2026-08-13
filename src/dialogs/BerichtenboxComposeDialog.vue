@@ -10,7 +10,7 @@
 					:model-value="form.bsn"
 					:label="t('procest', 'BSN (burgerservicenummer)')"
 					:error="!!errors.bsn"
-					@update:model-value="v => form.bsn = v" />
+					@update:model-value="(v) => (form.bsn = v)" />
 				<p v-if="errors.bsn" class="form-error">
 					{{ errors.bsn }}
 				</p>
@@ -21,14 +21,16 @@
 					:model-value="form.subject"
 					:label="t('procest', 'Subject')"
 					:error="!!errors.subject"
-					@update:model-value="v => form.subject = v" />
+					@update:model-value="(v) => (form.subject = v)" />
 				<p v-if="errors.subject" class="form-error">
 					{{ errors.subject }}
 				</p>
 			</div>
 
 			<div class="form-group">
-				<label for="berichtenbox-compose-body">{{ t('procest', 'Message (plain text only)') }}</label>
+				<label for="berichtenbox-compose-body">{{
+					t('procest', 'Message (plain text only)')
+				}}</label>
 				<textarea
 					id="berichtenbox-compose-body"
 					v-model="form.body"
@@ -70,7 +72,13 @@
 </template>
 
 <script>
-import { NcDialog, NcButton, NcTextField, NcSelect, NcNoteCard } from '@nextcloud/vue'
+import {
+	NcDialog,
+	NcButton,
+	NcTextField,
+	NcSelect,
+	NcNoteCard,
+} from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
 import { sendMessage } from '../services/berichtenboxApi.js'
 
@@ -102,7 +110,10 @@ export default {
 		validate() {
 			this.errors = {}
 			if (!this.form.bsn) {
-				this.errors.bsn = t('procest', 'BSN is required for Mijn Overheid messages')
+				this.errors.bsn = t(
+					'procest',
+					'BSN is required for Mijn Overheid messages',
+				)
 			}
 			if (!this.form.subject) {
 				this.errors.subject = t('procest', 'Subject is required')
@@ -127,7 +138,8 @@ export default {
 				})
 				this.$emit('sent')
 			} catch (e) {
-				this.sendError = e.response?.data?.error || t('procest', 'Failed to send message')
+				this.sendError =
+					e.response?.data?.error || t('procest', 'Failed to send message')
 			} finally {
 				this.sending = false
 			}
@@ -157,7 +169,13 @@ export default {
 	margin-top: 16px;
 }
 
-.form-group { margin-bottom: 12px; }
+.form-group {
+	margin-bottom: 12px;
+}
 
-.form-error { color: var(--color-error); font-size: 12px; margin-top: 4px; }
+.form-error {
+	color: var(--color-error);
+	font-size: 12px;
+	margin-top: 4px;
+}
 </style>

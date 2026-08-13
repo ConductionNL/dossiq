@@ -15,9 +15,10 @@ import { test, expect } from '@playwright/test'
 import { dismissSupportDialog } from '../helpers/nav'
 
 test.describe('Workflow Board keyboard status transition', () => {
-
 	// @e2e openspec/changes/kanban-board-keyboard-status-transition/specs/dashboard/spec.md#scenario-dash-v1-006d-keyboard-only-status-transition-new
-	test('a case card exposes a keyboard-operable "Move to…" menu', async ({ page }) => {
+	test('a case card exposes a keyboard-operable "Move to…" menu', async ({
+		page,
+	}) => {
 		await page.goto('/index.php/apps/procest/workflow-board')
 		await dismissSupportDialog(page)
 
@@ -29,13 +30,18 @@ test.describe('Workflow Board keyboard status transition', () => {
 
 		const firstCard = page.locator('.case-card').first()
 		if (!(await firstCard.isVisible({ timeout: 8000 }).catch(() => false))) {
-			test.skip(true, 'No cases on the Workflow Board to exercise the move control')
+			test.skip(
+				true,
+				'No cases on the Workflow Board to exercise the move control',
+			)
 			return
 		}
 
 		// The move-target menu trigger is reachable independent of the card's
 		// own click-to-open handler (a separate focusable NcActions control).
-		const moveTrigger = firstCard.locator('.case-card__move-actions button').first()
+		const moveTrigger = firstCard
+			.locator('.case-card__move-actions button')
+			.first()
 		await expect(moveTrigger).toBeVisible()
 
 		await moveTrigger.focus()
@@ -56,7 +62,10 @@ test.describe('Workflow Board keyboard status transition', () => {
 
 		const firstCard = page.locator('.case-card').first()
 		if (!(await firstCard.isVisible({ timeout: 8000 }).catch(() => false))) {
-			test.skip(true, 'No cases on the Workflow Board to exercise the drag path')
+			test.skip(
+				true,
+				'No cases on the Workflow Board to exercise the drag path',
+			)
 			return
 		}
 

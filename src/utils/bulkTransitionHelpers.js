@@ -34,7 +34,8 @@ export function emptySelection() {
  * @return {{columnId: string|null, caseIds: Array<string>}} The next selection state (new object).
  */
 export function toggleSelection(selection, caseId, columnId) {
-	const current = selection && typeof selection === 'object' ? selection : emptySelection()
+	const current =
+		selection && typeof selection === 'object' ? selection : emptySelection()
 
 	if (current.columnId !== columnId) {
 		// Selecting in a new/different column resets the selection.
@@ -42,9 +43,9 @@ export function toggleSelection(selection, caseId, columnId) {
 	}
 
 	const caseIds = Array.isArray(current.caseIds) ? current.caseIds : []
-	const exists = caseIds.some(id => String(id) === String(caseId))
+	const exists = caseIds.some((id) => String(id) === String(caseId))
 	const nextCaseIds = exists
-		? caseIds.filter(id => String(id) !== String(caseId))
+		? caseIds.filter((id) => String(id) !== String(caseId))
 		: [...caseIds, caseId]
 
 	if (nextCaseIds.length === 0) {
@@ -63,7 +64,7 @@ export function toggleSelection(selection, caseId, columnId) {
  */
 export function isSelected(selection, caseId) {
 	if (!selection || !Array.isArray(selection.caseIds)) return false
-	return selection.caseIds.some(id => String(id) === String(caseId))
+	return selection.caseIds.some((id) => String(id) === String(caseId))
 }
 
 /**
@@ -83,7 +84,8 @@ export function clearSelection() {
  * @return {{caseIds: Array<string>, transitionId: string}}
  */
 export function buildPreviewPayload(selection, transitionId) {
-	const caseIds = selection && Array.isArray(selection.caseIds) ? [...selection.caseIds] : []
+	const caseIds =
+		selection && Array.isArray(selection.caseIds) ? [...selection.caseIds] : []
 	return { caseIds, transitionId: transitionId || '' }
 }
 
@@ -96,7 +98,8 @@ export function buildPreviewPayload(selection, transitionId) {
  * @return {{caseIds: Array<string>, transitionId: string, comment: string|null}}
  */
 export function buildExecutePayload(selection, transitionId, comment) {
-	const caseIds = selection && Array.isArray(selection.caseIds) ? [...selection.caseIds] : []
+	const caseIds =
+		selection && Array.isArray(selection.caseIds) ? [...selection.caseIds] : []
 	return { caseIds, transitionId: transitionId || '', comment: comment || null }
 }
 

@@ -34,18 +34,22 @@ function ensureBundleBuilt(): void {
 		return
 	}
 	// eslint-disable-next-line no-console
-	console.log(`[playwright globalSetup] bundle missing at ${BUNDLE_PATH}; running 'npm run build' once…`)
+	console.log(
+		`[playwright globalSetup] bundle missing at ${BUNDLE_PATH}; running 'npm run build' once…`,
+	)
 	execSync('npm run build', { cwd: APP_ROOT, stdio: 'inherit' })
 }
 
 async function ensureNextcloudReachable(baseURL: string): Promise<void> {
 	const ctx = await request.newContext()
 	try {
-		const res = await ctx.get(`${baseURL}/status.php`, { failOnStatusCode: false })
+		const res = await ctx.get(`${baseURL}/status.php`, {
+			failOnStatusCode: false,
+		})
 		if (!res.ok()) {
 			throw new Error(
 				`Nextcloud status.php returned ${res.status()} at ${baseURL}. `
-				+ 'Make sure the docker container is running and reachable.',
+					+ 'Make sure the docker container is running and reachable.',
 			)
 		}
 		const body = await res.json().catch(() => ({}))
@@ -64,9 +68,11 @@ async function globalSetup(config: FullConfig): Promise<void> {
 	// Deliberately no `?? 'http://localhost:8080'` tail: off CI that literal is
 	// the SHARED dev container, and this setup logs in and writes storage state
 	// against it. See tests/e2e/base-url.ts — it throws instead.
-	const baseURL = (config.projects[0]?.use?.baseURL as string | undefined) ?? BASE_URL
+	const baseURL =
+		(config.projects[0]?.use?.baseURL as string | undefined) ?? BASE_URL
 	const user = process.env.ADMIN_USER ?? process.env.NC_ADMIN_USER ?? 'admin'
-	const password = process.env.ADMIN_PASSWORD ?? process.env.NC_ADMIN_PASS ?? 'admin'
+	const password =
+		process.env.ADMIN_PASSWORD ?? process.env.NC_ADMIN_PASS ?? 'admin'
 
 	ensureBundleBuilt()
 	await ensureNextcloudReachable(baseURL)
@@ -80,26 +86,39 @@ async function globalSetup(config: FullConfig): Promise<void> {
 	// compilation on a cold instance doesn't blow the 30s navigation budget;
 	// the form inputs we need are in the initial HTML. Retry once on a spike.
 	try {
-		await page.goto('/index.php/login', { waitUntil: 'domcontentloaded', timeout: 60_000 })
+		await page.goto('/index.php/login', {
+			waitUntil: 'domcontentloaded',
+			timeout: 60_000,
+		})
 	} catch {
-		await page.goto('/index.php/login', { waitUntil: 'domcontentloaded', timeout: 60_000 })
+		await page.goto('/index.php/login', {
+			waitUntil: 'domcontentloaded',
+			timeout: 60_000,
+		})
 	}
-	await page.locator('input[name="user"]').waitFor({ state: 'visible', timeout: 30_000 })
+	await page
+		.locator('input[name="user"]')
+		.waitFor({ state: 'visible', timeout: 30_000 })
 	await page.locator('input[name="user"]').fill(user)
 	await page.locator('input[name="password"]').fill(password)
 	// The themed NC submit button sometimes swallows a plain .click() (the
 	// click lands but no navigation is scheduled). Submit the form directly so
 	// the POST always fires; fall back to the button click if no form is found.
 	const submitted = await page.evaluate(() => {
-		const form = document.querySelector('form[action*="login"]') || document.querySelector('form')
+		const form =
+			document.querySelector('form[action*="login"]')
+			|| document.querySelector('form')
 		if (form && typeof (form as HTMLFormElement).requestSubmit === 'function') {
-			(form as HTMLFormElement).requestSubmit()
+			;(form as HTMLFormElement).requestSubmit()
 			return true
 		}
 		return false
 	})
 	if (submitted === false) {
-		await page.locator('button[type="submit"], input[type="submit"]').first().click()
+		await page
+			.locator('button[type="submit"], input[type="submit"]')
+			.first()
+			.click()
 	}
 	// Nextcloud bounces to /apps/dashboard/ on success.
 	try {
@@ -111,7 +130,7 @@ async function globalSetup(config: FullConfig): Promise<void> {
 	if (/\/login(\?|$|\/)/.test(currentUrl)) {
 		throw new Error(
 			`Login appears to have failed — still on ${currentUrl}. `
-			+ 'Check ADMIN_USER / ADMIN_PASSWORD (defaults admin/admin).',
+				+ 'Check ADMIN_USER / ADMIN_PASSWORD (defaults admin/admin).',
 		)
 	}
 
@@ -124,7 +143,10 @@ async function globalSetup(config: FullConfig): Promise<void> {
 	// tour step's `sinceVersion` sorts below it, so the tour composes to an empty
 	// step set (see useWalkthrough compareSemver gate) and never shows.
 	try {
-		await page.goto('/apps/procest/', { waitUntil: 'domcontentloaded', timeout: 60_000 })
+		await page.goto('/apps/procest/', {
+			waitUntil: 'domcontentloaded',
+			timeout: 60_000,
+		})
 		await page.evaluate(() => {
 			try {
 				window.localStorage.setItem('cn-walkthrough-seen:procest', '999.0.0')

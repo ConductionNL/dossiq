@@ -6,18 +6,25 @@
 			{{ t('procest', 'Advice types per case type') }}
 		</h3>
 		<p class="consultation-types-tab__description">
-			{{ t('procest', 'Configure which consultations are mandatory or optional for each case type.') }}
+			{{
+				t(
+					'procest',
+					'Configure which consultations are mandatory or optional for each case type.',
+				)
+			}}
 		</p>
 
 		<!-- Zaaktype selector -->
 		<div class="consultation-types-tab__selector">
-			<label class="consultation-types-tab__label">{{ t('procest', 'Zaaktype') }}</label>
+			<label class="consultation-types-tab__label">{{
+				t('procest', 'Zaaktype')
+			}}</label>
 			<NcSelect
 				v-model="selectedCaseTypeId"
 				:options="caseTypeOptions"
 				:aria-label-combobox="t('procest', 'Select case type')"
 				label="label"
-				:reduce="opt => opt.value"
+				:reduce="(opt) => opt.value"
 				:placeholder="t('procest', 'Select a case type')" />
 		</div>
 
@@ -36,25 +43,27 @@
 						:model-value="ct.name"
 						:label="t('procest', 'Naam')"
 						required
-						@update:model-value="v => ct.name = v" />
+						@update:model-value="(v) => (ct.name = v)" />
 
 					<NcSelect
 						v-model="ct.advisoryBodyId"
 						:options="advisoryBodyOptions"
 						:aria-label-combobox="t('procest', 'Default advisory body')"
 						label="label"
-						:reduce="opt => opt.value"
+						:reduce="(opt) => opt.value"
 						:placeholder="t('procest', 'Default advisory body')" />
 
 					<NcTextField
 						:model-value="String(ct.defaultDeadlineWeeks)"
 						:label="t('procest', 'Default duration (weeks)')"
 						type="number"
-						@update:model-value="v => ct.defaultDeadlineWeeks = parseInt(v) || 4" />
+						@update:model-value="
+							(v) => (ct.defaultDeadlineWeeks = parseInt(v) || 4)
+						" />
 
 					<NcCheckboxRadioSwitch
 						:model-value="ct.mandatory"
-						@update:model-value="v => ct.mandatory = v">
+						@update:model-value="(v) => (ct.mandatory = v)">
 						{{ t('procest', 'Required') }}
 					</NcCheckboxRadioSwitch>
 
@@ -68,11 +77,10 @@
 				<NcButton @click="addType">
 					{{ t('procest', 'Add advice type') }}
 				</NcButton>
-				<NcButton
-					type="primary"
-					:disabled="saving"
-					@click="saveTypes">
-					{{ saving ? t('procest', 'Opslaan...') : t('procest', 'Opslaan') }}
+				<NcButton type="primary" :disabled="saving" @click="saveTypes">
+					{{
+						saving ? t('procest', 'Opslaan...') : t('procest', 'Opslaan')
+					}}
 				</NcButton>
 			</div>
 		</template>
@@ -81,7 +89,13 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { NcButton, NcCheckboxRadioSwitch, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcNoteCard,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 
 export default {
 	name: 'ConsultationTypesTab',
@@ -125,7 +139,7 @@ export default {
 			try {
 				const { data } = await axios.get('/apps/procest/api/settings')
 				const types = data.caseTypes || []
-				this.caseTypeOptions = types.map(ct => ({
+				this.caseTypeOptions = types.map((ct) => ({
 					label: ct.title || ct.id,
 					value: ct.id,
 				}))
@@ -138,7 +152,7 @@ export default {
 			try {
 				const { data } = await axios.get('/apps/procest/api/advisory-bodies')
 				const bodies = data.results || []
-				this.advisoryBodyOptions = bodies.map(b => ({
+				this.advisoryBodyOptions = bodies.map((b) => ({
 					label: b.name,
 					value: b.id,
 				}))
@@ -154,7 +168,7 @@ export default {
 			try {
 				const { data } = await axios.get('/apps/procest/api/settings')
 				const ct = (data.consultationTypes || {})[caseTypeId] || []
-				this.consultationTypes = ct.map(t => ({ ...t }))
+				this.consultationTypes = ct.map((t) => ({ ...t }))
 			} catch (e) {
 				console.error('Failed to load consultation types', e)
 			}

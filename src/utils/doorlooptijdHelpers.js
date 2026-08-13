@@ -31,7 +31,7 @@ export function parseDurationToDays(duration) {
 	const weeks = parseInt(match[3], 10) || 0
 	const days = parseInt(match[4], 10) || 0
 
-	const total = (years * 365) + (months * 30) + (weeks * 7) + days
+	const total = years * 365 + months * 30 + weeks * 7 + days
 	return total > 0 ? total : null
 }
 
@@ -149,13 +149,17 @@ export function computeSlaCompliance(completedCases, caseTypes) {
 		if (isWithin) entry.withinSla++
 	}
 
-	const breakdown = Array.from(byType.values()).map(entry => ({
+	const breakdown = Array.from(byType.values()).map((entry) => ({
 		id: entry.id,
 		name: entry.name,
 		total: entry.total,
 		withinSla: entry.withinSla,
-		rate: entry.total > 0 ? Math.round((entry.withinSla / entry.total) * 100) : null,
-		avgActual: entry.total > 0 ? Math.round(entry.totalDays / entry.total) : null,
+		rate:
+			entry.total > 0
+				? Math.round((entry.withinSla / entry.total) * 100)
+				: null,
+		avgActual:
+			entry.total > 0 ? Math.round(entry.totalDays / entry.total) : null,
 		targetDays: entry.targetDays,
 	}))
 
@@ -199,7 +203,12 @@ export function computeProcessingTimeDistribution(completedCases, caseTypes, bin
 	const useBins = bins || DEFAULT_BINS
 	const caseTypeMap = buildCaseTypeMap(caseTypes)
 
-	const result = useBins.map(b => ({ label: b.label, count: 0, min: b.min, max: b.max }))
+	const result = useBins.map((b) => ({
+		label: b.label,
+		count: 0,
+		min: b.min,
+		max: b.max,
+	}))
 
 	let slaTargetDays = null
 	const targetSet = new Set()
@@ -225,7 +234,7 @@ export function computeProcessingTimeDistribution(completedCases, caseTypes, bin
 	}
 
 	return {
-		bins: result.map(b => ({ label: b.label, count: b.count })),
+		bins: result.map((b) => ({ label: b.label, count: b.count })),
 		slaTargetDays,
 	}
 }
@@ -276,7 +285,7 @@ export function computeMonthlyTrend(completedCases, caseTypes, months) {
 		if (actualDays <= targetDays) bucket.withinSla++
 	}
 
-	return buckets.map(b => ({
+	return buckets.map((b) => ({
 		month: b.month,
 		rate: b.total > 0 ? Math.round((b.withinSla / b.total) * 100) : null,
 		withinSla: b.withinSla,
@@ -318,7 +327,7 @@ export function getAtRiskCases(openCases, caseTypes, thresholdPct) {
 		const isOverdue = remainingDays < 0
 
 		// Include if overdue or remaining time is less than threshold
-		if (isOverdue || (1 - percentUsed) <= threshold) {
+		if (isOverdue || 1 - percentUsed <= threshold) {
 			const ct = caseTypeMap.get(c.caseType)
 			results.push({
 				id: c.id,
@@ -361,7 +370,9 @@ export function computePerformanceTable(completedCases, caseTypes) {
 
 	// Initialize all case types (even those with no completed cases)
 	for (const ct of caseTypes) {
-		const targetDays = ct.processingDeadline ? parseDurationToDays(ct.processingDeadline) : null
+		const targetDays = ct.processingDeadline
+			? parseDurationToDays(ct.processingDeadline)
+			: null
 		byType.set(ct.id, {
 			id: ct.id,
 			name: ct.title || ct.name || t('procest', 'Unknown'),
@@ -386,11 +397,13 @@ export function computePerformanceTable(completedCases, caseTypes) {
 		}
 	}
 
-	return Array.from(byType.values()).map(entry => {
-		const avgActualDays = entry.total > 0 ? Math.round(entry.totalDays / entry.total) : null
-		const complianceRate = entry.total > 0 && entry.targetDays !== null
-			? Math.round((entry.withinSla / entry.total) * 100)
-			: null
+	return Array.from(byType.values()).map((entry) => {
+		const avgActualDays =
+			entry.total > 0 ? Math.round(entry.totalDays / entry.total) : null
+		const complianceRate =
+			entry.total > 0 && entry.targetDays !== null
+				? Math.round((entry.withinSla / entry.total) * 100)
+				: null
 
 		let status = 'no-target'
 		if (entry.targetDays !== null && complianceRate !== null) {

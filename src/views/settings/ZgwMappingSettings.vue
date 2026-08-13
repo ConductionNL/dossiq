@@ -13,7 +13,9 @@
 					<tr v-for="key in resourceKeys" :key="key">
 						<td>{{ key }}</td>
 						<td>
-							<span v-if="mappings[key] && mappings[key].enabled" class="status-enabled">
+							<span
+								v-if="mappings[key] && mappings[key].enabled"
+								class="status-enabled">
 								{{ t('procest', 'Enabled') }}
 							</span>
 							<span v-else-if="mappings[key]" class="status-disabled">
@@ -39,7 +41,7 @@
 		<ZgwMappingDialog
 			:open="editingKey !== null"
 			:resource-key="editingKey || ''"
-			:mapping="editingKey ? (mappings[editingKey] || {}) : {}"
+			:mapping="editingKey ? mappings[editingKey] || {} : {}"
 			@save="saveMapping"
 			@close="editingKey = null" />
 
@@ -78,9 +80,18 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		resourceKeys() {
 			return [
-				'zaak', 'zaaktype', 'status', 'statustype',
-				'resultaat', 'resultaattype', 'rol', 'roltype',
-				'eigenschap', 'besluit', 'besluittype', 'informatieobjecttype',
+				'zaak',
+				'zaaktype',
+				'status',
+				'statustype',
+				'resultaat',
+				'resultaattype',
+				'rol',
+				'roltype',
+				'eigenschap',
+				'besluit',
+				'besluittype',
+				'informatieobjecttype',
 			]
 		},
 	},
@@ -105,7 +116,9 @@ export default {
 			if (result) {
 				this.editingKey = null
 				this.saved = true
-				setTimeout(() => { this.saved = false }, 3000)
+				setTimeout(() => {
+					this.saved = false
+				}, 3000)
 			}
 		},
 
@@ -116,7 +129,9 @@ export default {
 		async resetMapping(key) {
 			await this.store.resetMapping(key)
 			this.saved = true
-			setTimeout(() => { this.saved = false }, 3000)
+			setTimeout(() => {
+				this.saved = false
+			}, 3000)
 		},
 	},
 }

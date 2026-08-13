@@ -34,11 +34,19 @@
 			@update:model-value="$emit('toggle-select', caseItem.id)"
 			@click.stop
 			@keydown.stop>
-			<span class="hidden-visually">{{ t('procest', 'Select case {identifier}', { identifier: caseItem.identifier || caseItem.id }) }}</span>
+			<span class="hidden-visually">{{
+				t('procest', 'Select case {identifier}', {
+					identifier: caseItem.identifier || caseItem.id,
+				})
+			}}</span>
 		</NcCheckboxRadioSwitch>
 		<div class="case-card__header">
-			<span class="case-card__identifier">{{ caseItem.identifier || '—' }}</span>
-			<span v-if="caseTypeName" class="case-card__type">{{ caseTypeName }}</span>
+			<span class="case-card__identifier">{{
+				caseItem.identifier || '—'
+			}}</span>
+			<span v-if="caseTypeName" class="case-card__type">{{
+				caseTypeName
+			}}</span>
 		</div>
 		<p class="case-card__title">
 			{{ caseItem.title || '—' }}
@@ -152,7 +160,9 @@ export default {
 		deadlineLabel() {
 			if (this.daysRemaining === null) return null
 			if (this.daysRemaining < 0) {
-				return this.t('procest', '{days} days overdue', { days: Math.abs(this.daysRemaining) })
+				return this.t('procest', '{days} days overdue', {
+					days: Math.abs(this.daysRemaining),
+				})
 			}
 			if (this.daysRemaining === 0) return this.t('procest', 'Due today')
 			return this.t('procest', '{days} days', { days: this.daysRemaining })
@@ -161,7 +171,9 @@ export default {
 		 * @return {string} Deadline CSS modifier class
 		 */
 		deadlineClass() {
-			return this.deadlineSeverity ? `case-card__deadline--${this.deadlineSeverity}` : ''
+			return this.deadlineSeverity
+				? `case-card__deadline--${this.deadlineSeverity}`
+				: ''
 		},
 	},
 	methods: {
@@ -193,7 +205,9 @@ export default {
 	padding: 10px 12px;
 	margin-bottom: 8px;
 	cursor: grab;
-	transition: box-shadow 0.15s ease, background 0.15s ease;
+	transition:
+		box-shadow 0.15s ease,
+		background 0.15s ease;
 }
 
 .case-card__move-actions {

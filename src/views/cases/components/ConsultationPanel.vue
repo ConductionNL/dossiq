@@ -17,7 +17,9 @@
 				class="consultation-panel__item"
 				:class="{ 'consultation-panel__item--overdue': isOverdue(cons) }">
 				<div class="consultation-panel__item-header">
-					<span class="consultation-panel__department">{{ cons.adviesInstantie }}</span>
+					<span class="consultation-panel__department">{{
+						cons.adviesInstantie
+					}}</span>
 					<span
 						class="consultation-panel__status"
 						:class="'consultation-panel__status--' + cons.status">
@@ -33,20 +35,28 @@
 
 				<!-- Response section -->
 				<div v-if="cons.advies" class="consultation-panel__response">
-					<span class="consultation-panel__advice-label">{{ t('procest', 'Advice:') }}</span>
+					<span class="consultation-panel__advice-label">{{
+						t('procest', 'Advice:')
+					}}</span>
 					<span
 						class="consultation-panel__advice-value"
 						:class="'consultation-panel__advice--' + cons.advies">
 						{{ getAdviceLabel(cons.advies) }}
 					</span>
-					<p v-if="cons.toelichting" class="consultation-panel__explanation">
+					<p
+						v-if="cons.toelichting"
+						class="consultation-panel__explanation">
 						{{ cons.toelichting }}
 					</p>
 					<!-- Conditions -->
-					<div v-if="conditions(cons).length > 0" class="consultation-panel__conditions">
+					<div
+						v-if="conditions(cons).length > 0"
+						class="consultation-panel__conditions">
 						<strong>{{ t('procest', 'Conditions:') }}</strong>
 						<ul>
-							<li v-for="(condition, idx) in conditions(cons)" :key="idx">
+							<li
+								v-for="(condition, idx) in conditions(cons)"
+								:key="idx">
 								{{ condition }}
 							</li>
 						</ul>
@@ -54,16 +64,29 @@
 				</div>
 
 				<div class="consultation-panel__meta">
-					<span>{{ t('procest', 'Deadline: {date}', { date: formatDate(cons.uiterlijkeReactiedatum) }) }}</span>
-					<span v-if="cons.aanvrager">{{ t('procest', 'by {user}', { user: cons.aanvrager }) }}</span>
+					<span>{{
+						t('procest', 'Deadline: {date}', {
+							date: formatDate(cons.uiterlijkeReactiedatum),
+						})
+					}}</span>
+					<span v-if="cons.aanvrager">{{
+						t('procest', 'by {user}', { user: cons.aanvrager })
+					}}</span>
 				</div>
 
 				<!-- Actions -->
-				<div v-if="!isReadOnly && cons.status !== 'afgesloten'" class="consultation-panel__actions">
+				<div
+					v-if="!isReadOnly && cons.status !== 'afgesloten'"
+					class="consultation-panel__actions">
 					<NcButton
 						v-if="cons.status === 'open'"
 						type="secondary"
-						@click="$emit('update-status', { id: cons.id, status: 'in_behandeling' })">
+						@click="
+							$emit('update-status', {
+								id: cons.id,
+								status: 'in_behandeling',
+							})
+						">
 						{{ t('procest', 'Acknowledge') }}
 					</NcButton>
 					<NcButton
@@ -75,7 +98,12 @@
 					<NcButton
 						v-if="cons.status === 'advies_uitgebracht'"
 						type="secondary"
-						@click="$emit('update-status', { id: cons.id, status: 'afgesloten' })">
+						@click="
+							$emit('update-status', {
+								id: cons.id,
+								status: 'afgesloten',
+							})
+						">
 						{{ t('procest', 'Close') }}
 					</NcButton>
 				</div>
@@ -151,7 +179,7 @@ export default {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		openCount() {
 			return this.consultations.filter(
-				c => c.status === 'open' || c.status === 'in_behandeling',
+				(c) => c.status === 'open' || c.status === 'in_behandeling',
 			).length
 		},
 	},
@@ -176,7 +204,10 @@ export default {
 		getAdviceLabel(advies) {
 			const labels = {
 				positief: this.t('procest', 'Positive'),
-				positief_met_voorwaarden: this.t('procest', 'Positive with conditions'),
+				positief_met_voorwaarden: this.t(
+					'procest',
+					'Positive with conditions',
+				),
 				negatief: this.t('procest', 'Negative'),
 				niet_van_toepassing: this.t('procest', 'Not applicable'),
 			}
@@ -198,7 +229,8 @@ export default {
 		 */
 		isOverdue(cons) {
 			if (!cons.uiterlijkeReactiedatum) return false
-			if (cons.status === 'afgesloten' || cons.status === 'advies_uitgebracht') return false
+			if (cons.status === 'afgesloten' || cons.status === 'advies_uitgebracht')
+				return false
 			return new Date(cons.uiterlijkeReactiedatum) < new Date()
 		},
 		/**
@@ -208,9 +240,10 @@ export default {
 		conditions(cons) {
 			if (!cons.voorwaarden) return []
 			try {
-				const parsed = typeof cons.voorwaarden === 'string'
-					? JSON.parse(cons.voorwaarden)
-					: cons.voorwaarden
+				const parsed =
+					typeof cons.voorwaarden === 'string'
+						? JSON.parse(cons.voorwaarden)
+						: cons.voorwaarden
 				return Array.isArray(parsed) ? parsed : []
 			} catch {
 				return []

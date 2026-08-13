@@ -12,29 +12,41 @@
 			<CnDetailCard
 				v-for="agendaCase in cases"
 				:key="agendaCase.id"
-				:title="(agendaCase.agendanummer || '') + ' ' + (agendaCase.title || '')">
+				:title="
+					(agendaCase.agendanummer || '') + ' ' + (agendaCase.title || '')
+				">
 				<div class="vergadering-detail__form">
-					<label :for="'besluittype-' + agendaCase.id">{{ t('procest', 'Decision type') }}</label>
+					<label :for="'besluittype-' + agendaCase.id">{{
+						t('procest', 'Decision type')
+					}}</label>
 					<NcSelect
 						v-model="forms[agendaCase.id].decisionType"
 						:input-id="'besluittype-' + agendaCase.id"
 						:input-label="t('procest', 'Decision type')"
 						:options="decisionTypes" />
 
-					<label :for="'stem-' + agendaCase.id">{{ t('procest', 'Stemuitslag') }}</label>
+					<label :for="'stem-' + agendaCase.id">{{
+						t('procest', 'Stemuitslag')
+					}}</label>
 					<input
 						:id="'stem-' + agendaCase.id"
 						v-model="forms[agendaCase.id].stemuitslag"
 						type="text"
-						:placeholder="t('procest', 'e.g. Unanimous or 23 for / 8 against')">
+						:placeholder="
+							t('procest', 'e.g. Unanimous or 23 for / 8 against')
+						" />
 
-					<label :for="'leden-' + agendaCase.id">{{ t('procest', 'Aanwezige leden (komma-gescheiden)') }}</label>
+					<label :for="'leden-' + agendaCase.id">{{
+						t('procest', 'Aanwezige leden (komma-gescheiden)')
+					}}</label>
 					<input
 						:id="'leden-' + agendaCase.id"
 						v-model="forms[agendaCase.id].attendees"
-						type="text">
+						type="text" />
 
-					<label :for="'toelichting-' + agendaCase.id">{{ t('procest', 'Explanation') }}</label>
+					<label :for="'toelichting-' + agendaCase.id">{{
+						t('procest', 'Explanation')
+					}}</label>
 					<textarea
 						:id="'toelichting-' + agendaCase.id"
 						v-model="forms[agendaCase.id].explanation"
@@ -47,9 +59,7 @@
 							@click="recordBesluit(agendaCase)">
 							{{ t('procest', 'Besluit vastleggen') }}
 						</NcButton>
-						<NcButton
-							type="secondary"
-							@click="aanhouden(agendaCase)">
+						<NcButton type="secondary" @click="aanhouden(agendaCase)">
 							{{ t('procest', 'Aanhouden') }}
 						</NcButton>
 					</div>
@@ -110,7 +120,9 @@ export default {
 					'_filters[vergaderdatum]': this.id,
 					_limit: 100,
 				})
-				this.cases = Array.isArray(results) ? results : (results?.results || [])
+				this.cases = Array.isArray(results)
+					? results
+					: results?.results || []
 				this.meetingDate = this.cases[0]?.vergaderdatum || this.id
 				for (const c of this.cases) {
 					this.forms[c.id] = {
@@ -156,7 +168,8 @@ export default {
 					decisionDate: new Date().toISOString().slice(0, 10),
 					governingBody: agendaCase.vergadergremium || '',
 					decisionType: f.decisionType,
-					explanation: f.explanation + ' (Stemuitslag: ' + f.stemuitslag + ')',
+					explanation:
+						f.explanation + ' (Stemuitslag: ' + f.stemuitslag + ')',
 				})
 				await this.objectStore.createObject('caseProperty', {
 					case: agendaCase.id,
@@ -176,7 +189,10 @@ export default {
 		 * @param {string} attendees Comma-separated attendee uids.
 		 */
 		async recordAttendees(caseId, attendees) {
-			const list = (attendees || '').split(',').map(a => a.trim()).filter(Boolean)
+			const list = (attendees || '')
+				.split(',')
+				.map((a) => a.trim())
+				.filter(Boolean)
 			for (const person of list) {
 				await this.objectStore.createObject('role', {
 					case: caseId,

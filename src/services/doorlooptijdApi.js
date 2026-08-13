@@ -26,7 +26,11 @@ const METRICS_URL = generateUrl('/apps/procest/api/doorlooptijd/metrics')
  * @param {number} [options.atRiskDays] At-risk threshold (days).
  * @return {Promise<object>} Metrics body { kpi, compliance, caseTypeBreakdown, cases }.
  */
-export async function fetchMetrics({ caseType = null, period = '12m', atRiskDays = 5 } = {}) {
+export async function fetchMetrics({
+	caseType = null,
+	period = '12m',
+	atRiskDays = 5,
+} = {}) {
 	const params = { period, atRiskDays }
 	if (caseType) {
 		params.caseType = caseType

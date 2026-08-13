@@ -33,11 +33,19 @@
 					<td>{{ row.soapVersion }}</td>
 					<td>{{ row.zaakIdentificatieStrategie || '—' }}</td>
 					<td>
-						<span class="stuf-endpoints__health" :class="healthClass(row)">
+						<span
+							class="stuf-endpoints__health"
+							:class="healthClass(row)">
 							{{ healthLabel(row) }}
 						</span>
 					</td>
-					<td>{{ row.actief ? t('procest', 'Active') : t('procest', 'Inactive') }}</td>
+					<td>
+						{{
+							row.actief
+								? t('procest', 'Active')
+								: t('procest', 'Inactive')
+						}}
+					</td>
 				</tr>
 				<tr v-if="!endpoints.length">
 					<td colspan="7" class="stuf-endpoints__empty">
@@ -47,7 +55,12 @@
 			</tbody>
 		</table>
 		<p class="stuf-endpoints__note">
-			{{ t('procest', 'Endpoints, credentials (WSSE), and mTLS certificates are managed by the platform operator. Reach out to your administrator to add or rotate them.') }}
+			{{
+				t(
+					'procest',
+					'Endpoints, credentials (WSSE), and mTLS certificates are managed by the platform operator. Reach out to your administrator to add or rotate them.',
+				)
+			}}
 		</p>
 		<p v-if="loadError" class="stuf-endpoints__error">
 			{{ loadError }}
@@ -93,7 +106,8 @@ export default {
 		 * @spec exclude presentational CSS-class mapping — no business logic
 		 */
 		healthClass(row) {
-			const state = row && row.health && row.health.state ? row.health.state : 'ok'
+			const state =
+				row && row.health && row.health.state ? row.health.state : 'ok'
 			return 'stuf-endpoints__health--' + state
 		},
 		/**
@@ -103,7 +117,8 @@ export default {
 		 * @spec exclude presentational label mapping — no business logic
 		 */
 		healthLabel(row) {
-			const state = row && row.health && row.health.state ? row.health.state : 'ok'
+			const state =
+				row && row.health && row.health.state ? row.health.state : 'ok'
 			if (state === 'circuit_open') {
 				return t('procest', 'Circuit open')
 			}

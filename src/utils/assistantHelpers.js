@@ -57,18 +57,30 @@ export function assistantErrorMessage(error) {
 	const errorCode = error?.response?.data?.errorCode
 
 	if (errorCode === 'guardrail_blocked') {
-		return t('procest', 'This message was blocked by your organisation\'s AI guardrail policy.')
+		return t(
+			'procest',
+			"This message was blocked by your organisation's AI guardrail policy.",
+		)
 	}
 
 	switch (status) {
-	case 400:
-		return t('procest', 'The message could not be sent. It may be empty or too long.')
-	case 401:
-	case 403:
-		return t('procest', 'You are not allowed to use the assistant on this case.')
-	case 404:
-		return t('procest', 'This case could not be found.')
-	default:
-		return t('procest', 'The case assistant is currently unavailable. Please try again later.')
+		case 400:
+			return t(
+				'procest',
+				'The message could not be sent. It may be empty or too long.',
+			)
+		case 401:
+		case 403:
+			return t(
+				'procest',
+				'You are not allowed to use the assistant on this case.',
+			)
+		case 404:
+			return t('procest', 'This case could not be found.')
+		default:
+			return t(
+				'procest',
+				'The case assistant is currently unavailable. Please try again later.',
+			)
 	}
 }

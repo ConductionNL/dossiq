@@ -12,7 +12,12 @@
 
 		<template v-else>
 			<div class="document-checklist__header">
-				{{ t('procest', '{present}/{total} complete', { present: presentCount, total: documentTypes.length }) }}
+				{{
+					t('procest', '{present}/{total} complete', {
+						present: presentCount,
+						total: documentTypes.length,
+					})
+				}}
 			</div>
 
 			<div class="document-checklist__list">
@@ -20,22 +25,48 @@
 					v-for="docType in documentTypes"
 					:key="docType.id"
 					class="doc-item"
-					:class="{ 'doc-item--present': isDocPresent(docType.id), 'doc-item--missing': !isDocPresent(docType.id) }">
+					:class="{
+						'doc-item--present': isDocPresent(docType.id),
+						'doc-item--missing': !isDocPresent(docType.id),
+					}">
 					<div class="doc-item__icon">
-						<span v-if="isDocPresent(docType.id)" class="doc-item__check" aria-label="Present">&#10003;</span>
-						<span v-else class="doc-item__missing" aria-label="Missing">&#10007;</span>
+						<span
+							v-if="isDocPresent(docType.id)"
+							class="doc-item__check"
+							aria-label="Present"
+							>&#10003;</span
+						>
+						<span v-else class="doc-item__missing" aria-label="Missing"
+							>&#10007;</span
+						>
 					</div>
 					<div class="doc-item__info">
 						<span class="doc-item__name">{{ docType.name }}</span>
-						<span v-if="docType.category" class="doc-item__category">{{ docType.category }}</span>
-						<span v-if="getUploadDate(docType.id)" class="doc-item__date">
-							{{ t('procest', 'Uploaded: {date}', { date: getUploadDate(docType.id) }) }}
+						<span v-if="docType.category" class="doc-item__category">{{
+							docType.category
+						}}</span>
+						<span
+							v-if="getUploadDate(docType.id)"
+							class="doc-item__date">
+							{{
+								t('procest', 'Uploaded: {date}', {
+									date: getUploadDate(docType.id),
+								})
+							}}
 						</span>
-						<span v-else-if="docType.requiredAtStatus" class="doc-item__required-at">
-							{{ t('procest', 'Required at: {status}', { status: getStatusName(docType.requiredAtStatus) }) }}
+						<span
+							v-else-if="docType.requiredAtStatus"
+							class="doc-item__required-at">
+							{{
+								t('procest', 'Required at: {status}', {
+									status: getStatusName(docType.requiredAtStatus),
+								})
+							}}
 						</span>
 					</div>
-					<div v-if="!isDocPresent(docType.id) && !isReadOnly" class="doc-item__actions">
+					<div
+						v-if="!isDocPresent(docType.id) && !isReadOnly"
+						class="doc-item__actions">
 						<NcButton type="tertiary" @click="$emit('upload', docType)">
 							{{ t('procest', 'Upload') }}
 						</NcButton>
@@ -84,7 +115,7 @@ export default {
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		presentCount() {
-			return this.documentTypes.filter(dt => this.isDocPresent(dt.id)).length
+			return this.documentTypes.filter((dt) => this.isDocPresent(dt.id)).length
 		},
 	},
 	watch: {
@@ -124,7 +155,7 @@ export default {
 		},
 
 		isDocPresent(docTypeId) {
-			return this.caseDocuments.some(cd => cd.documentType === docTypeId)
+			return this.caseDocuments.some((cd) => cd.documentType === docTypeId)
 		},
 
 		/**
@@ -132,7 +163,9 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 		 */
 		getUploadDate(docTypeId) {
-			const doc = this.caseDocuments.find(cd => cd.documentType === docTypeId)
+			const doc = this.caseDocuments.find(
+				(cd) => cd.documentType === docTypeId,
+			)
 			if (!doc?.registrationDate) return null
 			return new Date(doc.registrationDate).toLocaleDateString(undefined, {
 				month: 'short',
@@ -145,7 +178,7 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 		 */
 		getStatusName(statusTypeId) {
-			const st = this.statusTypes.find(s => s.id === statusTypeId)
+			const st = this.statusTypes.find((s) => s.id === statusTypeId)
 			return st?.name || statusTypeId
 		},
 	},

@@ -35,29 +35,59 @@ describe('brkApi shim — endpoint routing', () => {
 	})
 
 	it('lookupParcel delegates to the procest parcel route with kadastrale-aanduiding params', async () => {
-		const envelope = { lookupStatus: 'FOUND', parcel: { sectie: 'A' }, dormant: false, extras: { tier: 'test' } }
+		const envelope = {
+			lookupStatus: 'FOUND',
+			parcel: { sectie: 'A' },
+			dormant: false,
+			extras: { tier: 'test' },
+		}
 		axios.get.mockResolvedValue(ok(envelope))
 
 		const result = await lookupParcel('VBSTD', 'A', '1234')
 
 		expect(axios.get).toHaveBeenCalledWith(`${BASE}/parcel`, {
-			params: { kadastraleGemeenteCode: 'VBSTD', sectie: 'A', perceelnummer: '1234' },
+			params: {
+				kadastraleGemeenteCode: 'VBSTD',
+				sectie: 'A',
+				perceelnummer: '1234',
+			},
 		})
 		expect(result).toEqual(envelope)
 	})
 
 	it('lookupParcel forwards appartementsrechtVolgnummer only when supplied', async () => {
-		axios.get.mockResolvedValue(ok({ lookupStatus: 'NOT_FOUND', parcel: {}, dormant: false, extras: {} }))
+		axios.get.mockResolvedValue(
+			ok({
+				lookupStatus: 'NOT_FOUND',
+				parcel: {},
+				dormant: false,
+				extras: {},
+			}),
+		)
 
-		await lookupParcel('VBSTD', 'A', '1234', { appartementsrechtVolgnummer: 'A1' })
+		await lookupParcel('VBSTD', 'A', '1234', {
+			appartementsrechtVolgnummer: 'A1',
+		})
 
 		expect(axios.get).toHaveBeenCalledWith(`${BASE}/parcel`, {
-			params: { kadastraleGemeenteCode: 'VBSTD', sectie: 'A', perceelnummer: '1234', appartementsrechtVolgnummer: 'A1' },
+			params: {
+				kadastraleGemeenteCode: 'VBSTD',
+				sectie: 'A',
+				perceelnummer: '1234',
+				appartementsrechtVolgnummer: 'A1',
+			},
 		})
 	})
 
 	it('lookupParcel omits appartementsrechtVolgnummer entirely when not supplied', async () => {
-		axios.get.mockResolvedValue(ok({ lookupStatus: 'NOT_FOUND', parcel: {}, dormant: false, extras: {} }))
+		axios.get.mockResolvedValue(
+			ok({
+				lookupStatus: 'NOT_FOUND',
+				parcel: {},
+				dormant: false,
+				extras: {},
+			}),
+		)
 
 		await lookupParcel('VBSTD', 'A', '1234')
 
@@ -66,7 +96,12 @@ describe('brkApi shim — endpoint routing', () => {
 	})
 
 	it('lookupParcelById delegates to the procest parcel-by-id route with an encoded id', async () => {
-		const envelope = { lookupStatus: 'FOUND', parcel: { oppervlakte: 350 }, dormant: false, extras: {} }
+		const envelope = {
+			lookupStatus: 'FOUND',
+			parcel: { oppervlakte: 350 },
+			dormant: false,
+			extras: {},
+		}
 		axios.get.mockResolvedValue(ok(envelope))
 
 		const result = await lookupParcelById('10280123450000')

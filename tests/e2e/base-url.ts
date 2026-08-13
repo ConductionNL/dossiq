@@ -52,7 +52,8 @@ const CI_DEFAULT_BASE_URL = 'http://localhost:8080'
  * @throws when no target is configured outside CI
  */
 export function resolveBaseURL(): string {
-	const explicit = process.env.PLAYWRIGHT_BASE_URL
+	const explicit =
+		process.env.PLAYWRIGHT_BASE_URL
 		?? process.env.NEXTCLOUD_URL
 		?? process.env.NC_BASE_URL
 		// Exported by the shared ConductionNL/.github quality workflow.
@@ -66,18 +67,18 @@ export function resolveBaseURL(): string {
 		// eslint-disable-next-line no-console
 		console.warn(
 			'[procest e2e] no PLAYWRIGHT_BASE_URL / NEXTCLOUD_URL / NC_BASE_URL / BASE_URL set; '
-			+ `using the CI-local default ${CI_DEFAULT_BASE_URL}.`,
+				+ `using the CI-local default ${CI_DEFAULT_BASE_URL}.`,
 		)
 		return CI_DEFAULT_BASE_URL
 	}
 
 	throw new Error(
 		'[procest e2e] No target Nextcloud configured. Set PLAYWRIGHT_BASE_URL (preferred), '
-		+ 'NEXTCLOUD_URL, NC_BASE_URL or BASE_URL to the instance you want to test, e.g.\n\n'
-		+ '    PLAYWRIGHT_BASE_URL=http://localhost:8095 npx playwright test\n\n'
-		+ 'There is deliberately no default: the historic one was http://localhost:8080, '
-		+ 'the SHARED development container, and this suite seeds AND DELETES OpenRegister '
-		+ "objects — running it there corrupts other people's environments.",
+			+ 'NEXTCLOUD_URL, NC_BASE_URL or BASE_URL to the instance you want to test, e.g.\n\n'
+			+ '    PLAYWRIGHT_BASE_URL=http://localhost:8095 npx playwright test\n\n'
+			+ 'There is deliberately no default: the historic one was http://localhost:8080, '
+			+ 'the SHARED development container, and this suite seeds AND DELETES OpenRegister '
+			+ "objects — running it there corrupts other people's environments.",
 	)
 }
 

@@ -80,7 +80,11 @@ export function resolveTranslatable(value, locale, fallbackLocale) {
 
 	// Try each language in order
 	for (const lang of chain) {
-		if (value[lang] !== undefined && value[lang] !== null && value[lang] !== '') {
+		if (
+			value[lang] !== undefined
+			&& value[lang] !== null
+			&& value[lang] !== ''
+		) {
 			return {
 				text: String(value[lang]),
 				lang,

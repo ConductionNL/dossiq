@@ -21,7 +21,8 @@ import { Page } from '@playwright/test'
  * The app's sidebar navigation container.
  * @param page
  */
-export const sidebarNav = (page: Page) => page.locator('[id^="app-navigation"]').first()
+export const sidebarNav = (page: Page) =>
+	page.locator('[id^="app-navigation"]').first()
 
 /**
  * Dismiss the "Support Procest" dialog if it is open. The dialog's
@@ -32,8 +33,13 @@ export const sidebarNav = (page: Page) => page.locator('[id^="app-navigation"]')
 export async function dismissSupportDialog(page: Page): Promise<void> {
 	const supportDialog = page.locator('[data-testid-modal="cn-support-dialog"]')
 	if (await supportDialog.isVisible().catch(() => false)) {
-		await supportDialog.getByRole('button', { name: 'Close' }).click().catch(() => {})
-		await supportDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+		await supportDialog
+			.getByRole('button', { name: 'Close' })
+			.click()
+			.catch(() => {})
+		await supportDialog
+			.waitFor({ state: 'hidden', timeout: 5000 })
+			.catch(() => {})
 	}
 }
 
@@ -46,13 +52,17 @@ export async function dismissSupportDialog(page: Page): Promise<void> {
  * therefore fell through to clicking a locator that matched nothing.
  * @param page
  */
-async function readNavLinks(page: Page): Promise<Array<{ label: string, href: string | null }>> {
-	return await sidebarNav(page).locator('a').evaluateAll(
-		(els) => els.map((e) => ({
-			label: (e.textContent || '').trim().replace(/\s+/g, ' '),
-			href: e.getAttribute('href'),
-		})),
-	)
+async function readNavLinks(
+	page: Page,
+): Promise<Array<{ label: string; href: string | null }>> {
+	return await sidebarNav(page)
+		.locator('a')
+		.evaluateAll((els) =>
+			els.map((e) => ({
+				label: (e.textContent || '').trim().replace(/\s+/g, ' '),
+				href: e.getAttribute('href'),
+			})),
+		)
 }
 
 /**
@@ -96,10 +106,12 @@ export async function navTo(page: Page, label: string): Promise<void> {
 		// full-length action timeouts and then silently asserted against the
 		// Dashboard, so a renamed nav label surfaced as an unrelated
 		// "element not found" 60s later.
-		const available = links.filter((l) => l.href && l.href !== '#').map((l) => l.label)
+		const available = links
+			.filter((l) => l.href && l.href !== '#')
+			.map((l) => l.label)
 		throw new Error(
 			`[procest e2e] navTo('${label}'): no navigating sidebar link with that exact label.\n`
-			+ `Available navigating labels: ${JSON.stringify(available)}`,
+				+ `Available navigating labels: ${JSON.stringify(available)}`,
 		)
 	}
 
@@ -140,7 +152,9 @@ export async function loadAllAdminSections(page: Page): Promise<void> {
 	// few steps. The page does expensive layout on each scroll; the calling
 	// tests use test.slow() so the per-test budget covers it.
 	for (let i = 0; i < 4; i++) {
-		await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => {})
+		await page
+			.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
+			.catch(() => {})
 		await page.waitForTimeout(500)
 	}
 	await page.evaluate(() => window.scrollTo(0, 0)).catch(() => {})

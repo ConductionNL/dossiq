@@ -7,12 +7,18 @@
 				v-for="item in timelineItems"
 				:key="item.id"
 				class="timeline-item"
-				:class="{ 'timeline-item--active': item.active, 'timeline-item--completed': item.completed, 'timeline-item--deadline': item.isDeadline }">
+				:class="{
+					'timeline-item--active': item.active,
+					'timeline-item--completed': item.completed,
+					'timeline-item--deadline': item.isDeadline,
+				}">
 				<div class="timeline-item__marker" />
 				<div class="timeline-item__content">
 					<span class="timeline-item__date">{{ item.date }}</span>
 					<span class="timeline-item__label">{{ item.label }}</span>
-					<span v-if="item.detail" class="timeline-item__detail">{{ item.detail }}</span>
+					<span v-if="item.detail" class="timeline-item__detail">{{
+						item.detail
+					}}</span>
 				</div>
 			</div>
 		</div>
@@ -71,9 +77,14 @@ export default {
 					id: 'hearing',
 					date: hearing.scheduledDate.split('T')[0],
 					label: t('procest', 'Hearing scheduled'),
-					detail: hearing.status === 'uitgevoerd' ? t('procest', 'Completed') : t('procest', hearing.status),
+					detail:
+						hearing.status === 'uitgevoerd'
+							? t('procest', 'Completed')
+							: t('procest', hearing.status),
 					completed: hearing.status === 'uitgevoerd',
-					active: hearing.status === 'gepland' || hearing.status === 'uitgenodigd',
+					active:
+						hearing.status === 'gepland'
+						|| hearing.status === 'uitgenodigd',
 					isDeadline: false,
 				})
 			}
@@ -84,7 +95,9 @@ export default {
 					id: 'advisory',
 					date: bezwaarStore.currentAdvisoryReport.adviceDate,
 					label: t('procest', 'Advisory report issued'),
-					detail: this.getAdviceTypeLabel(bezwaarStore.currentAdvisoryReport.adviceType),
+					detail: this.getAdviceTypeLabel(
+						bezwaarStore.currentAdvisoryReport.adviceType,
+					),
 					completed: true,
 					active: false,
 					isDeadline: false,
@@ -97,7 +110,9 @@ export default {
 					id: 'decision',
 					date: bezwaarStore.currentAppealDecision.decisionDate,
 					label: t('procest', 'Decision on objection'),
-					detail: this.getDispositionLabel(bezwaarStore.currentAppealDecision.dispositionType),
+					detail: this.getDispositionLabel(
+						bezwaarStore.currentAppealDecision.dispositionType,
+					),
 					completed: true,
 					active: false,
 					isDeadline: false,

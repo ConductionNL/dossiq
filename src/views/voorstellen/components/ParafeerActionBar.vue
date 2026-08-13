@@ -3,7 +3,9 @@
 		<!-- Advisory step: Adviseren -->
 		<template v-if="isAdvisoryStep">
 			<div class="form-group">
-				<label for="parafeer-action-advice">{{ t('procest', 'Advice') }}</label>
+				<label for="parafeer-action-advice">{{
+					t('procest', 'Advice')
+				}}</label>
 				<textarea
 					id="parafeer-action-advice"
 					v-model="adviceText"
@@ -14,7 +16,10 @@
 				<NcButton type="primary" :disabled="acting" @click="doAdviseren">
 					{{ t('procest', 'Advise') }}
 				</NcButton>
-				<NcButton type="error" :disabled="acting" @click="showReturnForm = true">
+				<NcButton
+					type="error"
+					:disabled="acting"
+					@click="showReturnForm = true">
 					{{ t('procest', 'Return') }}
 				</NcButton>
 			</div>
@@ -26,7 +31,10 @@
 				<NcButton type="primary" :disabled="acting" @click="doParaferen">
 					{{ t('procest', 'Endorse') }}
 				</NcButton>
-				<NcButton type="error" :disabled="acting" @click="showReturnForm = true">
+				<NcButton
+					type="error"
+					:disabled="acting"
+					@click="showReturnForm = true">
 					{{ t('procest', 'Return') }}
 				</NcButton>
 			</div>
@@ -34,20 +42,22 @@
 			<!-- Delegation option -->
 			<div v-if="!showReturnForm" class="parafeer-action-bar__delegation">
 				<label>
-					<input v-model="isDelegating" type="checkbox">
+					<input v-model="isDelegating" type="checkbox" />
 					{{ t('procest', 'Endorse on behalf of someone else') }}
 				</label>
-				<div v-if="isDelegating" class="parafeer-action-bar__delegation-fields">
+				<div
+					v-if="isDelegating"
+					class="parafeer-action-bar__delegation-fields">
 					<NcTextField
 						:model-value="delegateFor"
 						:placeholder="t('procest', 'User ID of principal')"
 						:aria-label="t('procest', 'User ID of principal')"
-						@update:model-value="v => delegateFor = v" />
+						@update:model-value="(v) => (delegateFor = v)" />
 					<NcTextField
 						:model-value="mandateRef"
 						:placeholder="t('procest', 'Mandate reference')"
 						:aria-label="t('procest', 'Mandate reference')"
-						@update:model-value="v => mandateRef = v" />
+						@update:model-value="(v) => (mandateRef = v)" />
 				</div>
 			</div>
 		</template>
@@ -55,11 +65,18 @@
 		<!-- Return form (shared) -->
 		<div v-if="showReturnForm" class="parafeer-action-bar__return-form">
 			<div class="form-group">
-				<label for="parafeer-return-reason">{{ t('procest', 'Reason for returning') }} *</label>
+				<label for="parafeer-return-reason"
+					>{{ t('procest', 'Reason for returning') }} *</label
+				>
 				<textarea
 					id="parafeer-return-reason"
 					v-model="returnComment"
-					:placeholder="t('procest', 'Provide the reason why the proposal is being returned...')"
+					:placeholder="
+						t(
+							'procest',
+							'Provide the reason why the proposal is being returned...',
+						)
+					"
 					rows="3" />
 				<p v-if="returnError" class="form-error">
 					{{ returnError }}
@@ -133,7 +150,11 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		formatStepType(type) {
-			const labels = { advies: 'Advies', parafering: 'Parafering', accordering: 'Accordering' }
+			const labels = {
+				advies: 'Advies',
+				parafering: 'Parafering',
+				accordering: 'Accordering',
+			}
 			return labels[type] || type || ''
 		},
 		/** @spec openspec/specs/parafering-actions/spec.md */

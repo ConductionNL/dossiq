@@ -39,17 +39,19 @@
 			<div class="form-row">
 				<div class="form-group">
 					<label for="sub-start">{{ t('procest', 'Start date') }} *</label>
-					<input id="sub-start"
+					<input
+						id="sub-start"
 						v-model="form.startDate"
 						type="date"
-						class="substitution-form__date">
+						class="substitution-form__date" />
 				</div>
 				<div class="form-group">
 					<label for="sub-end">{{ t('procest', 'End date') }} *</label>
-					<input id="sub-end"
+					<input
+						id="sub-end"
 						v-model="form.endDate"
 						type="date"
-						class="substitution-form__date">
+						class="substitution-form__date" />
 				</div>
 			</div>
 
@@ -73,7 +75,9 @@
 					track-by="value" />
 			</div>
 
-			<div v-if="selectedScope && selectedScope.value === 'caseTypes'" class="form-group">
+			<div
+				v-if="selectedScope && selectedScope.value === 'caseTypes'"
+				class="form-group">
 				<NcSelect
 					v-model="selectedCaseTypes"
 					:options="caseTypes"
@@ -186,7 +190,9 @@ export default {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async loadCaseTypes() {
 			try {
-				const results = await this.objectStore.fetchCollection('caseType', { _limit: 200 })
+				const results = await this.objectStore.fetchCollection('caseType', {
+					_limit: 200,
+				})
 				this.caseTypes = Array.isArray(results) ? results : []
 			} catch (err) {
 				this.caseTypes = []
@@ -214,9 +220,14 @@ export default {
 					substitute: this.form.substitute.trim(),
 					startDate: this.form.startDate,
 					endDate: this.form.endDate,
-					reason: this.selectedReason ? this.selectedReason.value : 'verlof',
+					reason: this.selectedReason
+						? this.selectedReason.value
+						: 'verlof',
 					scope,
-					scopeRefs: scope === 'caseTypes' ? this.selectedCaseTypes.map(ct => ct.id) : [],
+					scopeRefs:
+						scope === 'caseTypes'
+							? this.selectedCaseTypes.map((ct) => ct.id)
+							: [],
 					comment: this.form.comment,
 				}
 				if (this.allowCoordinator && this.form.absentee.trim()) {
@@ -225,7 +236,8 @@ export default {
 				const created = await createSubstitution(payload)
 				this.$emit('created', created)
 			} catch (err) {
-				this.serverError = err?.response?.data?.error
+				this.serverError =
+					err?.response?.data?.error
 					|| err?.message
 					|| t('procest', 'Failed to register substitution.')
 			} finally {

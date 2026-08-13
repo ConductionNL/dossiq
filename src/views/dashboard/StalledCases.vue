@@ -15,19 +15,35 @@
 					class="stalled-cases__row"
 					role="button"
 					tabindex="0"
-					@click="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
-					@keydown.enter="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
-					@keydown.space.prevent="$router.push({ name: 'CaseDetail', params: { id: item.id } })">
+					@click="
+						$router.push({ name: 'CaseDetail', params: { id: item.id } })
+					"
+					@keydown.enter="
+						$router.push({ name: 'CaseDetail', params: { id: item.id } })
+					"
+					@keydown.space.prevent="
+						$router.push({ name: 'CaseDetail', params: { id: item.id } })
+					">
 					<div class="stalled-cases__info">
-						<span class="stalled-cases__identifier">{{ item.identifier }}</span>
+						<span class="stalled-cases__identifier">{{
+							item.identifier
+						}}</span>
 						<span class="stalled-cases__title">{{ item.title }}</span>
-						<span class="stalled-cases__type">{{ item.caseTypeName }}</span>
+						<span class="stalled-cases__type">{{
+							item.caseTypeName
+						}}</span>
 					</div>
 					<div class="stalled-cases__meta">
 						<span class="stalled-cases__days">
-							{{ t('procest', '{days} days inactive', { days: item.daysSinceActivity }) }}
+							{{
+								t('procest', '{days} days inactive', {
+									days: item.daysSinceActivity,
+								})
+							}}
 						</span>
-						<span class="stalled-cases__handler">{{ item.handler }}</span>
+						<span class="stalled-cases__handler">{{
+							item.handler
+						}}</span>
 					</div>
 				</div>
 			</div>

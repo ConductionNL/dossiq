@@ -46,7 +46,9 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		resultType() {
 			if (!this.result?.resultType) return null
-			return this.resultTypes.find(t => t.id === this.result.resultType) || null
+			return (
+				this.resultTypes.find((t) => t.id === this.result.resultType) || null
+			)
 		},
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		resultTypeName() {
@@ -59,18 +61,25 @@ export default {
 			const parts = []
 
 			if (rt.archivalAction) {
-				const actionLabel = rt.archivalAction === 'bewaren'
-					? t('procest', 'retain')
-					: rt.archivalAction === 'vernietigen'
-						? t('procest', 'destroy')
-						: rt.archivalAction === 'blijvend_bewaren'
-							? t('procest', 'permanently retain')
-							: rt.archivalAction
-				parts.push(t('procest', 'Archive: {action}', { action: actionLabel }))
+				const actionLabel =
+					rt.archivalAction === 'bewaren'
+						? t('procest', 'retain')
+						: rt.archivalAction === 'vernietigen'
+							? t('procest', 'destroy')
+							: rt.archivalAction === 'blijvend_bewaren'
+								? t('procest', 'permanently retain')
+								: rt.archivalAction
+				parts.push(
+					t('procest', 'Archive: {action}', { action: actionLabel }),
+				)
 			}
 
 			if (rt.archivalPeriod) {
-				parts.push(t('procest', 'Retention: {period}', { period: this.formatPeriod(rt.archivalPeriod) }))
+				parts.push(
+					t('procest', 'Retention: {period}', {
+						period: this.formatPeriod(rt.archivalPeriod),
+					}),
+				)
 			}
 
 			return parts.join(' — ')

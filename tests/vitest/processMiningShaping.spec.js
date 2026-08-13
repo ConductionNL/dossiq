@@ -26,8 +26,22 @@ import {
 } from '../../src/views/processMining/processMiningShaping.js'
 
 const dwellTime = [
-	{ statusId: 'intake', statusName: 'Intake', medianHours: 4, p90Hours: 8, meanHours: 5, visitCount: 10 },
-	{ statusId: 'review', statusName: 'In Review', medianHours: 72, p90Hours: 120, meanHours: 80, visitCount: 10 },
+	{
+		statusId: 'intake',
+		statusName: 'Intake',
+		medianHours: 4,
+		p90Hours: 8,
+		meanHours: 5,
+		visitCount: 10,
+	},
+	{
+		statusId: 'review',
+		statusName: 'In Review',
+		medianHours: 72,
+		p90Hours: 120,
+		meanHours: 80,
+		visitCount: 10,
+	},
 ]
 
 describe('buildDwellSeries / buildDwellCategories', () => {
@@ -60,7 +74,10 @@ describe('buildThroughputSeries / buildThroughputCategories', () => {
 	})
 
 	it('emits ISO week labels aligned with the series', () => {
-		expect(buildThroughputCategories(throughputTrend)).toEqual(['2026-W22', '2026-W23'])
+		expect(buildThroughputCategories(throughputTrend)).toEqual([
+			'2026-W22',
+			'2026-W23',
+		])
 	})
 
 	it('returns an empty series when there is no throughput data', () => {
@@ -73,21 +90,31 @@ describe('buildBottleneckRows', () => {
 		{
 			title: 'Omgevingsvergunning',
 			bottlenecks: [
-				{ statusName: 'Review', medianHours: 72, visitCount: 10, score: 720 },
+				{
+					statusName: 'Review',
+					medianHours: 72,
+					visitCount: 10,
+					score: 720,
+				},
 				{ statusName: 'Intake', medianHours: 4, visitCount: 10, score: 40 },
 			],
 		},
 		{
 			title: 'Bezwaar',
 			bottlenecks: [
-				{ statusName: 'Advies', medianHours: 200, visitCount: 3, score: 600 },
+				{
+					statusName: 'Advies',
+					medianHours: 200,
+					visitCount: 3,
+					score: 600,
+				},
 			],
 		},
 	]
 
-	it('flattens every case type\'s bottlenecks and sorts by score descending', () => {
+	it("flattens every case type's bottlenecks and sorts by score descending", () => {
 		const rows = buildBottleneckRows(caseTypes)
-		expect(rows.map(r => r.statusName)).toEqual(['Review', 'Advies', 'Intake'])
+		expect(rows.map((r) => r.statusName)).toEqual(['Review', 'Advies', 'Intake'])
 		expect(rows[0].caseTypeTitle).toBe('Omgevingsvergunning')
 	})
 
@@ -105,8 +132,34 @@ describe('buildKpiSummary', () => {
 	it('sums case volume and computes a transition-weighted overall rework %', () => {
 		const report = {
 			caseTypes: [
-				{ caseVolume: 10, reworkPercent: 10, transitionCount: 20, bottlenecks: [{ statusName: 'Review', medianHours: 72, visitCount: 10, score: 720 }], title: 'A' },
-				{ caseVolume: 5, reworkPercent: 40, transitionCount: 5, bottlenecks: [{ statusName: 'Advies', medianHours: 200, visitCount: 3, score: 600 }], title: 'B' },
+				{
+					caseVolume: 10,
+					reworkPercent: 10,
+					transitionCount: 20,
+					bottlenecks: [
+						{
+							statusName: 'Review',
+							medianHours: 72,
+							visitCount: 10,
+							score: 720,
+						},
+					],
+					title: 'A',
+				},
+				{
+					caseVolume: 5,
+					reworkPercent: 40,
+					transitionCount: 5,
+					bottlenecks: [
+						{
+							statusName: 'Advies',
+							medianHours: 200,
+							visitCount: 3,
+							score: 600,
+						},
+					],
+					title: 'B',
+				},
 			],
 		}
 

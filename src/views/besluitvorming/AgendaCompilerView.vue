@@ -6,7 +6,12 @@
 	<div class="agenda-compiler">
 		<CnDetailPage
 			:title="t('procest', 'Agenda samenstellen')"
-			:subtitle="t('procest', 'Compile the meeting agenda from decisions ready for scheduling')"
+			:subtitle="
+				t(
+					'procest',
+					'Compile the meeting agenda from decisions ready for scheduling',
+				)
+			"
 			:loading="loading"
 			:sidebar="false">
 			<template #header-actions>
@@ -26,7 +31,9 @@
 
 			<CnDetailCard :title="t('procest', 'Vergadering')">
 				<div class="agenda-compiler__controls">
-					<label for="bvw-gremium">{{ t('procest', 'Vergadergremium') }}</label>
+					<label for="bvw-gremium">{{
+						t('procest', 'Vergadergremium')
+					}}</label>
 					<NcSelect
 						v-model="gremium"
 						input-id="bvw-gremium"
@@ -34,34 +41,43 @@
 						:options="gremiumOptions"
 						@update:model-value="loadReadyItems" />
 					<label for="bvw-date">{{ t('procest', 'Vergaderdatum') }}</label>
-					<input id="bvw-date" v-model="meetingDate" type="date">
+					<input id="bvw-date" v-model="meetingDate" type="date" />
 				</div>
 			</CnDetailCard>
 
 			<div class="agenda-compiler__panels">
-				<CnDetailCard :title="t('procest', 'Available for scheduling')" class="agenda-compiler__panel">
+				<CnDetailCard
+					:title="t('procest', 'Available for scheduling')"
+					class="agenda-compiler__panel">
 					<NcEmptyContent
 						v-if="available.length === 0"
 						:name="t('procest', 'No available items')"
-						:description="t('procest', 'No decisions are ready for scheduling for this body.')" />
+						:description="
+							t(
+								'procest',
+								'No decisions are ready for scheduling for this body.',
+							)
+						" />
 					<div
 						v-for="item in available"
 						:key="item.id"
 						class="agenda-compiler__available-item">
-						<span>{{ item.title || t('procest', 'Onbenoemd voorstel') }}</span>
+						<span>{{
+							item.title || t('procest', 'Onbenoemd voorstel')
+						}}</span>
 						<NcButton type="tertiary" @click="addItem(item)">
 							{{ t('procest', 'Toevoegen') }}
 						</NcButton>
 					</div>
 				</CnDetailCard>
 
-				<CnDetailCard
-					:title="agendaTitle"
-					class="agenda-compiler__panel">
+				<CnDetailCard :title="agendaTitle" class="agenda-compiler__panel">
 					<NcEmptyContent
 						v-if="agenda.length === 0"
 						:name="t('procest', 'Lege agenda')"
-						:description="t('procest', 'Add items from the list on the left.')" />
+						:description="
+							t('procest', 'Add items from the list on the left.')
+						" />
 					<AgendaItem
 						v-for="item in agenda"
 						:key="item.id"
@@ -78,7 +94,11 @@ import { NcButton, NcSelect, NcEmptyContent } from '@nextcloud/vue'
 import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import AgendaItem from '../../components/besluitvorming/AgendaItem.vue'
 import { useObjectStore } from '../../store/modules/object.js'
-import { addToAgenda, confirmAgenda, generateAgenda } from '../../services/besluitvormingApi.js'
+import {
+	addToAgenda,
+	confirmAgenda,
+	generateAgenda,
+} from '../../services/besluitvormingApi.js'
 
 export default {
 	name: 'AgendaCompilerView',
@@ -122,15 +142,20 @@ export default {
 		async loadReadyItems() {
 			this.loading = true
 			try {
-				const gremium = typeof this.gremium === 'string' ? this.gremium : (this.gremium?.label || this.gremium)
+				const gremium =
+					typeof this.gremium === 'string'
+						? this.gremium
+						: this.gremium?.label || this.gremium
 				const results = await this.objectStore.fetchCollection('case', {
 					'_filters[status]': 'gereed_voor_agendering',
 					'_filters[caseTypeTitle]': gremium,
 					_limit: 200,
 				})
-				const rows = Array.isArray(results) ? results : (results?.results || [])
-				const taken = new Set(this.agenda.map(i => i.id))
-				this.available = rows.filter(r => !taken.has(r.id))
+				const rows = Array.isArray(results)
+					? results
+					: results?.results || []
+				const taken = new Set(this.agenda.map((i) => i.id))
+				this.available = rows.filter((r) => !taken.has(r.id))
 			} catch (error) {
 				console.error('Failed to load ready items:', error)
 				this.available = []
@@ -145,9 +170,13 @@ export default {
 		 */
 		async addItem(item) {
 			const order = this.agenda.length + 1
-			const entry = { ...item, behandeling: 'hamerstuk', agendanummer: '1.' + order }
+			const entry = {
+				...item,
+				behandeling: 'hamerstuk',
+				agendanummer: '1.' + order,
+			}
 			this.agenda.push(entry)
-			this.available = this.available.filter(a => a.id !== item.id)
+			this.available = this.available.filter((a) => a.id !== item.id)
 			try {
 				await addToAgenda(item.id, 'hamerstuk', order)
 			} catch (error) {
@@ -162,7 +191,7 @@ export default {
 		 * @param payload.behandeling
 		 */
 		async onSetBehandeling({ id, behandeling }) {
-			const idx = this.agenda.findIndex(i => i.id === id)
+			const idx = this.agenda.findIndex((i) => i.id === id)
 			if (idx === -1) return
 			this.agenda[idx].behandeling = behandeling
 			try {
@@ -179,7 +208,11 @@ export default {
 		async onConfirm() {
 			if (!this.meetingDate || this.agenda.length === 0) return
 			try {
-				await confirmAgenda('agenda-' + this.meetingDate, this.agenda.map(i => i.id), this.meetingDate)
+				await confirmAgenda(
+					'agenda-' + this.meetingDate,
+					this.agenda.map((i) => i.id),
+					this.meetingDate,
+				)
 				this.agenda = []
 				await this.loadReadyItems()
 			} catch (error) {
@@ -193,7 +226,7 @@ export default {
 		 */
 		async onGenerate() {
 			try {
-				await generateAgenda(this.agenda.map(i => i.id))
+				await generateAgenda(this.agenda.map((i) => i.id))
 			} catch (error) {
 				console.error('Failed to generate agenda document:', error)
 			}

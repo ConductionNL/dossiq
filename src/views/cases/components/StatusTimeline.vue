@@ -6,7 +6,10 @@
 			class="status-timeline__step"
 			:class="stepClass(statusType)">
 			<!-- Connecting line (before dot, except for first) -->
-			<div v-if="index > 0" class="status-timeline__line" :class="lineClass(statusType)" />
+			<div
+				v-if="index > 0"
+				class="status-timeline__line"
+				:class="lineClass(statusType)" />
 
 			<!-- Dot -->
 			<div class="status-timeline__dot" :class="dotClass(statusType)" />
@@ -44,7 +47,7 @@ export default {
 	computed: {
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		currentIndex() {
-			return this.statusTypes.findIndex(st => st.id === this.currentStatusId)
+			return this.statusTypes.findIndex((st) => st.id === this.currentStatusId)
 		},
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		historyMap() {
@@ -61,7 +64,7 @@ export default {
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		isPassed(statusType) {
-			const idx = this.statusTypes.findIndex(st => st.id === statusType.id)
+			const idx = this.statusTypes.findIndex((st) => st.id === statusType.id)
 			return idx < this.currentIndex
 		},
 		isCurrent(statusType) {
@@ -72,7 +75,7 @@ export default {
 		 * @spec openspec/specs/status-transition-engine/spec.md
 		 */
 		isFuture(statusType) {
-			const idx = this.statusTypes.findIndex(st => st.id === statusType.id)
+			const idx = this.statusTypes.findIndex((st) => st.id === statusType.id)
 			return idx > this.currentIndex
 		},
 		/**
@@ -103,7 +106,8 @@ export default {
 		 */
 		lineClass(statusType) {
 			return {
-				'status-timeline__line--passed': this.isPassed(statusType) || this.isCurrent(statusType),
+				'status-timeline__line--passed':
+					this.isPassed(statusType) || this.isCurrent(statusType),
 			}
 		},
 		/**

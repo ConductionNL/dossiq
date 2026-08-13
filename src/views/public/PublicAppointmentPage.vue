@@ -13,11 +13,19 @@
 			<h2>{{ t('procest', 'Your Appointment') }}</h2>
 
 			<div class="public-appointment-page__details">
-				<p><strong>{{ t('procest', 'Date and time') }}:</strong> {{ formatDateTime(appointment.dateTime) }}</p>
-				<p><strong>{{ t('procest', 'Status') }}:</strong> {{ statusLabel(appointment.status) }}</p>
+				<p>
+					<strong>{{ t('procest', 'Date and time') }}:</strong>
+					{{ formatDateTime(appointment.dateTime) }}
+				</p>
+				<p>
+					<strong>{{ t('procest', 'Status') }}:</strong>
+					{{ statusLabel(appointment.status) }}
+				</p>
 			</div>
 
-			<div v-if="appointment.status === 'scheduled'" class="public-appointment-page__actions">
+			<div
+				v-if="appointment.status === 'scheduled'"
+				class="public-appointment-page__actions">
 				<NcButton type="error" @click="cancelAppointment">
 					{{ t('procest', 'Cancel appointment') }}
 				</NcButton>
@@ -50,11 +58,16 @@ export default {
 	/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 	async mounted() {
 		try {
-			const url = generateUrl(`/apps/procest/api/public/appointment/${this.token}`)
+			const url = generateUrl(
+				`/apps/procest/api/public/appointment/${this.token}`,
+			)
 			const response = await axios.get(url)
 			this.appointment = response.data.appointment
 		} catch (e) {
-			this.error = t('procest', 'This appointment link is invalid or has expired.')
+			this.error = t(
+				'procest',
+				'This appointment link is invalid or has expired.',
+			)
 		} finally {
 			this.loading = false
 		}
@@ -67,7 +80,10 @@ export default {
 		 */
 		formatDateTime(dt) {
 			if (!dt) return '-'
-			return new Date(dt).toLocaleString('nl-NL', { dateStyle: 'long', timeStyle: 'short' })
+			return new Date(dt).toLocaleString('nl-NL', {
+				dateStyle: 'long',
+				timeStyle: 'short',
+			})
 		},
 		/**
 		 * @param status
@@ -85,7 +101,9 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 		async cancelAppointment() {
 			try {
-				const url = generateUrl(`/apps/procest/api/public/appointment/${this.token}/cancel`)
+				const url = generateUrl(
+					`/apps/procest/api/public/appointment/${this.token}/cancel`,
+				)
 				await axios.post(url)
 				this.appointment.status = 'cancelled'
 				this.cancelled = true

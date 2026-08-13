@@ -13,7 +13,7 @@
 				type="search"
 				:aria-label="t('procest', 'Search complaints')"
 				class="complaint-list__search"
-				:placeholder="t('procest', 'Search complaints…')">
+				:placeholder="t('procest', 'Search complaints…')" />
 			<select v-model="statusFilter" class="complaint-list__status">
 				<option value="">
 					{{ t('procest', 'Any status') }}
@@ -55,7 +55,9 @@
 					<td>{{ row.title || '-' }}</td>
 					<td>{{ row.category || '-' }}</td>
 					<td>
-						<span class="complaint-list__badge" :class="'badge-' + row.status">
+						<span
+							class="complaint-list__badge"
+							:class="'badge-' + row.status">
 							{{ row.status }}
 						</span>
 					</td>
@@ -100,9 +102,10 @@ export default {
 			}
 			if (this.search) {
 				const q = this.search.toLowerCase()
-				out = out.filter((r) =>
-					(r.title || '').toLowerCase().includes(q)
-					|| (r.category || '').toLowerCase().includes(q),
+				out = out.filter(
+					(r) =>
+						(r.title || '').toLowerCase().includes(q)
+						|| (r.category || '').toLowerCase().includes(q),
 				)
 			}
 			return out
@@ -124,12 +127,15 @@ export default {
 		async fetch() {
 			this.loading = true
 			try {
-				const res = await fetch(OC.generateUrl('/apps/procest/api/complaints'), {
-					headers: { requesttoken: OC.requestToken },
-				})
+				const res = await fetch(
+					OC.generateUrl('/apps/procest/api/complaints'),
+					{
+						headers: { requesttoken: OC.requestToken },
+					},
+				)
 				if (res.ok) {
 					const body = await res.json()
-					this.rows = Array.isArray(body) ? body : (body.items || [])
+					this.rows = Array.isArray(body) ? body : body.items || []
 				}
 			} catch (e) {
 				this.rows = []

@@ -17,11 +17,17 @@
 				class="checklist-admin__item">
 				<div class="checklist-admin__item-info">
 					<strong>{{ checklist.name }}</strong>
-					<span class="checklist-admin__badge" :class="'checklist-admin__badge--' + checklist.status">
+					<span
+						class="checklist-admin__badge"
+						:class="'checklist-admin__badge--' + checklist.status">
 						{{ checklist.status }} (v{{ checklist.version || 1 }})
 					</span>
 					<span class="checklist-admin__item-count">
-						{{ t('procest', '{count} items', { count: (checklist.items || []).length }) }}
+						{{
+							t('procest', '{count} items', {
+								count: (checklist.items || []).length,
+							})
+						}}
 					</span>
 				</div>
 				<div class="checklist-admin__item-actions">
@@ -55,23 +61,33 @@
 					{{ t('procest', 'Back to list') }}
 				</NcButton>
 				<NcButton type="primary" :disabled="saving" @click="saveChecklist">
-					{{ saving ? t('procest', 'Saving...') : t('procest', 'Save checklist') }}
+					{{
+						saving
+							? t('procest', 'Saving...')
+							: t('procest', 'Save checklist')
+					}}
 				</NcButton>
 			</div>
 
 			<div class="checklist-admin__field">
-				<label for="checklist-admin-name">{{ t('procest', 'Checklist name') }}</label>
+				<label for="checklist-admin-name">{{
+					t('procest', 'Checklist name')
+				}}</label>
 				<input
 					id="checklist-admin-name"
 					v-model="editingChecklist.name"
 					type="text"
 					class="checklist-admin__input"
-					:placeholder="t('procest', 'e.g. Bouwtoezicht fase 1 - Fundering')">
+					:placeholder="
+						t('procest', 'e.g. Bouwtoezicht fase 1 - Fundering')
+					" />
 			</div>
 
 			<div class="checklist-admin__field">
 				<label>{{ t('procest', 'Status') }}</label>
-				<select v-model="editingChecklist.status" class="checklist-admin__input">
+				<select
+					v-model="editingChecklist.status"
+					class="checklist-admin__input">
 					<option value="draft">
 						{{ t('procest', 'Draft') }}
 					</option>
@@ -103,9 +119,11 @@
 							type="text"
 							class="checklist-admin__input"
 							:placeholder="t('procest', 'Item label')"
-							:aria-label="t('procest', 'Item label')">
+							:aria-label="t('procest', 'Item label')" />
 
-						<select v-model="item.type" class="checklist-admin__input checklist-admin__input--small">
+						<select
+							v-model="item.type"
+							class="checklist-admin__input checklist-admin__input--small">
 							<option value="ja_nee_nvt">
 								{{ t('procest', 'Yes/No/N.A.') }}
 							</option>
@@ -124,12 +142,12 @@
 						</select>
 
 						<label class="checklist-admin__toggle">
-							<input v-model="item.required" type="checkbox">
+							<input v-model="item.required" type="checkbox" />
 							{{ t('procest', 'Required') }}
 						</label>
 
 						<label class="checklist-admin__toggle">
-							<input v-model="item.fotoRequired" type="checkbox">
+							<input v-model="item.fotoRequired" type="checkbox" />
 							{{ t('procest', 'Photo required') }}
 						</label>
 					</div>
@@ -140,16 +158,25 @@
 							type="text"
 							class="checklist-admin__input"
 							:placeholder="t('procest', 'Help text for inspector')"
-							:aria-label="t('procest', 'Help text for inspector')">
+							:aria-label="t('procest', 'Help text for inspector')" />
 
-						<div v-if="item.type === 'meerkeuze'" class="checklist-admin__options">
-							<label :for="`checklist-admin-options-${index}`">{{ t('procest', 'Options (comma-separated):') }}</label>
+						<div
+							v-if="item.type === 'meerkeuze'"
+							class="checklist-admin__options">
+							<label :for="`checklist-admin-options-${index}`">{{
+								t('procest', 'Options (comma-separated):')
+							}}</label>
 							<input
 								:id="`checklist-admin-options-${index}`"
 								:value="(item.options || []).join(', ')"
 								type="text"
 								class="checklist-admin__input"
-								@input="item.options = $event.target.value.split(',').map(o => o.trim()).filter(Boolean)">
+								@input="
+									item.options = $event.target.value
+										.split(',')
+										.map((o) => o.trim())
+										.filter(Boolean)
+								" />
 						</div>
 					</div>
 
@@ -281,7 +308,11 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md
 		 */
 		async deleteChecklist(checklist) {
-			if (confirm(t('procest', 'Are you sure you want to delete this checklist?'))) {
+			if (
+				confirm(
+					t('procest', 'Are you sure you want to delete this checklist?'),
+				)
+			) {
 				await this.inspectionStore.deleteChecklist(checklist.id)
 			}
 		},

@@ -1,5 +1,6 @@
 <template>
-	<CnDataTable :rows="items"
+	<CnDataTable
+		:rows="items"
 		:columns="columns"
 		:loading="loading"
 		hide-header
@@ -7,7 +8,8 @@
 		:empty-text="t('procest', 'No tasks found')"
 		@row-click="onRowClick">
 		<template #footer>
-			<a class="cn-data-table__view-all"
+			<a
+				class="cn-data-table__view-all"
 				:href="viewAllUrl"
 				@click.prevent="onViewAll">
 				{{ t('procest', 'View all') }} →
@@ -63,7 +65,9 @@ export default {
 				id: task.id,
 				mainText: task.title || t('procest', 'Unnamed task'),
 				subText: task.dueDate
-					? t('procest', 'Deadline: {date}', { date: task.dueDate.slice(0, 10) })
+					? t('procest', 'Deadline: {date}', {
+							date: task.dueDate.slice(0, 10),
+						})
 					: t('procest', 'No deadline'),
 				targetUrl: generateUrl(`/apps/procest/tasks/${task.id}`),
 			}))
@@ -111,7 +115,7 @@ export default {
 				})
 				// Filter to active/available tasks only.
 				this.tasks = (results || []).filter(
-					t => t.status === 'available' || t.status === 'active',
+					(t) => t.status === 'available' || t.status === 'active',
 				)
 			} catch (err) {
 				console.error('[MyTasksWidget] Failed to fetch tasks:', err)

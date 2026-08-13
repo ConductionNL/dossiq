@@ -3,22 +3,30 @@
 		<div v-if="loading" class="start-case-widget__loading">
 			<NcLoadingIcon :size="44" />
 		</div>
-		<NcEmptyContent v-else-if="caseTypes.length === 0"
+		<NcEmptyContent
+			v-else-if="caseTypes.length === 0"
 			:title="t('procest', 'No case types configured')"
-			:description="t('procest', 'Configure case types in Procest admin settings')">
+			:description="
+				t('procest', 'Configure case types in Procest admin settings')
+			">
 			<template #icon>
 				<BriefcaseVariantOutline />
 			</template>
 		</NcEmptyContent>
 		<div v-else class="start-case-widget__grid">
-			<button v-for="caseType in caseTypes"
+			<button
+				v-for="caseType in caseTypes"
 				:key="caseType.id"
 				class="start-case-widget__card"
 				:disabled="creating"
 				:title="caseType.description || caseType.title"
 				@click="startCase(caseType)">
-				<BriefcaseVariantOutline :size="24" class="start-case-widget__card-icon" />
-				<span class="start-case-widget__card-title">{{ caseType.title }}</span>
+				<BriefcaseVariantOutline
+					:size="24"
+					class="start-case-widget__card-icon" />
+				<span class="start-case-widget__card-title">{{
+					caseType.title
+				}}</span>
 				<NcLoadingIcon v-if="creatingId === caseType.id" :size="20" />
 			</button>
 		</div>
@@ -26,7 +34,8 @@
 		<!-- Optional initiator selection (brp-kvk-register-sets): picking a
 		     case type first asks who submitted it; Skip creates the case
 		     without an initiator (existing flow unchanged). -->
-		<InitiatorPickerModal v-if="pendingCaseType"
+		<InitiatorPickerModal
+			v-if="pendingCaseType"
 			@confirm="onInitiatorConfirmed"
 			@skip="onInitiatorSkipped"
 			@close="pendingCaseType = null" />
@@ -155,7 +164,9 @@ export default {
 					...extraFields,
 				})
 				if (newCase?.id) {
-					window.location.href = generateUrl(`/apps/procest/cases/${newCase.id}`)
+					window.location.href = generateUrl(
+						`/apps/procest/cases/${newCase.id}`,
+					)
 				}
 			} catch (err) {
 				console.error('[StartCaseWidget] Failed to create case:', err)
@@ -197,7 +208,9 @@ export default {
 	border-radius: var(--border-radius-large);
 	background: var(--color-main-background);
 	cursor: pointer;
-	transition: background-color 0.15s ease, border-color 0.15s ease;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease;
 }
 
 .start-case-widget__card:hover:not(:disabled) {

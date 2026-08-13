@@ -17,15 +17,34 @@
 		-->
 		<NcEmptyContent
 			:name="t('procest', 'Capture inspections via the Forms tab')"
-			:description="t('procest', 'Inspection checklist items are filled in through the Forms tab and photos are attached through the Photos tab. Procest validates the photo requirement and append-only rules against the captured data.')">
+			:description="
+				t(
+					'procest',
+					'Inspection checklist items are filled in through the Forms tab and photos are attached through the Photos tab. Procest validates the photo requirement and append-only rules against the captured data.',
+				)
+			">
 			<template #icon>
 				<ClipboardCheckMultipleOutline :size="48" />
 			</template>
 		</NcEmptyContent>
 
 		<ul class="inspection-checklist__rules">
-			<li>{{ t('procest', 'Photo gate: required photos are checked against attachments in the Photos tab.') }}</li>
-			<li>{{ t('procest', 'A submitted run is append-only and can no longer be edited.') }}</li>
+			<li>
+				{{
+					t(
+						'procest',
+						'Photo gate: required photos are checked against attachments in the Photos tab.',
+					)
+				}}
+			</li>
+			<li>
+				{{
+					t(
+						'procest',
+						'A submitted run is append-only and can no longer be edited.',
+					)
+				}}
+			</li>
 		</ul>
 	</div>
 </template>

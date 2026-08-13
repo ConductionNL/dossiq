@@ -16,7 +16,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import axios from '@nextcloud/axios'
-import { lookupAddress, lookupPand, lookupVerblijfsobject } from '../../src/services/bagApi.js'
+import {
+	lookupAddress,
+	lookupPand,
+	lookupVerblijfsobject,
+} from '../../src/services/bagApi.js'
 
 const BASE = '/index.php/apps/procest/api/external/bag'
 
@@ -35,29 +39,64 @@ describe('bagApi shim — endpoint routing', () => {
 	})
 
 	it('lookupAddress delegates to the procest address route with postcode + huisnummer', async () => {
-		const envelope = { lookupStatus: 'FOUND', address: { street: 'Voorstraat' }, dormant: false, extras: { tier: 'test' } }
+		const envelope = {
+			lookupStatus: 'FOUND',
+			address: { street: 'Voorstraat' },
+			dormant: false,
+			extras: { tier: 'test' },
+		}
 		axios.get.mockResolvedValue(ok(envelope))
 
 		const result = await lookupAddress('1234AB', '10')
 
-		expect(axios.get).toHaveBeenCalledWith(`${BASE}/address`, { params: { postcode: '1234AB', huisnummer: '10' } })
+		expect(axios.get).toHaveBeenCalledWith(`${BASE}/address`, {
+			params: { postcode: '1234AB', huisnummer: '10' },
+		})
 		expect(result).toEqual(envelope)
 		const calledUrls = axios.get.mock.calls.map((c) => c[0])
-		expect(calledUrls.every((u) => !u.includes('api.bag.kadaster.nl') && !u.includes('openconnector'))).toBe(true)
+		expect(
+			calledUrls.every(
+				(u) =>
+					!u.includes('api.bag.kadaster.nl')
+					&& !u.includes('openconnector'),
+			),
+		).toBe(true)
 	})
 
 	it('lookupAddress forwards huisletter/huisnummertoevoeging only when supplied', async () => {
-		axios.get.mockResolvedValue(ok({ lookupStatus: 'NOT_FOUND', address: {}, dormant: false, extras: {} }))
+		axios.get.mockResolvedValue(
+			ok({
+				lookupStatus: 'NOT_FOUND',
+				address: {},
+				dormant: false,
+				extras: {},
+			}),
+		)
 
-		await lookupAddress('1234AB', '10', { huisletter: 'A', huisnummertoevoeging: 'II' })
+		await lookupAddress('1234AB', '10', {
+			huisletter: 'A',
+			huisnummertoevoeging: 'II',
+		})
 
 		expect(axios.get).toHaveBeenCalledWith(`${BASE}/address`, {
-			params: { postcode: '1234AB', huisnummer: '10', huisletter: 'A', huisnummertoevoeging: 'II' },
+			params: {
+				postcode: '1234AB',
+				huisnummer: '10',
+				huisletter: 'A',
+				huisnummertoevoeging: 'II',
+			},
 		})
 	})
 
 	it('lookupAddress omits optional params entirely when not supplied', async () => {
-		axios.get.mockResolvedValue(ok({ lookupStatus: 'NOT_FOUND', address: {}, dormant: false, extras: {} }))
+		axios.get.mockResolvedValue(
+			ok({
+				lookupStatus: 'NOT_FOUND',
+				address: {},
+				dormant: false,
+				extras: {},
+			}),
+		)
 
 		await lookupAddress('1234AB', '10')
 
@@ -67,7 +106,12 @@ describe('bagApi shim — endpoint routing', () => {
 	})
 
 	it('lookupPand delegates to the procest pand route with an encoded id', async () => {
-		const envelope = { lookupStatus: 'FOUND', address: { oorspronkelijkBouwjaar: 1998 }, dormant: false, extras: {} }
+		const envelope = {
+			lookupStatus: 'FOUND',
+			address: { oorspronkelijkBouwjaar: 1998 },
+			dormant: false,
+			extras: {},
+		}
 		axios.get.mockResolvedValue(ok(envelope))
 
 		const result = await lookupPand('0518100000123456')
@@ -77,12 +121,19 @@ describe('bagApi shim — endpoint routing', () => {
 	})
 
 	it('lookupVerblijfsobject delegates to the procest verblijfsobject route', async () => {
-		const envelope = { lookupStatus: 'NOT_FOUND', address: {}, dormant: false, extras: {} }
+		const envelope = {
+			lookupStatus: 'NOT_FOUND',
+			address: {},
+			dormant: false,
+			extras: {},
+		}
 		axios.get.mockResolvedValue(ok(envelope))
 
 		const result = await lookupVerblijfsobject('0518010000123456')
 
-		expect(axios.get).toHaveBeenCalledWith(`${BASE}/verblijfsobject/0518010000123456`)
+		expect(axios.get).toHaveBeenCalledWith(
+			`${BASE}/verblijfsobject/0518010000123456`,
+		)
 		expect(result).toEqual(envelope)
 	})
 })
