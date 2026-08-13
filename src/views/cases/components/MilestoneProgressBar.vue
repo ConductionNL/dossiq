@@ -1,7 +1,12 @@
 <template>
 	<div
 		class="milestone-bar"
-		:title="t('procest', '{reached} of {total} milestones reached', { reached, total })">
+		:title="
+			t('procest', '{reached} of {total} milestones reached', {
+				reached,
+				total,
+			})
+		">
 		<div class="milestone-bar__track">
 			<div
 				class="milestone-bar__fill"

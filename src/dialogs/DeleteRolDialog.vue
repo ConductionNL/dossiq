@@ -6,7 +6,11 @@
 	<NcDialog
 		:name="t('procest', 'Delete role')"
 		:open="!!role"
-		@update:open="v => { if (!v) $emit('close') }">
+		@update:open="
+			(v) => {
+				if (!v) $emit('close')
+			}
+		">
 		<p>{{ t('procest', 'Delete role {n}?', { n: role.naam || role.id }) }}</p>
 		<p v-if="blockedReason" class="rol-manager__warning">
 			{{ blockedReason }}
@@ -15,7 +19,10 @@
 			<NcButton @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton type="error" :disabled="!!blockedReason" @click="$emit('confirm')">
+			<NcButton
+				type="error"
+				:disabled="!!blockedReason"
+				@click="$emit('confirm')">
 				{{ t('procest', 'Delete') }}
 			</NcButton>
 		</template>

@@ -25,7 +25,12 @@
 			<div>
 				<h2>{{ t('procest', 'Process Mining') }}</h2>
 				<p class="process-mining-dashboard__subtitle">
-					{{ t('procest', 'Bottleneck analysis from recorded case status history') }}
+					{{
+						t(
+							'procest',
+							'Bottleneck analysis from recorded case status history',
+						)
+					}}
 				</p>
 			</div>
 			<div class="process-mining-dashboard__controls">
@@ -33,14 +38,16 @@
 					<template #icon>
 						<Calendar :size="20" />
 					</template>
-					<NcActionButton v-for="preset in datePresets"
+					<NcActionButton
+						v-for="preset in datePresets"
 						:key="preset.key"
 						:class="{ 'active-preset': selectedPreset === preset.key }"
 						@click="applyPreset(preset.key)">
 						{{ preset.label }}
 					</NcActionButton>
 				</NcActions>
-				<NcSelect :model-value="caseTypeFilter"
+				<NcSelect
+					:model-value="caseTypeFilter"
 					:options="caseTypeOptions"
 					:input-label="t('procest', 'Filter by case type')"
 					:placeholder="t('procest', 'All case types')"
@@ -60,25 +67,31 @@
 			{{ error }}
 		</NcNoteCard>
 
-		<div v-else-if="!loading && kpiSummary.totalCases === 0" class="process-mining-dashboard__empty">
+		<div
+			v-else-if="!loading && kpiSummary.totalCases === 0"
+			class="process-mining-dashboard__empty">
 			<p>{{ t('procest', 'No status history in the selected period.') }}</p>
 		</div>
 
 		<div v-else-if="!loading" class="process-mining-dashboard__content">
 			<CnKpiGrid :columns="4">
-				<CnStatsBlock :title="t('procest', 'Cases analysed')"
+				<CnStatsBlock
+					:title="t('procest', 'Cases analysed')"
 					:count="kpiSummary.totalCases"
 					variant="primary" />
-				<CnStatsBlock :title="t('procest', 'Case types')"
+				<CnStatsBlock
+					:title="t('procest', 'Case types')"
 					:count="kpiSummary.caseTypeCount"
 					variant="default" />
-				<CnStatsBlock :title="t('procest', 'Overall rework rate')"
+				<CnStatsBlock
+					:title="t('procest', 'Overall rework rate')"
 					variant="warning">
 					<template #value>
 						{{ kpiSummary.overallReworkPercent }}%
 					</template>
 				</CnStatsBlock>
-				<CnStatsBlock :title="t('procest', 'Top bottleneck')"
+				<CnStatsBlock
+					:title="t('procest', 'Top bottleneck')"
 					variant="error">
 					<template #value>
 						{{ topBottleneckLabel }}
@@ -87,14 +100,23 @@
 			</CnKpiGrid>
 
 			<NcNoteCard v-if="kpiSummary.overallReworkPercent >= 20" type="warning">
-				{{ t('procest', '{percent}% of recorded transitions revisit a status the case had already left — a high rework rate usually means guard conditions or handler routing need a closer look.', { percent: kpiSummary.overallReworkPercent }) }}
+				{{
+					t(
+						'procest',
+						'{percent}% of recorded transitions revisit a status the case had already left — a high rework rate usually means guard conditions or handler routing need a closer look.',
+						{ percent: kpiSummary.overallReworkPercent },
+					)
+				}}
 			</NcNoteCard>
 
 			<div class="process-mining-dashboard__charts">
 				<div class="chart-card">
-					<h3>{{ t('procest', 'Dwell time by status (median hours)') }}</h3>
+					<h3>
+						{{ t('procest', 'Dwell time by status (median hours)') }}
+					</h3>
 					<div v-if="dwellSeries.length > 0" class="chart-container">
-						<CnChartWidget type="bar"
+						<CnChartWidget
+							type="bar"
 							:height="280"
 							:series="dwellSeries"
 							:categories="dwellCategories"
@@ -108,14 +130,17 @@
 				<div class="chart-card">
 					<h3>{{ t('procest', 'Throughput (cases closed per week)') }}</h3>
 					<div v-if="throughputSeries.length > 0" class="chart-container">
-						<CnChartWidget type="line"
+						<CnChartWidget
+							type="line"
 							:height="280"
 							:series="throughputSeries"
 							:categories="throughputCategories"
 							:options="throughputOptions" />
 					</div>
 					<div v-else class="chart-empty">
-						{{ t('procest', 'No completed cases in the selected range') }}
+						{{
+							t('procest', 'No completed cases in the selected range')
+						}}
 					</div>
 				</div>
 			</div>
@@ -123,9 +148,16 @@
 			<div class="process-mining-dashboard__table-section">
 				<h3>{{ t('procest', 'Bottleneck ranking') }}</h3>
 				<p class="process-mining-dashboard__table-hint">
-					{{ t('procest', 'Ranked by median dwell time × case volume — the statuses most worth investigating first.') }}
+					{{
+						t(
+							'procest',
+							'Ranked by median dwell time × case volume — the statuses most worth investigating first.',
+						)
+					}}
 				</p>
-				<table v-if="bottleneckRows.length > 0" class="process-mining-dashboard__table">
+				<table
+					v-if="bottleneckRows.length > 0"
+					class="process-mining-dashboard__table">
 					<thead>
 						<tr>
 							<th scope="col">{{ t('procest', 'Case type') }}</th>
@@ -217,7 +249,10 @@ export default {
 		},
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		caseTypeOptions() {
-			return this.caseTypes.map(ct => ({ id: ct.id, label: ct.title || ct.name }))
+			return this.caseTypes.map((ct) => ({
+				id: ct.id,
+				label: ct.title || ct.name,
+			}))
 		},
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		caseTypesList() {
@@ -236,13 +271,19 @@ export default {
 		/** Dwell chart scopes to the filtered case type, or the busiest one otherwise. */
 		primaryCaseType() {
 			if (this.caseTypeFilter) {
-				return this.caseTypesList.find(ct => ct.id === this.caseTypeFilter) || null
+				return (
+					this.caseTypesList.find((ct) => ct.id === this.caseTypeFilter)
+					|| null
+				)
 			}
 			return this.caseTypesList[0] || null
 		},
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		dwellSeries() {
-			return buildDwellSeries(this.primaryCaseType?.dwellTime, t('procest', 'Median hours'))
+			return buildDwellSeries(
+				this.primaryCaseType?.dwellTime,
+				t('procest', 'Median hours'),
+			)
 		},
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		dwellCategories() {
@@ -259,7 +300,10 @@ export default {
 		},
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		throughputSeries() {
-			return buildThroughputSeries(this.report?.throughputTrend, t('procest', 'Cases closed'))
+			return buildThroughputSeries(
+				this.report?.throughputTrend,
+				t('procest', 'Cases closed'),
+			)
 		},
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		throughputCategories() {
@@ -268,7 +312,11 @@ export default {
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		throughputOptions() {
 			return {
-				yaxis: { min: 0, forceNiceScale: true, labels: { formatter: (val) => Math.round(val) } },
+				yaxis: {
+					min: 0,
+					forceNiceScale: true,
+					labels: { formatter: (val) => Math.round(val) },
+				},
 				colors: ['var(--color-primary)'],
 				stroke: { curve: 'smooth', width: 3 },
 				markers: { size: 4 },
@@ -283,17 +331,17 @@ export default {
 			const now = new Date()
 			let from = null
 			switch (this.selectedPreset) {
-			case '3m':
-				from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
-				break
-			case '6m':
-				from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
-				break
-			case 'all':
-				from = null
-				break
-			default:
-				from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
+				case '3m':
+					from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+					break
+				case '6m':
+					from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
+					break
+				case 'all':
+					from = null
+					break
+				default:
+					from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
 			}
 			return { from, to: now }
 		},
@@ -320,7 +368,10 @@ export default {
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		async loadCaseTypes() {
 			try {
-				this.caseTypes = await this.objectStore.fetchCollection('caseType', { _limit: 100 }) || []
+				this.caseTypes =
+					(await this.objectStore.fetchCollection('caseType', {
+						_limit: 100,
+					})) || []
 			} catch (err) {
 				// Non-fatal — the case-type filter simply stays empty.
 				// eslint-disable-next-line no-console
@@ -339,7 +390,10 @@ export default {
 					caseType: this.caseTypeFilter,
 				})
 			} catch (err) {
-				this.error = err?.response?.data?.message || err.message || t('procest', 'Failed to load process-mining report')
+				this.error =
+					err?.response?.data?.message
+					|| err.message
+					|| t('procest', 'Failed to load process-mining report')
 				this.report = null
 			} finally {
 				this.loading = false

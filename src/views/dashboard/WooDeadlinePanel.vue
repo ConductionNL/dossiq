@@ -45,7 +45,9 @@
 				<div class="woo-panel__info">
 					<span class="woo-panel__identifier">{{ item.identifier }}</span>
 					<span class="woo-panel__name">{{ item.title }}</span>
-					<span v-if="item.initiator && item.initiator !== '—'" class="woo-panel__initiator">
+					<span
+						v-if="item.initiator && item.initiator !== '—'"
+						class="woo-panel__initiator">
 						{{ item.initiator }}
 					</span>
 				</div>
@@ -53,7 +55,9 @@
 					<span class="woo-panel__days" :class="daysClass(item.severity)">
 						{{ countdownLabel(item) }}
 					</span>
-					<span class="woo-panel__severity">{{ severityLabel(item.severity) }}</span>
+					<span class="woo-panel__severity">{{
+						severityLabel(item.severity)
+					}}</span>
 				</div>
 			</button>
 
@@ -92,10 +96,14 @@ export default {
 		 */
 		severityLabel(severity) {
 			switch (severity) {
-			case 'overdue': return this.t('procest', 'Overdue')
-			case 'critical': return this.t('procest', 'Critical')
-			case 'warning': return this.t('procest', 'At risk')
-			default: return this.t('procest', 'On track')
+				case 'overdue':
+					return this.t('procest', 'Overdue')
+				case 'critical':
+					return this.t('procest', 'Critical')
+				case 'warning':
+					return this.t('procest', 'At risk')
+				default:
+					return this.t('procest', 'On track')
 			}
 		},
 		/**
@@ -112,7 +120,9 @@ export default {
 			if (item.daysRemaining === 0) {
 				return this.t('procest', 'Due today')
 			}
-			return this.t('procest', '{days} days remaining', { days: item.daysRemaining })
+			return this.t('procest', '{days} days remaining', {
+				days: item.daysRemaining,
+			})
 		},
 		/**
 		 * @param {string} severity Severity key
@@ -282,9 +292,15 @@ export default {
 }
 
 @keyframes shimmer {
-	0% { opacity: 0.6; }
-	50% { opacity: 1; }
-	100% { opacity: 0.6; }
+	0% {
+		opacity: 0.6;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0.6;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {

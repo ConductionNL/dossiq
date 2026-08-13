@@ -31,7 +31,10 @@ import { test, expect } from '@playwright/test'
  * @param timeout How long to wait for the worker to reach `activated`.
  * @return the worker's scope URL.
  */
-async function activeWorkerScope(page: import('@playwright/test').Page, timeout = 20_000): Promise<string> {
+async function activeWorkerScope(
+	page: import('@playwright/test').Page,
+	timeout = 20_000,
+): Promise<string> {
 	const deadline = Date.now() + timeout
 	while (Date.now() < deadline) {
 		const scope = await page.evaluate(async () => {
@@ -43,7 +46,9 @@ async function activeWorkerScope(page: import('@playwright/test').Page, timeout 
 		}
 		await page.waitForTimeout(250)
 	}
-	throw new Error(`procest registered no ACTIVE service worker within ${timeout}ms.`)
+	throw new Error(
+		`procest registered no ACTIVE service worker within ${timeout}ms.`,
+	)
 }
 
 /**
@@ -56,27 +61,39 @@ async function openControlled(page: import('@playwright/test').Page): Promise<vo
 	await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 	const scope = await activeWorkerScope(page)
 	await page.goto(scope)
-	await page.waitForFunction(() => navigator.serviceWorker.controller !== null, undefined, { timeout: 20_000 })
+	await page.waitForFunction(
+		() => navigator.serviceWorker.controller !== null,
+		undefined,
+		{ timeout: 20_000 },
+	)
 }
 
 test.describe('mobiel-inspectie-offline service worker', () => {
-
 	// @e2e openspec/specs/mobiel-inspectie-offline/spec.md#scenario-download-daily-schedule-with-cases-and-checklists
-	test('the worker script is served with a connect-src it can actually use', async ({ request }) => {
-		const res = await request.get('/index.php/apps/procest/service-worker.js', { failOnStatusCode: false })
+	test('the worker script is served with a connect-src it can actually use', async ({
+		request,
+	}) => {
+		const res = await request.get('/index.php/apps/procest/service-worker.js', {
+			failOnStatusCode: false,
+		})
 		expect(res.status()).toBe(200)
 		const csp = res.headers()['content-security-policy'] ?? ''
 		// Assert the DIRECTIVE, not merely that a policy exists: the broken
 		// header was a perfectly well-formed policy that happened to forbid
 		// every network call the worker makes.
-		expect(csp, `service-worker.js CSP must grant connect-src; got "${csp}"`).toContain('connect-src')
+		expect(
+			csp,
+			`service-worker.js CSP must grant connect-src; got "${csp}"`,
+		).toContain('connect-src')
 		expect(csp).toContain("connect-src 'self'")
 		// The BRT achtergrondkaart WMTS host the tile cache fetches.
 		expect(csp).toContain('https://service.pdok.nl')
 	})
 
 	// @e2e openspec/specs/mobiel-inspectie-offline/spec.md#scenario-download-daily-schedule-with-cases-and-checklists
-	test('a request the worker CLAIMS still reaches the server', async ({ page }) => {
+	test('a request the worker CLAIMS still reaches the server', async ({
+		page,
+	}) => {
 		await openControlled(page)
 		// `/apps/procest/api/sync/...` is the one same-origin prefix the worker
 		// answers itself (network-first). Under the old script CSP the worker's
@@ -85,15 +102,21 @@ test.describe('mobiel-inspectie-offline service worker', () => {
 		// never populate its cache in the first place.
 		const outcome = await page.evaluate(async () => {
 			try {
-				const res = await fetch('/index.php/apps/procest/api/sync/planning', {
-					headers: { 'OCS-APIRequest': 'true' },
-				})
+				const res = await fetch(
+					'/index.php/apps/procest/api/sync/planning',
+					{
+						headers: { 'OCS-APIRequest': 'true' },
+					},
+				)
 				return { status: res.status, type: res.type }
 			} catch (e) {
 				return { threw: String(e) }
 			}
 		})
-		expect(outcome.threw, `the worker must be able to reach the network: ${outcome.threw ?? ''}`).toBeUndefined()
+		expect(
+			outcome.threw,
+			`the worker must be able to reach the network: ${outcome.threw ?? ''}`,
+		).toBeUndefined()
 		// `error` is the opaque type a `Response.error()` carries; a real answer
 		// from Nextcloud is `basic`, whatever its status code.
 		expect(outcome.type).toBe('basic')

@@ -1,28 +1,43 @@
 <template>
-	<CnDetailCard class="ai-suggestion-card" :title="suggestion.type || t('procest', 'AI Suggestion')">
+	<CnDetailCard
+		class="ai-suggestion-card"
+		:title="suggestion.type || t('procest', 'AI Suggestion')">
 		<template #actions>
-			<AiConfidenceBadge v-if="suggestion.confidence" :confidence="suggestion.confidence" />
+			<AiConfidenceBadge
+				v-if="suggestion.confidence"
+				:confidence="suggestion.confidence" />
 		</template>
 
 		<div class="ai-suggestion-card__content">
 			<slot>
-				<p v-if="suggestion.explanation" class="ai-suggestion-card__explanation">
+				<p
+					v-if="suggestion.explanation"
+					class="ai-suggestion-card__explanation">
 					{{ suggestion.explanation }}
 				</p>
 				<div v-if="suggestion.value" class="ai-suggestion-card__value">
-					<strong>{{ t('procest', 'Suggestion') }}:</strong> {{ formatValue(suggestion.value) }}
+					<strong>{{ t('procest', 'Suggestion') }}:</strong>
+					{{ formatValue(suggestion.value) }}
 				</div>
 			</slot>
 		</div>
 
 		<div v-if="!readonly" class="ai-suggestion-card__actions">
-			<NcButton type="success" :disabled="loading" @click="$emit('accept', suggestion)">
+			<NcButton
+				type="success"
+				:disabled="loading"
+				@click="$emit('accept', suggestion)">
 				{{ t('procest', 'Accept') }}
 			</NcButton>
-			<NcButton type="error" :disabled="loading" @click="showRejectInput = true">
+			<NcButton
+				type="error"
+				:disabled="loading"
+				@click="showRejectInput = true">
 				{{ t('procest', 'Reject') }}
 			</NcButton>
-			<NcButton :disabled="loading" @click="$emit('modify', suggestion, suggestion.value)">
+			<NcButton
+				:disabled="loading"
+				@click="$emit('modify', suggestion, suggestion.value)">
 				{{ t('procest', 'Modify') }}
 			</NcButton>
 		</div>
@@ -31,7 +46,7 @@
 			<NcTextField
 				:model-value="rejectReason"
 				:label="t('procest', 'Reason for rejection')"
-				@update:model-value="v => rejectReason = v" />
+				@update:model-value="(v) => (rejectReason = v)" />
 			<NcButton type="error" @click="handleReject">
 				{{ t('procest', 'Confirm rejection') }}
 			</NcButton>
@@ -49,7 +64,13 @@ import AiConfidenceBadge from './AiConfidenceBadge.vue'
 
 export default {
 	name: 'AiSuggestionCard',
-	components: { NcButton, NcTextField, NcLoadingIcon, CnDetailCard, AiConfidenceBadge },
+	components: {
+		NcButton,
+		NcTextField,
+		NcLoadingIcon,
+		CnDetailCard,
+		AiConfidenceBadge,
+	},
 	props: {
 		suggestion: { type: Object, required: true },
 		loading: { type: Boolean, default: false },

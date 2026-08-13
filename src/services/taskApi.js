@@ -67,9 +67,10 @@ export function normalizeCalDavTask(task) {
 		if (diffDays < 0) {
 			isOverdue = true
 			const absDays = Math.abs(diffDays)
-			daysText = absDays === 1
-				? t('procest', '1 day overdue')
-				: t('procest', '{days} days overdue', { days: absDays })
+			daysText =
+				absDays === 1
+					? t('procest', '1 day overdue')
+					: t('procest', '{days} days overdue', { days: absDays })
 		} else if (diffDays === 0) {
 			daysText = t('procest', 'Due today')
 		} else {
@@ -115,7 +116,9 @@ export async function fetchTasksForObject(registerId, schemaId, objectId) {
 		const response = await fetch(url, { headers: getHeaders() })
 		if (!response.ok) {
 			if (response.status === 404) return []
-			console.warn(`Failed to fetch tasks for object ${objectId}: ${response.status}`)
+			console.warn(
+				`Failed to fetch tasks for object ${objectId}: ${response.status}`,
+			)
 			return []
 		}
 
@@ -152,7 +155,7 @@ export async function fetchTasksForCases(cases) {
 
 	const casesToFetch = cases.slice(0, 20)
 
-	const taskPromises = casesToFetch.map(c =>
+	const taskPromises = casesToFetch.map((c) =>
 		fetchTasksForObject(caseConfig.register, caseConfig.schema, c.id),
 	)
 

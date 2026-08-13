@@ -12,7 +12,13 @@
 	Spec: openspec/changes/case-bulk-status-transition/specs/case-bulk-status-transition/spec.md
 -->
 <template>
-	<NcDialog :name="t('procest', 'Change status for {count} cases', { count: caseIds.length })" @closing="onClose">
+	<NcDialog
+		:name="
+			t('procest', 'Change status for {count} cases', {
+				count: caseIds.length,
+			})
+		"
+		@closing="onClose">
 		<div class="bulk-transition-dialog">
 			<NcLoadingIcon v-if="loadingTransitions" :size="32" />
 
@@ -33,17 +39,37 @@
 
 					<NcTextArea
 						v-model="comment"
-						:label="t('procest', 'Comment (optional, applied to every case)')"
+						:label="
+							t('procest', 'Comment (optional, applied to every case)')
+						"
 						:disabled="executed" />
 
-					<NcLoadingIcon v-if="previewLoading" :size="24" class="bulk-transition-dialog__preview-loading" />
+					<NcLoadingIcon
+						v-if="previewLoading"
+						:size="24"
+						class="bulk-transition-dialog__preview-loading" />
 
-					<div v-else-if="previewSummary" class="bulk-transition-dialog__summary">
+					<div
+						v-else-if="previewSummary"
+						class="bulk-transition-dialog__summary">
 						<p>
-							{{ t('procest', '{ready} of {total} cases are ready to transition.', { ready: previewSummary.counts.ready || 0, total: previewSummary.total }) }}
+							{{
+								t(
+									'procest',
+									'{ready} of {total} cases are ready to transition.',
+									{
+										ready: previewSummary.counts.ready || 0,
+										total: previewSummary.total,
+									},
+								)
+							}}
 						</p>
-						<ul v-if="previewSummary.failed.length > 0" class="bulk-transition-dialog__reasons">
-							<li v-for="item in previewSummary.failed" :key="item.caseId">
+						<ul
+							v-if="previewSummary.failed.length > 0"
+							class="bulk-transition-dialog__reasons">
+							<li
+								v-for="item in previewSummary.failed"
+								:key="item.caseId">
 								{{ item.caseId }}: {{ reasonText(item) }}
 							</li>
 						</ul>
@@ -53,12 +79,28 @@
 						{{ error }}
 					</p>
 
-					<div v-if="executeSummary" class="bulk-transition-dialog__summary">
+					<div
+						v-if="executeSummary"
+						class="bulk-transition-dialog__summary">
 						<p>
-							{{ t('procest', '{succeeded} of {total} cases were transitioned.', { succeeded: executeSummary.counts.succeeded || 0, total: executeSummary.total }) }}
+							{{
+								t(
+									'procest',
+									'{succeeded} of {total} cases were transitioned.',
+									{
+										succeeded:
+											executeSummary.counts.succeeded || 0,
+										total: executeSummary.total,
+									},
+								)
+							}}
 						</p>
-						<ul v-if="executeSummary.failed.length > 0" class="bulk-transition-dialog__reasons">
-							<li v-for="item in executeSummary.failed" :key="item.caseId">
+						<ul
+							v-if="executeSummary.failed.length > 0"
+							class="bulk-transition-dialog__reasons">
+							<li
+								v-for="item in executeSummary.failed"
+								:key="item.caseId">
 								{{ item.caseId }}: {{ reasonText(item) }}
 							</li>
 						</ul>
@@ -71,8 +113,15 @@
 							@click="onExecute">
 							{{ t('procest', 'Execute') }}
 						</NcButton>
-						<NcButton type="secondary" :disabled="executing" @click="onClose">
-							{{ executed ? t('procest', 'Close') : t('procest', 'Cancel') }}
+						<NcButton
+							type="secondary"
+							:disabled="executing"
+							@click="onClose">
+							{{
+								executed
+									? t('procest', 'Close')
+									: t('procest', 'Cancel')
+							}}
 						</NcButton>
 					</div>
 				</template>
@@ -90,7 +139,11 @@ import NcButton from '@nextcloud/vue/components/NcButton'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import { buildPreviewPayload, buildExecutePayload, summarizeResults } from '../utils/bulkTransitionHelpers.js'
+import {
+	buildPreviewPayload,
+	buildExecutePayload,
+	summarizeResults,
+} from '../utils/bulkTransitionHelpers.js'
 
 export default {
 	name: 'BulkTransitionDialog',
@@ -133,7 +186,10 @@ export default {
 		 * @return {Array<{id: string, label: string}>}
 		 */
 		transitionOptions() {
-			return this.transitions.map(tr => ({ id: tr.id, label: tr.label || tr.id }))
+			return this.transitions.map((tr) => ({
+				id: tr.id,
+				label: tr.label || tr.id,
+			}))
 		},
 		/**
 		 * Execute is enabled once a transition is selected, preview has
@@ -142,7 +198,8 @@ export default {
 		 * @return {boolean}
 		 */
 		canExecute() {
-			if (this.executing || !this.selectedTransition || !this.previewSummary) return false
+			if (this.executing || !this.selectedTransition || !this.previewSummary)
+				return false
 			return (this.previewSummary.counts.ready || 0) > 0
 		},
 	},
@@ -177,7 +234,11 @@ export default {
 
 			try {
 				const { data } = await axios.get(
-					generateUrl('/apps/procest/api/case/' + encodeURIComponent(caseId) + '/available-transitions'),
+					generateUrl(
+						'/apps/procest/api/case/'
+							+ encodeURIComponent(caseId)
+							+ '/available-transitions',
+					),
 				)
 				this.transitions = data?.transitions || []
 			} catch (err) {
@@ -195,7 +256,10 @@ export default {
 			this.previewLoading = true
 			this.error = null
 			try {
-				const payload = buildPreviewPayload({ caseIds: this.caseIds }, this.selectedTransition.id)
+				const payload = buildPreviewPayload(
+					{ caseIds: this.caseIds },
+					this.selectedTransition.id,
+				)
 				const { data } = await axios.post(
 					generateUrl('/apps/procest/api/cases/bulk-transition/preview'),
 					payload,
@@ -217,7 +281,11 @@ export default {
 			this.executing = true
 			this.error = null
 			try {
-				const payload = buildExecutePayload({ caseIds: this.caseIds }, this.selectedTransition.id, this.comment)
+				const payload = buildExecutePayload(
+					{ caseIds: this.caseIds },
+					this.selectedTransition.id,
+					this.comment,
+				)
 				const { data } = await axios.post(
 					generateUrl('/apps/procest/api/cases/bulk-transition/execute'),
 					payload,
@@ -248,7 +316,9 @@ export default {
 		reasonText(item) {
 			if (!item.reasons || item.reasons.length === 0) return item.status
 			return item.reasons
-				.map(r => r?.failureMessage || r?.message || r?.type || item.status)
+				.map(
+					(r) => r?.failureMessage || r?.message || r?.type || item.status,
+				)
 				.join(', ')
 		},
 	},

@@ -1,5 +1,6 @@
 <template>
-	<CnDataTable :rows="items"
+	<CnDataTable
+		:rows="items"
 		:columns="columns"
 		:loading="loading"
 		hide-header
@@ -7,7 +8,8 @@
 		:empty-text="t('procest', 'No open cases')"
 		@row-click="onRowClick">
 		<template #footer>
-			<a class="cn-data-table__view-all"
+			<a
+				class="cn-data-table__view-all"
 				:href="viewAllUrl"
 				@click.prevent="onViewAll">
 				{{ t('procest', 'View all') }} →
@@ -61,9 +63,14 @@ export default {
 		items() {
 			return this.overdueCases.map((caseObj) => ({
 				id: caseObj.id,
-				mainText: caseObj.title || caseObj.identifier || t('procest', 'Unnamed case'),
+				mainText:
+					caseObj.title
+					|| caseObj.identifier
+					|| t('procest', 'Unnamed case'),
 				subText: caseObj.daysOverdue
-					? t('procest', '{days} days overdue', { days: caseObj.daysOverdue })
+					? t('procest', '{days} days overdue', {
+							days: caseObj.daysOverdue,
+						})
 					: caseObj.identifier || '',
 				targetUrl: generateUrl(`/apps/procest/cases/${caseObj.id}`),
 			}))
@@ -112,15 +119,18 @@ export default {
 
 				// Filter to open cases (non-final status).
 				const statusTypeMap = new Map()
-				for (const st of (statusTypes || [])) {
+				for (const st of statusTypes || []) {
 					statusTypeMap.set(st.id, st)
 				}
-				const openCases = (cases || []).filter(c => {
+				const openCases = (cases || []).filter((c) => {
 					const st = statusTypeMap.get(c.status)
 					return !st?.isFinal
 				})
 
-				this.overdueCases = getOverdueCases(openCases, caseTypes || []).slice(0, 7)
+				this.overdueCases = getOverdueCases(
+					openCases,
+					caseTypes || [],
+				).slice(0, 7)
 			} catch (err) {
 				console.error('[OverdueCasesWidget] Failed to fetch cases:', err)
 				this.overdueCases = []

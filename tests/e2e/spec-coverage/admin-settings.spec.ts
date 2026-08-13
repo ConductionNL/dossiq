@@ -15,7 +15,6 @@ import { BASE_URL } from '../base-url'
 const ADMIN_SETTINGS_URL = '/settings/admin/procest'
 
 test.describe('Admin Settings spec coverage', () => {
-
 	// The Nextcloud admin settings page mounts AdminRoot.vue's fourteen
 	// CnSettingsSections, each of which queries OpenRegister on mount. Under
 	// the CI `php -S` server that load is both slow and highly variable —
@@ -31,7 +30,9 @@ test.describe('Admin Settings spec coverage', () => {
 		// Nextcloud admin settings should render — not redirect to login
 		await expect(page).not.toHaveURL(/login/, { timeout: 10000 })
 		// The AdminRoot.vue component renders "Case Type Management" section heading
-		await expect(page.getByRole('heading', { name: 'Case Type Management' })).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByRole('heading', { name: 'Case Type Management' }),
+		).toBeVisible({ timeout: 15000 })
 	})
 
 	// @e2e openspec/specs/admin-settings/spec.md#regular-users-cannot-access-admin-settings
@@ -53,16 +54,21 @@ test.describe('Admin Settings spec coverage', () => {
 	})
 
 	// @e2e openspec/specs/admin-settings/spec.md#empty-case-type-list
-	test('case type list renders its management surface and add control', async ({ page }) => {
+	test('case type list renders its management surface and add control', async ({
+		page,
+	}) => {
 		await page.goto(ADMIN_SETTINGS_URL)
 		// CnIndexPage renders the "Case Type Management" section with an add
 		// control. The list body is data-dependent: it shows "No items found"
 		// on a fresh register, or rows once the caseType object type is
 		// registered and seeded. Assert the data-independent chrome (heading +
 		// add control) rather than a specific empty/populated state.
-		await expect(page.getByRole('heading', { name: 'Case Type Management' })).toBeVisible({ timeout: 15000 })
-		await expect(page.getByRole('button', { name: /Add (Item|Case Type)/ }).first())
-			.toBeVisible({ timeout: 10000 })
+		await expect(
+			page.getByRole('heading', { name: 'Case Type Management' }),
+		).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByRole('button', { name: /Add (Item|Case Type)/ }).first(),
+		).toBeVisible({ timeout: 10000 })
 	})
 
 	// FIXME(#719): the creation form never surfaces its Save control — this
@@ -72,16 +78,25 @@ test.describe('Admin Settings spec coverage', () => {
 	// @e2e openspec/specs/admin-settings/spec.md#add-a-new-case-type
 	test.fixme('clicking add case type opens creation form', async ({ page }) => {
 		await page.goto(ADMIN_SETTINGS_URL)
-		await expect(page.getByRole('heading', { name: 'Case Type Management' })).toBeVisible({ timeout: 15000 })
-		const addBtn = page.getByRole('button', { name: /Add (Item|Case Type)/ }).first()
+		await expect(
+			page.getByRole('heading', { name: 'Case Type Management' }),
+		).toBeVisible({ timeout: 15000 })
+		const addBtn = page
+			.getByRole('button', { name: /Add (Item|Case Type)/ })
+			.first()
 		await expect(addBtn).toBeVisible({ timeout: 10000 })
 		await addBtn.click()
 		// After clicking Add, CaseTypeAdmin switches to detail view showing CaseTypeDetail
 		// which renders an h3 "New Case Type" heading and a Save button
-		await expect(page.getByRole('heading', { name: 'New Case Type' })).toBeVisible({ timeout: 10000 })
+		await expect(
+			page.getByRole('heading', { name: 'New Case Type' }),
+		).toBeVisible({ timeout: 10000 })
 		// There may be multiple Save buttons on the page; ensure at least one is visible
-		await expect(page.getByRole('button', { name: 'Save' }).first()).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Back to list' })).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: 'Save' }).first(),
+		).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: 'Back to list' }),
+		).toBeVisible()
 	})
-
 })

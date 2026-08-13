@@ -5,10 +5,12 @@
 <template>
 	<div class="besluit-publicatie-panel">
 		<div v-if="state === 'success'" class="besluit-publicatie-panel__success">
-			<span class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--success">
+			<span
+				class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--success">
 				{{ t('procest', 'Gepubliceerd') }}
 			</span>
-			<a v-if="reference"
+			<a
+				v-if="reference"
 				:href="reference"
 				target="_blank"
 				rel="noopener noreferrer">
@@ -17,10 +19,16 @@
 		</div>
 
 		<div v-else-if="state === 'failed'" class="besluit-publicatie-panel__failed">
-			<span class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--failed">
+			<span
+				class="besluit-publicatie-panel__badge besluit-publicatie-panel__badge--failed">
 				{{ t('procest', 'Publicatie mislukt') }}
 			</span>
-			<p>{{ errorMessage || t('procest', 'The publication could not be sent.') }}</p>
+			<p>
+				{{
+					errorMessage
+					|| t('procest', 'The publication could not be sent.')
+				}}
+			</p>
 			<NcButton type="primary" :disabled="busy" @click="retry">
 				{{ t('procest', 'Opnieuw proberen') }}
 			</NcButton>
@@ -87,7 +95,10 @@ export default {
 				}
 			} catch (error) {
 				this.state = 'failed'
-				this.errorMessage = this.t('procest', 'The publication could not be sent.')
+				this.errorMessage = this.t(
+					'procest',
+					'The publication could not be sent.',
+				)
 			} finally {
 				this.busy = false
 			}
@@ -100,10 +111,16 @@ export default {
 		 */
 		mapError(code) {
 			if (code === 'not_configured') {
-				return this.t('procest', 'No DROP/LVBB endpoint has been configured.')
+				return this.t(
+					'procest',
+					'No DROP/LVBB endpoint has been configured.',
+				)
 			}
 			if (code === 'no_decision') {
-				return this.t('procest', 'No decision has been recorded to publish yet.')
+				return this.t(
+					'procest',
+					'No decision has been recorded to publish yet.',
+				)
 			}
 			return this.t('procest', 'The publication could not be sent.')
 		},

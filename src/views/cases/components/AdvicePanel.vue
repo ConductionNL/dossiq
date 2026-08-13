@@ -16,19 +16,42 @@
 				class="advice-panel__item"
 				:class="{ 'advice-panel__item--overdue': isOverdue(request) }">
 				<div class="advice-panel__item-header">
-					<span class="advice-panel__adviseur">{{ request.adviseur }}</span>
-					<span class="advice-panel__type-badge" :class="'advice-panel__type-badge--' + request.type">
-						{{ request.type === 'intern' ? t('procest', 'Internal') : t('procest', 'External') }}
+					<span class="advice-panel__adviseur">{{
+						request.adviseur
+					}}</span>
+					<span
+						class="advice-panel__type-badge"
+						:class="'advice-panel__type-badge--' + request.type">
+						{{
+							request.type === 'intern'
+								? t('procest', 'Internal')
+								: t('procest', 'External')
+						}}
 					</span>
-					<span class="advice-panel__status-badge" :class="statusClass(request.status)">
+					<span
+						class="advice-panel__status-badge"
+						:class="statusClass(request.status)">
 						{{ statusLabel(request.status) }}
 					</span>
-					<span v-if="request.deadline" class="advice-panel__deadline" :class="{ 'advice-panel__deadline--overdue': isOverdue(request) }">
+					<span
+						v-if="request.deadline"
+						class="advice-panel__deadline"
+						:class="{
+							'advice-panel__deadline--overdue': isOverdue(request),
+						}">
 						<template v-if="isOverdue(request)">
-							{{ t('procest', '{days} days overdue', { days: Math.abs(getDaysToDeadline(request)) }) }}
+							{{
+								t('procest', '{days} days overdue', {
+									days: Math.abs(getDaysToDeadline(request)),
+								})
+							}}
 						</template>
 						<template v-else>
-							{{ t('procest', 'Due: {date}', { date: formatDate(request.deadline) }) }}
+							{{
+								t('procest', 'Due: {date}', {
+									date: formatDate(request.deadline),
+								})
+							}}
 						</template>
 					</span>
 				</div>
@@ -43,7 +66,9 @@
 						{{ t('procest', 'Mark received') }}
 					</NcButton>
 					<NcButton
-						v-if="request.status === 'ontvangen' && request.adviesDocument"
+						v-if="
+							request.status === 'ontvangen' && request.adviesDocument
+						"
 						size="small"
 						@click="viewDocument(request)">
 						{{ t('procest', 'View advice') }}
@@ -57,7 +82,8 @@
 		</div>
 
 		<!-- Advice request dialog -->
-		<div v-if="showRequestDialog"
+		<div
+			v-if="showRequestDialog"
 			class="advice-panel__dialog-overlay"
 			role="button"
 			tabindex="0"
@@ -71,53 +97,73 @@
 					<label>{{ t('procest', 'Type') }}</label>
 					<div class="advice-panel__toggle-group">
 						<label>
-							<input v-model="newRequest.type" type="radio" value="intern">
+							<input
+								v-model="newRequest.type"
+								type="radio"
+								value="intern" />
 							{{ t('procest', 'Internal') }}
 						</label>
 						<label>
-							<input v-model="newRequest.type" type="radio" value="extern">
+							<input
+								v-model="newRequest.type"
+								type="radio"
+								value="extern" />
 							{{ t('procest', 'External') }}
 						</label>
 					</div>
 				</div>
 
 				<div class="advice-panel__field">
-					<label for="advice-panel-adviseur">{{ t('procest', 'Advisor') }}</label>
+					<label for="advice-panel-adviseur">{{
+						t('procest', 'Advisor')
+					}}</label>
 					<input
 						id="advice-panel-adviseur"
 						v-model="newRequest.adviseur"
 						type="text"
 						class="advice-panel__input"
-						:placeholder="newRequest.type === 'intern' ? t('procest', 'User ID') : t('procest', 'Organization name')">
+						:placeholder="
+							newRequest.type === 'intern'
+								? t('procest', 'User ID')
+								: t('procest', 'Organization name')
+						" />
 				</div>
 
 				<div class="advice-panel__field">
-					<label for="advice-panel-onderwerp">{{ t('procest', 'Subject') }}</label>
+					<label for="advice-panel-onderwerp">{{
+						t('procest', 'Subject')
+					}}</label>
 					<input
 						id="advice-panel-onderwerp"
 						v-model="newRequest.onderwerp"
 						type="text"
 						class="advice-panel__input"
-						:placeholder="t('procest', 'What advice is needed?')">
+						:placeholder="t('procest', 'What advice is needed?')" />
 				</div>
 
 				<div class="advice-panel__field">
-					<label for="advice-panel-deadline">{{ t('procest', 'Deadline') }}</label>
+					<label for="advice-panel-deadline">{{
+						t('procest', 'Deadline')
+					}}</label>
 					<input
 						id="advice-panel-deadline"
 						v-model="newRequest.deadline"
 						type="date"
-						class="advice-panel__input">
+						class="advice-panel__input" />
 				</div>
 
 				<div class="advice-panel__field">
-					<label for="advice-panel-questions">{{ t('procest', 'Questions') }}</label>
+					<label for="advice-panel-questions">{{
+						t('procest', 'Questions')
+					}}</label>
 					<textarea
 						id="advice-panel-questions"
 						v-model="newRequest.questions"
 						class="advice-panel__textarea"
 						rows="3"
-						:placeholder="t('procest', 'Specific questions for the advisor')" />
+						:placeholder="
+							t('procest', 'Specific questions for the advisor')
+						" />
 				</div>
 
 				<div class="advice-panel__dialog-actions">
@@ -125,7 +171,11 @@
 						type="primary"
 						:disabled="!canSubmit || submitting"
 						@click="submitRequest">
-						{{ submitting ? t('procest', 'Sending...') : t('procest', 'Send request') }}
+						{{
+							submitting
+								? t('procest', 'Sending...')
+								: t('procest', 'Send request')
+						}}
 					</NcButton>
 					<NcButton @click="showRequestDialog = false">
 						{{ t('procest', 'Cancel') }}
@@ -304,7 +354,10 @@ export default {
 		 */
 		viewDocument(request) {
 			if (request.adviesDocument) {
-				window.open(`/apps/files/?fileid=${request.adviesDocument}`, '_blank')
+				window.open(
+					`/apps/files/?fileid=${request.adviesDocument}`,
+					'_blank',
+				)
 			}
 		},
 	},

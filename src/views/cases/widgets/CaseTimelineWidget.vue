@@ -1,7 +1,9 @@
 <template>
 	<div class="case-timeline-widget">
 		<!-- Status change dropdown -->
-		<div v-if="!isReadOnly && orderedStatusTypes.length > 0" class="timeline-status-change">
+		<div
+			v-if="!isReadOnly && orderedStatusTypes.length > 0"
+			class="timeline-status-change">
 			<NcSelect
 				v-model="selectedStatus"
 				:options="orderedStatusTypes"
@@ -28,7 +30,12 @@
 					:model-value="resultText"
 					:label="t('procest', 'Result (required)')"
 					:error="!!resultError"
-					@update:model-value="v => { resultText = v; resultError = '' }" />
+					@update:model-value="
+						(v) => {
+							resultText = v
+							resultError = ''
+						}
+					" />
 			</template>
 			<p v-if="resultError" class="form-error">
 				{{ resultError }}
@@ -132,7 +139,10 @@ export default {
 				resultName = this.selectedResultType.name
 			} else {
 				if (!this.resultText.trim()) {
-					this.resultError = t('procest', 'Result is required when closing a case')
+					this.resultError = t(
+						'procest',
+						'Result is required when closing a case',
+					)
 					return
 				}
 				resultName = this.resultText.trim()

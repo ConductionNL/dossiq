@@ -16,19 +16,36 @@
 					class="deadline-alerts__row deadline-alerts__row--overdue"
 					role="button"
 					tabindex="0"
-					@click="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
-					@keydown.enter="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
-					@keydown.space.prevent="$router.push({ name: 'CaseDetail', params: { id: item.id } })">
+					@click="
+						$router.push({ name: 'CaseDetail', params: { id: item.id } })
+					"
+					@keydown.enter="
+						$router.push({ name: 'CaseDetail', params: { id: item.id } })
+					"
+					@keydown.space.prevent="
+						$router.push({ name: 'CaseDetail', params: { id: item.id } })
+					">
 					<div class="deadline-alerts__info">
-						<span class="deadline-alerts__identifier">{{ item.identifier }}</span>
+						<span class="deadline-alerts__identifier">{{
+							item.identifier
+						}}</span>
 						<span class="deadline-alerts__title">{{ item.title }}</span>
-						<span class="deadline-alerts__type">{{ item.caseTypeName }}</span>
+						<span class="deadline-alerts__type">{{
+							item.caseTypeName
+						}}</span>
 					</div>
 					<div class="deadline-alerts__meta">
-						<span class="deadline-alerts__days deadline-alerts__days--overdue">
-							{{ t('procest', '{days} days overdue', { days: item.daysOverdue }) }}
+						<span
+							class="deadline-alerts__days deadline-alerts__days--overdue">
+							{{
+								t('procest', '{days} days overdue', {
+									days: item.daysOverdue,
+								})
+							}}
 						</span>
-						<span class="deadline-alerts__handler">{{ item.handler }}</span>
+						<span class="deadline-alerts__handler">{{
+							item.handler
+						}}</span>
 					</div>
 				</div>
 
@@ -39,31 +56,51 @@
 					class="deadline-alerts__row deadline-alerts__row--warning"
 					role="button"
 					tabindex="0"
-					@click="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
-					@keydown.enter="$router.push({ name: 'CaseDetail', params: { id: item.id } })"
-					@keydown.space.prevent="$router.push({ name: 'CaseDetail', params: { id: item.id } })">
+					@click="
+						$router.push({ name: 'CaseDetail', params: { id: item.id } })
+					"
+					@keydown.enter="
+						$router.push({ name: 'CaseDetail', params: { id: item.id } })
+					"
+					@keydown.space.prevent="
+						$router.push({ name: 'CaseDetail', params: { id: item.id } })
+					">
 					<div class="deadline-alerts__info">
-						<span class="deadline-alerts__identifier">{{ item.identifier }}</span>
+						<span class="deadline-alerts__identifier">{{
+							item.identifier
+						}}</span>
 						<span class="deadline-alerts__title">{{ item.title }}</span>
-						<span class="deadline-alerts__type">{{ item.caseTypeName }}</span>
+						<span class="deadline-alerts__type">{{
+							item.caseTypeName
+						}}</span>
 					</div>
 					<div class="deadline-alerts__meta">
-						<span class="deadline-alerts__days deadline-alerts__days--warning">
+						<span
+							class="deadline-alerts__days deadline-alerts__days--warning">
 							<template v-if="item.daysRemaining === 0">
 								{{ t('procest', 'Due today') }}
 							</template>
 							<template v-else>
-								{{ t('procest', '{days} days remaining', { days: item.daysRemaining }) }}
+								{{
+									t('procest', '{days} days remaining', {
+										days: item.daysRemaining,
+									})
+								}}
 							</template>
 						</span>
-						<span class="deadline-alerts__handler">{{ item.handler }}</span>
+						<span class="deadline-alerts__handler">{{
+							item.handler
+						}}</span>
 					</div>
 				</div>
 			</div>
 
 			<div class="deadline-alerts__footer">
-				<a href="#"
-					@click.prevent="$router.push({ name: 'Cases', query: { overdue: 'true' } })">
+				<a
+					href="#"
+					@click.prevent="
+						$router.push({ name: 'Cases', query: { overdue: 'true' } })
+					">
 					{{ t('procest', 'View all deadline alerts') }} &rarr;
 				</a>
 			</div>

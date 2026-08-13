@@ -10,13 +10,20 @@
 
 		<!-- Editable title -->
 		<div class="property-row">
-			<label class="property-label" for="case-properties-title">{{ t('procest', 'Title') }}</label>
+			<label class="property-label" for="case-properties-title">{{
+				t('procest', 'Title')
+			}}</label>
 			<NcTextField
 				v-if="!isReadOnly"
 				id="case-properties-title"
 				:model-value="form.title"
 				:error="!!validationErrors.title"
-				@update:model-value="v => { form.title = v; validationErrors.title = '' }" />
+				@update:model-value="
+					(v) => {
+						form.title = v
+						validationErrors.title = ''
+					}
+				" />
 			<span v-else class="property-value">{{ caseData.title || '---' }}</span>
 			<p v-if="validationErrors.title" class="form-error">
 				{{ validationErrors.title }}
@@ -25,7 +32,9 @@
 
 		<!-- Description -->
 		<div class="property-row">
-			<label class="property-label" for="case-properties-description">{{ t('procest', 'Description') }}</label>
+			<label class="property-label" for="case-properties-description">{{
+				t('procest', 'Description')
+			}}</label>
 			<textarea
 				v-if="!isReadOnly"
 				id="case-properties-description"
@@ -45,7 +54,9 @@
 			</div>
 			<div class="property-cell">
 				<span class="property-label">{{ t('procest', 'Identifier') }}</span>
-				<span class="property-value">{{ caseData.identifier || '---' }}</span>
+				<span class="property-value">{{
+					caseData.identifier || '---'
+				}}</span>
 			</div>
 			<div class="property-cell">
 				<span class="property-label">{{ t('procest', 'Priority') }}</span>
@@ -54,34 +65,43 @@
 					v-model="form.priority"
 					:options="priorityOptions"
 					:aria-label-combobox="t('procest', 'Priority')" />
-				<span v-else class="property-value">{{ caseData.priority || '---' }}</span>
+				<span v-else class="property-value">{{
+					caseData.priority || '---'
+				}}</span>
 			</div>
 			<div class="property-cell">
-				<label class="property-label" for="case-properties-assignee">{{ t('procest', 'Handler') }}</label>
+				<label class="property-label" for="case-properties-assignee">{{
+					t('procest', 'Handler')
+				}}</label>
 				<NcTextField
 					v-if="!isReadOnly"
 					id="case-properties-assignee"
 					:model-value="form.assignee"
 					:placeholder="t('procest', 'Assign handler...')"
-					@update:model-value="v => form.assignee = v" />
-				<span v-else class="property-value">{{ caseData.assignee || '---' }}</span>
+					@update:model-value="(v) => (form.assignee = v)" />
+				<span v-else class="property-value">{{
+					caseData.assignee || '---'
+				}}</span>
 			</div>
 			<div class="property-cell">
 				<span class="property-label">{{ t('procest', 'Start date') }}</span>
-				<span class="property-value">{{ formatDate(caseData.startDate) }}</span>
+				<span class="property-value">{{
+					formatDate(caseData.startDate)
+				}}</span>
 			</div>
 			<div class="property-cell">
-				<span class="property-label">{{ t('procest', 'Confidentiality') }}</span>
-				<span class="property-value">{{ caseData.confidentiality || '---' }}</span>
+				<span class="property-label">{{
+					t('procest', 'Confidentiality')
+				}}</span>
+				<span class="property-value">{{
+					caseData.confidentiality || '---'
+				}}</span>
 			</div>
 		</div>
 
 		<!-- Save button -->
 		<div v-if="!isReadOnly" class="property-actions">
-			<NcButton
-				type="primary"
-				:disabled="saving"
-				@click="save">
+			<NcButton type="primary" :disabled="saving" @click="save">
 				<template v-if="saving">
 					<NcLoadingIcon :size="20" />
 				</template>

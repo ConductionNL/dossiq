@@ -1,5 +1,6 @@
 <template>
-	<div class="location-picker-overlay"
+	<div
+		class="location-picker-overlay"
 		role="button"
 		tabindex="0"
 		@click.self="$emit('cancel')"
@@ -25,21 +26,32 @@
 				</div>
 			</div>
 
-			<AddressSearch class="location-picker__search" @select="onAddressSelect" />
+			<AddressSearch
+				class="location-picker__search"
+				@select="onAddressSelect" />
 
 			<div ref="mapElement" class="location-picker__map" />
 
 			<div class="location-picker__info">
 				<template v-if="selectedGeometry">
 					<p v-if="selectedGeometry.type === 'Point'">
-						{{ t('procest', 'Coordinates') }}: {{ selectedGeometry.coordinates[1].toFixed(6) }}, {{ selectedGeometry.coordinates[0].toFixed(6) }}
+						{{ t('procest', 'Coordinates') }}:
+						{{ selectedGeometry.coordinates[1].toFixed(6) }},
+						{{ selectedGeometry.coordinates[0].toFixed(6) }}
 					</p>
 					<p v-if="selectedGeometry.type === 'Polygon' && area > 0">
 						{{ t('procest', 'Area') }}: {{ formatArea(area) }}
 					</p>
 				</template>
 				<p v-else class="location-picker__hint">
-					{{ mode === 'point' ? t('procest', 'Click on the map to place a marker') : t('procest', 'Click points to draw a polygon, double-click to finish') }}
+					{{
+						mode === 'point'
+							? t('procest', 'Click on the map to place a marker')
+							: t(
+									'procest',
+									'Click points to draw a polygon, double-click to finish',
+								)
+					}}
 				</p>
 			</div>
 
@@ -47,10 +59,7 @@
 				<NcButton @click="$emit('cancel')">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
-				<NcButton
-					type="primary"
-					:disabled="!selectedGeometry"
-					@click="save">
+				<NcButton type="primary" :disabled="!selectedGeometry" @click="save">
 					{{ t('procest', 'Save') }}
 				</NcButton>
 			</div>
@@ -74,7 +83,8 @@ import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl })
 
-const PDOK_TILES = 'https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:3857/{z}/{x}/{y}.png'
+const PDOK_TILES =
+	'https://service.pdok.nl/brt/achtergrondkaart/wmts/v2_0/standaard/EPSG:3857/{z}/{x}/{y}.png'
 const NL_CENTER = [52.1326, 5.2913]
 
 export default {
@@ -117,7 +127,10 @@ export default {
 			if (this.initialGeometry) {
 				this.selectedGeometry = this.initialGeometry
 				if (this.initialGeometry.type === 'Point') {
-					center = [this.initialGeometry.coordinates[1], this.initialGeometry.coordinates[0]]
+					center = [
+						this.initialGeometry.coordinates[1],
+						this.initialGeometry.coordinates[0],
+					]
 					zoom = 16
 				}
 			}
@@ -125,7 +138,8 @@ export default {
 			this.map = L.map(this.$refs.mapElement, { center, zoom })
 
 			L.tileLayer(PDOK_TILES, {
-				attribution: 'Kaartgegevens &copy; <a href="https://www.kadaster.nl">Kadaster</a>',
+				attribution:
+					'Kaartgegevens &copy; <a href="https://www.kadaster.nl">Kadaster</a>',
 				maxZoom: 19,
 			}).addTo(this.map)
 
@@ -234,7 +248,10 @@ export default {
 			if (!navigator.geolocation) return
 			navigator.geolocation.getCurrentPosition(
 				(pos) => {
-					const latlng = L.latLng(pos.coords.latitude, pos.coords.longitude)
+					const latlng = L.latLng(
+						pos.coords.latitude,
+						pos.coords.longitude,
+					)
 					this.map.setView(latlng, 16)
 					if (this.mode === 'point') {
 						this.placeMarker(latlng)
@@ -275,7 +292,7 @@ export default {
 	right: 0;
 	bottom: 0;
 	z-index: 10000;
-	background: rgba(0, 0, 0, .5);
+	background: rgba(0, 0, 0, 0.5);
 	display: flex;
 	align-items: center;
 	justify-content: center;

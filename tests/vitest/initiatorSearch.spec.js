@@ -36,10 +36,20 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 	})
 
 	it('composes a person display name incl voorvoegsel', () => {
-		expect(personDisplayName({ voornamen: 'Tina-Antïna', voorvoegsel: 'de', geslachtsnaam: 'Bruin' }))
-			.toBe('Tina-Antïna de Bruin')
-		expect(personDisplayName({ voornamen: 'Stephan', voorvoegsel: '', geslachtsnaam: 'Janssen' }))
-			.toBe('Stephan Janssen')
+		expect(
+			personDisplayName({
+				voornamen: 'Tina-Antïna',
+				voorvoegsel: 'de',
+				geslachtsnaam: 'Bruin',
+			}),
+		).toBe('Tina-Antïna de Bruin')
+		expect(
+			personDisplayName({
+				voornamen: 'Stephan',
+				voorvoegsel: '',
+				geslachtsnaam: 'Janssen',
+			}),
+		).toBe('Stephan Janssen')
 		expect(personDisplayName(null)).toBe('')
 	})
 
@@ -72,24 +82,42 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 	})
 
 	it('maps a picked result onto the case projection fields (one write path)', () => {
-		expect(initiatorProjection({ type: 'company', sourceId: '69599084', displayName: 'Test EMZ Dagobert' }))
-			.toEqual({
-				initiatorType: 'company',
-				initiatorSourceId: '69599084',
-				initiatorDisplayName: 'Test EMZ Dagobert',
-			})
+		expect(
+			initiatorProjection({
+				type: 'company',
+				sourceId: '69599084',
+				displayName: 'Test EMZ Dagobert',
+			}),
+		).toEqual({
+			initiatorType: 'company',
+			initiatorSourceId: '69599084',
+			initiatorDisplayName: 'Test EMZ Dagobert',
+		})
 		// No initiator picked -> no projection fields at all (case creatable without).
 		expect(initiatorProjection(null)).toEqual({})
 	})
 
 	it('searches contacts via the core contactsmenu endpoint', async () => {
 		axiosPost.mockResolvedValue({
-			data: { contacts: [{ id: 'c1', fullName: 'Anna de Wit', emailAddresses: ['anna@example.org'] }] },
+			data: {
+				contacts: [
+					{
+						id: 'c1',
+						fullName: 'Anna de Wit',
+						emailAddresses: ['anna@example.org'],
+					},
+				],
+			},
 		})
 		const results = await searchContacts('anna')
-		expect(axiosPost).toHaveBeenCalledWith('/index.php/contactsmenu/contacts', { filter: 'anna' })
+		expect(axiosPost).toHaveBeenCalledWith('/index.php/contactsmenu/contacts', {
+			filter: 'anna',
+		})
 		expect(results).toHaveLength(1)
-		expect(results[0]).toMatchObject({ type: 'contact', displayName: 'Anna de Wit' })
+		expect(results[0]).toMatchObject({
+			type: 'contact',
+			displayName: 'Anna de Wit',
+		})
 	})
 
 	it('degrades to an empty list when the contacts source is unavailable', async () => {
@@ -98,7 +126,11 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 	})
 
 	it('shapes a contactsmenu entry into a unified contact result', () => {
-		const result = contactResult({ id: 'uid-9', fullName: 'Anna de Wit', emailAddresses: ['anna@example.org'] })
+		const result = contactResult({
+			id: 'uid-9',
+			fullName: 'Anna de Wit',
+			emailAddresses: ['anna@example.org'],
+		})
 		expect(result).toMatchObject({
 			type: 'contact',
 			sourceId: 'uid-9',

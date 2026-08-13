@@ -30,7 +30,9 @@
 								:options="assessmentOptions"
 								:input-label="t('procest', 'Assessment')"
 								:disabled="isReadOnly"
-								@update:model-value="val => setAssessment(doc.id, val)" />
+								@update:model-value="
+									(val) => setAssessment(doc.id, val)
+								" />
 						</td>
 						<td>
 							<NcSelect
@@ -43,7 +45,9 @@
 								track-by="code"
 								:disabled="isReadOnly"
 								:placeholder="t('procest', 'Select grounds...')"
-								@update:model-value="val => setGrounds(doc.id, val)" />
+								@update:model-value="
+									(val) => setGrounds(doc.id, val)
+								" />
 							<span v-else>---</span>
 						</td>
 						<td>
@@ -62,16 +66,20 @@
 
 		<!-- Summary -->
 		<div v-if="documents.length > 0" class="document-assessment__summary">
-			<span class="document-assessment__count document-assessment__count--openbaar">
+			<span
+				class="document-assessment__count document-assessment__count--openbaar">
 				{{ t('procest', 'Public') }}: {{ counts.openbaar }}
 			</span>
-			<span class="document-assessment__count document-assessment__count--deels">
+			<span
+				class="document-assessment__count document-assessment__count--deels">
 				{{ t('procest', 'Partial') }}: {{ counts.deels_openbaar }}
 			</span>
-			<span class="document-assessment__count document-assessment__count--niet">
+			<span
+				class="document-assessment__count document-assessment__count--niet">
 				{{ t('procest', 'Withheld') }}: {{ counts.niet_openbaar }}
 			</span>
-			<span class="document-assessment__count document-assessment__count--pending">
+			<span
+				class="document-assessment__count document-assessment__count--pending">
 				{{ t('procest', 'Pending') }}: {{ counts.pending }}
 			</span>
 		</div>
@@ -133,29 +141,66 @@ export default {
 	},
 	data() {
 		return {
-			assessmentOptions: [
-				'openbaar',
-				'deels_openbaar',
-				'niet_openbaar',
-			],
+			assessmentOptions: ['openbaar', 'deels_openbaar', 'niet_openbaar'],
 			weigeringsgronden: [
-				{ code: '5.1.1', label: this.t('procest', '5.1.1 Eenheid van de Kroon') },
-				{ code: '5.1.2', label: this.t('procest', '5.1.2 Veiligheid van de Staat') },
-				{ code: '5.1.3', label: this.t('procest', '5.1.3 Bedrijfs- en fabricagegegevens') },
-				{ code: '5.1.4', label: this.t('procest', '5.1.4 Persoonlijke beleidsopvattingen') },
-				{ code: '5.1.5', label: this.t('procest', '5.1.5 Persoonlijke levenssfeer') },
-				{ code: '5.2.1', label: this.t('procest', '5.2.1 Economische belangen Staat') },
-				{ code: '5.2.2', label: this.t('procest', '5.2.2 Opsporing strafbare feiten') },
-				{ code: '5.2.3', label: this.t('procest', '5.2.3 Inspectie en toezicht') },
-				{ code: '5.2.4', label: this.t('procest', '5.2.4 Vertrouwelijkheid beraadslaging') },
-				{ code: '5.2.5', label: this.t('procest', '5.2.5 Functioneren van de Staat') },
+				{
+					code: '5.1.1',
+					label: this.t('procest', '5.1.1 Eenheid van de Kroon'),
+				},
+				{
+					code: '5.1.2',
+					label: this.t('procest', '5.1.2 Veiligheid van de Staat'),
+				},
+				{
+					code: '5.1.3',
+					label: this.t('procest', '5.1.3 Bedrijfs- en fabricagegegevens'),
+				},
+				{
+					code: '5.1.4',
+					label: this.t(
+						'procest',
+						'5.1.4 Persoonlijke beleidsopvattingen',
+					),
+				},
+				{
+					code: '5.1.5',
+					label: this.t('procest', '5.1.5 Persoonlijke levenssfeer'),
+				},
+				{
+					code: '5.2.1',
+					label: this.t('procest', '5.2.1 Economische belangen Staat'),
+				},
+				{
+					code: '5.2.2',
+					label: this.t('procest', '5.2.2 Opsporing strafbare feiten'),
+				},
+				{
+					code: '5.2.3',
+					label: this.t('procest', '5.2.3 Inspectie en toezicht'),
+				},
+				{
+					code: '5.2.4',
+					label: this.t(
+						'procest',
+						'5.2.4 Vertrouwelijkheid beraadslaging',
+					),
+				},
+				{
+					code: '5.2.5',
+					label: this.t('procest', '5.2.5 Functioneren van de Staat'),
+				},
 			],
 		}
 	},
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		counts() {
-			const result = { openbaar: 0, deels_openbaar: 0, niet_openbaar: 0, pending: 0 }
+			const result = {
+				openbaar: 0,
+				deels_openbaar: 0,
+				niet_openbaar: 0,
+				pending: 0,
+			}
 			for (const doc of this.documents) {
 				const assessment = this.getAssessment(doc.id)
 				if (assessment && result[assessment] !== undefined) {
@@ -187,7 +232,10 @@ export default {
 			this.$emit('update:assessment', {
 				documentId: docId,
 				assessment: value,
-				grounds: value === 'niet_openbaar' ? (this.assessments[docId]?.grounds || []) : [],
+				grounds:
+					value === 'niet_openbaar'
+						? this.assessments[docId]?.grounds || []
+						: [],
 			})
 		},
 		/**

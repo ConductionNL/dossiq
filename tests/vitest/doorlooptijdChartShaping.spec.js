@@ -54,14 +54,24 @@ describe('buildDonutSeries / buildDonutLabels', () => {
 
 describe('buildHistogramSeries', () => {
 	it('maps bin counts into a single named series', () => {
-		const dist = { bins: [{ label: '0-7', count: 2 }, { label: '8-14', count: 5 }] }
+		const dist = {
+			bins: [
+				{ label: '0-7', count: 2 },
+				{ label: '8-14', count: 5 },
+			],
+		}
 		expect(buildHistogramSeries(dist, 'Cases')).toEqual([
 			{ name: 'Cases', data: [2, 5] },
 		])
 	})
 
 	it('returns an empty array when every bin is empty (drives empty state)', () => {
-		const dist = { bins: [{ label: '0-7', count: 0 }, { label: '8-14', count: 0 }] }
+		const dist = {
+			bins: [
+				{ label: '0-7', count: 0 },
+				{ label: '8-14', count: 0 },
+			],
+		}
 		expect(buildHistogramSeries(dist, 'Cases')).toEqual([])
 	})
 
@@ -89,7 +99,10 @@ describe('findHistogramTargetBinIndex', () => {
 	})
 
 	it('falls back to the last bin when no labelled range matches', () => {
-		const noOpenEnd = [{ label: '0-7', count: 1 }, { label: '8-14', count: 2 }]
+		const noOpenEnd = [
+			{ label: '0-7', count: 1 },
+			{ label: '8-14', count: 2 },
+		]
 		expect(findHistogramTargetBinIndex(noOpenEnd, 100)).toBe(1)
 	})
 
@@ -100,14 +113,20 @@ describe('findHistogramTargetBinIndex', () => {
 
 describe('buildTrendSeries / buildThroughputSeries', () => {
 	it('extracts the rate values into a single trend series', () => {
-		const trend = [{ month: '2026-03', rate: 80 }, { month: '2026-04', rate: null }]
+		const trend = [
+			{ month: '2026-03', rate: 80 },
+			{ month: '2026-04', rate: null },
+		]
 		expect(buildTrendSeries(trend, 'SLA %')).toEqual([
 			{ name: 'SLA %', data: [80, null] },
 		])
 	})
 
 	it('extracts weekly counts into a single throughput series', () => {
-		const tp = [{ weekLabel: 'W12', count: 3 }, { weekLabel: 'W13', count: 0 }]
+		const tp = [
+			{ weekLabel: 'W12', count: 3 },
+			{ weekLabel: 'W13', count: 0 },
+		]
 		expect(buildThroughputSeries(tp, 'Closed')).toEqual([
 			{ name: 'Closed', data: [3, 0] },
 		])
@@ -115,7 +134,9 @@ describe('buildTrendSeries / buildThroughputSeries', () => {
 
 	it('tolerates undefined input', () => {
 		expect(buildTrendSeries(undefined, 'x')).toEqual([{ name: 'x', data: [] }])
-		expect(buildThroughputSeries(undefined, 'y')).toEqual([{ name: 'y', data: [] }])
+		expect(buildThroughputSeries(undefined, 'y')).toEqual([
+			{ name: 'y', data: [] },
+		])
 	})
 })
 
@@ -128,22 +149,22 @@ describe('sortPerformanceRows', () => {
 
 	it('sorts numeric ascending with nulls last', () => {
 		const out = sortPerformanceRows(rows, 'complianceRate', 'asc')
-		expect(out.map(r => r.id)).toEqual(['c', 'a', 'b'])
+		expect(out.map((r) => r.id)).toEqual(['c', 'a', 'b'])
 	})
 
 	it('sorts numeric descending with nulls still last', () => {
 		const out = sortPerformanceRows(rows, 'complianceRate', 'desc')
-		expect(out.map(r => r.id)).toEqual(['a', 'c', 'b'])
+		expect(out.map((r) => r.id)).toEqual(['a', 'c', 'b'])
 	})
 
 	it('sorts strings with locale compare', () => {
 		const out = sortPerformanceRows(rows, 'name', 'asc')
-		expect(out.map(r => r.name)).toEqual(['Aanvraag', 'Bezwaar', 'Woo'])
+		expect(out.map((r) => r.name)).toEqual(['Aanvraag', 'Bezwaar', 'Woo'])
 	})
 
 	it('does not mutate the input array', () => {
-		const snapshot = rows.map(r => r.id)
+		const snapshot = rows.map((r) => r.id)
 		sortPerformanceRows(rows, 'total', 'desc')
-		expect(rows.map(r => r.id)).toEqual(snapshot)
+		expect(rows.map((r) => r.id)).toEqual(snapshot)
 	})
 })

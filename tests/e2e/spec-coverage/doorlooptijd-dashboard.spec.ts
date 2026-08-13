@@ -12,9 +12,10 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Doorlooptijd Dashboard spec coverage', () => {
-
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading
-	test('renders the Processing Time Analytics heading on navigation', async ({ page }) => {
+	test('renders the Processing Time Analytics heading on navigation', async ({
+		page,
+	}) => {
 		await page.goto('/index.php/apps/procest/doorlooptijd')
 		// DoorlooptijdDashboard.vue mounts its page shell (header + the extracted
 		// DeadlineKpiRow / ComplianceCharts / DeadlineCaseTable / CaseTypeBreakdown
@@ -26,7 +27,10 @@ test.describe('Doorlooptijd Dashboard spec coverage', () => {
 		} catch {
 			// Defensive: in a stripped CI container the SPA may not mount (no
 			// OpenRegister backing store). Skip rather than fail on environment.
-			test.skip(true, 'Doorlooptijd page shell did not mount in this environment')
+			test.skip(
+				true,
+				'Doorlooptijd page shell did not mount in this environment',
+			)
 		}
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
@@ -36,7 +40,9 @@ test.describe('Doorlooptijd Dashboard spec coverage', () => {
 		await page.goto('/index.php/apps/procest/doorlooptijd')
 		// DoorlooptijdDashboard.vue renders "No case data available for processing time analysis."
 		// when showNoCasesState is true (no cases in the system).
-		const empty = page.getByText('No case data available for processing time analysis.')
+		const empty = page.getByText(
+			'No case data available for processing time analysis.',
+		)
 		try {
 			await empty.waitFor({ state: 'visible', timeout: 15000 })
 		} catch {
@@ -47,5 +53,4 @@ test.describe('Doorlooptijd Dashboard spec coverage', () => {
 		// No broken charts or error states should be visible
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
-
 })

@@ -14,15 +14,24 @@
 
 		<!-- Voorlopige voorziening flag -->
 		<NcNoteCard v-if="caseData.voorzieningRequested" type="warning">
-			{{ t('procest', 'Voorlopige voorziening (interim relief) has been requested. Expedited handling required.') }}
+			{{
+				t(
+					'procest',
+					'Voorlopige voorziening (interim relief) has been requested. Expedited handling required.',
+				)
+			}}
 		</NcNoteCard>
 
 		<!-- Ruling outcome (if decided) -->
 		<template v-if="caseData.rulingOutcome">
 			<div class="court-proceedings-panel__ruling">
 				<div class="ruling-detail">
-					<span class="ruling-detail__label">{{ t('procest', 'Court Ruling') }}</span>
-					<span class="ruling-detail__value status-badge" :class="'status-badge--' + caseData.rulingOutcome">
+					<span class="ruling-detail__label">{{
+						t('procest', 'Court Ruling')
+					}}</span>
+					<span
+						class="ruling-detail__value status-badge"
+						:class="'status-badge--' + caseData.rulingOutcome">
 						{{ getRulingLabel(caseData.rulingOutcome) }}
 					</span>
 				</div>
@@ -30,7 +39,12 @@
 
 			<!-- Hoger beroep information -->
 			<NcNoteCard type="info">
-				{{ t('procest', 'After the court ruling, an appeal (hoger beroep) can be filed at the Council of State (ABRvS) or the Central Appeals Tribunal (CRvB).') }}
+				{{
+					t(
+						'procest',
+						'After the court ruling, an appeal (hoger beroep) can be filed at the Council of State (ABRvS) or the Central Appeals Tribunal (CRvB).',
+					)
+				}}
 			</NcNoteCard>
 		</template>
 
@@ -43,7 +57,10 @@
 					v-model="rulingForm.outcome"
 					:options="rulingOptions"
 					:aria-label-combobox="t('procest', 'Court Ruling Outcome')" />
-				<NcButton type="primary" class="court-proceedings-panel__save-btn" @click="saveRuling">
+				<NcButton
+					type="primary"
+					class="court-proceedings-panel__save-btn"
+					@click="saveRuling">
 					{{ t('procest', 'Record Ruling') }}
 				</NcButton>
 			</div>
@@ -87,8 +104,14 @@ export default {
 				outcome: 'beroep_ongegrond',
 			},
 			rulingOptions: [
-				{ id: 'beroep_gegrond', label: t('procest', 'Appeal upheld (beroep gegrond)') },
-				{ id: 'beroep_ongegrond', label: t('procest', 'Appeal rejected (beroep ongegrond)') },
+				{
+					id: 'beroep_gegrond',
+					label: t('procest', 'Appeal upheld (beroep gegrond)'),
+				},
+				{
+					id: 'beroep_ongegrond',
+					label: t('procest', 'Appeal rejected (beroep ongegrond)'),
+				},
 				{ id: 'deels_gegrond', label: t('procest', 'Partially upheld') },
 				{ id: 'niet_ontvankelijk', label: t('procest', 'Inadmissible') },
 			],

@@ -143,9 +143,10 @@ export default {
 			// (the platform-admin tenant management pages). isUserAdmin() returns
 			// true for users in the Nextcloud admin group, matching the backend
 			// TenantService::isPlatformAdmin() check.
-			const isAdmin = typeof window.OC?.isUserAdmin === 'function'
-				? window.OC.isUserAdmin()
-				: false
+			const isAdmin =
+				typeof window.OC?.isUserAdmin === 'function'
+					? window.OC.isUserAdmin()
+					: false
 			return isAdmin ? [...base, 'admin'] : base
 		},
 	},

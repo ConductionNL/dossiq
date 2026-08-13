@@ -16,14 +16,25 @@
 <template>
 	<div class="deelzaak-detail">
 		<!-- Parent breadcrumb (mandatory when viewing a sub-case) -->
-		<nav v-if="parent" class="deelzaak-detail__breadcrumb" aria-label="breadcrumb">
+		<nav
+			v-if="parent"
+			class="deelzaak-detail__breadcrumb"
+			aria-label="breadcrumb">
 			<router-link :to="parentRoute" class="deelzaak-detail__breadcrumb-link">
 				<ArrowLeft :size="16" />
-				{{ parent.title || parent.identifier || t('procest', 'Parent case') }}
+				{{
+					parent.title || parent.identifier || t('procest', 'Parent case')
+				}}
 			</router-link>
-			<span class="deelzaak-detail__breadcrumb-sep" aria-hidden="true"> › </span>
+			<span class="deelzaak-detail__breadcrumb-sep" aria-hidden="true">
+				›
+			</span>
 			<span class="deelzaak-detail__breadcrumb-current">
-				{{ subCase ? (subCase.title || subCase.identifier) : t('procest', 'Sub-case') }}
+				{{
+					subCase
+						? subCase.title || subCase.identifier
+						: t('procest', 'Sub-case')
+				}}
 			</span>
 		</nav>
 
@@ -32,7 +43,12 @@
 		<NcEmptyContent
 			v-else-if="!subCase"
 			:name="t('procest', 'Sub-case not found')"
-			:description="t('procest', 'The sub-case could not be loaded. It may have been deleted or unlinked from its parent.')">
+			:description="
+				t(
+					'procest',
+					'The sub-case could not be loaded. It may have been deleted or unlinked from its parent.',
+				)
+			">
 			<template #icon>
 				<AlertCircleOutline :size="48" />
 			</template>
@@ -82,7 +98,7 @@
 				</div>
 				<div class="deelzaak-detail__row">
 					<dt>{{ t('procest', 'Case type') }}</dt>
-					<dd>{{ caseType ? (caseType.title || caseType.name) : '—' }}</dd>
+					<dd>{{ caseType ? caseType.title || caseType.name : '—' }}</dd>
 				</div>
 				<div class="deelzaak-detail__row">
 					<dt>{{ t('procest', 'Start date') }}</dt>
@@ -94,7 +110,13 @@
 				</div>
 				<div class="deelzaak-detail__row">
 					<dt>{{ t('procest', 'Completed') }}</dt>
-					<dd>{{ subCase.endDate ? formatDate(subCase.endDate) : t('procest', 'Open') }}</dd>
+					<dd>
+						{{
+							subCase.endDate
+								? formatDate(subCase.endDate)
+								: t('procest', 'Open')
+						}}
+					</dd>
 				</div>
 			</dl>
 
@@ -171,13 +193,19 @@ export default {
 				: { name: 'Cases' }
 		},
 		statusName() {
-			return this.statusType?.name || (this.subCase?.status ? '—' : t('procest', 'No status'))
+			return (
+				this.statusType?.name
+				|| (this.subCase?.status ? '—' : t('procest', 'No status'))
+			)
 		},
 		statusClass() {
 			if (!this.statusType) {
 				return ''
 			}
-			if (this.statusType.isFinal === true || this.statusType.isFinal === 'true') {
+			if (
+				this.statusType.isFinal === true
+				|| this.statusType.isFinal === 'true'
+			) {
 				return 'status-badge--final'
 			}
 			return 'status-badge--active'
@@ -242,7 +270,10 @@ export default {
 				this.releaseLiveSubscription()
 				return
 			}
-			if ((this.liveHandle && this.liveKey === uuid) || this.livePendingKey === uuid) {
+			if (
+				(this.liveHandle && this.liveKey === uuid)
+				|| this.livePendingKey === uuid
+			) {
 				return
 			}
 			this.releaseLiveSubscription()
@@ -261,7 +292,10 @@ export default {
 			} catch (err) {
 				this.liveHandle = null
 				this.liveKey = ''
-				console.warn('[DeelzaakDetail] live subscription failed:', err?.message ?? err)
+				console.warn(
+					'[DeelzaakDetail] live subscription failed:',
+					err?.message ?? err,
+				)
 			} finally {
 				if (this.livePendingKey === uuid) {
 					this.livePendingKey = ''
@@ -278,7 +312,10 @@ export default {
 		releaseLiveSubscription() {
 			this.liveEpoch += 1
 			this.livePendingKey = ''
-			if (this.liveHandle && typeof this.objectStore.unsubscribe === 'function') {
+			if (
+				this.liveHandle
+				&& typeof this.objectStore.unsubscribe === 'function'
+			) {
 				this.objectStore.unsubscribe(this.liveHandle)
 			}
 			this.liveHandle = null
@@ -373,7 +410,10 @@ export default {
 		},
 		goToFullCase() {
 			if (this.subCase) {
-				this.$router.push({ name: 'CaseDetail', params: { id: this.subCase.id } })
+				this.$router.push({
+					name: 'CaseDetail',
+					params: { id: this.subCase.id },
+				})
 			}
 		},
 	},

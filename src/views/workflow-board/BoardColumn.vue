@@ -45,8 +45,12 @@
 					:selection-mode="selectionColumnId === statusType.id"
 					@click="$emit('click-case', $event)"
 					@dragstart="$emit('dragstart', $event)"
-					@move="(caseId, newStatusId) => $emit('move', caseId, newStatusId)"
-					@toggle-select="caseId => $emit('toggle-select', caseId, statusType.id)" />
+					@move="
+						(caseId, newStatusId) => $emit('move', caseId, newStatusId)
+					"
+					@toggle-select="
+						(caseId) => $emit('toggle-select', caseId, statusType.id)
+					" />
 			</template>
 		</div>
 	</div>
@@ -108,7 +112,9 @@ export default {
 		 */
 		onDrop(event) {
 			this.dragOver = false
-			const caseId = event.dataTransfer ? event.dataTransfer.getData('text/plain') : null
+			const caseId = event.dataTransfer
+				? event.dataTransfer.getData('text/plain')
+				: null
 			if (caseId) {
 				this.$emit('drop', caseId, this.statusType.id)
 			}

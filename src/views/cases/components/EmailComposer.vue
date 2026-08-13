@@ -26,15 +26,17 @@
 					:model-value="form.to"
 					type="email"
 					:placeholder="t('procest', 'recipient@example.nl')"
-					@update:model-value="v => form.to = v" />
+					@update:model-value="(v) => (form.to = v)" />
 			</div>
 
 			<div class="form-group">
-				<label for="email-composer-subject">{{ t('procest', 'Subject') }} *</label>
+				<label for="email-composer-subject"
+					>{{ t('procest', 'Subject') }} *</label
+				>
 				<NcTextField
 					id="email-composer-subject"
 					:model-value="form.subject"
-					@update:model-value="v => form.subject = v" />
+					@update:model-value="(v) => (form.subject = v)" />
 			</div>
 
 			<div class="form-group">
@@ -43,13 +45,21 @@
 					id="email-composer-body"
 					v-model="form.body"
 					rows="8"
-					:placeholder="t('procest', 'Email body... Use {{variableName}} for template variables.')" />
+					:placeholder="
+						t(
+							'procest',
+							'Email body... Use {{variableName}} for template variables.',
+						)
+					" />
 			</div>
 
 			<!-- Unresolved variables warning -->
 			<div v-if="unresolvedVars.length > 0" class="email-composer__warning">
 				{{ t('procest', 'Unresolved variables:') }}
-				<span v-for="v in unresolvedVars" :key="v" class="email-composer__unresolved">
+				<span
+					v-for="v in unresolvedVars"
+					:key="v"
+					class="email-composer__unresolved">
 					{{ formatVariable(v) }}
 				</span>
 			</div>
@@ -59,7 +69,10 @@
 				<details>
 					<summary>{{ t('procest', 'Available variables') }}</summary>
 					<div class="email-composer__variable-list">
-						<code v-for="v in availableVariables" :key="v" @click="insertVariable(v)">
+						<code
+							v-for="v in availableVariables"
+							:key="v"
+							@click="insertVariable(v)">
 							{{ formatVariable(v) }}
 						</code>
 					</div>
@@ -86,7 +99,8 @@
 		</div>
 
 		<!-- Preview dialog -->
-		<div v-if="showPreview"
+		<div
+			v-if="showPreview"
 			class="email-composer__preview-overlay"
 			role="button"
 			tabindex="0"
@@ -95,8 +109,13 @@
 			@keydown.space.self.prevent="showPreview = false">
 			<div class="email-composer__preview">
 				<h5>{{ t('procest', 'Email Preview') }}</h5>
-				<p><strong>{{ t('procest', 'To:') }}</strong> {{ form.to }}</p>
-				<p><strong>{{ t('procest', 'Subject:') }}</strong> {{ previewSubject }}</p>
+				<p>
+					<strong>{{ t('procest', 'To:') }}</strong> {{ form.to }}
+				</p>
+				<p>
+					<strong>{{ t('procest', 'Subject:') }}</strong>
+					{{ previewSubject }}
+				</p>
 				<div class="email-composer__preview-body" v-html="previewBody" />
 				<NcButton @click="showPreview = false">
 					{{ t('procest', 'Close') }}
@@ -148,17 +167,24 @@ export default {
 			previewSubject: '',
 			previewBody: '',
 			availableVariables: [
-				'zaakNummer', 'titel', 'startdatum', 'deadline',
-				'status', 'behandelaar', 'aanvragerNaam',
+				'zaakNummer',
+				'titel',
+				'startdatum',
+				'deadline',
+				'status',
+				'behandelaar',
+				'aanvragerNaam',
 			],
 		}
 	},
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		isValid() {
-			return this.form.to.trim() !== ''
+			return (
+				this.form.to.trim() !== ''
 				&& this.form.subject.trim() !== ''
 				&& this.form.body.trim() !== ''
+			)
 		},
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		unresolvedVars() {

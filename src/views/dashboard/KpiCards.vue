@@ -18,7 +18,9 @@
 					{{ card.title }}
 				</h3>
 				<span class="kpi-card__count">{{ card.count }}</span>
-				<span class="kpi-card__sub" :class="card.subClass">{{ card.sub }}</span>
+				<span class="kpi-card__sub" :class="card.subClass">{{
+					card.sub
+				}}</span>
 			</template>
 		</div>
 	</div>
@@ -51,9 +53,10 @@ export default {
 					id: 'open',
 					title: t('procest', 'Open Cases'),
 					count: this.openCases,
-					sub: this.newToday > 0
-						? t('procest', '+{n} today', { n: this.newToday })
-						: t('procest', '0 today'),
+					sub:
+						this.newToday > 0
+							? t('procest', '+{n} today', { n: this.newToday })
+							: t('procest', '0 today'),
 					colorClass: 'kpi-card--primary',
 					subClass: '',
 				},
@@ -61,19 +64,29 @@ export default {
 					id: 'overdue',
 					title: t('procest', 'Overdue'),
 					count: this.overdueCases,
-					sub: this.overdueCases > 0
-						? t('procest', 'action needed')
-						: t('procest', 'all on track'),
-					colorClass: this.overdueCases > 0 ? 'kpi-card--warning' : 'kpi-card--primary',
-					subClass: this.overdueCases > 0 ? 'kpi-card__sub--warning' : 'kpi-card__sub--success',
+					sub:
+						this.overdueCases > 0
+							? t('procest', 'action needed')
+							: t('procest', 'all on track'),
+					colorClass:
+						this.overdueCases > 0
+							? 'kpi-card--warning'
+							: 'kpi-card--primary',
+					subClass:
+						this.overdueCases > 0
+							? 'kpi-card__sub--warning'
+							: 'kpi-card__sub--success',
 				},
 				{
 					id: 'completed',
 					title: t('procest', 'Completed This Month'),
 					count: this.completedThisMonth,
-					sub: this.avgProcessingDays !== null
-						? t('procest', 'avg {days} days', { days: this.avgProcessingDays })
-						: t('procest', 'no data'),
+					sub:
+						this.avgProcessingDays !== null
+							? t('procest', 'avg {days} days', {
+									days: this.avgProcessingDays,
+								})
+							: t('procest', 'no data'),
 					colorClass: 'kpi-card--success',
 					subClass: '',
 				},
@@ -81,9 +94,12 @@ export default {
 					id: 'tasks',
 					title: t('procest', 'My Tasks'),
 					count: this.myTasks,
-					sub: this.tasksDueToday > 0
-						? t('procest', '{n} due today', { n: this.tasksDueToday })
-						: t('procest', 'none due today'),
+					sub:
+						this.tasksDueToday > 0
+							? t('procest', '{n} due today', {
+									n: this.tasksDueToday,
+								})
+							: t('procest', 'none due today'),
 					colorClass: 'kpi-card--primary',
 					subClass: this.tasksDueToday > 0 ? 'kpi-card__sub--warning' : '',
 				},

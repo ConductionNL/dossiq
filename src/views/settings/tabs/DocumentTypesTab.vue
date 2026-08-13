@@ -1,7 +1,14 @@
 <template>
 	<div class="sub-entity-tab">
 		<div v-if="isCreate" class="sub-entity-tab__notice">
-			<p>{{ t('procest', 'Save the case type first before adding document types.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'Save the case type first before adding document types.',
+					)
+				}}
+			</p>
 		</div>
 
 		<template v-else>
@@ -9,28 +16,43 @@
 
 			<template v-else>
 				<div v-if="items.length > 0" class="sub-entity-tab__list">
-					<div
-						v-for="item in items"
-						:key="item.id"
-						class="sub-entity-row">
+					<div v-for="item in items" :key="item.id" class="sub-entity-row">
 						<template v-if="editingId !== item.id">
 							<span class="sub-entity-row__name">{{ item.name }}</span>
 							<span v-if="item.category" class="sub-entity-row__meta">
 								{{ item.category }}
 							</span>
-							<span v-if="item.isRequired" class="sub-entity-row__badge">
+							<span
+								v-if="item.isRequired"
+								class="sub-entity-row__badge">
 								{{ t('procest', 'Required') }}
 							</span>
-							<span v-if="item.confidentiality" class="sub-entity-row__meta">
+							<span
+								v-if="item.confidentiality"
+								class="sub-entity-row__meta">
 								{{ item.confidentiality }}
 							</span>
 							<div class="sub-entity-row__actions">
-								<NcButton type="tertiary" :aria-label="t('procest', 'Edit {name}', { name: item.name })" @click="startEdit(item)">
+								<NcButton
+									type="tertiary"
+									:aria-label="
+										t('procest', 'Edit {name}', {
+											name: item.name,
+										})
+									"
+									@click="startEdit(item)">
 									<template #icon>
 										<PencilIcon :size="20" />
 									</template>
 								</NcButton>
-								<NcButton type="tertiary" :aria-label="t('procest', 'Delete {name}', { name: item.name })" @click="deleteItem(item)">
+								<NcButton
+									type="tertiary"
+									:aria-label="
+										t('procest', 'Delete {name}', {
+											name: item.name,
+										})
+									"
+									@click="deleteItem(item)">
 									<template #icon>
 										<DeleteIcon :size="20" />
 									</template>
@@ -46,31 +68,41 @@
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:model-value="v => editForm.name = v" />
+										@update:model-value="
+											(v) => (editForm.name = v)
+										" />
 									<NcTextField
 										:model-value="editForm.category"
 										:label="t('procest', 'Category')"
 										class="edit-field"
-										@update:model-value="v => editForm.category = v" />
+										@update:model-value="
+											(v) => (editForm.category = v)
+										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
 										:model-value="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field edit-field--full"
-										@update:model-value="v => editForm.description = v" />
+										@update:model-value="
+											(v) => (editForm.description = v)
+										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
 										:model-value="editForm.confidentiality"
 										:label="t('procest', 'Confidentiality')"
 										class="edit-field"
-										@update:model-value="v => editForm.confidentiality = v" />
+										@update:model-value="
+											(v) => (editForm.confidentiality = v)
+										" />
 								</div>
 								<div class="edit-row">
 									<NcCheckboxRadioSwitch
 										:model-value="editForm.isRequired"
-										@update:model-value="v => editForm.isRequired = v">
+										@update:model-value="
+											(v) => (editForm.isRequired = v)
+										">
 										{{ t('procest', 'Required') }}
 									</NcCheckboxRadioSwitch>
 								</div>
@@ -102,14 +134,26 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcCheckboxRadioSwitch } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcLoadingIcon,
+	NcTextField,
+	NcCheckboxRadioSwitch,
+} from '@nextcloud/vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
 	name: 'DocumentTypesTab',
-	components: { NcButton, NcLoadingIcon, NcTextField, NcCheckboxRadioSwitch, PencilIcon, DeleteIcon },
+	components: {
+		NcButton,
+		NcLoadingIcon,
+		NcTextField,
+		NcCheckboxRadioSwitch,
+		PencilIcon,
+		DeleteIcon,
+	},
 	props: {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
@@ -119,7 +163,13 @@ export default {
 			loading: false,
 			items: [],
 			editingId: null,
-			editForm: { name: '', category: '', description: '', confidentiality: '', isRequired: false },
+			editForm: {
+				name: '',
+				category: '',
+				description: '',
+				confidentiality: '',
+				isRequired: false,
+			},
 			editError: '',
 		}
 	},
@@ -141,7 +191,13 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		startAdd() {
 			this.editingId = 'new'
-			this.editForm = { name: '', category: '', description: '', confidentiality: '', isRequired: false }
+			this.editForm = {
+				name: '',
+				category: '',
+				description: '',
+				confidentiality: '',
+				isRequired: false,
+			}
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
@@ -162,7 +218,8 @@ export default {
 		},
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		cancelEdit() {
-			if (this.editingId === 'new') this.items = this.items.filter(i => i.id !== 'new')
+			if (this.editingId === 'new')
+				this.items = this.items.filter((i) => i.id !== 'new')
 			this.editingId = null
 			this.editError = ''
 		},
@@ -191,7 +248,16 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
 		 */
 		async deleteItem(item) {
-			if (!confirm(t('procest', 'Delete document type "{name}"? Existing uploaded files will not be deleted.', { name: item.name }))) return
+			if (
+				!confirm(
+					t(
+						'procest',
+						'Delete document type "{name}"? Existing uploaded files will not be deleted.',
+						{ name: item.name },
+					),
+				)
+			)
+				return
 			const objectStore = useObjectStore()
 			await objectStore.deleteObject('documentType', item.id)
 			await this.loadItems()

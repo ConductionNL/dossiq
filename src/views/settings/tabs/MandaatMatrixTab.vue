@@ -10,7 +10,12 @@
 		<div class="mandaat-matrix-tab__header">
 			<h3>{{ t('procest', 'Mandate Matrix') }}</h3>
 			<p class="mandaat-matrix-tab__description">
-				{{ t('procest', 'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports. All changes are version-tracked.') }}
+				{{
+					t(
+						'procest',
+						'Configure mandate decisions, organisational roles, role assignments, and import legacy mandate exports. All changes are version-tracked.',
+					)
+				}}
 			</p>
 		</div>
 
@@ -103,7 +108,7 @@ export default {
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		roleOptions() {
-			return (this.roles || []).map(r => ({
+			return (this.roles || []).map((r) => ({
 				id: r.id,
 				label: r.naam || r.label || r.id,
 			}))
@@ -129,8 +134,12 @@ export default {
 		async loadBesluiten() {
 			this.loading = true
 			try {
-				const res = await axios.get(generateUrl('/apps/procest/api/mandate/besluiten'))
-				this.matrices = Array.isArray(res.data) ? res.data : (res.data?.results || [])
+				const res = await axios.get(
+					generateUrl('/apps/procest/api/mandate/besluiten'),
+				)
+				this.matrices = Array.isArray(res.data)
+					? res.data
+					: res.data?.results || []
 			} catch (e) {
 				this.matrices = []
 			} finally {
@@ -141,8 +150,12 @@ export default {
 		async loadRoles() {
 			this.loading = true
 			try {
-				const res = await axios.get(generateUrl('/apps/procest/api/mandate/rollen'))
-				this.roles = Array.isArray(res.data) ? res.data : (res.data?.results || [])
+				const res = await axios.get(
+					generateUrl('/apps/procest/api/mandate/rollen'),
+				)
+				this.roles = Array.isArray(res.data)
+					? res.data
+					: res.data?.results || []
 			} catch (e) {
 				this.roles = []
 			} finally {
@@ -153,8 +166,12 @@ export default {
 		async loadAssignments() {
 			this.loading = true
 			try {
-				const res = await axios.get(generateUrl('/apps/procest/api/mandate/toewijzingen'))
-				this.assignments = Array.isArray(res.data) ? res.data : (res.data?.results || [])
+				const res = await axios.get(
+					generateUrl('/apps/procest/api/mandate/toewijzingen'),
+				)
+				this.assignments = Array.isArray(res.data)
+					? res.data
+					: res.data?.results || []
 			} catch (e) {
 				this.assignments = []
 			} finally {
@@ -191,11 +208,17 @@ export default {
 			try {
 				if (this.editingMandaat && this.editingMandaat.id) {
 					await axios.patch(
-						generateUrl('/apps/procest/api/mandate/mandaten/' + encodeURIComponent(this.editingMandaat.id)),
+						generateUrl(
+							'/apps/procest/api/mandate/mandaten/'
+								+ encodeURIComponent(this.editingMandaat.id),
+						),
 						payload,
 					)
 				} else {
-					await axios.post(generateUrl('/apps/procest/api/mandate/mandaten'), payload)
+					await axios.post(
+						generateUrl('/apps/procest/api/mandate/mandaten'),
+						payload,
+					)
 				}
 				this.closeEditor()
 				this.loadBesluiten()

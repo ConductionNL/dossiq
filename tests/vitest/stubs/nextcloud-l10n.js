@@ -19,9 +19,9 @@
  */
 function interpolate(text, vars) {
 	if (!vars) return text
-	return text.replace(/\{(\w+)\}/g, (match, key) => (
-		Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : match
-	))
+	return text.replace(/\{(\w+)\}/g, (match, key) =>
+		Object.prototype.hasOwnProperty.call(vars, key) ? String(vars[key]) : match,
+	)
 }
 
 export function translate(app, text, vars) {
@@ -50,9 +50,51 @@ export const getLanguage = () => 'en'
 export const getCanonicalLocale = () => 'en'
 export const isRTL = () => false
 export const getFirstDay = () => 1
-export const getDayNames = () => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-export const getDayNamesShort = () => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+export const getDayNames = () => [
+	'Sunday',
+	'Monday',
+	'Tuesday',
+	'Wednesday',
+	'Thursday',
+	'Friday',
+	'Saturday',
+]
+export const getDayNamesShort = () => [
+	'Sun',
+	'Mon',
+	'Tue',
+	'Wed',
+	'Thu',
+	'Fri',
+	'Sat',
+]
 export const getDayNamesMin = () => ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-export const getMonthNames = () => ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-export const getMonthNamesShort = () => ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+export const getMonthNames = () => [
+	'January',
+	'February',
+	'March',
+	'April',
+	'May',
+	'June',
+	'July',
+	'August',
+	'September',
+	'October',
+	'November',
+	'December',
+]
+export const getMonthNamesShort = () => [
+	'Jan',
+	'Feb',
+	'Mar',
+	'Apr',
+	'May',
+	'Jun',
+	'Jul',
+	'Aug',
+	'Sep',
+	'Oct',
+	'Nov',
+	'Dec',
+]
 export const formatRelativeTime = (date) => String(date)

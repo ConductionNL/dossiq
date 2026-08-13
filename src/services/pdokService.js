@@ -104,7 +104,9 @@ export async function suggest(query) {
 		debounceTimer = setTimeout(async () => {
 			clearWarning()
 			try {
-				const response = await axios.get(`${BASE_URL}/suggest`, { params: { q: query } })
+				const response = await axios.get(`${BASE_URL}/suggest`, {
+					params: { q: query },
+				})
 				resolve(response.data?.docs || [])
 			} catch (error) {
 				try {
@@ -158,7 +160,9 @@ export async function free(query, rows = 10) {
 	}
 	clearWarning()
 	try {
-		const response = await axios.get(`${BASE_URL}/free`, { params: { q: query, rows } })
+		const response = await axios.get(`${BASE_URL}/free`, {
+			params: { q: query, rows },
+		})
 		return response.data?.docs || []
 	} catch (error) {
 		return handleNetworkError(error, [])
@@ -180,7 +184,9 @@ export async function free(query, rows = 10) {
 export async function reverse(lat, lng) {
 	clearWarning()
 	try {
-		const response = await axios.get(`${BASE_URL}/reverse`, { params: { lat, lng } })
+		const response = await axios.get(`${BASE_URL}/reverse`, {
+			params: { lat, lng },
+		})
 		return response.data?.docs?.[0] || null
 	} catch (error) {
 		return handleNetworkError(error, null)

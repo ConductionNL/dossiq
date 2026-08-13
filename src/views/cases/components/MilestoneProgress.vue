@@ -17,7 +17,9 @@
 				<div
 					v-if="index > 0"
 					class="milestone-progress__line"
-					:class="{ 'milestone-progress__line--reached': milestone.reached }" />
+					:class="{
+						'milestone-progress__line--reached': milestone.reached,
+					}" />
 
 				<!-- Dot -->
 				<div
@@ -27,15 +29,25 @@
 					:tabindex="isReadOnly ? -1 : 0"
 					@click="!isReadOnly && onDotClick(milestone, index)"
 					@keydown.enter="!isReadOnly && onDotClick(milestone, index)"
-					@keydown.space.prevent="!isReadOnly && onDotClick(milestone, index)">
-					<span v-if="milestone.reached" class="milestone-progress__check">&#10003;</span>
-					<span v-else class="milestone-progress__number">{{ index + 1 }}</span>
+					@keydown.space.prevent="
+						!isReadOnly && onDotClick(milestone, index)
+					">
+					<span v-if="milestone.reached" class="milestone-progress__check"
+						>&#10003;</span
+					>
+					<span v-else class="milestone-progress__number">{{
+						index + 1
+					}}</span>
 				</div>
 
 				<!-- Label -->
 				<div class="milestone-progress__label">
-					<span class="milestone-progress__name">{{ milestone.label }}</span>
-					<span v-if="milestone.reachedAt" class="milestone-progress__date">
+					<span class="milestone-progress__name">{{
+						milestone.label
+					}}</span>
+					<span
+						v-if="milestone.reachedAt"
+						class="milestone-progress__date">
 						{{ formatDate(milestone.reachedAt) }}
 					</span>
 				</div>
@@ -44,7 +56,9 @@
 
 		<!-- Progress bar -->
 		<div class="milestone-progress__bar-container">
-			<div class="milestone-progress__bar" :style="{ width: percentage + '%' }" />
+			<div
+				class="milestone-progress__bar"
+				:style="{ width: percentage + '%' }" />
 		</div>
 		<span class="milestone-progress__percentage">{{ percentage }}%</span>
 	</div>
@@ -84,10 +98,12 @@ export default {
 		stepClass(milestone, index) {
 			return {
 				'milestone-progress__step--reached': milestone.reached,
-				'milestone-progress__step--current': !milestone.reached
+				'milestone-progress__step--current':
+					!milestone.reached
 					&& index > 0
 					&& this.milestones[index - 1]?.reached,
-				'milestone-progress__step--future': !milestone.reached
+				'milestone-progress__step--future':
+					!milestone.reached
 					&& (index === 0 || !this.milestones[index - 1]?.reached),
 			}
 		},
@@ -99,10 +115,12 @@ export default {
 		dotClass(milestone, index) {
 			return {
 				'milestone-progress__dot--reached': milestone.reached,
-				'milestone-progress__dot--current': !milestone.reached
+				'milestone-progress__dot--current':
+					!milestone.reached
 					&& index > 0
 					&& this.milestones[index - 1]?.reached,
-				'milestone-progress__dot--future': !milestone.reached
+				'milestone-progress__dot--future':
+					!milestone.reached
 					&& (index === 0 || !this.milestones[index - 1]?.reached),
 			}
 		},
@@ -114,7 +132,10 @@ export default {
 			if (!dateStr) return ''
 			const date = new Date(dateStr)
 			if (isNaN(date.getTime())) return dateStr
-			return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })
+			return date.toLocaleDateString('nl-NL', {
+				day: 'numeric',
+				month: 'short',
+			})
 		},
 		/**
 		 * @param milestone

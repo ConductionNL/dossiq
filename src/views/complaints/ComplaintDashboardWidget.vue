@@ -21,9 +21,14 @@
 		</div>
 
 		<ul class="complaint-dashboard-widget__list">
-			<li v-for="item in topItems" :key="item.id" class="complaint-dashboard-widget__item">
+			<li
+				v-for="item in topItems"
+				:key="item.id"
+				class="complaint-dashboard-widget__item">
 				<a :href="itemUrl(item.id)">{{ item.title }}</a>
-				<span class="complaint-dashboard-widget__deadline">{{ item.deadline }}</span>
+				<span class="complaint-dashboard-widget__deadline">{{
+					item.deadline
+				}}</span>
 			</li>
 		</ul>
 	</div>
@@ -76,9 +81,14 @@ export default {
 					fetch(OC.generateUrl('/apps/procest/api/complaints/kpi'), {
 						headers: { requesttoken: OC.requestToken },
 					}),
-					fetch(OC.generateUrl('/apps/procest/api/complaints/deadline-alerts'), {
-						headers: { requesttoken: OC.requestToken },
-					}),
+					fetch(
+						OC.generateUrl(
+							'/apps/procest/api/complaints/deadline-alerts',
+						),
+						{
+							headers: { requesttoken: OC.requestToken },
+						},
+					),
 				])
 				if (kpiRes.ok) {
 					this.stats = await kpiRes.json()

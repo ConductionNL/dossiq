@@ -4,14 +4,24 @@
 
 		<!-- Contested Decision selector -->
 		<div class="form-group">
-			<label for="bezwaar-intake-contested-decision">{{ t('procest', 'Contested Decision (Bestreden Besluit)') }} *</label>
+			<label for="bezwaar-intake-contested-decision"
+				>{{
+					t('procest', 'Contested Decision (Bestreden Besluit)')
+				}}
+				*</label
+			>
 			<NcTextField
 				id="bezwaar-intake-contested-decision"
 				:model-value="form.contestedDecision"
 				:disabled="isReadOnly"
 				:placeholder="t('procest', 'UUID of the contested decision')"
 				:error="!!errors.contestedDecision"
-				@update:model-value="v => { form.contestedDecision = v; errors.contestedDecision = '' }" />
+				@update:model-value="
+					(v) => {
+						form.contestedDecision = v
+						errors.contestedDecision = ''
+					}
+				" />
 			<p v-if="errors.contestedDecision" class="form-error">
 				{{ errors.contestedDecision }}
 			</p>
@@ -19,7 +29,12 @@
 
 		<!-- Grounds -->
 		<div class="form-group">
-			<label for="bezwaar-intake-grounds">{{ t('procest', 'Grounds for Objection (Gronden van Bezwaar)') }} *</label>
+			<label for="bezwaar-intake-grounds"
+				>{{
+					t('procest', 'Grounds for Objection (Gronden van Bezwaar)')
+				}}
+				*</label
+			>
 			<textarea
 				id="bezwaar-intake-grounds"
 				v-model="form.grounds"
@@ -33,7 +48,9 @@
 
 		<!-- Requested Relief -->
 		<div class="form-group">
-			<label for="bezwaar-intake-requested-relief">{{ t('procest', 'Requested Outcome') }}</label>
+			<label for="bezwaar-intake-requested-relief">{{
+				t('procest', 'Requested Outcome')
+			}}</label>
 			<textarea
 				id="bezwaar-intake-requested-relief"
 				v-model="form.requestedRelief"
@@ -45,14 +62,22 @@
 		<div class="form-row">
 			<!-- Received Date -->
 			<div class="form-group">
-				<label for="bezwaar-intake-received-date">{{ t('procest', 'Date Received') }} *</label>
+				<label for="bezwaar-intake-received-date"
+					>{{ t('procest', 'Date Received') }} *</label
+				>
 				<NcTextField
 					id="bezwaar-intake-received-date"
 					:model-value="form.receivedDate"
 					:disabled="isReadOnly"
 					type="date"
 					:error="!!errors.receivedDate"
-					@update:model-value="v => { form.receivedDate = v; errors.receivedDate = ''; checkTimeliness() }" />
+					@update:model-value="
+						(v) => {
+							form.receivedDate = v
+							errors.receivedDate = ''
+							checkTimeliness()
+						}
+					" />
 				<p v-if="errors.receivedDate" class="form-error">
 					{{ errors.receivedDate }}
 				</p>
@@ -70,26 +95,36 @@
 		</div>
 
 		<!-- Timeliness Warning -->
-		<div v-if="timelinessResult && !timelinessResult.isTimely" class="bezwaar-intake-form__warning">
+		<div
+			v-if="timelinessResult && !timelinessResult.isTimely"
+			class="bezwaar-intake-form__warning">
 			<NcNoteCard type="warning">
 				{{ timelinessResult.message }}
 			</NcNoteCard>
 		</div>
 
-		<div v-if="timelinessResult && timelinessResult.isTimely" class="bezwaar-intake-form__info">
+		<div
+			v-if="timelinessResult && timelinessResult.isTimely"
+			class="bezwaar-intake-form__info">
 			<NcNoteCard type="success">
 				{{ timelinessResult.message }}
 			</NcNoteCard>
 		</div>
 
 		<!-- Timeliness Assessment (when late) -->
-		<div v-if="timelinessResult && !timelinessResult.isTimely" class="form-group">
-			<label for="bezwaar-intake-timeliness-assessment">{{ t('procest', 'Timeliness Assessment') }}</label>
+		<div
+			v-if="timelinessResult && !timelinessResult.isTimely"
+			class="form-group">
+			<label for="bezwaar-intake-timeliness-assessment">{{
+				t('procest', 'Timeliness Assessment')
+			}}</label>
 			<textarea
 				id="bezwaar-intake-timeliness-assessment"
 				v-model="form.timelinessAssessment"
 				:disabled="isReadOnly"
-				:placeholder="t('procest', 'E.g. verschoonbare termijnoverschrijding...')"
+				:placeholder="
+					t('procest', 'E.g. verschoonbare termijnoverschrijding...')
+				"
 				rows="2" />
 		</div>
 
@@ -99,8 +134,13 @@
 				<NcCheckboxRadioSwitch
 					:model-value="form.proVoorziening"
 					:disabled="isReadOnly"
-					@update:model-value="v => form.proVoorziening = v">
-					{{ t('procest', 'Interim relief (voorlopige voorziening) requested') }}
+					@update:model-value="(v) => (form.proVoorziening = v)">
+					{{
+						t(
+							'procest',
+							'Interim relief (voorlopige voorziening) requested',
+						)
+					}}
 				</NcCheckboxRadioSwitch>
 			</div>
 		</div>
@@ -110,16 +150,28 @@
 			<h5>{{ t('procest', 'Calculated Deadlines') }}</h5>
 			<div class="deadline-grid">
 				<div class="deadline-item">
-					<span class="deadline-label">{{ t('procest', 'Acknowledgment') }}</span>
-					<span class="deadline-value">{{ deadlines.ontvangstbevestigingDeadline }}</span>
+					<span class="deadline-label">{{
+						t('procest', 'Acknowledgment')
+					}}</span>
+					<span class="deadline-value">{{
+						deadlines.ontvangstbevestigingDeadline
+					}}</span>
 				</div>
 				<div class="deadline-item">
-					<span class="deadline-label">{{ t('procest', 'Processing') }}</span>
-					<span class="deadline-value">{{ deadlines.afhandelDeadline }}</span>
+					<span class="deadline-label">{{
+						t('procest', 'Processing')
+					}}</span>
+					<span class="deadline-value">{{
+						deadlines.afhandelDeadline
+					}}</span>
 				</div>
 				<div class="deadline-item">
-					<span class="deadline-label">{{ t('procest', 'Max with extension') }}</span>
-					<span class="deadline-value">{{ deadlines.maxDeadlineWithExtension }}</span>
+					<span class="deadline-label">{{
+						t('procest', 'Max with extension')
+					}}</span>
+					<span class="deadline-value">{{
+						deadlines.maxDeadlineWithExtension
+					}}</span>
 				</div>
 			</div>
 		</div>
@@ -127,14 +179,24 @@
 		<!-- Actions -->
 		<div v-if="!isReadOnly" class="bezwaar-intake-form__actions">
 			<NcButton type="primary" :disabled="saving" @click="save">
-				{{ saving ? t('procest', 'Saving...') : t('procest', 'Save Objection') }}
+				{{
+					saving
+						? t('procest', 'Saving...')
+						: t('procest', 'Save Objection')
+				}}
 			</NcButton>
 		</div>
 	</div>
 </template>
 
 <script>
-import { NcButton, NcTextField, NcSelect, NcCheckboxRadioSwitch, NcNoteCard } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcTextField,
+	NcSelect,
+	NcCheckboxRadioSwitch,
+	NcNoteCard,
+} from '@nextcloud/vue'
 import { useBezwaarStore } from '../../../../store/modules/bezwaar.js'
 
 export default {
@@ -244,10 +306,16 @@ export default {
 			this.errors = {}
 
 			if (!this.form.contestedDecision) {
-				this.errors.contestedDecision = t('procest', 'Contested decision is required')
+				this.errors.contestedDecision = t(
+					'procest',
+					'Contested decision is required',
+				)
 			}
 			if (!this.form.grounds) {
-				this.errors.grounds = t('procest', 'Grounds for objection are required')
+				this.errors.grounds = t(
+					'procest',
+					'Grounds for objection are required',
+				)
 			}
 			if (!this.form.receivedDate) {
 				this.errors.receivedDate = t('procest', 'Date received is required')

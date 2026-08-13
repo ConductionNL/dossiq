@@ -38,9 +38,24 @@ describe('isValidDuration', () => {
 
 describe('parseDuration', () => {
 	it('splits into year/month/week/day components', () => {
-		expect(parseDuration('P1Y6M')).toEqual({ years: 1, months: 6, weeks: 0, days: 0 })
-		expect(parseDuration('P56D')).toEqual({ years: 0, months: 0, weeks: 0, days: 56 })
-		expect(parseDuration('P8W')).toEqual({ years: 0, months: 0, weeks: 8, days: 0 })
+		expect(parseDuration('P1Y6M')).toEqual({
+			years: 1,
+			months: 6,
+			weeks: 0,
+			days: 0,
+		})
+		expect(parseDuration('P56D')).toEqual({
+			years: 0,
+			months: 0,
+			weeks: 0,
+			days: 56,
+		})
+		expect(parseDuration('P8W')).toEqual({
+			years: 0,
+			months: 0,
+			weeks: 8,
+			days: 0,
+		})
 	})
 
 	it('returns null for invalid input', () => {

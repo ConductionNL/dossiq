@@ -65,25 +65,25 @@ const cssNoop = {
 }
 
 module.exports = {
-	plugins: [
-		cssNoop,
-		vue.default ? vue.default() : vue(),
-	],
+	plugins: [cssNoop, vue.default ? vue.default() : vue()],
 	test: {
 		environment: 'node',
 		globals: false,
 		include: ['tests/vitest/**/*.spec.{js,ts}'],
-		exclude: ['tests/e2e/**', 'tests/zgw/**', 'tests/Unit/**', 'tests/unit/**', 'node_modules/**'],
+		exclude: [
+			'tests/e2e/**',
+			'tests/zgw/**',
+			'tests/Unit/**',
+			'tests/unit/**',
+			'node_modules/**',
+		],
 		setupFiles: [path.resolve(__dirname, 'tests/vitest/setup.js')],
 		server: {
 			deps: {
 				// Inline Vue 2 + Nextcloud packages so Vite transforms their
 				// .css side-effect imports through the cssNoop plugin above,
 				// for the (jsdom-opted-in) component specs that import them.
-				inline: [
-					/@nextcloud\/vue/,
-					/vue-material-design-icons/,
-				],
+				inline: [/@nextcloud\/vue/, /vue-material-design-icons/],
 			},
 		},
 	},
@@ -92,19 +92,31 @@ module.exports = {
 			{ find: '@', replacement: path.resolve(__dirname, 'src') },
 			{
 				find: /^@nextcloud\/l10n$/,
-				replacement: path.resolve(__dirname, 'tests/vitest/stubs/nextcloud-l10n.js'),
+				replacement: path.resolve(
+					__dirname,
+					'tests/vitest/stubs/nextcloud-l10n.js',
+				),
 			},
 			{
 				find: /^@nextcloud\/axios$/,
-				replacement: path.resolve(__dirname, 'tests/vitest/stubs/nextcloud-axios.js'),
+				replacement: path.resolve(
+					__dirname,
+					'tests/vitest/stubs/nextcloud-axios.js',
+				),
 			},
 			{
 				find: /^@nextcloud\/router$/,
-				replacement: path.resolve(__dirname, 'tests/vitest/stubs/nextcloud-router.js'),
+				replacement: path.resolve(
+					__dirname,
+					'tests/vitest/stubs/nextcloud-router.js',
+				),
 			},
 			{
 				find: /^@conduction\/nextcloud-vue$/,
-				replacement: path.resolve(__dirname, 'tests/vitest/stubs/conduction-nextcloud-vue.js'),
+				replacement: path.resolve(
+					__dirname,
+					'tests/vitest/stubs/conduction-nextcloud-vue.js',
+				),
 			},
 		],
 	},

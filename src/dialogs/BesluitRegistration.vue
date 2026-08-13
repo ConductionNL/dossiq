@@ -5,25 +5,34 @@
 		@closing="$emit('close')">
 		<div class="besluit-registration">
 			<div class="form-group">
-				<label for="besluit-registration-title">{{ t('procest', 'Title') }} *</label>
+				<label for="besluit-registration-title"
+					>{{ t('procest', 'Title') }} *</label
+				>
 				<NcTextField
 					id="besluit-registration-title"
 					:model-value="form.title"
 					:error="!!errors.title"
 					:placeholder="t('procest', 'Title of the decision...')"
-					@update:model-value="v => { form.title = v; errors.title = '' }" />
+					@update:model-value="
+						(v) => {
+							form.title = v
+							errors.title = ''
+						}
+					" />
 				<p v-if="errors.title" class="form-error">
 					{{ errors.title }}
 				</p>
 			</div>
 
 			<div class="form-group">
-				<label for="besluit-registration-effective-date">{{ t('procest', 'Effective date') }}</label>
+				<label for="besluit-registration-effective-date">{{
+					t('procest', 'Effective date')
+				}}</label>
 				<NcTextField
 					id="besluit-registration-effective-date"
 					type="date"
 					:model-value="form.effectiveDate"
-					@update:model-value="v => form.effectiveDate = v" />
+					@update:model-value="(v) => (form.effectiveDate = v)" />
 			</div>
 
 			<div class="form-group">
@@ -38,7 +47,9 @@
 			</div>
 
 			<div class="form-group">
-				<label for="besluit-registration-explanation">{{ t('procest', 'Explanation') }}</label>
+				<label for="besluit-registration-explanation">{{
+					t('procest', 'Explanation')
+				}}</label>
 				<textarea
 					id="besluit-registration-explanation"
 					v-model="form.explanation"
@@ -47,12 +58,14 @@
 			</div>
 
 			<div class="form-group">
-				<label for="besluit-registration-governing-body">{{ t('procest', 'Administrative body') }}</label>
+				<label for="besluit-registration-governing-body">{{
+					t('procest', 'Administrative body')
+				}}</label>
 				<NcTextField
 					id="besluit-registration-governing-body"
 					:model-value="form.governingBody"
 					:placeholder="t('procest', 'College van B&W')"
-					@update:model-value="v => form.governingBody = v" />
+					@update:model-value="(v) => (form.governingBody = v)" />
 			</div>
 		</div>
 
@@ -71,7 +84,13 @@
 </template>
 
 <script>
-import { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcDialog,
+	NcLoadingIcon,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 import { useObjectStore } from '../store/modules/object.js'
 import { registerBesluit } from '../services/voorstelBesluitApi.js'
 
@@ -113,8 +132,12 @@ export default {
 	/** @spec openspec/specs/parafering-actions/spec.md */
 	async created() {
 		try {
-			const results = await this.objectStore.fetchCollection('decisionType', { _limit: 50 })
-			this.decisionTypes = Array.isArray(results) ? results : (results?.results || [])
+			const results = await this.objectStore.fetchCollection('decisionType', {
+				_limit: 50,
+			})
+			this.decisionTypes = Array.isArray(results)
+				? results
+				: results?.results || []
 		} catch (error) {
 			console.error('Failed to load decision types:', error)
 		}
@@ -151,7 +174,9 @@ export default {
 					effectiveDate: this.form.effectiveDate || undefined,
 					explanation: this.form.explanation || undefined,
 					governingBody: this.form.governingBody || undefined,
-					decisionType: this.selectedDecisionType ? this.selectedDecisionType.id : undefined,
+					decisionType: this.selectedDecisionType
+						? this.selectedDecisionType.id
+						: undefined,
 				})
 
 				// Reflect the awaiting-decidesk state on the voorstel (projection;
@@ -164,7 +189,10 @@ export default {
 				this.$emit('registered')
 			} catch (error) {
 				console.error('Failed to register besluit:', error)
-				this.errors.title = error.response?.data?.error || error.message || t('procest', 'Registration failed')
+				this.errors.title =
+					error.response?.data?.error
+					|| error.message
+					|| t('procest', 'Registration failed')
 			} finally {
 				this.saving = false
 			}

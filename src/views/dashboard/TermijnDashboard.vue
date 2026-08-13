@@ -86,11 +86,14 @@
 					:model-value="quarter"
 					:label="t('procest', 'Quarter (YYYY-Qn)')"
 					:placeholder="t('procest', 'e.g. 2026-Q2')"
-					@update:model-value="v => quarter = v" />
+					@update:model-value="(v) => (quarter = v)" />
 				<NcButton type="primary" @click="loadQuarterly">
 					{{ t('procest', 'Load report') }}
 				</NcButton>
-				<NcButton :disabled="!quarterly" type="secondary" @click="downloadQuarterCsv">
+				<NcButton
+					:disabled="!quarterly"
+					type="secondary"
+					@click="downloadQuarterCsv">
 					<template #icon>
 						<FileExport :size="18" />
 					</template>
@@ -98,18 +101,26 @@
 				</NcButton>
 			</div>
 
-			<div v-if="quarterly && quarterly.perType" class="termijn-dashboard__table-wrap">
+			<div
+				v-if="quarterly && quarterly.perType"
+				class="termijn-dashboard__table-wrap">
 				<table class="termijn-dashboard__table">
 					<thead>
 						<tr>
 							<th scope="col">{{ t('procest', 'Zaaktype') }}</th>
 							<th scope="col">{{ t('procest', 'Total') }}</th>
-							<th scope="col">{{ t('procest', 'Within deadline') }}</th>
+							<th scope="col">
+								{{ t('procest', 'Within deadline') }}
+							</th>
 							<th scope="col">{{ t('procest', 'Overruns') }}</th>
 							<th scope="col">{{ t('procest', 'Avg. duration') }}</th>
 							<th scope="col">{{ t('procest', 'Extensions') }}</th>
-							<th scope="col">{{ t('procest', 'Notices of default') }}</th>
-							<th scope="col">{{ t('procest', 'Total penalty payment') }}</th>
+							<th scope="col">
+								{{ t('procest', 'Notices of default') }}
+							</th>
+							<th scope="col">
+								{{ t('procest', 'Total penalty payment') }}
+							</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -134,17 +145,33 @@
 				<NcTextField
 					:model-value="String(year)"
 					:label="t('procest', 'Year')"
-					@update:model-value="v => year = Number(v) || year" />
+					@update:model-value="(v) => (year = Number(v) || year)" />
 				<NcButton type="primary" @click="loadAnnual">
 					{{ t('procest', 'Load audit') }}
 				</NcButton>
 			</div>
 			<div v-if="annual" class="termijn-dashboard__summary">
-				<strong>{{ t('procest', 'Total dwangsom in {y}:', { y: annual.jaar }) }}</strong>
-				{{ euro((annual.summary && annual.summary.totalCents) ? annual.summary.totalCents / 100 : 0) }}
-				<span class="termijn-dashboard__pill">{{ t('procest', '{n} payments', { n: annual.summary?.count || 0 }) }}</span>
-				<span v-if="(annual.warnings || []).length > 0" class="termijn-dashboard__pill termijn-dashboard__pill--warn">
-					{{ t('procest', '{n} data warnings', { n: annual.warnings.length }) }}
+				<strong>{{
+					t('procest', 'Total dwangsom in {y}:', { y: annual.jaar })
+				}}</strong>
+				{{
+					euro(
+						annual.summary && annual.summary.totalCents
+							? annual.summary.totalCents / 100
+							: 0,
+					)
+				}}
+				<span class="termijn-dashboard__pill">{{
+					t('procest', '{n} payments', { n: annual.summary?.count || 0 })
+				}}</span>
+				<span
+					v-if="(annual.warnings || []).length > 0"
+					class="termijn-dashboard__pill termijn-dashboard__pill--warn">
+					{{
+						t('procest', '{n} data warnings', {
+							n: annual.warnings.length,
+						})
+					}}
 				</span>
 			</div>
 		</div>
@@ -193,7 +220,10 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		selectedZaaktype() {
 			if (!this.zaaktypeFilter) return null
-			return this.zaaktypeOptions.find(o => o.id === this.zaaktypeFilter) || null
+			return (
+				this.zaaktypeOptions.find((o) => o.id === this.zaaktypeFilter)
+				|| null
+			)
 		},
 	},
 	mounted() {
@@ -244,7 +274,10 @@ export default {
 				)
 				this.kpi = res.data || null
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to load KPI')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to load KPI')
 			} finally {
 				this.loading = false
 			}
@@ -260,10 +293,15 @@ export default {
 				this.quarterly = res.data
 				// Backfill zaaktype filter options.
 				if (this.quarterly && this.quarterly.perType) {
-					this.zaaktypeOptions = Object.keys(this.quarterly.perType).map(k => ({ id: k, label: k }))
+					this.zaaktypeOptions = Object.keys(this.quarterly.perType).map(
+						(k) => ({ id: k, label: k }),
+					)
 				}
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to load quarterly report')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to load quarterly report')
 			}
 		},
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
@@ -275,27 +313,43 @@ export default {
 				)
 				this.annual = res.data
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to load annual audit')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to load annual audit')
 			}
 		},
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		downloadQuarterCsv() {
 			if (!this.quarterly || !this.quarterly.perType) return
-			const headers = ['zaaktype', 'totaal', 'binnenTermijnPercent', 'overschrijdingen', 'gemDoorlooptijd', 'verlengingen', 'ingebrekestellingen', 'dwangsomTotal']
+			const headers = [
+				'zaaktype',
+				'totaal',
+				'binnenTermijnPercent',
+				'overschrijdingen',
+				'gemDoorlooptijd',
+				'verlengingen',
+				'ingebrekestellingen',
+				'dwangsomTotal',
+			]
 			const lines = [headers.join(',')]
 			for (const [k, row] of Object.entries(this.quarterly.perType)) {
-				lines.push([
-					k,
-					row.totaal || 0,
-					row.binnenTermijnPercent || 0,
-					row.overschrijdingen || 0,
-					row.gemiddeldeDoorlooptijd || 0,
-					row.verlengingen || 0,
-					row.ingebrekestellingen || 0,
-					row.dwangsomTotal || 0,
-				].join(','))
+				lines.push(
+					[
+						k,
+						row.totaal || 0,
+						row.binnenTermijnPercent || 0,
+						row.overschrijdingen || 0,
+						row.gemiddeldeDoorlooptijd || 0,
+						row.verlengingen || 0,
+						row.ingebrekestellingen || 0,
+						row.dwangsomTotal || 0,
+					].join(','),
+				)
 			}
-			const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+			const blob = new Blob([lines.join('\n')], {
+				type: 'text/csv;charset=utf-8',
+			})
 			const url = window.URL.createObjectURL(blob)
 			const a = document.createElement('a')
 			a.href = url
@@ -345,15 +399,25 @@ export default {
 	background: var(--color-main-background);
 }
 
-.kpi-card--good { border-left: 4px solid var(--color-success); }
+.kpi-card--good {
+	border-left: 4px solid var(--color-success);
+}
 
-.kpi-card--warn { border-left: 4px solid var(--color-warning); }
+.kpi-card--warn {
+	border-left: 4px solid var(--color-warning);
+}
 
-.kpi-card--alert { border-left: 4px solid var(--color-error); }
+.kpi-card--alert {
+	border-left: 4px solid var(--color-error);
+}
 
-.kpi-card--neutral { border-left: 4px solid var(--color-primary-element); }
+.kpi-card--neutral {
+	border-left: 4px solid var(--color-primary-element);
+}
 
-.kpi-card--meta { border-left: 4px solid var(--color-border-dark); }
+.kpi-card--meta {
+	border-left: 4px solid var(--color-border-dark);
+}
 
 .kpi-card__label {
 	font-size: 12px;

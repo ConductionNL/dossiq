@@ -19,7 +19,10 @@
 		@row-click="openCase">
 		<template #below-header>
 			<WorkloadSummaryBar :handlers="workloadHandlers" />
-			<div class="mywork-sort-toggle" role="group" :aria-label="t('procest', 'Sort My Work')">
+			<div
+				class="mywork-sort-toggle"
+				role="group"
+				:aria-label="t('procest', 'Sort My Work')">
 				<NcButton
 					:type="sortMode === 'urgency' ? 'primary' : 'tertiary'"
 					@click="setSortMode('urgency')">
@@ -105,7 +108,8 @@ export default {
 		 * @spec openspec/specs/my-work/spec.md
 		 */
 		filter() {
-			const uid = (getCurrentUser() && getCurrentUser().uid)
+			const uid =
+				(getCurrentUser() && getCurrentUser().uid)
 				|| (typeof OC !== 'undefined' && OC.currentUser)
 				|| ''
 			return { assignee: uid }
@@ -120,8 +124,16 @@ export default {
 			return [
 				'identifier',
 				'title',
-				{ key: 'caseType', label: this.t('procest', 'Case type'), formatter: 'caseTypeName' },
-				{ key: 'status', label: this.t('procest', 'Status'), formatter: 'statusTypeName' },
+				{
+					key: 'caseType',
+					label: this.t('procest', 'Case type'),
+					formatter: 'caseTypeName',
+				},
+				{
+					key: 'status',
+					label: this.t('procest', 'Status'),
+					formatter: 'statusTypeName',
+				},
 				'deadline',
 			]
 		},
@@ -171,7 +183,7 @@ export default {
 		 */
 		buildNameMap(collection) {
 			const map = {}
-			for (const o of (collection || [])) {
+			for (const o of collection || []) {
 				const id = o.id || (o['@self'] && o['@self'].id)
 				if (id) {
 					map[id] = o.title || o.name || String(id)
@@ -189,8 +201,12 @@ export default {
 		 */
 		async fetchWorkQueue() {
 			try {
-				const response = await axios.get(generateUrl('/apps/procest/api/work-queue'))
-				this.urgencyMap = buildUrgencyMap(response.data && response.data.items)
+				const response = await axios.get(
+					generateUrl('/apps/procest/api/work-queue'),
+				)
+				this.urgencyMap = buildUrgencyMap(
+					response.data && response.data.items,
+				)
 			} catch (e) {
 				// Chips simply stay hidden; never block the list.
 			}
@@ -204,8 +220,11 @@ export default {
 		 */
 		async fetchWorkload() {
 			try {
-				const response = await axios.get(generateUrl('/apps/procest/api/work-queue/workload'))
-				this.workloadHandlers = (response.data && response.data.handlers) || []
+				const response = await axios.get(
+					generateUrl('/apps/procest/api/work-queue/workload'),
+				)
+				this.workloadHandlers =
+					(response.data && response.data.handlers) || []
 			} catch (e) {
 				this.workloadHandlers = []
 			}
@@ -230,7 +249,8 @@ export default {
 		 * @spec openspec/specs/my-work/spec.md
 		 */
 		openCase(row) {
-			const id = (row && (row.id || row.uuid))
+			const id =
+				(row && (row.id || row.uuid))
 				|| (row && row['@self'] && row['@self'].id)
 			if (id) {
 				this.$router.push({ name: 'CaseDetail', params: { id: String(id) } })

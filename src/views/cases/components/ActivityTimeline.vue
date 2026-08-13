@@ -12,10 +12,7 @@
 				:aria-label="t('procest', 'Add a note...')"
 				rows="2"
 				class="activity-timeline__note-input" />
-			<NcButton
-				type="primary"
-				:disabled="!noteText.trim()"
-				@click="addNote">
+			<NcButton type="primary" :disabled="!noteText.trim()" @click="addNote">
 				{{ t('procest', 'Add note') }}
 			</NcButton>
 		</div>
@@ -39,7 +36,9 @@
 				</div>
 				<div class="activity-timeline__meta">
 					<span class="activity-timeline__user">{{ entry.user }}</span>
-					<span class="activity-timeline__date">{{ formatEntryDate(entry.date) }}</span>
+					<span class="activity-timeline__date">{{
+						formatEntryDate(entry.date)
+					}}</span>
 				</div>
 			</div>
 		</div>
@@ -74,7 +73,9 @@ export default {
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		sortedActivity() {
-			return [...this.activity].sort((a, b) => new Date(b.date) - new Date(a.date))
+			return [...this.activity].sort(
+				(a, b) => new Date(b.date) - new Date(a.date),
+			)
 		},
 	},
 	methods: {

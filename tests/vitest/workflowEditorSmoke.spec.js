@@ -48,12 +48,23 @@ import { mount, flushPromises } from '@vue/test-utils'
 vi.mock('../../src/views/settings/components/WorkflowNode.vue', () => ({
 	default: {
 		name: 'WorkflowNode',
-		props: ['status', 'steps', 'position', 'selected', 'otherStatuses', 'outgoingTransitions'],
+		props: [
+			'status',
+			'steps',
+			'position',
+			'selected',
+			'otherStatuses',
+			'outgoingTransitions',
+		],
 		render() {
-			return h('div', {
-				class: 'workflow-node-stub',
-				'data-status-id': this.status.id,
-			}, this.status.name)
+			return h(
+				'div',
+				{
+					class: 'workflow-node-stub',
+					'data-status-id': this.status.id,
+				},
+				this.status.name,
+			)
 		},
 	},
 }))
@@ -65,7 +76,10 @@ vi.mock('../../src/views/settings/components/WorkflowTransitionArrow.vue', () =>
 	},
 }))
 vi.mock('../../src/views/settings/components/WorkflowPalette.vue', () => ({
-	default: { name: 'WorkflowPalette', render: () => h('div', { class: 'workflow-palette-stub' }) },
+	default: {
+		name: 'WorkflowPalette',
+		render: () => h('div', { class: 'workflow-palette-stub' }),
+	},
 }))
 vi.mock('../../src/views/settings/components/StepConfigPanel.vue', () => ({
 	default: {
@@ -86,9 +100,12 @@ vi.mock('../../src/views/settings/components/TransitionConfigPanel.vue', () => (
 // WorkflowNode from './components/WorkflowNode.vue'` etc. resolve to the
 // stubs (vi.mock factories are hoisted by Vitest, but importing the real
 // component-under-test afterwards keeps the intent explicit).
-const { default: WorkflowEditor } = await import('../../src/views/settings/WorkflowEditor.vue')
-const { default: WorkflowValidationBanner } = await import('../../src/views/settings/components/WorkflowValidationBanner.vue')
-const { validateWorkflowGraph } = await import('../../src/utils/workflowGraphValidation.js')
+const { default: WorkflowEditor } =
+	await import('../../src/views/settings/WorkflowEditor.vue')
+const { default: WorkflowValidationBanner } =
+	await import('../../src/views/settings/components/WorkflowValidationBanner.vue')
+const { validateWorkflowGraph } =
+	await import('../../src/utils/workflowGraphValidation.js')
 
 /**
  * Mount `WorkflowEditor` with its `workflowStore`/`objectStore` computed
@@ -117,14 +134,17 @@ const { validateWorkflowGraph } = await import('../../src/utils/workflowGraphVal
  * @return {object} The mounted wrapper.
  */
 function mountEditor(workflowStore, objectStore, props) {
-	return mount({
-		...WorkflowEditor,
-		computed: {
-			...WorkflowEditor.computed,
-			workflowStore: () => workflowStore,
-			objectStore: () => objectStore,
+	return mount(
+		{
+			...WorkflowEditor,
+			computed: {
+				...WorkflowEditor.computed,
+				workflowStore: () => workflowStore,
+				objectStore: () => objectStore,
+			},
 		},
-	}, { props })
+		{ props },
+	)
 }
 
 /**
@@ -142,7 +162,9 @@ function buildMockWorkflowStore(overrides = {}) {
 		parsedTransitions: [],
 		parsedNodePositions: {},
 		validationErrors: [],
-		validateWorkflow: vi.fn((statusNodes) => validateWorkflowGraph({ statusNodes, transitions: [] })),
+		validateWorkflow: vi.fn((statusNodes) =>
+			validateWorkflowGraph({ statusNodes, transitions: [] }),
+		),
 		getTemplate: vi.fn(() => Promise.resolve(null)),
 		updateNodePosition: vi.fn(),
 		addTransition: vi.fn(),
@@ -163,7 +185,9 @@ function buildMockObjectStore(overrides = {}) {
 	return {
 		fetchCollection: vi.fn(() => Promise.resolve([])),
 		fetchObject: vi.fn(() => Promise.resolve(null)),
-		saveObject: vi.fn((schema, data) => Promise.resolve({ id: 'new-id', ...data })),
+		saveObject: vi.fn((schema, data) =>
+			Promise.resolve({ id: 'new-id', ...data }),
+		),
 		deleteObject: vi.fn(() => Promise.resolve(true)),
 		...overrides,
 	}
@@ -176,11 +200,18 @@ describe('WorkflowEditor.vue — renders a loaded definition', () => {
 			{ id: 's2', name: 'Afgehandeld', isFinal: true },
 		]
 		const objectStore = buildMockObjectStore({
-			fetchCollection: vi.fn((schema) => (schema === 'statusType' ? Promise.resolve(statusNodes) : Promise.resolve([]))),
+			fetchCollection: vi.fn((schema) =>
+				schema === 'statusType'
+					? Promise.resolve(statusNodes)
+					: Promise.resolve([]),
+			),
 		})
 		const workflowStore = buildMockWorkflowStore()
 
-		const wrapper = mountEditor(workflowStore, objectStore, { caseTypeId: 'ct-1', templateId: 'tpl-1' })
+		const wrapper = mountEditor(workflowStore, objectStore, {
+			caseTypeId: 'ct-1',
+			templateId: 'tpl-1',
+		})
 
 		// mounted() -> loadData() is async; flush it.
 		//
@@ -210,11 +241,18 @@ describe('WorkflowEditor.vue — blocks save/publish on an invalid graph', () =>
 			{ id: 's2', name: 'In behandeling', isFinal: false },
 		]
 		const objectStore = buildMockObjectStore({
-			fetchCollection: vi.fn((schema) => (schema === 'statusType' ? Promise.resolve(statusNodes) : Promise.resolve([]))),
+			fetchCollection: vi.fn((schema) =>
+				schema === 'statusType'
+					? Promise.resolve(statusNodes)
+					: Promise.resolve([]),
+			),
 		})
 		const workflowStore = buildMockWorkflowStore()
 
-		const wrapper = mountEditor(workflowStore, objectStore, { caseTypeId: 'ct-1', templateId: null })
+		const wrapper = mountEditor(workflowStore, objectStore, {
+			caseTypeId: 'ct-1',
+			templateId: null,
+		})
 
 		await flushPromises()
 
@@ -241,17 +279,26 @@ describe('WorkflowEditor.vue — blocks save/publish on an invalid graph', () =>
 			{ id: 's2', name: 'Afgehandeld', isFinal: true },
 		]
 		const objectStore = buildMockObjectStore({
-			fetchCollection: vi.fn((schema) => (schema === 'statusType' ? Promise.resolve(statusNodes) : Promise.resolve([]))),
+			fetchCollection: vi.fn((schema) =>
+				schema === 'statusType'
+					? Promise.resolve(statusNodes)
+					: Promise.resolve([]),
+			),
 		})
 		const workflowStore = buildMockWorkflowStore({
 			parsedTransitions: [{ id: 't1', fromStatus: 's1', toStatus: 's2' }],
-			validateWorkflow: vi.fn((nodes) => validateWorkflowGraph({
-				statusNodes: nodes,
-				transitions: [{ id: 't1', fromStatus: 's1', toStatus: 's2' }],
-			})),
+			validateWorkflow: vi.fn((nodes) =>
+				validateWorkflowGraph({
+					statusNodes: nodes,
+					transitions: [{ id: 't1', fromStatus: 's1', toStatus: 's2' }],
+				}),
+			),
 		})
 
-		const wrapper = mountEditor(workflowStore, objectStore, { caseTypeId: 'ct-1', templateId: null })
+		const wrapper = mountEditor(workflowStore, objectStore, {
+			caseTypeId: 'ct-1',
+			templateId: null,
+		})
 
 		await flushPromises()
 
@@ -273,8 +320,16 @@ describe('WorkflowValidationBanner.vue — renders the blocking issues', () => {
 		const wrapper = mount(WorkflowValidationBanner, {
 			props: {
 				errors: [
-					{ type: 'error', code: 'NO_FINAL_STATUS', message: 'Workflow has no final status defined' },
-					{ type: 'warning', code: 'ORPHAN_NODE', message: 'Status "Losstaand" has no transitions' },
+					{
+						type: 'error',
+						code: 'NO_FINAL_STATUS',
+						message: 'Workflow has no final status defined',
+					},
+					{
+						type: 'warning',
+						code: 'ORPHAN_NODE',
+						message: 'Status "Losstaand" has no transitions',
+					},
 				],
 			},
 		})

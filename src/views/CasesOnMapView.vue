@@ -3,7 +3,12 @@
 		<div class="cases-on-map__sidebar">
 			<h2>{{ t('procest', 'Cases on map') }}</h2>
 			<p class="cases-on-map__summary">
-				{{ t('procest', 'Showing {filtered} of {total} located cases', { filtered: features.length, total: total }) }}
+				{{
+					t('procest', 'Showing {filtered} of {total} located cases', {
+						filtered: features.length,
+						total: total,
+					})
+				}}
 			</p>
 
 			<NcSelect
@@ -26,7 +31,12 @@
 
 			<div v-if="degraded" class="cases-on-map__notice">
 				<AlertIcon :size="20" />
-				<span>{{ t('procest', 'Map data could not be loaded. Showing what is available.') }}</span>
+				<span>{{
+					t(
+						'procest',
+						'Map data could not be loaded. Showing what is available.',
+					)
+				}}</span>
 			</div>
 		</div>
 
@@ -130,11 +140,13 @@ export default {
 		 * @return {Array<object>} CnMapWidget layer definitions.
 		 */
 		mapLayers() {
-			return [{
-				type: 'tile',
-				url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-				attribution: '© OpenStreetMap contributors',
-			}]
+			return [
+				{
+					type: 'tile',
+					url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+					attribution: '© OpenStreetMap contributors',
+				},
+			]
 		},
 		/**
 		 * Initial map centre — centroid of the plotted markers, else Berlin.
@@ -148,7 +160,11 @@ export default {
 			let n = 0
 			for (const feat of f) {
 				const c = feat.geometry && feat.geometry.coordinates
-				if (Array.isArray(c) && Number.isFinite(c[0]) && Number.isFinite(c[1])) {
+				if (
+					Array.isArray(c)
+					&& Number.isFinite(c[0])
+					&& Number.isFinite(c[1])
+				) {
 					sumLng += c[0]
 					sumLat += c[1]
 					n++
@@ -194,21 +210,41 @@ export default {
 				params.set('status', this.filterStatus)
 			}
 			try {
-				const url = generateUrl('/apps/openregister/api/objects/{register}/{schema}', { register: this.register, schema: this.schema })
-				const res = await fetch(url + '?' + params.toString(), { headers: { 'OCS-APIRequest': 'true' } })
+				const url = generateUrl(
+					'/apps/openregister/api/objects/{register}/{schema}',
+					{ register: this.register, schema: this.schema },
+				)
+				const res = await fetch(url + '?' + params.toString(), {
+					headers: { 'OCS-APIRequest': 'true' },
+				})
 				const json = await res.json()
-				const rows = Array.isArray(json) ? json : (json.results || json.data || [])
+				const rows = Array.isArray(json)
+					? json
+					: json.results || json.data || []
 				const points = []
 				for (const c of rows) {
 					let geo = c.geometry
 					if (typeof geo === 'string') {
-						try { geo = JSON.parse(geo) } catch { geo = null }
+						try {
+							geo = JSON.parse(geo)
+						} catch {
+							geo = null
+						}
 					}
 					const ll = this.firstLatLng(geo)
 					if (!ll) {
 						continue
 					}
-					points.push({ id: c.id, caseId: c.id, title: c.title, label: c.title, status: c.status, lat: ll.lat, lng: ll.lng, geometry: geo })
+					points.push({
+						id: c.id,
+						caseId: c.id,
+						title: c.title,
+						label: c.title,
+						status: c.status,
+						lat: ll.lat,
+						lng: ll.lng,
+						geometry: geo,
+					})
 				}
 				this.points = points
 				if (!this.filterCaseType && !this.filterStatus) {

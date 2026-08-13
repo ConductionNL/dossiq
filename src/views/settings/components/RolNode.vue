@@ -7,8 +7,14 @@
 		<div class="rol-node__row">
 			<span class="rol-node__name">{{ role.naam || role.id }}</span>
 			<span v-if="role.type" class="rol-node__pill">{{ role.type }}</span>
-			<span v-if="role.mandateLevel" class="rol-node__pill rol-node__pill--alt">{{ t('procest', 'level {n}', { n: role.mandateLevel }) }}</span>
-			<span v-if="role.afdeling" class="rol-node__pill">{{ role.afdeling }}</span>
+			<span
+				v-if="role.mandateLevel"
+				class="rol-node__pill rol-node__pill--alt"
+				>{{ t('procest', 'level {n}', { n: role.mandateLevel }) }}</span
+			>
+			<span v-if="role.afdeling" class="rol-node__pill">{{
+				role.afdeling
+			}}</span>
 			<span v-if="role.team" class="rol-node__pill">{{ role.team }}</span>
 			<div class="rol-node__actions">
 				<NcButton size="small" @click="onEdit(role)">

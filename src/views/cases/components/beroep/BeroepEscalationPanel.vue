@@ -5,7 +5,12 @@
 		<!-- Already escalated -->
 		<template v-if="linkedBeroepCase">
 			<NcNoteCard type="info">
-				{{ t('procest', 'This case has been escalated to an appeal (beroep) case.') }}
+				{{
+					t(
+						'procest',
+						'This case has been escalated to an appeal (beroep) case.',
+					)
+				}}
 			</NcNoteCard>
 			<NcButton @click="navigateToBeroep">
 				{{ t('procest', 'Go to appeal case') }}
@@ -14,30 +19,56 @@
 
 		<!-- Escalation available -->
 		<template v-else-if="canEscalate && !isReadOnly">
-			<p>{{ t('procest', 'If the objector disagrees with the decision, they can file an appeal (beroep) at the administrative court within 6 weeks.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'If the objector disagrees with the decision, they can file an appeal (beroep) at the administrative court within 6 weeks.',
+					)
+				}}
+			</p>
 
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
 					:model-value="voorzieningRequested"
-					@update:model-value="v => voorzieningRequested = v">
-					{{ t('procest', 'Voorlopige voorziening (interim relief) requested') }}
+					@update:model-value="(v) => (voorzieningRequested = v)">
+					{{
+						t(
+							'procest',
+							'Voorlopige voorziening (interim relief) requested',
+						)
+					}}
 				</NcCheckboxRadioSwitch>
 			</div>
 
 			<NcNoteCard v-if="voorzieningRequested" type="warning">
-				{{ t('procest', 'Urgent: the appellant has also requested interim relief. This may require expedited handling.') }}
+				{{
+					t(
+						'procest',
+						'Urgent: the appellant has also requested interim relief. This may require expedited handling.',
+					)
+				}}
 			</NcNoteCard>
 
 			<div class="beroep-escalation-panel__actions">
 				<NcButton type="primary" :disabled="escalating" @click="escalate">
-					{{ escalating ? t('procest', 'Creating...') : t('procest', 'Create Appeal Case') }}
+					{{
+						escalating
+							? t('procest', 'Creating...')
+							: t('procest', 'Create Appeal Case')
+					}}
 				</NcButton>
 			</div>
 		</template>
 
 		<template v-else>
 			<p class="section-empty">
-				{{ t('procest', 'Escalation to appeal is available after the decision on objection.') }}
+				{{
+					t(
+						'procest',
+						'Escalation to appeal is available after the decision on objection.',
+					)
+				}}
 			</p>
 		</template>
 	</div>

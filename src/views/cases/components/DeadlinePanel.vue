@@ -6,22 +6,32 @@
 
 		<div class="deadline-panel__grid">
 			<div class="deadline-panel__item">
-				<span class="deadline-panel__label">{{ t('procest', 'Started') }}</span>
+				<span class="deadline-panel__label">{{
+					t('procest', 'Started')
+				}}</span>
 				<span class="deadline-panel__value">{{ formattedStartDate }}</span>
 			</div>
 
 			<div class="deadline-panel__item">
-				<span class="deadline-panel__label">{{ t('procest', 'Deadline') }}</span>
+				<span class="deadline-panel__label">{{
+					t('procest', 'Deadline')
+				}}</span>
 				<span class="deadline-panel__value">{{ formattedDeadline }}</span>
 			</div>
 
 			<div class="deadline-panel__item">
-				<span class="deadline-panel__label">{{ t('procest', 'Processing time') }}</span>
-				<span class="deadline-panel__value">{{ formattedProcessingDeadline }}</span>
+				<span class="deadline-panel__label">{{
+					t('procest', 'Processing time')
+				}}</span>
+				<span class="deadline-panel__value">{{
+					formattedProcessingDeadline
+				}}</span>
 			</div>
 
 			<div class="deadline-panel__item">
-				<span class="deadline-panel__label">{{ t('procest', 'Days elapsed') }}</span>
+				<span class="deadline-panel__label">{{
+					t('procest', 'Days elapsed')
+				}}</span>
 				<span class="deadline-panel__value">{{ daysElapsed }}</span>
 			</div>
 		</div>
@@ -33,20 +43,25 @@
 
 		<!-- Extension info -->
 		<div class="deadline-panel__extension">
-			<span v-if="extensionAllowed && extensionCount === 0" class="deadline-panel__extension-info">
-				{{ t('procest', 'Extension: allowed (+{period})', { period: formattedExtensionPeriod }) }}
+			<span
+				v-if="extensionAllowed && extensionCount === 0"
+				class="deadline-panel__extension-info">
+				{{
+					t('procest', 'Extension: allowed (+{period})', {
+						period: formattedExtensionPeriod,
+					})
+				}}
 			</span>
-			<span v-else-if="extensionAllowed && extensionCount > 0" class="deadline-panel__extension-info">
+			<span
+				v-else-if="extensionAllowed && extensionCount > 0"
+				class="deadline-panel__extension-info">
 				{{ t('procest', 'Extension: already extended') }}
 			</span>
 			<span v-else class="deadline-panel__extension-info">
 				{{ t('procest', 'Extension: not allowed') }}
 			</span>
 
-			<NcButton
-				v-if="canExtend"
-				type="secondary"
-				@click="$emit('extend')">
+			<NcButton v-if="canExtend" type="secondary" @click="$emit('extend')">
 				{{ t('procest', 'Request Extension') }}
 			</NcButton>
 		</div>
@@ -55,7 +70,12 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
-import { formatDate, formatDeadlineCountdown, getDaysElapsed, formatDuration } from '../../../utils/caseHelpers.js'
+import {
+	formatDate,
+	formatDeadlineCountdown,
+	getDaysElapsed,
+	formatDuration,
+} from '../../../utils/caseHelpers.js'
 
 export default {
 	name: 'DeadlinePanel',
@@ -104,7 +124,9 @@ export default {
 		},
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		formattedProcessingDeadline() {
-			return this.processingDeadline ? formatDuration(this.processingDeadline) : '—'
+			return this.processingDeadline
+				? formatDuration(this.processingDeadline)
+				: '—'
 		},
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		formattedExtensionPeriod() {
@@ -120,7 +142,9 @@ export default {
 		},
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		canExtend() {
-			return this.extensionAllowed && this.extensionCount === 0 && !this.isFinal
+			return (
+				this.extensionAllowed && this.extensionCount === 0 && !this.isFinal
+			)
 		},
 	},
 }

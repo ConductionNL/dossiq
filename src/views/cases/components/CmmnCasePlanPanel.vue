@@ -50,7 +50,12 @@
 import { NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
 import CmmnPlanItemNode from './CmmnPlanItemNode.vue'
-import { fetchCasePlan, enableDiscretionaryItem, completeTask, terminateTask } from '../../../services/cmmnApi.js'
+import {
+	fetchCasePlan,
+	enableDiscretionaryItem,
+	completeTask,
+	terminateTask,
+} from '../../../services/cmmnApi.js'
 import { buildPlanTree } from '../../../utils/cmmnHelpers.js'
 
 export default {
@@ -117,7 +122,11 @@ export default {
 		 */
 		applyPlan(plan) {
 			this.items = Array.isArray(plan?.items) ? plan.items : []
-			this.enableableDiscretionary = Array.isArray(plan?.enableableDiscretionary) ? plan.enableableDiscretionary : []
+			this.enableableDiscretionary = Array.isArray(
+				plan?.enableableDiscretionary,
+			)
+				? plan.enableableDiscretionary
+				: []
 			this.milestones = plan?.milestones || {}
 		},
 		/**
@@ -126,7 +135,9 @@ export default {
 		 * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-004
 		 */
 		async onEnable(itemId) {
-			await this.runAction(itemId, () => enableDiscretionaryItem(this.caseId, itemId))
+			await this.runAction(itemId, () =>
+				enableDiscretionaryItem(this.caseId, itemId),
+			)
 		},
 		/**
 		 * @param {string} itemId Plan-item id
@@ -159,7 +170,10 @@ export default {
 				const plan = await call()
 				this.applyPlan(plan)
 			} catch (error) {
-				this.errorMessage = t('procest', 'This action could not be completed. The case plan may have changed — try reloading.')
+				this.errorMessage = t(
+					'procest',
+					'This action could not be completed. The case plan may have changed — try reloading.',
+				)
 				console.error('CMMN case-plan action failed:', error)
 			} finally {
 				this.busyItemId = null

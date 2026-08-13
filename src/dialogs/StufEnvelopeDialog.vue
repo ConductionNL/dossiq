@@ -18,11 +18,15 @@
 		@closing="$emit('close')">
 		<div class="stuf-audit-log__details">
 			<h4>{{ t('procest', 'Request envelope') }}</h4>
-			<pre class="stuf-audit-log__pre">{{ row.envelopeXml || t('procest', '(no envelope)') }}</pre>
+			<pre class="stuf-audit-log__pre">{{
+				row.envelopeXml || t('procest', '(no envelope)')
+			}}</pre>
 			<h4 v-if="row.responseEnvelopeXml">
 				{{ t('procest', 'Response envelope') }}
 			</h4>
-			<pre v-if="row.responseEnvelopeXml" class="stuf-audit-log__pre">{{ row.responseEnvelopeXml }}</pre>
+			<pre v-if="row.responseEnvelopeXml" class="stuf-audit-log__pre">{{
+				row.responseEnvelopeXml
+			}}</pre>
 			<h4 v-if="hasRetries(row)">
 				{{ t('procest', 'Retries') }}
 			</h4>
@@ -47,7 +51,9 @@
 			<h4 v-if="row.fout">
 				{{ t('procest', 'Error') }}
 			</h4>
-			<pre v-if="row.fout" class="stuf-audit-log__pre">{{ pretty(row.fout) }}</pre>
+			<pre v-if="row.fout" class="stuf-audit-log__pre">{{
+				pretty(row.fout)
+			}}</pre>
 		</div>
 	</NcDialog>
 </template>

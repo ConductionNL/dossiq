@@ -9,12 +9,21 @@
 				:key="decision.id"
 				class="decision-row">
 				<div class="decision-icon">
-					<span :class="decision.outcome === 'approved' ? 'icon--approved' : 'icon--default'">
-						{{ decision.outcome === 'approved' ? '&#10003;' : '&#9679;' }}
+					<span
+						:class="
+							decision.outcome === 'approved'
+								? 'icon--approved'
+								: 'icon--default'
+						">
+						{{
+							decision.outcome === 'approved' ? '&#10003;' : '&#9679;'
+						}}
 					</span>
 				</div>
 				<div class="decision-info">
-					<span class="decision-title">{{ decision.title || decision.name || '---' }}</span>
+					<span class="decision-title">{{
+						decision.title || decision.name || '---'
+					}}</span>
 					<span v-if="decision.outcome" class="decision-outcome">
 						{{ decision.outcome }}
 					</span>

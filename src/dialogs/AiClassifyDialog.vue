@@ -15,25 +15,34 @@
 
 			<div v-else-if="result" class="ai-classify-dialog__result">
 				<div class="ai-classify-dialog__header">
-					<AiConfidenceBadge :confidence="result.confidence || 0" size="medium" />
+					<AiConfidenceBadge
+						:confidence="result.confidence || 0"
+						size="medium" />
 				</div>
 
 				<div class="form-group">
-					<label for="ai-classify-document-type">{{ t('procest', 'Suggested document type') }}</label>
+					<label for="ai-classify-document-type">{{
+						t('procest', 'Suggested document type')
+					}}</label>
 					<NcTextField
 						id="ai-classify-document-type"
 						:model-value="modifiedType"
-						@update:model-value="v => modifiedType = v" />
+						@update:model-value="(v) => (modifiedType = v)" />
 				</div>
 
 				<div v-if="result.metadata" class="ai-classify-dialog__metadata">
 					<h4>{{ t('procest', 'Extracted metadata') }}</h4>
-					<div v-for="(value, key) in result.metadata" :key="key" class="form-group">
+					<div
+						v-for="(value, key) in result.metadata"
+						:key="key"
+						class="form-group">
 						<label :for="`ai-classify-metadata-${key}`">{{ key }}</label>
 						<NcTextField
 							:id="`ai-classify-metadata-${key}`"
 							:model-value="modifiedMetadata[key] || value"
-							@update:model-value="v => modifiedMetadata[key] = v" />
+							@update:model-value="
+								(v) => (modifiedMetadata[key] = v)
+							" />
 					</div>
 				</div>
 
@@ -51,14 +60,27 @@
 </template>
 
 <script>
-import { NcDialog, NcButton, NcTextField, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import {
+	NcDialog,
+	NcButton,
+	NcTextField,
+	NcLoadingIcon,
+	NcNoteCard,
+} from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
 import { classifyDocument } from '../services/aiApi.js'
 import AiConfidenceBadge from '../views/cases/components/AiConfidenceBadge.vue'
 
 export default {
 	name: 'AiClassifyDialog',
-	components: { NcDialog, NcButton, NcTextField, NcLoadingIcon, NcNoteCard, AiConfidenceBadge },
+	components: {
+		NcDialog,
+		NcButton,
+		NcTextField,
+		NcLoadingIcon,
+		NcNoteCard,
+		AiConfidenceBadge,
+	},
 	props: {
 		caseId: { type: String, required: true },
 		documentId: { type: String, required: true },
@@ -95,7 +117,8 @@ export default {
 				this.modifiedType = this.result.documentType || ''
 				this.modifiedMetadata = { ...(this.result.metadata || {}) }
 			} catch (e) {
-				this.error = e.response?.data?.error || t('procest', 'Classification failed')
+				this.error =
+					e.response?.data?.error || t('procest', 'Classification failed')
 			} finally {
 				this.loading = false
 			}

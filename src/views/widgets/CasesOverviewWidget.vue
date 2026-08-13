@@ -1,5 +1,6 @@
 <template>
-	<CnDataTable :rows="items"
+	<CnDataTable
+		:rows="items"
 		:columns="columns"
 		:loading="loading"
 		hide-header
@@ -7,7 +8,8 @@
 		:empty-text="t('procest', 'No cases found')"
 		@row-click="onRowClick">
 		<template #footer>
-			<a class="cn-data-table__view-all"
+			<a
+				class="cn-data-table__view-all"
 				:href="viewAllUrl"
 				@click.prevent="onViewAll">
 				{{ t('procest', 'View all') }} →
@@ -60,10 +62,11 @@ export default {
 		items() {
 			return this.cases.map((caseObj) => ({
 				id: caseObj.id,
-				mainText: caseObj.title || caseObj.identifier || t('procest', 'Unnamed case'),
-				subText: caseObj.identifier
-					? `#${caseObj.identifier}`
-					: '',
+				mainText:
+					caseObj.title
+					|| caseObj.identifier
+					|| t('procest', 'Unnamed case'),
+				subText: caseObj.identifier ? `#${caseObj.identifier}` : '',
 				targetUrl: generateUrl(`/apps/procest/cases/${caseObj.id}`),
 			}))
 		},

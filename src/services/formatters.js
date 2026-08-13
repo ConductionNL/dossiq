@@ -95,7 +95,7 @@ function lookupRelatedName(type, uuid) {
 	const hit = (collection || []).find(
 		(o) => o.id === uuid || (o['@self'] && o['@self'].id === uuid),
 	)
-	return hit ? (hit.title || hit.name || uuid) : uuid
+	return hit ? hit.title || hit.name || uuid : uuid
 }
 
 const VOORSTEL_STATUS_LABELS = {
@@ -141,10 +141,12 @@ function voorstelSteps(row) {
  */
 function rowUpdated(row) {
 	if (!row) return undefined
-	return (row['@self'] && row['@self'].updated)
+	return (
+		(row['@self'] && row['@self'].updated)
 		|| (row._self && row._self.updated)
 		|| row.updatedAt
 		|| undefined
+	)
 }
 
 export default {
@@ -154,7 +156,8 @@ export default {
 	 * @param {string} value The raw `type`.
 	 * @return {string}
 	 */
-	voorstelType: (value) => t('procest', VOORSTEL_TYPE_LABELS[value] || value || '-'),
+	voorstelType: (value) =>
+		t('procest', VOORSTEL_TYPE_LABELS[value] || value || '-'),
 
 	/**
 	 * Human label for a voorstel `status` enum value (also rendered as a
@@ -163,7 +166,8 @@ export default {
 	 * @param {string} value The raw `status`.
 	 * @return {string}
 	 */
-	voorstelStatus: (value) => t('procest', VOORSTEL_STATUS_LABELS[value] || value || '-'),
+	voorstelStatus: (value) =>
+		t('procest', VOORSTEL_STATUS_LABELS[value] || value || '-'),
 
 	/**
 	 * `currentStep / totalSteps` progress for a voorstel's parafeerroute.
@@ -189,7 +193,7 @@ export default {
 		const steps = voorstelSteps(row)
 		if (!steps.length || !row || !row.currentStep) return '-'
 		const current = steps.find((s) => s.order === row.currentStep)
-		return current ? (current.label || current.actor || '-') : '-'
+		return current ? current.label || current.actor || '-' : '-'
 	},
 
 	/**
@@ -202,7 +206,9 @@ export default {
 	voorstelDaysInStep: (value, row) => {
 		const updated = rowUpdated(row)
 		if (!updated) return '-'
-		const days = Math.floor((Date.now() - new Date(updated).getTime()) / 86400000)
+		const days = Math.floor(
+			(Date.now() - new Date(updated).getTime()) / 86400000,
+		)
 		return `${days}d`
 	},
 

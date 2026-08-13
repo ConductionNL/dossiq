@@ -1,7 +1,10 @@
 <template>
 	<div class="complaint-detail">
 		<header class="complaint-detail__header">
-			<button type="button" class="complaint-detail__back" @click="$emit('close')">
+			<button
+				type="button"
+				class="complaint-detail__back"
+				@click="$emit('close')">
 				← {{ t('procest', 'Back') }}
 			</button>
 			<h2>{{ complaint.title || t('procest', 'Complaint detail') }}</h2>
@@ -32,7 +35,8 @@
 				<h3>{{ t('procest', 'Hearings') }}</h3>
 				<ul v-if="hearings.length">
 					<li v-for="h in hearings" :key="h.id">
-						{{ h.format }} — {{ h.scheduledAt }} — {{ h.outcome || t('procest', 'pending') }}
+						{{ h.format }} — {{ h.scheduledAt }} —
+						{{ h.outcome || t('procest', 'pending') }}
 					</li>
 				</ul>
 				<p v-else>
@@ -107,10 +111,14 @@ export default {
 		async fetch() {
 			this.loading = true
 			try {
-				const base = OC.generateUrl('/apps/procest/api/complaints/' + this.complaintId)
+				const base = OC.generateUrl(
+					'/apps/procest/api/complaints/' + this.complaintId,
+				)
 				const [detailRes, hearingsRes] = await Promise.all([
 					fetch(base, { headers: { requesttoken: OC.requestToken } }),
-					fetch(base + '/hearings', { headers: { requesttoken: OC.requestToken } }),
+					fetch(base + '/hearings', {
+						headers: { requesttoken: OC.requestToken },
+					}),
 				])
 				if (detailRes.ok) {
 					this.complaint = await detailRes.json()

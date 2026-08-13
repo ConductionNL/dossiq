@@ -48,14 +48,14 @@ export function resolveSortConfig(mode) {
  */
 export function urgencyChipClass(tier) {
 	switch (tier) {
-	case 'overdue':
-		return 'mywork-card__urgency-chip--overdue'
-	case 'critical':
-		return 'mywork-card__urgency-chip--critical'
-	case 'warning':
-		return 'mywork-card__urgency-chip--warning'
-	default:
-		return ''
+		case 'overdue':
+			return 'mywork-card__urgency-chip--overdue'
+		case 'critical':
+			return 'mywork-card__urgency-chip--critical'
+		case 'warning':
+			return 'mywork-card__urgency-chip--warning'
+		default:
+			return ''
 	}
 }
 
@@ -70,7 +70,7 @@ export function urgencyChipClass(tier) {
  */
 export function buildUrgencyMap(items) {
 	const map = {}
-	for (const item of (items || [])) {
+	for (const item of items || []) {
 		if (!item || item.itemType !== 'case' || !item.id) {
 			continue
 		}

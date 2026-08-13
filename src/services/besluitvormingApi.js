@@ -23,7 +23,10 @@ const base = (path) => generateUrl('/apps/procest/api/besluitvorming' + path)
  * @return {Promise<object>} The updated agenda item.
  */
 export async function addToAgenda(caseId, behandeling, order) {
-	const response = await axios.post(base('/cases/' + caseId + '/agenda'), { behandeling, order })
+	const response = await axios.post(base('/cases/' + caseId + '/agenda'), {
+		behandeling,
+		order,
+	})
 	return response.data
 }
 
@@ -36,7 +39,10 @@ export async function addToAgenda(caseId, behandeling, order) {
  * @return {Promise<object>} The confirmation summary.
  */
 export async function confirmAgenda(vergaderingId, caseIds, meetingDate) {
-	const response = await axios.put(base('/cases/' + vergaderingId + '/agenda'), { caseIds, meetingDate })
+	const response = await axios.put(base('/cases/' + vergaderingId + '/agenda'), {
+		caseIds,
+		meetingDate,
+	})
 	return response.data
 }
 
@@ -71,6 +77,8 @@ export async function publishBesluit(caseId) {
  */
 export async function mandaatCheck(caseId, signingUserId) {
 	const params = signingUserId ? { signingUserId } : {}
-	const response = await axios.get(base('/cases/' + caseId + '/mandaat-check'), { params })
+	const response = await axios.get(base('/cases/' + caseId + '/mandaat-check'), {
+		params,
+	})
 	return response.data
 }

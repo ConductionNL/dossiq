@@ -2,7 +2,10 @@
 	<div class="transition-config-panel">
 		<div class="transition-config-panel__header">
 			<h4>{{ t('procest', 'Transition Configuration') }}</h4>
-			<NcButton type="tertiary" :aria-label="t('procest', 'Close transition configuration')" @click="$emit('close')">
+			<NcButton
+				type="tertiary"
+				:aria-label="t('procest', 'Close transition configuration')"
+				@click="$emit('close')">
 				<template #icon>
 					<CloseIcon :size="20" />
 				</template>
@@ -12,19 +15,23 @@
 		<div class="transition-config-panel__body">
 			<!-- Label -->
 			<div class="transition-config-panel__field">
-				<label for="transition-config-panel-label">{{ t('procest', 'Label') }}</label>
+				<label for="transition-config-panel-label">{{
+					t('procest', 'Label')
+				}}</label>
 				<input
 					id="transition-config-panel-label"
 					v-model="localTransition.label"
 					type="text"
 					class="transition-config-panel__input"
 					:placeholder="t('procest', 'e.g. Goedkeuren, Afwijzen')"
-					@input="emitUpdate">
+					@input="emitUpdate" />
 			</div>
 
 			<!-- Allowed Roles -->
 			<div class="transition-config-panel__field">
-				<label>{{ t('procest', 'Allowed roles (empty = all roles)') }}</label>
+				<label>{{
+					t('procest', 'Allowed roles (empty = all roles)')
+				}}</label>
 				<div
 					v-for="role in roleTypes"
 					:key="role.id"
@@ -33,7 +40,7 @@
 						:id="'role-' + role.id"
 						type="checkbox"
 						:checked="localAllowedRoles.includes(role.id)"
-						@change="toggleRole(role.id)">
+						@change="toggleRole(role.id)" />
 					<label :for="'role-' + role.id">{{ role.name }}</label>
 				</div>
 			</div>
@@ -71,7 +78,7 @@
 						:aria-label="t('procest', 'Field name (e.g. result)')"
 						:placeholder="t('procest', 'Field name (e.g. result)')"
 						class="transition-config-panel__input"
-						@input="emitUpdate">
+						@input="emitUpdate" />
 
 					<!-- Document type for requiredDocument guard -->
 					<select
@@ -116,9 +123,7 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton
-					type="secondary"
-					@click="addGuard">
+				<NcButton type="secondary" @click="addGuard">
 					{{ t('procest', 'Add guard') }}
 				</NcButton>
 			</div>
@@ -159,21 +164,35 @@
 						<input
 							v-model="action.recipient"
 							type="text"
-							:aria-label="t('procest', 'Recipient (role name or email)')"
-							:placeholder="t('procest', 'Recipient (role name or email)')"
+							:aria-label="
+								t('procest', 'Recipient (role name or email)')
+							"
+							:placeholder="
+								t('procest', 'Recipient (role name or email)')
+							"
 							class="transition-config-panel__input"
-							@input="emitUpdate">
+							@input="emitUpdate" />
 						<input
 							v-model="action.subject"
 							type="text"
 							:aria-label="t('procest', 'Subject template')"
 							:placeholder="t('procest', 'Subject template')"
 							class="transition-config-panel__input"
-							@input="emitUpdate">
+							@input="emitUpdate" />
 						<textarea
 							v-model="action.template"
-							:aria-label="t('procest', 'Email template (use {{case.title}}, {{transition.label}})')"
-							:placeholder="t('procest', 'Email template (use {{case.title}}, {{transition.label}})')"
+							:aria-label="
+								t(
+									'procest',
+									'Email template (use {{case.title}}, {{transition.label}})',
+								)
+							"
+							:placeholder="
+								t(
+									'procest',
+									'Email template (use {{case.title}}, {{transition.label}})',
+								)
+							"
 							class="transition-config-panel__textarea"
 							rows="3"
 							@input="emitUpdate" />
@@ -187,14 +206,14 @@
 							:aria-label="t('procest', 'Task title')"
 							:placeholder="t('procest', 'Task title')"
 							class="transition-config-panel__input"
-							@input="emitUpdate">
+							@input="emitUpdate" />
 						<input
 							v-model="action.description"
 							type="text"
 							:aria-label="t('procest', 'Task description')"
 							:placeholder="t('procest', 'Task description')"
 							class="transition-config-panel__input"
-							@input="emitUpdate">
+							@input="emitUpdate" />
 					</template>
 
 					<!-- webhook config -->
@@ -205,7 +224,7 @@
 							:aria-label="t('procest', 'Webhook URL')"
 							:placeholder="t('procest', 'Webhook URL')"
 							class="transition-config-panel__input"
-							@input="emitUpdate">
+							@input="emitUpdate" />
 					</template>
 
 					<!-- setField config -->
@@ -216,14 +235,14 @@
 							:aria-label="t('procest', 'Field name')"
 							:placeholder="t('procest', 'Field name')"
 							class="transition-config-panel__input"
-							@input="emitUpdate">
+							@input="emitUpdate" />
 						<input
 							v-model="action.value"
 							type="text"
 							:aria-label="t('procest', 'Value')"
 							:placeholder="t('procest', 'Value')"
 							class="transition-config-panel__input"
-							@input="emitUpdate">
+							@input="emitUpdate" />
 					</template>
 
 					<!-- notify config -->
@@ -234,7 +253,7 @@
 							:aria-label="t('procest', 'Notification message')"
 							:placeholder="t('procest', 'Notification message')"
 							class="transition-config-panel__input"
-							@input="emitUpdate">
+							@input="emitUpdate" />
 					</template>
 
 					<NcButton
@@ -246,18 +265,14 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton
-					type="secondary"
-					@click="addAction">
+				<NcButton type="secondary" @click="addAction">
 					{{ t('procest', 'Add action') }}
 				</NcButton>
 			</div>
 
 			<!-- Delete transition -->
 			<div class="transition-config-panel__danger">
-				<NcButton
-					type="error"
-					@click="onDelete">
+				<NcButton type="error" @click="onDelete">
 					{{ t('procest', 'Delete transition') }}
 				</NcButton>
 			</div>
@@ -321,7 +336,11 @@ export default {
 		parseGuards(guards) {
 			if (!guards) return []
 			if (typeof guards === 'string') {
-				try { return JSON.parse(guards) } catch { return [] }
+				try {
+					return JSON.parse(guards)
+				} catch {
+					return []
+				}
 			}
 			return [...guards]
 		},
@@ -333,7 +352,11 @@ export default {
 		parseActions(actions) {
 			if (!actions) return []
 			if (typeof actions === 'string') {
-				try { return JSON.parse(actions) } catch { return [] }
+				try {
+					return JSON.parse(actions)
+				} catch {
+					return []
+				}
 			}
 			return [...actions]
 		},
@@ -394,7 +417,11 @@ export default {
 
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		onDelete() {
-			if (confirm(t('procest', 'Are you sure you want to delete this transition?'))) {
+			if (
+				confirm(
+					t('procest', 'Are you sure you want to delete this transition?'),
+				)
+			) {
 				this.$emit('delete', this.transition.id)
 			}
 		},

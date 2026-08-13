@@ -11,16 +11,25 @@
 			{{ t('procest', 'No messages sent via Mijn Overheid.') }}
 		</div>
 
-		<div v-for="msg in messages" :key="msg.uuid || msg.id" class="berichtenbox-tab__message">
+		<div
+			v-for="msg in messages"
+			:key="msg.uuid || msg.id"
+			class="berichtenbox-tab__message">
 			<div class="berichtenbox-tab__message-info">
 				<strong>{{ msg.subject }}</strong>
-				<span class="berichtenbox-tab__status" :class="`status--${msg.status}`">
+				<span
+					class="berichtenbox-tab__status"
+					:class="`status--${msg.status}`">
 					{{ statusLabel(msg.status) }}
 				</span>
 			</div>
 			<div class="berichtenbox-tab__message-meta">
-				<small>{{ t('procest', 'Sent') }}: {{ formatDate(msg.sentAt) }}</small>
-				<small v-if="msg.readAt">{{ t('procest', 'Read') }}: {{ formatDate(msg.readAt) }}</small>
+				<small
+					>{{ t('procest', 'Sent') }}: {{ formatDate(msg.sentAt) }}</small
+				>
+				<small v-if="msg.readAt"
+					>{{ t('procest', 'Read') }}: {{ formatDate(msg.readAt) }}</small
+				>
 			</div>
 		</div>
 
@@ -70,7 +79,10 @@ export default {
 		 */
 		formatDate(dt) {
 			if (!dt) return '-'
-			return new Date(dt).toLocaleString('nl-NL', { dateStyle: 'short', timeStyle: 'short' })
+			return new Date(dt).toLocaleString('nl-NL', {
+				dateStyle: 'short',
+				timeStyle: 'short',
+			})
 		},
 		/**
 		 * @param status
@@ -115,18 +127,29 @@ export default {
 	font-weight: 600;
 }
 
-.status--sent { color: var(--color-primary); }
+.status--sent {
+	color: var(--color-primary);
+}
 
-.status--read { color: var(--color-success); }
+.status--read {
+	color: var(--color-success);
+}
 
-.status--failed { color: var(--color-error); }
+.status--failed {
+	color: var(--color-error);
+}
 
-.status--unread_flagged { color: var(--color-warning); }
+.status--unread_flagged {
+	color: var(--color-warning);
+}
 
 .berichtenbox-tab__message-meta small {
 	display: block;
 	color: var(--color-text-maxcontrast);
 }
 
-.berichtenbox-tab__empty { color: var(--color-text-maxcontrast); font-style: italic; }
+.berichtenbox-tab__empty {
+	color: var(--color-text-maxcontrast);
+	font-style: italic;
+}
 </style>

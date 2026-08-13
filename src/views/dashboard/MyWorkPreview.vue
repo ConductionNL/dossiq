@@ -35,16 +35,28 @@
 				@click="$emit('click-item', item.type, item.id)"
 				@keydown.enter="$emit('click-item', item.type, item.id)"
 				@keydown.space.prevent="$emit('click-item', item.type, item.id)">
-				<span class="my-work-preview__badge" :class="`my-work-preview__badge--${item.type}`">
-					{{ item.type === 'case' ? t('procest', 'CASE') : t('procest', 'TASK') }}
+				<span
+					class="my-work-preview__badge"
+					:class="`my-work-preview__badge--${item.type}`">
+					{{
+						item.type === 'case'
+							? t('procest', 'CASE')
+							: t('procest', 'TASK')
+					}}
 				</span>
 				<div class="my-work-preview__info">
 					<span class="my-work-preview__item-title">{{ item.title }}</span>
-					<span v-if="item.reference" class="my-work-preview__reference">{{ item.reference }}</span>
+					<span v-if="item.reference" class="my-work-preview__reference">{{
+						item.reference
+					}}</span>
 				</div>
 				<div class="my-work-preview__deadline">
-					<span :class="{ 'my-work-preview__overdue': item.isOverdue }">{{ item.daysText }}</span>
-					<span v-if="item.priority === 'urgent' || item.priority === 'high'" class="my-work-preview__priority">
+					<span :class="{ 'my-work-preview__overdue': item.isOverdue }">{{
+						item.daysText
+					}}</span>
+					<span
+						v-if="item.priority === 'urgent' || item.priority === 'high'"
+						class="my-work-preview__priority">
 						{{ item.priority === 'urgent' ? '!!' : '!' }}
 					</span>
 				</div>
@@ -199,9 +211,15 @@ export default {
 }
 
 @keyframes shimmer {
-	0% { opacity: 0.6; }
-	50% { opacity: 1; }
-	100% { opacity: 0.6; }
+	0% {
+		opacity: 0.6;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0.6;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {

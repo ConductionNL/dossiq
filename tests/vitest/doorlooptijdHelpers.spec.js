@@ -57,16 +57,27 @@ describe('parseDurationToDays', () => {
 
 describe('getProcessingDays', () => {
 	it('counts whole calendar days between start and end', () => {
-		expect(getProcessingDays({ startDate: '2026-01-01', endDate: '2026-01-31' })).toBe(30)
-		expect(getProcessingDays({ startDate: '2026-03-01', endDate: '2026-03-01' })).toBe(0)
+		expect(
+			getProcessingDays({ startDate: '2026-01-01', endDate: '2026-01-31' }),
+		).toBe(30)
+		expect(
+			getProcessingDays({ startDate: '2026-03-01', endDate: '2026-03-01' }),
+		).toBe(0)
 	})
 
 	it('ignores the time-of-day component (normalised to midnight)', () => {
-		expect(getProcessingDays({ startDate: '2026-01-01T23:59:00', endDate: '2026-01-03T00:01:00' })).toBe(2)
+		expect(
+			getProcessingDays({
+				startDate: '2026-01-01T23:59:00',
+				endDate: '2026-01-03T00:01:00',
+			}),
+		).toBe(2)
 	})
 
 	it('floors negative ranges to 0', () => {
-		expect(getProcessingDays({ startDate: '2026-02-10', endDate: '2026-02-01' })).toBe(0)
+		expect(
+			getProcessingDays({ startDate: '2026-02-10', endDate: '2026-02-01' }),
+		).toBe(0)
 	})
 
 	it('returns null when a date is missing', () => {
@@ -124,14 +135,14 @@ describe('computeSlaCompliance', () => {
 		expect(r.excluded).toBe(2) // no-target + no-end
 		expect(r.overallRate).toBe(67) // round(2/3 * 100)
 
-		const ct1 = r.byType.find(b => b.id === 'ct1')
+		const ct1 = r.byType.find((b) => b.id === 'ct1')
 		expect(ct1.total).toBe(2)
 		expect(ct1.withinSla).toBe(1)
 		expect(ct1.rate).toBe(50)
 		expect(ct1.avgActual).toBe(30) // round((20 + 40) / 2)
 		expect(ct1.targetDays).toBe(30)
 
-		const ct2 = r.byType.find(b => b.id === 'ct2')
+		const ct2 = r.byType.find((b) => b.id === 'ct2')
 		expect(ct2.rate).toBe(100)
 		expect(ct2.avgActual).toBe(5)
 	})
@@ -155,7 +166,7 @@ describe('computeProcessingTimeDistribution', () => {
 			{ caseType: 'ct1', startDate: '2026-01-01', endDate: '2026-02-27' }, // 57 -> 57+
 		]
 		const r = computeProcessingTimeDistribution(cases, caseTypes)
-		const counts = Object.fromEntries(r.bins.map(b => [b.label, b.count]))
+		const counts = Object.fromEntries(r.bins.map((b) => [b.label, b.count]))
 		expect(counts['0-7']).toBe(2)
 		expect(counts['8-14']).toBe(1)
 		expect(counts['57+']).toBe(1)
@@ -236,7 +247,7 @@ describe('getAtRiskCases', () => {
 			{ id: 'c', caseType: 'ct1', startDate: daysAgo(2) }, // 20% used, healthy
 		]
 		const r = getAtRiskCases(open, caseTypes, 0.25)
-		const ids = r.map(x => x.id)
+		const ids = r.map((x) => x.id)
 		expect(ids).toContain('a')
 		expect(ids).toContain('b')
 		expect(ids).not.toContain('c')
@@ -290,16 +301,32 @@ describe('computePerformanceTable', () => {
 	it('derives status from compliance thresholds (>=90 good, >=70 warning, else critical)', () => {
 		const cases = [
 			// good: 10/10 within -> 100%
-			...Array.from({ length: 10 }, () => ({ caseType: 'good', startDate: '2026-01-01', endDate: '2026-01-11' })), // 10d
+			...Array.from({ length: 10 }, () => ({
+				caseType: 'good',
+				startDate: '2026-01-01',
+				endDate: '2026-01-11',
+			})), // 10d
 			// warn: 8 within + 2 breach -> 80%
-			...Array.from({ length: 8 }, () => ({ caseType: 'warn', startDate: '2026-01-01', endDate: '2026-01-11' })), // 10d within
-			...Array.from({ length: 2 }, () => ({ caseType: 'warn', startDate: '2026-01-01', endDate: '2026-03-01' })), // 59d breach
+			...Array.from({ length: 8 }, () => ({
+				caseType: 'warn',
+				startDate: '2026-01-01',
+				endDate: '2026-01-11',
+			})), // 10d within
+			...Array.from({ length: 2 }, () => ({
+				caseType: 'warn',
+				startDate: '2026-01-01',
+				endDate: '2026-03-01',
+			})), // 59d breach
 			// crit: 1 within + 4 breach -> 20%
 			{ caseType: 'crit', startDate: '2026-01-01', endDate: '2026-01-11' },
-			...Array.from({ length: 4 }, () => ({ caseType: 'crit', startDate: '2026-01-01', endDate: '2026-03-01' })),
+			...Array.from({ length: 4 }, () => ({
+				caseType: 'crit',
+				startDate: '2026-01-01',
+				endDate: '2026-03-01',
+			})),
 		]
 		const rows = computePerformanceTable(cases, caseTypes)
-		const byId = Object.fromEntries(rows.map(r => [r.id, r]))
+		const byId = Object.fromEntries(rows.map((r) => [r.id, r]))
 
 		expect(byId.good.complianceRate).toBe(100)
 		expect(byId.good.status).toBe('good')
@@ -321,7 +348,7 @@ describe('computePerformanceTable', () => {
 	it('includes case types with zero completed cases (null averages)', () => {
 		const rows = computePerformanceTable([], caseTypes)
 		expect(rows).toHaveLength(4)
-		expect(rows.every(r => r.total === 0)).toBe(true)
-		expect(rows.every(r => r.avgActualDays === null)).toBe(true)
+		expect(rows.every((r) => r.total === 0)).toBe(true)
+		expect(rows.every((r) => r.avgActualDays === null)).toBe(true)
 	})
 })

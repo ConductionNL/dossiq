@@ -26,7 +26,11 @@ const REPORT_URL = generateUrl('/apps/procest/api/reports/process-mining')
  * @param {string|null} [options.caseType] CaseType UUID or slug to scope on.
  * @return {Promise<object>} Report body { period, caseTypeFilter, caseTypes, throughputTrend }.
  */
-export async function fetchProcessMiningReport({ from = null, to = null, caseType = null } = {}) {
+export async function fetchProcessMiningReport({
+	from = null,
+	to = null,
+	caseType = null,
+} = {}) {
 	const params = {}
 	if (from) {
 		params.from = from

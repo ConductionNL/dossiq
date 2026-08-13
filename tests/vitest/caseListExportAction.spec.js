@@ -27,13 +27,18 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { buildCaseExportUrl, CASE_EXPORT_ENDPOINT } from '../../src/utils/caseExportHelpers.js'
+import {
+	buildCaseExportUrl,
+	CASE_EXPORT_ENDPOINT,
+} from '../../src/utils/caseExportHelpers.js'
 
 const EXPECTED_BASE = '/index.php/apps/openregister/api/objects/procest/case/export'
 
 describe('CASE_EXPORT_ENDPOINT', () => {
 	it('points at the (procest, case) OpenRegister export leaf', () => {
-		expect(CASE_EXPORT_ENDPOINT).toBe('/apps/openregister/api/objects/procest/case/export')
+		expect(CASE_EXPORT_ENDPOINT).toBe(
+			'/apps/openregister/api/objects/procest/case/export',
+		)
 	})
 })
 
@@ -77,11 +82,15 @@ describe('buildCaseExportUrl', () => {
 	})
 
 	it('skips null/undefined query values', () => {
-		const url = buildCaseExportUrl('csv', { status: 'open', assignee: null, deadline: undefined })
+		const url = buildCaseExportUrl('csv', {
+			status: 'open',
+			assignee: null,
+			deadline: undefined,
+		})
 		expect(url).toBe(`${EXPECTED_BASE}?format=csv&status=open`)
 	})
 
-	it('falls back to {} when query is not provided (mirrors the component\'s $route-less guard)', () => {
+	it("falls back to {} when query is not provided (mirrors the component's $route-less guard)", () => {
 		const query = undefined
 		const url = buildCaseExportUrl('csv', query ?? {})
 		expect(url).toBe(`${EXPECTED_BASE}?format=csv`)

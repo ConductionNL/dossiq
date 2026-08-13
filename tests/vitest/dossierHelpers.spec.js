@@ -25,11 +25,15 @@ describe('confidentialityOrdinal', () => {
 	it('orders the hierarchy lowest to highest', () => {
 		expect(confidentialityOrdinal('openbaar')).toBe(0)
 		expect(confidentialityOrdinal('intern')).toBe(2)
-		expect(confidentialityOrdinal('zeer_geheim')).toBe(CONFIDENTIALITY_HIERARCHY.length - 1)
+		expect(confidentialityOrdinal('zeer_geheim')).toBe(
+			CONFIDENTIALITY_HIERARCHY.length - 1,
+		)
 	})
 
 	it('fails closed on unknown levels (most restrictive)', () => {
-		expect(confidentialityOrdinal('bogus')).toBe(CONFIDENTIALITY_HIERARCHY.length - 1)
+		expect(confidentialityOrdinal('bogus')).toBe(
+			CONFIDENTIALITY_HIERARCHY.length - 1,
+		)
 		expect(confidentialityOrdinal('')).toBe(CONFIDENTIALITY_HIERARCHY.length - 1)
 	})
 })
@@ -82,7 +86,9 @@ describe('groupByType', () => {
 			{ id: '3', informatieobjecttype: 'Aanvraag' },
 		])
 		expect(groups).toHaveLength(2)
-		const byType = Object.fromEntries(groups.map(g => [g.informatieobjecttype, g.count]))
+		const byType = Object.fromEntries(
+			groups.map((g) => [g.informatieobjecttype, g.count]),
+		)
 		expect(byType.Advies).toBe(2)
 		expect(byType.Aanvraag).toBe(1)
 	})

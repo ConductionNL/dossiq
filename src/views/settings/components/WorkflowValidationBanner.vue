@@ -1,7 +1,5 @@
 <template>
-	<div
-		v-if="errors.length > 0"
-		class="workflow-validation">
+	<div v-if="errors.length > 0" class="workflow-validation">
 		<div
 			v-for="(error, index) in errors"
 			:key="index"
@@ -12,9 +10,7 @@
 			</span>
 			<span class="workflow-validation__message">{{ error.message }}</span>
 		</div>
-		<button
-			class="workflow-validation__dismiss"
-			@click="$emit('dismiss')">
+		<button class="workflow-validation__dismiss" @click="$emit('dismiss')">
 			{{ t('procest', 'Dismiss') }}
 		</button>
 	</div>

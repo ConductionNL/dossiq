@@ -8,14 +8,18 @@
 		<path
 			:d="arrowPath"
 			fill="none"
-			:stroke="selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'"
+			:stroke="
+				selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'
+			"
 			stroke-width="2"
 			class="workflow-transition__path" />
 
 		<!-- Arrowhead -->
 		<polygon
 			:points="arrowheadPoints"
-			:fill="selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'" />
+			:fill="
+				selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'
+			" />
 
 		<!-- Label -->
 		<text
@@ -24,7 +28,9 @@
 			:y="midY - 8"
 			text-anchor="middle"
 			class="workflow-transition__label"
-			:fill="selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'">
+			:fill="
+				selected ? 'var(--color-primary)' : 'var(--color-text-maxcontrast)'
+			">
 			{{ transition.label }}
 		</text>
 
@@ -35,7 +41,7 @@
 			stroke="transparent"
 			stroke-width="16"
 			class="workflow-transition__click-target"
-			style="cursor: pointer;" />
+			style="cursor: pointer" />
 	</g>
 </template>
 

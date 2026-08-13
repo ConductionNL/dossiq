@@ -6,10 +6,7 @@
 			@back="showList"
 			@saved="onSaved"
 			@duplicated="openDetail" />
-		<CaseTypeList
-			v-else
-			@select="openDetail"
-			@create="openCreate" />
+		<CaseTypeList v-else @select="openDetail" @create="openCreate" />
 	</div>
 </template>
 

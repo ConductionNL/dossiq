@@ -16,15 +16,22 @@
 		@closing="onClose">
 		<div class="parafeer-actie-dialog">
 			<div class="parafeer-actie-dialog__step">
-				<strong>{{ t('procest', 'Step') }} {{ step.order }} — {{ stepLabel }}</strong>
+				<strong
+					>{{ t('procest', 'Step') }} {{ step.order }} —
+					{{ stepLabel }}</strong
+				>
 				<span v-if="step.actor" class="parafeer-actie-dialog__actor">
 					{{ step.actor }}
 				</span>
 			</div>
 
 			<!-- Advies field: required on advies steps. -->
-			<div v-if="isAdviesStep && !showReturnForm" class="parafeer-actie-dialog__field">
-				<label for="parafeer-actie-advice">{{ t('procest', 'Advice') }} *</label>
+			<div
+				v-if="isAdviesStep && !showReturnForm"
+				class="parafeer-actie-dialog__field">
+				<label for="parafeer-actie-advice"
+					>{{ t('procest', 'Advice') }} *</label
+				>
 				<textarea
 					id="parafeer-actie-advice"
 					v-model="advice"
@@ -34,8 +41,12 @@
 			</div>
 
 			<!-- Optional comment for parafering/accordering. -->
-			<div v-if="!isAdviesStep && !showReturnForm" class="parafeer-actie-dialog__field">
-				<label for="parafeer-actie-comment">{{ t('procest', 'Optional comment') }}</label>
+			<div
+				v-if="!isAdviesStep && !showReturnForm"
+				class="parafeer-actie-dialog__field">
+				<label for="parafeer-actie-comment">{{
+					t('procest', 'Optional comment')
+				}}</label>
 				<textarea
 					id="parafeer-actie-comment"
 					v-model="comment"
@@ -46,7 +57,9 @@
 
 			<!-- Return reason form (toggled by Terugsturen click). -->
 			<div v-if="showReturnForm" class="parafeer-actie-dialog__field">
-				<label for="parafeer-actie-return-reason">{{ t('procest', 'Reason for returning') }} *</label>
+				<label for="parafeer-actie-return-reason"
+					>{{ t('procest', 'Reason for returning') }} *</label
+				>
 				<textarea
 					id="parafeer-actie-return-reason"
 					v-model="returnReason"
@@ -168,7 +181,8 @@ export default {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		primaryActionLabel() {
 			if (this.step?.type === 'advies') return this.t('procest', 'Advise')
-			if (this.step?.type === 'parafering') return this.t('procest', 'Approve (paraferen)')
+			if (this.step?.type === 'parafering')
+				return this.t('procest', 'Approve (paraferen)')
 			if (this.step?.type === 'accordering') return this.t('procest', 'Accord')
 			return ''
 		},
@@ -234,7 +248,10 @@ export default {
 			if (stepType === 'parafering') action = 'parafered'
 			if (stepType === 'accordering') action = 'accorded'
 			if (!action) {
-				this.errorMessage = this.t('procest', 'Invalid action for this step type')
+				this.errorMessage = this.t(
+					'procest',
+					'Invalid action for this step type',
+				)
 				return
 			}
 			await this.submit(this.buildPayload(action))
@@ -267,7 +284,8 @@ export default {
 				this.resetForm()
 			} catch (error) {
 				const serverMessage = error?.response?.data?.message
-				this.errorMessage = serverMessage || this.t('procest', 'Operation failed')
+				this.errorMessage =
+					serverMessage || this.t('procest', 'Operation failed')
 			} finally {
 				this.submitting = false
 			}

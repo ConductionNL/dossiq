@@ -4,39 +4,53 @@
 
 		<NcCheckboxRadioSwitch
 			:model-value="enabled"
-			@update:model-value="v => enabled = v">
+			@update:model-value="(v) => (enabled = v)">
 			{{ t('procest', 'Enable Berichtenbox integration') }}
 		</NcCheckboxRadioSwitch>
 
 		<template v-if="enabled">
 			<div class="form-group">
-				<NcTextField :model-value="apiUrl"
+				<NcTextField
+					:model-value="apiUrl"
 					:label="t('procest', 'API Endpoint URL')"
-					@update:model-value="v => apiUrl = v" />
+					@update:model-value="(v) => (apiUrl = v)" />
 			</div>
 			<div class="form-group">
-				<NcTextField :model-value="oin"
+				<NcTextField
+					:model-value="oin"
 					:label="t('procest', 'OIN (Organisatie-identificatienummer)')"
-					@update:model-value="v => oin = v" />
+					@update:model-value="(v) => (oin = v)" />
 			</div>
 			<div class="form-group">
-				<NcTextField :model-value="certificatePath"
+				<NcTextField
+					:model-value="certificatePath"
 					:label="t('procest', 'Certificate path')"
-					@update:model-value="v => certificatePath = v" />
+					@update:model-value="(v) => (certificatePath = v)" />
 			</div>
 
 			<NcButton :disabled="testLoading" @click="testConnection">
 				{{ t('procest', 'Test connection') }}
 			</NcButton>
-			<NcNoteCard v-if="testResult !== null" :type="testResult ? 'success' : 'error'">
-				{{ testResult ? t('procest', 'Connection successful') : t('procest', 'Connection failed') }}
+			<NcNoteCard
+				v-if="testResult !== null"
+				:type="testResult ? 'success' : 'error'">
+				{{
+					testResult
+						? t('procest', 'Connection successful')
+						: t('procest', 'Connection failed')
+				}}
 			</NcNoteCard>
 		</template>
 	</div>
 </template>
 
 <script>
-import { NcButton, NcTextField, NcCheckboxRadioSwitch, NcNoteCard } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcTextField,
+	NcCheckboxRadioSwitch,
+	NcNoteCard,
+} from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
 
 export default {
@@ -72,5 +86,7 @@ export default {
 </script>
 
 <style scoped>
-.form-group { margin-bottom: 16px; }
+.form-group {
+	margin-bottom: 16px;
+}
 </style>

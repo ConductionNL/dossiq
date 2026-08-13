@@ -38,11 +38,13 @@ describe('mergeSubstitutedCases', () => {
 		const own = [{ id: 'a' }, { id: 'b' }]
 		const sub = [{ id: 'b' }, { id: 'c' }]
 		const merged = mergeSubstitutedCases(own, sub)
-		expect(merged.map(c => c.id)).toEqual(['a', 'b', 'c'])
+		expect(merged.map((c) => c.id)).toEqual(['a', 'b', 'c'])
 	})
 
 	it('returns own cases unchanged when no substituted cases', () => {
-		expect(mergeSubstitutedCases([{ id: 'a' }], []).map(c => c.id)).toEqual(['a'])
+		expect(mergeSubstitutedCases([{ id: 'a' }], []).map((c) => c.id)).toEqual([
+			'a',
+		])
 	})
 })
 

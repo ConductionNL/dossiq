@@ -66,7 +66,7 @@ export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 	}
 
 	const nodeIds = new Set(nodes.map((n) => n.id))
-	const nodeName = (id) => (nodes.find((n) => n.id === id)?.name || id)
+	const nodeName = (id) => nodes.find((n) => n.id === id)?.name || id
 
 	// --- DANGLING_EDGE: transition references a status outside this graph.
 	const validEdges = []
@@ -187,7 +187,9 @@ export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 
 	// DFS cycle detection (white/gray/black) collecting the node set of each
 	// distinct cycle found via a back-edge to a node still on the stack.
-	const WHITE = 0; const GRAY = 1; const BLACK = 2
+	const WHITE = 0
+	const GRAY = 1
+	const BLACK = 2
 	const color = new Map(nodes.map((n) => [n.id, WHITE]))
 	const stack = []
 	const reportedCycles = new Set()
@@ -204,7 +206,10 @@ export function validateWorkflowGraph({ statusNodes, transitions } = {}) {
 				const cycleStart = stack.indexOf(next)
 				const cycleNodes = stack.slice(cycleStart)
 				const cycleKey = [...cycleNodes].sort().join(',')
-				if (!reportedCycles.has(cycleKey) && !cycleNodes.some((id) => canReachFinal.has(id))) {
+				if (
+					!reportedCycles.has(cycleKey)
+					&& !cycleNodes.some((id) => canReachFinal.has(id))
+				) {
 					reportedCycles.add(cycleKey)
 					issues.push({
 						type: 'warning',

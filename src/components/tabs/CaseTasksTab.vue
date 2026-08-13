@@ -15,7 +15,9 @@
 		<div class="case-tab__header">
 			<h3 class="case-tab__title">
 				{{ t('procest', 'Tasks') }}
-				<span v-if="tasks.length > 0" class="case-tab__count">({{ completedCount }}/{{ tasks.length }})</span>
+				<span v-if="tasks.length > 0" class="case-tab__count"
+					>({{ completedCount }}/{{ tasks.length }})</span
+				>
 			</h3>
 			<NcButton type="primary" @click="onNewTask">
 				{{ t('procest', 'New task') }}
@@ -27,7 +29,9 @@
 		<NcEmptyContent
 			v-else-if="tasks.length === 0"
 			:title="t('procest', 'No tasks yet')"
-			:description="t('procest', 'Create a task to track work on this case.')" />
+			:description="
+				t('procest', 'Create a task to track work on this case.')
+			" />
 
 		<ul v-else class="case-tab__list">
 			<li
@@ -41,15 +45,23 @@
 				@keydown.enter="openTask(task)"
 				@keydown.space.prevent="openTask(task)">
 				<div class="case-tab__row">
-					<strong class="case-tab__item-title">{{ task.title || '—' }}</strong>
-					<CnStatusBadge :status="statusLabel(task.status)" :type="statusBadgeType(task.status)" />
+					<strong class="case-tab__item-title">{{
+						task.title || '—'
+					}}</strong>
+					<CnStatusBadge
+						:status="statusLabel(task.status)"
+						:type="statusBadgeType(task.status)" />
 				</div>
 				<div class="case-tab__meta">
 					<span v-if="task.assignee">{{ task.assignee }}</span>
-					<span v-if="task.dueDate" :class="{ 'case-tab__meta--overdue': isOverdue(task) }">
+					<span
+						v-if="task.dueDate"
+						:class="{ 'case-tab__meta--overdue': isOverdue(task) }">
 						{{ dueLabel(task) }}
 					</span>
-					<span v-if="task.priority && task.priority !== 'normal'" class="case-tab__priority">
+					<span
+						v-if="task.priority && task.priority !== 'normal'"
+						class="case-tab__priority">
 						{{ priorityLabel(task.priority) }}
 					</span>
 				</div>
@@ -94,7 +106,7 @@ export default {
 			return this.objectId || this.$route?.params?.id || null
 		},
 		completedCount() {
-			return this.tasks.filter(t => t.status === 'completed').length
+			return this.tasks.filter((t) => t.status === 'completed').length
 		},
 		/** Open tasks first, then by due date ascending (no due date last). */
 		sortedTasks() {
@@ -138,7 +150,10 @@ export default {
 			}
 		},
 		onNewTask() {
-			this.$router.push({ name: 'TaskNew', query: { caseId: this.resolvedCaseId } })
+			this.$router.push({
+				name: 'TaskNew',
+				query: { caseId: this.resolvedCaseId },
+			})
 		},
 		openTask(task) {
 			this.$router.push({ name: 'TaskDetail', params: { id: task.id } })
@@ -149,9 +164,13 @@ export default {
 		},
 		dueLabel(task) {
 			if (this.isOverdue(task)) {
-				return t('procest', 'Overdue: {date}', { date: formatDate(task.dueDate) })
+				return t('procest', 'Overdue: {date}', {
+					date: formatDate(task.dueDate),
+				})
 			}
-			if (task.dueDate.slice(0, 10) === new Date().toISOString().slice(0, 10)) {
+			if (
+				task.dueDate.slice(0, 10) === new Date().toISOString().slice(0, 10)
+			) {
 				return t('procest', 'Due today')
 			}
 			return t('procest', 'Due: {date}', { date: formatDate(task.dueDate) })

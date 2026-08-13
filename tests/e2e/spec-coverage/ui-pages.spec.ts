@@ -24,7 +24,6 @@ import { test, expect } from '@playwright/test'
 import { navTo, navToRoute, trackProcestErrors } from '../helpers/nav'
 
 test.describe('Dashboard page render', () => {
-
 	// @e2e openspec/specs/dashboard/spec.md#dashboard-page-renders-heading-and-widget-grid
 	test('dashboard renders the manifest widget grid shell', async ({ page }) => {
 		await navTo(page, 'Dashboard')
@@ -36,12 +35,19 @@ test.describe('Dashboard page render', () => {
 		// "the app content mounts and the grid container is attached". Earlier
 		// revisions asserted a specific `<h2>Dashboard</h2>` + named widget
 		// titles; the deployed build renders neither without seeded data.
-		await expect(page.locator('.app-content').first()).toBeVisible({ timeout: 15000 })
+		await expect(page.locator('.app-content').first()).toBeVisible({
+			timeout: 15000,
+		})
 		// The deployed @conduction/nextcloud-vue renders the manifest dashboard
 		// grid as `.cn-dashboard-grid` (older builds used `.cn-widget-grid`);
 		// accept either so the assertion tracks the data-independent contract.
-		await expect(page.locator('.app-content .cn-dashboard-grid, .app-content .cn-widget-grid').first())
-			.toBeAttached({ timeout: 15000 })
+		await expect(
+			page
+				.locator(
+					'.app-content .cn-dashboard-grid, .app-content .cn-widget-grid',
+				)
+				.first(),
+		).toBeAttached({ timeout: 15000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
@@ -52,8 +58,13 @@ test.describe('Dashboard page render', () => {
 		// The deployed @conduction/nextcloud-vue renders the manifest dashboard
 		// grid as `.cn-dashboard-grid` (older builds used `.cn-widget-grid`);
 		// accept either so the assertion tracks the data-independent contract.
-		await expect(page.locator('.app-content .cn-dashboard-grid, .app-content .cn-widget-grid').first())
-			.toBeAttached({ timeout: 15000 })
+		await expect(
+			page
+				.locator(
+					'.app-content .cn-dashboard-grid, .app-content .cn-widget-grid',
+				)
+				.first(),
+		).toBeAttached({ timeout: 15000 })
 		await page.waitForTimeout(1500)
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		expect(errors, errors.join('\n')).toEqual([])
@@ -61,7 +72,6 @@ test.describe('Dashboard page render', () => {
 })
 
 test.describe('Cases index page render', () => {
-
 	// @e2e openspec/specs/case-management/spec.md#cases-index-page-renders-list-shell
 	test('cases index renders list shell', async ({ page }) => {
 		// The "All cases" label does not exist — the nav ships a flat "Cases"
@@ -69,16 +79,19 @@ test.describe('Cases index page render', () => {
 		await navToRoute(page, '/cases')
 		// The view switcher renders as BUTTONS, not a radio group (the route
 		// exposes zero `radio` roles) — measured on a CI runner 2026-08-04.
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
 		await expect(page.getByRole('button', { name: /^Add / })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: 'Actions' }).first(),
+		).toBeVisible()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 })
 
 test.describe('Voorstellen page render', () => {
-
 	// @e2e openspec/specs/case-management/spec.md#voorstellen-page-renders-heading-and-create-control
 	test('voorstellen page renders heading and create control', async ({ page }) => {
 		// The nav renders no "Voorstellen" entry (the Decision-making group's
@@ -91,33 +104,41 @@ test.describe('Voorstellen page render', () => {
 		// heading and a button doesn't trip strict mode.
 		const customHeading = page.getByRole('heading', { name: /Voorstellen/ })
 		const addBtn = page.getByRole('button', { name: /Nieuw voorstel|^Add / })
-		await expect(customHeading.or(addBtn).first()).toBeVisible({ timeout: 15000 })
+		await expect(customHeading.or(addBtn).first()).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 })
 
 test.describe('Doorlooptijd page render', () => {
-
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading
-	test('doorlooptijd renders processing-time analytics heading', async ({ page }) => {
+	test('doorlooptijd renders processing-time analytics heading', async ({
+		page,
+	}) => {
 		// The "Processing time" leaf sits in the collapsed "Reports" group, so
 		// navigate by route. (The previous comment claimed the /index.php
 		// prefix resets the router to the Dashboard; measured on a CI runner
 		// 2026-08-04 it renders the view correctly.)
 		await navToRoute(page, '/doorlooptijd')
-		await expect(page.getByRole('heading', { name: 'Processing Time Analytics', level: 2 }))
-			.toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByRole('heading', {
+				name: 'Processing Time Analytics',
+				level: 2,
+			}),
+		).toBeVisible({ timeout: 15000 })
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 })
 
 test.describe('Bezwaren index page render', () => {
-
 	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaren-index-page-renders-list-shell
 	test('bezwaren index renders list shell', async ({ page }) => {
 		// The nav renders "Objections", not "Bezwaren" — navigate by route.
 		await navToRoute(page, '/bezwaren')
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
 		await expect(page.getByRole('button', { name: /^Add / })).toBeVisible()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
@@ -125,13 +146,14 @@ test.describe('Bezwaren index page render', () => {
 })
 
 test.describe('Advice index page render', () => {
-
 	// @e2e openspec/specs/advice-management/spec.md#advice-index-page-renders-list-shell
 	test('advice index renders list shell', async ({ page }) => {
 		// The Decision-making group's leaves are absent from this build's
 		// sidebar, so there is no "Advice" nav entry — navigate by route.
 		await navToRoute(page, '/advice')
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
 		await expect(page.getByRole('button', { name: /^Add / })).toBeVisible()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')

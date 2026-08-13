@@ -18,7 +18,9 @@
 		<NcEmptyContent
 			v-if="!loading && checklists.length === 0 && !editing"
 			:name="t('procest', 'No checklists')"
-			:description="t('procest', 'Create an inspection checklist to get started.')">
+			:description="
+				t('procest', 'Create an inspection checklist to get started.')
+			">
 			<template #icon>
 				<NcIconSvgWrapper :svg="clipboardIcon" />
 			</template>
@@ -31,10 +33,24 @@
 				class="checklists-tab__item">
 				<div class="checklists-tab__item-info">
 					<strong>{{ checklist.name }}</strong>
-					<span class="checklists-tab__badge" :class="checklist.active ? 'checklists-tab__badge--active' : 'checklists-tab__badge--inactive'">
-						{{ checklist.active ? t('procest', 'Active') : t('procest', 'Inactive') }}
+					<span
+						class="checklists-tab__badge"
+						:class="
+							checklist.active
+								? 'checklists-tab__badge--active'
+								: 'checklists-tab__badge--inactive'
+						">
+						{{
+							checklist.active
+								? t('procest', 'Active')
+								: t('procest', 'Inactive')
+						}}
 					</span>
-					<span class="checklists-tab__meta">v{{ checklist.version || 1 }} &bull; {{ (checklist.items || []).length }} {{ t('procest', 'items') }}</span>
+					<span class="checklists-tab__meta"
+						>v{{ checklist.version || 1 }} &bull;
+						{{ (checklist.items || []).length }}
+						{{ t('procest', 'items') }}</span
+					>
 				</div>
 				<div class="checklists-tab__item-actions">
 					<NcButton @click="openEditor(checklist)">
@@ -58,7 +74,11 @@
 			v-if="showDeleteConfirm"
 			ref="deleteConfirmDialog"
 			:dialog-title="t('procest', 'Delete checklist')"
-			:message="t('procest', 'Delete checklist “{name}”?', { name: pendingDeleteChecklist && pendingDeleteChecklist.name })"
+			:message="
+				t('procest', 'Delete checklist “{name}”?', {
+					name: pendingDeleteChecklist && pendingDeleteChecklist.name,
+				})
+			"
 			variant="error"
 			:confirm-label="t('procest', 'Delete')"
 			@confirm="onConfirmDelete"
@@ -67,7 +87,12 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcEmptyContent, NcIconSvgWrapper } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcLoadingIcon,
+	NcEmptyContent,
+	NcIconSvgWrapper,
+} from '@nextcloud/vue'
 import { CnConfirmDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
@@ -143,7 +168,8 @@ export default {
 			editingChecklist: null,
 			showDeleteConfirm: false,
 			pendingDeleteChecklist: null,
-			clipboardIcon: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19,3H14.82C14.25,1.44 12.53,0.64 11,1.2C10.14,1.5 9.5,2.16 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7Z" /></svg>',
+			clipboardIcon:
+				'<svg viewBox="0 0 24 24"><path fill="currentColor" d="M19,3H14.82C14.25,1.44 12.53,0.64 11,1.2C10.14,1.5 9.5,2.16 9.18,3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M12,3A1,1 0 0,1 13,4A1,1 0 0,1 12,5A1,1 0 0,1 11,4A1,1 0 0,1 12,3M7,7H17V5H19V19H5V5H7V7Z" /></svg>',
 		}
 	},
 
@@ -175,13 +201,13 @@ export default {
 			this.editingChecklist = checklist
 				? { ...checklist }
 				: {
-					name: '',
-					version: 1,
-					caseTypeRef: '',
-					items: [],
-					active: false,
-					validFrom: new Date().toISOString().split('T')[0],
-				}
+						name: '',
+						version: 1,
+						caseTypeRef: '',
+						items: [],
+						active: false,
+						validFrom: new Date().toISOString().split('T')[0],
+					}
 			this.editing = true
 		},
 
@@ -211,7 +237,9 @@ export default {
 			this.saving = true
 			try {
 				const url = checklist.id
-					? generateUrl(COLLECTION_URL + '/' + encodeURIComponent(checklist.id))
+					? generateUrl(
+							COLLECTION_URL + '/' + encodeURIComponent(checklist.id),
+						)
 					: generateUrl(COLLECTION_URL)
 				const method = checklist.id ? 'put' : 'post'
 				await axios[method](url, checklist)
@@ -248,7 +276,9 @@ export default {
 		async onConfirmDelete() {
 			const checklist = this.pendingDeleteChecklist
 			try {
-				const url = generateUrl(COLLECTION_URL + '/' + encodeURIComponent(checklist.id))
+				const url = generateUrl(
+					COLLECTION_URL + '/' + encodeURIComponent(checklist.id),
+				)
 				await axios.delete(url)
 				showSuccess(t('procest', 'Checklist deleted'))
 				this.showDeleteConfirm = false

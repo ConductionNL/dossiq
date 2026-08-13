@@ -9,7 +9,11 @@
 			</NcButton>
 
 			<h3 class="case-type-detail__title">
-				{{ isCreate ? t('procest', 'New Case Type') : (form.title || t('procest', 'Case Type')) }}
+				{{
+					isCreate
+						? t('procest', 'New Case Type')
+						: form.title || t('procest', 'Case Type')
+				}}
 			</h3>
 
 			<div class="case-type-detail__actions">
@@ -35,10 +39,7 @@
 					</template>
 					{{ t('procest', 'Duplicate') }}
 				</NcButton>
-				<NcButton
-					type="primary"
-					:disabled="saving"
-					@click="save">
+				<NcButton type="primary" :disabled="saving" @click="save">
 					<template v-if="saving" #icon>
 						<NcLoadingIcon :size="20" />
 					</template>
@@ -48,13 +49,27 @@
 		</div>
 
 		<!-- Active case warning -->
-		<div v-if="activeCaseCount > 0 && !isCreate" class="case-type-detail__warning">
-			<p>{{ t('procest', 'There are {count} active cases of this type. Changes will only apply to new cases.', { count: activeCaseCount }) }}</p>
+		<div
+			v-if="activeCaseCount > 0 && !isCreate"
+			class="case-type-detail__warning">
+			<p>
+				{{
+					t(
+						'procest',
+						'There are {count} active cases of this type. Changes will only apply to new cases.',
+						{ count: activeCaseCount },
+					)
+				}}
+			</p>
 		</div>
 
 		<!-- Publish errors -->
-		<div v-if="publishErrors.length > 0" class="case-type-detail__publish-errors">
-			<p><strong>{{ t('procest', 'Cannot publish:') }}</strong></p>
+		<div
+			v-if="publishErrors.length > 0"
+			class="case-type-detail__publish-errors">
+			<p>
+				<strong>{{ t('procest', 'Cannot publish:') }}</strong>
+			</p>
 			<ul>
 				<li v-for="(err, i) in publishErrors" :key="i">
 					{{ err }}
@@ -79,7 +94,9 @@
 					v-for="tab in tabs"
 					:key="tab.id"
 					class="case-type-detail__tab"
-					:class="{ 'case-type-detail__tab--active': activeTab === tab.id }"
+					:class="{
+						'case-type-detail__tab--active': activeTab === tab.id,
+					}"
 					@click="activeTab = tab.id">
 					{{ tab.label }}
 				</button>
@@ -146,7 +163,10 @@ import DecisionTypesTab from './tabs/DecisionTypesTab.vue'
 import SubCaseTypesTab from './tabs/SubCaseTypesTab.vue'
 import EmailTemplateAdmin from '../casetypes/components/EmailTemplateAdmin.vue'
 import { useObjectStore } from '../../store/modules/object.js'
-import { validateCaseType, validateForPublish } from '../../utils/caseTypeValidation.js'
+import {
+	validateCaseType,
+	validateForPublish,
+} from '../../utils/caseTypeValidation.js'
 
 const EMPTY_FORM = {
 	title: '',
@@ -249,7 +269,10 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async loadCaseType() {
 			this.loadingDetail = true
-			const data = await this.objectStore.fetchObject('caseType', this.caseTypeId)
+			const data = await this.objectStore.fetchObject(
+				'caseType',
+				this.caseTypeId,
+			)
 			if (data) {
 				this.form = { ...EMPTY_FORM, ...data }
 			}
@@ -307,9 +330,12 @@ export default {
 				} else {
 					this.form = { ...EMPTY_FORM, ...result }
 				}
-				setTimeout(() => { this.saveSuccess = false }, 3000)
+				setTimeout(() => {
+					this.saveSuccess = false
+				}, 3000)
 			} else {
-				this.saveError = this.objectStore.getError('caseType')
+				this.saveError =
+					this.objectStore.getError('caseType')
 					|| t('procest', 'Failed to save case type')
 			}
 		},
@@ -320,10 +346,13 @@ export default {
 			this.saveError = ''
 
 			// Fetch status types for validation
-			const statusTypes = await this.objectStore.fetchCollection('statusType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-			})
+			const statusTypes = await this.objectStore.fetchCollection(
+				'statusType',
+				{
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+				},
+			)
 
 			const result = validateForPublish(this.form, statusTypes || [])
 			if (!result.valid) {
@@ -339,7 +368,10 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async unpublish() {
 			const confirmed = confirm(
-				t('procest', 'Unpublishing this case type will prevent new cases from being created. Existing cases will continue to function. Continue?'),
+				t(
+					'procest',
+					'Unpublishing this case type will prevent new cases from being created. Existing cases will continue to function. Continue?',
+				),
 			)
 			if (!confirmed) return
 
@@ -357,14 +389,18 @@ export default {
 			this.duplicating = true
 			try {
 				const response = await axios.post(
-					generateUrl('/apps/procest/api/case-definitions/{id}/copy', { id: this.caseTypeId }),
+					generateUrl('/apps/procest/api/case-definitions/{id}/copy', {
+						id: this.caseTypeId,
+					}),
 				)
 				const newId = response.data?.id
 				if (newId) {
 					this.$emit('duplicated', newId)
 				}
 			} catch (err) {
-				this.saveError = err.response?.data?.error || t('procest', 'Failed to duplicate case type')
+				this.saveError =
+					err.response?.data?.error
+					|| t('procest', 'Failed to duplicate case type')
 			} finally {
 				this.duplicating = false
 			}

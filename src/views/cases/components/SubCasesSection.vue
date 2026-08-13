@@ -27,7 +27,9 @@
 							@click="openSubCase(subCase)">
 							<td>{{ subCase.title || '\u2014' }}</td>
 							<td>
-								<span class="status-badge" :class="getStatusClass(subCase)">
+								<span
+									class="status-badge"
+									:class="getStatusClass(subCase)">
 									{{ getStatusName(subCase) }}
 								</span>
 							</td>
@@ -91,7 +93,7 @@ export default {
 		},
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		completedCount() {
-			return this.subCases.filter(sc => sc.endDate).length
+			return this.subCases.filter((sc) => sc.endDate).length
 		},
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		totalCount() {
@@ -161,7 +163,8 @@ export default {
 		getStatusClass(subCase) {
 			if (!subCase.status) return ''
 			const st = this.statusTypeCache[subCase.status]
-			if (st?.isFinal === true || st?.isFinal === 'true') return 'status-badge--final'
+			if (st?.isFinal === true || st?.isFinal === 'true')
+				return 'status-badge--final'
 			return 'status-badge--active'
 		},
 

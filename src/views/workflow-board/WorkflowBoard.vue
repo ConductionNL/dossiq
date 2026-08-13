@@ -20,7 +20,12 @@
 			<div>
 				<h2>{{ t('procest', 'Workflow Board') }}</h2>
 				<p class="workflow-board__subtitle">
-					{{ t('procest', 'Drag cases between statuses, or use a case card\'s "Move to…" menu, to advance their workflow') }}
+					{{
+						t(
+							'procest',
+							'Drag cases between statuses, or use a case card\'s "Move to…" menu, to advance their workflow',
+						)
+					}}
 				</p>
 			</div>
 			<NcButton type="tertiary" @click="$router.push({ name: 'Dashboard' })">
@@ -38,13 +43,29 @@
 		</div>
 
 		<div v-else-if="columns.length === 0" class="workflow-board__empty">
-			<p>{{ t('procest', 'No workflow statuses configured. Define status types in Settings to use the board.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'No workflow statuses configured. Define status types in Settings to use the board.',
+					)
+				}}
+			</p>
 		</div>
 
 		<template v-else>
-			<div v-if="selection.caseIds.length > 0" class="workflow-board__bulk-bar">
+			<div
+				v-if="selection.caseIds.length > 0"
+				class="workflow-board__bulk-bar">
 				<span class="workflow-board__bulk-bar__count">
-					{{ n('procest', '%n case selected', '%n cases selected', selection.caseIds.length) }}
+					{{
+						n(
+							'procest',
+							'%n case selected',
+							'%n cases selected',
+							selection.caseIds.length,
+						)
+					}}
 				</span>
 				<div class="workflow-board__bulk-bar__actions">
 					<NcButton @click="openBulkDialog">
@@ -69,7 +90,7 @@
 					:case-type-map="caseTypeMap"
 					:all-columns="columns"
 					:loading="false"
-					:selected-case-ids="selection.caseIds.map(id => String(id))"
+					:selected-case-ids="selection.caseIds.map((id) => String(id))"
 					:selection-column-id="selection.columnId"
 					@drop="onDrop"
 					@move="onDrop"
@@ -94,7 +115,11 @@ import BoardColumn from './BoardColumn.vue'
 import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
-import { emptySelection, toggleSelection, clearSelection } from '../../utils/bulkTransitionHelpers.js'
+import {
+	emptySelection,
+	toggleSelection,
+	clearSelection,
+} from '../../utils/bulkTransitionHelpers.js'
 
 export default {
 	name: 'WorkflowBoard',
@@ -198,7 +223,11 @@ export default {
 		 */
 		async syncLiveSubscription() {
 			const store = this.objectStore
-			if (typeof store.subscribe !== 'function' || this.liveHandle || this.livePending) {
+			if (
+				typeof store.subscribe !== 'function'
+				|| this.liveHandle
+				|| this.livePending
+			) {
 				return
 			}
 			if (!store.objectTypeRegistry?.case) {
@@ -216,7 +245,10 @@ export default {
 				}
 				this.liveHandle = handle
 			} catch (err) {
-				console.warn('[WorkflowBoard] live subscription failed:', err?.message ?? err)
+				console.warn(
+					'[WorkflowBoard] live subscription failed:',
+					err?.message ?? err,
+				)
 			} finally {
 				if (this.liveEpoch === epoch) {
 					this.livePending = false
@@ -233,7 +265,10 @@ export default {
 		releaseLiveSubscription() {
 			this.liveEpoch += 1
 			this.livePending = false
-			if (this.liveHandle && typeof this.objectStore.unsubscribe === 'function') {
+			if (
+				this.liveHandle
+				&& typeof this.objectStore.unsubscribe === 'function'
+			) {
 				this.objectStore.unsubscribe(this.liveHandle)
 			}
 			this.liveHandle = null
@@ -255,7 +290,12 @@ export default {
 				// Skip while an initial load / another refresh is running, or
 				// while the user is mid-drag or mid-bulk-transition — the
 				// post-save server event triggers a fresh hint anyway.
-				if (this.loading || this.liveRefreshing || this.draggedCaseId || this.showBulkDialog) {
+				if (
+					this.loading
+					|| this.liveRefreshing
+					|| this.draggedCaseId
+					|| this.showBulkDialog
+				) {
 					return
 				}
 				// Non-blanking: the template swaps the whole board for a
@@ -292,7 +332,7 @@ export default {
 				])
 
 				const typeMap = {}
-				for (const ct of (caseTypes || [])) {
+				for (const ct of caseTypes || []) {
 					typeMap[ct.id] = ct.title || ct.name || ''
 				}
 				this.caseTypeMap = typeMap
@@ -302,21 +342,21 @@ export default {
 				// dropped case's own workflow.
 				const byId = {}
 				const byTypeAndName = {}
-				for (const st of (statusTypes || [])) {
+				for (const st of statusTypes || []) {
 					byId[st.id] = st
 					byTypeAndName[`${st.caseType}::${st.name || ''}`] = st.id
 				}
 				this.statusById = byId
 				this.statusIdByTypeAndName = byTypeAndName
 
-				const isFinal = st => st.isFinal === true || st.isFinal === 'true'
+				const isFinal = (st) => st.isFinal === true || st.isFinal === 'true'
 
 				// Merge all non-final status types that share a name into one
 				// column. Status types are defined per case type, so the same
 				// name (e.g. "Ontvangen") recurs across every workflow; without
 				// this merge the board renders one near-empty column per type.
 				const colByName = new Map()
-				for (const st of (statusTypes || [])) {
+				for (const st of statusTypes || []) {
 					if (isFinal(st)) continue
 					const name = st.name || ''
 					const order = st.order ?? 999
@@ -327,8 +367,9 @@ export default {
 						colByName.set(name, { id: name, name, order })
 					}
 				}
-				this.columns = [...colByName.values()]
-					.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+				this.columns = [...colByName.values()].sort(
+					(a, b) => a.order - b.order || a.name.localeCompare(b.name),
+				)
 
 				// Group open cases into their merged column by resolving each
 				// case's status id to its status-type name. Cases in a final
@@ -337,7 +378,7 @@ export default {
 				for (const col of this.columns) {
 					grouped[col.id] = []
 				}
-				for (const c of (cases || [])) {
+				for (const c of cases || []) {
 					const st = byId[c.status]
 					if (!st || isFinal(st)) continue
 					if (grouped[st.name]) {
@@ -379,7 +420,7 @@ export default {
 			let fromColumn = null
 			let caseObj = null
 			for (const [colName, list] of Object.entries(this.casesByStatus)) {
-				const found = list.find(c => String(c.id) === String(caseId))
+				const found = list.find((c) => String(c.id) === String(caseId))
 				if (found) {
 					fromColumn = colName
 					caseObj = found
@@ -394,17 +435,28 @@ export default {
 			// concrete status-type id from its OWN workflow. Resolve the id that
 			// carries this column's name within the case's case type; refuse the
 			// move when that workflow has no status by that name.
-			const targetStatusId = this.statusIdByTypeAndName[`${caseObj.caseType}::${newColumn}`]
+			const targetStatusId =
+				this.statusIdByTypeAndName[`${caseObj.caseType}::${newColumn}`]
 			if (!targetStatusId) {
-				showError(this.t('procest', 'That status is not part of this case\'s workflow.'))
+				showError(
+					this.t(
+						'procest',
+						"That status is not part of this case's workflow.",
+					),
+				)
 				return
 			}
 
 			// Optimistic move.
-			const fromList = this.casesByStatus[fromColumn].filter(c => String(c.id) !== String(caseId))
+			const fromList = this.casesByStatus[fromColumn].filter(
+				(c) => String(c.id) !== String(caseId),
+			)
 			this.casesByStatus[fromColumn] = fromList
 			const movedCase = { ...caseObj, status: targetStatusId }
-			this.casesByStatus[newColumn] = [...(this.casesByStatus[newColumn] || []), movedCase]
+			this.casesByStatus[newColumn] = [
+				...(this.casesByStatus[newColumn] || []),
+				movedCase,
+			]
 
 			try {
 				const result = await this.objectStore.saveObject('case', movedCase)
@@ -414,11 +466,20 @@ export default {
 			} catch (err) {
 				console.error('[procest] failed to advance case status', err)
 				// Revert: pull from the new column, restore in the old one.
-				const revertedNew = (this.casesByStatus[newColumn] || [])
-					.filter(c => String(c.id) !== String(caseId))
+				const revertedNew = (this.casesByStatus[newColumn] || []).filter(
+					(c) => String(c.id) !== String(caseId),
+				)
 				this.casesByStatus[newColumn] = revertedNew
-				this.casesByStatus[fromColumn] = [...this.casesByStatus[fromColumn], caseObj]
-				showError(this.t('procest', 'Could not move the case. You may not have permission, or the change failed.'))
+				this.casesByStatus[fromColumn] = [
+					...this.casesByStatus[fromColumn],
+					caseObj,
+				]
+				showError(
+					this.t(
+						'procest',
+						'Could not move the case. You may not have permission, or the change failed.',
+					),
+				)
 			}
 		},
 		/**
@@ -428,7 +489,9 @@ export default {
 		 * @return {void}
 		 */
 		goToCase(caseId) {
-			this.$router.push({ name: 'CaseDetail', params: { id: caseId } }).catch(() => {})
+			this.$router
+				.push({ name: 'CaseDetail', params: { id: caseId } })
+				.catch(() => {})
 		},
 		/**
 		 * Toggle a case's bulk-selection membership, scoped to its column.

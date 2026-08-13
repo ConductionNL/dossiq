@@ -17,7 +17,8 @@
 	<div v-if="cases.length > 0" class="at-risk-panel">
 		<h3>{{ t('procest', 'At-Risk Cases') }}</h3>
 		<div class="at-risk-list">
-			<div v-for="c in cases"
+			<div
+				v-for="c in cases"
 				:key="c.id"
 				class="at-risk-item"
 				role="button"
@@ -26,8 +27,12 @@
 				@keydown.enter="$emit('select-case', c.id)"
 				@keydown.space.prevent="$emit('select-case', c.id)">
 				<div class="at-risk-item__header">
-					<span class="at-risk-item__title">{{ c.title || c.identifier }}</span>
-					<span v-if="c.isOverdue" class="at-risk-badge at-risk-badge--overdue">
+					<span class="at-risk-item__title">{{
+						c.title || c.identifier
+					}}</span>
+					<span
+						v-if="c.isOverdue"
+						class="at-risk-badge at-risk-badge--overdue">
 						{{ t('procest', 'Overdue') }}
 					</span>
 					<span v-else class="at-risk-badge at-risk-badge--warning">
@@ -38,19 +43,29 @@
 					<span>{{ c.caseTypeName }}</span>
 					<span>{{ c.identifier ? '#' + c.identifier : '' }}</span>
 					<span :class="{ 'text-error': c.isOverdue }">
-						{{ c.remainingDays >= 0
-							? t('procest', '{days} days remaining', { days: c.remainingDays })
-							: t('procest', '{days} days overdue', { days: Math.abs(c.remainingDays) }) }}
+						{{
+							c.remainingDays >= 0
+								? t('procest', '{days} days remaining', {
+										days: c.remainingDays,
+									})
+								: t('procest', '{days} days overdue', {
+										days: Math.abs(c.remainingDays),
+									})
+						}}
 					</span>
 				</div>
 				<div class="at-risk-item__progress">
 					<div class="progress-track">
-						<div class="progress-fill"
+						<div
+							class="progress-fill"
 							:class="{
 								'progress-fill--danger': c.isOverdue,
-								'progress-fill--warning': !c.isOverdue && c.percentUsed > 0.75,
+								'progress-fill--warning':
+									!c.isOverdue && c.percentUsed > 0.75,
 							}"
-							:style="{ width: Math.min(c.percentUsed * 100, 100) + '%' }" />
+							:style="{
+								width: Math.min(c.percentUsed * 100, 100) + '%',
+							}" />
 					</div>
 					<span class="progress-label">
 						{{ Math.round(c.percentUsed * 100) }}%

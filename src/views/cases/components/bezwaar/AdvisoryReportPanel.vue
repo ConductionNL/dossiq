@@ -6,18 +6,30 @@
 		<template v-if="hasReport">
 			<div class="advisory-report-panel__details">
 				<div class="report-detail">
-					<span class="report-detail__label">{{ t('procest', 'Advice Type') }}</span>
-					<span class="report-detail__value status-badge" :class="'status-badge--' + report.adviceType">
+					<span class="report-detail__label">{{
+						t('procest', 'Advice Type')
+					}}</span>
+					<span
+						class="report-detail__value status-badge"
+						:class="'status-badge--' + report.adviceType">
 						{{ getAdviceTypeLabel(report.adviceType) }}
 					</span>
 				</div>
 				<div class="report-detail">
-					<span class="report-detail__label">{{ t('procest', 'Date') }}</span>
+					<span class="report-detail__label">{{
+						t('procest', 'Date')
+					}}</span>
 					<span class="report-detail__value">{{ report.adviceDate }}</span>
 				</div>
 				<div class="report-detail">
-					<span class="report-detail__label">{{ t('procest', 'Deviates from original') }}</span>
-					<span class="report-detail__value">{{ report.deviationFromPrimaryDecision ? t('procest', 'Yes') : t('procest', 'No') }}</span>
+					<span class="report-detail__label">{{
+						t('procest', 'Deviates from original')
+					}}</span>
+					<span class="report-detail__value">{{
+						report.deviationFromPrimaryDecision
+							? t('procest', 'Yes')
+							: t('procest', 'No')
+					}}</span>
 				</div>
 			</div>
 
@@ -44,16 +56,20 @@
 			</div>
 
 			<div class="form-group">
-				<label for="advisory-report-advice-date">{{ t('procest', 'Date') }} *</label>
+				<label for="advisory-report-advice-date"
+					>{{ t('procest', 'Date') }} *</label
+				>
 				<NcTextField
 					id="advisory-report-advice-date"
 					:model-value="form.adviceDate"
 					type="date"
-					@update:model-value="v => form.adviceDate = v" />
+					@update:model-value="(v) => (form.adviceDate = v)" />
 			</div>
 
 			<div class="form-group">
-				<label for="advisory-report-summary">{{ t('procest', 'Summary') }} *</label>
+				<label for="advisory-report-summary"
+					>{{ t('procest', 'Summary') }} *</label
+				>
 				<textarea
 					id="advisory-report-summary"
 					v-model="form.summary"
@@ -62,7 +78,9 @@
 			</div>
 
 			<div class="form-group">
-				<label for="advisory-report-grounds">{{ t('procest', 'Legal Grounds') }} *</label>
+				<label for="advisory-report-grounds"
+					>{{ t('procest', 'Legal Grounds') }} *</label
+				>
 				<textarea
 					id="advisory-report-grounds"
 					v-model="form.grounds"
@@ -71,35 +89,60 @@
 			</div>
 
 			<div class="form-group">
-				<label for="advisory-report-recommendation">{{ t('procest', 'Recommendation') }} *</label>
+				<label for="advisory-report-recommendation"
+					>{{ t('procest', 'Recommendation') }} *</label
+				>
 				<textarea
 					id="advisory-report-recommendation"
 					v-model="form.recommendation"
-					:placeholder="t('procest', 'Recommended action for the beslisser...')"
+					:placeholder="
+						t('procest', 'Recommended action for the beslisser...')
+					"
 					rows="3" />
 			</div>
 
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
 					:model-value="form.deviationFromPrimaryDecision"
-					@update:model-value="v => form.deviationFromPrimaryDecision = v">
-					{{ t('procest', 'Committee advises differently from original decision') }}
+					@update:model-value="
+						(v) => (form.deviationFromPrimaryDecision = v)
+					">
+					{{
+						t(
+							'procest',
+							'Committee advises differently from original decision',
+						)
+					}}
 				</NcCheckboxRadioSwitch>
 			</div>
 
 			<!-- Committee composition warning -->
 			<NcNoteCard v-if="showCompositionWarning" type="warning">
-				{{ t('procest', 'Best practice: the committee should have at least 3 members (voorzitter + 2 leden).') }}
+				{{
+					t(
+						'procest',
+						'Best practice: the committee should have at least 3 members (voorzitter + 2 leden).',
+					)
+				}}
 			</NcNoteCard>
 
 			<!-- Conflict of interest warning -->
 			<NcNoteCard v-if="hasConflictOfInterest" type="warning">
-				{{ t('procest', 'Warning: A committee member was involved in the original decision.') }}
+				{{
+					t(
+						'procest',
+						'Warning: A committee member was involved in the original decision.',
+					)
+				}}
 			</NcNoteCard>
 
 			<div class="advisory-report-panel__actions">
 				<NcButton type="primary" :disabled="saving" @click="save">
-					{{ saving ? t('procest', 'Saving...') : t('procest', 'Save Advisory Report') }}
+					{{
+						saving
+							? t('procest', 'Saving...')
+							: t('procest', 'Save Advisory Report')
+					}}
 				</NcButton>
 			</div>
 		</template>
@@ -113,7 +156,13 @@
 </template>
 
 <script>
-import { NcButton, NcTextField, NcSelect, NcCheckboxRadioSwitch, NcNoteCard } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcTextField,
+	NcSelect,
+	NcCheckboxRadioSwitch,
+	NcNoteCard,
+} from '@nextcloud/vue'
 import { useBezwaarStore } from '../../../../store/modules/bezwaar.js'
 
 export default {
@@ -158,8 +207,14 @@ export default {
 			adviceTypeOptions: [
 				{ id: 'gegrond', label: t('procest', 'Upheld (gegrond)') },
 				{ id: 'ongegrond', label: t('procest', 'Rejected (ongegrond)') },
-				{ id: 'deels_gegrond', label: t('procest', 'Partially upheld (deels gegrond)') },
-				{ id: 'niet_ontvankelijk', label: t('procest', 'Inadmissible (niet-ontvankelijk)') },
+				{
+					id: 'deels_gegrond',
+					label: t('procest', 'Partially upheld (deels gegrond)'),
+				},
+				{
+					id: 'niet_ontvankelijk',
+					label: t('procest', 'Inadmissible (niet-ontvankelijk)'),
+				},
 			],
 		}
 	},
@@ -193,7 +248,9 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		hasConflictOfInterest() {
 			if (!this.primaryDecisionMaker) return false
-			return this.committeeMembers.some((m) => m.id === this.primaryDecisionMaker)
+			return this.committeeMembers.some(
+				(m) => m.id === this.primaryDecisionMaker,
+			)
 		},
 	},
 	methods: {
@@ -218,7 +275,9 @@ export default {
 			await bezwaarStore.createAdvisoryReport({
 				case: this.caseId,
 				committeeChair: '',
-				committeeMembers: JSON.stringify(this.committeeMembers.map((m) => m.id)),
+				committeeMembers: JSON.stringify(
+					this.committeeMembers.map((m) => m.id),
+				),
 				...this.form,
 			})
 

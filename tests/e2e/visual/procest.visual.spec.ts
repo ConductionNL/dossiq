@@ -17,7 +17,12 @@ import { test, request, type APIRequestContext } from '@playwright/test'
 import { shootSurface, shootByNav } from './_visual-helpers'
 import { STORAGE_STATE } from '../helpers/auth'
 import {
-	getRequestToken, ensureCaseType, seedCase, objectId, cleanupRunObjects, deleteObject,
+	getRequestToken,
+	ensureCaseType,
+	seedCase,
+	objectId,
+	cleanupRunObjects,
+	deleteObject,
 } from '../helpers/fixtures'
 
 const APP = '/index.php/apps/procest/index'
@@ -84,6 +89,10 @@ test.describe('Procest — case detail (deelzaak/email host) visual', () => {
 
 	test.fixme('case detail', async ({ page }) => {
 		// History-mode detail route (verified live): /apps/procest/cases/:id.
-		await shootSurface(page, `/index.php/apps/procest/cases/${caseId}`, 'case-detail.png')
+		await shootSurface(
+			page,
+			`/index.php/apps/procest/cases/${caseId}`,
+			'case-detail.png',
+		)
 	})
 })

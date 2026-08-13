@@ -24,8 +24,12 @@
 					{{ getTypeIcon(result.type) }}
 				</span>
 				<span class="address-search__text">
-					<span class="address-search__name">{{ result.weergavenaam }}</span>
-					<span v-if="result.gemeentenaam" class="address-search__municipality">
+					<span class="address-search__name">{{
+						result.weergavenaam
+					}}</span>
+					<span
+						v-if="result.gemeentenaam"
+						class="address-search__municipality">
 						{{ result.gemeentenaam }}
 					</span>
 				</span>
@@ -40,7 +44,13 @@
 
 <script>
 import { NcTextField } from '@nextcloud/vue'
-import { suggest, lookup, free, extractCoordinates, formatAddress } from '../../services/pdokService.js'
+import {
+	suggest,
+	lookup,
+	free,
+	extractCoordinates,
+	formatAddress,
+} from '../../services/pdokService.js'
 
 export default {
 	name: 'AddressSearch',
@@ -130,11 +140,16 @@ export default {
 		 */
 		getTypeIcon(type) {
 			switch (type) {
-			case 'adres': return '\uD83C\uDFE0'
-			case 'weg': return '\uD83D\uDEB6'
-			case 'woonplaats': return '\uD83C\uDFD9'
-			case 'postcode': return '\uD83D\uDCEE'
-			default: return '\uD83D\uDCCD'
+				case 'adres':
+					return '\uD83C\uDFE0'
+				case 'weg':
+					return '\uD83D\uDEB6'
+				case 'woonplaats':
+					return '\uD83C\uDFD9'
+				case 'postcode':
+					return '\uD83D\uDCEE'
+				default:
+					return '\uD83D\uDCCD'
 			}
 		},
 	},
@@ -156,7 +171,7 @@ export default {
 	background: var(--color-main-background);
 	border: 1px solid var(--color-border);
 	border-radius: 0 0 8px 8px;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 	list-style: none;
 	margin: 0;
 	padding: 0;

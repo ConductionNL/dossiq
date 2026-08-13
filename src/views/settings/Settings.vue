@@ -16,63 +16,63 @@
 				<NcTextField
 					:model-value="form.register"
 					:label="t('procest', 'Register')"
-					@update:model-value="v => form.register = v" />
+					@update:model-value="(v) => (form.register = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Case schema') }}</label>
 				<NcTextField
 					:model-value="form.case_schema"
 					:label="t('procest', 'Case schema')"
-					@update:model-value="v => form.case_schema = v" />
+					@update:model-value="(v) => (form.case_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Task schema') }}</label>
 				<NcTextField
 					:model-value="form.task_schema"
 					:label="t('procest', 'Task schema')"
-					@update:model-value="v => form.task_schema = v" />
+					@update:model-value="(v) => (form.task_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Status schema') }}</label>
 				<NcTextField
 					:model-value="form.status_schema"
 					:label="t('procest', 'Status schema')"
-					@update:model-value="v => form.status_schema = v" />
+					@update:model-value="(v) => (form.status_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Role schema') }}</label>
 				<NcTextField
 					:model-value="form.role_schema"
 					:label="t('procest', 'Role schema')"
-					@update:model-value="v => form.role_schema = v" />
+					@update:model-value="(v) => (form.role_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Result schema') }}</label>
 				<NcTextField
 					:model-value="form.result_schema"
 					:label="t('procest', 'Result schema')"
-					@update:model-value="v => form.result_schema = v" />
+					@update:model-value="(v) => (form.result_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Decision schema') }}</label>
 				<NcTextField
 					:model-value="form.decision_schema"
 					:label="t('procest', 'Decision schema')"
-					@update:model-value="v => form.decision_schema = v" />
+					@update:model-value="(v) => (form.decision_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Case type schema') }}</label>
 				<NcTextField
 					:model-value="form.case_type_schema"
 					:label="t('procest', 'Case type schema')"
-					@update:model-value="v => form.case_type_schema = v" />
+					@update:model-value="(v) => (form.case_type_schema = v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Status type schema') }}</label>
 				<NcTextField
 					:model-value="form.status_type_schema"
 					:label="t('procest', 'Status type schema')"
-					@update:model-value="v => form.status_type_schema = v" />
+					@update:model-value="(v) => (form.status_type_schema = v)" />
 			</div>
 		</div>
 
@@ -134,7 +134,9 @@ export default {
 			const result = await this.settingsStore.saveSettings(this.form)
 			if (result) {
 				this.saved = true
-				setTimeout(() => { this.saved = false }, 3000)
+				setTimeout(() => {
+					this.saved = false
+				}, 3000)
 			}
 		},
 	},

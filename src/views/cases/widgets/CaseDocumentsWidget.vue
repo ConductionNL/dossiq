@@ -4,13 +4,14 @@
 			{{ t('procest', 'No documents attached') }}
 		</div>
 		<div v-else class="documents-list">
-			<div
-				v-for="doc in documents"
-				:key="doc.id"
-				class="document-row">
-				<span class="document-icon">{{ getFileIcon(doc.mimeType || doc.type) }}</span>
+			<div v-for="doc in documents" :key="doc.id" class="document-row">
+				<span class="document-icon">{{
+					getFileIcon(doc.mimeType || doc.type)
+				}}</span>
 				<div class="document-info">
-					<span class="document-name">{{ doc.title || doc.name || '---' }}</span>
+					<span class="document-name">{{
+						doc.title || doc.name || '---'
+					}}</span>
 					<span v-if="doc.createdAt" class="document-date">
 						{{ formatDate(doc.createdAt) }}
 					</span>
@@ -45,7 +46,8 @@ export default {
 			if (!mimeType) return '📄'
 			if (mimeType.includes('pdf')) return '📕'
 			if (mimeType.includes('image')) return '🖼'
-			if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return '📊'
+			if (mimeType.includes('spreadsheet') || mimeType.includes('excel'))
+				return '📊'
 			return '📄'
 		},
 	},

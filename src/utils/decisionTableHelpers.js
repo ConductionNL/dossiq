@@ -53,7 +53,10 @@ export function validateTableStructure(parsed) {
 	const errors = []
 
 	if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-		return { valid: false, errors: ['Decision definition must be a JSON object'] }
+		return {
+			valid: false,
+			errors: ['Decision definition must be a JSON object'],
+		}
 	}
 
 	const inputs = parsed.inputs
@@ -75,7 +78,9 @@ export function validateTableStructure(parsed) {
 	if (!Array.isArray(rules)) {
 		errors.push('rules must be an array')
 	} else if (Array.isArray(inputs) && Array.isArray(outputs)) {
-		rules.forEach((rule, i) => validateRule(rule, i, inputs.length, outputs.length, errors))
+		rules.forEach((rule, i) =>
+			validateRule(rule, i, inputs.length, outputs.length, errors),
+		)
 	}
 
 	return { valid: errors.length === 0, errors }
@@ -120,10 +125,14 @@ function validateRule(rule, index, inputCount, outputCount, errors) {
 	const inputEntries = Array.isArray(rule.inputEntries) ? rule.inputEntries : []
 	const outputEntries = Array.isArray(rule.outputEntries) ? rule.outputEntries : []
 	if (inputEntries.length !== inputCount) {
-		errors.push(`rules[${index}] has ${inputEntries.length} inputEntries but ${inputCount} inputs are declared`)
+		errors.push(
+			`rules[${index}] has ${inputEntries.length} inputEntries but ${inputCount} inputs are declared`,
+		)
 	}
 	if (outputEntries.length !== outputCount) {
-		errors.push(`rules[${index}] has ${outputEntries.length} outputEntries but ${outputCount} outputs are declared`)
+		errors.push(
+			`rules[${index}] has ${outputEntries.length} outputEntries but ${outputCount} outputs are declared`,
+		)
 	}
 }
 
@@ -142,6 +151,9 @@ export function parseDefinitionJson(raw) {
 	try {
 		return { ok: true, value: JSON.parse(raw) }
 	} catch (e) {
-		return { ok: false, error: 'Invalid JSON: ' + (e && e.message ? e.message : 'parse error') }
+		return {
+			ok: false,
+			error: 'Invalid JSON: ' + (e && e.message ? e.message : 'parse error'),
+		}
 	}
 }

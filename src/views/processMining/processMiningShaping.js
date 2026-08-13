@@ -27,10 +27,12 @@
 export function buildDwellSeries(dwellTime, seriesName) {
 	const rows = dwellTime || []
 	if (rows.length === 0) return []
-	return [{
-		name: seriesName,
-		data: rows.map(r => r.medianHours),
-	}]
+	return [
+		{
+			name: seriesName,
+			data: rows.map((r) => r.medianHours),
+		},
+	]
 }
 
 /**
@@ -41,7 +43,7 @@ export function buildDwellSeries(dwellTime, seriesName) {
  * @return {string[]} Status display names.
  */
 export function buildDwellCategories(dwellTime) {
-	return (dwellTime || []).map(r => r.statusName)
+	return (dwellTime || []).map((r) => r.statusName)
 }
 
 /**
@@ -54,10 +56,12 @@ export function buildDwellCategories(dwellTime) {
 export function buildThroughputSeries(throughputTrend, seriesName) {
 	const rows = throughputTrend || []
 	if (rows.length === 0) return []
-	return [{
-		name: seriesName,
-		data: rows.map(r => r.count),
-	}]
+	return [
+		{
+			name: seriesName,
+			data: rows.map((r) => r.count),
+		},
+	]
 }
 
 /**
@@ -68,7 +72,7 @@ export function buildThroughputSeries(throughputTrend, seriesName) {
  * @return {string[]} ISO week labels (e.g. `2026-W23`).
  */
 export function buildThroughputCategories(throughputTrend) {
-	return (throughputTrend || []).map(r => r.week)
+	return (throughputTrend || []).map((r) => r.week)
 }
 
 /**
@@ -81,8 +85,8 @@ export function buildThroughputCategories(throughputTrend) {
  */
 export function buildBottleneckRows(caseTypes, limit = 10) {
 	const rows = []
-	for (const caseType of (caseTypes || [])) {
-		for (const bottleneck of (caseType.bottlenecks || [])) {
+	for (const caseType of caseTypes || []) {
+		for (const bottleneck of caseType.bottlenecks || []) {
 			rows.push({
 				caseTypeTitle: caseType.title,
 				statusName: bottleneck.statusName,
@@ -117,9 +121,10 @@ export function buildKpiSummary(report) {
 		reworkWeightedSum += (caseType.reworkPercent || 0) * count
 		transitionTotal += count
 	}
-	const overallReworkPercent = transitionTotal > 0
-		? Math.round((reworkWeightedSum / transitionTotal) * 10) / 10
-		: 0
+	const overallReworkPercent =
+		transitionTotal > 0
+			? Math.round((reworkWeightedSum / transitionTotal) * 10) / 10
+			: 0
 
 	const bottleneckRows = buildBottleneckRows(caseTypes, 1)
 	const topBottleneck = bottleneckRows.length > 0 ? bottleneckRows[0] : null

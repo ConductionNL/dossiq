@@ -31,7 +31,12 @@
 			</NcNoteCard>
 
 			<p class="deelzaak-delete-warning__detail">
-				{{ t('procest', 'The sub-cases will remain accessible as standalone cases after deletion.') }}
+				{{
+					t(
+						'procest',
+						'The sub-cases will remain accessible as standalone cases after deletion.',
+					)
+				}}
 			</p>
 
 			<NcNoteCard v-if="error" type="error" role="alert">
@@ -54,12 +59,7 @@
 </template>
 
 <script>
-import {
-	NcButton,
-	NcDialog,
-	NcLoadingIcon,
-	NcNoteCard,
-} from '@nextcloud/vue'
+import { NcButton, NcDialog, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 
 import { useObjectStore } from '../store/modules/object.js'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
@@ -135,7 +135,9 @@ export default {
 			this.busy = true
 			this.error = null
 			try {
-				const result = await this.deelzaakStore.unlinkSubCases(this.parentCaseId)
+				const result = await this.deelzaakStore.unlinkSubCases(
+					this.parentCaseId,
+				)
 				if (!result.complete) {
 					this.error = t(
 						'procest',
@@ -148,7 +150,10 @@ export default {
 				this.$emit('deleted', this.parentCaseId)
 			} catch (err) {
 				console.error('[DeelzaakDeleteWarningModal] delete failed', err)
-				this.error = t('procest', 'The case could not be deleted. Please try again.')
+				this.error = t(
+					'procest',
+					'The case could not be deleted. Please try again.',
+				)
 			} finally {
 				this.busy = false
 			}

@@ -130,9 +130,12 @@ export default {
 			}
 			this.loading = true
 			try {
-				const response = await axios.get(generateUrl('/apps/openregister/api/objects/procest/caseShare'), {
-					params: { caseId: this.objectId, shareType: 'partner' },
-				})
+				const response = await axios.get(
+					generateUrl('/apps/openregister/api/objects/procest/caseShare'),
+					{
+						params: { caseId: this.objectId, shareType: 'partner' },
+					},
+				)
 				this.shares = response.data?.results || []
 			} catch (err) {
 				showError(t('procest', 'Could not load partner shares'))
@@ -149,9 +152,12 @@ export default {
 			}
 			this.federatedLoading = true
 			try {
-				const response = await axios.get(generateUrl(federatedSharesListEndpoint()), {
-					params: { caseId: this.objectId },
-				})
+				const response = await axios.get(
+					generateUrl(federatedSharesListEndpoint()),
+					{
+						params: { caseId: this.objectId },
+					},
+				)
 				this.federatedShares = response.data?.results || []
 			} catch (err) {
 				// Non-fatal: the federation leaf may not be installed on this
@@ -163,7 +169,11 @@ export default {
 		},
 		async loadPartners() {
 			try {
-				const response = await axios.get(generateUrl('/apps/openregister/api/objects/procest/partnerOrganization'))
+				const response = await axios.get(
+					generateUrl(
+						'/apps/openregister/api/objects/procest/partnerOrganization',
+					),
+				)
 				this.partners = response.data?.results || []
 			} catch (err) {
 				this.partners = []
@@ -174,7 +184,11 @@ export default {
 				return
 			}
 			try {
-				const response = await axios.get(generateUrl(`/apps/openregister/api/objects/procest/case/${encodeURIComponent(this.objectId)}`))
+				const response = await axios.get(
+					generateUrl(
+						`/apps/openregister/api/objects/procest/case/${encodeURIComponent(this.objectId)}`,
+					),
+				)
 				const docs = response.data?.documents || []
 				this.caseDocuments = docs.map((id) => ({ id, name: id }))
 			} catch (err) {
@@ -192,7 +206,10 @@ export default {
 				this.createShareDialogOpen = false
 				this.loadShares()
 			} catch (err) {
-				showError(err.response?.data?.error || t('procest', 'Could not create share'))
+				showError(
+					err.response?.data?.error
+						|| t('procest', 'Could not create share'),
+				)
 			}
 		},
 		/**
@@ -201,7 +218,11 @@ export default {
 		 */
 		async revokeShare(shareId) {
 			try {
-				await axios.delete(generateUrl(`/apps/procest/api/shares/${encodeURIComponent(shareId)}`))
+				await axios.delete(
+					generateUrl(
+						`/apps/procest/api/shares/${encodeURIComponent(shareId)}`,
+					),
+				)
 				showSuccess(t('procest', 'Share revoked'))
 				this.loadShares()
 			} catch (err) {
@@ -218,7 +239,10 @@ export default {
 				showSuccess(t('procest', 'Transfer request submitted'))
 				this.transferDialogOpen = false
 			} catch (err) {
-				showError(err.response?.data?.error || t('procest', 'Could not submit transfer request'))
+				showError(
+					err.response?.data?.error
+						|| t('procest', 'Could not submit transfer request'),
+				)
 			}
 		},
 		/**
@@ -227,12 +251,18 @@ export default {
 		 */
 		async createFederatedShare(payload) {
 			try {
-				await axios.post(generateUrl(createFederatedShareEndpoint()), payload)
+				await axios.post(
+					generateUrl(createFederatedShareEndpoint()),
+					payload,
+				)
 				showSuccess(t('procest', 'Case shared with remote organisation'))
 				this.createFederatedShareDialogOpen = false
 				this.loadFederatedShares()
 			} catch (err) {
-				showError(err.response?.data?.error || t('procest', 'Could not create federated share'))
+				showError(
+					err.response?.data?.error
+						|| t('procest', 'Could not create federated share'),
+				)
 			}
 		},
 		/**
@@ -241,7 +271,9 @@ export default {
 		 */
 		async revokeFederatedShare(shareId) {
 			try {
-				await axios.delete(generateUrl(revokeFederatedShareEndpoint(shareId)))
+				await axios.delete(
+					generateUrl(revokeFederatedShareEndpoint(shareId)),
+				)
 				showSuccess(t('procest', 'Federated share revoked'))
 				this.loadFederatedShares()
 			} catch (err) {
@@ -257,7 +289,9 @@ export default {
 			this.activityPanelOpen = true
 			this.activityLoading = true
 			try {
-				const response = await axios.get(generateUrl(federatedActivityEndpoint(shareId)))
+				const response = await axios.get(
+					generateUrl(federatedActivityEndpoint(shareId)),
+				)
 				this.activityEntries = response.data?.entries || []
 			} catch (err) {
 				showError(t('procest', 'Could not load activity'))
@@ -271,12 +305,18 @@ export default {
 		 */
 		async postActivity(payload) {
 			try {
-				await axios.post(generateUrl(federatedActivityEndpoint(payload.federatedShareId)), {
-					message: payload.message,
-				})
+				await axios.post(
+					generateUrl(federatedActivityEndpoint(payload.federatedShareId)),
+					{
+						message: payload.message,
+					},
+				)
 				this.openActivity(payload.federatedShareId)
 			} catch (err) {
-				showError(err.response?.data?.error || t('procest', 'Could not post activity'))
+				showError(
+					err.response?.data?.error
+						|| t('procest', 'Could not post activity'),
+				)
 			}
 		},
 	},

@@ -13,13 +13,27 @@
 
 		<p class="deadline-panel__remaining">
 			<template v-if="daysRemaining > 0">
-				{{ n('procest', '%n working day remaining', '%n working days remaining', daysRemaining) }}
+				{{
+					n(
+						'procest',
+						'%n working day remaining',
+						'%n working days remaining',
+						daysRemaining,
+					)
+				}}
 			</template>
 			<template v-else-if="daysRemaining === 0">
 				{{ t('procest', 'Deadline is today!') }}
 			</template>
 			<template v-else>
-				{{ n('procest', '%n working day overdue', '%n working days overdue', Math.abs(daysRemaining)) }}
+				{{
+					n(
+						'procest',
+						'%n working day overdue',
+						'%n working days overdue',
+						Math.abs(daysRemaining),
+					)
+				}}
 			</template>
 		</p>
 	</section>

@@ -77,6 +77,8 @@ export async function fetchBetrokkeneExtract({ idType, idValue, from, to }) {
 	if (to) {
 		params.to = to
 	}
-	const { data } = await axios.get(orBase('/api/avg/verwerkingen/betrokkene'), { params })
+	const { data } = await axios.get(orBase('/api/avg/verwerkingen/betrokkene'), {
+		params,
+	})
 	return data
 }

@@ -36,7 +36,7 @@
 				type="search"
 				class="substitution-admin__search"
 				:aria-label="t('procest', 'Filter by handler…')"
-				:placeholder="t('procest', 'Filter by handler…')">
+				:placeholder="t('procest', 'Filter by handler…')" />
 		</div>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
@@ -62,12 +62,19 @@
 					<td>{{ sub.substitute }}</td>
 					<td>{{ sub.startDate }} → {{ sub.endDate }}</td>
 					<td>{{ sub.scope }}</td>
-					<td><span :class="`status status--${sub.status}`">{{ sub.status }}</span></td>
+					<td>
+						<span :class="`status status--${sub.status}`">{{
+							sub.status
+						}}</span>
+					</td>
 					<td class="substitution-admin__row-actions">
 						<NcButton type="tertiary" @click="openActions(sub)">
 							{{ t('procest', 'Actions') }}
 						</NcButton>
-						<NcButton v-if="sub.status === 'active'" type="tertiary" @click="revoke(sub.id)">
+						<NcButton
+							v-if="sub.status === 'active'"
+							type="tertiary"
+							@click="revoke(sub.id)">
 							{{ t('procest', 'Revoke') }}
 						</NcButton>
 					</td>
@@ -76,15 +83,22 @@
 		</table>
 
 		<!-- Capacity-stamped action list -->
-		<div v-if="selectedSub" class="substitution-admin__detail" data-testid="substitution-actions">
+		<div
+			v-if="selectedSub"
+			class="substitution-admin__detail"
+			data-testid="substitution-actions">
 			<h3>{{ t('procest', 'Actions performed under this substitution') }}</h3>
 			<NcEmptyContent
 				v-if="actions.length === 0"
 				:name="t('procest', 'No actions recorded yet')" />
 			<ul v-else>
 				<li v-for="(a, idx) in actions" :key="idx">
-					{{ a.timestamp }} — {{ a.caseTitle || a.caseId }} — {{ a.action }}
-					({{ t('procest', 'on behalf of {who}', { who: a.actedOnBehalfOf }) }})
+					{{ a.timestamp }} — {{ a.caseTitle || a.caseId }} —
+					{{ a.action }} ({{
+						t('procest', 'on behalf of {who}', {
+							who: a.actedOnBehalfOf,
+						})
+					}})
 				</li>
 			</ul>
 		</div>
@@ -108,7 +122,11 @@ import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import AccountArrowRight from 'vue-material-design-icons/AccountArrowRight.vue'
 import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
 import BulkReassignModal from '../../modals/BulkReassignModal.vue'
-import { listSubstitutions, revokeSubstitution, fetchSubstitutionActions } from '../../services/substitutionApi.js'
+import {
+	listSubstitutions,
+	revokeSubstitution,
+	fetchSubstitutionActions,
+} from '../../services/substitutionApi.js'
 
 export default {
 	name: 'SubstitutionAdmin',
@@ -139,9 +157,10 @@ export default {
 			if (!q) {
 				return this.substitutions
 			}
-			return this.substitutions.filter(s =>
-				(s.absentee || '').toLowerCase().includes(q)
-				|| (s.substitute || '').toLowerCase().includes(q),
+			return this.substitutions.filter(
+				(s) =>
+					(s.absentee || '').toLowerCase().includes(q)
+					|| (s.substitute || '').toLowerCase().includes(q),
 			)
 		},
 	},

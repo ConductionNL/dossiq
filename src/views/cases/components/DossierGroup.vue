@@ -85,8 +85,8 @@ export default {
 			const key = this.sortKey
 			const dir = this.sortDirection === 'asc' ? 1 : -1
 			return [...this.documents].sort((a, b) => {
-				const av = (a[key] || '')
-				const bv = (b[key] || '')
+				const av = a[key] || ''
+				const bv = b[key] || ''
 				if (av < bv) {
 					return -1 * dir
 				}

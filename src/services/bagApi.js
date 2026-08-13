@@ -75,6 +75,8 @@ export async function lookupPand(id) {
  * @spec openspec/changes/bag-register-adapter/proposal.md
  */
 export async function lookupVerblijfsobject(id) {
-	const response = await axios.get(`${BASE_URL}/verblijfsobject/${encodeURIComponent(id)}`)
+	const response = await axios.get(
+		`${BASE_URL}/verblijfsobject/${encodeURIComponent(id)}`,
+	)
 	return response.data
 }

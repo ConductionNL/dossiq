@@ -37,10 +37,7 @@ describe('buildPlanTree', () => {
 
 	it('treats null/absent parentId as top-level', async () => {
 		const { buildPlanTree } = await importHelpers()
-		const items = [
-			{ id: 'a', parentId: null },
-			{ id: 'b' },
-		]
+		const items = [{ id: 'a', parentId: null }, { id: 'b' }]
 		const tree = buildPlanTree(items)
 		expect(tree.map((n) => n.id).sort()).toEqual(['a', 'b'])
 	})
@@ -75,7 +72,14 @@ describe('buildPlanTree', () => {
 describe('stateBadge', () => {
 	it('maps every known state to a label and CSS class', async () => {
 		const { stateBadge } = await importHelpers()
-		for (const state of ['available', 'enabled', 'active', 'completed', 'terminated', 'disabled']) {
+		for (const state of [
+			'available',
+			'enabled',
+			'active',
+			'completed',
+			'terminated',
+			'disabled',
+		]) {
 			const badge = stateBadge(state)
 			expect(badge.label).not.toBe('')
 			expect(badge.cssClass).toBe(`cmmn-plan-panel__badge--${state}`)

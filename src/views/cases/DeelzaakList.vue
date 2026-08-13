@@ -18,7 +18,10 @@
 	<div class="deelzaak-list">
 		<div class="deelzaak-list__header">
 			<div class="deelzaak-list__title">
-				<NcButton type="tertiary" :aria-label="t('procest', 'Back to parent case')" @click="goToParent">
+				<NcButton
+					type="tertiary"
+					:aria-label="t('procest', 'Back to parent case')"
+					@click="goToParent">
 					<template #icon>
 						<ArrowLeft :size="20" />
 					</template>
@@ -69,10 +72,7 @@
 				<FolderMultipleOutline :size="48" />
 			</template>
 			<template #action>
-				<NcButton
-					v-if="canCreate"
-					type="primary"
-					@click="showCreate = true">
+				<NcButton v-if="canCreate" type="primary" @click="showCreate = true">
 					{{ t('procest', 'Create first sub-case') }}
 				</NcButton>
 			</template>
@@ -99,13 +99,17 @@
 						<td>{{ subCase.identifier || '—' }}</td>
 						<td>{{ subCase.title || '—' }}</td>
 						<td>
-							<span class="status-badge" :class="getStatusClass(subCase)">
+							<span
+								class="status-badge"
+								:class="getStatusClass(subCase)">
 								{{ getStatusName(subCase) }}
 							</span>
 						</td>
 						<td>{{ subCase.assignee || '—' }}</td>
 						<td>{{ formatDate(subCase.deadline) }}</td>
-						<td>{{ subCase.endDate ? formatDate(subCase.endDate) : '—' }}</td>
+						<td>
+							{{ subCase.endDate ? formatDate(subCase.endDate) : '—' }}
+						</td>
 					</tr>
 				</tbody>
 			</table>
@@ -138,11 +142,7 @@
 </template>
 
 <script>
-import {
-	NcButton,
-	NcEmptyContent,
-	NcLoadingIcon,
-} from '@nextcloud/vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { CnConfirmDialog } from '@conduction/nextcloud-vue'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
@@ -210,13 +210,17 @@ export default {
 				if (aOpen !== bOpen) {
 					return aOpen ? -1 : 1
 				}
-				const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Number.POSITIVE_INFINITY
-				const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Number.POSITIVE_INFINITY
+				const aDeadline = a.deadline
+					? new Date(a.deadline).getTime()
+					: Number.POSITIVE_INFINITY
+				const bDeadline = b.deadline
+					? new Date(b.deadline).getTime()
+					: Number.POSITIVE_INFINITY
 				return aDeadline - bDeadline
 			})
 		},
 		completedCount() {
-			return this.subCases.filter(sc => sc.endDate).length
+			return this.subCases.filter((sc) => sc.endDate).length
 		},
 		totalCount() {
 			return this.subCases.length
@@ -243,18 +247,26 @@ export default {
 		},
 		emptyDescription() {
 			if (this.canCreate) {
-				return t('procest', 'This case has no sub-cases yet. Use the button above to create the first one.')
+				return t(
+					'procest',
+					'This case has no sub-cases yet. Use the button above to create the first one.',
+				)
 			}
 			if (this.parent?.parentCase) {
 				return t('procest', 'Sub-cases cannot themselves have sub-cases.')
 			}
 			if (this.parent?.endDate) {
-				return t('procest', 'This case is closed; sub-cases can no longer be added.')
+				return t(
+					'procest',
+					'This case is closed; sub-cases can no longer be added.',
+				)
 			}
 			return t('procest', 'The parent case type does not allow any sub-cases.')
 		},
 		parentRoute() {
-			return this.parent ? { name: 'CaseDetail', params: { id: this.parent.id } } : { name: 'Cases' }
+			return this.parent
+				? { name: 'CaseDetail', params: { id: this.parent.id } }
+				: { name: 'Cases' }
 		},
 	},
 	watch: {
@@ -282,9 +294,15 @@ export default {
 			this.loading = true
 			try {
 				const results = await Promise.all([
-					this.objectStore.fetchObject('case', this.parentCaseId).catch(() => null),
-					this.deelzaakStore.fetchSubCases(this.parentCaseId).catch(() => []),
-					this.objectStore.fetchCollection('statusType', { _limit: 200 }).catch(() => []),
+					this.objectStore
+						.fetchObject('case', this.parentCaseId)
+						.catch(() => null),
+					this.deelzaakStore
+						.fetchSubCases(this.parentCaseId)
+						.catch(() => []),
+					this.objectStore
+						.fetchCollection('statusType', { _limit: 200 })
+						.catch(() => []),
 				])
 				const parent = results[0]
 				const statusTypes = results[2]
@@ -295,7 +313,7 @@ export default {
 						.catch(() => null)
 				}
 				const cache = {}
-				for (const st of (statusTypes || [])) {
+				for (const st of statusTypes || []) {
 					cache[st.id] = st
 				}
 				this.statusTypeCache = cache
@@ -368,7 +386,10 @@ export default {
 			} catch (err) {
 				console.error('[DeelzaakList] parent delete failed', err)
 				this.$refs.deleteConfirmDialog.setResult({
-					error: t('procest', 'The case could not be deleted. Please try again.'),
+					error: t(
+						'procest',
+						'The case could not be deleted. Please try again.',
+					),
 				})
 			}
 		},

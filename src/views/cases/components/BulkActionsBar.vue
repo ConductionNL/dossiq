@@ -3,7 +3,14 @@
 <template>
 	<div v-if="selectedCount > 0" class="dossier-bulk-bar">
 		<span class="dossier-bulk-bar__count">
-			{{ n('procest', '%n document selected', '%n documents selected', selectedCount) }}
+			{{
+				n(
+					'procest',
+					'%n document selected',
+					'%n documents selected',
+					selectedCount,
+				)
+			}}
 		</span>
 
 		<div class="dossier-bulk-bar__actions">
@@ -16,7 +23,7 @@
 				class="dossier-bulk-bar__select"
 				:input-label="t('procest', 'Change confidentiality')"
 				:options="classificationOptions"
-				:reduce="option => option.id"
+				:reduce="(option) => option.id"
 				label="label"
 				:disabled="busy"
 				@option:selected="onClassificationSelected" />
@@ -25,7 +32,10 @@
 				{{ t('procest', 'Download selection as ZIP') }}
 			</NcButton>
 
-			<NcButton type="tertiary" :disabled="busy" @click="$emit('clear-selection')">
+			<NcButton
+				type="tertiary"
+				:disabled="busy"
+				@click="$emit('clear-selection')">
 				{{ t('procest', 'Clear selection') }}
 			</NcButton>
 		</div>
@@ -34,8 +44,17 @@
 			<li
 				v-for="result in results"
 				:key="result.id"
-				:class="result.success ? 'dossier-bulk-bar__result--ok' : 'dossier-bulk-bar__result--fail'">
-				{{ result.id }}: {{ result.success ? t('procest', 'OK') : (result.error || t('procest', 'Failed')) }}
+				:class="
+					result.success
+						? 'dossier-bulk-bar__result--ok'
+						: 'dossier-bulk-bar__result--fail'
+				">
+				{{ result.id }}:
+				{{
+					result.success
+						? t('procest', 'OK')
+						: result.error || t('procest', 'Failed')
+				}}
 			</li>
 		</ul>
 	</div>
@@ -72,7 +91,12 @@ export default {
 			default: () => [],
 		},
 	},
-	emits: ['mark-final', 'change-confidentiality', 'download-zip', 'clear-selection'],
+	emits: [
+		'mark-final',
+		'change-confidentiality',
+		'download-zip',
+		'clear-selection',
+	],
 	data() {
 		return {
 			bulkClassification: '',
@@ -88,9 +112,15 @@ export default {
 		classificationOptions() {
 			return [
 				{ id: 'openbaar', label: this.t('procest', 'Public') },
-				{ id: 'beperkt_openbaar', label: this.t('procest', 'Limited public') },
+				{
+					id: 'beperkt_openbaar',
+					label: this.t('procest', 'Limited public'),
+				},
 				{ id: 'intern', label: this.t('procest', 'Internal') },
-				{ id: 'zaakvertrouwelijk', label: this.t('procest', 'Case-confidential') },
+				{
+					id: 'zaakvertrouwelijk',
+					label: this.t('procest', 'Case-confidential'),
+				},
 				{ id: 'vertrouwelijk', label: this.t('procest', 'Confidential') },
 				{ id: 'confidentieel', label: this.t('procest', 'Restricted') },
 				{ id: 'geheim', label: this.t('procest', 'Secret') },

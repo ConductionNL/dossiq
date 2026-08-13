@@ -29,7 +29,9 @@ describe('buildSpanPreview', () => {
 	})
 
 	it('clamps offsets into range rather than throwing on out-of-bounds spans', () => {
-		expect(() => buildSpanPreview('short', { start: -50, end: 999 })).not.toThrow()
+		expect(() =>
+			buildSpanPreview('short', { start: -50, end: 999 }),
+		).not.toThrow()
 		const preview = buildSpanPreview('short', { start: -50, end: 999 })
 		expect(preview).toBe('…short…')
 	})
@@ -57,7 +59,11 @@ describe('buildInitialSelections', () => {
 
 describe('filterSelectedSpans', () => {
 	it('keeps only spans marked selected', () => {
-		const spans = [{ category: 'bsn' }, { category: 'person' }, { category: 'phone' }]
+		const spans = [
+			{ category: 'bsn' },
+			{ category: 'person' },
+			{ category: 'phone' },
+		]
 		const selections = { 0: true, 1: false, 2: true }
 		const result = filterSelectedSpans(spans, selections)
 		expect(result).toEqual([{ category: 'bsn' }, { category: 'phone' }])
@@ -70,7 +76,9 @@ describe('filterSelectedSpans', () => {
 
 	it('treats an unset selection as unselected', () => {
 		const spans = [{ category: 'bsn' }, { category: 'person' }]
-		expect(filterSelectedSpans(spans, { 0: true })).toEqual([{ category: 'bsn' }])
+		expect(filterSelectedSpans(spans, { 0: true })).toEqual([
+			{ category: 'bsn' },
+		])
 	})
 })
 

@@ -24,7 +24,9 @@ export function getDecisionValidity(decision) {
 				status: 'not_effective',
 				label: t('procest', 'Not yet effective'),
 				style: 'validity--pending',
-				remaining: t('procest', 'Effective from {date}', { date: formatDecisionDate(decision.effectiveDate) }),
+				remaining: t('procest', 'Effective from {date}', {
+					date: formatDecisionDate(decision.effectiveDate),
+				}),
 			}
 		}
 	}
@@ -50,7 +52,9 @@ export function getDecisionValidity(decision) {
 				status: 'expiring_soon',
 				label: t('procest', 'Expires in {days} days', { days: diffDays }),
 				style: 'validity--warning',
-				remaining: t('procest', 'Expires {date}', { date: formatDecisionDate(decision.expiryDate) }),
+				remaining: t('procest', 'Expires {date}', {
+					date: formatDecisionDate(decision.expiryDate),
+				}),
 			}
 		}
 
@@ -58,7 +62,9 @@ export function getDecisionValidity(decision) {
 			status: 'active',
 			label: t('procest', 'Active'),
 			style: 'validity--active',
-			remaining: t('procest', 'Valid until {date}', { date: formatDecisionDate(decision.expiryDate) }),
+			remaining: t('procest', 'Valid until {date}', {
+				date: formatDecisionDate(decision.expiryDate),
+			}),
 		}
 	}
 
@@ -68,7 +74,9 @@ export function getDecisionValidity(decision) {
 			status: 'active',
 			label: t('procest', 'Active'),
 			style: 'validity--active',
-			remaining: t('procest', 'From {date}', { date: formatDecisionDate(decision.effectiveDate) }),
+			remaining: t('procest', 'From {date}', {
+				date: formatDecisionDate(decision.effectiveDate),
+			}),
 		}
 	}
 
@@ -93,7 +101,11 @@ export function getDecisionValidity(decision) {
 export function formatDecisionDate(dateString) {
 	if (!dateString) return '—'
 	const date = new Date(dateString)
-	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+	return date.toLocaleDateString(undefined, {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric',
+	})
 }
 
 /**
@@ -117,7 +129,10 @@ export function validateDecision(form) {
 		const effective = new Date(form.effectiveDate)
 		const expiry = new Date(form.expiryDate)
 		if (expiry <= effective) {
-			errors.expiryDate = t('procest', 'Expiry date must be after effective date')
+			errors.expiryDate = t(
+				'procest',
+				'Expiry date must be after effective date',
+			)
 		}
 	}
 

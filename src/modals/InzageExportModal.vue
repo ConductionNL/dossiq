@@ -12,7 +12,10 @@
   @spec openspec/specs/avg-verwerkingenlogging/spec.md
 -->
 <template>
-	<NcModal size="normal" :name="t('procest', 'Data subject access export')" @close="$emit('close')">
+	<NcModal
+		size="normal"
+		:name="t('procest', 'Data subject access export')"
+		@close="$emit('close')">
 		<div class="inzage-export">
 			<!-- No <h2> here: NcModal's `name` prop already renders the dialog
 			     heading (h2.modal-header__name) and wires it as the dialog's
@@ -20,7 +23,12 @@
 			     twice to a screen reader and made every
 			     getByRole('heading', …) query ambiguous. -->
 			<p class="inzage-export__hint">
-				{{ t('procest', 'Produces the per-subject processing extract from OpenRegister (AVG art. 15). The export itself is logged.') }}
+				{{
+					t(
+						'procest',
+						'Produces the per-subject processing extract from OpenRegister (AVG art. 15). The export itself is logged.',
+					)
+				}}
 			</p>
 
 			<NcSelect
@@ -40,9 +48,19 @@
 				{{ error }}
 			</div>
 
-			<div v-if="result" class="inzage-export__result" data-testid="inzage-result">
+			<div
+				v-if="result"
+				class="inzage-export__result"
+				data-testid="inzage-result">
 				<p>
-					{{ n('procest', '%n logged processing found for this subject.', '%n logged processings found for this subject.', result.count) }}
+					{{
+						n(
+							'procest',
+							'%n logged processing found for this subject.',
+							'%n logged processings found for this subject.',
+							result.count,
+						)
+					}}
 				</p>
 				<NcButton type="secondary" @click="download">
 					{{ t('procest', 'Download extract (JSON)') }}
@@ -53,7 +71,10 @@
 				<NcButton type="tertiary" @click="$emit('close')">
 					{{ t('procest', 'Close') }}
 				</NcButton>
-				<NcButton type="primary" :disabled="loading || !idValue" @click="run">
+				<NcButton
+					type="primary"
+					:disabled="loading || !idValue"
+					@click="run">
 					<template #icon>
 						<NcLoadingIcon v-if="loading" :size="20" />
 					</template>
@@ -65,7 +86,13 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcModal, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcLoadingIcon,
+	NcModal,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 import { fetchBetrokkeneExtract } from '../services/verwerkingenApi.js'
 
 export default {
@@ -94,12 +121,21 @@ export default {
 			this.error = null
 			this.result = null
 			try {
-				this.result = await fetchBetrokkeneExtract({ idType: this.idType, idValue: this.idValue.trim() })
+				this.result = await fetchBetrokkeneExtract({
+					idType: this.idType,
+					idValue: this.idValue.trim(),
+				})
 			} catch (err) {
 				if (err.response && err.response.status === 403) {
-					this.error = t('procest', 'Privacy-officer or admin privileges are required for this export.')
+					this.error = t(
+						'procest',
+						'Privacy-officer or admin privileges are required for this export.',
+					)
 				} else {
-					this.error = t('procest', 'The extract could not be produced. Please try again.')
+					this.error = t(
+						'procest',
+						'The extract could not be produced. Please try again.',
+					)
 				}
 			} finally {
 				this.loading = false
@@ -107,7 +143,9 @@ export default {
 		},
 		/** @spec openspec/specs/avg-verwerkingenlogging/spec.md */
 		download() {
-			const blob = new Blob([JSON.stringify(this.result, null, 2)], { type: 'application/json' })
+			const blob = new Blob([JSON.stringify(this.result, null, 2)], {
+				type: 'application/json',
+			})
 			const url = URL.createObjectURL(blob)
 			const a = document.createElement('a')
 			a.href = url
