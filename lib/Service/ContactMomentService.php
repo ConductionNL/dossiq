@@ -85,7 +85,7 @@ class ContactMomentService {
 
 		$record = [
 			'kanaal' => (string)$data['kanaal'],
-			'direction' => (string)($data['direction'] ?? 'inkomend'),
+			'direction' => (string)($data['direction'] ?? 'inbound'),
 			'startTime' => (string)($data['startTime'] ?? $now),
 			'endTime' => ($data['endTime'] ?? null),
 			'callerIdentification' => (string)($data['callerIdentification'] ?? ''),

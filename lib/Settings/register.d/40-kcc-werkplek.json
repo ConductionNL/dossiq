@@ -34,7 +34,7 @@
                 "required": ["kanaal", "direction", "identificationMethod", "kccEmployeeId", "nature", "summary"],
                 "properties": {
                     "kanaal": {"type": "string", "title": "Channel", "enum": ["phone", "email", "webformulier", "chat", "social_media", "balie"], "description": "Communication channel"},
-                    "direction": {"type": "string", "title": "Direction", "enum": ["inkomend", "uitgaand"], "description": "Direction of the contact"},
+                    "direction": {"type": "string", "title": "Direction", "enum": ["inbound", "outbound"], "description": "Direction of the contact"},
                     "startTime": {"type": "string", "title": "Start Time", "format": "date-time", "description": "Start time of the contact"},
                     "endTime": {"type": "string", "title": "End Time", "format": "date-time", "description": "End time of the contact"},
                     "durationSeconds": {"type": "integer", "title": "Duration Seconds", "description": "Calculated duration in seconds"},
