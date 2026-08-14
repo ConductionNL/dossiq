@@ -31,6 +31,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\DataDownloadResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
@@ -105,6 +106,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function index(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -200,6 +202,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
 	public function create(string $resource): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -381,6 +384,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function show(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -416,6 +420,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
 	public function update(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -450,6 +455,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
 	public function patch(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -484,6 +490,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
 	public function destroy(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -585,6 +592,8 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	// Lower than the sibling reads: a download moves file bytes.
+	#[AnonRateLimit(limit: 60, period: 60)]
 	public function download(string $uuid): DataDownloadResponse|JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -656,6 +665,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
 	public function lock(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -782,6 +792,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 30, period: 60)]
 	public function unlock(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -932,6 +943,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function audittrailIndex(string $resource, string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -975,6 +987,7 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function audittrailShow(string $resource, string $uuid, string $auditUuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -1354,6 +1367,9 @@ class DrcController extends ZgwController {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	// Tight: each call accepts a chunk of file bytes, so this is the cheapest
+	// way for an anonymous caller to consume storage.
+	#[AnonRateLimit(limit: 30, period: 60)]
 	public function uploadChunk(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {

@@ -37,6 +37,7 @@ use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\ConsultationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use Psr\Log\LoggerInterface;
@@ -86,6 +87,7 @@ class ConsultationPublicController extends Controller {
 	 *
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
 	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function publicResponseGet(string $token): JSONResponse {
 		if (empty($token) === true) {
 			return new JSONResponse(['error' => 'Token is required'], Http::STATUS_BAD_REQUEST);
@@ -123,6 +125,9 @@ class ConsultationPublicController extends Controller {
 	 *
 	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-04
 	 */
+	// Tight: this is an unauthenticated public consultation response, so an
+	// unbounded caller can stuff the consultation with fabricated submissions.
+	#[AnonRateLimit(limit: 20, period: 60)]
 	public function publicResponsePost(string $token): JSONResponse {
 		if (empty($token) === true) {
 			return new JSONResponse(['error' => 'Token is required'], Http::STATUS_BAD_REQUEST);
