@@ -34,6 +34,7 @@ use OCP\IUser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Service\ObjectService;
 
 /**
  * Service for samenwerkverzoek lifecycle management.
@@ -61,7 +62,8 @@ class SamenwerkverzoekService {
 		private readonly ContainerInterface $container,
 		private readonly IEventDispatcher $eventDispatcher,
 		private readonly LoggerInterface $logger,
-	) {
+	
+		private readonly ObjectService $objectService,) {
 	}//end __construct()
 
 	/**
@@ -273,7 +275,7 @@ class SamenwerkverzoekService {
 	 */
 	private function getObjectService(): object {
 		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
+			return $this->objectService;
 		} catch (\Throwable $e) {
 			throw new RuntimeException(
 				'OpenRegister ObjectService not available: ' . $e->getMessage(),
