@@ -291,10 +291,13 @@ $extra = [
         // /api/stuf/inbound. This URL is a WIRE CONTRACT: it is written into the
         // upstream system's configuration, not into ours, so renaming it alone
         // turns a working webhook into a silent 404 on somebody else's schedule.
-        // The alias keeps the Dutch spelling alive deliberately and visibly, so
-        // it is a migration step with an end rather than a name we forgot.
-    ['name' => 'stuf#inbound',   'url' => '/api/stuf/inkomend',  'verb' => 'POST',
-        'postfix' => 'legacy-dutch-alias'],
+        //
+        // It routes to its OWN method rather than reusing 'stuf#inbound' with a
+        // postfix: openregister's AppHost Routes::standard() rejects duplicate
+        // names by `name` alone and never looks at `postfix`, so the two-entries-
+        // one-name form throws "Duplicate route name" at boot and takes the whole
+        // app's routing down with it.
+    ['name' => 'stuf#inboundLegacyPath', 'url' => '/api/stuf/inkomend', 'verb' => 'POST'],
 
         // Doorlooptijd (throughput-time) dashboard metrics.
     ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],

@@ -241,6 +241,37 @@ class StufController extends Controller {
 
 
 	/**
+	 * Serve the deprecated Dutch URL, /api/stuf/inkomend.
+	 *
+	 * Delegates to inbound(). It exists as its own method only because the URL
+	 * is a WIRE CONTRACT held in the upstream zaaksysteem's configuration:
+	 * renaming the path alone would turn a working webhook into a silent 404 on
+	 * somebody else's schedule.
+	 *
+	 * It cannot be expressed as a second routes.php entry reusing
+	 * `stuf#inbound` with a `postfix`, because openregister's AppHost
+	 * Routes::standard() rejects duplicates by `name` alone and never reads
+	 * `postfix` — that form throws "Duplicate route name" at boot and takes the
+	 * whole app's routing down. Measured: it failed procest's E2E seed.
+	 *
+	 * Remove once every configured sender posts to /api/stuf/inbound.
+	 *
+	 * @return DataResponse
+	 *
+	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
+	 *
+	 * @contract exclude Deprecated path alias for inbound(); the behaviour is covered by StufControllerInboundTest.
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 300, period: 60)]
+	public function inboundLegacyPath(): DataResponse {
+		return $this->inbound();
+
+	}//end inboundLegacyPath()
+
+
+	/**
 	 * Read the raw request body.
 	 *
 	 * A seam, and the reason this endpoint had no tests while its two siblings
