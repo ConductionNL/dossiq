@@ -192,7 +192,7 @@
                 "direction": {
                     "type": "string",
                     "description": "Message direction.",
-                    "enum": ["uitgaand", "inkomend"]
+                    "enum": ["outbound", "inbound"]
                 },
                 "berichtSoort": {
                     "type": "string",

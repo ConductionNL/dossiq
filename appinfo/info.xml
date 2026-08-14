@@ -139,6 +139,18 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 Idempotent, non-destructive, and refuses ambiguous renames.
             -->
             <step>OCA\Procest\Repair\RenameDutchDeadlineColumns</step>
+            <!--
+                Sibling of the step above, but a VALUE migration rather than a
+                column one: the `direction` column already has the right name,
+                and only the strings inside it move (inkomend/uitgaand/intern ->
+                inbound/outbound/internal).
+
+                Scoped to the `direction` COLUMN on purpose. `intern` is also a
+                value of the statutory ZGW vertrouwelijkheidaanduiding enum,
+                which is exempt from the vocabulary rule; a word-based rewrite
+                would have corrupted every confidentiality field in the install.
+            -->
+            <step>OCA\Procest\Repair\RenameDutchDirectionValues</step>
             <step>OCA\Procest\Repair\MigrateArchivalToOpenRegister</step>
             <step>OCA\Procest\Repair\SeedKccWerkplekData</step>
             <step>OCA\Procest\Repair\BackfillInformatieobjectMetadata</step>
@@ -167,6 +179,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
             each operates on data a fresh install does not have:
               MigrateWorkflowDefinitions        one-way migration
               RenameDutchDeadlineColumns        rename over existing rows
+              RenameDutchDirectionValues        rewrite over existing rows
               MigrateArchivalToOpenRegister     one-way migration
               BackfillInformatieobjectMetadata  backfill over existing documents
               LinkInFlight*DecisionsRepair      link IN-FLIGHT decisions; none exist yet

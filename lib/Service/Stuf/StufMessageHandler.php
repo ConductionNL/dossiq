@@ -35,6 +35,34 @@ use DateTimeZone;
  * Persists and updates StufMessage audit rows.
  */
 class StufMessageHandler {
+
+	/**
+	 * Message direction: sent by us.
+	 *
+	 * @var string
+	 */
+	public const DIRECTION_OUTBOUND = 'outbound';
+
+	/**
+	 * Message direction: received by us.
+	 *
+	 * @var string
+	 */
+	public const DIRECTION_INBOUND = 'inbound';
+
+	/**
+	 * The pre-rename Dutch spelling of DIRECTION_OUTBOUND.
+	 *
+	 * Read-only, and referenced from exactly one place: the transition fallback
+	 * in findOutboundByReferentienummer(). Nothing writes it. It exists so a row
+	 * stored before RenameDutchDirectionValues ran is still findable, and it is
+	 * deleted together with that fallback.
+	 *
+	 * @var string
+	 */
+	public const LEGACY_DIRECTION_OUTBOUND = 'uitgaand';
+
+
 	/**
 	 * Constructor.
 	 *
@@ -74,7 +102,7 @@ class StufMessageHandler {
 		$data = [
 			'id' => $this->newId(prefix: 'stuf-msg'),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
-			'direction' => 'uitgaand',
+			'direction' => self::DIRECTION_OUTBOUND,
 			'berichtSoort' => $messageKind,
 			'role' => $role,
 			'entiteittype' => 'ZAK',
@@ -116,7 +144,7 @@ class StufMessageHandler {
 		$data = [
 			'id' => $this->newId(prefix: 'stuf-msg'),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
-			'direction' => 'inkomend',
+			'direction' => self::DIRECTION_INBOUND,
 			'berichtSoort' => $messageKind,
 			'role' => ($role ?? ''),
 			'entiteittype' => 'ZAK',
@@ -193,9 +221,26 @@ class StufMessageHandler {
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md
 	 */
 	public function findOutboundByReferentienummer(string $referentienummer): ?array {
+		$match = $this->register->findOne(
+			schema: StufRegisterAccess::SCHEMA_MESSAGE,
+			filters: ['referentienummer' => $referentienummer, 'direction' => self::DIRECTION_OUTBOUND]
+		);
+
+		if ($match !== null) {
+			return $match;
+		}
+
+		// TRANSITION FALLBACK — remove once RenameDutchDirectionValues has run
+		// everywhere. This is a READ, and it is the dangerous half of a value
+		// rename: a row written before the migration still says `uitgaand`, and
+		// a query for `outbound` alone returns null rather than an error. The
+		// caller treats null as "no outbound message to confirm", so a Bv01
+		// confirmation would be silently dropped instead of failing loudly.
+		// findOne() takes scalar filters only, so this cannot be expressed as an
+		// IN and has to be a second query.
 		return $this->register->findOne(
 			schema: StufRegisterAccess::SCHEMA_MESSAGE,
-			filters: ['referentienummer' => $referentienummer, 'direction' => 'uitgaand']
+			filters: ['referentienummer' => $referentienummer, 'direction' => self::LEGACY_DIRECTION_OUTBOUND]
 		);
 	}//end findOutboundByReferentienummer()
 

@@ -2343,9 +2343,9 @@
                     "direction": {
                         "type": "string",
                         "enum": [
-                            "inkomend",
-                            "intern",
-                            "uitgaand"
+                            "inbound",
+                            "internal",
+                            "outbound"
                         ],
                         "description": "Direction of the document in the case",
                         "title": "Direction"
