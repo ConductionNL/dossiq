@@ -91,13 +91,13 @@ class BeschikkingService {
 			throw new OCSBadRequestException('verleendBedrag moet positief zijn');
 		}
 
-		$schema = $payload['voorschotSchema'] ?? [];
+		$schema = $payload['advanceSchema'] ?? [];
 		if (is_string($schema) === true) {
 			$schema = (json_decode($schema, true) ?? []);
 		}
 
 		if (is_array($schema) === true && $schema !== []) {
-			if ($this->subsidyService->voorschotSchemaReconciles(voorschotSchema: $schema, grantedAmount: $granted) === false) {
+			if ($this->subsidyService->voorschotSchemaReconciles(advanceSchema: $schema, grantedAmount: $granted) === false) {
 				throw new OCSBadRequestException(
 					'De som van de voorschotten moet gelijk zijn aan het verleende bedrag'
 				);

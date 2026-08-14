@@ -100,7 +100,7 @@ class BezwaarTermijnJob extends TimedJob {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['archiefTriggerActief' => true],
+				filters: ['archiveTriggerActive' => true],
 			);
 		} catch (\Throwable $e) {
 			$this->logger->error('BezwaarTermijnJob: query failed', ['exception' => $e->getMessage()]);
@@ -189,7 +189,7 @@ class BezwaarTermijnJob extends TimedJob {
 	 * @return void
 	 */
 	private function deactivateTrigger(object $objectService, string $register, string $schema, array $trigger): void {
-		$trigger['archiefTriggerActief'] = false;
+		$trigger['archiveTriggerActive'] = false;
 
 		try {
 			$objectService->saveObject(object: $trigger, register: $register, schema: $schema);

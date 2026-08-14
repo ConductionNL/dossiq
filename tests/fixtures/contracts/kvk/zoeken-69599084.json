@@ -7,7 +7,7 @@
       "kvkNumber": "69599084",
       "vestigingsnummer": "000038509520",
       "name": "Test EMZ Nevenvestiging Govert",
-      "adres": {
+      "address": {
         "binnenlandsAdres": {
           "type": "bezoekadres",
           "streetName": "Geneinde",
@@ -30,7 +30,7 @@
       "kvkNumber": "69599084",
       "vestigingsnummer": "000038509504",
       "name": "Test EMZ Dagobert",
-      "adres": {
+      "address": {
         "binnenlandsAdres": {
           "type": "bezoekadres",
           "streetName": "Abebe Bikilalaan",

@@ -176,7 +176,7 @@ class AdvisoryCommitteeService {
 			$payload,
 			[
 				'bezwaar' => $objectionId,
-				'commissie' => $commissieId,
+				'committee' => $commissieId,
 				'status' => 'assigned',
 				'assignedAt' => $now,
 			]

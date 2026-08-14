@@ -288,7 +288,7 @@ class DsoCaseServiceTest extends TestCase {
 
 		$request = [
 			'id' => 'aanvraag-uuid-1',
-			'titel' => 'Bouwen van een aanbouw',
+			'title' => 'Bouwen van een aanbouw',
 			'indieningsdatum' => '2026-03-01',
 			'activiteiten' => [
 				['name' => 'bouwen', 'regelkwalificatie' => 'reguliere'],

@@ -66,7 +66,7 @@
 						<span
 							class="toewijzingen-table__type"
 							:class="typeClass(a)"
-							>{{ a.toewijzingType || a.type || 'reguliere' }}</span
+							>{{ a.allocationType || a.type || 'reguliere' }}</span
 						>
 					</td>
 					<td>{{ a.vanaf || a.geldigVanaf || '—' }}</td>
@@ -137,7 +137,7 @@ export default {
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		isWaarnemer(a) {
-			const tt = (a.toewijzingType || a.type || '').toLowerCase()
+			const tt = (a.allocationType || a.type || '').toLowerCase()
 			return tt === 'waarnemer' || tt === 'plaatsvervanger'
 		},
 

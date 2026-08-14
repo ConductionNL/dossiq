@@ -145,14 +145,14 @@ class SubsidieService {
 	 * Validate that a voorschot-schema sums to the verleend bedrag
 	 * (REQ-SUB-001). Tolerates sub-cent floating-point drift.
 	 *
-	 * @param array<int, array<string, mixed>> $voorschotSchema Disbursement rows.
+	 * @param array<int, array<string, mixed>> $advanceSchema Disbursement rows.
 	 * @param float $grantedAmount The granted amount.
 	 *
 	 * @return bool True when the schedule reconciles to the granted amount.
 	 */
-	public function voorschotSchemaReconciles(array $voorschotSchema, float $grantedAmount): bool {
+	public function voorschotSchemaReconciles(array $advanceSchema, float $grantedAmount): bool {
 		$sum = 0.0;
-		foreach ($voorschotSchema as $voorschot) {
+		foreach ($advanceSchema as $voorschot) {
 			$sum += (float)($voorschot['amount'] ?? 0);
 		}
 
@@ -220,7 +220,7 @@ class SubsidieService {
 	public function createAanvraag(array $payload, int $termWeken = self::DEFAULT_AANVRAAG_TERMIJN_WEKEN): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');
 
-		if (((string)($payload['subsidieregeling'] ?? '')) === '') {
+		if (((string)($payload['subsidyScheme'] ?? '')) === '') {
 			throw new OCSBadRequestException('subsidieregeling is verplicht');
 		}
 
@@ -293,7 +293,7 @@ class SubsidieService {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');
 
 		$query = ['register' => (int)$register, 'schema' => (int)$schema];
-		foreach (['status', 'subsidieregeling', 'handler'] as $field) {
+		foreach (['status', 'subsidyScheme', 'handler'] as $field) {
 			if (isset($filters[$field]) === true && $filters[$field] !== '') {
 				$query[$field] = (string)$filters[$field];
 			}

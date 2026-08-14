@@ -183,7 +183,7 @@ class HearingService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function recordOutcome(string $id, array $outcome): array {
-		if (empty($outcome['verslag']) === true) {
+		if (empty($outcome['minutes']) === true) {
 			throw new RuntimeException('Verslag is required to record a hearing outcome');
 		}
 
@@ -196,9 +196,9 @@ class HearingService {
 		$schema = $this->settingsService->getConfigValue('hearing_schema');
 
 		$updateData = [
-			'verslag' => $outcome['verslag'],
-			'conclusie' => $outcome['conclusie'] ?? '',
-			'aanwezigen' => $outcome['aanwezigen'] ?? [],
+			'minutes' => $outcome['minutes'],
+			'conclusion' => $outcome['conclusion'] ?? '',
+			'attendees' => $outcome['attendees'] ?? [],
 			'dateCompleted' => $outcome['dateCompleted'] ?? date('Y-m-d'),
 		];
 

@@ -19,9 +19,9 @@
         "description": "ZGW DRC document with full metadata, stored as a Nextcloud file plus a register object. schema.org DigitalDocument.",
         "x-schema-org": "DigitalDocument",
         "type": "object",
-        "required": ["titel", "fileName", "vertrouwelijkheidaanduiding", "informatieobjecttype"],
+        "required": ["title", "fileName", "vertrouwelijkheidaanduiding", "informatieobjecttype"],
         "properties": {
-          "titel":                {"type": "string", "title": "Title", "facetable": true, "maxLength": 1024, "description": "Document title"},
+          "title":                {"type": "string", "title": "Title", "facetable": true, "maxLength": 1024, "description": "Document title"},
           "fileName":         {"type": "string", "title": "File Name", "maxLength": 1024, "description": "Filename"},
           "bestandsomvang":       {"type": "integer", "title": "File Size", "description": "Size in bytes"},
           "format":              {"type": "string", "title": "Format", "maxLength": 255, "description": "MIME type"},
@@ -56,12 +56,12 @@
           "taal":                 {"type": "string", "title": "Language", "maxLength": 3, "default": "nld", "description": "ISO 639-2/B language code"},
           "description":          {"type": "string", "title": "Description", "description": "Free-text description"},
           "link":                 {"type": "string", "title": "Link", "maxLength": 2048, "description": "External URI reference"},
-          "integriteit": {
+          "integrity": {
             "type": "object",
             "title": "Integrity",
             "description": "Integrity hash of the file content",
             "properties": {
-              "algoritme": {"type": "string", "title": "Integrity Algorithm", "default": "sha256", "description": "Hash algorithm (fixed sha256)"},
+              "algorithm": {"type": "string", "title": "Integrity Algorithm", "default": "sha256", "description": "Hash algorithm (fixed sha256)"},
               "value":    {"type": "string", "title": "Integrity Value", "maxLength": 128, "description": "Hex-encoded SHA-256 hash"},
               "date":     {"type": "string", "title": "Registration Date", "format": "date-time", "description": "Hash computation timestamp"}
             }
@@ -77,9 +77,9 @@
         "title": "Zaakinformatieobject",
         "description": "ZGW DRC join between a zaak (case) and an informatieobject. Allows a single document to be linked to multiple cases without duplication.",
         "type": "object",
-        "required": ["zaak", "informatieobject"],
+        "required": ["case", "informatieobject"],
         "properties": {
-          "zaak":               {"type": "string", "title": "Case Reference", "facetable": true, "maxLength": 255, "description": "Reference to the case (zaak)"},
+          "case":               {"type": "string", "title": "Case Reference", "facetable": true, "maxLength": 255, "description": "Reference to the case (zaak)"},
           "informatieobject":   {"type": "string", "title": "Information Object Reference", "facetable": true, "maxLength": 255, "description": "Reference to the informatieobject"},
           "natureRelationshipDisplay": {
             "type": "string",

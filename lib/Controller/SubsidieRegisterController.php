@@ -121,7 +121,7 @@ class SubsidieRegisterController extends Controller {
 
 			$request = $this->safeFind(objectService: $objectService, register: $register, schema: $requestSchema, id: $requestId);
 			$regeling = [];
-			$regelingId = (string)($request['subsidieregeling'] ?? '');
+			$regelingId = (string)($request['subsidyScheme'] ?? '');
 			if ($regelingId !== '') {
 				$regeling = $this->safeFind(objectService: $objectService, register: $register, schema: $regelingSchema, id: $regelingId);
 			}

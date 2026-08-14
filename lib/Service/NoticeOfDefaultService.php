@@ -177,7 +177,7 @@ class NoticeOfDefaultService {
 				'termijnInstance' => $termInstanceId,
 				'startDate' => $startAt,
 				'currentDag' => 0,
-				'dagtarief' => 0,
+				'dailyRate' => 0,
 				'cumulativeAmount' => 0,
 				'plafondCalculated' => (int)$regime['plafond'],
 				'plafondBereikt' => false,
@@ -238,7 +238,7 @@ class NoticeOfDefaultService {
 			return ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
 		}
 
-		$regime = $def['afwijkendDwangsomRegime'] ?? null;
+		$regime = $def['deviatingPenaltyPaymentRegime'] ?? null;
 		if (is_array($regime) === false) {
 			return ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
 		}

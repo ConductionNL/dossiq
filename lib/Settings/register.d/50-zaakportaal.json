@@ -205,12 +205,12 @@
                         "type": "string",
                         "description": "Pseudonymous subject reference (never raw BSN). One preference record per subject."
                     },
-                    "emailActief": {
+                    "emailActive": {
                         "title": "Email Active",
                         "type": "boolean",
                         "description": "Whether email notifications are active."
                     },
-                    "emailAdres": {
+                    "emailAddress": {
                         "title": "Email Address",
                         "type": "string",
                         "description": "The notification email address."
@@ -220,7 +220,7 @@
                         "type": "boolean",
                         "description": "Whether the email address has been verified."
                     },
-                    "pendingEmailAdres": {
+                    "pendingEmailAddress": {
                         "title": "Pending Email Address",
                         "type": "string",
                         "description": "A new, not-yet-verified email address."
@@ -236,12 +236,12 @@
                         "format": "date-time",
                         "description": "When the pending email verification expires (7 days)."
                     },
-                    "berichtenboxActief": {
+                    "messageBoxActive": {
                         "title": "Berichtenbox Active",
                         "type": "boolean",
                         "description": "Whether Berichtenbox is active. Always true (statutory)."
                     },
-                    "smsActief": {
+                    "smsActive": {
                         "title": "SMS Active",
                         "type": "boolean",
                         "description": "Whether SMS notifications are active."
@@ -256,7 +256,7 @@
                         "type": "boolean",
                         "description": "Notify on case status change."
                     },
-                    "eventDocumentToegevoegd": {
+                    "eventDocumentAdded": {
                         "title": "Event Document Added",
                         "type": "boolean",
                         "description": "Notify when a document is added."
@@ -291,13 +291,13 @@
                     "slug": "portaal-pref-demo-burger"
                 },
                 "subjectRef": "demo-burger-123456789",
-                "emailActief": true,
-                "emailAdres": "marja@example.nl",
+                "emailActive": true,
+                "emailAddress": "marja@example.nl",
                 "emailGeverifieerd": true,
-                "berichtenboxActief": true,
-                "smsActief": false,
+                "messageBoxActive": true,
+                "smsActive": false,
                 "eventStatuswijziging": true,
-                "eventDocumentToegevoegd": true,
+                "eventDocumentAdded": true,
                 "eventMessageFromHandler": true,
                 "eventTermReminder": true
             },

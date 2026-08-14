@@ -144,8 +144,8 @@ class AdviceAuthorizationGuard {
 			return;
 		}
 
-		$adviseur = (string)($advice['adviseur'] ?? '');
-		if ($adviseur !== '' && $adviseur === $uid) {
+		$advisor = (string)($advice['advisor'] ?? '');
+		if ($advisor !== '' && $advisor === $uid) {
 			return;
 		}
 
@@ -171,8 +171,8 @@ class AdviceAuthorizationGuard {
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
 	private function mayTransition(array $advice, string $to, string $uid): bool {
-		$adviseur = (string)($advice['adviseur'] ?? '');
-		$isAdviseur = ($adviseur !== '' && $adviseur === $uid);
+		$advisor = (string)($advice['advisor'] ?? '');
+		$isAdviseur = ($advisor !== '' && $advisor === $uid);
 
 		if ($to === 'ontvangen') {
 			return $isAdviseur;

@@ -206,7 +206,7 @@ class ParafeerRouteService {
 			action: 'started',
 			step: '1',
 			actor: $this->requireUserId(),
-			actorRole: 'steller',
+			actorRole: 'author',
 		);
 
 		return $proposal;
@@ -301,7 +301,7 @@ class ParafeerRouteService {
 		$actorRole = 'parafeerder';
 		if ($action === 'advised') {
 			$transition = 'advised';
-			$actorRole = 'adviseur';
+			$actorRole = 'advisor';
 		}
 
 		$this->dispatchTransition(

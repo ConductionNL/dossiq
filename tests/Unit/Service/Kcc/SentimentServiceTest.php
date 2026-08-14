@@ -50,7 +50,7 @@ class SentimentServiceTest extends TestCase {
 
 		self::assertEqualsWithDelta(0.0, $result['score'], 0.4);
 		self::assertContains($result['label'], ['neutraal', 'positief']);
-		self::assertFalse($result['escalatieAanbevolen']);
+		self::assertFalse($result['escalationRecommended']);
 	}//end testNeutralTextScoresAroundZero()
 
 	/**
@@ -76,7 +76,7 @@ class SentimentServiceTest extends TestCase {
 
 		self::assertLessThan(-0.5, $result['score']);
 		self::assertSame('boos', $result['label']);
-		self::assertTrue($result['escalatieAanbevolen']);
+		self::assertTrue($result['escalationRecommended']);
 	}//end testAngryTextScoresStronglyNegative()
 
 	/**
@@ -89,7 +89,7 @@ class SentimentServiceTest extends TestCase {
 
 		self::assertContains('advocaat', $result['triggers']);
 		self::assertContains('krant', $result['triggers']);
-		self::assertTrue($result['escalatieAanbevolen']);
+		self::assertTrue($result['escalationRecommended']);
 		self::assertSame('rood', $result['escalationLevel']);
 	}//end testSeriousTriggerEscalatesImmediately()
 
@@ -102,7 +102,7 @@ class SentimentServiceTest extends TestCase {
 		);
 
 		self::assertContains('klacht', $result['triggers']);
-		self::assertTrue($result['escalatieAanbevolen']);
+		self::assertTrue($result['escalationRecommended']);
 		self::assertContains($result['escalationLevel'], ['oranje', 'rood']);
 	}//end testKlachtTriggerIsDetectedButRedOnlyIfNegativeEnough()
 

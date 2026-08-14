@@ -159,7 +159,7 @@ class SentimentAnalysisJob extends TimedJob {
 			objectService: $objectService,
 			register: $register,
 			schema: $sentimentSchema,
-			filters: ['contactmomentId' => $contactId, '_limit' => 1],
+			filters: ['interactionId' => $contactId, '_limit' => 1],
 		);
 		if (empty((array)$existing) === false) {
 			return;
@@ -171,18 +171,18 @@ class SentimentAnalysisJob extends TimedJob {
 			$register,
 			$sentimentSchema,
 			[
-				'contactmomentId' => $contactId,
+				'interactionId' => $contactId,
 				'sentimentScore' => $analysis['score'],
 				'sentimentLabel' => $analysis['label'],
 				'triggerWoorden' => $analysis['triggers'],
 				'transcriptSnippet' => $analysis['snippet'],
-				'escalatieAanbevolen' => $analysis['escalatieAanbevolen'],
+				'escalationRecommended' => $analysis['escalationRecommended'],
 				'escalationLevel' => $analysis['escalationLevel'],
 				'createdAt' => date('c'),
 			],
 		);
 
-		if ($analysis['escalatieAanbevolen'] === true) {
+		if ($analysis['escalationRecommended'] === true) {
 			foreach ((array)($contact['relatedCases'] ?? []) as $caseId) {
 				$this->contactMomentService->recordActivity(
 					(string)$caseId,

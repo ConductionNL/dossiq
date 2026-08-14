@@ -70,7 +70,7 @@ class SentimentServiceTest extends TestCase {
 
 		$this->assertContains(needle: 'klacht', haystack: $result['triggers']);
 		$this->assertContains(needle: 'advocaat', haystack: $result['triggers']);
-		$this->assertTrue(condition: $result['escalatieAanbevolen']);
+		$this->assertTrue(condition: $result['escalationRecommended']);
 		$this->assertSame(expected: 'rood', actual: $result['escalationLevel']);
 		$this->assertSame(expected: 'boos', actual: $result['label']);
 		$this->assertLessThanOrEqual(expected: -0.5, actual: $result['score']);
@@ -87,7 +87,7 @@ class SentimentServiceTest extends TestCase {
 			$this->triggers,
 		);
 
-		$this->assertFalse(condition: $result['escalatieAanbevolen']);
+		$this->assertFalse(condition: $result['escalationRecommended']);
 		$this->assertSame(expected: 'geen', actual: $result['escalationLevel']);
 		$this->assertSame(expected: 'positief', actual: $result['label']);
 		$this->assertGreaterThan(expected: 0.0, actual: $result['score']);
@@ -105,7 +105,7 @@ class SentimentServiceTest extends TestCase {
 		);
 
 		$this->assertSame(expected: [], actual: $result['triggers']);
-		$this->assertFalse(condition: $result['escalatieAanbevolen']);
+		$this->assertFalse(condition: $result['escalationRecommended']);
 		$this->assertSame(expected: 'neutraal', actual: $result['label']);
 	}//end testNeutralText()
 

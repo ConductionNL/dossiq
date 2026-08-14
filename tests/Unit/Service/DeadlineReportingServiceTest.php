@@ -55,7 +55,7 @@ class DeadlineReportingServiceTest extends TestCase {
 			$this->objects->saveObject('procest', 'termijnInstance', [
 				'id' => 'ti-q2-' . $i,
 				'caseType' => 'omgevingsvergunning-regulier',
-				'zaak' => 'Z/2026/' . (400 + $i),
+				'case' => 'Z/2026/' . (400 + $i),
 				'startDate' => '2026-05-0' . $i . 'T10:00:00+00:00',
 				'endDateCurrent' => '2026-07-0' . $i,
 				'status' => ($i <= 3 ? 'voltooid' : ($i === 4 ? 'overschreden' : 'lopend')),

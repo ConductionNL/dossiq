@@ -142,7 +142,7 @@ export default {
 			try {
 				const overrides = {}
 				if (this.geadresseerdeNaam) {
-					overrides.geadresseerde = { name: this.geadresseerdeNaam }
+					overrides.addressee = { name: this.geadresseerdeNaam }
 				}
 				if (this.rationale) {
 					overrides.rationale = this.rationale

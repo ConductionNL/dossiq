@@ -127,7 +127,7 @@ class SeedVthMatrixCells implements IRepairStep {
 				);
 				$seeded++;
 			} catch (Throwable $e) {
-				$output->warning('Failed to seed LHS cell ' . $cell['gedragRow'] . ':' . $cell['gevolgColumn'] . ': ' . $e->getMessage());
+				$output->warning('Failed to seed LHS cell ' . $cell['behaviourRow'] . ':' . $cell['consequenceColumn'] . ': ' . $e->getMessage());
 				$this->logger->warning(
 					'VTH LHS cell seed failed',
 					['exception' => $e->getMessage(), 'cell' => $cell]

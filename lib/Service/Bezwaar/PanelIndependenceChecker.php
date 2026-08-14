@@ -118,7 +118,7 @@ class PanelIndependenceChecker {
 		}
 
 		try {
-			$steller = $this->resolveContestedDecisionAuthor(
+			$author = $this->resolveContestedDecisionAuthor(
 				objectService: $objectService,
 				objectionId: $objectionId,
 				register: $register,
@@ -126,13 +126,13 @@ class PanelIndependenceChecker {
 				objectionSchema: $objectionSchema,
 				decisionSchema: $decisionSchema,
 			);
-			if ($steller === '') {
+			if ($author === '') {
 				return $clear;
 			}
 
 			$conflicting = $this->findConflictingPanelMember(
 				panel: $panel,
-				steller: $steller,
+				author: $author,
 			);
 			if ($conflicting !== null) {
 				return [
@@ -221,15 +221,15 @@ class PanelIndependenceChecker {
 	 * Find the first panel member that is not independent from the steller.
 	 *
 	 * @param array<string> $panel Panel member UIDs.
-	 * @param string $steller UID of the contested decision's author.
+	 * @param string $author UID of the contested decision's author.
 	 *
 	 * @return string|null The conflicting member UID, or null when the panel is independent.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	private function findConflictingPanelMember(array $panel, string $steller): ?string {
+	private function findConflictingPanelMember(array $panel, string $author): ?string {
 		foreach ($panel as $memberUid) {
-			if ((string)$memberUid === $steller) {
+			if ((string)$memberUid === $author) {
 				return (string)$memberUid;
 			}
 		}

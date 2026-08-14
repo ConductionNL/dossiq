@@ -141,9 +141,9 @@ class AdviceService {
 
 		if ($to === 'ontvangen') {
 			$update['receivedAt'] = date('c');
-			$fileId = (string)($payload['adviesDocument'] ?? ($payload['fileId'] ?? ''));
+			$fileId = (string)($payload['adviceDocument'] ?? ($payload['fileId'] ?? ''));
 			if ($fileId !== '') {
-				$update['adviesDocument'] = $fileId;
+				$update['adviceDocument'] = $fileId;
 			}
 		}
 
@@ -213,13 +213,13 @@ class AdviceService {
 			return;
 		}
 
-		$adviseur = (string)($advice['adviseur'] ?? '');
-		if ($adviseur === '') {
+		$advisor = (string)($advice['advisor'] ?? '');
+		if ($advisor === '') {
 			return;
 		}
 
 		$this->notifier->sendUserNotification(
-			userId: $adviseur,
+			userId: $advisor,
 			subject: 'advies_herinnering',
 			objectId: $adviceId
 		);
@@ -357,11 +357,11 @@ class AdviceService {
 		$payload = [
 			'caseRef' => $caseId,
 			'requestedBy' => $requestedBy,
-			'adviseur' => $data['adviseur'] ?? '',
+			'advisor' => $data['advisor'] ?? '',
 			'deadline' => $data['deadline'] ?? null,
 			'status' => 'open',
 			'question' => $data['question'] ?? '',
-			'adviesText' => '',
+			'adviceText' => '',
 			'addedToFile' => false,
 		];
 
@@ -444,7 +444,7 @@ class AdviceService {
 					'externalReference' => $caseId,
 					'subjectLabel' => (string)($data['question'] ?? 'Adviesaanvraag'),
 					'question' => (string)($data['question'] ?? ''),
-					'adviseur' => (string)$payload['adviseur'],
+					'advisor' => (string)$payload['advisor'],
 				],
 			);
 

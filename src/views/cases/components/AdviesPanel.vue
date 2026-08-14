@@ -31,7 +31,7 @@
 				:class="{ 'advies-panel__item--overdue': isOverdue(item) }">
 				<div class="advies-panel__row">
 					<div class="advies-panel__meta">
-						<strong>{{ item.adviseur }}</strong>
+						<strong>{{ item.advisor }}</strong>
 						<CnStatusBadge
 							:status="typeLabel(item.type)"
 							:type="typeBadgeType(item.type)" />
@@ -67,13 +67,13 @@
 						{{ t(appName, 'Herinnering sturen') }}
 					</NcButton>
 					<NcButton
-						v-if="item.status === 'aangevraagd' && item.adviesDocument"
+						v-if="item.status === 'aangevraagd' && item.adviceDocument"
 						type="secondary"
 						@click="onMarkReceived(item)">
 						{{ t(appName, 'Markeer als ontvangen') }}
 					</NcButton>
 					<NcButton
-						v-if="item.status === 'ontvangen' && item.adviesDocument"
+						v-if="item.status === 'ontvangen' && item.adviceDocument"
 						type="tertiary"
 						@click="onViewDocument(item)">
 						{{ t(appName, 'Bekijk advies') }}
@@ -188,7 +188,7 @@ export default {
 			try {
 				await transitionStatus(item.id || item.uuid, {
 					to: 'ontvangen',
-					adviesDocument: item.adviesDocument || '',
+					adviceDocument: item.adviceDocument || '',
 				})
 				await this.fetchAdvies()
 			} catch (error) {
@@ -201,8 +201,8 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		onViewDocument(item) {
-			if (item.adviesDocument) {
-				window.open(`/index.php/f/${item.adviesDocument}`, '_blank')
+			if (item.adviceDocument) {
+				window.open(`/index.php/f/${item.adviceDocument}`, '_blank')
 			}
 		},
 

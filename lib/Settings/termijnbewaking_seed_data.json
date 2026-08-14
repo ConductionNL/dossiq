@@ -6,9 +6,9 @@
       "legalBasis": "Wabo 3.9 lid 1",
       "standardDurationDays": 56,
       "standardDurationWeeks": 8,
-      "verlengingsRuimte": 42,
+      "extensionCapacity": 42,
       "countExtensions": 1,
-      "pauzeeVerlengingsDuren": [14, 28],
+      "pauseExtensionDuration": [14, 28],
       "validFrom": "2026-01-01"
     },
     {
@@ -17,9 +17,9 @@
       "legalBasis": "Wmo 2015 art 2.3.5",
       "standardDurationDays": 42,
       "standardDurationWeeks": 6,
-      "verlengingsRuimte": 0,
+      "extensionCapacity": 0,
       "countExtensions": 0,
-      "pauzeeVerlengingsDuren": [14],
+      "pauseExtensionDuration": [14],
       "validFrom": "2026-01-01"
     },
     {
@@ -28,10 +28,10 @@
       "legalBasis": "Woo art 4.4",
       "standardDurationDays": 28,
       "standardDurationWeeks": 4,
-      "verlengingsRuimte": 14,
+      "extensionCapacity": 14,
       "countExtensions": 1,
-      "pauzeeVerlengingsDuren": [14],
-      "afwijkendDwangsomRegime": {
+      "pauseExtensionDuration": [14],
+      "deviatingPenaltyPaymentRegime": {
         "dailyTariff": 1500,
         "plafond": 50000,
         "grace": 14

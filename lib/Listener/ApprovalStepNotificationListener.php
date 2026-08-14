@@ -167,8 +167,8 @@ class ApprovalStepNotificationListener implements IEventListener {
 
 		$objectUuid = (string)$event->getObjectUuid();
 		$proposal = $this->loadProposal(objectUuid: $objectUuid);
-		$steller = (string)($proposal['steller'] ?? '');
-		if ($steller === '') {
+		$author = (string)($proposal['author'] ?? '');
+		if ($author === '') {
 			return;
 		}
 
@@ -186,7 +186,7 @@ class ApprovalStepNotificationListener implements IEventListener {
 		}
 
 		$this->notificationService->notifyVoorstelReturned(
-			$steller,
+			$author,
 			(string)($proposal['onderwerp'] ?? ''),
 			$objectUuid,
 			$rejectedBy,

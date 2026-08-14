@@ -23,7 +23,7 @@
             "description": "Computed DSO statutory deadline (working days from indieningsdatum)",
             "visible": false
           },
-          "bevoegdGezag": {
+          "competentAuthority": {
             "type": "string",
             "title": "Competent Authority",
             "description": "OIN or organization name of the bevoegd gezag",
@@ -66,18 +66,18 @@
         "description": "Request for collaboration between bevoegd gezag on a vergunningaanvraag",
         "type": "object",
         "required": [
-          "initiatorBevoegdGezag",
-          "aangezochtBevoegdGezag",
+          "initiatorCompetentAuthority",
+          "requestedCompetentAuthority",
           "permitApplicationRef",
           "status"
         ],
         "properties": {
-          "initiatorBevoegdGezag": {
+          "initiatorCompetentAuthority": {
             "type": "string",
             "title": "Initiating Competent Authority",
             "description": "OIN or organization name of the initiating bevoegd gezag"
           },
-          "aangezochtBevoegdGezag": {
+          "requestedCompetentAuthority": {
             "type": "string",
             "title": "Requested Competent Authority",
             "description": "OIN or organization name of the receiving bevoegd gezag"
@@ -133,8 +133,8 @@
           "schema": "samenwerkverzoek",
           "slug": "samenwerkverzoek-demo-001"
         },
-        "initiatorBevoegdGezag": "Gemeente Amsterdam",
-        "aangezochtBevoegdGezag": "Waterschap Amstel, Gooi en Vecht",
+        "initiatorCompetentAuthority": "Gemeente Amsterdam",
+        "requestedCompetentAuthority": "Waterschap Amstel, Gooi en Vecht",
         "permitApplicationRef": "nl.dso.aanvraag.2026-AMS-001",
         "rationale": "Aanvraag betreft activiteiten nabij waterkering, afstemming waterschap vereist.",
         "status": "geaccepteerd",
@@ -148,8 +148,8 @@
           "schema": "samenwerkverzoek",
           "slug": "samenwerkverzoek-demo-002"
         },
-        "initiatorBevoegdGezag": "Gemeente Rotterdam",
-        "aangezochtBevoegdGezag": "Provincie Zuid-Holland",
+        "initiatorCompetentAuthority": "Gemeente Rotterdam",
+        "requestedCompetentAuthority": "Provincie Zuid-Holland",
         "permitApplicationRef": "nl.dso.aanvraag.2026-RTD-007",
         "rationale": "Grootschalig bouwproject raakt provinciaal belang omgevingsvisie.",
         "status": "aangevraagd",
@@ -161,8 +161,8 @@
           "schema": "samenwerkverzoek",
           "slug": "samenwerkverzoek-demo-003"
         },
-        "initiatorBevoegdGezag": "Gemeente Utrecht",
-        "aangezochtBevoegdGezag": "Rijkswaterstaat",
+        "initiatorCompetentAuthority": "Gemeente Utrecht",
+        "requestedCompetentAuthority": "Rijkswaterstaat",
         "permitApplicationRef": "nl.dso.aanvraag.2026-UTR-014",
         "rationale": "Activiteit vindt plaats binnen rijkszone langs snelweg A12.",
         "status": "geweigerd",

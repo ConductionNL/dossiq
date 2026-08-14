@@ -202,7 +202,7 @@ class DwangsomCalculationService {
 		}
 
 		$row['currentDag'] = $nextDay;
-		$row['dagtarief'] = $tariff;
+		$row['dailyRate'] = $tariff;
 		$row['cumulativeAmount'] = $newCumul;
 		$row['plafondBereikt'] = $plafondHit;
 
@@ -381,7 +381,7 @@ class DwangsomCalculationService {
 			return self::AWB_TIER_1_CENTS;
 		}
 
-		$regime = $def['afwijkendDwangsomRegime'] ?? null;
+		$regime = $def['deviatingPenaltyPaymentRegime'] ?? null;
 		if (is_array($regime) === true && isset($regime['dailyTariff']) === true) {
 			return (int)$regime['dailyTariff'];
 		}

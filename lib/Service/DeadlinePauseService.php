@@ -94,7 +94,7 @@ class DeadlinePauseService {
 			[
 				'endDateCurrent' => $newEnd,
 				'status' => 'gepauzeerd',
-				'pauzeDeadline' => $pauseEnd,
+				'pauseDeadline' => $pauseEnd,
 				'pauzeStartDatum' => $now->format('Y-m-d'),
 				'pauzeDuurDagen' => $durationDays,
 			]
@@ -158,7 +158,7 @@ class DeadlinePauseService {
 			[
 				'endDateCurrent' => $newEnd,
 				'status' => 'lopend',
-				'pauzeDeadline' => null,
+				'pauseDeadline' => null,
 			]
 		);
 

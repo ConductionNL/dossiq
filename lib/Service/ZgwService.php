@@ -54,7 +54,7 @@ class ZgwService {
 	 */
 	public const RESOURCE_MAP = [
 		'zaken' => [
-			'zaken' => 'zaak',
+			'zaken' => 'case',
 			'statussen' => 'status',
 			'resultaten' => 'result',
 			'rollen' => 'role',
@@ -86,7 +86,7 @@ class ZgwService {
 			'enkelvoudiginformatieobjecten' => 'enkelvoudiginformatieobject',
 			'objectinformatieobjecten' => 'objectinformatieobject',
 			'gebruiksrechten' => 'gebruiksrechten',
-			'verzendingen' => 'verzending',
+			'verzendingen' => 'dispatch',
 		],
 		'notificaties' => [
 			'kanaal' => 'kanaal',
@@ -1678,7 +1678,7 @@ class ZgwService {
 		}
 
 		try {
-			$caseConfig = $this->zgwMappingService->getMapping('zaak');
+			$caseConfig = $this->zgwMappingService->getMapping('case');
 			if ($caseConfig === null) {
 				return null;
 			}
@@ -1747,7 +1747,7 @@ class ZgwService {
 			return null;
 		}
 
-		$caseUrl = $body['zaak'] ?? null;
+		$caseUrl = $body['case'] ?? null;
 		if ($caseUrl === null || $caseUrl === '') {
 			return null;
 		}
@@ -1764,7 +1764,7 @@ class ZgwService {
 		$zaakUuid = $matches[1];
 
 		try {
-			$caseConfig = $this->zgwMappingService->getMapping('zaak');
+			$caseConfig = $this->zgwMappingService->getMapping('case');
 			if ($caseConfig === null) {
 				return null;
 			}

@@ -386,7 +386,7 @@ class InspectionChecklistService {
 				$item = get_object_vars(object: $item);
 			}
 
-			if (is_array($item) === true && ($item['fotoRequired'] ?? false) === true) {
+			if (is_array($item) === true && ($item['photoRequired'] ?? false) === true) {
 				throw new RuntimeException(
 					'Photo required for non-conformant checklist item ' . $itemRef
 				);

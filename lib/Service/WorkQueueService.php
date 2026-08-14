@@ -473,7 +473,7 @@ class WorkQueueService {
 				register: $register,
 				schema: $termSchema,
 				filters: [
-					'zaak' => $caseId,
+					'case' => $caseId,
 					'status' => 'lopend',
 				]
 			);

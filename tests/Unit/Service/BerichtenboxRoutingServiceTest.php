@@ -61,10 +61,10 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 	public function testBurgerRoutesToMijnOverheid(): void {
 		$result = $this->service->routeToBerichtenbox([
 			'reference' => 'Z/2026/1/B01',
-			'geadresseerde' => [
+			'addressee' => [
 				'type' => 'burger',
 				'bsn' => '123456789',
-				'berichtenboxBevestigd' => true,
+				'messageBoxConfirmed' => true,
 			],
 		]);
 
@@ -81,10 +81,10 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 	public function testBedrijfRoutesToEherkenning(): void {
 		$result = $this->service->routeToBerichtenbox([
 			'reference' => 'Z/2026/2/B01',
-			'geadresseerde' => [
+			'addressee' => [
 				'type' => 'bedrijf',
 				'oin' => '00000001234567890000',
-				'berichtenboxBevestigd' => true,
+				'messageBoxConfirmed' => true,
 			],
 		]);
 
@@ -99,10 +99,10 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 	public function testFallbackToPrint(): void {
 		$result = $this->service->routeToBerichtenbox([
 			'reference' => 'Z/2026/3/B01',
-			'geadresseerde' => [
+			'addressee' => [
 				'type' => 'burger',
 				'bsn' => '987654321',
-				'berichtenboxBevestigd' => false,
+				'messageBoxConfirmed' => false,
 			],
 		]);
 

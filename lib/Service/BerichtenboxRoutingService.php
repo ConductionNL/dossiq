@@ -61,8 +61,8 @@ class BerichtenboxRoutingService {
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T15
 	 */
 	public function routeToBerichtenbox(array $decision): array {
-		$geadresseerde = (array)($decision['geadresseerde'] ?? []);
-		$channel = $this->resolveChannel(geadresseerde: $geadresseerde);
+		$addressee = (array)($decision['addressee'] ?? []);
+		$channel = $this->resolveChannel(addressee: $addressee);
 
 		// The berichtId is assigned by the downstream Berichtenbox provider; in
 		// the absence of a live channel we derive a stable, non-identifying id
@@ -89,23 +89,23 @@ class BerichtenboxRoutingService {
 	/**
 	 * Resolve the Berichtenbox channel for an addressee.
 	 *
-	 * @param array<string, mixed> $geadresseerde The addressee block.
+	 * @param array<string, mixed> $addressee The addressee block.
 	 *
 	 * @return string The channel slug.
 	 */
-	private function resolveChannel(array $geadresseerde): string {
-		$type = (string)($geadresseerde['type'] ?? '');
-		$bevestigd = ($geadresseerde['berichtenboxBevestigd'] ?? false) === true;
+	private function resolveChannel(array $addressee): string {
+		$type = (string)($addressee['type'] ?? '');
+		$bevestigd = ($addressee['messageBoxConfirmed'] ?? false) === true;
 
 		if ($bevestigd === false) {
 			return 'print-post';
 		}
 
-		if ($type === 'burger' && ($geadresseerde['bsn'] ?? '') !== '') {
+		if ($type === 'burger' && ($addressee['bsn'] ?? '') !== '') {
 			return 'berichtenbox-mijnoverheid';
 		}
 
-		if ($type === 'bedrijf' && ($geadresseerde['oin'] ?? '') !== '') {
+		if ($type === 'bedrijf' && ($addressee['oin'] ?? '') !== '') {
 			return 'berichtenbox-eherkenning';
 		}
 

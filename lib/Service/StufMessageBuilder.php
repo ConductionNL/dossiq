@@ -150,7 +150,7 @@ class StufMessageBuilder {
 			);
 		}
 
-		$omschrijving = (string)$mapping[$type];
+		$description = (string)$mapping[$type];
 		$includeDocs = (bool)($opts['includeDocuments'] ?? false);
 		$payloadLimit = (int)($opts['payloadLimitBytes'] ?? self::PAYLOAD_LIMIT_BYTES);
 
@@ -162,7 +162,7 @@ class StufMessageBuilder {
 			);
 		}
 
-		$referentienummer = $this->generateReferentienummer();
+		$referenceNumber = $this->generateReferentienummer();
 		$momentMessage = $this->currentTimestampStuf();
 
 		$stuurgegevens = $this->buildOutboundStuurgegevens(
@@ -170,14 +170,14 @@ class StufMessageBuilder {
 			endpoint: $endpoint,
 			entiteittype: 'ZAK',
 			role: 'creeerZaak',
-			referentienummer: $referentienummer,
+			referenceNumber: $referenceNumber,
 			momentMessage: $momentMessage
 		);
 
 		$body = $this->renderZakLk01(
 			stuurgegevens: $stuurgegevens,
 			caseId: $caseId,
-			zaaktypeOmschrijving: $omschrijving,
+			zaaktypeOmschrijving: $description,
 			case: $case,
 			documents: $documents
 		);
@@ -187,7 +187,7 @@ class StufMessageBuilder {
 			message: 'StUF Lk01 envelope built',
 			context: [
 				'endpoint' => ($endpoint['id'] ?? ''),
-				'referentienummer' => $referentienummer,
+				'referenceNumber' => $referenceNumber,
 				'snippet' => substr(string: $envelope, offset: 0, length: 500),
 			]
 		);
@@ -212,11 +212,11 @@ class StufMessageBuilder {
 			endpoint: $endpoint,
 			entiteittype: 'ZAK',
 			role: 'actualiseerZaak',
-			referentienummer: $this->generateReferentienummer(),
+			referenceNumber: $this->generateReferentienummer(),
 			momentMessage: $this->currentTimestampStuf()
 		);
 
-		$caseId = (string)($mapping['externIdentificatie'] ?? '');
+		$caseId = (string)($mapping['externIdentification'] ?? '');
 		$body = '<zkn:zakLk02>' . $stuurgegevens
 			. '<zkn:object stuf:entiteittype="ZAK" stuf:verwerkingssoort="W">'
 			. '<zkn:identificatie>' . $this->escape(value: $caseId) . '</zkn:identificatie>'
@@ -244,7 +244,7 @@ class StufMessageBuilder {
 			endpoint: $endpoint,
 			entiteittype: 'ZAK',
 			role: 'geefZaakDetails',
-			referentienummer: $this->generateReferentienummer(),
+			referenceNumber: $this->generateReferentienummer(),
 			momentMessage: $this->currentTimestampStuf()
 		);
 
@@ -278,7 +278,7 @@ class StufMessageBuilder {
 			endpoint: $endpoint,
 			entiteittype: 'ZAK',
 			role: 'genereerZaakIdentificatie',
-			referentienummer: $this->generateReferentienummer(),
+			referenceNumber: $this->generateReferentienummer(),
 			momentMessage: $this->currentTimestampStuf()
 		);
 
@@ -300,7 +300,7 @@ class StufMessageBuilder {
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-free-message-templates
 	 */
 	public function buildDu01VrijBericht(string $name, array $payload, array $endpoint): string {
-		$templates = ($endpoint['vrijeBerichtenTemplates'] ?? []);
+		$templates = ($endpoint['freeMessagesTemplates'] ?? []);
 		$template = null;
 		foreach ($templates as $candidate) {
 			if (($candidate['name'] ?? '') === $name) {
@@ -328,7 +328,7 @@ class StufMessageBuilder {
 			endpoint: $endpoint,
 			entiteittype: 'ZAK',
 			role: $name,
-			referentienummer: $this->generateReferentienummer(),
+			referenceNumber: $this->generateReferentienummer(),
 			momentMessage: $this->currentTimestampStuf()
 		);
 
@@ -352,7 +352,7 @@ class StufMessageBuilder {
 	 * @param array $endpoint The StufEndpoint array.
 	 * @param string $entiteittype The entiteittype (ZAK).
 	 * @param string $role The functie (creeerZaak, ...).
-	 * @param string $referentienummer The unique referentienummer.
+	 * @param string $referenceNumber The unique referentienummer.
 	 * @param string $momentMessage The yyyyMMddHHmmssSSS timestamp.
 	 *
 	 * @return string The stuurgegevens XML snippet.
@@ -364,21 +364,21 @@ class StufMessageBuilder {
 		array $endpoint,
 		string $entiteittype,
 		string $role,
-		string $referentienummer,
+		string $referenceNumber,
 		string $momentMessage,
 	): string {
 		return '<zkn:stuurgegevens>'
 			. '<stuf:berichtcode>' . $this->escape(value: $messageCode) . '</stuf:berichtcode>'
 			. '<stuf:zender>'
-			. '<stuf:organisatie>' . $this->escape(value: (string)($endpoint['zenderOrganisatie'] ?? '')) . '</stuf:organisatie>'
-			. '<stuf:applicatie>' . $this->escape(value: (string)($endpoint['zenderApplicatie'] ?? '')) . '</stuf:applicatie>'
+			. '<stuf:organisatie>' . $this->escape(value: (string)($endpoint['senderOrganisation'] ?? '')) . '</stuf:organisatie>'
+			. '<stuf:applicatie>' . $this->escape(value: (string)($endpoint['senderApplication'] ?? '')) . '</stuf:applicatie>'
 			. '</stuf:zender>'
 			. '<stuf:ontvanger>'
-			. '<stuf:organisatie>' . $this->escape(value: (string)($endpoint['ontvangerOrganisatie'] ?? '')) . '</stuf:organisatie>'
-			. '<stuf:applicatie>' . $this->escape(value: (string)($endpoint['ontvangerApplicatie'] ?? '')) . '</stuf:applicatie>'
-			. '<stuf:gebruiker>' . $this->escape(value: (string)($endpoint['ontvangerGebruiker'] ?? '')) . '</stuf:gebruiker>'
+			. '<stuf:organisatie>' . $this->escape(value: (string)($endpoint['recipientOrganisation'] ?? '')) . '</stuf:organisatie>'
+			. '<stuf:applicatie>' . $this->escape(value: (string)($endpoint['recipientApplication'] ?? '')) . '</stuf:applicatie>'
+			. '<stuf:gebruiker>' . $this->escape(value: (string)($endpoint['recipientUser'] ?? '')) . '</stuf:gebruiker>'
 			. '</stuf:ontvanger>'
-			. '<stuf:referentienummer>' . $this->escape(value: $referentienummer) . '</stuf:referentienummer>'
+			. '<stuf:referentienummer>' . $this->escape(value: $referenceNumber) . '</stuf:referentienummer>'
 			. '<stuf:tijdstipBericht>' . $this->escape(value: $momentMessage) . '</stuf:tijdstipBericht>'
 			. '<stuf:entiteittype>' . $this->escape(value: $entiteittype) . '</stuf:entiteittype>'
 			. '<stuf:functie>' . $this->escape(value: $role) . '</stuf:functie>'
@@ -484,7 +484,7 @@ class StufMessageBuilder {
 			$identification = '<zkn:identificatie>' . $this->escape(value: $caseId) . '</zkn:identificatie>';
 		}
 
-		$omschrijving = $this->escape(value: (string)($case['omschrijving'] ?? ''));
+		$description = $this->escape(value: (string)($case['description'] ?? ''));
 		$startDate = $this->escape(value: (string)($case['startdatum'] ?? ''));
 
 		$involvedParties = '';
@@ -512,7 +512,7 @@ class StufMessageBuilder {
 		return '<zkn:zakLk01>' . $stuurgegevens
 			. '<zkn:object stuf:entiteittype="ZAK" stuf:verwerkingssoort="T">'
 			. $identification
-			. '<zkn:omschrijving>' . $omschrijving . '</zkn:omschrijving>'
+			. '<zkn:omschrijving>' . $description . '</zkn:omschrijving>'
 			. '<zkn:startdatum>' . $startDate . '</zkn:startdatum>'
 			. '<zkn:zaaktype>'
 			. '<zkn:omschrijving>' . $this->escape(value: $zaaktypeOmschrijving) . '</zkn:omschrijving>'
@@ -532,7 +532,7 @@ class StufMessageBuilder {
 	 */
 	private function renderCaseMovementElements(array $case): string {
 		$out = '';
-		foreach (['omschrijving', 'endDate', 'resultaattoelichting'] as $field) {
+		foreach (['description', 'endDate', 'resultaattoelichting'] as $field) {
 			if (array_key_exists(key: $field, array: $case) === true && $case[$field] !== null) {
 				$out .= '<zkn:' . $field . '>' . $this->escape(value: (string)$case[$field]) . '</zkn:' . $field . '>';
 			}
@@ -555,9 +555,9 @@ class StufMessageBuilder {
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
 	 */
 	private function wrapEnvelope(string $bodyXml, array $endpoint): string {
-		$auth = ($endpoint['authenticatie'] ?? []);
-		$username = $this->escape(value: (string)($auth['gebruikersnaam'] ?? ''));
-		$passwordRef = (string)($auth['wachtwoordKluisRef'] ?? '');
+		$auth = ($endpoint['authentication'] ?? []);
+		$username = $this->escape(value: (string)($auth['username'] ?? ''));
+		$passwordRef = (string)($auth['passwordVaultRef'] ?? '');
 		$password = $this->escape(value: $this->vault->resolveSecret(reference: $passwordRef));
 
 		$security = '<wsse:Security>'

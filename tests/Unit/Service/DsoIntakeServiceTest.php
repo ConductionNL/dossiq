@@ -191,7 +191,7 @@ class DsoIntakeServiceTest extends TestCase {
 	 */
 	private function wireObjectService(
 		string $register = 'procest',
-		string $caseSchema = 'zaak',
+		string $caseSchema = 'case',
 		string $propertySchema = 'zaakeigenschap',
 	): DsoIntakeRecordingObjectService {
 		$recorder = new DsoIntakeRecordingObjectService();
@@ -278,7 +278,7 @@ class DsoIntakeServiceTest extends TestCase {
 				],
 				'extend' => [],
 				'register' => 'procest',
-				'schema' => 'zaak',
+				'schema' => 'case',
 			],
 			$recorder->calls[0]
 		);

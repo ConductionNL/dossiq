@@ -75,7 +75,7 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 		}
 
 		// Zrc-017: Validate informatieobjecttype belongs to zaak's zaaktype.
-		$caseUrl = $body['zaak'] ?? '';
+		$caseUrl = $body['case'] ?? '';
 		if ($ioUrl !== '' && $caseUrl !== '' && $this->objectService !== null) {
 			$error = $this->validateZioInformatieobjecttype(caseUrl: $caseUrl, ioUrl: $ioUrl);
 			if ($error !== null) {
@@ -303,11 +303,11 @@ class ZgwZrcZaakinformatieobjectRules extends ZgwRulesBase {
 		$caseChanged = $this->isRelationFieldChanged(
 			body: $body,
 			existingObject: $existingObject,
-			field: 'zaak',
+			field: 'case',
 			storedKey: 'case'
 		);
 		if ($caseChanged === true) {
-			return $this->fieldImmutableError(fieldName: 'zaak');
+			return $this->fieldImmutableError(fieldName: 'case');
 		}
 
 		// Zrc-004: informatieobject is immutable.

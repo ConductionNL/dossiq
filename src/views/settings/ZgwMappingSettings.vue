@@ -84,7 +84,7 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		resourceKeys() {
 			return [
-				'zaak',
+				'case',
 				'case_type',
 				'status',
 				'statustype',

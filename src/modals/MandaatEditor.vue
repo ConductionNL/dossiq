@@ -46,10 +46,10 @@
 					:options="typeOptions"
 					:inputLabel="t('procest', 'Bevoegdheidstype')"
 					@update:modelValue="
-						(v) => (form.bevoegdheidType = v ? v.id : '')
+						(v) => (form.competenceType = v ? v.id : '')
 					" />
-				<span v-if="errors.bevoegdheidType" class="field-error">{{
-					errors.bevoegdheidType
+				<span v-if="errors.competenceType" class="field-error">{{
+					errors.competenceType
 				}}</span>
 			</div>
 
@@ -169,8 +169,8 @@ export default {
 			form: {
 				mandateNumber: this.mandaat?.mandateNumber || '',
 				description: this.mandaat?.description || '',
-				bevoegdheidType:
-					this.mandaat?.bevoegdheidType || 'beslissingsbevoegdheid',
+				competenceType:
+					this.mandaat?.competenceType || 'beslissingsbevoegdheid',
 
 				legalBasis: this.mandaat?.legalBasis || '',
 				inWerkingtreding:
@@ -216,7 +216,7 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
-				this.typeOptions.find((o) => o.id === this.form.bevoegdheidType)
+				this.typeOptions.find((o) => o.id === this.form.competenceType)
 				|| this.typeOptions[0]
 			)
 		},
@@ -239,8 +239,8 @@ export default {
 				errs.mandateNumber = t('procest', 'Mandaatnummer is required')
 			if (!this.form.description)
 				errs.description = t('procest', 'Omschrijving is required')
-			if (!this.form.bevoegdheidType)
-				errs.bevoegdheidType = t('procest', 'Bevoegdheidstype is required')
+			if (!this.form.competenceType)
+				errs.competenceType = t('procest', 'Bevoegdheidstype is required')
 			if (!this.form.legalBasis)
 				errs.legalBasis = t('procest', 'Wettelijke grondslag is required')
 			try {

@@ -28,10 +28,10 @@
 			<tbody>
 				<tr v-for="row in endpoints" :key="row.id">
 					<td>{{ row.name }}</td>
-					<td>{{ row.gemeenteCode }}</td>
-					<td>{{ row.ontvangerApplicatie }}</td>
+					<td>{{ row.municipalityCode }}</td>
+					<td>{{ row.recipientApplication }}</td>
 					<td>{{ row.soapVersion }}</td>
-					<td>{{ row.zaakIdentificatieStrategie || '—' }}</td>
+					<td>{{ row.caseIdentificationStrategy || '—' }}</td>
 					<td>
 						<span
 							class="stuf-endpoints__health"

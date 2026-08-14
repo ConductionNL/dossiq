@@ -134,9 +134,9 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		}
 
 		// Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
-		$archief = $body['brondatumArchiefprocedure'] ?? null;
-		if ($archief !== null) {
-			$errors = $this->brondatumValidator->validate(archief: $archief, selectielijstData: $selectielijstData);
+		$archive = $body['brondatumArchiefprocedure'] ?? null;
+		if ($archive !== null) {
+			$errors = $this->brondatumValidator->validate(archive: $archive, selectielijstData: $selectielijstData);
 		}
 
 		if (empty($errors) === false) {
@@ -204,7 +204,7 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	/**
 	 * Enrich a resultaattype body with derived fields from external APIs (ztc-002b/f/g).
 	 *
-	 * - ztc-002b: Derive omschrijvingGeneriek from resultaattypeomschrijving.omschrijving
+	 * - ztc-002b: Derive omschrijvingGeneriek from resultaattypeomschrijving.description
 	 * - ztc-002f: Derive archiefnominatie from selectielijstklasse.waardering
 	 * - ztc-002g: Derive archiefactietermijn from selectielijstklasse.bewaartermijn
 	 *
@@ -218,7 +218,7 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	 */
 	private function enrichResultaattype(array $body, ?array $selectielijstData, ?array $rtoData): array {
 		if ($rtoData !== null && empty($body['omschrijvingGeneriek']) === true) {
-			$body['omschrijvingGeneriek'] = $rtoData['omschrijving'] ?? '';
+			$body['omschrijvingGeneriek'] = $rtoData['description'] ?? '';
 		}
 
 		if ($selectielijstData !== null && empty($body['archiefnominatie']) === true) {

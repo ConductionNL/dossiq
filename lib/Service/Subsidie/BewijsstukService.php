@@ -163,7 +163,7 @@ class BewijsstukService {
 	 */
 	public function create(array $payload, ?string $contents = null, ?int $regelingRetention = null): array {
 		$linkedIn = (string)($payload['linkedIn'] ?? '');
-		$type = (string)($payload['bewijsstukType'] ?? '');
+		$type = (string)($payload['evidenceType'] ?? '');
 		if ($this->isTypeAllowed(linkedIn: $linkedIn, type: $type) === false) {
 			throw new OCSBadRequestException('Bewijsstuktype "' . $type . '" is niet toegestaan voor fase "' . $linkedIn . '"');
 		}
@@ -177,7 +177,7 @@ class BewijsstukService {
 			[
 				'retentionPeriodYears' => $jaren,
 				'retentionPeriodEnd' => $this->bewaartermijnEinde(from: $now, jaren: $jaren)->format('Y-m-d'),
-				'archiefStatus' => 'actief',
+				'archiveStatus' => 'actief',
 				'immutable' => ($linkedIn === 'vaststelling'),
 			]
 		);

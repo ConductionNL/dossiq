@@ -95,20 +95,20 @@ class MandaatCheckServiceTest extends TestCase {
 		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
 			'userId' => 'alice',
 			'roleId' => 'rol-consulent',
-			'toewijzingType' => 'primair',
+			'allocationType' => 'primair',
 			'validFrom' => '2026-01-01',
 		]);
 		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
 			'userId' => 'bob',
 			'roleId' => 'rol-consulent',
-			'toewijzingType' => 'waarnemer',
+			'allocationType' => 'waarnemer',
 			'validFrom' => '2026-01-01',
-			'waarnemerVoor' => 'alice',
+			'observerFor' => 'alice',
 		]);
 		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
 			'userId' => 'carol',
 			'roleId' => 'rol-afdelingsmanager',
-			'toewijzingType' => 'primair',
+			'allocationType' => 'primair',
 			'validFrom' => '2026-01-01',
 		]);
 	}

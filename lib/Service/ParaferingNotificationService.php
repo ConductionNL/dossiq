@@ -131,7 +131,7 @@ class ParaferingNotificationService {
 			$this->logger->warning(
 				'Failed to send voorstel return notification',
 				[
-					'steller' => $stellerUserId,
+					'author' => $stellerUserId,
 					'voorstel' => $proposalId,
 					'exception' => $e->getMessage(),
 				]

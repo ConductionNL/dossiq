@@ -5,7 +5,7 @@
 		<NcCheckboxRadioSwitch
 			:modelValue="selected"
 			:aria-label="
-				t('procest', 'Select document {title}', { title: document.titel })
+				t('procest', 'Select document {title}', { title: document.title })
 			"
 			class="dossier-document-row__select"
 			@update:modelValue="$emit('toggle-select', document)" />
@@ -13,12 +13,12 @@
 		<img
 			class="dossier-document-row__thumb"
 			:src="thumbnailUrl"
-			:alt="document.titel"
+			:alt="document.title"
 			loading="lazy"
 			@error="onThumbError" />
 
 		<div class="dossier-document-row__main">
-			<span class="dossier-document-row__title">{{ document.titel }}</span>
+			<span class="dossier-document-row__title">{{ document.title }}</span>
 			<span class="dossier-document-row__meta">
 				{{ formatDate(document.creatiedatum) }} ·
 				{{ document.auteur || t('procest', 'Unknown') }} ·

@@ -78,11 +78,11 @@ class QuickActionService {
 	public function executeStatusTerugkoppelen(string $caseId): array {
 		$case = $this->loadCase(caseId: $caseId);
 		$status = (string)($case['status'] ?? 'onbekend');
-		$titel = (string)($case['title'] ?? ($case['titel'] ?? 'uw aanvraag'));
+		$title = (string)($case['title'] ?? ($case['titel'] ?? 'uw aanvraag'));
 
 		$draft = sprintf(
 			'Uw aanvraag "%s" heeft op dit moment de status: %s. Wij houden u op de hoogte van de voortgang.',
-			$titel,
+			$title,
 			$status,
 		);
 

@@ -95,7 +95,7 @@ class BeschikkingController extends Controller {
 			$templateId = (string)$body['templateId'];
 		}
 
-		$overrides = (array)($body['geadresseerde'] ?? []);
+		$overrides = (array)($body['addressee'] ?? []);
 		$payload = (array)$body;
 
 		if ($caseId === '') {
@@ -104,10 +104,10 @@ class BeschikkingController extends Controller {
 
 		$merged = [];
 		if ($overrides !== []) {
-			$merged['geadresseerde'] = $overrides;
+			$merged['addressee'] = $overrides;
 		}
 
-		foreach (['decisionType', 'rationale', 'beslissing'] as $field) {
+		foreach (['decisionType', 'rationale', 'decision'] as $field) {
 			if (isset($payload[$field]) === true) {
 				$merged[$field] = $payload[$field];
 			}

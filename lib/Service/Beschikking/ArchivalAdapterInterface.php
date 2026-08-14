@@ -43,7 +43,7 @@ interface ArchivalAdapterInterface {
 	 * @param string $fileId The Nextcloud file id of the signed PDF/A-3.
 	 * @param array<string, mixed> $tmloMetadata The TMLO-1.2 or MDTO metadata block.
 	 *
-	 * @return array{archiefId: string, destructionDate: string} The archival result.
+	 * @return array{archiveId: string, destructionDate: string} The archival result.
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T25
 	 */

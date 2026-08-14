@@ -20,7 +20,7 @@
 				:label="t('procest', 'Endpoint ID')"
 				:placeholder="t('procest', 'e.g. stuf-ep-amersfoort-key2zaken')" />
 			<NcSelect
-				v-model="filters.berichtSoort"
+				v-model="filters.messageKind"
 				:options="berichtSoortOptions"
 				:inputLabel="t('procest', 'Message type')"
 				clearable />
@@ -53,10 +53,10 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr v-for="row in messages" :key="row.id || row.referentienummer">
+				<tr v-for="row in messages" :key="row.id || row.referenceNumber">
 					<td>{{ row.sentOn }}</td>
 					<td>{{ row.direction }}</td>
-					<td>{{ row.berichtSoort }}</td>
+					<td>{{ row.messageKind }}</td>
 					<td>{{ row.role }}</td>
 					<td>
 						<span
@@ -66,7 +66,7 @@
 						>
 					</td>
 					<td>{{ row.httpStatus || '—' }}</td>
-					<td>{{ row.duurMs || '—' }}</td>
+					<td>{{ row.durationMs || '—' }}</td>
 					<td class="stuf-audit-log__actions">
 						<NcButton type="tertiary" @click="inspect(row)">
 							{{ t('procest', 'Inspect') }}
@@ -114,7 +114,7 @@ export default {
 			inspectRow: null,
 			filters: {
 				endpointId: '',
-				berichtSoort: '',
+				messageKind: '',
 				status: '',
 			},
 		}
@@ -136,12 +136,12 @@ export default {
 		 * @spec exclude presentational filter-option list — static enum, no business logic
 		 */
 		statusOptions() {
-			return ['verzonden', 'bevestigd', 'fout', 'wacht_op_retry']
+			return ['verzonden', 'bevestigd', 'error', 'wacht_op_retry']
 		},
 	},
 
 	watch: {
-		'filters.berichtSoort': 'reload',
+		'filters.messageKind': 'reload',
 		'filters.status': 'reload',
 		'filters.endpointId': 'debouncedReload',
 	},
@@ -175,7 +175,7 @@ export default {
 			try {
 				const data = await listMessages({
 					endpointId: this.filters.endpointId,
-					berichtSoort: this.filters.berichtSoort,
+					messageKind: this.filters.messageKind,
 					status: this.filters.status,
 					limit: 100,
 				})
@@ -218,13 +218,13 @@ export default {
 			const headers = [
 				'sentOn',
 				'direction',
-				'berichtSoort',
+				'messageKind',
 				'role',
 				'status',
 				'httpStatus',
-				'duurMs',
-				'referentienummer',
-				'zaakIdentificatie',
+				'durationMs',
+				'referenceNumber',
+				'caseIdentification',
 			]
 			const lines = [headers.join(',')]
 			for (const row of this.messages) {

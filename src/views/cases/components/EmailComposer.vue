@@ -174,7 +174,7 @@ export default {
 			previewBody: '',
 			availableVariables: [
 				'zaakNummer',
-				'titel',
+				'title',
 				'startdatum',
 				'deadline',
 				'status',

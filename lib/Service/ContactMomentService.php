@@ -97,7 +97,7 @@ class ContactMomentService {
 			'newCaseIds' => array_values((array)($data['newCaseIds'] ?? [])),
 			'nature' => (string)($data['nature'] ?? 'informatieverzoek'),
 			'summary' => (string)($data['summary'] ?? ''),
-			'volgensIntent' => (string)($data['volgensIntent'] ?? ''),
+			'accordingToIntent' => (string)($data['accordingToIntent'] ?? ''),
 			'firstTimeFix' => (bool)($data['firstTimeFix'] ?? false),
 			'transcript' => (string)($data['transcript'] ?? ''),
 			'transferTo' => (string)($data['transferTo'] ?? ''),
@@ -226,7 +226,7 @@ class ContactMomentService {
 	 * entries are never edited or removed.
 	 *
 	 * @param string $caseId The case UUID.
-	 * @param string $contactmomentId The contactmoment UUID.
+	 * @param string $interactionId The contactmoment UUID.
 	 * @param string $type The activity type.
 	 * @param string $employeeName The handling medewerker.
 	 * @param string $summary A short summary of the activity.
@@ -237,7 +237,7 @@ class ContactMomentService {
 	 */
 	public function recordActivity(
 		string $caseId,
-		string $contactmomentId,
+		string $interactionId,
 		string $type,
 		string $employeeName,
 		string $summary,
@@ -263,7 +263,7 @@ class ContactMomentService {
 			$activity = array_values((array)($case['activity'] ?? []));
 			$activity[] = [
 				'type' => $type,
-				'contactmomentId' => $contactmomentId,
+				'interactionId' => $interactionId,
 				'medewerker' => $employeeName,
 				'summary' => $summary,
 				'timestamp' => date('c'),
@@ -283,7 +283,7 @@ class ContactMomentService {
 	/**
 	 * Link an unidentified contactmoment to an identified burger.
 	 *
-	 * @param string $contactmomentId The contactmoment UUID.
+	 * @param string $interactionId The contactmoment UUID.
 	 * @param string $burgerId The resolved burger reference.
 	 * @param string $method The identification method.
 	 * @param float $score The identification confidence score.
@@ -295,7 +295,7 @@ class ContactMomentService {
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T04
 	 */
 	public function linkUnlinkedContactmoment(
-		string $contactmomentId,
+		string $interactionId,
 		string $burgerId,
 		string $method,
 		float $score,
@@ -311,7 +311,7 @@ class ContactMomentService {
 					'identificationMethod' => $method,
 					'identificationScore' => round($score, 2),
 				],
-				$contactmomentId,
+				$interactionId,
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

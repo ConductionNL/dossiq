@@ -39,7 +39,7 @@
 						<dt>{{ t('procest', 'Deadline') }}</dt>
 						<dd>{{ formatDate(zaak.deadlineDate) }}</dd>
 						<dt>{{ t('procest', 'Competent Authority') }}</dt>
-						<dd>{{ zaak.bevoegdGezag || '—' }}</dd>
+						<dd>{{ zaak.competentAuthority || '—' }}</dd>
 						<dt>{{ t('procest', 'Permit application ref') }}</dt>
 						<dd>{{ zaak.permitApplicationRef || '—' }}</dd>
 					</dl>
@@ -168,7 +168,7 @@ export default {
 	},
 
 	props: {
-		zaak: {
+		case: {
 			type: Object,
 			required: true,
 		},
@@ -196,12 +196,12 @@ export default {
 
 	computed: {
 		zaakId() {
-			return this.zaak.uuid || this.zaak.id || ''
+			return this.case.uuid || this.case.id || ''
 		},
 
 		activityEntries() {
 			try {
-				const raw = this.zaak.activity
+				const raw = this.case.activity
 				if (!raw) {
 					return []
 				}
@@ -263,9 +263,9 @@ export default {
 			this.showSamenwerkDialog = false
 			if (samenwerk?.uuid || samenwerk?.id) {
 				this.$emit('transition', {
-					...this.zaak,
+					...this.case,
 					collaboration_requests: [
-						...(this.zaak.collaboration_requests || []),
+						...(this.case.collaboration_requests || []),
 						samenwerk.uuid || samenwerk.id,
 					],
 				})

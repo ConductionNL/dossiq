@@ -385,7 +385,7 @@ class ChecklistService {
 			return;
 		}
 
-		$fotoGate = (string)($item['fotoRequired'] ?? 'nooit');
+		$fotoGate = (string)($item['photoRequired'] ?? 'nooit');
 		$value = (string)($payload['value'] ?? '');
 
 		if ($fotoGate === 'altijd') {

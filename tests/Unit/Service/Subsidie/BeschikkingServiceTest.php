@@ -74,7 +74,7 @@ class BeschikkingServiceTest extends TestCase {
 		$this->expectException(OCSBadRequestException::class);
 		$this->service->assertDraftValid([
 			'grantedAmount' => 450000,
-			'voorschotSchema' => [
+			'advanceSchema' => [
 				['date' => '2026-01-15', 'amount' => 100000],
 			],
 		]);
@@ -89,7 +89,7 @@ class BeschikkingServiceTest extends TestCase {
 	public function testDraftAcceptsReconcilingVoorschot(): void {
 		$this->service->assertDraftValid([
 			'grantedAmount' => 240000,
-			'voorschotSchema' => json_encode([
+			'advanceSchema' => json_encode([
 				['date' => '2026-01-15', 'amount' => 120000],
 				['date' => '2027-01-15', 'amount' => 120000],
 			]),

@@ -127,7 +127,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 	 */
 	private array $advice = [
 		'id' => 'advice-1',
-		'adviseur' => 'alice',
+		'advisor' => 'alice',
 		'case' => 'case-1',
 		'onderwerp' => 'Kapvergunning',
 		'status' => 'aangevraagd',

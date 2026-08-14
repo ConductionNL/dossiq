@@ -67,7 +67,7 @@ class MandaatVerifier {
 	 * Verify whether a mandaat covers a decision. [T14 verifyMandaat]
 	 *
 	 * @param array<string, mixed> $regeling The mandaatRegeling object.
-	 * @param string $niveau The proposed approver level.
+	 * @param string $level The proposed approver level.
 	 * @param float $amount The decision bedrag.
 	 * @param string $decisionType The decision type.
 	 * @param string $caseType The case type.
@@ -78,13 +78,13 @@ class MandaatVerifier {
 	 */
 	public function verifyMandaat(
 		array $regeling,
-		string $niveau,
+		string $level,
 		float $amount,
 		string $decisionType,
 		string $caseType,
 	): bool {
 		foreach ((array)($regeling['mandateGroups'] ?? []) as $groep) {
-			if ((string)($groep['niveau'] ?? '') !== $niveau) {
+			if ((string)($groep['level'] ?? '') !== $level) {
 				continue;
 			}
 
@@ -179,20 +179,20 @@ class MandaatVerifier {
 		$caseType = (string)($decision['caseType'] ?? '');
 
 		foreach ((array)($regeling['mandateGroups'] ?? []) as $groep) {
-			$niveau = (string)($groep['niveau'] ?? '');
-			if ($niveau === '' || str_starts_with($approvedBy, $niveau) === false) {
+			$level = (string)($groep['level'] ?? '');
+			if ($level === '' || str_starts_with($approvedBy, $level) === false) {
 				continue;
 			}
 
 			$covered = $this->verifyMandaat(
 				regeling: $regeling,
-				niveau: $niveau,
+				level: $level,
 				amount: $amount,
 				decisionType: $decisionType,
 				caseType: $caseType,
 			);
 			if ($covered === true) {
-				return $niveau;
+				return $level;
 			}
 		}
 

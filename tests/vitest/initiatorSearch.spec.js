@@ -73,7 +73,7 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 			id: 'uuid-2',
 			kvkNumber: '69599084',
 			trade_name: 'Test EMZ Dagobert',
-			rechtsvorm: 'Eenmanszaak',
+			legalForm: 'Eenmanszaak',
 		})
 		expect(result.type).toBe('company')
 		expect(result.sourceId).toBe('69599084')

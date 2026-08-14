@@ -204,7 +204,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 		}
 
 		$informatieobject = [
-			'titel' => $file->getName(),
+			'title' => $file->getName(),
 			'fileName' => $file->getName(),
 			'bestandsomvang' => $file->getSize(),
 			'format' => $file->getMimeType(),
@@ -215,8 +215,8 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			'creatiedatum' => date('Y-m-d', $file->getMTime()),
 			'taal' => 'nld',
 			'fileId' => $file->getId(),
-			'integriteit' => [
-				'algoritme' => 'sha256',
+			'integrity' => [
+				'algorithm' => 'sha256',
 				'value' => hash('sha256', $content),
 				'date' => date('Y-m-d\TH:i:s'),
 			],
@@ -232,7 +232,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 		if ($joinSchema !== '' && $infoId !== '') {
 			$objectService->saveObject(
 				object: [
-					'zaak' => $folderUuid,
+					'case' => $folderUuid,
 					'informatieobject' => $infoId,
 					'natureRelationshipDisplay' => 'Hoort bij, omgekeerd',
 					'registrationDate' => date('Y-m-d\TH:i:s\Z'),

@@ -262,19 +262,19 @@ class ZaakdossierServiceTest extends TestCase {
 			caseId: 'case-1',
 			fileName: 'a.pdf',
 			content: $content,
-			metadata: ['informatieobjecttype' => 'iot-1', 'vertrouwelijkheidaanduiding' => 'intern', 'titel' => 'My doc'],
+			metadata: ['informatieobjecttype' => 'iot-1', 'vertrouwelijkheidaanduiding' => 'intern', 'title' => 'My doc'],
 		);
 
 		$this->assertSame('inf-1', $result['id']);
 		$this->assertSame('concept', $result['status']);
 		$this->assertSame('intern', $result['vertrouwelijkheidaanduiding']);
-		$this->assertSame(hash('sha256', $content), $result['integriteit']['value']);
-		$this->assertSame('sha256', $result['integriteit']['algoritme']);
+		$this->assertSame(hash('sha256', $content), $result['integrity']['value']);
+		$this->assertSame('sha256', $result['integrity']['algorithm']);
 
 		// Both schemas were written.
 		$this->assertArrayHasKey('informatieobject', $captured);
 		$this->assertArrayHasKey('zaakinformatieobject', $captured);
-		$this->assertSame('case-1', $captured['zaakinformatieobject']['zaak']);
+		$this->assertSame('case-1', $captured['zaakinformatieobject']['case']);
 		$this->assertSame('inf-1', $captured['zaakinformatieobject']['informatieobject']);
 
 	}//end testUploadCreatesInformatieobjectAndJoinWithHash()
@@ -487,7 +487,7 @@ class ZaakdossierServiceTest extends TestCase {
 		$os->method('find')->willReturn(['id' => 'inf-1', 'status' => 'definitief']);
 
 		$this->expectException(\DomainException::class);
-		$this->service->updateMetadata('inf-1', ['titel' => 'New']);
+		$this->service->updateMetadata('inf-1', ['title' => 'New']);
 
 	}//end testUpdateMetadataRejectsDefinitief()
 

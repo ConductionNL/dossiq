@@ -59,10 +59,10 @@ class StufMessageBuilderTest extends TestCase {
 		// shape silently produces EMPTY organisatie/applicatie elements rather
 		// than failing, which is precisely why the routing quartet is asserted
 		// below instead of assumed.
-		'zenderOrganisatie' => 'Procest',
-		'zenderApplicatie' => 'PROCEST',
-		'ontvangerOrganisatie' => 'Gemeente',
-		'ontvangerApplicatie' => 'ZSDMS',
+		'senderOrganisation' => 'Procest',
+		'senderApplication' => 'PROCEST',
+		'recipientOrganisation' => 'Gemeente',
+		'recipientApplication' => 'ZSDMS',
 		'zaaktypeMappings' => ['melding-openbare-ruimte' => 'MOR'],
 	];
 
@@ -251,7 +251,7 @@ class StufMessageBuilderTest extends TestCase {
 			endpoint: self::ENDPOINT,
 			entiteittype: 'ZAK',
 			role: 'creeerZaak',
-			referentienummer: $this->builder->generateReferentienummer(),
+			referenceNumber: $this->builder->generateReferentienummer(),
 			momentMessage: $this->builder->currentTimestampStuf()
 		);
 

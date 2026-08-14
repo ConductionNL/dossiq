@@ -142,10 +142,10 @@ class TermijnNotificationService {
 		// router so the burger actually receives it; the returned delivery
 		// record (kanaal / berichtId / verzondenOp) is attached to the payload
 		// and is what the caller persists as proof of dispatch.
-		$payload['verzending'] = $this->router->routeToBerichtenbox(
+		$payload['dispatch'] = $this->router->routeToBerichtenbox(
 			[
 				'reference' => $termInstanceId,
-				'geadresseerde' => (array)($context['geadresseerde'] ?? []),
+				'addressee' => (array)($context['addressee'] ?? []),
 			]
 		);
 
@@ -155,7 +155,7 @@ class TermijnNotificationService {
 				'type' => $type,
 				'recipient' => $recipientUserId,
 				'instance' => $termInstanceId,
-				'kanaal' => $payload['verzending']['kanaal'],
+				'kanaal' => $payload['dispatch']['kanaal'],
 			]
 		);
 
@@ -175,7 +175,7 @@ class TermijnNotificationService {
 	 */
 	public function renderTemplate(string $type, array $instance, array $context): array {
 		$locale = (string)($context['locale'] ?? 'nl');
-		$case = (string)($instance['zaak'] ?? ($context['zaak'] ?? '–'));
+		$case = (string)($instance['case'] ?? ($context['zaak'] ?? '–'));
 		$end = (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–'));
 
 		$subject = '';

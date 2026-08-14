@@ -52,7 +52,7 @@
             "description": "Standard duration in weeks (alternative representation)",
             "minimum": 0
           },
-          "verlengingsRuimte": {
+          "extensionCapacity": {
             "type": "integer",
             "title": "Extension Allowance Days",
             "description": "Maximum days a single AWB 4:14 verlenging may add",
@@ -65,13 +65,13 @@
             "minimum": 0,
             "default": 1
           },
-          "pauzeeVerlengingsDuren": {
+          "pauseExtensionDuration": {
             "type": "array",
             "title": "Pause Extension Durations",
             "description": "Allowed pause durations in days (e.g. AWB 4:5 hersteltermijn)",
             "items": { "type": "integer" }
           },
-          "afwijkendDwangsomRegime": {
+          "deviatingPenaltyPaymentRegime": {
             "type": "object",
             "title": "Custom Penalty Regime",
             "description": "Custom dwangsom regime overriding the AWB-default (€23/€35/€45 tiers, €1442 plafond)",
@@ -117,7 +117,7 @@
         "description": "Live deadline instance bound to a specific zaak. Tracks the original computed end date, the actual (mutable) end date after pauses and extensions, and the current status.",
         "type": "object",
         "required": [
-          "zaak",
+          "case",
           "termijnDefinitie",
           "startDate",
           "endDateCalculated",
@@ -125,7 +125,7 @@
           "status"
         ],
         "properties": {
-          "zaak": {
+          "case": {
             "type": "string",
             "title": "Case Reference",
             "description": "Reference to the procest case (case id)",
@@ -175,7 +175,7 @@
             "title": "Maximum Extensions",
             "description": "Number of verlengingen consumed"
           },
-          "pauzeDeadline": {
+          "pauseDeadline": {
             "type": "string",
             "format": "date",
             "title": "Pause Deadline",
@@ -360,7 +360,7 @@
             "title": "Current Day",
             "description": "Days accrued so far"
           },
-          "dagtarief": {
+          "dailyRate": {
             "type": "integer",
             "default": 0,
             "title": "Daily Tariff",
@@ -460,7 +460,7 @@
             "default": "AWB 4:17",
             "maxLength": 255
           },
-          "betaaldatumUiterlijk": {
+          "paymentDateLatest": {
             "type": "string",
             "format": "date",
             "title": "Payment Deadline",

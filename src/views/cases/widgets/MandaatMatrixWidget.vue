@@ -32,7 +32,7 @@
 					<li v-for="h in roleHolders" :key="h.userId">
 						{{ h.displayName || h.userId }}
 						<span
-							v-if="h.toewijzingType === 'waarnemer'"
+							v-if="h.allocationType === 'waarnemer'"
 							class="mandaat-widget__waarnemer">
 							({{ t('procest', 'substitute') }})
 						</span>
@@ -106,7 +106,7 @@ export default {
 		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
 		 */
 		hasWaarnemer() {
-			return this.roleHolders.some((h) => h.toewijzingType === 'waarnemer')
+			return this.roleHolders.some((h) => h.allocationType === 'waarnemer')
 		},
 	},
 }

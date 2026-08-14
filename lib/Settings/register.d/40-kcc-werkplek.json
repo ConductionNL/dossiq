@@ -47,7 +47,7 @@
                     "newCaseIds": {"type": "array", "title": "New Case IDs", "items": {"type": "string"}, "description": "Case ids created during this contact"},
                     "nature": {"type": "string", "title": "Nature", "enum": ["informatieverzoek", "statusverzoek", "klacht", "melding", "nieuwe_aanvraag", "doorverbinding"], "description": "Nature of the contact"},
                     "summary": {"type": "string", "title": "Summary", "description": "Summary of the contact"},
-                    "volgensIntent": {"type": "string", "title": "Intent Compliant", "description": "Detected dialogue intent"},
+                    "accordingToIntent": {"type": "string", "title": "Intent Compliant", "description": "Detected dialogue intent"},
                     "firstTimeFix": {"type": "boolean", "title": "First Time Fix", "default": false, "description": "Whether the issue was resolved in one contact"},
                     "transcript": {"type": "string", "title": "Transcription", "description": "Optional voice-to-text transcription"},
                     "transferTo": {"type": "string", "title": "Transfer To", "description": "Specialist user id or wachtrij name if transferred"}
@@ -64,11 +64,11 @@
                 "properties": {
                     "name": {"type": "string", "title": "Name", "description": "Display name of the quick action"},
                     "actionType": {"type": "string", "title": "Action Type", "enum": ["status_geven", "nieuwe_zaak", "klacht_registreren", "doorverbinden", "bel_terug_inplannen", "email_sturen", "kopie_document_sturen"], "description": "Action type"},
-                    "vereisteContext": {"type": "array", "title": "Required Context", "items": {"type": "string"}, "description": "Required context conditions (has_open_case, is_geidentificeerd, ...)"},
+                    "requirementContext": {"type": "array", "title": "Required Context", "items": {"type": "string"}, "description": "Required context conditions (has_open_case, is_geidentificeerd, ...)"},
                     "targetCaseType": {"type": "string", "title": "Target Case Type", "description": "Target case type slug for nieuwe-zaak actions"},
                     "template": {"type": "string", "title": "Template", "description": "Email template reference for email actions"},
                     "permissies": {"type": "array", "title": "Permissions", "items": {"type": "string"}, "description": "KCC roles allowed to run this action"},
-                    "volgorde": {"type": "integer", "title": "Order", "default": 0, "description": "Display order"},
+                    "sortOrder": {"type": "integer", "title": "Order", "default": 0, "description": "Display order"},
                     "isActive": {"type": "boolean", "title": "Is Active", "default": true, "description": "Whether the action is active"}
                 }
             },
@@ -115,14 +115,14 @@
                 "title": "Doorverbinding",
                 "description": "A warm transfer with immutable context-overdracht snapshot to a specialist.",
                 "type": "object",
-                "required": ["contactmomentId", "fromEmployeeId"],
+                "required": ["interactionId", "fromEmployeeId"],
                 "properties": {
-                    "contactmomentId": {"type": "string", "title": "Contact Moment ID", "description": "Reference to the originating contactmoment"},
+                    "interactionId": {"type": "string", "title": "Contact Moment ID", "description": "Reference to the originating contactmoment"},
                     "fromEmployeeId": {"type": "string", "title": "From Employee ID", "description": "Nextcloud UID of the transferring medewerker"},
                     "toEmployeeId": {"type": "string", "title": "To Employee ID", "description": "Nextcloud UID of the receiving specialist, null when to a wachtrij"},
                     "toQueue": {"type": "string", "title": "To Queue", "description": "Target wachtrij name, null when to a specialist"},
                     "transferReason": {"type": "string", "title": "Transfer Reason", "description": "Reason for the transfer"},
-                    "contextOverdracht": {"type": "string", "title": "Context Transfer", "description": "Append-only handover notes"},
+                    "contextTransfer": {"type": "string", "title": "Context Transfer", "description": "Append-only handover notes"},
                     "contextSnapshot": {"type": "string", "title": "Context Snapshot", "description": "Immutable JSON snapshot captured at transfer time"},
                     "geaccepteerd": {"type": "boolean", "title": "Accepted", "description": "Whether the specialist accepted, null until answered"},
                     "acceptanceTime": {"type": "string", "title": "Acceptance Time", "format": "date-time", "description": "When the specialist answered"},
@@ -137,25 +137,25 @@
                 "title": "Klant Sentiment",
                 "description": "Sentiment classification for a contactmoment with escalation recommendation.",
                 "type": "object",
-                "required": ["contactmomentId", "sentimentLabel"],
+                "required": ["interactionId", "sentimentLabel"],
                 "properties": {
-                    "contactmomentId": {"type": "string", "title": "Contact Moment ID", "description": "Reference to the analysed contactmoment"},
+                    "interactionId": {"type": "string", "title": "Contact Moment ID", "description": "Reference to the analysed contactmoment"},
                     "sentimentScore": {"type": "number", "title": "Sentiment Score", "description": "Sentiment score from -1.0 (very negative) to +1.0 (very positive)"},
                     "sentimentLabel": {"type": "string", "title": "Sentiment Label", "enum": ["positief", "neutraal", "negatief", "boos"], "description": "Sentiment label"},
                     "triggerWoorden": {"type": "array", "title": "Trigger Words", "items": {"type": "string"}, "description": "Detected trigger words"},
                     "transcriptSnippet": {"type": "string", "title": "Transcription Snippet", "description": "Quote from the transcription with the trigger words"},
-                    "escalatieAanbevolen": {"type": "boolean", "title": "Escalation Recommended", "default": false, "description": "Whether escalation is recommended"},
+                    "escalationRecommended": {"type": "boolean", "title": "Escalation Recommended", "default": false, "description": "Whether escalation is recommended"},
                     "escalationLevel": {"type": "string", "title": "Escalation Level", "enum": ["geen", "geel", "oranje", "rood"], "default": "geen", "description": "Recommended escalation level"},
                     "createdAt": {"type": "string", "title": "Created At", "format": "date-time", "description": "Creation timestamp"}
                 }
             }
         },
         "objects": [
-            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Status terugkoppelen", "actionType": "status_geven", "vereisteContext": ["is_geidentificeerd", "has_open_case"], "permissies": ["kcc_medewerker"], "volgorde": 1, "isActive": true},
-            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Nieuwe zaak", "actionType": "nieuwe_zaak", "vereisteContext": ["is_geidentificeerd"], "permissies": ["kcc_medewerker"], "volgorde": 2, "isActive": true},
-            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Klacht registreren", "actionType": "klacht_registreren", "vereisteContext": [], "permissies": ["kcc_medewerker", "klachtenfunctionaris"], "volgorde": 3, "isActive": true},
-            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Doorverbinden", "actionType": "doorverbinden", "vereisteContext": [], "permissies": ["kcc_medewerker"], "volgorde": 4, "isActive": true},
-            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Bel terug inplannen", "actionType": "bel_terug_inplannen", "vereisteContext": [], "permissies": ["kcc_medewerker"], "volgorde": 5, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Status terugkoppelen", "actionType": "status_geven", "requirementContext": ["is_geidentificeerd", "has_open_case"], "permissies": ["kcc_medewerker"], "sortOrder": 1, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Nieuwe zaak", "actionType": "nieuwe_zaak", "requirementContext": ["is_geidentificeerd"], "permissies": ["kcc_medewerker"], "sortOrder": 2, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Klacht registreren", "actionType": "klacht_registreren", "requirementContext": [], "permissies": ["kcc_medewerker", "klachtenfunctionaris"], "sortOrder": 3, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Doorverbinden", "actionType": "doorverbinden", "requirementContext": [], "permissies": ["kcc_medewerker"], "sortOrder": 4, "isActive": true},
+            {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Bel terug inplannen", "actionType": "bel_terug_inplannen", "requirementContext": [], "permissies": ["kcc_medewerker"], "sortOrder": 5, "isActive": true},
             {"@self": {"schema": "belplan", "register": "procest"}, "name": "Algemeen gemeentenummer", "triggerNumber": ["14000"], "routingSteps": [{"type": "keuzemenu", "options": ["Omgevingsvergunningen", "Bouwtoezicht", "Infocentrum"]}, {"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen", "bouwtoezicht": "bouwtoezicht"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 180, "fallback_rol": "generalist"}], "openingHours": "Mo-Fr 08:00-17:00", "fallbackAction": "voicemail", "priority": 10, "isActive": true},
             {"@self": {"schema": "belplan", "register": "procest"}, "name": "Vaknummer Vergunningen", "triggerNumber": ["140001"], "routingSteps": [{"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 240, "fallback_rol": "generalist"}], "openingHours": "Mo-Fr 09:00-12:00", "fallbackAction": "sms_callback", "priority": 20, "isActive": true}
         ]

@@ -78,15 +78,15 @@ class BrondatumArchiefValidator extends ZgwRulesBase {
 	/**
 	 * Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
 	 *
-	 * @param array $archief The brondatumArchiefprocedure data
+	 * @param array $archive The brondatumArchiefprocedure data
 	 * @param array|null $selectielijstData The fetched selectielijstklasse data
 	 *
 	 * @return array<array{name: string, code: string, reason: string}> Validation errors
 	 *
 	 * @spec openspec/specs/zgw-business-rules-compliance/spec.md
 	 */
-	public function validate(array $archief, ?array $selectielijstData): array {
-		$afleidingswijze = $archief['afleidingswijze'] ?? '';
+	public function validate(array $archive, ?array $selectielijstData): array {
+		$afleidingswijze = $archive['afleidingswijze'] ?? '';
 		$errors = [];
 
 		// Ztc-004: datumkenmerk required/forbidden.
@@ -95,13 +95,13 @@ class BrondatumArchiefValidator extends ZgwRulesBase {
 			$this->validateFieldPresence(
 				afleidingswijze: $afleidingswijze,
 				fieldName: 'brondatumArchiefprocedure.datumkenmerk',
-				fieldValue: ($archief['datumkenmerk'] ?? ''),
+				fieldValue: ($archive['datumkenmerk'] ?? ''),
 				requiredFor: self::AFLEIDINGSWIJZE_REQUIRES_DATUMKENMERK
 			)
 		);
 
 		// Ztc-005: einddatumBekend must be false for afgehandeld/termijn.
-		$endDateBekend = $archief['einddatumBekend'] ?? false;
+		$endDateBekend = $archive['einddatumBekend'] ?? false;
 		if (($endDateBekend === true || $endDateBekend === 'true')
 			&& in_array($afleidingswijze, self::AFLEIDINGSWIJZE_FORBIDS_EINDDATUM_BEKEND, true) === true
 		) {
@@ -118,7 +118,7 @@ class BrondatumArchiefValidator extends ZgwRulesBase {
 			$this->validateFieldPresence(
 				afleidingswijze: $afleidingswijze,
 				fieldName: 'brondatumArchiefprocedure.objecttype',
-				fieldValue: ($archief['objecttype'] ?? ''),
+				fieldValue: ($archive['objecttype'] ?? ''),
 				requiredFor: self::AFLEIDINGSWIJZE_REQUIRES_OBJECTTYPE
 			)
 		);
@@ -129,13 +129,13 @@ class BrondatumArchiefValidator extends ZgwRulesBase {
 			$this->validateFieldPresence(
 				afleidingswijze: $afleidingswijze,
 				fieldName: 'brondatumArchiefprocedure.registratie',
-				fieldValue: ($archief['registratie'] ?? ''),
+				fieldValue: ($archive['registratie'] ?? ''),
 				requiredFor: ['ander_datumkenmerk']
 			)
 		);
 
 		// Ztc-008: procestermijn required only for termijn.
-		$procestermijn = $archief['procestermijn'] ?? null;
+		$procestermijn = $archive['procestermijn'] ?? null;
 
 		$ptValue = '';
 		if (is_string($procestermijn) === true) {

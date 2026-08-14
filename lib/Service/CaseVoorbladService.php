@@ -132,7 +132,7 @@ class CaseVoorbladService {
 
 			$cases[] = [
 				'id' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
-				'titel' => (string)($case['title'] ?? ($case['titel'] ?? '')),
+				'title' => (string)($case['title'] ?? ($case['titel'] ?? '')),
 				'status' => (string)($case['status'] ?? ''),
 				'laatsteActie' => (string)($case['lastActionDate'] ?? ($case['updated'] ?? '')),
 				'caseType' => (string)($case['caseType'] ?? ''),
@@ -162,12 +162,12 @@ class CaseVoorbladService {
 		}
 
 		$first = $openCases[0];
-		$titel = trim((string)($first['titel'] ?? ''));
-		if ($titel === '') {
-			$titel = trim((string)($first['caseType'] ?? 'lopende zaak'));
+		$title = trim((string)($first['title'] ?? ''));
+		if ($title === '') {
+			$title = trim((string)($first['caseType'] ?? 'lopende zaak'));
 		}
 
-		return 'Waarschijnlijk statusvraag over ' . $titel;
+		return 'Waarschijnlijk statusvraag over ' . $title;
 	}//end suggestTopic()
 
 	/**

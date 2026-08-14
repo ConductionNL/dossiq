@@ -149,7 +149,7 @@ class DsoCaseService {
 		);
 
 		$case = [
-			'title' => 'Omgevingsvergunning: ' . ($permitApplication['titel'] ?? $permitApplicationId),
+			'title' => 'Omgevingsvergunning: ' . ($permitApplication['title'] ?? $permitApplicationId),
 			'status' => 'ingediend',
 			'caseType' => 'omgevingsvergunning',
 			'procedureType' => $procedureType,

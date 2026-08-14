@@ -193,7 +193,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	public function testScenario4OverschrijdingAndDwangsom(): void {
 		// Seed overdue instance directly to simulate elapsed time without sleeping.
 		$instance = $this->objects->saveObject('procest', 'termijnInstance', [
-			'zaak' => 'Z/2026/S4',
+			'case' => 'Z/2026/S4',
 			'termijnDefinitie' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-02-26',

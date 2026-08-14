@@ -111,12 +111,12 @@
             "description": "Reasoning underpinning the decision",
             "x-translatable": false
           },
-          "rechtsmiddelenClausule": {
+          "legalRemediesClause": {
             "type": "string",
             "title": "Legal Remedies Clause",
             "description": "Standard rechtsmiddelen (appeal-rights) clause text"
           },
-          "samengesteldeInhoud": {
+          "compositeContent": {
             "type": "object",
             "title": "Composed Content",
             "description": "Rendered PDF/A-3 composition metadata",
@@ -127,7 +127,7 @@
               "paginas": { "type": "integer", "title": "Page Count", "description": "Number of pages in the rendered document" }
             }
           },
-          "geadresseerde": {
+          "addressee": {
             "type": "object",
             "title": "Addressee",
             "description": "Addressee (a citizen or a business). BSN/OIN are special-category identifiers and are masked when logged.",
@@ -137,17 +137,17 @@
               "oin": { "type": "string", "title": "OIN", "description": "Business identifier" },
               "name": { "type": "string", "title": "Name", "description": "Display name of the addressee" },
               "messageBoxChannel": { "type": "string", "title": "Message Box Channel", "description": "Delivery channel for berichtenbox dispatch", "enum": ["mijnoverheid", "eherkenning", "print-post"] },
-              "berichtenboxBevestigd": { "type": "boolean", "title": "Message Box Confirmed", "description": "Whether the addressee's berichtenbox address has been confirmed", "default": false }
+              "messageBoxConfirmed": { "type": "boolean", "title": "Message Box Confirmed", "description": "Whether the addressee's berichtenbox address has been confirmed", "default": false }
             }
           },
-          "beslissing": {
+          "decision": {
             "type": "object",
             "title": "Decision",
             "description": "Decision content",
             "properties": {
               "kind": { "type": "string", "title": "Decision Sort", "description": "Type of the decision, e.g. toekenning or afwijzing" },
               "onderwerp": { "type": "string", "title": "Decision Subject", "description": "Subject of the decision" },
-              "omvang": { "type": "string", "title": "Scope", "description": "Extent or scope of the decision, e.g. number of hours per week" },
+              "size": { "type": "string", "title": "Scope", "description": "Extent or scope of the decision, e.g. number of hours per week" },
               "effectiveDate": { "type": "string", "title": "Start Date", "description": "Date from which the decision takes effect", "format": "date" },
               "endDate": { "type": "string", "title": "End Date", "description": "Date on which the decision expires", "format": "date" }
             }
@@ -177,7 +177,7 @@
               "validationRapportId": { "type": "string", "title": "Validation Report ID", "description": "Reference to the signature validation report" }
             }
           },
-          "verzending": {
+          "dispatch": {
             "type": "object",
             "title": "Dispatch",
             "description": "Berichtenbox delivery record",
@@ -190,13 +190,13 @@
               "readConfirmationOn": { "type": "string", "title": "Read Confirmation On", "description": "Timestamp at which the message was read by the recipient", "format": "date-time" }
             }
           },
-          "archief": {
+          "archive": {
             "type": "object",
             "title": "Archive",
             "description": "Archival record (TMLO/MDTO) populated when the beschikking is archived via the OpenRegister archival pipeline",
             "properties": {
               "archivedOn": { "type": "string", "title": "Archived On", "description": "Timestamp at which the beschikking was archived", "format": "date-time" },
-              "archiefId": { "type": "string", "title": "Archive ID", "description": "Identifier assigned by the archival system" },
+              "archiveId": { "type": "string", "title": "Archive ID", "description": "Identifier assigned by the archival system" },
               "tmloMetadata": { "type": "object", "title": "TMLO Metadata", "description": "TMLO-1.2 or MDTO metadata block" },
               "destructionDate": { "type": "string", "title": "Destruction Date", "description": "Date on which the archived record is scheduled for destruction", "format": "date" }
             }
@@ -228,7 +228,7 @@
             "description": "Transition details",
             "properties": {
               "van": { "type": "string", "title": "From Status", "description": "Source status" },
-              "naar": { "type": "string", "title": "To Status", "description": "Target status" },
+              "to": { "type": "string", "title": "To Status", "description": "Target status" },
               "moment": { "type": "string", "title": "Timestamp", "description": "Date and time of the state transition", "format": "date-time" },
               "actor": { "type": "string", "title": "Actor", "description": "Nextcloud UID or 'systeem'" },
               "actorType": { "type": "string", "title": "Actor Type", "description": "Whether the actor is a medewerker or the system", "enum": ["medewerker", "systeem"] },
@@ -276,7 +276,7 @@
             "facetable": true
           },
           "objectionCaseId": { "type": "string", "title": "Objection Case ID", "description": "Linked bezwaar case, if any" },
-          "archiefTriggerActief": {
+          "archiveTriggerActive": {
             "type": "boolean",
             "title": "Archive Trigger Active",
             "default": true,
@@ -316,7 +316,7 @@
             "items": {
               "type": "object",
               "properties": {
-                "niveau": { "type": "string", "title": "Level", "description": "Approval level (e.g. consulent, afdelingsmanager, directeur)" },
+                "level": { "type": "string", "title": "Level", "description": "Approval level (e.g. consulent, afdelingsmanager, directeur)" },
                 "to_amount": { "type": "number", "title": "Up To Amount", "description": "Upper bedrag limit; null means unlimited" },
                 "caseTypes": { "type": "array", "title": "Case Types", "description": "Case types for which this authorization level applies", "items": { "type": "string" } },
                 "decisionTypes": { "type": "array", "title": "Decision Types", "description": "Decision types for which this authorization level applies", "items": { "type": "string" } }
@@ -339,9 +339,9 @@
         "withdrawalDate": null,
         "subMandateAllowed": true,
         "mandateGroups": [
-          { "niveau": "consulent", "to_amount": 5000, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning"] },
-          { "niveau": "afdelingsmanager", "to_amount": 25000, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning", "afwijzing"] },
-          { "niveau": "directeur", "to_amount": null, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning", "afwijzing", "wijziging"] }
+          { "level": "consulent", "to_amount": 5000, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning"] },
+          { "level": "afdelingsmanager", "to_amount": 25000, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning", "afwijzing"] },
+          { "level": "directeur", "to_amount": null, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning", "afwijzing", "wijziging"] }
         ]
       },
       {
@@ -360,17 +360,17 @@
         "announcementDate": "2026-04-02",
         "objectionTermEndDate": "2026-05-14",
         "reminderDate": "2026-05-07",
-        "geadresseerde": {
+        "addressee": {
           "type": "burger",
           "bsn": "123456789",
           "name": "M.A. Janssen-de Vries",
           "messageBoxChannel": "mijnoverheid",
-          "berichtenboxBevestigd": true
+          "messageBoxConfirmed": true
         },
-        "beslissing": {
+        "decision": {
           "kind": "toekenning",
           "onderwerp": "huishoudelijke ondersteuning",
-          "omvang": "4 uur per week",
+          "size": "4 uur per week",
           "effectiveDate": "2026-04-01",
           "endDate": "2027-04-01"
         },
@@ -388,15 +388,15 @@
           "kind": "gekwalificeerde-elektronische-handtekening",
           "validationRapportId": "val-2026-99231"
         },
-        "verzending": {
+        "dispatch": {
           "kanaal": "berichtenbox-mijnoverheid",
           "sentOn": "2026-04-02T09:00:00+02:00",
           "sentBy": "systeem",
           "messageId": "MO-2026-04-02-771234"
         },
-        "archief": {
+        "archive": {
           "archivedOn": "2026-05-15T06:30:00+02:00",
-          "archiefId": "openregister-2026-99231",
+          "archiveId": "openregister-2026-99231",
           "destructionDate": "2041-04-02"
         }
       },
@@ -413,17 +413,17 @@
         "templateId": "tpl-omgevingsvergunning-reguliere-procedure-v3",
         "draftVersion": 1,
         "currentStatus": "ondertekend",
-        "geadresseerde": {
+        "addressee": {
           "type": "bedrijf",
           "oin": "00000001234567890000",
           "name": "Bouwbedrijf de Vries B.V.",
           "messageBoxChannel": "eherkenning",
-          "berichtenboxBevestigd": true
+          "messageBoxConfirmed": true
         },
-        "beslissing": {
+        "decision": {
           "kind": "toekenning",
           "onderwerp": "bouwactiviteiten Kerkstraat 12",
-          "omvang": "n.v.t.",
+          "size": "n.v.t.",
           "effectiveDate": "2026-05-01"
         },
         "rationale": "De aanvrager heeft voldaan aan de eisen van de Omgevingswet.",
@@ -447,17 +447,17 @@
         "templateId": "tpl-subsidie-v2",
         "draftVersion": 1,
         "currentStatus": "ontwerp",
-        "geadresseerde": {
+        "addressee": {
           "type": "burger",
           "bsn": "987654321",
           "name": "J. Pieterse",
           "messageBoxChannel": "mijnoverheid",
-          "berichtenboxBevestigd": false
+          "messageBoxConfirmed": false
         },
-        "beslissing": {
+        "decision": {
           "kind": "toekenning",
           "onderwerp": "subsidie culturele activiteiten",
-          "omvang": "2500",
+          "size": "2500",
           "effectiveDate": "2026-06-01",
           "endDate": "2026-12-31"
         }

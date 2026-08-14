@@ -41,18 +41,18 @@
 				</thead>
 				<tbody>
 					<tr v-for="(retry, index) in row.retries" :key="index">
-						<td>{{ retry.poging }}</td>
+						<td>{{ retry.attempt }}</td>
 						<td>{{ retry.timestamp }}</td>
 						<td>{{ retry.httpStatus || '—' }}</td>
-						<td>{{ retry.duurMs || '—' }}</td>
+						<td>{{ retry.durationMs || '—' }}</td>
 					</tr>
 				</tbody>
 			</table>
-			<h4 v-if="row.fout">
+			<h4 v-if="row.error">
 				{{ t('procest', 'Error') }}
 			</h4>
-			<pre v-if="row.fout" class="stuf-audit-log__pre">{{
-				pretty(row.fout)
+			<pre v-if="row.error" class="stuf-audit-log__pre">{{
+				pretty(row.error)
 			}}</pre>
 		</div>
 	</NcDialog>

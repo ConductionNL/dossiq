@@ -34,7 +34,7 @@
 				trackBy="value"
 				class="vth-filter" />
 			<NcTextField
-				v-model="filters.gemeenteCode"
+				v-model="filters.municipalityCode"
 				:label="t('procest', 'Municipality code')"
 				:placeholder="t('procest', '0363')"
 				class="vth-filter vth-filter--small" />
@@ -99,7 +99,7 @@
 							</span>
 						</td>
 						<td>{{ zaak.procedureType || '—' }}</td>
-						<td>{{ zaak.bevoegdGezag || '—' }}</td>
+						<td>{{ zaak.competentAuthority || '—' }}</td>
 						<td>
 							<span :class="getDeadlineClass(zaak)">
 								{{ formatDeadline(zaak.deadlineDate) }}
@@ -153,7 +153,7 @@ export default {
 			filters: {
 				status: [],
 				procedureType: null,
-				gemeenteCode: '',
+				municipalityCode: '',
 				activiteitgroep: '',
 				regelkwalificatie: '',
 			},
@@ -209,8 +209,8 @@ export default {
 				if (this.filters.procedureType) {
 					params.procedureType = this.filters.procedureType.value
 				}
-				if (this.filters.gemeenteCode) {
-					params.gemeenteCode = this.filters.gemeenteCode
+				if (this.filters.municipalityCode) {
+					params.municipalityCode = this.filters.municipalityCode
 				}
 				if (this.filters.activiteitgroep) {
 					params.activiteitgroep = this.filters.activiteitgroep
@@ -249,7 +249,7 @@ export default {
 			this.filters = {
 				status: [],
 				procedureType: null,
-				gemeenteCode: '',
+				municipalityCode: '',
 				activiteitgroep: '',
 				regelkwalificatie: '',
 			}
