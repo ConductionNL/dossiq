@@ -32,6 +32,7 @@ use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\Subsidie\SubsidieRegisterExporter;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use Throwable;
@@ -71,6 +72,8 @@ class SubsidieRegisterController extends Controller {
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-39
 	 */
+	// Tight: an export is a cheap request that buys a lot of server work.
+	#[AnonRateLimit(limit: 20, period: 60)]
 	public function export(): JSONResponse {
 		$limit = (int)$this->request->getParam('limit', 100);
 		$offset = (int)$this->request->getParam('offset', 0);
