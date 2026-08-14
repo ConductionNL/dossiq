@@ -29,6 +29,7 @@ use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\DsoIntakeService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -96,6 +97,11 @@ class DSOIntakeController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	// DSO intake receiver — the caller is the Digitaal Stelsel Omgevingswet,
+	// not a browser, and it authenticates by its own credential. A generous
+	// ceiling against a delivery storm; too tight here would DROP statutory
+	// submissions, which is a worse failure than absorbing a burst.
+	#[AnonRateLimit(limit: 300, period: 60)]
 	public function intake(): JSONResponse {
 		// OCP\AppFramework\Http\Request::getContent() is marked protected, so
 		// calling it across class scopes throws Error at runtime. Read the
