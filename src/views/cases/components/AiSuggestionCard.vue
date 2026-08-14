@@ -24,13 +24,13 @@
 
 		<div v-if="!readonly" class="ai-suggestion-card__actions">
 			<NcButton
-				variant="success"
+				type="success"
 				:disabled="loading"
 				@click="$emit('accept', suggestion)">
 				{{ t('procest', 'Accept') }}
 			</NcButton>
 			<NcButton
-				variant="error"
+				type="error"
 				:disabled="loading"
 				@click="showRejectInput = true">
 				{{ t('procest', 'Reject') }}
@@ -47,7 +47,7 @@
 				:modelValue="rejectReason"
 				:label="t('procest', 'Reason for rejection')"
 				@update:modelValue="(v) => (rejectReason = v)" />
-			<NcButton variant="error" @click="handleReject">
+			<NcButton type="error" @click="handleReject">
 				{{ t('procest', 'Confirm rejection') }}
 			</NcButton>
 		</div>

@@ -69,7 +69,7 @@
 
 				<div class="ai-extract-dialog__actions">
 					<NcButton
-						variant="primary"
+						type="primary"
 						:disabled="selectedFields.length === 0"
 						@click="applySelected">
 						{{

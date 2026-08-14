@@ -80,7 +80,7 @@
 					class="consultation-panel__actions">
 					<NcButton
 						v-if="cons.status === 'open'"
-						variant="secondary"
+						type="secondary"
 						@click="
 							$emit('update-status', {
 								id: cons.id,
@@ -91,13 +91,13 @@
 					</NcButton>
 					<NcButton
 						v-if="cons.status === 'in_behandeling' && !cons.advies"
-						variant="secondary"
+						type="secondary"
 						@click="openResponseDialog(cons)">
 						{{ t('procest', 'Submit response') }}
 					</NcButton>
 					<NcButton
 						v-if="cons.status === 'advies_uitgebracht'"
-						variant="secondary"
+						type="secondary"
 						@click="
 							$emit('update-status', {
 								id: cons.id,

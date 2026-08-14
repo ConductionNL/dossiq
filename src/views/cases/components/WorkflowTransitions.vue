@@ -29,7 +29,7 @@
 			<NcButton
 				v-for="tr in availableTransitions"
 				:key="tr.id"
-				:variant="tr.available ? 'secondary' : 'tertiary'"
+				:type="tr.available ? 'secondary' : 'tertiary'"
 				:disabled="!tr.available || executing"
 				:title="tr.available ? '' : tr.unmetConditions.join('; ')"
 				@click="executeTransition(tr)">

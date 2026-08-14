@@ -50,7 +50,7 @@
 				@update:modelValue="(v) => (draft = v)"
 				@keydown.enter.prevent="onSend" />
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!sendAllowed"
 				:aria-label="t('procest', 'Send')"
 				data-testid="case-assistant-send"

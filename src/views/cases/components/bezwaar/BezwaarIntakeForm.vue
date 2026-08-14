@@ -178,7 +178,7 @@
 
 		<!-- Actions -->
 		<div v-if="!isReadOnly" class="bezwaar-intake-form__actions">
-			<NcButton variant="primary" :disabled="saving" @click="save">
+			<NcButton type="primary" :disabled="saving" @click="save">
 				{{
 					saving
 						? t('procest', 'Saving...')

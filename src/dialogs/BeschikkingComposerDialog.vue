@@ -72,12 +72,12 @@
 			</NcButton>
 			<NcButton
 				v-if="!composed"
-				variant="primary"
+				type="primary"
 				:disabled="submitting"
 				@click="onCompose">
 				{{ t('procest', 'Opstellen') }}
 			</NcButton>
-			<NcButton v-else variant="primary" @click="onDone">
+			<NcButton v-else type="primary" @click="onDone">
 				{{ t('procest', 'Klaar') }}
 			</NcButton>
 		</template>

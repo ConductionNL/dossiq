@@ -13,7 +13,7 @@
 		<template v-else-if="error">
 			<div class="my-work-preview__error">
 				<p>{{ error }}</p>
-				<NcButton variant="tertiary" @click="$emit('retry')">
+				<NcButton type="tertiary" @click="$emit('retry')">
 					{{ t('procest', 'Retry') }}
 				</NcButton>
 			</div>

@@ -40,11 +40,11 @@
 			</div>
 
 			<div class="initiator-picker-modal__actions">
-				<NcButton variant="tertiary" @click="$emit('skip')">
+				<NcButton type="tertiary" @click="$emit('skip')">
 					{{ t('procest', 'Skip') }}
 				</NcButton>
 				<NcButton
-					variant="primary"
+					type="primary"
 					:disabled="!selection"
 					@click="$emit('confirm', selection)">
 					{{ t('procest', 'Use as initiator') }}

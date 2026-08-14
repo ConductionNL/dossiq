@@ -6,7 +6,7 @@
 			<h3 class="advies-panel__title">
 				{{ t(appName, 'Adviezen') }}
 			</h3>
-			<NcButton variant="primary" @click="openCreateDialog">
+			<NcButton type="primary" @click="openCreateDialog">
 				{{ t(appName, 'Advies aanvragen') }}
 			</NcButton>
 		</div>
@@ -62,19 +62,19 @@
 				<div class="advies-panel__actions">
 					<NcButton
 						v-if="item.status === 'aangevraagd'"
-						variant="secondary"
+						type="secondary"
 						@click="onRemind(item)">
 						{{ t(appName, 'Herinnering sturen') }}
 					</NcButton>
 					<NcButton
 						v-if="item.status === 'aangevraagd' && item.adviesDocument"
-						variant="secondary"
+						type="secondary"
 						@click="onMarkReceived(item)">
 						{{ t(appName, 'Markeer als ontvangen') }}
 					</NcButton>
 					<NcButton
 						v-if="item.status === 'ontvangen' && item.adviesDocument"
-						variant="tertiary"
+						type="tertiary"
 						@click="onViewDocument(item)">
 						{{ t(appName, 'Bekijk advies') }}
 					</NcButton>

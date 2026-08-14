@@ -51,7 +51,7 @@
 			</NcNoteCard>
 
 			<div class="beroep-escalation-panel__actions">
-				<NcButton variant="primary" :disabled="escalating" @click="escalate">
+				<NcButton type="primary" :disabled="escalating" @click="escalate">
 					{{
 						escalating
 							? t('procest', 'Creating...')

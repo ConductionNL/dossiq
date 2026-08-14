@@ -10,7 +10,7 @@
 			<div class="task-create-dialog__header">
 				<h3>{{ t('procest', 'New Task') }}</h3>
 				<NcButton
-					variant="tertiary"
+					type="tertiary"
 					:aria-label="t('procest', 'Close')"
 					@click="$emit('close')">
 					✕
@@ -108,7 +108,7 @@
 				<NcButton @click="$emit('close')">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
-				<NcButton variant="primary" :disabled="saving" @click="submit">
+				<NcButton type="primary" :disabled="saving" @click="submit">
 					<template v-if="saving">
 						<NcLoadingIcon :size="20" />
 					</template>

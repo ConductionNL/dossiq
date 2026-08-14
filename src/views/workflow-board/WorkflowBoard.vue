@@ -28,9 +28,7 @@
 					}}
 				</p>
 			</div>
-			<NcButton
-				variant="tertiary"
-				@click="$router.push({ name: 'Dashboard' })">
+			<NcButton type="tertiary" @click="$router.push({ name: 'Dashboard' })">
 				{{ t('procest', 'Dashboard') }}
 			</NcButton>
 		</div>
@@ -39,7 +37,7 @@
 
 		<div v-else-if="error" class="workflow-board__error">
 			<p>{{ error }}</p>
-			<NcButton variant="tertiary" @click="fetchData">
+			<NcButton type="tertiary" @click="fetchData">
 				{{ t('procest', 'Retry') }}
 			</NcButton>
 		</div>
@@ -73,7 +71,7 @@
 					<NcButton @click="openBulkDialog">
 						{{ t('procest', 'Change status…') }}
 					</NcButton>
-					<NcButton variant="tertiary" @click="clearSelectionHandler">
+					<NcButton type="tertiary" @click="clearSelectionHandler">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
 				</div>

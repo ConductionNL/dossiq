@@ -3,7 +3,7 @@
 		<div class="transition-config-panel__header">
 			<h4>{{ t('procest', 'Transition Configuration') }}</h4>
 			<NcButton
-				variant="tertiary"
+				type="tertiary"
 				:aria-label="t('procest', 'Close transition configuration')"
 				@click="$emit('close')">
 				<template #icon>
@@ -115,7 +115,7 @@
 					</select>
 
 					<NcButton
-						variant="tertiary"
+						type="tertiary"
 						:aria-label="t('procest', 'Remove guard')"
 						@click="removeGuard(index)">
 						<template #icon>
@@ -123,7 +123,7 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton variant="secondary" @click="addGuard">
+				<NcButton type="secondary" @click="addGuard">
 					{{ t('procest', 'Add guard') }}
 				</NcButton>
 			</div>
@@ -257,7 +257,7 @@
 					</template>
 
 					<NcButton
-						variant="tertiary"
+						type="tertiary"
 						:aria-label="t('procest', 'Remove action')"
 						@click="removeAction(index)">
 						<template #icon>
@@ -265,14 +265,14 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton variant="secondary" @click="addAction">
+				<NcButton type="secondary" @click="addAction">
 					{{ t('procest', 'Add action') }}
 				</NcButton>
 			</div>
 
 			<!-- Delete transition -->
 			<div class="transition-config-panel__danger">
-				<NcButton variant="error" @click="onDelete">
+				<NcButton type="error" @click="onDelete">
 					{{ t('procest', 'Delete transition') }}
 				</NcButton>
 			</div>

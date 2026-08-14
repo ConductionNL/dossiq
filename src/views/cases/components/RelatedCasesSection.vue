@@ -16,7 +16,7 @@
 	<div class="related-cases-section">
 		<div class="related-cases-section__header">
 			<h3>{{ t('procest', 'Related cases') }}</h3>
-			<NcButton variant="secondary" @click="showAddModal = true">
+			<NcButton type="secondary" @click="showAddModal = true">
 				<template #icon>
 					<Plus :size="20" />
 				</template>
@@ -76,7 +76,7 @@
 						<td>{{ rel.toelichting || '—' }}</td>
 						<td class="related-cases-section__actions-col">
 							<NcButton
-								variant="tertiary"
+								type="tertiary"
 								:aria-label="t('procest', 'Remove relation')"
 								@click="remove(rel)">
 								<template #icon>

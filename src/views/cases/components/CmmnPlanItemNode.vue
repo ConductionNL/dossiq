@@ -37,7 +37,7 @@
 			<span class="cmmn-plan-item__actions">
 				<NcButton
 					v-if="enableable"
-					variant="secondary"
+					type="secondary"
 					:disabled="busy === node.id"
 					:aria-label="t('procest', 'Enable this optional task')"
 					@click="$emit('enable', node.id)">
@@ -45,7 +45,7 @@
 				</NcButton>
 				<NcButton
 					v-if="completable"
-					variant="primary"
+					type="primary"
 					:disabled="busy === node.id"
 					:aria-label="t('procest', 'Complete this task')"
 					@click="$emit('complete', node.id)">
@@ -53,7 +53,7 @@
 				</NcButton>
 				<NcButton
 					v-if="terminable"
-					variant="tertiary"
+					type="tertiary"
 					:disabled="busy === node.id"
 					:aria-label="t('procest', 'Terminate this task')"
 					@click="$emit('terminate', node.id)">

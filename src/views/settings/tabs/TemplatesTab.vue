@@ -35,7 +35,7 @@
 						>v{{ template.version }}</span
 					>
 					<NcButton
-						variant="primary"
+						type="primary"
 						:disabled="activating === template.id"
 						@click="activate(template.id)">
 						<template v-if="activating === template.id">

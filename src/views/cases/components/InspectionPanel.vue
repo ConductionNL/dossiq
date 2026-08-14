@@ -4,7 +4,7 @@
 			<h3>{{ t('procest', 'Inspections') }}</h3>
 			<NcButton
 				v-if="canInspect"
-				variant="primary"
+				type="primary"
 				@click="showChecklistForm = true">
 				{{ t('procest', 'New inspection') }}
 			</NcButton>
@@ -239,7 +239,7 @@
 
 					<div class="inspection-panel__form-actions">
 						<NcButton
-							variant="primary"
+							type="primary"
 							:disabled="submitting"
 							@click="submitReport">
 							{{

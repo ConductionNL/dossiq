@@ -29,7 +29,7 @@
 					|| t('procest', 'The publication could not be sent.')
 				}}
 			</p>
-			<NcButton variant="primary" :disabled="busy" @click="retry">
+			<NcButton type="primary" :disabled="busy" @click="retry">
 				{{ t('procest', 'Opnieuw proberen') }}
 			</NcButton>
 		</div>
@@ -38,7 +38,7 @@
 			<span class="besluit-publicatie-panel__badge">
 				{{ t('procest', 'Publicatie in behandeling') }}
 			</span>
-			<NcButton variant="secondary" :disabled="busy" @click="retry">
+			<NcButton type="secondary" :disabled="busy" @click="retry">
 				{{ t('procest', 'Nu publiceren') }}
 			</NcButton>
 		</div>

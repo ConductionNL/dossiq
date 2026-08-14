@@ -67,9 +67,7 @@
 					<div
 						v-if="!isDocPresent(docType.id) && !isReadOnly"
 						class="doc-item__actions">
-						<NcButton
-							variant="tertiary"
-							@click="$emit('upload', docType)">
+						<NcButton type="tertiary" @click="$emit('upload', docType)">
 							{{ t('procest', 'Upload') }}
 						</NcButton>
 					</div>

@@ -18,7 +18,7 @@
 					>({{ decisions.length }})</span
 				>
 			</h3>
-			<NcButton variant="primary" @click="openCreate">
+			<NcButton type="primary" @click="openCreate">
 				{{ t('procest', 'Add decision') }}
 			</NcButton>
 		</div>

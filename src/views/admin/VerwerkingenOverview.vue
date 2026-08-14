@@ -16,10 +16,7 @@
 	<div class="verwerkingen-overview">
 		<div class="verwerkingen-overview__header">
 			<h2>{{ t('procest', 'Processing activities (AVG)') }}</h2>
-			<NcButton
-				variant="primary"
-				:disabled="denied"
-				@click="showExport = true">
+			<NcButton type="primary" :disabled="denied" @click="showExport = true">
 				<template #icon>
 					<FileExportOutline :size="20" />
 				</template>

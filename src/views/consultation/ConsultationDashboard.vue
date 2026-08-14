@@ -126,7 +126,7 @@
 						<td>
 							<NcButton
 								v-if="item.status === 'open'"
-								variant="secondary"
+								type="secondary"
 								:title="t('procest', 'Take on consultation')"
 								@click="claimConsultation(item)">
 								{{ t('procest', 'Take on') }}

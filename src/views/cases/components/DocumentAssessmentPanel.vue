@@ -53,7 +53,7 @@
 						<td>
 							<NcButton
 								v-if="getAssessment(doc.id) === 'deels_openbaar'"
-								variant="secondary"
+								type="secondary"
 								:disabled="isReadOnly"
 								@click="$emit('anonymize', doc)">
 								{{ t('procest', 'Anonymize') }}

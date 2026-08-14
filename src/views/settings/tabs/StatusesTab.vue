@@ -58,7 +58,7 @@
 							</span>
 							<div class="status-type-row__actions">
 								<NcButton
-									variant="tertiary"
+									type="tertiary"
 									:aria-label="
 										t('procest', 'Edit {name}', {
 											name: st.name,
@@ -70,7 +70,7 @@
 									</template>
 								</NcButton>
 								<NcButton
-									variant="tertiary"
+									type="tertiary"
 									:aria-label="
 										t('procest', 'Delete {name}', {
 											name: st.name,
@@ -139,12 +139,12 @@
 								}}</span>
 								<div class="edit-row edit-row--actions">
 									<NcButton
-										variant="primary"
+										type="primary"
 										:disabled="editSaving"
 										@click="saveEdit">
 										{{ t('procest', 'Save') }}
 									</NcButton>
-									<NcButton variant="tertiary" @click="cancelEdit">
+									<NcButton type="tertiary" @click="cancelEdit">
 										{{ t('procest', 'Cancel') }}
 									</NcButton>
 								</div>
@@ -208,7 +208,7 @@
 							addError
 						}}</span>
 						<NcButton
-							variant="primary"
+							type="primary"
 							:disabled="addSaving"
 							@click="addStatusType">
 							{{ t('procest', 'Add') }}

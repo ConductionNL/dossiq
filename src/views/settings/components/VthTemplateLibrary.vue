@@ -98,7 +98,7 @@
 
 			<div class="vth-template-library__actions">
 				<NcButton
-					variant="primary"
+					type="primary"
 					@click="$emit('import', selectedTemplate.data)">
 					{{ t('procest', 'Import this template') }}
 				</NcButton>

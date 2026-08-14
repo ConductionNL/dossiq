@@ -69,7 +69,7 @@
 				{{ t('procest', 'Close') }}
 			</NcButton>
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!message.trim() || posting"
 				@click="post">
 				{{ posting ? t('procest', 'Posting...') : t('procest', 'Post') }}

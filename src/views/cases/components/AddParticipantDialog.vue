@@ -40,7 +40,7 @@
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
 				<NcButton
-					variant="primary"
+					type="primary"
 					:disabled="!canSubmit || saving"
 					@click="submit">
 					<template v-if="saving">

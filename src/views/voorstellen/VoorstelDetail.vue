@@ -10,7 +10,7 @@
 			<template #header-actions>
 				<NcButton
 					v-if="canRegisterBesluit"
-					variant="primary"
+					type="primary"
 					@click="showBesluitDialog = true">
 					{{ t('procest', 'Register decision') }}
 				</NcButton>
@@ -36,7 +36,7 @@
 			<CnDetailCard
 				v-if="isActiveActor && !isTerminalStatus"
 				:title="t('procest', 'Take action')">
-				<NcButton variant="primary" @click="actieDialogOpen = true">
+				<NcButton type="primary" @click="actieDialogOpen = true">
 					{{ t('procest', 'Take action') }}
 				</NcButton>
 			</CnDetailCard>
@@ -96,7 +96,7 @@
 						)
 					}}
 				</p>
-				<NcButton variant="primary" @click="resubmit">
+				<NcButton type="primary" @click="resubmit">
 					{{ t('procest', 'Resubmit') }}
 				</NcButton>
 			</CnDetailCard>

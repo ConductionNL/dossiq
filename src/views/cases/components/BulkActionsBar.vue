@@ -33,7 +33,7 @@
 			</NcButton>
 
 			<NcButton
-				variant="tertiary"
+				type="tertiary"
 				:disabled="busy"
 				@click="$emit('clear-selection')">
 				{{ t('procest', 'Clear selection') }}

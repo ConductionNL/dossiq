@@ -2,7 +2,7 @@
 	<div class="checklist-admin">
 		<div class="checklist-admin__header">
 			<h3>{{ t('procest', 'Inspection Checklists') }}</h3>
-			<NcButton variant="primary" @click="createChecklist">
+			<NcButton type="primary" @click="createChecklist">
 				{{ t('procest', 'New checklist') }}
 			</NcButton>
 		</div>
@@ -36,13 +36,13 @@
 					</NcButton>
 					<NcButton
 						v-if="checklist.status === 'active'"
-						variant="secondary"
+						type="secondary"
 						@click="createVersion(checklist)">
 						{{ t('procest', 'New version') }}
 					</NcButton>
 					<NcButton
 						v-if="checklist.status === 'draft'"
-						variant="error"
+						type="error"
 						@click="deleteChecklist(checklist)">
 						{{ t('procest', 'Delete') }}
 					</NcButton>
@@ -60,10 +60,7 @@
 				<NcButton @click="cancelEdit">
 					{{ t('procest', 'Back to list') }}
 				</NcButton>
-				<NcButton
-					variant="primary"
-					:disabled="saving"
-					@click="saveChecklist">
+				<NcButton type="primary" :disabled="saving" @click="saveChecklist">
 					{{
 						saving
 							? t('procest', 'Saving...')
@@ -183,7 +180,7 @@
 						</div>
 					</div>
 
-					<NcButton variant="error" @click="removeItem(index)">
+					<NcButton type="error" @click="removeItem(index)">
 						{{ t('procest', 'Remove') }}
 					</NcButton>
 				</div>

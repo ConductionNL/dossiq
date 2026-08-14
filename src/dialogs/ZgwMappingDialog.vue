@@ -80,10 +80,10 @@
 		</div>
 
 		<template #actions>
-			<NcButton variant="tertiary" @click="$emit('close')">
+			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton variant="primary" @click="onSave">
+			<NcButton type="primary" @click="onSave">
 				{{ t('procest', 'Save') }}
 			</NcButton>
 		</template>

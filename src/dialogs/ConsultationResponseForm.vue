@@ -75,7 +75,7 @@
 						class="consultation-response-form__condition-priority"
 						:placeholder="t('procest', 'Priority')" />
 					<NcButton
-						variant="tertiary"
+						type="tertiary"
 						:title="t('procest', 'Remove condition')"
 						@click="removeVoorwaarde(idx)">
 						✕
@@ -109,7 +109,7 @@
 			<NcButton :disabled="submitting" @click="onClose">
 				{{ t('procest', 'Annuleren') }}
 			</NcButton>
-			<NcButton variant="primary" :disabled="!canSubmit" @click="onSubmit">
+			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
 				{{
 					submitting
 						? t('procest', 'Bezig...')

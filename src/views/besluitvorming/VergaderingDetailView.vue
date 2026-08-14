@@ -54,12 +54,12 @@
 
 					<div class="vergadering-detail__actions">
 						<NcButton
-							variant="primary"
+							type="primary"
 							:disabled="!isComplete(agendaCase.id)"
 							@click="recordBesluit(agendaCase)">
 							{{ t('procest', 'Besluit vastleggen') }}
 						</NcButton>
-						<NcButton variant="secondary" @click="aanhouden(agendaCase)">
+						<NcButton type="secondary" @click="aanhouden(agendaCase)">
 							{{ t('procest', 'Aanhouden') }}
 						</NcButton>
 					</div>

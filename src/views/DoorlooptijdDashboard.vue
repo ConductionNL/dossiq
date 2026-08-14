@@ -44,7 +44,7 @@
 
 				<!-- Back to dashboard -->
 				<NcButton
-					variant="tertiary"
+					type="tertiary"
 					@click="$router.push({ name: 'Dashboard' })">
 					<template #icon>
 						<ArrowLeft :size="20" />
@@ -89,7 +89,7 @@
 				}}
 			</p>
 			<NcButton
-				variant="primary"
+				type="primary"
 				@click="$router.push({ name: 'ProcestConfiguration' })">
 				{{ t('procest', 'Go to Settings') }}
 			</NcButton>

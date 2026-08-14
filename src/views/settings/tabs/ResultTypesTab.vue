@@ -42,7 +42,7 @@
 							</span>
 							<div class="sub-entity-row__actions">
 								<NcButton
-									variant="tertiary"
+									type="tertiary"
 									:aria-label="t('procest', 'Edit')"
 									@click="startEdit(item)">
 									<template #icon>
@@ -50,7 +50,7 @@
 									</template>
 								</NcButton>
 								<NcButton
-									variant="tertiary"
+									type="tertiary"
 									:aria-label="t('procest', 'Delete')"
 									@click="deleteItem(item)">
 									<template #icon>
@@ -113,7 +113,7 @@
 								</p>
 								<div class="edit-actions">
 									<NcButton
-										variant="primary"
+										type="primary"
 										:disabled="saving"
 										@click="saveEdit">
 										{{ t('procest', 'Save') }}

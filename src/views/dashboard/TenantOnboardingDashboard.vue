@@ -17,7 +17,7 @@
 					:inputLabel="t('procest', 'Tenant')"
 					:placeholder="t('procest', 'Pick a tenant')"
 					@update:modelValue="onTenantChange" />
-				<NcButton variant="secondary" @click="loadProgress">
+				<NcButton type="secondary" @click="loadProgress">
 					<template #icon>
 						<Refresh :size="18" />
 					</template>
@@ -83,7 +83,7 @@
 					<NcButton
 						v-if="step.status !== 'complete'"
 						size="small"
-						variant="primary"
+						type="primary"
 						:disabled="markingStep === step.step"
 						@click="markComplete(step.step)">
 						<template #icon>
@@ -101,7 +101,7 @@
 				<h3>{{ t('procest', 'Go-live readiness') }}</h3>
 				<NcButton
 					:disabled="checkingGoLive"
-					variant="secondary"
+					type="secondary"
 					@click="checkGoLive">
 					<template #icon>
 						<NcLoadingIcon v-if="checkingGoLive" :size="18" />
@@ -118,7 +118,7 @@
 							t('procest', 'Tenant is ready to go live.')
 						}}</span>
 						<NcButton
-							variant="primary"
+							type="primary"
 							:disabled="activating"
 							@click="activate">
 							<template #icon>

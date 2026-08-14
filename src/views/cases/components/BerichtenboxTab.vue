@@ -2,7 +2,7 @@
 	<div class="berichtenbox-tab">
 		<div class="berichtenbox-tab__header">
 			<h4>{{ t('procest', 'Mijn Overheid Messages') }}</h4>
-			<NcButton variant="primary" @click="showCompose = true">
+			<NcButton type="primary" @click="showCompose = true">
 				{{ t('procest', 'New message') }}
 			</NcButton>
 		</div>

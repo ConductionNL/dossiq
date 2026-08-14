@@ -101,7 +101,7 @@
 
 		<!-- Save button -->
 		<div v-if="!isReadOnly" class="property-actions">
-			<NcButton variant="primary" :disabled="saving" @click="save">
+			<NcButton type="primary" :disabled="saving" @click="save">
 				<template v-if="saving">
 					<NcLoadingIcon :size="20" />
 				</template>

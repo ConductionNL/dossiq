@@ -20,7 +20,7 @@
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				variant="error"
+				type="error"
 				:disabled="!!blockedReason"
 				@click="$emit('confirm')">
 				{{ t('procest', 'Delete') }}

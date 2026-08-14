@@ -18,7 +18,7 @@
 						</span>
 						<div class="sub-entity-row__actions">
 							<NcButton
-								variant="tertiary"
+								type="tertiary"
 								:aria-label="
 									t('procest', 'Edit {name}', { name: item.name })
 								"
@@ -28,7 +28,7 @@
 								</template>
 							</NcButton>
 							<NcButton
-								variant="tertiary"
+								type="tertiary"
 								:aria-label="
 									t('procest', 'Delete {name}', {
 										name: item.name,
@@ -120,7 +120,7 @@
 								</li>
 							</ul>
 							<div class="edit-actions">
-								<NcButton variant="primary" @click="saveEdit">
+								<NcButton type="primary" @click="saveEdit">
 									{{ t('procest', 'Save') }}
 								</NcButton>
 								<NcButton @click="cancelEdit">

@@ -122,7 +122,7 @@
 
 		<div class="email-settings__actions">
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!writable || saving || loading"
 				@click="save">
 				<template #icon>
@@ -136,7 +136,7 @@
 			</NcButton>
 
 			<NcButton
-				variant="secondary"
+				type="secondary"
 				:disabled="testing || loading"
 				@click="testConnection">
 				<template #icon>

@@ -2,10 +2,7 @@
 	<div class="enforcement-panel">
 		<div class="enforcement-panel__header">
 			<h3>{{ t('procest', 'Enforcement') }}</h3>
-			<NcButton
-				v-if="!isReadOnly"
-				variant="primary"
-				@click="showWizard = true">
+			<NcButton v-if="!isReadOnly" type="primary" @click="showWizard = true">
 				{{ t('procest', 'Start enforcement') }}
 			</NcButton>
 		</div>

@@ -15,7 +15,7 @@
 		<!-- No hearing yet -->
 		<template v-else-if="!activeHearing && !isReadOnly">
 			<div class="hearing-panel__actions">
-				<NcButton variant="primary" @click="showScheduleDialog = true">
+				<NcButton type="primary" @click="showScheduleDialog = true">
 					{{ t('procest', 'Schedule Hearing') }}
 				</NcButton>
 				<NcButton @click="showWaiverDialog = true">
@@ -70,7 +70,7 @@
 			<div v-if="!isReadOnly" class="hearing-panel__actions">
 				<NcButton
 					v-if="activeHearing.status === 'gepland'"
-					variant="primary"
+					type="primary"
 					@click="sendInvitations">
 					{{ t('procest', 'Send Invitations') }}
 				</NcButton>
@@ -79,13 +79,13 @@
 						activeHearing.status === 'gepland'
 						|| activeHearing.status === 'uitgenodigd'
 					"
-					variant="primary"
+					type="primary"
 					@click="showMinutesDialog = true">
 					{{ t('procest', 'Record Minutes') }}
 				</NcButton>
 				<NcButton
 					v-if="activeHearing.status !== 'uitgevoerd'"
-					variant="error"
+					type="error"
 					@click="cancelHearing">
 					{{ t('procest', 'Cancel Hearing') }}
 				</NcButton>
@@ -147,7 +147,7 @@
 					<NcButton @click="showScheduleDialog = false">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
-					<NcButton variant="primary" @click="scheduleHearing">
+					<NcButton type="primary" @click="scheduleHearing">
 						{{ t('procest', 'Schedule') }}
 					</NcButton>
 				</div>
@@ -189,7 +189,7 @@
 					<NcButton @click="showWaiverDialog = false">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
-					<NcButton variant="primary" @click="recordWaiver">
+					<NcButton type="primary" @click="recordWaiver">
 						{{ t('procest', 'Record Waiver') }}
 					</NcButton>
 				</div>
@@ -221,7 +221,7 @@
 					<NcButton @click="showMinutesDialog = false">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
-					<NcButton variant="primary" @click="recordMinutes">
+					<NcButton type="primary" @click="recordMinutes">
 						{{ t('procest', 'Save Minutes') }}
 					</NcButton>
 				</div>

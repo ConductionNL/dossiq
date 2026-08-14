@@ -41,7 +41,7 @@
 		</div>
 
 		<div class="mandaat-import__actions">
-			<NcButton :disabled="!raw || running" variant="primary" @click="preview">
+			<NcButton :disabled="!raw || running" type="primary" @click="preview">
 				<template #icon>
 					<NcLoadingIcon v-if="running" :size="18" />
 					<EyeOutline v-else :size="18" />
@@ -51,7 +51,7 @@
 			<NcButton
 				v-if="previewResult"
 				:disabled="!importId || approving"
-				variant="success"
+				type="success"
 				@click="approve">
 				<template #icon>
 					<CheckBold :size="18" />

@@ -8,7 +8,7 @@
 <template>
 	<div class="toewijzingen-table">
 		<div class="toewijzingen-table__toolbar">
-			<NcButton variant="primary" @click="addOpen = true">
+			<NcButton type="primary" @click="addOpen = true">
 				<template #icon>
 					<Plus :size="18" />
 				</template>

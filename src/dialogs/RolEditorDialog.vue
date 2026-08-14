@@ -79,7 +79,7 @@
 			<NcButton @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton variant="primary" @click="save">
+			<NcButton type="primary" @click="save">
 				{{ t('procest', 'Save') }}
 			</NcButton>
 		</template>

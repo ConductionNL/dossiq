@@ -153,7 +153,7 @@
 								class="external-consultation-response__condition-priority"
 								:placeholder="t('procest', 'Priority')" />
 							<NcButton
-								variant="tertiary"
+								type="tertiary"
 								:title="t('procest', 'Remove condition')"
 								@click="removeVoorwaarde(idx)">
 								✕
@@ -183,7 +183,7 @@
 
 					<div class="external-consultation-response__form-actions">
 						<NcButton
-							variant="primary"
+							type="primary"
 							:disabled="!canSubmit || submitting"
 							@click="submitResponse">
 							{{

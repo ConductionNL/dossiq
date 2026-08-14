@@ -8,7 +8,7 @@
 	<div class="checklists-tab">
 		<div class="checklists-tab__header">
 			<h3>{{ t('procest', 'VTH Inspection Checklists') }}</h3>
-			<NcButton variant="primary" @click="openEditor(null)">
+			<NcButton type="primary" @click="openEditor(null)">
 				{{ t('procest', 'New checklist') }}
 			</NcButton>
 		</div>
@@ -56,7 +56,7 @@
 					<NcButton @click="openEditor(checklist)">
 						{{ t('procest', 'Edit') }}
 					</NcButton>
-					<NcButton variant="error" @click="confirmDelete(checklist)">
+					<NcButton type="error" @click="confirmDelete(checklist)">
 						{{ t('procest', 'Delete') }}
 					</NcButton>
 				</div>

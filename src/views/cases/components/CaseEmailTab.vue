@@ -50,7 +50,7 @@
 					:clearable="true" />
 
 				<NcButton
-					variant="primary"
+					type="primary"
 					:disabled="isFinal || drafting"
 					:title="
 						isFinal

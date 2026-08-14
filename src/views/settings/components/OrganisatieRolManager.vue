@@ -5,7 +5,7 @@
 <template>
 	<div class="rol-manager">
 		<div class="rol-manager__toolbar">
-			<NcButton variant="primary" @click="openEditor(null)">
+			<NcButton type="primary" @click="openEditor(null)">
 				<template #icon>
 					<Plus :size="18" />
 				</template>

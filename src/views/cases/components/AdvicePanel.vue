@@ -168,7 +168,7 @@
 
 				<div class="advice-panel__dialog-actions">
 					<NcButton
-						variant="primary"
+						type="primary"
 						:disabled="!canSubmit || submitting"
 						@click="submitRequest">
 						{{

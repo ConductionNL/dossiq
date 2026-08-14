@@ -63,7 +63,7 @@
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!isValid || saving"
 				@click="createFederatedShare">
 				{{ saving ? t('procest', 'Sharing...') : t('procest', 'Share') }}

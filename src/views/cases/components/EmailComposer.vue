@@ -84,11 +84,11 @@
 			<NcButton @click="$emit('cancel')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton variant="secondary" @click="previewEmail">
+			<NcButton type="secondary" @click="previewEmail">
 				{{ t('procest', 'Preview') }}
 			</NcButton>
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!isValid || sending"
 				@click="sendEmail">
 				<template v-if="sending">

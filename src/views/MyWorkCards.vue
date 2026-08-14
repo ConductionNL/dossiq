@@ -24,12 +24,12 @@
 				role="group"
 				:aria-label="t('procest', 'Sort My Work')">
 				<NcButton
-					:variant="sortMode === 'urgency' ? 'primary' : 'tertiary'"
+					:type="sortMode === 'urgency' ? 'primary' : 'tertiary'"
 					@click="setSortMode('urgency')">
 					{{ t('procest', 'Urgency') }}
 				</NcButton>
 				<NcButton
-					:variant="sortMode === 'newest' ? 'primary' : 'tertiary'"
+					:type="sortMode === 'newest' ? 'primary' : 'tertiary'"
 					@click="setSortMode('newest')">
 					{{ t('procest', 'Newest') }}
 				</NcButton>

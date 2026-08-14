@@ -141,7 +141,7 @@
 
 		<div class="kcc-settings__actions">
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!writable || saving || loading"
 				@click="save">
 				<template #icon>

@@ -87,13 +87,13 @@
 			<template v-if="!showReturnForm">
 				<NcButton
 					v-if="primaryActionLabel"
-					variant="primary"
+					type="primary"
 					:disabled="submitting || !canSubmit"
 					@click="submitPrimary">
 					{{ primaryActionLabel }}
 				</NcButton>
 				<NcButton
-					variant="error"
+					type="error"
 					:disabled="submitting"
 					@click="showReturnForm = true">
 					{{ t('procest', 'Return') }}
@@ -101,7 +101,7 @@
 			</template>
 			<template v-else>
 				<NcButton
-					variant="error"
+					type="error"
 					:disabled="submitting || returnReason.trim() === ''"
 					@click="submitReturn">
 					{{ t('procest', 'Return') }}

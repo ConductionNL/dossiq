@@ -1,7 +1,7 @@
 <template>
 	<div class="case-type-detail">
 		<div class="case-type-detail__header">
-			<NcButton variant="tertiary" @click="$emit('back')">
+			<NcButton type="tertiary" @click="$emit('back')">
 				<template #icon>
 					<ArrowLeftIcon :size="20" />
 				</template>
@@ -19,19 +19,19 @@
 			<div class="case-type-detail__actions">
 				<NcButton
 					v-if="!isCreate && form.isDraft"
-					variant="secondary"
+					type="secondary"
 					@click="publish">
 					{{ t('procest', 'Publish') }}
 				</NcButton>
 				<NcButton
 					v-if="!isCreate && !form.isDraft"
-					variant="secondary"
+					type="secondary"
 					@click="unpublish">
 					{{ t('procest', 'Unpublish') }}
 				</NcButton>
 				<NcButton
 					v-if="!isCreate"
-					variant="secondary"
+					type="secondary"
 					:disabled="duplicating"
 					@click="duplicate">
 					<template v-if="duplicating" #icon>
@@ -39,7 +39,7 @@
 					</template>
 					{{ t('procest', 'Duplicate') }}
 				</NcButton>
-				<NcButton variant="primary" :disabled="saving" @click="save">
+				<NcButton type="primary" :disabled="saving" @click="save">
 					<template v-if="saving" #icon>
 						<NcLoadingIcon :size="20" />
 					</template>

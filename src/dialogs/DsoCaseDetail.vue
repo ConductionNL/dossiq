@@ -12,22 +12,16 @@
 			<div class="dso-case-detail">
 				<!-- Lifecycle action bar -->
 				<div class="dso-case-detail__actions">
-					<NcButton variant="primary" @click="showTransitionDialog = true">
+					<NcButton type="primary" @click="showTransitionDialog = true">
 						{{ t('procest', 'Status transition') }}
 					</NcButton>
-					<NcButton
-						variant="secondary"
-						@click="showBeschikkingDialog = true">
+					<NcButton type="secondary" @click="showBeschikkingDialog = true">
 						{{ t('procest', 'Generate beschikking') }}
 					</NcButton>
-					<NcButton
-						variant="secondary"
-						@click="showSamenwerkDialog = true">
+					<NcButton type="secondary" @click="showSamenwerkDialog = true">
 						{{ t('procest', 'Collaboration') }}
 					</NcButton>
-					<NcButton
-						variant="secondary"
-						@click="showDoorstuurDialog = true">
+					<NcButton type="secondary" @click="showDoorstuurDialog = true">
 						{{ t('procest', 'Forward') }}
 					</NcButton>
 				</div>
@@ -135,14 +129,12 @@
 					type="date" />
 				<div class="dso-transition-form__actions">
 					<NcButton
-						variant="primary"
+						type="primary"
 						:disabled="!transitionStatus"
 						@click="executeTransition">
 						{{ t('procest', 'Confirm') }}
 					</NcButton>
-					<NcButton
-						variant="tertiary"
-						@click="showTransitionDialog = false">
+					<NcButton type="tertiary" @click="showTransitionDialog = false">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
 				</div>

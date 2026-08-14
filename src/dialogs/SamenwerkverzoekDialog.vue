@@ -30,7 +30,7 @@
 					<NcButton
 						v-for="org in commonOrganizations"
 						:key="org"
-						variant="tertiary"
+						type="tertiary"
 						@click="aangezochtBevoegdGezag = org">
 						{{ org }}
 					</NcButton>
@@ -51,11 +51,11 @@
 		</template>
 
 		<template #actions>
-			<NcButton variant="tertiary" @click="$emit('close')">
+			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!aangezochtBevoegdGezag || submitting"
 				@click="submit">
 				{{ t('procest', 'Initiate') }}

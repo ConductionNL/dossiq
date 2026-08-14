@@ -46,7 +46,7 @@
 			<NcButton @click="loadCases">
 				{{ t('procest', 'Apply filters') }}
 			</NcButton>
-			<NcButton variant="secondary" @click="resetFilters">
+			<NcButton type="secondary" @click="resetFilters">
 				{{ t('procest', 'Reset') }}
 			</NcButton>
 		</div>
@@ -106,7 +106,7 @@
 							</span>
 						</td>
 						<td>
-							<NcButton variant="tertiary" @click="openDetail(zaak)">
+							<NcButton type="tertiary" @click="openDetail(zaak)">
 								{{ t('procest', 'Open') }}
 							</NcButton>
 						</td>

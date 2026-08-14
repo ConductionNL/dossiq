@@ -114,7 +114,7 @@
 							{{ t('procest', 'Execute') }}
 						</NcButton>
 						<NcButton
-							variant="secondary"
+							type="secondary"
 							:disabled="executing"
 							@click="onClose">
 							{{

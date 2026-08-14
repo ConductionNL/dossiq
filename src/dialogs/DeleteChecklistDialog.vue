@@ -12,7 +12,7 @@
 		"
 		@close="$emit('cancel')">
 		<template #actions>
-			<NcButton variant="error" @click="$emit('confirm')">
+			<NcButton type="error" @click="$emit('confirm')">
 				{{ t('procest', 'Delete') }}
 			</NcButton>
 			<NcButton @click="$emit('cancel')">

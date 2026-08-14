@@ -5,13 +5,13 @@
 			<div class="step-config-panel__header-actions">
 				<NcButton
 					v-if="!readOnly"
-					variant="tertiary"
+					type="tertiary"
 					class="step-config-panel__delete-button"
 					@click="$emit('delete', localStep.id)">
 					{{ t('procest', 'Delete step') }}
 				</NcButton>
 				<NcButton
-					variant="tertiary"
+					type="tertiary"
 					:aria-label="t('procest', 'Close step configuration')"
 					@click="$emit('close')">
 					<template #icon>
@@ -97,7 +97,7 @@
 						:aria-label="t('procest', 'Checklist item')"
 						@input="emitUpdate" />
 					<NcButton
-						variant="tertiary"
+						type="tertiary"
 						:aria-label="t('procest', 'Remove checklist item')"
 						@click="removeChecklistItem(index)">
 						<template #icon>
@@ -105,7 +105,7 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton variant="secondary" @click="addChecklistItem">
+				<NcButton type="secondary" @click="addChecklistItem">
 					{{ t('procest', 'Add checklist item') }}
 				</NcButton>
 			</div>
@@ -190,7 +190,7 @@
 								:disabled="readOnly"
 								@input="emitUpdate" />
 							<NcButton
-								variant="tertiary"
+								type="tertiary"
 								:disabled="readOnly"
 								:aria-label="t('procest', 'Remove required field')"
 								@click="removeRequiredField(index)">
@@ -200,7 +200,7 @@
 							</NcButton>
 						</div>
 						<NcButton
-							variant="secondary"
+							type="secondary"
 							:disabled="readOnly"
 							@click="addRequiredField">
 							{{ t('procest', 'Add field') }}
@@ -333,7 +333,7 @@
 						class="step-config-panel__input"
 						@input="emitUpdate" />
 					<NcButton
-						variant="tertiary"
+						type="tertiary"
 						:aria-label="t('procest', 'Remove action')"
 						@click="removeAction(index)">
 						<template #icon>
@@ -341,7 +341,7 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton variant="secondary" @click="addAction">
+				<NcButton type="secondary" @click="addAction">
 					{{ t('procest', 'Add action') }}
 				</NcButton>
 			</div>

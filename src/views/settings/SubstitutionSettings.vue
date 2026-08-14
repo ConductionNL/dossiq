@@ -13,7 +13,7 @@
 	<div class="substitution-settings">
 		<div class="substitution-settings__header">
 			<h2>{{ t('procest', 'Substitution (vervanging)') }}</h2>
-			<NcButton variant="primary" @click="showModal = true">
+			<NcButton type="primary" @click="showModal = true">
 				<template #icon>
 					<AccountSwitch :size="20" />
 				</template>
@@ -68,7 +68,7 @@
 					<td>
 						<NcButton
 							v-if="sub.status === 'active'"
-							variant="tertiary"
+							type="tertiary"
 							:aria-label="t('procest', 'Revoke substitution')"
 							@click="revoke(sub.id)">
 							{{ t('procest', 'Revoke') }}

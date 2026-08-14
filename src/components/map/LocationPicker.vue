@@ -11,12 +11,12 @@
 				<h3>{{ t('procest', 'Select location') }}</h3>
 				<div class="location-picker__tools">
 					<NcButton
-						:variant="mode === 'point' ? 'primary' : 'secondary'"
+						:type="mode === 'point' ? 'primary' : 'secondary'"
 						@click="setMode('point')">
 						{{ t('procest', 'Point') }}
 					</NcButton>
 					<NcButton
-						:variant="mode === 'polygon' ? 'primary' : 'secondary'"
+						:type="mode === 'polygon' ? 'primary' : 'secondary'"
 						@click="setMode('polygon')">
 						{{ t('procest', 'Draw area') }}
 					</NcButton>
@@ -59,10 +59,7 @@
 				<NcButton @click="$emit('cancel')">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
-				<NcButton
-					variant="primary"
-					:disabled="!selectedGeometry"
-					@click="save">
+				<NcButton type="primary" :disabled="!selectedGeometry" @click="save">
 					{{ t('procest', 'Save') }}
 				</NcButton>
 			</div>

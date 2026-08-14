@@ -24,16 +24,12 @@
 					}}</label>
 					<div class="beschikking-dialog__outcome-buttons">
 						<NcButton
-							:variant="
-								outcome === 'verleend' ? 'primary' : 'secondary'
-							"
+							:type="outcome === 'verleend' ? 'primary' : 'secondary'"
 							@click="outcome = 'verleend'">
 							✓ {{ t('procest', 'Granted') }}
 						</NcButton>
 						<NcButton
-							:variant="
-								outcome === 'geweigerd' ? 'error' : 'secondary'
-							"
+							:type="outcome === 'geweigerd' ? 'error' : 'secondary'"
 							@click="outcome = 'geweigerd'">
 							✗ {{ t('procest', 'Refused') }}
 						</NcButton>
@@ -62,11 +58,11 @@
 		</template>
 
 		<template #actions>
-			<NcButton variant="tertiary" @click="$emit('close')">
+			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!outcome || submitting || success"
 				@click="submit">
 				{{ t('procest', 'Generate') }}

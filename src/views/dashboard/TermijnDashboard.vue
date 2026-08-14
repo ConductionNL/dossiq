@@ -13,7 +13,7 @@
 					:inputLabel="t('procest', 'Filter by case type')"
 					:placeholder="t('procest', 'All case types')"
 					@update:modelValue="onZaaktypeChange" />
-				<NcButton variant="secondary" @click="load">
+				<NcButton type="secondary" @click="load">
 					<template #icon>
 						<Refresh :size="18" />
 					</template>
@@ -87,12 +87,12 @@
 					:label="t('procest', 'Quarter (YYYY-Qn)')"
 					:placeholder="t('procest', 'e.g. 2026-Q2')"
 					@update:modelValue="(v) => (quarter = v)" />
-				<NcButton variant="primary" @click="loadQuarterly">
+				<NcButton type="primary" @click="loadQuarterly">
 					{{ t('procest', 'Load report') }}
 				</NcButton>
 				<NcButton
 					:disabled="!quarterly"
-					variant="secondary"
+					type="secondary"
 					@click="downloadQuarterCsv">
 					<template #icon>
 						<FileExport :size="18" />
@@ -146,7 +146,7 @@
 					:modelValue="String(year)"
 					:label="t('procest', 'Year')"
 					@update:modelValue="(v) => (year = Number(v) || year)" />
-				<NcButton variant="primary" @click="loadAnnual">
+				<NcButton type="primary" @click="loadAnnual">
 					{{ t('procest', 'Load audit') }}
 				</NcButton>
 			</div>

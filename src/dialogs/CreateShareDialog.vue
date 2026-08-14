@@ -40,7 +40,7 @@
 			<NcButton @click="$emit('update:open', false)">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton variant="primary" :disabled="saving" @click="createShare">
+			<NcButton type="primary" :disabled="saving" @click="createShare">
 				{{
 					saving
 						? t('procest', 'Creating...')

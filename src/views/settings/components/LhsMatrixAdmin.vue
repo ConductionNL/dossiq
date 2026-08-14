@@ -54,7 +54,7 @@
 
 		<div v-if="!loading" class="lhs-matrix-admin__actions">
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="saving || !dirty"
 				@click="saveMatrix">
 				{{

@@ -47,10 +47,10 @@
 				</div>
 
 				<div class="ai-classify-dialog__actions">
-					<NcButton variant="primary" @click="apply">
+					<NcButton type="primary" @click="apply">
 						{{ t('procest', 'Apply classification') }}
 					</NcButton>
-					<NcButton variant="error" @click="reject">
+					<NcButton type="error" @click="reject">
 						{{ t('procest', 'Reject') }}
 					</NcButton>
 				</div>

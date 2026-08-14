@@ -61,7 +61,7 @@
 				{{ t('procest', 'Extension: not allowed') }}
 			</span>
 
-			<NcButton v-if="canExtend" variant="secondary" @click="$emit('extend')">
+			<NcButton v-if="canExtend" type="secondary" @click="$emit('extend')">
 				{{ t('procest', 'Request Extension') }}
 			</NcButton>
 		</div>

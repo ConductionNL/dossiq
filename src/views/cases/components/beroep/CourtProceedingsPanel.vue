@@ -6,7 +6,7 @@
 		<div v-if="parentCase" class="court-proceedings-panel__parent">
 			<NcNoteCard type="info">
 				{{ t('procest', 'This appeal originates from bezwaar case:') }}
-				<NcButton variant="tertiary" @click="navigateToParent">
+				<NcButton type="tertiary" @click="navigateToParent">
 					{{ parentCase.title || parentCase.identifier }}
 				</NcButton>
 			</NcNoteCard>
@@ -58,7 +58,7 @@
 					:options="rulingOptions"
 					:aria-label-combobox="t('procest', 'Court Ruling Outcome')" />
 				<NcButton
-					variant="primary"
+					type="primary"
 					class="court-proceedings-panel__save-btn"
 					@click="saveRuling">
 					{{ t('procest', 'Record Ruling') }}

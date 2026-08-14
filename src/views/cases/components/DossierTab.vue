@@ -19,7 +19,7 @@
 					:reduce="(option) => option.id"
 					label="label"
 					:clearable="false" />
-				<NcButton variant="primary" @click="triggerFilePicker">
+				<NcButton type="primary" @click="triggerFilePicker">
 					<template #icon>
 						<Upload :size="20" />
 					</template>
@@ -60,7 +60,7 @@
 				<FolderOpenOutline :size="20" />
 			</template>
 			<template #action>
-				<NcButton variant="primary" @click="triggerFilePicker">
+				<NcButton type="primary" @click="triggerFilePicker">
 					{{ t('procest', 'Upload document') }}
 				</NcButton>
 			</template>

@@ -161,12 +161,12 @@
 					</NcButton>
 					<NcButton
 						v-if="editingDecision"
-						variant="error"
+						type="error"
 						@click="deleteDecision">
 						{{ t('procest', 'Delete') }}
 					</NcButton>
 					<NcButton
-						variant="primary"
+						type="primary"
 						:disabled="saving"
 						@click="saveDecision">
 						{{ t('procest', 'Save') }}

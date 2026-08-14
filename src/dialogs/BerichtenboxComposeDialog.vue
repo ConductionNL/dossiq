@@ -56,7 +56,7 @@
 			</div>
 
 			<div class="compose-dialog__actions">
-				<NcButton variant="primary" :disabled="sending" @click="send">
+				<NcButton type="primary" :disabled="sending" @click="send">
 					{{ sending ? t('procest', 'Sending...') : t('procest', 'Send') }}
 				</NcButton>
 				<NcButton @click="$emit('close')">

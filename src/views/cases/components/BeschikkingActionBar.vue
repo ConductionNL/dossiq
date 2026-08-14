@@ -4,21 +4,21 @@
 	<div class="beschikking-actionbar">
 		<NcButton
 			v-if="status === 'ontwerp'"
-			variant="primary"
+			type="primary"
 			:disabled="busy"
 			@click="onAkkoord">
 			{{ t('procest', 'Akkoord aanvragen') }}
 		</NcButton>
 		<NcButton
 			v-if="status === 'akkoord-mandaat'"
-			variant="primary"
+			type="primary"
 			:disabled="busy"
 			@click="onOnderteken">
 			{{ t('procest', 'Ondertekenen') }}
 		</NcButton>
 		<NcButton
 			v-if="status === 'ondertekend'"
-			variant="primary"
+			type="primary"
 			:disabled="busy"
 			@click="onVerzend">
 			{{ t('procest', 'Verzenden') }}

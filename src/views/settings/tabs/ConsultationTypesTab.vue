@@ -67,9 +67,7 @@
 						{{ t('procest', 'Required') }}
 					</NcCheckboxRadioSwitch>
 
-					<NcButton
-						variant="tertiary-no-background"
-						@click="removeType(idx)">
+					<NcButton type="tertiary-no-background" @click="removeType(idx)">
 						{{ t('procest', 'Verwijderen') }}
 					</NcButton>
 				</div>
@@ -79,7 +77,7 @@
 				<NcButton @click="addType">
 					{{ t('procest', 'Add advice type') }}
 				</NcButton>
-				<NcButton variant="primary" :disabled="saving" @click="saveTypes">
+				<NcButton type="primary" :disabled="saving" @click="saveTypes">
 					{{
 						saving ? t('procest', 'Opslaan...') : t('procest', 'Opslaan')
 					}}

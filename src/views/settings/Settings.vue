@@ -5,7 +5,7 @@
 		docUrl="https://procest.conduction.nl/docs/intro"
 		:loading="loading">
 		<template #actions>
-			<NcButton variant="primary" @click="save">
+			<NcButton type="primary" @click="save">
 				{{ t('procest', 'Save') }}
 			</NcButton>
 		</template>

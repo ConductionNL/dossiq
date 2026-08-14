@@ -103,10 +103,10 @@
 		</div>
 
 		<template #actions>
-			<NcButton variant="tertiary" @click="$emit('close')">
+			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton variant="primary" :disabled="saving" @click="submit">
+			<NcButton type="primary" :disabled="saving" @click="submit">
 				<template v-if="saving" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>

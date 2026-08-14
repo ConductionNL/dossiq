@@ -75,7 +75,7 @@
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!isValid || saving"
 				@click="submitTransfer">
 				{{

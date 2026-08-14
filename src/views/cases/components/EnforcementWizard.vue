@@ -200,14 +200,14 @@
 				</NcButton>
 				<NcButton
 					v-if="step < 3"
-					variant="primary"
+					type="primary"
 					:disabled="!canProceed"
 					@click="step++">
 					{{ t('procest', 'Next') }}
 				</NcButton>
 				<NcButton
 					v-if="step === 3"
-					variant="primary"
+					type="primary"
 					:disabled="submitting"
 					@click="submit">
 					{{

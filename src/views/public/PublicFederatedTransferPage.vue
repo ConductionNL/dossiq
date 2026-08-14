@@ -52,13 +52,13 @@
 
 			<div class="public-federated-transfer-page__actions">
 				<NcButton
-					variant="error"
+					type="error"
 					:disabled="submitting"
 					@click="respond('reject')">
 					{{ t('procest', 'Reject') }}
 				</NcButton>
 				<NcButton
-					variant="primary"
+					type="primary"
 					:disabled="submitting"
 					@click="respond('accept')">
 					{{ t('procest', 'Accept') }}

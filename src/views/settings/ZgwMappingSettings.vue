@@ -26,10 +26,10 @@
 							</span>
 						</td>
 						<td>
-							<NcButton variant="secondary" @click="editMapping(key)">
+							<NcButton type="secondary" @click="editMapping(key)">
 								{{ t('procest', 'Edit') }}
 							</NcButton>
-							<NcButton variant="tertiary" @click="resetMapping(key)">
+							<NcButton type="tertiary" @click="resetMapping(key)">
 								{{ t('procest', 'Reset') }}
 							</NcButton>
 						</td>

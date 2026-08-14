@@ -13,11 +13,11 @@
 					rows="3" />
 			</div>
 			<div class="parafeer-action-bar__actions">
-				<NcButton variant="primary" :disabled="acting" @click="doAdviseren">
+				<NcButton type="primary" :disabled="acting" @click="doAdviseren">
 					{{ t('procest', 'Advise') }}
 				</NcButton>
 				<NcButton
-					variant="error"
+					type="error"
 					:disabled="acting"
 					@click="showReturnForm = true">
 					{{ t('procest', 'Return') }}
@@ -28,11 +28,11 @@
 		<!-- Parafering/Accordering step -->
 		<template v-else>
 			<div class="parafeer-action-bar__actions">
-				<NcButton variant="primary" :disabled="acting" @click="doParaferen">
+				<NcButton type="primary" :disabled="acting" @click="doParaferen">
 					{{ t('procest', 'Endorse') }}
 				</NcButton>
 				<NcButton
-					variant="error"
+					type="error"
 					:disabled="acting"
 					@click="showReturnForm = true">
 					{{ t('procest', 'Return') }}
@@ -83,7 +83,7 @@
 				</p>
 			</div>
 			<div class="parafeer-action-bar__actions">
-				<NcButton variant="error" :disabled="acting" @click="doTerugsturen">
+				<NcButton type="error" :disabled="acting" @click="doTerugsturen">
 					{{ t('procest', 'Return') }}
 				</NcButton>
 				<NcButton @click="showReturnForm = false">

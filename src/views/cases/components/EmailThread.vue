@@ -49,7 +49,7 @@
 
 				<NcButton
 					v-if="msg.body && msg.body.length > 200"
-					variant="tertiary"
+					type="tertiary"
 					@click="toggleExpand(msg.messageId || msg.id)">
 					{{
 						isExpanded(msg.messageId || msg.id)

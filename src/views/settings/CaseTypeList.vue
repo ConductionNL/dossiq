@@ -46,7 +46,7 @@
 				<div class="ct-actions" @click.stop>
 					<NcButton
 						v-if="!row.isDraft"
-						variant="tertiary"
+						type="tertiary"
 						:title="t('procest', 'Set as default')"
 						@click="setDefault(row)">
 						<template #icon>
@@ -54,7 +54,7 @@
 						</template>
 					</NcButton>
 					<NcButton
-						variant="tertiary"
+						type="tertiary"
 						:disabled="duplicating === row.id"
 						:title="t('procest', 'Duplicate')"
 						@click="duplicate(row)">
@@ -66,7 +66,7 @@
 						</template>
 					</NcButton>
 					<NcButton
-						variant="tertiary"
+						type="tertiary"
 						:title="t('procest', 'Delete')"
 						@click="confirmDelete(row)">
 						<template #icon>

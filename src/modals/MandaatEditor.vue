@@ -122,7 +122,7 @@
 				<NcButton @click="$emit('close')">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
-				<NcButton variant="primary" :disabled="saving" @click="save">
+				<NcButton type="primary" :disabled="saving" @click="save">
 					<template #icon>
 						<NcLoadingIcon v-if="saving" :size="18" />
 						<ContentSave v-else :size="18" />

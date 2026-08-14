@@ -141,7 +141,7 @@
 		<template #actions>
 			<NcButton
 				v-if="!proposal"
-				variant="primary"
+				type="primary"
 				:disabled="!canDetect || detecting"
 				@click="detect">
 				{{
@@ -151,10 +151,10 @@
 				}}
 			</NcButton>
 			<template v-else>
-				<NcButton variant="secondary" :disabled="submitting" @click="reject">
+				<NcButton type="secondary" :disabled="submitting" @click="reject">
 					{{ t('procest', 'Reject') }}
 				</NcButton>
-				<NcButton variant="primary" :disabled="submitting" @click="approve">
+				<NcButton type="primary" :disabled="submitting" @click="approve">
 					{{
 						submitting
 							? t('procest', 'Applying…')

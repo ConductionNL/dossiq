@@ -30,7 +30,7 @@
 				</div>
 				<div class="parafeer-inbox__item-actions">
 					<NcButton
-						variant="primary"
+						type="primary"
 						:aria-label="t('procest', 'Endorse')"
 						@click="
 							$router.push({

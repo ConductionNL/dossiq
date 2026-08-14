@@ -44,7 +44,7 @@
 			</div>
 
 			<NcButton
-				variant="secondary"
+				type="secondary"
 				:disabled="!fromUser || loadingPreview"
 				@click="loadPreview">
 				<template v-if="loadingPreview" #icon>
@@ -134,10 +134,10 @@
 		</div>
 
 		<template #actions>
-			<NcButton variant="tertiary" @click="$emit('close')">
+			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Close') }}
 			</NcButton>
-			<NcButton variant="primary" :disabled="!canExecute" @click="execute">
+			<NcButton type="primary" :disabled="!canExecute" @click="execute">
 				<template v-if="executing" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>

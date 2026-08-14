@@ -20,7 +20,7 @@
 				<!-- Create new workflow if none exists -->
 				<NcButton
 					v-if="versions.length === 0"
-					variant="primary"
+					type="primary"
 					@click="createWorkflow">
 					{{ t('procest', 'Create workflow') }}
 				</NcButton>
@@ -28,7 +28,7 @@
 				<!-- Publish draft -->
 				<NcButton
 					v-if="currentIsDraft"
-					variant="secondary"
+					type="secondary"
 					:disabled="publishing"
 					@click="publish">
 					<template v-if="publishing" #icon>
@@ -40,7 +40,7 @@
 				<!-- Edit published (create draft copy) -->
 				<NcButton
 					v-if="currentIsPublished && !hasDraft"
-					variant="secondary"
+					type="secondary"
 					@click="editPublished">
 					{{ t('procest', 'Edit') }}
 				</NcButton>
@@ -48,7 +48,7 @@
 				<!-- Save -->
 				<NcButton
 					v-if="currentIsDraft && dirty"
-					variant="primary"
+					type="primary"
 					:disabled="saving"
 					@click="save">
 					<template v-if="saving" #icon>
@@ -58,10 +58,10 @@
 				</NcButton>
 
 				<!-- Import / Export -->
-				<NcButton variant="tertiary" @click="exportWorkflow">
+				<NcButton type="tertiary" @click="exportWorkflow">
 					{{ t('procest', 'Export') }}
 				</NcButton>
-				<NcButton variant="tertiary" @click="triggerImport">
+				<NcButton type="tertiary" @click="triggerImport">
 					{{ t('procest', 'Import') }}
 				</NcButton>
 				<input
@@ -98,7 +98,7 @@
 					{{ t('procest', 'Missing role type: {name}', { name: type }) }}
 				</li>
 			</ul>
-			<NcButton variant="secondary" @click="importReport = null">
+			<NcButton type="secondary" @click="importReport = null">
 				{{ t('procest', 'Cancel import') }}
 			</NcButton>
 		</div>

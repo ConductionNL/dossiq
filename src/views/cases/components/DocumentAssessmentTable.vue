@@ -124,7 +124,7 @@
 									&& localAssessments[doc.id].classification
 										=== 'deels_openbaar'
 								"
-								variant="tertiary"
+								type="tertiary"
 								:aria-label="
 									t(
 										'procest',
@@ -187,7 +187,7 @@
 		<div
 			v-if="!isReadOnly && documents.length > 0"
 			class="document-assessment-table__actions">
-			<NcButton variant="primary" :disabled="saving" @click="save">
+			<NcButton type="primary" :disabled="saving" @click="save">
 				<template v-if="saving">
 					{{ t('procest', 'Saving...') }}
 				</template>

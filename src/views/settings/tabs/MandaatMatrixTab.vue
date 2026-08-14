@@ -24,7 +24,7 @@
 			<NcButton
 				v-for="opt in tabOptions"
 				:key="opt.id"
-				:variant="active === opt.id ? 'primary' : 'secondary'"
+				:type="active === opt.id ? 'primary' : 'secondary'"
 				size="small"
 				@click="active = opt.id">
 				{{ opt.label }}

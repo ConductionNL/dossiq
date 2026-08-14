@@ -41,7 +41,7 @@
 				{{ resultError }}
 			</p>
 			<div class="result-prompt__actions">
-				<NcButton variant="primary" @click="confirmStatusChange">
+				<NcButton type="primary" @click="confirmStatusChange">
 					{{ t('procest', 'Confirm') }}
 				</NcButton>
 				<NcButton @click="cancelStatusChange">

@@ -26,7 +26,7 @@
 			<div
 				v-if="appointment.status === 'scheduled'"
 				class="public-appointment-page__actions">
-				<NcButton variant="error" @click="cancelAppointment">
+				<NcButton type="error" @click="cancelAppointment">
 					{{ t('procest', 'Cancel appointment') }}
 				</NcButton>
 			</div>

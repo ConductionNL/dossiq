@@ -53,7 +53,7 @@
 				<AlertCircleOutline :size="48" />
 			</template>
 			<template #action>
-				<NcButton variant="primary" @click="goToParent">
+				<NcButton type="primary" @click="goToParent">
 					{{ t('procest', 'Back to parent case') }}
 				</NcButton>
 			</template>
@@ -68,13 +68,13 @@
 					</p>
 				</div>
 				<div class="deelzaak-detail__actions">
-					<NcButton variant="secondary" @click="goToFullCase">
+					<NcButton type="secondary" @click="goToFullCase">
 						<template #icon>
 							<OpenInNew :size="20" />
 						</template>
 						{{ t('procest', 'Open in case view') }}
 					</NcButton>
-					<NcButton variant="tertiary" @click="goToParent">
+					<NcButton type="tertiary" @click="goToParent">
 						<template #icon>
 							<ArrowLeft :size="20" />
 						</template>

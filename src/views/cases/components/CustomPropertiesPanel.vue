@@ -46,7 +46,7 @@
 								@update:modelValue="(v) => (editValue = v)" />
 							<div class="property-item__edit-actions">
 								<NcButton
-									variant="primary"
+									type="primary"
 									@click="saveProperty(propDef)">
 									{{ t('procest', 'Save') }}
 								</NcButton>

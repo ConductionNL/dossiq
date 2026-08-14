@@ -12,10 +12,7 @@
 		<template v-else-if="roles.length === 0">
 			<div class="participants-section__empty">
 				<p>{{ t('procest', 'No participants assigned') }}</p>
-				<NcButton
-					v-if="!isReadOnly"
-					variant="primary"
-					@click="onAssignHandler">
+				<NcButton v-if="!isReadOnly" type="primary" @click="onAssignHandler">
 					{{ t('procest', 'Assign Handler') }}
 				</NcButton>
 			</div>
@@ -45,14 +42,14 @@
 						<template v-if="isHandlerRole(role)">
 							<NcButton
 								v-if="!reassigningHandler"
-								variant="tertiary"
+								type="tertiary"
 								@click="startReassign(role)">
 								{{ t('procest', 'Reassign') }}
 							</NcButton>
 						</template>
 						<NcButton
 							v-else
-							variant="tertiary"
+							type="tertiary"
 							:aria-label="t('procest', 'Remove participant')"
 							@click="removeRole(role)">
 							<template #icon>
@@ -74,7 +71,7 @@
 					trackBy="id"
 					:placeholder="t('procest', 'Select user...')"
 					@update:modelValue="onReassignSelected" />
-				<NcButton variant="tertiary" @click="cancelReassign">
+				<NcButton type="tertiary" @click="cancelReassign">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
 			</div>

@@ -20,7 +20,7 @@
 				<NcButton size="small" @click="onEdit(role)">
 					{{ t('procest', 'Edit') }}
 				</NcButton>
-				<NcButton size="small" variant="error" @click="onDelete(role)">
+				<NcButton size="small" type="error" @click="onDelete(role)">
 					{{ t('procest', 'Delete') }}
 				</NcButton>
 			</div>

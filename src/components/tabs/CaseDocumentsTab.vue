@@ -18,7 +18,7 @@
 					>({{ documents.length }})</span
 				>
 			</h3>
-			<NcButton variant="primary" @click="openCreate">
+			<NcButton type="primary" @click="openCreate">
 				{{ t('procest', 'Add document') }}
 			</NcButton>
 		</div>

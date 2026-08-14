@@ -15,13 +15,13 @@
 		<div class="substitution-admin__header">
 			<h2>{{ t('procest', 'Substitutions & reassignment') }}</h2>
 			<div class="substitution-admin__actions">
-				<NcButton variant="secondary" @click="showReassign = true">
+				<NcButton type="secondary" @click="showReassign = true">
 					<template #icon>
 						<AccountArrowRight :size="20" />
 					</template>
 					{{ t('procest', 'Bulk reassign') }}
 				</NcButton>
-				<NcButton variant="primary" @click="showForm = true">
+				<NcButton type="primary" @click="showForm = true">
 					<template #icon>
 						<AccountSwitch :size="20" />
 					</template>
@@ -68,12 +68,12 @@
 						}}</span>
 					</td>
 					<td class="substitution-admin__row-actions">
-						<NcButton variant="tertiary" @click="openActions(sub)">
+						<NcButton type="tertiary" @click="openActions(sub)">
 							{{ t('procest', 'Actions') }}
 						</NcButton>
 						<NcButton
 							v-if="sub.status === 'active'"
-							variant="tertiary"
+							type="tertiary"
 							@click="revoke(sub.id)">
 							{{ t('procest', 'Revoke') }}
 						</NcButton>

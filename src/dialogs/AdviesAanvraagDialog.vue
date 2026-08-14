@@ -10,12 +10,12 @@
 				<label>{{ t(appName, 'Type advies') }}</label>
 				<div class="advies-dialog__type-toggle">
 					<NcButton
-						:variant="form.type === 'intern' ? 'primary' : 'secondary'"
+						:type="form.type === 'intern' ? 'primary' : 'secondary'"
 						@click="form.type = 'intern'">
 						{{ t(appName, 'Intern') }}
 					</NcButton>
 					<NcButton
-						:variant="form.type === 'extern' ? 'primary' : 'secondary'"
+						:type="form.type === 'extern' ? 'primary' : 'secondary'"
 						@click="form.type = 'extern'">
 						{{ t(appName, 'Extern') }}
 					</NcButton>
@@ -60,11 +60,11 @@
 		</div>
 
 		<template #actions>
-			<NcButton variant="tertiary" @click="$emit('close')">
+			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t(appName, 'Annuleren') }}
 			</NcButton>
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!canSubmit || submitting"
 				@click="submit">
 				{{ t(appName, 'Aanvragen') }}

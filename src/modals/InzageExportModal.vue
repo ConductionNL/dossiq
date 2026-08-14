@@ -62,17 +62,17 @@
 						)
 					}}
 				</p>
-				<NcButton variant="secondary" @click="download">
+				<NcButton type="secondary" @click="download">
 					{{ t('procest', 'Download extract (JSON)') }}
 				</NcButton>
 			</div>
 
 			<div class="inzage-export__actions">
-				<NcButton variant="tertiary" @click="$emit('close')">
+				<NcButton type="tertiary" @click="$emit('close')">
 					{{ t('procest', 'Close') }}
 				</NcButton>
 				<NcButton
-					variant="primary"
+					type="primary"
 					:disabled="loading || !idValue"
 					@click="run">
 					<template #icon>

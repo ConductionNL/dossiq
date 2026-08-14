@@ -37,7 +37,7 @@
 					<span>{{ permissionLabel(share.permissionLevel) }}</span>
 				</div>
 				<div class="share-tab__item-actions">
-					<NcButton variant="error" @click="$emit('revoke', share.id)">
+					<NcButton type="error" @click="$emit('revoke', share.id)">
 						{{ t('procest', 'Revoke') }}
 					</NcButton>
 				</div>
@@ -46,7 +46,7 @@
 
 		<!-- Create partner share / transfer -->
 		<div class="share-tab__actions">
-			<NcButton variant="primary" @click="$emit('create-partner-share')">
+			<NcButton type="primary" @click="$emit('create-partner-share')">
 				{{ t('procest', 'Share with partner') }}
 			</NcButton>
 			<NcButton @click="$emit('transfer-case')">
@@ -108,7 +108,7 @@
 					</NcButton>
 					<NcButton
 						v-if="share.status !== 'revoked'"
-						variant="error"
+						type="error"
 						@click="$emit('revoke-federated', share.id)">
 						{{ t('procest', 'Revoke') }}
 					</NcButton>
@@ -117,7 +117,7 @@
 		</ul>
 
 		<div class="share-tab__actions">
-			<NcButton variant="primary" @click="$emit('create-federated-share')">
+			<NcButton type="primary" @click="$emit('create-federated-share')">
 				{{ t('procest', 'Share with remote organisation') }}
 			</NcButton>
 		</div>

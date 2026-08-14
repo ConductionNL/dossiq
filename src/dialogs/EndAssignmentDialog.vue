@@ -38,7 +38,7 @@
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!endDate"
 				@click="$emit('save', endDate)">
 				{{ t('procest', 'End assignment') }}

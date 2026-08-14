@@ -86,7 +86,7 @@
 			<NcButton :disabled="submitting" @click="onClose">
 				{{ t('procest', 'Annuleren') }}
 			</NcButton>
-			<NcButton variant="primary" :disabled="!canSubmit" @click="onSubmit">
+			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
 				{{
 					submitting
 						? t('procest', 'Bezig...')

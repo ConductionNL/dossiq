@@ -19,7 +19,7 @@
 					>({{ completedCount }}/{{ tasks.length }})</span
 				>
 			</h3>
-			<NcButton variant="primary" @click="onNewTask">
+			<NcButton type="primary" @click="onNewTask">
 				{{ t('procest', 'New task') }}
 			</NcButton>
 		</div>

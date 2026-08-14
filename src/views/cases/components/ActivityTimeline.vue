@@ -12,10 +12,7 @@
 				:aria-label="t('procest', 'Add a note...')"
 				rows="2"
 				class="activity-timeline__note-input" />
-			<NcButton
-				variant="primary"
-				:disabled="!noteText.trim()"
-				@click="addNote">
+			<NcButton type="primary" :disabled="!noteText.trim()" @click="addNote">
 				{{ t('procest', 'Add note') }}
 			</NcButton>
 		</div>

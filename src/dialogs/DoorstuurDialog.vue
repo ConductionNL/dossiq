@@ -48,11 +48,11 @@
 		</template>
 
 		<template #actions>
-			<NcButton variant="tertiary" @click="$emit('close')">
+			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				variant="primary"
+				type="primary"
 				:disabled="!doelBevoegdGezag || submitting || success"
 				@click="submit">
 				{{ t('procest', 'Forward') }}

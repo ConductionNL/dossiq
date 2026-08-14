@@ -14,7 +14,7 @@
 					)
 				}}
 			</p>
-			<NcButton variant="primary" @click="openNew">
+			<NcButton type="primary" @click="openNew">
 				<template #icon>
 					<Plus :size="18" />
 				</template>

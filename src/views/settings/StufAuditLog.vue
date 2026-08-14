@@ -29,13 +29,13 @@
 				:options="statusOptions"
 				:inputLabel="t('procest', 'Status')"
 				clearable />
-			<NcButton variant="primary" :disabled="loading" @click="reload">
+			<NcButton type="primary" :disabled="loading" @click="reload">
 				<template v-if="loading" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
 				{{ loading ? t('procest', 'Reloading…') : t('procest', 'Reload') }}
 			</NcButton>
-			<NcButton variant="tertiary" @click="exportCsv">
+			<NcButton type="tertiary" @click="exportCsv">
 				{{ t('procest', 'Export CSV') }}
 			</NcButton>
 		</div>
@@ -68,7 +68,7 @@
 					<td>{{ row.httpStatus || '—' }}</td>
 					<td>{{ row.duurMs || '—' }}</td>
 					<td class="stuf-audit-log__actions">
-						<NcButton variant="tertiary" @click="inspect(row)">
+						<NcButton type="tertiary" @click="inspect(row)">
 							{{ t('procest', 'Inspect') }}
 						</NcButton>
 					</td>

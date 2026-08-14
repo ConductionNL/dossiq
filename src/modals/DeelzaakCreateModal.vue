@@ -121,12 +121,12 @@
 		</div>
 
 		<template #actions>
-			<NcButton variant="tertiary" @click="$emit('close')">
+			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
 				v-if="availableCaseTypes.length > 0"
-				variant="primary"
+				type="primary"
 				:disabled="saving || !selectedCaseType"
 				@click="submit">
 				<template v-if="saving" #icon>

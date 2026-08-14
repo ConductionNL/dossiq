@@ -67,7 +67,7 @@
 
 				<div class="sub-case-types-tab__actions">
 					<NcButton
-						variant="primary"
+						type="primary"
 						:disabled="saving || !dirty"
 						@click="save">
 						{{

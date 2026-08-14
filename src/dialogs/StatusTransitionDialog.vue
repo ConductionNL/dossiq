@@ -28,7 +28,7 @@
 					{{ t('procest', 'Apply') }}
 				</NcButton>
 				<NcButton
-					variant="secondary"
+					type="secondary"
 					:disabled="submitting"
 					@click="$emit('close')">
 					{{ t('procest', 'Cancel') }}

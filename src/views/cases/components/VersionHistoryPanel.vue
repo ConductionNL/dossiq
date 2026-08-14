@@ -32,12 +32,12 @@
 				</div>
 				<div class="dossier-version-panel__actions">
 					<NcButton
-						variant="tertiary"
+						type="tertiary"
 						@click="$emit('download-version', version)">
 						{{ t('procest', 'Download') }}
 					</NcButton>
 					<NcButton
-						variant="tertiary"
+						type="tertiary"
 						:disabled="restoreDisabled"
 						:title="
 							restoreDisabled

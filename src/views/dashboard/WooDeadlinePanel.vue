@@ -23,7 +23,7 @@
 		<template v-else-if="error">
 			<div class="woo-panel__error">
 				<p>{{ error }}</p>
-				<NcButton variant="tertiary" @click="$emit('retry')">
+				<NcButton type="tertiary" @click="$emit('retry')">
 					{{ t('procest', 'Retry') }}
 				</NcButton>
 			</div>

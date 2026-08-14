@@ -63,7 +63,7 @@
 			{{ error }}
 		</NcNoteCard>
 
-		<NcButton variant="primary" :disabled="!writable || saving" @click="save">
+		<NcButton type="primary" :disabled="!writable || saving" @click="save">
 			<template #icon>
 				<NcLoadingIcon v-if="saving" :size="20" />
 			</template>

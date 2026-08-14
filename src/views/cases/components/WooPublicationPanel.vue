@@ -16,7 +16,7 @@
 				rel="noopener noreferrer">
 				{{ t('procest', 'View publication') }}
 			</a>
-			<NcButton variant="tertiary" :disabled="busy" @click="withdraw">
+			<NcButton type="tertiary" :disabled="busy" @click="withdraw">
 				{{ t('procest', 'Withdraw') }}
 			</NcButton>
 		</div>
@@ -29,13 +29,13 @@
 				{{ t('procest', 'Publication unavailable') }}
 			</span>
 			<p>{{ unavailableMessage }}</p>
-			<NcButton variant="secondary" :disabled="busy" @click="publish">
+			<NcButton type="secondary" :disabled="busy" @click="publish">
 				{{ t('procest', 'Retry') }}
 			</NcButton>
 		</div>
 
 		<div v-else class="woo-publication-panel__pending">
-			<NcButton variant="primary" :disabled="busy" @click="publish">
+			<NcButton type="primary" :disabled="busy" @click="publish">
 				{{ t('procest', 'Publish (Woo)') }}
 			</NcButton>
 		</div>

@@ -52,7 +52,7 @@
 					:inputLabel="t('procest', 'Filter by case type')"
 					:placeholder="t('procest', 'All case types')"
 					@update:modelValue="onCaseTypeChange" />
-				<NcButton variant="secondary" @click="load">
+				<NcButton type="secondary" @click="load">
 					<template #icon>
 						<Refresh :size="18" />
 					</template>

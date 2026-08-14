@@ -16,13 +16,13 @@
 			:sidebar="false">
 			<template #header-actions>
 				<NcButton
-					variant="secondary"
+					type="secondary"
 					:disabled="agenda.length === 0"
 					@click="onGenerate">
 					{{ t('procest', 'Agenda genereren') }}
 				</NcButton>
 				<NcButton
-					variant="primary"
+					type="primary"
 					:disabled="agenda.length === 0 || !meetingDate"
 					@click="onConfirm">
 					{{ t('procest', 'Agenda bevestigen') }}
@@ -65,7 +65,7 @@
 						<span>{{
 							item.title || t('procest', 'Onbenoemd voorstel')
 						}}</span>
-						<NcButton variant="tertiary" @click="addItem(item)">
+						<NcButton type="tertiary" @click="addItem(item)">
 							{{ t('procest', 'Toevoegen') }}
 						</NcButton>
 					</div>

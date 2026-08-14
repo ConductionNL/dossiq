@@ -10,7 +10,7 @@
 				<div class="email-template-admin__list-header">
 					<h4>{{ t('procest', 'Templates') }}</h4>
 					<NcButton
-						variant="primary"
+						type="primary"
 						:disabled="!caseTypeId"
 						@click="startCreate">
 						<template #icon>
@@ -92,13 +92,13 @@
 				</div>
 
 				<div class="email-template-admin__actions">
-					<NcButton variant="primary" :disabled="saving" @click="save">
+					<NcButton type="primary" :disabled="saving" @click="save">
 						<template #icon>
 							<NcLoadingIcon v-if="saving" :size="20" />
 						</template>
 						{{ saveLabel }}
 					</NcButton>
-					<NcButton variant="tertiary" @click="cancelEdit">
+					<NcButton type="tertiary" @click="cancelEdit">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
 				</div>

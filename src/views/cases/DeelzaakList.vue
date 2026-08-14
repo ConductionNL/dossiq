@@ -19,7 +19,7 @@
 		<div class="deelzaak-list__header">
 			<div class="deelzaak-list__title">
 				<NcButton
-					variant="tertiary"
+					type="tertiary"
 					:aria-label="t('procest', 'Back to parent case')"
 					@click="goToParent">
 					<template #icon>
@@ -41,7 +41,7 @@
 			<div class="deelzaak-list__actions">
 				<NcButton
 					v-if="canCreate"
-					variant="primary"
+					type="primary"
 					:aria-label="t('procest', 'Create sub-case')"
 					@click="showCreate = true">
 					<template #icon>
@@ -51,7 +51,7 @@
 				</NcButton>
 				<NcButton
 					v-if="parent"
-					variant="error"
+					type="error"
 					:aria-label="t('procest', 'Delete parent case')"
 					@click="onDeleteParent">
 					<template #icon>
@@ -72,10 +72,7 @@
 				<FolderMultipleOutline :size="48" />
 			</template>
 			<template #action>
-				<NcButton
-					v-if="canCreate"
-					variant="primary"
-					@click="showCreate = true">
+				<NcButton v-if="canCreate" type="primary" @click="showCreate = true">
 					{{ t('procest', 'Create first sub-case') }}
 				</NcButton>
 			</template>

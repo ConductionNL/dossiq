@@ -55,7 +55,7 @@
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
 				<NcButton
-					variant="primary"
+					type="primary"
 					:disabled="!canSubmit || uploading"
 					@click="submit">
 					{{ t('procest', 'Upload') }}

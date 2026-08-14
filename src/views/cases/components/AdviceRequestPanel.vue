@@ -92,7 +92,7 @@
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
 				<NcButton
-					variant="primary"
+					type="primary"
 					:disabled="!isFormValid"
 					@click="submitRequest">
 					{{ t('procest', 'Send Request') }}

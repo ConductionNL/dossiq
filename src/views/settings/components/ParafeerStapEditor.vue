@@ -41,7 +41,7 @@
 				<NcButton
 					:disabled="idx === 0"
 					:title="t('procest', 'Omhoog')"
-					variant="tertiary-no-background"
+					type="tertiary-no-background"
 					@click="moveStep(idx, -1)">
 					<template #icon>
 						<ChevronUp :size="20" />
@@ -50,7 +50,7 @@
 				<NcButton
 					:disabled="idx === steps.length - 1"
 					:title="t('procest', 'Omlaag')"
-					variant="tertiary-no-background"
+					type="tertiary-no-background"
 					@click="moveStep(idx, 1)">
 					<template #icon>
 						<ChevronDown :size="20" />
@@ -58,7 +58,7 @@
 				</NcButton>
 				<NcButton
 					:title="t('procest', 'Stap verwijderen')"
-					variant="tertiary-no-background"
+					type="tertiary-no-background"
 					@click="removeStep(idx)">
 					<template #icon>
 						<Delete :size="20" />
