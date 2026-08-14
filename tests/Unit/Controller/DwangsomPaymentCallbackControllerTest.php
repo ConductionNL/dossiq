@@ -150,7 +150,7 @@ class DwangsomPaymentCallbackControllerTest extends TestCase {
 	 */
 	public function testValidateSignatureAcceptsCorrectHmac(): void {
 		$secret = 'super-secret';
-		$rawBody = json_encode(['referentie' => 'REF-123', 'status' => 'betaald']);
+		$rawBody = json_encode(['reference' => 'REF-123', 'status' => 'betaald']);
 
 		$this->appConfig->method('getValueString')
 			->with('procest', 'dwangsom_callback_secret', '')

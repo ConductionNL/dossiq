@@ -51,11 +51,11 @@ class StufMessageHandler {
 	 * @param array $endpoint The StufEndpoint.
 	 * @param string $envelopeXml The full envelope XML.
 	 * @param string $referentienummer The outbound referentienummer.
-	 * @param string $berichtSoort The bericht code (Lk01, Lv01, ...).
-	 * @param string $functie The functie (creeerZaak, ...).
-	 * @param string|null $zaakId Optional zaak identificatie.
+	 * @param string $messageKind The bericht code (Lk01, Lv01, ...).
+	 * @param string $role The functie (creeerZaak, ...).
+	 * @param string|null $caseId Optional zaak identificatie.
 	 * @param string|null $bronEntiteit Optional procest source-entity type (case, contact).
-	 * @param string|null $bronId Optional procest source-entity id.
+	 * @param string|null $sourceId Optional procest source-entity id.
 	 *
 	 * @return array The persisted StufMessage as array.
 	 *
@@ -65,26 +65,26 @@ class StufMessageHandler {
 		array $endpoint,
 		string $envelopeXml,
 		string $referentienummer,
-		string $berichtSoort,
-		string $functie,
-		?string $zaakId = null,
+		string $messageKind,
+		string $role,
+		?string $caseId = null,
 		?string $bronEntiteit = null,
-		?string $bronId = null,
+		?string $sourceId = null,
 	): array {
 		$data = [
 			'id' => $this->newId(prefix: 'stuf-msg'),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
-			'richting' => 'uitgaand',
-			'berichtSoort' => $berichtSoort,
-			'functie' => $functie,
+			'direction' => 'uitgaand',
+			'berichtSoort' => $messageKind,
+			'role' => $role,
 			'entiteittype' => 'ZAK',
 			'referentienummer' => $referentienummer,
-			'zaakIdentificatie' => ($zaakId ?? ''),
-			'gerelateerdeZaakId' => ($zaakId ?? ''),
+			'zaakIdentificatie' => ($caseId ?? ''),
+			'gerelateerdeZaakId' => ($caseId ?? ''),
 			'envelopeXml' => $envelopeXml,
-			'verzondenOp' => $this->isoNow(),
+			'sentOn' => $this->isoNow(),
 			'bronEntiteit' => ($bronEntiteit ?? ''),
-			'bronId' => ($bronId ?? ''),
+			'bronId' => ($sourceId ?? ''),
 			'status' => 'verzonden',
 			'retries' => [],
 		];
@@ -96,10 +96,10 @@ class StufMessageHandler {
 	 *
 	 * @param array $endpoint The StufEndpoint that received.
 	 * @param string $responseXml The full inbound envelope XML.
-	 * @param string $berichtSoort The bericht code (Bv01, Lk02, ...).
+	 * @param string $messageKind The bericht code (Bv01, Lk02, ...).
 	 * @param string $crossRefnummer The crossRefnummer (matches an outbound referentienummer).
-	 * @param string|null $zaakId Optional zaak identificatie.
-	 * @param string|null $functie Optional functie.
+	 * @param string|null $caseId Optional zaak identificatie.
+	 * @param string|null $role Optional functie.
 	 *
 	 * @return array The persisted StufMessage as array.
 	 *
@@ -108,23 +108,23 @@ class StufMessageHandler {
 	public function logInbound(
 		array $endpoint,
 		string $responseXml,
-		string $berichtSoort,
+		string $messageKind,
 		string $crossRefnummer,
-		?string $zaakId = null,
-		?string $functie = null,
+		?string $caseId = null,
+		?string $role = null,
 	): array {
 		$data = [
 			'id' => $this->newId(prefix: 'stuf-msg'),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
-			'richting' => 'inkomend',
-			'berichtSoort' => $berichtSoort,
-			'functie' => ($functie ?? ''),
+			'direction' => 'inkomend',
+			'berichtSoort' => $messageKind,
+			'role' => ($role ?? ''),
 			'entiteittype' => 'ZAK',
 			'crossRefnummer' => $crossRefnummer,
-			'zaakIdentificatie' => ($zaakId ?? ''),
-			'gerelateerdeZaakId' => ($zaakId ?? ''),
+			'zaakIdentificatie' => ($caseId ?? ''),
+			'gerelateerdeZaakId' => ($caseId ?? ''),
 			'envelopeXml' => $responseXml,
-			'verzondenOp' => $this->isoNow(),
+			'sentOn' => $this->isoNow(),
 			'ontvangenOp' => $this->isoNow(),
 			'status' => 'bevestigd',
 		];
@@ -195,7 +195,7 @@ class StufMessageHandler {
 	public function findOutboundByReferentienummer(string $referentienummer): ?array {
 		return $this->register->findOne(
 			schema: StufRegisterAccess::SCHEMA_MESSAGE,
-			filters: ['referentienummer' => $referentienummer, 'richting' => 'uitgaand']
+			filters: ['referentienummer' => $referentienummer, 'direction' => 'uitgaand']
 		);
 	}//end findOutboundByReferentienummer()
 

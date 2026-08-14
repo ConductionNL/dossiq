@@ -91,7 +91,7 @@ class DecisionValidator {
 	 */
 	private const APPEAL_NOTICE_BASE_REQUIRED = [
 		'competentCourt',
-		'beroepTerm',
+		'appealTerm',
 		'effectiveDate',
 		'filingMethod',
 	];
@@ -249,7 +249,7 @@ class DecisionValidator {
 	 */
 	private function assertProceskostenRules(array $decision): void {
 		$disposition = (string)($decision['dispositionType'] ?? '');
-		$proceskosten = (array)($decision['proceskostenvergoeding'] ?? []);
+		$proceskosten = (array)($decision['legalCostsCompensation'] ?? []);
 		$requested = (bool)($proceskosten['requested'] ?? false);
 		$awardedSet = array_key_exists('awarded', $proceskosten);
 		$awarded = (bool)($proceskosten['awarded'] ?? false);
@@ -271,7 +271,7 @@ class DecisionValidator {
 			throw new RuntimeException(
 				'proceskosten.awarded MUST be explicitly set (true or false '
 				. 'with reasoning) when the bezwaarmaker requested '
-				. 'proceskostenvergoeding'
+				. 'legalCostsCompensation'
 			);
 		}
 	}//end assertProceskostenRules()
@@ -286,7 +286,7 @@ class DecisionValidator {
 	 * @spec openspec/specs/bezwaar-decision/spec.md
 	 */
 	public function computeProceskostenTotal(array $decision): ?float {
-		$proceskosten = (array)($decision['proceskostenvergoeding'] ?? []);
+		$proceskosten = (array)($decision['legalCostsCompensation'] ?? []);
 		if (($proceskosten['awarded'] ?? false) !== true) {
 			return null;
 		}

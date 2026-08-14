@@ -116,18 +116,18 @@
 			>
 			<NcTextField
 				id="woo-intake-receipt-date"
-				:model-value="form.ontvangstdatum"
+				:model-value="form.receipt_date"
 				:disabled="isReadOnly"
-				:error="!!errors.ontvangstdatum"
+				:error="!!errors.receipt_date"
 				type="date"
-				@update:model-value="(v) => update('ontvangstdatum', v)" />
-			<p v-if="errors.ontvangstdatum" class="form-error">
-				{{ errors.ontvangstdatum }}
+				@update:model-value="(v) => update('receipt_date', v)" />
+			<p v-if="errors.receipt_date" class="form-error">
+				{{ errors.receipt_date }}
 			</p>
 		</div>
 
 		<!-- Deadline info -->
-		<div v-if="form.ontvangstdatum" class="woo-intake-form__deadline-info">
+		<div v-if="form.receipt_date" class="woo-intake-form__deadline-info">
 			<span class="woo-intake-form__deadline-label">{{
 				t('procest', 'Calculated deadline:')
 			}}</span>
@@ -161,7 +161,7 @@ export default {
 				periodeVan: '',
 				periodeTot: '',
 				bestuurlijkeAangelegenheid: '',
-				ontvangstdatum: '',
+				receipt_date: '',
 				gewensteVorm: 'digitaal',
 			}),
 		},
@@ -176,17 +176,17 @@ export default {
 	},
 	data() {
 		return {
-			requesterTypes: ['burger', 'journalist', 'organisatie'],
+			requesterTypes: ['burger', 'journalist', 'organisation'],
 			formatOptions: ['digitaal', 'papier', 'inzage'],
 		}
 	},
 	computed: {
 		/** @spec openspec/specs/woo-case-type/spec.md */
 		calculatedDeadline() {
-			if (!this.form.ontvangstdatum) {
+			if (!this.form.receipt_date) {
 				return '---'
 			}
-			const receipt = new Date(this.form.ontvangstdatum)
+			const receipt = new Date(this.form.receipt_date)
 			if (isNaN(receipt.getTime())) {
 				return '---'
 			}

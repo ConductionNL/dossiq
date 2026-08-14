@@ -160,7 +160,7 @@ final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
 	 */
 	public function testUnresolvableSessionIsRejected(): void {
 		$user = $this->createMock(IUser::class);
-		$user->method('getUID')->willReturn('behandelaar');
+		$user->method('getUID')->willReturn('handler');
 		$this->userSession->method('getUser')->willReturn($user);
 
 		$response = $this->controllerWith(resolvedCaseId: null, mayMutate: true)
@@ -176,7 +176,7 @@ final class BezwaarHearingControllerRecordAttendanceTest extends TestCase {
 	 */
 	private function authenticate(): void {
 		$user = $this->createMock(IUser::class);
-		$user->method('getUID')->willReturn('behandelaar');
+		$user->method('getUID')->willReturn('handler');
 		$this->userSession->method('getUser')->willReturn($user);
 	}//end authenticate()
 

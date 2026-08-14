@@ -72,10 +72,10 @@ interface BrkAdapterInterface {
 	 * aanduiding (gemeentecode + sectie + perceelnummer, optionally an
 	 * appartementsrecht volgnummer).
 	 *
-	 * @param string $kadastraleGemeenteCode Kadastrale gemeentecode.
-	 * @param string $sectie Sectie (1-2 uppercase letters).
+	 * @param string $kadastraleMunicipalityCode Kadastrale gemeentecode.
+	 * @param string $section Sectie (1-2 uppercase letters).
 	 * @param string $perceelnummer Perceelnummer (1-5 digits).
-	 * @param string|null $appartementsrechtVolgnummer Optional appartementsrecht
+	 * @param string|null $appartementsrechtSequenceNumber Optional appartementsrecht
 	 *                                                 volgnummer (`A` + 1-4 digits).
 	 * @param array<string,mixed> $context Optional context —
 	 *                                     caseId, lookupReason,
@@ -87,10 +87,10 @@ interface BrkAdapterInterface {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByKadastraleAanduiding(
-		string $kadastraleGemeenteCode,
-		string $sectie,
+		string $kadastraleMunicipalityCode,
+		string $section,
 		string $perceelnummer,
-		?string $appartementsrechtVolgnummer = null,
+		?string $appartementsrechtSequenceNumber = null,
 		array $context = [],
 	): BrkLookupResult;
 

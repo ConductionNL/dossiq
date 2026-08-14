@@ -57,7 +57,7 @@ class LogBagAdapter implements BagAdapterInterface {
 	 * verbatim).
 	 *
 	 * @param string $postcode Dutch postcode.
-	 * @param string $huisnummer House number.
+	 * @param string $houseNumber House number.
 	 * @param string|null $huisletter Optional house letter.
 	 * @param string|null $toevoeging Optional house number
 	 *                                addition.
@@ -69,7 +69,7 @@ class LogBagAdapter implements BagAdapterInterface {
 	 */
 	public function lookupAddress(
 		string $postcode,
-		string $huisnummer,
+		string $houseNumber,
 		?string $huisletter = null,
 		?string $toevoeging = null,
 		array $context = [],
@@ -78,7 +78,7 @@ class LogBagAdapter implements BagAdapterInterface {
 			'Procest BAG lookup deferred (no outbound connector bound)',
 			[
 				'postcode' => $postcode,
-				'huisnummer' => $huisnummer,
+				'houseNumber' => $houseNumber,
 				'huisletter' => $huisletter,
 				'toevoeging' => $toevoeging,
 				'context' => $context,

@@ -59,10 +59,10 @@ export default {
 			}
 
 			// Acknowledgment deadline.
-			if (this.deadlines?.ontvangstbevestigingDeadline) {
+			if (this.deadlines?.acknowledgementOfReceiptDeadline) {
 				items.push({
 					id: 'ack-deadline',
-					date: this.deadlines.ontvangstbevestigingDeadline,
+					date: this.deadlines.acknowledgementOfReceiptDeadline,
 					label: t('procest', 'Acknowledgment deadline'),
 					completed: false,
 					active: false,

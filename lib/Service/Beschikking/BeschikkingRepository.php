@@ -62,13 +62,13 @@ class BeschikkingRepository {
 	/**
 	 * Load a single beschikking by id. [T06]
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $decisionId The beschikking UUID.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	public function find(string $beschikkingId): ?array {
+	public function find(string $decisionId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -80,11 +80,11 @@ class BeschikkingRepository {
 		}
 
 		try {
-			return $this->toArray(value: $objectService->find($beschikkingId, register: $register, schema: $schema));
+			return $this->toArray(value: $objectService->find($decisionId, register: $register, schema: $schema));
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BeschikkingService: find failed',
-				['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
+				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
 			);
 			return null;
 		}
@@ -93,7 +93,7 @@ class BeschikkingRepository {
 	/**
 	 * Load a beschikking or throw.
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $decisionId The beschikking UUID.
 	 *
 	 * @return array<string, mixed>
 	 *
@@ -101,24 +101,24 @@ class BeschikkingRepository {
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	public function requireBeschikking(string $beschikkingId): array {
-		$beschikking = $this->find(beschikkingId: $beschikkingId);
-		if ($beschikking === null) {
+	public function requireBeschikking(string $decisionId): array {
+		$decision = $this->find(decisionId: $decisionId);
+		if ($decision === null) {
 			throw new RuntimeException('not_found');
 		}
 
 		// Preserve the id for downstream save() calls.
-		if (isset($beschikking['id']) === false) {
-			$beschikking['id'] = $beschikkingId;
+		if (isset($decision['id']) === false) {
+			$decision['id'] = $decisionId;
 		}
 
-		return $beschikking;
+		return $decision;
 	}//end requireBeschikking()
 
 	/**
 	 * Persist a beschikking via ObjectService.
 	 *
-	 * @param array<string, mixed> $beschikking The beschikking payload.
+	 * @param array<string, mixed> $decision The beschikking payload.
 	 *
 	 * @return array<string, mixed>
 	 *
@@ -126,7 +126,7 @@ class BeschikkingRepository {
 	 *
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
-	public function save(array $beschikking): array {
+	public function save(array $decision): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('storage_unavailable');
@@ -137,7 +137,7 @@ class BeschikkingRepository {
 			throw new RuntimeException('beschikking_schema_not_configured');
 		}
 
-		return $this->toArray(value: $objectService->saveObject(object: $beschikking, register: $register, schema: $schema));
+		return $this->toArray(value: $objectService->saveObject(object: $decision, register: $register, schema: $schema));
 	}//end save()
 
 	/**

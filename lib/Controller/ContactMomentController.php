@@ -99,19 +99,19 @@ class ContactMomentController extends Controller {
 
 		$data = [
 			'kanaal' => (string)$this->request->getParam('kanaal', ''),
-			'richting' => (string)$this->request->getParam('richting', 'inkomend'),
-			'bellerIdentificatie' => (string)$this->request->getParam('bellerIdentificatie', ''),
-			'aard' => (string)$this->request->getParam('aard', 'informatieverzoek'),
-			'samenvatting' => (string)$this->request->getParam('samenvatting', ''),
-			'kccMedewerkerId' => $user->getUID(),
-			'transcriptie' => (string)$this->request->getParam('transcriptie', ''),
+			'direction' => (string)$this->request->getParam('direction', 'inkomend'),
+			'callerIdentification' => (string)$this->request->getParam('callerIdentification', ''),
+			'nature' => (string)$this->request->getParam('nature', 'informatieverzoek'),
+			'summary' => (string)$this->request->getParam('summary', ''),
+			'kccEmployeeId' => $user->getUID(),
+			'transcript' => (string)$this->request->getParam('transcript', ''),
 		];
 
 		// Auto-resolve a burger from the caller identifier when none supplied.
 		$burgerId = (string)$this->request->getParam('geidentificeerdeBurgerId', '');
-		$method = (string)$this->request->getParam('identificatieMethode', 'niet_geidentificeerd');
-		if ($burgerId === '' && $data['bellerIdentificatie'] !== '') {
-			$resolved = $this->burgerService->lookupByIdentifier($data['bellerIdentificatie']);
+		$method = (string)$this->request->getParam('identificationMethod', 'niet_geidentificeerd');
+		if ($burgerId === '' && $data['callerIdentification'] !== '') {
+			$resolved = $this->burgerService->lookupByIdentifier($data['callerIdentification']);
 			if ($resolved !== '') {
 				$burgerId = $resolved;
 				$method = 'identificatievragen';
@@ -124,7 +124,7 @@ class ContactMomentController extends Controller {
 		}
 
 		$data['geidentificeerdeBurgerId'] = $identifiedBurgerId;
-		$data['identificatieMethode'] = $method;
+		$data['identificationMethod'] = $method;
 
 		try {
 			$contactmoment = $this->contactMomentService->createContactMoment($data);
@@ -262,12 +262,12 @@ class ContactMomentController extends Controller {
 			return new JSONResponse(['error' => 'Not authorized'], Http::STATUS_FORBIDDEN);
 		}
 
-		$zaaktype = (string)$this->request->getParam('zaaktype', '');
+		$caseType = (string)$this->request->getParam('caseType', '');
 		$burgerId = (string)$this->request->getParam('burgerId', '');
 		$details = (array)$this->request->getParam('details', []);
 
 		try {
-			$result = $this->quickActionService->executeNieuweZaak($zaaktype, $burgerId, $details);
+			$result = $this->quickActionService->executeNieuweZaak($caseType, $burgerId, $details);
 		} catch (RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
@@ -296,11 +296,11 @@ class ContactMomentController extends Controller {
 		}
 
 		$caseId = (string)$this->request->getParam('caseId', '');
-		$samenvatting = (string)$this->request->getParam('samenvatting', '');
+		$summary = (string)$this->request->getParam('summary', '');
 		$burgerId = (string)$this->request->getParam('burgerId', '');
 
 		try {
-			$result = $this->quickActionService->executeKlachtRegistreren($caseId, $samenvatting, $burgerId);
+			$result = $this->quickActionService->executeKlachtRegistreren($caseId, $summary, $burgerId);
 		} catch (RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
@@ -325,10 +325,10 @@ class ContactMomentController extends Controller {
 
 		$data = [
 			'contactmomentId' => (string)$this->request->getParam('contactmomentId', ''),
-			'vanMedewerkerId' => $user->getUID(),
-			'naarMedewerkerId' => $this->request->getParam('naarMedewerkerId', null),
-			'naarWachtrij' => $this->request->getParam('naarWachtrij', null),
-			'doorverbindingsReden' => (string)$this->request->getParam('reden', ''),
+			'fromEmployeeId' => $user->getUID(),
+			'toEmployeeId' => $this->request->getParam('toEmployeeId', null),
+			'toQueue' => $this->request->getParam('toQueue', null),
+			'transferReason' => (string)$this->request->getParam('reason', ''),
 			'contextSnapshot' => (string)$this->request->getParam('contextSnapshot', '{}'),
 		];
 

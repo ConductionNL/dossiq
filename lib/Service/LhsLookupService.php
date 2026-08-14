@@ -130,12 +130,12 @@ class LhsLookupService {
 		// guaranteed to be a key in FALLBACK_MATRIX (4x4 = 16 cells), so no
 		// null-coalescing default is required.
 		$key = $gedrag . ':' . $gevolg;
-		$interventie = self::FALLBACK_MATRIX[$key];
+		$intervention = self::FALLBACK_MATRIX[$key];
 
 		return [
 			'gedragRow' => $gedrag,
 			'gevolgColumn' => $gevolg,
-			'interventieStep' => $interventie,
+			'interventionStep' => $intervention,
 			'description' => '',
 			'source' => 'fallback',
 		];

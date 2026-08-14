@@ -102,7 +102,7 @@ class DispositionServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Invalid oordeel/i');
 
-		$this->service->submitDisposition('complaint-uuid', ['oordeel' => 'onbekend']);
+		$this->service->submitDisposition('complaint-uuid', ['opinion' => 'onbekend']);
 	}//end testSubmitDispositionThrowsForInvalidOordeel()
 
 	/**
@@ -114,7 +114,7 @@ class DispositionServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Toelichting/i');
 
-		$this->service->submitDisposition('complaint-uuid', ['oordeel' => 'gegrond']);
+		$this->service->submitDisposition('complaint-uuid', ['opinion' => 'gegrond']);
 	}//end testSubmitDispositionThrowsWhenGegrondenMissingToelichting()
 
 	/**
@@ -126,7 +126,7 @@ class DispositionServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Toelichting/i');
 
-		$this->service->submitDisposition('complaint-uuid', ['oordeel' => 'deels_gegrond']);
+		$this->service->submitDisposition('complaint-uuid', ['opinion' => 'deels_gegrond']);
 	}//end testSubmitDispositionThrowsForDeelsGegrondenWithoutToelichting()
 
 	/**
@@ -144,11 +144,11 @@ class DispositionServiceTest extends TestCase {
 				['complaint_disposition_schema', '', 'complaintDisposition'],
 			]);
 
-		$savedDisposition = ['oordeel' => 'ongegrond', 'complaint' => 'complaint-uuid'];
+		$savedDisposition = ['opinion' => 'ongegrond', 'complaint' => 'complaint-uuid'];
 		$objectServiceMock->method('saveObject')->willReturn($savedDisposition);
 
-		$result = $this->service->submitDisposition('complaint-uuid', ['oordeel' => 'ongegrond']);
-		$this->assertSame('ongegrond', $result['oordeel']);
+		$result = $this->service->submitDisposition('complaint-uuid', ['opinion' => 'ongegrond']);
+		$this->assertSame('ongegrond', $result['opinion']);
 	}//end testSubmitDispositionSucceedsForOngegrondenWithoutToelichting()
 
 	/**
@@ -172,7 +172,7 @@ class DispositionServiceTest extends TestCase {
 
 		$result = $this->service->submitDispositionForApproval(
 			'complaint-uuid',
-			['oordeel' => 'ongegrond', 'afsluitdatum' => '2026-04-01']
+			['opinion' => 'ongegrond', 'closureDate' => '2026-04-01']
 		);
 
 		$this->assertSame('wacht_op_goedkeuring', $result['goedkeuringStatus']);

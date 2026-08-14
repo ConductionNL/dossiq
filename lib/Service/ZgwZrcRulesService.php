@@ -83,8 +83,8 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 */
 	public function rulesZakenCreate(array $body): array {
 		// Zrc-001: Validate zaaktype URL.
-		$zaaktypeUrl = $body['zaaktype'] ?? '';
-		$error = $this->validateZaaktypeReference(zaaktypeUrl: $zaaktypeUrl);
+		$caseTypeUrl = $body['caseType'] ?? '';
+		$error = $this->validateCaseTypeReference(caseTypeUrl: $caseTypeUrl);
 		if ($error !== null) {
 			return $error;
 		}
@@ -110,8 +110,8 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 
 		// Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype — always override
 		// template defaults to prevent leakage (incoming value used only as fallback).
-		if (empty($zaaktypeUrl) === false) {
-			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, zaaktypeUrl: $zaaktypeUrl);
+		if (empty($caseTypeUrl) === false) {
+			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
 		}
 
 		// Zrc-022: Set default archiefstatus.
@@ -125,9 +125,9 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Auto-assign handler from zaaktype defaultAssignee if no handler set.
-		$body = $this->applyDefaultAssignee(body: $body, zaaktypeUrl: $zaaktypeUrl);
+		$body = $this->applyDefaultAssignee(body: $body, caseTypeUrl: $caseTypeUrl);
 
-		return $this->validateZaakFields(result: $this->isValid(body: $body), existingObject: null, isPatch: false);
+		return $this->validateCaseFields(result: $this->isValid(body: $body), existingObject: null, isPatch: false);
 	}//end rulesZakenCreate()
 
 	/**
@@ -136,18 +136,18 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 * Returns null when there is nothing to validate — no zaaktype was supplied, or OpenRegister
 	 * is unavailable — which is exactly what the inline guard did.
 	 *
-	 * @param mixed $zaaktypeUrl The `zaaktype` value from the request body
+	 * @param mixed $caseTypeUrl The `zaaktype` value from the request body
 	 *
 	 * @return array|null The validation error, or null when the reference is acceptable
 	 */
-	private function validateZaaktypeReference(mixed $zaaktypeUrl): ?array {
-		if (empty($zaaktypeUrl) === true || $this->objectService === null) {
+	private function validateCaseTypeReference(mixed $caseTypeUrl): ?array {
+		if (empty($caseTypeUrl) === true || $this->objectService === null) {
 			return null;
 		}
 
 		return $this->validateTypeUrl(
-			typeUrl: $zaaktypeUrl,
-			fieldName: 'zaaktype',
+			typeUrl: $caseTypeUrl,
+			fieldName: 'caseType',
 			schemaKey: 'case_type_schema'
 		);
 	}//end validateZaaktypeReference()
@@ -156,16 +156,16 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 * Stamp the zaaktype's `defaultAssignee` on a zaak that carries no handler yet.
 	 *
 	 * @param array $body The ZGW request body
-	 * @param mixed $zaaktypeUrl The `zaaktype` value from the request body
+	 * @param mixed $caseTypeUrl The `zaaktype` value from the request body
 	 *
 	 * @return array The body, with `assignee` filled in when one could be resolved
 	 */
-	private function applyDefaultAssignee(array $body, mixed $zaaktypeUrl): array {
-		if (empty($body['assignee']) === false || empty($zaaktypeUrl) === true || $this->objectService === null) {
+	private function applyDefaultAssignee(array $body, mixed $caseTypeUrl): array {
+		if (empty($body['assignee']) === false || empty($caseTypeUrl) === true || $this->objectService === null) {
 			return $body;
 		}
 
-		$assignee = $this->zaaktypeDefaultAssignee(objectService: $this->objectService, zaaktypeUrl: $zaaktypeUrl);
+		$assignee = $this->caseTypeDefaultAssignee(objectService: $this->objectService, caseTypeUrl: $caseTypeUrl);
 		if ($assignee !== null) {
 			$body['assignee'] = $assignee;
 		}
@@ -180,12 +180,12 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 * failure is swallowed, exactly as the inline block did.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService
-	 * @param mixed $zaaktypeUrl The `zaaktype` value from the request body
+	 * @param mixed $caseTypeUrl The `zaaktype` value from the request body
 	 *
 	 * @return mixed The default assignee, or null when there is none
 	 */
-	private function zaaktypeDefaultAssignee(object $objectService, mixed $zaaktypeUrl): mixed {
-		$extractedUuid = $this->extractUuid(url: $zaaktypeUrl);
+	private function caseTypeDefaultAssignee(object $objectService, mixed $caseTypeUrl): mixed {
+		$extractedUuid = $this->extractUuid(url: $caseTypeUrl);
 		if ($extractedUuid === null) {
 			return null;
 		}
@@ -197,15 +197,15 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		try {
-			$zaaktype = $objectService->find(
+			$caseType = $objectService->find(
 				id: $extractedUuid,
 				register: $register,
 				schema: $schema
 			);
 
-			$ztData = $zaaktype;
-			if (is_array($zaaktype) === false) {
-				$ztData = $zaaktype->jsonSerialize();
+			$ztData = $caseType;
+			if (is_array($caseType) === false) {
+				$ztData = $caseType->jsonSerialize();
 			}
 
 			if (empty($ztData['defaultAssignee']) === false) {
@@ -251,12 +251,12 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype — always override.
-		$zaaktypeUrl = $body['zaaktype'] ?? '';
-		if (empty($zaaktypeUrl) === false) {
-			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, zaaktypeUrl: $zaaktypeUrl);
+		$caseTypeUrl = $body['caseType'] ?? '';
+		if (empty($caseTypeUrl) === false) {
+			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
 		}
 
-		return $this->validateZaakFields(
+		return $this->validateCaseFields(
 			result: $this->isValid(body: $body),
 			existingObject: $existingObject,
 			isPatch: false
@@ -276,26 +276,26 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	public function rulesZakenPatch(array $body, ?array $existingObject = null): array {
 		// Zrc-009: Derive vertrouwelijkheidaanduiding from zaaktype if not set.
 		// For PATCH, the zaaktype might not be in the body — check existing object.
-		$zaaktypeUrl = $body['zaaktype'] ?? '';
-		if ($zaaktypeUrl === '' && $existingObject !== null) {
+		$caseTypeUrl = $body['caseType'] ?? '';
+		if ($caseTypeUrl === '' && $existingObject !== null) {
 			$caseType = $existingObject['caseType'] ?? '';
 			if ($caseType !== '') {
-				$zaaktypeUrl = $caseType;
+				$caseTypeUrl = $caseType;
 			}
 		}
 
 		// Ensure zaaktype is available in body for downstream validations
 		// (zrc-010, zrc-015) that need the zaaktype URL from the existing object.
-		if (($body['zaaktype'] ?? '') === '' && $zaaktypeUrl !== '') {
-			$body['zaaktype'] = $zaaktypeUrl;
+		if (($body['caseType'] ?? '') === '' && $caseTypeUrl !== '') {
+			$body['caseType'] = $caseTypeUrl;
 		}
 
 		// Zrc-009: Always override from zaaktype to prevent template leakage.
-		if (empty($zaaktypeUrl) === false) {
-			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, zaaktypeUrl: $zaaktypeUrl);
+		if (empty($caseTypeUrl) === false) {
+			$body = $this->deriveVertrouwelijkheidaanduiding(body: $body, caseTypeUrl: $caseTypeUrl);
 		}
 
-		return $this->validateZaakFields(
+		return $this->validateCaseFields(
 			result: $this->isValid(body: $body),
 			existingObject: $existingObject,
 			isPatch: true
@@ -326,14 +326,14 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	public function rulesStatussenCreate(array $body): array {
 		// Zrc-016: Validate statustype belongs to zaak's zaaktype.
 		$statustypeUrl = $body['statustype'] ?? '';
-		$zaakUrl = $body['zaak'] ?? '';
-		if ($statustypeUrl !== '' && $zaakUrl !== '') {
+		$caseUrl = $body['zaak'] ?? '';
+		if ($statustypeUrl !== '' && $caseUrl !== '') {
 			$error = $this->validateSubResourceType(
-				zaakUrl: $zaakUrl,
+				caseUrl: $caseUrl,
 				typeUrl: $statustypeUrl,
 				fieldName: 'statustype',
 				typeSchemaKey: 'status_type_schema',
-				zaaktypeField: 'statusTypes'
+				caseTypeField: 'statusTypes'
 			);
 			if ($error !== null) {
 				return $error;
@@ -360,14 +360,14 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	public function rulesResultatenCreate(array $body): array {
 		// Zrc-020: Validate resultaattype belongs to zaak's zaaktype.
 		$resultaattypeUrl = $body['resultaattype'] ?? '';
-		$zaakUrl = $body['zaak'] ?? '';
-		if ($resultaattypeUrl !== '' && $zaakUrl !== '') {
+		$caseUrl = $body['zaak'] ?? '';
+		if ($resultaattypeUrl !== '' && $caseUrl !== '') {
 			$error = $this->validateSubResourceType(
-				zaakUrl: $zaakUrl,
+				caseUrl: $caseUrl,
 				typeUrl: $resultaattypeUrl,
 				fieldName: 'resultaattype',
 				typeSchemaKey: 'result_type_schema',
-				zaaktypeField: 'resultTypes'
+				caseTypeField: 'resultTypes'
 			);
 			if ($error !== null) {
 				return $error;
@@ -394,14 +394,14 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	public function rulesRollenCreate(array $body): array {
 		// Zrc-019: Validate roltype belongs to zaak's zaaktype.
 		$roltypeUrl = $body['roltype'] ?? '';
-		$zaakUrl = $body['zaak'] ?? '';
-		if ($roltypeUrl !== '' && $zaakUrl !== '') {
+		$caseUrl = $body['zaak'] ?? '';
+		if ($roltypeUrl !== '' && $caseUrl !== '') {
 			$error = $this->validateSubResourceType(
-				zaakUrl: $zaakUrl,
+				caseUrl: $caseUrl,
 				typeUrl: $roltypeUrl,
 				fieldName: 'roltype',
 				typeSchemaKey: 'role_type_schema',
-				zaaktypeField: 'roleTypes'
+				caseTypeField: 'roleTypes'
 			);
 			if ($error !== null) {
 				return $error;
@@ -427,15 +427,15 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 */
 	public function rulesZaakeigenschappenCreate(array $body): array {
 		// Zrc-018: Validate eigenschap belongs to zaak's zaaktype.
-		$eigenschapUrl = $body['eigenschap'] ?? '';
-		$zaakUrl = $body['zaak'] ?? '';
-		if ($eigenschapUrl !== '' && $zaakUrl !== '') {
+		$attributeUrl = $body['eigenschap'] ?? '';
+		$caseUrl = $body['zaak'] ?? '';
+		if ($attributeUrl !== '' && $caseUrl !== '') {
 			$error = $this->validateSubResourceType(
-				zaakUrl: $zaakUrl,
-				typeUrl: $eigenschapUrl,
+				caseUrl: $caseUrl,
+				typeUrl: $attributeUrl,
 				fieldName: 'eigenschap',
 				typeSchemaKey: 'property_definition_schema',
-				zaaktypeField: 'propertyDefinitions'
+				caseTypeField: 'propertyDefinitions'
 			);
 			if ($error !== null) {
 				return $error;
@@ -453,14 +453,14 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 * value is only used as a fallback when the zaaktype field is absent.
 	 *
 	 * @param array $body The request body
-	 * @param string $zaaktypeUrl The zaaktype URL
+	 * @param string $caseTypeUrl The zaaktype URL
 	 *
 	 * @return array The body with derived vertrouwelijkheidaanduiding
 	 *
 	 * @link https://vng-realisatie.github.io/gemma-zaken/standaard/zaken/
 	 */
-	private function deriveVertrouwelijkheidaanduiding(array $body, string $zaaktypeUrl): array {
-		$uuid = $this->extractUuid(url: $zaaktypeUrl);
+	private function deriveVertrouwelijkheidaanduiding(array $body, string $caseTypeUrl): array {
+		$uuid = $this->extractUuid(url: $caseTypeUrl);
 		if ($uuid === null) {
 			return $body;
 		}
@@ -486,47 +486,47 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 * Checks that the given type URL's UUID is present in the zaak's
 	 * zaaktype's corresponding type list.
 	 *
-	 * @param string $zaakUrl The zaak URL
+	 * @param string $caseUrl The zaak URL
 	 * @param string $typeUrl The sub-resource type URL (statustype, roltype, etc.)
 	 * @param string $fieldName The field name for error reporting
 	 * @param string $typeSchemaKey Settings key for the type's schema
-	 * @param string $zaaktypeField The zaaktype field containing allowed type UUIDs
+	 * @param string $caseTypeField The zaaktype field containing allowed type UUIDs
 	 *
 	 * @return array|null Validation error, or null if valid
 	 *
-	 * @psalm-suppress UnusedParam — $zaaktypeField reserved for future filtering
+	 * @psalm-suppress UnusedParam — $caseTypeField reserved for future filtering
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $zaaktypeField reserved for future filtering
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $caseTypeField reserved for future filtering
 	 * @SuppressWarnings(PHPMD.NPathComplexity)       — cross-register validation with multiple lookups
 	 */
 	private function validateSubResourceType(
-		string $zaakUrl,
+		string $caseUrl,
 		string $typeUrl,
 		string $fieldName,
 		string $typeSchemaKey,
-		string $zaaktypeField,
+		string $caseTypeField,
 	): ?array {
 		if ($this->objectService === null) {
 			return null;
 		}
 
 		// Look up the zaak to get its zaaktype.
-		$zaakUuid = $this->extractUuid(url: $zaakUrl);
+		$zaakUuid = $this->extractUuid(url: $caseUrl);
 		if ($zaakUuid === null) {
 			return null;
 		}
 
-		$zaakData = $this->findBySchemaKey(uuid: $zaakUuid, schemaKey: 'case_schema');
-		if ($zaakData === null) {
+		$caseData = $this->findBySchemaKey(uuid: $zaakUuid, schemaKey: 'case_schema');
+		if ($caseData === null) {
 			return null;
 		}
 
-		$zaaktypeId = $zaakData['caseType'] ?? '';
-		if (empty($zaaktypeId) === true) {
+		$caseTypeId = $caseData['caseType'] ?? '';
+		if (empty($caseTypeId) === true) {
 			return null;
 		}
 
-		$zaaktypeUuid = $this->extractUuid(url: (string)$zaaktypeId);
+		$zaaktypeUuid = $this->extractUuid(url: (string)$caseTypeId);
 		if ($zaaktypeUuid === null) {
 			return null;
 		}
@@ -592,7 +592,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $isPatch reserved for partial-update validation
 	 */
-	private function validateZaakFields(array $result, ?array $existingObject, bool $isPatch): array {
+	private function validateCaseFields(array $result, ?array $existingObject, bool $isPatch): array {
 		$body = $result['enrichedBody'];
 
 		// Zrc-002: Identificatie immutability on update/patch.
@@ -604,9 +604,9 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Zrc-010: Validate communicatiekanaal URL.
-		$commKanaal = $body['communicatiekanaal'] ?? null;
-		if ($commKanaal !== null && $commKanaal !== '') {
-			if (filter_var($commKanaal, FILTER_VALIDATE_URL) === false) {
+		$commChannel = $body['communicatiekanaal'] ?? null;
+		if ($commChannel !== null && $commChannel !== '') {
+			if (filter_var($commChannel, FILTER_VALIDATE_URL) === false) {
 				return $this->error(
 					status: 400,
 					detail: 'De communicatiekanaal URL is ongeldig.',
@@ -620,7 +620,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 				);
 			}
 
-			if ($this->isValidUrl(url: $commKanaal) === false) {
+			if ($this->isValidUrl(url: $commChannel) === false) {
 				// Zrc-010: URL is syntactically valid but does not point to a specific
 				// resource (no UUID path segment) → VNG requires 'invalid-resource'.
 				return $this->error(
@@ -638,10 +638,10 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}//end if
 
 		// Zrc-011: Validate relevanteAndereZaken URLs.
-		$relevanteZaken = $body['relevanteAndereZaken'] ?? null;
-		if (is_array($relevanteZaken) === true) {
-			foreach ($relevanteZaken as $idx => $relZaak) {
-				$relUrl = $relZaak['url'] ?? '';
+		$relevanteCases = $body['relevanteAndereZaken'] ?? null;
+		if (is_array($relevanteCases) === true) {
+			foreach ($relevanteCases as $idx => $relCase) {
+				$relUrl = $relCase['url'] ?? '';
 				if ($relUrl !== '' && $this->isValidUrl(url: $relUrl) === false) {
 					return $this->error(
 						status: 400,
@@ -658,10 +658,10 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Zrc-012: Validate opschorting.
-		$opschorting = $body['opschorting'] ?? null;
-		if (is_array($opschorting) === true) {
+		$suspension = $body['suspension'] ?? null;
+		if (is_array($suspension) === true) {
 			$errors = [];
-			if (($opschorting['indicatie'] ?? null) === null) {
+			if (($suspension['indicatie'] ?? null) === null) {
 				$errors[] = $this->fieldError(
 					fieldName: 'opschorting.indicatie',
 					code: 'required',
@@ -669,7 +669,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 				);
 			}
 
-			if (($opschorting['reden'] ?? '') === '') {
+			if (($suspension['reason'] ?? '') === '') {
 				$errors[] = $this->fieldError(
 					fieldName: 'opschorting.reden',
 					code: 'required',
@@ -687,10 +687,10 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}//end if
 
 		// Zrc-012: Validate verlenging.
-		$verlenging = $body['verlenging'] ?? null;
-		if (is_array($verlenging) === true) {
+		$extension = $body['verlenging'] ?? null;
+		if (is_array($extension) === true) {
 			$errors = [];
-			if (($verlenging['reden'] ?? '') === '') {
+			if (($extension['reason'] ?? '') === '') {
 				$errors[] = $this->fieldError(
 					fieldName: 'verlenging.reden',
 					code: 'required',
@@ -698,7 +698,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 				);
 			}
 
-			if (($verlenging['duur'] ?? '') === '') {
+			if (($extension['duur'] ?? '') === '') {
 				$errors[] = $this->fieldError(
 					fieldName: 'verlenging.duur',
 					code: 'required',
@@ -755,18 +755,18 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 
 		// Zrc-014: Validate betalingsindicatie + laatsteBetaaldatum.
 		$betalingsindicatie = $body['betalingsindicatie'] ?? null;
-		$laatsteBetaald = $body['laatsteBetaaldatum'] ?? null;
+		$lastPaid = $body['laatsteBetaaldatum'] ?? null;
 
 		// On update/patch, also consider existing values when not explicitly sent.
 		if ($betalingsindicatie === null && $existingObject !== null) {
 			$betalingsindicatie = $existingObject['paymentIndication'] ?? ($existingObject['betalingsindicatie'] ?? null);
 		}
 
-		if ($laatsteBetaald === null && $existingObject !== null) {
-			$laatsteBetaald = $existingObject['lastPaymentDate'] ?? ($existingObject['laatsteBetaaldatum'] ?? null);
+		if ($lastPaid === null && $existingObject !== null) {
+			$lastPaid = $existingObject['lastPaymentDate'] ?? ($existingObject['laatsteBetaaldatum'] ?? null);
 		}
 
-		if ($betalingsindicatie === 'nvt' && $laatsteBetaald !== null && $laatsteBetaald !== '') {
+		if ($betalingsindicatie === 'nvt' && $lastPaid !== null && $lastPaid !== '') {
 			// On create: reject (cannot set date with nvt).
 			if ($existingObject === null) {
 				return $this->error(
@@ -902,12 +902,12 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 			return null;
 		}
 
-		$zaaktypeUrl = $body['zaaktype'] ?? '';
-		if (empty($zaaktypeUrl) === true) {
+		$caseTypeUrl = $body['caseType'] ?? '';
+		if (empty($caseTypeUrl) === true) {
 			return null;
 		}
 
-		$zaaktypeUuid = $this->extractUuid(url: $zaaktypeUrl);
+		$zaaktypeUuid = $this->extractUuid(url: $caseTypeUrl);
 		if ($zaaktypeUuid === null) {
 			return null;
 		}
@@ -999,7 +999,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 		}
 
 		// Fallback: find the statustype with the highest volgnummer for this zaaktype.
-		return $this->isHighestVolgnummerStatustype(
+		return $this->isHighestSequenceNumberStatustype(
 			objectService: $this->objectService,
 			statustypeUuid: $statustypeUuid,
 			zaaktypeUuid: $zaaktypeUuid
@@ -1018,7 +1018,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 *
 	 * @return bool True if this statustype has the highest volgnummer
 	 */
-	private function isHighestVolgnummerStatustype(object $objectService, string $statustypeUuid, string $zaaktypeUuid): bool {
+	private function isHighestSequenceNumberStatustype(object $objectService, string $statustypeUuid, string $zaaktypeUuid): bool {
 		$register = $this->mappingConfig['sourceRegister'] ?? '';
 		$statusTypeSchema = $this->settingsService->getConfigValue(key: 'status_type_schema');
 		if (empty($register) === true || empty($statusTypeSchema) === true) {
@@ -1033,7 +1033,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 			);
 			$result = $objectService->searchObjectsPaginated(query: $query);
 
-			$maxVolgnummer = -1;
+			$maxSequenceNumber = -1;
 			$maxStatustypeUuid = null;
 			foreach (($result['results'] ?? []) as $obj) {
 				$data = $obj;
@@ -1041,10 +1041,10 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 					$data = $obj->jsonSerialize();
 				}
 
-				$volgnummer = (int)($data['sequenceNumber'] ?? ($data['volgnummer'] ?? 0));
+				$sequenceNumber = (int)($data['sequenceNumber'] ?? 0);
 				$objId = $data['id'] ?? ($data['@self']['id'] ?? null);
-				if ($volgnummer > $maxVolgnummer) {
-					$maxVolgnummer = $volgnummer;
+				if ($sequenceNumber > $maxSequenceNumber) {
+					$maxSequenceNumber = $sequenceNumber;
 					$maxStatustypeUuid = $objId;
 				}
 			}
@@ -1064,7 +1064,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 * the consumer's maxVertrouwelijkheidaanduiding for the zaaktype.
 	 * Falls back to unfiltered when no authorizations context is present.
 	 *
-	 * @param array $zaken Array of zaak objects (already serialized to arrays)
+	 * @param array $cases Array of zaak objects (already serialized to arrays)
 	 * @param array $authorizations The consumer's authorizations array from ZgwAuthMiddleware
 	 *
 	 * @return array The filtered zaken array
@@ -1075,21 +1075,21 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 *
 	 * @spec openspec/specs/status-transition-engine/spec.md
 	 */
-	public function filterZakenForConsumer(array $zaken, array $authorizations): array {
+	public function filterZakenForConsumer(array $cases, array $authorizations): array {
 		// No authorizations context → return all zaken unfiltered.
 		if (empty($authorizations) === true) {
-			return $zaken;
+			return $cases;
 		}
 
 		// Build lookup: zaaktype UUID → max vertrouwelijkheidaanduiding level.
 		$allowedZaaktypen = [];
 		foreach ($authorizations as $auth) {
-			$zaaktypeUrl = $auth['zaaktype'] ?? ($auth['zaaktypeUrl'] ?? '');
-			if (empty($zaaktypeUrl) === true) {
+			$caseTypeUrl = $auth['caseType'] ?? ($auth['zaaktypeUrl'] ?? '');
+			if (empty($caseTypeUrl) === true) {
 				continue;
 			}
 
-			$zaaktypeUuid = $this->extractUuid(url: (string)$zaaktypeUrl);
+			$zaaktypeUuid = $this->extractUuid(url: (string)$caseTypeUrl);
 			if ($zaaktypeUuid === null) {
 				continue;
 			}
@@ -1107,19 +1107,19 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 
 		return array_values(
 			array_filter(
-				$zaken,
-				function (array $zaak) use ($allowedZaaktypen): bool {
-					$zaaktypeId = $zaak['zaaktype'] ?? ($zaak['caseType'] ?? '');
-					$zaaktypeUuid = $this->extractUuid(url: (string)$zaaktypeId);
+				$cases,
+				function (array $case) use ($allowedZaaktypen): bool {
+					$caseTypeId = $case['caseType'] ?? '';
+					$zaaktypeUuid = $this->extractUuid(url: (string)$caseTypeId);
 
 					if ($zaaktypeUuid === null || isset($allowedZaaktypen[$zaaktypeUuid]) === false) {
 						return false;
 					}
 
-					$zaakVa = $zaak['vertrouwelijkheidaanduiding'] ?? ($zaak['confidentiality'] ?? 'openbaar');
-					$zaakLevel = self::VERTROUWELIJKHEID_LEVELS[(string)$zaakVa] ?? 1;
+					$caseVa = $case['vertrouwelijkheidaanduiding'] ?? ($case['confidentiality'] ?? 'openbaar');
+					$caseLevel = self::VERTROUWELIJKHEID_LEVELS[(string)$caseVa] ?? 1;
 
-					return $zaakLevel <= $allowedZaaktypen[$zaaktypeUuid];
+					return $caseLevel <= $allowedZaaktypen[$zaaktypeUuid];
 				}
 			)
 		);

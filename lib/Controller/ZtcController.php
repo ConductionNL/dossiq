@@ -143,11 +143,11 @@ class ZtcController extends ZgwController {
 		}
 
 		// ZTC datumGeldigheid: post-filter results by date validity.
-		$datumGeldigheid = $this->request->getParam('datumGeldigheid');
-		if ($datumGeldigheid !== null && $datumGeldigheid !== '') {
-			$data['results'] = $this->filterByDatumGeldigheid(
+		$dateValidity = $this->request->getParam('datumGeldigheid');
+		if ($dateValidity !== null && $dateValidity !== '') {
+			$data['results'] = $this->filterByDateValidity(
 				results: $data['results'],
-				datumGeldigheid: $datumGeldigheid
+				dateValidity: $dateValidity
 			);
 			$data['count'] = count($data['results']);
 		}
@@ -189,7 +189,7 @@ class ZtcController extends ZgwController {
 
 		// Ztc-010: Resolve parent zaaktype draft status for sub-resource creation.
 		$body = $this->zgwService->getRequestBody($this->request);
-		$parentZaaktypeDraft = $this->zgwService->resolveParentZaaktypeDraftFromBody($resource, $body);
+		$parentCaseTypeDraft = $this->zgwService->resolveParentZaaktypeDraftFromBody($resource, $body);
 
 		// Ztc-010m: For ZIOT, resolve informatieobjecttype by omschrijving if not a UUID/URL.
 		if ($resource === 'zaaktype-informatieobjecttypen') {
@@ -200,7 +200,7 @@ class ZtcController extends ZgwController {
 			$this->request,
 			self::ZGW_API,
 			$resource,
-			parentZaaktypeDraft: $parentZaaktypeDraft
+			parentCaseTypeDraft: $parentCaseTypeDraft
 		);
 
 		// Enrich cross-references on create response (without validity filtering
@@ -589,7 +589,7 @@ class ZtcController extends ZgwController {
 		}
 
 		if ($resource === 'zaaktypen' && $uuid !== '') {
-			$data = $this->enrichZaaktype(data: $data, baseUrl: $baseUrl, objectService: $objectService, uuid: $uuid);
+			$data = $this->enrichCaseType(data: $data, baseUrl: $baseUrl, objectService: $objectService, uuid: $uuid);
 
 			// Ensure array fields default to [] instead of null.
 			$arrayFields = [
@@ -710,7 +710,7 @@ class ZtcController extends ZgwController {
 	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength)
 	 */
-	private function enrichZaaktype(
+	private function enrichCaseType(
 		array $data,
 		string $baseUrl,
 		object $objectService,
@@ -810,7 +810,7 @@ class ZtcController extends ZgwController {
 		) {
 			$expanded = [];
 			foreach ($relatedRaw as $rel) {
-				$ztRef = $rel['zaaktype'] ?? '';
+				$ztRef = $rel['caseType'] ?? '';
 				if (is_string($ztRef) === false || $ztRef === '') {
 					continue;
 				}
@@ -845,13 +845,13 @@ class ZtcController extends ZgwController {
 							$mId = $mData['id'] ?? ($mData['@self']['id'] ?? '');
 							if ($mId !== '') {
 								$entry = $rel;
-								$entry['zaaktype'] = $baseUrl . '/zaaktypen/' . $mId;
+								$entry['caseType'] = $baseUrl . '/zaaktypen/' . $mId;
 								$expanded[] = $entry;
 							}
 						}
 					}//end if
 				} catch (\Throwable $e) {
-					$rel['zaaktype'] = $baseUrl . '/zaaktypen/' . $ztRef;
+					$rel['caseType'] = $baseUrl . '/zaaktypen/' . $ztRef;
 					$expanded[] = $rel;
 				}//end try
 			}//end foreach
@@ -860,7 +860,7 @@ class ZtcController extends ZgwController {
 			$seen = [];
 			$unique = [];
 			foreach ($expanded as $entry) {
-				$ztUrl = $entry['zaaktype'] ?? '';
+				$ztUrl = $entry['caseType'] ?? '';
 				if (isset($seen[$ztUrl]) === false) {
 					$seen[$ztUrl] = true;
 					$unique[] = $entry;
@@ -878,7 +878,7 @@ class ZtcController extends ZgwController {
 		if ($ziotMapping !== null && $iotMapping !== null) {
 			try {
 				$query = $objectService->buildSearchQuery(
-					requestParams: ['zaaktype' => $uuid, '_limit' => 100],
+					requestParams: ['caseType' => $uuid, '_limit' => 100],
 					register: $ziotMapping['sourceRegister'],
 					schema: $ziotMapping['sourceSchema']
 				);
@@ -1019,23 +1019,23 @@ class ZtcController extends ZgwController {
 	 * (eindeGeldigheid >= datumGeldigheid or eindeGeldigheid is absent).
 	 *
 	 * @param array $results The array of outbound-mapped result items.
-	 * @param string $datumGeldigheid The validity date in Y-m-d format.
+	 * @param string $dateValidity The validity date in Y-m-d format.
 	 *
 	 * @return array The filtered results (re-indexed).
 	 */
-	private function filterByDatumGeldigheid(array $results, string $datumGeldigheid): array {
+	private function filterByDateValidity(array $results, string $dateValidity): array {
 		$filtered = [];
 		foreach ($results as $item) {
-			$begin = $item['beginGeldigheid'] ?? null;
-			$end = $item['eindeGeldigheid'] ?? null;
+			$start = $item['startValidity'] ?? null;
+			$end = $item['endValidity'] ?? null;
 
 			// BeginGeldigheid must be present and <= datumGeldigheid.
-			if ($begin !== null && $begin !== '' && $begin > $datumGeldigheid) {
+			if ($start !== null && $start !== '' && $start > $dateValidity) {
 				continue;
 			}
 
 			// EindeGeldigheid, if present, must be >= datumGeldigheid.
-			if ($end !== null && $end !== '' && $end < $datumGeldigheid) {
+			if ($end !== null && $end !== '' && $end < $dateValidity) {
 				continue;
 			}
 
@@ -1076,8 +1076,8 @@ class ZtcController extends ZgwController {
 			$filtered = [];
 			foreach ($data[$field] as $item) {
 				if ($nested === true) {
-					// GerelateerdeZaaktypen: array of objects with 'zaaktype' URL field.
-					$url = $item['zaaktype'] ?? '';
+					// GerelateerdeZaaktypen: array of objects with 'caseType' URL field.
+					$url = $item['caseType'] ?? '';
 					if ($this->isUrlValid(url: $url, schemaKey: $schemaKey, today: $today) === true) {
 						$filtered[] = $item;
 					}
@@ -1162,13 +1162,13 @@ class ZtcController extends ZgwController {
 			}
 
 			// Check date validity: beginGeldigheid <= today.
-			$begin = $objectData['validFrom'] ?? ($objectData['beginGeldigheid'] ?? null);
-			if ($begin !== null && $begin !== '' && $begin > $today) {
+			$start = $objectData['validFrom'] ?? ($objectData['startValidity'] ?? null);
+			if ($start !== null && $start !== '' && $start > $today) {
 				return false;
 			}
 
 			// Check date validity: eindeGeldigheid >= today (or no end date).
-			$end = $objectData['validUntil'] ?? ($objectData['eindeGeldigheid'] ?? null);
+			$end = $objectData['validUntil'] ?? ($objectData['endValidity'] ?? null);
 			if ($end !== null && $end !== '' && $end < $today) {
 				return false;
 			}

@@ -52,17 +52,17 @@ class DeadlineDailyScanService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
-	 * @param TermijnService $termijnService TermijnService.
+	 * @param TermijnService $termService TermijnService.
 	 * @param DeadlineEscalationService $escalationService Escalation service.
 	 * @param LoggerInterface $logger Logger.
-	 * @param DwangsomCalculationService|null $dwangsomService Dwangsom calculation service.
+	 * @param DwangsomCalculationService|null $penaltyService Dwangsom calculation service.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly TermijnService $termijnService,
+		private readonly TermijnService $termService,
 		private readonly DeadlineEscalationService $escalationService,
 		private readonly LoggerInterface $logger,
-		private readonly ?DwangsomCalculationService $dwangsomService = null,
+		private readonly ?DwangsomCalculationService $penaltyService = null,
 	) {
 	}//end __construct()
 
@@ -117,7 +117,7 @@ class DeadlineDailyScanService {
 		}
 
 		// Sweep lopend DwangsomBerekeningen (member 06 hook).
-		$counts['dwangsomAccrued'] = $this->accrueLopendDwangsomBerekeningen();
+		$counts['dwangsomAccrued'] = $this->accrueLopendPenaltyPaymentBerekeningen();
 
 		$this->logger->info('Termijn daily scan complete', $counts);
 		return $counts;
@@ -128,8 +128,8 @@ class DeadlineDailyScanService {
 	 *
 	 * @return int Number of berekeningen accrued.
 	 */
-	private function accrueLopendDwangsomBerekeningen(): int {
-		if ($this->dwangsomService === null) {
+	private function accrueLopendPenaltyPaymentBerekeningen(): int {
+		if ($this->penaltyService === null) {
 			return 0;
 		}
 
@@ -159,7 +159,7 @@ class DeadlineDailyScanService {
 			}
 
 			try {
-				$this->dwangsomService->calculateDaily($id);
+				$this->penaltyService->calculateDaily($id);
 				$accrued++;
 			} catch (\Throwable $e) {
 				$this->logger->warning('Dwangsom accrual row failed', ['id' => $id, 'error' => $e->getMessage()]);
@@ -180,7 +180,7 @@ class DeadlineDailyScanService {
 	 */
 	private function processInstance(array $row, DateTimeImmutable $now, array &$counts): void {
 		$status = (string)($row['status'] ?? '');
-		if (in_array($status, ['voltooid', 'overschreden', 'ingetrokken'], true) === true) {
+		if (in_array($status, ['voltooid', 'overschreden', 'withdrawn'], true) === true) {
 			return;
 		}
 
@@ -192,7 +192,7 @@ class DeadlineDailyScanService {
 			return;
 		}
 
-		$deadline = (string)($row['einddatumActueel'] ?? '');
+		$deadline = (string)($row['endDateCurrent'] ?? '');
 		if ($deadline === '') {
 			return;
 		}
@@ -223,13 +223,13 @@ class DeadlineDailyScanService {
 		$pauseEnd = (string)($row['pauzeDeadline'] ?? '');
 		if ($pauseEnd !== '' && $pauseEnd < $now->format('Y-m-d')) {
 			$counts['pauseExpired']++;
-			$this->termijnService->recordEvent(
-				termijnInstanceId: $rowId,
+			$this->termService->recordEvent(
+				termInstanceId: $rowId,
 				type: 'pauze-verlopen',
-				grondslag: 'AWB 4:5',
-				motivering: 'Pauzetermijn verlopen zonder aanvulling',
-				dagenImpact: 0,
-				tijdstip: $now,
+				basis: 'AWB 4:5',
+				rationale: 'Pauzetermijn verlopen zonder aanvulling',
+				daysImpact: 0,
+				moment: $now,
 			);
 		}
 	}//end handlePauseExpiry()
@@ -264,14 +264,14 @@ class DeadlineDailyScanService {
 	 */
 	private function recordOverschrijding(string $rowId, DateTimeImmutable $now, array &$counts): void {
 		$counts['overschreden']++;
-		$this->termijnService->updateTermijnInstance($rowId, ['status' => 'overschreden']);
-		$this->termijnService->recordEvent(
-			termijnInstanceId: $rowId,
+		$this->termService->updateTermijnInstance($rowId, ['status' => 'overschreden']);
+		$this->termService->recordEvent(
+			termInstanceId: $rowId,
 			type: 'overschreden',
-			grondslag: 'AWB 4:13',
-			motivering: 'Termijn overschreden zonder beschikking',
-			dagenImpact: 0,
-			tijdstip: $now,
+			basis: 'AWB 4:13',
+			rationale: 'Termijn overschreden zonder beschikking',
+			daysImpact: 0,
+			moment: $now,
 		);
 	}//end recordOverschrijding()
 
@@ -291,7 +291,7 @@ class DeadlineDailyScanService {
 		}
 
 		// Re-read instance to pick up the just-updated status/notificatiesVerstuurd.
-		$latest = $this->termijnService->getTermijnInstance($rowId);
+		$latest = $this->termService->getTermijnInstance($rowId);
 		if ($latest === null) {
 			return;
 		}

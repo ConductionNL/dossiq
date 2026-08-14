@@ -138,7 +138,7 @@ class ZipManifestBuilderTest extends TestCase {
 	public function testBuildManifestColumnsAndRows(): void {
 		$docs = [
 			[
-				'bestandsnaam' => 'a.pdf',
+				'fileName' => 'a.pdf',
 				'titel' => 'Doc A',
 				'informatieobjecttype' => 'Advies',
 				'status' => 'definitief',
@@ -166,8 +166,8 @@ class ZipManifestBuilderTest extends TestCase {
 	 */
 	public function testBuildZipHasManifestAndTypeFolders(): void {
 		$docs = [
-			['id' => 'inf-1', 'bestandsnaam' => 'a.pdf', 'informatieobjecttype' => 'Advies', 'vertrouwelijkheidaanduiding' => 'openbaar'],
-			['id' => 'inf-2', 'bestandsnaam' => 'b.pdf', 'informatieobjecttype' => 'Aanvraag', 'vertrouwelijkheidaanduiding' => 'intern'],
+			['id' => 'inf-1', 'fileName' => 'a.pdf', 'informatieobjecttype' => 'Advies', 'vertrouwelijkheidaanduiding' => 'openbaar'],
+			['id' => 'inf-2', 'fileName' => 'b.pdf', 'informatieobjecttype' => 'Aanvraag', 'vertrouwelijkheidaanduiding' => 'intern'],
 		];
 
 		$path = (string)tempnam(sys_get_temp_dir(), 'ziptest-');
@@ -200,9 +200,9 @@ class ZipManifestBuilderTest extends TestCase {
 	 */
 	public function testBuildZipExcludesAboveClearance(): void {
 		$docs = [
-			['id' => 'inf-1', 'bestandsnaam' => 'open.pdf', 'informatieobjecttype' => 'Aanvraag', 'vertrouwelijkheidaanduiding' => 'openbaar'],
-			['id' => 'inf-2', 'bestandsnaam' => 'geheim.pdf', 'informatieobjecttype' => 'Advies', 'vertrouwelijkheidaanduiding' => 'geheim'],
-			['id' => 'inf-3', 'bestandsnaam' => 'top.pdf', 'informatieobjecttype' => 'Advies', 'vertrouwelijkheidaanduiding' => 'zeer_geheim'],
+			['id' => 'inf-1', 'fileName' => 'open.pdf', 'informatieobjecttype' => 'Aanvraag', 'vertrouwelijkheidaanduiding' => 'openbaar'],
+			['id' => 'inf-2', 'fileName' => 'geheim.pdf', 'informatieobjecttype' => 'Advies', 'vertrouwelijkheidaanduiding' => 'geheim'],
+			['id' => 'inf-3', 'fileName' => 'top.pdf', 'informatieobjecttype' => 'Advies', 'vertrouwelijkheidaanduiding' => 'zeer_geheim'],
 		];
 
 		$path = (string)tempnam(sys_get_temp_dir(), 'ziptest-');
@@ -240,8 +240,8 @@ class ZipManifestBuilderTest extends TestCase {
 	 */
 	public function testBuildZipDeduplicatesFilenames(): void {
 		$docs = [
-			['id' => 'inf-1', 'bestandsnaam' => 'doc.pdf', 'informatieobjecttype' => 'Advies', 'vertrouwelijkheidaanduiding' => 'openbaar'],
-			['id' => 'inf-2', 'bestandsnaam' => 'doc.pdf', 'informatieobjecttype' => 'Advies', 'vertrouwelijkheidaanduiding' => 'openbaar'],
+			['id' => 'inf-1', 'fileName' => 'doc.pdf', 'informatieobjecttype' => 'Advies', 'vertrouwelijkheidaanduiding' => 'openbaar'],
+			['id' => 'inf-2', 'fileName' => 'doc.pdf', 'informatieobjecttype' => 'Advies', 'vertrouwelijkheidaanduiding' => 'openbaar'],
 		];
 
 		$path = (string)tempnam(sys_get_temp_dir(), 'ziptest-');

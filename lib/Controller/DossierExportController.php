@@ -56,7 +56,7 @@ class DossierExportController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The HTTP request.
-	 * @param BeroepDossierExport $dossierExport The export service.
+	 * @param BeroepDossierExport $fileExport The export service.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
 	 * @param CaseAccessGuard $caseAccessGuard Per-case authorization (fails closed).
@@ -66,7 +66,7 @@ class DossierExportController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BeroepDossierExport $dossierExport,
+		private readonly BeroepDossierExport $fileExport,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 		private readonly CaseAccessGuard $caseAccessGuard,
@@ -102,7 +102,7 @@ class DossierExportController extends Controller {
 		}
 
 		try {
-			$plan = $this->dossierExport->buildPlan(caseId: $caseId);
+			$plan = $this->fileExport->buildPlan(caseId: $caseId);
 			return new JSONResponse($plan);
 		} catch (\Throwable $e) {
 			$this->logger->error(

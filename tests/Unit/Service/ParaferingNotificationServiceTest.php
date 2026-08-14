@@ -112,7 +112,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 		$this->service->notifyStepActivated(
 			actorUserId: 'actor-user-1',
 			onderwerp: 'Testvoorstel',
-			voorstelId: 'voorstel-uuid-123',
+			proposalId: 'voorstel-uuid-123',
 			stepLabel: 'Afdelingshoofd',
 		);
 
@@ -143,7 +143,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 		$this->service->notifyStepActivated(
 			actorUserId: 'actor-user-1',
 			onderwerp: 'Testvoorstel',
-			voorstelId: 'voorstel-uuid-123',
+			proposalId: 'voorstel-uuid-123',
 			stepLabel: 'Afdelingshoofd',
 		);
 
@@ -164,7 +164,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 		$this->service->notifyStepActivated(
 			actorUserId: 'actor-user-1',
 			onderwerp: 'Testvoorstel',
-			voorstelId: 'voorstel-uuid-123',
+			proposalId: 'voorstel-uuid-123',
 			stepLabel: 'Afdelingshoofd',
 		);
 
@@ -190,7 +190,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 		$this->service->notifyVoorstelReturned(
 			stellerUserId: 'steller-user-1',
 			onderwerp: 'Testvoorstel',
-			voorstelId: 'voorstel-uuid-123',
+			proposalId: 'voorstel-uuid-123',
 			returnedBy: 'manager-user',
 			comment: 'Aanpassing nodig',
 		);
@@ -220,7 +220,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 		$this->service->notifyVoorstelReturned(
 			stellerUserId: 'steller-user-1',
 			onderwerp: 'Testvoorstel',
-			voorstelId: 'voorstel-uuid-123',
+			proposalId: 'voorstel-uuid-123',
 			returnedBy: 'manager-user',
 			comment: 'Aanpassing nodig',
 		);
@@ -246,7 +246,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 		$this->service->notifyParaferingReminder(
 			actorUserId: 'actor-user-1',
 			onderwerp: 'Testvoorstel',
-			voorstelId: 'voorstel-uuid-123',
+			proposalId: 'voorstel-uuid-123',
 			daysWaiting: 3,
 		);
 
@@ -275,7 +275,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 		$this->service->notifyParaferingReminder(
 			actorUserId: 'actor-user-1',
 			onderwerp: 'Testvoorstel',
-			voorstelId: 'voorstel-uuid-123',
+			proposalId: 'voorstel-uuid-123',
 			daysWaiting: 5,
 		);
 
@@ -303,7 +303,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 		$this->service->notifyStepActivated(
 			actorUserId: 'actor-user-1',
 			onderwerp: 'Testvoorstel',
-			voorstelId: 'voorstel-uuid-123',
+			proposalId: 'voorstel-uuid-123',
 			stepLabel: 'Afdelingshoofd',
 		);
 

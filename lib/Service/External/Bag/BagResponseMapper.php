@@ -68,12 +68,12 @@ final class BagResponseMapper {
 	 */
 	public function map(array $raw): array {
 		return [
-			'street' => $this->stringOrNull(value: $raw['openbareRuimteNaam'] ?? $raw['straat'] ?? null),
-			'houseNumber' => $this->intOrNull(value: $raw['huisnummer'] ?? null),
+			'street' => $this->stringOrNull(value: $raw['openbareRuimteNaam'] ?? $raw['street'] ?? null),
+			'houseNumber' => $this->intOrNull(value: $raw['houseNumber'] ?? null),
 			'houseLetter' => $this->stringOrNull(value: $raw['huisletter'] ?? null),
 			'houseNumberAddition' => $this->stringOrNull(value: $raw['huisnummertoevoeging'] ?? null),
 			'postcode' => $this->stringOrNull(value: $raw['postcode'] ?? null),
-			'city' => $this->stringOrNull(value: $raw['woonplaatsNaam'] ?? $raw['woonplaats'] ?? null),
+			'city' => $this->stringOrNull(value: $raw['woonplaatsNaam'] ?? $raw['city'] ?? null),
 			'gebruiksdoel' => $this->toStringArray(value: $raw['gebruiksdoelen'] ?? $raw['gebruiksdoel'] ?? []),
 			'oorspronkelijkBouwjaar' => $this->intOrNull(value: $raw['oorspronkelijkBouwjaar'] ?? null),
 			'oppervlakte' => $this->intOrNull(value: $raw['oppervlakte'] ?? null),

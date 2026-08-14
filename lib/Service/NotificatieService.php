@@ -101,33 +101,33 @@ class NotificatieService {
 	 * Finds all subscriptions matching the kanaal and delivers the
 	 * notification payload via HTTP POST to each callback URL.
 	 *
-	 * @param string $kanaal The channel name (e.g. 'zaken', 'documenten')
+	 * @param string $channel The channel name (e.g. 'zaken', 'documenten')
 	 * @param string $hoofdObject The main object URL
 	 * @param string $resource The resource name (e.g. 'zaak', 'status')
 	 * @param string $resourceUrl The resource URL
-	 * @param string $actie The action ('create', 'update', 'destroy')
-	 * @param array $kenmerken Optional filter attributes for matching
+	 * @param string $action The action ('create', 'update', 'destroy')
+	 * @param array $characteristics Optional filter attributes for matching
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function publish(
-		string $kanaal,
+		string $channel,
 		string $hoofdObject,
 		string $resource,
 		string $resourceUrl,
-		string $actie,
-		array $kenmerken = [],
+		string $action,
+		array $characteristics = [],
 	): void {
 		$notification = [
-			'kanaal' => $kanaal,
+			'kanaal' => $channel,
 			'hoofdObject' => $hoofdObject,
 			'resource' => $resource,
 			'resourceUrl' => $resourceUrl,
-			'actie' => $actie,
+			'action' => $action,
 			'aanmaakdatum' => (new DateTime())->format('c'),
-			'kenmerken' => $kenmerken,
+			'kenmerken' => $characteristics,
 		];
 
 		try {
@@ -136,8 +136,8 @@ class NotificatieService {
 			$this->logger->warning(
 				'Failed to deliver notification',
 				[
-					'kanaal' => $kanaal,
-					'actie' => $actie,
+					'kanaal' => $channel,
+					'action' => $action,
 					'exception' => $e->getMessage(),
 				]
 			);
@@ -205,8 +205,8 @@ class NotificatieService {
 
 		// Check if this subscription listens to the notification channel.
 		$matches = false;
-		foreach ($kanalen as $kanaalConfig) {
-			if (($kanaalConfig['naam'] ?? '') === $notification['kanaal']) {
+		foreach ($kanalen as $channelConfig) {
+			if (($channelConfig['name'] ?? '') === $notification['kanaal']) {
 				$matches = true;
 				break;
 			}

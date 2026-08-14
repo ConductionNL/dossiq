@@ -56,18 +56,18 @@ class SubsidieController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param SubsidieService $subsidieService Core subsidy service.
-	 * @param BeschikkingService $beschikkingService Grant-decision service.
+	 * @param SubsidieService $subsidyService Core subsidy service.
+	 * @param BeschikkingService $decisionService Grant-decision service.
 	 * @param TussenrapportageService $tussenrapportage Interim-report service.
-	 * @param VaststellingService $vaststellingService Settlement service.
+	 * @param VaststellingService $determinationService Settlement service.
 	 * @param IUserSession $userSession The user session.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly SubsidieService $subsidieService,
-		private readonly BeschikkingService $beschikkingService,
+		private readonly SubsidieService $subsidyService,
+		private readonly BeschikkingService $decisionService,
 		private readonly TussenrapportageService $tussenrapportage,
-		private readonly VaststellingService $vaststellingService,
+		private readonly VaststellingService $determinationService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
@@ -92,11 +92,11 @@ class SubsidieController extends Controller {
 		$filters = [
 			'status' => $this->request->getParam('status', ''),
 			'subsidieregeling' => $this->request->getParam('regeling', ''),
-			'behandelaar' => $this->request->getParam('behandelaar', ''),
+			'handler' => $this->request->getParam('handler', ''),
 		];
 
 		try {
-			$results = $this->subsidieService->listAanvragen($filters);
+			$results = $this->subsidyService->listAanvragen($filters);
 		} catch (OCSBadRequestException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
@@ -123,20 +123,20 @@ class SubsidieController extends Controller {
 
 		$body = $this->bodyParams();
 		// The behandelaar is the acting user unless explicitly assigned.
-		if (((string)($body['behandelaar'] ?? '')) === '') {
-			$body['behandelaar'] = $userId;
+		if (((string)($body['handler'] ?? '')) === '') {
+			$body['handler'] = $userId;
 		}
 
-		$termijn = (int)($body['termijnWeken'] ?? SubsidieService::DEFAULT_AANVRAAG_TERMIJN_WEKEN);
+		$term = (int)($body['termijnWeken'] ?? SubsidieService::DEFAULT_AANVRAAG_TERMIJN_WEKEN);
 		unset($body['termijnWeken']);
 
 		try {
-			$aanvraag = $this->subsidieService->createAanvraag($body, $termijn);
+			$request = $this->subsidyService->createAanvraag($body, $term);
 		} catch (OCSBadRequestException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($aanvraag, Http::STATUS_CREATED);
+		return new JSONResponse($request, Http::STATUS_CREATED);
 	}//end create()
 
 	/**
@@ -160,12 +160,12 @@ class SubsidieController extends Controller {
 		$toStatus = (string)$this->request->getParam('status', '');
 
 		try {
-			$aanvraag = $this->subsidieService->transitionAanvraag($id, $toStatus);
+			$request = $this->subsidyService->transitionAanvraag($id, $toStatus);
 		} catch (OCSBadRequestException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($aanvraag);
+		return new JSONResponse($request);
 	}//end transition()
 
 	/**
@@ -191,18 +191,18 @@ class SubsidieController extends Controller {
 		unset($body['sequence']);
 
 		try {
-			$beschikking = $this->beschikkingService->createDraft($id, $body, $sequence);
+			$decision = $this->decisionService->createDraft($id, $body, $sequence);
 		} catch (OCSBadRequestException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($beschikking, Http::STATUS_CREATED);
+		return new JSONResponse($decision, Http::STATUS_CREATED);
 	}//end createBeschikking()
 
 	/**
 	 * Publish a beschikking (legal effect; starts the bezwaartermijn).
 	 *
-	 * @param string $beschikkingId The beschikking id.
+	 * @param string $decisionId The beschikking id.
 	 *
 	 * @return JSONResponse
 	 *
@@ -212,24 +212,24 @@ class SubsidieController extends Controller {
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
-	public function publishBeschikking(string $beschikkingId): JSONResponse {
+	public function publishBeschikking(string $decisionId): JSONResponse {
 		if ($this->requireUser() === null) {
 			return $this->unauthorized();
 		}
 
 		try {
-			$beschikking = $this->beschikkingService->publish($beschikkingId);
+			$decision = $this->decisionService->publish($decisionId);
 		} catch (OCSBadRequestException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($beschikking);
+		return new JSONResponse($decision);
 	}//end publishBeschikking()
 
 	/**
 	 * Sign a beschikking (signer derived from the session).
 	 *
-	 * @param string $beschikkingId The beschikking id.
+	 * @param string $decisionId The beschikking id.
 	 *
 	 * @return JSONResponse
 	 *
@@ -239,18 +239,18 @@ class SubsidieController extends Controller {
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
-	public function signBeschikking(string $beschikkingId): JSONResponse {
+	public function signBeschikking(string $decisionId): JSONResponse {
 		if ($this->requireUser() === null) {
 			return $this->unauthorized();
 		}
 
 		try {
-			$beschikking = $this->beschikkingService->sign($beschikkingId);
+			$decision = $this->decisionService->sign($decisionId);
 		} catch (OCSBadRequestException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
 
-		return new JSONResponse($beschikking);
+		return new JSONResponse($decision);
 	}//end signBeschikking()
 
 	/**
@@ -310,24 +310,24 @@ class SubsidieController extends Controller {
 			return $this->unauthorized();
 		}
 
-		$oordeel = $this->request->getParam('beoordelingsoordeel', null);
-		$bedrag = $this->request->getParam('ingekeurdeBedrag', null);
+		$opinion = $this->request->getParam('beoordelingsoordeel', null);
+		$amount = $this->request->getParam('approvedAmount', null);
 
-		$oordeelArg = null;
-		if ($oordeel !== null) {
-			$oordeelArg = (string)$oordeel;
+		$opinionArg = null;
+		if ($opinion !== null) {
+			$opinionArg = (string)$opinion;
 		}
 
-		$bedragArg = null;
-		if ($bedrag !== null) {
-			$bedragArg = (float)$bedrag;
+		$amountArg = null;
+		if ($amount !== null) {
+			$amountArg = (float)$amount;
 		}
 
 		try {
 			$report = $this->tussenrapportage->approveReport(
 				reportId: $reportId,
-				beoordelingsoordeel: $oordeelArg,
-				ingekeurdeBedrag: $bedragArg,
+				beoordelingsoordeel: $opinionArg,
+				approvedAmount: $amountArg,
 			);
 		} catch (OCSBadRequestException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
@@ -339,7 +339,7 @@ class SubsidieController extends Controller {
 	/**
 	 * Finalise a settlement (auto-triggers terugvordering when overpaid).
 	 *
-	 * @param string $vaststellingId The vaststelling id.
+	 * @param string $determinationId The vaststelling id.
 	 *
 	 * @return JSONResponse
 	 *
@@ -349,17 +349,17 @@ class SubsidieController extends Controller {
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/tasks.md#TASK-SUB-06
 	 */
-	public function finalizeVaststelling(string $vaststellingId): JSONResponse {
+	public function finalizeVaststelling(string $determinationId): JSONResponse {
 		if ($this->requireUser() === null) {
 			return $this->unauthorized();
 		}
 
-		$verleend = (float)$this->request->getParam('verleendBedrag', 0);
-		$werkelijke = (float)$this->request->getParam('werkelijkeKosten', 0);
-		$voorschotten = (float)$this->request->getParam('totaalVoorschotten', 0);
+		$granted = (float)$this->request->getParam('grantedAmount', 0);
+		$actual = (float)$this->request->getParam('werkelijkeKosten', 0);
+		$advances = (float)$this->request->getParam('totaalVoorschotten', 0);
 
 		try {
-			$result = $this->vaststellingService->finalize($vaststellingId, $verleend, $werkelijke, $voorschotten);
+			$result = $this->determinationService->finalize($determinationId, $granted, $actual, $advances);
 		} catch (OCSBadRequestException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
 		}
@@ -390,7 +390,7 @@ class SubsidieController extends Controller {
 		$params = $this->request->getParams();
 		unset(
 			$params['id'],
-			$params['beschikkingId'],
+			$params['decisionId'],
 			$params['reportId'],
 			$params['uitvoeringId'],
 			$params['vaststellingId'],

@@ -253,7 +253,7 @@ class ConsultationControllerTest extends TestCase {
 			'id' => 'con-uuid',
 			'status' => 'in_behandeling',
 			'onderwerp' => 'Brandveiligheidsadvies',
-			'uiterlijkeReactiedatum' => '2026-08-01',
+			'latestResponseDate' => '2026-08-01',
 		];
 
 		$this->consultationService->method('findBySecureToken')

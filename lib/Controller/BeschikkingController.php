@@ -59,14 +59,14 @@ class BeschikkingController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The HTTP request.
-	 * @param BeschikkingService $beschikkingService The beschikking service.
+	 * @param BeschikkingService $decisionService The beschikking service.
 	 * @param IUserSession $userSession The current session.
 	 * @param LoggerInterface $logger The logger.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly BeschikkingService $beschikkingService,
+		private readonly BeschikkingService $decisionService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -89,7 +89,7 @@ class BeschikkingController extends Controller {
 		}
 
 		$body = $this->readJsonBody();
-		$zaakId = (string)($body['zaakId'] ?? '');
+		$caseId = (string)($body['caseId'] ?? '');
 		$templateId = null;
 		if (isset($body['templateId']) === true) {
 			$templateId = (string)$body['templateId'];
@@ -98,7 +98,7 @@ class BeschikkingController extends Controller {
 		$overrides = (array)($body['geadresseerde'] ?? []);
 		$payload = (array)$body;
 
-		if ($zaakId === '') {
+		if ($caseId === '') {
 			return new JSONResponse(['error' => 'zaakId is required'], Http::STATUS_BAD_REQUEST);
 		}
 
@@ -107,14 +107,14 @@ class BeschikkingController extends Controller {
 			$merged['geadresseerde'] = $overrides;
 		}
 
-		foreach (['beschikkingType', 'motivering', 'beslissing'] as $field) {
+		foreach (['decisionType', 'rationale', 'beslissing'] as $field) {
 			if (isset($payload[$field]) === true) {
 				$merged[$field] = $payload[$field];
 			}
 		}
 
 		try {
-			$result = $this->beschikkingService->compose($zaakId, $templateId, $merged);
+			$result = $this->decisionService->compose($caseId, $templateId, $merged);
 			return new JSONResponse($result, Http::STATUS_CREATED);
 		} catch (\Throwable $e) {
 			return $this->fail(op: 'compose', e: $e);
@@ -138,12 +138,12 @@ class BeschikkingController extends Controller {
 		}
 
 		try {
-			$beschikking = $this->beschikkingService->find($id);
-			if ($beschikking === null) {
+			$decision = $this->decisionService->find($id);
+			if ($decision === null) {
 				return new JSONResponse(['error' => 'Beschikking not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			return new JSONResponse($beschikking);
+			return new JSONResponse($decision);
 		} catch (\Throwable $e) {
 			return $this->fail(op: 'show', e: $e);
 		}
@@ -166,10 +166,10 @@ class BeschikkingController extends Controller {
 		}
 
 		$updates = $this->readJsonBody();
-		unset($updates['id'], $updates['huidigeStatus']);
+		unset($updates['id'], $updates['currentStatus']);
 
 		try {
-			$result = $this->beschikkingService->updateFields($id, $updates);
+			$result = $this->decisionService->updateFields($id, $updates);
 			return new JSONResponse($result);
 		} catch (RuntimeException $e) {
 			return $this->mapRuntime(op: 'update', e: $e);
@@ -195,15 +195,15 @@ class BeschikkingController extends Controller {
 			return new JSONResponse(['error' => 'Not authenticated'], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$akkoordDoor = $uid;
+		$approvedBy = $uid;
 
 		try {
-			$result = $this->beschikkingService->akkoord($id, $akkoordDoor);
+			$result = $this->decisionService->akkoord($id, $approvedBy);
 			return new JSONResponse($result);
 		} catch (RuntimeException $e) {
-			return $this->mapRuntime(op: 'akkoord', e: $e);
+			return $this->mapRuntime(op: 'approved', e: $e);
 		} catch (\Throwable $e) {
-			return $this->fail(op: 'akkoord', e: $e);
+			return $this->fail(op: 'approved', e: $e);
 		}
 	}//end akkoord()
 
@@ -231,7 +231,7 @@ class BeschikkingController extends Controller {
 		}
 
 		try {
-			$result = $this->beschikkingService->onderteken($id, $tspProvider, $uid);
+			$result = $this->decisionService->onderteken($id, $tspProvider, $uid);
 			return new JSONResponse($result);
 		} catch (RuntimeException $e) {
 			return $this->mapRuntime(op: 'onderteken', e: $e);
@@ -258,7 +258,7 @@ class BeschikkingController extends Controller {
 		}
 
 		try {
-			$result = $this->beschikkingService->verzend($id, $uid);
+			$result = $this->decisionService->verzend($id, $uid);
 			return new JSONResponse($result);
 		} catch (RuntimeException $e) {
 			return $this->mapRuntime(op: 'verzend', e: $e);
@@ -285,10 +285,10 @@ class BeschikkingController extends Controller {
 		}
 
 		try {
-			$zip = $this->beschikkingService->exportAuditPacket($id);
+			$zip = $this->decisionService->exportAuditPacket($id);
 			$this->logger->info(
 				'BeschikkingController: audit-pakket export',
-				['beschikkingId' => $id, 'door' => $uid],
+				['decisionId' => $id, 'door' => $uid],
 			);
 			return new DataDownloadResponse(
 				$zip,

@@ -107,7 +107,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 * @param string $action The action (create/update/patch/destroy)
 	 * @param array $body The request body
 	 * @param array|null $existingObject The existing object data
-	 * @param bool|null $parentZaaktypeDraft Whether the parent zaaktype isDraft
+	 * @param bool|null $parentCaseTypeDraft Whether the parent zaaktype isDraft
 	 *
 	 * @return array|null Validation error result, or null if check passes
 	 *
@@ -121,11 +121,11 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 		string $action,
 		array $body,
 		?array $existingObject,
-		?bool $parentZaaktypeDraft,
+		?bool $parentCaseTypeDraft,
 	): ?array {
 		// Ztc-009: Direct concept resources (zaaktypen, besluittypen, informatieobjecttypen).
 		if (in_array($resource, self::CONCEPT_RESOURCES, true) === true) {
-			return $this->checkDirectConceptProtection(
+			return $this->checkDirectDraftProtection(
 				resource: $resource,
 				action: $action,
 				body: $body,
@@ -135,7 +135,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 
 		// Ztc-010: Sub-resources of zaaktypen.
 		if (in_array($resource, self::ZAAKTYPE_SUB_RESOURCES, true) === true
-			&& $parentZaaktypeDraft === false
+			&& $parentCaseTypeDraft === false
 		) {
 			// Allow creation of all sub-resources except resultaattypen.
 			if ($action === 'create' && $resource !== 'resultaattypen') {
@@ -409,7 +409,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array|null Validation error, or null if OK
 	 */
-	private function checkDirectConceptProtection(
+	private function checkDirectDraftProtection(
 		string $resource,
 		string $action,
 		array $body,
@@ -424,9 +424,9 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 			// Ztc-009c/g/k: PATCH with only geldigheid fields is allowed on published types.
 			if ($action === 'patch') {
 				$metadataKeys = ['_route', 'zgwApi', 'resource', 'uuid', 'concept'];
-				$allowedKeys = ['eindeGeldigheid', 'beginGeldigheid', 'beginObject'];
+				$allowedKeys = ['endValidity', 'startValidity', 'beginObject'];
 				$contentKeys = array_values(array_diff(array_keys($body), $metadataKeys, $allowedKeys));
-				if (count($contentKeys) === 0 && array_key_exists('eindeGeldigheid', $body) === true) {
+				if (count($contentKeys) === 0 && array_key_exists('endValidity', $body) === true) {
 					return null;
 				}
 			}
@@ -568,13 +568,13 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 
 		$resolved = [];
 		foreach ($body['gerelateerdeZaaktypen'] as $rel) {
-			$zaaktypeRef = $rel['zaaktype'] ?? '';
-			if ($zaaktypeRef === '' || is_string($zaaktypeRef) === false) {
+			$caseTypeRef = $rel['caseType'] ?? '';
+			if ($caseTypeRef === '' || is_string($caseTypeRef) === false) {
 				continue;
 			}
 
-			if (str_starts_with($zaaktypeRef, 'http://') === true
-				|| str_starts_with($zaaktypeRef, 'https://') === true
+			if (str_starts_with($caseTypeRef, 'http://') === true
+				|| str_starts_with($caseTypeRef, 'https://') === true
 			) {
 				$resolved[] = $rel;
 				continue;
@@ -584,11 +584,11 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 				register: $register,
 				schema: $schema,
 				field: 'identifier',
-				value: $zaaktypeRef
+				value: $caseTypeRef
 			);
 			foreach ($foundIds as $id) {
 				$entry = $rel;
-				$entry['zaaktype'] = $id;
+				$entry['caseType'] = $id;
 				$resolved[] = $entry;
 			}
 		}//end foreach

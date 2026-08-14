@@ -289,7 +289,7 @@
                 "priority": 2,
                 "matchConditions": [
                     { "type": "keyword", "value": "lantaarnpaal" },
-                    { "type": "keyword", "value": "straat" },
+                    { "type": "keyword", "value": "street" },
                     { "type": "keyword", "value": "stoep" }
                 ],
                 "assignedDomain": "openbare_werken",

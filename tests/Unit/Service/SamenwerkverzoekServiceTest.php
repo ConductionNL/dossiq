@@ -138,15 +138,15 @@ class SamenwerkverzoekServiceTest extends TestCase {
 	public function testInitiateSamenwerkingCreatesObject(): void {
 		$objectServiceMock = $this->createMock(SamenwerkObjectServiceStub::class);
 
-		$zaak = [
+		$case = [
 			'id' => 'zaak-uuid-1',
-			'vergunningaanvraagRef' => 'aanvraag-uuid-1',
+			'permitApplicationRef' => 'aanvraag-uuid-1',
 		];
 
 		$objectServiceMock
 			->expects($this->once())
 			->method('find')
-			->willReturn($zaak);
+			->willReturn($case);
 
 		$expectedSamenwerkverzoek = [
 			'id' => 'samenwerk-uuid-1',
@@ -197,7 +197,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 		$this->logger->expects($this->once())->method('info');
 
 		$result = $this->service->initiateSamenwerking(
-			zaakId: 'zaak-uuid-1',
+			caseId: 'zaak-uuid-1',
 			aangezochtGezag: 'gemeente-haarlem',
 			rationale: 'Bevoegdheidsgrens.'
 		);
@@ -215,7 +215,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 	public function testRespondToSamenwerkingAcceptUpdatesStatus(): void {
 		$objectServiceMock = $this->createMock(SamenwerkObjectServiceStub::class);
 
-		$verzoek = [
+		$request = [
 			'id' => 'samenwerk-uuid-1',
 			'status' => 'aangevraagd',
 		];
@@ -223,7 +223,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 		$objectServiceMock
 			->expects($this->once())
 			->method('find')
-			->willReturn($verzoek);
+			->willReturn($request);
 
 		$objectServiceMock
 			->expects($this->once())
@@ -273,14 +273,14 @@ class SamenwerkverzoekServiceTest extends TestCase {
 	public function testRespondToSamenwerkingRejectUpdatesStatus(): void {
 		$objectServiceMock = $this->createMock(SamenwerkObjectServiceStub::class);
 
-		$verzoek = [
+		$request = [
 			'id' => 'samenwerk-uuid-2',
 			'status' => 'aangevraagd',
 		];
 
 		$objectServiceMock
 			->method('find')
-			->willReturn($verzoek);
+			->willReturn($request);
 
 		$objectServiceMock
 			->method('saveObject')

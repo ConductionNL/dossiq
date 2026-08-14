@@ -116,7 +116,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 
 		// Drc-006b: If indicatieGebruiksrecht is explicitly true, gebruiksrechten must exist.
 		if ($body['indicatieGebruiksrecht'] === true && $this->objectService !== null) {
-			$error = $this->validateIndicatieGebruiksrechtTrue(body: $body);
+			$error = $this->validateIndicationGebruiksrechtTrue(body: $body);
 			if ($error !== null) {
 				return $error;
 			}
@@ -390,7 +390,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) — $body reserved for future gebruiksrechten lookup
 	 */
-	private function validateIndicatieGebruiksrechtTrue(array $body): array {
+	private function validateIndicationGebruiksrechtTrue(array $body): array {
 		// On create, the document does not yet exist so there can be no gebruiksrechten.
 		return $this->error(
 			status: 400,
@@ -456,7 +456,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 			);
 		}
 
-		if ($objectType === 'besluit' && strpos($objectUrl, '/besluiten/') === false) {
+		if ($objectType === 'decision' && strpos($objectUrl, '/besluiten/') === false) {
 			return $this->error(
 				status: 400,
 				detail: 'De object URL wijst niet naar een besluit.',
@@ -499,7 +499,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 
 		$typeMap = [
 			'zaak' => ['case_document_schema', 'case'],
-			'besluit' => ['decision_document_schema', 'decision'],
+			'decision' => ['decision_document_schema', 'decision'],
 		];
 		if (isset($typeMap[$objectType]) === false) {
 			return null;
@@ -608,7 +608,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		if ($objectType === 'zaak') {
 			$crossSchemaKey = 'case_document_schema';
 			$crossField = 'case';
-		} elseif ($objectType === 'besluit') {
+		} elseif ($objectType === 'decision') {
 			$crossSchemaKey = 'decision_document_schema';
 			$crossField = 'decision';
 		}

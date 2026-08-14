@@ -88,7 +88,7 @@ class WOODeadlineService {
 	/**
 	 * Calculate the initial WOO deadline from the receipt date.
 	 *
-	 * @param string $ontvangstdatum ISO 8601 date of receipt (e.g. '2026-05-01')
+	 * @param string $receiptDate ISO 8601 date of receipt (e.g. '2026-05-01')
 	 *
 	 * @return array<string, string> Array with 'expectedResolution' (Y-m-d) and 'processingPeriod' (ISO 8601)
 	 *
@@ -96,8 +96,8 @@ class WOODeadlineService {
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
 	 */
-	public function calculate(string $ontvangstdatum): array {
-		$receipt = $this->requireIsoDate(value: $ontvangstdatum, label: 'ontvangstdatum');
+	public function calculate(string $receiptDate): array {
+		$receipt = $this->requireIsoDate(value: $receiptDate, label: 'receiptDate');
 		$deadline = $receipt->modify('+' . self::INITIAL_PERIOD_DAYS . ' days');
 
 		return [
@@ -159,12 +159,12 @@ class WOODeadlineService {
 		$currentDeadline = $caseData['expectedResolution'] ?? null;
 		if (empty($currentDeadline) === true) {
 			// Derive from ontvangstdatum if not set.
-			$ontvangstdatum = $caseData['ontvangstdatum'] ?? null;
-			if (empty($ontvangstdatum) === true) {
+			$receiptDate = $caseData['receiptDate'] ?? null;
+			if (empty($receiptDate) === true) {
 				throw new RuntimeException('Case has no ontvangstdatum to calculate deadline from');
 			}
 
-			$calculated = $this->calculate(ontvangstdatum: $ontvangstdatum);
+			$calculated = $this->calculate(receiptDate: $receiptDate);
 			$currentDeadline = $calculated['expectedResolution'];
 		}
 
@@ -203,13 +203,13 @@ class WOODeadlineService {
 	 * notification to the assigned behandelaar when exactly 7 days remain.
 	 *
 	 * @param string $caseId The case UUID
-	 * @param string $behandelaar The user ID of the behandelaar to notify
+	 * @param string $handler The user ID of the behandelaar to notify
 	 *
 	 * @return array<string, mixed> Warning status with daysRemaining and isOverdue flags
 	 *
 	 * @spec openspec/changes/woo-case-type/tasks.md#task-4
 	 */
-	public function checkAndWarn(string $caseId, string $behandelaar): array {
+	public function checkAndWarn(string $caseId, string $handler): array {
 		$resolved = $this->resolveWarningDeadline(caseId: $caseId);
 		if ($resolved['deadline'] === null) {
 			return ['warned' => false, 'reason' => $resolved['reason']];
@@ -222,7 +222,7 @@ class WOODeadlineService {
 
 		if ($daysRemaining === self::WARNING_THRESHOLD_DAYS || $isOverdue === true) {
 			$this->sendDeadlineNotification(
-				userId: $behandelaar,
+				userId: $handler,
 				caseId: $caseId,
 				daysRemaining: $daysRemaining,
 				isOverdue: $isOverdue,

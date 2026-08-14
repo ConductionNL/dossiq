@@ -162,7 +162,7 @@
 							"  pm.expect(found).to.be.true",
 							"})",
 							"pm.test('toelichting is never emitted in the ZGW shape', function () {",
-							"  (b.relevanteAndereZaken || []).forEach(function (r) { pm.expect(r).to.not.have.property('toelichting') })",
+							"  (b.relevanteAndereZaken || []).forEach(function (r) { pm.expect(r).to.not.have.property('notes') })",
 							"})"
 						]
 					}

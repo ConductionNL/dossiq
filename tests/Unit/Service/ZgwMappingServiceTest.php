@@ -230,7 +230,7 @@ class ZgwMappingServiceTest extends TestCase {
 		$this->assertArrayHasKey('zaak', $mappings);
 		$this->assertArrayHasKey('zaaktype', $mappings);
 		$this->assertSame(['title' => 'omschrijving'], $mappings['zaak']);
-		$this->assertNull($mappings['zaaktype']);
+		$this->assertNull($mappings['caseType']);
 
 	}//end testListMappingsReturnsAllKeys()
 

@@ -56,26 +56,26 @@ final class WozResponseMapper {
 	 *
 	 * @return array{
 	 *     wozobjectnummer: string|null,
-	 *     waarde: int|null,
+	 *     value: int|null,
 	 *     waardepeildatum: string|null,
 	 *     grondoppervlakte: int|null,
 	 *     gebruiksdoel: array<int,string>,
-	 *     nummeraanduidingId: string|null,
+	 *     addressDesignationId: string|null,
 	 * }
 	 *
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function map(array $raw): array {
-		$current = $this->mostRecentWaarde(raw: $raw);
+		$current = $this->mostRecentValue(raw: $raw);
 
 		return [
 			'wozobjectnummer' => $this->stringOrNull(value: $raw['wozobjectnummer'] ?? null),
-			'waarde' => $this->intOrNull(value: $current['vastgesteldeWaarde'] ?? $raw['waarde'] ?? null),
+			'value' => $this->intOrNull(value: $current['vastgesteldeWaarde'] ?? $raw['value'] ?? null),
 			'waardepeildatum' => $this->stringOrNull(value: $current['waardepeildatum'] ?? $raw['waardepeildatum'] ?? null),
 			'grondoppervlakte' => $this->intOrNull(value: $raw['grondoppervlakte'] ?? null),
 			'gebruiksdoel' => $this->toStringArray(value: $raw['gebruiksdoelen'] ?? $raw['gebruiksdoel'] ?? []),
-			'nummeraanduidingId' => $this->stringOrNull(
-				value: $raw['nummeraanduidingIdentificatie'] ?? $raw['adresseerbaarObjectIdentificatie'] ?? $raw['nummeraanduidingId'] ?? null
+			'addressDesignationId' => $this->stringOrNull(
+				value: $raw['nummeraanduidingIdentificatie'] ?? $raw['adresseerbaarObjectIdentificatie'] ?? $raw['addressDesignationId'] ?? null
 			),
 		];
 	}//end map()
@@ -112,7 +112,7 @@ final class WozResponseMapper {
 	 * @return array<string,mixed> The most recent entry, or an empty array
 	 *                             when the fragment carries no history.
 	 */
-	private function mostRecentWaarde(array $raw): array {
+	private function mostRecentValue(array $raw): array {
 		$waarden = ($raw['vastgesteldeWaarden'] ?? null);
 		if (is_array($waarden) === false || $waarden === []) {
 			return [];

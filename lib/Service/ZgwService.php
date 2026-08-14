@@ -56,8 +56,8 @@ class ZgwService {
 		'zaken' => [
 			'zaken' => 'zaak',
 			'statussen' => 'status',
-			'resultaten' => 'resultaat',
-			'rollen' => 'rol',
+			'resultaten' => 'result',
+			'rollen' => 'role',
 			'zaakeigenschappen' => 'zaakeigenschap',
 			'zaakinformatieobjecten' => 'zaakinformatieobject',
 			'zaakobjecten' => 'zaakobject',
@@ -65,7 +65,7 @@ class ZgwService {
 		],
 		'catalogi' => [
 			'catalogussen' => 'catalogus',
-			'zaaktypen' => 'zaaktype',
+			'zaaktypen' => 'caseType',
 			'statustypen' => 'statustype',
 			'resultaattypen' => 'resultaattype',
 			'roltypen' => 'roltype',
@@ -75,7 +75,7 @@ class ZgwService {
 			'zaaktype-informatieobjecttypen' => 'zaaktypeinformatieobjecttype',
 		],
 		'besluiten' => [
-			'besluiten' => 'besluit',
+			'besluiten' => 'decision',
 			'besluittypen' => 'besluittype',
 			'besluitinformatieobjecten' => 'besluitinformatieobject',
 		],
@@ -128,7 +128,7 @@ class ZgwService {
 	 * @param ZgwMappingService $zgwMappingService The ZGW mapping service
 	 * @param ZgwPaginationHelper $paginationHelper The pagination helper
 	 * @param ZgwDocumentService $documentService The document storage service
-	 * @param NotificatieService $notificatieService The notification service
+	 * @param NotificatieService $notificationService The notification service
 	 * @param ZgwBusinessRulesService $businessRulesService The business rules service
 	 * @param ZgwJwtValidator $jwtValidator The ZGW JWT validator
 	 * @param LoggerInterface $logger The logger
@@ -139,7 +139,7 @@ class ZgwService {
 		private readonly ZgwMappingService $zgwMappingService,
 		private readonly ZgwPaginationHelper $paginationHelper,
 		private readonly ZgwDocumentService $documentService,
-		private readonly NotificatieService $notificatieService,
+		private readonly NotificatieService $notificationService,
 		private readonly ZgwBusinessRulesService $businessRulesService,
 		private readonly ZgwJwtValidator $jwtValidator,
 		private readonly LoggerInterface $logger,
@@ -766,7 +766,7 @@ class ZgwService {
 	 * @param string $zgwApi The ZGW API group
 	 * @param string $resource The ZGW resource name
 	 * @param string $resourceUrl The resource URL
-	 * @param string $actie The action (create, update, destroy)
+	 * @param string $action The action (create, update, destroy)
 	 *
 	 * @return void
 	 *
@@ -776,16 +776,16 @@ class ZgwService {
 		string $zgwApi,
 		string $resource,
 		string $resourceUrl,
-		string $actie,
+		string $action,
 	): void {
 		$resourceKey = self::RESOURCE_MAP[$zgwApi][$resource] ?? $resource;
 
-		$this->notificatieService->publish(
-			kanaal: $zgwApi,
+		$this->notificationService->publish(
+			channel: $zgwApi,
 			hoofdObject: $resourceUrl,
 			resource: $resourceKey,
 			resourceUrl: $resourceUrl,
-			actie: $actie
+			action: $action
 		);
 	}//end publishNotification()
 
@@ -942,9 +942,9 @@ class ZgwService {
 	 * @param IRequest $request The request object
 	 * @param string $zgwApi The ZGW API group
 	 * @param string $resource The ZGW resource name
-	 * @param bool $zaakClosed Whether the parent zaak is closed (zrc-007)
+	 * @param bool $caseClosed Whether the parent zaak is closed (zrc-007)
 	 * @param bool $hasForceer Whether the consumer has geforceerd-bijwerken scope
-	 * @param bool $parentZaaktypeDraft Whether parent zaaktype is draft (ztc-010)
+	 * @param bool $parentCaseTypeDraft Whether parent zaaktype is draft (ztc-010)
 	 *
 	 * @return JSONResponse
 	 *
@@ -957,9 +957,9 @@ class ZgwService {
 		IRequest $request,
 		string $zgwApi,
 		string $resource,
-		?bool $zaakClosed = null,
+		?bool $caseClosed = null,
 		bool $hasForceer = true,
-		?bool $parentZaaktypeDraft = null,
+		?bool $parentCaseTypeDraft = null,
 	): JSONResponse {
 		if ($this->objectService === null) {
 			return $this->unavailableResponse();
@@ -980,8 +980,8 @@ class ZgwService {
 				body: $body,
 				objectService: $this->objectService,
 				mappingConfig: $mappingConfig,
-				parentZaaktypeDraft: $parentZaaktypeDraft,
-				zaakClosed: $zaakClosed,
+				parentCaseTypeDraft: $parentCaseTypeDraft,
+				caseClosed: $caseClosed,
 				hasGeforceerd: $hasForceer
 			);
 			if ($ruleResult['valid'] === false) {
@@ -1046,7 +1046,7 @@ class ZgwService {
 				zgwApi: $zgwApi,
 				resource: $resource,
 				resourceUrl: $resourceUrl,
-				actie: 'create'
+				action: 'create'
 			);
 
 			return new JSONResponse(data: $mapped, statusCode: Http::STATUS_CREATED);
@@ -1133,7 +1133,7 @@ class ZgwService {
 	 * @param string $uuid The resource UUID
 	 * @param bool $partial Whether this is a partial update (PATCH)
 	 * @param bool $parentZtDraft Whether parent zaaktype is draft (ztc-010)
-	 * @param bool $zaakClosed Whether the parent zaak is closed (zrc-007)
+	 * @param bool $caseClosed Whether the parent zaak is closed (zrc-007)
 	 * @param bool $hasForceer Whether consumer has geforceerd-bijwerken
 	 *
 	 * @return JSONResponse
@@ -1152,7 +1152,7 @@ class ZgwService {
 		string $uuid,
 		bool $partial = false,
 		?bool $parentZtDraft = null,
-		?bool $zaakClosed = null,
+		?bool $caseClosed = null,
 		bool $hasForceer = true,
 	): JSONResponse {
 		// Resolve UUID from URL path — Nextcloud's getParam() merges JSON body
@@ -1195,8 +1195,8 @@ class ZgwService {
 				existingObject: $existingData,
 				objectService: $this->objectService,
 				mappingConfig: $mappingConfig,
-				parentZaaktypeDraft: $parentZtDraft,
-				zaakClosed: $zaakClosed,
+				parentCaseTypeDraft: $parentZtDraft,
+				caseClosed: $caseClosed,
 				hasGeforceerd: $hasForceer
 			);
 			if ($ruleResult['valid'] === false) {
@@ -1332,7 +1332,7 @@ class ZgwService {
 				zgwApi: $zgwApi,
 				resource: $resource,
 				resourceUrl: $baseUrl . '/' . $uuid,
-				actie: 'update'
+				action: 'update'
 			);
 
 			return new JSONResponse(data: $mapped);
@@ -1356,7 +1356,7 @@ class ZgwService {
 	 * @param string $resource The ZGW resource name
 	 * @param string $uuid The resource UUID
 	 * @param bool $parentZtDraft Whether parent zaaktype is draft (ztc-010)
-	 * @param bool $zaakClosed Whether the parent zaak is closed (zrc-007)
+	 * @param bool $caseClosed Whether the parent zaak is closed (zrc-007)
 	 * @param bool $hasForceer Whether consumer has geforceerd-bijwerken
 	 *
 	 * @return JSONResponse
@@ -1371,7 +1371,7 @@ class ZgwService {
 		string $resource,
 		string $uuid,
 		?bool $parentZtDraft = null,
-		?bool $zaakClosed = null,
+		?bool $caseClosed = null,
 		bool $hasForceer = true,
 	): JSONResponse {
 		if ($this->objectService === null) {
@@ -1403,8 +1403,8 @@ class ZgwService {
 				existingObject: $existingData,
 				objectService: $this->objectService,
 				mappingConfig: $mappingConfig,
-				parentZaaktypeDraft: $parentZtDraft,
-				zaakClosed: $zaakClosed,
+				parentCaseTypeDraft: $parentZtDraft,
+				caseClosed: $caseClosed,
 				hasGeforceerd: $hasForceer
 			);
 			if ($ruleResult['valid'] === false) {
@@ -1421,7 +1421,7 @@ class ZgwService {
 				zgwApi: $zgwApi,
 				resource: $resource,
 				resourceUrl: $baseUrl . '/' . $uuid,
-				actie: 'destroy'
+				action: 'destroy'
 			);
 
 			return new JSONResponse(data: [], statusCode: Http::STATUS_NO_CONTENT);
@@ -1487,9 +1487,9 @@ class ZgwService {
 				'bron' => 'procest',
 				'applicatieId' => 'procest',
 				'applicatieWeergave' => 'Procest',
-				'actie' => 'create',
+				'action' => 'create',
 				'actieWeergave' => 'Object aangemaakt',
-				'resultaat' => 200,
+				'result' => 200,
 				'hoofdObject' => $resourceUrl,
 				'resource' => $resource,
 				'resourceUrl' => $resourceUrl,
@@ -1557,9 +1557,9 @@ class ZgwService {
 				'bron' => 'procest',
 				'applicatieId' => 'procest',
 				'applicatieWeergave' => 'Procest',
-				'actie' => 'create',
+				'action' => 'create',
 				'actieWeergave' => 'Object aangemaakt',
-				'resultaat' => 200,
+				'result' => 200,
 				'hoofdObject' => $resourceUrl,
 				'resource' => $resource,
 				'resourceUrl' => $resourceUrl,
@@ -1612,17 +1612,17 @@ class ZgwService {
 		];
 
 		$orAction = $logData['action'] ?? 'create';
-		$zgwActie = $actionMap[$orAction] ?? $orAction;
-		$weergave = $actionDisplayMap[$zgwActie] ?? ucfirst($orAction);
+		$zgwAction = $actionMap[$orAction] ?? $orAction;
+		$weergave = $actionDisplayMap[$zgwAction] ?? ucfirst($orAction);
 
 		return [
 			'uuid' => $logData['uuid'] ?? '',
 			'bron' => 'procest',
 			'applicatieId' => $logData['user'] ?? 'procest',
 			'applicatieWeergave' => $logData['userName'] ?? 'Procest',
-			'actie' => $zgwActie,
+			'action' => $zgwAction,
 			'actieWeergave' => $weergave,
-			'resultaat' => 200,
+			'result' => 200,
 			'hoofdObject' => $resourceUrl,
 			'resource' => $resource,
 			'resourceUrl' => $resourceUrl,
@@ -1646,11 +1646,11 @@ class ZgwService {
 	 */
 	public function resolveZaakClosed(string $resource, array $existingData): ?bool {
 		if ($resource === 'zaken') {
-			$endDate = $existingData['endDate'] ?? ($existingData['einddatum'] ?? null);
+			$endDate = $existingData['endDate'] ?? null;
 			return $endDate !== null && $endDate !== '';
 		}
 
-		$zaakSubResources = [
+		$caseSubResources = [
 			'statussen',
 			'resultaten',
 			'rollen',
@@ -1659,7 +1659,7 @@ class ZgwService {
 			'zaakobjecten',
 			'klantcontacten',
 		];
-		if (in_array($resource, $zaakSubResources, true) === false) {
+		if (in_array($resource, $caseSubResources, true) === false) {
 			return null;
 		}
 
@@ -1678,33 +1678,33 @@ class ZgwService {
 		}
 
 		try {
-			$zaakConfig = $this->zgwMappingService->getMapping('zaak');
-			if ($zaakConfig === null) {
+			$caseConfig = $this->zgwMappingService->getMapping('zaak');
+			if ($caseConfig === null) {
 				return null;
 			}
 
-			$zaak = $this->objectService->find(
+			$case = $this->objectService->find(
 				$zaakUuid,
-				register: $zaakConfig['sourceRegister'],
-				schema: $zaakConfig['sourceSchema']
+				register: $caseConfig['sourceRegister'],
+				schema: $caseConfig['sourceSchema']
 			);
-			if ($zaak === null) {
+			if ($case === null) {
 				return null;
 			}
 
-			$zaakData = $zaak;
-			if (is_array($zaak) === false) {
-				$zaakData = $zaak->jsonSerialize();
+			$caseData = $case;
+			if (is_array($case) === false) {
+				$caseData = $case->jsonSerialize();
 			}
 
-			$endDate = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
+			$endDate = $caseData['endDate'] ?? null;
 
 			return $endDate !== null && $endDate !== '';
 		} catch (\Throwable $e) {
 			// WF3a fix: fail-CLOSED on any unexpected error. Returning true
 			// (= zaak is closed) rather than null prevents a transient OR error
 			// or crafted UUID from bypassing closed-zaak protection (zrc-007).
-			// Callers check `$zaakClosed === true && $hasGeforceerd === false`
+			// Callers check `$caseClosed === true && $hasGeforceerd === false`
 			// so returning true with no geforceerd scope → 403. This is the
 			// safe default: a consumer who genuinely needs to write must have
 			// the zaken.geforceerd-bijwerken scope.
@@ -1734,7 +1734,7 @@ class ZgwService {
 			return null;
 		}
 
-		$zaakSubResources = [
+		$caseSubResources = [
 			'statussen',
 			'resultaten',
 			'rollen',
@@ -1743,18 +1743,18 @@ class ZgwService {
 			'zaakobjecten',
 			'klantcontacten',
 		];
-		if (in_array($resource, $zaakSubResources, true) === false) {
+		if (in_array($resource, $caseSubResources, true) === false) {
 			return null;
 		}
 
-		$zaakUrl = $body['zaak'] ?? null;
-		if ($zaakUrl === null || $zaakUrl === '') {
+		$caseUrl = $body['zaak'] ?? null;
+		if ($caseUrl === null || $caseUrl === '') {
 			return null;
 		}
 
 		if (preg_match(
 			'/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-			(string)$zaakUrl,
+			(string)$caseUrl,
 			$matches
 		) !== 1
 		) {
@@ -1764,26 +1764,26 @@ class ZgwService {
 		$zaakUuid = $matches[1];
 
 		try {
-			$zaakConfig = $this->zgwMappingService->getMapping('zaak');
-			if ($zaakConfig === null) {
+			$caseConfig = $this->zgwMappingService->getMapping('zaak');
+			if ($caseConfig === null) {
 				return null;
 			}
 
-			$zaak = $this->objectService->find(
+			$case = $this->objectService->find(
 				$zaakUuid,
-				register: $zaakConfig['sourceRegister'],
-				schema: $zaakConfig['sourceSchema']
+				register: $caseConfig['sourceRegister'],
+				schema: $caseConfig['sourceSchema']
 			);
-			if ($zaak === null) {
+			if ($case === null) {
 				return null;
 			}
 
-			$zaakData = $zaak;
-			if (is_array($zaak) === false) {
-				$zaakData = $zaak->jsonSerialize();
+			$caseData = $case;
+			if (is_array($case) === false) {
+				$caseData = $case->jsonSerialize();
 			}
 
-			$endDate = $zaakData['endDate'] ?? ($zaakData['einddatum'] ?? null);
+			$endDate = $caseData['endDate'] ?? null;
 
 			return $endDate !== null && $endDate !== '';
 		} catch (\Throwable $e) {
@@ -1824,7 +1824,7 @@ class ZgwService {
 			return null;
 		}
 
-		$zaaktypeUuid = $existingData['caseType'] ?? ($existingData['zaaktype'] ?? null);
+		$zaaktypeUuid = $existingData['caseType'] ?? null;
 		if ($zaaktypeUuid === null || $zaaktypeUuid === '') {
 			return null;
 		}
@@ -1839,23 +1839,23 @@ class ZgwService {
 		}
 
 		try {
-			$zaaktypeConfig = $this->zgwMappingService->getMapping('zaaktype');
-			if ($zaaktypeConfig === null) {
+			$caseTypeConfig = $this->zgwMappingService->getMapping('caseType');
+			if ($caseTypeConfig === null) {
 				return null;
 			}
 
-			$zaaktype = $this->objectService->find(
+			$caseType = $this->objectService->find(
 				$zaaktypeUuid,
-				register: $zaaktypeConfig['sourceRegister'],
-				schema: $zaaktypeConfig['sourceSchema']
+				register: $caseTypeConfig['sourceRegister'],
+				schema: $caseTypeConfig['sourceSchema']
 			);
-			if ($zaaktype === null) {
+			if ($caseType === null) {
 				return null;
 			}
 
-			$ztData = $zaaktype;
-			if (is_array($zaaktype) === false) {
-				$ztData = $zaaktype->jsonSerialize();
+			$ztData = $caseType;
+			if (is_array($caseType) === false) {
+				$ztData = $caseType->jsonSerialize();
 			}
 
 			$isDraft = $ztData['isDraft'] ?? ($ztData['concept'] ?? true);
@@ -1902,15 +1902,15 @@ class ZgwService {
 			return null;
 		}
 
-		$zaaktypeRef = $body['zaaktype'] ?? null;
-		if ($zaaktypeRef === null || $zaaktypeRef === '') {
+		$caseTypeRef = $body['caseType'] ?? null;
+		if ($caseTypeRef === null || $caseTypeRef === '') {
 			return null;
 		}
 
 		// Extract UUID from URL or plain UUID.
 		if (preg_match(
 			'/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i',
-			(string)$zaaktypeRef,
+			(string)$caseTypeRef,
 			$matches
 		) !== 1
 		) {
@@ -1920,23 +1920,23 @@ class ZgwService {
 		$zaaktypeUuid = $matches[1];
 
 		try {
-			$zaaktypeConfig = $this->zgwMappingService->getMapping('zaaktype');
-			if ($zaaktypeConfig === null) {
+			$caseTypeConfig = $this->zgwMappingService->getMapping('caseType');
+			if ($caseTypeConfig === null) {
 				return null;
 			}
 
-			$zaaktype = $this->objectService->find(
+			$caseType = $this->objectService->find(
 				$zaaktypeUuid,
-				register: $zaaktypeConfig['sourceRegister'],
-				schema: $zaaktypeConfig['sourceSchema']
+				register: $caseTypeConfig['sourceRegister'],
+				schema: $caseTypeConfig['sourceSchema']
 			);
-			if ($zaaktype === null) {
+			if ($caseType === null) {
 				return null;
 			}
 
-			$ztData = $zaaktype;
-			if (is_array($zaaktype) === false) {
-				$ztData = $zaaktype->jsonSerialize();
+			$ztData = $caseType;
+			if (is_array($caseType) === false) {
+				$ztData = $caseType->jsonSerialize();
 			}
 
 			$isDraft = $ztData['isDraft'] ?? ($ztData['concept'] ?? true);

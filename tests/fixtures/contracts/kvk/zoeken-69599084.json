@@ -4,14 +4,14 @@
   "totaal": 2,
   "resultaten": [
     {
-      "kvkNummer": "69599084",
+      "kvkNumber": "69599084",
       "vestigingsnummer": "000038509520",
-      "naam": "Test EMZ Nevenvestiging Govert",
+      "name": "Test EMZ Nevenvestiging Govert",
       "adres": {
         "binnenlandsAdres": {
           "type": "bezoekadres",
-          "straatnaam": "Geneinde",
-          "plaats": "Maastricht"
+          "streetName": "Geneinde",
+          "place": "Maastricht"
         }
       },
       "type": "nevenvestiging",
@@ -27,14 +27,14 @@
       ]
     },
     {
-      "kvkNummer": "69599084",
+      "kvkNumber": "69599084",
       "vestigingsnummer": "000038509504",
-      "naam": "Test EMZ Dagobert",
+      "name": "Test EMZ Dagobert",
       "adres": {
         "binnenlandsAdres": {
           "type": "bezoekadres",
-          "straatnaam": "Abebe Bikilalaan",
-          "plaats": "Amsterdam"
+          "streetName": "Abebe Bikilalaan",
+          "place": "Amsterdam"
         }
       },
       "type": "hoofdvestiging",

@@ -53,11 +53,11 @@ class DeadlineEscalationService {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termijnService TermijnService for instance lookup/update.
+	 * @param TermijnService $termService TermijnService for instance lookup/update.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly TermijnService $termijnService,
+		private readonly TermijnService $termService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -136,15 +136,15 @@ class DeadlineEscalationService {
 			'priority' => $config['priority'],
 			'recipients' => $config['recipients'],
 			'instanceId' => $instanceId,
-			'zaakId' => (string)($instance['zaak'] ?? ''),
-			'deadline' => (string)($instance['einddatumActueel'] ?? ''),
+			'caseId' => (string)($instance['zaak'] ?? ''),
+			'deadline' => (string)($instance['endDateCurrent'] ?? ''),
 		];
 
 		$this->logger->info('Procest termijn escalation dispatched', $payload);
 
 		// Mark threshold as sent (duplicate suppression).
 		$alreadySent[] = $threshold;
-		$this->termijnService->updateTermijnInstance(
+		$this->termService->updateTermijnInstance(
 			$instanceId,
 			['notificatiesVerstuurd' => array_values(array_unique(array_map('intval', $alreadySent)))]
 		);

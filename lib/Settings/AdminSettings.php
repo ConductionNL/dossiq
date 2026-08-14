@@ -75,7 +75,7 @@ class AdminSettings implements IDelegatedSettings {
 		);
 		$this->initialState->provideInitialState(
 			'mandaatSettings',
-			$this->mandaatSettings()
+			$this->mandateSettings()
 		);
 
 		return new TemplateResponse(
@@ -120,7 +120,7 @@ class AdminSettings implements IDelegatedSettings {
 	 *
 	 * @return array<string, mixed> The mandate matrix settings.
 	 */
-	private function mandaatSettings(): array {
+	private function mandateSettings(): array {
 		return [
 			'decideskConnection' => $this->settingsService->getConfigValue(
 				'mandaat_decidesk_connection',

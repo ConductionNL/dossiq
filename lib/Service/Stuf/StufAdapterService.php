@@ -100,17 +100,17 @@ class StufAdapterService {
 			throw new CircuitOpenException(message: 'Circuit breaker is open');
 		}
 
-		$zaakId = null;
+		$caseId = null;
 		if (($endpoint['zaakIdentificatieStrategie'] ?? '') === 'vooraf') {
-			$zaakId = $this->genereerZaakIdentificatie(endpoint: $endpoint);
+			$caseId = $this->genereerZaakIdentificatie(endpoint: $endpoint);
 			// Anticipatory mapping.
-			$this->mappings->persist(case: $case, externId: $zaakId, endpoint: $endpoint);
+			$this->mappings->persist(case: $case, externId: $caseId, endpoint: $endpoint);
 		}
 
 		$envelope = $this->builder->buildLk01CreeerZaak(
 			case: $case,
 			endpoint: $endpoint,
-			zaakId: $zaakId,
+			caseId: $caseId,
 			opts: ($opts ?? [])
 		);
 
@@ -122,31 +122,31 @@ class StufAdapterService {
 				endpoint: $endpoint,
 				envelopeXml: $envelope,
 				referentienummer: $referentienummer,
-				berichtSoort: 'Lk01',
-				functie: 'creeerZaak',
-				zaakId: $zaakId,
+				messageKind: 'Lk01',
+				role: 'creeerZaak',
+				caseId: $caseId,
 				bronEntiteit: 'case',
-				bronId: (string)($case['id'] ?? '')
+				sourceId: (string)($case['id'] ?? '')
 			),
-			functie: 'creeerZaak'
+			role: 'creeerZaak'
 		);
 
-		$serverZaakId = ($result['zaakIdentificatie'] ?? $zaakId);
+		$serverCaseId = ($result['zaakIdentificatie'] ?? $caseId);
 		$mapping = null;
-		if ($result['success'] === true && $serverZaakId !== null && $serverZaakId !== '') {
-			$mapping = $this->mappings->persist(case: $case, externId: $serverZaakId, endpoint: $endpoint);
+		if ($result['success'] === true && $serverCaseId !== null && $serverCaseId !== '') {
+			$mapping = $this->mappings->persist(case: $case, externId: $serverCaseId, endpoint: $endpoint);
 		}
 
-		$zaakIdentificatie = $serverZaakId;
-		if ($serverZaakId === '') {
-			$zaakIdentificatie = null;
+		$caseIdentification = $serverCaseId;
+		if ($serverCaseId === '') {
+			$caseIdentification = null;
 		}
 
 		return [
 			'success' => $result['success'],
 			'referentienummer' => $referentienummer,
 			'stufMessageId' => $result['messageId'],
-			'zaakIdentificatie' => $zaakIdentificatie,
+			'zaakIdentificatie' => $caseIdentification,
 			'mappingId' => ($mapping['id'] ?? null),
 			'fout' => ($result['fout'] ?? null),
 		];
@@ -181,7 +181,7 @@ class StufAdapterService {
 					'code' => 'NO_MAPPING',
 					'omschrijving' => 'Geen mapping voor case',
 					'details' => '',
-					'soort' => 'permanent',
+					'kind' => 'permanent',
 				],
 			];
 		}
@@ -195,13 +195,13 @@ class StufAdapterService {
 				endpoint: $endpoint,
 				envelopeXml: $envelope,
 				referentienummer: $referentienummer,
-				berichtSoort: 'Lk02',
-				functie: 'actualiseerZaak',
-				zaakId: (string)($mapping['externIdentificatie'] ?? ''),
+				messageKind: 'Lk02',
+				role: 'actualiseerZaak',
+				caseId: (string)($mapping['externIdentificatie'] ?? ''),
 				bronEntiteit: 'case',
-				bronId: (string)($case['id'] ?? '')
+				sourceId: (string)($case['id'] ?? '')
 			),
-			functie: 'actualiseerZaak'
+			role: 'actualiseerZaak'
 		);
 
 		return [
@@ -215,7 +215,7 @@ class StufAdapterService {
 	/**
 	 * Synchronously query zaak details (Lv01 → La01, up to 30s).
 	 *
-	 * @param string $zaakId The zaak identificatie.
+	 * @param string $caseId The zaak identificatie.
 	 * @param array $endpoint The StufEndpoint.
 	 * @param array $gewensteElementen Optional gewenste zkn elements to scope.
 	 *
@@ -225,13 +225,13 @@ class StufAdapterService {
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-synchronous-zaak-query
 	 */
-	public function geefZaakDetails(string $zaakId, array $endpoint, array $gewensteElementen = []): ?array {
+	public function geefZaakDetails(string $caseId, array $endpoint, array $gewensteElementen = []): ?array {
 		if ($this->circuitBreaker->checkEndpoint(endpoint: $endpoint) === false) {
 			throw new CircuitOpenException(message: 'Circuit breaker is open');
 		}
 
 		$envelope = $this->builder->buildLv01GeefDetails(
-			zaakId: $zaakId,
+			caseId: $caseId,
 			endpoint: $endpoint,
 			gewensteElementen: $gewensteElementen
 		);
@@ -239,12 +239,12 @@ class StufAdapterService {
 			endpoint: $endpoint,
 			envelopeXml: $envelope,
 			referentienummer: $this->extractReferentienummer(envelope: $envelope),
-			berichtSoort: 'Lv01',
-			functie: 'geefZaakDetails',
-			zaakId: $zaakId
+			messageKind: 'Lv01',
+			role: 'geefZaakDetails',
+			caseId: $caseId
 		);
 
-		$response = $this->transport->send(endpoint: $endpoint, envelope: $envelope, functie: 'geefZaakDetails');
+		$response = $this->transport->send(endpoint: $endpoint, envelope: $envelope, role: 'geefZaakDetails');
 
 		if ($response['httpStatus'] === 0 && ($response['fout']['code'] ?? '') === 'TIMEOUT') {
 			$this->messageHandler->transitionStatus(
@@ -297,10 +297,10 @@ class StufAdapterService {
 
 		$envelope = $this->builder->buildDu01VrijBericht(name: $name, payload: $payload, endpoint: $endpoint);
 		$referentienummer = $this->extractReferentienummer(envelope: $envelope);
-		$zaakId = (string)($payload['zaakIdentificatie'] ?? '');
-		$zaakIdArg = $zaakId;
-		if ($zaakId === '') {
-			$zaakIdArg = null;
+		$caseId = (string)($payload['zaakIdentificatie'] ?? '');
+		$caseIdArg = $caseId;
+		if ($caseId === '') {
+			$caseIdArg = null;
 		}
 
 		$result = $this->transport->dispatch(
@@ -310,11 +310,11 @@ class StufAdapterService {
 				endpoint: $endpoint,
 				envelopeXml: $envelope,
 				referentienummer: $referentienummer,
-				berichtSoort: 'Du01',
-				functie: $name,
-				zaakId: $zaakIdArg
+				messageKind: 'Du01',
+				role: $name,
+				caseId: $caseIdArg
 			),
-			functie: $name
+			role: $name
 		);
 
 		return [
@@ -340,16 +340,16 @@ class StufAdapterService {
 			endpoint: $endpoint,
 			envelopeXml: $envelope,
 			referentienummer: $this->extractReferentienummer(envelope: $envelope),
-			berichtSoort: 'Du01',
-			functie: 'genereerZaakIdentificatie'
+			messageKind: 'Du01',
+			role: 'genereerZaakIdentificatie'
 		);
 
 		$response = $this->transport->send(
 			endpoint: $endpoint,
 			envelope: $envelope,
-			functie: 'genereerZaakIdentificatie'
+			role: 'genereerZaakIdentificatie'
 		);
-		$bevestiging = $this->parser->parseBevestiging(responseXml: $response['responseXml']);
+		$confirmation = $this->parser->parseBevestiging(responseXml: $response['responseXml']);
 
 		$this->messageHandler->transitionStatus(
 			msg: $msg,
@@ -358,11 +358,11 @@ class StufAdapterService {
 				'httpStatus' => $response['httpStatus'],
 				'duurMs' => $response['durationMs'],
 				'responseEnvelopeXml' => $response['responseXml'],
-				'zaakIdentificatie' => ($bevestiging['zaakIdentificatie'] ?? ''),
+				'zaakIdentificatie' => ($confirmation['zaakIdentificatie'] ?? ''),
 			]
 		);
 
-		return (string)($bevestiging['zaakIdentificatie'] ?? '');
+		return (string)($confirmation['zaakIdentificatie'] ?? '');
 	}//end genereerZaakIdentificatie()
 
 	/**
@@ -398,17 +398,17 @@ class StufAdapterService {
 			return;
 		}
 
-		$functie = (string)($msg['functie'] ?? '');
+		$role = (string)($msg['role'] ?? '');
 
 		$this->transport->handleResponse(
 			endpoint: $endpoint,
 			response: $this->transport->send(
 				endpoint: $endpoint,
 				envelope: (string)($msg['envelopeXml'] ?? ''),
-				functie: $functie
+				role: $role
 			),
 			message: $msg,
-			functie: $functie,
+			role: $role,
 			attempt: (count(value: (array)($msg['retries'] ?? [])) + 1)
 		);
 	}//end retrySend()

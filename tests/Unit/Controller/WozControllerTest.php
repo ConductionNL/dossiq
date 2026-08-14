@@ -133,7 +133,7 @@ class WozControllerTest extends TestCase {
 		$this->request->method('getParam')->willReturnCallback(
 			static function (string $key, $default = null) {
 				return match ($key) {
-					'nummeraanduidingId' => '0518010000123456',
+					'addressDesignationId' => '0518010000123456',
 					default => $default,
 				};
 			}
@@ -161,7 +161,7 @@ class WozControllerTest extends TestCase {
 			static function (string $key, $default = null) {
 				return match ($key) {
 					'postcode' => '1234AB',
-					'huisnummer' => '10',
+					'houseNumber' => '10',
 					default => $default,
 				};
 			}
@@ -194,7 +194,7 @@ class WozControllerTest extends TestCase {
 			static function (string $key, $default = null) {
 				return match ($key) {
 					'postcode' => '1234AB',
-					'huisnummer' => '10',
+					'houseNumber' => '10',
 					default => $default,
 				};
 			}
@@ -203,7 +203,7 @@ class WozControllerTest extends TestCase {
 		$this->wozAdapter->method('lookupAddress')->willReturn(
 			new WozLookupResult(
 				lookupStatus: 'FOUND',
-				wozObject: ['wozobjectnummer' => '05180000001234', 'waarde' => 385000],
+				wozObject: ['wozobjectnummer' => '05180000001234', 'value' => 385000],
 				dormant: false,
 				extras: ['tier' => 'test', 'count' => 1],
 			)
@@ -213,7 +213,7 @@ class WozControllerTest extends TestCase {
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 		$data = $response->getData();
 		$this->assertSame('FOUND', $data['lookupStatus']);
-		$this->assertSame(385000, $data['wozObject']['waarde']);
+		$this->assertSame(385000, $data['wozObject']['value']);
 	}//end testValueReturnsFoundEnvelope()
 
 	/**
@@ -227,7 +227,7 @@ class WozControllerTest extends TestCase {
 			static function (string $key, $default = null) {
 				return match ($key) {
 					'postcode' => '1234AB',
-					'huisnummer' => '10',
+					'houseNumber' => '10',
 					default => $default,
 				};
 			}

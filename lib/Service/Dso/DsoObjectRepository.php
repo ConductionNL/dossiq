@@ -143,7 +143,7 @@ class DsoObjectRepository {
 	 * @param array<string,mixed> $params Filters pushed to ObjectService.
 	 * @param string $activiteitgroep Filter by activiteitgroep.
 	 * @param string $regelkwalificatie Filter by regelkwalificatie.
-	 * @param string $locatie Filter by locatie substring.
+	 * @param string $location Filter by locatie substring.
 	 *
 	 * @return array{error: string|null, results: array<int,array<string,mixed>>} The query outcome.
 	 *
@@ -153,7 +153,7 @@ class DsoObjectRepository {
 		array $params,
 		string $activiteitgroep,
 		string $regelkwalificatie,
-		string $locatie,
+		string $location,
 	): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
@@ -167,7 +167,7 @@ class DsoObjectRepository {
 			return ['error' => 'Case register not configured', 'results' => []];
 		}
 
-		$zakenList = $this->searchObjectsAsArrays(
+		$casesList = $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,
@@ -177,10 +177,10 @@ class DsoObjectRepository {
 		return [
 			'error' => null,
 			'results' => $this->applyInMemoryFilters(
-				zaken: $zakenList,
+				cases: $casesList,
 				activiteitgroep: $activiteitgroep,
 				regelkwalificatie: $regelkwalificatie,
-				locatie: $locatie
+				location: $location
 			),
 		];
 	}//end fetchDashboard()
@@ -188,36 +188,36 @@ class DsoObjectRepository {
 	/**
 	 * Apply in-memory filters that cannot be pushed to ObjectService params.
 	 *
-	 * @param array<int,mixed> $zaken The zaken array (elements come from ObjectService and are not guaranteed to be arrays)
+	 * @param array<int,mixed> $cases The zaken array (elements come from ObjectService and are not guaranteed to be arrays)
 	 * @param string $activiteitgroep Filter by activiteitgroep
 	 * @param string $regelkwalificatie Filter by regelkwalificatie
-	 * @param string $locatie Filter by locatie substring
+	 * @param string $location Filter by locatie substring
 	 *
 	 * @return array<int,array<string,mixed>> The filtered zaken.
 	 *
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
 	 */
 	private function applyInMemoryFilters(
-		array $zaken,
+		array $cases,
 		string $activiteitgroep,
 		string $regelkwalificatie,
-		string $locatie,
+		string $location,
 	): array {
-		if ($activiteitgroep === '' && $regelkwalificatie === '' && $locatie === '') {
-			return $zaken;
+		if ($activiteitgroep === '' && $regelkwalificatie === '' && $location === '') {
+			return $cases;
 		}
 
 		$result = [];
-		foreach ($zaken as $zaak) {
-			if (is_array($zaak) === false) {
+		foreach ($cases as $case) {
+			if (is_array($case) === false) {
 				continue;
 			}
 
-			if ($locatie !== '' && str_contains((string)($zaak['locatie'] ?? ''), $locatie) === false) {
+			if ($location !== '' && str_contains((string)($case['location'] ?? ''), $location) === false) {
 				continue;
 			}
 
-			$result[] = $zaak;
+			$result[] = $case;
 		}
 
 		return $result;

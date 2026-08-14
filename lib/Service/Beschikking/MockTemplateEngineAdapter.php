@@ -41,7 +41,7 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @param string $templateId The template identifier.
 	 * @param array<string, mixed> $context The render context.
 	 *
-	 * @return array{format: string, bestandId: string, checksumSha256: string, paginas: int}
+	 * @return array{format: string, fileId: string, checksumSha256: string, paginas: int}
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
 	 */
@@ -53,7 +53,7 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 
 		return [
 			'format' => 'pdf-a3',
-			'bestandId' => 'doc-' . substr(hash('sha256', $payload), 0, 12),
+			'fileId' => 'doc-' . substr(hash('sha256', $payload), 0, 12),
 			'checksumSha256' => hash('sha256', $payload),
 			'paginas' => 4,
 		];
@@ -65,7 +65,7 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 	 * @param string $templateId The template identifier.
 	 * @param string $effectiveDate The effective date.
 	 *
-	 * @return array{templateId: string, version: string, ingangsdatum: string}
+	 * @return array{templateId: string, version: string, effectiveDate: string}
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
 	 */
@@ -73,7 +73,7 @@ class MockTemplateEngineAdapter implements TemplateEngineAdapterInterface {
 		return [
 			'templateId' => $templateId,
 			'version' => 'v1',
-			'ingangsdatum' => $effectiveDate,
+			'effectiveDate' => $effectiveDate,
 		];
 	}//end resolveVersion()
 }//end class

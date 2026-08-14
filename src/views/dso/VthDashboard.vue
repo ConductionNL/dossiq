@@ -102,7 +102,7 @@
 						<td>{{ zaak.bevoegdGezag || '—' }}</td>
 						<td>
 							<span :class="getDeadlineClass(zaak)">
-								{{ formatDeadline(zaak.deadlineDatum) }}
+								{{ formatDeadline(zaak.deadlineDate) }}
 							</span>
 						</td>
 						<td>
@@ -161,7 +161,7 @@ export default {
 				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
 				{ label: t('procest', 'Granted'), value: 'verleend' },
 				{ label: t('procest', 'Refused'), value: 'geweigerd' },
-				{ label: t('procest', 'Withdrawn'), value: 'ingetrokken' },
+				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
 			],
 			procedureTypeOptions: [
 				{
@@ -265,7 +265,7 @@ export default {
 				in_behandeling: t('procest', 'In behandeling'),
 				verleend: t('procest', 'Granted'),
 				geweigerd: t('procest', 'Refused'),
-				ingetrokken: t('procest', 'Withdrawn'),
+				withdrawn: t('procest', 'Withdrawn'),
 			}
 			return statusMap[zaak.dsoStatus] || zaak.dsoStatus || '—'
 		},
@@ -273,9 +273,9 @@ export default {
 			return (zaak.dsoStatus || 'unknown').replace(/_/g, '-')
 		},
 		getDeadlineClass(zaak) {
-			if (!zaak.deadlineDatum) return 'vth-deadline vth-deadline--none'
+			if (!zaak.deadlineDate) return 'vth-deadline vth-deadline--none'
 			const today = new Date()
-			const deadline = new Date(zaak.deadlineDatum)
+			const deadline = new Date(zaak.deadlineDate)
 			const diffDays = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24))
 			if (diffDays < 0) return 'vth-deadline vth-deadline--overdue'
 			if (diffDays <= 10) return 'vth-deadline vth-deadline--critical'

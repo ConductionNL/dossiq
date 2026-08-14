@@ -126,12 +126,12 @@ class WozAdapterTest extends TestCase {
 
 		$this->assertTrue($adapter->isDormant());
 
-		$addressResult = $adapter->lookupAddress(postcode: '1234AB', huisnummer: '10');
+		$addressResult = $adapter->lookupAddress(postcode: '1234AB', houseNumber: '10');
 		$this->assertSame('LOOKUP_DEFERRED', $addressResult->lookupStatus);
 		$this->assertTrue($addressResult->dormant);
 
-		$nummeraanduidingResult = $adapter->lookupByNummeraanduiding(nummeraanduidingId: '0518010000123456');
-		$this->assertSame('LOOKUP_DEFERRED', $nummeraanduidingResult->lookupStatus);
+		$addressDesignationResult = $adapter->lookupByNummeraanduiding(addressDesignationId: '0518010000123456');
+		$this->assertSame('LOOKUP_DEFERRED', $addressDesignationResult->lookupStatus);
 
 		$objectResult = $adapter->lookupByWozObjectNummer(wozobjectnummer: '05180000001234');
 		$this->assertSame('LOOKUP_DEFERRED', $objectResult->lookupStatus);
@@ -174,11 +174,11 @@ class WozAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupAddress(postcode: '1234ab', huisnummer: '10');
+		$result = $adapter->lookupAddress(postcode: '1234ab', houseNumber: '10');
 
 		$this->assertStringEndsWith('/wozobjecten', $captured['url']);
 		$this->assertSame('1234AB', $captured['options']['query']['postcode'], 'postcode must be normalized to uppercase, no spaces');
-		$this->assertSame('10', $captured['options']['query']['huisnummer']);
+		$this->assertSame('10', $captured['options']['query']['houseNumber']);
 		$this->assertSame('secret-key', $captured['options']['headers']['X-Api-Key']);
 
 		$this->assertSame('FOUND', $result->lookupStatus);
@@ -200,7 +200,7 @@ class WozAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$adapter->lookupAddress(postcode: '1234AB', huisnummer: '10', huisletter: 'A', toevoeging: 'II');
+		$adapter->lookupAddress(postcode: '1234AB', houseNumber: '10', huisletter: 'A', toevoeging: 'II');
 
 		$this->assertSame('A', $captured['options']['query']['huisletter']);
 		$this->assertSame('II', $captured['options']['query']['huisnummertoevoeging']);
@@ -226,7 +226,7 @@ class WozAdapterTest extends TestCase {
 		);
 
 		foreach (['0001AB', '1234A', '1234ABC', '12345A', 'ABCD12', ''] as $badPostcode) {
-			$result = $adapter->lookupAddress(postcode: $badPostcode, huisnummer: '10');
+			$result = $adapter->lookupAddress(postcode: $badPostcode, houseNumber: '10');
 			$this->assertSame('INVALID_INPUT', $result->lookupStatus, "postcode '{$badPostcode}' must be rejected");
 		}
 	}//end testInvalidPostcodeIsRejectedWithoutNetworkCall()
@@ -249,7 +249,7 @@ class WozAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupAddress(postcode: '1234AB', huisnummer: 'abc');
+		$result = $adapter->lookupAddress(postcode: '1234AB', houseNumber: 'abc');
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 	}//end testInvalidHuisnummerIsRejected()
 
@@ -271,7 +271,7 @@ class WozAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupByNummeraanduiding(nummeraanduidingId: '');
+		$result = $adapter->lookupByNummeraanduiding(addressDesignationId: '');
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 	}//end testEmptyNummeraanduidingIdIsRejected()
 
@@ -290,7 +290,7 @@ class WozAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$adapter->lookupByNummeraanduiding(nummeraanduidingId: '0518010000123456');
+		$adapter->lookupByNummeraanduiding(addressDesignationId: '0518010000123456');
 
 		$this->assertSame('0518010000123456', $captured['options']['query']['nummeraanduidingIdentificatie']);
 	}//end testNummeraanduidingLookupBuildsCorrectQuery()
@@ -309,7 +309,7 @@ class WozAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupAddress(postcode: '9999ZZ', huisnummer: '1');
+		$result = $adapter->lookupAddress(postcode: '9999ZZ', houseNumber: '1');
 		$this->assertSame('NOT_FOUND', $result->lookupStatus);
 	}//end testSearchEmptyResultIsNotFound()
 
@@ -407,7 +407,7 @@ class WozAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$addressResult = $adapter->lookupAddress(postcode: '1234AB', huisnummer: '10');
+		$addressResult = $adapter->lookupAddress(postcode: '1234AB', houseNumber: '10');
 		$this->assertSame('LOOKUP_ERROR', $addressResult->lookupStatus);
 		$this->assertSame('transport-error', $addressResult->extras['reason']);
 

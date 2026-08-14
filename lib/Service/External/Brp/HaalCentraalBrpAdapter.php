@@ -55,7 +55,7 @@ class HaalCentraalBrpAdapter implements BrpHaalCentraalAdapterInterface {
 	 *
 	 * @var array<int, string>
 	 */
-	private const FIELDS = ['burgerservicenummer', 'naam', 'geboorte', 'verblijfplaats'];
+	private const FIELDS = ['citizenServiceNumber', 'name', 'birth', 'residence'];
 
 	/**
 	 * Constructor.
@@ -87,7 +87,7 @@ class HaalCentraalBrpAdapter implements BrpHaalCentraalAdapterInterface {
 
 		$payload = [
 			'type' => 'RaadpleegMetBurgerservicenummer',
-			'burgerservicenummer' => [$bsn],
+			'citizenServiceNumber' => [$bsn],
 			'fields' => self::FIELDS,
 		];
 
@@ -119,7 +119,7 @@ class HaalCentraalBrpAdapter implements BrpHaalCentraalAdapterInterface {
 			$persoon = (array)$personen[0];
 			// Strip the BSN back out — the caller already holds it and it
 			// MUST NOT persist beyond the autorisatieprofiel-protected need.
-			unset($persoon['burgerservicenummer']);
+			unset($persoon['citizenServiceNumber']);
 
 			return new BrpLookupResult(
 				lookupStatus: 'FOUND',

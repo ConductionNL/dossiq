@@ -61,12 +61,12 @@ class BeschikkingService {
 	 * @var array<int, string>
 	 */
 	private const CONTENT_FIELDS = [
-		'motivering',
+		'rationale',
 		'beslissing',
 		'geadresseerde',
-		'beschikkingType',
+		'decisionType',
 		'rechtsmiddelenClausule',
-		'legesbedrag',
+		'feeAmount',
 		'templateId',
 	];
 
@@ -79,7 +79,7 @@ class BeschikkingService {
 	 * @param SigningAdapterInterface $signingAdapter The OpenConnector TSP adapter.
 	 * @param ArchivalAdapterInterface $archivalAdapter The OpenRegister archival adapter.
 	 * @param BeschikkingRepository $repository Beschikking persistence.
-	 * @param MandaatVerifier $mandaatVerifier Mandaat resolution + verification.
+	 * @param MandaatVerifier $mandateVerifier Mandaat resolution + verification.
 	 * @param AuditPacketBuilder $auditPacket Verifiable audit-pakket assembly.
 	 * @param BezwaarTermijnScheduler $bezwaarScheduler Awb 6:7 bezwaartermijn scheduling.
 	 *
@@ -92,7 +92,7 @@ class BeschikkingService {
 		private readonly SigningAdapterInterface $signingAdapter,
 		private readonly ArchivalAdapterInterface $archivalAdapter,
 		private readonly BeschikkingRepository $repository,
-		private readonly MandaatVerifier $mandaatVerifier,
+		private readonly MandaatVerifier $mandateVerifier,
 		private readonly AuditPacketBuilder $auditPacket,
 		private readonly BezwaarTermijnScheduler $bezwaarScheduler,
 	) {
@@ -101,7 +101,7 @@ class BeschikkingService {
 	/**
 	 * Compose a new beschikking from zaakdata (status: ontwerp). [T05]
 	 *
-	 * @param string $zaakId The case UUID.
+	 * @param string $caseId The case UUID.
 	 * @param string|null $templateId The chosen template, or null to auto-select.
 	 * @param array<string, mixed> $overrides Optional geadresseerde/field overrides.
 	 *
@@ -109,8 +109,8 @@ class BeschikkingService {
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T05
 	 */
-	public function compose(string $zaakId, ?string $templateId = null, array $overrides = []): array {
-		if ($zaakId === '') {
+	public function compose(string $caseId, ?string $templateId = null, array $overrides = []): array {
+		if ($caseId === '') {
 			throw new RuntimeException('zaakId_required');
 		}
 
@@ -120,23 +120,23 @@ class BeschikkingService {
 
 		$composition = $this->templateAdapter->render(
 			$version['templateId'],
-			['zaakId' => $zaakId, 'overrides' => $overrides],
+			['caseId' => $caseId, 'overrides' => $overrides],
 		);
 
-		$beschikking = [
-			'zaakId' => $zaakId,
-			'beschikkingType' => (string)($overrides['beschikkingType'] ?? 'toekenning'),
+		$decision = [
+			'caseId' => $caseId,
+			'decisionType' => (string)($overrides['decisionType'] ?? 'toekenning'),
 			'templateId' => $version['templateId'],
-			'ontwerpVersie' => 1,
-			'huidigeStatus' => 'ontwerp',
+			'draftVersion' => 1,
+			'currentStatus' => 'ontwerp',
 			'samengesteldeInhoud' => $composition,
 			'geadresseerde' => (array)($overrides['geadresseerde'] ?? []),
 			'beslissing' => (array)($overrides['beslissing'] ?? []),
-			'motivering' => ($overrides['motivering'] ?? null),
+			'rationale' => ($overrides['rationale'] ?? null),
 		];
 
-		$saved = $this->repository->save(beschikking: $beschikking);
-		return $this->markRequiredFields(beschikking: $saved);
+		$saved = $this->repository->save(decision: $decision);
+		return $this->markRequiredFields(decision: $saved);
 	}//end compose()
 
 	/**
@@ -144,21 +144,21 @@ class BeschikkingService {
 	 *
 	 * Delegates to {@see BeschikkingRepository::find()}.
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $decisionId The beschikking UUID.
 	 *
 	 * @return array<string, mixed>|null
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T06
 	 */
-	public function find(string $beschikkingId): ?array {
-		return $this->repository->find(beschikkingId: $beschikkingId);
+	public function find(string $decisionId): ?array {
+		return $this->repository->find(decisionId: $decisionId);
 	}//end find()
 
 	/**
 	 * Grant mandaat-approval and transition to akkoord-mandaat. [T07]
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
-	 * @param string $akkoordDoor The approver's Nextcloud UID.
+	 * @param string $decisionId The beschikking UUID.
+	 * @param string $approvedBy The approver's Nextcloud UID.
 	 *
 	 * @return array<string, mixed> The updated beschikking.
 	 *
@@ -166,39 +166,39 @@ class BeschikkingService {
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T07
 	 */
-	public function akkoord(string $beschikkingId, string $akkoordDoor): array {
-		$beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
-		$current = (string)($beschikking['huidigeStatus'] ?? '');
+	public function akkoord(string $decisionId, string $approvedBy): array {
+		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
+		$current = (string)($decision['currentStatus'] ?? '');
 
 		if ($this->stateMachine->validateTransition($current, 'akkoord-mandaat') === false) {
 			throw new RuntimeException('invalid_transition');
 		}
 
-		$regeling = $this->mandaatVerifier->resolveMandaatRegeling(zaaktype: (string)($beschikking['zaaktype'] ?? ''));
-		$niveau = $this->mandaatVerifier->resolveNiveauForUser(
+		$regeling = $this->mandateVerifier->resolveMandaatRegeling(caseType: (string)($decision['caseType'] ?? ''));
+		$niveau = $this->mandateVerifier->resolveNiveauForUser(
 			regeling: $regeling,
-			beschikking: $beschikking,
-			akkoordDoor: $akkoordDoor
+			decision: $decision,
+			approvedBy: $approvedBy
 		);
 
 		if ($niveau === null) {
 			throw new RuntimeException('mandaat_insufficient');
 		}
 
-		$beschikking['mandateGranted'] = [
-			'mandaatregelingId' => (string)($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
-			'mandaatNiveau' => $niveau,
-			'akkoordDoor' => $akkoordDoor,
-			'akkoordDatum' => (new DateTimeImmutable())->format('c'),
+		$decision['mandateGranted'] = [
+			'mandateSchemeId' => (string)($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
+			'mandateLevel' => $niveau,
+			'approvedBy' => $approvedBy,
+			'approvedDate' => (new DateTimeImmutable())->format('c'),
 		];
-		$beschikking['huidigeStatus'] = 'akkoord-mandaat';
+		$decision['currentStatus'] = 'akkoord-mandaat';
 
-		$saved = $this->repository->save(beschikking: $beschikking);
+		$saved = $this->repository->save(decision: $decision);
 		$this->stateMachine->logTransition(
-			$beschikkingId,
+			$decisionId,
 			$current,
 			'akkoord-mandaat',
-			['actor' => $akkoordDoor, 'actorType' => 'medewerker', 'trigger' => 'handmatig'],
+			['actor' => $approvedBy, 'actorType' => 'medewerker', 'trigger' => 'handmatig'],
 		);
 
 		return $saved;
@@ -207,9 +207,9 @@ class BeschikkingService {
 	/**
 	 * Sign the beschikking via the TSP and transition to ondertekend. [T08]
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $decisionId The beschikking UUID.
 	 * @param string $tspProvider The TSP provider slug.
-	 * @param string $ondertekenaar The signer's Nextcloud UID.
+	 * @param string $signatory The signer's Nextcloud UID.
 	 *
 	 * @return array<string, mixed> The updated beschikking.
 	 *
@@ -217,41 +217,41 @@ class BeschikkingService {
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T08
 	 */
-	public function onderteken(string $beschikkingId, string $tspProvider, string $ondertekenaar): array {
-		$beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
-		$current = (string)($beschikking['huidigeStatus'] ?? '');
+	public function onderteken(string $decisionId, string $tspProvider, string $signatory): array {
+		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
+		$current = (string)($decision['currentStatus'] ?? '');
 
 		if ($this->stateMachine->validateTransition($current, 'ondertekend') === false) {
 			throw new RuntimeException('invalid_transition');
 		}
 
-		$bestandId = (string)(($beschikking['samengesteldeInhoud']['bestandId'] ?? ''));
-		$signature = $this->signingAdapter->sign($bestandId, $ondertekenaar, $tspProvider);
+		$fileId = (string)(($decision['samengesteldeInhoud']['fileId'] ?? ''));
+		$signature = $this->signingAdapter->sign($fileId, $signatory, $tspProvider);
 
-		$beschikking['handtekening'] = [
+		$decision['signature'] = [
 			'tspProvider' => $tspProvider,
 			'tspProviderEidasId' => (string)($signature['tspProviderEidasId'] ?? ''),
-			'ondertekenaar' => $ondertekenaar,
-			'ondertekeningTijdstip' => (string)($signature['ondertekeningTijdstip'] ?? ''),
-			'soort' => 'gekwalificeerde-elektronische-handtekening',
-			'certificaatSerienummer' => (string)($signature['certificaatSerienummer'] ?? ''),
-			'validatieRapportId' => (string)($signature['validatieRapportId'] ?? ''),
+			'signatory' => $signatory,
+			'signingMoment' => (string)($signature['signingMoment'] ?? ''),
+			'kind' => 'gekwalificeerde-elektronische-handtekening',
+			'certificateSerialNumber' => (string)($signature['certificateSerialNumber'] ?? ''),
+			'validationRapportId' => (string)($signature['validationRapportId'] ?? ''),
 		];
-		$beschikking['samengesteldeInhoud']['bestandId'] = (string)($signature['signedBestandId'] ?? $bestandId);
-		$beschikking['huidigeStatus'] = 'ondertekend';
+		$decision['samengesteldeInhoud']['fileId'] = (string)($signature['signedBestandId'] ?? $fileId);
+		$decision['currentStatus'] = 'ondertekend';
 
-		$saved = $this->repository->save(beschikking: $beschikking);
+		$saved = $this->repository->save(decision: $decision);
 		$this->stateMachine->logTransition(
-			$beschikkingId,
+			$decisionId,
 			$current,
 			'ondertekend',
 			[
-				'actor' => $ondertekenaar,
+				'actor' => $signatory,
 				'actorType' => 'medewerker',
 				'trigger' => 'handmatig',
-				'bewijsMateriaal' => [
-					'soort' => 'tsp-handtekening-rapport',
-					'rapportId' => (string)($signature['validatieRapportId'] ?? ''),
+				'evidenceMaterial' => [
+					'kind' => 'tsp-handtekening-rapport',
+					'rapportId' => (string)($signature['validationRapportId'] ?? ''),
 				],
 			],
 		);
@@ -264,7 +264,7 @@ class BeschikkingService {
 	 *
 	 * Creates a BezwaarTrigger with a 6-week bezwaartermijn (Awb 6:7).
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $decisionId The beschikking UUID.
 	 * @param string $actor The dispatching user's UID.
 	 *
 	 * @return array<string, mixed> The updated beschikking.
@@ -273,36 +273,36 @@ class BeschikkingService {
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T09
 	 */
-	public function verzend(string $beschikkingId, string $actor): array {
-		$beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
-		$current = (string)($beschikking['huidigeStatus'] ?? '');
+	public function verzend(string $decisionId, string $actor): array {
+		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
+		$current = (string)($decision['currentStatus'] ?? '');
 
 		if ($this->stateMachine->validateTransition($current, 'verzonden') === false) {
 			throw new RuntimeException('invalid_transition');
 		}
 
-		$verzending = $this->berichtenbox->routeToBerichtenbox($beschikking);
+		$verzending = $this->berichtenbox->routeToBerichtenbox($decision);
 
 		$bekendmaking = (new DateTimeImmutable())->format('Y-m-d');
-		$termijn = $this->bezwaarScheduler->computeTermijn(bekendmaking: $bekendmaking);
+		$term = $this->bezwaarScheduler->computeTermijn(bekendmaking: $bekendmaking);
 
-		$beschikking['verzending'] = $verzending;
-		$beschikking['bekendmakingDatum'] = $bekendmaking;
-		$beschikking['bezwaarTermijnEindDatum'] = $termijn['eindDatum'];
-		$beschikking['herinneringDatum'] = $termijn['herinnering'];
-		$beschikking['huidigeStatus'] = 'verzonden';
+		$decision['verzending'] = $verzending;
+		$decision['announcementDate'] = $bekendmaking;
+		$decision['objectionTermEndDate'] = $term['endDate'];
+		$decision['reminderDate'] = $term['herinnering'];
+		$decision['currentStatus'] = 'verzonden';
 
-		$saved = $this->repository->save(beschikking: $beschikking);
+		$saved = $this->repository->save(decision: $decision);
 
 		$this->bezwaarScheduler->createBezwaarTrigger(
-			beschikkingId: $beschikkingId,
+			decisionId: $decisionId,
 			bekendmaking: $bekendmaking,
-			eindDatum: $termijn['eindDatum'],
-			herinnering: $termijn['herinnering'],
+			endDate: $term['endDate'],
+			herinnering: $term['herinnering'],
 		);
 
 		$this->stateMachine->logTransition(
-			$beschikkingId,
+			$decisionId,
 			$current,
 			'verzonden',
 			['actor' => $actor, 'actorType' => 'medewerker', 'trigger' => 'handmatig'],
@@ -314,7 +314,7 @@ class BeschikkingService {
 	/**
 	 * Field-edit a beschikking, honouring the immutability contract. [T11]
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $decisionId The beschikking UUID.
 	 * @param array<string, mixed> $updates The field updates.
 	 *
 	 * @return array<string, mixed> The updated beschikking.
@@ -323,9 +323,9 @@ class BeschikkingService {
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T11
 	 */
-	public function updateFields(string $beschikkingId, array $updates): array {
-		$beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
-		$status = (string)($beschikking['huidigeStatus'] ?? '');
+	public function updateFields(string $decisionId, array $updates): array {
+		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
+		$status = (string)($decision['currentStatus'] ?? '');
 
 		if ($this->stateMachine->isImmutable($status) === true) {
 			foreach (array_keys($updates) as $field) {
@@ -336,12 +336,12 @@ class BeschikkingService {
 		}
 
 		foreach ($updates as $field => $value) {
-			$beschikking[$field] = $value;
+			$decision[$field] = $value;
 		}
 
-		$beschikking['ontwerpVersie'] = ((int)($beschikking['ontwerpVersie'] ?? 1)) + 1;
+		$decision['draftVersion'] = ((int)($decision['draftVersion'] ?? 1)) + 1;
 
-		return $this->repository->save(beschikking: $beschikking);
+		return $this->repository->save(decision: $decision);
 	}//end updateFields()
 
 	/**
@@ -351,9 +351,9 @@ class BeschikkingService {
 	 *
 	 * @param array<string, mixed> $regeling The mandaatRegeling object.
 	 * @param string $niveau The proposed approver level.
-	 * @param float $bedrag The decision bedrag.
-	 * @param string $beschikkingType The decision type.
-	 * @param string $zaaktype The case type.
+	 * @param float $amount The decision bedrag.
+	 * @param string $decisionType The decision type.
+	 * @param string $caseType The case type.
 	 *
 	 * @return bool True when the level may sign this decision within its limit.
 	 *
@@ -362,16 +362,16 @@ class BeschikkingService {
 	public function verifyMandaat(
 		array $regeling,
 		string $niveau,
-		float $bedrag,
-		string $beschikkingType,
-		string $zaaktype,
+		float $amount,
+		string $decisionType,
+		string $caseType,
 	): bool {
-		return $this->mandaatVerifier->verifyMandaat(
+		return $this->mandateVerifier->verifyMandaat(
 			regeling: $regeling,
 			niveau: $niveau,
-			bedrag: $bedrag,
-			beschikkingType: $beschikkingType,
-			zaaktype: $zaaktype,
+			amount: $amount,
+			decisionType: $decisionType,
+			caseType: $caseType,
 		);
 	}//end verifyMandaat()
 
@@ -380,7 +380,7 @@ class BeschikkingService {
 	 *
 	 * Delegates to {@see AuditPacketBuilder::build()}.
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $decisionId The beschikking UUID.
 	 *
 	 * @return string The ZIP bytes.
 	 *
@@ -388,16 +388,16 @@ class BeschikkingService {
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T10
 	 */
-	public function exportAuditPacket(string $beschikkingId): string {
-		$beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
+	public function exportAuditPacket(string $decisionId): string {
+		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 
-		return $this->auditPacket->build(beschikkingId: $beschikkingId, beschikking: $beschikking);
+		return $this->auditPacket->build(decisionId: $decisionId, decision: $decision);
 	}//end exportAuditPacket()
 
 	/**
 	 * Archive a beschikking to durable storage and transition to gearchiveerd. [T13]
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
+	 * @param string $decisionId The beschikking UUID.
 	 *
 	 * @return array<string, mixed> The updated beschikking.
 	 *
@@ -405,9 +405,9 @@ class BeschikkingService {
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T13
 	 */
-	public function archive(string $beschikkingId): array {
-		$beschikking = $this->repository->requireBeschikking(beschikkingId: $beschikkingId);
-		$current = (string)($beschikking['huidigeStatus'] ?? '');
+	public function archive(string $decisionId): array {
+		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
+		$current = (string)($decision['currentStatus'] ?? '');
 
 		if ($this->stateMachine->validateTransition($current, 'gearchiveerd') === false) {
 			throw new RuntimeException('invalid_transition');
@@ -415,28 +415,28 @@ class BeschikkingService {
 
 		$metadata = [
 			'schema' => 'TMLO-1.2',
-			'identificatieKenmerk' => (string)($beschikking['kenmerk'] ?? ''),
+			'identificatieKenmerk' => (string)($decision['reference'] ?? ''),
 			'aggregatieniveau' => 'Archiefstuk',
-			'creatieDatum' => (string)(($beschikking['mandateGranted']['akkoordDatum'] ?? '')),
-			'bekendmakingDatum' => (string)($beschikking['bekendmakingDatum'] ?? ''),
+			'creatieDatum' => (string)(($decision['mandateGranted']['approvedDate'] ?? '')),
+			'announcementDate' => (string)($decision['announcementDate'] ?? ''),
 			'vertrouwelijkheid' => 'vertrouwelijk',
 			'bewaartermijn' => 'P15Y',
 		];
 
-		$bestandId = (string)(($beschikking['samengesteldeInhoud']['bestandId'] ?? ''));
-		$result = $this->archivalAdapter->ingest($beschikkingId, $bestandId, $metadata);
+		$fileId = (string)(($decision['samengesteldeInhoud']['fileId'] ?? ''));
+		$result = $this->archivalAdapter->ingest($decisionId, $fileId, $metadata);
 
-		$beschikking['archief'] = [
-			'gearchiveerdOp' => (new DateTimeImmutable())->format('c'),
+		$decision['archief'] = [
+			'archivedOn' => (new DateTimeImmutable())->format('c'),
 			'archiefId' => (string)$result['archiefId'],
 			'tmloMetadata' => $metadata,
-			'vernietigingsdatum' => (string)$result['vernietigingsdatum'],
+			'destructionDate' => (string)$result['destructionDate'],
 		];
-		$beschikking['huidigeStatus'] = 'gearchiveerd';
+		$decision['currentStatus'] = 'gearchiveerd';
 
-		$saved = $this->repository->save(beschikking: $beschikking);
+		$saved = $this->repository->save(decision: $decision);
 		$this->stateMachine->logTransition(
-			$beschikkingId,
+			$decisionId,
 			$current,
 			'gearchiveerd',
 			['actor' => 'systeem', 'actorType' => 'systeem', 'trigger' => 'automatisch'],
@@ -448,20 +448,20 @@ class BeschikkingService {
 	/**
 	 * Flag required-but-empty fields with `_required` markers.
 	 *
-	 * @param array<string, mixed> $beschikking The beschikking.
+	 * @param array<string, mixed> $decision The beschikking.
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function markRequiredFields(array $beschikking): array {
-		if (($beschikking['motivering'] ?? null) === null || $beschikking['motivering'] === '') {
-			$beschikking['motivering_required'] = true;
+	private function markRequiredFields(array $decision): array {
+		if (($decision['rationale'] ?? null) === null || $decision['rationale'] === '') {
+			$decision['motivering_required'] = true;
 		}
 
-		$geadresseerde = (array)($beschikking['geadresseerde'] ?? []);
-		if (($geadresseerde['naam'] ?? '') === '') {
-			$beschikking['geadresseerde_required'] = true;
+		$geadresseerde = (array)($decision['geadresseerde'] ?? []);
+		if (($geadresseerde['name'] ?? '') === '') {
+			$decision['geadresseerde_required'] = true;
 		}
 
-		return $beschikking;
+		return $decision;
 	}//end markRequiredFields()
 }//end class

@@ -109,7 +109,7 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 
 		$this->expectException(\RuntimeException::class);
 
-		$this->service->activate(voorstelId: 'test-voorstel-id');
+		$this->service->activate(proposalId: 'test-voorstel-id');
 
 	}//end testActivateThrowsWhenOpenRegisterUnavailable()
 
@@ -119,9 +119,9 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testActivateReturnsArrayWhenVoorstelFound(): void {
-		$voorstelObj = new \stdClass();
-		$voorstelObj->id = 'voorstel-uuid-1';
-		$voorstelObj->status = 'concept';
+		$proposalObj = new \stdClass();
+		$proposalObj->id = 'voorstel-uuid-1';
+		$proposalObj->status = 'concept';
 
 		$updatedObj = new \stdClass();
 		$updatedObj->id = 'voorstel-uuid-1';
@@ -131,8 +131,8 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 		$objectServiceMock
 			->method('searchObjectsBySlug')
 			->willReturnCallback(
-				static function (string $register, string $schema, array $params) use ($voorstelObj): array {
-					return [$voorstelObj];
+				static function (string $register, string $schema, array $params) use ($proposalObj): array {
+					return [$proposalObj];
 				}
 			);
 
@@ -148,7 +148,7 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 			->method('getConfigValue')
 			->willReturn('test-value');
 
-		$result = $this->service->activate(voorstelId: 'voorstel-uuid-1');
+		$result = $this->service->activate(proposalId: 'voorstel-uuid-1');
 
 		$this->assertIsArray($result);
 
@@ -173,7 +173,7 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 			->method('getConfigValue')
 			->willReturn('test-schema');
 
-		$result = $this->service->allParafenCollected(voorstelId: 'voorstel-uuid-1');
+		$result = $this->service->allParafenCollected(proposalId: 'voorstel-uuid-1');
 
 		$this->assertFalse($result);
 
@@ -189,7 +189,7 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 			->method('getObjectService')
 			->willReturn(null);
 
-		$result = $this->service->allParafenCollected(voorstelId: 'voorstel-uuid-1');
+		$result = $this->service->allParafenCollected(proposalId: 'voorstel-uuid-1');
 
 		$this->assertFalse($result);
 
@@ -201,13 +201,13 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testHandleParaafActionReturnsArrayWithStatus(): void {
-		$voorstelObj = new \stdClass();
-		$voorstelObj->id = 'voorstel-uuid-1';
-		$voorstelObj->status = 'in_parafering';
+		$proposalObj = new \stdClass();
+		$proposalObj->id = 'voorstel-uuid-1';
+		$proposalObj->status = 'in_parafering';
 
-		$actieObj = new \stdClass();
-		$actieObj->id = 'actie-uuid-1';
-		$actieObj->action = 'goedgekeurd';
+		$actionObj = new \stdClass();
+		$actionObj->id = 'actie-uuid-1';
+		$actionObj->action = 'goedgekeurd';
 
 		$updatedObj = new \stdClass();
 		$updatedObj->id = 'voorstel-uuid-1';
@@ -217,12 +217,12 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 		$objectServiceMock
 			->method('searchObjectsBySlug')
 			->willReturnCallback(
-				static function (string $register, string $schema, array $params) use ($voorstelObj, $actieObj): array {
+				static function (string $register, string $schema, array $params) use ($proposalObj, $actionObj): array {
 					if (isset($params['id']) === true && $params['id'] === 'actie-uuid-1') {
-						return [$actieObj];
+						return [$actionObj];
 					}
 
-					return [$voorstelObj];
+					return [$proposalObj];
 				}
 			);
 
@@ -239,7 +239,7 @@ class BesluitvormingParafeerServiceTest extends TestCase {
 			->willReturn('test-value');
 
 		$result = $this->service->handleParaafAction(
-			voorstelId: 'voorstel-uuid-1',
+			proposalId: 'voorstel-uuid-1',
 			parafeeractieId: 'actie-uuid-1',
 		);
 

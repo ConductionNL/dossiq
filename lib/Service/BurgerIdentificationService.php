@@ -48,7 +48,7 @@ class BurgerIdentificationService {
 	 * @var array<string, float>
 	 */
 	private const WEIGHTS = [
-		'naam' => 0.30,
+		'name' => 0.30,
 		'geboortedatum' => 0.30,
 		'adres' => 0.20,
 		'bsn' => 0.15,

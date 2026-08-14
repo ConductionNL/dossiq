@@ -76,19 +76,19 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'id' => 'b1',
 			'ingebrekestelling' => 'ig-1',
 			'termijnInstance' => 'ti-1',
-			'startDatum' => '2026-03-29',
-			'huidigeDag' => 0,
-			'cumulatievBedrag' => 0,
-			'plafondBerekend' => 144200,
+			'startDate' => '2026-03-29',
+			'currentDag' => 0,
+			'cumulativeAmount' => 0,
+			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
 			'regime' => 'awb-default',
 		]);
 
 		$row = $this->service->calculateDaily('b1');
-		self::assertSame(1, $row['huidigeDag']);
+		self::assertSame(1, $row['currentDag']);
 		self::assertSame(2300, $row['dagtarief']);
-		self::assertSame(2300, $row['cumulatievBedrag']);
+		self::assertSame(2300, $row['cumulativeAmount']);
 		self::assertFalse($row['plafondBereikt']);
 	}
 
@@ -100,19 +100,19 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'id' => 'b2',
 			'ingebrekestelling' => 'ig-1',
 			'termijnInstance' => 'ti-1',
-			'startDatum' => '2026-03-29',
-			'huidigeDag' => 14,
-			'cumulatievBedrag' => 32200,
-			'plafondBerekend' => 144200,
+			'startDate' => '2026-03-29',
+			'currentDag' => 14,
+			'cumulativeAmount' => 32200,
+			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
 			'regime' => 'awb-default',
 		]);
 
 		$row = $this->service->calculateDaily('b2');
-		self::assertSame(15, $row['huidigeDag']);
+		self::assertSame(15, $row['currentDag']);
 		self::assertSame(3500, $row['dagtarief']);
-		self::assertSame(35700, $row['cumulatievBedrag']);
+		self::assertSame(35700, $row['cumulativeAmount']);
 	}
 
 	/**
@@ -123,19 +123,19 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'id' => 'b3',
 			'ingebrekestelling' => 'ig-1',
 			'termijnInstance' => 'ti-1',
-			'startDatum' => '2026-03-29',
-			'huidigeDag' => 28,
-			'cumulatievBedrag' => 81200,
-			'plafondBerekend' => 144200,
+			'startDate' => '2026-03-29',
+			'currentDag' => 28,
+			'cumulativeAmount' => 81200,
+			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
 			'regime' => 'awb-default',
 		]);
 
 		$row = $this->service->calculateDaily('b3');
-		self::assertSame(29, $row['huidigeDag']);
+		self::assertSame(29, $row['currentDag']);
 		self::assertSame(4500, $row['dagtarief']);
-		self::assertSame(85700, $row['cumulatievBedrag']);
+		self::assertSame(85700, $row['cumulativeAmount']);
 	}
 
 	/**
@@ -146,22 +146,22 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'id' => 'b4',
 			'ingebrekestelling' => 'ig-1',
 			'termijnInstance' => 'ti-1',
-			'startDatum' => '2026-03-29',
-			'huidigeDag' => 41,
-			'cumulatievBedrag' => 142000,
-			'plafondBerekend' => 144200,
+			'startDate' => '2026-03-29',
+			'currentDag' => 41,
+			'cumulativeAmount' => 142000,
+			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
 			'regime' => 'awb-default',
 		]);
 
 		$row = $this->service->calculateDaily('b4');
-		self::assertSame(144200, $row['cumulatievBedrag']);
+		self::assertSame(144200, $row['cumulativeAmount']);
 		self::assertTrue($row['plafondBereikt']);
 
 		// Second call after plafond does not change cumulative.
 		$row2 = $this->service->calculateDaily('b4');
-		self::assertSame(144200, $row2['cumulatievBedrag']);
+		self::assertSame(144200, $row2['cumulativeAmount']);
 	}
 
 	/**
@@ -172,21 +172,21 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'id' => 'b5',
 			'ingebrekestelling' => 'ig-1',
 			'termijnInstance' => 'ti-1',
-			'startDatum' => '2026-03-29',
-			'huidigeDag' => 5,
-			'cumulatievBedrag' => 11500,
-			'plafondBerekend' => 144200,
+			'startDate' => '2026-03-29',
+			'currentDag' => 5,
+			'cumulativeAmount' => 11500,
+			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
 		]);
 
 		$stopped = $this->service->stopForBeschikking('b5');
 		self::assertSame('gestopt-wegens-beschikking', $stopped['status']);
-		self::assertSame(11500, $stopped['definitievBedrag']);
+		self::assertSame(11500, $stopped['definitiveAmount']);
 
 		// Further calculateDaily is a no-op on stopped berekeningen.
 		$row = $this->service->calculateDaily('b5');
-		self::assertSame(5, $row['huidigeDag']);
+		self::assertSame(5, $row['currentDag']);
 	}
 
 	/**
@@ -196,7 +196,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		// Seed Woo definition + instance.
 		$this->objects->saveObject('procest', 'termijnDefinitie', [
 			'id' => 'td-woo',
-			'zaaktype' => 'woo-verzoek',
+			'caseType' => 'woo-verzoek',
 			'afwijkendDwangsomRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
@@ -208,10 +208,10 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'id' => 'b-woo',
 			'ingebrekestelling' => 'ig-woo',
 			'termijnInstance' => 'ti-woo',
-			'startDatum' => '2026-03-29',
-			'huidigeDag' => 0,
-			'cumulatievBedrag' => 0,
-			'plafondBerekend' => 50000,
+			'startDate' => '2026-03-29',
+			'currentDag' => 0,
+			'cumulativeAmount' => 0,
+			'plafondCalculated' => 50000,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
 			'regime' => 'afwijkend',
@@ -219,6 +219,6 @@ class DwangsomCalculationServiceTest extends TestCase {
 
 		$row = $this->service->calculateDaily('b-woo');
 		self::assertSame(1500, $row['dagtarief']);
-		self::assertSame(1500, $row['cumulatievBedrag']);
+		self::assertSame(1500, $row['cumulativeAmount']);
 	}
 }

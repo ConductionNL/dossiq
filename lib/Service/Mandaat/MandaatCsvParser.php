@@ -56,6 +56,16 @@ class MandaatCsvParser {
 	 *
 	 * @var string[]
 	 */
+	/**
+	 * Column headers the uploaded CSV must contain.
+	 *
+	 * These are DUTCH deliberately and must not be translated: they are the
+	 * header row of a file authored outside this codebase, so renaming them
+	 * makes every existing import fail with "missing required column". The
+	 * adapter boundary is the one exemption to the English-only rule.
+	 *
+	 * @var array<int, string>
+	 */
 	public const REQUIRED_COLUMNS = ['mandaatNummer', 'omschrijving', 'rolNaam', 'plafondCents'];
 
 	/**

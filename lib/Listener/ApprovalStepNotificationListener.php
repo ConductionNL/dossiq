@@ -135,8 +135,8 @@ class ApprovalStepNotificationListener implements IEventListener {
 		}
 
 		$objectUuid = (string)$event->getObjectUuid();
-		$voorstel = $this->loadVoorstel(objectUuid: $objectUuid);
-		$onderwerp = (string)($voorstel['onderwerp'] ?? '');
+		$proposal = $this->loadProposal(objectUuid: $objectUuid);
+		$onderwerp = (string)($proposal['onderwerp'] ?? '');
 
 		$role = '';
 		if (is_callable([$nextStep, 'getRole']) === true) {
@@ -166,8 +166,8 @@ class ApprovalStepNotificationListener implements IEventListener {
 		}
 
 		$objectUuid = (string)$event->getObjectUuid();
-		$voorstel = $this->loadVoorstel(objectUuid: $objectUuid);
-		$steller = (string)($voorstel['steller'] ?? '');
+		$proposal = $this->loadProposal(objectUuid: $objectUuid);
+		$steller = (string)($proposal['steller'] ?? '');
 		if ($steller === '') {
 			return;
 		}
@@ -187,7 +187,7 @@ class ApprovalStepNotificationListener implements IEventListener {
 
 		$this->notificationService->notifyVoorstelReturned(
 			$steller,
-			(string)($voorstel['onderwerp'] ?? ''),
+			(string)($proposal['onderwerp'] ?? ''),
 			$objectUuid,
 			$rejectedBy,
 			$comment
@@ -201,7 +201,7 @@ class ApprovalStepNotificationListener implements IEventListener {
 	 *
 	 * @return array<string, mixed> The voorstel array, or an empty array.
 	 */
-	private function loadVoorstel(string $objectUuid): array {
+	private function loadProposal(string $objectUuid): array {
 		if ($objectUuid === '') {
 			return [];
 		}
@@ -218,8 +218,8 @@ class ApprovalStepNotificationListener implements IEventListener {
 		}
 
 		try {
-			$voorstel = $objectService->find($objectUuid, register: $register, schema: $schema);
-			return $this->normalizeToArray(value: $voorstel);
+			$proposal = $objectService->find($objectUuid, register: $register, schema: $schema);
+			return $this->normalizeToArray(value: $proposal);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest: could not load voorstel for approval notification',

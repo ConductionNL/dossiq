@@ -27,7 +27,7 @@
 			</thead>
 			<tbody>
 				<tr v-for="row in endpoints" :key="row.id">
-					<td>{{ row.naam }}</td>
+					<td>{{ row.name }}</td>
 					<td>{{ row.gemeenteCode }}</td>
 					<td>{{ row.ontvangerApplicatie }}</td>
 					<td>{{ row.soapVersion }}</td>

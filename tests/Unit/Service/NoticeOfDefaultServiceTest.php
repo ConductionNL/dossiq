@@ -40,7 +40,7 @@ use Psr\Log\LoggerInterface;
  */
 class NoticeOfDefaultServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
-	private TermijnService $termijnService;
+	private TermijnService $termService;
 	private NoticeOfDefaultService $service;
 
 	protected function setUp(): void {
@@ -62,16 +62,16 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		);
 
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->termijnService = new TermijnService($settings, $logger);
-		$this->service = new NoticeOfDefaultService($settings, $this->termijnService, $logger);
+		$this->termService = new TermijnService($settings, $logger);
+		$this->service = new NoticeOfDefaultService($settings, $this->termService, $logger);
 
 		// Seed an AWB-default definition.
 		$this->objects->saveObject('procest', 'termijnDefinitie', [
 			'id' => 'td-ov',
-			'zaaktype' => 'omgevingsvergunning-regulier',
+			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
-			'standaardDuurDagen' => 56,
-			'aantalVerlengingen' => 1,
+			'standardDurationDays' => 56,
+			'countExtensions' => 1,
 			'validFrom' => '2026-01-01',
 		]);
 
@@ -80,9 +80,9 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'id' => 'ti-1',
 			'zaak' => 'Z/2026/300',
 			'termijnDefinitie' => 'td-ov',
-			'startDatum' => '2026-01-01T10:00:00+00:00',
-			'einddatumBerekend' => '2026-02-25',
-			'einddatumActueel' => '2026-02-25',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-02-25',
+			'endDateCurrent' => '2026-02-25',
 			'status' => 'overschreden',
 			'notificatiesVerstuurd' => [],
 		]);
@@ -100,12 +100,12 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		);
 
 		self::assertTrue($row['gevalideerd']);
-		self::assertSame('geldig', $row['geldigheidStatus']);
+		self::assertSame('geldig', $row['validityStatus']);
 		self::assertArrayHasKey('dwangsomBerekening', $row);
 
 		$b = $row['dwangsomBerekening'];
-		self::assertSame('2026-03-29', $b['startDatum']);
-		self::assertSame(144200, $b['plafondBerekend']);
+		self::assertSame('2026-03-29', $b['startDate']);
+		self::assertSame(144200, $b['plafondCalculated']);
 		self::assertSame('awb-default', $b['regime']);
 		self::assertSame('lopend', $b['status']);
 
@@ -123,9 +123,9 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'id' => 'ti-lopend',
 			'zaak' => 'Z/2026/301',
 			'termijnDefinitie' => 'td-ov',
-			'startDatum' => '2026-01-01T10:00:00+00:00',
-			'einddatumBerekend' => '2026-12-31',
-			'einddatumActueel' => '2026-12-31',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-12-31',
+			'endDateCurrent' => '2026-12-31',
 			'status' => 'lopend',
 			'notificatiesVerstuurd' => [],
 		]);
@@ -137,7 +137,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		);
 
 		self::assertFalse($row['gevalideerd']);
-		self::assertSame('premaat', $row['geldigheidStatus']);
+		self::assertSame('premaat', $row['validityStatus']);
 		self::assertArrayNotHasKey('dwangsomBerekening', $row);
 	}
 
@@ -170,10 +170,10 @@ class NoticeOfDefaultServiceTest extends TestCase {
 	public function testCustomRegimeIsResolvedFromDefinition(): void {
 		$this->objects->saveObject('procest', 'termijnDefinitie', [
 			'id' => 'td-woo',
-			'zaaktype' => 'woo-verzoek',
+			'caseType' => 'woo-verzoek',
 			'wettelijkeGrondslag' => 'Woo art 4.4',
-			'standaardDuurDagen' => 28,
-			'aantalVerlengingen' => 1,
+			'standardDurationDays' => 28,
+			'countExtensions' => 1,
 			'afwijkendDwangsomRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
@@ -181,9 +181,9 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'id' => 'ti-woo',
 			'zaak' => 'Z/2026/302',
 			'termijnDefinitie' => 'td-woo',
-			'startDatum' => '2026-01-01T10:00:00+00:00',
-			'einddatumBerekend' => '2026-01-29',
-			'einddatumActueel' => '2026-01-29',
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => '2026-01-29',
+			'endDateCurrent' => '2026-01-29',
 			'status' => 'overschreden',
 			'notificatiesVerstuurd' => [],
 		]);
@@ -195,6 +195,6 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		);
 		$b = $row['dwangsomBerekening'];
 		self::assertSame('afwijkend', $b['regime']);
-		self::assertSame(50000, $b['plafondBerekend']);
+		self::assertSame(50000, $b['plafondCalculated']);
 	}
 }

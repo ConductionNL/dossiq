@@ -19,12 +19,12 @@
         "description": "ZGW DRC document with full metadata, stored as a Nextcloud file plus a register object. schema.org DigitalDocument.",
         "x-schema-org": "DigitalDocument",
         "type": "object",
-        "required": ["titel", "bestandsnaam", "vertrouwelijkheidaanduiding", "informatieobjecttype"],
+        "required": ["titel", "fileName", "vertrouwelijkheidaanduiding", "informatieobjecttype"],
         "properties": {
           "titel":                {"type": "string", "title": "Title", "facetable": true, "maxLength": 1024, "description": "Document title"},
-          "bestandsnaam":         {"type": "string", "title": "File Name", "maxLength": 1024, "description": "Filename"},
+          "fileName":         {"type": "string", "title": "File Name", "maxLength": 1024, "description": "Filename"},
           "bestandsomvang":       {"type": "integer", "title": "File Size", "description": "Size in bytes"},
-          "formaat":              {"type": "string", "title": "Format", "maxLength": 255, "description": "MIME type"},
+          "format":              {"type": "string", "title": "Format", "maxLength": 255, "description": "MIME type"},
           "vertrouwelijkheidaanduiding": {
             "type": "string",
             "title": "Confidentiality Designation",
@@ -62,11 +62,11 @@
             "description": "Integrity hash of the file content",
             "properties": {
               "algoritme": {"type": "string", "title": "Integrity Algorithm", "default": "sha256", "description": "Hash algorithm (fixed sha256)"},
-              "waarde":    {"type": "string", "title": "Integrity Value", "maxLength": 128, "description": "Hex-encoded SHA-256 hash"},
-              "datum":     {"type": "string", "title": "Registration Date", "format": "date-time", "description": "Hash computation timestamp"}
+              "value":    {"type": "string", "title": "Integrity Value", "maxLength": 128, "description": "Hex-encoded SHA-256 hash"},
+              "date":     {"type": "string", "title": "Registration Date", "format": "date-time", "description": "Hash computation timestamp"}
             }
           },
-          "vergrendeldOp":        {"type": "string", "title": "Locked On", "format": "date-time", "description": "Timestamp set when status transitions to definitief"},
+          "lockedOn":        {"type": "string", "title": "Locked On", "format": "date-time", "description": "Timestamp set when status transitions to definitief"},
           "fileId":               {"type": "integer", "title": "File ID", "description": "Nextcloud file ID backing this informatieobject"}
         }
       },
@@ -81,13 +81,13 @@
         "properties": {
           "zaak":               {"type": "string", "title": "Case Reference", "facetable": true, "maxLength": 255, "description": "Reference to the case (zaak)"},
           "informatieobject":   {"type": "string", "title": "Information Object Reference", "facetable": true, "maxLength": 255, "description": "Reference to the informatieobject"},
-          "aardRelatieWeergave": {
+          "natureRelationshipDisplay": {
             "type": "string",
             "title": "Relation Nature",
             "description": "Nature of the relation",
             "enum": ["Hoort bij, omgekeerd", "Legt vast, omgekeerd"]
           },
-          "registratiedatum":   {"type": "string", "title": "Registration Date", "format": "date-time", "description": "When the link was registered"}
+          "registrationDate":   {"type": "string", "title": "Registration Date", "format": "date-time", "description": "When the link was registered"}
         }
       },
       "besluitinformatieobject": {
@@ -97,11 +97,11 @@
         "title": "Besluitinformatieobject",
         "description": "ZGW DRC join between a besluit (decision) and an informatieobject.",
         "type": "object",
-        "required": ["besluit", "informatieobject"],
+        "required": ["decision", "informatieobject"],
         "properties": {
-          "besluit":            {"type": "string", "title": "Decision Reference", "facetable": true, "maxLength": 255, "description": "Reference to the besluit"},
+          "decision":            {"type": "string", "title": "Decision Reference", "facetable": true, "maxLength": 255, "description": "Reference to the besluit"},
           "informatieobject":   {"type": "string", "title": "Information Object Reference", "facetable": true, "maxLength": 255, "description": "Reference to the informatieobject"},
-          "registratiedatum":   {"type": "string", "title": "Registration Date", "format": "date-time", "description": "When the link was registered"}
+          "registrationDate":   {"type": "string", "title": "Registration Date", "format": "date-time", "description": "When the link was registered"}
         }
       },
       "informatieobjecttype": {
@@ -131,8 +131,8 @@
             ]
           },
           "schema":                   {"type": "string", "title": "Schema", "maxLength": 255, "description": "Register schema this type applies to"},
-          "beginGeldigheid":          {"type": "string", "title": "Validity Start", "format": "date", "description": "Validity start date"},
-          "eindeGeldigheid":          {"type": "string", "title": "Validity End", "format": "date", "description": "Validity end date (nullable)"}
+          "startValidity":          {"type": "string", "title": "Validity Start", "format": "date", "description": "Validity start date"},
+          "endValidity":          {"type": "string", "title": "Validity End", "format": "date", "description": "Validity end date (nullable)"}
         }
       }
     }

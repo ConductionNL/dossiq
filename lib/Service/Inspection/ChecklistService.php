@@ -691,7 +691,7 @@ class ChecklistService {
 			'type' => 'waarschuwing',
 			'ernst' => 'aanzienlijk',
 			'gedrag' => 'onverschillig',
-			'interventie' => 'Suggested by inspection checklist run ' . $runId . ' item ' . $itemId,
+			'intervention' => 'Suggested by inspection checklist run ' . $runId . ' item ' . $itemId,
 		];
 
 		try {

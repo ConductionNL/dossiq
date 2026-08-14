@@ -1480,7 +1480,7 @@
 									"label": "Address"
 								},
 								{
-									"key": "nummeraanduidingId",
+									"key": "addressDesignationId",
 									"label": "Nummeraanduiding id"
 								},
 								{
@@ -1866,7 +1866,7 @@
 								"objection",
 								"status",
 								"awbReference",
-								"ontvangstdatum",
+								"receiptDate",
 								"decisionDeadline"
 							]
 						}
@@ -1917,15 +1917,15 @@
 						"content": {
 							"columns": 2,
 							"include": [
-								"verdaagdOp",
+								"adjournedOn",
 								"verdagingsperiode",
-								"opschorting",
-								"opschortingStart",
-								"opschortingEnd",
+								"suspension",
+								"suspensionStart",
+								"suspensionEnd",
 								"hearingWaived",
 								"waiverReason",
 								"ingebrekestelling",
-								"dwangsom"
+								"penaltyPayment"
 							]
 						}
 					},
@@ -2117,7 +2117,7 @@
 								"advisoryOpinion",
 								"followsAdvice",
 								"deviationRationale",
-								"proceskostenvergoeding",
+								"legalCostsCompensation",
 								"status"
 							]
 						}
@@ -2396,7 +2396,7 @@
 					{
 						"key": "type",
 						"label": "Type",
-						"formatter": "voorstelType"
+						"formatter": "proposalType"
 					},
 					{
 						"key": "status",
@@ -2721,7 +2721,7 @@
 						"key": "name"
 					},
 					{
-						"key": "voorstelType"
+						"key": "proposalType"
 					},
 					{
 						"key": "caseType"
@@ -3759,7 +3759,7 @@
 						"key": "formattedAddress"
 					},
 					{
-						"key": "nummeraanduidingId"
+						"key": "addressDesignationId"
 					},
 					{
 						"key": "parcelId"
@@ -3861,7 +3861,7 @@
 					"ernst",
 					"gedrag",
 					"actorType",
-					"recommendedInterventie",
+					"recommendedIntervention",
 					"finalIntervention",
 					"override",
 					"matrixVersion"
@@ -3909,7 +3909,7 @@
 								"gedrag",
 								"actorType",
 								"matrixVersion",
-								"recommendedInterventie",
+								"recommendedIntervention",
 								"recommendedBy"
 							]
 						}
@@ -4455,7 +4455,7 @@
 							"columns": 2,
 							"include": [
 								"case",
-								"sourceBezwaar",
+								"sourceObjection",
 								"contestedDecision",
 								"courtReference",
 								"responsibleChamber",
@@ -4474,14 +4474,14 @@
 								"appellantFilingDate",
 								"appellantNotifiedDate",
 								"filingDeadline",
-								"voorzieningRequested",
+								"provisionRequested",
 								"latefilingNotice",
 								"fileInspectionRequests",
 								"judgmentOutcome",
 								"judgmentDate",
 								"judgmentDocument",
 								"cascadeAction",
-								"cascadeBezwaarCase"
+								"cascadeObjectionCase"
 							]
 						}
 					},

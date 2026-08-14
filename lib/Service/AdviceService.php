@@ -360,7 +360,7 @@ class AdviceService {
 			'adviseur' => $data['adviseur'] ?? '',
 			'deadline' => $data['deadline'] ?? null,
 			'status' => 'open',
-			'vraag' => $data['vraag'] ?? '',
+			'question' => $data['question'] ?? '',
 			'adviesText' => '',
 			'addedToFile' => false,
 		];
@@ -442,8 +442,8 @@ class AdviceService {
 				payload: [
 					'subjectRegister' => $register,
 					'externalReference' => $caseId,
-					'subjectLabel' => (string)($data['vraag'] ?? 'Adviesaanvraag'),
-					'question' => (string)($data['vraag'] ?? ''),
+					'subjectLabel' => (string)($data['question'] ?? 'Adviesaanvraag'),
+					'question' => (string)($data['question'] ?? ''),
 					'adviseur' => (string)$payload['adviseur'],
 				],
 			);

@@ -207,10 +207,10 @@ class BeschikkingServiceTest extends TestCase {
 			'mandaatRegeling',
 			[
 				'id' => 'mr-2024-007-wmo',
-				'naam' => 'Mandaatregeling WMO',
+				'name' => 'Mandaatregeling WMO',
 				'mandateGroups' => [
-					['niveau' => 'consulent', 'tot_bedrag' => 5000, 'zaaktypes' => ['wmo-melding'], 'beschikkingTypes' => ['toekenning']],
-					['niveau' => 'afdelingsmanager', 'tot_bedrag' => 25000, 'zaaktypes' => ['wmo-melding'], 'beschikkingTypes' => ['toekenning', 'afwijzing']],
+					['niveau' => 'consulent', 'to_amount' => 5000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning']],
+					['niveau' => 'afdelingsmanager', 'to_amount' => 25000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning', 'afwijzing']],
 				],
 			]
 		);
@@ -222,19 +222,19 @@ class BeschikkingServiceTest extends TestCase {
 	 * @return array<string, mixed> The composed beschikking (for chaining).
 	 */
 	private function composeWmo(): array {
-		$beschikking = $this->service->compose(
+		$decision = $this->service->compose(
 			'zaak-2026-wmo-1',
 			'tpl-wmo-v1',
 			[
-				'beschikkingType' => 'toekenning',
-				'geadresseerde' => ['type' => 'burger', 'bsn' => '123456789', 'naam' => 'M. Jansen', 'berichtenboxBevestigd' => true],
-				'motivering' => 'Toegekend op basis van onderzoek.',
+				'decisionType' => 'toekenning',
+				'geadresseerde' => ['type' => 'burger', 'bsn' => '123456789', 'name' => 'M. Jansen', 'berichtenboxBevestigd' => true],
+				'rationale' => 'Toegekend op basis van onderzoek.',
 			],
 		);
 
 		// The compose path does not set zaaktype/legesbedrag; patch them in
 		// (ontwerp status permits edits) so the mandaat lookup can resolve.
-		return $this->service->updateFields($beschikking['id'], ['zaaktype' => 'wmo-melding', 'legesbedrag' => 4000]);
+		return $this->service->updateFields($decision['id'], ['caseType' => 'wmo-melding', 'feeAmount' => 4000]);
 	}//end composeWmo()
 
 	/**
@@ -243,11 +243,11 @@ class BeschikkingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testComposeCreatesDraft(): void {
-		$beschikking = $this->composeWmo();
+		$decision = $this->composeWmo();
 
-		$this->assertSame('ontwerp', $beschikking['huidigeStatus']);
-		$this->assertSame('pdf-a3', $beschikking['samengesteldeInhoud']['format']);
-		$this->assertNotEmpty($beschikking['samengesteldeInhoud']['bestandId']);
+		$this->assertSame('ontwerp', $decision['currentStatus']);
+		$this->assertSame('pdf-a3', $decision['samengesteldeInhoud']['format']);
+		$this->assertNotEmpty($decision['samengesteldeInhoud']['fileId']);
 	}//end testComposeCreatesDraft()
 
 	/**
@@ -256,35 +256,35 @@ class BeschikkingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testFullLifecycle(): void {
-		$beschikking = $this->composeWmo();
-		$id = $beschikking['id'];
+		$decision = $this->composeWmo();
+		$id = $decision['id'];
 
-		$afterAkkoord = $this->service->akkoord($id, 'afdelingsmanager-wmo-15');
-		$this->assertSame('akkoord-mandaat', $afterAkkoord['huidigeStatus']);
+		$afterApproved = $this->service->akkoord($id, 'afdelingsmanager-wmo-15');
+		$this->assertSame('akkoord-mandaat', $afterApproved['currentStatus']);
 		// Outer key renamed; the inner `mandaatNiveau` is nested JSON and is
 		// deliberately left Dutch until the JSON-rewrite migration.
-		$this->assertSame('afdelingsmanager', $afterAkkoord['mandateGranted']['mandaatNiveau']);
+		$this->assertSame('afdelingsmanager', $afterApproved['mandateGranted']['mandateLevel']);
 
 		$afterSign = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
-		$this->assertSame('ondertekend', $afterSign['huidigeStatus']);
-		$this->assertNotEmpty($afterSign['handtekening']['validatieRapportId']);
+		$this->assertSame('ondertekend', $afterSign['currentStatus']);
+		$this->assertNotEmpty($afterSign['signature']['validationRapportId']);
 
 		$afterSend = $this->service->verzend($id, 'afdelingsmanager-wmo-15');
-		$this->assertSame('verzonden', $afterSend['huidigeStatus']);
-		$this->assertNotEmpty($afterSend['bezwaarTermijnEindDatum']);
+		$this->assertSame('verzonden', $afterSend['currentStatus']);
+		$this->assertNotEmpty($afterSend['objectionTermEndDate']);
 
 		// A BezwaarTrigger was created with a 6-week termijn. [V08]
-		$triggers = $this->objects->searchObjectsBySlug('procest', 'bezwaarTrigger', ['beschikkingId' => $id]);
+		$triggers = $this->objects->searchObjectsBySlug('procest', 'bezwaarTrigger', ['decisionId' => $id]);
 		$this->assertCount(1, $triggers);
 		$this->assertTrue($triggers[0]['archiefTriggerActief']);
 
 		$afterArchive = $this->service->archive($id);
-		$this->assertSame('gearchiveerd', $afterArchive['huidigeStatus']);
+		$this->assertSame('gearchiveerd', $afterArchive['currentStatus']);
 		$this->assertNotEmpty($afterArchive['archief']['archiefId']);
-		$this->assertNotEmpty($afterArchive['archief']['vernietigingsdatum']);
+		$this->assertNotEmpty($afterArchive['archief']['destructionDate']);
 
 		// Every transition was logged. [V05 logging]
-		$logs = $this->objects->searchObjectsBySlug('procest', 'stateMachineLog', ['beschikkingId' => $id]);
+		$logs = $this->objects->searchObjectsBySlug('procest', 'stateMachineLog', ['decisionId' => $id]);
 		$this->assertGreaterThanOrEqual(4, count($logs));
 	}//end testFullLifecycle()
 
@@ -294,15 +294,15 @@ class BeschikkingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testMandaatRejectedWhenOverLimit(): void {
-		$beschikking = $this->composeWmo();
+		$decision = $this->composeWmo();
 		// Raise the bedrag above the consulent limit while still ontwerp.
-		$beschikking = $this->service->updateFields($beschikking['id'], ['legesbedrag' => 9000]);
+		$decision = $this->service->updateFields($decision['id'], ['feeAmount' => 9000]);
 
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('mandaat_insufficient');
 
 		// A consulent may only sign up to 5000.
-		$this->service->akkoord($beschikking['id'], 'consulent-wmo-3');
+		$this->service->akkoord($decision['id'], 'consulent-wmo-3');
 	}//end testMandaatRejectedWhenOverLimit()
 
 	/**
@@ -311,8 +311,8 @@ class BeschikkingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testImmutabilityAfterSigning(): void {
-		$beschikking = $this->composeWmo();
-		$id = $beschikking['id'];
+		$decision = $this->composeWmo();
+		$id = $decision['id'];
 
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
 		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
@@ -320,7 +320,7 @@ class BeschikkingServiceTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('immutable');
 
-		$this->service->updateFields($id, ['motivering' => 'gewijzigd']);
+		$this->service->updateFields($id, ['rationale' => 'gewijzigd']);
 	}//end testImmutabilityAfterSigning()
 
 	/**
@@ -329,13 +329,13 @@ class BeschikkingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testInvalidTransitionRejected(): void {
-		$beschikking = $this->composeWmo();
+		$decision = $this->composeWmo();
 
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('invalid_transition');
 
 		// Cannot verzend straight from ontwerp.
-		$this->service->verzend($beschikking['id'], 'afdelingsmanager-wmo-15');
+		$this->service->verzend($decision['id'], 'afdelingsmanager-wmo-15');
 	}//end testInvalidTransitionRejected()
 
 	/**
@@ -344,8 +344,8 @@ class BeschikkingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAuditPacketIsZip(): void {
-		$beschikking = $this->composeWmo();
-		$id = $beschikking['id'];
+		$decision = $this->composeWmo();
+		$id = $decision['id'];
 
 		$this->service->akkoord($id, 'afdelingsmanager-wmo-15');
 		$this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');

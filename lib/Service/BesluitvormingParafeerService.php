@@ -56,7 +56,7 @@ class BesluitvormingParafeerService {
 	 * creates a route snapshot, sets currentStep to 1, creates a task for the
 	 * first parafeerder, and updates the voorstel status to 'in_parafering'.
 	 *
-	 * @param string $voorstelId The UUID of the voorstel.
+	 * @param string $proposalId The UUID of the voorstel.
 	 *
 	 * @return array<string, mixed> The updated voorstel.
 	 *
@@ -64,38 +64,38 @@ class BesluitvormingParafeerService {
 	 *
 	 * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-4
 	 */
-	public function activate(string $voorstelId): array {
+	public function activate(string $proposalId): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
-		$voorstelSchema = $this->settingsService->getConfigValue('voorstel_schema');
+		$proposalSchema = $this->settingsService->getConfigValue('voorstel_schema');
 
-		if (empty($register) === true || empty($voorstelSchema) === true) {
+		if (empty($register) === true || empty($proposalSchema) === true) {
 			throw new RuntimeException('Procest register or voorstel_schema not configured');
 		}
 
 		// Load the voorstel.
-		$voorstelResults = $this->searchObjectsAsArrays(
+		$proposalResults = $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,
-			schema: $voorstelSchema,
-			filters: ['id' => $voorstelId]
+			schema: $proposalSchema,
+			filters: ['id' => $proposalId]
 		);
 
-		if (empty($voorstelResults) === true) {
-			throw new RuntimeException('Voorstel not found: ' . $voorstelId);
+		if (empty($proposalResults) === true) {
+			throw new RuntimeException('Voorstel not found: ' . $proposalId);
 		}
 
-		$voorstel = $this->toArray(value: $voorstelResults[0]);
+		$proposal = $this->toArray(value: $proposalResults[0]);
 
 		// Find the parafeerroute for this voorstel's caseType.
 		$routeSchema = $this->settingsService->getConfigValue('parafeerroute_schema');
 		$routeResults = [];
 		if (empty($routeSchema) === false) {
-			$caseTypeId = $voorstel['caseType'] ?? null;
+			$caseTypeId = $proposal['caseType'] ?? null;
 			$routeResults = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
@@ -117,10 +117,10 @@ class BesluitvormingParafeerService {
 			'routeSnapshot' => $routeSnapshot,
 		];
 
-		$updated = $objectService->saveObject(object: array_merge($voorstel, $updateData), register: $register, schema: $voorstelSchema);
+		$updated = $objectService->saveObject(object: array_merge($proposal, $updateData), register: $register, schema: $proposalSchema);
 
 		$this->logger->info(
-			'Besluitvorming parafering activated for voorstel: ' . $voorstelId,
+			'Besluitvorming parafering activated for voorstel: ' . $proposalId,
 			['app' => Application::APP_ID]
 		);
 
@@ -134,7 +134,7 @@ class BesluitvormingParafeerService {
 	 * sets status 'retour' on 'retour'. When all steps are complete, transitions
 	 * the parent case to 'Gereed voor agendering'.
 	 *
-	 * @param string $voorstelId The UUID of the voorstel.
+	 * @param string $proposalId The UUID of the voorstel.
 	 * @param string $parafeeractieId The UUID of the parafeeractie.
 	 *
 	 * @return array<string, mixed> The updated voorstel.
@@ -143,69 +143,69 @@ class BesluitvormingParafeerService {
 	 *
 	 * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-4
 	 */
-	public function handleParaafAction(string $voorstelId, string $parafeeractieId): array {
+	public function handleParaafAction(string $proposalId, string $parafeeractieId): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
-		$voorstelSchema = $this->settingsService->getConfigValue('voorstel_schema');
-		$actieSchema = $this->settingsService->getConfigValue('parafeeractie_schema');
+		$proposalSchema = $this->settingsService->getConfigValue('voorstel_schema');
+		$actionSchema = $this->settingsService->getConfigValue('parafeeractie_schema');
 
-		if (empty($register) === true || empty($voorstelSchema) === true) {
+		if (empty($register) === true || empty($proposalSchema) === true) {
 			throw new RuntimeException('Procest register or voorstel_schema not configured');
 		}
 
 		// Load voorstel.
-		$voorstelResults = $this->searchObjectsAsArrays(
+		$proposalResults = $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,
-			schema: $voorstelSchema,
-			filters: ['id' => $voorstelId]
+			schema: $proposalSchema,
+			filters: ['id' => $proposalId]
 		);
 
-		if (empty($voorstelResults) === true) {
-			throw new RuntimeException('Voorstel not found: ' . $voorstelId);
+		if (empty($proposalResults) === true) {
+			throw new RuntimeException('Voorstel not found: ' . $proposalId);
 		}
 
-		$voorstel = $this->toArray(value: $voorstelResults[0]);
+		$proposal = $this->toArray(value: $proposalResults[0]);
 
 		// Load parafeeractie.
 		$action = $this->resolveParaafActionType(
 			objectService: $objectService,
 			register: $register,
-			actieSchema: $actieSchema,
+			actionSchema: $actionSchema,
 			parafeeractieId: $parafeeractieId,
 		);
 
 		// Handle retour: set voorstel status to retour.
 		if ($action === 'retour') {
 			$updated = $objectService->saveObject(
-				object: array_merge($voorstel, ['status' => 'retour']),
+				object: array_merge($proposal, ['status' => 'retour']),
 				register: $register,
-				schema: $voorstelSchema
+				schema: $proposalSchema
 			);
 			return $this->toArray(value: $updated);
 		}
 
 		// Advance to next step.
 		$nextStep = $this->findNextParaafStep(
-			snapshot: ($voorstel['routeSnapshot'] ?? []),
-			currentStep: (int)($voorstel['currentStep'] ?? 1),
+			snapshot: ($proposal['routeSnapshot'] ?? []),
+			currentStep: (int)($proposal['currentStep'] ?? 1),
 		);
 
 		if ($nextStep === null) {
 			// All steps complete: transition case to gereed voor agendering.
 			$updateData = ['status' => 'gereed_voor_agendering', 'currentStep' => 0];
 			$updated = $objectService->saveObject(
-				object: array_merge($voorstel, $updateData),
+				object: array_merge($proposal, $updateData),
 				register: $register,
-				schema: $voorstelSchema
+				schema: $proposalSchema
 			);
 
 			$this->logger->info(
-				'All parafen collected for voorstel: ' . $voorstelId . ', transitioning case.',
+				'All parafen collected for voorstel: ' . $proposalId . ', transitioning case.',
 				['app' => Application::APP_ID]
 			);
 
@@ -215,9 +215,9 @@ class BesluitvormingParafeerService {
 		// Advance to next step.
 		$updateData = ['currentStep' => $nextStep, 'status' => 'in_parafering'];
 		$updated = $objectService->saveObject(
-			object: array_merge($voorstel, $updateData),
+			object: array_merge($proposal, $updateData),
 			register: $register,
-			schema: $voorstelSchema
+			schema: $proposalSchema
 		);
 
 		return $this->toArray(value: $updated);
@@ -228,7 +228,7 @@ class BesluitvormingParafeerService {
 	 *
 	 * @param object $objectService The OpenRegister object service.
 	 * @param string $register The register identifier.
-	 * @param string $actieSchema The parafeeractie schema identifier, may be empty.
+	 * @param string $actionSchema The parafeeractie schema identifier, may be empty.
 	 * @param string $parafeeractieId The UUID of the parafeeractie.
 	 *
 	 * @return string The action slug ('goedgekeurd' when unresolvable).
@@ -236,27 +236,27 @@ class BesluitvormingParafeerService {
 	private function resolveParaafActionType(
 		object $objectService,
 		string $register,
-		string $actieSchema,
+		string $actionSchema,
 		string $parafeeractieId,
 	): string {
-		if (empty($actieSchema) === true) {
+		if (empty($actionSchema) === true) {
 			return 'goedgekeurd';
 		}
 
-		$actieResults = $this->searchObjectsAsArrays(
+		$actionResults = $this->searchObjectsAsArrays(
 			objectService: $objectService,
 			register: $register,
-			schema: $actieSchema,
+			schema: $actionSchema,
 			filters: ['id' => $parafeeractieId]
 		);
 
-		if (empty($actieResults) === true) {
+		if (empty($actionResults) === true) {
 			return 'goedgekeurd';
 		}
 
-		$actie = $this->toArray(value: $actieResults[0]);
+		$action = $this->toArray(value: $actionResults[0]);
 
-		return (string)($actie['action'] ?? 'goedgekeurd');
+		return (string)($action['action'] ?? 'goedgekeurd');
 	}//end resolveParaafActionType()
 
 	/**
@@ -297,22 +297,22 @@ class BesluitvormingParafeerService {
 	 * Queries all parafeeracties for the voorstel and checks whether every
 	 * required step has action='goedgekeurd'.
 	 *
-	 * @param string $voorstelId The UUID of the voorstel.
+	 * @param string $proposalId The UUID of the voorstel.
 	 *
 	 * @return bool True when all required parafen are collected, false otherwise.
 	 *
 	 * @spec openspec/changes/besluitvorming-workflow/tasks.md#task-4
 	 */
-	public function allParafenCollected(string $voorstelId): bool {
+	public function allParafenCollected(string $proposalId): bool {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return false;
 		}
 
 		$register = $this->settingsService->getConfigValue('register');
-		$actieSchema = $this->settingsService->getConfigValue('parafeeractie_schema');
+		$actionSchema = $this->settingsService->getConfigValue('parafeeractie_schema');
 
-		if (empty($register) === true || empty($actieSchema) === true) {
+		if (empty($register) === true || empty($actionSchema) === true) {
 			return false;
 		}
 
@@ -320,17 +320,17 @@ class BesluitvormingParafeerService {
 			$acties = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $actieSchema,
-				filters: ['voorstel' => $voorstelId]
+				schema: $actionSchema,
+				filters: ['voorstel' => $proposalId]
 			);
 
 			if (empty($acties) === true) {
 				return false;
 			}
 
-			foreach ($acties as $actie) {
-				$actieArr = $this->toArray(value: $actie);
-				if ((string)($actieArr['action'] ?? '') !== 'goedgekeurd') {
+			foreach ($acties as $action) {
+				$actionArr = $this->toArray(value: $action);
+				if ((string)($actionArr['action'] ?? '') !== 'goedgekeurd') {
 					return false;
 				}
 			}
@@ -339,7 +339,7 @@ class BesluitvormingParafeerService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'BesluitvormingParafeerService::allParafenCollected failed',
-				['voorstelId' => $voorstelId, 'exception' => $e->getMessage()]
+				['voorstelId' => $proposalId, 'exception' => $e->getMessage()]
 			);
 			return false;
 		}//end try

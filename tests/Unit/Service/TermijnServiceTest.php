@@ -65,10 +65,10 @@ class TermijnServiceTest extends TestCase {
 			'termijnDefinitie',
 			[
 				'id' => 'td-omgevingsvergunning-regulier',
-				'zaaktype' => 'omgevingsvergunning-regulier',
+				'caseType' => 'omgevingsvergunning-regulier',
 				'legalBasis' => 'Wabo 3.9 lid 1',
-				'standaardDuurDagen' => 56,
-				'aantalVerlengingen' => 1,
+				'standardDurationDays' => 56,
+				'countExtensions' => 1,
 				'validFrom' => '2026-01-01',
 			]
 		);
@@ -77,10 +77,10 @@ class TermijnServiceTest extends TestCase {
 			'termijnDefinitie',
 			[
 				'id' => 'td-wmo-aanvraag',
-				'zaaktype' => 'wmo-melding',
+				'caseType' => 'wmo-melding',
 				'legalBasis' => 'Wmo 2015 art 2.3.5',
-				'standaardDuurDagen' => 42,
-				'aantalVerlengingen' => 0,
+				'standardDurationDays' => 42,
+				'countExtensions' => 0,
 				'validFrom' => '2026-01-01',
 			]
 		);
@@ -96,16 +96,16 @@ class TermijnServiceTest extends TestCase {
 		self::assertSame('Z/2026/123', $instance['zaak']);
 		self::assertSame('td-omgevingsvergunning-regulier', $instance['termijnDefinitie']);
 		self::assertSame('lopend', $instance['status']);
-		self::assertSame('2026-07-27', $instance['einddatumBerekend']);
-		self::assertSame('2026-07-27', $instance['einddatumActueel']);
+		self::assertSame('2026-07-27', $instance['endDateCalculated']);
+		self::assertSame('2026-07-27', $instance['endDateCurrent']);
 
 		// Start event recorded.
 		$events = $this->objects->store['termijnGebeurtenis'] ?? [];
 		self::assertCount(1, $events);
 		$event = array_values($events)[0];
 		self::assertSame('start', $event['type']);
-		self::assertSame(56, $event['dagenImpact']);
-		self::assertSame('Wabo 3.9 lid 1', $event['grondslag']);
+		self::assertSame(56, $event['daysImpact']);
+		self::assertSame('Wabo 3.9 lid 1', $event['basis']);
 	}//end testCreateTermijnInstanceForOmgevingsvergunningHas56DayDeadline()
 
 	/**
@@ -115,7 +115,7 @@ class TermijnServiceTest extends TestCase {
 		$start = new DateTimeImmutable('2026-06-01T10:00:00+00:00');
 		$instance = $this->service->createTermijnInstance('Z/2026/124', 'wmo-melding', $start);
 
-		self::assertSame('2026-07-13', $instance['einddatumBerekend']);
+		self::assertSame('2026-07-13', $instance['endDateCalculated']);
 	}//end testCreateTermijnInstanceForWmoHas42DayDeadline()
 
 	/**
@@ -138,9 +138,9 @@ class TermijnServiceTest extends TestCase {
 			'termijnDefinitie',
 			[
 				'id' => 'td-omgevingsvergunning-regulier-v2',
-				'zaaktype' => 'omgevingsvergunning-regulier',
+				'caseType' => 'omgevingsvergunning-regulier',
 				'legalBasis' => 'Wabo 3.9 lid 1',
-				'standaardDuurDagen' => 70,
+				'standardDurationDays' => 70,
 				'validFrom' => '2026-03-01',
 			]
 		);
@@ -164,7 +164,7 @@ class TermijnServiceTest extends TestCase {
 		$resolved = $service->getTermijnDefinitie('omgevingsvergunning-regulier');
 		self::assertNotNull($resolved);
 		self::assertSame('td-omgevingsvergunning-regulier-v2', $resolved['id']);
-		self::assertSame(70, $resolved['standaardDuurDagen']);
+		self::assertSame(70, $resolved['standardDurationDays']);
 	}//end testGetTermijnDefinitieReturnsLatestActiveVersion()
 
 	/**
@@ -225,7 +225,7 @@ class TermijnServiceTest extends TestCase {
 		);
 		self::assertSame('td-omgevingsvergunning-regulier', $existing['termijnDefinitie']);
 		// 2026-01-15 + 56 days = 2026-03-12.
-		self::assertSame('2026-03-12', $existing['einddatumBerekend']);
+		self::assertSame('2026-03-12', $existing['endDateCalculated']);
 
 		// Phase 2 — publish a new v2 (70 days) for the same zaaktype.
 		$this->objects->saveObject(
@@ -233,9 +233,9 @@ class TermijnServiceTest extends TestCase {
 			'termijnDefinitie',
 			[
 				'id' => 'td-omgevingsvergunning-regulier-v2',
-				'zaaktype' => 'omgevingsvergunning-regulier',
+				'caseType' => 'omgevingsvergunning-regulier',
 				'legalBasis' => 'Wabo 3.9 lid 1',
-				'standaardDuurDagen' => 70,
+				'standardDurationDays' => 70,
 				'validFrom' => '2026-03-01',
 			]
 		);
@@ -246,7 +246,7 @@ class TermijnServiceTest extends TestCase {
 		$reloaded = $this->service->getTermijnInstance((string)$existing['id']);
 		self::assertNotNull($reloaded);
 		self::assertSame('td-omgevingsvergunning-regulier', $reloaded['termijnDefinitie']);
-		self::assertSame('2026-03-12', $reloaded['einddatumBerekend']);
+		self::assertSame('2026-03-12', $reloaded['endDateCalculated']);
 
 		// Phase 4 — a brand-new instance for the same zaaktype binds to v2.
 		// Reset the definitie cache by creating a fresh service so the new
@@ -273,7 +273,7 @@ class TermijnServiceTest extends TestCase {
 		);
 		self::assertSame('td-omgevingsvergunning-regulier-v2', $fresh['termijnDefinitie']);
 		// 2026-04-01 + 70 days = 2026-06-10.
-		self::assertSame('2026-06-10', $fresh['einddatumBerekend']);
+		self::assertSame('2026-06-10', $fresh['endDateCalculated']);
 	}//end testExistingTermijnInstanceRetainsOriginalDefinitieAfterVersionBump()
 }//end class
 

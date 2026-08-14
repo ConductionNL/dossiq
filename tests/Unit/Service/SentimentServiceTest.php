@@ -71,7 +71,7 @@ class SentimentServiceTest extends TestCase {
 		$this->assertContains(needle: 'klacht', haystack: $result['triggers']);
 		$this->assertContains(needle: 'advocaat', haystack: $result['triggers']);
 		$this->assertTrue(condition: $result['escalatieAanbevolen']);
-		$this->assertSame(expected: 'rood', actual: $result['escalatieLevel']);
+		$this->assertSame(expected: 'rood', actual: $result['escalationLevel']);
 		$this->assertSame(expected: 'boos', actual: $result['label']);
 		$this->assertLessThanOrEqual(expected: -0.5, actual: $result['score']);
 	}//end testSeriousTriggersEscalateToRood()
@@ -88,7 +88,7 @@ class SentimentServiceTest extends TestCase {
 		);
 
 		$this->assertFalse(condition: $result['escalatieAanbevolen']);
-		$this->assertSame(expected: 'geen', actual: $result['escalatieLevel']);
+		$this->assertSame(expected: 'geen', actual: $result['escalationLevel']);
 		$this->assertSame(expected: 'positief', actual: $result['label']);
 		$this->assertGreaterThan(expected: 0.0, actual: $result['score']);
 	}//end testPositiveTextDoesNotEscalate()

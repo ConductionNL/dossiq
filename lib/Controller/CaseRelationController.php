@@ -150,13 +150,13 @@ class CaseRelationController extends Controller {
 		}
 
 		$targetId = (string)$this->request->getParam('targetId', '');
-		$aardRelatie = (string)$this->request->getParam('aardRelatie', '');
-		$toelichting = $this->request->getParam('toelichting', null);
-		if ($toelichting !== null) {
-			$toelichting = (string)$toelichting;
+		$natureRelationship = (string)$this->request->getParam('aardRelatie', '');
+		$notes = $this->request->getParam('notes', null);
+		if ($notes !== null) {
+			$notes = (string)$notes;
 		}
 
-		if ($targetId === '' || $aardRelatie === '') {
+		if ($targetId === '' || $natureRelationship === '') {
 			return new JSONResponse(
 				['ok' => false, 'reason' => 'missing_case_id', 'message' => 'targetId and aardRelatie are required'],
 				Http::STATUS_BAD_REQUEST
@@ -173,8 +173,8 @@ class CaseRelationController extends Controller {
 		$result = $this->caseRelationService->addRelation(
 			caseId: $caseId,
 			targetId: $targetId,
-			aardRelatie: $aardRelatie,
-			toelichting: $toelichting,
+			natureRelationship: $natureRelationship,
+			notes: $notes,
 		);
 
 		if ($result['ok'] === false) {
@@ -192,7 +192,7 @@ class CaseRelationController extends Controller {
 	 *
 	 * @param string $caseId Origin case UUID.
 	 * @param string $targetId Target case UUID.
-	 * @param string $aardRelatie Relation type to remove.
+	 * @param string $natureRelationship Relation type to remove.
 	 *
 	 * @NoAdminRequired
 	 *
@@ -200,7 +200,7 @@ class CaseRelationController extends Controller {
 	 *
 	 * @spec openspec/specs/authz-bypass-fixes/spec.md
 	 */
-	public function destroy(string $caseId, string $targetId, string $aardRelatie): JSONResponse {
+	public function destroy(string $caseId, string $targetId, string $natureRelationship): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['message' => 'unauthenticated'], Http::STATUS_UNAUTHORIZED);
@@ -216,7 +216,7 @@ class CaseRelationController extends Controller {
 		$result = $this->caseRelationService->removeRelation(
 			caseId: $caseId,
 			targetId: $targetId,
-			aardRelatie: $aardRelatie,
+			natureRelationship: $natureRelationship,
 		);
 
 		if ($result['ok'] === false) {

@@ -51,10 +51,10 @@
 						<dt>{{ t('procest', 'Onderwerp') }}</dt>
 						<dd>{{ consultationData.onderwerp }}</dd>
 					</div>
-					<div v-if="consultationData.vraagstelling">
+					<div v-if="consultationData.question_formulation">
 						<dt>{{ t('procest', 'Question') }}</dt>
 						<dd class="external-consultation-response__question">
-							{{ consultationData.vraagstelling }}
+							{{ consultationData.question_formulation }}
 						</dd>
 					</div>
 					<div>
@@ -68,7 +68,7 @@
 								'external-consultation-response__deadline--overdue':
 									isDeadlinePassed,
 							}">
-							{{ formatDate(consultationData.uiterlijkeReactiedatum) }}
+							{{ formatDate(consultationData.latestResponseDate) }}
 							<span
 								v-if="isDeadlinePassed"
 								class="external-consultation-response__overdue-label">
@@ -108,7 +108,7 @@
 						</label>
 						<textarea
 							id="external-consultation-response-toelichting"
-							v-model="responseForm.toelichting"
+							v-model="responseForm.notes"
 							class="external-consultation-response__textarea"
 							rows="5"
 							:placeholder="
@@ -127,7 +127,7 @@
 							{{ t('procest', 'Conditions') }}
 						</label>
 						<div
-							v-for="(voorwaarde, idx) in responseForm.voorwaarden"
+							v-for="(voorwaarde, idx) in responseForm.terms"
 							:key="idx"
 							class="external-consultation-response__condition-row">
 							<input
@@ -172,7 +172,7 @@
 						</label>
 						<input
 							id="external-consultation-response-datum"
-							v-model="responseForm.datum"
+							v-model="responseForm.date"
 							type="date"
 							class="external-consultation-response__date-input" />
 					</div>
@@ -227,9 +227,9 @@ export default {
 			consultationData: null,
 			responseForm: {
 				advies: null,
-				toelichting: '',
-				voorwaarden: [],
-				datum: new Date().toISOString().slice(0, 10),
+				notes: '',
+				terms: [],
+				date: new Date().toISOString().slice(0, 10),
 			},
 			adviesOptions: [
 				{ label: this.t('procest', 'Positive'), value: 'positief' },
@@ -257,20 +257,15 @@ export default {
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		isDeadlinePassed() {
-			if (!this.consultationData?.uiterlijkeReactiedatum) return false
-			return (
-				new Date(this.consultationData.uiterlijkeReactiedatum) < new Date()
-			)
+			if (!this.consultationData?.latestResponseDate) return false
+			return new Date(this.consultationData.latestResponseDate) < new Date()
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		canSubmit() {
 			if (!this.responseForm.advies) return false
-			if (
-				this.toelichtingRequired
-				&& this.responseForm.toelichting.trim() === ''
-			)
+			if (this.toelichtingRequired && this.responseForm.notes.trim() === '')
 				return false
-			if (!this.responseForm.datum) return false
+			if (!this.responseForm.date) return false
 			return true
 		},
 	},
@@ -298,7 +293,7 @@ export default {
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		addVoorwaarde() {
-			this.responseForm.voorwaarden.push({
+			this.responseForm.terms.push({
 				description: '',
 				priority: 'normaal',
 			})
@@ -308,7 +303,7 @@ export default {
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06
 		 */
 		removeVoorwaarde(idx) {
-			this.responseForm.voorwaarden.splice(idx, 1)
+			this.responseForm.terms.splice(idx, 1)
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		async submitResponse() {
@@ -320,12 +315,12 @@ export default {
 					`/apps/procest/api/public/consultations/${encodeURIComponent(this.token)}`,
 					{
 						advies: this.responseForm.advies,
-						toelichting: this.responseForm.toelichting.trim(),
-						voorwaarden:
+						notes: this.responseForm.notes.trim(),
+						terms:
 							this.responseForm.advies === 'positief_met_voorwaarden'
-								? [...this.responseForm.voorwaarden]
+								? [...this.responseForm.terms]
 								: [],
-						datum: this.responseForm.datum,
+						date: this.responseForm.date,
 					},
 				)
 				this.submitted = true

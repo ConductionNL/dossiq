@@ -213,7 +213,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function bezwaarOnProtectedStatus(): array {
+	private function objectionOnProtectedStatus(): array {
 		return [
 			'id' => 'bezwaar-1',
 			'@self' => ['schema' => 'bezwaar'],
@@ -247,7 +247,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 
 		$listener->handle(
 			$this->event(
-				$this->bezwaarOnProtectedStatus(),
+				$this->objectionOnProtectedStatus(),
 				['status' => 'In behandeling']
 			)
 		);
@@ -278,7 +278,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 
 		$listener->handle(
 			$this->event(
-				$this->bezwaarOnProtectedStatus(),
+				$this->objectionOnProtectedStatus(),
 				['status' => 'In behandeling']
 			)
 		);
@@ -302,7 +302,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 
 		$listener->handle(
 			$this->event(
-				$this->bezwaarOnProtectedStatus(),
+				$this->objectionOnProtectedStatus(),
 				['status' => 'In behandeling']
 			)
 		);
@@ -324,7 +324,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 
 		$listener->handle(
 			$this->event(
-				$this->bezwaarOnProtectedStatus(),
+				$this->objectionOnProtectedStatus(),
 				['status' => 'In behandeling']
 			)
 		);
@@ -345,7 +345,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 
 		$listener->handle(
 			$this->event(
-				$this->bezwaarOnProtectedStatus(),
+				$this->objectionOnProtectedStatus(),
 				['status' => 'In behandeling']
 			)
 		);

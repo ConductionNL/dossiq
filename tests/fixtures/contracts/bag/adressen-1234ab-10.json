@@ -5,7 +5,7 @@
                 "identificatie": "0518200000123456",
                 "adresseerbaarObjectIdentificatie": "0518010000123456",
                 "openbareRuimteNaam": "Voorstraat",
-                "huisnummer": 10,
+                "houseNumber": 10,
                 "huisletter": null,
                 "huisnummertoevoeging": null,
                 "postcode": "1234AB",

@@ -142,7 +142,7 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 			return;
 		}
 
-		$lastUpdate = strtotime((string)($record['laatsteUpdate'] ?? ''));
+		$lastUpdate = strtotime((string)($record['lastUpdate'] ?? ''));
 		if ($lastUpdate === false) {
 			return;
 		}
@@ -162,7 +162,7 @@ class SpecialistBeschikbaarheidRefreshJob extends TimedJob {
 				$schema,
 				[
 					'status' => 'afwezig',
-					'laatsteUpdate' => date('c'),
+					'lastUpdate' => date('c'),
 				],
 				$id,
 			);

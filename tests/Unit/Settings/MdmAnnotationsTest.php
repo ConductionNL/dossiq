@@ -83,7 +83,7 @@ class MdmAnnotationsTest extends TestCase {
 		}
 		$this->assertSame('exact', $byField['identifier'][0]['method']);
 		$this->assertSame(0.4, $byField['identifier'][0]['weight']);
-		$this->assertSame('exact', $byField['vergunningaanvraagRef'][0]['method'], 'DSO re-delivery must match on vergunningaanvraagRef');
+		$this->assertSame('exact', $byField['permitApplicationRef'][0]['method'], 'DSO re-delivery must match on vergunningaanvraagRef');
 		$this->assertCount(2, $byField['title'], 'title must match normalized + levenshtein');
 	}
 

@@ -77,7 +77,7 @@ interface ZtcCatalogiAdapterInterface {
 	 * Resolve a `zaaktypeIdentificatie` to a canonical Catalogi-API
 	 * URL on the named receiver.
 	 *
-	 * @param string $zaaktypeId The receiver-side
+	 * @param string $caseTypeId The receiver-side
 	 *                           zaaktypeIdentificatie
 	 *                           (e.g. `ZAAK-2026-WOO`).
 	 * @param string $receiverSourceSlug Which openconnector
@@ -88,13 +88,13 @@ interface ZtcCatalogiAdapterInterface {
 	 *
 	 * @return ZtcResult The lookup outcome (status + canonical URL).
 	 */
-	public function resolveZaakType(string $zaaktypeId, string $receiverSourceSlug, array $context = []): ZtcResult;
+	public function resolveZaakType(string $caseTypeId, string $receiverSourceSlug, array $context = []): ZtcResult;
 
 	/**
 	 * Import a `ZaakType` envelope from a neighbouring Catalogi-API
 	 * into the tenant's own ZTC.
 	 *
-	 * @param string $zaaktypeUrl Canonical receiver-side
+	 * @param string $caseTypeUrl Canonical receiver-side
 	 *                            URL (output of
 	 *                            resolveZaakType() or
 	 *                            operator paste).
@@ -109,7 +109,7 @@ interface ZtcCatalogiAdapterInterface {
 	 * @return ZtcResult The import outcome (status +
 	 *                   `localZaakTypeUrl`).
 	 */
-	public function importZaakType(string $zaaktypeUrl, array $context = []): ZtcResult;
+	public function importZaakType(string $caseTypeUrl, array $context = []): ZtcResult;
 
 	/**
 	 * Whether the adapter is dormant — i.e. wired but not contacting

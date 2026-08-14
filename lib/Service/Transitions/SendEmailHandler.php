@@ -38,11 +38,11 @@ class SendEmailHandler implements ActionHandlerInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param NotificatieService $notificatieService Notification dispatcher
+	 * @param NotificatieService $notificationService Notification dispatcher
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
-		private readonly NotificatieService $notificatieService,
+		private readonly NotificatieService $notificationService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -73,8 +73,8 @@ class SendEmailHandler implements ActionHandlerInterface {
 				'transition' => $transitionContext,
 			];
 
-			if (method_exists($this->notificatieService, 'sendEmail') === true) {
-				$this->notificatieService->sendEmail($recipient, $payload);
+			if (method_exists($this->notificationService, 'sendEmail') === true) {
+				$this->notificationService->sendEmail($recipient, $payload);
 				return new ActionResult(succeeded: true, data: ['to' => $recipient]);
 			}
 

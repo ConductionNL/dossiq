@@ -110,7 +110,7 @@ class BagContractTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupAddress(postcode: '1234AB', huisnummer: '10');
+		$result = $adapter->lookupAddress(postcode: '1234AB', houseNumber: '10');
 		$this->assertSame('FOUND', $result->lookupStatus);
 		$this->assertSame('Voorstraat', $result->address['street']);
 		$this->assertSame('1234AB', $result->address['postcode']);

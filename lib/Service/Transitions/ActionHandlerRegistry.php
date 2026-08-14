@@ -51,8 +51,8 @@ class ActionHandlerRegistry {
 	 * @param WebhookHandler $webhook Built-in webhook handler
 	 * @param SetFieldHandler $setField Built-in field-set handler
 	 * @param NotifyHandler $notify Built-in notification handler
-	 * @param BesluitvormingActivateHandler $besluitActivate Parafering-chain activation handler
-	 * @param BesluitvormingPublishHandler $besluitPublish DROP/LVBB publication handler
+	 * @param BesluitvormingActivateHandler $decisionActivate Parafering-chain activation handler
+	 * @param BesluitvormingPublishHandler $decisionPublish DROP/LVBB publication handler
 	 * @param EvaluateDecisionHandler $evaluateDecision DMN decision-evaluation handler
 	 */
 	public function __construct(
@@ -62,8 +62,8 @@ class ActionHandlerRegistry {
 		WebhookHandler $webhook,
 		SetFieldHandler $setField,
 		NotifyHandler $notify,
-		BesluitvormingActivateHandler $besluitActivate,
-		BesluitvormingPublishHandler $besluitPublish,
+		BesluitvormingActivateHandler $decisionActivate,
+		BesluitvormingPublishHandler $decisionPublish,
 		EvaluateDecisionHandler $evaluateDecision,
 	) {
 		$this->handlers = [
@@ -73,8 +73,8 @@ class ActionHandlerRegistry {
 			'webhook' => $webhook,
 			'setField' => $setField,
 			'notify' => $notify,
-			'besluitvormingActivate' => $besluitActivate,
-			'besluitvormingPublish' => $besluitPublish,
+			'besluitvormingActivate' => $decisionActivate,
+			'besluitvormingPublish' => $decisionPublish,
 			'evaluateDecision' => $evaluateDecision,
 		];
 	}//end __construct()

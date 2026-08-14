@@ -249,7 +249,7 @@ class TenantOnboardingService {
 
 		$missing = [];
 		if ($this->countSchemaRows(objectService: $objectService, schema: 'caseType', filters: ['tenantRef' => $tenantId]) === 0) {
-			$missing[] = 'zaaktype';
+			$missing[] = 'caseType';
 		}
 
 		if ($this->countSchemaRows(objectService: $objectService, schema: 'tenantMandate', filters: ['tenantRef' => $tenantId]) === 0) {

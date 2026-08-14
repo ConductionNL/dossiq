@@ -40,10 +40,10 @@ class DeadlinePauseService {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termijnService TermijnService.
+	 * @param TermijnService $termService TermijnService.
 	 */
 	public function __construct(
-		private readonly TermijnService $termijnService,
+		private readonly TermijnService $termService,
 	) {
 	}//end __construct()
 
@@ -54,9 +54,9 @@ class DeadlinePauseService {
 	 * records a `pauze` event with dagenImpact=+duurDagen, and stores
 	 * the pause deadline for the daily scan to watch.
 	 *
-	 * @param string $termijnInstanceId Instance id.
-	 * @param int $duurDagen Pause days requested.
-	 * @param string $motivering Reason.
+	 * @param string $termInstanceId Instance id.
+	 * @param int $durationDays Pause days requested.
+	 * @param string $rationale Reason.
 	 * @param string $documentLink Document link (e.g. hersteltermijnbrief).
 	 *
 	 * @return array<string, mixed>
@@ -66,47 +66,47 @@ class DeadlinePauseService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
 	public function registerPauze(
-		string $termijnInstanceId,
-		int $duurDagen,
-		string $motivering,
+		string $termInstanceId,
+		int $durationDays,
+		string $rationale,
 		string $documentLink = '',
 	): array {
-		if ($duurDagen <= 0) {
+		if ($durationDays <= 0) {
 			throw new RuntimeException('Pause duration must be positive (AWB 4:5)');
 		}
 
-		$instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+		$instance = $this->termService->getTermijnInstance($termInstanceId);
 		if ($instance === null) {
-			throw new RuntimeException('TermijnInstance not found: ' . $termijnInstanceId);
+			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
 		}
 
 		if (($instance['status'] ?? '') === 'gepauzeerd') {
-			throw new RuntimeException('TermijnInstance already paused: ' . $termijnInstanceId);
+			throw new RuntimeException('TermijnInstance already paused: ' . $termInstanceId);
 		}
 
 		$now = new DateTimeImmutable();
-		$current = new DateTimeImmutable((string)($instance['einddatumActueel'] ?? $now->format('Y-m-d')));
-		$newEnd = $current->modify('+' . $duurDagen . ' days')->format('Y-m-d');
-		$pauseEnd = $now->modify('+' . $duurDagen . ' days')->format('Y-m-d');
+		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $now->format('Y-m-d')));
+		$newEnd = $current->modify('+' . $durationDays . ' days')->format('Y-m-d');
+		$pauseEnd = $now->modify('+' . $durationDays . ' days')->format('Y-m-d');
 
-		$updated = $this->termijnService->updateTermijnInstance(
-			$termijnInstanceId,
+		$updated = $this->termService->updateTermijnInstance(
+			$termInstanceId,
 			[
-				'einddatumActueel' => $newEnd,
+				'endDateCurrent' => $newEnd,
 				'status' => 'gepauzeerd',
 				'pauzeDeadline' => $pauseEnd,
 				'pauzeStartDatum' => $now->format('Y-m-d'),
-				'pauzeDuurDagen' => $duurDagen,
+				'pauzeDuurDagen' => $durationDays,
 			]
 		);
 
-		$this->termijnService->recordEvent(
-			termijnInstanceId: $termijnInstanceId,
+		$this->termService->recordEvent(
+			termInstanceId: $termInstanceId,
 			type: 'pauze',
-			grondslag: 'AWB 4:5',
-			motivering: $motivering,
-			dagenImpact: $duurDagen,
-			tijdstip: $now,
+			basis: 'AWB 4:5',
+			rationale: $rationale,
+			daysImpact: $durationDays,
+			moment: $now,
 			documentLink: $documentLink,
 		);
 
@@ -120,7 +120,7 @@ class DeadlinePauseService {
 	 * unconsumed portion to einddatumActueel; sets status=lopend and
 	 * records the `hervat` event.
 	 *
-	 * @param string $termijnInstanceId Instance id.
+	 * @param string $termInstanceId Instance id.
 	 * @param DateTimeImmutable|null $aanvullingDatum When aanvulling received (default now).
 	 *
 	 * @return array<string, mixed>
@@ -129,46 +129,46 @@ class DeadlinePauseService {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
-	public function resumeAfterPauze(string $termijnInstanceId, ?DateTimeImmutable $aanvullingDatum = null): array {
+	public function resumeAfterPauze(string $termInstanceId, ?DateTimeImmutable $aanvullingDatum = null): array {
 		$aanvullingDatum = ($aanvullingDatum ?? new DateTimeImmutable());
 
-		$instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+		$instance = $this->termService->getTermijnInstance($termInstanceId);
 		if ($instance === null) {
-			throw new RuntimeException('TermijnInstance not found: ' . $termijnInstanceId);
+			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
 		}
 
 		if (($instance['status'] ?? '') !== 'gepauzeerd') {
-			throw new RuntimeException('TermijnInstance not in gepauzeerd state: ' . $termijnInstanceId);
+			throw new RuntimeException('TermijnInstance not in gepauzeerd state: ' . $termInstanceId);
 		}
 
 		$pauzeStart = new DateTimeImmutable((string)($instance['pauzeStartDatum'] ?? $aanvullingDatum->format('Y-m-d')));
-		$duurDagen = (int)($instance['pauzeDuurDagen'] ?? 0);
+		$durationDays = (int)($instance['pauzeDuurDagen'] ?? 0);
 
 		// Days actually used (cap at the requested duration).
 		$diff = (int)$pauzeStart->diff($aanvullingDatum)->days;
-		$consumed = max(0, min($duurDagen, $diff));
-		$unused = $duurDagen - $consumed;
+		$consumed = max(0, min($durationDays, $diff));
+		$unused = $durationDays - $consumed;
 
 		// Pull back the unused portion of einddatumActueel.
-		$current = new DateTimeImmutable((string)($instance['einddatumActueel'] ?? $aanvullingDatum->format('Y-m-d')));
+		$current = new DateTimeImmutable((string)($instance['endDateCurrent'] ?? $aanvullingDatum->format('Y-m-d')));
 		$newEnd = $current->modify('-' . $unused . ' days')->format('Y-m-d');
 
-		$updated = $this->termijnService->updateTermijnInstance(
-			$termijnInstanceId,
+		$updated = $this->termService->updateTermijnInstance(
+			$termInstanceId,
 			[
-				'einddatumActueel' => $newEnd,
+				'endDateCurrent' => $newEnd,
 				'status' => 'lopend',
 				'pauzeDeadline' => null,
 			]
 		);
 
-		$this->termijnService->recordEvent(
-			termijnInstanceId: $termijnInstanceId,
+		$this->termService->recordEvent(
+			termInstanceId: $termInstanceId,
 			type: 'hervat',
-			grondslag: 'AWB 4:15',
-			motivering: 'Aanvulling ontvangen; termijn hervat',
-			dagenImpact: (-1 * $unused),
-			tijdstip: $aanvullingDatum,
+			basis: 'AWB 4:15',
+			rationale: 'Aanvulling ontvangen; termijn hervat',
+			daysImpact: (-1 * $unused),
+			moment: $aanvullingDatum,
 		);
 
 		return $updated ?? $instance;

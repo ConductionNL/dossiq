@@ -75,28 +75,28 @@ class OpenRegisterArchivalAdapter implements ArchivalAdapterInterface {
 	/**
 	 * {@inheritDoc}
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
-	 * @param string $bestandId The signed PDF/A-3 file id.
+	 * @param string $decisionId The beschikking UUID.
+	 * @param string $fileId The signed PDF/A-3 file id.
 	 * @param array<string, mixed> $tmloMetadata The TMLO-1.2/MDTO metadata block.
 	 *
-	 * @return array{archiefId: string, vernietigingsdatum: string}
+	 * @return array{archiefId: string, destructionDate: string}
 	 *
 	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
-	public function ingest(string $beschikkingId, string $bestandId, array $tmloMetadata): array {
-		$bewaartermijn = (string)($tmloMetadata['bewaartermijn'] ?? self::DEFAULT_BEWAARTERMIJN);
-		if ($this->isValidDuration(duration: $bewaartermijn) === false) {
-			$bewaartermijn = self::DEFAULT_BEWAARTERMIJN;
+	public function ingest(string $decisionId, string $fileId, array $tmloMetadata): array {
+		$retentionPeriod = (string)($tmloMetadata['bewaartermijn'] ?? self::DEFAULT_BEWAARTERMIJN);
+		if ($this->isValidDuration(duration: $retentionPeriod) === false) {
+			$retentionPeriod = self::DEFAULT_BEWAARTERMIJN;
 		}
 
-		$vernietigingsdatum = $this->computeVernietigingsdatum(
+		$destructionDate = $this->computeDestructionDate(
 			metadata: $tmloMetadata,
-			bewaartermijn: $bewaartermijn
+			retentionPeriod: $retentionPeriod
 		);
 
 		return [
-			'archiefId' => 'openregister-' . substr(hash('sha256', $beschikkingId . $bestandId), 0, 12),
-			'vernietigingsdatum' => $vernietigingsdatum,
+			'archiefId' => 'openregister-' . substr(hash('sha256', $decisionId . $fileId), 0, 12),
+			'destructionDate' => $destructionDate,
 		];
 	}//end ingest()
 
@@ -105,12 +105,12 @@ class OpenRegisterArchivalAdapter implements ArchivalAdapterInterface {
 	 * the declared bewaartermijn (retention runs from creation, not archival).
 	 *
 	 * @param array<string, mixed> $metadata The TMLO metadata block.
-	 * @param string $bewaartermijn Validated ISO-8601 duration.
+	 * @param string $retentionPeriod Validated ISO-8601 duration.
 	 *
 	 * @return string The vernietigingsdatum (Y-m-d), or '' when uncomputable.
 	 */
-	private function computeVernietigingsdatum(array $metadata, string $bewaartermijn): string {
-		$creatie = (string)($metadata['creatieDatum'] ?? ($metadata['bekendmakingDatum'] ?? ''));
+	private function computeDestructionDate(array $metadata, string $retentionPeriod): string {
+		$creatie = (string)($metadata['creatieDatum'] ?? ($metadata['announcementDate'] ?? ''));
 
 		try {
 			$base = new DateTimeImmutable();
@@ -118,7 +118,7 @@ class OpenRegisterArchivalAdapter implements ArchivalAdapterInterface {
 				$base = new DateTimeImmutable($creatie);
 			}
 
-			return $base->add(new DateInterval($bewaartermijn))->format('Y-m-d');
+			return $base->add(new DateInterval($retentionPeriod))->format('Y-m-d');
 		} catch (Exception $e) {
 			$this->logger->warning(
 				'OpenRegisterArchivalAdapter: could not compute vernietigingsdatum',

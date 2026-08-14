@@ -304,13 +304,13 @@ class ZgwZrcRulesServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testFilterZakenForConsumerUnfilteredWithoutAuthorizations(): void {
-		$zaken = [
-			['zaaktype' => 'http://example.com/zaaktypen/uuid-zt-1', 'vertrouwelijkheidaanduiding' => 'openbaar'],
-			['zaaktype' => 'http://example.com/zaaktypen/uuid-zt-2', 'vertrouwelijkheidaanduiding' => 'geheim'],
+		$cases = [
+			['caseType' => 'http://example.com/zaaktypen/uuid-zt-1', 'vertrouwelijkheidaanduiding' => 'openbaar'],
+			['caseType' => 'http://example.com/zaaktypen/uuid-zt-2', 'vertrouwelijkheidaanduiding' => 'geheim'],
 		];
 
 		$result = $this->service->filterZakenForConsumer(
-			zaken: $zaken,
+			cases: $cases,
 			authorizations: []
 		);
 
@@ -327,22 +327,22 @@ class ZgwZrcRulesServiceTest extends TestCase {
 		$zaaktypeUuid1 = 'aabbccdd-1111-2222-3333-444455556666';
 		$zaaktypeUuid2 = 'bbccddee-2222-3333-4444-555566667777';
 
-		$zaken = [
-			['zaaktype' => "http://example.com/zaaktypen/{$zaaktypeUuid1}", 'vertrouwelijkheidaanduiding' => 'openbaar'],
-			['zaaktype' => "http://example.com/zaaktypen/{$zaaktypeUuid2}", 'vertrouwelijkheidaanduiding' => 'openbaar'],
+		$cases = [
+			['caseType' => "http://example.com/zaaktypen/{$zaaktypeUuid1}", 'vertrouwelijkheidaanduiding' => 'openbaar'],
+			['caseType' => "http://example.com/zaaktypen/{$zaaktypeUuid2}", 'vertrouwelijkheidaanduiding' => 'openbaar'],
 		];
 
 		$authorizations = [
-			['zaaktype' => "http://example.com/zaaktypen/{$zaaktypeUuid1}", 'maxVertrouwelijkheidaanduiding' => 'openbaar'],
+			['caseType' => "http://example.com/zaaktypen/{$zaaktypeUuid1}", 'maxVertrouwelijkheidaanduiding' => 'openbaar'],
 		];
 
 		$result = $this->service->filterZakenForConsumer(
-			zaken: $zaken,
+			cases: $cases,
 			authorizations: $authorizations
 		);
 
 		$this->assertCount(1, $result);
-		$this->assertStringContainsString($zaaktypeUuid1, $result[0]['zaaktype']);
+		$this->assertStringContainsString($zaaktypeUuid1, $result[0]['caseType']);
 
 	}//end testFilterZakenForConsumerExcludesUnauthorizedZaaktype()
 
@@ -354,17 +354,17 @@ class ZgwZrcRulesServiceTest extends TestCase {
 	public function testFilterZakenForConsumerExcludesExceedingVertrouwelijkheid(): void {
 		$zaaktypeUuid = 'aabbccdd-1111-2222-3333-444455556666';
 
-		$zaken = [
-			['zaaktype' => "http://example.com/zaaktypen/{$zaaktypeUuid}", 'vertrouwelijkheidaanduiding' => 'openbaar'],
-			['zaaktype' => "http://example.com/zaaktypen/{$zaaktypeUuid}", 'vertrouwelijkheidaanduiding' => 'zeer_geheim'],
+		$cases = [
+			['caseType' => "http://example.com/zaaktypen/{$zaaktypeUuid}", 'vertrouwelijkheidaanduiding' => 'openbaar'],
+			['caseType' => "http://example.com/zaaktypen/{$zaaktypeUuid}", 'vertrouwelijkheidaanduiding' => 'zeer_geheim'],
 		];
 
 		$authorizations = [
-			['zaaktype' => "http://example.com/zaaktypen/{$zaaktypeUuid}", 'maxVertrouwelijkheidaanduiding' => 'intern'],
+			['caseType' => "http://example.com/zaaktypen/{$zaaktypeUuid}", 'maxVertrouwelijkheidaanduiding' => 'intern'],
 		];
 
 		$result = $this->service->filterZakenForConsumer(
-			zaken: $zaken,
+			cases: $cases,
 			authorizations: $authorizations
 		);
 
@@ -443,7 +443,7 @@ class ZgwZrcRulesServiceTest extends TestCase {
 		);
 
 		$body = [
-			'zaaktype' => "http://example.com/zaaktypen/{$zaaktypeUuid}",
+			'caseType' => "http://example.com/zaaktypen/{$zaaktypeUuid}",
 			'hoofdzaak' => "http://example.com/zaken/{$hoofdzaakUuid}",
 		];
 
@@ -498,7 +498,7 @@ class ZgwZrcRulesServiceTest extends TestCase {
 		);
 
 		$body = [
-			'zaaktype' => "http://example.com/zaaktypen/{$zaaktypeUuid}",
+			'caseType' => "http://example.com/zaaktypen/{$zaaktypeUuid}",
 			'bronorganisatie' => '000000000',
 			'vertrouwelijkheidaanduiding' => 'openbaar',
 			// Incoming says openbaar, zaaktype says vertrouwelijk.
@@ -549,7 +549,7 @@ class ZgwZrcRulesServiceTest extends TestCase {
 		);
 
 		$body = [
-			'zaaktype' => "http://example.com/zaaktypen/{$zaaktypeUuid}",
+			'caseType' => "http://example.com/zaaktypen/{$zaaktypeUuid}",
 			'bronorganisatie' => '000000000',
 			'vertrouwelijkheidaanduiding' => 'intern',
 		];

@@ -63,7 +63,7 @@ class EmailTemplateService {
 				. '\n\nMet vriendelijke groet,\n{{behandelaar}}',
 		],
 		[
-			'slug' => 'besluit',
+			'slug' => 'decision',
 			'name' => 'Besluit',
 			'subject' => 'Besluit zaak {{zaakNummer}}',
 			'body' => 'Geachte {{contactNaam}},\n\nWij hebben besloten in uw zaak {{zaakNummer}}. Het besluit is op {{einddatum}} genomen.'
@@ -185,11 +185,11 @@ class EmailTemplateService {
 			'case' => [
 				'zaakNummer',
 				'titel',
-				'startDatum',
-				'einddatum',
+				'startDate',
+				'endDate',
 				'deadline',
 				'status',
-				'behandelaar',
+				'handler',
 			],
 			'contact' => [
 				'contactNaam',
@@ -358,11 +358,11 @@ class EmailTemplateService {
 		return [
 			'zaakNummer' => (string)($case['identifier'] ?? ''),
 			'titel' => (string)($case['title'] ?? ''),
-			'startDatum' => (string)($case['startDate'] ?? ''),
-			'einddatum' => (string)($case['endDate'] ?? ''),
+			'startDate' => (string)($case['startDate'] ?? ''),
+			'endDate' => (string)($case['endDate'] ?? ''),
 			'deadline' => (string)($case['deadline'] ?? ''),
 			'status' => (string)($case['status'] ?? ''),
-			'behandelaar' => (string)($case['assignee'] ?? ''),
+			'handler' => (string)($case['assignee'] ?? ''),
 			'contactNaam' => (string)($case['contactName'] ?? ($case['contact']['name'] ?? '')),
 			'contactEmail' => (string)($case['contactEmail'] ?? ($case['contact']['email'] ?? '')),
 			'contactTelefoon' => (string)($case['contactPhone'] ?? ($case['contact']['phone'] ?? '')),

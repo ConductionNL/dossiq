@@ -64,17 +64,17 @@ class BrpKvkRegisterSetsTest extends TestCase {
 		// 'bsn' is not a registered OpenRegister string format (see the field's
 		// own description); the fragment intentionally pattern-validates the
 		// nine-digit BSN instead (ADR-011 — no procest-side validator).
-		$this->assertSame('^[0-9]{9}$', $person['burgerservicenummer']['pattern'], 'BSN must be pattern-validated as nine digits (ADR-011)');
-		foreach (['naam', 'geboorte', 'verblijfplaats'] as $block) {
+		$this->assertSame('^[0-9]{9}$', $person['citizenServiceNumber']['pattern'], 'BSN must be pattern-validated as nine digits (ADR-011)');
+		foreach (['name', 'birth', 'residence'] as $block) {
 			$this->assertArrayHasKey($block, $person, "Haal Centraal block {$block} required");
 		}
 
 		$company = $schemas['kvkCompany']['properties'];
-		foreach (['kvkNummer', 'handelsnaam', 'rechtsvorm', 'adres'] as $field) {
+		foreach (['kvkNumber', 'tradeName', 'rechtsvorm', 'adres'] as $field) {
 			$this->assertArrayHasKey($field, $company, "KvK Zoeken field {$field} required");
 		}
 
-		$this->assertSame('^[0-9]{8}$', $company['kvkNummer']['pattern']);
+		$this->assertSame('^[0-9]{8}$', $company['kvkNumber']['pattern']);
 		$this->assertSame('schema:Person', $schemas['brpPerson']['x-schema-org']);
 		$this->assertSame('schema:Organization', $schemas['kvkCompany']['x-schema-org']);
 
@@ -115,16 +115,16 @@ class BrpKvkRegisterSetsTest extends TestCase {
 		$this->assertCount(10, $persons);
 
 		foreach ($persons as $person) {
-			$bsn = $person['burgerservicenummer'];
+			$bsn = $person['citizenServiceNumber'];
 			$this->assertTrue($this->elfproef(bsn: $bsn), "seed BSN {$bsn} must be 11-proef valid");
 			$this->assertStringContainsString('personen-mock', $person['description'], 'row must name its fixture source');
-			$this->assertNotEmpty($person['naam']['geslachtsnaam']);
-			$this->assertNotEmpty($person['geboorte']['datum']);
+			$this->assertNotEmpty($person['name']['surname']);
+			$this->assertNotEmpty($person['birth']['date']);
 			$this->assertNotEmpty($person['displayName']);
 			$this->assertSame('procest', $person['@self']['register']);
 		}
 
-		$bsns = array_column($persons, 'burgerservicenummer');
+		$bsns = array_column($persons, 'citizenServiceNumber');
 		$this->assertSame($bsns, array_unique($bsns), 'seed BSNs must be unique');
 
 	}//end testSeedPersonsArePinnedMockPersonas()
@@ -139,14 +139,14 @@ class BrpKvkRegisterSetsTest extends TestCase {
 		$companies = $this->seedRows(schema: 'kvkCompany');
 		$this->assertCount(10, $companies);
 
-		$numbers = array_column($companies, 'kvkNummer');
+		$numbers = array_column($companies, 'kvkNumber');
 		foreach (self::PINNED_KVK as $pinned) {
 			$this->assertContains($pinned, $numbers, "pinned fixture KVK {$pinned} must be seeded");
 		}
 
 		foreach ($companies as $company) {
-			$this->assertMatchesRegularExpression('/^[0-9]{8}$/', $company['kvkNummer']);
-			$this->assertNotEmpty($company['handelsnaam']);
+			$this->assertMatchesRegularExpression('/^[0-9]{8}$/', $company['kvkNumber']);
+			$this->assertNotEmpty($company['tradeName']);
 			$this->assertNotEmpty($company['rechtsvorm']);
 			$this->assertStringContainsString('developers.kvk.nl', $company['description'], 'row must name its fixture source');
 		}

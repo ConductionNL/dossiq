@@ -84,7 +84,7 @@ class RaadsinformatieFeedController extends Controller {
 	/**
 	 * Serve the Atom feed for vergaderingen.
 	 *
-	 * @param string $organisatie Optional organisatie filter
+	 * @param string $organisation Optional organisatie filter
 	 *
 	 * @return DataDisplayResponse Atom XML feed
 	 *
@@ -92,11 +92,11 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function vergaderingen(string $organisatie = ''): DataDisplayResponse {
+	public function vergaderingen(string $organisation = ''): DataDisplayResponse {
 		return $this->buildFeed(
 			type: 'vergaderingen',
 			schema: 'vergadering',
-			organisatie: $organisatie
+			organisation: $organisation
 		);
 
 	}//end vergaderingen()
@@ -104,7 +104,7 @@ class RaadsinformatieFeedController extends Controller {
 	/**
 	 * Serve the Atom feed for agendapunten.
 	 *
-	 * @param string $organisatie Optional organisatie filter (not directly on schema, used as hint)
+	 * @param string $organisation Optional organisatie filter (not directly on schema, used as hint)
 	 *
 	 * @return DataDisplayResponse Atom XML feed
 	 *
@@ -112,11 +112,11 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function agendapunten(string $organisatie = ''): DataDisplayResponse {
+	public function agendapunten(string $organisation = ''): DataDisplayResponse {
 		return $this->buildFeed(
 			type: 'agendapunten',
 			schema: 'agendapunt',
-			organisatie: $organisatie
+			organisation: $organisation
 		);
 
 	}//end agendapunten()
@@ -124,7 +124,7 @@ class RaadsinformatieFeedController extends Controller {
 	/**
 	 * Serve the Atom feed for raadsdocumenten.
 	 *
-	 * @param string $organisatie Optional organisatie filter
+	 * @param string $organisation Optional organisatie filter
 	 *
 	 * @return DataDisplayResponse Atom XML feed
 	 *
@@ -132,11 +132,11 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
-	public function documenten(string $organisatie = ''): DataDisplayResponse {
+	public function documenten(string $organisation = ''): DataDisplayResponse {
 		return $this->buildFeed(
 			type: 'documenten',
 			schema: 'raadsdocument',
-			organisatie: $organisatie
+			organisation: $organisation
 		);
 
 	}//end documenten()
@@ -146,14 +146,14 @@ class RaadsinformatieFeedController extends Controller {
 	 *
 	 * @param string $type Feed type label used in titles (vergaderingen / agendapunten / documenten)
 	 * @param string $schema ORI schema slug
-	 * @param string $organisatie Optional organisatie filter value
+	 * @param string $organisation Optional organisatie filter value
 	 *
 	 * @return DataDisplayResponse Atom XML response
 	 */
-	private function buildFeed(string $type, string $schema, string $organisatie): DataDisplayResponse {
-		$objects = $this->fetchObjects(schema: $schema, organisatie: $organisatie);
+	private function buildFeed(string $type, string $schema, string $organisation): DataDisplayResponse {
+		$objects = $this->fetchObjects(schema: $schema, organisation: $organisation);
 
-		$xml = $this->renderAtom(type: $type, schema: $schema, objects: $objects, organisatie: $organisatie);
+		$xml = $this->renderAtom(type: $type, schema: $schema, objects: $objects, organisation: $organisation);
 
 		$response = new DataDisplayResponse($xml, Http::STATUS_OK);
 		$response->addHeader('Content-Type', 'application/atom+xml; charset=utf-8');
@@ -166,11 +166,11 @@ class RaadsinformatieFeedController extends Controller {
 	 * Fetch the latest objects for the given schema from the ORI register.
 	 *
 	 * @param string $schema The ORI schema slug (e.g. "vergadering")
-	 * @param string $organisatie Optional organisatie filter
+	 * @param string $organisation Optional organisatie filter
 	 *
 	 * @return array<int,array> Array of object arrays
 	 */
-	private function fetchObjects(string $schema, string $organisatie): array {
+	private function fetchObjects(string $schema, string $organisation): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return [];
@@ -181,8 +181,8 @@ class RaadsinformatieFeedController extends Controller {
 			'_order[created]' => 'desc',
 		];
 
-		if (empty($organisatie) === false) {
-			$params['organisatie'] = $organisatie;
+		if (empty($organisation) === false) {
+			$params['organisation'] = $organisation;
 		}
 
 		try {
@@ -208,13 +208,13 @@ class RaadsinformatieFeedController extends Controller {
 	 * @param string $type Feed type label (vergaderingen / agendapunten / documenten)
 	 * @param string $schema ORI schema slug
 	 * @param array<int,array> $objects The objects to include in the feed
-	 * @param string $organisatie Active organisatie filter (for self link)
+	 * @param string $organisation Active organisatie filter (for self link)
 	 *
 	 * @return string Atom XML string
 	 */
-	private function renderAtom(string $type, string $schema, array $objects, string $organisatie): string {
+	private function renderAtom(string $type, string $schema, array $objects, string $organisation): string {
 		$feedId = 'urn:procest:ori:feed:' . $type;
-		$feedTitle = $this->feedTitle(type: $type, organisatie: $organisatie);
+		$feedTitle = $this->feedTitle(type: $type, organisation: $organisation);
 		$feedUpdated = gmdate('Y-m-d\TH:i:s\Z');
 
 		$xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -272,10 +272,10 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	private function extractTitle(string $schema, array $object): string {
 		return match ($schema) {
-			'vergadering' => (string)($object['naam'] ?? ''),
+			'vergadering' => (string)($object['name'] ?? ''),
 			'agendapunt' => (string)($object['onderwerp'] ?? ''),
 			'raadsdocument' => (string)($object['titel'] ?? ''),
-			default => (string)($object['naam'] ?? ($object['titel'] ?? $schema)),
+			default => (string)($object['name'] ?? ($object['titel'] ?? $schema)),
 		};
 
 	}//end extractTitle()
@@ -291,12 +291,12 @@ class RaadsinformatieFeedController extends Controller {
 	private function extractSummary(string $schema, array $object): string {
 		if ($schema === 'vergadering') {
 			$parts = [];
-			if (empty($object['startDatum']) === false) {
-				$parts[] = 'Datum: ' . $object['startDatum'];
+			if (empty($object['startDate']) === false) {
+				$parts[] = 'Datum: ' . $object['startDate'];
 			}
 
-			if (empty($object['locatie']) === false) {
-				$parts[] = 'Locatie: ' . $object['locatie'];
+			if (empty($object['location']) === false) {
+				$parts[] = 'Locatie: ' . $object['location'];
 			}
 
 			if (empty($object['status']) === false) {
@@ -316,8 +316,8 @@ class RaadsinformatieFeedController extends Controller {
 				$parts[] = 'Type: ' . $object['type'];
 			}
 
-			if (empty($object['classificatie']) === false) {
-				$parts[] = 'Classificatie: ' . $object['classificatie'];
+			if (empty($object['classification']) === false) {
+				$parts[] = 'Classificatie: ' . $object['classification'];
 			}
 
 			return implode(separator: ' | ', array: $parts);
@@ -330,11 +330,11 @@ class RaadsinformatieFeedController extends Controller {
 	 * Build a descriptive feed title.
 	 *
 	 * @param string $type Feed type (vergaderingen / agendapunten / documenten)
-	 * @param string $organisatie Optional organisatie filter
+	 * @param string $organisation Optional organisatie filter
 	 *
 	 * @return string
 	 */
-	private function feedTitle(string $type, string $organisatie): string {
+	private function feedTitle(string $type, string $organisation): string {
 		$labels = [
 			'vergaderingen' => 'Vergaderingen',
 			'agendapunten' => 'Agendapunten',
@@ -343,8 +343,8 @@ class RaadsinformatieFeedController extends Controller {
 
 		$label = ($labels[$type] ?? ucfirst(string: $type));
 
-		if (empty($organisatie) === false) {
-			return 'Open Raadsinformatie — ' . $label . ' — ' . $organisatie;
+		if (empty($organisation) === false) {
+			return 'Open Raadsinformatie — ' . $label . ' — ' . $organisation;
 		}
 
 		return 'Open Raadsinformatie — ' . $label;

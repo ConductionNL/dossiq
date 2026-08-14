@@ -116,8 +116,8 @@ class StateMachineService {
 	/**
 	 * Persist an immutable stateMachineLog record for a transition.
 	 *
-	 * @param string $beschikkingId The beschikking UUID.
-	 * @param string $van The source status.
+	 * @param string $decisionId The beschikking UUID.
+	 * @param string $from The source status.
 	 * @param string $naar The target status.
 	 * @param array<string, mixed> $metadata Actor/trigger/evidence metadata.
 	 *
@@ -125,7 +125,7 @@ class StateMachineService {
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
 	 */
-	public function logTransition(string $beschikkingId, string $van, string $naar, array $metadata = []): array {
+	public function logTransition(string $decisionId, string $from, string $naar, array $metadata = []): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$this->logger->warning('StateMachineService: storage unavailable, transition not logged');
@@ -140,15 +140,15 @@ class StateMachineService {
 		}
 
 		$record = [
-			'beschikkingId' => $beschikkingId,
+			'decisionId' => $decisionId,
 			'overgang' => [
-				'van' => $van,
+				'van' => $from,
 				'naar' => $naar,
-				'tijdstip' => (new DateTimeImmutable())->format('c'),
+				'moment' => (new DateTimeImmutable())->format('c'),
 				'actor' => (string)($metadata['actor'] ?? 'systeem'),
 				'actorType' => (string)($metadata['actorType'] ?? 'systeem'),
 				'trigger' => (string)($metadata['trigger'] ?? 'automatisch'),
-				'bewijsMateriaal' => ($metadata['bewijsMateriaal'] ?? null),
+				'evidenceMaterial' => ($metadata['evidenceMaterial'] ?? null),
 			],
 		];
 
@@ -158,7 +158,7 @@ class StateMachineService {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'StateMachineService: failed to persist transition log',
-				['exception' => $e->getMessage(), 'beschikkingId' => $beschikkingId],
+				['exception' => $e->getMessage(), 'decisionId' => $decisionId],
 			);
 			return [];
 		}

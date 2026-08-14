@@ -51,14 +51,14 @@ class InformatieobjectReader {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZaakdossierService $dossierService The dossier orchestrator.
+	 * @param ZaakdossierService $fileService The dossier orchestrator.
 	 * @param InformatieobjectAccessGuard $accessGuard The confidentiality guard.
 	 * @param ZgwDocumentService $documentService The binary storage service.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ZaakdossierService $dossierService,
+		private readonly ZaakdossierService $fileService,
 		private readonly InformatieobjectAccessGuard $accessGuard,
 		private readonly ZgwDocumentService $documentService,
 	) {
@@ -76,7 +76,7 @@ class InformatieobjectReader {
 	 */
 	public function loadReadable(IUser $user, string $infoObjectId): array|JSONResponse {
 		try {
-			$doc = $this->dossierService->getInformatieobject(infoObjectId: $infoObjectId);
+			$doc = $this->fileService->getInformatieobject(infoObjectId: $infoObjectId);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_SERVICE_UNAVAILABLE);
 		}

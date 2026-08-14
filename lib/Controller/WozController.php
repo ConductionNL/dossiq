@@ -96,33 +96,33 @@ class WozController extends Controller {
 
 		// A nummeraanduidingId takes precedence over an address search (the
 		// preferred composition path — see design.md Decision 3).
-		$nummeraanduidingId = (string)$this->request->getParam('nummeraanduidingId', '');
-		if ($nummeraanduidingId !== '') {
-			return $this->nummeraanduidingLookup(nummeraanduidingId: $nummeraanduidingId);
+		$addressDesignationId = (string)$this->request->getParam('addressDesignationId', '');
+		if ($addressDesignationId !== '') {
+			return $this->addressDesignationLookup(addressDesignationId: $addressDesignationId);
 		}
 
 		$postcode = (string)$this->request->getParam('postcode', '');
-		$huisnummer = (string)$this->request->getParam('huisnummer', '');
-		if ($postcode === '' || $huisnummer === '') {
+		$houseNumber = (string)$this->request->getParam('houseNumber', '');
+		if ($postcode === '' || $houseNumber === '') {
 			return new JSONResponse(
 				['error' => 'nummeraanduidingId, or postcode and huisnummer, are required'],
 				Http::STATUS_BAD_REQUEST,
 			);
 		}
 
-		return $this->addressLookup(postcode: $postcode, huisnummer: $huisnummer);
+		return $this->addressLookup(postcode: $postcode, houseNumber: $houseNumber);
 	}//end value()
 
 	/**
 	 * Look up a WOZ value by BAG nummeraanduiding identificatie.
 	 *
-	 * @param string $nummeraanduidingId BAG nummeraanduiding identificatie.
+	 * @param string $addressDesignationId BAG nummeraanduiding identificatie.
 	 *
 	 * @return JSONResponse
 	 */
-	private function nummeraanduidingLookup(string $nummeraanduidingId): JSONResponse {
+	private function addressDesignationLookup(string $addressDesignationId): JSONResponse {
 		try {
-			$result = $this->wozAdapter->lookupByNummeraanduiding(nummeraanduidingId: $nummeraanduidingId);
+			$result = $this->wozAdapter->lookupByNummeraanduiding(addressDesignationId: $addressDesignationId);
 		} catch (Throwable $e) {
 			$this->logger->error('Procest WOZ nummeraanduiding lookup failed: ' . $e->getMessage());
 			return new JSONResponse(['error' => 'WOZ lookup failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
@@ -136,18 +136,18 @@ class WozController extends Controller {
 	 * huisletter / huisnummertoevoeging from the request.
 	 *
 	 * @param string $postcode Dutch postcode.
-	 * @param string $huisnummer House number.
+	 * @param string $houseNumber House number.
 	 *
 	 * @return JSONResponse
 	 */
-	private function addressLookup(string $postcode, string $huisnummer): JSONResponse {
+	private function addressLookup(string $postcode, string $houseNumber): JSONResponse {
 		$huisletter = $this->optionalParam(key: 'huisletter');
 		$toevoeging = $this->optionalParam(key: 'huisnummertoevoeging');
 
 		try {
 			$result = $this->wozAdapter->lookupAddress(
 				postcode: $postcode,
-				huisnummer: $huisnummer,
+				houseNumber: $houseNumber,
 				huisletter: $huisletter,
 				toevoeging: $toevoeging,
 			);

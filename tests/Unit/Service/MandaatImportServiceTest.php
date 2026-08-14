@@ -64,8 +64,8 @@ class MandaatImportServiceTest extends TestCase {
 		);
 
 		// Seed roles.
-		$this->objects->saveObject('procest', 'organisatieRol', ['id' => 'rol-consulent', 'rolNaam' => 'Consulent']);
-		$this->objects->saveObject('procest', 'organisatieRol', ['id' => 'rol-manager', 'rolNaam' => 'Afdelingsmanager']);
+		$this->objects->saveObject('procest', 'organisatieRol', ['id' => 'rol-consulent', 'roleName' => 'Consulent']);
+		$this->objects->saveObject('procest', 'organisatieRol', ['id' => 'rol-manager', 'roleName' => 'Afdelingsmanager']);
 	}
 
 	/**
@@ -82,14 +82,14 @@ class MandaatImportServiceTest extends TestCase {
 		self::assertSame(0, $r['changedCount']);
 		self::assertSame(0, $r['removedCount']);
 
-		$besluit = $this->objects->store['mandateDecision'][$r['mandateDecisionId']];
-		self::assertSame('concept', $besluit['status']);
+		$decision = $this->objects->store['mandateDecision'][$r['mandateDecisionId']];
+		self::assertSame('concept', $decision['status']);
 		self::assertCount(2, $this->objects->store['mandaat']);
 
 		$m = array_values($this->objects->store['mandaat'])[0];
-		self::assertSame(500000, $m['voorwaarden']['plafondCents']);
-		self::assertFalse($m['voorwaarden']['subdelegatie']);
-		self::assertSame(['wmo-toekenning'], $m['voorwaarden']['decisionTypes']);
+		self::assertSame(500000, $m['terms']['plafondCents']);
+		self::assertFalse($m['terms']['subdelegatie']);
+		self::assertSame(['wmo-toekenning'], $m['terms']['decisionTypes']);
 	}
 
 	/**

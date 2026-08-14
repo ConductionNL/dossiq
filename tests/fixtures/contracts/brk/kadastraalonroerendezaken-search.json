@@ -5,17 +5,17 @@
                 "identificatie": "10280123450000",
                 "kadastraleAanduiding": {
                     "kadastraleGemeentecode": {
-                        "waarde": "VBSTD"
+                        "value": "VBSTD"
                     },
                     "kadastraleGemeente": {
-                        "waarde": "Voorbeeldstad"
+                        "value": "Voorbeeldstad"
                     },
                     "sectie": "A",
                     "perceelnummer": 1234
                 },
                 "kadastraleAanduidingVolledig": "VBSTD A 1234",
                 "kadastraleGrootte": {
-                    "waarde": 350
+                    "value": 350
                 },
                 "soortCultuurBebouwd": [
                     "wonen"
@@ -24,7 +24,7 @@
                     {
                         "identificatie": "ZG0001",
                         "aardZakelijkRecht": {
-                            "waarde": "Eigendom (recht van)"
+                            "value": "Eigendom (recht van)"
                         }
                     }
                 ],

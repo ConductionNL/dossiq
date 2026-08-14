@@ -61,10 +61,10 @@ class DsoDoorsturenNotifier {
 	/**
 	 * Dispatch the VergunningDoorgestuurd event for a forwarded case.
 	 *
-	 * @param array<string,mixed> $zaak The zaak being forwarded.
+	 * @param array<string,mixed> $case The zaak being forwarded.
 	 * @param string $caseId The zaak UUID.
 	 * @param string $targetBevoegdGezag The receiving bevoegd gezag.
-	 * @param string $reden The reason for forwarding.
+	 * @param string $reason The reason for forwarding.
 	 * @param string $userId The acting user id.
 	 *
 	 * @return void
@@ -72,18 +72,18 @@ class DsoDoorsturenNotifier {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T07
 	 */
 	public function dispatchDoorgestuurd(
-		array $zaak,
+		array $case,
 		string $caseId,
 		string $targetBevoegdGezag,
-		string $reden,
+		string $reason,
 		string $userId,
 	): void {
 		$event = new GenericEvent(
-			subject: $zaak,
+			subject: $case,
 			arguments: [
 				'caseId' => $caseId,
 				'targetBevoegdGezag' => $targetBevoegdGezag,
-				'reden' => $reden,
+				'reason' => $reason,
 				'userId' => $userId,
 			]
 		);

@@ -41,7 +41,7 @@ interface TemplateEngineAdapterInterface {
 	 * @param string $templateId The template identifier.
 	 * @param array<string, mixed> $context The zaakdata + beschikking context.
 	 *
-	 * @return array{format: string, bestandId: string, checksumSha256: string, paginas: int} Composition metadata.
+	 * @return array{format: string, fileId: string, checksumSha256: string, paginas: int} Composition metadata.
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
 	 */
@@ -53,7 +53,7 @@ interface TemplateEngineAdapterInterface {
 	 * @param string $templateId The template identifier.
 	 * @param string $effectiveDate The ISO date the beschikking is effective.
 	 *
-	 * @return array{templateId: string, version: string, ingangsdatum: string} The resolved version.
+	 * @return array{templateId: string, version: string, effectiveDate: string} The resolved version.
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T26
 	 */

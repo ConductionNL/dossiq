@@ -77,7 +77,7 @@ class ComplaintController extends Controller {
 		}
 
 		$filters = [];
-		foreach (['status', 'behandelaar', 'categorie'] as $key) {
+		foreach (['status', 'handler', 'category'] as $key) {
 			$value = $this->request->getParam($key);
 			if ($value !== null) {
 				$filters[$key] = $value;
@@ -233,8 +233,8 @@ class ComplaintController extends Controller {
 
 		try {
 			$data = $this->accessGuard->parseBody();
-			$justificatie = $data['justificatie'] ?? '';
-			$result = $this->complaintService->requestVerdaging($id, $justificatie);
+			$justification = $data['justificatie'] ?? '';
+			$result = $this->complaintService->requestVerdaging($id, $justification);
 			return new JSONResponse($result);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);

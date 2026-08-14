@@ -103,13 +103,13 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 	 * @var array<string, string>
 	 */
 	private const COLUMN_MAP = [
-		'naam' => 'name',
+		'name' => 'name',
 		'onderwerp' => 'subject',
 		'omschrijving' => 'description',
 		'beschrijving' => 'description',
-		'toelichting' => 'notes',
-		'motivering' => 'rationale',
-		'afdeling' => 'department',
+		'notes' => 'notes',
+		'rationale' => 'rationale',
+		'department' => 'department',
 		'aantal_verlengingen' => 'extension_count',
 		'einddatum_actueel' => 'end_date_actual',
 		'pauze_deadline' => 'pause_deadline',
@@ -136,7 +136,7 @@ class RenameDutchDeadlineColumns implements IRepairStep {
 		'vorig_besluit' => 'previous_decision',
 		'mandaterings_besluit' => 'mandate_decision',
 
-		// mandaat -> mandate. All four owning schemas (mandaat, mandaatGebruik,
+		// Mandaat -> mandate. All four owning schemas (mandaat, mandaatGebruik,
 		// mandaatEscalatie, mandaatRegeling) are renamed in this same change and
 		// all four live in the `procest` register, so this map's scope covers
 		// every owner — no declaration is left pointing at a Dutch column.

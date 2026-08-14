@@ -19,10 +19,10 @@
 					:input-label="t('procest', 'Zaaktype')"
 					:placeholder="t('procest', 'Select or type a zaaktype slug')"
 					@update:model-value="
-						(v) => (form.zaaktype = v ? v.id || v.label || v : '')
+						(v) => (form.case_type = v ? v.id || v.label || v : '')
 					" />
-				<span v-if="errors.zaaktype" class="field-error">{{
-					errors.zaaktype
+				<span v-if="errors.case_type" class="field-error">{{
+					errors.case_type
 				}}</span>
 			</div>
 
@@ -32,11 +32,11 @@
 				}}</label>
 				<NcTextField
 					id="td-grondslag"
-					:model-value="form.grondslag"
+					:model-value="form.basis"
 					:placeholder="t('procest', 'e.g. AWB art. 4:13 lid 2')"
-					@update:model-value="(v) => (form.grondslag = v)" />
-				<span v-if="errors.grondslag" class="field-error">{{
-					errors.grondslag
+					@update:model-value="(v) => (form.basis = v)" />
+				<span v-if="errors.basis" class="field-error">{{
+					errors.basis
 				}}</span>
 			</div>
 
@@ -61,7 +61,7 @@
 					:model-value="selectedCategorie"
 					:options="categorieOptions"
 					:input-label="t('procest', 'Category')"
-					@update:model-value="(v) => (form.categorie = v ? v.id : '')" />
+					@update:model-value="(v) => (form.category = v ? v.id : '')" />
 			</div>
 
 			<div class="form-group">
@@ -158,10 +158,10 @@ export default {
 			saving: false,
 			errors: {},
 			form: {
-				zaaktype: this.definition?.zaaktype || '',
-				grondslag: this.definition?.grondslag || '',
+				case_type: this.definition?.case_type || '',
+				basis: this.definition?.basis || '',
 				duurDagen: this.definition?.duurDagen || this.definition?.duur || 0,
-				categorie: this.definition?.categorie || 'beslis',
+				category: this.definition?.category || 'beslis',
 				extendable: this.definition?.extendable || false,
 				maxExtensionDagen: this.definition?.maxExtensionDagen || 0,
 			},
@@ -171,14 +171,18 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		title() {
 			return this.definition
-				? t('procest', 'New version of {z}', { z: this.definition.zaaktype })
+				? t('procest', 'New version of {z}', {
+						z: this.definition.case_type,
+					})
 				: t('procest', 'New term definition')
 		},
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedZaaktype() {
-			if (!this.form.zaaktype) return null
-			const hit = this.zaaktypeOptions.find((o) => o.id === this.form.zaaktype)
-			return hit || { id: this.form.zaaktype, label: this.form.zaaktype }
+			if (!this.form.case_type) return null
+			const hit = this.zaaktypeOptions.find(
+				(o) => o.id === this.form.case_type,
+			)
+			return hit || { id: this.form.case_type, label: this.form.case_type }
 		},
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		categorieOptions() {
@@ -192,7 +196,7 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedCategorie() {
 			return (
-				this.categorieOptions.find((o) => o.id === this.form.categorie)
+				this.categorieOptions.find((o) => o.id === this.form.category)
 				|| this.categorieOptions[0]
 			)
 		},
@@ -202,10 +206,10 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		validate() {
 			const errs = {}
-			if (!this.form.zaaktype)
-				errs.zaaktype = t('procest', 'Zaaktype is required')
-			if (!this.form.grondslag)
-				errs.grondslag = t('procest', 'Wettelijke grondslag is required')
+			if (!this.form.case_type)
+				errs.case_type = t('procest', 'Zaaktype is required')
+			if (!this.form.basis)
+				errs.basis = t('procest', 'Wettelijke grondslag is required')
 			if (!this.form.duurDagen || this.form.duurDagen < 1) {
 				errs.duurDagen = t('procest', 'Duration must be at least 1 day')
 			}

@@ -176,13 +176,13 @@ class ZaakdossierDownloadController extends Controller {
 			return $doc;
 		}
 
-		$fileName = (string)($doc['bestandsnaam'] ?? 'document');
+		$fileName = (string)($doc['fileName'] ?? 'document');
 		$content = $this->reader->contentFor(uuid: $objectId, fileName: $fileName);
 		if ($content === null) {
 			return new JSONResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$mime = (string)($doc['formaat'] ?? 'application/octet-stream');
+		$mime = (string)($doc['format'] ?? 'application/octet-stream');
 		return new DataDownloadResponse($content, $fileName, $mime);
 	}//end downloadFile()
 
@@ -208,7 +208,7 @@ class ZaakdossierDownloadController extends Controller {
 			return $doc;
 		}
 
-		$fileName = (string)($doc['bestandsnaam'] ?? 'document');
+		$fileName = (string)($doc['fileName'] ?? 'document');
 		$content = $this->reader->contentFor(uuid: $uuid, fileName: $fileName);
 		if ($content === null) {
 			return new JSONResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
@@ -217,7 +217,7 @@ class ZaakdossierDownloadController extends Controller {
 		return new RangeStreamResponse(
 			content: $content,
 			fileName: $fileName,
-			contentType: (string)($doc['formaat'] ?? 'application/octet-stream'),
+			contentType: (string)($doc['format'] ?? 'application/octet-stream'),
 			rangeHeader: (string)$this->request->getHeader('Range'),
 		);
 	}//end downloadZgwDocumenten()

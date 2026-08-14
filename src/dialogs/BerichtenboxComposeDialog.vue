@@ -95,7 +95,7 @@ export default {
 		return {
 			form: { bsn: this.bsn, subject: '', body: '', berichtTypeCode: null },
 			typeCodes: [
-				{ code: 'besluit', label: t('procest', 'Decision (Besluit)') },
+				{ code: 'decision', label: t('procest', 'Decision (Besluit)') },
 				{ code: 'status', label: t('procest', 'Status update') },
 				{ code: 'informatie', label: t('procest', 'Information') },
 			],

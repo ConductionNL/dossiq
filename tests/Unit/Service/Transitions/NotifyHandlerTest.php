@@ -43,7 +43,7 @@ class NotifyHandlerTest extends TestCase {
 		// NotificatieService only exposes publish() today; notifyUser is gated
 		// by method_exists. Handler must report success with skipped flag.
 		$handler = new NotifyHandler(
-			notificatieService: $this->createMock(NotificatieService::class),
+			notificationService: $this->createMock(NotificatieService::class),
 			logger: new NullLogger(),
 		);
 
@@ -62,7 +62,7 @@ class NotifyHandlerTest extends TestCase {
 	 */
 	public function testFallsBackToCaseAssigneeWhenUserIdMissing(): void {
 		$handler = new NotifyHandler(
-			notificatieService: $this->createMock(NotificatieService::class),
+			notificationService: $this->createMock(NotificatieService::class),
 			logger: new NullLogger(),
 		);
 
@@ -81,7 +81,7 @@ class NotifyHandlerTest extends TestCase {
 	 */
 	public function testReturnsSkippedWhenNoRecipientAndNoAssignee(): void {
 		$handler = new NotifyHandler(
-			notificatieService: $this->createMock(NotificatieService::class),
+			notificationService: $this->createMock(NotificatieService::class),
 			logger: new NullLogger(),
 		);
 

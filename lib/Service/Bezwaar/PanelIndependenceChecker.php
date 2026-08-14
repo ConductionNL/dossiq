@@ -74,21 +74,21 @@ class PanelIndependenceChecker {
 	 * Compares each panel member UID against the `createdBy` (steller) of
 	 * the contested primair besluit.
 	 *
-	 * @param string $bezwaarId The bezwaar (lifecycle) UUID.
+	 * @param string $objectionId The bezwaar (lifecycle) UUID.
 	 * @param array<string> $panel Panel member UIDs.
 	 *
 	 * @return array{ok: bool, member: ?string, reason: ?string} The verdict.
 	 *
 	 * @spec openspec/specs/bezwaar-advisory-committee/spec.md
 	 */
-	public function check(string $bezwaarId, array $panel): array {
+	public function check(string $objectionId, array $panel): array {
 		$clear = [
 			'ok' => true,
 			'member' => null,
 			'reason' => null,
 		];
 
-		if ($bezwaarId === '' || $panel === []) {
+		if ($objectionId === '' || $panel === []) {
 			return $clear;
 		}
 
@@ -98,7 +98,7 @@ class PanelIndependenceChecker {
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$bezwaarSchema = $this->settingsService->getConfigValue(
+		$legacyObjSchema = $this->settingsService->getConfigValue(
 			key: 'bezwaar_schema'
 		);
 		$objectionSchema = $this->settingsService->getConfigValue(
@@ -120,9 +120,9 @@ class PanelIndependenceChecker {
 		try {
 			$steller = $this->resolveContestedDecisionAuthor(
 				objectService: $objectService,
-				bezwaarId: $bezwaarId,
+				objectionId: $objectionId,
 				register: $register,
-				bezwaarSchema: $bezwaarSchema,
+				legacyObjSchema: $legacyObjSchema,
 				objectionSchema: $objectionSchema,
 				decisionSchema: $decisionSchema,
 			);
@@ -157,9 +157,9 @@ class PanelIndependenceChecker {
 	 * objection filed on the bezwaar's underlying procest case.
 	 *
 	 * @param object $objectService OpenRegister object service.
-	 * @param string $bezwaarId The bezwaar (lifecycle) UUID.
+	 * @param string $objectionId The bezwaar (lifecycle) UUID.
 	 * @param string $register Register identifier.
-	 * @param string $bezwaarSchema Bezwaar schema identifier, may be ''.
+	 * @param string $legacyObjSchema Legacy objection schema (config key `bezwaar_schema`), may be ''.
 	 * @param string $objectionSchema Objection schema identifier.
 	 * @param string $decisionSchema Decision schema identifier.
 	 *
@@ -169,9 +169,9 @@ class PanelIndependenceChecker {
 	 */
 	private function resolveContestedDecisionAuthor(
 		object $objectService,
-		string $bezwaarId,
+		string $objectionId,
 		string $register,
-		string $bezwaarSchema,
+		string $legacyObjSchema,
 		string $objectionSchema,
 		string $decisionSchema,
 	): string {
@@ -179,11 +179,11 @@ class PanelIndependenceChecker {
 		// when the bezwaar_schema is registered. When unavailable
 		// (e.g. legacy callers passing a case UUID directly), fall back
 		// to treating the input as the case id.
-		$caseId = $bezwaarId;
-		if ($bezwaarSchema !== '') {
-			$bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
+		$caseId = $objectionId;
+		if ($legacyObjSchema !== '') {
+			$bezwaar = $objectService->find($objectionId, register: $register, schema: $legacyObjSchema);
 			if (is_array($bezwaar) === true) {
-				$caseId = (string)($bezwaar['case'] ?? $bezwaarId);
+				$caseId = (string)($bezwaar['case'] ?? $objectionId);
 			}
 		}
 

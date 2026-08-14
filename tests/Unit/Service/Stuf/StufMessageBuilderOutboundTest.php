@@ -58,7 +58,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 	private function endpointFixture(): array {
 		return [
 			'id' => 'stuf-ep-test',
-			'naam' => 'Test',
+			'name' => 'Test',
 			'ontvangerApplicatie' => 'Key2Zaken',
 			'ontvangerOrganisatie' => 'Gemeente Test',
 			'ontvangerGebruiker' => 'procest',
@@ -77,7 +77,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 				'evenementenvergunning' => 'Evenementenvergunning',
 			],
 			'vrijeBerichtenTemplates' => [
-				['naam' => 'zetStatus', 'verplichteVelden' => ['zaakIdentificatie', 'statusType', 'datumStatusGezet']],
+				['name' => 'zetStatus', 'verplichteVelden' => ['zaakIdentificatie', 'statusType', 'datumStatusGezet']],
 			],
 		];
 	}//end endpointFixture()
@@ -155,7 +155,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 				],
 			],
 			endpoint: $this->endpointFixture(),
-			zaakId: null,
+			caseId: null,
 			opts: ['includeDocuments' => true]
 		);
 		$expected = base64_encode('PDFBYTES');
@@ -179,7 +179,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 				],
 			],
 			endpoint: $this->endpointFixture(),
-			zaakId: null,
+			caseId: null,
 			opts: ['includeDocuments' => true]
 		);
 	}//end testPayloadTooLargeRejectsBeforeSend()
@@ -209,7 +209,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 	 */
 	public function testLv01ContainsScopeElements(): void {
 		$envelope = $this->builder->buildLv01GeefDetails(
-			zaakId: 'ZAAK-2026-0008812',
+			caseId: 'ZAAK-2026-0008812',
 			endpoint: $this->endpointFixture(),
 			gewensteElementen: ['omschrijving', 'startdatum']
 		);
@@ -239,7 +239,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 	public function testInboundBuildersStillWork(): void {
 		$responses = new StufResponseBuilder();
 
-		$bv01 = $responses->buildBv01(['organisatie' => 'Procest', 'applicatie' => 'Procest'], [], 'REF-123');
+		$bv01 = $responses->buildBv01(['organisation' => 'Procest', 'applicatie' => 'Procest'], [], 'REF-123');
 		$this->assertStringContainsString('Bv01', $bv01);
 		$this->assertStringContainsString('REF-123', $bv01);
 		$this->assertStringContainsString('<stuf:organisatie>Procest</stuf:organisatie>', $bv01);
@@ -249,7 +249,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 		$this->assertStringContainsString('soap:Fault', $fault);
 		$this->assertStringContainsString('boom', $fault);
 
-		$fo01 = $responses->buildFo01('StUF055', 'kapot', 'server', ['organisatie' => 'Procest'], []);
+		$fo01 = $responses->buildFo01('StUF055', 'kapot', 'server', ['organisation' => 'Procest'], []);
 		$this->assertStringContainsString('<stuf:code>StUF055</stuf:code>', $fo01);
 		$this->assertStringContainsString('<stuf:plek>server</stuf:plek>', $fo01);
 		$this->assertStringContainsString('<stuf:omschrijving>kapot</stuf:omschrijving>', $fo01);

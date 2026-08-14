@@ -49,7 +49,7 @@ export default {
 		NcNoteCard,
 	},
 	props: {
-		beschikkingId: {
+		decisionId: {
 			type: String,
 			required: true,
 		},
@@ -78,13 +78,13 @@ export default {
 	},
 	methods: {
 		async onAkkoord() {
-			await this.run(() => akkoord(this.beschikkingId))
+			await this.run(() => akkoord(this.decisionId))
 		},
 		async onOnderteken() {
-			await this.run(() => onderteken(this.beschikkingId, this.tspProvider))
+			await this.run(() => onderteken(this.decisionId, this.tspProvider))
 		},
 		async onVerzend() {
-			await this.run(() => verzend(this.beschikkingId))
+			await this.run(() => verzend(this.decisionId))
 		},
 		async run(fn) {
 			this.busy = true
@@ -102,11 +102,11 @@ export default {
 			this.busy = true
 			this.error = ''
 			try {
-				const blob = await exportAuditPacket(this.beschikkingId)
+				const blob = await exportAuditPacket(this.decisionId)
 				const url = window.URL.createObjectURL(blob)
 				const link = document.createElement('a')
 				link.href = url
-				link.download = `audit-pakket-${this.beschikkingId}.zip`
+				link.download = `audit-pakket-${this.decisionId}.zip`
 				link.click()
 				window.URL.revokeObjectURL(url)
 			} catch (e) {

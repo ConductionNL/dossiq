@@ -30,7 +30,7 @@
 
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
-					:model-value="voorzieningRequested"
+					:model-value="provisionRequested"
 					@update:model-value="(v) => (voorzieningRequested = v)">
 					{{
 						t(
@@ -41,7 +41,7 @@
 				</NcCheckboxRadioSwitch>
 			</div>
 
-			<NcNoteCard v-if="voorzieningRequested" type="warning">
+			<NcNoteCard v-if="provisionRequested" type="warning">
 				{{
 					t(
 						'procest',
@@ -106,7 +106,7 @@ export default {
 	emits: ['escalated'],
 	data() {
 		return {
-			voorzieningRequested: false,
+			provisionRequested: false,
 			escalating: false,
 		}
 	},
@@ -117,7 +117,7 @@ export default {
 			const bezwaarStore = useBezwaarStore()
 
 			const beroepCase = await bezwaarStore.escalateToBeroep(this.caseData, {
-				voorzieningRequested: this.voorzieningRequested,
+				provisionRequested: this.provisionRequested,
 			})
 
 			this.escalating = false

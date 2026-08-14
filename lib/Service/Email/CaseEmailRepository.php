@@ -166,7 +166,7 @@ class CaseEmailRepository {
 			'startdatum' => $caseObj['startDate'] ?? '',
 			'deadline' => $caseObj['deadline'] ?? '',
 			'status' => $caseObj['status'] ?? '',
-			'behandelaar' => $caseObj['assignee'] ?? '',
+			'handler' => $caseObj['assignee'] ?? '',
 		];
 	}//end loadCaseVariables()
 

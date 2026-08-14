@@ -92,10 +92,10 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 */
 	public function rulesBesluitenCreate(array $body): array {
 		// Brc-001: Validate besluittype URL.
-		$besluitTypeUrl = $body['besluittype'] ?? '';
-		if (empty($besluitTypeUrl) === false && $this->objectService !== null) {
+		$decisionTypeUrl = $body['besluittype'] ?? '';
+		if (empty($decisionTypeUrl) === false && $this->objectService !== null) {
 			$error = $this->validateTypeUrl(
-				typeUrl: $besluitTypeUrl,
+				typeUrl: $decisionTypeUrl,
 				fieldName: 'besluittype',
 				schemaKey: 'decision_type_schema'
 			);
@@ -106,20 +106,20 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 
 		// Brc-002: Check unique combination of verantwoordelijkeOrganisatie + identificatie.
 		if (empty($body['identificatie']) === false && $this->objectService !== null) {
-			$uniqueError = $this->checkBesluitIdentificatieUnique(body: $body);
+			$uniqueError = $this->checkDecisionIdentificationUnique(body: $body);
 			if ($uniqueError !== null) {
 				return $uniqueError;
 			}
 		}
 
 		// Brc-007: Validate zaak-besluittype relation.
-		$zaakUrl = $body['zaak'] ?? null;
-		if ($zaakUrl !== null && $zaakUrl !== '' && empty($besluitTypeUrl) === false
+		$caseUrl = $body['zaak'] ?? null;
+		if ($caseUrl !== null && $caseUrl !== '' && empty($decisionTypeUrl) === false
 			&& $this->objectService !== null
 		) {
-			$relError = $this->validateZaakBesluittypeRelation(
-				zaakUrl: $zaakUrl,
-				besluitTypeUrl: $besluitTypeUrl
+			$relError = $this->validateCaseBesluittypeRelation(
+				caseUrl: $caseUrl,
+				decisionTypeUrl: $decisionTypeUrl
 			);
 			if ($relError !== null) {
 				return $relError;
@@ -151,7 +151,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	public function rulesBesluitenUpdate(array $body, ?array $existingObject = null): array {
 		$result = $this->isValid(body: $body);
 
-		$result = $this->checkBesluitTypeImmutability(
+		$result = $this->checkDecisionTypeImmutability(
 			result: $result,
 			existingObject: $existingObject
 		);
@@ -159,7 +159,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 			return $result;
 		}
 
-		$result = $this->checkBesluitFieldImmutability(
+		$result = $this->checkDecisionFieldImmutability(
 			result: $result,
 			existingObject: $existingObject
 		);
@@ -168,7 +168,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 		}
 
 		// Preserve immutable fields from existing object when omitted in PUT body.
-		$result = $this->preserveImmutableBesluitFields(
+		$result = $this->preserveImmutableDecisionFields(
 			result: $result,
 			existingObject: $existingObject
 		);
@@ -191,7 +191,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	public function rulesBesluitenPatch(array $body, ?array $existingObject = null): array {
 		$result = $this->isValid(body: $body);
 
-		$result = $this->checkBesluitTypeImmutability(
+		$result = $this->checkDecisionTypeImmutability(
 			result: $result,
 			existingObject: $existingObject
 		);
@@ -199,7 +199,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 			return $result;
 		}
 
-		return $this->checkBesluitFieldImmutability(
+		return $this->checkDecisionFieldImmutability(
 			result: $result,
 			existingObject: $existingObject
 		);
@@ -229,10 +229,10 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 		}
 
 		// Brc-008: Validate informatieobjecttype in besluittype.informatieobjecttypen.
-		$besluitUrl = $body['besluit'] ?? '';
-		if ($besluitUrl !== '' && $ioUrl !== '' && $this->objectService !== null) {
+		$decisionUrl = $body['decision'] ?? '';
+		if ($decisionUrl !== '' && $ioUrl !== '' && $this->objectService !== null) {
 			$iotError = $this->validateBioInformatieobjecttype(
-				besluitUrl: $besluitUrl,
+				decisionUrl: $decisionUrl,
 				ioUrl: $ioUrl
 			);
 			if ($iotError !== null) {
@@ -241,7 +241,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 		}
 
 		// Brc-004: Set aardRelatieWeergave automatically.
-		$body['aardRelatieWeergave'] = 'Legt vast, omgekeerd: wordt vastgelegd door';
+		$body['natureRelationshipDisplay'] = 'Legt vast, omgekeerd: wordt vastgelegd door';
 
 		return $this->isValid(body: $body);
 	}//end rulesBesluitinformatieobjectenCreate()
@@ -254,7 +254,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The updated validation result
 	 */
-	private function checkBesluitTypeImmutability(array $result, ?array $existingObject): array {
+	private function checkDecisionTypeImmutability(array $result, ?array $existingObject): array {
 		if ($existingObject === null) {
 			return $result;
 		}
@@ -285,7 +285,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The updated validation result
 	 */
-	private function checkBesluitFieldImmutability(array $result, ?array $existingObject): array {
+	private function checkDecisionFieldImmutability(array $result, ?array $existingObject): array {
 		if ($existingObject === null) {
 			return $result;
 		}
@@ -325,7 +325,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array The updated validation result with preserved fields
 	 */
-	private function preserveImmutableBesluitFields(array $result, ?array $existingObject): array {
+	private function preserveImmutableDecisionFields(array $result, ?array $existingObject): array {
 		if ($existingObject === null) {
 			return $result;
 		}
@@ -366,11 +366,11 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 *
 	 * @return array|null Validation error, or null if unique
 	 */
-	private function checkBesluitIdentificatieUnique(array $body): ?array {
-		$identificatie = $body['identificatie'] ?? '';
+	private function checkDecisionIdentificationUnique(array $body): ?array {
+		$identification = $body['identificatie'] ?? '';
 		$organisation = $body['verantwoordelijkeOrganisatie'] ?? '';
 
-		if ($identificatie === '' || $this->objectService === null) {
+		if ($identification === '' || $this->objectService === null) {
 			return null;
 		}
 
@@ -382,7 +382,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 		}
 
 		try {
-			$searchParams = ['title' => $identificatie];
+			$searchParams = ['title' => $identification];
 			if ($organisation !== '') {
 				$searchParams['responsibleOrganisation'] = $organisation;
 			}
@@ -422,38 +422,38 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 *
 	 * The zaak's zaaktype must be listed in the besluittype's zaaktypen.
 	 *
-	 * @param string $zaakUrl The zaak URL from the request
-	 * @param string $besluitTypeUrl The besluittype URL from the request
+	 * @param string $caseUrl The zaak URL from the request
+	 * @param string $decisionTypeUrl The besluittype URL from the request
 	 *
 	 * @return array|null Validation error, or null if valid
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 */
-	private function validateZaakBesluittypeRelation(string $zaakUrl, string $besluitTypeUrl): ?array {
+	private function validateCaseBesluittypeRelation(string $caseUrl, string $decisionTypeUrl): ?array {
 		$register = $this->mappingConfig['sourceRegister'] ?? '';
 		if (empty($register) === true || $this->objectService === null) {
 			return null;
 		}
 
 		// Look up the zaak to get its zaaktype.
-		$zaakUuid = $this->extractUuid(url: $zaakUrl);
+		$zaakUuid = $this->extractUuid(url: $caseUrl);
 		if ($zaakUuid === null) {
 			return null;
 		}
 
-		$zaakData = $this->findBySchemaKey(uuid: $zaakUuid, schemaKey: 'case_schema');
-		if ($zaakData === null) {
+		$caseData = $this->findBySchemaKey(uuid: $zaakUuid, schemaKey: 'case_schema');
+		if ($caseData === null) {
 			return null;
 		}
 
-		$zaakCaseType = $zaakData['caseType'] ?? '';
-		if (empty($zaakCaseType) === true) {
+		$caseCaseType = $caseData['caseType'] ?? '';
+		if (empty($caseCaseType) === true) {
 			return null;
 		}
 
 		// Look up the besluittype to check its zaaktypen/caseTypes.
-		$btUuid = $this->extractUuid(url: $besluitTypeUrl);
+		$btUuid = $this->extractUuid(url: $decisionTypeUrl);
 		if ($btUuid === null) {
 			return null;
 		}
@@ -463,7 +463,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 			return null;
 		}
 
-		$zaakCaseTypeUuid = $this->extractUuid(url: $zaakCaseType);
+		$zaakCaseTypeUuid = $this->extractUuid(url: $caseCaseType);
 
 		// Check direction 1: BT.caseTypes contains the zaaktype UUID.
 		$caseTypes = $btData['caseTypes'] ?? [];
@@ -523,7 +523,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	/**
 	 * Validate informatieobjecttype is in besluittype.informatieobjecttypen (brc-008).
 	 *
-	 * @param string $besluitUrl The besluit URL
+	 * @param string $decisionUrl The besluit URL
 	 * @param string $ioUrl The informatieobject URL
 	 *
 	 * @return array|null Validation error, or null if valid
@@ -532,23 +532,23 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 	 * @SuppressWarnings(PHPMD.NPathComplexity)
 	 * @SuppressWarnings(PHPMD.ExcessiveMethodLength) — ZGW cross-register validation
 	 */
-	private function validateBioInformatieobjecttype(string $besluitUrl, string $ioUrl): ?array {
+	private function validateBioInformatieobjecttype(string $decisionUrl, string $ioUrl): ?array {
 		if ($this->objectService === null) {
 			return null;
 		}
 
 		// Get the besluit to find its besluittype.
-		$besluitUuid = $this->extractUuid(url: $besluitUrl);
+		$besluitUuid = $this->extractUuid(url: $decisionUrl);
 		if ($besluitUuid === null) {
 			return null;
 		}
 
-		$besluitData = $this->findBySchemaKey(uuid: $besluitUuid, schemaKey: 'decision_schema');
-		if ($besluitData === null) {
+		$decisionData = $this->findBySchemaKey(uuid: $besluitUuid, schemaKey: 'decision_schema');
+		if ($decisionData === null) {
 			return null;
 		}
 
-		$decisionTypeId = $besluitData['decisionType'] ?? '';
+		$decisionTypeId = $decisionData['decisionType'] ?? '';
 		if (empty($decisionTypeId) === true) {
 			return null;
 		}

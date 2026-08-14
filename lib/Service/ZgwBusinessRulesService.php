@@ -66,8 +66,8 @@ class ZgwBusinessRulesService {
 	 * @param array|null $existingObject The existing object data (for update/patch/destroy)
 	 * @param object|null $objectService The OpenRegister ObjectService
 	 * @param array|null $mappingConfig The mapping config
-	 * @param bool|null $parentZaaktypeDraft Whether the parent zaaktype isDraft (for ztc-010)
-	 * @param bool|null $zaakClosed Whether the (parent) zaak is closed (for zrc-007)
+	 * @param bool|null $parentCaseTypeDraft Whether the parent zaaktype isDraft (for ztc-010)
+	 * @param bool|null $caseClosed Whether the (parent) zaak is closed (for zrc-007)
 	 * @param bool $hasGeforceerd Whether consumer has geforceerd-bijwerken scope
 	 *
 	 * @return array{valid: bool, status: int, detail: string, enrichedBody: array}
@@ -87,8 +87,8 @@ class ZgwBusinessRulesService {
 		?array $existingObject = null,
 		?object $objectService = null,
 		?array $mappingConfig = null,
-		?bool $parentZaaktypeDraft = null,
-		?bool $zaakClosed = null,
+		?bool $parentCaseTypeDraft = null,
+		?bool $caseClosed = null,
 		bool $hasGeforceerd = true,
 	): array {
 		// Set context on the ZTC rules this service guards with directly, and
@@ -98,18 +98,18 @@ class ZgwBusinessRulesService {
 
 		// ---- ZTC cross-cutting concerns (concept protection) ----
 		if ($zgwApi === 'catalogi') {
-			$conceptCheck = $this->applyCatalogiConceptRules(
+			$draftCheck = $this->applyCatalogiDraftRules(
 				resource: $resource,
 				action: $action,
 				body: $body,
 				existingObject: $existingObject,
-				parentZaaktypeDraft: $parentZaaktypeDraft
+				parentCaseTypeDraft: $parentCaseTypeDraft
 			);
-			if ($conceptCheck !== null) {
-				return $conceptCheck;
+			if ($draftCheck !== null) {
+				return $draftCheck;
 			}
 
-			$publishGuard = $this->guardZaaktypePublish(
+			$publishGuard = $this->guardCaseTypePublish(
 				resource: $resource,
 				action: $action,
 				body: $body,
@@ -120,7 +120,7 @@ class ZgwBusinessRulesService {
 				return $publishGuard;
 			}
 
-			$destroyGuard = $this->guardZaaktypeDestroy(
+			$destroyGuard = $this->guardCaseTypeDestroy(
 				resource: $resource,
 				action: $action,
 				body: $body,
@@ -133,7 +133,7 @@ class ZgwBusinessRulesService {
 		}//end if
 
 		// ---- ZRC cross-cutting concern: closed zaak protection (zrc-007) ----
-		if ($zaakClosed === true && $hasGeforceerd === false) {
+		if ($caseClosed === true && $hasGeforceerd === false) {
 			return [
 				'valid' => false,
 				'status' => 403,
@@ -168,16 +168,16 @@ class ZgwBusinessRulesService {
 	 * @param string $action The action
 	 * @param array $body The request body, enriched in place
 	 * @param array|null $existingObject The existing object data
-	 * @param bool|null $parentZaaktypeDraft Whether the parent zaaktype isDraft
+	 * @param bool|null $parentCaseTypeDraft Whether the parent zaaktype isDraft
 	 *
 	 * @return array|null The guard response, or null when the request may proceed
 	 */
-	private function applyCatalogiConceptRules(
+	private function applyCatalogiDraftRules(
 		string $resource,
 		string $action,
 		array &$body,
 		?array $existingObject,
-		?bool $parentZaaktypeDraft,
+		?bool $parentCaseTypeDraft,
 	): ?array {
 		// Default concept=true for new concept resources.
 		if ($action === 'create') {
@@ -195,7 +195,7 @@ class ZgwBusinessRulesService {
 			$action,
 			$body,
 			$existingObject,
-			$parentZaaktypeDraft
+			$parentCaseTypeDraft
 		);
 	}//end applyCatalogiConceptRules()
 
@@ -212,7 +212,7 @@ class ZgwBusinessRulesService {
 	 *
 	 * @return array|null The guard response, or null when the save may proceed
 	 */
-	private function guardZaaktypePublish(
+	private function guardCaseTypePublish(
 		string $resource,
 		string $action,
 		array $body,
@@ -262,7 +262,7 @@ class ZgwBusinessRulesService {
 	 *
 	 * @return array|null The guard response, or null when the delete may proceed
 	 */
-	private function guardZaaktypeDestroy(
+	private function guardCaseTypeDestroy(
 		string $resource,
 		string $action,
 		array $body,

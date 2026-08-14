@@ -124,7 +124,7 @@ class BeschikkingGenerationServiceTest extends TestCase {
 		$this->logger->expects($this->atLeastOnce())->method('warning');
 
 		$result = $this->service->generateBeschikking(
-			zaakId: 'zaak-123',
+			caseId: 'zaak-123',
 			outcome: 'verleend',
 			motivation: 'Voldoet aan alle eisen.'
 		);
@@ -164,7 +164,7 @@ class BeschikkingGenerationServiceTest extends TestCase {
 
 		// For 'geweigerd' outcome.
 		$this->service->generateBeschikking(
-			zaakId: 'zaak-456',
+			caseId: 'zaak-456',
 			outcome: 'geweigerd',
 			motivation: 'Voldoet niet.'
 		);
@@ -176,7 +176,7 @@ class BeschikkingGenerationServiceTest extends TestCase {
 
 		// For 'verleend' outcome.
 		$this->service->generateBeschikking(
-			zaakId: 'zaak-789',
+			caseId: 'zaak-789',
 			outcome: 'verleend',
 			motivation: 'Alles in orde.'
 		);

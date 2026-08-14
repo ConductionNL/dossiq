@@ -145,6 +145,13 @@ Vrij en open source onder de EUPL-1.2-licentie.
             <step>OCA\Procest\Repair\LinkInFlightContractDecisionsRepair</step>
             <step>OCA\Procest\Repair\LinkInFlightRemainingDecisionsRepair</step>
             <step>OCA\Procest\Repair\SeedVerwerkingsactiviteiten</step>
+            <!--
+                Must run AFTER the register sync that adds the English columns, so it
+                can tell a rename from a back-fill. Covers every renamed property
+                together: a register-scoped step that moved some owners and not others
+                would leave the rest silently reading null.
+            -->
+            <step>OCA\Procest\Repair\RenameDutchColumns</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:

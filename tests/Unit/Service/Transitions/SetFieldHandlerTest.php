@@ -67,7 +67,7 @@ class SetFieldHandlerTest extends TestCase {
 		$handler = new SetFieldHandler($settings, new NullLogger());
 
 		$result = $handler->handle(
-			actionConfig: ['type' => 'setField', 'field' => 'einddatum'],
+			actionConfig: ['type' => 'setField', 'field' => 'endDate'],
 			case: ['id' => 'c'],
 			transitionContext: [],
 		);
@@ -109,14 +109,14 @@ class SetFieldHandlerTest extends TestCase {
 		$handler = new SetFieldHandler($settings, new NullLogger());
 
 		$result = $handler->handle(
-			actionConfig: ['type' => 'setField', 'field' => 'resultaat', 'value' => 'toegewezen'],
-			case: ['id' => 'case-1', 'resultaat' => null],
+			actionConfig: ['type' => 'setField', 'field' => 'result', 'value' => 'toegewezen'],
+			case: ['id' => 'case-1', 'result' => null],
 			transitionContext: [],
 		);
 
 		self::assertTrue($result->succeeded);
-		self::assertSame('resultaat', $result->data['field']);
-		self::assertSame('toegewezen', $recorded['resultaat']);
+		self::assertSame('result', $result->data['field']);
+		self::assertSame('toegewezen', $recorded['result']);
 	}//end testWritesFieldOnCase()
 
 	/**
@@ -152,7 +152,7 @@ class SetFieldHandlerTest extends TestCase {
 		$handler = new SetFieldHandler($settings, new NullLogger());
 
 		$result = $handler->handle(
-			actionConfig: ['type' => 'setField', 'field' => 'einddatum', 'value' => '__now__'],
+			actionConfig: ['type' => 'setField', 'field' => 'endDate', 'value' => '__now__'],
 			case: ['id' => 'case-1'],
 			transitionContext: [],
 		);
@@ -161,7 +161,7 @@ class SetFieldHandlerTest extends TestCase {
 		// ISO-8601 ATOM format: YYYY-MM-DDTHH:MM:SS+ZZ:ZZ.
 		self::assertMatchesRegularExpression(
 			'/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+\-]\d{2}:\d{2}$/',
-			(string)$recorded['einddatum'],
+			(string)$recorded['endDate'],
 		);
 	}//end testResolvesNowMacro()
 

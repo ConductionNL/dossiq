@@ -48,12 +48,12 @@ class NoticeOfDefaultService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Settings service.
-	 * @param TermijnService $termijnService TermijnService.
+	 * @param TermijnService $termService TermijnService.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly TermijnService $termijnService,
+		private readonly TermijnService $termService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -61,9 +61,9 @@ class NoticeOfDefaultService {
 	/**
 	 * Register an ingebrekestelling against a TermijnInstance.
 	 *
-	 * @param string $termijnInstanceId TermijnInstance id.
-	 * @param DateTimeImmutable $ontvangstDatum Receipt date.
-	 * @param string $kanaal Receipt channel.
+	 * @param string $termInstanceId TermijnInstance id.
+	 * @param DateTimeImmutable $receiptDate Receipt date.
+	 * @param string $channel Receipt channel.
 	 * @param string $documentLink Document link.
 	 *
 	 * @return array<string, mixed> The ingebrekestelling row (with possibly null/created berekening).
@@ -73,33 +73,33 @@ class NoticeOfDefaultService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-05-ingebrekestelling/tasks.md
 	 */
 	public function registerNoticeOfDefault(
-		string $termijnInstanceId,
-		DateTimeImmutable $ontvangstDatum,
-		string $kanaal,
+		string $termInstanceId,
+		DateTimeImmutable $receiptDate,
+		string $channel,
 		string $documentLink = '',
 	): array {
-		$instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+		$instance = $this->termService->getTermijnInstance($termInstanceId);
 		if ($instance === null) {
-			throw new RuntimeException('TermijnInstance not found: ' . $termijnInstanceId);
+			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
 		}
 
 		$status = (string)($instance['status'] ?? '');
-		$deadline = (string)($instance['einddatumActueel'] ?? '');
-		$receipt = $ontvangstDatum->format('Y-m-d');
+		$deadline = (string)($instance['endDateCurrent'] ?? '');
+		$receipt = $receiptDate->format('Y-m-d');
 
 		$isValid = ($status === 'overschreden' && $deadline !== '' && $deadline < $receipt);
 
 		$row = [
-			'termijnInstance' => $termijnInstanceId,
-			'ontvangstDatum' => $receipt,
-			'kanaal' => $kanaal,
+			'termijnInstance' => $termInstanceId,
+			'receiptDate' => $receipt,
+			'kanaal' => $channel,
 			'gevalideerd' => $isValid,
 			'documentLink' => $documentLink,
 		];
 
-		$row['geldigheidStatus'] = 'premaat';
+		$row['validityStatus'] = 'premaat';
 		if ($isValid === true) {
-			$row['geldigheidStatus'] = 'geldig';
+			$row['validityStatus'] = 'geldig';
 		}
 
 		$saved = $this->saveSchema(schemaConfigKey: 'ingebrekestelling_schema', object: $row);
@@ -108,7 +108,7 @@ class NoticeOfDefaultService {
 		if ($isValid === false) {
 			$this->logger->info(
 				'Premature ingebrekestelling rejected',
-				['termijnInstance' => $termijnInstanceId, 'ontvangstDatum' => $receipt]
+				['termijnInstance' => $termInstanceId, 'receiptDate' => $receipt]
 			);
 			return $row;
 		}
@@ -119,18 +119,18 @@ class NoticeOfDefaultService {
 		if ($existing !== '') {
 			$this->logger->info(
 				'Additional ingebrekestelling recorded; first remains the dwangsom basis',
-				['termijnInstance' => $termijnInstanceId, 'firstNotice' => $existing]
+				['termijnInstance' => $termInstanceId, 'firstNotice' => $existing]
 			);
 			return $row;
 		}
 
 		// First valid notice: link it and start a DwangsomBerekening.
-		$row['dwangsomBerekening'] = $this->startDwangsomBerekening(
-			termijnInstanceId: $termijnInstanceId,
+		$row['dwangsomBerekening'] = $this->startPenaltyPaymentCalculation(
+			termInstanceId: $termInstanceId,
 			instance: $instance,
 			ingebrekestellingId: (string)$row['id'],
-			ontvangstDatum: $ontvangstDatum,
-			kanaal: $kanaal,
+			receiptDate: $receiptDate,
+			channel: $channel,
 			documentLink: $documentLink,
 		);
 
@@ -140,72 +140,72 @@ class NoticeOfDefaultService {
 	/**
 	 * Link the first valid notice to its instance and open the DwangsomBerekening.
 	 *
-	 * @param string $termijnInstanceId TermijnInstance id.
+	 * @param string $termInstanceId TermijnInstance id.
 	 * @param array<string, mixed> $instance TermijnInstance row.
 	 * @param string $ingebrekestellingId Id of the saved ingebrekestelling.
-	 * @param DateTimeImmutable $ontvangstDatum Receipt date.
-	 * @param string $kanaal Receipt channel.
+	 * @param DateTimeImmutable $receiptDate Receipt date.
+	 * @param string $channel Receipt channel.
 	 * @param string $documentLink Document link.
 	 *
 	 * @return array<string, mixed> The created DwangsomBerekening row.
 	 */
-	private function startDwangsomBerekening(
-		string $termijnInstanceId,
+	private function startPenaltyPaymentCalculation(
+		string $termInstanceId,
 		array $instance,
 		string $ingebrekestellingId,
-		DateTimeImmutable $ontvangstDatum,
-		string $kanaal,
+		DateTimeImmutable $receiptDate,
+		string $channel,
 		string $documentLink,
 	): array {
-		$this->termijnService->updateTermijnInstance(
-			$termijnInstanceId,
+		$this->termService->updateTermijnInstance(
+			$termInstanceId,
 			['relevantIngbrekes' => $ingebrekestellingId]
 		);
 
 		$regime = $this->resolveRegime(instance: $instance);
-		$startAt = $ontvangstDatum->modify('+' . ((int)$regime['grace']) . ' days')->format('Y-m-d');
+		$startAt = $receiptDate->modify('+' . ((int)$regime['grace']) . ' days')->format('Y-m-d');
 
 		$regimeLabel = 'awb-default';
 		if ($regime['custom'] === true) {
 			$regimeLabel = 'afwijkend';
 		}
 
-		$berekening = $this->saveSchema(
+		$calculation = $this->saveSchema(
 			schemaConfigKey: 'dwangsom_berekening_schema',
 			object: [
 				'ingebrekestelling' => $ingebrekestellingId,
-				'termijnInstance' => $termijnInstanceId,
-				'startDatum' => $startAt,
-				'huidigeDag' => 0,
+				'termijnInstance' => $termInstanceId,
+				'startDate' => $startAt,
+				'currentDag' => 0,
 				'dagtarief' => 0,
-				'cumulatievBedrag' => 0,
-				'plafondBerekend' => (int)$regime['plafond'],
+				'cumulativeAmount' => 0,
+				'plafondCalculated' => (int)$regime['plafond'],
 				'plafondBereikt' => false,
 				'status' => 'lopend',
 				'regime' => $regimeLabel,
 			]
 		);
 
-		$this->termijnService->recordEvent(
-			termijnInstanceId: $termijnInstanceId,
+		$this->termService->recordEvent(
+			termInstanceId: $termInstanceId,
 			type: 'ingebrekestelling-ontvangen',
-			grondslag: 'AWB 4:17',
-			motivering: 'Ingebrekestelling ontvangen via ' . $kanaal,
-			dagenImpact: 0,
-			tijdstip: $ontvangstDatum,
+			basis: 'AWB 4:17',
+			rationale: 'Ingebrekestelling ontvangen via ' . $channel,
+			daysImpact: 0,
+			moment: $receiptDate,
 			documentLink: $documentLink,
 		);
 
-		$this->termijnService->recordEvent(
-			termijnInstanceId: $termijnInstanceId,
+		$this->termService->recordEvent(
+			termInstanceId: $termInstanceId,
 			type: 'dwangsom-gestart',
-			grondslag: 'AWB 4:17',
-			motivering: 'Dwangsom-berekening gestart na grace period',
-			dagenImpact: 0,
-			tijdstip: $ontvangstDatum,
+			basis: 'AWB 4:17',
+			rationale: 'Dwangsom-berekening gestart na grace period',
+			daysImpact: 0,
+			moment: $receiptDate,
 		);
 
-		return $berekening;
+		return $calculation;
 	}//end startDwangsomBerekening()
 
 	/**

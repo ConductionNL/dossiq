@@ -125,7 +125,7 @@ class VergunningaanvraagCreatedListener implements IEventListener {
 		self::$processedIds[$objectId] = true;
 
 		try {
-			$this->dsoCaseService->createZaakFromVergunningaanvraag(vergunningaanvraagId: $objectId);
+			$this->dsoCaseService->createZaakFromVergunningaanvraag(permitApplicationId: $objectId);
 			$this->logger->info(
 				'Procest DSO listener: zaak created for vergunningaanvraag',
 				[

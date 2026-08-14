@@ -55,11 +55,11 @@ class DsoStatusChangeNotifier {
 	/**
 	 * Dispatch the typed status-changed event for a transitioned zaak.
 	 *
-	 * @param string $aanvraagRef The vergunningaanvraag UUID reference.
+	 * @param string $requestRef The vergunningaanvraag UUID reference.
 	 * @param string $oldStatus The previous status value.
 	 * @param string $newStatus The new status value.
 	 * @param string|null $besluitdatum Optional decision date (ISO 8601).
-	 * @param string|null $toelichting Optional explanation text.
+	 * @param string|null $notes Optional explanation text.
 	 * @param string $userId The Nextcloud UID that triggered the transition.
 	 *
 	 * @return void
@@ -67,19 +67,19 @@ class DsoStatusChangeNotifier {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
 	 */
 	public function dispatchStatusChanged(
-		string $aanvraagRef,
+		string $requestRef,
 		string $oldStatus,
 		string $newStatus,
 		?string $besluitdatum,
-		?string $toelichting,
+		?string $notes,
 		string $userId,
 	): void {
 		$event = new VergunningStatusChangedEvent(
-			aanvraagRef: $aanvraagRef,
+			requestRef: $requestRef,
 			oldStatus: $oldStatus,
 			newStatus: $newStatus,
 			besluitdatum: $besluitdatum,
-			toelichting: $toelichting,
+			notes: $notes,
 			userId: $userId,
 		);
 

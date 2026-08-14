@@ -236,7 +236,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 
 		$placed = 0;
 		foreach ($rows as $row) {
-			$caseId = (string)($row['zaakId'] ?? '');
+			$caseId = (string)($row['caseId'] ?? '');
 			if ($caseId === '') {
 				continue;
 			}
@@ -303,7 +303,7 @@ class MigrateArchivalToOpenRegister implements IRepairStep {
 
 		$exported = 0;
 		foreach ($proofs as $proof) {
-			$caseId = (string)($proof['zaakId'] ?? ($proof['caseId'] ?? ''));
+			$caseId = (string)($proof['caseId'] ?? '');
 			if ($caseId === '') {
 				continue;
 			}

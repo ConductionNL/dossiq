@@ -128,8 +128,8 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 	/**
 	 * {@inheritDoc}
 	 *
-	 * @param string $bestandId The PDF file id.
-	 * @param string $ondertekenaar The signer UID.
+	 * @param string $fileId The PDF file id.
+	 * @param string $signatory The signer UID.
 	 * @param string $tspProvider The provider slug (unused for the LibreSign identifier; kept for the interface contract).
 	 *
 	 * @return array<string, string>
@@ -140,14 +140,14 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 	 *
 	 * @spec openspec/specs/libresign-besluit-signing/spec.md
 	 */
-	public function sign(string $bestandId, string $ondertekenaar, string $tspProvider): array {
+	public function sign(string $fileId, string $signatory, string $tspProvider): array {
 		$this->assertAvailable();
 
-		$signer = $this->resolveSigner(ondertekenaar: $ondertekenaar);
+		$signer = $this->resolveSigner(signatory: $signatory);
 
 		$request = $this->apiClient->requestSignature(
-			fileId: (int)$bestandId,
-			documentName: 'beschikking-' . $bestandId,
+			fileId: (int)$fileId,
+			documentName: 'beschikking-' . $fileId,
 			signers: [$signer],
 		);
 
@@ -183,8 +183,8 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 
 			if ($mapped === LibresignResultAssembler::SIGNED) {
 				return $this->assembler->assembleSignedResult(
-					bestandId: $bestandId,
-					ondertekenaar: $ondertekenaar,
+					fileId: $fileId,
+					signatory: $signatory,
 					uuid: $uuid,
 					status: $status,
 				);
@@ -208,25 +208,25 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 	 * Degrades to a structured-but-invalid report on transport failure rather than throwing,
 	 * matching MockSigningAdapter's always-answers shape.
 	 *
-	 * @param string $validatieRapportId The LibreSign request uuid (procest stores it as the validatierapport id).
+	 * @param string $validationRapportId The LibreSign request uuid (procest stores it as the validatierapport id).
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/libresign-besluit-signing/spec.md
 	 */
-	public function fetchValidationReport(string $validatieRapportId): array {
+	public function fetchValidationReport(string $validationRapportId): array {
 		try {
 			return $this->assembler->assembleValidationReport(
-				validatieRapportId: $validatieRapportId,
-				status: $this->apiClient->getStatus($validatieRapportId),
+				validationRapportId: $validationRapportId,
+				status: $this->apiClient->getStatus($validationRapportId),
 			);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'LibresignSigningAdapter: fetchValidationReport degraded to an invalid report',
-				['app' => Application::APP_ID, 'validatieRapportId' => $validatieRapportId, 'error' => $e->getMessage()],
+				['app' => Application::APP_ID, 'validationRapportId' => $validationRapportId, 'error' => $e->getMessage()],
 			);
 
-			return $this->assembler->assembleFailedValidationReport(validatieRapportId: $validatieRapportId);
+			return $this->assembler->assembleFailedValidationReport(validationRapportId: $validationRapportId);
 		}//end try
 	}//end fetchValidationReport()
 
@@ -247,15 +247,15 @@ class LibresignSigningAdapter implements SigningAdapterInterface {
 	/**
 	 * Resolve the LibreSign signer identity from the mandaat-authorised actor's NC account.
 	 *
-	 * @param string $ondertekenaar The Nextcloud UID.
+	 * @param string $signatory The Nextcloud UID.
 	 *
 	 * @return array<string, mixed> `{identify: {email: string}, displayName: string}`.
 	 *
 	 * @throws RuntimeException 'libresign_signer_unresolvable' when the UID does not resolve to
 	 *                          an account, or the account has no configured email.
 	 */
-	private function resolveSigner(string $ondertekenaar): array {
-		$user = $this->userManager->get($ondertekenaar);
+	private function resolveSigner(string $signatory): array {
+		$user = $this->userManager->get($signatory);
 		if ($user === null) {
 			throw new RuntimeException('libresign_signer_unresolvable');
 		}

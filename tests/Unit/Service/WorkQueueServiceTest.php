@@ -247,7 +247,7 @@ class WorkQueueServiceTest extends TestCase {
 			'id' => 'ti-1',
 			'zaak' => 'case-1',
 			'status' => 'lopend',
-			'einddatumActueel' => '2026-07-14',
+			'endDateCurrent' => '2026-07-14',
 		]);
 
 		$items = $this->service->computeQueue('jan', new DateTimeImmutable('2026-07-13'));

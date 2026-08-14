@@ -6,7 +6,7 @@
 	<div
 		class="agenda-item"
 		:class="{
-			'agenda-item--bespreekstuk': item.behandeling === 'bespreekstuk',
+			'agenda-item--bespreekstuk': item.handling === 'bespreekstuk',
 		}">
 		<span
 			class="agenda-item__handle"
@@ -19,12 +19,12 @@
 		}}</span>
 		<div class="agenda-item__toggle">
 			<NcButton
-				:type="item.behandeling === 'hamerstuk' ? 'primary' : 'secondary'"
+				:type="item.handling === 'hamerstuk' ? 'primary' : 'secondary'"
 				@click="setBehandeling('hamerstuk')">
 				{{ t('procest', 'Hamerstuk') }}
 			</NcButton>
 			<NcButton
-				:type="item.behandeling === 'bespreekstuk' ? 'primary' : 'secondary'"
+				:type="item.handling === 'bespreekstuk' ? 'primary' : 'secondary'"
 				@click="setBehandeling('bespreekstuk')">
 				{{ t('procest', 'Bespreekstuk') }}
 			</NcButton>

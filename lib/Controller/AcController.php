@@ -691,15 +691,15 @@ class AcController extends ZgwController {
 			$scopes = $autorisatie['scopes'] ?? [];
 
 			// Check if any scope relates to the component's domain.
-			$hasZakenScope = $this->scopesContain(scopes: $scopes, keyword: 'zaken');
+			$hasCasesScope = $this->scopesContain(scopes: $scopes, keyword: 'zaken');
 			$hasDocumentenScope = $this->scopesContain(scopes: $scopes, keyword: 'documenten');
 
 			// Ac-003a/003b: ZRC with zaken-related scope.
-			if ($component === 'zrc' && $hasZakenScope === true) {
-				$zaaktype = $autorisatie['zaaktype'] ?? null;
+			if ($component === 'zrc' && $hasCasesScope === true) {
+				$caseType = $autorisatie['caseType'] ?? null;
 				$maxVertr = $autorisatie['maxVertrouwelijkheidaanduiding'] ?? null;
 
-				if ($zaaktype === null || $zaaktype === '') {
+				if ($caseType === null || $caseType === '') {
 					$invalidParams[] = [
 						'name' => "autorisaties.{$index}.zaaktype",
 						'code' => 'required',
@@ -740,8 +740,8 @@ class AcController extends ZgwController {
 			}//end if
 
 			// Ac-003e (not tested but included): BRC with besluiten-related scope.
-			$hasBesluitenScope = $this->scopesContain(scopes: $scopes, keyword: 'besluiten');
-			if ($component === 'brc' && $hasBesluitenScope === true) {
+			$hasDecisionsScope = $this->scopesContain(scopes: $scopes, keyword: 'besluiten');
+			if ($component === 'brc' && $hasDecisionsScope === true) {
 				$besluittype = $autorisatie['besluittype'] ?? null;
 				if ($besluittype === null || $besluittype === '') {
 					$invalidParams[] = [

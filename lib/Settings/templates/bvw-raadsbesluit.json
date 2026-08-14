@@ -38,7 +38,7 @@
             { "name": "portefeuillehouder", "propertyType": "string", "isRequired": true, "description": "Nextcloud-gebruiker van de verantwoordelijk wethouder" },
             { "name": "vergadergremium", "propertyType": "string", "isRequired": true, "description": "Het besluitvormend orgaan (Gemeenteraad)" },
             { "name": "agendanummer", "propertyType": "string", "isRequired": false, "description": "Nummer op de raadsagenda" },
-            { "name": "behandeling", "propertyType": "string", "isRequired": false, "description": "Classificatie als hamerstuk of bespreekstuk" },
+            { "name": "handling", "propertyType": "string", "isRequired": false, "description": "Classificatie als hamerstuk of bespreekstuk" },
             { "name": "publicatieReferentie", "propertyType": "string", "isRequired": false, "description": "Referentie-URI van de publicatie in DROP of LVBB" }
         ],
         "documentTypes": [
@@ -100,7 +100,7 @@
         },
         "parafeerroute": {
             "name": "Raadsvoorstel - 4 stappen",
-            "voorstelType": "raadsvoorstel",
+            "proposalType": "raadsvoorstel",
             "isDefault": true,
             "description": "Parafeerketen voor raadsvoorstellen met griffier als eindstap",
             "steps": [

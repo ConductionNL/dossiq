@@ -67,7 +67,7 @@ class BelplanRoutingService {
 				continue;
 			}
 
-			$trigger = $this->normalisePhone(phoneNumber: (string)($bp['triggerNummer'] ?? ''));
+			$trigger = $this->normalisePhone(phoneNumber: (string)($bp['triggerNumber'] ?? ''));
 			if ($trigger === '') {
 				continue;
 			}
@@ -91,16 +91,16 @@ class BelplanRoutingService {
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function resolveVaardigheid(array $belplan, string|int $menuSelection): string {
-		$stappen = $belplan['routeringStappen'] ?? [];
-		if (is_array($stappen) === false) {
+		$steps = $belplan['routingSteps'] ?? [];
+		if (is_array($steps) === false) {
 			return '';
 		}
 
 		// Numeric selection: 1-based index into routeringStappen[].
 		if (is_int($menuSelection) === true || ctype_digit((string)$menuSelection) === true) {
 			$idx = ((int)$menuSelection) - 1;
-			if (isset($stappen[$idx]) === true && is_array($stappen[$idx]) === true) {
-				return (string)($stappen[$idx]['vaardigheid'] ?? '');
+			if (isset($steps[$idx]) === true && is_array($steps[$idx]) === true) {
+				return (string)($steps[$idx]['vaardigheid'] ?? '');
 			}
 
 			return '';
@@ -108,14 +108,14 @@ class BelplanRoutingService {
 
 		// Otherwise, match the option label case-insensitively.
 		$needle = mb_strtolower((string)$menuSelection);
-		foreach ($stappen as $stap) {
-			if (is_array($stap) === false) {
+		foreach ($steps as $step) {
+			if (is_array($step) === false) {
 				continue;
 			}
 
-			$label = mb_strtolower((string)($stap['label'] ?? ''));
+			$label = mb_strtolower((string)($step['label'] ?? ''));
 			if ($label === $needle) {
-				return (string)($stap['vaardigheid'] ?? '');
+				return (string)($step['vaardigheid'] ?? '');
 			}
 		}
 
@@ -136,7 +136,7 @@ class BelplanRoutingService {
 	 * @param string $vaardigheid The required skill.
 	 * @param array<int, array<string, mixed>> $pool Specialist availability snapshot.
 	 * @param int $overflowWachttijd Seconds threshold.
-	 * @param int $maxWachtrijLengte Queue threshold.
+	 * @param int $maxQueueLengte Queue threshold.
 	 *
 	 * @return array{destinationSpecialistId: string|null, escalatieFlag: bool,
 	 *               estimatedWaitTime: int, vaardigheid: string,
@@ -148,7 +148,7 @@ class BelplanRoutingService {
 		string $vaardigheid,
 		array $pool,
 		int $overflowWachttijd = self::DEFAULT_OVERFLOW_WACHTTIJD,
-		int $maxWachtrijLengte = self::DEFAULT_OVERFLOW_WACHTRIJ_LENGTE,
+		int $maxQueueLengte = self::DEFAULT_OVERFLOW_WACHTRIJ_LENGTE,
 	): array {
 		if ($vaardigheid === '') {
 			return [
@@ -183,8 +183,8 @@ class BelplanRoutingService {
 		// No-one available: overflow check.
 		if (count($available) === 0) {
 			$minQueue = $this->minQueueLength(pool: $candidates);
-			$estWait = $minQueue * $this->avgBehandelduur(pool: $candidates);
-			$overflow = ($estWait > $overflowWachttijd) || ($minQueue > $maxWachtrijLengte);
+			$estWait = $minQueue * $this->avgHandlingDuration(pool: $candidates);
+			$overflow = ($estWait > $overflowWachttijd) || ($minQueue > $maxQueueLengte);
 
 			return [
 				'destinationSpecialistId' => null,
@@ -198,26 +198,26 @@ class BelplanRoutingService {
 		usort(
 			$available,
 			static function (array $a, array $b): int {
-				$queueA = (int)($a['huidigeWachtrijLengte'] ?? 0);
-				$queueB = (int)($b['huidigeWachtrijLengte'] ?? 0);
+				$queueA = (int)($a['currentQueueLength'] ?? 0);
+				$queueB = (int)($b['currentQueueLength'] ?? 0);
 				if ($queueA !== $queueB) {
 					return $queueA <=> $queueB;
 				}
 
-				$durationA = (int)($a['gemiddeldeBehandelduur'] ?? 0);
-				$durationB = (int)($b['gemiddeldeBehandelduur'] ?? 0);
+				$durationA = (int)($a['averageHandlingDuration'] ?? 0);
+				$durationB = (int)($b['averageHandlingDuration'] ?? 0);
 				return $durationA <=> $durationB;
 			}
 		);
 
 		$picked = $available[0];
-		$picked['huidigeWachtrijLengte'] = (int)($picked['huidigeWachtrijLengte'] ?? 0);
-		$picked['gemiddeldeBehandelduur'] = (int)($picked['gemiddeldeBehandelduur'] ?? 0);
+		$picked['currentQueueLength'] = (int)($picked['currentQueueLength'] ?? 0);
+		$picked['averageHandlingDuration'] = (int)($picked['averageHandlingDuration'] ?? 0);
 
 		return [
-			'destinationSpecialistId' => (string)($picked['medewerkerId'] ?? ($picked['id'] ?? '')),
+			'destinationSpecialistId' => (string)($picked['employeeId'] ?? ($picked['id'] ?? '')),
 			'escalatieFlag' => false,
-			'estimatedWaitTime' => $picked['huidigeWachtrijLengte'] * $picked['gemiddeldeBehandelduur'],
+			'estimatedWaitTime' => $picked['currentQueueLength'] * $picked['averageHandlingDuration'],
 			'vaardigheid' => $vaardigheid,
 			'candidatePool' => count($candidates),
 		];
@@ -273,7 +273,7 @@ class BelplanRoutingService {
 	private function minQueueLength(array $pool): int {
 		$min = PHP_INT_MAX;
 		foreach ($pool as $sp) {
-			$queue = (int)($sp['huidigeWachtrijLengte'] ?? 0);
+			$queue = (int)($sp['currentQueueLength'] ?? 0);
 			if ($queue < $min) {
 				$min = $queue;
 			}
@@ -293,14 +293,14 @@ class BelplanRoutingService {
 	 *
 	 * @return int The average duur.
 	 */
-	private function avgBehandelduur(array $pool): int {
+	private function avgHandlingDuration(array $pool): int {
 		if (count($pool) === 0) {
 			return 0;
 		}
 
 		$sum = 0;
 		foreach ($pool as $sp) {
-			$sum += (int)($sp['gemiddeldeBehandelduur'] ?? 0);
+			$sum += (int)($sp['averageHandlingDuration'] ?? 0);
 		}
 
 		return (int)round($sum / count($pool));

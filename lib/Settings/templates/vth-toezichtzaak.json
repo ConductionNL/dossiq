@@ -12,6 +12,6 @@
   "roleTypes": ["inspecteur", "contactpersoon", "opdrachtgever"],
   "propertyDefinitions": [
     {"name": "inspectionPhase", "type": "string"},
-    {"name": "locatie", "type": "string"}
+    {"name": "location", "type": "string"}
   ]
 }

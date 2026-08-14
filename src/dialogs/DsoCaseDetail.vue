@@ -37,11 +37,11 @@
 						<dt>{{ t('procest', 'Procedure type') }}</dt>
 						<dd>{{ zaak.procedureType || '—' }}</dd>
 						<dt>{{ t('procest', 'Deadline') }}</dt>
-						<dd>{{ formatDate(zaak.deadlineDatum) }}</dd>
+						<dd>{{ formatDate(zaak.deadlineDate) }}</dd>
 						<dt>{{ t('procest', 'Competent Authority') }}</dt>
 						<dd>{{ zaak.bevoegdGezag || '—' }}</dd>
 						<dt>{{ t('procest', 'Permit application ref') }}</dt>
-						<dd>{{ zaak.vergunningaanvraagRef || '—' }}</dd>
+						<dd>{{ zaak.permitApplicationRef || '—' }}</dd>
 					</dl>
 				</section>
 
@@ -52,7 +52,7 @@
 						<dt>{{ t('procest', 'Decision date') }}</dt>
 						<dd>{{ formatDate(zaak.besluitdatum) }}</dd>
 						<dt>{{ t('procest', 'Explanation') }}</dt>
-						<dd>{{ zaak.dsoToelichting || '—' }}</dd>
+						<dd>{{ zaak.dsoNotes || '—' }}</dd>
 					</dl>
 				</section>
 
@@ -61,13 +61,13 @@
 					<h3>{{ t('procest', 'Collaboration requests') }}</h3>
 					<p
 						v-if="
-							!zaak.samenwerkverzoeken
-							|| zaak.samenwerkverzoeken.length === 0
+							!zaak.collaboration_requests
+							|| zaak.collaboration_requests.length === 0
 						">
 						{{ t('procest', 'No samenwerkverzoeken linked') }}
 					</p>
 					<ul v-else>
-						<li v-for="swId in zaak.samenwerkverzoeken" :key="swId">
+						<li v-for="swId in zaak.collaboration_requests" :key="swId">
 							{{ swId }}
 						</li>
 					</ul>
@@ -98,17 +98,17 @@
 			<!-- Sub-dialogs -->
 			<BeschikkingDialog
 				v-if="showBeschikkingDialog"
-				:zaak-id="zaakId"
+				:zaak-id="caseId"
 				@close="showBeschikkingDialog = false"
 				@generated="onBeschikkingGenerated" />
 			<SamenwerkverzoekDialog
 				v-if="showSamenwerkDialog"
-				:zaak-id="zaakId"
+				:zaak-id="caseId"
 				@close="showSamenwerkDialog = false"
 				@initiated="onSamenwerkInitiated" />
 			<DoorstuurDialog
 				v-if="showDoorstuurDialog"
-				:zaak-id="zaakId"
+				:zaak-id="caseId"
 				@close="showDoorstuurDialog = false" />
 
 			<!-- Inline transition form -->
@@ -187,7 +187,7 @@ export default {
 				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
 				{ label: t('procest', 'Granted'), value: 'verleend' },
 				{ label: t('procest', 'Refused'), value: 'geweigerd' },
-				{ label: t('procest', 'Withdrawn'), value: 'ingetrokken' },
+				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
 			],
 		}
 	},
@@ -230,13 +230,13 @@ export default {
 			try {
 				const payload = {
 					newStatus: this.transitionStatus.value,
-					toelichting: this.transitionToelichting || undefined,
+					notes: this.transitionToelichting || undefined,
 					besluitdatum: this.transitionBesluitdatum || undefined,
 				}
 				const { data } = await axios.post(
 					generateUrl(
 						'/apps/procest/api/dso/cases/'
-							+ encodeURIComponent(this.zaakId)
+							+ encodeURIComponent(this.caseId)
 							+ '/transition',
 					),
 					payload,
@@ -255,8 +255,8 @@ export default {
 			if (samenwerk?.uuid || samenwerk?.id) {
 				this.$emit('transition', {
 					...this.zaak,
-					samenwerkverzoeken: [
-						...(this.zaak.samenwerkverzoeken || []),
+					collaboration_requests: [
+						...(this.zaak.collaboration_requests || []),
 						samenwerk.uuid || samenwerk.id,
 					],
 				})

@@ -103,7 +103,7 @@
 								"
 								:model-value="
 									localAssessments[doc.id]
-									&& localAssessments[doc.id].motivering
+									&& localAssessments[doc.id].rationale
 								"
 								:disabled="isReadOnly"
 								:aria-label="
@@ -379,7 +379,7 @@ export default {
 				[docId]: {
 					...(this.localAssessments[docId] || {}),
 					documentRef: docId,
-					motivering: value,
+					rationale: value,
 				},
 			}
 		},

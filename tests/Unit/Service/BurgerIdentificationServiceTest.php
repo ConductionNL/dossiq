@@ -87,7 +87,7 @@ class BurgerIdentificationServiceTest extends TestCase {
 	public function testFullMatchScoresOne(): void {
 		$score = $this->service->calculateScore(
 			[
-				'naam' => true,
+				'name' => true,
 				'geboortedatum' => true,
 				'adres' => true,
 				'bsn' => true,
@@ -105,7 +105,7 @@ class BurgerIdentificationServiceTest extends TestCase {
 	 */
 	public function testPartialMatchBelowThresholdNotIdentified(): void {
 		$result = $this->service->startIdentificatievragen(
-			['naam' => true, 'geboortedatum' => true],
+			['name' => true, 'geboortedatum' => true],
 			'burger:abc',
 		);
 
@@ -121,7 +121,7 @@ class BurgerIdentificationServiceTest extends TestCase {
 	 */
 	public function testMatchAtThresholdIdentified(): void {
 		$result = $this->service->startIdentificatievragen(
-			['naam' => true, 'geboortedatum' => true, 'adres' => true],
+			['name' => true, 'geboortedatum' => true, 'adres' => true],
 			'burger:abc',
 		);
 

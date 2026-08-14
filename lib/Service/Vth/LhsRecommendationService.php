@@ -140,8 +140,8 @@ class LhsRecommendationService {
 			'gedrag' => $gedrag,
 			'actorType' => $actorType,
 			'matrixVersion' => (int)($matrix['version'] ?? 1),
-			'recommendedInterventie' => (string)($cell['interventie'] ?? ''),
-			'finalIntervention' => (string)($cell['interventie'] ?? ''),
+			'recommendedIntervention' => (string)($cell['intervention'] ?? ''),
+			'finalIntervention' => (string)($cell['intervention'] ?? ''),
 			'override' => false,
 			'recommendedBy' => $user->getUID(),
 		];
@@ -192,7 +192,7 @@ class LhsRecommendationService {
 			);
 		}
 
-		$recommended = (string)($recommendation['recommendedInterventie'] ?? '');
+		$recommended = (string)($recommendation['recommendedIntervention'] ?? '');
 		$recSeverity = self::INTERVENTIE_SEVERITY[$recommended] ?? 0;
 		$newSeverity = self::INTERVENTIE_SEVERITY[$intervention] ?? 0;
 		if ($newSeverity === 0) {

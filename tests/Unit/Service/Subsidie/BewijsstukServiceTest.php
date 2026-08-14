@@ -78,8 +78,8 @@ class BewijsstukServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testRetentionEndDate(): void {
-		$vanaf = new DateTimeImmutable('2026-06-01');
-		$this->assertSame('2033-06-01', $this->service->bewaartermijnEinde($vanaf, 7)->format('Y-m-d'));
+		$from = new DateTimeImmutable('2026-06-01');
+		$this->assertSame('2033-06-01', $this->service->bewaartermijnEinde($from, 7)->format('Y-m-d'));
 	}//end testRetentionEndDate()
 
 	/**

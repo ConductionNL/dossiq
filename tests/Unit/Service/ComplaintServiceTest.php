@@ -217,7 +217,7 @@ class ComplaintServiceTest extends TestCase {
 	 */
 	public function testRequestVerdagingUpdatesDeadlineAndSetsFlag(): void {
 		$complaint = [
-			'verdagingMogelijk' => true,
+			'postponementPossible' => true,
 			'afhandelDeadline' => '2026-04-12',
 		];
 
@@ -244,14 +244,14 @@ class ComplaintServiceTest extends TestCase {
 			->method('saveObject')
 			->willReturnCallback(
 				function (array $data, string $reg, string $sch, ?string $id = null) {
-					$this->assertFalse($data['verdagingMogelijk']);
+					$this->assertFalse($data['postponementPossible']);
 					$this->assertSame('2026-05-10', $data['afhandelDeadline']);
 					return $data;
 				}
 			);
 
 		$result = $this->service->requestVerdaging('uuid-123', 'Complexe zaak vereist extra onderzoek');
-		$this->assertFalse($result['verdagingMogelijk']);
+		$this->assertFalse($result['postponementPossible']);
 	}//end testRequestVerdagingUpdatesDeadlineAndSetsFlag()
 
 	/**
@@ -260,7 +260,7 @@ class ComplaintServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testRequestVerdagingThrowsWhenExtensionNotAvailable(): void {
-		$complaint = ['verdagingMogelijk' => false, 'afhandelDeadline' => '2026-04-12'];
+		$complaint = ['postponementPossible' => false, 'afhandelDeadline' => '2026-04-12'];
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
@@ -279,7 +279,7 @@ class ComplaintServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testRequestVerdagingThrowsWhenJustificatieEmpty(): void {
-		$complaint = ['verdagingMogelijk' => true, 'afhandelDeadline' => '2026-04-12'];
+		$complaint = ['postponementPossible' => true, 'afhandelDeadline' => '2026-04-12'];
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
@@ -340,7 +340,7 @@ class ComplaintServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Required fields/i');
 
-		$this->service->createComplaint(['behandelaar' => 'user1']);
+		$this->service->createComplaint(['handler' => 'user1']);
 	}//end testCreateComplaintThrowsWhenRequiredFieldsMissing()
 
 	/**
@@ -358,7 +358,7 @@ class ComplaintServiceTest extends TestCase {
 		$this->service->createComplaint([
 			'onderwerp' => 'Test',
 			'omschrijving' => 'Description',
-			'ontvangstdatum' => '2026-03-01',
+			'receiptDate' => '2026-03-01',
 		]);
 	}//end testCreateComplaintThrowsWhenOpenRegisterUnavailable()
 

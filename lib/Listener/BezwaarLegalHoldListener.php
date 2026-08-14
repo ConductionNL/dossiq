@@ -287,12 +287,12 @@ class BezwaarLegalHoldListener implements IEventListener {
 	 */
 	private function resolveCaseId(string $schemaSlug, array $payload): string {
 		if ($schemaSlug === 'bezwaarDecision') {
-			$bezwaarId = (string)($payload['bezwaar'] ?? '');
-			if ($bezwaarId === '') {
+			$objectionId = (string)($payload['bezwaar'] ?? '');
+			if ($objectionId === '') {
 				return '';
 			}
 
-			return $this->caseIdOfObjection(bezwaarId: $bezwaarId);
+			return $this->caseIdOfObjection(objectionId: $objectionId);
 		}
 
 		return (string)($payload['case'] ?? '');
@@ -301,11 +301,11 @@ class BezwaarLegalHoldListener implements IEventListener {
 	/**
 	 * Resolve the case UUID an objection belongs to via the OR object mapper.
 	 *
-	 * @param string $bezwaarId The objection (bezwaar) UUID.
+	 * @param string $objectionId The objection (bezwaar) UUID.
 	 *
 	 * @return string The linked case UUID, or '' when unresolvable.
 	 */
-	private function caseIdOfObjection(string $bezwaarId): string {
+	private function caseIdOfObjection(string $objectionId): string {
 		$objectMapper = $this->resolveOr(fqn: self::OBJECT_MAPPER);
 		if ($objectMapper === null) {
 			return '';
@@ -314,7 +314,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 		try {
 			// See resolveCaseObject(): findByUuid() does not exist on MagicMapper.
 			$objection = $objectMapper->find(
-				identifier: $bezwaarId,
+				identifier: $objectionId,
 				_rbac: false,
 				_multitenancy: false
 			);
@@ -333,7 +333,7 @@ class BezwaarLegalHoldListener implements IEventListener {
 				'Procest legal-hold: could not resolve objection for case linkage',
 				[
 					'app' => Application::APP_ID,
-					'bezwaarId' => $bezwaarId,
+					'bezwaarId' => $objectionId,
 					'error' => $e->getMessage(),
 				]
 			);

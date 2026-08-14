@@ -56,7 +56,7 @@ class BezwaarListenerRegistrar {
 	 */
 	public function register(IRegistrationContext $context): void {
 		$this->registerParaferingListeners(context: $context);
-		$this->registerBezwaarStatusListeners(context: $context);
+		$this->registerObjectionStatusListeners(context: $context);
 	}//end register()
 
 	/**
@@ -104,7 +104,7 @@ class BezwaarListenerRegistrar {
 	 *
 	 * @spec openspec/specs/bezwaar-lifecycle/spec.md
 	 */
-	private function registerBezwaarStatusListeners(IRegistrationContext $context): void {
+	private function registerObjectionStatusListeners(IRegistrationContext $context): void {
 		// Bezwaar-advisory-committee auto-assignment when a bezwaar enters
 		// status "Hoorzitting gepland" — listener defers to
 		// AdvisoryCommitteeService::autoAssignDefaultCommittee.
