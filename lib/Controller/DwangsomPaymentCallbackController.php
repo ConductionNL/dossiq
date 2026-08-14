@@ -34,6 +34,7 @@ use DateTimeImmutable;
 use OCA\Procest\Service\DwangsomUitbetalingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -78,6 +79,10 @@ class DwangsomPaymentCallbackController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	// Payment provider callback. Same reasoning as the DSO receiver: the
+	// caller is a provider retrying on its own schedule, and dropping a
+	// payment notification is worse than absorbing a burst.
+	#[AnonRateLimit(limit: 300, period: 60)]
 	public function callback(): JSONResponse {
 		// The OCP IRequest::getContent() method is marked protected in
 		// OC\AppFramework\Http\Request, so we cannot call it across scopes —

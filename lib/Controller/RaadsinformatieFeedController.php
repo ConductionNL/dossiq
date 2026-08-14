@@ -31,6 +31,7 @@ use OCA\Procest\Service\SettingsService;
 use OCA\Procest\Service\Support\SearchesObjects;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\DataDisplayResponse;
@@ -92,6 +93,10 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	// Raadsinformatie is a published open-data feed — public access is the
+	// statutory point of it, so these are runaway ceilings, not gates, and
+	// carry no brute-force counter.
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function vergaderingen(string $organisation = ''): DataDisplayResponse {
 		return $this->buildFeed(
 			type: 'vergaderingen',
@@ -112,6 +117,7 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function agendapunten(string $organisation = ''): DataDisplayResponse {
 		return $this->buildFeed(
 			type: 'agendapunten',
@@ -132,6 +138,7 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function documenten(string $organisation = ''): DataDisplayResponse {
 		return $this->buildFeed(
 			type: 'documenten',

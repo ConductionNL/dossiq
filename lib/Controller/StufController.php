@@ -48,6 +48,7 @@ use OCA\Procest\Service\Stuf\StufSoapRequestDispatcher;
 use OCA\Procest\Settings\AdminSettings;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
@@ -100,6 +101,10 @@ class StufController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	// StUF-ZKN SOAP receivers. The caller is a municipal middleware component
+	// on its own retry schedule, so the ceiling is generous — dropping a StUF
+	// delivery is worse than absorbing a burst.
+	#[AnonRateLimit(limit: 300, period: 60)]
 	public function zaken(): DataDisplayResponse {
 		return $this->dispatcher->dispatch(
 			rawBody: file_get_contents('php://input'),
@@ -118,6 +123,7 @@ class StufController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 300, period: 60)]
 	public function personen(): DataDisplayResponse {
 		return $this->dispatcher->dispatch(
 			rawBody: file_get_contents('php://input'),
@@ -190,6 +196,7 @@ class StufController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 300, period: 60)]
 	public function inkomend(): DataResponse {
 		$rawXml = (string)file_get_contents(filename: 'php://input');
 		if ($rawXml === '') {
