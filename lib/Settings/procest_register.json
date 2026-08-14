@@ -7819,7 +7819,7 @@
                         "items": {
                             "type": "object",
                             "properties": {
-                                "description": {
+                                "omschrijving": {
                                     "type": "string",
                                     "title": "Description",
                                     "description": "Description of the measure taken to address the complaint"

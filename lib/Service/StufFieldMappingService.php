@@ -55,7 +55,7 @@ class StufFieldMappingService {
 	 */
 	private const DEFAULT_ZKN_MAPPINGS = [
 		'identificatie' => ['property' => 'identifier', 'transform' => null],
-		'description' => ['property' => 'title', 'transform' => null],
+		'omschrijving' => ['property' => 'title', 'transform' => null],
 		'notes' => ['property' => 'description', 'transform' => null],
 		'startdatum' => ['property' => 'startDate', 'transform' => 'stufDateToIso'],
 		'endDate' => ['property' => 'endDate', 'transform' => 'stufDateToIso'],

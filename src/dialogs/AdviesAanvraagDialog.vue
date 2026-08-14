@@ -30,7 +30,7 @@
 						: t(appName, 'Adviseur (organisatie)')
 				"
 				:placeholder="
-					form.type === 'intern' ? 'username' : 'Naam organisatie'
+					form.type === 'intern' ? 'gebruikersnaam' : 'Naam organisatie'
 				" />
 
 			<NcTextField v-model="form.onderwerp" :label="t(appName, 'Onderwerp')" />

@@ -665,7 +665,7 @@
                                     "description": "Type of instrument deployed.",
                                     "type": "string"
                                 },
-                                "description": {
+                                "omschrijving": {
                                     "title": "Description",
                                     "description": "Description of the instrument.",
                                     "type": "string"

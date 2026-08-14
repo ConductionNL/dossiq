@@ -31,7 +31,7 @@
 					<td>{{ row.municipalityCode }}</td>
 					<td>{{ row.recipientApplication }}</td>
 					<td>{{ row.soapVersion }}</td>
-					<td>{{ row.caseIdentificationStrategy || '—' }}</td>
+					<td>{{ row.zaakIdentificatieStrategie || '—' }}</td>
 					<td>
 						<span
 							class="stuf-endpoints__health"

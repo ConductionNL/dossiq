@@ -48,11 +48,11 @@
 					</tr>
 				</tbody>
 			</table>
-			<h4 v-if="row.error">
+			<h4 v-if="row.fout">
 				{{ t('procest', 'Error') }}
 			</h4>
-			<pre v-if="row.error" class="stuf-audit-log__pre">{{
-				pretty(row.error)
+			<pre v-if="row.fout" class="stuf-audit-log__pre">{{
+				pretty(row.fout)
 			}}</pre>
 		</div>
 	</NcDialog>

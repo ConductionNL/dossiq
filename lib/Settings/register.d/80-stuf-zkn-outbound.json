@@ -30,7 +30,7 @@
                 "soapVersion",
                 "stufVersion",
                 "sectorModel",
-                "authentication"
+                "authenticatie"
             ],
             "properties": {
                 "id": {
@@ -94,20 +94,20 @@
                     "description": "StUF sectormodel; ZKN for cases.",
                     "enum": ["ZKN"]
                 },
-                "authentication": {
+                "authenticatie": {
                     "type": "object",
                     "description": "Authentication block (WSSE UsernameToken). The password itself is never stored in the schema; only the vault reference is persisted.",
-                    "required": ["type", "username", "passwordVaultRef"],
+                    "required": ["type", "gebruikersnaam", "wachtwoordKluisRef"],
                     "properties": {
                         "type": {
                             "type": "string",
                             "enum": ["wsse-usernametoken"]
                         },
-                        "username": {
+                        "gebruikersnaam": {
                             "type": "string",
                             "maxLength": 255
                         },
-                        "passwordVaultRef": {
+                        "wachtwoordKluisRef": {
                             "type": "string",
                             "description": "Vault reference (e.g. vault://stuf/amersfoort/key2zaken).",
                             "maxLength": 512
@@ -119,7 +119,7 @@
                     "description": "Vault reference for the mutual-TLS client certificate (PEM).",
                     "maxLength": 512
                 },
-                "caseIdentificationStrategy": {
+                "zaakIdentificatieStrategie": {
                     "type": "string",
                     "description": "Zaak ID allocation strategy (vooraf = pre-allocate via Du01; achteraf = server allocates on Lk01).",
                     "enum": ["vooraf", "achteraf"]
@@ -219,7 +219,7 @@
                     "description": "crossRefnummer set by inbound responses to refer back to a referentienummer.",
                     "maxLength": 64
                 },
-                "caseIdentification": {
+                "zaakIdentificatie": {
                     "type": "string",
                     "description": "Zaak ID this message refers to (if known).",
                     "maxLength": 64
@@ -242,14 +242,14 @@
                     "type": "integer",
                     "description": "Wall-clock duration in milliseconds."
                 },
-                "error": {
+                "fout": {
                     "type": "object",
                     "description": "Error details if the call failed.",
                     "properties": {
                         "code": {
                             "type": "string"
                         },
-                        "description": {
+                        "omschrijving": {
                             "type": "string"
                         },
                         "details": {
@@ -266,7 +266,7 @@
                     "format": "date-time",
                     "description": "When the message was sent (or registered, for inbound messages)."
                 },
-                "receivedOn": {
+                "ontvangenOp": {
                     "type": "string",
                     "format": "date-time",
                     "description": "When the response was received."
@@ -281,7 +281,7 @@
                     "description": "Type of the procest source entity that triggered this message.",
                     "enum": ["case", "contact"]
                 },
-                "sourceId": {
+                "bronId": {
                     "type": "string",
                     "description": "Identifier of the procest source entity that triggered this message.",
                     "maxLength": 128
@@ -311,7 +311,7 @@
                             "durationMs": {
                                 "type": "integer"
                             },
-                            "error": {
+                            "fout": {
                                 "type": "object"
                             }
                         }
@@ -330,9 +330,9 @@
             "required": [
                 "id",
                 "sourceEntity",
-                "sourceId",
-                "externEntity",
-                "externIdentification",
+                "bronId",
+                "externEntiteit",
+                "externIdentificatie",
                 "endpointId"
             ],
             "properties": {
@@ -346,7 +346,7 @@
                     "description": "Type of procest entity bound to the external one.",
                     "enum": ["case", "contact"]
                 },
-                "sourceId": {
+                "bronId": {
                     "type": "string",
                     "description": "Identifier of the procest entity (case id or contact id).",
                     "maxLength": 128
@@ -356,12 +356,12 @@
                     "description": "Procest case id this mapping relates to (set for case mappings; mirrors bronId for bronEntiteit=case).",
                     "maxLength": 128
                 },
-                "externEntity": {
+                "externEntiteit": {
                     "type": "string",
                     "description": "External entity type (ZAK, NPS, NNP).",
                     "enum": ["ZAK", "NPS", "NNP"]
                 },
-                "externIdentification": {
+                "externIdentificatie": {
                     "type": "string",
                     "description": "External identifier (zaak ID or betrokkene ID).",
                     "maxLength": 128
@@ -371,12 +371,12 @@
                     "description": "Reference to the StufEndpoint used.",
                     "maxLength": 128
                 },
-                "lastSynchronisation": {
+                "laatsteSynchronisatie": {
                     "type": "string",
                     "format": "date-time",
                     "description": "Timestamp of last successful sync."
                 },
-                "synchronisationStatus": {
+                "synchronisatieStatus": {
                     "type": "string",
                     "description": "Sync status.",
                     "enum": ["in_sync", "fout", "geannuleerd", "wacht"]
@@ -422,13 +422,13 @@
             "soapVersion": "1.1",
             "stufVersion": "0310",
             "sectorModel": "ZKN",
-            "authentication": {
+            "authenticatie": {
                 "type": "wsse-usernametoken",
-                "username": "procest_amersfoort",
-                "passwordVaultRef": "vault://stuf/amersfoort/key2zaken"
+                "gebruikersnaam": "procest_amersfoort",
+                "wachtwoordKluisRef": "vault://stuf/amersfoort/key2zaken"
             },
             "tlsClientCertRef": "vault://pki/procest-amersfoort.pem",
-            "caseIdentificationStrategy": "achteraf",
+            "zaakIdentificatieStrategie": "achteraf",
             "zaaktypeMappings": {
                 "evenementenvergunning": "Evenementenvergunning",
                 "klacht-openbare-ruimte": "Klacht openbare ruimte",

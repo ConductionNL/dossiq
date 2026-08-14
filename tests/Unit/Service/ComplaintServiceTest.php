@@ -357,7 +357,7 @@ class ComplaintServiceTest extends TestCase {
 		// for onderwerp/omschrijving/ontvangstdatum; pass them all.
 		$this->service->createComplaint([
 			'onderwerp' => 'Test',
-			'description' => 'Description',
+			'omschrijving' => 'Description',
 			'receiptDate' => '2026-03-01',
 		]);
 	}//end testCreateComplaintThrowsWhenOpenRegisterUnavailable()

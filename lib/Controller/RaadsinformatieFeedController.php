@@ -314,7 +314,7 @@ class RaadsinformatieFeedController extends Controller {
 		}
 
 		if ($schema === 'agendapunt') {
-			return (string)($object['description'] ?? '');
+			return (string)($object['omschrijving'] ?? '');
 		}
 
 		if ($schema === 'raadsdocument') {

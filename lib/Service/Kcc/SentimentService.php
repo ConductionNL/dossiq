@@ -78,7 +78,7 @@ class SentimentService {
 		'schandalig' => -0.7,
 		'slecht' => -0.4,
 		'niet' => -0.1,
-		'error' => -0.4,
+		'fout' => -0.4,
 		'verkeerd' => -0.3,
 		'teleurgesteld' => -0.5,
 		'gefrustreerd' => -0.5,

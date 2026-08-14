@@ -150,7 +150,7 @@ class StufMessageBuilder {
 			);
 		}
 
-		$description = (string)$mapping[$type];
+		$omschrijving = (string)$mapping[$type];
 		$includeDocs = (bool)($opts['includeDocuments'] ?? false);
 		$payloadLimit = (int)($opts['payloadLimitBytes'] ?? self::PAYLOAD_LIMIT_BYTES);
 
@@ -177,7 +177,7 @@ class StufMessageBuilder {
 		$body = $this->renderZakLk01(
 			stuurgegevens: $stuurgegevens,
 			caseId: $caseId,
-			zaaktypeOmschrijving: $description,
+			zaaktypeOmschrijving: $omschrijving,
 			case: $case,
 			documents: $documents
 		);
@@ -216,7 +216,7 @@ class StufMessageBuilder {
 			momentMessage: $this->currentTimestampStuf()
 		);
 
-		$caseId = (string)($mapping['externIdentification'] ?? '');
+		$caseId = (string)($mapping['externIdentificatie'] ?? '');
 		$body = '<zkn:zakLk02>' . $stuurgegevens
 			. '<zkn:object stuf:entiteittype="ZAK" stuf:verwerkingssoort="W">'
 			. '<zkn:identificatie>' . $this->escape(value: $caseId) . '</zkn:identificatie>'
@@ -484,7 +484,7 @@ class StufMessageBuilder {
 			$identification = '<zkn:identificatie>' . $this->escape(value: $caseId) . '</zkn:identificatie>';
 		}
 
-		$description = $this->escape(value: (string)($case['description'] ?? ''));
+		$omschrijving = $this->escape(value: (string)($case['omschrijving'] ?? ''));
 		$startDate = $this->escape(value: (string)($case['startdatum'] ?? ''));
 
 		$involvedParties = '';
@@ -512,7 +512,7 @@ class StufMessageBuilder {
 		return '<zkn:zakLk01>' . $stuurgegevens
 			. '<zkn:object stuf:entiteittype="ZAK" stuf:verwerkingssoort="T">'
 			. $identification
-			. '<zkn:omschrijving>' . $description . '</zkn:omschrijving>'
+			. '<zkn:omschrijving>' . $omschrijving . '</zkn:omschrijving>'
 			. '<zkn:startdatum>' . $startDate . '</zkn:startdatum>'
 			. '<zkn:zaaktype>'
 			. '<zkn:omschrijving>' . $this->escape(value: $zaaktypeOmschrijving) . '</zkn:omschrijving>'
@@ -532,7 +532,7 @@ class StufMessageBuilder {
 	 */
 	private function renderCaseMovementElements(array $case): string {
 		$out = '';
-		foreach (['description', 'endDate', 'resultaattoelichting'] as $field) {
+		foreach (['omschrijving', 'endDate', 'resultaattoelichting'] as $field) {
 			if (array_key_exists(key: $field, array: $case) === true && $case[$field] !== null) {
 				$out .= '<zkn:' . $field . '>' . $this->escape(value: (string)$case[$field]) . '</zkn:' . $field . '>';
 			}
@@ -555,9 +555,9 @@ class StufMessageBuilder {
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
 	 */
 	private function wrapEnvelope(string $bodyXml, array $endpoint): string {
-		$auth = ($endpoint['authentication'] ?? []);
-		$username = $this->escape(value: (string)($auth['username'] ?? ''));
-		$passwordRef = (string)($auth['passwordVaultRef'] ?? '');
+		$auth = ($endpoint['authenticatie'] ?? []);
+		$username = $this->escape(value: (string)($auth['gebruikersnaam'] ?? ''));
+		$passwordRef = (string)($auth['wachtwoordKluisRef'] ?? '');
 		$password = $this->escape(value: $this->vault->resolveSecret(reference: $passwordRef));
 
 		$security = '<wsse:Security>'

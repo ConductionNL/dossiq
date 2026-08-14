@@ -136,7 +136,7 @@ export default {
 		 * @spec exclude presentational filter-option list — static enum, no business logic
 		 */
 		statusOptions() {
-			return ['verzonden', 'bevestigd', 'error', 'wacht_op_retry']
+			return ['verzonden', 'bevestigd', 'fout', 'wacht_op_retry']
 		},
 	},
 
@@ -224,7 +224,7 @@ export default {
 				'httpStatus',
 				'durationMs',
 				'referenceNumber',
-				'caseIdentification',
+				'zaakIdentificatie',
 			]
 			const lines = [headers.join(',')]
 			for (const row of this.messages) {

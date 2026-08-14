@@ -204,7 +204,7 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	/**
 	 * Enrich a resultaattype body with derived fields from external APIs (ztc-002b/f/g).
 	 *
-	 * - ztc-002b: Derive omschrijvingGeneriek from resultaattypeomschrijving.description
+	 * - ztc-002b: Derive omschrijvingGeneriek from resultaattypeomschrijving.omschrijving
 	 * - ztc-002f: Derive archiefnominatie from selectielijstklasse.waardering
 	 * - ztc-002g: Derive archiefactietermijn from selectielijstklasse.bewaartermijn
 	 *
@@ -218,7 +218,7 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	 */
 	private function enrichResultaattype(array $body, ?array $selectielijstData, ?array $rtoData): array {
 		if ($rtoData !== null && empty($body['omschrijvingGeneriek']) === true) {
-			$body['omschrijvingGeneriek'] = $rtoData['description'] ?? '';
+			$body['omschrijvingGeneriek'] = $rtoData['omschrijving'] ?? '';
 		}
 
 		if ($selectielijstData !== null && empty($body['archiefnominatie']) === true) {

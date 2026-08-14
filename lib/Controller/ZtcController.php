@@ -1318,7 +1318,7 @@ class ZtcController extends ZgwController {
 			}
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->debug(
-				'ztc-010m: Failed to resolve IOT by description: ' . $e->getMessage()
+				'ztc-010m: Failed to resolve IOT by omschrijving: ' . $e->getMessage()
 			);
 		}//end try
 	}//end resolveIotByOmschrijving()
