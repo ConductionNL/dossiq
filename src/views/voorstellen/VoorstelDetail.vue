@@ -171,7 +171,9 @@
 						}})
 					</h4>
 					<ul>
-						<li v-for="(bijlage, idx) in voorstel.attachments" :key="idx">
+						<li
+							v-for="(bijlage, idx) in voorstel.attachments"
+							:key="idx">
 							{{ bijlage }}
 						</li>
 					</ul>

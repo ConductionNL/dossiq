@@ -177,11 +177,7 @@ export default {
 				toegewezenRol: this.mandaat?.toegewezenRol || '',
 				terms: this.mandaat?.terms || {},
 			},
-			voorwaardenJson: JSON.stringify(
-				this.mandaat?.terms || {},
-				null,
-				2,
-			),
+			voorwaardenJson: JSON.stringify(this.mandaat?.terms || {}, null, 2),
 		}
 	},
 	computed: {

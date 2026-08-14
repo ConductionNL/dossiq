@@ -355,8 +355,12 @@ export default {
 					ernst: this.ernst,
 					gedrag: this.gedrag,
 					intervention: this.intervention,
-					penaltyPaymentAmount: this.isDwangsom ? this.penaltyPaymentAmount : null,
-					penaltyPaymentMaximum: this.isDwangsom ? this.penaltyPaymentMaximum : null,
+					penaltyPaymentAmount: this.isDwangsom
+						? this.penaltyPaymentAmount
+						: null,
+					penaltyPaymentMaximum: this.isDwangsom
+						? this.penaltyPaymentMaximum
+						: null,
 					compliance_period: this.compliance_period || null,
 					effectuationDate: this.isBestuursdwang
 						? this.effectuationDate

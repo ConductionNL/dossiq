@@ -234,8 +234,7 @@ export default {
 				const aOverdue = this.overdueIds.has(a.id) ? 0 : 1
 				const bOverdue = this.overdueIds.has(b.id) ? 0 : 1
 				if (aOverdue !== bOverdue) return aOverdue - bOverdue
-				return (a.latestResponseDate || '')
-					< (b.latestResponseDate || '')
+				return (a.latestResponseDate || '') < (b.latestResponseDate || '')
 					? -1
 					: 1
 			})

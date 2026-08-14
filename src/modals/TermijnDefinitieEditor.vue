@@ -171,13 +171,17 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		title() {
 			return this.definition
-				? t('procest', 'New version of {z}', { z: this.definition.case_type })
+				? t('procest', 'New version of {z}', {
+						z: this.definition.case_type,
+					})
 				: t('procest', 'New term definition')
 		},
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedZaaktype() {
 			if (!this.form.case_type) return null
-			const hit = this.zaaktypeOptions.find((o) => o.id === this.form.case_type)
+			const hit = this.zaaktypeOptions.find(
+				(o) => o.id === this.form.case_type,
+			)
 			return hit || { id: this.form.case_type, label: this.form.case_type }
 		},
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */

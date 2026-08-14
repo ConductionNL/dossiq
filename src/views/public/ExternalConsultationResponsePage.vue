@@ -258,17 +258,12 @@ export default {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		isDeadlinePassed() {
 			if (!this.consultationData?.latestResponseDate) return false
-			return (
-				new Date(this.consultationData.latestResponseDate) < new Date()
-			)
+			return new Date(this.consultationData.latestResponseDate) < new Date()
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		canSubmit() {
 			if (!this.responseForm.advies) return false
-			if (
-				this.toelichtingRequired
-				&& this.responseForm.notes.trim() === ''
-			)
+			if (this.toelichtingRequired && this.responseForm.notes.trim() === '')
 				return false
 			if (!this.responseForm.date) return false
 			return true

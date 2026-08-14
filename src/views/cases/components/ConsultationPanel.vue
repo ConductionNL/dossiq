@@ -29,7 +29,9 @@
 				<p class="consultation-panel__subject">
 					{{ cons.onderwerp }}
 				</p>
-				<p v-if="cons.question_formulation" class="consultation-panel__question">
+				<p
+					v-if="cons.question_formulation"
+					class="consultation-panel__question">
 					{{ cons.question_formulation }}
 				</p>
 
@@ -43,9 +45,7 @@
 						:class="'consultation-panel__advice--' + cons.advies">
 						{{ getAdviceLabel(cons.advies) }}
 					</span>
-					<p
-						v-if="cons.notes"
-						class="consultation-panel__explanation">
+					<p v-if="cons.notes" class="consultation-panel__explanation">
 						{{ cons.notes }}
 					</p>
 					<!-- Conditions -->

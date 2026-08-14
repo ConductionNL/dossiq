@@ -191,15 +191,12 @@ export default {
 					receipt_date: new Date().toISOString().split('T')[0],
 					status: 'ontvangen',
 					priority:
-						this.form.priority?.id
-						|| this.form.priority
-						|| 'normaal',
+						this.form.priority?.id || this.form.priority || 'normaal',
 					receipt_channel:
 						this.form.receipt_channel?.id
 						|| this.form.receipt_channel
 						|| null,
-					category:
-						this.form.category?.id || this.form.category || null,
+					category: this.form.category?.id || this.form.category || null,
 				}
 				await store.createObject('complaint', data)
 				this.$emit('created')
