@@ -3,10 +3,10 @@
 		:rows="items"
 		:columns="columns"
 		:loading="loading"
-		hide-header
+		hideHeader
 		borderless
-		:empty-text="t('procest', 'No cases found')"
-		@row-click="onRowClick">
+		:emptyText="t('procest', 'No cases found')"
+		@rowClick="onRowClick">
 		<template #footer>
 			<a
 				class="cn-data-table__view-all"
@@ -23,19 +23,21 @@ import { CnDataTable } from '@conduction/nextcloud-vue'
 import { generateUrl } from '@nextcloud/router'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
-import { SIGNAL_COLUMNS, navigateTo } from './signalTable.js'
+import { navigateTo, SIGNAL_COLUMNS } from './signalTable.js'
 
 export default {
 	name: 'CasesOverviewWidget',
 	components: {
 		CnDataTable,
 	},
+
 	props: {
 		title: {
 			type: String,
 			default: '',
 		},
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -43,11 +45,13 @@ export default {
 			columns: SIGNAL_COLUMNS,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/signalering-widgets/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/**
 		 * Real destination URL for the "View all" link (gate-32: an `<a>`
 		 * with a real `href` is a genuine link, not a mouse-only click
@@ -58,6 +62,7 @@ export default {
 		viewAllUrl() {
 			return generateUrl('/apps/procest/cases')
 		},
+
 		/** @spec openspec/specs/signalering-widgets/spec.md */
 		items() {
 			return this.cases.map((caseObj) => ({
@@ -71,6 +76,7 @@ export default {
 			}))
 		},
 	},
+
 	async mounted() {
 		// Ensure object types are registered before fetching. App.vue's
 		// async created() does not block child mounting, so this widget can
@@ -79,6 +85,7 @@ export default {
 		await initializeStores()
 		this.fetchData()
 	},
+
 	methods: {
 		/**
 		 * Navigate to a clicked case in the same tab.
@@ -89,6 +96,7 @@ export default {
 		onRowClick(row) {
 			navigateTo(row.targetUrl)
 		},
+
 		/**
 		 * Navigate to the full cases list.
 		 *
@@ -97,6 +105,7 @@ export default {
 		onViewAll() {
 			navigateTo(generateUrl('/apps/procest/cases'))
 		},
+
 		/**
 		 * Fetch case data.
 		 *

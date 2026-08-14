@@ -59,21 +59,25 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		/** Selection state forwarded by CnCardGrid. */
 		selected: {
 			type: Boolean,
 			default: false,
 		},
+
 		/** { caseTypeUuid: name } supplied by the parent index. */
 		caseTypeMap: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		/** { statusTypeUuid: name } supplied by the parent index. */
 		statusMap: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		/**
 		 * { caseId: { tier, score, daysUntilDeadline } } supplied by the parent
 		 * index, sourced from GET /api/work-queue.
@@ -93,23 +97,28 @@ export default {
 				|| t('procest', 'Untitled case')
 			)
 		},
+
 		description() {
 			const d = this.object.description || ''
 			return d.length > 140 ? `${d.slice(0, 140)}…` : d
 		},
+
 		identifier() {
 			return this.object.identifier || ''
 		},
+
 		/** Case-type name resolved from the parent-supplied map. */
 		caseTypeLabel() {
 			const v = this.object.caseType
 			return v ? this.caseTypeMap[v] || '' : ''
 		},
+
 		/** Status name resolved from the parent-supplied map. */
 		statusLabel() {
 			const v = this.object.status
 			return v ? this.statusMap[v] || '' : ''
 		},
+
 		deadlineLabel() {
 			const raw = this.object.deadline
 			if (!raw) return ''
@@ -121,22 +130,26 @@ export default {
 				year: 'numeric',
 			})
 		},
+
 		overdue() {
 			const raw = this.object.deadline
 			if (!raw) return false
 			const d = new Date(raw)
 			return !isNaN(d.getTime()) && d.getTime() < Date.now()
 		},
+
 		/** This card's urgency entry from the parent-supplied work-queue map. */
 		urgencyEntry() {
 			const id =
 				this.object.id || (this.object['@self'] && this.object['@self'].id)
 			return id ? this.urgencyMap[id] || null : null
 		},
+
 		/** CSS modifier class for the urgency chip; '' when no chip should render. */
 		urgencyChipClassName() {
 			return urgencyChipClass(this.urgencyEntry && this.urgencyEntry.tier)
 		},
+
 		/** Human label for the urgency chip; '' hides the chip (normal tier). */
 		urgencyChipLabel() {
 			const tier = this.urgencyEntry && this.urgencyEntry.tier

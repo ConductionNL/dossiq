@@ -211,12 +211,14 @@ export default {
 		NcNoteCard,
 		NcSelect,
 	},
+
 	props: {
 		token: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -231,6 +233,7 @@ export default {
 				terms: [],
 				date: new Date().toISOString().slice(0, 10),
 			},
+
 			adviesOptions: [
 				{ label: this.t('procest', 'Positive'), value: 'positief' },
 				{
@@ -243,6 +246,7 @@ export default {
 					value: 'niet_van_toepassing',
 				},
 			],
+
 			priorityOptions: [
 				{ label: this.t('procest', 'High'), value: 'hoog' },
 				{ label: this.t('procest', 'Normal'), value: 'normaal' },
@@ -250,16 +254,19 @@ export default {
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		toelichtingRequired() {
 			return this.responseForm.advies !== 'niet_van_toepassing'
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		isDeadlinePassed() {
 			if (!this.consultationData?.latestResponseDate) return false
 			return new Date(this.consultationData.latestResponseDate) < new Date()
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		canSubmit() {
 			if (!this.responseForm.advies) return false
@@ -269,9 +276,11 @@ export default {
 			return true
 		},
 	},
+
 	async mounted() {
 		await this.loadConsultation()
 	},
+
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		async loadConsultation() {
@@ -291,6 +300,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		addVoorwaarde() {
 			this.responseForm.terms.push({
@@ -298,6 +308,7 @@ export default {
 				priority: 'normaal',
 			})
 		},
+
 		/**
 		 * @param idx
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06
@@ -305,6 +316,7 @@ export default {
 		removeVoorwaarde(idx) {
 			this.responseForm.terms.splice(idx, 1)
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		async submitResponse() {
 			this.submitError = ''
@@ -333,6 +345,7 @@ export default {
 				this.submitting = false
 			}
 		},
+
 		/**
 		 * @param dateStr
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06

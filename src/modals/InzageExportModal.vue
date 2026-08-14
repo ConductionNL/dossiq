@@ -35,12 +35,12 @@
 				v-model="idType"
 				class="inzage-export__field"
 				:options="idTypes"
-				:input-label="t('procest', 'Subject identifier type')"
+				:inputLabel="t('procest', 'Subject identifier type')"
 				:clearable="false" />
 
 			<NcTextField
-				class="inzage-export__field"
 				v-model="idValue"
+				class="inzage-export__field"
 				:label="t('procest', 'Subject identifier value')"
 				:placeholder="t('procest', 'e.g. a BSN or contact reference')" />
 
@@ -104,6 +104,7 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	data() {
 		return {
 			idType: 'BSN',
@@ -114,6 +115,7 @@ export default {
 			result: null,
 		}
 	},
+
 	methods: {
 		/** @spec openspec/specs/avg-verwerkingenlogging/spec.md */
 		async run() {
@@ -141,6 +143,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/specs/avg-verwerkingenlogging/spec.md */
 		download() {
 			const blob = new Blob([JSON.stringify(this.result, null, 2)], {

@@ -46,32 +46,37 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
-import { useWorkflowStore } from '../../../store/modules/workflow.js'
 import { useObjectStore } from '../../../store/modules/object.js'
+import { useWorkflowStore } from '../../../store/modules/workflow.js'
 
 export default {
 	name: 'WorkflowTransitions',
 	components: {
 		NcButton,
 	},
+
 	props: {
 		caseData: {
 			type: Object,
 			required: true,
 		},
+
 		tasks: {
 			type: Array,
 			default: () => [],
 		},
+
 		documents: {
 			type: Array,
 			default: () => [],
 		},
+
 		userRoles: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['transition-executed'],
 	data() {
 		return {
@@ -83,15 +88,18 @@ export default {
 			executing: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		versionNotice() {
 			if (!this.workflowTemplate || !this.activeVersion) return null
@@ -111,6 +119,7 @@ export default {
 			}
 			return null
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		requiredStepsInfo() {
 			if (!this.workflowTemplate) return []
@@ -131,6 +140,7 @@ export default {
 				})
 		},
 	},
+
 	watch: {
 		'caseData.status': {
 			/** @spec openspec/specs/workflow-definition-model/spec.md */
@@ -138,17 +148,21 @@ export default {
 				this.computeTransitions()
 			},
 		},
+
 		tasks: {
 			/** @spec openspec/specs/workflow-definition-model/spec.md */
 			handler() {
 				this.computeTransitions()
 			},
+
 			deep: true,
 		},
 	},
+
 	async mounted() {
 		await this.loadWorkflow()
 	},
+
 	methods: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async loadWorkflow() {

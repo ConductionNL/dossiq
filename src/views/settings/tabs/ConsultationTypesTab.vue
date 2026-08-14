@@ -40,10 +40,10 @@
 					:key="idx"
 					class="consultation-types-tab__row">
 					<NcTextField
-						:model-value="ct.name"
+						:modelValue="ct.name"
 						:label="t('procest', 'Naam')"
 						required
-						@update:model-value="(v) => (ct.name = v)" />
+						@update:modelValue="(v) => (ct.name = v)" />
 
 					<NcSelect
 						v-model="ct.advisoryBodyId"
@@ -54,16 +54,16 @@
 						:placeholder="t('procest', 'Default advisory body')" />
 
 					<NcTextField
-						:model-value="String(ct.defaultDeadlineWeeks)"
+						:modelValue="String(ct.defaultDeadlineWeeks)"
 						:label="t('procest', 'Default duration (weeks)')"
 						type="number"
-						@update:model-value="
+						@update:modelValue="
 							(v) => (ct.defaultDeadlineWeeks = parseInt(v) || 4)
 						" />
 
 					<NcCheckboxRadioSwitch
-						:model-value="ct.mandatory"
-						@update:model-value="(v) => (ct.mandatory = v)">
+						:modelValue="ct.mandatory"
+						@update:modelValue="(v) => (ct.mandatory = v)">
 						{{ t('procest', 'Required') }}
 					</NcCheckboxRadioSwitch>
 
@@ -106,6 +106,7 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	data() {
 		return {
 			selectedCaseTypeId: null,
@@ -116,6 +117,7 @@ export default {
 			saveError: '',
 		}
 	},
+
 	watch: {
 		/**
 		 * @param newId
@@ -129,10 +131,12 @@ export default {
 			}
 		},
 	},
+
 	mounted() {
 		this.loadCaseTypes()
 		this.loadAdvisoryBodies()
 	},
+
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07 */
 		async loadCaseTypes() {
@@ -147,6 +151,7 @@ export default {
 				console.error('Failed to load case types', e)
 			}
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07 */
 		async loadAdvisoryBodies() {
 			try {
@@ -160,6 +165,7 @@ export default {
 				console.error('Failed to load advisory bodies', e)
 			}
 		},
+
 		/**
 		 * @param caseTypeId
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07
@@ -173,6 +179,7 @@ export default {
 				console.error('Failed to load consultation types', e)
 			}
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07 */
 		addType() {
 			this.consultationTypes.push({
@@ -182,6 +189,7 @@ export default {
 				mandatory: false,
 			})
 		},
+
 		/**
 		 * @param idx
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07
@@ -189,6 +197,7 @@ export default {
 		removeType(idx) {
 			this.consultationTypes.splice(idx, 1)
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-07 */
 		async saveTypes() {
 			this.saving = true

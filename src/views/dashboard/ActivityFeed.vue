@@ -71,11 +71,13 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		entries: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 		error: { type: String, default: null },
 	},
+
 	emits: ['view-all', 'retry'],
 	methods: {
 		/**
@@ -85,6 +87,7 @@ export default {
 		typeIcon(type) {
 			return TYPE_ICONS[type] || '&#8226;'
 		},
+
 		/**
 		 * @param date
 		 * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md

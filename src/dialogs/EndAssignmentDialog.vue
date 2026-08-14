@@ -48,8 +48,8 @@
 </template>
 
 <script>
-import { NcButton, NcDialog } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcDialog } from '@nextcloud/vue'
 
 export default {
 	name: 'EndAssignmentDialog',
@@ -57,12 +57,14 @@ export default {
 	props: {
 		assignment: { type: Object, required: true },
 	},
+
 	emits: ['save', 'close'],
 	data() {
 		return {
 			endDate: new Date().toISOString().slice(0, 10),
 		}
 	},
+
 	methods: { t },
 }
 </script>

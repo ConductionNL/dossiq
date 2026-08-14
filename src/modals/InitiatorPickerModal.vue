@@ -65,6 +65,7 @@ export default {
 		NcModal,
 		InitiatorPicker,
 	},
+
 	data() {
 		return {
 			selection: null,

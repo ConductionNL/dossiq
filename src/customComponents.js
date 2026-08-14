@@ -17,60 +17,54 @@
 //   - openspec/changes/procest-manifest-v1/design.md
 //   - @conduction/nextcloud-vue → docs/migrating-to-manifest.md
 
-// --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
-import MyWorkView from './views/MyWorkCards.vue'
-// CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
-// (see openspec/changes/case-map-overview/design.md).
-import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
+import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
+// --- Detail-tab custom components (one per cross-schema relation). ---
+// Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
+import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+// --- Case-email sidebar tab (leaf-first per ADR-022). ---
+// @spec openspec/changes/case-email-integration/tasks.md#T12
+import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
+// --- ZGW DRC case dossier sidebar tab. ---
+// @spec openspec/changes/document-zaakdossier/tasks.md#T10
+import DossierTab from './views/cases/components/DossierTab.vue'
+import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
+// --- Deelzaak (sub-case) full-page views — manifest custom routes. ---
+// @spec openspec/changes/deelzaak-support/tasks.md#T05
+// @spec openspec/changes/deelzaak-support/tasks.md#T06
+import DeelzaakList from './views/cases/DeelzaakList.vue'
+import ProcessMiningDashboard from './views/dashboard/ProcessMiningDashboard.vue'
+import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
 // --- Termijnbewaking + Tenant dashboards (chain-builds 06/2026). ---
 // Archief dashboard retired (migrate-archival-to-or, ADR-022): the archivist
 // views are owned by OpenRegister.
 import TermijnDashboard from './views/dashboard/TermijnDashboard.vue'
-import ProcessMiningDashboard from './views/dashboard/ProcessMiningDashboard.vue'
-import TenantOnboardingDashboard from './views/dashboard/TenantOnboardingDashboard.vue'
-// VoorstellenView removed — the Voorstellen list page is now a declarative
-// `type:"index"` on the `voorstel` schema (formatter columns + status badge,
-// see src/manifest.json + src/services/formatters.js).
-import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
-import AdminRootView from './views/settings/AdminRoot.vue'
-import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
-import PublicStatusPage from './views/public/PublicStatusPage.vue'
-// Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration).
-import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
-
 // --- Leverancier-zaakportaal (external supplier portal) MOVED to Portaliq
 //     (ADR-046, procest#162): the /leverancier Vue surface is retired here and
 //     re-expressed as the `supplier` audience in
 //     lib/Portal/PortalContributionProvider.php. The backend supplier services
 //     + /api/leverancier-portaal/* endpoints stay; only the in-app portal views
 //     and their nav/routes are removed. ---
-
-// --- Detail-tab custom components (one per cross-schema relation). ---
-// Stubs for v1 — full implementations follow in `procest-case-relation-tabs`.
-import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
-import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
-import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
-
-// --- Deelzaak (sub-case) full-page views — manifest custom routes. ---
-// @spec openspec/changes/deelzaak-support/tasks.md#T05
-// @spec openspec/changes/deelzaak-support/tasks.md#T06
-import DeelzaakList from './views/cases/DeelzaakList.vue'
-import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
-
+// CaseMapView removed — superseded by manifest `type: 'map'` CnMapPage
+// (see openspec/changes/case-map-overview/design.md).
+import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+// --- Surviving custom pages — see design.md "Custom-fallback inventory". ---
+import MyWorkView from './views/MyWorkCards.vue'
+import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
+// Remote-org accept/reject for a federated zaakoverdracht (federated-case-collaboration).
+import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
+import PublicStatusPage from './views/public/PublicStatusPage.vue'
 // Mobiel-inspectie offline views retired — "Veldinspecties" now surfaces the
 // generic `field-inspection` OpenRegister integration leaf (a nc-vue builtin),
 // registered with procest's offline schema mapping in src/main.js. The custom
 // InspectieList/InspectieDetail views + their offline glue (offlineDb.js,
 // syncReplayService.js) are deleted; the leaf owns the planning list, checklist
 // completion, mutation queue and reconnect-replay.
-
-// --- Case-email sidebar tab (leaf-first per ADR-022). ---
-// @spec openspec/changes/case-email-integration/tasks.md#T12
-import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
-
-// --- ZGW DRC case dossier sidebar tab. ---
-// @spec openspec/changes/document-zaakdossier/tasks.md#T10
-import DossierTab from './views/cases/components/DossierTab.vue'
+import AdminRootView from './views/settings/AdminRoot.vue'
+// VoorstellenView removed — the Voorstellen list page is now a declarative
+// `type:"index"` on the `voorstel` schema (formatter columns + status badge,
+// see src/manifest.json + src/services/formatters.js).
+import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
 
 // --- Features & Roadmap page — thin wrapper around the lib's
 //     CnFeaturesAndRoadmapView (the in-product roadmap surface powered by

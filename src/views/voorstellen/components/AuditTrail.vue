@@ -79,16 +79,19 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 	},
+
 	props: {
 		acties: {
 			type: Array,
 			default: () => [],
 		},
+
 		loading: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	methods: {
 		/**
 		 * @param action
@@ -97,6 +100,7 @@ export default {
 		formatAction(action) {
 			return t('procest', ACTION_LABELS[action] || action)
 		},
+
 		/**
 		 * @param actie
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -112,6 +116,7 @@ export default {
 				minute: '2-digit',
 			})
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		exportAuditTrail() {
 			const data = this.acties.map((a) => ({

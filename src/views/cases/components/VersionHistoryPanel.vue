@@ -54,9 +54,9 @@
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
 import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import History from 'vue-material-design-icons/History.vue'
 
 /**
@@ -75,16 +75,19 @@ export default {
 		NcLoadingIcon,
 		History,
 	},
+
 	props: {
 		document: {
 			type: Object,
 			required: true,
 		},
+
 		userId: {
 			type: String,
 			default: '',
 		},
 	},
+
 	emits: ['download-version', 'restore-version'],
 	data() {
 		return {
@@ -92,6 +95,7 @@ export default {
 			loading: false,
 		}
 	},
+
 	computed: {
 		/**
 		 * Whether the restore action is disabled (definitief documents).
@@ -103,6 +107,7 @@ export default {
 			return this.document.status === 'definitief'
 		},
 	},
+
 	watch: {
 		document: {
 			immediate: true,
@@ -116,6 +121,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		/**
 		 * Fetch the document's versions from the Nextcloud versions API.
@@ -145,6 +151,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Parse the WebDAV multistatus response into a version list.
 		 *
@@ -185,6 +192,7 @@ export default {
 			})
 			return versions
 		},
+
 		/**
 		 * Format an ISO/HTTP date for display.
 		 *

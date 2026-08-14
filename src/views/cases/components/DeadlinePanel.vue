@@ -73,8 +73,8 @@ import { NcButton } from '@nextcloud/vue'
 import {
 	formatDate,
 	formatDeadlineCountdown,
-	getDaysElapsed,
 	formatDuration,
+	getDaysElapsed,
 } from '../../../utils/caseHelpers.js'
 
 export default {
@@ -82,64 +82,78 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		startDate: {
 			type: String,
 			default: null,
 		},
+
 		deadline: {
 			type: String,
 			default: null,
 		},
+
 		processingDeadline: {
 			type: String,
 			default: null,
 		},
+
 		extensionAllowed: {
 			type: Boolean,
 			default: false,
 		},
+
 		extensionPeriod: {
 			type: String,
 			default: null,
 		},
+
 		extensionCount: {
 			type: Number,
 			default: 0,
 		},
+
 		isFinal: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['extend'],
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		formattedStartDate() {
 			return formatDate(this.startDate)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		formattedDeadline() {
 			return formatDate(this.deadline)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		formattedProcessingDeadline() {
 			return this.processingDeadline
 				? formatDuration(this.processingDeadline)
 				: '—'
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		formattedExtensionPeriod() {
 			return this.extensionPeriod ? formatDuration(this.extensionPeriod) : '—'
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		daysElapsed() {
 			return getDaysElapsed(this.startDate)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		countdown() {
 			return formatDeadlineCountdown({ deadline: this.deadline }, this.isFinal)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		canExtend() {
 			return (

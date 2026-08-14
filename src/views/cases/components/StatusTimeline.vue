@@ -35,20 +35,24 @@ export default {
 			type: Array,
 			required: true,
 		},
+
 		currentStatusId: {
 			type: String,
 			default: null,
 		},
+
 		statusHistory: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	computed: {
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		currentIndex() {
 			return this.statusTypes.findIndex((st) => st.id === this.currentStatusId)
 		},
+
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		historyMap() {
 			const map = {}
@@ -58,6 +62,7 @@ export default {
 			return map
 		},
 	},
+
 	methods: {
 		/**
 		 * @param statusType
@@ -67,9 +72,11 @@ export default {
 			const idx = this.statusTypes.findIndex((st) => st.id === statusType.id)
 			return idx < this.currentIndex
 		},
+
 		isCurrent(statusType) {
 			return statusType.id === this.currentStatusId
 		},
+
 		/**
 		 * @param statusType
 		 * @spec openspec/specs/status-transition-engine/spec.md
@@ -78,6 +85,7 @@ export default {
 			const idx = this.statusTypes.findIndex((st) => st.id === statusType.id)
 			return idx > this.currentIndex
 		},
+
 		/**
 		 * @param statusType
 		 * @spec openspec/specs/status-transition-engine/spec.md
@@ -89,6 +97,7 @@ export default {
 				'status-timeline__step--future': this.isFuture(statusType),
 			}
 		},
+
 		/**
 		 * @param statusType
 		 * @spec openspec/specs/status-transition-engine/spec.md
@@ -100,6 +109,7 @@ export default {
 				'status-timeline__dot--future': this.isFuture(statusType),
 			}
 		},
+
 		/**
 		 * @param statusType
 		 * @spec openspec/specs/status-transition-engine/spec.md
@@ -110,6 +120,7 @@ export default {
 					this.isPassed(statusType) || this.isCurrent(statusType),
 			}
 		},
+
 		/**
 		 * @param statusType
 		 * @spec openspec/specs/status-transition-engine/spec.md

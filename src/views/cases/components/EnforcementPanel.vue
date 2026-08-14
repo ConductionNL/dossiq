@@ -95,17 +95,17 @@
 		<!-- Enforcement wizard dialog -->
 		<EnforcementWizard
 			v-if="showWizard"
-			:case-id="caseId"
+			:caseId="caseId"
 			@close="showWizard = false"
 			@created="onActionCreated" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import { useEnforcementStore } from '../../../store/modules/enforcement.js'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import EnforcementWizard from './EnforcementWizard.vue'
+import { useEnforcementStore } from '../../../store/modules/enforcement.js'
 
 export default {
 	name: 'EnforcementPanel',
@@ -121,10 +121,12 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
@@ -142,18 +144,22 @@ export default {
 		enforcementStore() {
 			return useEnforcementStore()
 		},
+
 		/** @spec openspec/specs/vth-module/spec.md */
 		actions() {
 			return this.enforcementStore.actions
 		},
+
 		/** @spec openspec/specs/vth-module/spec.md */
 		activeAction() {
 			return this.enforcementStore.activeAction
 		},
+
 		/** @spec openspec/specs/vth-module/spec.md */
 		totalVerbeurd() {
 			return this.enforcementStore.totalVerbeurd
 		},
+
 		/** @spec openspec/specs/vth-module/spec.md */
 		loading() {
 			return this.enforcementStore.loading

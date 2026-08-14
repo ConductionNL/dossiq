@@ -82,7 +82,7 @@
 			ref="formDialog"
 			:fields="formFields"
 			:item="editItem"
-			:dialog-title="
+			:dialogTitle="
 				editItem
 					? t('procest', 'Edit decision')
 					: t('procest', 'Add decision')
@@ -100,6 +100,7 @@
 </template>
 
 <script>
+import { CnDeleteDialog, CnFormDialog } from '@conduction/nextcloud-vue'
 import {
 	NcActionButton,
 	NcActions,
@@ -107,7 +108,6 @@ import {
 	NcEmptyContent,
 	NcLoadingIcon,
 } from '@nextcloud/vue'
-import { CnDeleteDialog, CnFormDialog } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
@@ -123,6 +123,7 @@ export default {
 		CnDeleteDialog,
 		CnFormDialog,
 	},
+
 	props: {
 		/** Case UUID — passed by CnObjectSidebar as a shared tab prop. */
 		objectId: {
@@ -130,6 +131,7 @@ export default {
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			decisions: [],
@@ -140,13 +142,16 @@ export default {
 			deleteItem: null,
 		}
 	},
+
 	computed: {
 		objectStore() {
 			return useObjectStore()
 		},
+
 		resolvedCaseId() {
 			return this.objectId || this.$route?.params?.id || null
 		},
+
 		formFields() {
 			const enumLabels = {}
 			for (const dt of this.decisionTypes) {
@@ -179,15 +184,18 @@ export default {
 			]
 		},
 	},
+
 	watch: {
 		resolvedCaseId() {
 			this.reload()
 		},
 	},
+
 	async mounted() {
 		await initializeStores()
 		await this.reload()
 	},
+
 	methods: {
 		formatDate,
 		async reload() {
@@ -215,22 +223,27 @@ export default {
 				this.loading = false
 			}
 		},
+
 		decisionTypeName(id) {
 			if (!id) return null
 			const dt = this.decisionTypes.find((d) => d.id === id)
 			return dt ? dt.title || dt.name || id : id
 		},
+
 		openCreate() {
 			this.editItem = null
 			this.showFormDialog = true
 		},
+
 		openEdit(decision) {
 			this.editItem = decision
 			this.showFormDialog = true
 		},
+
 		openDelete(decision) {
 			this.deleteItem = decision
 		},
+
 		async onFormConfirm(formData) {
 			try {
 				const result = await this.objectStore.saveObject('decision', {
@@ -251,6 +264,7 @@ export default {
 				})
 			}
 		},
+
 		async onDeleteConfirm(id) {
 			try {
 				await this.objectStore.deleteObject('decision', id)

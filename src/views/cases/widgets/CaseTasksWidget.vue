@@ -61,10 +61,10 @@
 <script>
 import { NcButton } from '@nextcloud/vue'
 import {
-	isOverdue,
-	isDueToday,
-	getOverdueText,
 	formatDueDate,
+	getOverdueText,
+	isDueToday,
+	isOverdue,
 	sortTasks,
 } from '../../../utils/taskHelpers.js'
 
@@ -73,30 +73,36 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			default: null,
 		},
+
 		tasks: {
 			type: Array,
 			default: () => [],
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	computed: {
 		/** @spec openspec/specs/signalering-widgets/spec.md */
 		sortedTasks() {
 			return sortTasks(this.tasks)
 		},
+
 		/** @spec openspec/specs/signalering-widgets/spec.md */
 		completedCount() {
 			return this.tasks.filter((t) => t.status === 'completed').length
 		},
 	},
+
 	methods: {
 		isOverdue,
 		isDueToday,

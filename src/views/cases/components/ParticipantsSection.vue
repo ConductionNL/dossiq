@@ -68,9 +68,9 @@
 					:options="userOptions"
 					:aria-label-combobox="t('procest', 'Reassign handler to')"
 					label="label"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Select user...')"
-					@update:model-value="onReassignSelected" />
+					@update:modelValue="onReassignSelected" />
 				<NcButton type="tertiary" @click="cancelReassign">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
@@ -79,10 +79,10 @@
 
 		<AddParticipantDialog
 			v-if="showAddDialog"
-			:case-id="caseId"
-			:role-types="roleTypes"
-			:user-options="userOptions"
-			:pre-select-handler="preSelectHandler"
+			:caseId="caseId"
+			:roleTypes="roleTypes"
+			:userOptions="userOptions"
+			:preSelectHandler="preSelectHandler"
 			@created="onRoleCreated"
 			@close="closeAddDialog" />
 	</div>
@@ -91,8 +91,8 @@
 <script>
 import { NcButton, NcLoadingIcon, NcSelect } from '@nextcloud/vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
-import { useObjectStore } from '../../../store/modules/object.js'
 import AddParticipantDialog from './AddParticipantDialog.vue'
+import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
 	name: 'ParticipantsSection',
@@ -103,16 +103,19 @@ export default {
 		Delete,
 		AddParticipantDialog,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['handler-changed'],
 	data() {
 		return {
@@ -127,11 +130,13 @@ export default {
 			reassignUser: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		roleTypeMap() {
 			const map = {}
@@ -140,6 +145,7 @@ export default {
 			}
 			return map
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		groupedRoles() {
 			const groups = {}
@@ -154,9 +160,11 @@ export default {
 			return Object.values(groups)
 		},
 	},
+
 	async mounted() {
 		await this.fetchData()
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async fetchData() {

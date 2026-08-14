@@ -25,15 +25,18 @@ export default {
 			type: Number,
 			default: 0,
 		},
+
 		total: {
 			type: Number,
 			default: 0,
 		},
+
 		percentage: {
 			type: Number,
 			default: 0,
 		},
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md */
 		fillClass() {

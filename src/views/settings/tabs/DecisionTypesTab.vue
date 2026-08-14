@@ -72,52 +72,52 @@
 							<div class="sub-entity-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.name"
+										:modelValue="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.name = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.description"
+										:modelValue="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field edit-field--full"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.description = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.validFrom"
+										:modelValue="editForm.validFrom"
 										:label="t('procest', 'Valid from')"
 										type="date"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.validFrom = v)
 										" />
 									<NcTextField
-										:model-value="editForm.validUntil"
+										:modelValue="editForm.validUntil"
 										:label="t('procest', 'Valid until')"
 										type="date"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.validUntil = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcCheckboxRadioSwitch
-										:model-value="editForm.isDraft"
-										@update:model-value="
+										:modelValue="editForm.isDraft"
+										@update:modelValue="
 											(v) => (editForm.isDraft = v)
 										">
 										{{ t('procest', 'Draft') }}
 									</NcCheckboxRadioSwitch>
 									<NcCheckboxRadioSwitch
-										:model-value="editForm.publicationRequired"
-										@update:model-value="
+										:modelValue="editForm.publicationRequired"
+										@update:modelValue="
 											(v) => (editForm.publicationRequired = v)
 										">
 										{{ t('procest', 'Publication required') }}
@@ -160,13 +160,13 @@
 <script>
 import {
 	NcButton,
+	NcCheckboxRadioSwitch,
 	NcLoadingIcon,
 	NcNoteCard,
 	NcTextField,
-	NcCheckboxRadioSwitch,
 } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
@@ -180,10 +180,12 @@ export default {
 		PencilIcon,
 		DeleteIcon,
 	},
+
 	props: {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -195,9 +197,11 @@ export default {
 			saving: false,
 		}
 	},
+
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) await this.loadItems()
 	},
+
 	methods: {
 		emptyForm() {
 			return {
@@ -209,6 +213,7 @@ export default {
 				validUntil: '',
 			}
 		},
+
 		async loadItems() {
 			this.loading = true
 			this.error = ''
@@ -225,12 +230,14 @@ export default {
 			}
 			this.loading = false
 		},
+
 		startAdd() {
 			this.editingId = 'new'
 			this.editForm = this.emptyForm()
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
+
 		/**
 		 * @param item the decision type row being edited
 		 */
@@ -243,17 +250,20 @@ export default {
 				publicationRequired:
 					item.publicationRequired === true
 					|| item.publicationRequired === 'true',
+
 				validFrom: item.validFrom || '',
 				validUntil: item.validUntil || '',
 			}
 			this.editError = ''
 		},
+
 		cancelEdit() {
 			if (this.editingId === 'new')
 				this.items = this.items.filter((i) => i.id !== 'new')
 			this.editingId = null
 			this.editError = ''
 		},
+
 		async saveEdit() {
 			this.editError = ''
 			if (!this.editForm.name.trim()) {
@@ -289,6 +299,7 @@ export default {
 				this.saving = false
 			}
 		},
+
 		/**
 		 * @param item the decision type row being deleted
 		 */

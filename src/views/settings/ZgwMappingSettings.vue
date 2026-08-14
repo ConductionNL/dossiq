@@ -40,7 +40,7 @@
 
 		<ZgwMappingDialog
 			:open="editingKey !== null"
-			:resource-key="editingKey || ''"
+			:resourceKey="editingKey || ''"
 			:mapping="editingKey ? mappings[editingKey] || {} : {}"
 			@save="saveMapping"
 			@close="editingKey = null" />
@@ -53,8 +53,8 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
-import { useZgwMappingStore } from '../../store/modules/zgwMapping.js'
 import ZgwMappingDialog from '../../dialogs/ZgwMappingDialog.vue'
+import { useZgwMappingStore } from '../../store/modules/zgwMapping.js'
 
 export default {
 	name: 'ZgwMappingSettings',
@@ -62,21 +62,25 @@ export default {
 		NcButton,
 		ZgwMappingDialog,
 	},
+
 	data() {
 		return {
 			editingKey: null,
 			saved: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		store() {
 			return useZgwMappingStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		mappings() {
 			return this.store.mappings
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		resourceKeys() {
 			return [
@@ -95,9 +99,11 @@ export default {
 			]
 		},
 	},
+
 	async mounted() {
 		await this.store.fetchMappings()
 	},
+
 	methods: {
 		/**
 		 * @param key

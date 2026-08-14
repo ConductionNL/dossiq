@@ -131,6 +131,7 @@ export default {
 		FileExportOutline,
 		InzageExportModal,
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -140,9 +141,11 @@ export default {
 			showExport: false,
 		}
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		/** @spec openspec/specs/avg-verwerkingenlogging/spec.md */
 		async load() {
@@ -175,6 +178,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Human label for an OR activity lifecycle status.
 		 *

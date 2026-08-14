@@ -68,17 +68,17 @@
 </template>
 
 <script>
+import { NcButton } from '@nextcloud/vue'
 import L from 'leaflet'
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
+// Fix Leaflet default icon paths broken by webpack
+import iconUrl from 'leaflet/dist/images/marker-icon.png'
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
+import AddressSearch from './AddressSearch.vue'
+
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-draw'
 import 'leaflet-draw/dist/leaflet.draw.css'
-import { NcButton } from '@nextcloud/vue'
-import AddressSearch from './AddressSearch.vue'
-
-// Fix Leaflet default icon paths broken by webpack
-import iconUrl from 'leaflet/dist/images/marker-icon.png'
-import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png'
-import shadowUrl from 'leaflet/dist/images/marker-shadow.png'
 
 delete L.Icon.Default.prototype._getIconUrl
 L.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl, shadowUrl })
@@ -97,6 +97,7 @@ export default {
 			default: null,
 		},
 	},
+
 	emits: ['save', 'cancel'],
 	data() {
 		return {
@@ -109,15 +110,18 @@ export default {
 			area: 0,
 		}
 	},
+
 	mounted() {
 		this.initMap()
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
-	beforeDestroy() {
+	beforeUnmount() {
 		if (this.map) {
 			this.map.remove()
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-25-map-component/tasks.md */
 		initMap() {
@@ -187,12 +191,14 @@ export default {
 							allowIntersection: false,
 							showArea: true,
 						},
+
 						polyline: false,
 						rectangle: false,
 						circle: false,
 						circlemarker: false,
 						marker: false,
 					},
+
 					edit: {
 						featureGroup: drawnItems,
 					},

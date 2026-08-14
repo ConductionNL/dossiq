@@ -26,21 +26,25 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		label: {
 			type: String,
 			default: '',
 		},
+
 		isSuspended: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		status() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.getDeadlineStatus(this.deadline, this.isSuspended)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		indicatorClass() {
 			if (this.status.isSuspended) return 'deadline-indicator--suspended'

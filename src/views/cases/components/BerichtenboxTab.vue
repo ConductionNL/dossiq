@@ -35,7 +35,7 @@
 
 		<BerichtenboxComposeDialog
 			v-if="showCompose"
-			:case-id="caseId"
+			:caseId="caseId"
 			:bsn="caseBsn"
 			:show="showCompose"
 			@close="showCompose = false"
@@ -44,10 +44,10 @@
 </template>
 
 <script>
-import { NcButton } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import { listMessages } from '../../../services/berichtenboxApi.js'
+import { NcButton } from '@nextcloud/vue'
 import BerichtenboxComposeDialog from '../../../dialogs/BerichtenboxComposeDialog.vue'
+import { listMessages } from '../../../services/berichtenboxApi.js'
 
 export default {
 	name: 'BerichtenboxTab',
@@ -56,12 +56,15 @@ export default {
 		caseId: { type: String, required: true },
 		caseBsn: { type: String, default: '' },
 	},
+
 	data() {
 		return { messages: [], showCompose: false }
 	},
+
 	async mounted() {
 		await this.loadMessages()
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
@@ -73,6 +76,7 @@ export default {
 				this.messages = []
 			}
 		},
+
 		/**
 		 * @param dt
 		 * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
@@ -84,6 +88,7 @@ export default {
 				timeStyle: 'short',
 			})
 		},
+
 		/**
 		 * @param status
 		 * @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md
@@ -99,6 +104,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		async onSent() {
 			this.showCompose = false

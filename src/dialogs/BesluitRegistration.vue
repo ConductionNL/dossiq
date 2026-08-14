@@ -10,10 +10,10 @@
 				>
 				<NcTextField
 					id="besluit-registration-title"
-					:model-value="form.title"
+					:modelValue="form.title"
 					:error="!!errors.title"
 					:placeholder="t('procest', 'Title of the decision...')"
-					@update:model-value="
+					@update:modelValue="
 						(v) => {
 							form.title = v
 							errors.title = ''
@@ -31,8 +31,8 @@
 				<NcTextField
 					id="besluit-registration-effective-date"
 					type="date"
-					:model-value="form.effectiveDate"
-					@update:model-value="(v) => (form.effectiveDate = v)" />
+					:modelValue="form.effectiveDate"
+					@update:modelValue="(v) => (form.effectiveDate = v)" />
 			</div>
 
 			<div class="form-group">
@@ -42,7 +42,7 @@
 					:options="decisionTypes"
 					:aria-label-combobox="t('procest', 'Decision type')"
 					label="name"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Select decision type...')" />
 			</div>
 
@@ -63,9 +63,9 @@
 				}}</label>
 				<NcTextField
 					id="besluit-registration-governing-body"
-					:model-value="form.governingBody"
+					:modelValue="form.governingBody"
 					:placeholder="t('procest', 'College van B&W')"
-					@update:model-value="(v) => (form.governingBody = v)" />
+					@update:modelValue="(v) => (form.governingBody = v)" />
 			</div>
 		</div>
 
@@ -91,8 +91,8 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
-import { useObjectStore } from '../store/modules/object.js'
 import { registerBesluit } from '../services/voorstelBesluitApi.js'
+import { useObjectStore } from '../store/modules/object.js'
 
 export default {
 	name: 'BesluitRegistration',
@@ -103,12 +103,14 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	props: {
 		voorstel: {
 			type: Object,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			saving: false,
@@ -120,15 +122,18 @@ export default {
 				explanation: '',
 				governingBody: 'College van B&W',
 			},
+
 			errors: {},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+
 	/** @spec openspec/specs/parafering-actions/spec.md */
 	async created() {
 		try {
@@ -142,6 +147,7 @@ export default {
 			console.error('Failed to load decision types:', error)
 		}
 	},
+
 	methods: {
 		/**
 		 * Register a besluit on the voorstel.

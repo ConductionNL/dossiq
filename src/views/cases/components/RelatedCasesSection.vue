@@ -91,7 +91,7 @@
 
 		<AddCaseRelationModal
 			v-if="showAddModal"
-			:case-id="resolvedCaseId"
+			:caseId="resolvedCaseId"
 			@created="onCreated"
 			@close="showAddModal = false" />
 	</div>
@@ -99,15 +99,15 @@
 
 <script>
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
-import Plus from 'vue-material-design-icons/Plus.vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
-import { useObjectStore } from '../../../store/modules/object.js'
+import Plus from 'vue-material-design-icons/Plus.vue'
+import AddCaseRelationModal from '../../../modals/AddCaseRelationModal.vue'
 import {
 	fetchRelations,
-	removeRelation,
 	relationTypeLabel,
+	removeRelation,
 } from '../../../services/caseRelationApi.js'
-import AddCaseRelationModal from '../../../modals/AddCaseRelationModal.vue'
+import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
 	name: 'RelatedCasesSection',
@@ -119,6 +119,7 @@ export default {
 		Delete,
 		AddCaseRelationModal,
 	},
+
 	props: {
 		/** Case UUID — passed by CnObjectSidebar as a shared tab prop. */
 		objectId: {
@@ -126,6 +127,7 @@ export default {
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -133,16 +135,19 @@ export default {
 			showAddModal: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/related-case-linking/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/related-case-linking/spec.md */
 		resolvedCaseId() {
 			return this.objectId || this.$route?.params?.id || null
 		},
 	},
+
 	watch: {
 		resolvedCaseId: {
 			immediate: true,
@@ -152,6 +157,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		/**
 		 * Localised, direction-aware relation-type label.
@@ -164,6 +170,7 @@ export default {
 		typeLabel(aardRelatie) {
 			return relationTypeLabel(aardRelatie)
 		},
+
 		/**
 		 * Load the relation list and hydrate each target case for display,
 		 * masking targets the viewer cannot read.
@@ -191,6 +198,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Resolve a relation entry's target case for display. An unreadable
 		 * target (object store rejects/returns nothing) becomes a masked stub.
@@ -224,6 +232,7 @@ export default {
 			}
 			return row
 		},
+
 		/**
 		 * Navigate to a related case detail.
 		 *
@@ -235,6 +244,7 @@ export default {
 		openCase(caseId) {
 			this.$router.push({ path: `/cases/${caseId}` })
 		},
+
 		/**
 		 * Remove a relation (two-sided) and refresh.
 		 *
@@ -247,6 +257,7 @@ export default {
 			await removeRelation(this.resolvedCaseId, rel.caseId, rel.aardRelatie)
 			await this.load()
 		},
+
 		/**
 		 * Refresh after a relation was created.
 		 *

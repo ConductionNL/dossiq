@@ -82,7 +82,7 @@
 
 		<AddAssignmentDialog
 			v-if="addOpen"
-			:role-options="roleOptions"
+			:roleOptions="roleOptions"
 			@save="onAdd"
 			@close="addOpen = false" />
 
@@ -95,12 +95,12 @@
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
+import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
-import Plus from 'vue-material-design-icons/Plus.vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 import AddAssignmentDialog from '../../../dialogs/AddAssignmentDialog.vue'
 import EndAssignmentDialog from '../../../dialogs/EndAssignmentDialog.vue'
 
@@ -115,11 +115,13 @@ export default {
 		AddAssignmentDialog,
 		EndAssignmentDialog,
 	},
+
 	props: {
 		assignments: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 		roleOptions: { type: Array, default: () => [] },
 	},
+
 	emits: ['reload'],
 	data() {
 		return {
@@ -127,6 +129,7 @@ export default {
 			ending: null,
 		}
 	},
+
 	methods: {
 		t,
 		/**
@@ -137,6 +140,7 @@ export default {
 			const tt = (a.toewijzingType || a.type || '').toLowerCase()
 			return tt === 'waarnemer' || tt === 'plaatsvervanger'
 		},
+
 		/**
 		 * @param a
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -146,6 +150,7 @@ export default {
 				? 'toewijzingen-table__type--waarnemer'
 				: 'toewijzingen-table__type--regular'
 		},
+
 		/**
 		 * @param a
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -154,6 +159,7 @@ export default {
 			const opt = this.roleOptions.find((o) => o.id === (a.roleId || a.role))
 			return opt ? opt.label : a.rolLabel || a.roleId || a.role || '—'
 		},
+
 		/**
 		 * @param a
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -161,6 +167,7 @@ export default {
 		openEnd(a) {
 			this.ending = a
 		},
+
 		/**
 		 * @param payload
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -177,6 +184,7 @@ export default {
 				/* dialog stays open */
 			}
 		},
+
 		/**
 		 * End an assignment by setting its end date.
 		 *

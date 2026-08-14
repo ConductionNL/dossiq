@@ -47,7 +47,7 @@
 				v-else-if="active === 'toewijzingen'"
 				:assignments="assignments"
 				:loading="loading"
-				:role-options="roleOptions"
+				:roleOptions="roleOptions"
 				@reload="loadAssignments" />
 			<MandaatImportPanel
 				v-else-if="active === 'import'"
@@ -57,22 +57,22 @@
 		<MandaatEditor
 			v-if="editorOpen"
 			:mandaat="editingMandaat"
-			:role-options="roleOptions"
+			:roleOptions="roleOptions"
 			@save="onMandaatSave"
 			@close="closeEditor" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcAppNavigationCaption } from '@nextcloud/vue'
+import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
-import MandaatMatrixTable from '../components/MandaatMatrixTable.vue'
-import OrganisatieRolManager from '../components/OrganisatieRolManager.vue'
-import MandaatToewijzingenTable from '../components/MandaatToewijzingenTable.vue'
-import MandaatImportPanel from '../components/MandaatImportPanel.vue'
+import { NcAppNavigationCaption, NcButton } from '@nextcloud/vue'
 import MandaatEditor from '../../../modals/MandaatEditor.vue'
+import MandaatImportPanel from '../components/MandaatImportPanel.vue'
+import MandaatMatrixTable from '../components/MandaatMatrixTable.vue'
+import MandaatToewijzingenTable from '../components/MandaatToewijzingenTable.vue'
+import OrganisatieRolManager from '../components/OrganisatieRolManager.vue'
 
 export default {
 	name: 'MandaatMatrixTab',
@@ -85,6 +85,7 @@ export default {
 		MandaatImportPanel,
 		MandaatEditor,
 	},
+
 	data() {
 		return {
 			active: 'besluiten',
@@ -96,6 +97,7 @@ export default {
 			editingMandaat: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		tabOptions() {
@@ -106,6 +108,7 @@ export default {
 				{ id: 'import', label: t('procest', 'Import') },
 			]
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		roleOptions() {
 			return (this.roles || []).map((r) => ({
@@ -114,6 +117,7 @@ export default {
 			}))
 		},
 	},
+
 	watch: {
 		active: {
 			immediate: true,
@@ -128,6 +132,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
@@ -146,6 +151,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async loadRoles() {
 			this.loading = true
@@ -162,6 +168,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async loadAssignments() {
 			this.loading = true
@@ -178,6 +185,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param mandaat
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -186,20 +194,24 @@ export default {
 			this.editingMandaat = mandaat
 			this.editorOpen = true
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingMandaat = null
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		openImport() {
 			this.active = 'import'
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		onImported() {
 			this.active = 'besluiten'
 			this.loadBesluiten()
 		},
+
 		/**
 		 * @param payload
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md

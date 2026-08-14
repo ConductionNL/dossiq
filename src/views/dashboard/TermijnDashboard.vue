@@ -8,11 +8,11 @@
 			<h2>{{ t('procest', 'Deadline monitoring') }}</h2>
 			<div class="termijn-dashboard__controls">
 				<NcSelect
-					:model-value="selectedZaaktype"
+					:modelValue="selectedZaaktype"
 					:options="zaaktypeOptions"
-					:input-label="t('procest', 'Filter by case type')"
+					:inputLabel="t('procest', 'Filter by case type')"
 					:placeholder="t('procest', 'All case types')"
-					@update:model-value="onZaaktypeChange" />
+					@update:modelValue="onZaaktypeChange" />
 				<NcButton type="secondary" @click="load">
 					<template #icon>
 						<Refresh :size="18" />
@@ -83,10 +83,10 @@
 			<h3>{{ t('procest', 'Quarterly report') }}</h3>
 			<div class="termijn-dashboard__report-controls">
 				<NcTextField
-					:model-value="quarter"
+					:modelValue="quarter"
 					:label="t('procest', 'Quarter (YYYY-Qn)')"
 					:placeholder="t('procest', 'e.g. 2026-Q2')"
-					@update:model-value="(v) => (quarter = v)" />
+					@update:modelValue="(v) => (quarter = v)" />
 				<NcButton type="primary" @click="loadQuarterly">
 					{{ t('procest', 'Load report') }}
 				</NcButton>
@@ -143,9 +143,9 @@
 			<h3>{{ t('procest', 'Annual dwangsom audit') }}</h3>
 			<div class="termijn-dashboard__report-controls">
 				<NcTextField
-					:model-value="String(year)"
+					:modelValue="String(year)"
 					:label="t('procest', 'Year')"
-					@update:model-value="(v) => (year = Number(v) || year)" />
+					@update:modelValue="(v) => (year = Number(v) || year)" />
 				<NcButton type="primary" @click="loadAnnual">
 					{{ t('procest', 'Load audit') }}
 				</NcButton>
@@ -179,6 +179,9 @@
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcLoadingIcon,
@@ -186,11 +189,8 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
-import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
-import Refresh from 'vue-material-design-icons/Refresh.vue'
 import FileExport from 'vue-material-design-icons/FileExport.vue'
+import Refresh from 'vue-material-design-icons/Refresh.vue'
 
 export default {
 	name: 'TermijnDashboard',
@@ -203,6 +203,7 @@ export default {
 		Refresh,
 		FileExport,
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -216,6 +217,7 @@ export default {
 			zaaktypeOptions: [],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		selectedZaaktype() {
@@ -226,9 +228,11 @@ export default {
 			)
 		},
 	},
+
 	mounted() {
 		this.load()
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
@@ -237,6 +241,7 @@ export default {
 			const q = Math.floor(d.getMonth() / 3) + 1
 			return `${d.getFullYear()}-Q${q}`
 		},
+
 		/**
 		 * @param v
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
@@ -245,6 +250,7 @@ export default {
 			const n = Number(v) || 0
 			return `${n.toFixed(1)} %`
 		},
+
 		/**
 		 * @param v
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
@@ -253,6 +259,7 @@ export default {
 			const n = Number(v) || 0
 			return n.toLocaleString('nl-NL', { style: 'currency', currency: 'EUR' })
 		},
+
 		/**
 		 * @param opt
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md
@@ -261,6 +268,7 @@ export default {
 			this.zaaktypeFilter = opt ? opt.id : ''
 			this.load()
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		async load() {
 			this.loading = true
@@ -282,6 +290,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		async loadQuarterly() {
 			if (!this.quarter) return
@@ -304,6 +313,7 @@ export default {
 					|| t('procest', 'Failed to load quarterly report')
 			}
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		async loadAnnual() {
 			try {
@@ -319,6 +329,7 @@ export default {
 					|| t('procest', 'Failed to load annual audit')
 			}
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-09-reporting-dashboard/tasks.md */
 		downloadQuarterCsv() {
 			if (!this.quarterly || !this.quarterly.perType) return

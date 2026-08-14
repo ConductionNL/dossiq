@@ -1,43 +1,41 @@
 // SPDX-License-Identifier: EUPL-1.2
 // Copyright (C) 2026 Conduction B.V.
 
-// Must stay first: sets __webpack_public_path__ before any dynamic import()
-// (map/Leaflet, manifest validator) triggers lazy-chunk loading.
-import './publicPath.js'
-import { createApp, markRaw, h } from 'vue'
-import { createRouter, createWebHistory } from 'vue-router'
-
-// @vue/compat REMOVED (ADR-066 task 6.1): lib + procest source are compat-
-// construct-free (v-model, no .sync/$set/filters/Vue.extend) — pure Vue 3.
-import {
-	translate as t,
-	translatePlural as n,
-	loadTranslations,
-} from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
 import {
 	buildManifest,
-	useAppManifest,
 	CnPageRenderer,
 	defaultPageTypes,
 	fieldInspectionIntegration,
-	registerIntegration,
 	registerIcons,
+	registerIntegration,
 	registerTranslations,
+	useAppManifest,
 } from '@conduction/nextcloud-vue'
-import pinia from './pinia.js'
+// @vue/compat REMOVED (ADR-066 task 6.1): lib + procest source are compat-
+// construct-free (v-model, no .sync/$set/filters/Vue.extend) — pure Vue 3.
+import {
+	loadTranslations,
+	translatePlural as n,
+	translate as t,
+} from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
+import { createApp, h, markRaw } from 'vue'
+import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
+import customComponents from './customComponents.js'
+import appIcons from './icons.js'
 import bundledManifest from './manifest.json'
 import menuLayout from './menu-layout.json'
-import customComponents from './customComponents.js'
+import pinia from './pinia.js'
 import registry from './registry.js'
-import appIcons from './icons.js'
-import mapFormatters from './services/mapFormatters.js'
 import formatters from './services/formatters.js'
+import mapFormatters from './services/mapFormatters.js'
 
+// Must stay first: sets __webpack_public_path__ before any dynamic import()
+// (map/Leaflet, manifest validator) triggers lazy-chunk loading.
+import './publicPath.js'
 // Library CSS — must be explicit import (webpack tree-shakes side-effect imports from aliased packages)
 import '@conduction/nextcloud-vue/css/index.css'
-
 // Global (unscoped) app styles
 import './assets/app.css'
 
@@ -69,6 +67,9 @@ try {
 // its callback meant boot silently failed when translations couldn't
 // load. Strings just fall back to their English source on miss; boot
 // MUST not depend on this resolving.
+/**
+ *
+ */
 function tryLoadTranslations() {
 	try {
 		const result = loadTranslations('procest', () => {})
@@ -249,7 +250,7 @@ if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 			.register(generateUrl('/apps/procest/service-worker.js'), {
 				scope: generateUrl('/apps/procest/'),
 			})
-			// eslint-disable-next-line no-console
+
 			.catch((e) =>
 				console.warn('[procest] service worker registration failed', e),
 			)

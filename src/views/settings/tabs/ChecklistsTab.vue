@@ -73,30 +73,30 @@
 		<CnConfirmDialog
 			v-if="showDeleteConfirm"
 			ref="deleteConfirmDialog"
-			:dialog-title="t('procest', 'Delete checklist')"
+			:dialogTitle="t('procest', 'Delete checklist')"
 			:message="
 				t('procest', 'Delete checklist “{name}”?', {
 					name: pendingDeleteChecklist && pendingDeleteChecklist.name,
 				})
 			"
 			variant="error"
-			:confirm-label="t('procest', 'Delete')"
+			:confirmLabel="t('procest', 'Delete')"
 			@confirm="onConfirmDelete"
 			@close="showDeleteConfirm = false" />
 	</div>
 </template>
 
 <script>
-import {
-	NcButton,
-	NcLoadingIcon,
-	NcEmptyContent,
-	NcIconSvgWrapper,
-} from '@nextcloud/vue'
 import { CnConfirmDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { showError, showSuccess } from '@nextcloud/dialogs'
+import { generateUrl } from '@nextcloud/router'
+import {
+	NcButton,
+	NcEmptyContent,
+	NcIconSvgWrapper,
+	NcLoadingIcon,
+} from '@nextcloud/vue'
 import InspectionChecklistEditor from '../../../components/InspectionChecklistEditor.vue'
 
 /**

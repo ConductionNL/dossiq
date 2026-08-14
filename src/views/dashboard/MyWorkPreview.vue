@@ -79,11 +79,13 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		items: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 		error: { type: String, default: null },
 	},
+
 	emits: ['click-item', 'view-all', 'retry'],
 }
 </script>

@@ -14,7 +14,7 @@
 				<NcSelect
 					v-model="sortKey"
 					class="dossier-tab__sort"
-					:input-label="t('procest', 'Sort by')"
+					:inputLabel="t('procest', 'Sort by')"
 					:options="sortOptions"
 					:reduce="(option) => option.id"
 					label="label"
@@ -37,13 +37,13 @@
 			@change="onFilesSelected" />
 
 		<BulkActionsBar
-			:selected-count="selectedIds.length"
+			:selectedCount="selectedIds.length"
 			:busy="bulkBusy"
 			:results="bulkResults"
-			@mark-final="bulkMarkFinal"
-			@change-confidentiality="bulkChangeConfidentiality"
-			@download-zip="downloadSelectionZip"
-			@clear-selection="clearSelection" />
+			@markFinal="bulkMarkFinal"
+			@changeConfidentiality="bulkChangeConfidentiality"
+			@downloadZip="downloadSelectionZip"
+			@clearSelection="clearSelection" />
 
 		<NcLoadingIcon v-if="loading" :size="32" />
 
@@ -70,15 +70,15 @@
 			<DossierGroup
 				v-for="group in groups"
 				:key="group.informatieobjecttype"
-				:group-label="typeLabel(group.informatieobjecttype)"
+				:groupLabel="typeLabel(group.informatieobjecttype)"
 				:documents="group.documents"
-				:selected-ids="selectedIds"
-				:sort-key="sortKey"
-				:sort-direction="sortDirection"
-				@toggle-select="toggleSelect"
+				:selectedIds="selectedIds"
+				:sortKey="sortKey"
+				:sortDirection="sortDirection"
+				@toggleSelect="toggleSelect"
 				@open="openInFiles"
 				@share="shareDocument"
-				@version-history="showVersions"
+				@versionHistory="showVersions"
 				@delete="deleteDocument" />
 		</div>
 
@@ -99,22 +99,22 @@
 		<VersionHistoryPanel
 			v-if="versionDocument"
 			:document="versionDocument"
-			:user-id="userId" />
+			:userId="userId" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon, NcSelect } from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
 import { getCurrentUser } from '@nextcloud/auth'
-import { showError, showSuccess } from '@nextcloud/dialogs'
 import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
+import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcEmptyContent, NcLoadingIcon, NcSelect } from '@nextcloud/vue'
 import FolderOpenOutline from 'vue-material-design-icons/FolderOpenOutline.vue'
 import Upload from 'vue-material-design-icons/Upload.vue'
+import DocumentMetadataDialog from '../../../modals/DocumentMetadataDialog.vue'
 import BulkActionsBar from './BulkActionsBar.vue'
 import DossierGroup from './DossierGroup.vue'
 import VersionHistoryPanel from './VersionHistoryPanel.vue'
-import DocumentMetadataDialog from '../../../modals/DocumentMetadataDialog.vue'
 
 /**
  * Case dossier tab: lists informatieobjecten grouped by type with a count
@@ -139,6 +139,7 @@ export default {
 		VersionHistoryPanel,
 		DocumentMetadataDialog,
 	},
+
 	props: {
 		// Received from CnObjectSidebar's sharedTabProps; falls back to the
 		// route id for standalone use, matching the other case-detail tabs.
@@ -147,6 +148,7 @@ export default {
 			default: '',
 		},
 	},
+
 	emits: ['count-changed'],
 	data() {
 		return {
@@ -168,6 +170,7 @@ export default {
 			bulkResults: [],
 		}
 	},
+
 	computed: {
 		/**
 		 * The resolved case id (sharedTabProps objectId or route fallback).
@@ -182,6 +185,7 @@ export default {
 				|| ''
 			)
 		},
+
 		/**
 		 * The current user id (for version-history requests).
 		 *
@@ -192,6 +196,7 @@ export default {
 			const user = getCurrentUser()
 			return user ? user.uid : ''
 		},
+
 		/**
 		 * Sort dropdown options.
 		 *
@@ -206,6 +211,7 @@ export default {
 			]
 		},
 	},
+
 	watch: {
 		caseId: {
 			immediate: true,
@@ -220,6 +226,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		/**
 		 * Fetch the dossier for the current case.
@@ -247,6 +254,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Fetch the informatieobjecttype catalog for the upload dialog.
 		 *
@@ -264,6 +272,7 @@ export default {
 				this.types = []
 			}
 		},
+
 		/**
 		 * Resolve a type id to its description label.
 		 *
@@ -279,6 +288,7 @@ export default {
 				? match.description || typeId
 				: typeId || this.t('procest', 'Unknown type')
 		},
+
 		/**
 		 * Open the native file picker.
 		 *
@@ -289,6 +299,7 @@ export default {
 				this.$refs.fileInput.click()
 			}
 		},
+
 		/**
 		 * Handle files chosen via the picker.
 		 *
@@ -301,6 +312,7 @@ export default {
 				this.openMetadataDialog(files)
 			}
 		},
+
 		/**
 		 * Handle a drag-and-drop file drop.
 		 *
@@ -316,6 +328,7 @@ export default {
 				this.openMetadataDialog(files)
 			}
 		},
+
 		/**
 		 * Open the metadata dialog for the pending files.
 		 *
@@ -328,6 +341,7 @@ export default {
 			this.uploadErrors = {}
 			this.showMetadataDialog = true
 		},
+
 		/**
 		 * Close the metadata dialog and reset pending state.
 		 *
@@ -340,6 +354,7 @@ export default {
 				this.$refs.fileInput.value = ''
 			}
 		},
+
 		/**
 		 * Upload the pending files with the shared metadata, per-file progress.
 		 *
@@ -385,6 +400,7 @@ export default {
 				showError(this.t('procest', 'Upload failed'))
 			}
 		},
+
 		/**
 		 * Toggle the selection of a document.
 		 *
@@ -399,6 +415,7 @@ export default {
 				this.selectedIds.splice(index, 1)
 			}
 		},
+
 		/**
 		 * Clear the current selection and bulk results.
 		 *
@@ -408,6 +425,7 @@ export default {
 			this.selectedIds = []
 			this.bulkResults = []
 		},
+
 		/**
 		 * Bulk-transition the selection to definitief.
 		 *
@@ -420,6 +438,7 @@ export default {
 				status: 'definitief',
 			})
 		},
+
 		/**
 		 * Bulk-update the confidentiality of the selection.
 		 *
@@ -436,6 +455,7 @@ export default {
 				},
 			)
 		},
+
 		/**
 		 * Run a bulk endpoint and record the per-item results.
 		 *
@@ -456,6 +476,7 @@ export default {
 				this.bulkBusy = false
 			}
 		},
+
 		/**
 		 * Download the current selection (or full dossier) as a ZIP.
 		 *
@@ -485,6 +506,7 @@ export default {
 				this.bulkBusy = false
 			}
 		},
+
 		/**
 		 * Open the document in Nextcloud Files.
 		 *
@@ -496,6 +518,7 @@ export default {
 				window.open(generateUrl(`/f/${document.fileId}`), '_blank')
 			}
 		},
+
 		/**
 		 * Trigger a public share for the document.
 		 *
@@ -510,6 +533,7 @@ export default {
 				}),
 			)
 		},
+
 		/**
 		 * Show the version-history panel for a document.
 		 *
@@ -519,6 +543,7 @@ export default {
 		showVersions(document) {
 			this.versionDocument = document
 		},
+
 		/**
 		 * Delete a concept document and refresh.
 		 *

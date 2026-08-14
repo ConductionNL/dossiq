@@ -43,12 +43,12 @@
 </template>
 
 <script>
-import { NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
-import { useObjectStore } from '../../store/modules/object.js'
+import { NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import BriefcaseVariantOutline from 'vue-material-design-icons/BriefcaseVariantOutline.vue'
 import InitiatorPickerModal from '../../modals/InitiatorPickerModal.vue'
 import { initiatorProjection } from '../../services/initiatorSearch.js'
+import { useObjectStore } from '../../store/modules/object.js'
 
 export default {
 	name: 'StartCaseWidget',
@@ -58,12 +58,14 @@ export default {
 		BriefcaseVariantOutline,
 		InitiatorPickerModal,
 	},
+
 	props: {
 		title: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -73,15 +75,18 @@ export default {
 			pendingCaseType: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/signalering-widgets/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+
 	mounted() {
 		this.fetchCaseTypes()
 	},
+
 	methods: {
 		/**
 		 * Fetch available case types from OpenRegister.
@@ -104,6 +109,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Open the optional initiator step for the chosen case type.
 		 * The case is created by onInitiatorConfirmed / onInitiatorSkipped.
@@ -118,6 +124,7 @@ export default {
 			}
 			this.pendingCaseType = caseType
 		},
+
 		/**
 		 * Create the case carrying the picked initiator projection.
 		 *
@@ -130,6 +137,7 @@ export default {
 			this.pendingCaseType = null
 			await this.createCase(caseType, initiatorProjection(initiator))
 		},
+
 		/**
 		 * Create the case without an initiator (existing flow unchanged).
 		 *
@@ -141,6 +149,7 @@ export default {
 			this.pendingCaseType = null
 			await this.createCase(caseType, {})
 		},
+
 		/**
 		 * Create a new case of the given type and navigate to it.
 		 *

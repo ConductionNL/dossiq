@@ -57,19 +57,23 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		decisionId: {
 			type: String,
 			required: true,
 		},
+
 		initialStatus: {
 			type: String,
 			default: 'pending',
 		},
+
 		initialPublicationUrl: {
 			type: String,
 			default: '',
 		},
 	},
+
 	data() {
 		return {
 			state: this.initialStatus === 'published' ? 'published' : 'pending',
@@ -78,6 +82,7 @@ export default {
 			busy: false,
 		}
 	},
+
 	methods: {
 		/**
 		 * Publish the WOO decision to OpenCatalogi.
@@ -104,6 +109,7 @@ export default {
 				this.busy = false
 			}
 		},
+
 		/**
 		 * Withdraw the WOO publication from OpenCatalogi.
 		 *
@@ -125,6 +131,7 @@ export default {
 				this.busy = false
 			}
 		},
+
 		/**
 		 * Map a backend unavailability reason to a human message.
 		 *

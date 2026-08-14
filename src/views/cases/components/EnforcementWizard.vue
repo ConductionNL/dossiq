@@ -225,8 +225,8 @@
 </template>
 
 <script>
-import { NcButton } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton } from '@nextcloud/vue'
 import { useEnforcementStore } from '../../../store/modules/enforcement.js'
 
 export default {

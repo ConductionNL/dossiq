@@ -290,20 +290,24 @@ export default {
 		NcButton,
 		CloseIcon,
 	},
+
 	props: {
 		transition: {
 			type: Object,
 			required: true,
 		},
+
 		roleTypes: {
 			type: Array,
 			default: () => [],
 		},
+
 		documentTypes: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['update', 'delete', 'close'],
 	data() {
 		return {
@@ -313,6 +317,7 @@ export default {
 			localActions: this.parseActions(this.transition.automaticActions),
 		}
 	},
+
 	watch: {
 		transition: {
 			/**
@@ -325,9 +330,11 @@ export default {
 				this.localGuards = this.parseGuards(newVal.guards)
 				this.localActions = this.parseActions(newVal.automaticActions)
 			},
+
 			deep: true,
 		},
 	},
+
 	methods: {
 		/**
 		 * @param guards

@@ -70,20 +70,20 @@
 							<div class="result-type-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.name"
+										:modelValue="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.name = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.description"
+										:modelValue="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.description = v)
 										" />
 								</div>
@@ -93,28 +93,28 @@
 											t('procest', 'Archive action')
 										}}</label>
 										<NcCheckboxRadioSwitch
-											:model-value="editForm.archivalAction"
+											:modelValue="editForm.archivalAction"
 											value="retain"
 											name="edit-archive-action"
 											type="radio"
-											@update:model-value="
+											@update:modelValue="
 												(v) => (editForm.archivalAction = v)
 											">
 											{{ t('procest', 'Retain') }}
 										</NcCheckboxRadioSwitch>
 										<NcCheckboxRadioSwitch
-											:model-value="editForm.archivalAction"
+											:modelValue="editForm.archivalAction"
 											value="destroy"
 											name="edit-archive-action"
 											type="radio"
-											@update:model-value="
+											@update:modelValue="
 												(v) => (editForm.archivalAction = v)
 											">
 											{{ t('procest', 'Destroy') }}
 										</NcCheckboxRadioSwitch>
 									</div>
 									<NcTextField
-										:model-value="editForm.archivalPeriod"
+										:modelValue="editForm.archivalPeriod"
 										:label="
 											t(
 												'procest',
@@ -122,7 +122,7 @@
 											)
 										"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.archivalPeriod = v)
 										" />
 								</div>
@@ -155,17 +155,17 @@
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
-								:model-value="newForm.name"
+								:modelValue="newForm.name"
 								:label="t('procest', 'Name *')"
 								class="add-form__field"
-								@update:model-value="(v) => (newForm.name = v)" />
+								@update:modelValue="(v) => (newForm.name = v)" />
 						</div>
 						<div class="add-form__row">
 							<NcTextField
-								:model-value="newForm.description"
+								:modelValue="newForm.description"
 								:label="t('procest', 'Description')"
 								class="add-form__field"
-								@update:model-value="
+								@update:modelValue="
 									(v) => (newForm.description = v)
 								" />
 						</div>
@@ -175,31 +175,31 @@
 									t('procest', 'Archive action')
 								}}</label>
 								<NcCheckboxRadioSwitch
-									:model-value="newForm.archivalAction"
+									:modelValue="newForm.archivalAction"
 									value="retain"
 									name="new-archive-action"
 									type="radio"
-									@update:model-value="
+									@update:modelValue="
 										(v) => (newForm.archivalAction = v)
 									">
 									{{ t('procest', 'Retain') }}
 								</NcCheckboxRadioSwitch>
 								<NcCheckboxRadioSwitch
-									:model-value="newForm.archivalAction"
+									:modelValue="newForm.archivalAction"
 									value="destroy"
 									name="new-archive-action"
 									type="radio"
-									@update:model-value="
+									@update:modelValue="
 										(v) => (newForm.archivalAction = v)
 									">
 									{{ t('procest', 'Destroy') }}
 								</NcCheckboxRadioSwitch>
 							</div>
 							<NcTextField
-								:model-value="newForm.archivalPeriod"
+								:modelValue="newForm.archivalPeriod"
 								:label="t('procest', 'Retention period (e.g. P20Y)')"
 								class="add-form__field"
-								@update:model-value="
+								@update:modelValue="
 									(v) => (newForm.archivalPeriod = v)
 								" />
 						</div>
@@ -226,12 +226,12 @@
 <script>
 import {
 	NcButton,
+	NcCheckboxRadioSwitch,
 	NcLoadingIcon,
 	NcTextField,
-	NcCheckboxRadioSwitch,
 } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
@@ -244,10 +244,12 @@ export default {
 		PencilIcon,
 		DeleteIcon,
 	},
+
 	props: {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
 	},
+
 	data() {
 		return {
 			resultTypes: [],
@@ -259,6 +261,7 @@ export default {
 				archivalAction: 'retain',
 				archivalPeriod: '',
 			},
+
 			addError: '',
 			addSaving: false,
 			editingId: null,
@@ -267,18 +270,21 @@ export default {
 			editSaving: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) {
 			await this.fetchResultTypes()
 		}
 	},
+
 	methods: {
 		/**
 		 * @param period
@@ -291,6 +297,7 @@ export default {
 			const units = { Y: 'years', M: 'months', W: 'weeks', D: 'days' }
 			return `${match[1]} ${units[match[2]] || match[2]}`
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async fetchResultTypes() {
 			this.loading = true
@@ -305,6 +312,7 @@ export default {
 			}
 			this.loading = false
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async addResultType() {
 			this.addError = ''
@@ -330,6 +338,7 @@ export default {
 					|| t('procest', 'Failed to add result type')
 			}
 		},
+
 		/**
 		 * @param rt
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
@@ -339,12 +348,14 @@ export default {
 			this.editForm = { ...rt }
 			this.editError = ''
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		cancelEdit() {
 			this.editingId = null
 			this.editForm = {}
 			this.editError = ''
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async saveEdit() {
 			this.editError = ''
@@ -371,6 +382,7 @@ export default {
 					|| t('procest', 'Failed to save')
 			}
 		},
+
 		/**
 		 * @param rt
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md

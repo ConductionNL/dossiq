@@ -32,10 +32,10 @@
 <template>
 	<CnNotesTabComponent
 		v-if="CnNotesTabComponent"
-		:object-id="objectId"
+		:objectId="objectId"
 		:register="register"
 		:schema="schema"
-		:api-base="apiBase"
+		:apiBase="apiBase"
 		@mention="onMention" />
 </template>
 
@@ -53,16 +53,19 @@ export default {
 			type: String,
 			default: '',
 		},
+
 		/** OpenRegister register slug; forwarded by sharedTabProps. */
 		register: {
 			type: String,
 			default: '',
 		},
+
 		/** OpenRegister schema slug; forwarded by sharedTabProps. */
 		schema: {
 			type: String,
 			default: '',
 		},
+
 		/** OpenRegister API base; forwarded by sharedTabProps. */
 		apiBase: {
 			type: String,

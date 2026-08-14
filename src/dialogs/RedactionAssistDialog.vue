@@ -19,7 +19,7 @@
 		v-if="open"
 		:name="t('procest', 'AI-assisted redaction suggestions')"
 		size="large"
-		:can-close="!submitting"
+		:canClose="!submitting"
 		@closing="$emit('close')">
 		<div class="redaction-assist-dialog">
 			<p class="redaction-assist-dialog__intro">
@@ -167,12 +167,12 @@
 </template>
 
 <script>
-import { NcButton, NcDialog, NcNoteCard } from '@nextcloud/vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcDialog, NcNoteCard } from '@nextcloud/vue'
 import {
-	buildSpanPreview,
 	buildInitialSelections,
+	buildSpanPreview,
 	filterSelectedSpans,
 	isSpanToggleable,
 } from '../utils/redactionAssistHelpers.js'
@@ -184,24 +184,29 @@ export default {
 		NcDialog,
 		NcNoteCard,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: true,
 		},
+
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		documentRef: {
 			type: String,
 			required: true,
 		},
+
 		initialText: {
 			type: String,
 			default: '',
 		},
 	},
+
 	emits: ['close', 'reviewed'],
 	data() {
 		return {
@@ -215,12 +220,14 @@ export default {
 			selections: {},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/woo-llm-anonymisation/spec.md#requirement-redaction-proposals-require-explicit-human-review-before-any-hand-off */
 		canDetect() {
 			return this.text.trim().length > 0 && this.text.length <= this.maxLength
 		},
 	},
+
 	methods: {
 		/**
 		 * Build a short, safe preview snippet for a span (see

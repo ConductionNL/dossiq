@@ -5,7 +5,7 @@
 <template>
 	<NcDialog
 		:name="t('procest', 'Forward verzoek — Doorsturen')"
-		:can-close="true"
+		:canClose="true"
 		@close="$emit('close')">
 		<template #default>
 			<div class="doorstuur-dialog">
@@ -63,8 +63,8 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
@@ -79,6 +79,7 @@ export default {
 			required: true,
 		},
 	},
+
 	emits: ['close'],
 	data() {
 		return {
@@ -89,6 +90,7 @@ export default {
 			success: false,
 		}
 	},
+
 	methods: {
 		t,
 		async submit() {

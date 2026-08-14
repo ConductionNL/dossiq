@@ -72,6 +72,7 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	emits: ['drag-start', 'add-status'],
 	methods: {
 		/**

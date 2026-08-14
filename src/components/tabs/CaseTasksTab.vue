@@ -71,8 +71,8 @@
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { CnStatusBadge } from '@conduction/nextcloud-vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
@@ -85,6 +85,7 @@ export default {
 		NcLoadingIcon,
 		CnStatusBadge,
 	},
+
 	props: {
 		/** Case UUID — passed by CnObjectSidebar as a shared tab prop. */
 		objectId: {
@@ -92,22 +93,27 @@ export default {
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			tasks: [],
 			loading: true,
 		}
 	},
+
 	computed: {
 		objectStore() {
 			return useObjectStore()
 		},
+
 		resolvedCaseId() {
 			return this.objectId || this.$route?.params?.id || null
 		},
+
 		completedCount() {
 			return this.tasks.filter((t) => t.status === 'completed').length
 		},
+
 		/** Open tasks first, then by due date ascending (no due date last). */
 		sortedTasks() {
 			return [...this.tasks].sort((a, b) => {
@@ -120,15 +126,18 @@ export default {
 			})
 		},
 	},
+
 	watch: {
 		resolvedCaseId() {
 			this.reload()
 		},
 	},
+
 	async mounted() {
 		await initializeStores()
 		await this.reload()
 	},
+
 	methods: {
 		async reload() {
 			if (!this.resolvedCaseId) {
@@ -149,19 +158,23 @@ export default {
 				this.loading = false
 			}
 		},
+
 		onNewTask() {
 			this.$router.push({
 				name: 'TaskNew',
 				query: { caseId: this.resolvedCaseId },
 			})
 		},
+
 		openTask(task) {
 			this.$router.push({ name: 'TaskDetail', params: { id: task.id } })
 		},
+
 		isOverdue(task) {
 			if (!task.dueDate || task.status === 'completed') return false
 			return task.dueDate.slice(0, 10) < new Date().toISOString().slice(0, 10)
 		},
+
 		dueLabel(task) {
 			if (this.isOverdue(task)) {
 				return t('procest', 'Overdue: {date}', {
@@ -175,6 +188,7 @@ export default {
 			}
 			return t('procest', 'Due: {date}', { date: formatDate(task.dueDate) })
 		},
+
 		statusLabel(status) {
 			const labels = {
 				available: t('procest', 'Open'),
@@ -184,12 +198,14 @@ export default {
 			}
 			return labels[status] || status || '—'
 		},
+
 		statusBadgeType(status) {
 			if (status === 'completed') return 'success'
 			if (status === 'blocked') return 'error'
 			if (status === 'active') return 'primary'
 			return 'default'
 		},
+
 		priorityLabel(priority) {
 			const labels = {
 				low: t('procest', 'Low'),

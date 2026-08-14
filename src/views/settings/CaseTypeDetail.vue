@@ -111,57 +111,57 @@
 					@update="onFieldUpdate" />
 				<StatusesTab
 					v-else-if="activeTab === 'statuses'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<ResultsTab
 					v-else-if="activeTab === 'results'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<RolesTab
 					v-else-if="activeTab === 'roles'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<PropertiesTab
 					v-else-if="activeTab === 'properties'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<DocumentTypesTab
 					v-else-if="activeTab === 'documents'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<DecisionTypesTab
 					v-else-if="activeTab === 'decisions'"
-					:case-type-id="caseTypeId"
-					:is-create="isCreate" />
+					:caseTypeId="caseTypeId"
+					:isCreate="isCreate" />
 				<SubCaseTypesTab
 					v-else-if="activeTab === 'subCaseTypes'"
-					:case-type-id="caseTypeId" />
+					:caseTypeId="caseTypeId" />
 				<WorkflowTab
 					v-else-if="activeTab === 'workflow'"
-					:case-type-id="caseTypeId" />
+					:caseTypeId="caseTypeId" />
 				<EmailTemplateAdmin
 					v-else-if="activeTab === 'emailTemplates'"
-					:case-type-id="caseTypeId" />
+					:caseTypeId="caseTypeId" />
 			</div>
 		</template>
 	</div>
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
 import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import ArrowLeftIcon from 'vue-material-design-icons/ArrowLeft.vue'
+import EmailTemplateAdmin from '../casetypes/components/EmailTemplateAdmin.vue'
+import DecisionTypesTab from './tabs/DecisionTypesTab.vue'
+import DocumentTypesTab from './tabs/DocumentTypesTab.vue'
 import GeneralTab from './tabs/GeneralTab.vue'
-import StatusesTab from './tabs/StatusesTab.vue'
-import WorkflowTab from './tabs/WorkflowTab.vue'
+import PropertiesTab from './tabs/PropertiesTab.vue'
 import ResultsTab from './tabs/ResultsTab.vue'
 import RolesTab from './tabs/RolesTab.vue'
-import PropertiesTab from './tabs/PropertiesTab.vue'
-import DocumentTypesTab from './tabs/DocumentTypesTab.vue'
-import DecisionTypesTab from './tabs/DecisionTypesTab.vue'
+import StatusesTab from './tabs/StatusesTab.vue'
 import SubCaseTypesTab from './tabs/SubCaseTypesTab.vue'
-import EmailTemplateAdmin from '../casetypes/components/EmailTemplateAdmin.vue'
+import WorkflowTab from './tabs/WorkflowTab.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import {
 	validateCaseType,
@@ -212,12 +212,14 @@ export default {
 		SubCaseTypesTab,
 		EmailTemplateAdmin,
 	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			form: { ...EMPTY_FORM },
@@ -233,14 +235,17 @@ export default {
 			duplicating: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		isCreate() {
 			return !this.caseTypeId
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		tabs() {
 			return [
@@ -257,6 +262,7 @@ export default {
 			]
 		},
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 	async mounted() {
 		if (!this.isCreate) {
@@ -265,6 +271,7 @@ export default {
 			this.form.identifier = 'CT-' + Date.now()
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async loadCaseType() {

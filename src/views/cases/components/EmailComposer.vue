@@ -12,9 +12,9 @@
 				:options="templates"
 				:aria-label-combobox="t('procest', 'Template')"
 				label="name"
-				track-by="id"
+				trackBy="id"
 				:placeholder="t('procest', 'Select template or compose ad-hoc...')"
-				@update:model-value="onTemplateSelected" />
+				@update:modelValue="onTemplateSelected" />
 		</div>
 
 		<!-- Email form -->
@@ -23,10 +23,10 @@
 				<label for="email-composer-to">{{ t('procest', 'To') }} *</label>
 				<NcTextField
 					id="email-composer-to"
-					:model-value="form.to"
+					:modelValue="form.to"
 					type="email"
 					:placeholder="t('procest', 'recipient@example.nl')"
-					@update:model-value="(v) => (form.to = v)" />
+					@update:modelValue="(v) => (form.to = v)" />
 			</div>
 
 			<div class="form-group">
@@ -35,8 +35,8 @@
 				>
 				<NcTextField
 					id="email-composer-subject"
-					:model-value="form.subject"
-					@update:model-value="(v) => (form.subject = v)" />
+					:modelValue="form.subject"
+					@update:modelValue="(v) => (form.subject = v)" />
 			</div>
 
 			<div class="form-group">
@@ -126,7 +126,7 @@
 </template>
 
 <script>
-import { NcButton, NcTextField, NcSelect, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 
 export default {
 	name: 'EmailComposer',
@@ -136,24 +136,29 @@ export default {
 		NcSelect,
 		NcLoadingIcon,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		caseData: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		templates: {
 			type: Array,
 			default: () => [],
 		},
+
 		defaultTo: {
 			type: String,
 			default: '',
 		},
 	},
+
 	data() {
 		return {
 			form: {
@@ -161,6 +166,7 @@ export default {
 				subject: '',
 				body: '',
 			},
+
 			selectedTemplate: null,
 			sending: false,
 			showPreview: false,
@@ -177,6 +183,7 @@ export default {
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		isValid() {
@@ -186,6 +193,7 @@ export default {
 				&& this.form.body.trim() !== ''
 			)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		unresolvedVars() {
 			const pattern = /\{\{(\w+)\}\}/g
@@ -200,6 +208,7 @@ export default {
 			return [...new Set(vars)]
 		},
 	},
+
 	methods: {
 		/**
 		 * @param varName
@@ -208,6 +217,7 @@ export default {
 		formatVariable(varName) {
 			return '{{' + varName + '}}'
 		},
+
 		/**
 		 * @param template
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
@@ -217,6 +227,7 @@ export default {
 			this.form.subject = template.subjectPattern || ''
 			this.form.body = template.body || ''
 		},
+
 		/**
 		 * @param varName
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
@@ -224,12 +235,14 @@ export default {
 		insertVariable(varName) {
 			this.form.body += '{{' + varName + '}}'
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		previewEmail() {
 			this.previewSubject = this.resolveVars(this.form.subject)
 			this.previewBody = this.resolveVars(this.form.body)
 			this.showPreview = true
 		},
+
 		/**
 		 * @param text
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
@@ -239,6 +252,7 @@ export default {
 				return this.caseData[key] || match
 			})
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		sendEmail() {
 			this.sending = true

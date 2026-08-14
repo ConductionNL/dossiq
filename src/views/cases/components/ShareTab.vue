@@ -133,25 +133,30 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 	},
+
 	props: {
 		shares: {
 			type: Array,
 			default: () => [],
 		},
+
 		loading: {
 			type: Boolean,
 			default: false,
 		},
+
 		/** Federated (cross-instance) case shares — federated-case-collaboration. */
 		federatedShares: {
 			type: Array,
 			default: () => [],
 		},
+
 		federatedLoading: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: [
 		'revoke',
 		'create-partner-share',
@@ -160,6 +165,7 @@ export default {
 		'revoke-federated',
 		'open-activity',
 	],
+
 	methods: {
 		/**
 		 * @param {string} level the permission level slug.

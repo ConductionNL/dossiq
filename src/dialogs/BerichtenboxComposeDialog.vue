@@ -7,10 +7,10 @@
 		<div class="compose-dialog">
 			<div class="form-group">
 				<NcTextField
-					:model-value="form.bsn"
+					:modelValue="form.bsn"
 					:label="t('procest', 'BSN (burgerservicenummer)')"
 					:error="!!errors.bsn"
-					@update:model-value="(v) => (form.bsn = v)" />
+					@update:modelValue="(v) => (form.bsn = v)" />
 				<p v-if="errors.bsn" class="form-error">
 					{{ errors.bsn }}
 				</p>
@@ -18,10 +18,10 @@
 
 			<div class="form-group">
 				<NcTextField
-					:model-value="form.subject"
+					:modelValue="form.subject"
 					:label="t('procest', 'Subject')"
 					:error="!!errors.subject"
-					@update:model-value="(v) => (form.subject = v)" />
+					@update:modelValue="(v) => (form.subject = v)" />
 				<p v-if="errors.subject" class="form-error">
 					{{ errors.subject }}
 				</p>
@@ -52,7 +52,7 @@
 					:options="typeCodes"
 					:aria-label-combobox="t('procest', 'Bericht type')"
 					label="label"
-					track-by="code" />
+					trackBy="code" />
 			</div>
 
 			<div class="compose-dialog__actions">
@@ -72,14 +72,14 @@
 </template>
 
 <script>
-import {
-	NcDialog,
-	NcButton,
-	NcTextField,
-	NcSelect,
-	NcNoteCard,
-} from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import {
+	NcButton,
+	NcDialog,
+	NcNoteCard,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 import { sendMessage } from '../services/berichtenboxApi.js'
 
 export default {
@@ -90,6 +90,7 @@ export default {
 		bsn: { type: String, default: '' },
 		show: { type: Boolean, default: false },
 	},
+
 	emits: ['close', 'sent'],
 	data() {
 		return {
@@ -99,11 +100,13 @@ export default {
 				{ code: 'status', label: t('procest', 'Status update') },
 				{ code: 'informatie', label: t('procest', 'Information') },
 			],
+
 			errors: {},
 			sending: false,
 			sendError: null,
 		}
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
@@ -123,6 +126,7 @@ export default {
 			}
 			return Object.keys(this.errors).length === 0
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */
 		async send() {
 			if (!this.validate()) return

@@ -15,6 +15,9 @@ export const TASK_STATUSES = {
 	disabled: 'disabled',
 }
 
+/**
+ *
+ */
 function getStatusLabels() {
 	return {
 		available: t('procest', 'Available'),
@@ -33,6 +36,9 @@ const TRANSITION_MAP = {
 	disabled: [],
 }
 
+/**
+ *
+ */
 function getTransitionLabels() {
 	return {
 		active: t('procest', 'Start'),

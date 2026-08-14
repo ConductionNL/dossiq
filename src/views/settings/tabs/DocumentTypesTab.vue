@@ -64,43 +64,43 @@
 							<div class="sub-entity-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.name"
+										:modelValue="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.name = v)
 										" />
 									<NcTextField
-										:model-value="editForm.category"
+										:modelValue="editForm.category"
 										:label="t('procest', 'Category')"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.category = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.description"
+										:modelValue="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field edit-field--full"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.description = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.confidentiality"
+										:modelValue="editForm.confidentiality"
 										:label="t('procest', 'Confidentiality')"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.confidentiality = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcCheckboxRadioSwitch
-										:model-value="editForm.isRequired"
-										@update:model-value="
+										:modelValue="editForm.isRequired"
+										@update:modelValue="
 											(v) => (editForm.isRequired = v)
 										">
 										{{ t('procest', 'Required') }}
@@ -136,12 +136,12 @@
 <script>
 import {
 	NcButton,
+	NcCheckboxRadioSwitch,
 	NcLoadingIcon,
 	NcTextField,
-	NcCheckboxRadioSwitch,
 } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
@@ -154,10 +154,12 @@ export default {
 		PencilIcon,
 		DeleteIcon,
 	},
+
 	props: {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -170,12 +172,15 @@ export default {
 				confidentiality: '',
 				isRequired: false,
 			},
+
 			editError: '',
 		}
 	},
+
 	async mounted() {
 		if (!this.isCreate) await this.loadItems()
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async loadItems() {
@@ -188,6 +193,7 @@ export default {
 			this.items = results || []
 			this.loading = false
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		startAdd() {
 			this.editingId = 'new'
@@ -201,6 +207,7 @@ export default {
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
@@ -216,6 +223,7 @@ export default {
 			}
 			this.editError = ''
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		cancelEdit() {
 			if (this.editingId === 'new')
@@ -223,6 +231,7 @@ export default {
 			this.editingId = null
 			this.editError = ''
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async saveEdit() {
 			if (!this.editForm.name.trim()) {
@@ -243,6 +252,7 @@ export default {
 			this.editingId = null
 			await this.loadItems()
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md

@@ -18,12 +18,14 @@ export default {
 			required: true,
 			validator: (v) => v >= 0 && v <= 1,
 		},
+
 		size: {
 			type: String,
 			default: 'small',
 			validator: (v) => ['small', 'medium'].includes(v),
 		},
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		level() {
@@ -31,10 +33,12 @@ export default {
 			if (this.confidence >= 0.6) return 'medium'
 			return 'low'
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		label() {
 			return `${Math.round(this.confidence * 100)}%`
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		ariaLabel() {
 			const levelLabel =

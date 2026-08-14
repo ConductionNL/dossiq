@@ -69,7 +69,7 @@
 </template>
 
 <script>
-import { NcButton, NcSelect, NcNoteCard } from '@nextcloud/vue'
+import { NcButton, NcNoteCard, NcSelect } from '@nextcloud/vue'
 import { useObjectStore } from '../../../../store/modules/object.js'
 
 export default {
@@ -79,30 +79,36 @@ export default {
 		NcSelect,
 		NcNoteCard,
 	},
+
 	props: {
 		caseData: {
 			type: Object,
 			required: true,
 		},
+
 		parentCase: {
 			type: Object,
 			default: null,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
+
 		showRulingForm: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['ruling-recorded'],
 	data() {
 		return {
 			rulingForm: {
 				outcome: 'beroep_ongegrond',
 			},
+
 			rulingOptions: [
 				{
 					id: 'beroep_gegrond',
@@ -117,6 +123,7 @@ export default {
 			],
 		}
 	},
+
 	methods: {
 		/**
 		 * @param outcome
@@ -131,6 +138,7 @@ export default {
 			}
 			return labels[outcome] || outcome
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		navigateToParent() {
 			if (this.parentCase) {
@@ -140,6 +148,7 @@ export default {
 				})
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async saveRuling() {
 			const objectStore = useObjectStore()

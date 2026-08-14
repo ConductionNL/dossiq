@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
-import pinia from './pinia.js'
 import MyTasksWidget from './views/widgets/MyTasksWidget.vue'
+import pinia from './pinia.js'
 
 OCA.Dashboard.register('procest_my_tasks_widget', async (el, { widget }) => {
 	const app = createApp(MyTasksWidget, { title: widget.title })

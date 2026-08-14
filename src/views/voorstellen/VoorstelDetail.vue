@@ -3,8 +3,8 @@
 		<CnDetailPage
 			:title="voorstel.onderwerp || t('procest', 'Proposal')"
 			:subtitle="formatType(voorstel.type)"
-			:back-route="{ name: 'Voorstellen' }"
-			:back-label="t('procest', 'Back to overview')"
+			:backRoute="{ name: 'Voorstellen' }"
+			:backLabel="t('procest', 'Back to overview')"
 			:loading="loading"
 			:sidebar="false">
 			<template #header-actions>
@@ -28,7 +28,7 @@
 				<ProgressTimeline
 					v-if="steps.length > 0"
 					:steps="steps"
-					:current-step="voorstel.currentStep || 0"
+					:currentStep="voorstel.currentStep || 0"
 					:acties="acties" />
 			</CnDetailCard>
 
@@ -43,17 +43,17 @@
 
 			<ParafeerActieDialog
 				v-if="isActiveActor && !isTerminalStatus && currentStepInfo"
-				:voorstel-id="voorstel.id"
-				:step="currentStepInfo"
 				v-model:open="actieDialogOpen"
+				:voorstelId="voorstel.id"
+				:step="currentStepInfo"
 				:mandates="mandates"
-				@action-recorded="onActionCompleted" />
+				@actionRecorded="onActionCompleted" />
 
 			<!-- Parafering History (action history timeline). -->
 			<CnDetailCard :title="t('procest', 'Parafering history')">
 				<ParafeerActieTimeline
 					ref="actieTimeline"
-					:voorstel-id="voorstel.id || voorstelId" />
+					:voorstelId="voorstel.id || voorstelId" />
 			</CnDetailCard>
 
 			<!-- Manager override controls -->
@@ -72,16 +72,16 @@
 
 			<SkipStepDialog
 				:open="showSkipDialog"
-				:voorstel-id="voorstel.id || voorstelId"
+				:voorstelId="voorstel.id || voorstelId"
 				:step="currentStepInfo"
 				@skipped="onOverrideCompleted"
 				@close="showSkipDialog = false" />
 
 			<AddStepDialog
 				:open="showAddStepDialog"
-				:voorstel-id="voorstel.id || voorstelId"
-				:route-snapshot="steps"
-				@step-added="onOverrideCompleted"
+				:voorstelId="voorstel.id || voorstelId"
+				:routeSnapshot="steps"
+				@stepAdded="onOverrideCompleted"
 				@close="showAddStepDialog = false" />
 
 			<!-- Resubmit for steller -->
@@ -195,16 +195,16 @@
 </template>
 
 <script>
-import { NcButton } from '@nextcloud/vue'
-import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
+import { CnDetailCard, CnDetailPage } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
-import ProgressTimeline from './components/ProgressTimeline.vue'
-import ParafeerActieDialog from '../../dialogs/ParafeerActieDialog.vue'
-import ParafeerActieTimeline from './components/ParafeerActieTimeline.vue'
-import AuditTrail from './components/AuditTrail.vue'
-import BesluitRegistration from '../../dialogs/BesluitRegistration.vue'
-import SkipStepDialog from '../../dialogs/SkipStepDialog.vue'
+import { NcButton } from '@nextcloud/vue'
 import AddStepDialog from '../../dialogs/AddStepDialog.vue'
+import BesluitRegistration from '../../dialogs/BesluitRegistration.vue'
+import ParafeerActieDialog from '../../dialogs/ParafeerActieDialog.vue'
+import SkipStepDialog from '../../dialogs/SkipStepDialog.vue'
+import AuditTrail from './components/AuditTrail.vue'
+import ParafeerActieTimeline from './components/ParafeerActieTimeline.vue'
+import ProgressTimeline from './components/ProgressTimeline.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 
@@ -239,12 +239,14 @@ export default {
 		SkipStepDialog,
 		AddStepDialog,
 	},
+
 	props: {
 		voorstelId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -258,11 +260,13 @@ export default {
 			showAddStepDialog: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		steps() {
 			if (this.voorstel.routeSnapshot) {
@@ -276,6 +280,7 @@ export default {
 			}
 			return []
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		currentStepInfo() {
 			if (!this.voorstel.currentStep || !this.steps.length) return null
@@ -283,25 +288,31 @@ export default {
 				this.steps.find((s) => s.order === this.voorstel.currentStep) || null
 			)
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		currentUserId() {
 			return getCurrentUser()?.uid || ''
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		isActiveActor() {
 			if (!this.currentStepInfo) return false
 			return this.currentStepInfo.actor === this.currentUserId
 		},
+
 		isSteller() {
 			return this.voorstel.steller === this.currentUserId
 		},
+
 		isTerminalStatus() {
 			return ['besloten', 'gearchiveerd'].includes(this.voorstel.status)
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canRegisterBesluit() {
 			return ['geaccordeerd', 'aangeboden'].includes(this.voorstel.status)
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canOverrideRoute() {
 			if (
@@ -323,6 +334,7 @@ export default {
 			)
 		},
 	},
+
 	/** @spec openspec/specs/parafering-actions/spec.md */
 	async created() {
 		// Widgets can mount before App.vue's initializeStores() resolves the
@@ -331,6 +343,7 @@ export default {
 		await initializeStores()
 		await Promise.all([this.loadVoorstel(), this.loadActies()])
 	},
+
 	methods: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async loadVoorstel() {
@@ -346,6 +359,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async loadActies() {
 			this.loadingActies = true
@@ -369,6 +383,7 @@ export default {
 				this.loadingActies = false
 			}
 		},
+
 		/**
 		 * @param type
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -376,6 +391,7 @@ export default {
 		formatType(type) {
 			return t('procest', TYPE_LABELS[type] || type || '-')
 		},
+
 		/**
 		 * @param status
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -383,6 +399,7 @@ export default {
 		formatStatus(status) {
 			return t('procest', STATUS_LABELS[status] || status || '-')
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onActionCompleted() {
 			this.actieDialogOpen = false
@@ -392,20 +409,24 @@ export default {
 				await this.$refs.actieTimeline.load()
 			}
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		openSkipDialog() {
 			this.showSkipDialog = true
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		openAddStepDialog() {
 			this.showAddStepDialog = true
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onOverrideCompleted() {
 			this.showSkipDialog = false
 			this.showAddStepDialog = false
 			await Promise.all([this.loadVoorstel(), this.loadActies()])
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async resubmit() {
 			try {
@@ -420,6 +441,7 @@ export default {
 				console.error('Failed to resubmit voorstel:', error)
 			}
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onBesluitRegistered() {
 			this.showBesluitDialog = false

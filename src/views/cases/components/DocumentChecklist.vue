@@ -87,24 +87,29 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
+
 		statusTypes: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -112,12 +117,14 @@ export default {
 			caseDocuments: [],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		presentCount() {
 			return this.documentTypes.filter((dt) => this.isDocPresent(dt.id)).length
 		},
 	},
+
 	watch: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		caseTypeId() {
@@ -126,12 +133,14 @@ export default {
 			}
 		},
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 	async mounted() {
 		if (this.caseTypeId) {
 			await this.loadData()
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async loadData() {

@@ -73,8 +73,8 @@
 <script>
 import { generateUrl } from '@nextcloud/router'
 import AccountOutline from 'vue-material-design-icons/AccountOutline.vue'
-import Domain from 'vue-material-design-icons/Domain.vue'
 import CardAccountMailOutline from 'vue-material-design-icons/CardAccountMailOutline.vue'
+import Domain from 'vue-material-design-icons/Domain.vue'
 import TransitConnectionVariant from 'vue-material-design-icons/TransitConnectionVariant.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
@@ -87,17 +87,20 @@ export default {
 		CardAccountMailOutline,
 		TransitConnectionVariant,
 	},
+
 	data() {
 		return {
 			caseObject: {},
 			sourceObjectId: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/initiator-display/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/initiator-display/spec.md */
 		hasInitiator() {
 			return !!(
@@ -106,6 +109,7 @@ export default {
 				&& this.caseObject.initiatorDisplayName
 			)
 		},
+
 		/** @spec openspec/specs/initiator-display/spec.md */
 		typeLabel() {
 			switch (this.caseObject.initiatorType) {
@@ -117,6 +121,7 @@ export default {
 					return t('procest', 'Person')
 			}
 		},
+
 		/** @spec openspec/specs/initiator-display/spec.md */
 		typeIcon() {
 			switch (this.caseObject.initiatorType) {
@@ -128,6 +133,7 @@ export default {
 					return 'AccountOutline'
 			}
 		},
+
 		/** @spec openspec/specs/initiator-display/spec.md */
 		typeSchema() {
 			switch (this.caseObject.initiatorType) {
@@ -139,6 +145,7 @@ export default {
 					return null
 			}
 		},
+
 		/** @spec openspec/specs/initiator-display/spec.md */
 		sourceLink() {
 			if (!this.typeSchema || !this.sourceObjectId) {
@@ -148,10 +155,12 @@ export default {
 				`/apps/openregister/#/objects/procest/${this.typeSchema}/${this.sourceObjectId}`,
 			)
 		},
+
 		/** @spec openspec/specs/semantic-case-intake/spec.md */
 		hasHandoff() {
 			return !!(this.caseObject && this.caseObject.handoffSource)
 		},
+
 		/**
 		 * Deep-link to the originating object behind the handoffSource
 		 * back-link, via OpenRegister's URN resolver (app-agnostic — the
@@ -167,6 +176,7 @@ export default {
 				`/apps/openregister/api/urn/resolve?urn=${encodeURIComponent(this.caseObject.handoffSource)}`,
 			)
 		},
+
 		/**
 		 * The handoff moment = the case's creation timestamp (the case is
 		 * created at handoff execution). Formatted for display; empty when
@@ -186,6 +196,7 @@ export default {
 			return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString()
 		},
 	},
+
 	async mounted() {
 		// CnAppRoot mounts manifest slot widgets before App.vue's
 		// initializeStores() has resolved the app-config, so the 'case'
@@ -194,6 +205,7 @@ export default {
 		await initializeStores()
 		await this.load()
 	},
+
 	methods: {
 		/**
 		 * Load the case and resolve the initiator's source register object.
@@ -216,6 +228,7 @@ export default {
 			}
 			await this.resolveSource()
 		},
+
 		/**
 		 * Resolve the source register object id behind the initiatorSourceId
 		 * so the number can deep-link to the seeded record.

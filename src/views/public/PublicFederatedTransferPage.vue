@@ -69,10 +69,10 @@
 </template>
 
 <script>
-import { NcButton, NcNoteCard } from '@nextcloud/vue'
-import { translate as t } from '@nextcloud/l10n'
 import axios from '@nextcloud/axios'
+import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import { publicFederatedTransferEndpoint } from '../../utils/federatedShareHelpers.js'
 
 export default {
@@ -82,6 +82,7 @@ export default {
 		shareToken: { type: String, required: true },
 		transferId: { type: String, required: true },
 	},
+
 	data() {
 		return {
 			reason: '',
@@ -89,6 +90,7 @@ export default {
 			result: null,
 		}
 	},
+
 	methods: {
 		/**
 		 * @param {string} action 'accept' or 'reject'.

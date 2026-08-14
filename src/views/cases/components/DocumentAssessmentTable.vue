@@ -62,33 +62,33 @@
 						</td>
 						<td>
 							<NcSelect
-								:model-value="
+								:modelValue="
 									localAssessments[doc.id]
 									&& localAssessments[doc.id].classification
 								"
 								:options="classificationOptions"
-								:input-label="t('procest', 'Assessment')"
+								:inputLabel="t('procest', 'Assessment')"
 								:disabled="isReadOnly"
 								:placeholder="t('procest', 'Select...')"
-								@update:model-value="
+								@update:modelValue="
 									(val) => setClassification(doc.id, val)
 								" />
 						</td>
 						<td>
 							<NcSelect
 								v-if="requiresGrounds(doc.id)"
-								:model-value="
+								:modelValue="
 									localAssessments[doc.id]
 									&& localAssessments[doc.id].weigeringsgronden
 								"
 								:options="weigeringsgronden"
-								:input-label="t('procest', 'Grounds')"
+								:inputLabel="t('procest', 'Grounds')"
 								:multiple="true"
 								label="label"
-								track-by="code"
+								trackBy="code"
 								:disabled="isReadOnly"
 								:placeholder="t('procest', 'Select grounds...')"
-								@update:model-value="
+								@update:modelValue="
 									(val) => setGrounds(doc.id, val)
 								" />
 							<span v-else class="document-assessment-table__na"
@@ -101,7 +101,7 @@
 									localAssessments[doc.id]
 									&& localAssessments[doc.id].classification
 								"
-								:model-value="
+								:modelValue="
 									localAssessments[doc.id]
 									&& localAssessments[doc.id].rationale
 								"
@@ -112,7 +112,7 @@
 									})
 								"
 								:placeholder="t('procest', 'Optional motivation...')"
-								@update:model-value="
+								@update:modelValue="
 									(val) => setMotivering(doc.id, val)
 								" />
 						</td>
@@ -146,8 +146,8 @@
 
 		<RedactionAssistDialog
 			v-if="activeRedactionDoc"
-			:case-id="caseId"
-			:document-ref="activeRedactionDoc"
+			:caseId="caseId"
+			:documentRef="activeRedactionDoc"
 			@close="activeRedactionDoc = null"
 			@reviewed="onRedactionReviewed" />
 
@@ -200,9 +200,9 @@
 </template>
 
 <script>
-import { NcButton, NcProgressBar, NcSelect, NcTextField } from '@nextcloud/vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcProgressBar, NcSelect, NcTextField } from '@nextcloud/vue'
 import RedactionAssistDialog from '../../../dialogs/RedactionAssistDialog.vue'
 
 export default {
@@ -214,23 +214,28 @@ export default {
 		NcTextField,
 		RedactionAssistDialog,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		documents: {
 			type: Array,
 			default: () => [],
 		},
+
 		savedAssessments: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Whether the "Redaction assist" (woo-llm-anonymisation) action is
 		 * shown for `deels_openbaar` documents. Defaults to true — the
@@ -243,6 +248,7 @@ export default {
 			default: true,
 		},
 	},
+
 	emits: ['saved', 'error', 'redaction-reviewed'],
 	data() {
 		return {
@@ -267,6 +273,7 @@ export default {
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/woo-case-type/tasks.md#task-6 */
 		counts() {
@@ -289,6 +296,7 @@ export default {
 			}
 			return result
 		},
+
 		/** @spec openspec/changes/woo-case-type/tasks.md#task-6 */
 		assessedCount() {
 			return this.documents.filter(
@@ -298,6 +306,7 @@ export default {
 			).length
 		},
 	},
+
 	watch: {
 		savedAssessments: {
 			immediate: true,
@@ -306,6 +315,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		/**
 		 * @param docId

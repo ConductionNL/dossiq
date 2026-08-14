@@ -133,9 +133,8 @@ import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
 import ArrowLeft from 'vue-material-design-icons/ArrowLeft.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
-
-import { useObjectStore } from '../../store/modules/object.js'
 import { useDeelzaakStore } from '../../store/modules/deelzaak.js'
+import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
 
@@ -149,6 +148,7 @@ export default {
 		ArrowLeft,
 		OpenInNew,
 	},
+
 	data() {
 		return {
 			subCase: null,
@@ -174,30 +174,37 @@ export default {
 			liveRefreshing: false,
 		}
 	},
+
 	computed: {
 		objectStore() {
 			return useObjectStore()
 		},
+
 		deelzaakStore() {
 			return useDeelzaakStore()
 		},
+
 		parentIdFromRoute() {
 			return this.$route?.params?.parentId || this.subCase?.parentCase || null
 		},
+
 		subCaseIdFromRoute() {
 			return this.$route?.params?.id || null
 		},
+
 		parentRoute() {
 			return this.parent
 				? { name: 'CaseDetail', params: { id: this.parent.id } }
 				: { name: 'Cases' }
 		},
+
 		statusName() {
 			return (
 				this.statusType?.name
 				|| (this.subCase?.status ? '—' : t('procest', 'No status'))
 			)
 		},
+
 		statusClass() {
 			if (!this.statusType) {
 				return ''
@@ -211,6 +218,7 @@ export default {
 			return 'status-badge--active'
 		},
 	},
+
 	watch: {
 		subCaseIdFromRoute: {
 			immediate: false,
@@ -219,6 +227,7 @@ export default {
 				this.syncLiveSubscription()
 			},
 		},
+
 		/**
 		 * Live event hint received on the store (or-object event →
 		 * liveUpdatesPlugin) — reload through the existing fetch path,
@@ -226,10 +235,11 @@ export default {
 		 *
 		 * @spec openspec/specs/realtime-updates-ui/spec.md
 		 */
-		'objectStore.liveLastEventAt'() {
+		'objectStore.liveLastEventAt': function () {
 			this.onLiveEvent()
 		},
 	},
+
 	async mounted() {
 		// Object types are registered by App.vue's async created(), which
 		// does not block child mounting — on a deep link this view can
@@ -238,15 +248,17 @@ export default {
 		await this.reload()
 		this.syncLiveSubscription()
 	},
+
 	/**
 	 * Release the live object subscription on unmount.
 	 *
 	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
-	beforeDestroy() {
+	beforeUnmount() {
 		clearTimeout(this.liveRefetchTimer)
 		this.releaseLiveSubscription()
 	},
+
 	methods: {
 		formatDate,
 		/**
@@ -302,6 +314,7 @@ export default {
 				}
 			}
 		},
+
 		/**
 		 * Release the current live object subscription and invalidate any
 		 * in-flight subscribe (its resolution unsubscribes itself via the
@@ -321,6 +334,7 @@ export default {
 			this.liveHandle = null
 			this.liveKey = ''
 		},
+
 		/**
 		 * Debounced reload on a live event hint — through the existing
 		 * reload() path (non-blanking), never patched from a payload.
@@ -346,6 +360,7 @@ export default {
 				}
 			}, 500)
 		},
+
 		/**
 		 * Load the sub-case with its parent, case type and status type.
 		 *
@@ -405,9 +420,11 @@ export default {
 				}
 			}
 		},
+
 		goToParent() {
 			this.$router.push(this.parentRoute)
 		},
+
 		goToFullCase() {
 			if (this.subCase) {
 				this.$router.push({

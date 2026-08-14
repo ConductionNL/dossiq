@@ -8,8 +8,8 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Enabled') }}</label>
 				<NcCheckboxRadioSwitch
-					:model-value="form.enabled"
-					@update:model-value="(v) => (form.enabled = v)">
+					:modelValue="form.enabled"
+					@update:modelValue="(v) => (form.enabled = v)">
 					{{ t('procest', 'Enable this mapping') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -17,17 +17,17 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Source Register') }}</label>
 				<NcTextField
-					:model-value="form.sourceRegister"
+					:modelValue="form.sourceRegister"
 					:label="t('procest', 'Register ID')"
-					@update:model-value="(v) => (form.sourceRegister = v)" />
+					@update:modelValue="(v) => (form.sourceRegister = v)" />
 			</div>
 
 			<div class="form-group">
 				<label>{{ t('procest', 'Source Schema') }}</label>
 				<NcTextField
-					:model-value="form.sourceSchema"
+					:modelValue="form.sourceSchema"
 					:label="t('procest', 'Schema ID')"
-					@update:model-value="(v) => (form.sourceSchema = v)" />
+					@update:modelValue="(v) => (form.sourceSchema = v)" />
 			</div>
 
 			<div class="form-group">
@@ -106,20 +106,24 @@ export default {
 		NcDialog,
 		NcTextField,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		resourceKey: {
 			type: String,
 			default: '',
 		},
+
 		mapping: {
 			type: Object,
 			default: () => ({}),
 		},
 	},
+
 	emits: ['save', 'close'],
 	data() {
 		return {
@@ -128,6 +132,7 @@ export default {
 				sourceRegister: '',
 				sourceSchema: '',
 			},
+
 			propertyMappingJson: '{}',
 			reverseMappingJson: '{}',
 			valueMappingJson: '{}',
@@ -135,6 +140,7 @@ export default {
 			jsonError: null,
 		}
 	},
+
 	watch: {
 		open: {
 			immediate: true,
@@ -149,6 +155,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-zgw-api-mapping/tasks.md */
 		initFromMapping() {

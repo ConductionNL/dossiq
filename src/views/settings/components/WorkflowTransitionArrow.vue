@@ -53,29 +53,35 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		fromPos: {
 			type: Object,
 			required: true,
 		},
+
 		toPos: {
 			type: Object,
 			required: true,
 		},
+
 		selected: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['click', 'dblclick'],
 	computed: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		midX() {
 			return (this.fromPos.x + this.toPos.x) / 2
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		midY() {
 			return (this.fromPos.y + this.toPos.y) / 2
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		arrowPath() {
 			const dx = this.toPos.x - this.fromPos.x
@@ -89,6 +95,7 @@ export default {
 
 			return `M ${this.fromPos.x} ${this.fromPos.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${this.toPos.x} ${this.toPos.y}`
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		arrowheadPoints() {
 			// Calculate arrowhead at the end point

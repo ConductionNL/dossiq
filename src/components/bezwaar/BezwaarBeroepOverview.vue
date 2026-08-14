@@ -50,10 +50,10 @@
 <script>
 import { CnCard } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
-import Gavel from 'vue-material-design-icons/Gavel.vue'
-import ScaleBalance from 'vue-material-design-icons/ScaleBalance.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import Comment from 'vue-material-design-icons/Comment.vue'
+import Gavel from 'vue-material-design-icons/Gavel.vue'
+import ScaleBalance from 'vue-material-design-icons/ScaleBalance.vue'
 
 export default {
 	name: 'BezwaarBeroepOverview',
@@ -75,6 +75,7 @@ export default {
 					label: 'Bezwaren',
 					description:
 						'Overzicht van alle bezwaarschriften die bij de gemeente zijn ingediend.',
+
 					icon: Gavel,
 					route: 'Bezwaren',
 				},
@@ -83,6 +84,7 @@ export default {
 					label: 'Beroepen',
 					description:
 						'Overzicht van beroepsprocedures bij de bestuursrechter.',
+
 					icon: ScaleBalance,
 					route: 'Beroepen',
 				},
@@ -91,6 +93,7 @@ export default {
 					label: 'Beslissingen op bezwaar',
 					description:
 						'Overzicht van beslissingen op ingediende bezwaarschriften.',
+
 					icon: CheckCircle,
 					route: 'BezwaarDecisions',
 				},
@@ -99,6 +102,7 @@ export default {
 					label: 'BAC-adviezen',
 					description:
 						'Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.',
+
 					icon: Comment,
 					route: 'BezwaarAdviceRequests',
 				},

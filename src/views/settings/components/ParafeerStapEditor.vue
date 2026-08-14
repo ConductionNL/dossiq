@@ -11,30 +11,30 @@
 			class="parafeer-stap-editor__row">
 			<span class="parafeer-stap-editor__order">{{ idx + 1 }}</span>
 			<NcSelect
-				:model-value="step.type"
+				:modelValue="step.type"
 				:options="stepTypeOptions"
-				:input-label="t('procest', 'Type')"
+				:inputLabel="t('procest', 'Type')"
 				:placeholder="t('procest', 'Type')"
 				class="parafeer-stap-editor__type"
-				@update:model-value="(v) => updateStep(idx, 'type', v)" />
+				@update:modelValue="(v) => updateStep(idx, 'type', v)" />
 			<NcSelect
-				:model-value="step.actorType"
+				:modelValue="step.actorType"
 				:options="actorTypeOptions"
-				:input-label="t('procest', 'Actor type')"
+				:inputLabel="t('procest', 'Actor type')"
 				:placeholder="t('procest', 'Actor type')"
 				class="parafeer-stap-editor__actor-type"
-				@update:model-value="(v) => updateStep(idx, 'actorType', v)" />
+				@update:modelValue="(v) => updateStep(idx, 'actorType', v)" />
 			<NcTextField
-				:model-value="step.actor"
+				:modelValue="step.actor"
 				:placeholder="t('procest', 'Actor (UID, groep of rol)')"
 				:label="t('procest', 'Actor')"
-				:label-visible="false"
+				:labelVisible="false"
 				class="parafeer-stap-editor__actor"
-				@update:model-value="(v) => updateStep(idx, 'actor', v)" />
+				@update:modelValue="(v) => updateStep(idx, 'actor', v)" />
 			<NcCheckboxRadioSwitch
-				:model-value="step.mandatory"
+				:modelValue="step.mandatory"
 				class="parafeer-stap-editor__mandatory"
-				@update:model-value="(v) => updateStep(idx, 'mandatory', v)">
+				@update:modelValue="(v) => updateStep(idx, 'mandatory', v)">
 				{{ t('procest', 'Required') }}
 			</NcCheckboxRadioSwitch>
 			<div class="parafeer-stap-editor__actions">
@@ -82,8 +82,8 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
-import ChevronUp from 'vue-material-design-icons/ChevronUp.vue'
 import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
+import ChevronUp from 'vue-material-design-icons/ChevronUp.vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 
@@ -99,18 +99,21 @@ export default {
 		Delete,
 		Plus,
 	},
+
 	props: {
 		steps: {
 			type: Array,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			stepTypeOptions: ['advies', 'parafering', 'accordering'],
 			actorTypeOptions: ['user', 'group', 'role'],
 		}
 	},
+
 	methods: {
 		/**
 		 * @param steps
@@ -120,6 +123,7 @@ export default {
 			const renumbered = steps.map((s, i) => ({ ...s, order: i + 1 }))
 			this.$emit('update:steps', renumbered)
 		},
+
 		/**
 		 * @param idx
 		 * @param key
@@ -132,6 +136,7 @@ export default {
 			)
 			this.emitUpdate(next)
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		addStep() {
 			this.emitUpdate([
@@ -145,6 +150,7 @@ export default {
 				},
 			])
 		},
+
 		/**
 		 * @param idx
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -153,6 +159,7 @@ export default {
 			const next = this.steps.filter((_, i) => i !== idx)
 			this.emitUpdate(next)
 		},
+
 		/**
 		 * @param idx
 		 * @param delta

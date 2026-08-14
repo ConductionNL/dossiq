@@ -59,20 +59,20 @@
 				<NcSelect
 					v-model="selectedReason"
 					:options="reasonOptions"
-					:input-label="t('procest', 'Reason')"
+					:inputLabel="t('procest', 'Reason')"
 					:aria-label-combobox="t('procest', 'Reason')"
 					label="label"
-					track-by="value" />
+					trackBy="value" />
 			</div>
 
 			<div class="form-group">
 				<NcSelect
 					v-model="selectedScope"
 					:options="scopeOptions"
-					:input-label="t('procest', 'Scope')"
+					:inputLabel="t('procest', 'Scope')"
 					:aria-label-combobox="t('procest', 'Scope')"
 					label="label"
-					track-by="value" />
+					trackBy="value" />
 			</div>
 
 			<div
@@ -82,10 +82,10 @@
 					v-model="selectedCaseTypes"
 					:options="caseTypes"
 					:multiple="true"
-					:input-label="t('procest', 'Case types')"
+					:inputLabel="t('procest', 'Case types')"
 					:aria-label-combobox="t('procest', 'Case types')"
 					label="title"
-					track-by="id" />
+					trackBy="id" />
 			</div>
 
 			<div class="form-group">
@@ -136,6 +136,7 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	props: {
 		/** When true the absentee field is shown (coordinator acts for others). */
 		allowCoordinator: {
@@ -143,6 +144,7 @@ export default {
 			default: false,
 		},
 	},
+
 	emits: ['created', 'close'],
 	data() {
 		return {
@@ -153,6 +155,7 @@ export default {
 				endDate: '',
 				comment: '',
 			},
+
 			selectedReason: { value: 'verlof', label: t('procest', 'Leave') },
 			selectedScope: { value: 'all', label: t('procest', 'All work') },
 			selectedCaseTypes: [],
@@ -162,11 +165,13 @@ export default {
 			serverError: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		reasonOptions() {
 			return [
@@ -175,6 +180,7 @@ export default {
 				{ value: 'anders', label: t('procest', 'Other') },
 			]
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		scopeOptions() {
 			return [
@@ -183,9 +189,11 @@ export default {
 			]
 		},
 	},
+
 	async mounted() {
 		await this.loadCaseTypes()
 	},
+
 	methods: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async loadCaseTypes() {
@@ -198,6 +206,7 @@ export default {
 				this.caseTypes = []
 			}
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		validate() {
 			const errs = {}
@@ -207,6 +216,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async submit() {
 			this.serverError = ''
@@ -223,11 +233,13 @@ export default {
 					reason: this.selectedReason
 						? this.selectedReason.value
 						: 'verlof',
+
 					scope,
 					scopeRefs:
 						scope === 'caseTypes'
 							? this.selectedCaseTypes.map((ct) => ct.id)
 							: [],
+
 					comment: this.form.comment,
 				}
 				if (this.allowCoordinator && this.form.absentee.trim()) {
@@ -244,6 +256,7 @@ export default {
 				this.saving = false
 			}
 		},
+
 		/**
 		 * @param open
 		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md

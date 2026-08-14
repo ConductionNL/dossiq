@@ -65,8 +65,8 @@
 
 		<VoorstelCreateDialog
 			v-if="showCreate"
-			:case-id="caseId"
-			:case-title="caseTitle"
+			:caseId="caseId"
+			:caseTitle="caseTitle"
 			@close="showCreate = false"
 			@created="onCreated" />
 	</div>
@@ -101,20 +101,24 @@ export default {
 		NcLoadingIcon,
 		VoorstelCreateDialog,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		caseTitle: {
 			type: String,
 			default: '',
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -122,15 +126,18 @@ export default {
 			showCreate: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+
 	async created() {
 		await this.loadVoorstellen()
 	},
+
 	methods: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async loadVoorstellen() {
@@ -150,9 +157,11 @@ export default {
 				this.loading = false
 			}
 		},
+
 		isActive(voorstel) {
 			return !['besloten', 'gearchiveerd'].includes(voorstel.status)
 		},
+
 		/**
 		 * @param type
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -160,6 +169,7 @@ export default {
 		formatType(type) {
 			return t('procest', TYPE_LABELS[type] || type || '-')
 		},
+
 		/**
 		 * @param status
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -167,6 +177,7 @@ export default {
 		formatStatus(status) {
 			return t('procest', STATUS_LABELS[status] || status || '-')
 		},
+
 		/**
 		 * @param voorstel
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -186,6 +197,7 @@ export default {
 			if (!steps.length) return `${voorstel.currentStep}`
 			return `${voorstel.currentStep}/${steps.length}`
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onCreated() {
 			this.showCreate = false

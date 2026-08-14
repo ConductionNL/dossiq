@@ -14,8 +14,8 @@
 // marker formatting.)
 
 import { translate as t } from '@nextcloud/l10n'
-import { useObjectStore } from '../store/modules/object.js'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
+import { useObjectStore } from '../store/modules/object.js'
 import { subCaseCountBadge } from '../utils/deelzaakHelpers.js'
 
 // Guard so each lookup collection is fetched at most once per page load.

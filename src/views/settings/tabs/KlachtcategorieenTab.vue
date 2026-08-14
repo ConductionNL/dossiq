@@ -108,10 +108,10 @@
 		<CnConfirmDialog
 			v-if="showDeleteConfirm"
 			ref="deleteConfirmDialog"
-			:dialog-title="t('procest', 'Delete complaint category')"
+			:dialogTitle="t('procest', 'Delete complaint category')"
 			:message="t('procest', 'Delete this complaint category?')"
 			variant="error"
-			:confirm-label="t('procest', 'Delete')"
+			:confirmLabel="t('procest', 'Delete')"
 			@confirm="onConfirmDelete"
 			@close="showDeleteConfirm = false" />
 	</div>
@@ -142,6 +142,7 @@ export default {
 				defaultHandler: '',
 				slaOverrideDays: null,
 			},
+
 			showDeleteConfirm: false,
 			pendingDeleteCat: null,
 		}

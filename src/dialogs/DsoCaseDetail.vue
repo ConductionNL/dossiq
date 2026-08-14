@@ -6,7 +6,7 @@
 	<NcDialog
 		:name="t('procest', 'Omgevingsvergunning — Detail')"
 		size="large"
-		:can-close="true"
+		:canClose="true"
 		@close="$emit('close')">
 		<template #default>
 			<div class="dso-case-detail">
@@ -98,17 +98,17 @@
 			<!-- Sub-dialogs -->
 			<BeschikkingDialog
 				v-if="showBeschikkingDialog"
-				:zaak-id="caseId"
+				:zaakId="caseId"
 				@close="showBeschikkingDialog = false"
 				@generated="onBeschikkingGenerated" />
 			<SamenwerkverzoekDialog
 				v-if="showSamenwerkDialog"
-				:zaak-id="caseId"
+				:zaakId="caseId"
 				@close="showSamenwerkDialog = false"
 				@initiated="onSamenwerkInitiated" />
 			<DoorstuurDialog
 				v-if="showDoorstuurDialog"
-				:zaak-id="caseId"
+				:zaakId="caseId"
 				@close="showDoorstuurDialog = false" />
 
 			<!-- Inline transition form -->
@@ -117,8 +117,8 @@
 				<NcSelect
 					v-model="transitionStatus"
 					:options="transitionOptions"
-					:input-label="t('procest', 'New status')"
-					input-id="transition-status" />
+					:inputLabel="t('procest', 'New status')"
+					inputId="transition-status" />
 				<NcTextField
 					v-model="transitionToelichting"
 					:label="t('procest', 'Explanation')" />
@@ -145,8 +145,8 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
@@ -166,12 +166,14 @@ export default {
 		DoorstuurDialog,
 		SamenwerkverzoekDialog,
 	},
+
 	props: {
 		zaak: {
 			type: Object,
 			required: true,
 		},
 	},
+
 	emits: ['close', 'transition'],
 	data() {
 		return {
@@ -191,10 +193,12 @@ export default {
 			],
 		}
 	},
+
 	computed: {
 		zaakId() {
 			return this.zaak.uuid || this.zaak.id || ''
 		},
+
 		activityEntries() {
 			try {
 				const raw = this.zaak.activity
@@ -208,11 +212,13 @@ export default {
 				return []
 			}
 		},
+
 		requiresBesluitdatum() {
 			const val = this.transitionStatus?.value
 			return val === 'verleend' || val === 'geweigerd'
 		},
 	},
+
 	methods: {
 		t,
 		formatDate(dateStr) {
@@ -222,6 +228,7 @@ export default {
 
 			return new Date(dateStr).toLocaleDateString('nl-NL')
 		},
+
 		async executeTransition() {
 			if (!this.transitionStatus) {
 				return
@@ -247,9 +254,11 @@ export default {
 				// Error is shown via Nextcloud toast in a real impl; silent for now.
 			}
 		},
+
 		onBeschikkingGenerated() {
 			this.showBeschikkingDialog = false
 		},
+
 		onSamenwerkInitiated(samenwerk) {
 			this.showSamenwerkDialog = false
 			if (samenwerk?.uuid || samenwerk?.id) {

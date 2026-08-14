@@ -1,3 +1,4 @@
+import { generateUrl } from '@nextcloud/router'
 /**
  * Workflow store module for Procest.
  *
@@ -8,9 +9,8 @@
  * workflowTemplate objects in OpenRegister.
  */
 import { defineStore } from 'pinia'
-import { generateUrl } from '@nextcloud/router'
-import { useObjectStore } from './object.js'
 import { validateWorkflowGraph } from '../../utils/workflowGraphValidation.js'
+import { useObjectStore } from './object.js'
 
 /**
  * Generate a UUID v4.

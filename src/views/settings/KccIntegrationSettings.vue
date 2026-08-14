@@ -12,7 +12,7 @@
 		<div class="setting-row">
 			<NcSelect
 				v-model="identificationMethodOption"
-				:input-label="t('procest', 'Identification method')"
+				:inputLabel="t('procest', 'Identification method')"
 				:options="identificationMethodOptions"
 				:disabled="!writable || loading"
 				:clearable="false" />
@@ -35,7 +35,7 @@
 				v-model="form.identification_score_threshold"
 				type="number"
 				:disabled="!writable || loading"
-				:placeholder="'0.8'" />
+				placeholder="0.8" />
 			<p class="setting-help">
 				{{
 					t(
@@ -55,7 +55,7 @@
 				v-model="form.sentiment_polling_interval"
 				type="number"
 				:disabled="!writable || loading"
-				:placeholder="'5'" />
+				placeholder="5" />
 		</div>
 
 		<div class="setting-row">
@@ -67,7 +67,7 @@
 				v-model="form.specialist_availability_polling_interval"
 				type="number"
 				:disabled="!writable || loading"
-				:placeholder="'30'" />
+				placeholder="30" />
 		</div>
 
 		<div class="setting-row">
@@ -79,7 +79,7 @@
 				v-model="form.max_zaken_voorblad"
 				type="number"
 				:disabled="!writable || loading"
-				:placeholder="'10'" />
+				placeholder="10" />
 		</div>
 
 		<div class="setting-row">
@@ -91,7 +91,7 @@
 				v-model="form.max_contactmomenten_history"
 				type="number"
 				:disabled="!writable || loading"
-				:placeholder="'5'" />
+				placeholder="5" />
 		</div>
 
 		<div class="setting-row">
@@ -103,7 +103,7 @@
 				v-model="form.belplan_overflow_threshold_wachttijd"
 				type="number"
 				:disabled="!writable || loading"
-				:placeholder="'180'" />
+				placeholder="180" />
 		</div>
 
 		<div class="setting-row">
@@ -115,7 +115,7 @@
 				v-model="form.belplan_overflow_threshold_wachtrij_lengte"
 				type="number"
 				:disabled="!writable || loading"
-				:placeholder="'5'" />
+				placeholder="5" />
 		</div>
 
 		<div class="setting-row">
@@ -162,6 +162,7 @@
 </template>
 
 <script>
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcInputField,
@@ -169,10 +170,9 @@ import {
 	NcNoteCard,
 	NcSelect,
 } from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
 import {
-	triggerWordsToText,
 	textToTriggerWords,
+	triggerWordsToText,
 } from '../../utils/kccTriggerWords.js'
 
 /**
@@ -205,6 +205,7 @@ export default {
 				belplan_overflow_threshold_wachtrij_lengte: '5',
 				sentiment_trigger_words: '[]',
 			},
+
 			identificationMethodOptions: [
 				{ id: 'digid', label: 'DigiD' },
 				{
@@ -215,6 +216,7 @@ export default {
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md */
 		identificationMethodOption: {
@@ -225,14 +227,17 @@ export default {
 					) || this.identificationMethodOptions[2]
 				)
 			},
+
 			set(option) {
 				this.form.identification_method = option ? option.id : 'both'
 			},
 		},
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		/** @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md */
 		async load() {
@@ -263,6 +268,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/specs.md */
 		async save() {
 			this.saving = true

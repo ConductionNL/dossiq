@@ -44,6 +44,7 @@ export default {
 			required: true,
 		},
 	},
+
 	methods: {
 		/**
 		 * Emit a behandeling change for this item.

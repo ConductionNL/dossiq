@@ -3,16 +3,16 @@
 		<!-- Deadline panel reuse -->
 		<DeadlinePanel
 			v-if="caseTypeData"
-			:start-date="caseData.startDate"
+			:startDate="caseData.startDate"
 			:deadline="caseData.deadline"
-			:processing-deadline="caseTypeData.processingDeadline"
-			:extension-allowed="
+			:processingDeadline="caseTypeData.processingDeadline"
+			:extensionAllowed="
 				caseTypeData.extensionAllowed === true
 				|| caseTypeData.extensionAllowed === 'true'
 			"
-			:extension-period="caseTypeData.extensionPeriod"
-			:extension-count="caseData.extensionCount || 0"
-			:is-final="isFinal"
+			:extensionPeriod="caseTypeData.extensionPeriod"
+			:extensionCount="caseData.extensionCount || 0"
+			:isFinal="isFinal"
 			@extend="$emit('extend')" />
 
 		<!-- Milestones list -->
@@ -43,32 +43,37 @@
 </template>
 
 <script>
-import { formatDate } from '../../../utils/caseHelpers.js'
 import DeadlinePanel from '../components/DeadlinePanel.vue'
+import { formatDate } from '../../../utils/caseHelpers.js'
 
 export default {
 	name: 'CaseMilestonesWidget',
 	components: {
 		DeadlinePanel,
 	},
+
 	props: {
 		caseData: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		caseTypeData: {
 			type: Object,
 			default: null,
 		},
+
 		milestones: {
 			type: Array,
 			default: () => [],
 		},
+
 		isFinal: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['extend'],
 	methods: {
 		formatDate,

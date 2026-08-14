@@ -5,7 +5,7 @@
 		v-if="open"
 		:name="t('procest', 'Stap overslaan')"
 		size="normal"
-		:can-close="!submitting"
+		:canClose="!submitting"
 		@closing="onClose">
 		<div class="skip-step-dialog">
 			<div v-if="step" class="skip-step-dialog__step">
@@ -31,13 +31,13 @@
 
 			<NcTextArea
 				v-else
-				:model-value="reason"
+				:modelValue="reason"
 				:label="t('procest', 'Reason for skipping')"
 				:placeholder="
 					t('procest', 'Give a reason why this step is being skipped...')
 				"
 				required
-				@update:model-value="(v) => (reason = v)" />
+				@update:modelValue="(v) => (reason = v)" />
 
 			<NcNoteCard v-if="error" type="error">
 				{{ error }}
@@ -68,20 +68,24 @@ export default {
 		NcNoteCard,
 		NcTextArea,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		voorstelId: {
 			type: String,
 			required: true,
 		},
+
 		step: {
 			type: Object,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			reason: '',
@@ -89,6 +93,7 @@ export default {
 			error: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canSubmit() {
@@ -100,6 +105,7 @@ export default {
 			)
 		},
 	},
+
 	watch: {
 		/**
 		 * @param value
@@ -112,6 +118,7 @@ export default {
 			}
 		},
 	},
+
 	methods: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onSubmit() {
@@ -132,6 +139,7 @@ export default {
 				this.submitting = false
 			}
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		onClose() {
 			if (this.submitting) return

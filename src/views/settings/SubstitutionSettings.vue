@@ -103,6 +103,7 @@ export default {
 		AccountSwitch,
 		SubstitutionFormModal,
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -110,19 +111,23 @@ export default {
 			showModal: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		currentUser() {
 			return (typeof OC !== 'undefined' && OC?.currentUser) || ''
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		ownSubstitutions() {
 			return this.substitutions.filter((s) => s.absentee === this.currentUser)
 		},
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async load() {
@@ -136,12 +141,17 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async onCreated() {
 			this.showModal = false
 			await this.load()
 		},
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+
+		/**
+		 * @param id
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
 		async revoke(id) {
 			try {
 				await revokeSubstitution(id)

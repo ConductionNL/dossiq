@@ -44,9 +44,9 @@
 
 		<div v-if="showRejectInput" class="ai-suggestion-card__reject">
 			<NcTextField
-				:model-value="rejectReason"
+				:modelValue="rejectReason"
 				:label="t('procest', 'Reason for rejection')"
-				@update:model-value="(v) => (rejectReason = v)" />
+				@update:modelValue="(v) => (rejectReason = v)" />
 			<NcButton type="error" @click="handleReject">
 				{{ t('procest', 'Confirm rejection') }}
 			</NcButton>
@@ -57,9 +57,9 @@
 </template>
 
 <script>
-import { NcButton, NcTextField, NcLoadingIcon } from '@nextcloud/vue'
 import { CnDetailCard } from '@conduction/nextcloud-vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
 import AiConfidenceBadge from './AiConfidenceBadge.vue'
 
 export default {
@@ -71,11 +71,13 @@ export default {
 		CnDetailCard,
 		AiConfidenceBadge,
 	},
+
 	props: {
 		suggestion: { type: Object, required: true },
 		loading: { type: Boolean, default: false },
 		readonly: { type: Boolean, default: false },
 	},
+
 	emits: ['accept', 'reject', 'modify'],
 	data() {
 		return {
@@ -83,6 +85,7 @@ export default {
 			rejectReason: '',
 		}
 	},
+
 	methods: {
 		t,
 		/**
@@ -93,6 +96,7 @@ export default {
 			if (typeof value === 'object') return JSON.stringify(value, null, 2)
 			return String(value)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		handleReject() {
 			this.$emit('reject', this.suggestion, this.rejectReason)

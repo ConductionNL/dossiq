@@ -259,8 +259,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { useInspectionStore } from '../../../store/modules/inspection.js'
 
 export default {
@@ -276,10 +276,12 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		caseTypeId: {
 			type: String,
 			required: true,
 		},
+
 		canInspect: {
 			type: Boolean,
 			default: true,
@@ -301,22 +303,27 @@ export default {
 		inspectionStore() {
 			return useInspectionStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		reports() {
 			return this.inspectionStore.reports
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		activeChecklists() {
 			return this.inspectionStore.activeChecklists
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		loading() {
 			return this.inspectionStore.loading
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		totalPhases() {
 			return this.activeChecklists.length
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		completedPhases() {
 			const completedChecklistIds = new Set(
@@ -326,6 +333,7 @@ export default {
 				completedChecklistIds.has(c.id),
 			).length
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		progressPercent() {
 			if (this.totalPhases === 0) {
@@ -348,6 +356,7 @@ export default {
 				}
 			},
 		},
+
 		caseTypeId: {
 			immediate: true,
 			/**
@@ -360,6 +369,7 @@ export default {
 				}
 			},
 		},
+
 		/**
 		 * @param checklist
 		 * @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md

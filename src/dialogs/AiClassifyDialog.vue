@@ -26,8 +26,8 @@
 					}}</label>
 					<NcTextField
 						id="ai-classify-document-type"
-						:model-value="modifiedType"
-						@update:model-value="(v) => (modifiedType = v)" />
+						:modelValue="modifiedType"
+						@update:modelValue="(v) => (modifiedType = v)" />
 				</div>
 
 				<div v-if="result.metadata" class="ai-classify-dialog__metadata">
@@ -39,8 +39,8 @@
 						<label :for="`ai-classify-metadata-${key}`">{{ key }}</label>
 						<NcTextField
 							:id="`ai-classify-metadata-${key}`"
-							:model-value="modifiedMetadata[key] || value"
-							@update:model-value="
+							:modelValue="modifiedMetadata[key] || value"
+							@update:modelValue="
 								(v) => (modifiedMetadata[key] = v)
 							" />
 					</div>
@@ -60,16 +60,16 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import {
-	NcDialog,
 	NcButton,
-	NcTextField,
+	NcDialog,
 	NcLoadingIcon,
 	NcNoteCard,
+	NcTextField,
 } from '@nextcloud/vue'
-import { translate as t } from '@nextcloud/l10n'
-import { classifyDocument } from '../services/aiApi.js'
 import AiConfidenceBadge from '../views/cases/components/AiConfidenceBadge.vue'
+import { classifyDocument } from '../services/aiApi.js'
 
 export default {
 	name: 'AiClassifyDialog',
@@ -81,11 +81,13 @@ export default {
 		NcNoteCard,
 		AiConfidenceBadge,
 	},
+
 	props: {
 		caseId: { type: String, required: true },
 		documentId: { type: String, required: true },
 		show: { type: Boolean, default: false },
 	},
+
 	emits: ['close', 'applied'],
 	data() {
 		return {
@@ -96,6 +98,7 @@ export default {
 			modifiedMetadata: {},
 		}
 	},
+
 	watch: {
 		/**
 		 * @param val
@@ -105,6 +108,7 @@ export default {
 			if (val) this.classify()
 		},
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
@@ -123,6 +127,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		apply() {
 			this.$emit('applied', {
@@ -132,6 +137,7 @@ export default {
 			})
 			this.$emit('close')
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		reject() {
 			this.$emit('close')

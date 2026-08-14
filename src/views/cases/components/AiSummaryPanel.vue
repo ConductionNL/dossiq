@@ -29,8 +29,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { summarize } from '../../../services/aiApi.js'
 
 export default {
@@ -43,12 +43,15 @@ export default {
 			default: 'case',
 			validator: (v) => ['case', 'document', 'timeline'].includes(v),
 		},
+
 		documentId: { type: String, default: null },
 	},
+
 	emits: ['save-note'],
 	data() {
 		return { loading: false, summary: '', error: null }
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
@@ -70,6 +73,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		saveAsNote() {
 			this.$emit('save-note', this.summary)

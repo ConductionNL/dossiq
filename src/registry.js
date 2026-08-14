@@ -24,83 +24,78 @@
 //   current manifest pages reference MapComponent by key directly; retained as
 //   a pass-through.
 
-import { leafTab } from './integrations/leafTabs.js'
-import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
-import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
-import MyWorkView from './views/MyWorkCards.vue'
-import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
-import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
-import AdminRootView from './views/settings/AdminRoot.vue'
-import SubstitutionSettingsView from './views/settings/SubstitutionSettings.vue'
-import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
-import VerwerkingenOverviewView from './views/admin/VerwerkingenOverview.vue'
-// Initiator (indiener) selection + display — brp-kvk-register-sets.
-// @spec openspec/specs/initiator-selection/spec.md
-import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
-import InitiatorSection from './components/initiator/InitiatorSection.vue'
-// Case-assistant chat panel — conversational assistance delegated to Hermiq
-// (fleet rule: AI functionality lives in Hermiq; procest is a thin consumer).
-// @spec openspec/specs/case-assistant-via-hermiq/spec.md
-import CaseAssistantPanel from './views/cases/components/CaseAssistantPanel.vue'
-// CMMN adaptive case-plan panel — sibling to the BPMN status-transition
-// engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
-// @spec openspec/specs/cmmn-adaptive-case/spec.md
-import CmmnCasePlanPanel from './views/cases/components/CmmnCasePlanPanel.vue'
-import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
-import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
-import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
 import BesluitPublicatiePanel from './components/besluitvorming/BesluitPublicatiePanel.vue'
-import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
-import PublicStatusPage from './views/public/PublicStatusPage.vue'
-// Federated case sharing/transfer/activity — federated-case-collaboration.
-// @spec openspec/specs/federated-case-collaboration/spec.md
-import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
-import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
-
+import BezwaarBeroepOverview from './components/bezwaar/BezwaarBeroepOverview.vue'
 // Case-list CSV/Excel export via the OR export leaf — actions-slot component
 // on the Cases page (manifest `pages[].actionsComponent`). Builds the OR
 // export-leaf URL client-side; no procest-side serialization (ADR-022).
 // @spec openspec/specs/case-list-export-via-or-export-leaf/spec.md
 import CaseListExportAction from './components/export/CaseListExportAction.vue'
-
-// Cases-on-map — full-screen multi-object overview. Consumes OpenRegister's
-// page-level maps-overview leaf (OR #154): OR owns the geometry extraction,
-// RBAC scoping, and base-layer config; the markers render through the lib's
-// `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in procest (ADR-022).
-// @spec openspec/specs/case-map-overview/spec.md
-import CasesOnMapView from './views/CasesOnMapView.vue'
-
-// Detail-tab components (used as `component:` in sidebarTabs[])
-import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
-import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
-import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
+// Initiator (indiener) selection + display — brp-kvk-register-sets.
+// @spec openspec/specs/initiator-selection/spec.md
+import InitiatorPicker from './components/initiator/InitiatorPicker.vue'
+import InitiatorSection from './components/initiator/InitiatorSection.vue'
 // "Besluitvorming" decision-making is owned by decidesk and surfaced here as
 // an OR integration leaf (decidesk-decisions) on the case-detail sidebar.
 // @spec openspec/changes/consume-decidesk-besluitvorming-leaf/tasks.md
 import BesluitvormingLeafTab from './components/tabs/BesluitvormingLeafTab.vue'
-
+import CaseDecisionsTab from './components/tabs/CaseDecisionsTab.vue'
+import CaseDocumentsTab from './components/tabs/CaseDocumentsTab.vue'
+// Detail-tab components (used as `component:` in sidebarTabs[])
+import CaseTasksTab from './components/tabs/CaseTasksTab.vue'
+import SubstitutionAdminView from './views/admin/SubstitutionAdmin.vue'
+import VerwerkingenOverviewView from './views/admin/VerwerkingenOverview.vue'
+import AgendaCompilerView from './views/besluitvorming/AgendaCompilerView.vue'
+import VergaderingDetailView from './views/besluitvorming/VergaderingDetailView.vue'
+// VTH-specific case detail panels
+import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
+import AdviesPanel from './views/cases/components/AdviesPanel.vue'
+// Case-assistant chat panel — conversational assistance delegated to Hermiq
+// (fleet rule: AI functionality lives in Hermiq; procest is a thin consumer).
+// @spec openspec/specs/case-assistant-via-hermiq/spec.md
+import CaseAssistantPanel from './views/cases/components/CaseAssistantPanel.vue'
+// Case-email integration — leaf-first per ADR-022. The sidebar tab
+// wraps the EmailThread component (display only), reuses NC Mail as
+// the email engine, and triggers prefillDraft via the case-email API.
+// @spec openspec/changes/case-email-integration/tasks.md#T12
+import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
+import CaseNotesTab from './views/cases/components/CaseNotesTab.vue'
+// Federated case sharing/transfer/activity — federated-case-collaboration.
+// @spec openspec/specs/federated-case-collaboration/spec.md
+import CaseSharingTab from './views/cases/components/CaseSharingTab.vue'
+// CMMN adaptive case-plan panel — sibling to the BPMN status-transition
+// engine, for caseTypes with handlingModel = 'cmmn' (cmmn-adaptive-case).
+// @spec openspec/specs/cmmn-adaptive-case/spec.md
+import CmmnCasePlanPanel from './views/cases/components/CmmnCasePlanPanel.vue'
+import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
+import InspectionPanel from './views/cases/components/InspectionPanel.vue'
+// Related-case linking — typed peer relations (relevanteAndereZaken) sidebar tab.
+// Modal isolation per ADR-004: AddCaseRelationModal lives in src/modals/.
+// @spec openspec/specs/related-case-linking/spec.md
+import RelatedCasesSection from './views/cases/components/RelatedCasesSection.vue'
+import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
 // Deelzaak (sub-case) full-page views — wired via manifest routes
 // /cases/:id/deelzaken (list) and /cases/:parentId/deelzaken/:id (detail).
 // Modal isolation per ADR-004: DeelzaakCreateModal lives in src/modals/.
 // @spec openspec/changes/deelzaak-support/tasks.md#T05
 // @spec openspec/changes/deelzaak-support/tasks.md#T06
 import DeelzaakList from './views/cases/DeelzaakList.vue'
-import DeelzaakDetail from './views/cases/DeelzaakDetail.vue'
-
-// Case-email integration — leaf-first per ADR-022. The sidebar tab
-// wraps the EmailThread component (display only), reuses NC Mail as
-// the email engine, and triggers prefillDraft via the case-email API.
-// @spec openspec/changes/case-email-integration/tasks.md#T12
-import CaseEmailTab from './views/cases/components/CaseEmailTab.vue'
-import AdviesPanel from './views/cases/components/AdviesPanel.vue'
-// Related-case linking — typed peer relations (relevanteAndereZaken) sidebar tab.
-// Modal isolation per ADR-004: AddCaseRelationModal lives in src/modals/.
-// @spec openspec/specs/related-case-linking/spec.md
-import RelatedCasesSection from './views/cases/components/RelatedCasesSection.vue'
-// VTH-specific case detail panels
-import AdviceRequestPanel from './views/cases/components/AdviceRequestPanel.vue'
-import InspectionChecklistPanel from './views/cases/components/InspectionChecklistPanel.vue'
-import InspectionPanel from './views/cases/components/InspectionPanel.vue'
+// Cases-on-map — full-screen multi-object overview. Consumes OpenRegister's
+// page-level maps-overview leaf (OR #154): OR owns the geometry extraction,
+// RBAC scoping, and base-layer config; the markers render through the lib's
+// `CnMapWidget`. No bespoke Leaflet / WMS / WFS stack in procest (ADR-022).
+// @spec openspec/specs/case-map-overview/spec.md
+import CasesOnMapView from './views/CasesOnMapView.vue'
+import DoorlooptijdView from './views/DoorlooptijdDashboard.vue'
+import MyWorkView from './views/MyWorkCards.vue'
+import PublicAppointmentPage from './views/public/PublicAppointmentPage.vue'
+import PublicFederatedTransferPage from './views/public/PublicFederatedTransferPage.vue'
+import PublicStatusPage from './views/public/PublicStatusPage.vue'
+import AdminRootView from './views/settings/AdminRoot.vue'
+import SubstitutionSettingsView from './views/settings/SubstitutionSettings.vue'
+import VoorstelDetailView from './views/voorstellen/VoorstelDetail.vue'
+import WorkflowBoardView from './views/workflow-board/WorkflowBoard.vue'
+import { leafTab } from './integrations/leafTabs.js'
 
 // ADR-049 dissolution: the manifest Dashboard page's signal widgets (open /
 // overdue / stalled cases, my tasks, task reminders, deadline alerts) and the

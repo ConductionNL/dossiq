@@ -7,11 +7,11 @@
 			<NcSelect
 				v-model="selectedStatus"
 				:options="orderedStatusTypes"
-				:input-label="t('procest', 'Change status')"
+				:inputLabel="t('procest', 'Change status')"
 				label="name"
-				track-by="id"
+				trackBy="id"
 				:placeholder="t('procest', 'Change status...')"
-				@update:model-value="onStatusSelected" />
+				@update:modelValue="onStatusSelected" />
 		</div>
 
 		<!-- Result prompt (shown when final status selected) -->
@@ -20,17 +20,17 @@
 				<NcSelect
 					v-model="selectedResultType"
 					:options="resultTypes"
-					:input-label="t('procest', 'Select result type')"
+					:inputLabel="t('procest', 'Select result type')"
 					label="name"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Select result type...')" />
 			</template>
 			<template v-else>
 				<NcTextField
-					:model-value="resultText"
+					:modelValue="resultText"
 					:label="t('procest', 'Result (required)')"
 					:error="!!resultError"
-					@update:model-value="
+					@update:modelValue="
 						(v) => {
 							resultText = v
 							resultError = ''
@@ -53,9 +53,9 @@
 		<!-- Timeline visualization -->
 		<StatusTimeline
 			v-if="orderedStatusTypes.length > 0"
-			:status-types="orderedStatusTypes"
-			:current-status-id="currentStatusId"
-			:status-history="statusHistory" />
+			:statusTypes="orderedStatusTypes"
+			:currentStatusId="currentStatusId"
+			:statusHistory="statusHistory" />
 
 		<div v-else class="timeline-empty">
 			{{ t('procest', 'No status types configured') }}
@@ -64,7 +64,7 @@
 </template>
 
 <script>
-import { NcButton, NcTextField, NcSelect } from '@nextcloud/vue'
+import { NcButton, NcSelect, NcTextField } from '@nextcloud/vue'
 import StatusTimeline from '../components/StatusTimeline.vue'
 
 export default {
@@ -75,28 +75,34 @@ export default {
 		NcSelect,
 		StatusTimeline,
 	},
+
 	props: {
 		orderedStatusTypes: {
 			type: Array,
 			default: () => [],
 		},
+
 		currentStatusId: {
 			type: String,
 			default: null,
 		},
+
 		statusHistory: {
 			type: Array,
 			default: () => [],
 		},
+
 		resultTypes: {
 			type: Array,
 			default: () => [],
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['status-change', 'status-change-with-result'],
 	data() {
 		return {
@@ -108,6 +114,7 @@ export default {
 			selectedResultType: null,
 		}
 	},
+
 	methods: {
 		/**
 		 * @param status
@@ -128,6 +135,7 @@ export default {
 				this.selectedStatus = null
 			}
 		},
+
 		/** @spec openspec/specs/signalering-widgets/spec.md */
 		confirmStatusChange() {
 			let resultName = ''
@@ -157,6 +165,7 @@ export default {
 			this.resultText = ''
 			this.selectedResultType = null
 		},
+
 		/** @spec openspec/specs/signalering-widgets/spec.md */
 		cancelStatusChange() {
 			this.showResultPrompt = false

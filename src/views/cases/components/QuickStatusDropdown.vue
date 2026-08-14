@@ -3,13 +3,13 @@
 		<NcSelect
 			v-model="selectedStatus"
 			:options="statusOptions"
-			:input-label="t('procest', 'Change status')"
+			:inputLabel="t('procest', 'Change status')"
 			label="name"
-			track-by="id"
+			trackBy="id"
 			:placeholder="t('procest', 'Change status')"
 			:disabled="saving"
 			class="quick-status__select"
-			@update:model-value="onStatusChange" />
+			@update:modelValue="onStatusChange" />
 	</div>
 </template>
 
@@ -23,16 +23,19 @@ export default {
 	components: {
 		NcSelect,
 	},
+
 	props: {
 		caseObj: {
 			type: Object,
 			required: true,
 		},
+
 		statusTypes: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['changed'],
 	data() {
 		return {
@@ -40,11 +43,13 @@ export default {
 			saving: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		statusOptions() {
 			return [...this.statusTypes].sort(
@@ -52,10 +57,12 @@ export default {
 			)
 		},
 	},
+
 	mounted() {
 		this.selectedStatus =
 			this.statusTypes.find((st) => st.id === this.caseObj.status) || null
 	},
+
 	methods: {
 		/**
 		 * @param newStatus

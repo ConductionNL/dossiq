@@ -194,8 +194,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { useInspectionStore } from '../../../store/modules/inspection.js'
 
 export default {
@@ -226,10 +226,12 @@ export default {
 		inspectionStore() {
 			return useInspectionStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		checklists() {
 			return this.inspectionStore.checklists
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		loading() {
 			return this.inspectionStore.loading

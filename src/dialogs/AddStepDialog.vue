@@ -5,7 +5,7 @@
 		v-if="open"
 		:name="t('procest', 'Ad-hoc stap toevoegen')"
 		size="normal"
-		:can-close="!submitting"
+		:canClose="!submitting"
 		@closing="onClose">
 		<div class="add-step-dialog">
 			<div class="add-step-dialog__field">
@@ -42,15 +42,15 @@
 			</div>
 			<div class="add-step-dialog__field">
 				<NcTextField
-					:model-value="actor"
+					:modelValue="actor"
 					:label="t('procest', 'Actor (UID, groep of rol)')"
 					required
-					@update:model-value="(v) => (actor = v)" />
+					@update:modelValue="(v) => (actor = v)" />
 			</div>
 			<div class="add-step-dialog__field">
 				<NcCheckboxRadioSwitch
-					:model-value="mandatory"
-					@update:model-value="(v) => (mandatory = v)">
+					:modelValue="mandatory"
+					@update:modelValue="(v) => (mandatory = v)">
 					{{ t('procest', 'Verplichte stap') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -95,20 +95,24 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		voorstelId: {
 			type: String,
 			required: true,
 		},
+
 		routeSnapshot: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	data() {
 		return {
 			afterStep: null,
@@ -122,6 +126,7 @@ export default {
 			actorTypeOptions: ['user', 'group', 'role'],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		insertionOptions() {
@@ -133,6 +138,7 @@ export default {
 				value: s.order,
 			}))
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canSubmit() {
 			return (
@@ -142,6 +148,7 @@ export default {
 			)
 		},
 	},
+
 	watch: {
 		/**
 		 * @param value
@@ -158,6 +165,7 @@ export default {
 			}
 		},
 	},
+
 	methods: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onSubmit() {
@@ -182,6 +190,7 @@ export default {
 				this.submitting = false
 			}
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		onClose() {
 			if (this.submitting) return

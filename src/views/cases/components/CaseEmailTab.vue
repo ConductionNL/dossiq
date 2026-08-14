@@ -43,9 +43,9 @@
 					v-model="selectedTemplate"
 					:options="templates"
 					:aria-label-combobox="t('procest', 'Email template')"
-					:input-label="t('procest', 'Email template')"
+					:inputLabel="t('procest', 'Email template')"
 					label="name"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Select a template (optional)…')"
 					:clearable="true" />
 
@@ -95,14 +95,16 @@
 
 			<!-- Email thread (display from the leaf link-table) -->
 			<EmailThread
-				:case-id="caseId"
-				:is-read-only="isFinal"
+				:caseId="caseId"
+				:isReadOnly="isFinal"
 				@compose="composeDraft" />
 		</template>
 	</div>
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcEmptyContent,
@@ -112,9 +114,6 @@ import {
 } from '@nextcloud/vue'
 import EmailEditOutline from 'vue-material-design-icons/EmailEditOutline.vue'
 import EmailOffOutline from 'vue-material-design-icons/EmailOffOutline.vue'
-import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
-
 import EmailThread from './EmailThread.vue'
 
 export default {
@@ -129,6 +128,7 @@ export default {
 		EmailOffOutline,
 		EmailThread,
 	},
+
 	props: {
 		/**
 		 * Case UUID. Manifest passes this as :id; CaseDetail also injects it
@@ -138,12 +138,14 @@ export default {
 			type: String,
 			default: null,
 		},
+
 		/** Inline case object — short-circuit for caseType + endDate lookups. */
 		caseObject: {
 			type: Object,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -157,16 +159,19 @@ export default {
 			isFinal: false,
 		}
 	},
+
 	computed: {
 		resolvedCaseId() {
 			return this.caseId || this.$route?.params?.id || null
 		},
+
 		draftButtonLabel() {
 			return this.selectedTemplate
 				? t('procest', 'Open draft from template')
 				: t('procest', 'Open empty draft')
 		},
 	},
+
 	watch: {
 		resolvedCaseId: {
 			immediate: false,
@@ -174,6 +179,7 @@ export default {
 				this.reload()
 			},
 		},
+
 		caseObject: {
 			immediate: false,
 			deep: false,
@@ -182,9 +188,11 @@ export default {
 			},
 		},
 	},
+
 	async mounted() {
 		await this.reload()
 	},
+
 	methods: {
 		async reload() {
 			if (!this.resolvedCaseId) {
@@ -223,6 +231,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		applyCaseObject(caseObj) {
 			if (!caseObj) {
 				return
@@ -231,6 +240,7 @@ export default {
 			this.caseTypeId = inner.caseType || inner['@self']?.caseType || null
 			this.isFinal = !!(inner.endDate || inner['@self']?.endDate)
 		},
+
 		async loadTemplates() {
 			try {
 				const url = generateUrl(
@@ -248,6 +258,7 @@ export default {
 				this.templates = []
 			}
 		},
+
 		/**
 		 * Compose action.
 		 *
@@ -294,6 +305,7 @@ export default {
 				this.drafting = false
 			}
 		},
+
 		formatVariable(name) {
 			return `{{${name}}}`
 		},

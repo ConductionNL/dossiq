@@ -143,6 +143,7 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		saving: {
 			type: Boolean,
 			default: false,

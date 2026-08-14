@@ -145,6 +145,10 @@ export function validateForPublish(caseType, statusTypes) {
 	}
 }
 
+/**
+ *
+ * @param field
+ */
 function getFieldLabel(field) {
 	const labels = {
 		title: t('procest', 'Title'),

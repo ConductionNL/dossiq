@@ -19,9 +19,9 @@
 						<tr>
 							<th scope="col">
 								<NcCheckboxRadioSwitch
-									:model-value="allSelected"
+									:modelValue="allSelected"
 									:aria-label="t('procest', 'Select all fields')"
-									@update:model-value="toggleAll" />
+									@update:modelValue="toggleAll" />
 							</th>
 							<th scope="col">{{ t('procest', 'Field') }}</th>
 							<th scope="col">
@@ -37,20 +37,18 @@
 							:class="{ 'low-confidence': field.confidence < 0.6 }">
 							<td>
 								<NcCheckboxRadioSwitch
-									:model-value="
-										selectedFields.includes(field.name)
-									"
+									:modelValue="selectedFields.includes(field.name)"
 									:aria-label="
 										t('procest', 'Select field {field}', {
 											field: field.name,
 										})
 									"
-									@update:model-value="toggleField(field.name)" />
+									@update:modelValue="toggleField(field.name)" />
 							</td>
 							<td>{{ field.name }}</td>
 							<td>
 								<NcTextField
-									:model-value="
+									:modelValue="
 										modifiedValues[field.name] || field.value
 									"
 									:aria-label="
@@ -58,7 +56,7 @@
 											field: field.name,
 										})
 									"
-									@update:model-value="
+									@update:modelValue="
 										(v) => (modifiedValues[field.name] = v)
 									" />
 							</td>
@@ -101,17 +99,17 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import {
-	NcDialog,
 	NcButton,
-	NcTextField,
+	NcCheckboxRadioSwitch,
+	NcDialog,
 	NcLoadingIcon,
 	NcNoteCard,
-	NcCheckboxRadioSwitch,
+	NcTextField,
 } from '@nextcloud/vue'
-import { translate as t } from '@nextcloud/l10n'
-import { extractData } from '../services/aiApi.js'
 import AiConfidenceBadge from '../views/cases/components/AiConfidenceBadge.vue'
+import { extractData } from '../services/aiApi.js'
 
 export default {
 	name: 'AiExtractDialog',
@@ -124,11 +122,13 @@ export default {
 		NcCheckboxRadioSwitch,
 		AiConfidenceBadge,
 	},
+
 	props: {
 		caseId: { type: String, required: true },
 		documentId: { type: String, default: null },
 		show: { type: Boolean, default: false },
 	},
+
 	emits: ['close', 'applied'],
 	data() {
 		return {
@@ -139,6 +139,7 @@ export default {
 			modifiedValues: {},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		allSelected() {
@@ -148,6 +149,7 @@ export default {
 			)
 		},
 	},
+
 	watch: {
 		/**
 		 * @param val
@@ -157,6 +159,7 @@ export default {
 			if (val) this.extract()
 		},
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
@@ -177,6 +180,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param checked
 		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
@@ -184,6 +188,7 @@ export default {
 		toggleAll(checked) {
 			this.selectedFields = checked ? this.fields.map((f) => f.name) : []
 		},
+
 		/**
 		 * @param name
 		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
@@ -196,6 +201,7 @@ export default {
 				this.selectedFields.push(name)
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		applySelected() {
 			const applied = {}

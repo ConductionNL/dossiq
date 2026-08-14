@@ -67,11 +67,11 @@
 							v-model="selectedCaseType"
 							:options="availableCaseTypes"
 							:aria-label-combobox="t('procest', 'Sub-case type')"
-							:input-label="t('procest', 'Sub-case type')"
+							:inputLabel="t('procest', 'Sub-case type')"
 							label="title"
-							track-by="id"
+							trackBy="id"
 							:placeholder="t('procest', 'Select a sub-case type…')"
-							@update:model-value="onCaseTypeSelected" />
+							@update:modelValue="onCaseTypeSelected" />
 						<p v-if="errors.caseType" class="form-error" role="alert">
 							{{ errors.caseType }}
 						</p>
@@ -82,10 +82,10 @@
 						<label for="dc-title">{{ t('procest', 'Title') }} *</label>
 						<NcTextField
 							id="dc-title"
-							:model-value="form.title"
+							:modelValue="form.title"
 							:placeholder="t('procest', 'Enter sub-case title…')"
 							:error="!!errors.title"
-							@update:model-value="
+							@update:modelValue="
 								(v) => {
 									form.title = v
 									errors.title = ''
@@ -148,10 +148,9 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
-
-import { useObjectStore } from '../store/modules/object.js'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
-import { generateIdentifier, calculateDeadline } from '../utils/caseHelpers.js'
+import { useObjectStore } from '../store/modules/object.js'
+import { calculateDeadline, generateIdentifier } from '../utils/caseHelpers.js'
 
 export default {
 	name: 'DeelzaakCreateModal',
@@ -164,18 +163,21 @@ export default {
 		NcTextField,
 		AlertCircleOutline,
 	},
+
 	props: {
 		/** Parent case UUID — will be set as `parentCase` on the new sub-case. */
 		parentCase: {
 			type: String,
 			required: true,
 		},
+
 		/** Parent caseType object — used to filter the allowed child types. */
 		parentCaseType: {
 			type: Object,
 			default: null,
 		},
 	},
+
 	emits: ['created', 'close'],
 	data() {
 		return {
@@ -184,6 +186,7 @@ export default {
 				description: '',
 				caseType: null,
 			},
+
 			selectedCaseType: null,
 			caseTypes: [],
 			statusTypes: [],
@@ -193,16 +196,20 @@ export default {
 			serverError: '',
 		}
 	},
+
 	computed: {
 		objectStore() {
 			return useObjectStore()
 		},
+
 		deelzaakStore() {
 			return useDeelzaakStore()
 		},
+
 		dialogTitle() {
 			return t('procest', 'Create sub-case')
 		},
+
 		/**
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
 		 * Filter caseTypes to ONLY those listed on parentCaseType.subCaseTypes.
@@ -221,9 +228,11 @@ export default {
 			)
 		},
 	},
+
 	async mounted() {
 		await this.loadCaseTypes()
 	},
+
 	methods: {
 		async loadCaseTypes() {
 			this.loadingTypes = true
@@ -239,6 +248,7 @@ export default {
 				this.loadingTypes = false
 			}
 		},
+
 		async onCaseTypeSelected(caseType) {
 			this.form.caseType = caseType?.id || null
 			this.errors.caseType = ''
@@ -264,6 +274,7 @@ export default {
 				this.statusTypes = []
 			}
 		},
+
 		validate() {
 			const errs = {}
 			if (!this.form.title || !this.form.title.trim()) {
@@ -275,6 +286,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+
 		/**
 		 * @spec openspec/changes/deelzaak-support/tasks.md#T08
 		 * Submit creates a `case` with `parentCase` set, optionally pre-checked
@@ -321,8 +333,10 @@ export default {
 					deadline: deadline
 						? deadline.toISOString().split('T')[0] + 'T17:00:00Z'
 						: null,
+
 					confidentiality:
 						this.selectedCaseType.confidentiality || 'public',
+
 					assignee: this.selectedCaseType.defaultAssignee || null,
 					intakeChannel: 'manual',
 					priority: 'normal',
@@ -339,6 +353,7 @@ export default {
 							changedBy: currentUser,
 						},
 					]),
+
 					activity: JSON.stringify([
 						{
 							date: now.toISOString(),
@@ -369,6 +384,7 @@ export default {
 				this.saving = false
 			}
 		},
+
 		onDialogClose(open) {
 			if (!open) {
 				this.$emit('close')

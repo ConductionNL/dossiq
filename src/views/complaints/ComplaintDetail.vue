@@ -29,7 +29,7 @@
 			<DeadlinePanel
 				v-if="complaint.deadline"
 				:deadline="complaint.deadline"
-				:warned-at="complaint.warnedAt" />
+				:warnedAt="complaint.warnedAt" />
 
 			<section class="complaint-detail__section">
 				<h3>{{ t('procest', 'Hearings') }}</h3>

@@ -13,21 +13,21 @@
 
 			<NcSelect
 				v-model="filterCaseType"
-				:input-label="t('procest', 'Case type')"
+				:inputLabel="t('procest', 'Case type')"
 				:options="caseTypeOptions"
 				:placeholder="t('procest', 'All case types')"
 				:clearable="true"
 				class="cases-on-map__filter"
-				@update:model-value="reload" />
+				@update:modelValue="reload" />
 
 			<NcSelect
 				v-model="filterStatus"
-				:input-label="t('procest', 'Status')"
+				:inputLabel="t('procest', 'Status')"
 				:options="statusOptions"
 				:placeholder="t('procest', 'All statuses')"
 				:clearable="true"
 				class="cases-on-map__filter"
-				@update:model-value="reload" />
+				@update:modelValue="reload" />
 
 			<div v-if="degraded" class="cases-on-map__notice">
 				<AlertIcon :size="20" />
@@ -46,20 +46,20 @@
 				:layers="mapLayers"
 				:markers="markers"
 				:clustering="true"
-				:auto-fit="features.length > 0"
+				:autoFit="features.length > 0"
 				height="100%"
-				@marker-click="onMarkerClick" />
+				@markerClick="onMarkerClick" />
 			<NcLoadingIcon v-if="loading" :size="40" class="cases-on-map__loading" />
 		</div>
 	</div>
 </template>
 
 <script>
-import NcSelect from '@nextcloud/vue/components/NcSelect'
-import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
-import AlertIcon from 'vue-material-design-icons/Alert.vue'
-import { generateUrl } from '@nextcloud/router'
 import { CnMapWidget } from '@conduction/nextcloud-vue'
+import { generateUrl } from '@nextcloud/router'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
+import NcSelect from '@nextcloud/vue/components/NcSelect'
+import AlertIcon from 'vue-material-design-icons/Alert.vue'
 import { registerCasesOnMapOverview } from '../services/casesOnMapApi.js'
 import { shapeMarkerFeatures } from '../services/mapFormatters.js'
 
@@ -92,12 +92,14 @@ export default {
 			type: String,
 			default: 'procest',
 		},
+
 		/** OpenRegister schema slug for the case objects. @type {string} */
 		schema: {
 			type: String,
 			default: 'case',
 		},
 	},
+
 	data() {
 		return {
 			points: [],
@@ -110,6 +112,7 @@ export default {
 			caseTypeOptions: [],
 		}
 	},
+
 	computed: {
 		/**
 		 * GeoJSON Point features for CnMapWidget, shaped from the OR point set.
@@ -120,6 +123,7 @@ export default {
 		features() {
 			return shapeMarkerFeatures(this.points)
 		},
+
 		/**
 		 * CnMapWidget marker config — inline features + popup field. The
 		 * features already carry the status colour from `shapeMarkerFeatures`.
@@ -134,6 +138,7 @@ export default {
 				clustering: true,
 			}
 		},
+
 		/**
 		 * Default OpenStreetMap basemap for the map widget.
 		 *
@@ -148,6 +153,7 @@ export default {
 				},
 			]
 		},
+
 		/**
 		 * Initial map centre — centroid of the plotted markers, else Berlin.
 		 *
@@ -176,6 +182,7 @@ export default {
 			return [52.517, 13.404]
 		},
 	},
+
 	/**
 	 * Declare the overview once (idempotent on the OR side), then load points.
 	 *
@@ -186,6 +193,7 @@ export default {
 		registerCasesOnMapOverview({ register: this.register, schema: this.schema })
 		this.reload()
 	},
+
 	methods: {
 		/**
 		 * Fetch the RBAC-scoped case points from OR for the active filters.
@@ -257,6 +265,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Dig the first `[lng, lat]` pair out of a GeoJSON geometry (Point or the
 		 * first ring of a Polygon) and return it as `{ lat, lng }`, or null.
@@ -277,6 +286,7 @@ export default {
 			}
 			return null
 		},
+
 		/**
 		 * Navigate to the case detail when a marker is clicked.
 		 *

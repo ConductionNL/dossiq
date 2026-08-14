@@ -26,32 +26,32 @@
 		<ShareTab
 			:shares="shares"
 			:loading="loading"
-			:federated-shares="federatedShares"
-			:federated-loading="federatedLoading"
+			:federatedShares="federatedShares"
+			:federatedLoading="federatedLoading"
 			@revoke="revokeShare"
-			@create-partner-share="createShareDialogOpen = true"
-			@transfer-case="transferDialogOpen = true"
-			@create-federated-share="createFederatedShareDialogOpen = true"
-			@revoke-federated="revokeFederatedShare"
-			@open-activity="openActivity" />
+			@createPartnerShare="createShareDialogOpen = true"
+			@transferCase="transferDialogOpen = true"
+			@createFederatedShare="createFederatedShareDialogOpen = true"
+			@revokeFederated="revokeFederatedShare"
+			@openActivity="openActivity" />
 
 		<CreateShareDialog
 			:open="createShareDialogOpen"
-			:case-id="objectId"
+			:caseId="objectId"
 			:partners="partners"
 			@update:open="createShareDialogOpen = $event"
 			@created="createShare" />
 
 		<CaseTransferDialog
 			:open="transferDialogOpen"
-			:case-id="objectId"
+			:caseId="objectId"
 			:partners="partners"
 			@update:open="transferDialogOpen = $event"
 			@submitted="initiateTransfer" />
 
 		<CreateFederatedShareDialog
 			:open="createFederatedShareDialogOpen"
-			:case-id="objectId"
+			:caseId="objectId"
 			:documents="caseDocuments"
 			@update:open="createFederatedShareDialogOpen = $event"
 			@created="createFederatedShare" />
@@ -59,7 +59,7 @@
 		<FederatedActivityPanel
 			v-if="activeFederatedShareId"
 			:open="activityPanelOpen"
-			:federated-share-id="activeFederatedShareId"
+			:federatedShareId="activeFederatedShareId"
 			:entries="activityEntries"
 			:loading="activityLoading"
 			@update:open="activityPanelOpen = $event"
@@ -69,18 +69,18 @@
 
 <script>
 import axios from '@nextcloud/axios'
+import { showError, showSuccess } from '@nextcloud/dialogs'
 import { generateUrl } from '@nextcloud/router'
-import { showSuccess, showError } from '@nextcloud/dialogs'
-import ShareTab from './ShareTab.vue'
-import CreateShareDialog from '../../../dialogs/CreateShareDialog.vue'
 import CaseTransferDialog from '../../../dialogs/CaseTransferDialog.vue'
 import CreateFederatedShareDialog from '../../../dialogs/CreateFederatedShareDialog.vue'
+import CreateShareDialog from '../../../dialogs/CreateShareDialog.vue'
 import FederatedActivityPanel from '../../../dialogs/FederatedActivityPanel.vue'
+import ShareTab from './ShareTab.vue'
 import {
-	federatedSharesListEndpoint,
 	createFederatedShareEndpoint,
-	revokeFederatedShareEndpoint,
 	federatedActivityEndpoint,
+	federatedSharesListEndpoint,
+	revokeFederatedShareEndpoint,
 } from '../../../utils/federatedShareHelpers.js'
 
 export default {
@@ -92,6 +92,7 @@ export default {
 		CreateFederatedShareDialog,
 		FederatedActivityPanel,
 	},
+
 	props: {
 		/** Case UUID; forwarded by CnObjectSidebar's sharedTabProps. */
 		objectId: {
@@ -99,6 +100,7 @@ export default {
 			default: '',
 		},
 	},
+
 	data() {
 		return {
 			shares: [],
@@ -116,12 +118,14 @@ export default {
 			activityLoading: false,
 		}
 	},
+
 	mounted() {
 		this.loadShares()
 		this.loadFederatedShares()
 		this.loadPartners()
 		this.loadCaseDocuments()
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async loadShares() {
@@ -143,6 +147,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @spec openspec/specs/federated-case-collaboration/spec.md#the-case-detail-sharing-surface-is-wired-not-orphaned
 		 */
@@ -167,6 +172,7 @@ export default {
 				this.federatedLoading = false
 			}
 		},
+
 		async loadPartners() {
 			try {
 				const response = await axios.get(
@@ -179,6 +185,7 @@ export default {
 				this.partners = []
 			}
 		},
+
 		async loadCaseDocuments() {
 			if (!this.objectId) {
 				return
@@ -195,6 +202,7 @@ export default {
 				this.caseDocuments = []
 			}
 		},
+
 		/**
 		 * @param {object} payload the partner-share creation payload.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
@@ -212,6 +220,7 @@ export default {
 				)
 			}
 		},
+
 		/**
 		 * @param {string} shareId the caseShare UUID to revoke.
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
@@ -229,6 +238,7 @@ export default {
 				showError(t('procest', 'Could not revoke share'))
 			}
 		},
+
 		/**
 		 * @param {object} payload the transfer-initiation payload (incl. optional remoteCloudId).
 		 * @spec openspec/specs/federated-case-collaboration/spec.md#case-transfer-extends-across-federation-with-idempotent-acceptreject-and-a-custody-audit-trail
@@ -245,6 +255,7 @@ export default {
 				)
 			}
 		},
+
 		/**
 		 * @param {object} payload the federated-share creation payload (shapeFederatedSharePayload output).
 		 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-case-share-is-a-redacted-snapshot-never-the-live-case
@@ -265,6 +276,7 @@ export default {
 				)
 			}
 		},
+
 		/**
 		 * @param {string} shareId the caseFederatedShare UUID to revoke.
 		 * @spec openspec/specs/federated-case-collaboration/spec.md#federated-share-revocation-is-immediate-and-single-sourced
@@ -280,6 +292,7 @@ export default {
 				showError(t('procest', 'Could not revoke federated share'))
 			}
 		},
+
 		/**
 		 * @param {string} shareId the caseFederatedShare UUID to load activity for.
 		 * @spec openspec/specs/federated-case-collaboration/spec.md#shared-activity-stream-is-async-append-only-scoped-to-one-federated-share
@@ -299,6 +312,7 @@ export default {
 				this.activityLoading = false
 			}
 		},
+
 		/**
 		 * @param {object} payload `{ federatedShareId, message }`.
 		 * @spec openspec/specs/federated-case-collaboration/spec.md#a-local-handler-posts-an-activity-entry

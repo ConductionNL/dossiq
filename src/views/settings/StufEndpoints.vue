@@ -80,9 +80,11 @@ export default {
 			loadError: '',
 		}
 	},
+
 	mounted() {
 		this.reload()
 	},
+
 	methods: {
 		/**
 		 * Reload the StUF endpoint list + circuit-breaker health from the backend.
@@ -99,6 +101,7 @@ export default {
 				showError(this.loadError)
 			}
 		},
+
 		/**
 		 * Map an endpoint's breaker health state to its CSS modifier class.
 		 *
@@ -110,6 +113,7 @@ export default {
 				row && row.health && row.health.state ? row.health.state : 'ok'
 			return 'stuf-endpoints__health--' + state
 		},
+
 		/**
 		 * Map an endpoint's breaker health state to a human label.
 		 *

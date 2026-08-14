@@ -5,8 +5,8 @@
 		<!-- Global toggle -->
 		<div class="ai-settings-tab__section">
 			<NcCheckboxRadioSwitch
-				:model-value="settings.ai_enabled"
-				@update:model-value="(v) => updateSetting('ai_enabled', v)">
+				:modelValue="settings.ai_enabled"
+				@update:modelValue="(v) => updateSetting('ai_enabled', v)">
 				{{ t('procest', 'Enable AI-assisted processing') }}
 			</NcCheckboxRadioSwitch>
 		</div>
@@ -19,19 +19,19 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Model type') }}</label>
 					<NcCheckboxRadioSwitch
-						:model-value="settings.ai_model_type === 'local'"
+						:modelValue="settings.ai_model_type === 'local'"
 						type="radio"
 						name="model_type"
-						@update:model-value="
+						@update:modelValue="
 							() => updateSetting('ai_model_type', 'local')
 						">
 						{{ t('procest', 'Local (Ollama)') }}
 					</NcCheckboxRadioSwitch>
 					<NcCheckboxRadioSwitch
-						:model-value="settings.ai_model_type === 'cloud'"
+						:modelValue="settings.ai_model_type === 'cloud'"
 						type="radio"
 						name="model_type"
-						@update:model-value="
+						@update:modelValue="
 							() => updateSetting('ai_model_type', 'cloud')
 						">
 						{{ t('procest', 'Cloud') }}
@@ -49,30 +49,28 @@
 
 				<div class="form-group">
 					<NcTextField
-						:model-value="settings.ai_model_url"
+						:modelValue="settings.ai_model_url"
 						:label="t('procest', 'Model endpoint URL')"
-						@update:model-value="
+						@update:modelValue="
 							(v) => updateSetting('ai_model_url', v)
 						" />
 				</div>
 
 				<div class="form-group">
 					<NcTextField
-						:model-value="settings.ai_model_name"
+						:modelValue="settings.ai_model_name"
 						:label="t('procest', 'Model name')"
-						:placeholder="'llama3.1'"
-						@update:model-value="
+						placeholder="llama3.1"
+						@update:modelValue="
 							(v) => updateSetting('ai_model_name', v)
 						" />
 				</div>
 
 				<div v-if="settings.ai_model_type === 'cloud'" class="form-group">
 					<NcPasswordField
-						:model-value="settings.ai_api_key"
+						:modelValue="settings.ai_api_key"
 						:label="t('procest', 'API Key')"
-						@update:model-value="
-							(v) => updateSetting('ai_api_key', v)
-						" />
+						@update:modelValue="(v) => updateSetting('ai_api_key', v)" />
 				</div>
 			</div>
 
@@ -82,8 +80,8 @@
 				<NcCheckboxRadioSwitch
 					v-for="feature in featureToggles"
 					:key="feature.key"
-					:model-value="settings[feature.key]"
-					@update:model-value="(v) => updateSetting(feature.key, v)">
+					:modelValue="settings[feature.key]"
+					@update:modelValue="(v) => updateSetting(feature.key, v)">
 					{{ feature.label }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -92,10 +90,8 @@
 			<div class="ai-settings-tab__section">
 				<h3>{{ t('procest', 'Privacy & Compliance') }}</h3>
 				<NcCheckboxRadioSwitch
-					:model-value="settings.ai_pii_stripping"
-					@update:model-value="
-						(v) => updateSetting('ai_pii_stripping', v)
-					">
+					:modelValue="settings.ai_pii_stripping"
+					@update:modelValue="(v) => updateSetting('ai_pii_stripping', v)">
 					{{
 						t(
 							'procest',
@@ -104,8 +100,8 @@
 					}}
 				</NcCheckboxRadioSwitch>
 				<NcCheckboxRadioSwitch
-					:model-value="settings.ai_dpia_acknowledged"
-					@update:model-value="
+					:modelValue="settings.ai_dpia_acknowledged"
+					@update:modelValue="
 						(v) => updateSetting('ai_dpia_acknowledged', v)
 					">
 					{{
@@ -146,19 +142,19 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import {
 	NcButton,
-	NcTextField,
 	NcCheckboxRadioSwitch,
 	NcLoadingIcon,
 	NcNoteCard,
 	NcPasswordField,
+	NcTextField,
 } from '@nextcloud/vue'
-import { translate as t } from '@nextcloud/l10n'
 import {
 	getAiSettings,
-	updateAiSettings,
 	testAiHealth,
+	updateAiSettings,
 } from '../../../services/aiApi.js'
 
 export default {
@@ -171,6 +167,7 @@ export default {
 		NcNoteCard,
 		NcPasswordField,
 	},
+
 	data() {
 		return {
 			settings: {
@@ -188,10 +185,12 @@ export default {
 				ai_pii_stripping: true,
 				ai_dpia_acknowledged: false,
 			},
+
 			healthLoading: false,
 			healthResult: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		featureToggles() {
@@ -220,6 +219,7 @@ export default {
 			]
 		},
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 	async mounted() {
 		try {
@@ -229,6 +229,7 @@ export default {
 			// Use defaults
 		}
 	},
+
 	methods: {
 		t,
 		/**
@@ -244,6 +245,7 @@ export default {
 				// Revert on failure would go here
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async testHealth() {
 			this.healthLoading = true

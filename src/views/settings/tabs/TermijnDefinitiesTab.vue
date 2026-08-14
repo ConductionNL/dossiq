@@ -97,17 +97,17 @@
 		<TermijnDefinitieEditor
 			v-if="editorOpen"
 			:definition="editingDefinition"
-			:zaaktype-options="zaaktypeOptions"
+			:zaaktypeOptions="zaaktypeOptions"
 			@save="onSave"
 			@close="closeEditor" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
+import { NcButton, NcEmptyContent, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import TimerSand from 'vue-material-design-icons/TimerSand.vue'
 import TermijnDefinitieEditor from '../../../modals/TermijnDefinitieEditor.vue'
@@ -123,6 +123,7 @@ export default {
 		TimerSand,
 		TermijnDefinitieEditor,
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -132,6 +133,7 @@ export default {
 			editingDefinition: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		zaaktypeOptions() {
@@ -147,9 +149,11 @@ export default {
 			return opts
 		},
 	},
+
 	mounted() {
 		this.load()
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
@@ -172,6 +176,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param def
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
@@ -182,6 +187,7 @@ export default {
 			const until = def.validUntil || '9999-12-31'
 			return from <= today && today <= until
 		},
+
 		/**
 		 * @param def
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
@@ -190,11 +196,13 @@ export default {
 			const v = def.duurDagen || def.duur || 0
 			return v ? t('procest', '{n} days', { n: v }) : '—'
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		openNew() {
 			this.editingDefinition = null
 			this.editorOpen = true
 		},
+
 		/**
 		 * @param def
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md
@@ -203,11 +211,13 @@ export default {
 			this.editingDefinition = def
 			this.editorOpen = true
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingDefinition = null
 		},
+
 		/**
 		 * @param payload
 		 * @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md

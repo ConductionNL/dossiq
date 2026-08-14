@@ -21,8 +21,8 @@
 					}}</label>
 					<NcSelect
 						v-model="forms[agendaCase.id].decisionType"
-						:input-id="'besluittype-' + agendaCase.id"
-						:input-label="t('procest', 'Decision type')"
+						:inputId="'besluittype-' + agendaCase.id"
+						:inputLabel="t('procest', 'Decision type')"
 						:options="decisionTypes" />
 
 					<label :for="'stem-' + agendaCase.id">{{
@@ -70,8 +70,8 @@
 </template>
 
 <script>
+import { CnDetailCard, CnDetailPage } from '@conduction/nextcloud-vue'
 import { NcButton, NcSelect } from '@nextcloud/vue'
-import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 
 export default {
@@ -82,12 +82,14 @@ export default {
 		CnDetailPage,
 		CnDetailCard,
 	},
+
 	props: {
 		id: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -97,15 +99,18 @@ export default {
 			decisionTypes: ['Goedgekeurd', 'Verworpen', 'Aangehouden'],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/besluitvorming-workflow/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+
 	created() {
 		this.loadCases()
 	},
+
 	methods: {
 		/**
 		 * Load all geagendeerde cases for the meeting.
@@ -139,6 +144,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Whether the required fields for a case are filled.
 		 *
@@ -149,6 +155,7 @@ export default {
 			const f = this.forms[caseId]
 			return !!(f && f.decisionType && f.stemuitslag && f.explanation)
 		},
+
 		/**
 		 * Create the decision object and transition the case.
 		 *
@@ -182,6 +189,7 @@ export default {
 				console.error('Failed to record decision:', error)
 			}
 		},
+
 		/**
 		 * Record attending members as role objects.
 		 *
@@ -201,6 +209,7 @@ export default {
 				})
 			}
 		},
+
 		/**
 		 * Defer (aanhouden) — route the case back to Gereed voor agendering.
 		 *

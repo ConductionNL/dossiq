@@ -59,6 +59,7 @@ export default {
 		NcEmptyContent,
 		ClipboardCheckMultipleOutline,
 	},
+
 	props: {
 		/** Case UUID — kept for parent contract; the leaf tabs use the object context. */
 		caseId: {

@@ -86,9 +86,9 @@
 					>
 					<NcTextField
 						id="decisions-section-title"
-						:model-value="form.title"
+						:modelValue="form.title"
 						:error="!!formErrors.title"
-						@update:model-value="
+						@update:modelValue="
 							(v) => {
 								form.title = v
 								formErrors.title = ''
@@ -116,9 +116,9 @@
 						}}</label>
 						<NcTextField
 							id="decisions-section-effective-date"
-							:model-value="form.effectiveDate"
+							:modelValue="form.effectiveDate"
 							type="date"
-							@update:model-value="(v) => (form.effectiveDate = v)" />
+							@update:modelValue="(v) => (form.effectiveDate = v)" />
 					</div>
 					<div class="form-group">
 						<label for="decisions-section-expiry-date">{{
@@ -126,10 +126,10 @@
 						}}</label>
 						<NcTextField
 							id="decisions-section-expiry-date"
-							:model-value="form.expiryDate"
+							:modelValue="form.expiryDate"
 							type="date"
 							:error="!!formErrors.expiryDate"
-							@update:model-value="
+							@update:modelValue="
 								(v) => {
 									form.expiryDate = v
 									formErrors.expiryDate = ''
@@ -178,11 +178,11 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 import {
-	getDecisionValidity,
 	formatDecisionDate,
+	getDecisionValidity,
 	validateDecision,
 } from '../../../utils/decisionHelpers.js'
 
@@ -194,20 +194,24 @@ export default {
 		NcTextField,
 		NcSelect,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -223,9 +227,11 @@ export default {
 				expiryDate: '',
 				decisionType: null,
 			},
+
 			formErrors: {},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/roles-decisions/spec.md */
 		sortedDecisions() {
@@ -235,6 +241,7 @@ export default {
 				return dateB.localeCompare(dateA) // newest first
 			})
 		},
+
 		/** @spec openspec/specs/roles-decisions/spec.md */
 		decisionTypeOptions() {
 			return this.decisionTypes.map((dt) => ({
@@ -243,9 +250,11 @@ export default {
 			}))
 		},
 	},
+
 	async mounted() {
 		await this.loadData()
 	},
+
 	methods: {
 		/** @spec openspec/specs/roles-decisions/spec.md */
 		async loadData() {

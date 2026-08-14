@@ -38,17 +38,17 @@
 				<CaseCard
 					v-for="c in cases"
 					:key="c.id"
-					:case-item="c"
-					:case-type-name="caseTypeName(c.caseType)"
+					:caseItem="c"
+					:caseTypeName="caseTypeName(c.caseType)"
 					:columns="allColumns"
 					:selected="selectedCaseIds.includes(String(c.id))"
-					:selection-mode="selectionColumnId === statusType.id"
+					:selectionMode="selectionColumnId === statusType.id"
 					@click="$emit('click-case', $event)"
 					@dragstart="$emit('dragstart', $event)"
 					@move="
 						(caseId, newStatusId) => $emit('move', caseId, newStatusId)
 					"
-					@toggle-select="
+					@toggleSelect="
 						(caseId) => $emit('toggle-select', caseId, statusType.id)
 					" />
 			</template>
@@ -66,6 +66,7 @@ export default {
 		NcLoadingIcon,
 		CaseCard,
 	},
+
 	props: {
 		/** The status type for this column: { id, name, order, isFinal }. */
 		statusType: { type: Object, required: true },
@@ -87,12 +88,14 @@ export default {
 		/** The column id that owns the active selection scope, or null. */
 		selectionColumnId: { type: String, default: null },
 	},
+
 	emits: ['drop', 'click-case', 'dragstart', 'move', 'toggle-select'],
 	data() {
 		return {
 			dragOver: false,
 		}
 	},
+
 	methods: {
 		/**
 		 * Resolve a caseType id to its display name.
@@ -103,6 +106,7 @@ export default {
 		caseTypeName(caseTypeId) {
 			return this.caseTypeMap[caseTypeId] || ''
 		},
+
 		/**
 		 * Handle a card drop: read the dragged case id and notify the parent to
 		 * transition it into this column's status.

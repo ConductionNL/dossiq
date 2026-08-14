@@ -12,7 +12,7 @@
 		v-if="open"
 		:name="dialogTitle"
 		size="normal"
-		:can-close="!submitting"
+		:canClose="!submitting"
 		@closing="onClose">
 		<div class="parafeer-actie-dialog">
 			<div class="parafeer-actie-dialog__step">
@@ -115,8 +115,8 @@
 </template>
 
 <script>
-import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import DelegateSelectorField from '../views/voorstellen/components/DelegateSelectorField.vue'
 import { recordAction } from '../services/parafeerActieApi.js'
 
@@ -127,11 +127,13 @@ export default {
 		NcButton,
 		DelegateSelectorField,
 	},
+
 	props: {
 		voorstelId: {
 			type: String,
 			required: true,
 		},
+
 		/**
 		 * Current step (from voorstel.routeSnapshot) — must include order, type, actor, label.
 		 */
@@ -139,10 +141,12 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		/**
 		 * Mandates available to the logged-in user. When empty, the
 		 * DelegateSelectorField is hidden.
@@ -152,6 +156,7 @@ export default {
 			default: () => [],
 		},
 	},
+
 	emits: ['action-recorded', 'update:open'],
 	data() {
 		return {
@@ -166,18 +171,22 @@ export default {
 			validationError: '',
 		}
 	},
+
 	computed: {
 		isAdviesStep() {
 			return this.step?.type === 'advies'
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		stepLabel() {
 			return this.step?.label || this.formatStepType(this.step?.type)
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		dialogTitle() {
 			return this.t('procest', 'Take action')
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		primaryActionLabel() {
 			if (this.step?.type === 'advies') return this.t('procest', 'Advise')
@@ -186,6 +195,7 @@ export default {
 			if (this.step?.type === 'accordering') return this.t('procest', 'Accord')
 			return ''
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canSubmit() {
 			if (this.isAdviesStep) {
@@ -194,6 +204,7 @@ export default {
 			return true
 		},
 	},
+
 	methods: {
 		/**
 		 * @param type
@@ -207,12 +218,14 @@ export default {
 			}
 			return labels[type] || type || ''
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		onClose() {
 			if (this.submitting) return
 			this.$emit('update:open', false)
 			this.resetForm()
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		resetForm() {
 			this.advice = ''
@@ -224,6 +237,7 @@ export default {
 			this.errorMessage = ''
 			this.validationError = ''
 		},
+
 		/**
 		 * @param action
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -239,6 +253,7 @@ export default {
 			if (this.mandate) payload.mandate = this.mandate
 			return payload
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async submitPrimary() {
 			if (!this.canSubmit) return
@@ -256,6 +271,7 @@ export default {
 			}
 			await this.submit(this.buildPayload(action))
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async submitReturn() {
 			if (this.returnReason.trim() === '') {
@@ -270,6 +286,7 @@ export default {
 			}
 			await this.submit(payload)
 		},
+
 		/**
 		 * @param payload
 		 * @spec openspec/specs/parafering-actions/spec.md

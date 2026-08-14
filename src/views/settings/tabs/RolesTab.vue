@@ -58,20 +58,20 @@
 							<div class="role-type-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.name"
+										:modelValue="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.name = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.description"
+										:modelValue="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.description = v)
 										" />
 								</div>
@@ -124,17 +124,17 @@
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
-								:model-value="newForm.name"
+								:modelValue="newForm.name"
 								:label="t('procest', 'Name *')"
 								class="add-form__field"
-								@update:model-value="(v) => (newForm.name = v)" />
+								@update:modelValue="(v) => (newForm.name = v)" />
 						</div>
 						<div class="add-form__row">
 							<NcTextField
-								:model-value="newForm.description"
+								:modelValue="newForm.description"
 								:label="t('procest', 'Description')"
 								class="add-form__field"
-								@update:model-value="
+								@update:modelValue="
 									(v) => (newForm.description = v)
 								" />
 						</div>
@@ -180,8 +180,8 @@
 
 <script>
 import { NcButton, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 const GENERIC_ROLES = [
@@ -202,6 +202,7 @@ export default {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
 	},
+
 	data() {
 		return {
 			roleTypes: [],
@@ -216,19 +217,23 @@ export default {
 			editSaving: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		genericRoleOptions() {
 			return GENERIC_ROLES
 		},
 	},
+
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) await this.fetchRoleTypes()
 	},
+
 	methods: {
 		/**
 		 * @param value
@@ -238,6 +243,7 @@ export default {
 			const opt = GENERIC_ROLES.find((r) => r.value === value)
 			return opt ? opt.label : value || '—'
 		},
+
 		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		async fetchRoleTypes() {
 			this.loading = true
@@ -252,6 +258,7 @@ export default {
 			}
 			this.loading = false
 		},
+
 		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		async addRoleType() {
 			this.addError = ''
@@ -278,6 +285,7 @@ export default {
 					|| t('procest', 'Failed to add role type')
 			}
 		},
+
 		/**
 		 * @param rt
 		 * @spec openspec/specs/role-based-step-routing/spec.md
@@ -287,12 +295,14 @@ export default {
 			this.editForm = { ...rt }
 			this.editError = ''
 		},
+
 		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		cancelEdit() {
 			this.editingId = null
 			this.editForm = {}
 			this.editError = ''
 		},
+
 		/** @spec openspec/specs/role-based-step-routing/spec.md */
 		async saveEdit() {
 			this.editError = ''
@@ -317,6 +327,7 @@ export default {
 					|| t('procest', 'Failed to save')
 			}
 		},
+
 		/**
 		 * @param rt
 		 * @spec openspec/specs/role-based-step-routing/spec.md

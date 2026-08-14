@@ -130,6 +130,7 @@
 </template>
 
 <script>
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcInputField,
@@ -138,7 +139,6 @@ import {
 	NcTextArea,
 } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
-import { generateUrl } from '@nextcloud/router'
 import {
 	collectUnresolved,
 	renderPreview,
@@ -162,12 +162,14 @@ export default {
 		NcTextArea,
 		Plus,
 	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -179,6 +181,7 @@ export default {
 			draft: { id: null, name: '', subject: '', body: '' },
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		introText() {
@@ -187,10 +190,12 @@ export default {
 				'Per-case-type email templates with placeholder variables. Editing a template creates a new version — old versions are retained. Templates prefill a Nextcloud Mail draft; Procest never sends mail itself.',
 			)
 		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		flatVariableNames() {
 			return Object.values(this.variables).flat()
 		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		unresolved() {
 			return collectUnresolved(
@@ -198,10 +203,12 @@ export default {
 				this.flatVariableNames,
 			)
 		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		previewHtml() {
 			return renderPreview(this.draft.body, this.flatVariableNames)
 		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		saveLabel() {
 			if (this.saving) return t('procest', 'Saving...')
@@ -210,6 +217,7 @@ export default {
 				: t('procest', 'Create template')
 		},
 	},
+
 	watch: {
 		caseTypeId: {
 			immediate: true,
@@ -220,12 +228,20 @@ export default {
 			},
 		},
 	},
+
 	methods: {
-		/** @spec openspec/specs/case-email-integration/spec.md */
+		/**
+		 * @param name
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
 		varToken(name) {
 			return '{{' + name + '}}'
 		},
-		/** @spec openspec/specs/case-email-integration/spec.md */
+
+		/**
+		 * @param group
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
 		groupLabel(group) {
 			const labels = {
 				case: t('procest', 'Case'),
@@ -234,9 +250,11 @@ export default {
 			}
 			return labels[group] || group
 		},
+
 		isSelected(tpl) {
 			return this.draft.id && tpl.id === this.draft.id
 		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		async load() {
 			this.loading = true
@@ -274,13 +292,18 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		startCreate() {
 			this.draft = { id: null, name: '', subject: '', body: '' }
 			this.editing = true
 			this.activeField = 'body'
 		},
-		/** @spec openspec/specs/case-email-integration/spec.md */
+
+		/**
+		 * @param tpl
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
 		selectTemplate(tpl) {
 			this.draft = {
 				id: tpl.id || null,
@@ -291,10 +314,15 @@ export default {
 			this.editing = true
 			this.activeField = 'body'
 		},
+
 		cancelEdit() {
 			this.editing = false
 		},
-		/** @spec openspec/specs/case-email-integration/spec.md */
+
+		/**
+		 * @param name
+		 * @spec openspec/specs/case-email-integration/spec.md
+		 */
 		insertVariable(name) {
 			const token = `{{${name}}}`
 			if (this.activeField === 'subject') {
@@ -303,6 +331,7 @@ export default {
 				this.draft.body = `${this.draft.body || ''}${token}`
 			}
 		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		async save() {
 			this.saving = true

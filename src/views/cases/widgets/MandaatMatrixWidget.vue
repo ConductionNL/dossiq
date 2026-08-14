@@ -70,6 +70,7 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		roleHolders: {
 			type: Array,
 			default: () => [],

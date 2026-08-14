@@ -3,12 +3,12 @@
 <template>
 	<div class="dossier-document-row">
 		<NcCheckboxRadioSwitch
-			:model-value="selected"
+			:modelValue="selected"
 			:aria-label="
 				t('procest', 'Select document {title}', { title: document.titel })
 			"
 			class="dossier-document-row__select"
-			@update:model-value="$emit('toggle-select', document)" />
+			@update:modelValue="$emit('toggle-select', document)" />
 
 		<img
 			class="dossier-document-row__thumb"
@@ -69,16 +69,16 @@
 </template>
 
 <script>
-import { NcActionButton, NcActions, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
-import {
-	canShare as canShareLevel,
-	formatSize as formatBytes,
-} from '../../../utils/dossierHelpers.js'
+import { NcActionButton, NcActions, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
 import History from 'vue-material-design-icons/History.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
 import ShareVariant from 'vue-material-design-icons/ShareVariant.vue'
+import {
+	canShare as canShareLevel,
+	formatSize as formatBytes,
+} from '../../../utils/dossierHelpers.js'
 
 /**
  * A single dossier document row: selection checkbox, preview thumbnail, title
@@ -99,22 +99,26 @@ export default {
 		OpenInNew,
 		ShareVariant,
 	},
+
 	props: {
 		document: {
 			type: Object,
 			required: true,
 		},
+
 		selected: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['toggle-select', 'open', 'share', 'version-history', 'delete'],
 	data() {
 		return {
 			thumbFailed: false,
 		}
 	},
+
 	computed: {
 		/**
 		 * Nextcloud preview API URL for the file thumbnail.
@@ -130,6 +134,7 @@ export default {
 				`/core/preview?fileId=${this.document.fileId}&x=64&y=64`,
 			)
 		},
+
 		/**
 		 * Human-readable status label.
 		 *
@@ -144,6 +149,7 @@ export default {
 			}
 			return labels[this.document.status] || this.document.status
 		},
+
 		/**
 		 * Human-readable confidentiality label.
 		 *
@@ -166,6 +172,7 @@ export default {
 				|| this.document.vertrouwelijkheidaanduiding
 			)
 		},
+
 		/**
 		 * Whether the document may be publicly shared (mirrors server guard).
 		 *
@@ -176,6 +183,7 @@ export default {
 			return canShareLevel(this.document.vertrouwelijkheidaanduiding)
 		},
 	},
+
 	methods: {
 		/**
 		 * Format an ISO date for display.
@@ -194,6 +202,7 @@ export default {
 			}
 			return d.toLocaleDateString('nl-NL')
 		},
+
 		/**
 		 * Format a byte count for display.
 		 *
@@ -204,6 +213,7 @@ export default {
 		formatSize(bytes) {
 			return formatBytes(bytes)
 		},
+
 		/**
 		 * Fall back to a generic icon when the preview fails to load.
 		 *

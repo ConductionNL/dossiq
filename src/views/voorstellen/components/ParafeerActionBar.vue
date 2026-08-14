@@ -49,15 +49,15 @@
 					v-if="isDelegating"
 					class="parafeer-action-bar__delegation-fields">
 					<NcTextField
-						:model-value="delegateFor"
+						:modelValue="delegateFor"
 						:placeholder="t('procest', 'User ID of principal')"
 						:aria-label="t('procest', 'User ID of principal')"
-						@update:model-value="(v) => (delegateFor = v)" />
+						@update:modelValue="(v) => (delegateFor = v)" />
 					<NcTextField
-						:model-value="mandateRef"
+						:modelValue="mandateRef"
 						:placeholder="t('procest', 'Mandate reference')"
 						:aria-label="t('procest', 'Mandate reference')"
-						@update:model-value="(v) => (mandateRef = v)" />
+						@update:modelValue="(v) => (mandateRef = v)" />
 				</div>
 			</div>
 		</template>
@@ -95,9 +95,9 @@
 </template>
 
 <script>
-import { NcButton, NcTextField } from '@nextcloud/vue'
 import { CnDetailCard } from '@conduction/nextcloud-vue'
 import { getCurrentUser } from '@nextcloud/auth'
+import { NcButton, NcTextField } from '@nextcloud/vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 import { getNextStep, getStatusAfterAdvance } from '../../../utils/parafeerEngine.js'
 
@@ -108,16 +108,19 @@ export default {
 		NcTextField,
 		CnDetailCard,
 	},
+
 	props: {
 		voorstel: {
 			type: Object,
 			required: true,
 		},
+
 		currentStepInfo: {
 			type: Object,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			acting: false,
@@ -130,20 +133,24 @@ export default {
 			mandateRef: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		isAdvisoryStep() {
 			return this.currentStepInfo?.type === 'advies'
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		actionTitle() {
 			const label = this.currentStepInfo?.label || t('procest', 'Your action')
 			return `${label} — ${this.formatStepType(this.currentStepInfo?.type)}`
 		},
 	},
+
 	methods: {
 		/**
 		 * @param type
@@ -157,6 +164,7 @@ export default {
 			}
 			return labels[type] || type || ''
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async doParaferen() {
 			this.acting = true
@@ -193,6 +201,7 @@ export default {
 				this.acting = false
 			}
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async doAdviseren() {
 			this.acting = true
@@ -223,6 +232,7 @@ export default {
 				this.acting = false
 			}
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async doTerugsturen() {
 			if (!this.returnComment.trim()) {

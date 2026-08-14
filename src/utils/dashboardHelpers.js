@@ -5,9 +5,9 @@
 
 import { translate as t } from '@nextcloud/l10n'
 import {
-	isCaseOverdue,
-	getDaysRemaining,
 	formatDeadlineCountdown,
+	getDaysRemaining,
+	isCaseOverdue,
 } from './caseHelpers.js'
 import { prioritySortWeight } from './taskHelpers.js'
 import { isTerminalStatus } from './taskLifecycle.js'

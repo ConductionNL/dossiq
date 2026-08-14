@@ -5,7 +5,7 @@
 		v-if="open"
 		:name="t('procest', 'New consultation')"
 		size="normal"
-		:can-close="!submitting"
+		:canClose="!submitting"
 		@closing="onClose">
 		<div class="consultation-create-dialog">
 			<!-- Read-only parent case display -->
@@ -20,21 +20,21 @@
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:model-value="form.adviceAuthority"
+					:modelValue="form.adviceAuthority"
 					:label="t('procest', 'Advisory body')"
 					:placeholder="
 						t('procest', 'e.g. Fire brigade, Aesthetics committee')
 					"
 					required
-					@update:model-value="(v) => (form.adviceAuthority = v)" />
+					@update:modelValue="(v) => (form.adviceAuthority = v)" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:model-value="form.onderwerp"
+					:modelValue="form.onderwerp"
 					:label="t('procest', 'Onderwerp')"
 					required
-					@update:model-value="(v) => (form.onderwerp = v)" />
+					@update:modelValue="(v) => (form.onderwerp = v)" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
@@ -115,20 +115,24 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		parentZaakTitle: {
 			type: String,
 			default: '',
 		},
 	},
+
 	emits: ['close', 'created'],
 	data() {
 		return {
@@ -141,23 +145,27 @@ export default {
 				latestResponseDate: '',
 				priority: 'normaal',
 			},
+
 			prioriteitOptions: [
 				{ label: this.t('procest', 'Normal'), value: 'normaal' },
 				{ label: this.t('procest', 'Urgent'), value: 'spoed' },
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		today() {
 			return new Date().toISOString().slice(0, 10)
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		defaultDeadline() {
 			const d = new Date()
 			d.setDate(d.getDate() + 28)
 			return d.toISOString().slice(0, 10)
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		canSubmit() {
 			return (
@@ -169,6 +177,7 @@ export default {
 			)
 		},
 	},
+
 	watch: {
 		/**
 		 * @param value
@@ -188,6 +197,7 @@ export default {
 			}
 		},
 	},
+
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
@@ -215,6 +225,7 @@ export default {
 			}
 			return true
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		onSubmit() {
 			this.validationError = ''
@@ -230,6 +241,7 @@ export default {
 			})
 			this.submitting = false
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		onClose() {
 			if (this.submitting) return

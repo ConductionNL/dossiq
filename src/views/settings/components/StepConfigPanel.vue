@@ -361,20 +361,24 @@ export default {
 		NcButton,
 		CloseIcon,
 	},
+
 	props: {
 		step: {
 			type: Object,
 			required: true,
 		},
+
 		roleTypes: {
 			type: Array,
 			default: () => [],
 		},
+
 		readOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['update', 'close', 'delete'],
 	data() {
 		return {
@@ -388,10 +392,12 @@ export default {
 				&& this.step.config
 				&& this.step.config.escalationRule
 			),
+
 			slaValueMax: 10000,
 			dragCheckIndex: null,
 		}
 	},
+
 	watch: {
 		step: {
 			/**
@@ -409,9 +415,11 @@ export default {
 					&& newStep.config.escalationRule
 				)
 			},
+
 			deep: true,
 		},
 	},
+
 	methods: {
 		/**
 		 * @param config
@@ -433,17 +441,21 @@ export default {
 						safe.sla && Number.isFinite(safe.sla.value)
 							? safe.sla.value
 							: null,
+
 					unit:
 						safe.sla && typeof safe.sla.unit === 'string'
 							? safe.sla.unit
 							: '',
 				},
+
 				requiredFields: Array.isArray(safe.requiredFields)
 					? [...safe.requiredFields]
 					: [],
+
 				autoActions: Array.isArray(safe.autoActions)
 					? [...safe.autoActions]
 					: [],
+
 				escalationRule:
 					safe.escalationRule && typeof safe.escalationRule === 'object'
 						? {
@@ -451,24 +463,29 @@ export default {
 									typeof safe.escalationRule.trigger === 'string'
 										? safe.escalationRule.trigger
 										: 'preBreach',
+
 								offset: Number.isFinite(safe.escalationRule.offset)
 									? safe.escalationRule.offset
 									: 0,
+
 								offsetUnit:
 									typeof safe.escalationRule.offsetUnit
 									=== 'string'
 										? safe.escalationRule.offsetUnit
 										: 'businessDays',
+
 								notifyRole:
 									typeof safe.escalationRule.notifyRole
 									=== 'string'
 										? safe.escalationRule.notifyRole
 										: '',
+
 								escalateToRole:
 									typeof safe.escalationRule.escalateToRole
 									=== 'string'
 										? safe.escalationRule.escalateToRole
 										: '',
+
 								openIncident: !!safe.escalationRule.openIncident,
 							}
 						: {

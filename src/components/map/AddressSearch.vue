@@ -1,13 +1,13 @@
 <template>
 	<div class="address-search">
 		<NcTextField
-			:model-value="query"
+			:modelValue="query"
 			:label="t('procest', 'Search address...')"
 			:placeholder="t('procest', 'Street, postcode, or city')"
-			trailing-button-icon="close"
-			:show-trailing-button="query.length > 0"
+			trailingButtonIcon="close"
+			:showTrailingButton="query.length > 0"
 			@update:value="onInput"
-			@trailing-button-click="clear"
+			@trailingButtonClick="clear"
 			@keydown.enter="onEnter" />
 
 		<ul v-if="results.length > 0" class="address-search__results">
@@ -45,11 +45,11 @@
 <script>
 import { NcTextField } from '@nextcloud/vue'
 import {
-	suggest,
-	lookup,
-	free,
 	extractCoordinates,
 	formatAddress,
+	free,
+	lookup,
+	suggest,
 } from '../../services/pdokService.js'
 
 export default {
@@ -63,6 +63,7 @@ export default {
 			loading: false,
 		}
 	},
+
 	methods: {
 		/**
 		 * @param value

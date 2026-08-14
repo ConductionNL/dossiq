@@ -75,11 +75,13 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		/** Count of cases near or past their deadline. */
 		atRiskCount: {
 			type: Number,
 			default: 0,
 		},
+
 		/** Count of cases completed in the selected period. */
 		completedCount: {
 			type: Number,
