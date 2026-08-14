@@ -27,6 +27,7 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\AppInfo\Application;
 use OCA\Procest\Service\AppointmentService;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 
@@ -59,6 +60,7 @@ class PublicAppointmentController extends Controller {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function view(string $token): JSONResponse {
 		$appointment = $this->appointmentService->getAppointmentByToken($token);
 		if ($appointment === null) {
@@ -91,6 +93,9 @@ class PublicAppointmentController extends Controller {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
+	// Tight: cancelling is destructive and reachable without authentication,
+	// so the token in the link is the only barrier.
+	#[AnonRateLimit(limit: 20, period: 60)]
 	public function cancel(string $token): JSONResponse {
 		$appointment = $this->appointmentService->getAppointmentByToken($token);
 		if ($appointment === null) {

@@ -32,6 +32,7 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
@@ -85,6 +86,7 @@ class ZgwOpenApiController extends Controller {
 	 *
 	 * @spec openspec/specs/zgw-openapi-publication/spec.md
 	 */
+	#[AnonRateLimit(limit: 240, period: 60)]
 	public function index(): JSONResponse {
 		$apis = [];
 		foreach (self::APIS as $id => $name) {
@@ -116,6 +118,9 @@ class ZgwOpenApiController extends Controller {
 	 *
 	 * @spec openspec/specs/zgw-openapi-publication/spec.md
 	 */
+	// Generous: the OpenAPI document is fetched by tooling and client
+	// generators, which a tight ceiling would break rather than protect.
+	#[AnonRateLimit(limit: 240, period: 60)]
 	public function spec(string $api): DataDisplayResponse|JSONResponse {
 		if (isset(self::APIS[$api]) === false) {
 			return new JSONResponse(

@@ -28,6 +28,7 @@ namespace OCA\Procest\Controller;
 
 use OCA\Procest\Service\ZgwService;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IL10N;
 use OCP\IRequest;
@@ -83,6 +84,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function index(): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
@@ -253,6 +255,7 @@ class AcController extends ZgwController {
 	 * @PublicPage
 	 * @CORS
 	 */
+	#[AnonRateLimit(limit: 120, period: 60)]
 	public function show(string $uuid): JSONResponse {
 		$authError = $this->zgwService->validateJwtAuth($this->request);
 		if ($authError !== null) {
