@@ -56,12 +56,12 @@ class StufFieldMappingService {
 	private const DEFAULT_ZKN_MAPPINGS = [
 		'identificatie' => ['property' => 'identifier', 'transform' => null],
 		'omschrijving' => ['property' => 'title', 'transform' => null],
-		'notes' => ['property' => 'description', 'transform' => null],
+		'toelichting' => ['property' => 'description', 'transform' => null],
 		'startdatum' => ['property' => 'startDate', 'transform' => 'stufDateToIso'],
-		'endDate' => ['property' => 'endDate', 'transform' => 'stufDateToIso'],
+		'einddatum' => ['property' => 'endDate', 'transform' => 'stufDateToIso'],
 		'einddatumGepland' => ['property' => 'plannedEndDate', 'transform' => 'stufDateToIso'],
 		'uiterlijkeEinddatumAfdoening' => ['property' => 'deadline', 'transform' => 'stufDateToIso'],
-		'registrationDate' => ['property' => 'registrationDate', 'transform' => 'stufDateToIso'],
+		'registratiedatum' => ['property' => 'registrationDate', 'transform' => 'stufDateToIso'],
 		'vertrouwelijkAanduiding' => ['property' => 'confidentiality', 'transform' => 'confidentialityToInternal'],
 	];
 
@@ -72,9 +72,9 @@ class StufFieldMappingService {
 	 */
 	private const DEFAULT_BG_MAPPINGS = [
 		'inp.bsn' => ['property' => 'bsn', 'transform' => null],
-		'surname' => ['property' => 'lastName', 'transform' => null],
+		'geslachtsnaam' => ['property' => 'lastName', 'transform' => null],
 		'voorvoegselGeslachtsnaam' => ['property' => 'namePrefix', 'transform' => null],
-		'givenNames' => ['property' => 'firstName', 'transform' => null],
+		'voornamen' => ['property' => 'firstName', 'transform' => null],
 		'geboortedatum' => ['property' => 'dateOfBirth', 'transform' => 'stufDateToIso'],
 	];
 
