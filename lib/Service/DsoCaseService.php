@@ -91,8 +91,8 @@ class DsoCaseService {
 		private readonly ContainerInterface $container,
 		private readonly DsoStatusChangeNotifier $notifier,
 		private readonly LoggerInterface $logger,
-	
-		private readonly ObjectService $objectService,) {
+		private readonly ObjectService $objectService,
+	) {
 	}//end __construct()
 
 	/**

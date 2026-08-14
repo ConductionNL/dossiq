@@ -62,8 +62,8 @@ class SamenwerkverzoekService {
 		private readonly ContainerInterface $container,
 		private readonly IEventDispatcher $eventDispatcher,
 		private readonly LoggerInterface $logger,
-	
-		private readonly ObjectService $objectService,) {
+		private readonly ObjectService $objectService,
+	) {
 	}//end __construct()
 
 	/**
