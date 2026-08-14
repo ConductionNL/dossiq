@@ -169,7 +169,7 @@
 				:placeholder="t('procest', 'No IV3 classification')"
 				:aria-label-combobox="t('procest', 'IV3 taakveld')"
 				@update:model-value="
-					(v) => $emit('update', 'iv3Taakveld', v ? v.id : '')
+					(v) => $emit('update', 'iv3TaskField', v ? v.id : '')
 				" />
 			<p class="general-tab__hint">
 				{{
@@ -341,9 +341,9 @@ export default {
 		},
 		/** @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/tasks.md#5.3 */
 		selectedIv3Taakveld() {
-			if (!this.form.iv3Taakveld) return null
+			if (!this.form.iv3TaskField) return null
 			return (
-				this.iv3TaakveldOptions.find((o) => o.id === this.form.iv3Taakveld)
+				this.iv3TaakveldOptions.find((o) => o.id === this.form.iv3TaskField)
 				|| null
 			)
 		},

@@ -62,9 +62,9 @@
 				}}</label>
 				<NcTextField
 					id="voorstel-create-department"
-					:model-value="form.afdeling"
+					:model-value="form.department"
 					:placeholder="t('procest', 'Department')"
-					@update:model-value="(v) => (form.afdeling = v)" />
+					@update:model-value="(v) => (form.department = v)" />
 			</div>
 		</div>
 
@@ -121,7 +121,7 @@ export default {
 				onderwerp: this.caseTitle || '',
 				type: 'collegeadvies',
 				portefeuillehouder: '',
-				afdeling: '',
+				department: '',
 			},
 			errors: {},
 			typeOptions: ['dt_advies', 'collegeadvies', 'raadsvoorstel'],
@@ -200,11 +200,11 @@ export default {
 					type: this.form.type,
 					onderwerp: this.form.onderwerp.trim(),
 					steller: getCurrentUser()?.uid || '',
-					afdeling: this.form.afdeling,
+					department: this.form.department,
 					portefeuillehouder: this.form.portefeuillehouder,
 					status: 'concept',
 					currentStep: 0,
-					bijlagen: [],
+					attachments: [],
 				}
 
 				if (routeId) {

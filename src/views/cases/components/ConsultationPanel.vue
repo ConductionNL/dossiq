@@ -18,7 +18,7 @@
 				:class="{ 'consultation-panel__item--overdue': isOverdue(cons) }">
 				<div class="consultation-panel__item-header">
 					<span class="consultation-panel__department">{{
-						cons.adviesInstantie
+						cons.adviesAuthority
 					}}</span>
 					<span
 						class="consultation-panel__status"
@@ -29,8 +29,8 @@
 				<p class="consultation-panel__subject">
 					{{ cons.onderwerp }}
 				</p>
-				<p v-if="cons.vraagstelling" class="consultation-panel__question">
-					{{ cons.vraagstelling }}
+				<p v-if="cons.question_formulation" class="consultation-panel__question">
+					{{ cons.question_formulation }}
 				</p>
 
 				<!-- Response section -->
@@ -44,9 +44,9 @@
 						{{ getAdviceLabel(cons.advies) }}
 					</span>
 					<p
-						v-if="cons.toelichting"
+						v-if="cons.notes"
 						class="consultation-panel__explanation">
-						{{ cons.toelichting }}
+						{{ cons.notes }}
 					</p>
 					<!-- Conditions -->
 					<div
@@ -66,11 +66,11 @@
 				<div class="consultation-panel__meta">
 					<span>{{
 						t('procest', 'Deadline: {date}', {
-							date: formatDate(cons.uiterlijkeReactiedatum),
+							date: formatDate(cons.latestResponseDate),
 						})
 					}}</span>
-					<span v-if="cons.aanvrager">{{
-						t('procest', 'by {user}', { user: cons.aanvrager })
+					<span v-if="cons.applicant">{{
+						t('procest', 'by {user}', { user: cons.applicant })
 					}}</span>
 				</div>
 
@@ -228,22 +228,22 @@ export default {
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		isOverdue(cons) {
-			if (!cons.uiterlijkeReactiedatum) return false
+			if (!cons.latestResponseDate) return false
 			if (cons.status === 'afgesloten' || cons.status === 'advies_uitgebracht')
 				return false
-			return new Date(cons.uiterlijkeReactiedatum) < new Date()
+			return new Date(cons.latestResponseDate) < new Date()
 		},
 		/**
 		 * @param cons
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		conditions(cons) {
-			if (!cons.voorwaarden) return []
+			if (!cons.terms) return []
 			try {
 				const parsed =
-					typeof cons.voorwaarden === 'string'
-						? JSON.parse(cons.voorwaarden)
-						: cons.voorwaarden
+					typeof cons.terms === 'string'
+						? JSON.parse(cons.terms)
+						: cons.terms
 				return Array.isArray(parsed) ? parsed : []
 			} catch {
 				return []

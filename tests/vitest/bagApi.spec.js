@@ -50,7 +50,7 @@ describe('bagApi shim — endpoint routing', () => {
 		const result = await lookupAddress('1234AB', '10')
 
 		expect(axios.get).toHaveBeenCalledWith(`${BASE}/address`, {
-			params: { postcode: '1234AB', huisnummer: '10' },
+			params: { postcode: '1234AB', house_number: '10' },
 		})
 		expect(result).toEqual(envelope)
 		const calledUrls = axios.get.mock.calls.map((c) => c[0])
@@ -81,7 +81,7 @@ describe('bagApi shim — endpoint routing', () => {
 		expect(axios.get).toHaveBeenCalledWith(`${BASE}/address`, {
 			params: {
 				postcode: '1234AB',
-				huisnummer: '10',
+				house_number: '10',
 				huisletter: 'A',
 				huisnummertoevoeging: 'II',
 			},

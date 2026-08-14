@@ -73,7 +73,7 @@
 					}}</label>
 					<input
 						id="enforcement-intervention-type"
-						v-model="interventie"
+						v-model="intervention"
 						type="text"
 						class="enforcement-wizard__input" />
 				</div>
@@ -85,7 +85,7 @@
 						}}</label>
 						<input
 							id="enforcement-penalty-amount"
-							v-model.number="dwangsomBedrag"
+							v-model.number="penaltyPaymentAmount"
 							type="number"
 							class="enforcement-wizard__input"
 							min="0" />
@@ -96,7 +96,7 @@
 						}}</label>
 						<input
 							id="enforcement-penalty-maximum"
-							v-model.number="dwangsomMaximaal"
+							v-model.number="penaltyPaymentMaximum"
 							type="number"
 							class="enforcement-wizard__input"
 							min="0" />
@@ -107,7 +107,7 @@
 						}}</label>
 						<input
 							id="enforcement-grace-period"
-							v-model.number="begunstigingstermijn"
+							v-model.number="compliance_period"
 							type="number"
 							class="enforcement-wizard__input"
 							min="1" />
@@ -123,7 +123,7 @@
 						}}</label>
 						<input
 							id="enforcement-execution-date"
-							v-model="effectueringsDatum"
+							v-model="effectueringsDate"
 							type="date"
 							class="enforcement-wizard__input" />
 					</div>
@@ -186,7 +186,7 @@
 						{{ t('procest', 'per violation, max') }} EUR
 						{{ dwangsomMaximaal }}
 					</p>
-					<p v-if="begunstigingstermijn">
+					<p v-if="compliance_period">
 						<strong>{{ t('procest', 'Grace period:') }}</strong>
 						{{ begunstigingstermijn }} {{ t('procest', 'days') }}
 					</p>
@@ -250,11 +250,11 @@ export default {
 			step: 1,
 			ernst: null,
 			gedrag: null,
-			interventie: '',
-			dwangsomBedrag: 5000,
-			dwangsomMaximaal: 25000,
-			begunstigingstermijn: 42,
-			effectueringsDatum: '',
+			intervention: '',
+			penaltyPaymentAmount: 5000,
+			penaltyPaymentMaximum: 25000,
+			compliance_period: 42,
+			effectueringsDate: '',
 			overrideReason: '',
 			zienswijzetermijn: 14,
 			submitting: false,
@@ -307,11 +307,11 @@ export default {
 		},
 
 		isDwangsom() {
-			return this.interventie?.toLowerCase().includes('dwangsom')
+			return this.intervention?.toLowerCase().includes('penalty_payment')
 		},
 
 		isBestuursdwang() {
-			return this.interventie?.toLowerCase().includes('bestuursdwang')
+			return this.intervention?.toLowerCase().includes('bestuursdwang')
 		},
 
 		/** @spec openspec/specs/vth-module/spec.md */
@@ -320,7 +320,7 @@ export default {
 				return this.ernst && this.gedrag
 			}
 			if (this.step === 2) {
-				return this.interventie
+				return this.intervention
 			}
 			return true
 		},
@@ -332,8 +332,8 @@ export default {
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		suggestedIntervention(val) {
-			if (val && !this.interventie) {
-				this.interventie = val
+			if (val && !this.intervention) {
+				this.intervention = val
 			}
 		},
 	},
@@ -351,18 +351,18 @@ export default {
 			try {
 				const action = await this.enforcementStore.createAction({
 					case: this.caseId,
-					type: this.mapInterventionToType(this.interventie),
+					type: this.mapInterventionToType(this.intervention),
 					ernst: this.ernst,
 					gedrag: this.gedrag,
-					interventie: this.interventie,
-					dwangsomBedrag: this.isDwangsom ? this.dwangsomBedrag : null,
-					dwangsomMaximaal: this.isDwangsom ? this.dwangsomMaximaal : null,
-					begunstigingstermijn: this.begunstigingstermijn || null,
-					effectueringsDatum: this.isBestuursdwang
-						? this.effectueringsDatum
+					intervention: this.intervention,
+					penaltyPaymentAmount: this.isDwangsom ? this.penaltyPaymentAmount : null,
+					penaltyPaymentMaximum: this.isDwangsom ? this.penaltyPaymentMaximum : null,
+					compliance_period: this.compliance_period || null,
+					effectueringsDate: this.isBestuursdwang
+						? this.effectueringsDate
 						: null,
 					overrideReason:
-						this.interventie !== this.suggestedIntervention
+						this.intervention !== this.suggestedIntervention
 							? this.overrideReason
 							: null,
 				})
@@ -382,7 +382,7 @@ export default {
 			if (lower.includes('bestuursdwang')) {
 				return 'bestuursdwang'
 			}
-			if (lower.includes('dwangsom')) {
+			if (lower.includes('penalty_payment')) {
 				return 'last_onder_dwangsom'
 			}
 			if (lower.includes('pv') || lower.includes('proces')) {

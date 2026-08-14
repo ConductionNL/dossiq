@@ -78,8 +78,8 @@
 							'e.g. { \&quot;maxBedrag\&quot;: 50000, \&quot;categorie\&quot;: [\&quot;subsidie\&quot;] }',
 						)
 					" />
-				<span v-if="errors.voorwaarden" class="field-error">{{
-					errors.voorwaarden
+				<span v-if="errors.terms" class="field-error">{{
+					errors.terms
 				}}</span>
 			</div>
 
@@ -175,10 +175,10 @@ export default {
 					|| new Date().toISOString().slice(0, 10),
 				vervaldatum: this.mandaat?.vervaldatum || '',
 				toegewezenRol: this.mandaat?.toegewezenRol || '',
-				voorwaarden: this.mandaat?.voorwaarden || {},
+				terms: this.mandaat?.terms || {},
 			},
 			voorwaardenJson: JSON.stringify(
-				this.mandaat?.voorwaarden || {},
+				this.mandaat?.terms || {},
 				null,
 				2,
 			),
@@ -238,11 +238,11 @@ export default {
 			if (!this.form.legalBasis)
 				errs.legalBasis = t('procest', 'Wettelijke grondslag is required')
 			try {
-				this.form.voorwaarden = this.voorwaardenJson.trim()
+				this.form.terms = this.voorwaardenJson.trim()
 					? JSON.parse(this.voorwaardenJson)
 					: {}
 			} catch (e) {
-				errs.voorwaarden = t('procest', 'Voorwaarden must be valid JSON')
+				errs.terms = t('procest', 'Voorwaarden must be valid JSON')
 			}
 			this.errors = errs
 			return Object.keys(errs).length === 0

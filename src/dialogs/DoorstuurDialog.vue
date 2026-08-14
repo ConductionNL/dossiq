@@ -25,7 +25,7 @@
 					:placeholder="t('procest', 'e.g. Gemeente Utrecht')" />
 
 				<NcTextArea
-					v-model="reden"
+					v-model="reason"
 					:label="t('procest', 'Reason for forwarding')"
 					:placeholder="
 						t('procest', 'Explain why the verzoek is being forwarded...')
@@ -74,7 +74,7 @@ export default {
 	name: 'DoorstuurDialog',
 	components: { NcButton, NcDialog, NcTextArea, NcTextField },
 	props: {
-		zaakId: {
+		caseId: {
 			type: String,
 			required: true,
 		},
@@ -83,7 +83,7 @@ export default {
 	data() {
 		return {
 			doelBevoegdGezag: '',
-			reden: '',
+			reason: '',
 			submitting: false,
 			error: null,
 			success: false,
@@ -102,12 +102,12 @@ export default {
 				await axios.post(
 					generateUrl(
 						'/apps/procest/api/dso/cases/'
-							+ encodeURIComponent(this.zaakId)
+							+ encodeURIComponent(this.caseId)
 							+ '/doorstuur',
 					),
 					{
 						doelBevoegdGezag: this.doelBevoegdGezag,
-						reden: this.reden,
+						reason: this.reason,
 					},
 				)
 				this.success = true

@@ -86,7 +86,7 @@
 						<td>
 							<code>{{ activity.code }}</code>
 						</td>
-						<td>{{ activity.naam }}</td>
+						<td>{{ activity.name }}</td>
 						<td>{{ activity.rechtsgrond }}</td>
 						<td>
 							<span :class="`status status--${activity.status}`">{{
