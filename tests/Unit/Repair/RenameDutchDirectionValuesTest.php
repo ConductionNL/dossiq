@@ -24,7 +24,11 @@ namespace OCA\Procest\Tests\Unit\Repair;
 
 use OCA\Procest\Repair\RenameDutchDirectionValues;
 use OCA\Procest\Service\ZgwRulesBase;
+use OCP\DB\Exception as DbException;
+use OCP\DB\IPreparedStatement;
+use OCP\DB\IResult;
 use OCP\IDBConnection;
+use OCP\Migration\IOutput;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use ReflectionClass;
@@ -77,6 +81,165 @@ class RenameDutchDirectionValuesTest extends TestCase {
 		return $method->invokeArgs($this->step(), $args);
 
 	}//end call()
+
+
+	/**
+	 * THE BEHAVIOURAL ARM — a procest shard table with a `direction` column is
+	 * updated once per Dutch value, and only ever on that column.
+	 *
+	 * Everything else in this file inspects constants. This one drives run()
+	 * end to end against mocked SQL and asserts the statements it issues, which
+	 * is the only place the actual UPDATE is exercised.
+	 *
+	 * @return void
+	 */
+	public function testItUpdatesEachDutchValueOnAProcestShardTable(): void {
+		$registers = $this->createMock(IResult::class);
+		$registers->method('fetchAll')->willReturn([17]);
+
+		// information_schema.tables, then the per-table column probe.
+		$tables = $this->createMock(IPreparedStatement::class);
+		$tables->method('execute')->willReturn($this->createMock(IResult::class));
+		$tables->method('fetch')->willReturnOnConsecutiveCalls(
+			['table_name' => 'oc_openregister_table_17_928'],
+			// Another app's table — must be filtered out before any UPDATE.
+			['table_name' => 'oc_openregister_table_16_41'],
+			false,
+			// The column probe for the one in-scope table.
+			['column_name' => 'direction'],
+			false
+		);
+
+		$db = $this->createMock(IDBConnection::class);
+		$db->method('executeQuery')->willReturn($registers);
+		$db->method('prepare')->willReturn($tables);
+		$db->method('getDatabasePlatform')->willReturn(
+			new class {
+				/**
+				 * @param string $identifier Identifier.
+				 *
+				 * @return string
+				 */
+				public function quoteSingleIdentifier(string $identifier): string {
+					return '"' . $identifier . '"';
+				}
+			}
+		);
+
+		$statements = [];
+		$db->method('executeStatement')->willReturnCallback(
+			static function (string $sql, array $params) use (&$statements): int {
+				$statements[] = [$sql, $params];
+				return 1;
+			}
+		);
+
+		$step = new RenameDutchDirectionValues($db, $this->createMock(LoggerInterface::class));
+		$step->run($this->createMock(IOutput::class));
+
+		// One UPDATE per mapped value, and no more — the out-of-scope table
+		// contributed nothing.
+		$this->assertCount(3, $statements);
+
+		foreach ($statements as [$sql, $params]) {
+			$this->assertStringContainsString('oc_openregister_table_17_928', $sql);
+			$this->assertStringContainsString('"direction"', $sql);
+			$this->assertStringNotContainsString('vertrouwelijkheidaanduiding', $sql);
+			$this->assertStringNotContainsString('oc_openregister_table_16_41', $sql);
+		}
+
+		$pairs = array_map(static fn (array $s): array => $s[1], $statements);
+		$this->assertEqualsCanonicalizing(
+			[['inbound', 'inkomend'], ['outbound', 'uitgaand'], ['internal', 'intern']],
+			$pairs
+		);
+
+	}//end testItUpdatesEachDutchValueOnAProcestShardTable()
+
+
+	/**
+	 * The step names itself for `occ maintenance:repair`.
+	 *
+	 * @return void
+	 */
+	public function testItNamesItself(): void {
+		$this->assertStringContainsString('direction', $this->step()->getName());
+
+	}//end testItNamesItself()
+
+
+	/**
+	 * An install with no procest register does nothing and SAYS so.
+	 *
+	 * A repair step that prints nothing on a clean install is indistinguishable
+	 * from one that never ran.
+	 *
+	 * @return void
+	 */
+	public function testAnInstallWithoutProcestRegistersReportsInsteadOfSilentlyPassing(): void {
+		$result = $this->createMock(IResult::class);
+		$result->method('fetchAll')->willReturn([]);
+
+		$db = $this->createMock(IDBConnection::class);
+		$db->method('executeQuery')->willReturn($result);
+		// Nothing may be written when there is nothing in scope.
+		$db->expects($this->never())->method('executeStatement');
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())
+			->method('info')
+			->with($this->stringContains('nothing to do'));
+
+		$step = new RenameDutchDirectionValues($db, $this->createMock(LoggerInterface::class));
+		$step->run($output);
+
+	}//end testAnInstallWithoutProcestRegistersReportsInsteadOfSilentlyPassing()
+
+
+	/**
+	 * A database error while resolving registers is logged and skipped, not
+	 * thrown — one broken install must not abort the whole repair run.
+	 *
+	 * @return void
+	 */
+	public function testAFailedRegisterLookupIsLoggedAndSkipped(): void {
+		$db = $this->createMock(IDBConnection::class);
+		$db->method('executeQuery')->willThrowException(new DbException('boom'));
+		$db->expects($this->never())->method('executeStatement');
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning');
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects($this->once())->method('info');
+
+		$step = new RenameDutchDirectionValues($db, $logger);
+		$step->run($output);
+
+	}//end testAFailedRegisterLookupIsLoggedAndSkipped()
+
+
+	/**
+	 * A table whose columns cannot be inspected is skipped rather than updated
+	 * blind.
+	 *
+	 * @return void
+	 */
+	public function testAnUninspectableTableIsSkippedRatherThanUpdatedBlind(): void {
+		$db = $this->createMock(IDBConnection::class);
+		$db->method('prepare')->willThrowException(new \RuntimeException('no information_schema'));
+
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->once())->method('warning');
+
+		$step = new RenameDutchDirectionValues($db, $logger);
+
+		$method = (new ReflectionClass(RenameDutchDirectionValues::class))->getMethod('hasDirectionColumn');
+		$method->setAccessible(true);
+
+		$this->assertFalse($method->invokeArgs($step, ['oc_openregister_table_17_928']));
+
+	}//end testAnUninspectableTableIsSkippedRatherThanUpdatedBlind()
 
 
 	/**
