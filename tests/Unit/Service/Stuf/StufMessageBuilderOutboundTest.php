@@ -59,11 +59,11 @@ class StufMessageBuilderOutboundTest extends TestCase {
 		return [
 			'id' => 'stuf-ep-test',
 			'name' => 'Test',
-			'ontvangerApplicatie' => 'Key2Zaken',
-			'ontvangerOrganisatie' => 'Gemeente Test',
-			'ontvangerGebruiker' => 'procest',
-			'zenderApplicatie' => 'Procest',
-			'zenderOrganisatie' => 'Gemeente Test',
+			'recipientApplication' => 'Key2Zaken',
+			'recipientOrganisation' => 'Gemeente Test',
+			'recipientUser' => 'procest',
+			'senderApplication' => 'Procest',
+			'senderOrganisation' => 'Gemeente Test',
 			'endpointUrl' => 'https://test.example/stuf',
 			'soapVersion' => '1.1',
 			'stufVersion' => '0310',
@@ -76,7 +76,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 			'zaaktypeMappings' => [
 				'evenementenvergunning' => 'Evenementenvergunning',
 			],
-			'vrijeBerichtenTemplates' => [
+			'freeMessagesTemplates' => [
 				['name' => 'zetStatus', 'verplichteVelden' => ['zaakIdentificatie', 'statusType', 'datumStatusGezet']],
 			],
 		];

@@ -291,7 +291,7 @@ class StufMessageBuilder {
 	 *
 	 * @param string $name The template name.
 	 * @param array $payload The payload values.
-	 * @param array $endpoint The StufEndpoint (template registered under `vrijeBerichtenTemplates`).
+	 * @param array $endpoint The StufEndpoint (template registered under `freeMessagesTemplates`).
 	 *
 	 * @return string The envelope XML.
 	 *
