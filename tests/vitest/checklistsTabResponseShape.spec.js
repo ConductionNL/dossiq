@@ -81,10 +81,13 @@ vi.mock('../../src/components/InspectionChecklistEditor.vue', () => ({
 	default: stub('div'),
 }))
 
-const ChecklistsTab = (await import('../../src/views/settings/tabs/ChecklistsTab.vue')).default
+const ChecklistsTab = (
+	await import('../../src/views/settings/tabs/ChecklistsTab.vue')
+).default
 
 /** A realistic stand-in for what Nextcloud actually returned: an HTML page. */
-const HTML_ERROR_PAGE = '<!DOCTYPE html>\n<html class="ng-csp" lang="en">'
+const HTML_ERROR_PAGE =
+	'<!DOCTYPE html>\n<html class="ng-csp" lang="en">'
 	+ '<head><title>Nextcloud</title></head><body>'
 	+ 'x'.repeat(4000)
 	+ '</body></html>'
@@ -135,7 +138,10 @@ describe('ChecklistsTab — response-shape handling (procest#784)', () => {
 	})
 
 	it('unwraps the paginated `{ results: [...] }` envelope', async () => {
-		const wrapper = await mountWith({ results: [{ id: 'a', name: 'Bouw', items: [] }], total: 1 })
+		const wrapper = await mountWith({
+			results: [{ id: 'a', name: 'Bouw', items: [] }],
+			total: 1,
+		})
 
 		expect(wrapper.findAll('.checklists-tab__item')).toHaveLength(1)
 	})

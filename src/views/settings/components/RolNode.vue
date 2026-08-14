@@ -5,10 +5,16 @@
 <template>
 	<div class="rol-node">
 		<div class="rol-node__row">
-			<span class="rol-node__name">{{ role.name || role.id }}</span>
+			<span class="rol-node__name">{{ role.naam || role.id }}</span>
 			<span v-if="role.type" class="rol-node__pill">{{ role.type }}</span>
-			<span v-if="role.mandateLevel" class="rol-node__pill rol-node__pill--alt">{{ t('procest', 'level {n}', { n: role.mandateLevel }) }}</span>
-			<span v-if="role.department" class="rol-node__pill">{{ role.department }}</span>
+			<span
+				v-if="role.mandateLevel"
+				class="rol-node__pill rol-node__pill--alt"
+				>{{ t('procest', 'level {n}', { n: role.mandateLevel }) }}</span
+			>
+			<span v-if="role.afdeling" class="rol-node__pill">{{
+				role.afdeling
+			}}</span>
 			<span v-if="role.team" class="rol-node__pill">{{ role.team }}</span>
 			<div class="rol-node__actions">
 				<NcButton size="small" @click="onEdit(role)">
@@ -55,11 +61,11 @@ export default {
 </script>
 
 <style scoped>
-.role-node {
+.rol-node {
 	padding: 4px 0;
 }
 
-.role-node__row {
+.rol-node__row {
 	display: flex;
 	align-items: center;
 	gap: 8px;
@@ -67,32 +73,32 @@ export default {
 	border-radius: 4px;
 }
 
-.role-node__row:hover {
+.rol-node__row:hover {
 	background: var(--color-background-hover);
 }
 
-.role-node__name {
+.rol-node__name {
 	font-weight: 500;
 }
 
-.role-node__pill {
+.rol-node__pill {
 	font-size: 11px;
 	padding: 2px 8px;
 	border-radius: 8px;
 	background: var(--color-background-dark);
 }
 
-.role-node__pill--alt {
+.rol-node__pill--alt {
 	background: var(--color-primary-light);
 }
 
-.role-node__actions {
+.rol-node__actions {
 	display: flex;
 	gap: 4px;
 	margin-left: auto;
 }
 
-.role-node__children {
+.rol-node__children {
 	margin-left: 24px;
 	border-left: 2px solid var(--color-border);
 	padding-left: 8px;

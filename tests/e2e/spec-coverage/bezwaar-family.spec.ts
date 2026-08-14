@@ -23,17 +23,25 @@ import { navToRoute, trackProcestErrors } from '../helpers/nav'
 
 test.describe('Beroepen (appeals) index page', () => {
 	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#beroepen-index-page-renders-list-shell
-	test('beroepen index renders the appeals list shell with a create control', async ({ page }) => {
+	test('beroepen index renders the appeals list shell with a create control', async ({
+		page,
+	}) => {
 		const errors = trackProcestErrors(page)
 		// The nav renders "Appeals", not "Beroepen" — navigate by route so this
 		// does not depend on the current translation of the menu string.
 		await navToRoute(page, '/beroepen')
 		// View switcher renders as buttons, not radios.
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
 		// Distinct create control for the appeals surface.
-		await expect(page.getByRole('button', { name: /^Add Beroep|^Add Case/ })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: /^Add Beroep|^Add Case/ }),
+		).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: 'Actions' }).first(),
+		).toBeVisible()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		expect(errors, errors.join('\n')).toEqual([])
 	})
@@ -41,7 +49,9 @@ test.describe('Beroepen (appeals) index page', () => {
 
 test.describe('Bezwaaradviescommissies (advisory committees) page', () => {
 	// @e2e openspec/specs/bezwaar-lifecycle/spec.md#bezwaar-committees-settings-page-renders-list-shell
-	test('bezwaar committees page renders its own create control', async ({ page }) => {
+	test('bezwaar committees page renders its own create control', async ({
+		page,
+	}) => {
 		const errors = trackProcestErrors(page)
 		// The nav entry is "Objection advisory committees" and lives in a
 		// collapsed group, so it is display:none and unclickable on load.
@@ -51,9 +61,12 @@ test.describe('Bezwaaradviescommissies (advisory committees) page', () => {
 		// other bezwaar/beroep lists in the group.
 		// The control renders as "Add Objection Advisory Committee" — measured
 		// on a CI runner (2026-08-04); the Dutch label was never emitted.
-		await expect(page.getByRole('button', { name: 'Add Objection Advisory Committee' }))
-			.toBeVisible({ timeout: 15000 })
-		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: 'Add Objection Advisory Committee' }),
+		).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByRole('button', { name: 'Actions' }).first(),
+		).toBeVisible()
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		expect(errors, errors.join('\n')).toEqual([])
 	})

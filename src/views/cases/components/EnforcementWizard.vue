@@ -1,5 +1,6 @@
 <template>
-	<div class="enforcement-wizard-overlay"
+	<div
+		class="enforcement-wizard-overlay"
 		role="button"
 		tabindex="0"
 		@click.self="$emit('close')"
@@ -14,7 +15,10 @@
 					v-for="s in 3"
 					:key="s"
 					class="enforcement-wizard__step-indicator"
-					:class="{ 'enforcement-wizard__step-indicator--active': step === s, 'enforcement-wizard__step-indicator--done': step > s }">
+					:class="{
+						'enforcement-wizard__step-indicator--active': step === s,
+						'enforcement-wizard__step-indicator--done': step > s,
+					}">
 					{{ s }}
 				</span>
 			</div>
@@ -22,13 +26,20 @@
 			<!-- Step 1: Classification -->
 			<div v-if="step === 1" class="enforcement-wizard__content">
 				<h4>{{ t('procest', 'Step 1: Classification') }}</h4>
-				<p>{{ t('procest', 'Classify the violation using the LHS matrix (severity x behavior).') }}</p>
+				<p>
+					{{
+						t(
+							'procest',
+							'Classify the violation using the LHS matrix (severity x behavior).',
+						)
+					}}
+				</p>
 
 				<div class="enforcement-wizard__field">
 					<label>{{ t('procest', 'Severity (ernst)') }}</label>
 					<div class="enforcement-wizard__radio-group">
 						<label v-for="e in ernstOptions" :key="e.value">
-							<input v-model="ernst" type="radio" :value="e.value">
+							<input v-model="ernst" type="radio" :value="e.value" />
 							<span>{{ e.label }}</span>
 						</label>
 					</div>
@@ -38,13 +49,15 @@
 					<label>{{ t('procest', 'Behavior (gedrag)') }}</label>
 					<div class="enforcement-wizard__radio-group">
 						<label v-for="g in gedragOptions" :key="g.value">
-							<input v-model="gedrag" type="radio" :value="g.value">
+							<input v-model="gedrag" type="radio" :value="g.value" />
 							<span>{{ g.label }}</span>
 						</label>
 					</div>
 				</div>
 
-				<div v-if="suggestedIntervention" class="enforcement-wizard__suggestion">
+				<div
+					v-if="suggestedIntervention"
+					class="enforcement-wizard__suggestion">
 					<strong>{{ t('procest', 'Suggested intervention:') }}</strong>
 					{{ suggestedIntervention }}
 				</div>
@@ -55,53 +68,78 @@
 				<h4>{{ t('procest', 'Step 2: Intervention Details') }}</h4>
 
 				<div class="enforcement-wizard__field">
-					<label for="enforcement-intervention-type">{{ t('procest', 'Intervention type') }}</label>
-					<input id="enforcement-intervention-type"
-						v-model="intervention"
+					<label for="enforcement-intervention-type">{{
+						t('procest', 'Intervention type')
+					}}</label>
+					<input
+						id="enforcement-intervention-type"
+						v-model="interventie"
 						type="text"
-						class="enforcement-wizard__input">
+						class="enforcement-wizard__input" />
 				</div>
 
 				<div v-if="isDwangsom" class="enforcement-wizard__dwangsom-fields">
 					<div class="enforcement-wizard__field">
-						<label for="enforcement-penalty-amount">{{ t('procest', 'Penalty per violation (EUR)') }}</label>
-						<input id="enforcement-penalty-amount"
-							v-model.number="penaltyPaymentAmount"
+						<label for="enforcement-penalty-amount">{{
+							t('procest', 'Penalty per violation (EUR)')
+						}}</label>
+						<input
+							id="enforcement-penalty-amount"
+							v-model.number="dwangsomBedrag"
 							type="number"
 							class="enforcement-wizard__input"
-							min="0">
+							min="0" />
 					</div>
 					<div class="enforcement-wizard__field">
-						<label for="enforcement-penalty-maximum">{{ t('procest', 'Maximum penalty (EUR)') }}</label>
-						<input id="enforcement-penalty-maximum"
-							v-model.number="penaltyPaymentMaximum"
+						<label for="enforcement-penalty-maximum">{{
+							t('procest', 'Maximum penalty (EUR)')
+						}}</label>
+						<input
+							id="enforcement-penalty-maximum"
+							v-model.number="dwangsomMaximaal"
 							type="number"
 							class="enforcement-wizard__input"
-							min="0">
+							min="0" />
 					</div>
 					<div class="enforcement-wizard__field">
-						<label for="enforcement-grace-period">{{ t('procest', 'Grace period (days)') }}</label>
-						<input id="enforcement-grace-period"
-							v-model.number="compliancePeriod"
+						<label for="enforcement-grace-period">{{
+							t('procest', 'Grace period (days)')
+						}}</label>
+						<input
+							id="enforcement-grace-period"
+							v-model.number="begunstigingstermijn"
 							type="number"
 							class="enforcement-wizard__input"
-							min="1">
+							min="1" />
 					</div>
 				</div>
 
-				<div v-if="isBestuursdwang" class="enforcement-wizard__bestuursdwang-fields">
+				<div
+					v-if="isBestuursdwang"
+					class="enforcement-wizard__bestuursdwang-fields">
 					<div class="enforcement-wizard__field">
-						<label for="enforcement-execution-date">{{ t('procest', 'Execution date') }}</label>
-						<input id="enforcement-execution-date"
-							v-model="effectueringsDate"
+						<label for="enforcement-execution-date">{{
+							t('procest', 'Execution date')
+						}}</label>
+						<input
+							id="enforcement-execution-date"
+							v-model="effectueringsDatum"
 							type="date"
-							class="enforcement-wizard__input">
+							class="enforcement-wizard__input" />
 					</div>
 				</div>
 
-				<div v-if="overrideReason || interventie !== suggestedIntervention" class="enforcement-wizard__field">
-					<label for="enforcement-override-reason">{{ t('procest', 'Override reason (required if different from suggestion)') }}</label>
-					<textarea id="enforcement-override-reason"
+				<div
+					v-if="overrideReason || interventie !== suggestedIntervention"
+					class="enforcement-wizard__field">
+					<label for="enforcement-override-reason">{{
+						t(
+							'procest',
+							'Override reason (required if different from suggestion)',
+						)
+					}}</label>
+					<textarea
+						id="enforcement-override-reason"
 						v-model="overrideReason"
 						class="enforcement-wizard__textarea"
 						rows="2" />
@@ -111,27 +149,46 @@
 			<!-- Step 3: Vooraankondiging -->
 			<div v-if="step === 3" class="enforcement-wizard__content">
 				<h4>{{ t('procest', 'Step 3: Vooraankondiging') }}</h4>
-				<p>{{ t('procest', 'A vooraankondiging letter will be generated and a zienswijze period will be set.') }}</p>
+				<p>
+					{{
+						t(
+							'procest',
+							'A vooraankondiging letter will be generated and a zienswijze period will be set.',
+						)
+					}}
+				</p>
 
 				<div class="enforcement-wizard__field">
-					<label for="enforcement-zienswijze-period">{{ t('procest', 'Zienswijze period (days)') }}</label>
-					<input id="enforcement-zienswijze-period"
+					<label for="enforcement-zienswijze-period">{{
+						t('procest', 'Zienswijze period (days)')
+					}}</label>
+					<input
+						id="enforcement-zienswijze-period"
 						v-model.number="zienswijzetermijn"
 						type="number"
 						class="enforcement-wizard__input"
-						min="1">
+						min="1" />
 				</div>
 
 				<div class="enforcement-wizard__summary">
 					<h5>{{ t('procest', 'Summary') }}</h5>
-					<p><strong>{{ t('procest', 'Classification:') }}</strong> {{ ernst }} / {{ gedrag }}</p>
-					<p><strong>{{ t('procest', 'Intervention:') }}</strong> {{ interventie }}</p>
+					<p>
+						<strong>{{ t('procest', 'Classification:') }}</strong>
+						{{ ernst }} / {{ gedrag }}
+					</p>
+					<p>
+						<strong>{{ t('procest', 'Intervention:') }}</strong>
+						{{ interventie }}
+					</p>
 					<p v-if="isDwangsom">
 						<strong>{{ t('procest', 'Penalty:') }}</strong>
-						EUR {{ dwangsomBedrag }} {{ t('procest', 'per violation, max') }} EUR {{ dwangsomMaximaal }}
+						EUR {{ dwangsomBedrag }}
+						{{ t('procest', 'per violation, max') }} EUR
+						{{ dwangsomMaximaal }}
 					</p>
-					<p v-if="compliancePeriod">
-						<strong>{{ t('procest', 'Grace period:') }}</strong> {{ begunstigingstermijn }} {{ t('procest', 'days') }}
+					<p v-if="begunstigingstermijn">
+						<strong>{{ t('procest', 'Grace period:') }}</strong>
+						{{ begunstigingstermijn }} {{ t('procest', 'days') }}
 					</p>
 				</div>
 			</div>
@@ -141,17 +198,23 @@
 				<NcButton v-if="step > 1" @click="step--">
 					{{ t('procest', 'Previous') }}
 				</NcButton>
-				<NcButton v-if="step < 3"
+				<NcButton
+					v-if="step < 3"
 					type="primary"
 					:disabled="!canProceed"
 					@click="step++">
 					{{ t('procest', 'Next') }}
 				</NcButton>
-				<NcButton v-if="step === 3"
+				<NcButton
+					v-if="step === 3"
 					type="primary"
 					:disabled="submitting"
 					@click="submit">
-					{{ submitting ? t('procest', 'Creating...') : t('procest', 'Create enforcement action') }}
+					{{
+						submitting
+							? t('procest', 'Creating...')
+							: t('procest', 'Create enforcement action')
+					}}
 				</NcButton>
 				<NcButton @click="$emit('close')">
 					{{ t('procest', 'Cancel') }}
@@ -187,11 +250,11 @@ export default {
 			step: 1,
 			ernst: null,
 			gedrag: null,
-			intervention: '',
-			penaltyPaymentAmount: 5000,
-			penaltyPaymentMaximum: 25000,
-			compliance_period: 42,
-			effectueringsDate: '',
+			interventie: '',
+			dwangsomBedrag: 5000,
+			dwangsomMaximaal: 25000,
+			begunstigingstermijn: 42,
+			effectueringsDatum: '',
 			overrideReason: '',
 			zienswijzetermijn: 14,
 			submitting: false,
@@ -208,7 +271,10 @@ export default {
 		ernstOptions() {
 			return [
 				{ value: 'gering', label: t('procest', 'Minor (gering)') },
-				{ value: 'aanzienlijk', label: t('procest', 'Significant (substantial)') },
+				{
+					value: 'aanzienlijk',
+					label: t('procest', 'Significant (substantial)'),
+				},
 				{ value: 'ernstig', label: t('procest', 'Serious (ernstig)') },
 			]
 		},
@@ -216,9 +282,18 @@ export default {
 		/** @spec openspec/specs/vth-module/spec.md */
 		gedragOptions() {
 			return [
-				{ value: 'goedwillend', label: t('procest', 'Cooperative (goedwillend)') },
-				{ value: 'onverschillig', label: t('procest', 'Indifferent (onverschillig)') },
-				{ value: 'calculerend', label: t('procest', 'Calculating (calculerend)') },
+				{
+					value: 'goedwillend',
+					label: t('procest', 'Cooperative (goedwillend)'),
+				},
+				{
+					value: 'onverschillig',
+					label: t('procest', 'Indifferent (onverschillig)'),
+				},
+				{
+					value: 'calculerend',
+					label: t('procest', 'Calculating (calculerend)'),
+				},
 				{ value: 'crimineel', label: t('procest', 'Criminal (crimineel)') },
 			]
 		},
@@ -232,11 +307,11 @@ export default {
 		},
 
 		isDwangsom() {
-			return this.intervention?.toLowerCase().includes('penaltyPayment')
+			return this.interventie?.toLowerCase().includes('dwangsom')
 		},
 
 		isBestuursdwang() {
-			return this.intervention?.toLowerCase().includes('bestuursdwang')
+			return this.interventie?.toLowerCase().includes('bestuursdwang')
 		},
 
 		/** @spec openspec/specs/vth-module/spec.md */
@@ -245,7 +320,7 @@ export default {
 				return this.ernst && this.gedrag
 			}
 			if (this.step === 2) {
-				return this.intervention
+				return this.interventie
 			}
 			return true
 		},
@@ -257,8 +332,8 @@ export default {
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		suggestedIntervention(val) {
-			if (val && !this.intervention) {
-				this.intervention = val
+			if (val && !this.interventie) {
+				this.interventie = val
 			}
 		},
 	},
@@ -276,15 +351,20 @@ export default {
 			try {
 				const action = await this.enforcementStore.createAction({
 					case: this.caseId,
-					type: this.mapInterventionToType(this.intervention),
+					type: this.mapInterventionToType(this.interventie),
 					ernst: this.ernst,
 					gedrag: this.gedrag,
-					intervention: this.intervention,
-					penaltyPaymentAmount: this.isDwangsom ? this.penaltyPaymentAmount : null,
-					penaltyPaymentMaximum: this.isDwangsom ? this.penaltyPaymentMaximum : null,
-					compliance_period: this.compliance_period || null,
-					effectueringsDate: this.isBestuursdwang ? this.effectueringsDate : null,
-					overrideReason: this.intervention !== this.suggestedIntervention ? this.overrideReason : null,
+					interventie: this.interventie,
+					dwangsomBedrag: this.isDwangsom ? this.dwangsomBedrag : null,
+					dwangsomMaximaal: this.isDwangsom ? this.dwangsomMaximaal : null,
+					begunstigingstermijn: this.begunstigingstermijn || null,
+					effectueringsDatum: this.isBestuursdwang
+						? this.effectueringsDatum
+						: null,
+					overrideReason:
+						this.interventie !== this.suggestedIntervention
+							? this.overrideReason
+							: null,
 				})
 				this.$emit('created', action)
 				this.$emit('close')
@@ -302,7 +382,7 @@ export default {
 			if (lower.includes('bestuursdwang')) {
 				return 'bestuursdwang'
 			}
-			if (lower.includes('penaltyPayment')) {
+			if (lower.includes('dwangsom')) {
 				return 'last_onder_dwangsom'
 			}
 			if (lower.includes('pv') || lower.includes('proces')) {

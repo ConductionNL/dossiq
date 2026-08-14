@@ -15,18 +15,26 @@
   document "anonymised" or publishes anything.
 -->
 <template>
-	<NcDialog v-if="open"
+	<NcDialog
+		v-if="open"
 		:name="t('procest', 'AI-assisted redaction suggestions')"
 		size="large"
 		:can-close="!submitting"
 		@closing="$emit('close')">
 		<div class="redaction-assist-dialog">
 			<p class="redaction-assist-dialog__intro">
-				{{ t('procest', 'Paste or confirm the document text below, then request redaction suggestions. Rule-based matches (BSN, IBAN, phone, postcode) are always applied; AI-proposed spans can be reviewed and deselected before approval.') }}
+				{{
+					t(
+						'procest',
+						'Paste or confirm the document text below, then request redaction suggestions. Rule-based matches (BSN, IBAN, phone, postcode) are always applied; AI-proposed spans can be reviewed and deselected before approval.',
+					)
+				}}
 			</p>
 
 			<div v-if="!proposal" class="redaction-assist-dialog__field">
-				<label class="redaction-assist-dialog__label" for="redaction-assist-text">
+				<label
+					class="redaction-assist-dialog__label"
+					for="redaction-assist-text">
 					{{ t('procest', 'Document text') }}
 				</label>
 				<textarea
@@ -34,9 +42,19 @@
 					v-model="text"
 					class="redaction-assist-dialog__textarea"
 					:disabled="detecting"
-					:placeholder="t('procest', 'Paste the document text to scan for redaction candidates…')" />
+					:placeholder="
+						t(
+							'procest',
+							'Paste the document text to scan for redaction candidates…',
+						)
+					" />
 				<span class="redaction-assist-dialog__hint">
-					{{ t('procest', '{count} / {max} characters', { count: text.length, max: maxLength }) }}
+					{{
+						t('procest', '{count} / {max} characters', {
+							count: text.length,
+							max: maxLength,
+						})
+					}}
 				</span>
 			</div>
 
@@ -46,13 +64,28 @@
 
 			<template v-if="proposal">
 				<NcNoteCard v-if="proposal.source === 'rules_only'" type="info">
-					{{ t('procest', 'AI assist is currently unavailable — showing rule-based matches only.') }}
+					{{
+						t(
+							'procest',
+							'AI assist is currently unavailable — showing rule-based matches only.',
+						)
+					}}
 				</NcNoteCard>
-				<NcNoteCard v-else-if="proposal.source === 'rules_only_fallback'" type="warning">
-					{{ t('procest', 'AI-assisted detection failed ({error}) — falling back to rule-based matches only.', { error: proposal.llmError || '' }) }}
+				<NcNoteCard
+					v-else-if="proposal.source === 'rules_only_fallback'"
+					type="warning">
+					{{
+						t(
+							'procest',
+							'AI-assisted detection failed ({error}) — falling back to rule-based matches only.',
+							{ error: proposal.llmError || '' },
+						)
+					}}
 				</NcNoteCard>
 
-				<table v-if="proposal.spans.length > 0" class="redaction-assist-dialog__table">
+				<table
+					v-if="proposal.spans.length > 0"
+					class="redaction-assist-dialog__table">
 					<thead>
 						<tr>
 							<th />
@@ -66,15 +99,31 @@
 							<td>
 								<input
 									type="checkbox"
-									:aria-label="t('procest', 'Select redaction candidate {category}', { category: span.category })"
+									:aria-label="
+										t(
+											'procest',
+											'Select redaction candidate {category}',
+											{ category: span.category },
+										)
+									"
 									:checked="selections[index]"
 									:disabled="!isToggleable(span)"
-									@change="e => toggleSpan(index, e.target.checked)">
+									@change="
+										(e) => toggleSpan(index, e.target.checked)
+									" />
 							</td>
 							<td>{{ span.category }}</td>
 							<td>
-								<span :class="'redaction-assist-dialog__badge redaction-assist-dialog__badge--' + span.source">
-									{{ span.source === 'rule' ? t('procest', 'Rule (always applied)') : t('procest', 'AI-proposed') }}
+								<span
+									:class="
+										'redaction-assist-dialog__badge redaction-assist-dialog__badge--'
+										+ span.source
+									">
+									{{
+										span.source === 'rule'
+											? t('procest', 'Rule (always applied)')
+											: t('procest', 'AI-proposed')
+									}}
 								</span>
 							</td>
 							<td class="redaction-assist-dialog__preview">
@@ -90,18 +139,27 @@
 		</div>
 
 		<template #actions>
-			<NcButton v-if="!proposal"
+			<NcButton
+				v-if="!proposal"
 				type="primary"
 				:disabled="!canDetect || detecting"
 				@click="detect">
-				{{ detecting ? t('procest', 'Scanning…') : t('procest', 'Detect redaction candidates') }}
+				{{
+					detecting
+						? t('procest', 'Scanning…')
+						: t('procest', 'Detect redaction candidates')
+				}}
 			</NcButton>
 			<template v-else>
 				<NcButton type="secondary" :disabled="submitting" @click="reject">
 					{{ t('procest', 'Reject') }}
 				</NcButton>
 				<NcButton type="primary" :disabled="submitting" @click="approve">
-					{{ submitting ? t('procest', 'Applying…') : t('procest', 'Approve selected') }}
+					{{
+						submitting
+							? t('procest', 'Applying…')
+							: t('procest', 'Approve selected')
+					}}
 				</NcButton>
 			</template>
 		</template>
@@ -112,7 +170,12 @@
 import { NcButton, NcDialog, NcNoteCard } from '@nextcloud/vue'
 import axios from '@nextcloud/axios'
 import { generateUrl } from '@nextcloud/router'
-import { buildSpanPreview, buildInitialSelections, filterSelectedSpans, isSpanToggleable } from '../utils/redactionAssistHelpers.js'
+import {
+	buildSpanPreview,
+	buildInitialSelections,
+	filterSelectedSpans,
+	isSpanToggleable,
+} from '../utils/redactionAssistHelpers.js'
 
 export default {
 	name: 'RedactionAssistDialog',
@@ -200,8 +263,11 @@ export default {
 			this.errorMessage = ''
 			try {
 				const url = generateUrl(
-					'/apps/procest/api/cases/' + encodeURIComponent(this.caseId)
-					+ '/woo/documents/' + encodeURIComponent(this.documentRef) + '/redaction-proposal',
+					'/apps/procest/api/cases/'
+						+ encodeURIComponent(this.caseId)
+						+ '/woo/documents/'
+						+ encodeURIComponent(this.documentRef)
+						+ '/redaction-proposal',
 				)
 				const { data } = await axios.post(url, { text: this.text })
 				this.proposal = data
@@ -244,10 +310,16 @@ export default {
 			this.errorMessage = ''
 			try {
 				const url = generateUrl(
-					'/apps/procest/api/cases/' + encodeURIComponent(this.caseId)
-					+ '/woo/documents/' + encodeURIComponent(this.documentRef) + '/redaction-proposal/review',
+					'/apps/procest/api/cases/'
+						+ encodeURIComponent(this.caseId)
+						+ '/woo/documents/'
+						+ encodeURIComponent(this.documentRef)
+						+ '/redaction-proposal/review',
 				)
-				const spans = filterSelectedSpans(this.proposal.spans, this.selections)
+				const spans = filterSelectedSpans(
+					this.proposal.spans,
+					this.selections,
+				)
 				const { data } = await axios.post(url, { decision, spans })
 				this.$emit('reviewed', data)
 				this.$emit('close')

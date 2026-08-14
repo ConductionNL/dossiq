@@ -16,7 +16,12 @@
 		<NcEmptyContent
 			v-else-if="advies.length === 0"
 			:title="t(appName, 'Geen adviezen aangevraagd')"
-			:description="t(appName, 'Vraag advies aan bij interne of externe partijen om hier te tonen.')" />
+			:description="
+				t(
+					appName,
+					'Vraag advies aan bij interne of externe partijen om hier te tonen.',
+				)
+			" />
 
 		<ul v-else class="advies-panel__list">
 			<li
@@ -27,15 +32,27 @@
 				<div class="advies-panel__row">
 					<div class="advies-panel__meta">
 						<strong>{{ item.adviseur }}</strong>
-						<CnStatusBadge :status="typeLabel(item.type)" :type="typeBadgeType(item.type)" />
-						<CnStatusBadge :status="statusLabel(item.status)" :type="statusBadgeType(item.status)" />
+						<CnStatusBadge
+							:status="typeLabel(item.type)"
+							:type="typeBadgeType(item.type)" />
+						<CnStatusBadge
+							:status="statusLabel(item.status)"
+							:type="statusBadgeType(item.status)" />
 					</div>
 					<div class="advies-panel__deadline">
 						<template v-if="isOverdue(item)">
-							{{ t(appName, '{days} dagen te laat', { days: daysOverdue(item) }) }}
+							{{
+								t(appName, '{days} dagen te laat', {
+									days: daysOverdue(item),
+								})
+							}}
 						</template>
 						<template v-else-if="item.deadline">
-							{{ t(appName, 'Deadline: {date}', { date: formatDate(item.deadline) }) }}
+							{{
+								t(appName, 'Deadline: {date}', {
+									date: formatDate(item.deadline),
+								})
+							}}
 						</template>
 					</div>
 				</div>

@@ -4,7 +4,9 @@
 	<div class="dossier-document-row">
 		<NcCheckboxRadioSwitch
 			:model-value="selected"
-			:aria-label="t('procest', 'Select document {title}', { title: document.titel })"
+			:aria-label="
+				t('procest', 'Select document {title}', { title: document.titel })
+			"
 			class="dossier-document-row__select"
 			@update:model-value="$emit('toggle-select', document)" />
 
@@ -13,12 +15,14 @@
 			:src="thumbnailUrl"
 			:alt="document.titel"
 			loading="lazy"
-			@error="onThumbError">
+			@error="onThumbError" />
 
 		<div class="dossier-document-row__main">
 			<span class="dossier-document-row__title">{{ document.titel }}</span>
 			<span class="dossier-document-row__meta">
-				{{ formatDate(document.creatiedatum) }} · {{ document.auteur || t('procest', 'Unknown') }} · {{ formatSize(document.bestandsomvang) }}
+				{{ formatDate(document.creatiedatum) }} ·
+				{{ document.auteur || t('procest', 'Unknown') }} ·
+				{{ formatSize(document.bestandsomvang) }}
 			</span>
 		</div>
 
@@ -28,7 +32,8 @@
 			{{ statusLabel }}
 		</span>
 
-		<span class="dossier-document-row__badge dossier-document-row__confidentiality">
+		<span
+			class="dossier-document-row__badge dossier-document-row__confidentiality">
 			{{ confidentialityLabel }}
 		</span>
 
@@ -64,13 +69,12 @@
 </template>
 
 <script>
-import {
-	NcActionButton,
-	NcActions,
-	NcCheckboxRadioSwitch,
-} from '@nextcloud/vue'
+import { NcActionButton, NcActions, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
-import { canShare as canShareLevel, formatSize as formatBytes } from '../../../utils/dossierHelpers.js'
+import {
+	canShare as canShareLevel,
+	formatSize as formatBytes,
+} from '../../../utils/dossierHelpers.js'
 import Delete from 'vue-material-design-icons/Delete.vue'
 import History from 'vue-material-design-icons/History.vue'
 import OpenInNew from 'vue-material-design-icons/OpenInNew.vue'
@@ -122,7 +126,9 @@ export default {
 			if (this.thumbFailed || !this.document.fileId) {
 				return generateUrl('/apps/theming/img/core/filetypes/file.svg')
 			}
-			return generateUrl(`/core/preview?fileId=${this.document.fileId}&x=64&y=64`)
+			return generateUrl(
+				`/core/preview?fileId=${this.document.fileId}&x=64&y=64`,
+			)
 		},
 		/**
 		 * Human-readable status label.
@@ -155,7 +161,10 @@ export default {
 				geheim: this.t('procest', 'Secret'),
 				zeer_geheim: this.t('procest', 'Top secret'),
 			}
-			return labels[this.document.vertrouwelijkheidaanduiding] || this.document.vertrouwelijkheidaanduiding
+			return (
+				labels[this.document.vertrouwelijkheidaanduiding]
+				|| this.document.vertrouwelijkheidaanduiding
+			)
 		},
 		/**
 		 * Whether the document may be publicly shared (mirrors server guard).

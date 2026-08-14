@@ -32,10 +32,14 @@
 				class="activity-feed__entry">
 				<span class="activity-feed__icon" v-html="typeIcon(entry.type)" />
 				<div class="activity-feed__content">
-					<span class="activity-feed__description">{{ entry.description }}</span>
+					<span class="activity-feed__description">{{
+						entry.description
+					}}</span>
 					<span class="activity-feed__meta">
 						{{ t('procest', 'by {user}', { user: entry.user }) }}
-						<span class="activity-feed__case-ref">#{{ entry.caseIdentifier }}</span>
+						<span class="activity-feed__case-ref"
+							>#{{ entry.caseIdentifier }}</span
+						>
 					</span>
 				</div>
 				<span class="activity-feed__time">{{ formatTime(entry.date) }}</span>
@@ -197,9 +201,15 @@ export default {
 }
 
 @keyframes shimmer {
-	0% { opacity: 0.6; }
-	50% { opacity: 1; }
-	100% { opacity: 0.6; }
+	0% {
+		opacity: 0.6;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0.6;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {

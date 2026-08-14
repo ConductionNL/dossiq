@@ -1,17 +1,27 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<NcDialog v-if="open"
+	<NcDialog
+		v-if="open"
 		:name="t('procest', 'Stap overslaan')"
 		size="normal"
 		:can-close="!submitting"
 		@closing="onClose">
 		<div class="skip-step-dialog">
 			<div v-if="step" class="skip-step-dialog__step">
-				<h4>{{ t('procest', 'Stap {n}: {actor}', { n: step.order, actor: step.actor }) }}</h4>
+				<h4>
+					{{
+						t('procest', 'Stap {n}: {actor}', {
+							n: step.order,
+							actor: step.actor,
+						})
+					}}
+				</h4>
 				<p>
-					<strong>{{ t('procest', 'Type') }}:</strong> {{ step.type }}<br>
-					<strong>{{ t('procest', 'Actor type') }}:</strong> {{ step.actorType }}
+					<strong>{{ t('procest', 'Type') }}:</strong> {{ step.type
+					}}<br />
+					<strong>{{ t('procest', 'Actor type') }}:</strong>
+					{{ step.actorType }}
 				</p>
 			</div>
 
@@ -19,12 +29,15 @@
 				{{ t('procest', 'This step is mandatory and cannot be skipped.') }}
 			</NcNoteCard>
 
-			<NcTextArea v-else
+			<NcTextArea
+				v-else
 				:model-value="reason"
 				:label="t('procest', 'Reason for skipping')"
-				:placeholder="t('procest', 'Give a reason why this step is being skipped...')"
+				:placeholder="
+					t('procest', 'Give a reason why this step is being skipped...')
+				"
 				required
-				@update:model-value="v => reason = v" />
+				@update:model-value="(v) => (reason = v)" />
 
 			<NcNoteCard v-if="error" type="error">
 				{{ error }}
@@ -34,10 +47,10 @@
 			<NcButton :disabled="submitting" @click="onClose">
 				{{ t('procest', 'Annuleren') }}
 			</NcButton>
-			<NcButton type="primary"
-				:disabled="!canSubmit"
-				@click="onSubmit">
-				{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Overslaan') }}
+			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
+				{{
+					submitting ? t('procest', 'Bezig...') : t('procest', 'Overslaan')
+				}}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -79,10 +92,12 @@ export default {
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canSubmit() {
-			return !this.submitting
+			return (
+				!this.submitting
 				&& this.step
 				&& this.step.mandatory !== true
 				&& this.reason.trim().length > 0
+			)
 		},
 	},
 	watch: {

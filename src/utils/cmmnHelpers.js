@@ -97,7 +97,10 @@ export function isEnableable(item, enableableDiscretionary) {
 	if (!item || item.discretionary !== true) {
 		return false
 	}
-	return Array.isArray(enableableDiscretionary) && enableableDiscretionary.includes(item.id)
+	return (
+		Array.isArray(enableableDiscretionary)
+		&& enableableDiscretionary.includes(item.id)
+	)
 }
 
 /**
@@ -120,7 +123,10 @@ export function canComplete(item) {
  * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-007
  */
 export function canTerminate(item) {
-	return item?.type === 'humanTask' && (item?.state === 'active' || item?.state === 'enabled')
+	return (
+		item?.type === 'humanTask'
+		&& (item?.state === 'active' || item?.state === 'enabled')
+	)
 }
 
 /**

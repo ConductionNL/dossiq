@@ -14,7 +14,12 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { getRequestToken, ensureCaseType, seedCase, objectId } from '../helpers/fixtures'
+import {
+	getRequestToken,
+	ensureCaseType,
+	seedCase,
+	objectId,
+} from '../helpers/fixtures'
 import { STORAGE_STATE } from '../helpers/auth'
 import { request as pwRequest, type APIRequestContext } from '@playwright/test'
 
@@ -56,14 +61,17 @@ test.describe('Semantic case intake — handoff provenance UI', () => {
 	// streamlining); the handoff-provenance scenario is covered by the case-detail
 	// test below.
 	// @e2e openspec/specs/semantic-case-intake/spec.md#behandelaar-sees-the-handoff-case-with-origin
-	test('case detail shows the handoff provenance with a source link', async ({ page }) => {
+	test('case detail shows the handoff provenance with a source link', async ({
+		page,
+	}) => {
 		// History-mode router: the old `…/index#/cases/<id>` hash URL loaded a
 		// non-route and the detail view never rendered.
 		await page.goto(`${APP}/cases/${caseId}`)
 		const provenance = page.getByTestId('handoff-provenance')
 		await expect(provenance).toBeVisible({ timeout: 20000 })
 		await expect(provenance).toContainText('Received via handoff')
-		await expect(provenance.getByRole('link', { name: 'Open source object' }))
-			.toHaveAttribute('href', /openregister/)
+		await expect(
+			provenance.getByRole('link', { name: 'Open source object' }),
+		).toHaveAttribute('href', /openregister/)
 	})
 })

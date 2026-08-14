@@ -12,35 +12,53 @@
 		<!-- Active enforcement summary -->
 		<div v-if="!loading && activeAction" class="enforcement-panel__active">
 			<div class="enforcement-panel__classification">
-				<span class="enforcement-panel__label">{{ t('procest', 'Classification:') }}</span>
-				<span class="enforcement-panel__badge enforcement-panel__badge--ernst">
+				<span class="enforcement-panel__label">{{
+					t('procest', 'Classification:')
+				}}</span>
+				<span
+					class="enforcement-panel__badge enforcement-panel__badge--ernst">
 					{{ activeAction.ernst }}
 				</span>
-				<span class="enforcement-panel__badge enforcement-panel__badge--gedrag">
+				<span
+					class="enforcement-panel__badge enforcement-panel__badge--gedrag">
 					{{ activeAction.gedrag }}
 				</span>
 			</div>
 			<div class="enforcement-panel__intervention">
-				<span class="enforcement-panel__label">{{ t('procest', 'Intervention:') }}</span>
-				<strong>{{ activeAction.intervention }}</strong>
+				<span class="enforcement-panel__label">{{
+					t('procest', 'Intervention:')
+				}}</span>
+				<strong>{{ activeAction.interventie }}</strong>
 			</div>
 			<div class="enforcement-panel__status-line">
-				<span class="enforcement-panel__label">{{ t('procest', 'Status:') }}</span>
-				<span class="enforcement-panel__status-badge" :class="'enforcement-panel__status-badge--' + activeAction.status">
+				<span class="enforcement-panel__label">{{
+					t('procest', 'Status:')
+				}}</span>
+				<span
+					class="enforcement-panel__status-badge"
+					:class="
+						'enforcement-panel__status-badge--' + activeAction.status
+					">
 					{{ statusLabel(activeAction.status) }}
 				</span>
 			</div>
 
 			<!-- Dwangsom details -->
-			<div v-if="activeAction.penaltyPaymentAmount" class="enforcement-panel__dwangsom">
+			<div
+				v-if="activeAction.dwangsomBedrag"
+				class="enforcement-panel__dwangsom">
 				<p>
 					<strong>{{ t('procest', 'Penalty:') }}</strong>
-					EUR {{ activeAction.penaltyPaymentAmount }} {{ t('procest', 'per violation') }}
-					({{ t('procest', 'max') }} EUR {{ activeAction.penaltyPaymentMaximum }})
+					EUR {{ activeAction.dwangsomBedrag }}
+					{{ t('procest', 'per violation') }} ({{
+						t('procest', 'max')
+					}}
+					EUR {{ activeAction.dwangsomMaximaal }})
 				</p>
-				<p v-if="activeAction.compliance_period">
+				<p v-if="activeAction.begunstigingstermijn">
 					<strong>{{ t('procest', 'Grace period:') }}</strong>
-					{{ activeAction.compliance_period }} {{ t('procest', 'days') }}
+					{{ activeAction.begunstigingstermijn }}
+					{{ t('procest', 'days') }}
 				</p>
 				<p v-if="totalVerbeurd > 0">
 					<strong>{{ t('procest', 'Total forfeited:') }}</strong>
@@ -50,17 +68,23 @@
 		</div>
 
 		<!-- Action history -->
-		<div v-if="!loading && actions.length > 0" class="enforcement-panel__history">
+		<div
+			v-if="!loading && actions.length > 0"
+			class="enforcement-panel__history">
 			<h4>{{ t('procest', 'Enforcement history') }}</h4>
 			<div
 				v-for="action in actions"
 				:key="action.id"
 				class="enforcement-panel__history-item">
-				<span class="enforcement-panel__status-badge" :class="'enforcement-panel__status-badge--' + action.status">
+				<span
+					class="enforcement-panel__status-badge"
+					:class="'enforcement-panel__status-badge--' + action.status">
 					{{ statusLabel(action.status) }}
 				</span>
-				<span>{{ action.intervention }}</span>
-				<span class="enforcement-panel__history-date">{{ action.ernst }} / {{ action.gedrag }}</span>
+				<span>{{ action.interventie }}</span>
+				<span class="enforcement-panel__history-date"
+					>{{ action.ernst }} / {{ action.gedrag }}</span
+				>
 			</div>
 		</div>
 
@@ -163,7 +187,7 @@ export default {
 				opgelegd: t('procest', 'Imposed'),
 				verbeurd: t('procest', 'Forfeited'),
 				geeffectueerd: t('procest', 'Executed'),
-				withdrawn: t('procest', 'Withdrawn'),
+				ingetrokken: t('procest', 'Withdrawn'),
 			}
 			return labels[status] || status
 		},

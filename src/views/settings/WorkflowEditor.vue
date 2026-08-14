@@ -1,8 +1,5 @@
 <template>
-	<div
-		class="workflow-editor"
-		@dragover.prevent
-		@drop="onCanvasDrop">
+	<div class="workflow-editor" @dragover.prevent @drop="onCanvasDrop">
 		<!-- Validation banner -->
 		<WorkflowValidationBanner
 			:errors="validationErrors"
@@ -25,9 +22,7 @@
 				@mouseup="onCanvasMouseUp"
 				@wheel="onCanvasWheel">
 				<!-- SVG layer for transitions -->
-				<svg
-					class="workflow-editor__svg"
-					:viewBox="svgViewBox">
+				<svg class="workflow-editor__svg" :viewBox="svgViewBox">
 					<!-- Existing transitions -->
 					<WorkflowTransitionArrow
 						v-for="transition in transitions"
@@ -60,7 +55,9 @@
 					:position="nodePositions[status.id] || { x: 100, y: 100 }"
 					:selected="selectedNode === status.id"
 					:other-statuses="statusNodes.filter((s) => s.id !== status.id)"
-					:outgoing-transitions="transitions.filter((t) => t.fromStatus === status.id)"
+					:outgoing-transitions="
+						transitions.filter((t) => t.fromStatus === status.id)
+					"
 					@select="selectNode(status.id)"
 					@drag-start="onNodeDragStart(status.id, $event)"
 					@connection-start="onConnectionStart(status.id, $event)"
@@ -180,7 +177,10 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		selectedTransitionData() {
 			if (!this.selectedTransition) return null
-			return this.transitions.find((t) => t.id === this.selectedTransition) || null
+			return (
+				this.transitions.find((t) => t.id === this.selectedTransition)
+				|| null
+			)
 		},
 		/**
 		 * True when the loaded workflow template is published (not a draft).
@@ -218,23 +218,26 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async loadData() {
 			// Load status types for this case type
-			this.statusNodes = await this.objectStore.fetchCollection('statusType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-				_order: { order: 'asc' },
-			}) || []
+			this.statusNodes =
+				(await this.objectStore.fetchCollection('statusType', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+					_order: { order: 'asc' },
+				})) || []
 
 			// Load role types
-			this.roleTypes = await this.objectStore.fetchCollection('roleType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-			}) || []
+			this.roleTypes =
+				(await this.objectStore.fetchCollection('roleType', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+				})) || []
 
 			// Load document types
-			this.documentTypes = await this.objectStore.fetchCollection('documentType', {
-				'_filters[caseType]': this.caseTypeId,
-				_limit: 100,
-			}) || []
+			this.documentTypes =
+				(await this.objectStore.fetchCollection('documentType', {
+					'_filters[caseType]': this.caseTypeId,
+					_limit: 100,
+				})) || []
 
 			// Load or create workflow template
 			if (this.templateId) {
@@ -259,7 +262,8 @@ export default {
 				}
 			})
 			if (changed && this.workflowStore.currentTemplate) {
-				this.workflowStore.currentTemplate.nodePositions = JSON.stringify(positions)
+				this.workflowStore.currentTemplate.nodePositions =
+					JSON.stringify(positions)
 			}
 		},
 
@@ -346,9 +350,11 @@ export default {
 		onCanvasMouseMove(event) {
 			if (this.draggingNode) {
 				const rect = this.$refs.canvas.getBoundingClientRect()
-				const x = (event.clientX - rect.left - this.panOffset.x) / this.zoom
+				const x =
+					(event.clientX - rect.left - this.panOffset.x) / this.zoom
 					- this.draggingNode.offsetX
-				const y = (event.clientY - rect.top - this.panOffset.y) / this.zoom
+				const y =
+					(event.clientY - rect.top - this.panOffset.y) / this.zoom
 					- this.draggingNode.offsetY
 				this.workflowStore.updateNodePosition(
 					this.draggingNode.statusId,
@@ -357,8 +363,10 @@ export default {
 				)
 			} else if (this.drawingConnection) {
 				const rect = this.$refs.canvas.getBoundingClientRect()
-				this.drawingConnection.currentX = (event.clientX - rect.left - this.panOffset.x) / this.zoom
-				this.drawingConnection.currentY = (event.clientY - rect.top - this.panOffset.y) / this.zoom
+				this.drawingConnection.currentX =
+					(event.clientX - rect.left - this.panOffset.x) / this.zoom
+				this.drawingConnection.currentY =
+					(event.clientY - rect.top - this.panOffset.y) / this.zoom
 			} else if (this.panning) {
 				this.panOffset.x = event.clientX - this.panStart.x
 				this.panOffset.y = event.clientY - this.panStart.y
@@ -383,7 +391,10 @@ export default {
 		 */
 		onCanvasMouseDown(event) {
 			// Only pan if clicking empty canvas area
-			if (event.target === this.$refs.canvas || event.target.classList.contains('workflow-editor__svg')) {
+			if (
+				event.target === this.$refs.canvas
+				|| event.target.classList.contains('workflow-editor__svg')
+			) {
 				this.panning = true
 				this.panStart = {
 					x: event.clientX - this.panOffset.x,
@@ -427,7 +438,10 @@ export default {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onConnectionEnd(statusId) {
-			if (this.drawingConnection && this.drawingConnection.fromStatus !== statusId) {
+			if (
+				this.drawingConnection
+				&& this.drawingConnection.fromStatus !== statusId
+			) {
 				this.workflowStore.addTransition(
 					this.drawingConnection.fromStatus,
 					statusId,
@@ -561,27 +575,44 @@ export default {
 			if (!target) return
 
 			if (target.isFinal) {
-				const otherFinals = this.statusNodes.filter((s) => s.id !== statusId && s.isFinal)
+				const otherFinals = this.statusNodes.filter(
+					(s) => s.id !== statusId && s.isFinal,
+				)
 				if (otherFinals.length === 0) {
-					this.validationErrors = [{
-						type: 'error',
-						message: t('procest', 'At least one status must be marked as final'),
-					}]
+					this.validationErrors = [
+						{
+							type: 'error',
+							message: t(
+								'procest',
+								'At least one status must be marked as final',
+							),
+						},
+					]
 					return
 				}
 			}
 
 			// eslint-disable-next-line no-alert
-			if (!confirm(t('procest', 'Delete status "{name}"? This also removes its steps and transitions.', { name: target.name }))) {
+			if (
+				!confirm(
+					t(
+						'procest',
+						'Delete status "{name}"? This also removes its steps and transitions.',
+						{ name: target.name },
+					),
+				)
+			) {
 				return
 			}
 
 			const ok = await this.objectStore.deleteObject('statusType', statusId)
 			if (!ok) {
-				this.validationErrors = [{
-					type: 'error',
-					message: t('procest', 'Failed to delete status'),
-				}]
+				this.validationErrors = [
+					{
+						type: 'error',
+						message: t('procest', 'Failed to delete status'),
+					},
+				]
 				return
 			}
 
@@ -637,7 +668,10 @@ export default {
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
 		onTransitionUpdate(updatedTransition) {
-			this.workflowStore.updateTransition(updatedTransition.id, updatedTransition)
+			this.workflowStore.updateTransition(
+				updatedTransition.id,
+				updatedTransition,
+			)
 			this.$emit('dirty')
 		},
 
@@ -661,7 +695,9 @@ export default {
 		 */
 		/** @spec openspec/specs/visual-workflow-editor/spec.md#requirement-workflow-editor-validation */
 		validate() {
-			this.validationErrors = this.workflowStore.validateWorkflow(this.statusNodes)
+			this.validationErrors = this.workflowStore.validateWorkflow(
+				this.statusNodes,
+			)
 			return this.validationErrors.length === 0
 		},
 	},

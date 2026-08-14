@@ -23,8 +23,8 @@ export function triggerWordsToText(raw) {
 		const parsed = JSON.parse(raw)
 		if (Array.isArray(parsed)) {
 			return parsed
-				.map(w => String(w).trim())
-				.filter(w => w.length > 0)
+				.map((w) => String(w).trim())
+				.filter((w) => w.length > 0)
 				.join('\n')
 		}
 	} catch (error) {
@@ -46,8 +46,8 @@ export function textToTriggerWords(text) {
 	const seen = new Set()
 	const words = String(text || '')
 		.split('\n')
-		.map(w => w.trim())
-		.filter(w => {
+		.map((w) => w.trim())
+		.filter((w) => {
 			if (w.length === 0 || seen.has(w)) {
 				return false
 			}

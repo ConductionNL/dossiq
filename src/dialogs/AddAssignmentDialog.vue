@@ -6,27 +6,37 @@
 	<NcDialog
 		:open="true"
 		:name="t('procest', 'Add role assignment')"
-		@update:open="v => { if (!v) $emit('close') }">
+		@update:open="
+			(v) => {
+				if (!v) $emit('close')
+			}
+		">
 		<div class="add-assignment">
 			<div class="form-group">
-				<label class="required" for="aa-person">{{ t('procest', 'Person (UID / email)') }}</label>
+				<label class="required" for="aa-person">{{
+					t('procest', 'Person (UID / email)')
+				}}</label>
 				<NcTextField
 					id="aa-person"
 					:model-value="form.persoonId"
 					:error="!!errors.persoonId"
 					:helper-text="errors.persoonId"
-					@update:model-value="v => form.persoonId = v" />
+					@update:model-value="(v) => (form.persoonId = v)" />
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="aa-role">{{ t('procest', 'Role') }}</label>
+				<label class="required" for="aa-role">{{
+					t('procest', 'Role')
+				}}</label>
 				<NcSelect
 					id="aa-role"
 					:model-value="selectedRole"
 					:options="roleOptions"
 					:input-label="t('procest', 'Role')"
-					@update:model-value="v => form.roleId = v ? v.id : ''" />
-				<span v-if="errors.roleId" class="field-error">{{ errors.roleId }}</span>
+					@update:model-value="(v) => (form.rolId = v ? v.id : '')" />
+				<span v-if="errors.rolId" class="field-error">{{
+					errors.rolId
+				}}</span>
 			</div>
 
 			<div class="form-group">
@@ -36,17 +46,21 @@
 					:model-value="selectedType"
 					:options="typeOptions"
 					:input-label="t('procest', 'Type')"
-					@update:model-value="v => form.toewijzingType = v ? v.id : ''" />
+					@update:model-value="
+						(v) => (form.toewijzingType = v ? v.id : '')
+					" />
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="aa-vanaf">{{ t('procest', 'From') }}</label>
+				<label class="required" for="aa-vanaf">{{
+					t('procest', 'From')
+				}}</label>
 				<input
 					id="aa-vanaf"
 					type="date"
 					class="add-assignment__date"
 					:value="form.vanaf"
-					@input="form.vanaf = $event.target.value">
+					@input="form.vanaf = $event.target.value" />
 			</div>
 
 			<div class="form-group">
@@ -56,7 +70,7 @@
 					type="date"
 					class="add-assignment__date"
 					:value="form.totEnMet"
-					@input="form.totEnMet = $event.target.value">
+					@input="form.totEnMet = $event.target.value" />
 			</div>
 		</div>
 
@@ -87,7 +101,7 @@ export default {
 			errors: {},
 			form: {
 				persoonId: '',
-				roleId: '',
+				rolId: '',
 				toewijzingType: 'reguliere',
 				vanaf: new Date().toISOString().slice(0, 10),
 				totEnMet: '',
@@ -105,11 +119,14 @@ export default {
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
-			return this.roleOptions.find(o => o.id === this.form.roleId) || null
+			return this.roleOptions.find((o) => o.id === this.form.rolId) || null
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
-			return this.typeOptions.find(o => o.id === this.form.toewijzingType) || this.typeOptions[0]
+			return (
+				this.typeOptions.find((o) => o.id === this.form.toewijzingType)
+				|| this.typeOptions[0]
+			)
 		},
 	},
 	methods: {
@@ -117,8 +134,9 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
-			if (!this.form.persoonId) errs.persoonId = t('procest', 'Person is required')
-			if (!this.form.roleId) errs.roleId = t('procest', 'Role is required')
+			if (!this.form.persoonId)
+				errs.persoonId = t('procest', 'Person is required')
+			if (!this.form.rolId) errs.rolId = t('procest', 'Role is required')
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},

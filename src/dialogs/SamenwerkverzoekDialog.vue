@@ -3,22 +3,32 @@
  SPDX-License-Identifier: EUPL-1.2
 -->
 <template>
-	<NcDialog :name="t('procest', 'Initiate Samenwerkverzoek')"
+	<NcDialog
+		:name="t('procest', 'Initiate Samenwerkverzoek')"
 		:can-close="true"
 		@close="$emit('close')">
 		<template #default>
 			<div class="samenwerk-dialog">
 				<p class="samenwerk-dialog__intro">
-					{{ t('procest', 'Request collaboration from another bevoegd gezag for this vergunningaanvraag.') }}
+					{{
+						t(
+							'procest',
+							'Request collaboration from another bevoegd gezag for this vergunningaanvraag.',
+						)
+					}}
 				</p>
 
-				<NcTextField v-model="aangezochtBevoegdGezag"
+				<NcTextField
+					v-model="aangezochtBevoegdGezag"
 					:label="t('procest', 'Aangezocht bevoegd gezag (OIN or name)')"
 					:required="true"
-					:placeholder="t('procest', 'e.g. Waterschap Amstel, Gooi en Vecht')" />
+					:placeholder="
+						t('procest', 'e.g. Waterschap Amstel, Gooi en Vecht')
+					" />
 
 				<div class="samenwerk-dialog__suggestions">
-					<NcButton v-for="org in commonOrganizations"
+					<NcButton
+						v-for="org in commonOrganizations"
 						:key="org"
 						type="tertiary"
 						@click="aangezochtBevoegdGezag = org">
@@ -26,9 +36,12 @@
 					</NcButton>
 				</div>
 
-				<NcTextArea v-model="rationale"
+				<NcTextArea
+					v-model="rationale"
 					:label="t('procest', 'Rationale')"
-					:placeholder="t('procest', 'Explain why collaboration is needed...')"
+					:placeholder="
+						t('procest', 'Explain why collaboration is needed...')
+					"
 					rows="4" />
 
 				<div v-if="error" class="samenwerk-dialog__error">
@@ -41,7 +54,8 @@
 			<NcButton type="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton type="primary"
+			<NcButton
+				type="primary"
 				:disabled="!aangezochtBevoegdGezag || submitting"
 				@click="submit">
 				{{ t('procest', 'Initiate') }}
@@ -63,7 +77,7 @@ export default {
 	name: 'SamenwerkverzoekDialog',
 	components: { NcButton, NcDialog, NcTextArea, NcTextField },
 	props: {
-		caseId: {
+		zaakId: {
 			type: String,
 			required: true,
 		},
@@ -93,7 +107,11 @@ export default {
 			this.error = null
 			try {
 				const { data } = await axios.post(
-					generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.caseId) + '/samenwerking'),
+					generateUrl(
+						'/apps/procest/api/dso/cases/'
+							+ encodeURIComponent(this.zaakId)
+							+ '/samenwerking',
+					),
 					{
 						aangezochtBevoegdGezag: this.aangezochtBevoegdGezag,
 						rationale: this.rationale,
@@ -101,7 +119,10 @@ export default {
 				)
 				this.$emit('initiated', data)
 			} catch (e) {
-				this.error = t('procest', 'Could not initiate samenwerkverzoek. Please try again.')
+				this.error = t(
+					'procest',
+					'Could not initiate samenwerkverzoek. Please try again.',
+				)
 			} finally {
 				this.submitting = false
 			}

@@ -6,7 +6,9 @@
 		<div v-if="isHearingWaived" class="hearing-panel__waived">
 			<NcNoteCard type="info">
 				{{ t('procest', 'The objector has waived the right to be heard.') }}
-				<span v-if="waiverReason">{{ t('procest', 'Reason:') }} {{ waiverReason }}</span>
+				<span v-if="waiverReason"
+					>{{ t('procest', 'Reason:') }} {{ waiverReason }}</span
+				>
 			</NcNoteCard>
 		</div>
 
@@ -26,25 +28,41 @@
 		<template v-else-if="activeHearing">
 			<div class="hearing-panel__details">
 				<div class="hearing-detail">
-					<span class="hearing-detail__label">{{ t('procest', 'Status') }}</span>
-					<span class="hearing-detail__value status-badge" :class="'status-badge--' + activeHearing.status">
+					<span class="hearing-detail__label">{{
+						t('procest', 'Status')
+					}}</span>
+					<span
+						class="hearing-detail__value status-badge"
+						:class="'status-badge--' + activeHearing.status">
 						{{ getHearingStatusLabel(activeHearing.status) }}
 					</span>
 				</div>
 
 				<div class="hearing-detail">
-					<span class="hearing-detail__label">{{ t('procest', 'Date') }}</span>
-					<span class="hearing-detail__value">{{ formatDateTime(activeHearing.scheduledDate) }}</span>
+					<span class="hearing-detail__label">{{
+						t('procest', 'Date')
+					}}</span>
+					<span class="hearing-detail__value">{{
+						formatDateTime(activeHearing.scheduledDate)
+					}}</span>
 				</div>
 
 				<div v-if="activeHearing.location" class="hearing-detail">
-					<span class="hearing-detail__label">{{ t('procest', 'Location') }}</span>
-					<span class="hearing-detail__value">{{ activeHearing.location }}</span>
+					<span class="hearing-detail__label">{{
+						t('procest', 'Location')
+					}}</span>
+					<span class="hearing-detail__value">{{
+						activeHearing.location
+					}}</span>
 				</div>
 
 				<div v-if="activeHearing.videoCallUrl" class="hearing-detail">
-					<span class="hearing-detail__label">{{ t('procest', 'Video link') }}</span>
-					<a :href="activeHearing.videoCallUrl" target="_blank">{{ t('procest', 'Join online') }}</a>
+					<span class="hearing-detail__label">{{
+						t('procest', 'Video link')
+					}}</span>
+					<a :href="activeHearing.videoCallUrl" target="_blank">{{
+						t('procest', 'Join online')
+					}}</a>
 				</div>
 			</div>
 
@@ -57,7 +75,10 @@
 					{{ t('procest', 'Send Invitations') }}
 				</NcButton>
 				<NcButton
-					v-if="activeHearing.status === 'gepland' || activeHearing.status === 'uitgenodigd'"
+					v-if="
+						activeHearing.status === 'gepland'
+						|| activeHearing.status === 'uitgenodigd'
+					"
 					type="primary"
 					@click="showMinutesDialog = true">
 					{{ t('procest', 'Record Minutes') }}
@@ -78,7 +99,8 @@
 		</template>
 
 		<!-- Schedule Dialog -->
-		<div v-if="showScheduleDialog"
+		<div
+			v-if="showScheduleDialog"
 			class="dialog-overlay"
 			role="button"
 			tabindex="0"
@@ -88,28 +110,38 @@
 			<div class="dialog-card">
 				<h3>{{ t('procest', 'Schedule Hearing') }}</h3>
 				<div class="form-group">
-					<label for="hearing-panel-scheduled-date">{{ t('procest', 'Date and Time') }} *</label>
+					<label for="hearing-panel-scheduled-date"
+						>{{ t('procest', 'Date and Time') }} *</label
+					>
 					<NcTextField
 						id="hearing-panel-scheduled-date"
 						:model-value="scheduleForm.scheduledDate"
 						type="datetime-local"
-						@update:model-value="v => scheduleForm.scheduledDate = v" />
+						@update:model-value="
+							(v) => (scheduleForm.scheduledDate = v)
+						" />
 				</div>
 				<div class="form-group">
-					<label for="hearing-panel-location">{{ t('procest', 'Location') }}</label>
+					<label for="hearing-panel-location">{{
+						t('procest', 'Location')
+					}}</label>
 					<NcTextField
 						id="hearing-panel-location"
 						:model-value="scheduleForm.location"
 						:placeholder="t('procest', 'Location or Online')"
-						@update:model-value="v => scheduleForm.location = v" />
+						@update:model-value="(v) => (scheduleForm.location = v)" />
 				</div>
 				<div class="form-group">
-					<label for="hearing-panel-video-call-url">{{ t('procest', 'Video Call URL') }}</label>
+					<label for="hearing-panel-video-call-url">{{
+						t('procest', 'Video Call URL')
+					}}</label>
 					<NcTextField
 						id="hearing-panel-video-call-url"
 						:model-value="scheduleForm.videoCallUrl"
 						:placeholder="t('procest', 'https://...')"
-						@update:model-value="v => scheduleForm.videoCallUrl = v" />
+						@update:model-value="
+							(v) => (scheduleForm.videoCallUrl = v)
+						" />
 				</div>
 				<div class="dialog-card__actions">
 					<NcButton @click="showScheduleDialog = false">
@@ -123,7 +155,8 @@
 		</div>
 
 		<!-- Waiver Dialog -->
-		<div v-if="showWaiverDialog"
+		<div
+			v-if="showWaiverDialog"
 			class="dialog-overlay"
 			role="button"
 			tabindex="0"
@@ -132,13 +165,24 @@
 			@keydown.space.self.prevent="showWaiverDialog = false">
 			<div class="dialog-card">
 				<h3>{{ t('procest', 'Record Hearing Waiver') }}</h3>
-				<p>{{ t('procest', 'The objector waives the right to be heard (Awb art. 7:3).') }}</p>
+				<p>
+					{{
+						t(
+							'procest',
+							'The objector waives the right to be heard (Awb art. 7:3).',
+						)
+					}}
+				</p>
 				<div class="form-group">
-					<label for="hearing-panel-waiver-reason">{{ t('procest', 'Reason') }}</label>
+					<label for="hearing-panel-waiver-reason">{{
+						t('procest', 'Reason')
+					}}</label>
 					<textarea
 						id="hearing-panel-waiver-reason"
 						v-model="waiverForm.reason"
-						:placeholder="t('procest', 'Reason for waiving the hearing right...')"
+						:placeholder="
+							t('procest', 'Reason for waiving the hearing right...')
+						"
 						rows="3" />
 				</div>
 				<div class="dialog-card__actions">
@@ -153,7 +197,8 @@
 		</div>
 
 		<!-- Minutes Dialog -->
-		<div v-if="showMinutesDialog"
+		<div
+			v-if="showMinutesDialog"
 			class="dialog-overlay"
 			role="button"
 			tabindex="0"
@@ -163,7 +208,9 @@
 			<div class="dialog-card">
 				<h3>{{ t('procest', 'Record Hearing Minutes') }}</h3>
 				<div class="form-group">
-					<label for="hearing-panel-minutes-summary">{{ t('procest', 'Minutes Summary (Verslag)') }} *</label>
+					<label for="hearing-panel-minutes-summary"
+						>{{ t('procest', 'Minutes Summary (Verslag)') }} *</label
+					>
 					<textarea
 						id="hearing-panel-minutes-summary"
 						v-model="minutesForm.summary"
@@ -237,7 +284,9 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		waiverReason() {
 			const bezwaarStore = useBezwaarStore()
-			const waived = bezwaarStore.hearingSessions.find((h) => h.hearingWaived === true)
+			const waived = bezwaarStore.hearingSessions.find(
+				(h) => h.hearingWaived === true,
+			)
 			return waived?.waiverReason || ''
 		},
 	},

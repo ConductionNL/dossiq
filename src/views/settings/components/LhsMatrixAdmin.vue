@@ -2,7 +2,12 @@
 	<div class="lhs-matrix-admin">
 		<h3>{{ t('procest', 'Enforcement Strategy (LHS Matrix)') }}</h3>
 		<p class="lhs-matrix-admin__description">
-			{{ t('procest', 'Configure the Landelijke Handhavingsstrategie matrix. Each cell defines the intervention for a combination of severity (ernst) and behavior (gedrag).') }}
+			{{
+				t(
+					'procest',
+					'Configure the Landelijke Handhavingsstrategie matrix. Each cell defines the intervention for a combination of severity (ernst) and behavior (gedrag).',
+				)
+			}}
 		</p>
 
 		<NcLoadingIcon v-if="loading" :size="32" />
@@ -12,7 +17,10 @@
 				<thead>
 					<tr>
 						<th />
-						<th v-for="gedrag in gedragLabels" :key="gedrag.key" scope="col">
+						<th
+							v-for="gedrag in gedragLabels"
+							:key="gedrag.key"
+							scope="col">
 							{{ gedrag.label }}
 						</th>
 					</tr>
@@ -24,7 +32,13 @@
 							<select
 								:value="matrix[ernst.key]?.[gedrag.key] || ''"
 								class="lhs-matrix-admin__select"
-								@change="updateCell(ernst.key, gedrag.key, $event.target.value)">
+								@change="
+									updateCell(
+										ernst.key,
+										gedrag.key,
+										$event.target.value,
+									)
+								">
 								<option
 									v-for="option in interventionOptions"
 									:key="option"
@@ -43,11 +57,11 @@
 				type="primary"
 				:disabled="saving || !dirty"
 				@click="saveMatrix">
-				{{ saving ? t('procest', 'Saving...') : t('procest', 'Save matrix') }}
+				{{
+					saving ? t('procest', 'Saving...') : t('procest', 'Save matrix')
+				}}
 			</NcButton>
-			<NcButton
-				v-if="dirty"
-				@click="resetMatrix">
+			<NcButton v-if="dirty" @click="resetMatrix">
 				{{ t('procest', 'Reset to default') }}
 			</NcButton>
 		</div>
@@ -91,7 +105,10 @@ export default {
 		ernstLabels() {
 			return [
 				{ key: 'gering', label: t('procest', 'Minor (gering)') },
-				{ key: 'aanzienlijk', label: t('procest', 'Significant (substantial)') },
+				{
+					key: 'aanzienlijk',
+					label: t('procest', 'Significant (substantial)'),
+				},
 				{ key: 'ernstig', label: t('procest', 'Serious (ernstig)') },
 			]
 		},

@@ -12,22 +12,44 @@
 					v-for="voorstel in voorstellen"
 					:key="voorstel.id"
 					class="voorstellen-panel__item"
-					:class="{ 'voorstellen-panel__item--active': isActive(voorstel) }"
+					:class="{
+						'voorstellen-panel__item--active': isActive(voorstel),
+					}"
 					role="button"
 					tabindex="0"
-					@click="$router.push({ name: 'VoorstelDetail', params: { id: voorstel.id } })"
-					@keydown.enter="$router.push({ name: 'VoorstelDetail', params: { id: voorstel.id } })"
-					@keydown.space.prevent="$router.push({ name: 'VoorstelDetail', params: { id: voorstel.id } })">
+					@click="
+						$router.push({
+							name: 'VoorstelDetail',
+							params: { id: voorstel.id },
+						})
+					"
+					@keydown.enter="
+						$router.push({
+							name: 'VoorstelDetail',
+							params: { id: voorstel.id },
+						})
+					"
+					@keydown.space.prevent="
+						$router.push({
+							name: 'VoorstelDetail',
+							params: { id: voorstel.id },
+						})
+					">
 					<div class="voorstellen-panel__item-header">
-						<span class="voorstellen-panel__type">{{ formatType(voorstel.type) }}</span>
-						<span class="voorstellen-panel__status" :class="`voorstellen-panel__status--${voorstel.status}`">
+						<span class="voorstellen-panel__type">{{
+							formatType(voorstel.type)
+						}}</span>
+						<span
+							class="voorstellen-panel__status"
+							:class="`voorstellen-panel__status--${voorstel.status}`">
 							{{ formatStatus(voorstel.status) }}
 						</span>
 					</div>
 					<div class="voorstellen-panel__item-meta">
 						{{ voorstel.steller }}
 						<span v-if="voorstel.currentStep && isActive(voorstel)">
-							— {{ t('procest', 'step') }} {{ formatStepProgress(voorstel) }}
+							— {{ t('procest', 'step') }}
+							{{ formatStepProgress(voorstel) }}
 						</span>
 					</div>
 				</div>
@@ -118,7 +140,9 @@ export default {
 					'_filters[case]': this.caseId,
 					_limit: 50,
 				})
-				this.voorstellen = Array.isArray(results) ? results : (results?.results || [])
+				this.voorstellen = Array.isArray(results)
+					? results
+					: results?.results || []
 			} catch (error) {
 				console.error('Failed to load voorstellen for case:', error)
 				this.voorstellen = []
@@ -151,9 +175,10 @@ export default {
 			let steps = []
 			if (voorstel.routeSnapshot) {
 				try {
-					steps = typeof voorstel.routeSnapshot === 'string'
-						? JSON.parse(voorstel.routeSnapshot)
-						: voorstel.routeSnapshot
+					steps =
+						typeof voorstel.routeSnapshot === 'string'
+							? JSON.parse(voorstel.routeSnapshot)
+							: voorstel.routeSnapshot
 				} catch {
 					// ignore
 				}
@@ -209,15 +234,29 @@ export default {
 	border-radius: var(--border-radius);
 }
 
-.voorstellen-panel__status--concept { background: var(--color-background-dark); }
+.voorstellen-panel__status--concept {
+	background: var(--color-background-dark);
+}
 
-.voorstellen-panel__status--in_parafering { background: var(--color-primary-element-light); color: var(--color-primary-element); }
+.voorstellen-panel__status--in_parafering {
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element);
+}
 
-.voorstellen-panel__status--geaccordeerd { background: var(--color-success-light, #e8f5e9); color: var(--color-success, #2e7d32); }
+.voorstellen-panel__status--geaccordeerd {
+	background: var(--color-success-light, #e8f5e9);
+	color: var(--color-success, #2e7d32);
+}
 
-.voorstellen-panel__status--besloten { background: var(--color-success-light, #e8f5e9); color: var(--color-success, #2e7d32); }
+.voorstellen-panel__status--besloten {
+	background: var(--color-success-light, #e8f5e9);
+	color: var(--color-success, #2e7d32);
+}
 
-.voorstellen-panel__status--teruggestuurd { background: var(--color-warning-light, #fff3e0); color: var(--color-warning, #e65100); }
+.voorstellen-panel__status--teruggestuurd {
+	background: var(--color-warning-light, #fff3e0);
+	color: var(--color-warning, #e65100);
+}
 
 .voorstellen-panel__item-meta {
 	font-size: 0.85em;

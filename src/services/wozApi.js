@@ -62,7 +62,9 @@ export async function lookupWozValue(postcode, huisnummer, options = {}) {
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 export async function lookupWozValueByNummeraanduiding(nummeraanduidingId) {
-	const response = await axios.get(`${BASE_URL}/value`, { params: { nummeraanduidingId } })
+	const response = await axios.get(`${BASE_URL}/value`, {
+		params: { nummeraanduidingId },
+	})
 	return response.data
 }
 
@@ -75,6 +77,8 @@ export async function lookupWozValueByNummeraanduiding(nummeraanduidingId) {
  * @spec openspec/changes/brk-woz-register-adapters/proposal.md
  */
 export async function lookupWozObject(wozobjectnummer) {
-	const response = await axios.get(`${BASE_URL}/value/${encodeURIComponent(wozobjectnummer)}`)
+	const response = await axios.get(
+		`${BASE_URL}/value/${encodeURIComponent(wozobjectnummer)}`,
+	)
 	return response.data
 }

@@ -14,7 +14,8 @@
 					<template #icon>
 						<Calendar :size="20" />
 					</template>
-					<NcActionButton v-for="preset in datePresets"
+					<NcActionButton
+						v-for="preset in datePresets"
 						:key="preset.key"
 						:class="{ 'active-preset': selectedPreset === preset.key }"
 						@click="applyPreset(preset.key)">
@@ -27,11 +28,13 @@
 					<template #icon>
 						<FilterVariant :size="20" />
 					</template>
-					<NcActionButton :class="{ 'active-preset': !selectedCaseType }"
+					<NcActionButton
+						:class="{ 'active-preset': !selectedCaseType }"
 						@click="selectedCaseType = null">
 						{{ t('procest', 'All case types') }}
 					</NcActionButton>
-					<NcActionButton v-for="ct in caseTypesWithSla"
+					<NcActionButton
+						v-for="ct in caseTypesWithSla"
 						:key="ct.id"
 						:class="{ 'active-preset': selectedCaseType === ct.id }"
 						@click="selectedCaseType = ct.id">
@@ -40,7 +43,8 @@
 				</NcActions>
 
 				<!-- Back to dashboard -->
-				<NcButton type="tertiary"
+				<NcButton
+					type="tertiary"
 					@click="$router.push({ name: 'Dashboard' })">
 					<template #icon>
 						<ArrowLeft :size="20" />
@@ -64,13 +68,28 @@
 
 		<!-- Empty state: no cases -->
 		<div v-else-if="showNoCasesState" class="doorlooptijd-empty">
-			<p>{{ t('procest', 'No case data available for processing time analysis.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'No case data available for processing time analysis.',
+					)
+				}}
+			</p>
 		</div>
 
 		<!-- Empty state: no SLA targets -->
 		<div v-else-if="showNoSlaState" class="doorlooptijd-empty">
-			<p>{{ t('procest', 'No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking.') }}</p>
-			<NcButton type="primary"
+			<p>
+				{{
+					t(
+						'procest',
+						'No SLA targets configured. Set processing deadlines on case types in Settings to enable compliance tracking.',
+					)
+				}}
+			</p>
+			<NcButton
+				type="primary"
 				@click="$router.push({ name: 'ProcestConfiguration' })">
 				{{ t('procest', 'Go to Settings') }}
 			</NcButton>
@@ -78,7 +97,9 @@
 
 		<!-- Empty state: no data in range -->
 		<div v-else-if="showNoDataInRange" class="doorlooptijd-empty">
-			<p>{{ t('procest', 'No completed cases in the selected date range.') }}</p>
+			<p>
+				{{ t('procest', 'No completed cases in the selected date range.') }}
+			</p>
 		</div>
 
 		<!-- Main content -->
@@ -101,14 +122,23 @@
 				<WooDeadlinePanel
 					:cases="wooCases"
 					:loading="loading"
-					@click-case="$router.push({ name: 'CaseDetail', params: { id: $event } })"
-					@view-all="$router.push({ name: 'Cases', query: { caseTypeContains: 'woo' } })" />
+					@click-case="
+						$router.push({ name: 'CaseDetail', params: { id: $event } })
+					"
+					@view-all="
+						$router.push({
+							name: 'Cases',
+							query: { caseTypeContains: 'woo' },
+						})
+					" />
 			</div>
 
 			<!-- At-risk cases panel -->
 			<DeadlineCaseTable
 				:cases="atRiskCases"
-				@select-case="$router.push({ name: 'CaseDetail', params: { id: $event } })" />
+				@select-case="
+					$router.push({ name: 'CaseDetail', params: { id: $event } })
+				" />
 
 			<!-- Performance breakdown table -->
 			<CaseTypeBreakdown :performance-data="performanceData" />
@@ -184,23 +214,23 @@ export default {
 			const now = new Date()
 			let from = null
 			switch (this.selectedPreset) {
-			case '3m':
-				from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
-				break
-			case '6m':
-				from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
-				break
-			case '12m':
-				from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
-				break
-			case 'year':
-				from = new Date(now.getFullYear(), 0, 1)
-				break
-			case 'all':
-				from = null
-				break
-			default:
-				from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
+				case '3m':
+					from = new Date(now.getFullYear(), now.getMonth() - 3, 1)
+					break
+				case '6m':
+					from = new Date(now.getFullYear(), now.getMonth() - 6, 1)
+					break
+				case '12m':
+					from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
+					break
+				case 'year':
+					from = new Date(now.getFullYear(), 0, 1)
+					break
+				case 'all':
+					from = null
+					break
+				default:
+					from = new Date(now.getFullYear(), now.getMonth() - 12, 1)
 			}
 			return { from, to: now }
 		},
@@ -214,14 +244,14 @@ export default {
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		completedCases() {
-			return this.allCases.filter(c => {
+			return this.allCases.filter((c) => {
 				const st = this.statusTypeMap.get(c.status)
 				return st?.isFinal && c.endDate
 			})
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		openCases() {
-			return this.allCases.filter(c => {
+			return this.allCases.filter((c) => {
 				const st = this.statusTypeMap.get(c.status)
 				return !st?.isFinal
 			})
@@ -241,12 +271,14 @@ export default {
 			// Apply date range
 			if (this.dateRange.from) {
 				const fromStr = this.dateRange.from.toISOString().slice(0, 10)
-				cases = cases.filter(c => c.endDate && c.endDate.slice(0, 10) >= fromStr)
+				cases = cases.filter(
+					(c) => c.endDate && c.endDate.slice(0, 10) >= fromStr,
+				)
 			}
 
 			// Apply case type filter
 			if (this.selectedCaseType) {
-				cases = cases.filter(c => c.caseType === this.selectedCaseType)
+				cases = cases.filter((c) => c.caseType === this.selectedCaseType)
 			}
 
 			return cases
@@ -254,13 +286,19 @@ export default {
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		filteredOpenCases() {
 			if (this.selectedCaseType) {
-				return this.openCases.filter(c => c.caseType === this.selectedCaseType)
+				return this.openCases.filter(
+					(c) => c.caseType === this.selectedCaseType,
+				)
 			}
 			return this.openCases
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		caseTypesWithSla() {
-			return this.caseTypes.filter(ct => ct.processingDeadline && parseDurationToDays(ct.processingDeadline))
+			return this.caseTypes.filter(
+				(ct) =>
+					ct.processingDeadline
+					&& parseDurationToDays(ct.processingDeadline),
+			)
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		showNoCasesState() {
@@ -268,15 +306,21 @@ export default {
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		showNoSlaState() {
-			return !this.loading && this.allCases.length > 0 && this.caseTypesWithSla.length === 0
+			return (
+				!this.loading
+				&& this.allCases.length > 0
+				&& this.caseTypesWithSla.length === 0
+			)
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		showNoDataInRange() {
-			return !this.loading
+			return (
+				!this.loading
 				&& this.allCases.length > 0
 				&& this.caseTypesWithSla.length > 0
 				&& this.filteredCompletedCases.length === 0
 				&& this.atRiskCases.length === 0
+			)
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		slaData() {
@@ -284,27 +328,40 @@ export default {
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		distributionData() {
-			return computeProcessingTimeDistribution(this.filteredCompletedCases, this.caseTypes)
+			return computeProcessingTimeDistribution(
+				this.filteredCompletedCases,
+				this.caseTypes,
+			)
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		trendMonths() {
 			switch (this.selectedPreset) {
-			case '3m': return 3
-			case '6m': return 6
-			case 'year': {
-				const now = new Date()
-				return now.getMonth() + 1
-			}
-			case 'all': return 24
-			default: return 12
+				case '3m':
+					return 3
+				case '6m':
+					return 6
+				case 'year': {
+					const now = new Date()
+					return now.getMonth() + 1
+				}
+				case 'all':
+					return 24
+				default:
+					return 12
 			}
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		trendData() {
 			const casesForTrend = this.selectedCaseType
-				? this.completedCases.filter(c => c.caseType === this.selectedCaseType)
+				? this.completedCases.filter(
+						(c) => c.caseType === this.selectedCaseType,
+					)
 				: this.completedCases
-			return computeMonthlyTrend(casesForTrend, this.caseTypes, this.trendMonths)
+			return computeMonthlyTrend(
+				casesForTrend,
+				this.caseTypes,
+				this.trendMonths,
+			)
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		atRiskCases() {
@@ -312,7 +369,10 @@ export default {
 		},
 		/** @spec openspec/specs/doorlooptijd-dashboard/spec.md */
 		performanceData() {
-			return computePerformanceTable(this.filteredCompletedCases, this.caseTypes)
+			return computePerformanceTable(
+				this.filteredCompletedCases,
+				this.caseTypes,
+			)
 		},
 		/**
 		 * Weekly throughput — completed cases closed per ISO week over the
@@ -334,10 +394,16 @@ export default {
 			try {
 				// Primary path: server-aggregated metrics (kpi/compliance/breakdown/cases).
 				try {
-					const { fetchMetrics } = await import('../services/doorlooptijdApi.js')
-					this.serverMetrics = await fetchMetrics({ caseType: this.selectedCaseType })
+					const { fetchMetrics } =
+						await import('../services/doorlooptijdApi.js')
+					this.serverMetrics = await fetchMetrics({
+						caseType: this.selectedCaseType,
+					})
 				} catch (apiErr) {
-					console.warn('Doorlooptijd server metrics unavailable, falling back to client aggregation', apiErr)
+					console.warn(
+						'Doorlooptijd server metrics unavailable, falling back to client aggregation',
+						apiErr,
+					)
 					this.serverMetrics = null
 				}
 
@@ -347,9 +413,12 @@ export default {
 					this.objectStore.fetchCollection('statusType', { _limit: 500 }),
 				])
 
-				this.allCases = results[0].status === 'fulfilled' ? (results[0].value || []) : []
-				this.caseTypes = results[1].status === 'fulfilled' ? (results[1].value || []) : []
-				this.statusTypes = results[2].status === 'fulfilled' ? (results[2].value || []) : []
+				this.allCases =
+					results[0].status === 'fulfilled' ? results[0].value || [] : []
+				this.caseTypes =
+					results[1].status === 'fulfilled' ? results[1].value || [] : []
+				this.statusTypes =
+					results[2].status === 'fulfilled' ? results[2].value || [] : []
 			} catch (err) {
 				console.error('Doorlooptijd data fetch error:', err)
 			} finally {
@@ -444,8 +513,13 @@ export default {
 }
 
 @keyframes pulse {
-	0%, 100% { opacity: 1; }
-	50% { opacity: 0.5; }
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
 }
 
 /*

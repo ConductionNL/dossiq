@@ -19,12 +19,21 @@
 				{{ t('procest', 'SLA Compliance') }}
 			</div>
 			<div class="kpi-card__sub">
-				{{ slaData.total > 0
-					? t('procest', '{within}/{total} within SLA', { within: slaData.withinSla, total: slaData.total })
-					: t('procest', 'No data') }}
+				{{
+					slaData.total > 0
+						? t('procest', '{within}/{total} within SLA', {
+								within: slaData.withinSla,
+								total: slaData.total,
+							})
+						: t('procest', 'No data')
+				}}
 			</div>
 			<div v-if="slaData.excluded > 0" class="kpi-card__note">
-				{{ t('procest', '{count} cases excluded — no SLA target', { count: slaData.excluded }) }}
+				{{
+					t('procest', '{count} cases excluded — no SLA target', {
+						count: slaData.excluded,
+					})
+				}}
 			</div>
 		</div>
 

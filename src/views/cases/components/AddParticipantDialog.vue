@@ -1,5 +1,6 @@
 <template>
-	<div class="add-participant-overlay"
+	<div
+		class="add-participant-overlay"
 		role="button"
 		tabindex="0"
 		@click.self="$emit('close')"
@@ -103,7 +104,9 @@ export default {
 	/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 	mounted() {
 		if (this.preSelectHandler) {
-			const handlerType = this.roleTypes.find(rt => rt.genericRole === 'handler')
+			const handlerType = this.roleTypes.find(
+				(rt) => rt.genericRole === 'handler',
+			)
 			if (handlerType) {
 				this.selectedRoleType = handlerType
 			}
@@ -130,7 +133,9 @@ export default {
 					this.$emit('created', result)
 				} else {
 					const storeError = this.objectStore.getError('role')
-					this.error = storeError?.message || t('procest', 'Failed to add participant')
+					this.error =
+						storeError?.message
+						|| t('procest', 'Failed to add participant')
 				}
 			} catch (err) {
 				this.error = err.message || t('procest', 'Failed to add participant')

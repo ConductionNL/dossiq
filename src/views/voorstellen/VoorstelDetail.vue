@@ -19,7 +19,9 @@
 			<!-- Status & Progress -->
 			<CnDetailCard :title="t('procest', 'Status & Progress')">
 				<div class="voorstel-detail__status">
-					<span class="voorstel-detail__status-badge" :class="`voorstel-detail__status-badge--${voorstel.status}`">
+					<span
+						class="voorstel-detail__status-badge"
+						:class="`voorstel-detail__status-badge--${voorstel.status}`">
 						{{ formatStatus(voorstel.status) }}
 					</span>
 				</div>
@@ -55,7 +57,9 @@
 			</CnDetailCard>
 
 			<!-- Manager override controls -->
-			<CnDetailCard v-if="canOverrideRoute" :title="t('procest', 'Route-aanpassing (manager)')">
+			<CnDetailCard
+				v-if="canOverrideRoute"
+				:title="t('procest', 'Route-aanpassing (manager)')">
 				<div class="voorstel-detail__override-actions">
 					<NcButton :disabled="!currentStepInfo" @click="openSkipDialog">
 						{{ t('procest', 'Stap overslaan') }}
@@ -66,21 +70,32 @@
 				</div>
 			</CnDetailCard>
 
-			<SkipStepDialog :open="showSkipDialog"
+			<SkipStepDialog
+				:open="showSkipDialog"
 				:voorstel-id="voorstel.id || voorstelId"
 				:step="currentStepInfo"
 				@skipped="onOverrideCompleted"
 				@close="showSkipDialog = false" />
 
-			<AddStepDialog :open="showAddStepDialog"
+			<AddStepDialog
+				:open="showAddStepDialog"
 				:voorstel-id="voorstel.id || voorstelId"
 				:route-snapshot="steps"
 				@step-added="onOverrideCompleted"
 				@close="showAddStepDialog = false" />
 
 			<!-- Resubmit for steller -->
-			<CnDetailCard v-if="voorstel.status === 'teruggestuurd' && isSteller" :title="t('procest', 'Returned')">
-				<p>{{ t('procest', 'This proposal has been returned. Adjust the document and resubmit it.') }}</p>
+			<CnDetailCard
+				v-if="voorstel.status === 'teruggestuurd' && isSteller"
+				:title="t('procest', 'Returned')">
+				<p>
+					{{
+						t(
+							'procest',
+							'This proposal has been returned. Adjust the document and resubmit it.',
+						)
+					}}
+				</p>
 				<NcButton type="primary" @click="resubmit">
 					{{ t('procest', 'Resubmit') }}
 				</NcButton>
@@ -91,11 +106,15 @@
 				<div class="form-row">
 					<div class="form-group">
 						<label>{{ t('procest', 'Onderwerp') }}</label>
-						<span class="form-value">{{ voorstel.onderwerp || '-' }}</span>
+						<span class="form-value">{{
+							voorstel.onderwerp || '-'
+						}}</span>
 					</div>
 					<div class="form-group">
 						<label>{{ t('procest', 'Type') }}</label>
-						<span class="form-value">{{ formatType(voorstel.type) }}</span>
+						<span class="form-value">{{
+							formatType(voorstel.type)
+						}}</span>
 					</div>
 				</div>
 				<div class="form-row">
@@ -105,19 +124,26 @@
 					</div>
 					<div class="form-group">
 						<label>{{ t('procest', 'Department') }}</label>
-						<span class="form-value">{{ voorstel.department || '-' }}</span>
+						<span class="form-value">{{
+							voorstel.afdeling || '-'
+						}}</span>
 					</div>
 				</div>
 				<div class="form-row">
 					<div class="form-group">
 						<label>{{ t('procest', 'Portfolio holder') }}</label>
-						<span class="form-value">{{ voorstel.portefeuillehouder || '-' }}</span>
+						<span class="form-value">{{
+							voorstel.portefeuillehouder || '-'
+						}}</span>
 					</div>
 					<div class="form-group">
 						<label>{{ t('procest', 'Case') }}</label>
 						<router-link
 							v-if="voorstel.case"
-							:to="{ name: 'CaseDetail', params: { id: voorstel.case } }">
+							:to="{
+								name: 'CaseDetail',
+								params: { id: voorstel.case },
+							}">
 							{{ t('procest', 'View case') }}
 						</router-link>
 						<span v-else class="form-value">-</span>
@@ -128,15 +154,24 @@
 			<!-- Document -->
 			<CnDetailCard :title="t('procest', 'Document & Bijlagen')">
 				<div v-if="voorstel.document" class="voorstel-detail__document">
-					<p>{{ t('procest', 'Proposal document') }}: {{ voorstel.document }}</p>
+					<p>
+						{{ t('procest', 'Proposal document') }}:
+						{{ voorstel.document }}
+					</p>
 				</div>
 				<div v-else>
 					<p>{{ t('procest', 'No document linked') }}</p>
 				</div>
-				<div v-if="voorstel.attachments && voorstel.attachments.length > 0" class="voorstel-detail__bijlagen">
-					<h4>{{ t('procest', 'Attachments') }} ({{ voorstel.attachments.length }})</h4>
+				<div
+					v-if="voorstel.bijlagen && voorstel.bijlagen.length > 0"
+					class="voorstel-detail__bijlagen">
+					<h4>
+						{{ t('procest', 'Attachments') }} ({{
+							voorstel.bijlagen.length
+						}})
+					</h4>
 					<ul>
-						<li v-for="(bijlage, idx) in voorstel.attachments" :key="idx">
+						<li v-for="(bijlage, idx) in voorstel.bijlagen" :key="idx">
 							{{ bijlage }}
 						</li>
 					</ul>
@@ -242,7 +277,9 @@ export default {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		currentStepInfo() {
 			if (!this.voorstel.currentStep || !this.steps.length) return null
-			return this.steps.find(s => s.order === this.voorstel.currentStep) || null
+			return (
+				this.steps.find((s) => s.order === this.voorstel.currentStep) || null
+			)
 		},
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		currentUserId() {
@@ -265,7 +302,10 @@ export default {
 		},
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canOverrideRoute() {
-			if (this.voorstel.status !== 'in_parafering' && this.voorstel.status !== 'ter_accordering') {
+			if (
+				this.voorstel.status !== 'in_parafering'
+				&& this.voorstel.status !== 'ter_accordering'
+			) {
 				return false
 			}
 			const user = getCurrentUser()
@@ -273,10 +313,12 @@ export default {
 			// Group membership is server-enforced; we surface the controls to admins
 			// and to the steller so they can request additional advice.
 			const groups = user.groups || []
-			return groups.includes('admin')
+			return (
+				groups.includes('admin')
 				|| groups.includes('manager')
 				|| groups.includes('secretariaat')
 				|| this.isSteller
+			)
 		},
 	},
 	/** @spec openspec/specs/parafering-actions/spec.md */
@@ -285,17 +327,17 @@ export default {
 		// app-config — await it (idempotent) so 'voorstel'/'parafeeractie'
 		// are registered before the first fetch.
 		await initializeStores()
-		await Promise.all([
-			this.loadVoorstel(),
-			this.loadActies(),
-		])
+		await Promise.all([this.loadVoorstel(), this.loadActies()])
 	},
 	methods: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async loadVoorstel() {
 			this.loading = true
 			try {
-				this.voorstel = await this.objectStore.fetchObject('voorstel', this.voorstelId)
+				this.voorstel = await this.objectStore.fetchObject(
+					'voorstel',
+					this.voorstelId,
+				)
 			} catch (error) {
 				console.error('Failed to load voorstel:', error)
 			} finally {
@@ -306,13 +348,18 @@ export default {
 		async loadActies() {
 			this.loadingActies = true
 			try {
-				const results = await this.objectStore.fetchCollection('parafeeractie', {
-					'_filters[voorstel]': this.voorstelId,
-					_limit: 100,
-					_order: '_self.created',
-					_direction: 'asc',
-				})
-				this.acties = Array.isArray(results) ? results : (results?.results || [])
+				const results = await this.objectStore.fetchCollection(
+					'parafeeractie',
+					{
+						'_filters[voorstel]': this.voorstelId,
+						_limit: 100,
+						_order: '_self.created',
+						_direction: 'asc',
+					},
+				)
+				this.acties = Array.isArray(results)
+					? results
+					: results?.results || []
 			} catch (error) {
 				console.error('Failed to load acties:', error)
 				this.acties = []
@@ -337,10 +384,7 @@ export default {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async onActionCompleted() {
 			this.actieDialogOpen = false
-			await Promise.all([
-				this.loadVoorstel(),
-				this.loadActies(),
-			])
+			await Promise.all([this.loadVoorstel(), this.loadActies()])
 			// Reload the timeline component (it loads on mount).
 			if (this.$refs.actieTimeline?.load) {
 				await this.$refs.actieTimeline.load()
@@ -358,10 +402,7 @@ export default {
 		async onOverrideCompleted() {
 			this.showSkipDialog = false
 			this.showAddStepDialog = false
-			await Promise.all([
-				this.loadVoorstel(),
-				this.loadActies(),
-			])
+			await Promise.all([this.loadVoorstel(), this.loadActies()])
 		},
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async resubmit() {
@@ -398,15 +439,29 @@ export default {
 	font-weight: 600;
 }
 
-.voorstel-detail__status-badge--concept { background: var(--color-background-dark); }
+.voorstel-detail__status-badge--concept {
+	background: var(--color-background-dark);
+}
 
-.voorstel-detail__status-badge--in_parafering { background: var(--color-primary-element-light); color: var(--color-primary-element); }
+.voorstel-detail__status-badge--in_parafering {
+	background: var(--color-primary-element-light);
+	color: var(--color-primary-element);
+}
 
-.voorstel-detail__status-badge--geaccordeerd { background: var(--color-success-light, #e8f5e9); color: var(--color-success, #2e7d32); }
+.voorstel-detail__status-badge--geaccordeerd {
+	background: var(--color-success-light, #e8f5e9);
+	color: var(--color-success, #2e7d32);
+}
 
-.voorstel-detail__status-badge--besloten { background: var(--color-success-light, #e8f5e9); color: var(--color-success, #2e7d32); }
+.voorstel-detail__status-badge--besloten {
+	background: var(--color-success-light, #e8f5e9);
+	color: var(--color-success, #2e7d32);
+}
 
-.voorstel-detail__status-badge--teruggestuurd { background: var(--color-warning-light, #fff3e0); color: var(--color-warning, #e65100); }
+.voorstel-detail__status-badge--teruggestuurd {
+	background: var(--color-warning-light, #fff3e0);
+	color: var(--color-warning, #e65100);
+}
 
 .form-row {
 	display: flex;

@@ -10,7 +10,10 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { collectUnresolved, renderPreview } from '../../src/utils/emailTemplatePreview.js'
+import {
+	collectUnresolved,
+	renderPreview,
+} from '../../src/utils/emailTemplatePreview.js'
 
 const KNOWN = ['zaakNummer', 'contactNaam', 'handler', 'startDate']
 
@@ -21,7 +24,8 @@ describe('collectUnresolved', () => {
 	})
 
 	it('returns unknown placeholder names', () => {
-		const text = 'Hallo {{contactNaam}}, veld {{nonExistentField}} en {{onbekend}}'
+		const text =
+			'Hallo {{contactNaam}}, veld {{nonExistentField}} en {{onbekend}}'
 		const result = collectUnresolved(text, KNOWN)
 		expect(result).toContain('onbekend')
 		expect(result).toContain('nonExistentField')

@@ -14,7 +14,9 @@
 					class="ai-assistant-panel__message"
 					:class="`ai-assistant-panel__message--${msg.role}`">
 					<p>{{ msg.content }}</p>
-					<div v-if="msg.sources && msg.sources.length" class="ai-assistant-panel__sources">
+					<div
+						v-if="msg.sources && msg.sources.length"
+						class="ai-assistant-panel__sources">
 						<small v-for="(src, si) in msg.sources" :key="si">
 							{{ src.document }} ({{ src.section }})
 						</small>
@@ -26,7 +28,7 @@
 					:model-value="question"
 					:aria-label="t('procest', 'Ask a question about this case...')"
 					:placeholder="t('procest', 'Ask a question about this case...')"
-					@update:model-value="v => question = v"
+					@update:model-value="(v) => (question = v)"
 					@keydown.enter="askQuestion" />
 				<NcButton :disabled="!question || askLoading" @click="askQuestion">
 					{{ t('procest', 'Ask') }}
@@ -44,7 +46,9 @@
 				:suggestion="sug"
 				@accept="handleAccept"
 				@reject="handleReject" />
-			<p v-if="!suggestionsLoading && suggestions.length === 0" class="ai-assistant-panel__empty">
+			<p
+				v-if="!suggestionsLoading && suggestions.length === 0"
+				class="ai-assistant-panel__empty">
 				{{ t('procest', 'No suggestions available') }}
 			</p>
 		</div>
@@ -52,7 +56,10 @@
 		<!-- Summary Section -->
 		<div class="ai-assistant-panel__section">
 			<h4>{{ t('procest', 'Case Summary') }}</h4>
-			<NcButton v-if="!summaryText" :disabled="summaryLoading" @click="loadSummary">
+			<NcButton
+				v-if="!summaryText"
+				:disabled="summaryLoading"
+				@click="loadSummary">
 				{{ t('procest', 'Generate summary') }}
 			</NcButton>
 			<NcLoadingIcon v-if="summaryLoading" :size="20" />
@@ -66,7 +73,11 @@
 <script>
 import { NcButton, NcTextField, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import { askQuestion as askApi, suggestNext, summarize } from '../../../services/aiApi.js'
+import {
+	askQuestion as askApi,
+	suggestNext,
+	summarize,
+} from '../../../services/aiApi.js'
 import AiSuggestionCard from './AiSuggestionCard.vue'
 
 export default {
@@ -102,13 +113,18 @@ export default {
 				const response = await askApi(this.caseId, q)
 				this.conversation.push({
 					role: 'assistant',
-					content: response.answer || t('procest', 'No relevant information found'),
+					content:
+						response.answer
+						|| t('procest', 'No relevant information found'),
 					sources: response.sources || [],
 				})
 			} catch (e) {
 				this.conversation.push({
 					role: 'assistant',
-					content: t('procest', 'Failed to get an answer. Please try again.'),
+					content: t(
+						'procest',
+						'Failed to get an answer. Please try again.',
+					),
 				})
 			} finally {
 				this.askLoading = false

@@ -3,7 +3,6 @@ import { test, expect, Page } from '@playwright/test'
 const sidebarNav = (page: Page) => page.locator('[id^="app-navigation"]').first()
 
 test.describe('Sidebar Navigation', () => {
-
 	test('shows all navigation items', async ({ page }) => {
 		await page.goto('/index.php/apps/procest')
 		const nav = sidebarNav(page)
@@ -23,7 +22,9 @@ test.describe('Sidebar Navigation', () => {
 		// settings"), so they are present in the DOM but `display:none` until
 		// their group is expanded — asserted separately below.
 		for (const label of ['Dashboard', 'Cases']) {
-			await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible()
+			await expect(
+				nav.getByRole('link', { name: label, exact: true }),
+			).toBeVisible()
 		}
 
 		// Collapsed-group leaves: present in the navigation, hidden until the
@@ -36,7 +37,9 @@ test.describe('Sidebar Navigation', () => {
 
 		// And the group headers themselves are visible toggles.
 		for (const group of ['Work queue', 'Reports']) {
-			await expect(nav.getByRole('link', { name: group, exact: true })).toBeVisible()
+			await expect(
+				nav.getByRole('link', { name: group, exact: true }),
+			).toBeVisible()
 		}
 
 		// The Documentation footer link is present in the navigation DOM.
@@ -53,8 +56,9 @@ test.describe('Sidebar Navigation', () => {
 		// "Tasks" is not a top-level nav entry; its /tasks route stays
 		// deep-linkable and is covered by pages.spec.ts.
 		// "Cases" is a visible top-level leaf, so it can be matched by role.
-		await expect(nav.getByRole('link', { name: 'Cases', exact: true }))
-			.toHaveAttribute('href', '/index.php/apps/procest/cases')
+		await expect(
+			nav.getByRole('link', { name: 'Cases', exact: true }),
+		).toHaveAttribute('href', '/index.php/apps/procest/cases')
 
 		// The rest live in collapsed groups and are therefore absent from the
 		// accessibility tree — assert their href wiring via the DOM, checking
@@ -77,7 +81,11 @@ test.describe('Sidebar Navigation', () => {
 		// guarding against is gone: the SettingsMenu nav entry was relabelled
 		// "Configuration" under ADR-079 D4, precisely because two things
 		// reading "Settings" rendered "Settings > Settings".
-		await expect(page.getByTestId('cn-nav-settings').getByRole('button', { name: 'Settings' })).toBeVisible()
+		await expect(
+			page
+				.getByTestId('cn-nav-settings')
+				.getByRole('button', { name: 'Settings' }),
+		).toBeVisible()
 	})
 
 	test('clicking nav item navigates', async ({ page }) => {

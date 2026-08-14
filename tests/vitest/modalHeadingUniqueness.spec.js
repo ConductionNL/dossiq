@@ -59,26 +59,32 @@ function dialogTitle(source) {
  * @return {string[]} Heading literals.
  */
 function bodyHeadings(source) {
-	return [...source.matchAll(/<h[1-6][^>]*>\s*\{\{\s*t\('procest',\s*'((?:[^'\\]|\\.)+)'\)\s*\}\}\s*<\/h[1-6]>/g)]
-		.map(m => m[1])
+	return [
+		...source.matchAll(
+			/<h[1-6][^>]*>\s*\{\{\s*t\('procest',\s*'((?:[^'\\]|\\.)+)'\)\s*\}\}\s*<\/h[1-6]>/g,
+		),
+	].map((m) => m[1])
 }
 
 describe('modal dialog headings are not duplicated in the body', () => {
-	const files = readdirSync(MODAL_DIR).filter(f => f.endsWith('.vue'))
+	const files = readdirSync(MODAL_DIR).filter((f) => f.endsWith('.vue'))
 
 	it('finds modal components to check (guards against an empty scope passing vacuously)', () => {
 		expect(files.length).toBeGreaterThan(0)
 	})
 
-	it.each(files)('%s does not repeat its NcModal name as a body heading', (file) => {
-		const source = readFileSync(join(MODAL_DIR, file), 'utf8')
-		const title = dialogTitle(source)
+	it.each(files)(
+		'%s does not repeat its NcModal name as a body heading',
+		(file) => {
+			const source = readFileSync(join(MODAL_DIR, file), 'utf8')
+			const title = dialogTitle(source)
 
-		if (title === null) {
-			// Modal sets no `name` — nothing to duplicate.
-			return
-		}
+			if (title === null) {
+				// Modal sets no `name` — nothing to duplicate.
+				return
+			}
 
-		expect(bodyHeadings(source)).not.toContain(title)
-	})
+			expect(bodyHeadings(source)).not.toContain(title)
+		},
+	)
 })

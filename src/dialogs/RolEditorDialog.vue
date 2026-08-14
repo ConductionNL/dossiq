@@ -9,16 +9,22 @@
 		:open="true"
 		:name="title"
 		size="normal"
-		@update:open="v => { if (!v) $emit('close') }">
+		@update:open="
+			(v) => {
+				if (!v) $emit('close')
+			}
+		">
 		<div class="rol-editor">
 			<div class="form-group">
-				<label class="required" for="rol-naam">{{ t('procest', 'Naam') }}</label>
+				<label class="required" for="rol-naam">{{
+					t('procest', 'Naam')
+				}}</label>
 				<NcTextField
 					id="rol-naam"
-					:model-value="form.name"
-					:error="!!errors.name"
-					:helper-text="errors.name"
-					@update:model-value="v => form.name = v" />
+					:model-value="form.naam"
+					:error="!!errors.naam"
+					:helper-text="errors.naam"
+					@update:model-value="(v) => (form.naam = v)" />
 			</div>
 
 			<div class="form-group">
@@ -28,7 +34,7 @@
 					:model-value="selectedType"
 					:options="typeOptions"
 					:input-label="t('procest', 'Type')"
-					@update:model-value="v => form.type = v ? v.id : ''" />
+					@update:model-value="(v) => (form.type = v ? v.id : '')" />
 			</div>
 
 			<div class="form-group">
@@ -38,15 +44,15 @@
 					:model-value="selectedParent"
 					:options="parentOptions"
 					:input-label="t('procest', 'Parent role')"
-					@update:model-value="v => form.parentRole = v ? v.id : ''" />
+					@update:model-value="(v) => (form.parentRole = v ? v.id : '')" />
 			</div>
 
 			<div class="form-group">
 				<label for="rol-afdeling">{{ t('procest', 'Department') }}</label>
 				<NcTextField
 					id="rol-afdeling"
-					:model-value="form.department"
-					@update:model-value="v => form.department = v" />
+					:model-value="form.afdeling"
+					@update:model-value="(v) => (form.afdeling = v)" />
 			</div>
 
 			<div class="form-group">
@@ -54,7 +60,7 @@
 				<NcTextField
 					id="rol-team"
 					:model-value="form.team"
-					@update:model-value="v => form.team = v" />
+					@update:model-value="(v) => (form.team = v)" />
 			</div>
 
 			<div class="form-group">
@@ -63,7 +69,9 @@
 					id="rol-niveau"
 					type="number"
 					:model-value="String(form.mandateLevel)"
-					@update:model-value="v => form.mandateLevel = Number(v) || 0" />
+					@update:model-value="
+						(v) => (form.mandateLevel = Number(v) || 0)
+					" />
 			</div>
 		</div>
 
@@ -94,10 +102,10 @@ export default {
 		return {
 			errors: {},
 			form: {
-				name: this.role?.name || '',
+				naam: this.role?.naam || '',
 				type: this.role?.type || 'medewerker',
 				parentRole: this.role?.parentRole || '',
-				department: this.role?.department || '',
+				afdeling: this.role?.afdeling || '',
 				team: this.role?.team || '',
 				mandateLevel: this.role?.mandateLevel || 1,
 			},
@@ -120,11 +128,17 @@ export default {
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
-			return this.typeOptions.find(o => o.id === this.form.type) || this.typeOptions[3]
+			return (
+				this.typeOptions.find((o) => o.id === this.form.type)
+				|| this.typeOptions[3]
+			)
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedParent() {
-			return this.parentOptions.find(o => o.id === this.form.parentRole) || this.parentOptions[0]
+			return (
+				this.parentOptions.find((o) => o.id === this.form.parentRole)
+				|| this.parentOptions[0]
+			)
 		},
 	},
 	methods: {
@@ -132,7 +146,7 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
-			if (!this.form.name) errs.name = t('procest', 'Naam is required')
+			if (!this.form.naam) errs.naam = t('procest', 'Naam is required')
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
@@ -146,7 +160,7 @@ export default {
 </script>
 
 <style scoped>
-.role-editor {
+.rol-editor {
 	padding: 8px 4px;
 	min-width: 420px;
 }

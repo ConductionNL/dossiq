@@ -16,19 +16,30 @@
 
 		<!-- Success state (after submission) -->
 		<div v-else-if="submitted" class="external-consultation-response__success">
-			<div class="external-consultation-response__success-icon">
-				✓
-			</div>
+			<div class="external-consultation-response__success-icon">✓</div>
 			<h2>{{ t('procest', 'Advice submitted') }}</h2>
-			<p>{{ t('procest', 'Your advice has been received successfully. You can close this window.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'Your advice has been received successfully. You can close this window.',
+					)
+				}}
+			</p>
 		</div>
 
 		<!-- Consultation data + response form -->
-		<div v-else-if="consultationData" class="external-consultation-response__content">
+		<div
+			v-else-if="consultationData"
+			class="external-consultation-response__content">
 			<header class="external-consultation-response__header">
 				<h1>{{ t('procest', 'Advice request') }}</h1>
 				<p class="external-consultation-response__organization">
-					{{ t('procest', 'From:') }} {{ consultationData.aanvragendeOrganisatie || t('procest', 'Municipality') }}
+					{{ t('procest', 'From:') }}
+					{{
+						consultationData.aanvragendeOrganisatie
+						|| t('procest', 'Municipality')
+					}}
 				</p>
 			</header>
 
@@ -40,10 +51,10 @@
 						<dt>{{ t('procest', 'Onderwerp') }}</dt>
 						<dd>{{ consultationData.onderwerp }}</dd>
 					</div>
-					<div v-if="consultationData.question_formulation">
+					<div v-if="consultationData.vraagstelling">
 						<dt>{{ t('procest', 'Question') }}</dt>
 						<dd class="external-consultation-response__question">
-							{{ consultationData.question_formulation }}
+							{{ consultationData.vraagstelling }}
 						</dd>
 					</div>
 					<div>
@@ -52,9 +63,15 @@
 					</div>
 					<div>
 						<dt>{{ t('procest', 'Deadline') }}</dt>
-						<dd :class="{ 'external-consultation-response__deadline--overdue': isDeadlinePassed }">
-							{{ formatDate(consultationData.latestResponseDate) }}
-							<span v-if="isDeadlinePassed" class="external-consultation-response__overdue-label">
+						<dd
+							:class="{
+								'external-consultation-response__deadline--overdue':
+									isDeadlinePassed,
+							}">
+							{{ formatDate(consultationData.uiterlijkeReactiedatum) }}
+							<span
+								v-if="isDeadlinePassed"
+								class="external-consultation-response__overdue-label">
 								({{ t('procest', 'expired') }})
 							</span>
 						</dd>
@@ -76,44 +93,63 @@
 							:options="adviesOptions"
 							:aria-label-combobox="t('procest', 'Advice type')"
 							label="label"
-							:reduce="opt => opt.value"
+							:reduce="(opt) => opt.value"
 							:placeholder="t('procest', 'Select advice type')" />
 					</div>
 
-					<div v-if="responseForm.advies !== null" class="external-consultation-response__field">
-						<label class="external-consultation-response__label" for="external-consultation-response-toelichting">
+					<div
+						v-if="responseForm.advies !== null"
+						class="external-consultation-response__field">
+						<label
+							class="external-consultation-response__label"
+							for="external-consultation-response-toelichting">
 							{{ t('procest', 'Explanation') }}
 							<span v-if="toelichtingRequired">*</span>
 						</label>
 						<textarea
 							id="external-consultation-response-toelichting"
-							v-model="responseForm.notes"
+							v-model="responseForm.toelichting"
 							class="external-consultation-response__textarea"
 							rows="5"
-							:placeholder="t('procest', 'Provide an explanation for your advice...')" />
+							:placeholder="
+								t(
+									'procest',
+									'Provide an explanation for your advice...',
+								)
+							" />
 					</div>
 
 					<!-- Conditions block for positief_met_voorwaarden -->
-					<div v-if="responseForm.advies === 'positief_met_voorwaarden'" class="external-consultation-response__field">
+					<div
+						v-if="responseForm.advies === 'positief_met_voorwaarden'"
+						class="external-consultation-response__field">
 						<label class="external-consultation-response__label">
 							{{ t('procest', 'Conditions') }}
 						</label>
 						<div
-							v-for="(voorwaarde, idx) in responseForm.terms"
+							v-for="(voorwaarde, idx) in responseForm.voorwaarden"
 							:key="idx"
 							class="external-consultation-response__condition-row">
 							<input
 								v-model="voorwaarde.description"
 								class="external-consultation-response__condition-input"
-								:aria-label="t('procest', 'Condition description {n}', { n: idx + 1 })"
+								:aria-label="
+									t('procest', 'Condition description {n}', {
+										n: idx + 1,
+									})
+								"
 								:placeholder="t('procest', 'Condition description')"
-								type="text">
+								type="text" />
 							<NcSelect
 								v-model="voorwaarde.priority"
 								:options="priorityOptions"
-								:aria-label-combobox="t('procest', 'Priority condition {n}', { n: idx + 1 })"
+								:aria-label-combobox="
+									t('procest', 'Priority condition {n}', {
+										n: idx + 1,
+									})
+								"
 								label="label"
-								:reduce="opt => opt.value"
+								:reduce="(opt) => opt.value"
 								class="external-consultation-response__condition-priority"
 								:placeholder="t('procest', 'Priority')" />
 							<NcButton
@@ -129,14 +165,16 @@
 					</div>
 
 					<div class="external-consultation-response__field">
-						<label class="external-consultation-response__label" for="external-consultation-response-datum">
+						<label
+							class="external-consultation-response__label"
+							for="external-consultation-response-datum">
 							{{ t('procest', 'Advice date') }} *
 						</label>
 						<input
 							id="external-consultation-response-datum"
-							v-model="responseForm.date"
+							v-model="responseForm.datum"
 							type="date"
-							class="external-consultation-response__date-input">
+							class="external-consultation-response__date-input" />
 					</div>
 
 					<NcNoteCard v-if="submitError" type="error">
@@ -148,7 +186,11 @@
 							type="primary"
 							:disabled="!canSubmit || submitting"
 							@click="submitResponse">
-							{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Submit advice') }}
+							{{
+								submitting
+									? t('procest', 'Bezig...')
+									: t('procest', 'Submit advice')
+							}}
 						</NcButton>
 					</div>
 				</div>
@@ -185,15 +227,21 @@ export default {
 			consultationData: null,
 			responseForm: {
 				advies: null,
-				notes: '',
-				terms: [],
-				date: new Date().toISOString().slice(0, 10),
+				toelichting: '',
+				voorwaarden: [],
+				datum: new Date().toISOString().slice(0, 10),
 			},
 			adviesOptions: [
 				{ label: this.t('procest', 'Positive'), value: 'positief' },
-				{ label: this.t('procest', 'Positive with conditions'), value: 'positief_met_voorwaarden' },
+				{
+					label: this.t('procest', 'Positive with conditions'),
+					value: 'positief_met_voorwaarden',
+				},
 				{ label: this.t('procest', 'Negative'), value: 'negatief' },
-				{ label: this.t('procest', 'Not applicable'), value: 'niet_van_toepassing' },
+				{
+					label: this.t('procest', 'Not applicable'),
+					value: 'niet_van_toepassing',
+				},
 			],
 			priorityOptions: [
 				{ label: this.t('procest', 'High'), value: 'hoog' },
@@ -209,14 +257,20 @@ export default {
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		isDeadlinePassed() {
-			if (!this.consultationData?.latestResponseDate) return false
-			return new Date(this.consultationData.latestResponseDate) < new Date()
+			if (!this.consultationData?.uiterlijkeReactiedatum) return false
+			return (
+				new Date(this.consultationData.uiterlijkeReactiedatum) < new Date()
+			)
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		canSubmit() {
 			if (!this.responseForm.advies) return false
-			if (this.toelichtingRequired && this.responseForm.notes.trim() === '') return false
-			if (!this.responseForm.date) return false
+			if (
+				this.toelichtingRequired
+				&& this.responseForm.toelichting.trim() === ''
+			)
+				return false
+			if (!this.responseForm.datum) return false
 			return true
 		},
 	},
@@ -229,24 +283,32 @@ export default {
 			this.loading = true
 			this.loadError = ''
 			try {
-				const response = await axios.get(`/apps/procest/api/public/consultations/${encodeURIComponent(this.token)}`)
+				const response = await axios.get(
+					`/apps/procest/api/public/consultations/${encodeURIComponent(this.token)}`,
+				)
 				this.consultationData = response.data
 			} catch (err) {
-				this.loadError = this.t('procest', 'Consultation not found or the link has expired.')
+				this.loadError = this.t(
+					'procest',
+					'Consultation not found or the link has expired.',
+				)
 			} finally {
 				this.loading = false
 			}
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		addVoorwaarde() {
-			this.responseForm.terms.push({ description: '', priority: 'normaal' })
+			this.responseForm.voorwaarden.push({
+				description: '',
+				priority: 'normaal',
+			})
 		},
 		/**
 		 * @param idx
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06
 		 */
 		removeVoorwaarde(idx) {
-			this.responseForm.terms.splice(idx, 1)
+			this.responseForm.voorwaarden.splice(idx, 1)
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-06 */
 		async submitResponse() {
@@ -258,16 +320,20 @@ export default {
 					`/apps/procest/api/public/consultations/${encodeURIComponent(this.token)}`,
 					{
 						advies: this.responseForm.advies,
-						notes: this.responseForm.notes.trim(),
-						terms: this.responseForm.advies === 'positief_met_voorwaarden'
-							? [...this.responseForm.terms]
-							: [],
-						date: this.responseForm.date,
+						toelichting: this.responseForm.toelichting.trim(),
+						voorwaarden:
+							this.responseForm.advies === 'positief_met_voorwaarden'
+								? [...this.responseForm.voorwaarden]
+								: [],
+						datum: this.responseForm.datum,
 					},
 				)
 				this.submitted = true
 			} catch (err) {
-				this.submitError = this.t('procest', 'Submission failed. Please try again.')
+				this.submitError = this.t(
+					'procest',
+					'Submission failed. Please try again.',
+				)
 			} finally {
 				this.submitting = false
 			}
@@ -280,7 +346,11 @@ export default {
 			if (!dateStr) return '—'
 			const d = new Date(dateStr)
 			if (isNaN(d.getTime())) return dateStr
-			return d.toLocaleDateString('nl-NL', { year: 'numeric', month: 'long', day: 'numeric' })
+			return d.toLocaleDateString('nl-NL', {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric',
+			})
 		},
 	},
 }

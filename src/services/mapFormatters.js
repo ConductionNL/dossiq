@@ -33,16 +33,16 @@
  */
 export function statusColor(status) {
 	switch (status) {
-	case 'blocked':
-		return 'var(--color-status-error)'
-	case 'in_progress':
-		return 'var(--color-status-warning)'
-	case 'open':
-		return 'var(--color-status-info)'
-	case 'closed':
-		return 'var(--color-text-maxcontrast)'
-	default:
-		return 'var(--color-text-maxcontrast)'
+		case 'blocked':
+			return 'var(--color-status-error)'
+		case 'in_progress':
+			return 'var(--color-status-warning)'
+		case 'open':
+			return 'var(--color-status-info)'
+		case 'closed':
+			return 'var(--color-text-maxcontrast)'
+		default:
+			return 'var(--color-text-maxcontrast)'
 	}
 }
 
@@ -58,16 +58,16 @@ export function statusColor(status) {
  */
 export function statusIcon(status) {
 	switch (status) {
-	case 'blocked':
-		return 'alert-circle'
-	case 'in_progress':
-		return 'progress-clock'
-	case 'open':
-		return 'map-marker'
-	case 'closed':
-		return 'check-circle'
-	default:
-		return 'map-marker'
+		case 'blocked':
+			return 'alert-circle'
+		case 'in_progress':
+			return 'progress-clock'
+		case 'open':
+			return 'map-marker'
+		case 'closed':
+			return 'check-circle'
+		default:
+			return 'map-marker'
 	}
 }
 
@@ -88,20 +88,33 @@ function extractCoords(geometry) {
 	if (!geometry || typeof geometry !== 'object') {
 		return null
 	}
-	if (geometry.type === 'Point' && Array.isArray(geometry.coordinates) && geometry.coordinates.length >= 2) {
+	if (
+		geometry.type === 'Point'
+		&& Array.isArray(geometry.coordinates)
+		&& geometry.coordinates.length >= 2
+	) {
 		const [lon, lat] = geometry.coordinates
 		if (Number.isFinite(lat) && Number.isFinite(lon)) {
 			return { lat, lon }
 		}
 		return null
 	}
-	if (geometry.type === 'Polygon' && Array.isArray(geometry.coordinates) && Array.isArray(geometry.coordinates[0])) {
+	if (
+		geometry.type === 'Polygon'
+		&& Array.isArray(geometry.coordinates)
+		&& Array.isArray(geometry.coordinates[0])
+	) {
 		const ring = geometry.coordinates[0]
 		let sumLat = 0
 		let sumLon = 0
 		let count = 0
 		for (const pair of ring) {
-			if (Array.isArray(pair) && pair.length >= 2 && Number.isFinite(pair[0]) && Number.isFinite(pair[1])) {
+			if (
+				Array.isArray(pair)
+				&& pair.length >= 2
+				&& Number.isFinite(pair[0])
+				&& Number.isFinite(pair[1])
+			) {
 				sumLon += pair[0]
 				sumLat += pair[1]
 				count++

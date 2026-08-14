@@ -5,18 +5,34 @@
 <template>
 	<div class="financial-integration-tab">
 		<p class="financial-integration-tab__description">
-			{{ t('procest', 'Configure the shared secret used to validate the X-Procest-Signature HMAC-SHA256 header on the public dwangsom payment-confirmation callback ({endpoint}). Without a configured secret, every callback request is rejected (HTTP 401) — an unconfigured secret is never treated as an implicit pass.', { endpoint: '/apps/procest/api/dwangsom/payment-callback' }) }}
+			{{
+				t(
+					'procest',
+					'Configure the shared secret used to validate the X-Procest-Signature HMAC-SHA256 header on the public dwangsom payment-confirmation callback ({endpoint}). Without a configured secret, every callback request is rejected (HTTP 401) — an unconfigured secret is never treated as an implicit pass.',
+					{ endpoint: '/apps/procest/api/dwangsom/payment-callback' },
+				)
+			}}
 		</p>
 
 		<NcNoteCard v-if="!secretConfigured" type="warning">
-			{{ t('procest', 'No callback secret is configured. Every dwangsom payment-confirmation callback is currently being rejected with HTTP 401.') }}
+			{{
+				t(
+					'procest',
+					'No callback secret is configured. Every dwangsom payment-confirmation callback is currently being rejected with HTTP 401.',
+				)
+			}}
 		</NcNoteCard>
 
 		<div class="form-group">
 			<NcPasswordField
 				:model-value="dwangsomCallbackSecret"
 				:label="t('procest', 'Dwangsom callback secret')"
-				:helper-text="t('procest', 'Shared HMAC-SHA256 signing secret. Provide this value to the ERP/openconnector integrator so it can sign X-Procest-Signature headers.')"
+				:helper-text="
+					t(
+						'procest',
+						'Shared HMAC-SHA256 signing secret. Provide this value to the ERP/openconnector integrator so it can sign X-Procest-Signature headers.',
+					)
+				"
 				@update:model-value="onSecretInput" />
 		</div>
 
@@ -56,7 +72,10 @@ export default {
 		const config = store.getConfig || {}
 		// The generic settings endpoint masks secrets as '***' for non-admins;
 		// only render a placeholder in that case rather than the mask itself.
-		this.dwangsomCallbackSecret = config.dwangsom_callback_secret === '***' ? '' : (config.dwangsom_callback_secret || '')
+		this.dwangsomCallbackSecret =
+			config.dwangsom_callback_secret === '***'
+				? ''
+				: config.dwangsom_callback_secret || ''
 	},
 	methods: {
 		t,
@@ -72,7 +91,9 @@ export default {
 		async generateSecret() {
 			const bytes = new Uint8Array(32)
 			crypto.getRandomValues(bytes)
-			const secret = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+			const secret = Array.from(bytes, (b) =>
+				b.toString(16).padStart(2, '0'),
+			).join('')
 			this.dwangsomCallbackSecret = secret
 			await this.persist(secret)
 		},

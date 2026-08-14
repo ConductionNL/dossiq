@@ -12,7 +12,12 @@
 
 		<template v-else>
 			<div class="custom-properties-panel__summary">
-				{{ t('procest', '{filled} of {total} properties filled', { filled: filledCount, total: propertyDefinitions.length }) }}
+				{{
+					t('procest', '{filled} of {total} properties filled', {
+						filled: filledCount,
+						total: propertyDefinitions.length,
+					})
+				}}
 			</div>
 
 			<div class="custom-properties-panel__list">
@@ -22,7 +27,11 @@
 					class="property-item">
 					<div class="property-item__header">
 						<span class="property-item__name">{{ propDef.name }}</span>
-						<span v-if="propDef.isRequired" class="property-item__required">*</span>
+						<span
+							v-if="propDef.isRequired"
+							class="property-item__required"
+							>*</span
+						>
 					</div>
 
 					<template v-if="editing && editingPropId === propDef.id">
@@ -30,10 +39,15 @@
 							<NcTextField
 								:model-value="editValue"
 								:aria-label="propDef.name"
-								:placeholder="propDef.definition || t('procest', 'Enter value...')"
-								@update:model-value="v => editValue = v" />
+								:placeholder="
+									propDef.definition
+									|| t('procest', 'Enter value...')
+								"
+								@update:model-value="(v) => (editValue = v)" />
 							<div class="property-item__edit-actions">
-								<NcButton type="primary" @click="saveProperty(propDef)">
+								<NcButton
+									type="primary"
+									@click="saveProperty(propDef)">
 									{{ t('procest', 'Save') }}
 								</NcButton>
 								<NcButton @click="cancelEdit">
@@ -44,7 +58,8 @@
 					</template>
 
 					<template v-else>
-						<div class="property-item__value"
+						<div
+							class="property-item__value"
 							role="button"
 							tabindex="0"
 							@click="startEdit(propDef)"
@@ -106,7 +121,9 @@ export default {
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		filledCount() {
-			return this.propertyDefinitions.filter(pd => this.getPropertyValue(pd.id)).length
+			return this.propertyDefinitions.filter((pd) =>
+				this.getPropertyValue(pd.id),
+			).length
 		},
 	},
 	watch: {
@@ -150,7 +167,9 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 		 */
 		getPropertyValue(propDefId) {
-			const prop = this.caseProperties.find(cp => cp.propertyDefinition === propDefId)
+			const prop = this.caseProperties.find(
+				(cp) => cp.propertyDefinition === propDefId,
+			)
 			return prop?.value || ''
 		},
 
@@ -185,7 +204,9 @@ export default {
 		 */
 		async saveProperty(propDef) {
 			const objectStore = useObjectStore()
-			const existing = this.caseProperties.find(cp => cp.propertyDefinition === propDef.id)
+			const existing = this.caseProperties.find(
+				(cp) => cp.propertyDefinition === propDef.id,
+			)
 
 			if (existing) {
 				await objectStore.saveObject('caseProperty', {

@@ -22,7 +22,9 @@
 					@keydown.enter="editDecision(decision)"
 					@keydown.space.prevent="editDecision(decision)">
 					<div class="decision-card__header">
-						<span class="decision-card__title">{{ decision.title || '—' }}</span>
+						<span class="decision-card__title">{{
+							decision.title || '—'
+						}}</span>
 						<span
 							v-if="getValidity(decision).label"
 							class="decision-card__validity"
@@ -32,16 +34,24 @@
 					</div>
 					<div class="decision-card__meta">
 						<span v-if="decision.decidedBy || decision.decisionDate">
-							{{ t('procest', 'Decided by {user} on {date}', {
-								user: decision.decidedBy || t('procest', 'unknown'),
-								date: formatDate(decision.decisionDate),
-							}) }}
+							{{
+								t('procest', 'Decided by {user} on {date}', {
+									user:
+										decision.decidedBy
+										|| t('procest', 'unknown'),
+									date: formatDate(decision.decisionDate),
+								})
+							}}
 						</span>
-						<span v-if="decision.decisionType" class="decision-card__type">
+						<span
+							v-if="decision.decisionType"
+							class="decision-card__type">
 							{{ getDecisionTypeName(decision.decisionType) }}
 						</span>
 					</div>
-					<div v-if="getValidity(decision).remaining" class="decision-card__remaining">
+					<div
+						v-if="getValidity(decision).remaining"
+						class="decision-card__remaining">
 						{{ getValidity(decision).remaining }}
 					</div>
 				</div>
@@ -53,7 +63,8 @@
 		</NcButton>
 
 		<!-- Create/Edit Dialog -->
-		<div v-if="showCreateForm"
+		<div
+			v-if="showCreateForm"
 			class="decision-overlay"
 			role="button"
 			tabindex="0"
@@ -61,42 +72,69 @@
 			@keydown.enter.self="closeForm"
 			@keydown.space.self.prevent="closeForm">
 			<div class="decision-dialog">
-				<h3>{{ editingDecision ? t('procest', 'Edit Decision') : t('procest', 'New Decision') }}</h3>
+				<h3>
+					{{
+						editingDecision
+							? t('procest', 'Edit Decision')
+							: t('procest', 'New Decision')
+					}}
+				</h3>
 
 				<div class="form-group">
-					<label for="decisions-section-title">{{ t('procest', 'Title') }} *</label>
+					<label for="decisions-section-title"
+						>{{ t('procest', 'Title') }} *</label
+					>
 					<NcTextField
 						id="decisions-section-title"
 						:model-value="form.title"
 						:error="!!formErrors.title"
-						@update:model-value="v => { form.title = v; formErrors.title = '' }" />
+						@update:model-value="
+							(v) => {
+								form.title = v
+								formErrors.title = ''
+							}
+						" />
 					<p v-if="formErrors.title" class="form-error">
 						{{ formErrors.title }}
 					</p>
 				</div>
 
 				<div class="form-group">
-					<label for="decisions-section-description">{{ t('procest', 'Description') }}</label>
-					<textarea id="decisions-section-description" v-model="form.description" rows="3" />
+					<label for="decisions-section-description">{{
+						t('procest', 'Description')
+					}}</label>
+					<textarea
+						id="decisions-section-description"
+						v-model="form.description"
+						rows="3" />
 				</div>
 
 				<div class="form-row">
 					<div class="form-group">
-						<label for="decisions-section-effective-date">{{ t('procest', 'Effective date') }}</label>
+						<label for="decisions-section-effective-date">{{
+							t('procest', 'Effective date')
+						}}</label>
 						<NcTextField
 							id="decisions-section-effective-date"
 							:model-value="form.effectiveDate"
 							type="date"
-							@update:model-value="v => form.effectiveDate = v" />
+							@update:model-value="(v) => (form.effectiveDate = v)" />
 					</div>
 					<div class="form-group">
-						<label for="decisions-section-expiry-date">{{ t('procest', 'Expiry date') }}</label>
+						<label for="decisions-section-expiry-date">{{
+							t('procest', 'Expiry date')
+						}}</label>
 						<NcTextField
 							id="decisions-section-expiry-date"
 							:model-value="form.expiryDate"
 							type="date"
 							:error="!!formErrors.expiryDate"
-							@update:model-value="v => { form.expiryDate = v; formErrors.expiryDate = '' }" />
+							@update:model-value="
+								(v) => {
+									form.expiryDate = v
+									formErrors.expiryDate = ''
+								}
+							" />
 						<p v-if="formErrors.expiryDate" class="form-error">
 							{{ formErrors.expiryDate }}
 						</p>
@@ -110,19 +148,27 @@
 						:options="decisionTypeOptions"
 						:aria-label-combobox="t('procest', 'Decision type')"
 						label="label"
-						:reduce="o => o.value"
+						:reduce="(o) => o.value"
 						:clearable="true"
-						:placeholder="t('procest', 'Select decision type (optional)')" />
+						:placeholder="
+							t('procest', 'Select decision type (optional)')
+						" />
 				</div>
 
 				<div class="decision-dialog__actions">
 					<NcButton @click="closeForm">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
-					<NcButton v-if="editingDecision" type="error" @click="deleteDecision">
+					<NcButton
+						v-if="editingDecision"
+						type="error"
+						@click="deleteDecision">
 						{{ t('procest', 'Delete') }}
 					</NcButton>
-					<NcButton type="primary" :disabled="saving" @click="saveDecision">
+					<NcButton
+						type="primary"
+						:disabled="saving"
+						@click="saveDecision">
 						{{ t('procest', 'Save') }}
 					</NcButton>
 				</div>
@@ -134,7 +180,11 @@
 <script>
 import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
 import { useObjectStore } from '../../../store/modules/object.js'
-import { getDecisionValidity, formatDecisionDate, validateDecision } from '../../../utils/decisionHelpers.js'
+import {
+	getDecisionValidity,
+	formatDecisionDate,
+	validateDecision,
+} from '../../../utils/decisionHelpers.js'
 
 export default {
 	name: 'DecisionsSection',
@@ -187,7 +237,7 @@ export default {
 		},
 		/** @spec openspec/specs/roles-decisions/spec.md */
 		decisionTypeOptions() {
-			return this.decisionTypes.map(dt => ({
+			return this.decisionTypes.map((dt) => ({
 				value: dt.id,
 				label: dt.name,
 			}))
@@ -241,7 +291,7 @@ export default {
 		 * @spec openspec/specs/roles-decisions/spec.md
 		 */
 		getDecisionTypeName(typeId) {
-			const dt = this.decisionTypes.find(t => t.id === typeId)
+			const dt = this.decisionTypes.find((t) => t.id === typeId)
 			return dt?.name || ''
 		},
 
@@ -267,7 +317,13 @@ export default {
 		closeForm() {
 			this.showCreateForm = false
 			this.editingDecision = null
-			this.form = { title: '', description: '', effectiveDate: '', expiryDate: '', decisionType: null }
+			this.form = {
+				title: '',
+				description: '',
+				effectiveDate: '',
+				expiryDate: '',
+				decisionType: null,
+			}
 			this.formErrors = {}
 		},
 
@@ -310,7 +366,12 @@ export default {
 		/** @spec openspec/specs/roles-decisions/spec.md */
 		async deleteDecision() {
 			if (!this.editingDecision) return
-			if (!confirm(t('procest', 'Are you sure you want to delete this decision?'))) return
+			if (
+				!confirm(
+					t('procest', 'Are you sure you want to delete this decision?'),
+				)
+			)
+				return
 
 			const objectStore = useObjectStore()
 			await objectStore.deleteObject('decision', this.editingDecision.id)

@@ -10,37 +10,49 @@
   @spec openspec/specs/cmmn-adaptive-case/spec.md
 -->
 <template>
-	<li class="cmmn-plan-item" :class="`cmmn-plan-item--${node.type}`" :data-testid="`cmmn-plan-item-${node.id}`">
+	<li
+		class="cmmn-plan-item"
+		:class="`cmmn-plan-item--${node.type}`"
+		:data-testid="`cmmn-plan-item-${node.id}`">
 		<div class="cmmn-plan-item__row">
 			<span class="cmmn-plan-item__name">
 				{{ node.name }}
-				<span v-if="node.discretionary" class="cmmn-plan-item__discretionary-tag">
+				<span
+					v-if="node.discretionary"
+					class="cmmn-plan-item__discretionary-tag">
 					{{ t('procest', 'optional') }}
 				</span>
 			</span>
 
-			<span class="cmmn-plan-panel__badge" :class="badge.cssClass">{{ badge.label }}</span>
+			<span class="cmmn-plan-panel__badge" :class="badge.cssClass">{{
+				badge.label
+			}}</span>
 
-			<span v-if="node.type === 'milestone' && achieved" class="cmmn-plan-item__achieved">
+			<span
+				v-if="node.type === 'milestone' && achieved"
+				class="cmmn-plan-item__achieved">
 				{{ t('procest', 'Achieved') }}
 			</span>
 
 			<span class="cmmn-plan-item__actions">
-				<NcButton v-if="enableable"
+				<NcButton
+					v-if="enableable"
 					type="secondary"
 					:disabled="busy === node.id"
 					:aria-label="t('procest', 'Enable this optional task')"
 					@click="$emit('enable', node.id)">
 					{{ t('procest', 'Enable') }}
 				</NcButton>
-				<NcButton v-if="completable"
+				<NcButton
+					v-if="completable"
 					type="primary"
 					:disabled="busy === node.id"
 					:aria-label="t('procest', 'Complete this task')"
 					@click="$emit('complete', node.id)">
 					{{ t('procest', 'Complete') }}
 				</NcButton>
-				<NcButton v-if="terminable"
+				<NcButton
+					v-if="terminable"
 					type="tertiary"
 					:disabled="busy === node.id"
 					:aria-label="t('procest', 'Terminate this task')"
@@ -50,7 +62,9 @@
 			</span>
 		</div>
 
-		<ul v-if="node.children && node.children.length > 0" class="cmmn-plan-item__children">
+		<ul
+			v-if="node.children && node.children.length > 0"
+			class="cmmn-plan-item__children">
 			<CmmnPlanItemNode
 				v-for="child in node.children"
 				:key="child.id"
@@ -68,7 +82,13 @@
 <script>
 import { NcButton } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import { stateBadge, isEnableable, canComplete, canTerminate, isMilestoneAchieved } from '../../../utils/cmmnHelpers.js'
+import {
+	stateBadge,
+	isEnableable,
+	canComplete,
+	canTerminate,
+	isMilestoneAchieved,
+} from '../../../utils/cmmnHelpers.js'
 
 export default {
 	name: 'CmmnPlanItemNode',

@@ -24,7 +24,12 @@
 		<NcEmptyContent
 			v-else-if="mailNotInstalled"
 			:name="t('procest', 'Email integration unavailable')"
-			:description="t('procest', 'Install Nextcloud Mail to enable case email linking. Procest does not maintain its own email engine.')">
+			:description="
+				t(
+					'procest',
+					'Install Nextcloud Mail to enable case email linking. Procest does not maintain its own email engine.',
+				)
+			">
 			<template #icon>
 				<EmailOffOutline :size="48" />
 			</template>
@@ -47,7 +52,11 @@
 				<NcButton
 					type="primary"
 					:disabled="isFinal || drafting"
-					:title="isFinal ? t('procest', 'Case is closed; email cannot be sent.') : ''"
+					:title="
+						isFinal
+							? t('procest', 'Case is closed; email cannot be sent.')
+							: ''
+					"
 					@click="composeDraft">
 					<template #icon>
 						<EmailEditOutline :size="20" />
@@ -69,7 +78,14 @@
 				v-if="unresolvedVariables.length > 0"
 				type="warning"
 				role="status">
-				<p>{{ t('procest', 'Unresolved template variables — the draft contains raw placeholders that you must fill manually:') }}</p>
+				<p>
+					{{
+						t(
+							'procest',
+							'Unresolved template variables — the draft contains raw placeholders that you must fill manually:',
+						)
+					}}
+				</p>
 				<ul class="case-email-tab__unresolved">
 					<li v-for="v in unresolvedVariables" :key="v">
 						<code>{{ formatVariable(v) }}</code>
@@ -189,8 +205,12 @@ export default {
 				} else {
 					// OR per-object endpoint needs both register and schema
 					// slugs: /objects/{register}/{schema}/{id}.
-					const url = generateUrl(`/apps/openregister/api/objects/procest/case/${encodeURIComponent(this.resolvedCaseId)}`)
-					const { data } = await axios.get(url).catch(() => ({ data: null }))
+					const url = generateUrl(
+						`/apps/openregister/api/objects/procest/case/${encodeURIComponent(this.resolvedCaseId)}`,
+					)
+					const { data } = await axios
+						.get(url)
+						.catch(() => ({ data: null }))
 					this.applyCaseObject(data)
 				}
 
@@ -217,7 +237,11 @@ export default {
 					`/apps/procest/api/casetypes/${encodeURIComponent(this.caseTypeId)}/email-templates`,
 				)
 				const { data } = await axios.get(url)
-				this.templates = Array.isArray(data?.results) ? data.results : (Array.isArray(data) ? data : [])
+				this.templates = Array.isArray(data?.results)
+					? data.results
+					: Array.isArray(data)
+						? data
+						: []
 			} catch (err) {
 				// Template fetch is non-fatal: still allow empty-draft compose.
 				console.warn('[CaseEmailTab] template fetch failed', err)
@@ -234,7 +258,10 @@ export default {
 		 */
 		async composeDraft() {
 			if (this.isFinal) {
-				this.error = t('procest', 'Case is closed; new emails cannot be drafted.')
+				this.error = t(
+					'procest',
+					'Case is closed; new emails cannot be drafted.',
+				)
 				return
 			}
 			this.drafting = true
@@ -246,7 +273,9 @@ export default {
 					`/apps/procest/api/cases/${encodeURIComponent(this.resolvedCaseId)}/email-templates/${encodeURIComponent(templateId)}/draft`,
 				)
 				const { data } = await axios.post(url, {})
-				this.unresolvedVariables = Array.isArray(data?.unresolved) ? data.unresolved : []
+				this.unresolvedVariables = Array.isArray(data?.unresolved)
+					? data.unresolved
+					: []
 				// Navigate the user to the newly created NC Mail draft if a URL was returned.
 				if (data?.draftUrl) {
 					window.open(data.draftUrl, '_blank', 'noopener')
@@ -257,7 +286,8 @@ export default {
 				if (status === 404) {
 					this.mailNotInstalled = true
 				}
-				this.error = err?.response?.data?.message
+				this.error =
+					err?.response?.data?.message
 					|| err?.message
 					|| t('procest', 'Failed to open the draft.')
 			} finally {

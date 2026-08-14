@@ -9,7 +9,9 @@
 		<div class="deadline-indicator__content">
 			<span class="deadline-indicator__label">{{ label }}</span>
 			<span class="deadline-indicator__value">{{ status.label }}</span>
-			<span class="deadline-indicator__date">{{ t('procest', 'Deadline:') }} {{ deadline }}</span>
+			<span class="deadline-indicator__date"
+				>{{ t('procest', 'Deadline:') }} {{ deadline }}</span
+			>
 		</div>
 	</div>
 </template>

@@ -1,5 +1,6 @@
 <template>
-	<div class="task-create-overlay"
+	<div
+		class="task-create-overlay"
 		role="button"
 		tabindex="0"
 		@click.self="$emit('close')"
@@ -8,7 +9,10 @@
 		<div class="task-create-dialog">
 			<div class="task-create-dialog__header">
 				<h3>{{ t('procest', 'New Task') }}</h3>
-				<NcButton type="tertiary" :aria-label="t('procest', 'Close')" @click="$emit('close')">
+				<NcButton
+					type="tertiary"
+					:aria-label="t('procest', 'Close')"
+					@click="$emit('close')">
 					✕
 				</NcButton>
 			</div>
@@ -16,13 +20,20 @@
 			<div class="task-create-dialog__body">
 				<!-- Title -->
 				<div class="form-group">
-					<label for="task-create-title">{{ t('procest', 'Title') }} *</label>
+					<label for="task-create-title"
+						>{{ t('procest', 'Title') }} *</label
+					>
 					<NcTextField
 						id="task-create-title"
 						:model-value="form.title"
 						:placeholder="t('procest', 'Enter task title...')"
 						:error="!!errors.title"
-						@update:model-value="v => { form.title = v; errors.title = '' }" />
+						@update:model-value="
+							(v) => {
+								form.title = v
+								errors.title = ''
+							}
+						" />
 					<p v-if="errors.title" class="form-error">
 						{{ errors.title }}
 					</p>
@@ -30,7 +41,9 @@
 
 				<!-- Description -->
 				<div class="form-group">
-					<label for="task-create-description">{{ t('procest', 'Description') }}</label>
+					<label for="task-create-description">{{
+						t('procest', 'Description')
+					}}</label>
 					<textarea
 						id="task-create-description"
 						v-model="form.description"
@@ -50,24 +63,30 @@
 							:placeholder="t('procest', 'Select priority')" />
 					</div>
 					<div class="form-group">
-						<label for="task-create-due-date">{{ t('procest', 'Due date') }}</label>
+						<label for="task-create-due-date">{{
+							t('procest', 'Due date')
+						}}</label>
 						<NcTextField
 							id="task-create-due-date"
 							:model-value="form.dueDate || ''"
 							type="date"
 							:placeholder="t('procest', 'Select due date')"
-							@update:model-value="v => form.dueDate = v || null" />
+							@update:model-value="
+								(v) => (form.dueDate = v || null)
+							" />
 					</div>
 				</div>
 
 				<!-- Assignee -->
 				<div class="form-group">
-					<label for="task-create-assignee">{{ t('procest', 'Assignee') }}</label>
+					<label for="task-create-assignee">{{
+						t('procest', 'Assignee')
+					}}</label>
 					<NcTextField
 						id="task-create-assignee"
 						:model-value="form.assignee"
 						:placeholder="t('procest', 'Username (optional)')"
-						@update:model-value="v => form.assignee = v" />
+						@update:model-value="(v) => (form.assignee = v)" />
 				</div>
 
 				<!-- Case -->
@@ -79,7 +98,7 @@
 						:aria-label-combobox="t('procest', 'Case')"
 						:clearable="true"
 						label="label"
-						:reduce="o => o.value"
+						:reduce="(o) => o.value"
 						:placeholder="t('procest', 'Link to a case')" />
 					<p v-if="errors.case" class="form-error">
 						{{ errors.case }}
@@ -91,10 +110,7 @@
 				<NcButton @click="$emit('close')">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
-				<NcButton
-					type="primary"
-					:disabled="saving"
-					@click="submit">
+				<NcButton type="primary" :disabled="saving" @click="submit">
 					<template v-if="saving">
 						<NcLoadingIcon :size="20" />
 					</template>
@@ -141,7 +157,7 @@ export default {
 		},
 		/** @spec openspec/specs/task-management/spec.md */
 		caseOptions() {
-			return this.cases.map(c => ({
+			return this.cases.map((c) => ({
 				value: c.id,
 				label: c.title || c.identifier || c.id,
 			}))
@@ -149,7 +165,9 @@ export default {
 	},
 	/** @spec openspec/specs/task-management/spec.md */
 	async mounted() {
-		const results = await this.objectStore.fetchCollection('case', { _limit: 200 })
+		const results = await this.objectStore.fetchCollection('case', {
+			_limit: 200,
+		})
 		this.cases = results || []
 	},
 	methods: {

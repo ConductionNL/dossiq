@@ -6,16 +6,25 @@
 		@update:open="$emit('update:open', $event)">
 		<div class="create-federated-share-dialog">
 			<p class="create-federated-share-dialog__description">
-				{{ t('procest', 'Only the fields you select below are shared — never the whole case. The remote organisation gets read-only access to a snapshot; it can collaborate via the activity stream but cannot change the case.') }}
+				{{
+					t(
+						'procest',
+						'Only the fields you select below are shared — never the whole case. The remote organisation gets read-only access to a snapshot; it can collaborate via the activity stream but cannot change the case.',
+					)
+				}}
 			</p>
 
 			<div class="form-group">
-				<label for="federated-share-remote-cloud-id">{{ t('procest', 'Remote cloud ID') }}</label>
+				<label for="federated-share-remote-cloud-id">{{
+					t('procest', 'Remote cloud ID')
+				}}</label>
 				<input
 					id="federated-share-remote-cloud-id"
 					v-model="form.remoteCloudId"
 					type="text"
-					:placeholder="t('procest', 'e.g. partner-org@partner.example.com')">
+					:placeholder="
+						t('procest', 'e.g. partner-org@partner.example.com')
+					" />
 			</div>
 
 			<div class="form-group">
@@ -26,7 +35,7 @@
 							<input
 								v-model="form.sharedFields"
 								type="checkbox"
-								:value="field.value">
+								:value="field.value" />
 							{{ field.label }}
 						</label>
 					</li>
@@ -41,7 +50,7 @@
 							<input
 								v-model="form.sharedDocuments"
 								type="checkbox"
-								:value="doc.id">
+								:value="doc.id" />
 							{{ doc.name || doc.id }}
 						</label>
 					</li>
@@ -106,7 +115,10 @@ export default {
 			// helper (PHP is the source of truth; the server rejects any
 			// field outside its own allow-list even if this UI somehow got
 			// out of sync).
-			allowedFields: FEDERATION_ALLOWED_FIELDS.map((value) => ({ value, label: this.fieldLabel(value) })),
+			allowedFields: FEDERATION_ALLOWED_FIELDS.map((value) => ({
+				value,
+				label: this.fieldLabel(value),
+			})),
 		}
 	},
 	computed: {
@@ -141,7 +153,10 @@ export default {
 		async createFederatedShare() {
 			this.saving = true
 			try {
-				this.$emit('created', shapeFederatedSharePayload(this.form, this.caseId))
+				this.$emit(
+					'created',
+					shapeFederatedSharePayload(this.form, this.caseId),
+				)
 			} finally {
 				this.saving = false
 			}

@@ -29,7 +29,11 @@ const validDefinition = {
 		{ name: 'tier', type: 'string' },
 	],
 	rules: [
-		{ id: 'r1', inputEntries: ['[0..25000]', '-'], outputEntries: [true, 'gold'] },
+		{
+			id: 'r1',
+			inputEntries: ['[0..25000]', '-'],
+			outputEntries: [true, 'gold'],
+		},
 		{ id: 'r2', inputEntries: ['> 25000', '-'], outputEntries: [false, 'none'] },
 	],
 }
@@ -58,34 +62,44 @@ describe('validateTableStructure', () => {
 		const def = { ...validDefinition, inputs: [{ type: 'number' }] }
 		const result = validateTableStructure(def)
 		expect(result.valid).toBe(false)
-		expect(result.errors.some(e => e.includes('requires a non-empty name'))).toBe(true)
+		expect(
+			result.errors.some((e) => e.includes('requires a non-empty name')),
+		).toBe(true)
 	})
 
 	it('rejects a field with an invalid type', () => {
 		const def = { ...validDefinition, inputs: [{ name: 'x', type: 'bogus' }] }
 		const result = validateTableStructure(def)
 		expect(result.valid).toBe(false)
-		expect(result.errors.some(e => e.includes('invalid type'))).toBe(true)
+		expect(result.errors.some((e) => e.includes('invalid type'))).toBe(true)
 	})
 
 	it('rejects a rule whose inputEntries count does not match inputs', () => {
 		const def = {
 			...validDefinition,
-			rules: [{ id: 'r1', inputEntries: ['[0..1]'], outputEntries: [true, 'gold'] }],
+			rules: [
+				{
+					id: 'r1',
+					inputEntries: ['[0..1]'],
+					outputEntries: [true, 'gold'],
+				},
+			],
 		}
 		const result = validateTableStructure(def)
 		expect(result.valid).toBe(false)
-		expect(result.errors.some(e => e.includes('inputEntries'))).toBe(true)
+		expect(result.errors.some((e) => e.includes('inputEntries'))).toBe(true)
 	})
 
 	it('rejects a rule whose outputEntries count does not match outputs', () => {
 		const def = {
 			...validDefinition,
-			rules: [{ id: 'r1', inputEntries: ['[0..1]', '-'], outputEntries: [true] }],
+			rules: [
+				{ id: 'r1', inputEntries: ['[0..1]', '-'], outputEntries: [true] },
+			],
 		}
 		const result = validateTableStructure(def)
 		expect(result.valid).toBe(false)
-		expect(result.errors.some(e => e.includes('outputEntries'))).toBe(true)
+		expect(result.errors.some((e) => e.includes('outputEntries'))).toBe(true)
 	})
 })
 
@@ -120,7 +134,13 @@ describe('parseDefinitionJson', () => {
 
 describe('constants', () => {
 	it('exposes the five DMN hit policies', () => {
-		expect(HIT_POLICIES).toEqual(['UNIQUE', 'FIRST', 'PRIORITY', 'ANY', 'COLLECT'])
+		expect(HIT_POLICIES).toEqual([
+			'UNIQUE',
+			'FIRST',
+			'PRIORITY',
+			'ANY',
+			'COLLECT',
+		])
 	})
 
 	it('exposes the four field types', () => {

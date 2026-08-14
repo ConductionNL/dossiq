@@ -15,16 +15,23 @@
 		</div>
 
 		<div v-else-if="shares.length === 0" class="share-tab__empty">
-			<p>{{ t('procest', 'This case has not been shared with a partner yet.') }}</p>
+			<p>
+				{{
+					t('procest', 'This case has not been shared with a partner yet.')
+				}}
+			</p>
 		</div>
 
 		<ul v-else class="share-tab__list">
 			<li v-for="share in shares" :key="share.id" class="share-tab__item">
 				<div class="share-tab__item-header">
-					<span class="share-tab__type-badge share-tab__type-badge--partner">
+					<span
+						class="share-tab__type-badge share-tab__type-badge--partner">
 						{{ t('procest', 'Partner') }}
 					</span>
-					<span class="share-tab__label">{{ share.label || t('procest', 'Unnamed share') }}</span>
+					<span class="share-tab__label">{{
+						share.label || t('procest', 'Unnamed share')
+					}}</span>
 				</div>
 				<div class="share-tab__item-details">
 					<span>{{ permissionLabel(share.permissionLevel) }}</span>
@@ -63,20 +70,37 @@
 		</div>
 
 		<div v-else-if="federatedShares.length === 0" class="share-tab__empty">
-			<p>{{ t('procest', 'This case has not been shared with a remote organisation yet.') }}</p>
+			<p>
+				{{
+					t(
+						'procest',
+						'This case has not been shared with a remote organisation yet.',
+					)
+				}}
+			</p>
 		</div>
 
 		<ul v-else class="share-tab__list">
-			<li v-for="share in federatedShares" :key="share.id" class="share-tab__item">
+			<li
+				v-for="share in federatedShares"
+				:key="share.id"
+				class="share-tab__item">
 				<div class="share-tab__item-header">
-					<span class="share-tab__type-badge share-tab__type-badge--federated">
+					<span
+						class="share-tab__type-badge share-tab__type-badge--federated">
 						{{ t('procest', 'Federated') }}
 					</span>
 					<span class="share-tab__label">{{ share.remoteCloudId }}</span>
 				</div>
 				<div class="share-tab__item-details">
-					<span>{{ t('procest', 'Shared fields: {fields}', { fields: (share.sharedFields || []).join(', ') }) }}</span>
-					<span>{{ t('procest', 'Status: {status}', { status: share.status }) }}</span>
+					<span>{{
+						t('procest', 'Shared fields: {fields}', {
+							fields: (share.sharedFields || []).join(', '),
+						})
+					}}</span>
+					<span>{{
+						t('procest', 'Status: {status}', { status: share.status })
+					}}</span>
 				</div>
 				<div class="share-tab__item-actions">
 					<NcButton @click="$emit('open-activity', share.id)">

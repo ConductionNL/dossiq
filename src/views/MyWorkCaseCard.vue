@@ -9,11 +9,19 @@
 		:class="{ 'mywork-card--selected': selected }"
 		@click="$emit('open', object)">
 		<span class="mywork-card__title">{{ title }}</span>
-		<span v-if="description" class="mywork-card__description">{{ description }}</span>
+		<span v-if="description" class="mywork-card__description">{{
+			description
+		}}</span>
 		<span class="mywork-card__meta">
 			<span v-if="identifier" class="mywork-card__ref">{{ identifier }}</span>
-			<span v-if="caseTypeLabel" class="mywork-card__chip">{{ caseTypeLabel }}</span>
-			<span v-if="statusLabel" class="mywork-card__chip mywork-card__chip--status">{{ statusLabel }}</span>
+			<span v-if="caseTypeLabel" class="mywork-card__chip">{{
+				caseTypeLabel
+			}}</span>
+			<span
+				v-if="statusLabel"
+				class="mywork-card__chip mywork-card__chip--status"
+				>{{ statusLabel }}</span
+			>
 			<span
 				v-if="urgencyChipLabel"
 				class="mywork-card__chip mywork-card__urgency-chip"
@@ -21,7 +29,10 @@
 				{{ urgencyChipLabel }}
 			</span>
 		</span>
-		<span v-if="deadlineLabel" class="mywork-card__deadline" :class="{ 'mywork-card__deadline--overdue': overdue }">
+		<span
+			v-if="deadlineLabel"
+			class="mywork-card__deadline"
+			:class="{ 'mywork-card__deadline--overdue': overdue }">
 			{{ t('procest', 'Deadline') }}: {{ deadlineLabel }}
 		</span>
 	</button>
@@ -75,7 +86,12 @@ export default {
 
 	computed: {
 		title() {
-			return this.object.title || this.object.name || this.identifier || t('procest', 'Untitled case')
+			return (
+				this.object.title
+				|| this.object.name
+				|| this.identifier
+				|| t('procest', 'Untitled case')
+			)
 		},
 		description() {
 			const d = this.object.description || ''
@@ -87,19 +103,23 @@ export default {
 		/** Case-type name resolved from the parent-supplied map. */
 		caseTypeLabel() {
 			const v = this.object.caseType
-			return v ? (this.caseTypeMap[v] || '') : ''
+			return v ? this.caseTypeMap[v] || '' : ''
 		},
 		/** Status name resolved from the parent-supplied map. */
 		statusLabel() {
 			const v = this.object.status
-			return v ? (this.statusMap[v] || '') : ''
+			return v ? this.statusMap[v] || '' : ''
 		},
 		deadlineLabel() {
 			const raw = this.object.deadline
 			if (!raw) return ''
 			const d = new Date(raw)
 			if (isNaN(d.getTime())) return ''
-			return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+			return d.toLocaleDateString(undefined, {
+				day: 'numeric',
+				month: 'short',
+				year: 'numeric',
+			})
 		},
 		overdue() {
 			const raw = this.object.deadline
@@ -109,8 +129,9 @@ export default {
 		},
 		/** This card's urgency entry from the parent-supplied work-queue map. */
 		urgencyEntry() {
-			const id = this.object.id || (this.object['@self'] && this.object['@self'].id)
-			return id ? (this.urgencyMap[id] || null) : null
+			const id =
+				this.object.id || (this.object['@self'] && this.object['@self'].id)
+			return id ? this.urgencyMap[id] || null : null
 		},
 		/** CSS modifier class for the urgency chip; '' when no chip should render. */
 		urgencyChipClassName() {
@@ -120,14 +141,14 @@ export default {
 		urgencyChipLabel() {
 			const tier = this.urgencyEntry && this.urgencyEntry.tier
 			switch (tier) {
-			case 'overdue':
-				return t('procest', 'Overdue')
-			case 'critical':
-				return t('procest', 'Critical')
-			case 'warning':
-				return t('procest', 'Due soon')
-			default:
-				return ''
+				case 'overdue':
+					return t('procest', 'Overdue')
+				case 'critical':
+					return t('procest', 'Critical')
+				case 'warning':
+					return t('procest', 'Due soon')
+				default:
+					return ''
 			}
 		},
 	},

@@ -24,7 +24,9 @@
 									@update:model-value="toggleAll" />
 							</th>
 							<th scope="col">{{ t('procest', 'Field') }}</th>
-							<th scope="col">{{ t('procest', 'Extracted value') }}</th>
+							<th scope="col">
+								{{ t('procest', 'Extracted value') }}
+							</th>
 							<th scope="col">{{ t('procest', 'Confidence') }}</th>
 						</tr>
 					</thead>
@@ -32,19 +34,33 @@
 						<tr
 							v-for="field in fields"
 							:key="field.name"
-							:class="{ 'low-confidence': field.confidence < 0.60 }">
+							:class="{ 'low-confidence': field.confidence < 0.6 }">
 							<td>
 								<NcCheckboxRadioSwitch
-									:model-value="selectedFields.includes(field.name)"
-									:aria-label="t('procest', 'Select field {field}', { field: field.name })"
+									:model-value="
+										selectedFields.includes(field.name)
+									"
+									:aria-label="
+										t('procest', 'Select field {field}', {
+											field: field.name,
+										})
+									"
 									@update:model-value="toggleField(field.name)" />
 							</td>
 							<td>{{ field.name }}</td>
 							<td>
 								<NcTextField
-									:model-value="modifiedValues[field.name] || field.value"
-									:aria-label="t('procest', 'Extracted value for {field}', { field: field.name })"
-									@update:model-value="v => modifiedValues[field.name] = v" />
+									:model-value="
+										modifiedValues[field.name] || field.value
+									"
+									:aria-label="
+										t('procest', 'Extracted value for {field}', {
+											field: field.name,
+										})
+									"
+									@update:model-value="
+										(v) => (modifiedValues[field.name] = v)
+									" />
 							</td>
 							<td>
 								<AiConfidenceBadge :confidence="field.confidence" />
@@ -54,8 +70,15 @@
 				</table>
 
 				<div class="ai-extract-dialog__actions">
-					<NcButton type="primary" :disabled="selectedFields.length === 0" @click="applySelected">
-						{{ t('procest', 'Apply selected ({count})', { count: selectedFields.length }) }}
+					<NcButton
+						type="primary"
+						:disabled="selectedFields.length === 0"
+						@click="applySelected">
+						{{
+							t('procest', 'Apply selected ({count})', {
+								count: selectedFields.length,
+							})
+						}}
 					</NcButton>
 					<NcButton @click="$emit('close')">
 						{{ t('procest', 'Cancel') }}
@@ -65,7 +88,12 @@
 
 			<div v-else>
 				<NcNoteCard type="info">
-					{{ t('procest', 'No data could be extracted from this document.') }}
+					{{
+						t(
+							'procest',
+							'No data could be extracted from this document.',
+						)
+					}}
 				</NcNoteCard>
 			</div>
 		</div>
@@ -73,14 +101,29 @@
 </template>
 
 <script>
-import { NcDialog, NcButton, NcTextField, NcLoadingIcon, NcNoteCard, NcCheckboxRadioSwitch } from '@nextcloud/vue'
+import {
+	NcDialog,
+	NcButton,
+	NcTextField,
+	NcLoadingIcon,
+	NcNoteCard,
+	NcCheckboxRadioSwitch,
+} from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
 import { extractData } from '../services/aiApi.js'
 import AiConfidenceBadge from '../views/cases/components/AiConfidenceBadge.vue'
 
 export default {
 	name: 'AiExtractDialog',
-	components: { NcDialog, NcButton, NcTextField, NcLoadingIcon, NcNoteCard, NcCheckboxRadioSwitch, AiConfidenceBadge },
+	components: {
+		NcDialog,
+		NcButton,
+		NcTextField,
+		NcLoadingIcon,
+		NcNoteCard,
+		NcCheckboxRadioSwitch,
+		AiConfidenceBadge,
+	},
 	props: {
 		caseId: { type: String, required: true },
 		documentId: { type: String, default: null },
@@ -99,7 +142,10 @@ export default {
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		allSelected() {
-			return this.fields.length > 0 && this.selectedFields.length === this.fields.length
+			return (
+				this.fields.length > 0
+				&& this.selectedFields.length === this.fields.length
+			)
 		},
 	},
 	watch: {
@@ -121,11 +167,12 @@ export default {
 				const response = await extractData(this.caseId, this.documentId)
 				this.fields = response.fields || []
 				this.selectedFields = this.fields
-					.filter((f) => f.confidence >= 0.60)
+					.filter((f) => f.confidence >= 0.6)
 					.map((f) => f.name)
 				this.modifiedValues = {}
 			} catch (e) {
-				this.error = e.response?.data?.error || t('procest', 'Extraction failed')
+				this.error =
+					e.response?.data?.error || t('procest', 'Extraction failed')
 			} finally {
 				this.loading = false
 			}
@@ -153,7 +200,8 @@ export default {
 		applySelected() {
 			const applied = {}
 			for (const name of this.selectedFields) {
-				applied[name] = this.modifiedValues[name]
+				applied[name] =
+					this.modifiedValues[name]
 					|| this.fields.find((f) => f.name === name)?.value
 			}
 			this.$emit('applied', applied)

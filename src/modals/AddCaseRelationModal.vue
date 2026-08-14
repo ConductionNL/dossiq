@@ -63,12 +63,18 @@
 
 			<!-- Toelichting (optional) -->
 			<div class="form-group">
-				<label for="acr-toelichting">{{ t('procest', 'Explanation') }}</label>
+				<label for="acr-toelichting">{{
+					t('procest', 'Explanation')
+				}}</label>
 				<NcTextField
 					id="acr-toelichting"
 					:model-value="notes"
 					:placeholder="t('procest', 'Optional clarification…')"
-					@update:model-value="v => { toelichting = v }" />
+					@update:model-value="
+						(v) => {
+							toelichting = v
+						}
+					" />
 			</div>
 
 			<p v-if="submitError" class="form-error" role="alert">
@@ -91,9 +97,20 @@
 </template>
 
 <script>
-import { NcButton, NcDialog, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcDialog,
+	NcLoadingIcon,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 import { useObjectStore } from '../store/modules/object.js'
-import { addRelation, relationErrorMessage, relationTypeLabel, AARD_RELATIE_TYPES } from '../services/caseRelationApi.js'
+import {
+	addRelation,
+	relationErrorMessage,
+	relationTypeLabel,
+	AARD_RELATIE_TYPES,
+} from '../services/caseRelationApi.js'
 
 export default {
 	name: 'AddCaseRelationModal',
@@ -132,7 +149,10 @@ export default {
 		},
 		/** @spec openspec/specs/related-case-linking/spec.md */
 		typeOptions() {
-			return AARD_RELATIE_TYPES.map(value => ({ value, label: relationTypeLabel(value) }))
+			return AARD_RELATIE_TYPES.map((value) => ({
+				value,
+				label: relationTypeLabel(value),
+			}))
 		},
 	},
 	methods: {
@@ -165,12 +185,15 @@ export default {
 			}
 			this.searching = true
 			try {
-				const results = await this.objectStore.fetchCollection('case', { _search: term, _limit: 25 })
+				const results = await this.objectStore.fetchCollection('case', {
+					_search: term,
+					_limit: 25,
+				})
 				this.caseOptions = (results || [])
-					.filter(c => (c.id || c['@self']?.id) !== this.caseId)
-					.map(c => ({
+					.filter((c) => (c.id || c['@self']?.id) !== this.caseId)
+					.map((c) => ({
 						id: c.id || c['@self']?.id,
-						label: c.title || c.identifier || (c.id || c['@self']?.id),
+						label: c.title || c.identifier || c.id || c['@self']?.id,
 					}))
 			} catch (e) {
 				this.caseOptions = []

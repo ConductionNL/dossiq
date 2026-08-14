@@ -11,22 +11,46 @@ export async function initializeStores() {
 
 	if (config) {
 		if (config.register && config.case_schema) {
-			objectStore.registerObjectType('case', config.case_schema, config.register)
+			objectStore.registerObjectType(
+				'case',
+				config.case_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.task_schema) {
-			objectStore.registerObjectType('task', config.task_schema, config.register)
+			objectStore.registerObjectType(
+				'task',
+				config.task_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.status_schema) {
-			objectStore.registerObjectType('status', config.status_schema, config.register)
+			objectStore.registerObjectType(
+				'status',
+				config.status_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.role_schema) {
-			objectStore.registerObjectType('role', config.role_schema, config.register)
+			objectStore.registerObjectType(
+				'role',
+				config.role_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.result_schema) {
-			objectStore.registerObjectType('result', config.result_schema, config.register)
+			objectStore.registerObjectType(
+				'result',
+				config.result_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.decision_schema) {
-			objectStore.registerObjectType('decision', config.decision_schema, config.register)
+			objectStore.registerObjectType(
+				'decision',
+				config.decision_schema,
+				config.register,
+			)
 		}
 		// caseType / statusType power the Workflow Board kanban and the
 		// Doorlooptijd analytics view. Their numeric schema id is not always
@@ -39,57 +63,125 @@ export async function initializeStores() {
 		// is empty. This keeps the board/analytics functional regardless of
 		// whether the register config carries the numeric ids.
 		if (config.register) {
-			objectStore.registerObjectType('caseType', config.case_type_schema || 'caseType', config.register)
+			objectStore.registerObjectType(
+				'caseType',
+				config.case_type_schema || 'caseType',
+				config.register,
+			)
 		}
 		if (config.register) {
-			objectStore.registerObjectType('statusType', config.status_type_schema || 'statusType', config.register)
+			objectStore.registerObjectType(
+				'statusType',
+				config.status_type_schema || 'statusType',
+				config.register,
+			)
 		}
 		if (config.register && config.result_type_schema) {
-			objectStore.registerObjectType('resultType', config.result_type_schema, config.register)
+			objectStore.registerObjectType(
+				'resultType',
+				config.result_type_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.role_type_schema) {
-			objectStore.registerObjectType('roleType', config.role_type_schema, config.register)
+			objectStore.registerObjectType(
+				'roleType',
+				config.role_type_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.property_definition_schema) {
-			objectStore.registerObjectType('propertyDefinition', config.property_definition_schema, config.register)
+			objectStore.registerObjectType(
+				'propertyDefinition',
+				config.property_definition_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.document_type_schema) {
-			objectStore.registerObjectType('documentType', config.document_type_schema, config.register)
+			objectStore.registerObjectType(
+				'documentType',
+				config.document_type_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.decision_type_schema) {
-			objectStore.registerObjectType('decisionType', config.decision_type_schema, config.register)
+			objectStore.registerObjectType(
+				'decisionType',
+				config.decision_type_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.map_layer_schema) {
-			objectStore.registerObjectType('mapLayer', config.map_layer_schema, config.register)
+			objectStore.registerObjectType(
+				'mapLayer',
+				config.map_layer_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.objection_schema) {
-			objectStore.registerObjectType('objection', config.objection_schema, config.register)
+			objectStore.registerObjectType(
+				'objection',
+				config.objection_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.hearing_session_schema) {
-			objectStore.registerObjectType('hearingSession', config.hearing_session_schema, config.register)
+			objectStore.registerObjectType(
+				'hearingSession',
+				config.hearing_session_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.advisory_report_schema) {
-			objectStore.registerObjectType('advisoryReport', config.advisory_report_schema, config.register)
+			objectStore.registerObjectType(
+				'advisoryReport',
+				config.advisory_report_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.appeal_decision_schema) {
-			objectStore.registerObjectType('appealDecision', config.appeal_decision_schema, config.register)
+			objectStore.registerObjectType(
+				'appealDecision',
+				config.appeal_decision_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.workflow_template_schema) {
-			objectStore.registerObjectType('workflowTemplate', config.workflow_template_schema, config.register)
+			objectStore.registerObjectType(
+				'workflowTemplate',
+				config.workflow_template_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.voorstel_schema) {
-			objectStore.registerObjectType('voorstel', config.voorstel_schema, config.register)
+			objectStore.registerObjectType(
+				'voorstel',
+				config.voorstel_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.parafeerroute_schema) {
-			objectStore.registerObjectType('parafeerroute', config.parafeerroute_schema, config.register)
+			objectStore.registerObjectType(
+				'parafeerroute',
+				config.parafeerroute_schema,
+				config.register,
+			)
 		}
 		if (config.register && config.parafeeractie_schema) {
-			objectStore.registerObjectType('parafeeractie', config.parafeeractie_schema, config.register)
+			objectStore.registerObjectType(
+				'parafeeractie',
+				config.parafeeractie_schema,
+				config.register,
+			)
 		}
 		// Case-document relation records (case detail Documents tab +
 		// DocumentChecklist). Slug fallback like caseType/statusType above.
 		if (config.register) {
-			objectStore.registerObjectType('caseDocument', config.case_document_schema || 'caseDocument', config.register)
+			objectStore.registerObjectType(
+				'caseDocument',
+				config.case_document_schema || 'caseDocument',
+				config.register,
+			)
 		}
 	}
 

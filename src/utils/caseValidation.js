@@ -49,7 +49,10 @@ export function getCaseTypeUnusableReason(caseType) {
 	if (!caseType) return t('procest', 'Case type not found')
 
 	if (caseType.isDraft === true || caseType.isDraft === 'true') {
-		return t('procest', 'Cannot create a case with a draft case type. The case type must be published first.')
+		return t(
+			'procest',
+			'Cannot create a case with a draft case type. The case type must be published first.',
+		)
 	}
 
 	const today = new Date()
@@ -60,7 +63,11 @@ export function getCaseTypeUnusableReason(caseType) {
 		validFrom.setHours(0, 0, 0, 0)
 		if (validFrom > today) {
 			const dateStr = caseType.validFrom.split('T')[0]
-			return t('procest', 'Cannot create a case with a case type that is not yet valid. The case type is valid from {date}.', { date: dateStr })
+			return t(
+				'procest',
+				'Cannot create a case with a case type that is not yet valid. The case type is valid from {date}.',
+				{ date: dateStr },
+			)
 		}
 	}
 
@@ -69,7 +76,11 @@ export function getCaseTypeUnusableReason(caseType) {
 		validUntil.setHours(0, 0, 0, 0)
 		if (validUntil < today) {
 			const dateStr = caseType.validUntil.split('T')[0]
-			return t('procest', 'Cannot create a case with an expired case type. The case type was valid until {date}.', { date: dateStr })
+			return t(
+				'procest',
+				'Cannot create a case with an expired case type. The case type was valid until {date}.',
+				{ date: dateStr },
+			)
 		}
 	}
 
@@ -98,7 +109,9 @@ export function validateCaseCreate(form, caseTypes = []) {
 	if (!form.caseType) {
 		errors.caseType = t('procest', 'Case type is required')
 	} else {
-		const caseType = caseTypes.find(ct => ct.id === form.caseType || ct.id === form.caseType?.id)
+		const caseType = caseTypes.find(
+			(ct) => ct.id === form.caseType || ct.id === form.caseType?.id,
+		)
 		if (caseType) {
 			const reason = getCaseTypeUnusableReason(caseType)
 			if (reason) {
@@ -156,11 +169,15 @@ export function validateStatusChange(targetStatus, caseObj, statusTypes) {
 	}
 
 	// Verify the target status belongs to this case type
-	const validStatus = statusTypes.find(st => st.id === targetStatus.id)
+	const validStatus = statusTypes.find((st) => st.id === targetStatus.id)
 	if (!validStatus) {
 		return {
 			valid: false,
-			error: t('procest', 'Status \'{status}\' is not defined for this case type', { status: targetStatus.name }),
+			error: t(
+				'procest',
+				"Status '{status}' is not defined for this case type",
+				{ status: targetStatus.name },
+			),
 		}
 	}
 

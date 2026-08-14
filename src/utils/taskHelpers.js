@@ -21,10 +21,18 @@ const PRIORITY_WEIGHTS = {
 /** @spec openspec/specs/task-management/spec.md */
 export function getPriorityLevels() {
 	return {
-		urgent: { label: t('procest', 'Urgent'), weight: 1, cssVar: '--color-error' },
+		urgent: {
+			label: t('procest', 'Urgent'),
+			weight: 1,
+			cssVar: '--color-error',
+		},
 		high: { label: t('procest', 'High'), weight: 2, cssVar: '--color-warning' },
 		normal: { label: t('procest', 'Normal'), weight: 3, cssVar: null },
-		low: { label: t('procest', 'Low'), weight: 4, cssVar: '--color-text-maxcontrast' },
+		low: {
+			label: t('procest', 'Low'),
+			weight: 4,
+			cssVar: '--color-text-maxcontrast',
+		},
 	}
 }
 
@@ -64,9 +72,11 @@ export function isDueToday(task) {
 	if (isTerminalStatus(task.status)) return false
 	const due = new Date(task.dueDate)
 	const now = new Date()
-	return due.getFullYear() === now.getFullYear()
+	return (
+		due.getFullYear() === now.getFullYear()
 		&& due.getMonth() === now.getMonth()
 		&& due.getDate() === now.getDate()
+	)
 }
 
 /**
@@ -131,12 +141,18 @@ export function prioritySortWeight(priority) {
  */
 function statusGroupWeight(status) {
 	switch (status) {
-	case 'active': return 0
-	case 'available': return 1
-	case 'completed': return 2
-	case 'terminated': return 3
-	case 'disabled': return 4
-	default: return 5
+		case 'active':
+			return 0
+		case 'available':
+			return 1
+		case 'completed':
+			return 2
+		case 'terminated':
+			return 3
+		case 'disabled':
+			return 4
+		default:
+			return 5
 	}
 }
 
@@ -156,7 +172,8 @@ export function sortTasks(tasks) {
 		const statusDiff = statusGroupWeight(a.status) - statusGroupWeight(b.status)
 		if (statusDiff !== 0) return statusDiff
 
-		const priorityDiff = prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
+		const priorityDiff =
+			prioritySortWeight(a.priority) - prioritySortWeight(b.priority)
 		if (priorityDiff !== 0) return priorityDiff
 
 		if (a.dueDate && b.dueDate) {

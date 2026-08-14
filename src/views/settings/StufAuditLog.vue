@@ -54,12 +54,16 @@
 			</thead>
 			<tbody>
 				<tr v-for="row in messages" :key="row.id || row.referentienummer">
-					<td>{{ row.verzondenOn }}</td>
-					<td>{{ row.direction }}</td>
+					<td>{{ row.verzondenOp }}</td>
+					<td>{{ row.richting }}</td>
 					<td>{{ row.berichtSoort }}</td>
-					<td>{{ row.role }}</td>
+					<td>{{ row.functie }}</td>
 					<td>
-						<span class="stuf-audit-log__status" :class="statusClass(row.status)">{{ row.status }}</span>
+						<span
+							class="stuf-audit-log__status"
+							:class="statusClass(row.status)"
+							>{{ row.status }}</span
+						>
 					</td>
 					<td>{{ row.httpStatus || '—' }}</td>
 					<td>{{ row.duurMs || '—' }}</td>
@@ -94,7 +98,13 @@ import StufEnvelopeDialog from '../../dialogs/StufEnvelopeDialog.vue'
 
 export default {
 	name: 'StufAuditLog',
-	components: { NcButton, NcLoadingIcon, NcSelect, NcTextField, StufEnvelopeDialog },
+	components: {
+		NcButton,
+		NcLoadingIcon,
+		NcSelect,
+		NcTextField,
+		StufEnvelopeDialog,
+	},
 	data() {
 		return {
 			messages: [],
@@ -194,10 +204,24 @@ export default {
 		 * @spec exclude presentational client-side CSV export — no business logic
 		 */
 		exportCsv() {
-			const headers = ['verzondenOn', 'direction', 'berichtSoort', 'role', 'status', 'httpStatus', 'duurMs', 'referentienummer', 'zaakIdentificatie']
+			const headers = [
+				'verzondenOp',
+				'richting',
+				'berichtSoort',
+				'functie',
+				'status',
+				'httpStatus',
+				'duurMs',
+				'referentienummer',
+				'zaakIdentificatie',
+			]
 			const lines = [headers.join(',')]
 			for (const row of this.messages) {
-				lines.push(headers.map((h) => JSON.stringify(row[h] == null ? '' : row[h])).join(','))
+				lines.push(
+					headers
+						.map((h) => JSON.stringify(row[h] == null ? '' : row[h]))
+						.join(','),
+				)
 			}
 			const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
 			const url = URL.createObjectURL(blob)

@@ -3,7 +3,9 @@
 		<div class="overdue-panel__header">
 			<h3 class="overdue-panel__title">
 				{{ t('procest', 'Overdue Cases') }}
-				<span v-if="cases.length > 0" class="overdue-panel__badge">{{ cases.length }}</span>
+				<span v-if="cases.length > 0" class="overdue-panel__badge">{{
+					cases.length
+				}}</span>
 			</h3>
 		</div>
 
@@ -42,13 +44,19 @@
 					@keydown.enter="$emit('click-case', c.id)"
 					@keydown.space.prevent="$emit('click-case', c.id)">
 					<div class="overdue-panel__info">
-						<span class="overdue-panel__identifier">{{ c.identifier }}</span>
+						<span class="overdue-panel__identifier">{{
+							c.identifier
+						}}</span>
 						<span class="overdue-panel__case-title">{{ c.title }}</span>
 						<span class="overdue-panel__type">{{ c.caseTypeName }}</span>
 					</div>
 					<div class="overdue-panel__meta">
 						<span class="overdue-panel__days">
-							{{ t('procest', '{days} days overdue', { days: c.daysOverdue }) }}
+							{{
+								t('procest', '{days} days overdue', {
+									days: c.daysOverdue,
+								})
+							}}
 						</span>
 						<span class="overdue-panel__handler">{{ c.handler }}</span>
 					</div>
@@ -244,9 +252,15 @@ export default {
 }
 
 @keyframes shimmer {
-	0% { opacity: 0.6; }
-	50% { opacity: 1; }
-	100% { opacity: 0.6; }
+	0% {
+		opacity: 0.6;
+	}
+	50% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0.6;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -15,7 +15,8 @@
 <template>
 	<div class="initiator-picker">
 		<div class="initiator-picker__tabs" role="tablist">
-			<NcCheckboxRadioSwitch v-for="tab in tabs"
+			<NcCheckboxRadioSwitch
+				v-for="tab in tabs"
 				:key="tab.id"
 				v-model="activeTab"
 				:value="tab.id"
@@ -27,7 +28,8 @@
 			</NcCheckboxRadioSwitch>
 		</div>
 
-		<NcTextField class="initiator-picker__search"
+		<NcTextField
+			class="initiator-picker__search"
 			v-model="query"
 			:label="t('procest', 'Search initiator')"
 			:placeholder="searchPlaceholder"
@@ -38,19 +40,30 @@
 
 		<NcLoadingIcon v-if="searching" :size="24" />
 
-		<NcEmptyContent v-else-if="query.trim() !== '' && results.length === 0"
+		<NcEmptyContent
+			v-else-if="query.trim() !== '' && results.length === 0"
 			:name="emptyTitle"
 			:description="emptyDescription" />
 
 		<ul v-else class="initiator-picker__results">
 			<li v-for="result in results" :key="`${result.type}-${result.sourceId}`">
-				<button type="button"
+				<button
+					type="button"
 					class="initiator-picker__result"
-					:class="{ 'initiator-picker__result--selected': isSelected(result) }"
+					:class="{
+						'initiator-picker__result--selected': isSelected(result),
+					}"
 					@click="select(result)">
-					<component :is="typeIcon(result.type)" :size="20" class="initiator-picker__result-icon" />
-					<span class="initiator-picker__result-name">{{ result.displayName }}</span>
-					<span class="initiator-picker__result-detail">{{ result.detail }}</span>
+					<component
+						:is="typeIcon(result.type)"
+						:size="20"
+						class="initiator-picker__result-icon" />
+					<span class="initiator-picker__result-name">{{
+						result.displayName
+					}}</span>
+					<span class="initiator-picker__result-detail">{{
+						result.detail
+					}}</span>
 				</button>
 			</li>
 		</ul>
@@ -58,12 +71,21 @@
 </template>
 
 <script>
-import { NcCheckboxRadioSwitch, NcEmptyContent, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
+import {
+	NcCheckboxRadioSwitch,
+	NcEmptyContent,
+	NcLoadingIcon,
+	NcTextField,
+} from '@nextcloud/vue'
 import AccountOutline from 'vue-material-design-icons/AccountOutline.vue'
 import Domain from 'vue-material-design-icons/Domain.vue'
 import CardAccountMailOutline from 'vue-material-design-icons/CardAccountMailOutline.vue'
 import { useObjectStore } from '../../store/modules/object.js'
-import { companyResult, personResult, searchContacts } from '../../services/initiatorSearch.js'
+import {
+	companyResult,
+	personResult,
+	searchContacts,
+} from '../../services/initiatorSearch.js'
 
 export default {
 	name: 'InitiatorPicker',
@@ -108,12 +130,12 @@ export default {
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		searchPlaceholder() {
 			switch (this.activeTab) {
-			case 'company':
-				return t('procest', 'Trade name or KvK number')
-			case 'contact':
-				return t('procest', 'Contact name or email')
-			default:
-				return t('procest', 'Name or BSN')
+				case 'company':
+					return t('procest', 'Trade name or KvK number')
+				case 'contact':
+					return t('procest', 'Contact name or email')
+				default:
+					return t('procest', 'Name or BSN')
 			}
 		},
 		/** @spec openspec/specs/initiator-selection/spec.md */
@@ -125,7 +147,10 @@ export default {
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		emptyDescription() {
 			return this.activeTab === 'contact'
-				? t('procest', 'No matching contacts — the Contacts app may not be installed or holds no matching entries.')
+				? t(
+						'procest',
+						'No matching contacts — the Contacts app may not be installed or holds no matching entries.',
+					)
 				: t('procest', 'No matching records in the seeded register set.')
 		},
 	},
@@ -164,10 +189,16 @@ export default {
 			this.searching = true
 			try {
 				if (this.activeTab === 'person') {
-					const rows = await this.objectStore.fetchCollection('brpPerson', { _search: query, _limit: 20 })
+					const rows = await this.objectStore.fetchCollection(
+						'brpPerson',
+						{ _search: query, _limit: 20 },
+					)
 					this.results = (rows || []).map(personResult)
 				} else if (this.activeTab === 'company') {
-					const rows = await this.objectStore.fetchCollection('kvkCompany', { _search: query, _limit: 20 })
+					const rows = await this.objectStore.fetchCollection(
+						'kvkCompany',
+						{ _search: query, _limit: 20 },
+					)
 					this.results = (rows || []).map(companyResult)
 				} else {
 					this.results = await searchContacts(query)
@@ -187,9 +218,11 @@ export default {
 		 * @spec openspec/specs/initiator-selection/spec.md
 		 */
 		isSelected(result) {
-			return !!this.value
+			return (
+				!!this.value
 				&& this.value.type === result.type
 				&& this.value.sourceId === result.sourceId
+			)
 		},
 		/**
 		 * Emit the picked initiator.
@@ -210,12 +243,12 @@ export default {
 		 */
 		typeIcon(type) {
 			switch (type) {
-			case 'company':
-				return 'Domain'
-			case 'contact':
-				return 'CardAccountMailOutline'
-			default:
-				return 'AccountOutline'
+				case 'company':
+					return 'Domain'
+				case 'contact':
+					return 'CardAccountMailOutline'
+				default:
+					return 'AccountOutline'
 			}
 		},
 	},

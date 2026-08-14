@@ -17,5 +17,5 @@
  */
 export function columnsExcludingCurrent(columns, currentStatusId) {
 	if (!Array.isArray(columns)) return []
-	return columns.filter(col => String(col.id) !== String(currentStatusId))
+	return columns.filter((col) => String(col.id) !== String(currentStatusId))
 }

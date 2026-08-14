@@ -7,7 +7,12 @@
 		<div class="termijn-definities-tab__header">
 			<h3>{{ t('procest', 'AWB Term definitions') }}</h3>
 			<p class="termijn-definities-tab__description">
-				{{ t('procest', 'Configure statutory term definitions per zaaktype (legal basis, duration, validity). Saving a new version automatically sets validFrom=tomorrow on the new version and validUntil=today on the prior version. New cases use the latest version; running cases keep the version they were bound to.') }}
+				{{
+					t(
+						'procest',
+						'Configure statutory term definitions per zaaktype (legal basis, duration, validity). Saving a new version automatically sets validFrom=tomorrow on the new version and validUntil=today on the prior version. New cases use the latest version; running cases keep the version they were bound to.',
+					)
+				}}
 			</p>
 			<NcButton type="primary" @click="openNew">
 				<template #icon>
@@ -23,17 +28,26 @@
 			{{ error }}
 		</NcNoteCard>
 
-		<div v-if="!loading && definitions.length === 0" class="termijn-definities-tab__empty">
+		<div
+			v-if="!loading && definitions.length === 0"
+			class="termijn-definities-tab__empty">
 			<NcEmptyContent
 				:name="t('procest', 'No term definitions')"
-				:description="t('procest', 'No AWB term definitions configured yet. Create one to enable termijnbewaking for a zaaktype.')">
+				:description="
+					t(
+						'procest',
+						'No AWB term definitions configured yet. Create one to enable termijnbewaking for a zaaktype.',
+					)
+				">
 				<template #icon>
 					<TimerSand :size="48" />
 				</template>
 			</NcEmptyContent>
 		</div>
 
-		<div v-if="!loading && definitions.length > 0" class="termijn-definities-tab__list">
+		<div
+			v-if="!loading && definitions.length > 0"
+			class="termijn-definities-tab__list">
 			<div
 				v-for="def in definitions"
 				:key="def.id"
@@ -46,10 +60,12 @@
 					<span class="termijn-definities-tab__pill">
 						{{ def.basis || t('procest', '(no grondslag)') }}
 					</span>
-					<span class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
+					<span
+						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
 						{{ formatDuur(def) }}
 					</span>
-					<span class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
+					<span
+						class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
 						v{{ def.version || 1 }}
 					</span>
 					<span class="termijn-definities-tab__validity">
@@ -57,8 +73,16 @@
 					</span>
 					<span
 						class="termijn-definities-tab__badge"
-						:class="isActive(def) ? 'termijn-definities-tab__badge--active' : 'termijn-definities-tab__badge--inactive'">
-						{{ isActive(def) ? t('procest', 'Active') : t('procest', 'Inactive') }}
+						:class="
+							isActive(def)
+								? 'termijn-definities-tab__badge--active'
+								: 'termijn-definities-tab__badge--inactive'
+						">
+						{{
+							isActive(def)
+								? t('procest', 'Active')
+								: t('procest', 'Inactive')
+						}}
 					</span>
 				</div>
 				<div class="termijn-definities-tab__row-actions">
@@ -133,10 +157,17 @@ export default {
 			this.loading = true
 			this.error = null
 			try {
-				const res = await axios.get(generateUrl('/apps/procest/api/termijn/definities'))
-				this.definitions = Array.isArray(res.data) ? res.data : (res.data?.results || [])
+				const res = await axios.get(
+					generateUrl('/apps/procest/api/termijn/definities'),
+				)
+				this.definitions = Array.isArray(res.data)
+					? res.data
+					: res.data?.results || []
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to load term definitions')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to load term definitions')
 			} finally {
 				this.loading = false
 			}
@@ -192,22 +223,33 @@ export default {
 				...payload,
 				validFrom: isoTomorrow,
 				validUntil: null,
-				version: this.editingDefinition ? (Number(this.editingDefinition.version || 1) + 1) : 1,
+				version: this.editingDefinition
+					? Number(this.editingDefinition.version || 1) + 1
+					: 1,
 			}
 
 			try {
 				// Close the prior version if editing
 				if (this.editingDefinition) {
 					await axios.patch(
-						generateUrl('/apps/procest/api/termijn/definities/' + encodeURIComponent(this.editingDefinition.id)),
+						generateUrl(
+							'/apps/procest/api/termijn/definities/'
+								+ encodeURIComponent(this.editingDefinition.id),
+						),
 						{ validUntil: isoToday },
 					)
 				}
-				await axios.post(generateUrl('/apps/procest/api/termijn/definities'), next)
+				await axios.post(
+					generateUrl('/apps/procest/api/termijn/definities'),
+					next,
+				)
 				this.closeEditor()
 				await this.load()
 			} catch (e) {
-				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to save')
+				this.error =
+					e?.response?.data?.message
+					|| e.message
+					|| t('procest', 'Failed to save')
 			}
 		},
 	},

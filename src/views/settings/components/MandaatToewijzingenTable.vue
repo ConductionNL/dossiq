@@ -21,13 +21,20 @@
 		<NcEmptyContent
 			v-if="!loading && assignments.length === 0"
 			:name="t('procest', 'No role assignments')"
-			:description="t('procest', 'Assign roles to employees to enable mandate-driven authorisation.')">
+			:description="
+				t(
+					'procest',
+					'Assign roles to employees to enable mandate-driven authorisation.',
+				)
+			">
 			<template #icon>
 				<AccountMultiple :size="48" />
 			</template>
 		</NcEmptyContent>
 
-		<table v-if="!loading && assignments.length > 0" class="toewijzingen-table__table">
+		<table
+			v-if="!loading && assignments.length > 0"
+			class="toewijzingen-table__table">
 			<thead>
 				<tr>
 					<th scope="col">{{ t('procest', 'Person') }}</th>
@@ -42,11 +49,25 @@
 				<tr
 					v-for="a in assignments"
 					:key="a.id"
-					:class="{ 'toewijzingen-table__row--waarnemer': isWaarnemer(a) }">
-					<td>{{ a.personLabel || a.medewerkerLabel || a.persoonId || a.medewerker || '—' }}</td>
+					:class="{
+						'toewijzingen-table__row--waarnemer': isWaarnemer(a),
+					}">
+					<td>
+						{{
+							a.personLabel
+							|| a.medewerkerLabel
+							|| a.persoonId
+							|| a.medewerker
+							|| '—'
+						}}
+					</td>
 					<td>{{ roleLabel(a) }}</td>
 					<td>
-						<span class="toewijzingen-table__type" :class="typeClass(a)">{{ a.toewijzingType || a.type || 'reguliere' }}</span>
+						<span
+							class="toewijzingen-table__type"
+							:class="typeClass(a)"
+							>{{ a.toewijzingType || a.type || 'reguliere' }}</span
+						>
 					</td>
 					<td>{{ a.vanaf || a.geldigVanaf || '—' }}</td>
 					<td>{{ a.totEnMet || a.geldigTotEnMet || '—' }}</td>
@@ -85,7 +106,15 @@ import EndAssignmentDialog from '../../../dialogs/EndAssignmentDialog.vue'
 
 export default {
 	name: 'MandaatToewijzingenTable',
-	components: { NcButton, NcEmptyContent, NcLoadingIcon, Plus, AccountMultiple, AddAssignmentDialog, EndAssignmentDialog },
+	components: {
+		NcButton,
+		NcEmptyContent,
+		NcLoadingIcon,
+		Plus,
+		AccountMultiple,
+		AddAssignmentDialog,
+		EndAssignmentDialog,
+	},
 	props: {
 		assignments: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
@@ -122,8 +151,8 @@ export default {
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		roleLabel(a) {
-			const opt = this.roleOptions.find(o => o.id === (a.roleId || a.role))
-			return opt ? opt.label : (a.rolLabel || a.roleId || a.role || '—')
+			const opt = this.roleOptions.find((o) => o.id === (a.rolId || a.role))
+			return opt ? opt.label : a.rolLabel || a.rolId || a.role || '—'
 		},
 		/**
 		 * @param a
@@ -138,10 +167,15 @@ export default {
 		 */
 		async onAdd(payload) {
 			try {
-				await axios.post(generateUrl('/apps/procest/api/mandate/toewijzingen'), payload)
+				await axios.post(
+					generateUrl('/apps/procest/api/mandate/toewijzingen'),
+					payload,
+				)
 				this.addOpen = false
 				this.$emit('reload')
-			} catch (e) { /* dialog stays open */ }
+			} catch (e) {
+				/* dialog stays open */
+			}
 		},
 		/**
 		 * End an assignment by setting its end date.
@@ -164,12 +198,17 @@ export default {
 		async onEnd(endDate) {
 			try {
 				await axios.patch(
-					generateUrl('/apps/procest/api/mandate/toewijzingen/' + encodeURIComponent(this.ending.id)),
+					generateUrl(
+						'/apps/procest/api/mandate/toewijzingen/'
+							+ encodeURIComponent(this.ending.id),
+					),
 					{ ...this.ending, validUntil: endDate },
 				)
 				this.ending = null
 				this.$emit('reload')
-			} catch (e) { /* dialog stays open */ }
+			} catch (e) {
+				/* dialog stays open */
+			}
 		},
 	},
 }

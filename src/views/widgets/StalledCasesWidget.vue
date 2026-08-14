@@ -1,5 +1,6 @@
 <template>
-	<CnDataTable :rows="items"
+	<CnDataTable
+		:rows="items"
 		:columns="columns"
 		:loading="loading"
 		hide-header
@@ -7,7 +8,8 @@
 		:empty-text="t('procest', 'All cases active')"
 		@row-click="onRowClick">
 		<template #footer>
-			<a class="cn-data-table__view-all"
+			<a
+				class="cn-data-table__view-all"
 				:href="viewAllUrl"
 				@click.prevent="onViewAll">
 				{{ t('procest', 'View all') }} →
@@ -62,7 +64,9 @@ export default {
 			return this.stalledCases.slice(0, 5).map((item) => ({
 				id: item.id,
 				mainText: item.title,
-				subText: t('procest', '{days} days inactive', { days: item.daysSinceActivity }),
+				subText: t('procest', '{days} days inactive', {
+					days: item.daysSinceActivity,
+				}),
 				targetUrl: generateUrl(`/apps/procest/cases/${item.id}`),
 			}))
 		},
@@ -108,15 +112,18 @@ export default {
 					this.objectStore.fetchCollection('statusType', { _limit: 500 }),
 				])
 
-				const allCases = results[0].status === 'fulfilled' ? (results[0].value || []) : []
-				const caseTypes = results[1].status === 'fulfilled' ? (results[1].value || []) : []
-				const statusTypes = results[2].status === 'fulfilled' ? (results[2].value || []) : []
+				const allCases =
+					results[0].status === 'fulfilled' ? results[0].value || [] : []
+				const caseTypes =
+					results[1].status === 'fulfilled' ? results[1].value || [] : []
+				const statusTypes =
+					results[2].status === 'fulfilled' ? results[2].value || [] : []
 
 				const statusTypeMap = new Map()
 				for (const st of statusTypes) {
 					statusTypeMap.set(st.id, st)
 				}
-				const openCases = allCases.filter(c => {
+				const openCases = allCases.filter((c) => {
 					const st = statusTypeMap.get(c.status)
 					return !st?.isFinal
 				})

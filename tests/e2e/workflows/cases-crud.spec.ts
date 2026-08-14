@@ -28,12 +28,26 @@
  * generic-dialog issue (#427) — see the inline note on that test.
  */
 
-import { test, expect, request, type APIRequestContext, type Page } from '@playwright/test'
+import {
+	test,
+	expect,
+	request,
+	type APIRequestContext,
+	type Page,
+} from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth'
 import { dismissSupportDialog, navTo } from '../helpers/nav'
 import {
-	RUN_PREFIX, getRequestToken, ensureCaseType, seedCase, showObject,
-	deleteObject, tryDeleteObject, listObjects, objectId, cleanupRunObjects,
+	RUN_PREFIX,
+	getRequestToken,
+	ensureCaseType,
+	seedCase,
+	showObject,
+	deleteObject,
+	tryDeleteObject,
+	listObjects,
+	objectId,
+	cleanupRunObjects,
 } from '../helpers/fixtures'
 
 let api: APIRequestContext
@@ -67,17 +81,28 @@ test.describe('Cases — full CRUD with persistence', () => {
 	 */
 	async function openCasesList(page: Page): Promise<void> {
 		await navTo(page, 'Cases')
-		await expect(page.getByRole('button', { name: /^Add (Item|Case|Task)$/ })).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }),
+		).toBeVisible({ timeout: 15000 })
 		// The CnIndexPage fires GET …/objects/procest/case on mount; give the
 		// table a moment to render the fetched rows before asserting.
-		await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 15000 })
+		await expect(page.locator('tbody tr').first()).toBeVisible({
+			timeout: 15000,
+		})
 	}
 
 	// @e2e openspec/specs/case-management/spec.md#cases-index-page-renders-list-shell
-	test('a seeded case appears as a row with its title and identifier', async ({ page }) => {
+	test('a seeded case appears as a row with its title and identifier', async ({
+		page,
+	}) => {
 		const title = `${RUN_PREFIX} Vergunning aanvraag`
 		const identifier = `${RUN_PREFIX}-READ`
-		const kase = await seedCase(api, token, { title, caseType: caseTypeId, identifier, description: 'Seeded for the read leg.' })
+		const kase = await seedCase(api, token, {
+			title,
+			caseType: caseTypeId,
+			identifier,
+			description: 'Seeded for the read leg.',
+		})
 		const caseId = objectId(kase)
 		expect(caseId, 'case was created via the object API').not.toBe('')
 
@@ -87,9 +112,15 @@ test.describe('Cases — full CRUD with persistence', () => {
 		// zaaknummer itself (schema `case` x-openregister-processing) and IGNORES
 		// any supplied identifier, so assert the ASSIGNED identifier the create
 		// returned — the seed input never reaches the row.
-		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({ timeout: 15000 })
-		const assignedIdentifier = String((kase as Record<string, unknown>).identifier ?? identifier)
-		await expect(page.getByText(assignedIdentifier, { exact: false }).first()).toBeVisible()
+		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({
+			timeout: 15000,
+		})
+		const assignedIdentifier = String(
+			(kase as Record<string, unknown>).identifier ?? identifier,
+		)
+		await expect(
+			page.getByText(assignedIdentifier, { exact: false }).first(),
+		).toBeVisible()
 	})
 
 	// FIXME(#719): the case DETAIL page never displays the zaaknummer. A case
@@ -98,13 +129,22 @@ test.describe('Cases — full CRUD with persistence', () => {
 	// text entirely. It DOES render in the case LIST, which is why the
 	// list-view assertion above passes.
 	// @e2e openspec/specs/case-management/spec.md#case-detail-page-renders
-	test.fixme('opening the row shows the case detail with its values', async ({ page }) => {
+	test.fixme('opening the row shows the case detail with its values', async ({
+		page,
+	}) => {
 		const title = `${RUN_PREFIX} Detail case`
 		const identifier = `${RUN_PREFIX}-DETAIL`
-		const kase = await seedCase(api, token, { title, caseType: caseTypeId, identifier, description: 'Detail-leg description.' })
+		const kase = await seedCase(api, token, {
+			title,
+			caseType: caseTypeId,
+			identifier,
+			description: 'Detail-leg description.',
+		})
 		// procest assigns the zaaknummer and ignores the supplied identifier;
 		// assert the ASSIGNED value the create returned.
-		const assignedIdentifier = String((kase as Record<string, unknown>).identifier ?? identifier)
+		const assignedIdentifier = String(
+			(kase as Record<string, unknown>).identifier ?? identifier,
+		)
 
 		await openCasesList(page)
 		await dismissSupportDialog(page)
@@ -116,14 +156,23 @@ test.describe('Cases — full CRUD with persistence', () => {
 
 		// CaseDetail (manifest `type:"detail"`) renders the case title + the
 		// detail chrome. Assert the title and (assigned) identifier surface.
-		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({ timeout: 15000 })
-		await expect(page.getByText(assignedIdentifier, { exact: false }).first()).toBeVisible()
+		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({
+			timeout: 15000,
+		})
+		await expect(
+			page.getByText(assignedIdentifier, { exact: false }).first(),
+		).toBeVisible()
 	})
 
 	// @e2e openspec/specs/case-management/spec.md#edit-a-case
 	test('editing a case persists the change', async ({ page }) => {
 		const title = `${RUN_PREFIX} Editable case`
-		const kase = await seedCase(api, token, { title, caseType: caseTypeId, identifier: `${RUN_PREFIX}-EDIT`, description: 'Original description.' })
+		const kase = await seedCase(api, token, {
+			title,
+			caseType: caseTypeId,
+			identifier: `${RUN_PREFIX}-EDIT`,
+			description: 'Original description.',
+		})
 		const caseId = objectId(kase)
 
 		await openCasesList(page)
@@ -142,17 +191,30 @@ test.describe('Cases — full CRUD with persistence', () => {
 		const dialog = page.locator('[role="dialog"], .modal-container').first()
 		await expect(dialog).toBeVisible({ timeout: 10000 })
 		const newTitle = `${RUN_PREFIX} Edited case`
-		const titleField = dialog.getByRole('textbox', { name: /title|titel/i }).first()
+		const titleField = dialog
+			.getByRole('textbox', { name: /title|titel/i })
+			.first()
 		await expect(titleField).toBeVisible({ timeout: 10000 })
 		await titleField.fill(newTitle)
-		await dialog.getByRole('button', { name: /Save|Update|Opslaan|Bijwerken/i }).first().click()
+		await dialog
+			.getByRole('button', { name: /Save|Update|Opslaan|Bijwerken/i })
+			.first()
+			.click()
 
 		// PERSISTENCE assertion: re-read the object from the API and confirm
 		// the new title was written through (not just optimistic UI state).
-		await expect.poll(async () => {
-			const fresh = await showObject(api, 'case', caseId)
-			return String(fresh.title ?? '')
-		}, { timeout: 15000, message: 'edited title persisted to the object store' }).toBe(newTitle)
+		await expect
+			.poll(
+				async () => {
+					const fresh = await showObject(api, 'case', caseId)
+					return String(fresh.title ?? '')
+				},
+				{
+					timeout: 15000,
+					message: 'edited title persisted to the object store',
+				},
+			)
+			.toBe(newTitle)
 	})
 
 	// @e2e openspec/specs/case-management/spec.md#delete-a-case
@@ -160,9 +222,15 @@ test.describe('Cases — full CRUD with persistence', () => {
 	// user-driven deletion is rejected (Archiefwet immutability) and removal is
 	// reserved for the retention-sweep cron. This asserts that guarantee rather
 	// than a (now-impossible) successful user delete.
-	test('a case is archival-immutable — user deletion is rejected and the record persists', async ({ page }) => {
+	test('a case is archival-immutable — user deletion is rejected and the record persists', async ({
+		page,
+	}) => {
 		const title = `${RUN_PREFIX} Immutable case`
-		const kase = await seedCase(api, token, { title, caseType: caseTypeId, identifier: `${RUN_PREFIX}-DEL` })
+		const kase = await seedCase(api, token, {
+			title,
+			caseType: caseTypeId,
+			identifier: `${RUN_PREFIX}-DEL`,
+		})
 		const caseId = objectId(kase)
 
 		// A user-driven delete on an archival schema is a structured 403
@@ -172,15 +240,25 @@ test.describe('Cases — full CRUD with persistence', () => {
 		expect(JSON.stringify(del.body)).toMatch(/ARCHIVAL_IMMUTABLE|archival/i)
 
 		// PERSISTENCE: the record is still in the object store …
-		await expect.poll(async () => {
-			const rows = await listObjects(api, 'case')
-			return rows.some((r) => objectId(r) === caseId)
-		}, { timeout: 15000, message: 'archival case persists after a rejected delete' }).toBe(true)
+		await expect
+			.poll(
+				async () => {
+					const rows = await listObjects(api, 'case')
+					return rows.some((r) => objectId(r) === caseId)
+				},
+				{
+					timeout: 15000,
+					message: 'archival case persists after a rejected delete',
+				},
+			)
+			.toBe(true)
 
 		// … and still renders in the Cases list.
 		await openCasesList(page)
 		await dismissSupportDialog(page)
-		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({ timeout: 15000 })
+		await expect(page.getByText(title, { exact: false }).first()).toBeVisible({
+			timeout: 15000,
+		})
 	})
 
 	// CREATE-via-UI. Known issue #427: in some environments the Cases "Add"
@@ -191,14 +269,19 @@ test.describe('Cases — full CRUD with persistence', () => {
 	// guarded so the suite stays green where the generic-dialog regression is
 	// present. Re-enable verification once #427 is resolved.
 	// @e2e openspec/specs/case-management/spec.md#create-a-case
-	test('creating a case via the UI form persists and lists it', async ({ page }) => {
+	test('creating a case via the UI form persists and lists it', async ({
+		page,
+	}) => {
 		await openCasesList(page)
 		await dismissSupportDialog(page)
 		await page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }).click()
 
 		const customDialog = page.locator('.case-create-dialog')
 		const isCustom = await customDialog.isVisible().catch(() => false)
-		test.fixme(!isCustom, 'BUG #427: Cases "Add" opens the generic empty CnFormDialog instead of CaseCreateDialog — case fields do not resolve, cannot create via UI.')
+		test.fixme(
+			!isCustom,
+			'BUG #427: Cases "Add" opens the generic empty CnFormDialog instead of CaseCreateDialog — case fields do not resolve, cannot create via UI.',
+		)
 
 		const newTitle = `${RUN_PREFIX} UI created case`
 		await customDialog.getByPlaceholder('Enter case title').fill(newTitle)
@@ -208,11 +291,18 @@ test.describe('Cases — full CRUD with persistence', () => {
 		await customDialog.getByRole('button', { name: 'Create case' }).click()
 
 		// Persistence: the new case shows up in the API listing and the list.
-		await expect.poll(async () => {
-			const rows = await listObjects(api, 'case')
-			return rows.some((r) => String(r.title ?? '') === newTitle)
-		}, { timeout: 15000 }).toBe(true)
+		await expect
+			.poll(
+				async () => {
+					const rows = await listObjects(api, 'case')
+					return rows.some((r) => String(r.title ?? '') === newTitle)
+				},
+				{ timeout: 15000 },
+			)
+			.toBe(true)
 		await openCasesList(page)
-		await expect(page.getByText(newTitle, { exact: false }).first()).toBeVisible({ timeout: 15000 })
+		await expect(page.getByText(newTitle, { exact: false }).first()).toBeVisible(
+			{ timeout: 15000 },
+		)
 	})
 })

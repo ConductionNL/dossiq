@@ -2,9 +2,12 @@
 	<div class="case-tasks-widget">
 		<div class="tasks-header">
 			<span class="tasks-count">
-				{{ completedCount }}/{{ tasks.length }} {{ t('procest', 'completed') }}
+				{{ completedCount }}/{{ tasks.length }}
+				{{ t('procest', 'completed') }}
 			</span>
-			<NcButton v-if="!isReadOnly" @click="$router.push({ name: 'TaskNew', query: { caseId } })">
+			<NcButton
+				v-if="!isReadOnly"
+				@click="$router.push({ name: 'TaskNew', query: { caseId } })">
 				{{ t('procest', 'New task') }}
 			</NcButton>
 		</div>
@@ -21,15 +24,27 @@
 				:class="{ 'task-row--overdue': isOverdue(task) }"
 				role="button"
 				tabindex="0"
-				@click="$router.push({ name: 'TaskDetail', params: { id: task.id } })"
-				@keydown.enter="$router.push({ name: 'TaskDetail', params: { id: task.id } })"
-				@keydown.space.prevent="$router.push({ name: 'TaskDetail', params: { id: task.id } })">
-				<span class="task-status-dot" :class="'task-status-dot--' + task.status" />
+				@click="
+					$router.push({ name: 'TaskDetail', params: { id: task.id } })
+				"
+				@keydown.enter="
+					$router.push({ name: 'TaskDetail', params: { id: task.id } })
+				"
+				@keydown.space.prevent="
+					$router.push({ name: 'TaskDetail', params: { id: task.id } })
+				">
+				<span
+					class="task-status-dot"
+					:class="'task-status-dot--' + task.status" />
 				<span class="task-title">{{ task.title || '---' }}</span>
 				<span class="task-assignee">{{ task.assignee || '' }}</span>
 				<span class="task-due" :class="dueDateClass(task)">
-					<template v-if="isOverdue(task)">{{ getOverdueText(task) }}</template>
-					<template v-else-if="isDueToday(task)">{{ t('procest', 'Today') }}</template>
+					<template v-if="isOverdue(task)">{{
+						getOverdueText(task)
+					}}</template>
+					<template v-else-if="isDueToday(task)">{{
+						t('procest', 'Today')
+					}}</template>
 					<template v-else>{{ formatDueDate(task.dueDate) }}</template>
 				</span>
 				<span
@@ -45,7 +60,13 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
-import { isOverdue, isDueToday, getOverdueText, formatDueDate, sortTasks } from '../../../utils/taskHelpers.js'
+import {
+	isOverdue,
+	isDueToday,
+	getOverdueText,
+	formatDueDate,
+	sortTasks,
+} from '../../../utils/taskHelpers.js'
 
 export default {
 	name: 'CaseTasksWidget',
@@ -73,7 +94,7 @@ export default {
 		},
 		/** @spec openspec/specs/signalering-widgets/spec.md */
 		completedCount() {
-			return this.tasks.filter(t => t.status === 'completed').length
+			return this.tasks.filter((t) => t.status === 'completed').length
 		},
 	},
 	methods: {

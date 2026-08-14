@@ -11,44 +11,58 @@
 			<h2>{{ title }}</h2>
 
 			<div class="form-group">
-				<label class="required" for="me-num">{{ t('procest', 'Mandate number') }}</label>
+				<label class="required" for="me-num">{{
+					t('procest', 'Mandate number')
+				}}</label>
 				<NcTextField
 					id="me-num"
 					:model-value="form.mandateNumber"
 					:error="!!errors.mandateNumber"
 					:helper-text="errors.mandateNumber"
-					@update:model-value="v => form.mandateNumber = v" />
+					@update:model-value="(v) => (form.mandateNumber = v)" />
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="me-omschr">{{ t('procest', 'Description') }}</label>
+				<label class="required" for="me-omschr">{{
+					t('procest', 'Description')
+				}}</label>
 				<textarea
 					id="me-omschr"
 					v-model="form.description"
 					class="mandaat-editor__textarea"
 					rows="3" />
-				<span v-if="errors.description" class="field-error">{{ errors.description }}</span>
+				<span v-if="errors.description" class="field-error">{{
+					errors.description
+				}}</span>
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="me-type">{{ t('procest', 'Bevoegdheidstype') }}</label>
+				<label class="required" for="me-type">{{
+					t('procest', 'Bevoegdheidstype')
+				}}</label>
 				<NcSelect
 					id="me-type"
 					:model-value="selectedType"
 					:options="typeOptions"
 					:input-label="t('procest', 'Bevoegdheidstype')"
-					@update:model-value="v => form.bevoegdheidType = v ? v.id : ''" />
-				<span v-if="errors.bevoegdheidType" class="field-error">{{ errors.bevoegdheidType }}</span>
+					@update:model-value="
+						(v) => (form.bevoegdheidType = v ? v.id : '')
+					" />
+				<span v-if="errors.bevoegdheidType" class="field-error">{{
+					errors.bevoegdheidType
+				}}</span>
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="me-grond">{{ t('procest', 'Legal basis') }}</label>
+				<label class="required" for="me-grond">{{
+					t('procest', 'Legal basis')
+				}}</label>
 				<NcTextField
 					id="me-grond"
 					:model-value="form.legalBasis"
 					:error="!!errors.legalBasis"
 					:helper-text="errors.legalBasis"
-					@update:model-value="v => form.legalBasis = v" />
+					@update:model-value="(v) => (form.legalBasis = v)" />
 			</div>
 
 			<div class="form-group">
@@ -58,19 +72,28 @@
 					v-model="voorwaardenJson"
 					class="mandaat-editor__textarea mandaat-editor__textarea--mono"
 					rows="6"
-					:placeholder="t('procest', 'e.g. { \&quot;maxBedrag\&quot;: 50000, \&quot;categorie\&quot;: [\&quot;subsidie\&quot;] }')" />
-				<span v-if="errors.terms" class="field-error">{{ errors.terms }}</span>
+					:placeholder="
+						t(
+							'procest',
+							'e.g. { \&quot;maxBedrag\&quot;: 50000, \&quot;categorie\&quot;: [\&quot;subsidie\&quot;] }',
+						)
+					" />
+				<span v-if="errors.voorwaarden" class="field-error">{{
+					errors.voorwaarden
+				}}</span>
 			</div>
 
 			<div class="form-row">
 				<div class="form-group">
-					<label class="required" for="me-inwerkingtreding">{{ t('procest', 'In werkingtreding') }}</label>
+					<label class="required" for="me-inwerkingtreding">{{
+						t('procest', 'In werkingtreding')
+					}}</label>
 					<input
 						id="me-inwerkingtreding"
 						type="date"
 						class="mandaat-editor__date"
 						:value="form.inWerkingtreding"
-						@input="form.inWerkingtreding = $event.target.value">
+						@input="form.inWerkingtreding = $event.target.value" />
 				</div>
 				<div class="form-group">
 					<label for="me-verval">{{ t('procest', 'Expiry date') }}</label>
@@ -79,7 +102,7 @@
 						type="date"
 						class="mandaat-editor__date"
 						:value="form.vervaldatum"
-						@input="form.vervaldatum = $event.target.value">
+						@input="form.vervaldatum = $event.target.value" />
 				</div>
 			</div>
 
@@ -90,7 +113,9 @@
 					:model-value="selectedRole"
 					:options="roleOptions"
 					:input-label="t('procest', 'Assigned role')"
-					@update:model-value="v => form.toegewezenRol = v ? v.id : ''" />
+					@update:model-value="
+						(v) => (form.toegewezenRol = v ? v.id : '')
+					" />
 			</div>
 
 			<div class="mandaat-editor__actions">
@@ -142,14 +167,21 @@ export default {
 			form: {
 				mandateNumber: this.mandaat?.mandateNumber || '',
 				description: this.mandaat?.description || '',
-				bevoegdheidType: this.mandaat?.bevoegdheidType || 'beslissingsbevoegdheid',
+				bevoegdheidType:
+					this.mandaat?.bevoegdheidType || 'beslissingsbevoegdheid',
 				legalBasis: this.mandaat?.legalBasis || '',
-				inWerkingtreding: this.mandaat?.inWerkingtreding || new Date().toISOString().slice(0, 10),
+				inWerkingtreding:
+					this.mandaat?.inWerkingtreding
+					|| new Date().toISOString().slice(0, 10),
 				vervaldatum: this.mandaat?.vervaldatum || '',
 				toegewezenRol: this.mandaat?.toegewezenRol || '',
-				terms: this.mandaat?.terms || {},
+				voorwaarden: this.mandaat?.voorwaarden || {},
 			},
-			voorwaardenJson: JSON.stringify(this.mandaat?.terms || {}, null, 2),
+			voorwaardenJson: JSON.stringify(
+				this.mandaat?.voorwaarden || {},
+				null,
+				2,
+			),
 		}
 	},
 	computed: {
@@ -162,19 +194,34 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
-				{ id: 'beslissingsbevoegdheid', label: t('procest', 'Decision authority') },
-				{ id: 'ondertekeningsbevoegdheid', label: t('procest', 'Signing authority') },
-				{ id: 'gemandateerde-bevoegdheid', label: t('procest', 'Mandated authority') },
+				{
+					id: 'beslissingsbevoegdheid',
+					label: t('procest', 'Decision authority'),
+				},
+				{
+					id: 'ondertekeningsbevoegdheid',
+					label: t('procest', 'Signing authority'),
+				},
+				{
+					id: 'gemandateerde-bevoegdheid',
+					label: t('procest', 'Mandated authority'),
+				},
 				{ id: 'doormandaat', label: t('procest', 'Doormandaat') },
 			]
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
-			return this.typeOptions.find(o => o.id === this.form.bevoegdheidType) || this.typeOptions[0]
+			return (
+				this.typeOptions.find((o) => o.id === this.form.bevoegdheidType)
+				|| this.typeOptions[0]
+			)
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
-			return this.roleOptions.find(o => o.id === this.form.toegewezenRol) || null
+			return (
+				this.roleOptions.find((o) => o.id === this.form.toegewezenRol)
+				|| null
+			)
 		},
 	},
 	methods: {
@@ -182,14 +229,20 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
-			if (!this.form.mandateNumber) errs.mandateNumber = t('procest', 'Mandaatnummer is required')
-			if (!this.form.description) errs.description = t('procest', 'Omschrijving is required')
-			if (!this.form.bevoegdheidType) errs.bevoegdheidType = t('procest', 'Bevoegdheidstype is required')
-			if (!this.form.legalBasis) errs.legalBasis = t('procest', 'Wettelijke grondslag is required')
+			if (!this.form.mandateNumber)
+				errs.mandateNumber = t('procest', 'Mandaatnummer is required')
+			if (!this.form.description)
+				errs.description = t('procest', 'Omschrijving is required')
+			if (!this.form.bevoegdheidType)
+				errs.bevoegdheidType = t('procest', 'Bevoegdheidstype is required')
+			if (!this.form.legalBasis)
+				errs.legalBasis = t('procest', 'Wettelijke grondslag is required')
 			try {
-				this.form.terms = this.voorwaardenJson.trim() ? JSON.parse(this.voorwaardenJson) : {}
+				this.form.voorwaarden = this.voorwaardenJson.trim()
+					? JSON.parse(this.voorwaardenJson)
+					: {}
 			} catch (e) {
-				errs.terms = t('procest', 'Voorwaarden must be valid JSON')
+				errs.voorwaarden = t('procest', 'Voorwaarden must be valid JSON')
 			}
 			this.errors = errs
 			return Object.keys(errs).length === 0

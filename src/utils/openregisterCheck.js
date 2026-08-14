@@ -23,7 +23,11 @@ export async function checkOpenRegisterStatus() {
 		})
 
 		if (!response.ok) {
-			return { available: false, configured: false, error: `HTTP ${response.status}` }
+			return {
+				available: false,
+				configured: false,
+				error: `HTTP ${response.status}`,
+			}
 		}
 
 		const data = await response.json()
@@ -49,13 +53,21 @@ export async function checkOpenRegisterStatus() {
  */
 export function getStatusMessage(status) {
 	if (status.error) {
-		return t('procest', 'Could not check OpenRegister status: {error}', { error: status.error })
+		return t('procest', 'Could not check OpenRegister status: {error}', {
+			error: status.error,
+		})
 	}
 	if (!status.available) {
-		return t('procest', 'OpenRegister is not installed or enabled. Please install OpenRegister from the App Store.')
+		return t(
+			'procest',
+			'OpenRegister is not installed or enabled. Please install OpenRegister from the App Store.',
+		)
 	}
 	if (!status.configured) {
-		return t('procest', 'OpenRegister is available but the Procest register is not configured. Go to Administration Settings > Procest to import the configuration.')
+		return t(
+			'procest',
+			'OpenRegister is available but the Procest register is not configured. Go to Administration Settings > Procest to import the configuration.',
+		)
 	}
 	return ''
 }

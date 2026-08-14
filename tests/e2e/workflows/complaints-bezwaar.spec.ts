@@ -22,12 +22,26 @@
  * (`navTo`), support dialog dismissed. Playwright = UI for assertions.
  */
 
-import { test, expect, request, type APIRequestContext, type Page } from '@playwright/test'
+import {
+	test,
+	expect,
+	request,
+	type APIRequestContext,
+	type Page,
+} from '@playwright/test'
 import { STORAGE_STATE } from '../helpers/auth'
 import { dismissSupportDialog, navTo } from '../helpers/nav'
 import {
-	RUN_PREFIX, getRequestToken, ensureCaseType, seedCase, createObject,
-	updateObject, showObject, deleteObject, objectId, cleanupRunObjects,
+	RUN_PREFIX,
+	getRequestToken,
+	ensureCaseType,
+	seedCase,
+	createObject,
+	updateObject,
+	showObject,
+	deleteObject,
+	objectId,
+	cleanupRunObjects,
 } from '../helpers/fixtures'
 
 let api: APIRequestContext
@@ -52,7 +66,10 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		const ct = await ensureCaseType(api, token)
 		caseTypeId = ct.id
 		caseTypeSeeded = ct.seeded
-		const kase = await seedCase(api, token, { title: `${RUN_PREFIX} Bezwaar parent case`, caseType: caseTypeId })
+		const kase = await seedCase(api, token, {
+			title: `${RUN_PREFIX} Bezwaar parent case`,
+			caseType: caseTypeId,
+		})
 		caseId = objectId(kase)
 	})
 
@@ -89,11 +106,15 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		// Dashboard; the bare path resolves the /bezwaren route directly).
 		await page.goto('/index.php/apps/procest/bezwaren')
 		await dismissSupportDialog(page)
-		await expect(page.locator('tbody tr').first()).toBeVisible({ timeout: 15000 })
+		await expect(page.locator('tbody tr').first()).toBeVisible({
+			timeout: 15000,
+		})
 	}
 
 	// @e2e openspec/specs/bezwaar-management/spec.md#bezwaar-appears-in-list
-	test('a seeded bezwaar appears in the list with its workflow status', async ({ page }) => {
+	test('a seeded bezwaar appears in the list with its workflow status', async ({
+		page,
+	}) => {
 		const awb = `${RUN_PREFIX}-AWB-LIST`
 		const bz = await seedBezwaar(awb, 'Ontvangen')
 		expect(objectId(bz)).not.toBe('')
@@ -104,11 +125,15 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		const row = page.locator('tbody tr', { hasText: awb }).first()
 		await expect(row).toBeVisible({ timeout: 15000 })
 		// … and its workflow status ("Ontvangen") renders in that row.
-		await expect(row.getByText('Ontvangen', { exact: false }).first()).toBeVisible()
+		await expect(
+			row.getByText('Ontvangen', { exact: false }).first(),
+		).toBeVisible()
 	})
 
 	// @e2e openspec/specs/bezwaar-management/spec.md#bezwaar-status-persists
-	test('changing the bezwaar workflow status persists and re-renders', async ({ page }) => {
+	test('changing the bezwaar workflow status persists and re-renders', async ({
+		page,
+	}) => {
 		const awb = `${RUN_PREFIX}-AWB-STATUS`
 		const bz = await seedBezwaar(awb, 'Ontvangen')
 		const bzId = objectId(bz)
@@ -117,14 +142,23 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 		await updateObject(api, token, 'bezwaar', bzId, { status: 'In behandeling' })
 
 		// PERSISTENCE: re-read confirms the new status was written.
-		await expect.poll(async () => String((await showObject(api, 'bezwaar', bzId)).status ?? ''), {
-			timeout: 15000, message: 'bezwaar status persisted',
-		}).toBe('In behandeling')
+		await expect
+			.poll(
+				async () =>
+					String((await showObject(api, 'bezwaar', bzId)).status ?? ''),
+				{
+					timeout: 15000,
+					message: 'bezwaar status persisted',
+				},
+			)
+			.toBe('In behandeling')
 
 		// The list now renders the new status on the row.
 		await openBezwaren(page)
 		const row = page.locator('tbody tr', { hasText: awb }).first()
 		await expect(row).toBeVisible({ timeout: 15000 })
-		await expect(row.getByText('In behandeling', { exact: false }).first()).toBeVisible()
+		await expect(
+			row.getByText('In behandeling', { exact: false }).first(),
+		).toBeVisible()
 	})
 })

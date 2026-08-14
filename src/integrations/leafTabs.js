@@ -29,6 +29,8 @@ import { builtinIntegrations } from '@conduction/nextcloud-vue'
  *   library does not ship a bespoke tab for that id.
  */
 export function leafTab(id) {
-	const descriptor = (builtinIntegrations || []).find((entry) => entry && entry.id === id)
+	const descriptor = (builtinIntegrations || []).find(
+		(entry) => entry && entry.id === id,
+	)
 	return descriptor ? descriptor.tab : undefined
 }

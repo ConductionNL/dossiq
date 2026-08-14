@@ -9,11 +9,16 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { triggerWordsToText, textToTriggerWords } from '../../src/utils/kccTriggerWords.js'
+import {
+	triggerWordsToText,
+	textToTriggerWords,
+} from '../../src/utils/kccTriggerWords.js'
 
 describe('triggerWordsToText', () => {
 	it('renders a JSON array as newline-separated words', () => {
-		expect(triggerWordsToText('["klacht","advocaat","media"]')).toBe('klacht\nadvocaat\nmedia')
+		expect(triggerWordsToText('["klacht","advocaat","media"]')).toBe(
+			'klacht\nadvocaat\nmedia',
+		)
 	})
 
 	it('returns empty string for non-array JSON', () => {
@@ -26,21 +31,29 @@ describe('triggerWordsToText', () => {
 	})
 
 	it('trims and drops blank entries', () => {
-		expect(triggerWordsToText('["  klacht  ","",  "advocaat"]')).toBe('klacht\nadvocaat')
+		expect(triggerWordsToText('["  klacht  ","",  "advocaat"]')).toBe(
+			'klacht\nadvocaat',
+		)
 	})
 })
 
 describe('textToTriggerWords', () => {
 	it('serialises newline-separated text into a JSON array', () => {
-		expect(textToTriggerWords('klacht\nadvocaat\nmedia')).toBe('["klacht","advocaat","media"]')
+		expect(textToTriggerWords('klacht\nadvocaat\nmedia')).toBe(
+			'["klacht","advocaat","media"]',
+		)
 	})
 
 	it('trims lines and drops blank lines', () => {
-		expect(textToTriggerWords('  klacht  \n\n advocaat \n')).toBe('["klacht","advocaat"]')
+		expect(textToTriggerWords('  klacht  \n\n advocaat \n')).toBe(
+			'["klacht","advocaat"]',
+		)
 	})
 
 	it('de-duplicates while preserving first-seen order', () => {
-		expect(textToTriggerWords('klacht\nadvocaat\nklacht')).toBe('["klacht","advocaat"]')
+		expect(textToTriggerWords('klacht\nadvocaat\nklacht')).toBe(
+			'["klacht","advocaat"]',
+		)
 	})
 
 	it('handles empty and null input', () => {

@@ -24,33 +24,37 @@
 				:model-value="filters.search"
 				:label="t('procest', 'Search')"
 				:placeholder="t('procest', 'Search by subject, department...')"
-				@update:model-value="v => filters.search = v" />
+				@update:model-value="(v) => (filters.search = v)" />
 
 			<NcSelect
 				v-model="filters.status"
 				:options="statusOptions"
 				:aria-label-combobox="t('procest', 'Status filter')"
 				label="label"
-				:reduce="opt => opt.value"
+				:reduce="(opt) => opt.value"
 				:placeholder="t('procest', 'All statuses')" />
 
 			<div class="consultation-dashboard__date-range">
-				<label class="consultation-dashboard__filter-label" for="consultation-dashboard-deadline-from">
+				<label
+					class="consultation-dashboard__filter-label"
+					for="consultation-dashboard-deadline-from">
 					{{ t('procest', 'Deadline from') }}
 				</label>
 				<input
 					id="consultation-dashboard-deadline-from"
 					v-model="filters.dateFrom"
 					type="date"
-					class="consultation-dashboard__date-input">
-				<label class="consultation-dashboard__filter-label" for="consultation-dashboard-deadline-to">
+					class="consultation-dashboard__date-input" />
+				<label
+					class="consultation-dashboard__filter-label"
+					for="consultation-dashboard-deadline-to">
 					{{ t('procest', 'to') }}
 				</label>
 				<input
 					id="consultation-dashboard-deadline-to"
 					v-model="filters.dateTo"
 					type="date"
-					class="consultation-dashboard__date-input">
+					class="consultation-dashboard__date-input" />
 			</div>
 
 			<NcButton @click="loadConsultations">
@@ -69,7 +73,9 @@
 		</NcNoteCard>
 
 		<!-- Empty state -->
-		<div v-else-if="displayItems.length === 0" class="consultation-dashboard__empty">
+		<div
+			v-else-if="displayItems.length === 0"
+			class="consultation-dashboard__empty">
 			{{ t('procest', 'No consultations found.') }}
 		</div>
 
@@ -91,20 +97,29 @@
 					<tr
 						v-for="item in displayItems"
 						:key="item.id"
-						:class="{ 'consultation-dashboard__row--overdue': isOverdue(item) }">
+						:class="{
+							'consultation-dashboard__row--overdue': isOverdue(item),
+						}">
 						<td class="consultation-dashboard__cell--number">
 							{{ item.nummer || item.id }}
 						</td>
-						<td>{{ item.parentCase }}</td>
+						<td>{{ item.parentZaak }}</td>
 						<td>{{ item.onderwerp }}</td>
-						<td>{{ item.adviesAuthority }}</td>
-						<td :class="{ 'consultation-dashboard__cell--overdue': isOverdue(item) }">
-							{{ formatDate(item.latestResponseDate) }}
+						<td>{{ item.adviesInstantie }}</td>
+						<td
+							:class="{
+								'consultation-dashboard__cell--overdue':
+									isOverdue(item),
+							}">
+							{{ formatDate(item.uiterlijkeReactiedatum) }}
 						</td>
 						<td>
 							<span
 								class="consultation-dashboard__status-badge"
-								:class="'consultation-dashboard__status-badge--' + item.status">
+								:class="
+									'consultation-dashboard__status-badge--'
+									+ item.status
+								">
 								{{ getStatusLabel(item.status) }}
 							</span>
 						</td>
@@ -126,7 +141,13 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { NcButton, NcLoadingIcon, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcLoadingIcon,
+	NcNoteCard,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 
 export default {
 	name: 'ConsultationDashboard',
@@ -151,8 +172,14 @@ export default {
 			},
 			statusOptions: [
 				{ label: this.t('procest', 'Open'), value: 'open' },
-				{ label: this.t('procest', 'In behandeling'), value: 'in_behandeling' },
-				{ label: this.t('procest', 'Advice issued'), value: 'advies_uitgebracht' },
+				{
+					label: this.t('procest', 'In behandeling'),
+					value: 'in_behandeling',
+				},
+				{
+					label: this.t('procest', 'Advice issued'),
+					value: 'advies_uitgebracht',
+				},
 				{ label: this.t('procest', 'Closed'), value: 'afgesloten' },
 			],
 		}
@@ -160,7 +187,9 @@ export default {
 	computed: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		openCount() {
-			return this.consultations.filter(c => c.status === 'open' || c.status === 'in_behandeling').length
+			return this.consultations.filter(
+				(c) => c.status === 'open' || c.status === 'in_behandeling',
+			).length
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		overdueCount() {
@@ -168,7 +197,7 @@ export default {
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		overdueIds() {
-			return new Set(this.overdueItems.map(c => c.id))
+			return new Set(this.overdueItems.map((c) => c.id))
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		displayItems() {
@@ -176,23 +205,28 @@ export default {
 
 			if (this.filters.search.trim()) {
 				const term = this.filters.search.trim().toLowerCase()
-				items = items.filter(c =>
-					(c.onderwerp || '').toLowerCase().includes(term)
-					|| (c.adviesAuthority || '').toLowerCase().includes(term)
-					|| (c.parentCase || '').toLowerCase().includes(term),
+				items = items.filter(
+					(c) =>
+						(c.onderwerp || '').toLowerCase().includes(term)
+						|| (c.adviesInstantie || '').toLowerCase().includes(term)
+						|| (c.parentZaak || '').toLowerCase().includes(term),
 				)
 			}
 
 			if (this.filters.status) {
-				items = items.filter(c => c.status === this.filters.status)
+				items = items.filter((c) => c.status === this.filters.status)
 			}
 
 			if (this.filters.dateFrom) {
-				items = items.filter(c => c.latestResponseDate >= this.filters.dateFrom)
+				items = items.filter(
+					(c) => c.uiterlijkeReactiedatum >= this.filters.dateFrom,
+				)
 			}
 
 			if (this.filters.dateTo) {
-				items = items.filter(c => c.latestResponseDate <= this.filters.dateTo)
+				items = items.filter(
+					(c) => c.uiterlijkeReactiedatum <= this.filters.dateTo,
+				)
 			}
 
 			// Overdue items first.
@@ -200,7 +234,10 @@ export default {
 				const aOverdue = this.overdueIds.has(a.id) ? 0 : 1
 				const bOverdue = this.overdueIds.has(b.id) ? 0 : 1
 				if (aOverdue !== bOverdue) return aOverdue - bOverdue
-				return (a.latestResponseDate || '') < (b.latestResponseDate || '') ? -1 : 1
+				return (a.uiterlijkeReactiedatum || '')
+					< (b.uiterlijkeReactiedatum || '')
+					? -1
+					: 1
 			})
 
 			return items
@@ -269,7 +306,9 @@ export default {
 		 */
 		async claimConsultation(item) {
 			try {
-				await axios.post(`/apps/procest/api/consultations/${encodeURIComponent(item.id)}/claim`)
+				await axios.post(
+					`/apps/procest/api/consultations/${encodeURIComponent(item.id)}/claim`,
+				)
 				await this.loadConsultations()
 			} catch (err) {
 				this.error = this.t('procest', 'Could not take on the consultation.')

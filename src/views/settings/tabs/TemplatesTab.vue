@@ -4,7 +4,12 @@
 			{{ t('procest', 'Case Type Templates') }}
 		</h3>
 		<p class="templates-tab__description">
-			{{ t('procest', 'Activate a pre-configured case type template to quickly set up a new case type with statuses, properties, document types, and roles.') }}
+			{{
+				t(
+					'procest',
+					'Activate a pre-configured case type template to quickly set up a new case type with statuses, properties, document types, and roles.',
+				)
+			}}
 		</p>
 
 		<NcLoadingIcon v-if="loading" />
@@ -26,7 +31,9 @@
 					{{ template.description }}
 				</p>
 				<div class="templates-tab__card-footer">
-					<span class="templates-tab__version">v{{ template.version }}</span>
+					<span class="templates-tab__version"
+						>v{{ template.version }}</span
+					>
 					<NcButton
 						type="primary"
 						:disabled="activating === template.id"
@@ -44,12 +51,17 @@
 		<div v-if="activationResult" class="templates-tab__result">
 			<p>{{ t('procest', 'Template activated successfully!') }}</p>
 			<p>
-				{{ t('procest', 'Case type created with {statuses} statuses, {properties} properties, {documents} document types.',
-					{
-						statuses: activationResult.statuses.length,
-						properties: activationResult.properties.length,
-						documents: activationResult.documents.length,
-					}) }}
+				{{
+					t(
+						'procest',
+						'Case type created with {statuses} statuses, {properties} properties, {documents} document types.',
+						{
+							statuses: activationResult.statuses.length,
+							properties: activationResult.properties.length,
+							documents: activationResult.documents.length,
+						},
+					)
+				}}
 			</p>
 		</div>
 
@@ -94,7 +106,9 @@ export default {
 				)
 				this.templates = response.data?.results || []
 			} catch (err) {
-				this.error = err.response?.data?.error || this.t('procest', 'Failed to load templates')
+				this.error =
+					err.response?.data?.error
+					|| this.t('procest', 'Failed to load templates')
 			} finally {
 				this.loading = false
 			}
@@ -109,11 +123,15 @@ export default {
 			this.error = ''
 			try {
 				const response = await axios.post(
-					generateUrl('/apps/procest/api/templates/{id}/activate', { id: templateId }),
+					generateUrl('/apps/procest/api/templates/{id}/activate', {
+						id: templateId,
+					}),
 				)
 				this.activationResult = response.data
 			} catch (err) {
-				this.error = err.response?.data?.error || this.t('procest', 'Failed to activate template')
+				this.error =
+					err.response?.data?.error
+					|| this.t('procest', 'Failed to activate template')
 			} finally {
 				this.activating = null
 			}

@@ -24,7 +24,9 @@
 					<tr v-if="editingId !== cat.id" :key="cat.id">
 						<td>{{ cat.name }}</td>
 						<td>{{ cat.defaultHandler || '-' }}</td>
-						<td>{{ cat.slaOverrideDays || t('procest', 'use default') }}</td>
+						<td>
+							{{ cat.slaOverrideDays || t('procest', 'use default') }}
+						</td>
 						<td class="actions">
 							<button type="button" @click="onEdit(cat)">
 								{{ t('procest', 'Edit') }}
@@ -40,21 +42,21 @@
 								v-model="form.name"
 								type="text"
 								:aria-label="t('procest', 'Name')"
-								:placeholder="t('procest', 'Name')">
+								:placeholder="t('procest', 'Name')" />
 						</td>
 						<td>
 							<input
 								v-model="form.defaultHandler"
 								type="text"
 								:aria-label="t('procest', 'User id')"
-								:placeholder="t('procest', 'User id')">
+								:placeholder="t('procest', 'User id')" />
 						</td>
 						<td>
 							<input
 								v-model.number="form.slaOverrideDays"
 								type="number"
 								:aria-label="t('procest', 'SLA override (days)')"
-								min="0">
+								min="0" />
 						</td>
 						<td class="actions">
 							<button type="button" @click="onSave">
@@ -72,21 +74,21 @@
 							v-model="form.name"
 							type="text"
 							:aria-label="t('procest', 'Name')"
-							:placeholder="t('procest', 'Name')">
+							:placeholder="t('procest', 'Name')" />
 					</td>
 					<td>
 						<input
 							v-model="form.defaultHandler"
 							type="text"
 							:aria-label="t('procest', 'User id')"
-							:placeholder="t('procest', 'User id')">
+							:placeholder="t('procest', 'User id')" />
 					</td>
 					<td>
 						<input
 							v-model.number="form.slaOverrideDays"
 							type="number"
 							:aria-label="t('procest', 'SLA override (days)')"
-							min="0">
+							min="0" />
 					</td>
 					<td class="actions">
 						<button type="button" @click="onSave">
@@ -161,12 +163,14 @@ export default {
 			this.loading = true
 			try {
 				const res = await fetch(
-					OC.generateUrl('/apps/openregister/api/objects/procest/complaintCategory'),
+					OC.generateUrl(
+						'/apps/openregister/api/objects/procest/complaintCategory',
+					),
 					{ headers: { requesttoken: OC.requestToken } },
 				)
 				if (res.ok) {
 					const body = await res.json()
-					this.categories = Array.isArray(body) ? body : (body.items || [])
+					this.categories = Array.isArray(body) ? body : body.items || []
 				}
 			} catch (e) {
 				this.categories = []
@@ -223,8 +227,10 @@ export default {
 		 * @spec openspec/changes/complaint-management/tasks.md#task-cm-09
 		 */
 		async onSave() {
-			const url = OC.generateUrl('/apps/openregister/api/objects/procest/complaintCategory'
-				+ (this.editingId === '__new' ? '' : '/' + this.editingId))
+			const url = OC.generateUrl(
+				'/apps/openregister/api/objects/procest/complaintCategory'
+					+ (this.editingId === '__new' ? '' : '/' + this.editingId),
+			)
 			try {
 				const res = await fetch(url, {
 					method: this.editingId === '__new' ? 'POST' : 'PUT',
@@ -267,7 +273,10 @@ export default {
 			const cat = this.pendingDeleteCat
 			try {
 				const res = await fetch(
-					OC.generateUrl('/apps/openregister/api/objects/procest/complaintCategory/' + cat.id),
+					OC.generateUrl(
+						'/apps/openregister/api/objects/procest/complaintCategory/'
+							+ cat.id,
+					),
 					{
 						method: 'DELETE',
 						headers: { requesttoken: OC.requestToken },
@@ -278,12 +287,18 @@ export default {
 					this.showDeleteConfirm = false
 				} else {
 					this.$refs.deleteConfirmDialog.setResult({
-						error: t('procest', 'The category could not be deleted. Please try again.'),
+						error: t(
+							'procest',
+							'The category could not be deleted. Please try again.',
+						),
 					})
 				}
 			} catch (e) {
 				this.$refs.deleteConfirmDialog.setResult({
-					error: t('procest', 'The category could not be deleted. Please try again.'),
+					error: t(
+						'procest',
+						'The category could not be deleted. Please try again.',
+					),
 				})
 			}
 		},

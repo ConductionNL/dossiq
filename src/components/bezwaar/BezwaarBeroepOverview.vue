@@ -24,7 +24,12 @@
 				{{ t('procest', 'Objection & Appeal') }}
 			</h2>
 			<p class="bezwaar-overview__hint">
-				{{ t('procest', 'Manage objections, appeals, decisions and BAC advice from a single overview.') }}
+				{{
+					t(
+						'procest',
+						'Manage objections, appeals, decisions and BAC advice from a single overview.',
+					)
+				}}
 			</p>
 		</header>
 
@@ -68,28 +73,32 @@ export default {
 				{
 					id: 'Bezwaren',
 					label: 'Bezwaren',
-					description: 'Overzicht van alle bezwaarschriften die bij de gemeente zijn ingediend.',
+					description:
+						'Overzicht van alle bezwaarschriften die bij de gemeente zijn ingediend.',
 					icon: Gavel,
 					route: 'Bezwaren',
 				},
 				{
 					id: 'Beroepen',
 					label: 'Beroepen',
-					description: 'Overzicht van beroepsprocedures bij de bestuursrechter.',
+					description:
+						'Overzicht van beroepsprocedures bij de bestuursrechter.',
 					icon: ScaleBalance,
 					route: 'Beroepen',
 				},
 				{
 					id: 'BezwaarDecisions',
 					label: 'Beslissingen op bezwaar',
-					description: 'Overzicht van beslissingen op ingediende bezwaarschriften.',
+					description:
+						'Overzicht van beslissingen op ingediende bezwaarschriften.',
 					icon: CheckCircle,
 					route: 'BezwaarDecisions',
 				},
 				{
 					id: 'BezwaarAdviceRequests',
 					label: 'BAC-adviezen',
-					description: 'Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.',
+					description:
+						'Adviezen van de Bezwaaradviescommissie (BAC) over ingediende bezwaren.',
 					icon: Comment,
 					route: 'BezwaarAdviceRequests',
 				},

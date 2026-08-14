@@ -28,7 +28,7 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		level() {
 			if (this.confidence > 0.85) return 'high'
-			if (this.confidence >= 0.60) return 'medium'
+			if (this.confidence >= 0.6) return 'medium'
 			return 'low'
 		},
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
@@ -37,11 +37,12 @@ export default {
 		},
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		ariaLabel() {
-			const levelLabel = this.level === 'high'
-				? t('procest', 'high')
-				: this.level === 'medium'
-					? t('procest', 'medium')
-					: t('procest', 'low')
+			const levelLabel =
+				this.level === 'high'
+					? t('procest', 'high')
+					: this.level === 'medium'
+						? t('procest', 'medium')
+						: t('procest', 'low')
 			return t('procest', 'Confidence: {percentage} ({level})', {
 				percentage: this.label,
 				level: levelLabel,

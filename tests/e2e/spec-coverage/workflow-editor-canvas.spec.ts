@@ -53,20 +53,31 @@ async function openFirstCaseTypeWorkflowTabOrSkip(page): Promise<boolean> {
 	await page.goto(ADMIN_SETTINGS_URL)
 	const heading = page.getByRole('heading', { name: 'Case Type Management' })
 	if (!(await heading.isVisible({ timeout: 15000 }).catch(() => false))) {
-		test.skip(true, 'Case Type Management admin section not present in the deployed build')
+		test.skip(
+			true,
+			'Case Type Management admin section not present in the deployed build',
+		)
 		return false
 	}
 
 	const row = page.locator('.viewTableRow, tr[role="row"], .list-item').first()
 	if (!(await row.isVisible({ timeout: 10000 }).catch(() => false))) {
-		test.skip(true, 'No case types in the deployed/seeded register — the Workflow tab is data-dependent.')
+		test.skip(
+			true,
+			'No case types in the deployed/seeded register — the Workflow tab is data-dependent.',
+		)
 		return false
 	}
 	await row.click().catch(() => {})
 
-	const workflowTab = page.locator('.case-type-detail__tab', { hasText: 'Workflow' }).first()
+	const workflowTab = page
+		.locator('.case-type-detail__tab', { hasText: 'Workflow' })
+		.first()
 	if (!(await workflowTab.isVisible({ timeout: 10000 }).catch(() => false))) {
-		test.skip(true, 'Workflow tab not present on the case type detail page (deploy mismatch).')
+		test.skip(
+			true,
+			'Workflow tab not present on the case type detail page (deploy mismatch).',
+		)
 		return false
 	}
 	await workflowTab.click()
@@ -75,9 +86,10 @@ async function openFirstCaseTypeWorkflowTabOrSkip(page): Promise<boolean> {
 }
 
 test.describe('Visual workflow editor canvas (workflow-editor-integration)', () => {
-
 	// @e2e openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#scenario-the-canvas-renders-an-existing-definitions-steps-and-transitions
-	test('the Workflow tab renders the canonical canvas or its empty state', async ({ page }) => {
+	test('the Workflow tab renders the canonical canvas or its empty state', async ({
+		page,
+	}) => {
 		const opened = await openFirstCaseTypeWorkflowTabOrSkip(page)
 		if (!opened) return
 
@@ -92,13 +104,18 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 	})
 
 	// @e2e openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#scenario-keyboard-operable-canvas
-	test('a status node on the canvas is keyboard-focusable and exposes a keyboard-operable actions menu', async ({ page }) => {
+	test('a status node on the canvas is keyboard-focusable and exposes a keyboard-operable actions menu', async ({
+		page,
+	}) => {
 		const opened = await openFirstCaseTypeWorkflowTabOrSkip(page)
 		if (!opened) return
 
 		const node = page.locator('.workflow-node').first()
 		if (!(await node.isVisible({ timeout: 5000 }).catch(() => false))) {
-			test.skip(true, 'No workflow definition with status nodes for this case type — canvas keyboard interaction is data-dependent.')
+			test.skip(
+				true,
+				'No workflow definition with status nodes for this case type — canvas keyboard interaction is data-dependent.',
+			)
 			return
 		}
 
@@ -120,13 +137,18 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 	})
 
 	// @e2e openspec/changes/workflow-editor-integration/specs/visual-workflow-editor/spec.md#scenario-keyboard-operable-canvas
-	test('the palette exposes a keyboard-reachable "Add status node" button as a drag-and-drop alternative', async ({ page }) => {
+	test('the palette exposes a keyboard-reachable "Add status node" button as a drag-and-drop alternative', async ({
+		page,
+	}) => {
 		const opened = await openFirstCaseTypeWorkflowTabOrSkip(page)
 		if (!opened) return
 
 		const canvas = page.locator('.workflow-editor')
 		if (!(await canvas.isVisible({ timeout: 5000 }).catch(() => false))) {
-			test.skip(true, 'No workflow defined for this case type yet — the palette only renders alongside the canvas.')
+			test.skip(
+				true,
+				'No workflow defined for this case type yet — the palette only renders alongside the canvas.',
+			)
 			return
 		}
 

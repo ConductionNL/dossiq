@@ -77,8 +77,12 @@ export const useAdviceStore = defineStore('advice', {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		allAdviceReceived(state) {
-			return state.requests.length > 0
-				&& state.requests.every((r) => r.status === 'ontvangen' || r.status === 'verlopen')
+			return (
+				state.requests.length > 0
+				&& state.requests.every(
+					(r) => r.status === 'ontvangen' || r.status === 'verlopen',
+				)
+			)
 		},
 	},
 
@@ -98,10 +102,13 @@ export const useAdviceStore = defineStore('advice', {
 			this.error = null
 			try {
 				const objectStore = useObjectStore()
-				const response = await objectStore.fetchCollection('adviesAanvraag', {
-					'_filters[case]': caseId,
-					limit: 100,
-				})
+				const response = await objectStore.fetchCollection(
+					'adviesAanvraag',
+					{
+						'_filters[case]': caseId,
+						limit: 100,
+					},
+				)
 				this.requests = response?.results || response || []
 				return this.requests
 			} catch (error) {

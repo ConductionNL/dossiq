@@ -24,8 +24,11 @@
  * @return {string} The preview snippet, ellipsis-bounded.
  */
 export function buildSpanPreview(text, span, context = 10) {
-	const safeText = (typeof text === 'string') ? text : ''
-	const start = Math.max(0, Math.min(safeText.length, (span?.start ?? 0) - context))
+	const safeText = typeof text === 'string' ? text : ''
+	const start = Math.max(
+		0,
+		Math.min(safeText.length, (span?.start ?? 0) - context),
+	)
 	const end = Math.max(0, Math.min(safeText.length, (span?.end ?? 0) + context))
 	return '…' + safeText.slice(start, end) + '…'
 }

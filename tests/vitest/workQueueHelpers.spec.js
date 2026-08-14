@@ -10,7 +10,12 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { resolveSortConfig, urgencyChipClass, buildUrgencyMap, SORT_MODES } from '../../src/utils/workQueueHelpers.js'
+import {
+	resolveSortConfig,
+	urgencyChipClass,
+	buildUrgencyMap,
+	SORT_MODES,
+} from '../../src/utils/workQueueHelpers.js'
 
 describe('SORT_MODES', () => {
 	it('lists urgency and newest', () => {
@@ -20,11 +25,17 @@ describe('SORT_MODES', () => {
 
 describe('resolveSortConfig', () => {
 	it('maps "urgency" to deadline ascending', () => {
-		expect(resolveSortConfig('urgency')).toEqual({ key: 'deadline', order: 'asc' })
+		expect(resolveSortConfig('urgency')).toEqual({
+			key: 'deadline',
+			order: 'asc',
+		})
 	})
 
 	it('maps "newest" to startDate descending', () => {
-		expect(resolveSortConfig('newest')).toEqual({ key: 'startDate', order: 'desc' })
+		expect(resolveSortConfig('newest')).toEqual({
+			key: 'startDate',
+			order: 'desc',
+		})
 	})
 
 	it('falls back to the urgency default for an unknown mode', () => {
@@ -32,21 +43,30 @@ describe('resolveSortConfig', () => {
 	})
 
 	it('falls back to the urgency default for undefined', () => {
-		expect(resolveSortConfig(undefined)).toEqual({ key: 'deadline', order: 'asc' })
+		expect(resolveSortConfig(undefined)).toEqual({
+			key: 'deadline',
+			order: 'asc',
+		})
 	})
 })
 
 describe('urgencyChipClass', () => {
 	it('maps overdue', () => {
-		expect(urgencyChipClass('overdue')).toBe('mywork-card__urgency-chip--overdue')
+		expect(urgencyChipClass('overdue')).toBe(
+			'mywork-card__urgency-chip--overdue',
+		)
 	})
 
 	it('maps critical', () => {
-		expect(urgencyChipClass('critical')).toBe('mywork-card__urgency-chip--critical')
+		expect(urgencyChipClass('critical')).toBe(
+			'mywork-card__urgency-chip--critical',
+		)
 	})
 
 	it('maps warning', () => {
-		expect(urgencyChipClass('warning')).toBe('mywork-card__urgency-chip--warning')
+		expect(urgencyChipClass('warning')).toBe(
+			'mywork-card__urgency-chip--warning',
+		)
 	})
 
 	it('returns empty string for normal (no chip)', () => {
@@ -67,8 +87,20 @@ describe('urgencyChipClass', () => {
 describe('buildUrgencyMap', () => {
 	it('keys case items by id', () => {
 		const items = [
-			{ itemType: 'case', id: 'case-1', tier: 'overdue', score: 1005, daysUntilDeadline: -2 },
-			{ itemType: 'case', id: 'case-2', tier: 'normal', score: 260, daysUntilDeadline: 30 },
+			{
+				itemType: 'case',
+				id: 'case-1',
+				tier: 'overdue',
+				score: 1005,
+				daysUntilDeadline: -2,
+			},
+			{
+				itemType: 'case',
+				id: 'case-2',
+				tier: 'normal',
+				score: 260,
+				daysUntilDeadline: 30,
+			},
 		]
 		expect(buildUrgencyMap(items)).toEqual({
 			'case-1': { tier: 'overdue', score: 1005, daysUntilDeadline: -2 },
@@ -78,8 +110,20 @@ describe('buildUrgencyMap', () => {
 
 	it('skips task items', () => {
 		const items = [
-			{ itemType: 'task', id: 'task-1', tier: 'overdue', score: 1005, daysUntilDeadline: -2 },
-			{ itemType: 'case', id: 'case-1', tier: 'warning', score: 493, daysUntilDeadline: 7 },
+			{
+				itemType: 'task',
+				id: 'task-1',
+				tier: 'overdue',
+				score: 1005,
+				daysUntilDeadline: -2,
+			},
+			{
+				itemType: 'case',
+				id: 'case-1',
+				tier: 'warning',
+				score: 493,
+				daysUntilDeadline: 7,
+			},
 		]
 		const map = buildUrgencyMap(items)
 		expect(Object.keys(map)).toEqual(['case-1'])

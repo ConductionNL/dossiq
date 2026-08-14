@@ -3,7 +3,8 @@
  SPDX-License-Identifier: EUPL-1.2
 -->
 <template>
-	<NcDialog :name="t('procest', 'Omgevingsvergunning — Detail')"
+	<NcDialog
+		:name="t('procest', 'Omgevingsvergunning — Detail')"
 		size="large"
 		:can-close="true"
 		@close="$emit('close')">
@@ -11,20 +12,16 @@
 			<div class="dso-case-detail">
 				<!-- Lifecycle action bar -->
 				<div class="dso-case-detail__actions">
-					<NcButton type="primary"
-						@click="showTransitionDialog = true">
+					<NcButton type="primary" @click="showTransitionDialog = true">
 						{{ t('procest', 'Status transition') }}
 					</NcButton>
-					<NcButton type="secondary"
-						@click="showBeschikkingDialog = true">
+					<NcButton type="secondary" @click="showBeschikkingDialog = true">
 						{{ t('procest', 'Generate beschikking') }}
 					</NcButton>
-					<NcButton type="secondary"
-						@click="showSamenwerkDialog = true">
+					<NcButton type="secondary" @click="showSamenwerkDialog = true">
 						{{ t('procest', 'Collaboration') }}
 					</NcButton>
-					<NcButton type="secondary"
-						@click="showDoorstuurDialog = true">
+					<NcButton type="secondary" @click="showDoorstuurDialog = true">
 						{{ t('procest', 'Forward') }}
 					</NcButton>
 				</div>
@@ -40,11 +37,11 @@
 						<dt>{{ t('procest', 'Procedure type') }}</dt>
 						<dd>{{ zaak.procedureType || '—' }}</dd>
 						<dt>{{ t('procest', 'Deadline') }}</dt>
-						<dd>{{ formatDate(zaak.deadlineDate) }}</dd>
+						<dd>{{ formatDate(zaak.deadlineDatum) }}</dd>
 						<dt>{{ t('procest', 'Competent Authority') }}</dt>
 						<dd>{{ zaak.bevoegdGezag || '—' }}</dd>
 						<dt>{{ t('procest', 'Permit application ref') }}</dt>
-						<dd>{{ zaak.permitApplicationRef || '—' }}</dd>
+						<dd>{{ zaak.vergunningaanvraagRef || '—' }}</dd>
 					</dl>
 				</section>
 
@@ -55,18 +52,22 @@
 						<dt>{{ t('procest', 'Decision date') }}</dt>
 						<dd>{{ formatDate(zaak.besluitdatum) }}</dd>
 						<dt>{{ t('procest', 'Explanation') }}</dt>
-						<dd>{{ zaak.dsoNotes || '—' }}</dd>
+						<dd>{{ zaak.dsoToelichting || '—' }}</dd>
 					</dl>
 				</section>
 
 				<!-- Samenwerkverzoeken section -->
 				<section class="dso-section">
 					<h3>{{ t('procest', 'Collaboration requests') }}</h3>
-					<p v-if="!zaak.collaboration_requests || zaak.collaboration_requests.length === 0">
+					<p
+						v-if="
+							!zaak.samenwerkverzoeken
+							|| zaak.samenwerkverzoeken.length === 0
+						">
 						{{ t('procest', 'No samenwerkverzoeken linked') }}
 					</p>
 					<ul v-else>
-						<li v-for="swId in zaak.collaboration_requests" :key="swId">
+						<li v-for="swId in zaak.samenwerkverzoeken" :key="swId">
 							{{ swId }}
 						</li>
 					</ul>
@@ -77,9 +78,15 @@
 					<h3>{{ t('procest', 'Activity timeline') }}</h3>
 					<ul v-if="activityEntries.length > 0" class="dso-activity">
 						<li v-for="(entry, idx) in activityEntries" :key="idx">
-							<span class="dso-activity__timestamp">{{ formatDate(entry.timestamp) }}</span>
-							<span class="dso-activity__user">{{ entry.userId }}</span>
-							<span>{{ entry.oldStatus }} → {{ entry.newStatus }}</span>
+							<span class="dso-activity__timestamp">{{
+								formatDate(entry.timestamp)
+							}}</span>
+							<span class="dso-activity__user">{{
+								entry.userId
+							}}</span>
+							<span
+								>{{ entry.oldStatus }} → {{ entry.newStatus }}</span
+							>
 						</li>
 					</ul>
 					<p v-else>
@@ -89,33 +96,42 @@
 			</div>
 
 			<!-- Sub-dialogs -->
-			<BeschikkingDialog v-if="showBeschikkingDialog"
-				:zaak-id="caseId"
+			<BeschikkingDialog
+				v-if="showBeschikkingDialog"
+				:zaak-id="zaakId"
 				@close="showBeschikkingDialog = false"
 				@generated="onBeschikkingGenerated" />
-			<SamenwerkverzoekDialog v-if="showSamenwerkDialog"
-				:zaak-id="caseId"
+			<SamenwerkverzoekDialog
+				v-if="showSamenwerkDialog"
+				:zaak-id="zaakId"
 				@close="showSamenwerkDialog = false"
 				@initiated="onSamenwerkInitiated" />
-			<DoorstuurDialog v-if="showDoorstuurDialog"
-				:zaak-id="caseId"
+			<DoorstuurDialog
+				v-if="showDoorstuurDialog"
+				:zaak-id="zaakId"
 				@close="showDoorstuurDialog = false" />
 
 			<!-- Inline transition form -->
 			<div v-if="showTransitionDialog" class="dso-transition-form">
 				<h3>{{ t('procest', 'Transition status') }}</h3>
-				<NcSelect v-model="transitionStatus"
+				<NcSelect
+					v-model="transitionStatus"
 					:options="transitionOptions"
 					:input-label="t('procest', 'New status')"
 					input-id="transition-status" />
-				<NcTextField v-model="transitionToelichting"
+				<NcTextField
+					v-model="transitionToelichting"
 					:label="t('procest', 'Explanation')" />
-				<NcTextField v-if="requiresBesluitdatum"
+				<NcTextField
+					v-if="requiresBesluitdatum"
 					v-model="transitionBesluitdatum"
 					:label="t('procest', 'Decision date')"
 					type="date" />
 				<div class="dso-transition-form__actions">
-					<NcButton type="primary" :disabled="!transitionStatus" @click="executeTransition">
+					<NcButton
+						type="primary"
+						:disabled="!transitionStatus"
+						@click="executeTransition">
 						{{ t('procest', 'Confirm') }}
 					</NcButton>
 					<NcButton type="tertiary" @click="showTransitionDialog = false">
@@ -171,7 +187,7 @@ export default {
 				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
 				{ label: t('procest', 'Granted'), value: 'verleend' },
 				{ label: t('procest', 'Refused'), value: 'geweigerd' },
-				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
+				{ label: t('procest', 'Withdrawn'), value: 'ingetrokken' },
 			],
 		}
 	},
@@ -214,11 +230,15 @@ export default {
 			try {
 				const payload = {
 					newStatus: this.transitionStatus.value,
-					notes: this.transitionToelichting || undefined,
+					toelichting: this.transitionToelichting || undefined,
 					besluitdatum: this.transitionBesluitdatum || undefined,
 				}
 				const { data } = await axios.post(
-					generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.caseId) + '/transition'),
+					generateUrl(
+						'/apps/procest/api/dso/cases/'
+							+ encodeURIComponent(this.zaakId)
+							+ '/transition',
+					),
 					payload,
 				)
 				this.showTransitionDialog = false
@@ -235,7 +255,10 @@ export default {
 			if (samenwerk?.uuid || samenwerk?.id) {
 				this.$emit('transition', {
 					...this.zaak,
-					collaboration_requests: [...(this.zaak.collaboration_requests || []), samenwerk.uuid || samenwerk.id],
+					samenwerkverzoeken: [
+						...(this.zaak.samenwerkverzoeken || []),
+						samenwerk.uuid || samenwerk.id,
+					],
 				})
 			}
 		},

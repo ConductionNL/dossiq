@@ -30,7 +30,10 @@ describe('columnsExcludingCurrent', () => {
 	})
 
 	it('compares ids as strings so numeric/string mismatches still match', () => {
-		const numericColumns = [{ id: 1, name: 'Ontvangen' }, { id: 2, name: 'In behandeling' }]
+		const numericColumns = [
+			{ id: 1, name: 'Ontvangen' },
+			{ id: 2, name: 'In behandeling' },
+		]
 		const result = columnsExcludingCurrent(numericColumns, '1')
 		expect(result).toEqual([{ id: 2, name: 'In behandeling' }])
 	})
@@ -41,7 +44,10 @@ describe('columnsExcludingCurrent', () => {
 	})
 
 	it('returns an empty array when there are no other columns', () => {
-		const result = columnsExcludingCurrent([{ id: 'status-1', name: 'Ontvangen' }], 'status-1')
+		const result = columnsExcludingCurrent(
+			[{ id: 'status-1', name: 'Ontvangen' }],
+			'status-1',
+		)
 		expect(result).toEqual([])
 	})
 })

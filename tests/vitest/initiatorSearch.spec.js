@@ -36,20 +36,30 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 	})
 
 	it('composes a person display name incl voorvoegsel', () => {
-		expect(personDisplayName({ given_names: 'Tina-Antïna', name_prefix: 'de', surname: 'Bruin' }))
-			.toBe('Tina-Antïna de Bruin')
-		expect(personDisplayName({ given_names: 'Stephan', name_prefix: '', surname: 'Janssen' }))
-			.toBe('Stephan Janssen')
+		expect(
+			personDisplayName({
+				voornamen: 'Tina-Antïna',
+				voorvoegsel: 'de',
+				geslachtsnaam: 'Bruin',
+			}),
+		).toBe('Tina-Antïna de Bruin')
+		expect(
+			personDisplayName({
+				voornamen: 'Stephan',
+				voorvoegsel: '',
+				geslachtsnaam: 'Janssen',
+			}),
+		).toBe('Stephan Janssen')
 		expect(personDisplayName(null)).toBe('')
 	})
 
 	it('shapes a brpPerson row into a unified person result', () => {
 		const result = personResult({
 			id: 'uuid-1',
-			citizen_service_number: '999990627',
+			burgerservicenummer: '999990627',
 			displayName: 'Stephan Janssen',
-			birth: { date: '1975-04-06' },
-			name: { given_names: 'Stephan', surname: 'Janssen' },
+			geboorte: { datum: '1975-04-06' },
+			naam: { voornamen: 'Stephan', geslachtsnaam: 'Janssen' },
 		})
 		expect(result.type).toBe('person')
 		expect(result.sourceId).toBe('999990627')
@@ -61,8 +71,8 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 	it('shapes a kvkCompany row into a unified company result', () => {
 		const result = companyResult({
 			id: 'uuid-2',
-			kvkNumber: '69599084',
-			trade_name: 'Test EMZ Dagobert',
+			kvkNummer: '69599084',
+			handelsnaam: 'Test EMZ Dagobert',
 			rechtsvorm: 'Eenmanszaak',
 		})
 		expect(result.type).toBe('company')
@@ -72,24 +82,42 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 	})
 
 	it('maps a picked result onto the case projection fields (one write path)', () => {
-		expect(initiatorProjection({ type: 'company', sourceId: '69599084', displayName: 'Test EMZ Dagobert' }))
-			.toEqual({
-				initiatorType: 'company',
-				initiatorSourceId: '69599084',
-				initiatorDisplayName: 'Test EMZ Dagobert',
-			})
+		expect(
+			initiatorProjection({
+				type: 'company',
+				sourceId: '69599084',
+				displayName: 'Test EMZ Dagobert',
+			}),
+		).toEqual({
+			initiatorType: 'company',
+			initiatorSourceId: '69599084',
+			initiatorDisplayName: 'Test EMZ Dagobert',
+		})
 		// No initiator picked -> no projection fields at all (case creatable without).
 		expect(initiatorProjection(null)).toEqual({})
 	})
 
 	it('searches contacts via the core contactsmenu endpoint', async () => {
 		axiosPost.mockResolvedValue({
-			data: { contacts: [{ id: 'c1', fullName: 'Anna de Wit', emailAddresses: ['anna@example.org'] }] },
+			data: {
+				contacts: [
+					{
+						id: 'c1',
+						fullName: 'Anna de Wit',
+						emailAddresses: ['anna@example.org'],
+					},
+				],
+			},
 		})
 		const results = await searchContacts('anna')
-		expect(axiosPost).toHaveBeenCalledWith('/index.php/contactsmenu/contacts', { filter: 'anna' })
+		expect(axiosPost).toHaveBeenCalledWith('/index.php/contactsmenu/contacts', {
+			filter: 'anna',
+		})
 		expect(results).toHaveLength(1)
-		expect(results[0]).toMatchObject({ type: 'contact', displayName: 'Anna de Wit' })
+		expect(results[0]).toMatchObject({
+			type: 'contact',
+			displayName: 'Anna de Wit',
+		})
 	})
 
 	it('degrades to an empty list when the contacts source is unavailable', async () => {
@@ -98,7 +126,11 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 	})
 
 	it('shapes a contactsmenu entry into a unified contact result', () => {
-		const result = contactResult({ id: 'uid-9', fullName: 'Anna de Wit', emailAddresses: ['anna@example.org'] })
+		const result = contactResult({
+			id: 'uid-9',
+			fullName: 'Anna de Wit',
+			emailAddresses: ['anna@example.org'],
+		})
 		expect(result).toMatchObject({
 			type: 'contact',
 			sourceId: 'uid-9',

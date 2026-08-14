@@ -5,7 +5,8 @@
 		<div v-if="!steps.length" class="parafeer-stap-editor__empty">
 			{{ t('procest', 'No steps yet. Add a step to get started.') }}
 		</div>
-		<div v-for="(step, idx) in steps"
+		<div
+			v-for="(step, idx) in steps"
 			:key="idx"
 			class="parafeer-stap-editor__row">
 			<span class="parafeer-stap-editor__order">{{ idx + 1 }}</span>
@@ -15,29 +16,30 @@
 				:input-label="t('procest', 'Type')"
 				:placeholder="t('procest', 'Type')"
 				class="parafeer-stap-editor__type"
-				@update:model-value="v => updateStep(idx, 'type', v)" />
+				@update:model-value="(v) => updateStep(idx, 'type', v)" />
 			<NcSelect
 				:model-value="step.actorType"
 				:options="actorTypeOptions"
 				:input-label="t('procest', 'Actor type')"
 				:placeholder="t('procest', 'Actor type')"
 				class="parafeer-stap-editor__actor-type"
-				@update:model-value="v => updateStep(idx, 'actorType', v)" />
+				@update:model-value="(v) => updateStep(idx, 'actorType', v)" />
 			<NcTextField
 				:model-value="step.actor"
 				:placeholder="t('procest', 'Actor (UID, groep of rol)')"
 				:label="t('procest', 'Actor')"
 				:label-visible="false"
 				class="parafeer-stap-editor__actor"
-				@update:model-value="v => updateStep(idx, 'actor', v)" />
+				@update:model-value="(v) => updateStep(idx, 'actor', v)" />
 			<NcCheckboxRadioSwitch
 				:model-value="step.mandatory"
 				class="parafeer-stap-editor__mandatory"
-				@update:model-value="v => updateStep(idx, 'mandatory', v)">
+				@update:model-value="(v) => updateStep(idx, 'mandatory', v)">
 				{{ t('procest', 'Required') }}
 			</NcCheckboxRadioSwitch>
 			<div class="parafeer-stap-editor__actions">
-				<NcButton :disabled="idx === 0"
+				<NcButton
+					:disabled="idx === 0"
 					:title="t('procest', 'Omhoog')"
 					type="tertiary-no-background"
 					@click="moveStep(idx, -1)">
@@ -45,7 +47,8 @@
 						<ChevronUp :size="20" />
 					</template>
 				</NcButton>
-				<NcButton :disabled="idx === steps.length - 1"
+				<NcButton
+					:disabled="idx === steps.length - 1"
 					:title="t('procest', 'Omlaag')"
 					type="tertiary-no-background"
 					@click="moveStep(idx, 1)">
@@ -53,7 +56,8 @@
 						<ChevronDown :size="20" />
 					</template>
 				</NcButton>
-				<NcButton :title="t('procest', 'Stap verwijderen')"
+				<NcButton
+					:title="t('procest', 'Stap verwijderen')"
 					type="tertiary-no-background"
 					@click="removeStep(idx)">
 					<template #icon>
@@ -72,7 +76,12 @@
 </template>
 
 <script>
-import { NcButton, NcCheckboxRadioSwitch, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 import ChevronUp from 'vue-material-design-icons/ChevronUp.vue'
 import ChevronDown from 'vue-material-design-icons/ChevronDown.vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
@@ -118,7 +127,9 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		updateStep(idx, key, value) {
-			const next = this.steps.map((s, i) => i === idx ? { ...s, [key]: value } : s)
+			const next = this.steps.map((s, i) =>
+				i === idx ? { ...s, [key]: value } : s,
+			)
 			this.emitUpdate(next)
 		},
 		/** @spec openspec/specs/parafering-actions/spec.md */

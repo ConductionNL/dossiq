@@ -1,5 +1,6 @@
 <template>
-	<CnDataTable :rows="items"
+	<CnDataTable
+		:rows="items"
 		:columns="columns"
 		:loading="loading"
 		hide-header
@@ -7,7 +8,8 @@
 		:empty-text="t('procest', 'No task reminders')"
 		@row-click="onRowClick">
 		<template #footer>
-			<a class="cn-data-table__view-all"
+			<a
+				class="cn-data-table__view-all"
 				:href="viewAllUrl"
 				@click.prevent="onViewAll">
 				{{ t('procest', 'View all') }} →
@@ -63,15 +65,20 @@ export default {
 			const overdueItems = this.reminders.overdue.map((item) => ({
 				id: item.id,
 				mainText: item.title,
-				subText: t('procest', '{days} days overdue', { days: item.daysOverdue }),
+				subText: t('procest', '{days} days overdue', {
+					days: item.daysOverdue,
+				}),
 				targetUrl: generateUrl(`/apps/procest/tasks/${item.id}`),
 			}))
 			const dueSoonItems = this.reminders.dueSoon.map((item) => ({
 				id: item.id,
 				mainText: item.title,
-				subText: item.daysRemaining === 0
-					? t('procest', 'Due today')
-					: t('procest', '{days} days remaining', { days: item.daysRemaining }),
+				subText:
+					item.daysRemaining === 0
+						? t('procest', 'Due today')
+						: t('procest', '{days} days remaining', {
+								days: item.daysRemaining,
+							}),
 				targetUrl: generateUrl(`/apps/procest/tasks/${item.id}`),
 			}))
 			return [...overdueItems, ...dueSoonItems].slice(0, 5)
@@ -117,8 +124,8 @@ export default {
 					'_filters[assignee]': currentUser,
 					_limit: 100,
 				})
-				const activeTasks = (tasks || []).filter(t =>
-					t.status === 'available' || t.status === 'active',
+				const activeTasks = (tasks || []).filter(
+					(t) => t.status === 'available' || t.status === 'active',
 				)
 				this.reminders = getTaskDueReminders(activeTasks)
 			} catch (err) {

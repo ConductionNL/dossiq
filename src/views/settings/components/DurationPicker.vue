@@ -17,7 +17,9 @@
 				v-for="preset in presets"
 				:key="preset.value"
 				class="duration-picker__preset"
-				:class="{ 'duration-picker__preset--active': value === preset.value }"
+				:class="{
+					'duration-picker__preset--active': value === preset.value,
+				}"
 				type="button"
 				@click="selectPreset(preset)">
 				{{ preset.label }}
@@ -43,7 +45,7 @@ export default {
 		presetType: {
 			type: String,
 			default: 'deadline',
-			validator: v => ['deadline', 'extension'].includes(v),
+			validator: (v) => ['deadline', 'extension'].includes(v),
 		},
 	},
 	computed: {

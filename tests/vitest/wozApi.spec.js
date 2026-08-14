@@ -17,7 +17,11 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import axios from '@nextcloud/axios'
-import { lookupWozValue, lookupWozValueByNummeraanduiding, lookupWozObject } from '../../src/services/wozApi.js'
+import {
+	lookupWozValue,
+	lookupWozValueByNummeraanduiding,
+	lookupWozObject,
+} from '../../src/services/wozApi.js'
 
 const BASE = '/index.php/apps/procest/api/external/woz'
 
@@ -36,29 +40,58 @@ describe('wozApi shim — endpoint routing', () => {
 	})
 
 	it('lookupWozValue delegates to the procest value route with postcode + huisnummer', async () => {
-		const envelope = { lookupStatus: 'FOUND', wozObject: { wozobjectnummer: '05180000001234' }, dormant: false, extras: { tier: 'test' } }
+		const envelope = {
+			lookupStatus: 'FOUND',
+			wozObject: { wozobjectnummer: '05180000001234' },
+			dormant: false,
+			extras: { tier: 'test' },
+		}
 		axios.get.mockResolvedValue(ok(envelope))
 
 		const result = await lookupWozValue('1234AB', '10')
 
-		expect(axios.get).toHaveBeenCalledWith(`${BASE}/value`, { params: { postcode: '1234AB', huisnummer: '10' } })
+		expect(axios.get).toHaveBeenCalledWith(`${BASE}/value`, {
+			params: { postcode: '1234AB', huisnummer: '10' },
+		})
 		expect(result).toEqual(envelope)
 		const calledUrls = axios.get.mock.calls.map((c) => c[0])
 		expect(calledUrls.every((u) => !u.includes('wozwaardeloket.nl'))).toBe(true)
 	})
 
 	it('lookupWozValue forwards huisletter/huisnummertoevoeging only when supplied', async () => {
-		axios.get.mockResolvedValue(ok({ lookupStatus: 'NOT_FOUND', wozObject: {}, dormant: false, extras: {} }))
+		axios.get.mockResolvedValue(
+			ok({
+				lookupStatus: 'NOT_FOUND',
+				wozObject: {},
+				dormant: false,
+				extras: {},
+			}),
+		)
 
-		await lookupWozValue('1234AB', '10', { huisletter: 'A', huisnummertoevoeging: 'II' })
+		await lookupWozValue('1234AB', '10', {
+			huisletter: 'A',
+			huisnummertoevoeging: 'II',
+		})
 
 		expect(axios.get).toHaveBeenCalledWith(`${BASE}/value`, {
-			params: { postcode: '1234AB', huisnummer: '10', huisletter: 'A', huisnummertoevoeging: 'II' },
+			params: {
+				postcode: '1234AB',
+				huisnummer: '10',
+				huisletter: 'A',
+				huisnummertoevoeging: 'II',
+			},
 		})
 	})
 
 	it('lookupWozValue omits optional params entirely when not supplied', async () => {
-		axios.get.mockResolvedValue(ok({ lookupStatus: 'NOT_FOUND', wozObject: {}, dormant: false, extras: {} }))
+		axios.get.mockResolvedValue(
+			ok({
+				lookupStatus: 'NOT_FOUND',
+				wozObject: {},
+				dormant: false,
+				extras: {},
+			}),
+		)
 
 		await lookupWozValue('1234AB', '10')
 
@@ -68,17 +101,29 @@ describe('wozApi shim — endpoint routing', () => {
 	})
 
 	it('lookupWozValueByNummeraanduiding delegates to the procest value route with nummeraanduidingId', async () => {
-		const envelope = { lookupStatus: 'FOUND', wozObject: { wozobjectnummer: '05180000001234' }, dormant: false, extras: {} }
+		const envelope = {
+			lookupStatus: 'FOUND',
+			wozObject: { wozobjectnummer: '05180000001234' },
+			dormant: false,
+			extras: {},
+		}
 		axios.get.mockResolvedValue(ok(envelope))
 
 		const result = await lookupWozValueByNummeraanduiding('0518010000123456')
 
-		expect(axios.get).toHaveBeenCalledWith(`${BASE}/value`, { params: { nummeraanduidingId: '0518010000123456' } })
+		expect(axios.get).toHaveBeenCalledWith(`${BASE}/value`, {
+			params: { nummeraanduidingId: '0518010000123456' },
+		})
 		expect(result).toEqual(envelope)
 	})
 
 	it('lookupWozObject delegates to the procest object route with an encoded wozobjectnummer', async () => {
-		const envelope = { lookupStatus: 'FOUND', wozObject: { waarde: 385000 }, dormant: false, extras: {} }
+		const envelope = {
+			lookupStatus: 'FOUND',
+			wozObject: { waarde: 385000 },
+			dormant: false,
+			extras: {},
+		}
 		axios.get.mockResolvedValue(ok(envelope))
 
 		const result = await lookupWozObject('05180000001234')

@@ -8,7 +8,9 @@
 			<h2>{{ title }}</h2>
 
 			<div class="form-group">
-				<label class="required" for="td-zaaktype">{{ t('procest', 'Zaaktype') }}</label>
+				<label class="required" for="td-zaaktype">{{
+					t('procest', 'Zaaktype')
+				}}</label>
 				<NcSelect
 					id="td-zaaktype"
 					:model-value="selectedZaaktype"
@@ -16,28 +18,40 @@
 					:taggable="true"
 					:input-label="t('procest', 'Zaaktype')"
 					:placeholder="t('procest', 'Select or type a zaaktype slug')"
-					@update:model-value="v => form.case_type = v ? (v.id || v.label || v) : ''" />
-				<span v-if="errors.case_type" class="field-error">{{ errors.case_type }}</span>
+					@update:model-value="
+						(v) => (form.zaaktype = v ? v.id || v.label || v : '')
+					" />
+				<span v-if="errors.zaaktype" class="field-error">{{
+					errors.zaaktype
+				}}</span>
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="td-grondslag">{{ t('procest', 'Legal basis') }}</label>
+				<label class="required" for="td-grondslag">{{
+					t('procest', 'Legal basis')
+				}}</label>
 				<NcTextField
 					id="td-grondslag"
-					:model-value="form.basis"
+					:model-value="form.grondslag"
 					:placeholder="t('procest', 'e.g. AWB art. 4:13 lid 2')"
-					@update:model-value="v => form.basis = v" />
-				<span v-if="errors.basis" class="field-error">{{ errors.basis }}</span>
+					@update:model-value="(v) => (form.grondslag = v)" />
+				<span v-if="errors.grondslag" class="field-error">{{
+					errors.grondslag
+				}}</span>
 			</div>
 
 			<div class="form-group">
-				<label class="required" for="td-duur">{{ t('procest', 'Duration (days)') }}</label>
+				<label class="required" for="td-duur">{{
+					t('procest', 'Duration (days)')
+				}}</label>
 				<NcTextField
 					id="td-duur"
 					type="number"
 					:model-value="String(form.duurDagen)"
-					@update:model-value="v => form.duurDagen = Number(v) || 0" />
-				<span v-if="errors.duurDagen" class="field-error">{{ errors.duurDagen }}</span>
+					@update:model-value="(v) => (form.duurDagen = Number(v) || 0)" />
+				<span v-if="errors.duurDagen" class="field-error">{{
+					errors.duurDagen
+				}}</span>
 			</div>
 
 			<div class="form-group">
@@ -47,30 +61,41 @@
 					:model-value="selectedCategorie"
 					:options="categorieOptions"
 					:input-label="t('procest', 'Category')"
-					@update:model-value="v => form.category = v ? v.id : ''" />
+					@update:model-value="(v) => (form.categorie = v ? v.id : '')" />
 			</div>
 
 			<div class="form-group">
-				<label for="td-extendable">{{ t('procest', 'Extension allowed') }}</label>
+				<label for="td-extendable">{{
+					t('procest', 'Extension allowed')
+				}}</label>
 				<NcCheckboxRadioSwitch
 					:model-value="form.extendable"
-					@update:model-value="v => form.extendable = v">
+					@update:model-value="(v) => (form.extendable = v)">
 					{{ t('procest', 'Tenant may grant an extension on this term') }}
 				</NcCheckboxRadioSwitch>
 			</div>
 
 			<div v-if="form.extendable" class="form-group">
-				<label for="td-ext-dagen">{{ t('procest', 'Max extension (days)') }}</label>
+				<label for="td-ext-dagen">{{
+					t('procest', 'Max extension (days)')
+				}}</label>
 				<NcTextField
 					id="td-ext-dagen"
 					type="number"
 					:model-value="String(form.maxExtensionDagen)"
-					@update:model-value="v => form.maxExtensionDagen = Number(v) || 0" />
+					@update:model-value="
+						(v) => (form.maxExtensionDagen = Number(v) || 0)
+					" />
 			</div>
 
 			<div class="form-group form-group--note">
 				<p class="termijn-editor__note">
-					{{ t('procest', 'Saving creates a new version effective tomorrow; the prior version stays valid until end-of-day today. Cases in flight keep the version they started with.') }}
+					{{
+						t(
+							'procest',
+							'Saving creates a new version effective tomorrow; the prior version stays valid until end-of-day today. Cases in flight keep the version they started with.',
+						)
+					}}
 				</p>
 			</div>
 
@@ -83,7 +108,11 @@
 						<NcLoadingIcon v-if="saving" :size="18" />
 						<ContentSave v-else :size="18" />
 					</template>
-					{{ saving ? t('procest', 'Saving…') : t('procest', 'Save new version') }}
+					{{
+						saving
+							? t('procest', 'Saving…')
+							: t('procest', 'Save new version')
+					}}
 				</NcButton>
 			</div>
 		</div>
@@ -129,10 +158,10 @@ export default {
 			saving: false,
 			errors: {},
 			form: {
-				case_type: this.definition?.case_type || '',
-				basis: this.definition?.basis || '',
+				zaaktype: this.definition?.zaaktype || '',
+				grondslag: this.definition?.grondslag || '',
 				duurDagen: this.definition?.duurDagen || this.definition?.duur || 0,
-				category: this.definition?.category || 'beslis',
+				categorie: this.definition?.categorie || 'beslis',
 				extendable: this.definition?.extendable || false,
 				maxExtensionDagen: this.definition?.maxExtensionDagen || 0,
 			},
@@ -142,14 +171,14 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		title() {
 			return this.definition
-				? t('procest', 'New version of {z}', { z: this.definition.case_type })
+				? t('procest', 'New version of {z}', { z: this.definition.zaaktype })
 				: t('procest', 'New term definition')
 		},
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedZaaktype() {
-			if (!this.form.case_type) return null
-			const hit = this.zaaktypeOptions.find(o => o.id === this.form.case_type)
-			return hit || { id: this.form.case_type, label: this.form.case_type }
+			if (!this.form.zaaktype) return null
+			const hit = this.zaaktypeOptions.find((o) => o.id === this.form.zaaktype)
+			return hit || { id: this.form.zaaktype, label: this.form.zaaktype }
 		},
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		categorieOptions() {
@@ -162,7 +191,10 @@ export default {
 		},
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedCategorie() {
-			return this.categorieOptions.find(o => o.id === this.form.category) || this.categorieOptions[0]
+			return (
+				this.categorieOptions.find((o) => o.id === this.form.categorie)
+				|| this.categorieOptions[0]
+			)
 		},
 	},
 	methods: {
@@ -170,8 +202,10 @@ export default {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		validate() {
 			const errs = {}
-			if (!this.form.case_type) errs.case_type = t('procest', 'Zaaktype is required')
-			if (!this.form.basis) errs.basis = t('procest', 'Wettelijke grondslag is required')
+			if (!this.form.zaaktype)
+				errs.zaaktype = t('procest', 'Zaaktype is required')
+			if (!this.form.grondslag)
+				errs.grondslag = t('procest', 'Wettelijke grondslag is required')
 			if (!this.form.duurDagen || this.form.duurDagen < 1) {
 				errs.duurDagen = t('procest', 'Duration must be at least 1 day')
 			}

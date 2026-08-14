@@ -7,8 +7,12 @@
 					{{ t('procest', 'Period') }}:
 					<select v-model="period" @change="fetch">
 						<option value="q">{{ t('procest', 'This quarter') }}</option>
-						<option value="ytd">{{ t('procest', 'Year to date') }}</option>
-						<option value="12m">{{ t('procest', 'Trailing 12 months') }}</option>
+						<option value="ytd">
+							{{ t('procest', 'Year to date') }}
+						</option>
+						<option value="12m">
+							{{ t('procest', 'Trailing 12 months') }}
+						</option>
 					</select>
 				</label>
 			</div>
@@ -24,11 +28,15 @@
 					<thead>
 						<tr>
 							<th scope="col">{{ t('procest', 'Category') }}</th>
-							<th scope="col" class="num">{{ t('procest', 'Count') }}</th>
+							<th scope="col" class="num">
+								{{ t('procest', 'Count') }}
+							</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="row in analytics.byCategory || []" :key="row.category">
+						<tr
+							v-for="row in analytics.byCategory || []"
+							:key="row.category">
 							<td>{{ row.category }}</td>
 							<td class="num">
 								{{ row.count }}
@@ -41,8 +49,11 @@
 			<section class="complaint-analytics__card">
 				<h3>{{ t('procest', 'Employee thresholds (≥3 in 6 months)') }}</h3>
 				<ul v-if="(analytics.employeeAlerts || []).length">
-					<li v-for="alert in analytics.employeeAlerts" :key="alert.employeeAnon">
-						{{ alert.employeeAnon }} — {{ alert.count }} {{ t('procest', 'complaints') }}
+					<li
+						v-for="alert in analytics.employeeAlerts"
+						:key="alert.employeeAnon">
+						{{ alert.employeeAnon }} — {{ alert.count }}
+						{{ t('procest', 'complaints') }}
 					</li>
 				</ul>
 				<p v-else>
@@ -54,7 +65,8 @@
 				<h3>{{ t('procest', 'Systemic issues (>50% QoQ)') }}</h3>
 				<ul v-if="(analytics.systemic || []).length">
 					<li v-for="issue in analytics.systemic" :key="issue.category">
-						{{ issue.category }} — {{ Math.round(issue.qoqDelta * 100) }}%
+						{{ issue.category }} —
+						{{ Math.round(issue.qoqDelta * 100) }}%
 					</li>
 				</ul>
 				<p v-else>
@@ -64,8 +76,14 @@
 
 			<section class="complaint-analytics__card">
 				<h3>{{ t('procest', 'Resolution time') }}</h3>
-				<p>{{ t('procest', 'Average') }}: {{ analytics.avgDurationDays || '-' }} {{ t('procest', 'days') }}</p>
-				<p>{{ t('procest', 'Within Awb deadline') }}: {{ analytics.onTimePct || '-' }}%</p>
+				<p>
+					{{ t('procest', 'Average') }}:
+					{{ analytics.avgDurationDays || '-' }} {{ t('procest', 'days') }}
+				</p>
+				<p>
+					{{ t('procest', 'Within Awb deadline') }}:
+					{{ analytics.onTimePct || '-' }}%
+				</p>
 			</section>
 		</div>
 	</div>
@@ -104,7 +122,10 @@ export default {
 			this.loading = true
 			try {
 				const res = await fetch(
-					OC.generateUrl('/apps/procest/api/complaints/analytics?period=' + this.period),
+					OC.generateUrl(
+						'/apps/procest/api/complaints/analytics?period='
+							+ this.period,
+					),
 					{ headers: { requesttoken: OC.requestToken } },
 				)
 				if (res.ok) {

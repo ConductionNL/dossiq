@@ -1,12 +1,8 @@
-const {
-	defineConfig,
-} = require('@eslint/config-helpers')
+const { defineConfig } = require('@eslint/config-helpers')
 
 const js = require('@eslint/js')
 
-const {
-	FlatCompat,
-} = require('@eslint/eslintrc')
+const { FlatCompat } = require('@eslint/eslintrc')
 
 const compat = new FlatCompat({
 	baseDirectory: __dirname,
@@ -14,53 +10,72 @@ const compat = new FlatCompat({
 	allConfig: js.configs.all,
 })
 
-module.exports = defineConfig([{
-	extends: compat.extends('@nextcloud'),
+module.exports = defineConfig([
+	{
+		extends: compat.extends('@nextcloud'),
 
-	settings: {
-		'import/resolver': {
-			alias: {
-				map: [
-					['@', './src'],
-					['@conduction/nextcloud-vue', '../nextcloud-vue/src'],
-				],
-				extensions: ['.js', '.ts', '.vue', '.json', '.css'],
+		settings: {
+			'import/resolver': {
+				alias: {
+					map: [
+						['@', './src'],
+						['@conduction/nextcloud-vue', '../nextcloud-vue/src'],
+					],
+					extensions: ['.js', '.ts', '.vue', '.json', '.css'],
+				},
 			},
 		},
-	},
 
-	rules: {
-		'jsdoc/check-tag-names': ['warn', { definedTags: ['spec'] }],
-		'jsdoc/require-jsdoc': 'off',
-		'vue/first-attribute-linebreak': 'off',
-		// Vue 3 (ADR-066): the shared @nextcloud eslint preset is still
-		// Vue-2-oriented and enables `vue/no-v-model-argument`, which forbids
-		// `v-model:<arg>`. Under Vue 3 an argument is the ONLY way to bind a
-		// non-default model — `@nextcloud/vue` v9's NcDialog declares its model
-		// as `defineModel('open')` (emits `update:open`), so `v-model:open` is
-		// the required syntax, not a violation. The Vue-2 rule is therefore
-		// incorrect for this app and is disabled. Mirrors decidesk's
-		// `vue/no-v-for-template-key` exemption.
-		'vue/no-v-model-argument': 'off',
-		'vue/enforce-style-attribute': ['error', { allow: ['scoped'] }],
-		'@typescript-eslint/no-explicit-any': 'off',
-		'n/no-missing-import': 'off',
-		'import/named': 'off', // disable named import checking — alias resolver can't parse transitive Vue SFC exports
-		'import/namespace': 'off',
-		'import/default': 'off',
-		'import/no-named-as-default': 'off',
-		'import/no-named-as-default-member': 'off',
-		'import/no-unresolved': ['error', { ignore: ['^@conduction/nextcloud-vue'] }],
+		rules: {
+			'jsdoc/check-tag-names': ['warn', { definedTags: ['spec'] }],
+			'jsdoc/require-jsdoc': 'off',
+			'vue/first-attribute-linebreak': 'off',
+			// Vue 3 (ADR-066): the shared @nextcloud eslint preset is still
+			// Vue-2-oriented and enables `vue/no-v-model-argument`, which forbids
+			// `v-model:<arg>`. Under Vue 3 an argument is the ONLY way to bind a
+			// non-default model — `@nextcloud/vue` v9's NcDialog declares its model
+			// as `defineModel('open')` (emits `update:open`), so `v-model:open` is
+			// the required syntax, not a violation. The Vue-2 rule is therefore
+			// incorrect for this app and is disabled. Mirrors decidesk's
+			// `vue/no-v-for-template-key` exemption.
+			'vue/no-v-model-argument': 'off',
+			'vue/enforce-style-attribute': ['error', { allow: ['scoped'] }],
+			'@typescript-eslint/no-explicit-any': 'off',
+			'n/no-missing-import': 'off',
+			'import/named': 'off', // disable named import checking — alias resolver can't parse transitive Vue SFC exports
+			'import/namespace': 'off',
+			'import/default': 'off',
+			'import/no-named-as-default': 'off',
+			'import/no-named-as-default-member': 'off',
+			'import/no-unresolved': [
+				'error',
+				{ ignore: ['^@conduction/nextcloud-vue'] },
+			],
+		},
 	},
-}, {
-	// Test files legitimately import devDependencies (`vitest`,
-	// `@vue/test-utils`, `@playwright/test`). `n/no-unpublished-import` exists
-	// to stop a devDependency leaking into shipped code, and a spec file is not
-	// shipped — so it flags every spec in the suite as an error. Note this was
-	// invisible: `npm run lint` is `eslint src`, so `tests/` is never linted by
-	// CI and the error only appears when a file is linted by path.
-	files: ['tests/**/*.js', 'tests/**/*.ts'],
-	rules: {
-		'n/no-unpublished-import': 'off',
+	{
+		// Test files legitimately import devDependencies (`vitest`,
+		// `@vue/test-utils`, `@playwright/test`). `n/no-unpublished-import` exists
+		// to stop a devDependency leaking into shipped code, and a spec file is not
+		// shipped — so it flags every spec in the suite as an error. Note this was
+		// invisible: `npm run lint` is `eslint src`, so `tests/` is never linted by
+		// CI and the error only appears when a file is linted by path.
+		files: ['tests/**/*.js', 'tests/**/*.ts'],
+		rules: {
+			'n/no-unpublished-import': 'off',
+		},
 	},
-}])
+	// `eslint-config-prettier` LAST OF ALL, and it has to be: it only turns rules
+	// OFF — every stylistic rule prettier now owns (indent, quotes,
+	// operator-linebreak, comma-dangle…). Anything spread after it would switch
+	// some of them back on, and eslint and prettier would then demand opposite
+	// things — the unfixable state this fleet already hit once with php-cs-fixer
+	// and PHPCS.
+	//
+	// It disables no CORRECTNESS rule: the `vue/no-deprecated-*` family and every
+	// other non-stylistic rule above stay present and ON, because prettier has no
+	// opinion about them. `indent` is now off HERE and enforced by prettier's
+	// `useTabs: true` instead — the same tab, from the tool that also covers CSS
+	// and SCSS, which @nextcloud/stylelint-config no longer does.
+	require('eslint-config-prettier'),
+])

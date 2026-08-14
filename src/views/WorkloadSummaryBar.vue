@@ -4,9 +4,14 @@
 -->
 <template>
 	<div v-if="handlers.length > 0" class="workload-summary">
-		<span class="workload-summary__title">{{ t('procest', 'Team workload') }}</span>
+		<span class="workload-summary__title">{{
+			t('procest', 'Team workload')
+		}}</span>
 		<ul class="workload-summary__list">
-			<li v-for="row in handlers" :key="row.handler" class="workload-summary__row">
+			<li
+				v-for="row in handlers"
+				:key="row.handler"
+				class="workload-summary__row">
 				<span class="workload-summary__handler">{{ row.handler }}</span>
 				<span class="workload-summary__bar-track">
 					<span
@@ -43,7 +48,10 @@ export default {
 	computed: {
 		/** The highest open-case count across all handlers, used to scale bars. */
 		maxCount() {
-			return this.handlers.reduce((max, row) => Math.max(max, row.openCaseCount || 0), 0)
+			return this.handlers.reduce(
+				(max, row) => Math.max(max, row.openCaseCount || 0),
+				0,
+			)
 		},
 	},
 

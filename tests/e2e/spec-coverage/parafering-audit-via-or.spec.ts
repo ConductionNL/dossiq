@@ -36,7 +36,6 @@ function registerConfig(): { register: string; voorstelSchema: string } {
 }
 
 test.describe('Parafering audit via OR — spec coverage', () => {
-
 	// @e2e parafering-audit-via-or::approved-transition-creates-or-audit-entry
 	// @e2e parafering-audit-via-or::returned-transition-creates-or-audit-entry
 	test('parafeerroute transitions are recorded as OR audit entries (procest.parafering.*)', async () => {
@@ -48,7 +47,9 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 		// On a fresh instance there may be no parafeerroute transitions yet; the
 		// contract under test is that the endpoint exists and returns a list shape
 		// (never the removed in-app token/validator path).
-		const res = await ctx.get(`${OR_API}/audit-trails`, { failOnStatusCode: false })
+		const res = await ctx.get(`${OR_API}/audit-trails`, {
+			failOnStatusCode: false,
+		})
 		expect([200, 401, 403, 404]).toContain(res.status())
 		await ctx.dispose()
 	})
@@ -61,7 +62,10 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 		// deterministically covered by ParaferingAuditListenerTest; here we
 		// assert the source contract is wired: the listener references
 		// AuditTrailMapper and builds the documented context keys.
-		const listener = resolve(REPO_ROOT, 'lib/Listener/ParaferingAuditListener.php')
+		const listener = resolve(
+			REPO_ROOT,
+			'lib/Listener/ParaferingAuditListener.php',
+		)
 		const src = readFileSync(listener, 'utf8')
 		expect(src).toContain('createAuditTrailEntry')
 		expect(src).toContain('parafeerrouteId')
@@ -71,7 +75,10 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 
 	// @e2e parafering-audit-via-or::no-new-paraferingauditentry-objects-created-after-migration
 	test('the listener no longer writes paraferingAuditEntry objects', async () => {
-		const listener = resolve(REPO_ROOT, 'lib/Listener/ParaferingAuditListener.php')
+		const listener = resolve(
+			REPO_ROOT,
+			'lib/Listener/ParaferingAuditListener.php',
+		)
 		const src = readFileSync(listener, 'utf8')
 		// No ObjectService::saveObject write path in the audit listener anymore.
 		expect(src).not.toContain('saveObject')
@@ -89,7 +96,14 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 		expect(text).toContain('"deprecated": true')
 		expect(text).toContain('deprecationNote')
 		// And the read/export path is still resolvable (config + export controller present).
-		expect(existsSync(resolve(REPO_ROOT, 'lib/Controller/ParaferingAuditExportController.php'))).toBe(true)
+		expect(
+			existsSync(
+				resolve(
+					REPO_ROOT,
+					'lib/Controller/ParaferingAuditExportController.php',
+				),
+			),
+		).toBe(true)
 		expect(json).toBeTruthy()
 	})
 
@@ -102,9 +116,12 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 		})
 		const cfg = registerConfig()
 		// Query by an objectUuid filter — the documented discovery contract.
-		const res = await ctx.get(`${OR_API}/audit-trails?objectUuid=__none__&register=${cfg.register}`, {
-			failOnStatusCode: false,
-		})
+		const res = await ctx.get(
+			`${OR_API}/audit-trails?objectUuid=__none__&register=${cfg.register}`,
+			{
+				failOnStatusCode: false,
+			},
+		)
 		// Endpoint must exist (not the removed in-app path). Empty result is fine.
 		expect([200, 401, 403, 404]).toContain(res.status())
 		await ctx.dispose()
@@ -112,8 +129,18 @@ test.describe('Parafering audit via OR — spec coverage', () => {
 
 	// @e2e parafering-audit-via-or::validator-file-absent-after-migration
 	test('the in-app append-only validator has been removed', async () => {
-		expect(existsSync(resolve(REPO_ROOT, 'lib/Validator/ParaferingAuditAppendOnlyValidator.php'))).toBe(false)
-		const app = readFileSync(resolve(REPO_ROOT, 'lib/AppInfo/Application.php'), 'utf8')
+		expect(
+			existsSync(
+				resolve(
+					REPO_ROOT,
+					'lib/Validator/ParaferingAuditAppendOnlyValidator.php',
+				),
+			),
+		).toBe(false)
+		const app = readFileSync(
+			resolve(REPO_ROOT, 'lib/AppInfo/Application.php'),
+			'utf8',
+		)
 		expect(app).not.toContain('ParaferingAuditAppendOnlyValidator')
 	})
 

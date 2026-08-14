@@ -21,14 +21,10 @@
 		<!-- Header -->
 		<div class="workflow-node__header">
 			<span class="workflow-node__name">{{ status.name }}</span>
-			<span
-				v-if="steps.length > 0"
-				class="workflow-node__badge">
+			<span v-if="steps.length > 0" class="workflow-node__badge">
 				{{ steps.length }}
 			</span>
-			<span
-				v-if="status.isFinal"
-				class="workflow-node__final-badge">
+			<span v-if="status.isFinal" class="workflow-node__final-badge">
 				{{ t('procest', 'Final') }}
 			</span>
 
@@ -39,7 +35,9 @@
 			<NcActions
 				class="workflow-node__actions"
 				:inline="0"
-				:aria-label="t('procest', 'Actions for status {name}', { name: status.name })"
+				:aria-label="
+					t('procest', 'Actions for status {name}', { name: status.name })
+				"
 				@click.stop
 				@keydown.stop>
 				<NcActionButton
@@ -52,7 +50,11 @@
 					v-for="transition in outgoingTransitions"
 					:key="'disconnect-' + transition.id"
 					@click="$emit('keyboard-disconnect', transition.id)">
-					{{ t('procest', 'Disconnect from {name}', { name: targetName(transition.toStatus) }) }}
+					{{
+						t('procest', 'Disconnect from {name}', {
+							name: targetName(transition.toStatus),
+						})
+					}}
 				</NcActionButton>
 				<NcActionButton @click="$emit('add-step')">
 					{{ t('procest', 'Add step') }}
@@ -64,9 +66,7 @@
 		</div>
 
 		<!-- Steps list -->
-		<div
-			v-if="steps.length > 0"
-			class="workflow-node__steps">
+		<div v-if="steps.length > 0" class="workflow-node__steps">
 			<div
 				v-for="step in steps"
 				:key="step.id"
@@ -91,9 +91,7 @@
 		</div>
 
 		<!-- Add step button -->
-		<button
-			class="workflow-node__add-step"
-			@click.stop="$emit('add-step')">
+		<button class="workflow-node__add-step" @click.stop="$emit('add-step')">
 			+ {{ t('procest', 'Add step') }}
 		</button>
 
@@ -142,8 +140,15 @@ export default {
 		},
 	},
 	emits: [
-		'select', 'drag-start', 'connection-start', 'connection-end', 'step-click',
-		'add-step', 'keyboard-connect', 'keyboard-disconnect', 'delete-status',
+		'select',
+		'drag-start',
+		'connection-start',
+		'connection-end',
+		'step-click',
+		'add-step',
+		'keyboard-connect',
+		'keyboard-disconnect',
+		'delete-status',
 	],
 	data() {
 		return {
@@ -168,7 +173,9 @@ export default {
 		 */
 		/** @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas */
 		connectableStatuses() {
-			const connectedIds = new Set(this.outgoingTransitions.map((t) => t.toStatus))
+			const connectedIds = new Set(
+				this.outgoingTransitions.map((t) => t.toStatus),
+			)
 			return this.otherStatuses.filter((s) => !connectedIds.has(s.id))
 		},
 	},
@@ -184,7 +191,9 @@ export default {
 		 * @spec openspec/specs/visual-workflow-editor/spec.md#requirement-keyboard-operable-canvas
 		 */
 		targetName(statusId) {
-			return this.otherStatuses.find((s) => s.id === statusId)?.name || statusId
+			return (
+				this.otherStatuses.find((s) => s.id === statusId)?.name || statusId
+			)
 		},
 
 		/**
@@ -286,7 +295,8 @@ export default {
 	gap: 8px;
 	padding: 8px 12px;
 	background: var(--color-background-dark);
-	border-radius: var(--border-radius-large, 8px) var(--border-radius-large, 8px) 0 0;
+	border-radius: var(--border-radius-large, 8px) var(--border-radius-large, 8px) 0
+		0;
 }
 
 .workflow-node__actions {

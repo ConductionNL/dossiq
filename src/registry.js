@@ -181,13 +181,13 @@ const registry = {
 	CasesOnMapView: {
 		kind: 'page',
 		component: CasesOnMapView,
-		_note: 'Full-screen multi-object cases-on-map overview. Markers come from OpenRegister\'s page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib\'s CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).',
+		_note: "Full-screen multi-object cases-on-map overview. Markers come from OpenRegister's page-level maps-overview surface (RBAC-scoped, OR #154) and render through the lib's CnMapWidget — no bespoke Leaflet/WMS/WFS plumbing (ADR-022).",
 	},
 
 	DoorlooptijdView: {
 		kind: 'page',
 		component: DoorlooptijdView,
-		_note: 'SLA / processing-time dashboard. SLA maths stays in-app (doorlooptijdHelpers.js); charts render through OR\'s analytics-series leaf surface via the lib CnChartWidget (ADR-022) — no bespoke chart library.',
+		_note: "SLA / processing-time dashboard. SLA maths stays in-app (doorlooptijdHelpers.js); charts render through OR's analytics-series leaf surface via the lib CnChartWidget (ADR-022) — no bespoke chart library.",
 	},
 
 	// --- Workflow Board — Kanban with drag-to-advance status transitions. ---
@@ -222,7 +222,7 @@ const registry = {
 	VerwerkingenOverviewView: {
 		kind: 'page',
 		component: VerwerkingenOverviewView,
-		_note: 'FG/admin window on OR\'s processing-activity register: catalogue review status, unclassified counter (OR-PA-4), inzageverzoek export entry (OR-PA-7). OR enforces FG access fail-closed.',
+		_note: "FG/admin window on OR's processing-activity register: catalogue review status, unclassified counter (OR-PA-4), inzageverzoek export entry (OR-PA-7). OR enforces FG access fail-closed.",
 	},
 
 	// --- Initiator selection + display (brp-kvk-register-sets). ---
@@ -380,7 +380,7 @@ const registry = {
 	CaseNotesTab: {
 		kind: 'page',
 		component: CaseNotesTab,
-		_note: 'Mention-aware notes sidebar tab: wraps the library CnNotesTab (via leafTab(\'notes\')) and POSTs mention payloads to /api/notes/mention. Zero note/mention UI logic reimplemented — see CaseNotesTab.vue.',
+		_note: "Mention-aware notes sidebar tab: wraps the library CnNotesTab (via leafTab('notes')) and POSTs mention payloads to /api/notes/mention. Zero note/mention UI logic reimplemented — see CaseNotesTab.vue.",
 	},
 	// --- Sharing/transfer sidebar tab (federated-case-collaboration). ---
 	// Wires the previously-orphaned ShareTab/CreateShareDialog/

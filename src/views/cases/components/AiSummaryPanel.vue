@@ -3,7 +3,11 @@
 		<div class="ai-summary-panel__header">
 			<h4>{{ t('procest', 'AI Summary') }}</h4>
 			<NcButton :disabled="loading" @click="generate">
-				{{ loading ? t('procest', 'Generating...') : t('procest', 'Generate') }}
+				{{
+					loading
+						? t('procest', 'Generating...')
+						: t('procest', 'Generate')
+				}}
 			</NcButton>
 		</div>
 
@@ -34,7 +38,11 @@ export default {
 	components: { NcButton, NcLoadingIcon, NcNoteCard },
 	props: {
 		caseId: { type: String, required: true },
-		type: { type: String, default: 'case', validator: (v) => ['case', 'document', 'timeline'].includes(v) },
+		type: {
+			type: String,
+			default: 'case',
+			validator: (v) => ['case', 'document', 'timeline'].includes(v),
+		},
 		documentId: { type: String, default: null },
 	},
 	emits: ['save-note'],
@@ -48,10 +56,16 @@ export default {
 			this.loading = true
 			this.error = null
 			try {
-				const response = await summarize(this.caseId, this.type, this.documentId)
+				const response = await summarize(
+					this.caseId,
+					this.type,
+					this.documentId,
+				)
 				this.summary = response.summary || ''
 			} catch (e) {
-				this.error = e.response?.data?.error || t('procest', 'Summary generation failed')
+				this.error =
+					e.response?.data?.error
+					|| t('procest', 'Summary generation failed')
 			} finally {
 				this.loading = false
 			}

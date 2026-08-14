@@ -22,7 +22,8 @@ import { generateUrl } from '@nextcloud/router'
  *
  * @type {string}
  */
-export const CASE_EXPORT_ENDPOINT = '/apps/openregister/api/objects/procest/case/export'
+export const CASE_EXPORT_ENDPOINT =
+	'/apps/openregister/api/objects/procest/case/export'
 
 /**
  * Build the OpenRegister export-leaf URL for the case list.

@@ -64,7 +64,12 @@ describe('assistantErrorMessage', () => {
 
 	it('keys guardrail blocks off the stable errorCode, not message text', async () => {
 		const { assistantErrorMessage } = await importHelpers()
-		const message = assistantErrorMessage(errorWith(422, { errorCode: 'guardrail_blocked', message: 'whatever backend text' }))
+		const message = assistantErrorMessage(
+			errorWith(422, {
+				errorCode: 'guardrail_blocked',
+				message: 'whatever backend text',
+			}),
+		)
 		expect(message).toMatch(/guardrail/i)
 	})
 

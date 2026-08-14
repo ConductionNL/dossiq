@@ -19,8 +19,8 @@ import { validateWorkflowGraph } from '../../utils/workflowGraphValidation.js'
  */
 function generateUUID() {
 	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-		const r = Math.random() * 16 | 0
-		const v = c === 'x' ? r : (r & 0x3 | 0x8)
+		const r = (Math.random() * 16) | 0
+		const v = c === 'x' ? r : (r & 0x3) | 0x8
 		return v.toString(16)
 	})
 }
@@ -128,11 +128,14 @@ export const useWorkflowStore = defineStore('workflow', {
 			this.error = null
 			try {
 				const objectStore = useObjectStore()
-				const results = await objectStore.fetchCollection('workflowTemplate', {
-					'_filters[caseType]': caseTypeId,
-					_limit: 100,
-					_order: { version: 'desc' },
-				})
+				const results = await objectStore.fetchCollection(
+					'workflowTemplate',
+					{
+						'_filters[caseType]': caseTypeId,
+						_limit: 100,
+						_order: { version: 'desc' },
+					},
+				)
 				this.versions = results || []
 				return this.versions
 			} catch (err) {
@@ -158,7 +161,10 @@ export const useWorkflowStore = defineStore('workflow', {
 			this.error = null
 			try {
 				const objectStore = useObjectStore()
-				const template = await objectStore.fetchObject('workflowTemplate', templateId)
+				const template = await objectStore.fetchObject(
+					'workflowTemplate',
+					templateId,
+				)
 				this.currentTemplate = template
 				return template
 			} catch (err) {
@@ -184,12 +190,15 @@ export const useWorkflowStore = defineStore('workflow', {
 			this.error = null
 			try {
 				const objectStore = useObjectStore()
-				const results = await objectStore.fetchCollection('workflowTemplate', {
-					'_filters[caseType]': caseTypeId,
-					'_filters[isActive]': true,
-					'_filters[isDraft]': false,
-					_limit: 1,
-				})
+				const results = await objectStore.fetchCollection(
+					'workflowTemplate',
+					{
+						'_filters[caseType]': caseTypeId,
+						'_filters[isActive]': true,
+						'_filters[isDraft]': false,
+						_limit: 1,
+					},
+				)
 				const active = results && results.length > 0 ? results[0] : null
 				return active
 			} catch (err) {
@@ -343,18 +352,25 @@ export const useWorkflowStore = defineStore('workflow', {
 
 			this.loading = true
 			try {
-				const response = await fetch(generateUrl(`/apps/procest/api/workflow-definitions/${templateId}/publish`), {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: OC.requestToken,
-						'OCS-APIREQUEST': 'true',
+				const response = await fetch(
+					generateUrl(
+						`/apps/procest/api/workflow-definitions/${templateId}/publish`,
+					),
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							requesttoken: OC.requestToken,
+							'OCS-APIREQUEST': 'true',
+						},
 					},
-				})
+				)
 
 				const body = await response.json().catch(() => null)
 				if (!response.ok || !body?.success) {
-					this.error = body?.error || t('procest', 'Could not publish workflow definition')
+					this.error =
+						body?.error
+						|| t('procest', 'Could not publish workflow definition')
 					return null
 				}
 
@@ -384,7 +400,10 @@ export const useWorkflowStore = defineStore('workflow', {
 			this.error = null
 			try {
 				const objectStore = useObjectStore()
-				const source = await objectStore.fetchObject('workflowTemplate', sourceTemplateId)
+				const source = await objectStore.fetchObject(
+					'workflowTemplate',
+					sourceTemplateId,
+				)
 				if (!source) {
 					this.error = t('procest', 'Source workflow template not found')
 					return null
@@ -439,16 +458,24 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param caseDocuments
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
-		computeAvailableTransitions(caseData, userRoles, workflow, caseTasks, caseDocuments) {
+		computeAvailableTransitions(
+			caseData,
+			userRoles,
+			workflow,
+			caseTasks,
+			caseDocuments,
+		) {
 			if (!workflow?.transitions) return []
 
-			const transitions = typeof workflow.transitions === 'string'
-				? JSON.parse(workflow.transitions)
-				: workflow.transitions
+			const transitions =
+				typeof workflow.transitions === 'string'
+					? JSON.parse(workflow.transitions)
+					: workflow.transitions
 
-			const steps = typeof workflow.steps === 'string'
-				? JSON.parse(workflow.steps)
-				: (workflow.steps || [])
+			const steps =
+				typeof workflow.steps === 'string'
+					? JSON.parse(workflow.steps)
+					: workflow.steps || []
 
 			const currentStatus = caseData.status
 
@@ -456,7 +483,8 @@ export const useWorkflowStore = defineStore('workflow', {
 				.filter((t) => t.fromStatus === currentStatus)
 				.map((transition) => {
 					// Check role access
-					const roleAllowed = !transition.allowedRoles
+					const roleAllowed =
+						!transition.allowedRoles
 						|| transition.allowedRoles.length === 0
 						|| transition.allowedRoles.some((r) => userRoles.includes(r))
 
@@ -481,12 +509,14 @@ export const useWorkflowStore = defineStore('workflow', {
 						caseTasks,
 					)
 
-					const allGuardsMet = guardResults.every((g) => g.met)
-						&& requiredStepsResult.met
+					const allGuardsMet =
+						guardResults.every((g) => g.met) && requiredStepsResult.met
 
 					const unmetConditions = [
 						...guardResults.filter((g) => !g.met).map((g) => g.message),
-						...(requiredStepsResult.met ? [] : requiredStepsResult.messages),
+						...(requiredStepsResult.met
+							? []
+							: requiredStepsResult.messages),
 					]
 
 					return {
@@ -518,20 +548,30 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param currentStatus
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
-		evaluateGuards(guards, caseData, caseTasks, caseDocuments, steps, currentStatus) {
+		evaluateGuards(
+			guards,
+			caseData,
+			caseTasks,
+			caseDocuments,
+			steps,
+			currentStatus,
+		) {
 			return guards.map((guard) => {
 				switch (guard.type) {
-				case 'checklist':
-					return this.evaluateChecklistGuard(guard, caseTasks)
-				case 'requiredField':
-					return this.evaluateRequiredFieldGuard(guard, caseData)
-				case 'requiredDocument':
-					return this.evaluateRequiredDocumentGuard(guard, caseDocuments)
-				case 'roleGuard':
-					// Role guards are handled at the transition level (filter)
-					return { met: true, message: '' }
-				default:
-					return { met: true, message: '' }
+					case 'checklist':
+						return this.evaluateChecklistGuard(guard, caseTasks)
+					case 'requiredField':
+						return this.evaluateRequiredFieldGuard(guard, caseData)
+					case 'requiredDocument':
+						return this.evaluateRequiredDocumentGuard(
+							guard,
+							caseDocuments,
+						)
+					case 'roleGuard':
+						// Role guards are handled at the transition level (filter)
+						return { met: true, message: '' }
+					default:
+						return { met: true, message: '' }
 				}
 			})
 		},
@@ -552,24 +592,30 @@ export const useWorkflowStore = defineStore('workflow', {
 			// Find tasks with checklists and check completion
 			const tasksWithChecklists = caseTasks.filter((task) => {
 				if (!task.checklist) return false
-				const checklist = typeof task.checklist === 'string'
-					? JSON.parse(task.checklist)
-					: task.checklist
+				const checklist =
+					typeof task.checklist === 'string'
+						? JSON.parse(task.checklist)
+						: task.checklist
 				return checklist.length > 0
 			})
 
 			for (const task of tasksWithChecklists) {
-				const checklist = typeof task.checklist === 'string'
-					? JSON.parse(task.checklist)
-					: task.checklist
+				const checklist =
+					typeof task.checklist === 'string'
+						? JSON.parse(task.checklist)
+						: task.checklist
 				const unchecked = checklist.filter((item) => !item.checked)
 				if (unchecked.length > 0) {
 					return {
 						met: false,
-						message: t('procest', '{count} checklist item(s) not completed: {items}', {
-							count: unchecked.length,
-							items: unchecked.map((i) => i.label).join(', '),
-						}),
+						message: t(
+							'procest',
+							'{count} checklist item(s) not completed: {items}',
+							{
+								count: unchecked.length,
+								items: unchecked.map((i) => i.label).join(', '),
+							},
+						),
 					}
 				}
 			}
@@ -595,7 +641,9 @@ export const useWorkflowStore = defineStore('workflow', {
 			if (!value || (typeof value === 'string' && value.trim() === '')) {
 				return {
 					met: false,
-					message: t('procest', 'Required field missing: {field}', { field: fieldName }),
+					message: t('procest', 'Required field missing: {field}', {
+						field: fieldName,
+					}),
 				}
 			}
 			return { met: true, message: '' }
@@ -616,12 +664,15 @@ export const useWorkflowStore = defineStore('workflow', {
 		evaluateRequiredDocumentGuard(guard, caseDocuments) {
 			const requiredType = guard.documentTypeName
 			const hasDocument = caseDocuments.some(
-				(doc) => doc.documentType === requiredType || doc.title === requiredType,
+				(doc) =>
+					doc.documentType === requiredType || doc.title === requiredType,
 			)
 			if (!hasDocument) {
 				return {
 					met: false,
-					message: t('procest', 'Required document missing: {type}', { type: requiredType }),
+					message: t('procest', 'Required document missing: {type}', {
+						type: requiredType,
+					}),
 				}
 			}
 			return { met: true, message: '' }
@@ -653,7 +704,9 @@ export const useWorkflowStore = defineStore('workflow', {
 				)
 				if (!matchingTask || matchingTask.status !== 'completed') {
 					messages.push(
-						t('procest', 'Required step not completed: {step}', { step: step.title }),
+						t('procest', 'Required step not completed: {step}', {
+							step: step.title,
+						}),
 					)
 				}
 			}
@@ -685,36 +738,52 @@ export const useWorkflowStore = defineStore('workflow', {
 			for (const action of actions) {
 				try {
 					switch (action.type) {
-					case 'sendEmail':
-						await this.dispatchEmailAction(action, caseData, transition)
-						results.push({ action: action.type, success: true })
-						break
-					case 'createTask':
-						await this.dispatchCreateTaskAction(action, caseData)
-						results.push({ action: action.type, success: true })
-						break
-					case 'createSubCase':
-						await this.dispatchCreateSubCaseAction(action, caseData)
-						results.push({ action: action.type, success: true })
-						break
-					case 'webhook':
-						await this.dispatchWebhookAction(action, caseData, transition)
-						results.push({ action: action.type, success: true })
-						break
-					case 'setField':
-						await this.dispatchSetFieldAction(action, caseData)
-						results.push({ action: action.type, success: true })
-						break
-					case 'notify':
-						await this.dispatchNotifyAction(action, caseData)
-						results.push({ action: action.type, success: true })
-						break
-					default:
-						results.push({ action: action.type, success: false, error: 'Unknown action type' })
+						case 'sendEmail':
+							await this.dispatchEmailAction(
+								action,
+								caseData,
+								transition,
+							)
+							results.push({ action: action.type, success: true })
+							break
+						case 'createTask':
+							await this.dispatchCreateTaskAction(action, caseData)
+							results.push({ action: action.type, success: true })
+							break
+						case 'createSubCase':
+							await this.dispatchCreateSubCaseAction(action, caseData)
+							results.push({ action: action.type, success: true })
+							break
+						case 'webhook':
+							await this.dispatchWebhookAction(
+								action,
+								caseData,
+								transition,
+							)
+							results.push({ action: action.type, success: true })
+							break
+						case 'setField':
+							await this.dispatchSetFieldAction(action, caseData)
+							results.push({ action: action.type, success: true })
+							break
+						case 'notify':
+							await this.dispatchNotifyAction(action, caseData)
+							results.push({ action: action.type, success: true })
+							break
+						default:
+							results.push({
+								action: action.type,
+								success: false,
+								error: 'Unknown action type',
+							})
 					}
 				} catch (err) {
 					console.error(`Workflow action ${action.type} failed:`, err)
-					results.push({ action: action.type, success: false, error: err.message })
+					results.push({
+						action: action.type,
+						success: false,
+						error: err.message,
+					})
 				}
 			}
 			return results
@@ -736,11 +805,20 @@ export const useWorkflowStore = defineStore('workflow', {
 		 */
 		async dispatchEmailAction(action, caseData, transition) {
 			// Delegate to n8n webhook for email sending
-			const webhookUrl = action.webhookUrl || '/apps/procest/api/workflow/actions/email'
+			const webhookUrl =
+				action.webhookUrl || '/apps/procest/api/workflow/actions/email'
 			const body = {
 				recipient: action.recipient,
-				subject: this.interpolateTemplate(action.subject || '', caseData, transition),
-				template: this.interpolateTemplate(action.template || '', caseData, transition),
+				subject: this.interpolateTemplate(
+					action.subject || '',
+					caseData,
+					transition,
+				),
+				template: this.interpolateTemplate(
+					action.template || '',
+					caseData,
+					transition,
+				),
 				caseId: caseData.id,
 				caseTitle: caseData.title,
 			}
@@ -799,7 +877,11 @@ export const useWorkflowStore = defineStore('workflow', {
 		async dispatchCreateSubCaseAction(action, caseData) {
 			const objectStore = useObjectStore()
 			await objectStore.saveObject('case', {
-				title: action.title || t('procest', 'Sub-case of {title}', { title: caseData.title }),
+				title:
+					action.title
+					|| t('procest', 'Sub-case of {title}', {
+						title: caseData.title,
+					}),
 				caseType: action.caseTypeId,
 				parentCase: caseData.id,
 				priority: caseData.priority || 'normal',
@@ -834,10 +916,10 @@ export const useWorkflowStore = defineStore('workflow', {
 						status: caseData.status,
 						transition: transition
 							? {
-								label: transition.label,
-								fromStatus: transition.fromStatus,
-								toStatus: transition.toStatus,
-							}
+									label: transition.label,
+									fromStatus: transition.fromStatus,
+									toStatus: transition.toStatus,
+								}
 							: null,
 					}),
 					signal: controller.signal,
@@ -884,22 +966,25 @@ export const useWorkflowStore = defineStore('workflow', {
 		 */
 		async dispatchNotifyAction(action, caseData) {
 			// Use Nextcloud OCS notification API
-			await fetch('/ocs/v2.php/apps/admin_notifications/api/v1/notifications/admin', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					requesttoken: OC.requestToken,
-					'OCS-APIREQUEST': 'true',
+			await fetch(
+				'/ocs/v2.php/apps/admin_notifications/api/v1/notifications/admin',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						requesttoken: OC.requestToken,
+						'OCS-APIREQUEST': 'true',
+					},
+					body: JSON.stringify({
+						shortMessage: this.interpolateTemplate(
+							action.message || '',
+							caseData,
+							null,
+						),
+						longMessage: '',
+					}),
 				},
-				body: JSON.stringify({
-					shortMessage: this.interpolateTemplate(
-						action.message || '',
-						caseData,
-						null,
-					),
-					longMessage: '',
-				}),
-			})
+			)
 		},
 
 		/**
@@ -981,24 +1066,34 @@ export const useWorkflowStore = defineStore('workflow', {
 		 */
 		exportWorkflow(template, statusTypes, roleTypes, docTypes) {
 			const statusMap = {}
-			statusTypes.forEach((s) => { statusMap[s.id] = s.name })
+			statusTypes.forEach((s) => {
+				statusMap[s.id] = s.name
+			})
 			const roleMap = {}
-			roleTypes.forEach((r) => { roleMap[r.id] = r.name })
+			roleTypes.forEach((r) => {
+				roleMap[r.id] = r.name
+			})
 			const docMap = {}
-			docTypes.forEach((d) => { docMap[d.id] = d.name })
+			docTypes.forEach((d) => {
+				docMap[d.id] = d.name
+			})
 
-			const steps = typeof template.steps === 'string'
-				? JSON.parse(template.steps)
-				: (template.steps || [])
-			const transitions = typeof template.transitions === 'string'
-				? JSON.parse(template.transitions)
-				: (template.transitions || [])
+			const steps =
+				typeof template.steps === 'string'
+					? JSON.parse(template.steps)
+					: template.steps || []
+			const transitions =
+				typeof template.transitions === 'string'
+					? JSON.parse(template.transitions)
+					: template.transitions || []
 
 			// Replace UUIDs with names for portability
 			const portableSteps = steps.map((s) => ({
 				...s,
 				status: statusMap[s.status] || s.status,
-				assigneeRole: s.assigneeRole ? (roleMap[s.assigneeRole] || s.assigneeRole) : null,
+				assigneeRole: s.assigneeRole
+					? roleMap[s.assigneeRole] || s.assigneeRole
+					: null,
 			}))
 
 			const portableTransitions = transitions.map((t) => ({
@@ -1042,18 +1137,30 @@ export const useWorkflowStore = defineStore('workflow', {
 		 * @param docTypes
 		 * @spec openspec/specs/workflow-definition-model/spec.md
 		 */
-		async importWorkflow(importData, caseTypeId, statusTypes, roleTypes, docTypes) {
+		async importWorkflow(
+			importData,
+			caseTypeId,
+			statusTypes,
+			roleTypes,
+			docTypes,
+		) {
 			// Build reverse maps (name -> UUID)
 			const statusNameMap = {}
-			statusTypes.forEach((s) => { statusNameMap[s.name] = s.id })
+			statusTypes.forEach((s) => {
+				statusNameMap[s.name] = s.id
+			})
 			const roleNameMap = {}
-			roleTypes.forEach((r) => { roleNameMap[r.name] = r.id })
+			roleTypes.forEach((r) => {
+				roleNameMap[r.name] = r.id
+			})
 
 			// Check for missing types
-			const missingStatuses = (importData.manifest?.statusTypes || [])
-				.filter((name) => !statusNameMap[name])
-			const missingRoles = (importData.manifest?.roleTypes || [])
-				.filter((name) => !roleNameMap[name])
+			const missingStatuses = (importData.manifest?.statusTypes || []).filter(
+				(name) => !statusNameMap[name],
+			)
+			const missingRoles = (importData.manifest?.roleTypes || []).filter(
+				(name) => !roleNameMap[name],
+			)
 
 			if (missingStatuses.length > 0 || missingRoles.length > 0) {
 				return {
@@ -1071,7 +1178,9 @@ export const useWorkflowStore = defineStore('workflow', {
 				...s,
 				id: generateUUID(),
 				status: statusNameMap[s.status] || s.status,
-				assigneeRole: s.assigneeRole ? (roleNameMap[s.assigneeRole] || s.assigneeRole) : null,
+				assigneeRole: s.assigneeRole
+					? roleNameMap[s.assigneeRole] || s.assigneeRole
+					: null,
 			}))
 
 			const transitions = (importData.transitions || []).map((t) => ({
@@ -1159,7 +1268,9 @@ export const useWorkflowStore = defineStore('workflow', {
 				const siblingSteps = steps
 					.filter((s) => s.status === removed.status)
 					.sort((a, b) => a.order - b.order)
-				siblingSteps.forEach((s, i) => { s.order = i + 1 })
+				siblingSteps.forEach((s, i) => {
+					s.order = i + 1
+				})
 			}
 
 			if (this.currentTemplate) {

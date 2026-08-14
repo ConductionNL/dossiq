@@ -1,7 +1,12 @@
 <template>
 	<div class="mandaat-settings">
 		<NcNoteCard type="info">
-			{{ t('procest', 'The mandate matrix (Awb art. 10:3) is being delivered in the mandaat-matrix chain. This panel will host role hierarchy, Decidesk imports and waarnemer assignments.') }}
+			{{
+				t(
+					'procest',
+					'The mandate matrix (Awb art. 10:3) is being delivered in the mandaat-matrix chain. This panel will host role hierarchy, Decidesk imports and waarnemer assignments.',
+				)
+			}}
 		</NcNoteCard>
 
 		<div class="setting-row">
@@ -14,13 +19,20 @@
 				:disabled="!writable"
 				:placeholder="'decidesk-default'" />
 			<p class="setting-help">
-				{{ t('procest', 'Identifier of the openconnector connection used to fetch mandateringsbesluiten from Decidesk.') }}
+				{{
+					t(
+						'procest',
+						'Identifier of the openconnector connection used to fetch mandateringsbesluiten from Decidesk.',
+					)
+				}}
 			</p>
 		</div>
 
 		<div class="setting-row">
 			<label for="mandaat_default_extension_days">
-				{{ t('procest', 'Default extension days for waarnemer assignments') }}
+				{{
+					t('procest', 'Default extension days for waarnemer assignments')
+				}}
 			</label>
 			<NcInputField
 				id="mandaat_default_extension_days"
@@ -29,28 +41,37 @@
 				:disabled="!writable"
 				:placeholder="'14'" />
 			<p class="setting-help">
-				{{ t('procest', 'Used as a hint when a waarnemer assignment is created without an explicit end date.') }}
+				{{
+					t(
+						'procest',
+						'Used as a hint when a waarnemer assignment is created without an explicit end date.',
+					)
+				}}
 			</p>
 		</div>
 
-		<NcCheckboxRadioSwitch
-			v-model="autoFinalizeApproved"
-			:disabled="!writable">
-			{{ t('procest', 'Automatically activate a mandate import after approval') }}
+		<NcCheckboxRadioSwitch v-model="autoFinalizeApproved" :disabled="!writable">
+			{{
+				t(
+					'procest',
+					'Automatically activate a mandate import after approval',
+				)
+			}}
 		</NcCheckboxRadioSwitch>
 
 		<NcNoteCard v-if="error" type="error">
 			{{ error }}
 		</NcNoteCard>
 
-		<NcButton
-			type="primary"
-			:disabled="!writable || saving"
-			@click="save">
+		<NcButton type="primary" :disabled="!writable || saving" @click="save">
 			<template #icon>
 				<NcLoadingIcon v-if="saving" :size="20" />
 			</template>
-			{{ saving ? t('procest', 'Saving...') : t('procest', 'Save mandate matrix settings') }}
+			{{
+				saving
+					? t('procest', 'Saving...')
+					: t('procest', 'Save mandate matrix settings')
+			}}
 		</NcButton>
 
 		<p class="docs-link">
@@ -132,12 +153,18 @@ export default {
 					},
 					body: JSON.stringify({
 						mandaat_decidesk_connection: this.decideskConnection,
-						mandaat_default_extension_days: String(Number(this.defaultExtensionDays)),
-						mandaat_auto_finalize_approved: this.autoFinalizeApproved ? '1' : '0',
+						mandaat_default_extension_days: String(
+							Number(this.defaultExtensionDays),
+						),
+						mandaat_auto_finalize_approved: this.autoFinalizeApproved
+							? '1'
+							: '0',
 					}),
 				})
 				if (!res.ok) {
-					this.error = t('procest', 'Saving failed ({status})', { status: res.status })
+					this.error = t('procest', 'Saving failed ({status})', {
+						status: res.status,
+					})
 				}
 			} catch (e) {
 				this.error = e.message || t('procest', 'Saving failed')

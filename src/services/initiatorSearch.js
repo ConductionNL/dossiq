@@ -31,8 +31,8 @@ export function personDisplayName(naam) {
 	if (!naam) {
 		return ''
 	}
-	return [naam.given_names, naam.name_prefix, naam.surname]
-		.filter(part => !!part && String(part).trim() !== '')
+	return [naam.voornamen, naam.voorvoegsel, naam.geslachtsnaam]
+		.filter((part) => !!part && String(part).trim() !== '')
 		.join(' ')
 }
 
@@ -46,10 +46,14 @@ export function personDisplayName(naam) {
 export function personResult(person) {
 	return {
 		type: 'person',
-		sourceId: person.citizen_service_number || '',
-		displayName: person.displayName || personDisplayName(person.name),
-		detail: [person.birth?.date, person.citizen_service_number && `BSN ${person.citizen_service_number}`]
-			.filter(Boolean).join(' · '),
+		sourceId: person.burgerservicenummer || '',
+		displayName: person.displayName || personDisplayName(person.naam),
+		detail: [
+			person.geboorte?.datum,
+			person.burgerservicenummer && `BSN ${person.burgerservicenummer}`,
+		]
+			.filter(Boolean)
+			.join(' · '),
 		objectId: person.id || person['@self']?.id || null,
 	}
 }
@@ -64,10 +68,11 @@ export function personResult(person) {
 export function companyResult(company) {
 	return {
 		type: 'company',
-		sourceId: company.kvkNumber || '',
-		displayName: company.trade_name || '',
-		detail: [company.rechtsvorm, company.kvkNumber && `KVK ${company.kvkNumber}`]
-			.filter(Boolean).join(' · '),
+		sourceId: company.kvkNummer || '',
+		displayName: company.handelsnaam || '',
+		detail: [company.rechtsvorm, company.kvkNummer && `KVK ${company.kvkNummer}`]
+			.filter(Boolean)
+			.join(' · '),
 		objectId: company.id || company['@self']?.id || null,
 	}
 }
@@ -82,7 +87,12 @@ export function companyResult(company) {
 export function contactResult(contact) {
 	return {
 		type: 'contact',
-		sourceId: contact.id || contact.uid || contact.emailAddresses?.[0] || contact.fullName || '',
+		sourceId:
+			contact.id
+			|| contact.uid
+			|| contact.emailAddresses?.[0]
+			|| contact.fullName
+			|| '',
 		displayName: contact.fullName || contact.id || '',
 		detail: contact.emailAddresses?.[0] || contact.topAction?.title || '',
 		objectId: null,
@@ -121,7 +131,9 @@ export function initiatorProjection(result) {
  */
 export async function searchContacts(query) {
 	try {
-		const { data } = await axios.post(generateUrl('/contactsmenu/contacts'), { filter: query })
+		const { data } = await axios.post(generateUrl('/contactsmenu/contacts'), {
+			filter: query,
+		})
 		const contacts = data?.contacts || []
 		return contacts.map(contactResult)
 	} catch (err) {

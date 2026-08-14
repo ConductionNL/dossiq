@@ -94,10 +94,14 @@ async function voorstelReminder({ actionId, item }) {
 	const steps = (() => {
 		const snap = item && item.routeSnapshot
 		if (!snap) return []
-		try { return typeof snap === 'string' ? JSON.parse(snap) : snap } catch { return [] }
+		try {
+			return typeof snap === 'string' ? JSON.parse(snap) : snap
+		} catch {
+			return []
+		}
 	})()
 	const current = steps.find((s) => s.order === item.currentStep)
-	const actor = current ? (current.label || current.actor || '-') : '-'
+	const actor = current ? current.label || current.actor || '-' : '-'
 	try {
 		await fetch('/apps/procest/api/notifications/parafering-reminder', {
 			method: 'POST',
@@ -106,7 +110,11 @@ async function voorstelReminder({ actionId, item }) {
 				requesttoken: window.OC?.requestToken,
 				'OCS-APIREQUEST': 'true',
 			},
-			body: JSON.stringify({ voorstelId: item.id, actor, onderwerp: item.onderwerp }),
+			body: JSON.stringify({
+				voorstelId: item.id,
+				actor,
+				onderwerp: item.onderwerp,
+			}),
 		})
 	} catch (error) {
 		// eslint-disable-next-line no-console

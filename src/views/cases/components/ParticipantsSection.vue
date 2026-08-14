@@ -184,12 +184,15 @@ export default {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async fetchUsers() {
 			try {
-				const response = await fetch('/ocs/v2.php/cloud/users/details?format=json&limit=100', {
-					headers: {
-						'OCS-APIREQUEST': 'true',
-						requesttoken: OC.requestToken,
+				const response = await fetch(
+					'/ocs/v2.php/cloud/users/details?format=json&limit=100',
+					{
+						headers: {
+							'OCS-APIREQUEST': 'true',
+							requesttoken: OC.requestToken,
+						},
 					},
-				})
+				)
 				if (response.ok) {
 					const data = await response.json()
 					const users = data?.ocs?.data?.users || {}
@@ -209,12 +212,15 @@ export default {
 				const uid = role.participant
 				if (!uid) continue
 				try {
-					const response = await fetch(`/ocs/v2.php/cloud/users/${encodeURIComponent(uid)}?format=json`, {
-						headers: {
-							'OCS-APIREQUEST': 'true',
-							requesttoken: OC.requestToken,
+					const response = await fetch(
+						`/ocs/v2.php/cloud/users/${encodeURIComponent(uid)}?format=json`,
+						{
+							headers: {
+								'OCS-APIREQUEST': 'true',
+								requesttoken: OC.requestToken,
+							},
 						},
-					})
+					)
 					if (response.ok) {
 						const data = await response.json()
 						role._displayName = data?.ocs?.data?.displayname || uid
@@ -314,7 +320,10 @@ export default {
 			// Update the case assignee.
 			const caseData = this.objectStore.getObject('case', this.caseId)
 			if (caseData) {
-				await this.objectStore.saveObject('case', { ...caseData, assignee: user.id })
+				await this.objectStore.saveObject('case', {
+					...caseData,
+					assignee: user.id,
+				})
 			}
 
 			this.cancelReassign()

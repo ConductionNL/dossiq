@@ -15,22 +15,25 @@
 
 		<template v-if="backend && backend.value !== 'local'">
 			<div class="form-group">
-				<NcTextField :model-value="backendUrl"
+				<NcTextField
+					:model-value="backendUrl"
 					:label="t('procest', 'API URL')"
-					@update:model-value="v => backendUrl = v" />
+					@update:model-value="(v) => (backendUrl = v)" />
 			</div>
 			<div class="form-group">
-				<NcPasswordField :model-value="backendApiKey"
+				<NcPasswordField
+					:model-value="backendApiKey"
 					:label="t('procest', 'API Key')"
-					@update:model-value="v => backendApiKey = v" />
+					@update:model-value="(v) => (backendApiKey = v)" />
 			</div>
 		</template>
 
 		<div class="form-group">
-			<NcTextField :model-value="reminderDays"
+			<NcTextField
+				:model-value="reminderDays"
 				:label="t('procest', 'Reminder days before appointment')"
 				type="number"
-				@update:model-value="v => reminderDays = v" />
+				@update:model-value="(v) => (reminderDays = v)" />
 		</div>
 	</div>
 </template>
@@ -44,9 +47,15 @@ export default {
 	components: { NcSelect, NcTextField, NcPasswordField },
 	data() {
 		return {
-			backend: { value: 'local', label: t('procest', 'Local (no external system)') },
+			backend: {
+				value: 'local',
+				label: t('procest', 'Local (no external system)'),
+			},
 			backendOptions: [
-				{ value: 'local', label: t('procest', 'Local (no external system)') },
+				{
+					value: 'local',
+					label: t('procest', 'Local (no external system)'),
+				},
 				{ value: 'jcc', label: t('procest', 'JCC Afspraken') },
 				{ value: 'qmatic', label: t('procest', 'Qmatic Orchestra') },
 			],
@@ -66,7 +75,13 @@ export default {
 </script>
 
 <style scoped>
-.form-group { margin-bottom: 16px; }
+.form-group {
+	margin-bottom: 16px;
+}
 
-.form-group label { display: block; font-weight: 600; margin-bottom: 4px; }
+.form-group label {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 4px;
+}
 </style>

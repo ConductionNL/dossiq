@@ -1,27 +1,40 @@
 <template>
-	<div class="dialog-overlay"
+	<div
+		class="dialog-overlay"
 		role="button"
 		tabindex="0"
 		@click.self="$emit('close')"
 		@keydown.enter.self="$emit('close')"
 		@keydown.space.self.prevent="$emit('close')">
-		<div class="dialog" role="dialog" :aria-label="t('procest', 'New Complaint')">
+		<div
+			class="dialog"
+			role="dialog"
+			:aria-label="t('procest', 'New Complaint')">
 			<h2>{{ t('procest', 'Register New Complaint') }}</h2>
 
 			<div class="form-group">
-				<label for="complaint-create-onderwerp">{{ t('procest', 'Subject') }} *</label>
+				<label for="complaint-create-onderwerp"
+					>{{ t('procest', 'Subject') }} *</label
+				>
 				<NcTextField
 					id="complaint-create-onderwerp"
 					:model-value="form.onderwerp"
 					:error="!!errors.onderwerp"
-					@update:model-value="v => { form.onderwerp = v; errors.onderwerp = '' }" />
+					@update:model-value="
+						(v) => {
+							form.onderwerp = v
+							errors.onderwerp = ''
+						}
+					" />
 				<p v-if="errors.onderwerp" class="form-error">
 					{{ errors.onderwerp }}
 				</p>
 			</div>
 
 			<div class="form-group">
-				<label for="complaint-create-description">{{ t('procest', 'Description') }} *</label>
+				<label for="complaint-create-description"
+					>{{ t('procest', 'Description') }} *</label
+				>
 				<textarea
 					id="complaint-create-description"
 					v-model="form.description"
@@ -34,18 +47,22 @@
 
 			<div class="form-row">
 				<div class="form-group">
-					<label for="complaint-create-klager-naam">{{ t('procest', 'Complainant name') }}</label>
+					<label for="complaint-create-klager-naam">{{
+						t('procest', 'Complainant name')
+					}}</label>
 					<NcTextField
 						id="complaint-create-klager-naam"
 						:model-value="form.klagerNaam"
-						@update:model-value="v => form.klagerNaam = v" />
+						@update:model-value="(v) => (form.klagerNaam = v)" />
 				</div>
 				<div class="form-group">
-					<label for="complaint-create-klager-email">{{ t('procest', 'Email') }}</label>
+					<label for="complaint-create-klager-email">{{
+						t('procest', 'Email')
+					}}</label>
 					<NcTextField
 						id="complaint-create-klager-email"
 						:model-value="form.klagerEmail"
-						@update:model-value="v => form.klagerEmail = v" />
+						@update:model-value="(v) => (form.klagerEmail = v)" />
 				</div>
 			</div>
 
@@ -53,14 +70,14 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Intake channel') }}</label>
 					<NcSelect
-						v-model="form.receipt_channel"
+						v-model="form.ontvangstkanaal"
 						:options="channelOptions"
 						:aria-label-combobox="t('procest', 'Intake channel')" />
 				</div>
 				<div class="form-group">
 					<label>{{ t('procest', 'Priority') }}</label>
 					<NcSelect
-						v-model="form.priority"
+						v-model="form.prioriteit"
 						:options="priorityOptions"
 						:aria-label-combobox="t('procest', 'Priority')" />
 				</div>
@@ -69,7 +86,7 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Category') }}</label>
 				<NcSelect
-					v-model="form.category"
+					v-model="form.categorie"
 					:options="categories"
 					:aria-label-combobox="t('procest', 'Category')"
 					label="name"
@@ -119,9 +136,9 @@ export default {
 				description: '',
 				klagerNaam: '',
 				klagerEmail: '',
-				receipt_channel: null,
-				priority: 'normaal',
-				category: null,
+				ontvangstkanaal: null,
+				prioriteit: 'normaal',
+				categorie: null,
 			},
 			errors: {},
 		}
@@ -131,7 +148,7 @@ export default {
 		channelOptions() {
 			return [
 				{ id: 'balie', label: this.t('procest', 'Counter') },
-				{ id: 'phone', label: this.t('procest', 'Phone') },
+				{ id: 'telefoon', label: this.t('procest', 'Phone') },
 				{ id: 'email', label: this.t('procest', 'Email') },
 				{ id: 'brief', label: this.t('procest', 'Letter') },
 				{ id: 'website', label: this.t('procest', 'Website') },
@@ -156,7 +173,10 @@ export default {
 				this.errors.onderwerp = this.t('procest', 'Subject is required')
 			}
 			if (!this.form.description.trim()) {
-				this.errors.description = this.t('procest', 'Description is required')
+				this.errors.description = this.t(
+					'procest',
+					'Description is required',
+				)
 			}
 			return Object.keys(this.errors).length === 0
 		},
@@ -168,11 +188,18 @@ export default {
 				const store = useObjectStore()
 				const data = {
 					...this.form,
-					receipt_date: new Date().toISOString().split('T')[0],
+					ontvangstdatum: new Date().toISOString().split('T')[0],
 					status: 'ontvangen',
-					priority: this.form.priority?.id || this.form.priority || 'normaal',
-					receipt_channel: this.form.receipt_channel?.id || this.form.receipt_channel || null,
-					category: this.form.category?.id || this.form.category || null,
+					prioriteit:
+						this.form.prioriteit?.id
+						|| this.form.prioriteit
+						|| 'normaal',
+					ontvangstkanaal:
+						this.form.ontvangstkanaal?.id
+						|| this.form.ontvangstkanaal
+						|| null,
+					categorie:
+						this.form.categorie?.id || this.form.categorie || null,
 				}
 				await store.createObject('complaint', data)
 				this.$emit('created')

@@ -2,27 +2,28 @@
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
 	<div class="beschikking-actionbar">
-		<NcButton v-if="status === 'ontwerp'"
+		<NcButton
+			v-if="status === 'ontwerp'"
 			type="primary"
 			:disabled="busy"
 			@click="onAkkoord">
 			{{ t('procest', 'Akkoord aanvragen') }}
 		</NcButton>
-		<NcButton v-if="status === 'akkoord-mandaat'"
+		<NcButton
+			v-if="status === 'akkoord-mandaat'"
 			type="primary"
 			:disabled="busy"
 			@click="onOnderteken">
 			{{ t('procest', 'Ondertekenen') }}
 		</NcButton>
-		<NcButton v-if="status === 'ondertekend'"
+		<NcButton
+			v-if="status === 'ondertekend'"
 			type="primary"
 			:disabled="busy"
 			@click="onVerzend">
 			{{ t('procest', 'Verzenden') }}
 		</NcButton>
-		<NcButton v-if="canExport"
-			:disabled="busy"
-			@click="onExport">
+		<NcButton v-if="canExport" :disabled="busy" @click="onExport">
 			{{ t('procest', 'Audit-pakket exporteren') }}
 		</NcButton>
 
@@ -34,7 +35,12 @@
 
 <script>
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
-import { akkoord, onderteken, verzend, exportAuditPacket } from '../../../services/beschikkingApi.js'
+import {
+	akkoord,
+	onderteken,
+	verzend,
+	exportAuditPacket,
+} from '../../../services/beschikkingApi.js'
 
 export default {
 	name: 'BeschikkingActionBar',
@@ -65,7 +71,9 @@ export default {
 	},
 	computed: {
 		canExport() {
-			return ['verzonden', 'ontvangen-bevestiging', 'gearchiveerd'].includes(this.status)
+			return ['verzonden', 'ontvangen-bevestiging', 'gearchiveerd'].includes(
+				this.status,
+			)
 		},
 	},
 	methods: {

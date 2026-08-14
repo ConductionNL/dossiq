@@ -6,7 +6,12 @@
 		@update:open="$emit('update:open', $event)">
 		<div class="federated-activity-panel">
 			<p class="federated-activity-panel__description">
-				{{ t('procest', 'Async collaboration on this shared case. Entries are append-only and visible to both organisations.') }}
+				{{
+					t(
+						'procest',
+						'Async collaboration on this shared case. Entries are append-only and visible to both organisations.',
+					)
+				}}
 			</p>
 
 			<div v-if="loading" class="federated-activity-panel__loading">
@@ -14,19 +19,30 @@
 				{{ t('procest', 'Loading activity...') }}
 			</div>
 
-			<div v-else-if="entries.length === 0" class="federated-activity-panel__empty">
+			<div
+				v-else-if="entries.length === 0"
+				class="federated-activity-panel__empty">
 				<p>{{ t('procest', 'No activity yet.') }}</p>
 			</div>
 
 			<ul v-else class="federated-activity-panel__list">
-				<li v-for="(entry, index) in entries" :key="index" class="federated-activity-panel__entry">
+				<li
+					v-for="(entry, index) in entries"
+					:key="index"
+					class="federated-activity-panel__entry">
 					<div class="federated-activity-panel__entry-header">
 						<span
 							class="federated-activity-panel__actor-badge"
 							:class="`federated-activity-panel__actor-badge--${entry.actorType}`">
-							{{ entry.actorType === 'remote' ? t('procest', 'Remote') : t('procest', 'Local') }}
+							{{
+								entry.actorType === 'remote'
+									? t('procest', 'Remote')
+									: t('procest', 'Local')
+							}}
 						</span>
-						<span class="federated-activity-panel__actor">{{ entry.actor }}</span>
+						<span class="federated-activity-panel__actor">{{
+							entry.actor
+						}}</span>
 					</div>
 					<p class="federated-activity-panel__message">
 						{{ entry.message }}
@@ -35,12 +51,16 @@
 			</ul>
 
 			<div class="form-group">
-				<label for="federated-activity-message">{{ t('procest', 'Add a message') }}</label>
+				<label for="federated-activity-message">{{
+					t('procest', 'Add a message')
+				}}</label>
 				<textarea
 					id="federated-activity-message"
 					v-model="message"
 					rows="3"
-					:placeholder="t('procest', 'Write a note visible to both organisations...')" />
+					:placeholder="
+						t('procest', 'Write a note visible to both organisations...')
+					" />
 			</div>
 		</div>
 
@@ -100,7 +120,10 @@ export default {
 		async post() {
 			this.posting = true
 			try {
-				this.$emit('post', { federatedShareId: this.federatedShareId, message: this.message.trim() })
+				this.$emit('post', {
+					federatedShareId: this.federatedShareId,
+					message: this.message.trim(),
+				})
 				this.message = ''
 			} finally {
 				this.posting = false

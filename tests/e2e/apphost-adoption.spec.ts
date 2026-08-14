@@ -50,11 +50,16 @@ import { BASE_URL } from './base-url'
 const API_HEADERS = { 'OCS-APIRequest': 'true' }
 
 test.describe('AppHost adoption (ADR-040)', () => {
-	test('health#index is served by the AppHost generic, not the SPA catch-all', async ({ request }) => {
-		const res = await request.get(`${BASE_URL}/index.php/apps/procest/api/health`, {
-			headers: { ...API_HEADERS, Accept: 'application/json' },
-			failOnStatusCode: false,
-		})
+	test('health#index is served by the AppHost generic, not the SPA catch-all', async ({
+		request,
+	}) => {
+		const res = await request.get(
+			`${BASE_URL}/index.php/apps/procest/api/health`,
+			{
+				headers: { ...API_HEADERS, Accept: 'application/json' },
+				failOnStatusCode: false,
+			},
+		)
 
 		const contentType = res.headers()['content-type'] ?? ''
 		const body = await res.text()
@@ -66,9 +71,9 @@ test.describe('AppHost adoption (ADR-040)', () => {
 		expect(
 			contentType,
 			`health returned ${res.status()} ${contentType}. text/html means the SPA `
-			+ 'catch-all answered — Bootstrap::register() never installed the AppHost '
-			+ 'alias, i.e. OCA\\OpenRegister\\ was not autoloadable during procest\'s '
-			+ 'register(). See lib/AppInfo/Registrar/OpenRegisterAutoloadRegistrar.php.',
+				+ 'catch-all answered — Bootstrap::register() never installed the AppHost '
+				+ "alias, i.e. OCA\\OpenRegister\\ was not autoloadable during procest's "
+				+ 'register(). See lib/AppInfo/Registrar/OpenRegisterAutoloadRegistrar.php.',
 		).toContain('application/json')
 
 		const doc = JSON.parse(body)
@@ -76,14 +81,22 @@ test.describe('AppHost adoption (ADR-040)', () => {
 		expect(doc.status).toBeTruthy()
 		// The generic reports its own view of OpenRegister. If the adoption were
 		// half-wired this key would not be here at all.
-		expect(doc.checks, 'the AppHost health generic always reports a checks block').toBeTruthy()
+		expect(
+			doc.checks,
+			'the AppHost health generic always reports a checks block',
+		).toBeTruthy()
 	})
 
-	test('metrics#index emits Prometheus text, which the SPA shell cannot', async ({ request }) => {
-		const res = await request.get(`${BASE_URL}/index.php/apps/procest/api/metrics`, {
-			headers: API_HEADERS,
-			failOnStatusCode: false,
-		})
+	test('metrics#index emits Prometheus text, which the SPA shell cannot', async ({
+		request,
+	}) => {
+		const res = await request.get(
+			`${BASE_URL}/index.php/apps/procest/api/metrics`,
+			{
+				headers: API_HEADERS,
+				failOnStatusCode: false,
+			},
+		)
 
 		const contentType = res.headers()['content-type'] ?? ''
 		const body = await res.text()
@@ -91,16 +104,20 @@ test.describe('AppHost adoption (ADR-040)', () => {
 		expect(
 			contentType,
 			`metrics returned ${res.status()} ${contentType}; expected Prometheus text. `
-			+ 'See the health assertion above for what an HTML answer means.',
+				+ 'See the health assertion above for what an HTML answer means.',
 		).toContain('text/plain')
 
 		// Prometheus exposition format. The app shell starts `<!DOCTYPE html>`,
 		// so this cannot be satisfied by the catch-all under any circumstance.
-		expect(body.startsWith('# HELP'), `body began: ${body.slice(0, 60)}`).toBe(true)
+		expect(body.startsWith('# HELP'), `body began: ${body.slice(0, 60)}`).toBe(
+			true,
+		)
 		expect(body).toContain('procest_info')
 	})
 
-	test('the catch-all really does answer 200 (guard against a dead discriminator)', async ({ request }) => {
+	test('the catch-all really does answer 200 (guard against a dead discriminator)', async ({
+		request,
+	}) => {
 		// The two assertions above are only meaningful while the catch-all
 		// behaves as described. If procest ever starts returning a real 404 for
 		// unmatched API paths, the content-type checks stop being the ONLY thing
@@ -111,7 +128,10 @@ test.describe('AppHost adoption (ADR-040)', () => {
 			{ headers: API_HEADERS, failOnStatusCode: false },
 		)
 
-		expect(res.status(), 'if this is now 404, update the reasoning in this file').toBe(200)
+		expect(
+			res.status(),
+			'if this is now 404, update the reasoning in this file',
+		).toBe(200)
 		expect(res.headers()['content-type'] ?? '').toContain('text/html')
 	})
 

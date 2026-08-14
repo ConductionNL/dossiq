@@ -1,5 +1,6 @@
 <template>
-	<NcDialog v-if="open"
+	<NcDialog
+		v-if="open"
 		:name="t('procest', 'Edit ZGW Mapping: {key}', { key: resourceKey })"
 		size="large"
 		@closing="$emit('close')">
@@ -8,7 +9,7 @@
 				<label>{{ t('procest', 'Enabled') }}</label>
 				<NcCheckboxRadioSwitch
 					:model-value="form.enabled"
-					@update:model-value="v => form.enabled = v">
+					@update:model-value="(v) => (form.enabled = v)">
 					{{ t('procest', 'Enable this mapping') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -18,7 +19,7 @@
 				<NcTextField
 					:model-value="form.sourceRegister"
 					:label="t('procest', 'Register ID')"
-					@update:model-value="v => form.sourceRegister = v" />
+					@update:model-value="(v) => (form.sourceRegister = v)" />
 			</div>
 
 			<div class="form-group">
@@ -26,11 +27,13 @@
 				<NcTextField
 					:model-value="form.sourceSchema"
 					:label="t('procest', 'Schema ID')"
-					@update:model-value="v => form.sourceSchema = v" />
+					@update:model-value="(v) => (form.sourceSchema = v)" />
 			</div>
 
 			<div class="form-group">
-				<label for="zgw-mapping-property">{{ t('procest', 'Property Mapping (outbound: English → Dutch)') }}</label>
+				<label for="zgw-mapping-property">{{
+					t('procest', 'Property Mapping (outbound: English → Dutch)')
+				}}</label>
 				<textarea
 					id="zgw-mapping-property"
 					v-model="propertyMappingJson"
@@ -39,7 +42,9 @@
 			</div>
 
 			<div class="form-group">
-				<label for="zgw-mapping-reverse">{{ t('procest', 'Reverse Mapping (inbound: Dutch → English)') }}</label>
+				<label for="zgw-mapping-reverse">{{
+					t('procest', 'Reverse Mapping (inbound: Dutch → English)')
+				}}</label>
 				<textarea
 					id="zgw-mapping-reverse"
 					v-model="reverseMappingJson"
@@ -48,7 +53,9 @@
 			</div>
 
 			<div class="form-group">
-				<label for="zgw-mapping-value">{{ t('procest', 'Value Mappings (enum translations)') }}</label>
+				<label for="zgw-mapping-value">{{
+					t('procest', 'Value Mappings (enum translations)')
+				}}</label>
 				<textarea
 					id="zgw-mapping-value"
 					v-model="valueMappingJson"
@@ -57,7 +64,9 @@
 			</div>
 
 			<div class="form-group">
-				<label for="zgw-mapping-query-param">{{ t('procest', 'Query Parameter Mapping') }}</label>
+				<label for="zgw-mapping-query-param">{{
+					t('procest', 'Query Parameter Mapping')
+				}}</label>
 				<textarea
 					id="zgw-mapping-query-param"
 					v-model="queryParamMappingJson"
@@ -82,7 +91,12 @@
 </template>
 
 <script>
-import { NcButton, NcCheckboxRadioSwitch, NcDialog, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcDialog,
+	NcTextField,
+} from '@nextcloud/vue'
 
 export default {
 	name: 'ZgwMappingDialog',
@@ -144,10 +158,26 @@ export default {
 				sourceRegister: mapping.sourceRegister || '',
 				sourceSchema: mapping.sourceSchema || '',
 			}
-			this.propertyMappingJson = JSON.stringify(mapping.propertyMapping || {}, null, 2)
-			this.reverseMappingJson = JSON.stringify(mapping.reverseMapping || {}, null, 2)
-			this.valueMappingJson = JSON.stringify(mapping.valueMapping || {}, null, 2)
-			this.queryParamMappingJson = JSON.stringify(mapping.queryParameterMapping || {}, null, 2)
+			this.propertyMappingJson = JSON.stringify(
+				mapping.propertyMapping || {},
+				null,
+				2,
+			)
+			this.reverseMappingJson = JSON.stringify(
+				mapping.reverseMapping || {},
+				null,
+				2,
+			)
+			this.valueMappingJson = JSON.stringify(
+				mapping.valueMapping || {},
+				null,
+				2,
+			)
+			this.queryParamMappingJson = JSON.stringify(
+				mapping.queryParameterMapping || {},
+				null,
+				2,
+			)
 			this.jsonError = null
 		},
 
@@ -162,7 +192,11 @@ export default {
 				valueMapping = JSON.parse(this.valueMappingJson)
 				queryParameterMapping = JSON.parse(this.queryParamMappingJson)
 			} catch (e) {
-				this.jsonError = t('procest', 'Invalid JSON in one of the mapping fields: {error}', { error: e.message })
+				this.jsonError = t(
+					'procest',
+					'Invalid JSON in one of the mapping fields: {error}',
+					{ error: e.message },
+				)
 				return
 			}
 

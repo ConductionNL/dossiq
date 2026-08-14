@@ -1,7 +1,12 @@
 <template>
 	<div class="email-settings">
 		<NcNoteCard type="info">
-			{{ t('procest', 'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Outbound mail and per-user accounts are owned by Nextcloud Mail — they are not configured here.') }}
+			{{
+				t(
+					'procest',
+					'Configure the shared functional mailbox (e.g. zaken@gemeente.nl) that the inbound poller ingests and auto-links to cases by [ZAAK-YYYY-NNNNNN] subject tag. Outbound mail and per-user accounts are owned by Nextcloud Mail — they are not configured here.',
+				)
+			}}
 		</NcNoteCard>
 
 		<div class="setting-row">
@@ -50,12 +55,19 @@
 				:disabled="!writable || loading"
 				:placeholder="passwordPlaceholder" />
 			<p class="setting-help">
-				{{ t('procest', 'Stored securely (masked in the API and occ config). Leave as *** to keep the saved password.') }}
+				{{
+					t(
+						'procest',
+						'Stored securely (masked in the API and occ config). Leave as *** to keep the saved password.',
+					)
+				}}
 			</p>
 		</div>
 
 		<div class="setting-row">
-			<label for="email_imap_folder">{{ t('procest', 'Mailbox folder') }}</label>
+			<label for="email_imap_folder">{{
+				t('procest', 'Mailbox folder')
+			}}</label>
 			<NcInputField
 				id="email_imap_folder"
 				v-model="form.email_imap_folder"
@@ -64,19 +76,30 @@
 		</div>
 
 		<div class="setting-row">
-			<label for="email_transport">{{ t('procest', 'Transport / source mailbox account') }}</label>
+			<label for="email_transport">{{
+				t('procest', 'Transport / source mailbox account')
+			}}</label>
 			<NcInputField
 				id="email_transport"
 				v-model="form.email_transport"
 				:disabled="!writable || loading"
-				:placeholder="t('procest', 'Nextcloud Mail account or functional mailbox id')" />
+				:placeholder="
+					t('procest', 'Nextcloud Mail account or functional mailbox id')
+				" />
 			<p class="setting-help">
-				{{ t('procest', 'Which Nextcloud Mail account or functional mailbox is the case-correspondence source. No per-user SMTP send credentials are configured here.') }}
+				{{
+					t(
+						'procest',
+						'Which Nextcloud Mail account or functional mailbox is the case-correspondence source. No per-user SMTP send credentials are configured here.',
+					)
+				}}
 			</p>
 		</div>
 
 		<div class="setting-row">
-			<label for="email_poll_interval">{{ t('procest', 'Poll interval (seconds)') }}</label>
+			<label for="email_poll_interval">{{
+				t('procest', 'Poll interval (seconds)')
+			}}</label>
 			<NcInputField
 				id="email_poll_interval"
 				v-model="form.email_poll_interval"
@@ -86,7 +109,9 @@
 		</div>
 
 		<div class="setting-row">
-			<label for="email_poll_batch_size">{{ t('procest', 'Messages per run') }}</label>
+			<label for="email_poll_batch_size">{{
+				t('procest', 'Messages per run')
+			}}</label>
 			<NcInputField
 				id="email_poll_batch_size"
 				v-model="form.email_poll_batch_size"
@@ -103,7 +128,11 @@
 				<template #icon>
 					<NcLoadingIcon v-if="saving" :size="20" />
 				</template>
-				{{ saving ? t('procest', 'Saving...') : t('procest', 'Save mailbox settings') }}
+				{{
+					saving
+						? t('procest', 'Saving...')
+						: t('procest', 'Save mailbox settings')
+				}}
 			</NcButton>
 
 			<NcButton
@@ -124,7 +153,13 @@
 </template>
 
 <script>
-import { NcButton, NcInputField, NcLoadingIcon, NcNoteCard, NcSelect } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcInputField,
+	NcLoadingIcon,
+	NcNoteCard,
+	NcSelect,
+} from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
 
 /**
@@ -168,8 +203,11 @@ export default {
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		encryptionOption: {
 			get() {
-				return this.encryptionOptions.find(o => o.id === this.form.email_imap_encryption)
-					|| this.encryptionOptions[0]
+				return (
+					this.encryptionOptions.find(
+						(o) => o.id === this.form.email_imap_encryption,
+					) || this.encryptionOptions[0]
+				)
 			},
 			set(option) {
 				this.form.email_imap_encryption = option ? option.id : 'ssl'
@@ -190,12 +228,15 @@ export default {
 		async load() {
 			this.loading = true
 			try {
-				const response = await fetch(generateUrl('/apps/procest/api/settings/email'), {
-					headers: { requesttoken: OC.requestToken },
-				})
+				const response = await fetch(
+					generateUrl('/apps/procest/api/settings/email'),
+					{
+						headers: { requesttoken: OC.requestToken },
+					},
+				)
 				if (response.ok) {
 					const data = await response.json()
-					Object.keys(this.form).forEach(key => {
+					Object.keys(this.form).forEach((key) => {
 						if (data[key] !== undefined && data[key] !== null) {
 							this.form[key] = String(data[key])
 						}
@@ -217,22 +258,36 @@ export default {
 				if (payload.email_imap_password === '') {
 					delete payload.email_imap_password
 				}
-				const response = await fetch(generateUrl('/apps/procest/api/settings/email'), {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: OC.requestToken,
+				const response = await fetch(
+					generateUrl('/apps/procest/api/settings/email'),
+					{
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							requesttoken: OC.requestToken,
+						},
+						body: JSON.stringify(payload),
 					},
-					body: JSON.stringify(payload),
-				})
+				)
 				if (response.ok) {
-					this.testResult = { type: 'success', message: t('procest', 'Mailbox settings saved.') }
+					this.testResult = {
+						type: 'success',
+						message: t('procest', 'Mailbox settings saved.'),
+					}
 					await this.load()
 				} else {
-					this.testResult = { type: 'error', message: t('procest', 'Could not save mailbox settings.') }
+					this.testResult = {
+						type: 'error',
+						message: t('procest', 'Could not save mailbox settings.'),
+					}
 				}
 			} catch (error) {
-				this.testResult = { type: 'error', message: error.message || t('procest', 'Could not save mailbox settings.') }
+				this.testResult = {
+					type: 'error',
+					message:
+						error.message
+						|| t('procest', 'Could not save mailbox settings.'),
+				}
 			} finally {
 				this.saving = false
 			}
@@ -242,22 +297,39 @@ export default {
 			this.testing = true
 			this.testResult = null
 			try {
-				const response = await fetch(generateUrl('/apps/procest/api/settings/email/test-imap'), {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						requesttoken: OC.requestToken,
+				const response = await fetch(
+					generateUrl('/apps/procest/api/settings/email/test-imap'),
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							requesttoken: OC.requestToken,
+						},
 					},
-				})
+				)
 				const data = await response.json()
 				if (data && data.ok === true) {
-					this.testResult = { type: 'success', message: t('procest', 'Connection successful.') }
+					this.testResult = {
+						type: 'success',
+						message: t('procest', 'Connection successful.'),
+					}
 				} else {
-					const detail = data && (data.detail || data.error) ? (data.detail || data.error) : t('procest', 'unknown error')
-					this.testResult = { type: 'error', message: t('procest', 'Connection failed: {detail}', { detail }) }
+					const detail =
+						data && (data.detail || data.error)
+							? data.detail || data.error
+							: t('procest', 'unknown error')
+					this.testResult = {
+						type: 'error',
+						message: t('procest', 'Connection failed: {detail}', {
+							detail,
+						}),
+					}
 				}
 			} catch (error) {
-				this.testResult = { type: 'error', message: error.message || t('procest', 'Connection failed.') }
+				this.testResult = {
+					type: 'error',
+					message: error.message || t('procest', 'Connection failed.'),
+				}
 			} finally {
 				this.testing = false
 			}

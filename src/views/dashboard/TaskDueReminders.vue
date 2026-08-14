@@ -16,18 +16,32 @@
 					class="task-reminders__row task-reminders__row--overdue"
 					role="button"
 					tabindex="0"
-					@click="$router.push({ name: 'TaskDetail', params: { id: item.id } })"
-					@keydown.enter="$router.push({ name: 'TaskDetail', params: { id: item.id } })"
-					@keydown.space.prevent="$router.push({ name: 'TaskDetail', params: { id: item.id } })">
+					@click="
+						$router.push({ name: 'TaskDetail', params: { id: item.id } })
+					"
+					@keydown.enter="
+						$router.push({ name: 'TaskDetail', params: { id: item.id } })
+					"
+					@keydown.space.prevent="
+						$router.push({ name: 'TaskDetail', params: { id: item.id } })
+					">
 					<div class="task-reminders__info">
 						<span class="task-reminders__title">{{ item.title }}</span>
-						<span class="task-reminders__reference">{{ item.caseReference }}</span>
+						<span class="task-reminders__reference">{{
+							item.caseReference
+						}}</span>
 					</div>
 					<div class="task-reminders__meta">
-						<span class="task-reminders__days task-reminders__days--overdue">
-							{{ t('procest', '{days} days overdue', { days: item.daysOverdue }) }}
+						<span
+							class="task-reminders__days task-reminders__days--overdue">
+							{{
+								t('procest', '{days} days overdue', {
+									days: item.daysOverdue,
+								})
+							}}
 						</span>
-						<span class="task-reminders__priority"
+						<span
+							class="task-reminders__priority"
 							:class="'priority--' + item.priority">
 							{{ item.priority }}
 						</span>
@@ -41,23 +55,37 @@
 					class="task-reminders__row task-reminders__row--warning"
 					role="button"
 					tabindex="0"
-					@click="$router.push({ name: 'TaskDetail', params: { id: item.id } })"
-					@keydown.enter="$router.push({ name: 'TaskDetail', params: { id: item.id } })"
-					@keydown.space.prevent="$router.push({ name: 'TaskDetail', params: { id: item.id } })">
+					@click="
+						$router.push({ name: 'TaskDetail', params: { id: item.id } })
+					"
+					@keydown.enter="
+						$router.push({ name: 'TaskDetail', params: { id: item.id } })
+					"
+					@keydown.space.prevent="
+						$router.push({ name: 'TaskDetail', params: { id: item.id } })
+					">
 					<div class="task-reminders__info">
 						<span class="task-reminders__title">{{ item.title }}</span>
-						<span class="task-reminders__reference">{{ item.caseReference }}</span>
+						<span class="task-reminders__reference">{{
+							item.caseReference
+						}}</span>
 					</div>
 					<div class="task-reminders__meta">
-						<span class="task-reminders__days task-reminders__days--warning">
+						<span
+							class="task-reminders__days task-reminders__days--warning">
 							<template v-if="item.daysRemaining === 0">
 								{{ t('procest', 'Due today') }}
 							</template>
 							<template v-else>
-								{{ t('procest', '{days} days remaining', { days: item.daysRemaining }) }}
+								{{
+									t('procest', '{days} days remaining', {
+										days: item.daysRemaining,
+									})
+								}}
 							</template>
 						</span>
-						<span class="task-reminders__priority"
+						<span
+							class="task-reminders__priority"
 							:class="'priority--' + item.priority">
 							{{ item.priority }}
 						</span>

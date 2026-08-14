@@ -47,19 +47,27 @@ describe('FEDERATION_ALLOWED_FIELDS', () => {
 
 describe('endpoint builders', () => {
 	it('builds the local federated-shares list endpoint', () => {
-		expect(federatedSharesListEndpoint()).toBe('/apps/openregister/api/objects/procest/caseFederatedShare')
+		expect(federatedSharesListEndpoint()).toBe(
+			'/apps/openregister/api/objects/procest/caseFederatedShare',
+		)
 	})
 
 	it('builds the create-federated-share endpoint', () => {
-		expect(createFederatedShareEndpoint()).toBe('/apps/procest/api/federation/shares')
+		expect(createFederatedShareEndpoint()).toBe(
+			'/apps/procest/api/federation/shares',
+		)
 	})
 
 	it('builds the revoke-federated-share endpoint with URL-encoding', () => {
-		expect(revokeFederatedShareEndpoint('share/1')).toBe('/apps/procest/api/federation/shares/share%2F1')
+		expect(revokeFederatedShareEndpoint('share/1')).toBe(
+			'/apps/procest/api/federation/shares/share%2F1',
+		)
 	})
 
 	it('builds the local activity endpoint', () => {
-		expect(federatedActivityEndpoint('share-1')).toBe('/apps/procest/api/federation/activity/share-1')
+		expect(federatedActivityEndpoint('share-1')).toBe(
+			'/apps/procest/api/federation/activity/share-1',
+		)
 	})
 
 	it('builds the public transfer accept/reject endpoint from token + transferId', () => {
@@ -89,13 +97,20 @@ describe('shapeFederatedSharePayload', () => {
 	})
 
 	it('defaults to empty arrays when fields/documents are omitted', () => {
-		const payload = shapeFederatedSharePayload({ remoteCloudId: 'x@y.example' }, 'case-2')
+		const payload = shapeFederatedSharePayload(
+			{ remoteCloudId: 'x@y.example' },
+			'case-2',
+		)
 		expect(payload.sharedFields).toEqual([])
 		expect(payload.sharedDocuments).toEqual([])
 	})
 
 	it('never mutates or aliases the input form arrays', () => {
-		const form = { remoteCloudId: 'x@y.example', sharedFields: ['title'], sharedDocuments: [] }
+		const form = {
+			remoteCloudId: 'x@y.example',
+			sharedFields: ['title'],
+			sharedDocuments: [],
+		}
 		const payload = shapeFederatedSharePayload(form, 'case-3')
 		payload.sharedFields.push('description')
 		expect(form.sharedFields).toEqual(['title'])
@@ -104,15 +119,35 @@ describe('shapeFederatedSharePayload', () => {
 
 describe('isFederatedShareFormValid', () => {
 	it('requires a non-empty cloud id', () => {
-		expect(isFederatedShareFormValid({ remoteCloudId: '', sharedFields: ['title'] })).toBe(false)
-		expect(isFederatedShareFormValid({ remoteCloudId: '   ', sharedFields: ['title'] })).toBe(false)
+		expect(
+			isFederatedShareFormValid({
+				remoteCloudId: '',
+				sharedFields: ['title'],
+			}),
+		).toBe(false)
+		expect(
+			isFederatedShareFormValid({
+				remoteCloudId: '   ',
+				sharedFields: ['title'],
+			}),
+		).toBe(false)
 	})
 
 	it('requires at least one selected field', () => {
-		expect(isFederatedShareFormValid({ remoteCloudId: 'x@y.example', sharedFields: [] })).toBe(false)
+		expect(
+			isFederatedShareFormValid({
+				remoteCloudId: 'x@y.example',
+				sharedFields: [],
+			}),
+		).toBe(false)
 	})
 
 	it('is valid with a cloud id and at least one field', () => {
-		expect(isFederatedShareFormValid({ remoteCloudId: 'x@y.example', sharedFields: ['title'] })).toBe(true)
+		expect(
+			isFederatedShareFormValid({
+				remoteCloudId: 'x@y.example',
+				sharedFields: ['title'],
+			}),
+		).toBe(true)
 	})
 })

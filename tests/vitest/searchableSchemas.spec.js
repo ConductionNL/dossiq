@@ -15,7 +15,10 @@ import { describe, it, expect } from 'vitest'
 import fs from 'fs'
 import path from 'path'
 
-const REGISTER_PATH = path.resolve(__dirname, '../../lib/Settings/procest_register.json')
+const REGISTER_PATH = path.resolve(
+	__dirname,
+	'../../lib/Settings/procest_register.json',
+)
 const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 
 const EXPECTED_SEARCHABLE_SLUGS = ['case', 'task', 'bezwaar', 'voorstel', 'beroep']
@@ -27,7 +30,9 @@ describe('searchable schema opt-in (register JSON)', () => {
 		const register = loadJson(REGISTER_PATH)
 		const schemas = register.components.schemas
 
-		const searchableSlugs = Object.keys(schemas).filter((slug) => schemas[slug].searchable === true)
+		const searchableSlugs = Object.keys(schemas).filter(
+			(slug) => schemas[slug].searchable === true,
+		)
 
 		expect(searchableSlugs.sort()).toEqual([...EXPECTED_SEARCHABLE_SLUGS].sort())
 	})
@@ -39,7 +44,9 @@ describe('deep links cover all searchable schemas', () => {
 		const manifest = loadJson(MANIFEST_PATH)
 		const schemas = register.components.schemas
 
-		const searchableSlugs = Object.keys(schemas).filter((slug) => schemas[slug].searchable === true)
+		const searchableSlugs = Object.keys(schemas).filter(
+			(slug) => schemas[slug].searchable === true,
+		)
 		const deepLinkSlugs = manifest.deepLinks.map((entry) => entry.schemaSlug)
 
 		searchableSlugs.forEach((slug) => {
@@ -67,13 +74,18 @@ describe('deep links cover all searchable schemas', () => {
 		}
 
 		const pageRoutes = manifest.pages.map((page) => page.route)
-		const deepLinksBySlug = Object.fromEntries(manifest.deepLinks.map((entry) => [entry.schemaSlug, entry]))
+		const deepLinksBySlug = Object.fromEntries(
+			manifest.deepLinks.map((entry) => [entry.schemaSlug, entry]),
+		)
 
 		Object.keys(expectedTemplates).forEach((slug) => {
 			const deepLink = deepLinksBySlug[slug]
 			expect(deepLink, `missing deepLink for schema "${slug}"`).toBeDefined()
 			expect(deepLink.urlTemplate).toBe(expectedTemplates[slug])
-			expect(pageRoutes, `manifest has no page route "${expectedRoutes[slug]}" for schema "${slug}"`).toContain(expectedRoutes[slug])
+			expect(
+				pageRoutes,
+				`manifest has no page route "${expectedRoutes[slug]}" for schema "${slug}"`,
+			).toContain(expectedRoutes[slug])
 		})
 	})
 })

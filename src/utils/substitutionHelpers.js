@@ -20,10 +20,10 @@
  */
 export function buildSubstitutedMap(cases = [], tasks = []) {
 	const map = {}
-	for (const c of (cases || [])) {
+	for (const c of cases || []) {
 		map[`case:${c.id}`] = (c._substituted && c._substituted.absentee) || ''
 	}
-	for (const tk of (tasks || [])) {
+	for (const tk of tasks || []) {
 		map[`task:${tk.id}`] = (tk._substituted && tk._substituted.absentee) || ''
 	}
 	return map
@@ -38,9 +38,9 @@ export function buildSubstitutedMap(cases = [], tasks = []) {
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
 export function mergeSubstitutedCases(ownCases = [], substitutedCases = []) {
-	const seen = new Set((ownCases || []).map(c => c.id))
+	const seen = new Set((ownCases || []).map((c) => c.id))
 	const merged = [...(ownCases || [])]
-	for (const c of (substitutedCases || [])) {
+	for (const c of substitutedCases || []) {
 		if (!seen.has(c.id)) {
 			seen.add(c.id)
 			merged.push(c)
@@ -73,9 +73,13 @@ export function substitutedFor(map, item) {
  * @return {Array} The (possibly) filtered list.
  * @spec openspec/specs/handler-vervanging-waarneming/spec.md
  */
-export function applySubstitutedFilter(items = [], map = {}, showSubstituted = true) {
+export function applySubstitutedFilter(
+	items = [],
+	map = {},
+	showSubstituted = true,
+) {
 	if (showSubstituted) {
 		return items || []
 	}
-	return (items || []).filter(i => !substitutedFor(map, i))
+	return (items || []).filter((i) => !substitutedFor(map, i))
 }

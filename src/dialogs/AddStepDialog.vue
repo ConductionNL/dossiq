@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2024 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<NcDialog v-if="open"
+	<NcDialog
+		v-if="open"
 		:name="t('procest', 'Ad-hoc stap toevoegen')"
 		size="normal"
 		:can-close="!submitting"
@@ -11,18 +12,20 @@
 				<label class="add-step-dialog__label">
 					{{ t('procest', 'Invoegen na stap') }}
 				</label>
-				<NcSelect v-model="afterStep"
+				<NcSelect
+					v-model="afterStep"
 					:options="insertionOptions"
 					:aria-label-combobox="t('procest', 'Invoegen na stap')"
 					label="label"
-					:reduce="opt => opt.value"
+					:reduce="(opt) => opt.value"
 					:placeholder="t('procest', 'Select insert position')" />
 			</div>
 			<div class="add-step-dialog__field">
 				<label class="add-step-dialog__label">
 					{{ t('procest', 'Stap type') }}
 				</label>
-				<NcSelect v-model="stepType"
+				<NcSelect
+					v-model="stepType"
 					:options="stepTypeOptions"
 					:aria-label-combobox="t('procest', 'Stap type')"
 					:placeholder="t('procest', 'Select type')" />
@@ -31,20 +34,23 @@
 				<label class="add-step-dialog__label">
 					{{ t('procest', 'Actor type') }}
 				</label>
-				<NcSelect v-model="actorType"
+				<NcSelect
+					v-model="actorType"
 					:options="actorTypeOptions"
 					:aria-label-combobox="t('procest', 'Actor type')"
 					:placeholder="t('procest', 'Select actor type')" />
 			</div>
 			<div class="add-step-dialog__field">
-				<NcTextField :model-value="actor"
+				<NcTextField
+					:model-value="actor"
 					:label="t('procest', 'Actor (UID, groep of rol)')"
 					required
-					@update:model-value="v => actor = v" />
+					@update:model-value="(v) => (actor = v)" />
 			</div>
 			<div class="add-step-dialog__field">
-				<NcCheckboxRadioSwitch :model-value="mandatory"
-					@update:model-value="v => mandatory = v">
+				<NcCheckboxRadioSwitch
+					:model-value="mandatory"
+					@update:model-value="(v) => (mandatory = v)">
 					{{ t('procest', 'Verplichte stap') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -57,17 +63,26 @@
 			<NcButton :disabled="submitting" @click="onClose">
 				{{ t('procest', 'Annuleren') }}
 			</NcButton>
-			<NcButton type="primary"
-				:disabled="!canSubmit"
-				@click="onSubmit">
-				{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Stap toevoegen') }}
+			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
+				{{
+					submitting
+						? t('procest', 'Bezig...')
+						: t('procest', 'Stap toevoegen')
+				}}
 			</NcButton>
 		</template>
 	</NcDialog>
 </template>
 
 <script>
-import { NcButton, NcCheckboxRadioSwitch, NcDialog, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcCheckboxRadioSwitch,
+	NcDialog,
+	NcNoteCard,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 import parafeerRouteApi from '../services/parafeerRouteApi.js'
 
 export default {
@@ -110,14 +125,21 @@ export default {
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		insertionOptions() {
-			return this.routeSnapshot.map(s => ({
-				label: this.t('procest', 'Na stap {n} — {actor}', { n: s.order, actor: s.actor }),
+			return this.routeSnapshot.map((s) => ({
+				label: this.t('procest', 'Na stap {n} — {actor}', {
+					n: s.order,
+					actor: s.actor,
+				}),
 				value: s.order,
 			}))
 		},
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canSubmit() {
-			return !this.submitting && this.afterStep !== null && this.actor.trim().length > 0
+			return (
+				!this.submitting
+				&& this.afterStep !== null
+				&& this.actor.trim().length > 0
+			)
 		},
 	},
 	watch: {

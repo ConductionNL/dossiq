@@ -27,7 +27,10 @@
 				<NcButton :disabled="!selectedStatus || submitting" @click="submit">
 					{{ t('procest', 'Apply') }}
 				</NcButton>
-				<NcButton type="secondary" :disabled="submitting" @click="$emit('close')">
+				<NcButton
+					type="secondary"
+					:disabled="submitting"
+					@click="$emit('close')">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
 			</div>
@@ -84,7 +87,11 @@ export default {
 			this.submitting = true
 			this.error = null
 			try {
-				const url = generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.caseId) + '/transition')
+				const url = generateUrl(
+					'/apps/procest/api/dso/cases/'
+						+ encodeURIComponent(this.caseId)
+						+ '/transition',
+				)
 				const res = await axios.post(url, {
 					newStatus: this.selectedStatus.value,
 					besluitdatum: this.besluitdatum || null,

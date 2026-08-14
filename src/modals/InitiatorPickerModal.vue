@@ -11,7 +11,10 @@
   @spec openspec/specs/initiator-selection/spec.md
 -->
 <template>
-	<NcModal size="normal" :name="t('procest', 'Who is the initiator?')" @close="$emit('close')">
+	<NcModal
+		size="normal"
+		:name="t('procest', 'Who is the initiator?')"
+		@close="$emit('close')">
 		<div class="initiator-picker-modal">
 			<!-- No <h2> here: NcModal's `name` prop already renders the dialog
 			     heading (h2.modal-header__name) and wires it as the dialog's
@@ -19,20 +22,31 @@
 			     twice to a screen reader and made every
 			     getByRole('heading', …) query ambiguous. -->
 			<p class="initiator-picker-modal__hint">
-				{{ t('procest', 'Link the case to the person, company, or contact who submitted it. You can also skip this and add the initiator later.') }}
+				{{
+					t(
+						'procest',
+						'Link the case to the person, company, or contact who submitted it. You can also skip this and add the initiator later.',
+					)
+				}}
 			</p>
 
 			<InitiatorPicker :value="selection" @select="selection = $event" />
 
 			<div v-if="selection" class="initiator-picker-modal__selection">
-				{{ t('procest', 'Selected:') }} <strong>{{ selection.displayName }}</strong> ({{ selection.sourceId }})
+				{{ t('procest', 'Selected:') }}
+				<strong>{{ selection.displayName }}</strong> ({{
+					selection.sourceId
+				}})
 			</div>
 
 			<div class="initiator-picker-modal__actions">
 				<NcButton type="tertiary" @click="$emit('skip')">
 					{{ t('procest', 'Skip') }}
 				</NcButton>
-				<NcButton type="primary" :disabled="!selection" @click="$emit('confirm', selection)">
+				<NcButton
+					type="primary"
+					:disabled="!selection"
+					@click="$emit('confirm', selection)">
 					{{ t('procest', 'Use as initiator') }}
 				</NcButton>
 			</div>

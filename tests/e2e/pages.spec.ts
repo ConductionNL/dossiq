@@ -1,8 +1,12 @@
 import { test, expect } from '@playwright/test'
-import { navTo, navToRoute, dismissSupportDialog, loadAllAdminSections } from './helpers/nav'
+import {
+	navTo,
+	navToRoute,
+	dismissSupportDialog,
+	loadAllAdminSections,
+} from './helpers/nav'
 
 test.describe('Dashboard', () => {
-
 	// FIXME(#427): under the CI env (bare `php -S`, no mod_rewrite) CnDashboardPage
 	// renders its widget grid but not its header — no <h2>Dashboard</h2>, no action
 	// buttons — and every widget shows "Widget not available". Renders fine in a
@@ -13,26 +17,39 @@ test.describe('Dashboard', () => {
 		// vue-router's history-mode location empty so the '/' route never
 		// resolves and the dashboard renders an empty router-view.
 		await page.goto('/index.php/apps/procest/cases')
-		await page.locator('[id^="app-navigation"]').first().getByRole('link', { name: 'Dashboard' }).click()
-		await expect(page.getByRole('heading', { name: 'Dashboard', level: 2 })).toBeVisible({ timeout: 15000 })
+		await page
+			.locator('[id^="app-navigation"]')
+			.first()
+			.getByRole('link', { name: 'Dashboard' })
+			.click()
+		await expect(
+			page.getByRole('heading', { name: 'Dashboard', level: 2 }),
+		).toBeVisible({ timeout: 15000 })
 		await expect(page.getByRole('button', { name: 'New Case' })).toBeVisible()
 		await expect(page.getByRole('button', { name: 'New Task' })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Refresh dashboard' })).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: 'Refresh dashboard' }),
+		).toBeVisible()
 	})
 })
 
 test.describe('Cases page', () => {
-
 	// @e2e openspec/specs/case-management/spec.md#cases-index-page-renders-list-shell
 	test('renders list view with correct controls', async ({ page }) => {
 		await navTo(page, 'Cases')
 		// The view switcher renders as BUTTONS, not a radio group — measured on
 		// a CI runner (2026-08-04): the page exposes zero `radio` roles, so the
 		// old `getByRole('radio', …)` assertions could never pass.
-		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible()
-		await expect(page.getByRole('button', { name: /^Add (Item|Case|Task)$/ })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }),
+		).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: 'Actions' }).first(),
+		).toBeVisible()
 	})
 
 	// FIXME(#427): under the CI env the Cases create dialog opens the generic
@@ -47,12 +64,18 @@ test.describe('Cases page', () => {
 		// procest's custom CaseCreateDialog (.case-create-dialog) — scope to it
 		// so e.g. the case-type combobox doesn't collide with the sidebar filter.
 		const modal = page.locator('.case-create-dialog')
-		await expect(modal.getByRole('heading', { name: 'New Case' })).toBeVisible({ timeout: 15000 })
+		await expect(modal.getByRole('heading', { name: 'New Case' })).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(modal.getByRole('combobox')).toBeVisible()
 		await expect(modal.getByPlaceholder('Enter case title')).toBeVisible()
 		await expect(modal.getByPlaceholder('Optional description')).toBeVisible()
-		await expect(modal.getByRole('button', { name: 'Set location' })).toBeVisible()
-		await expect(modal.getByRole('button', { name: 'Create case' })).toBeVisible()
+		await expect(
+			modal.getByRole('button', { name: 'Set location' }),
+		).toBeVisible()
+		await expect(
+			modal.getByRole('button', { name: 'Create case' }),
+		).toBeVisible()
 		await expect(modal.getByRole('button', { name: 'Cancel' })).toBeVisible()
 	})
 
@@ -69,7 +92,6 @@ test.describe('Cases page', () => {
 })
 
 test.describe('Tasks page', () => {
-
 	// @e2e openspec/specs/task-management/spec.md#view-the-global-task-list
 	test('renders list view with search and filters', async ({ page }) => {
 		// "Tasks" is no longer a top-level sidebar leaf (dropped by the
@@ -77,10 +99,16 @@ test.describe('Tasks page', () => {
 		// to it client-side rather than via a (non-existent) nav link.
 		await navToRoute(page, '/tasks')
 		// View switcher renders as buttons, not radios — see the Cases test.
-		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Table' })).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(page.getByRole('button', { name: 'Cards' })).toBeVisible()
-		await expect(page.getByRole('button', { name: /^Add (Item|Case|Task)$/ })).toBeVisible()
-		await expect(page.getByRole('button', { name: 'Actions' }).first()).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: /^Add (Item|Case|Task)$/ }),
+		).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: 'Actions' }).first(),
+		).toBeVisible()
 		// CnIndexSidebar's search field — placeholder is "Type to search..."
 		// (lib default). The index sidebar starts COLLAPSED on this route, so
 		// the field is in the DOM but hidden; assert it is wired up rather
@@ -90,7 +118,6 @@ test.describe('Tasks page', () => {
 })
 
 test.describe('My Work page', () => {
-
 	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
 	test('renders as a card index scoped to the current user', async ({ page }) => {
 		// The sidebar label is "My work" (lower-case w) — "My Work" matched no
@@ -100,14 +127,17 @@ test.describe('My Work page', () => {
 		// renders NO page heading — measured on a CI runner (2026-08-04) the
 		// route exposes zero `heading` roles — so identify it by the sort
 		// controls that are unique to this view plus its card/table toggle.
-		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Urgency' })).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(page.getByRole('button', { name: 'Newest' })).toBeVisible()
-		await expect(page.getByRole('button', { name: /Cards/ }).first()).toBeVisible()
+		await expect(
+			page.getByRole('button', { name: /Cards/ }).first(),
+		).toBeVisible()
 	})
 })
 
 test.describe('B&W Voorstellen page', () => {
-
 	// DEPLOY-MISMATCH: the bespoke "B&W Voorstellen" view (heading "B&W
 	// Voorstellen", "Nieuw voorstel" button, "Actief"/"Afgerond"/"Alle" filter
 	// tabs, "Geen actieve voorstellen" Dutch empty state) is a v0.2.8 feature.
@@ -120,39 +150,50 @@ test.describe('B&W Voorstellen page', () => {
 	// @e2e openspec/specs/case-management/spec.md#voorstellen-page-renders-heading-and-create-control
 	test.fixme('renders with heading and create button', async ({ page }) => {
 		await navTo(page, 'Voorstellen')
-		await expect(page.getByRole('heading', { name: 'B&W Voorstellen', level: 2 })).toBeVisible({ timeout: 15000 })
-		await expect(page.getByRole('button', { name: 'Nieuw voorstel' })).toBeVisible()
+		await expect(
+			page.getByRole('heading', { name: 'B&W Voorstellen', level: 2 }),
+		).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByRole('button', { name: 'Nieuw voorstel' }),
+		).toBeVisible()
 	})
 
 	test.fixme('has filter tabs', async ({ page }) => {
 		await navTo(page, 'Voorstellen')
-		await expect(page.getByRole('button', { name: /Actief/ })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: /Actief/ })).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(page.getByRole('button', { name: /Afgerond/ })).toBeVisible()
 		await expect(page.getByRole('button', { name: /Alle/ })).toBeVisible()
 	})
 
 	test.fixme('shows Dutch empty state', async ({ page }) => {
 		await navTo(page, 'Voorstellen')
-		await expect(page.getByText('Geen actieve voorstellen')).toBeVisible({ timeout: 15000 })
+		await expect(page.getByText('Geen actieve voorstellen')).toBeVisible({
+			timeout: 15000,
+		})
 	})
 })
 
 test.describe('Doorlooptijd page', () => {
-
 	// @e2e openspec/specs/doorlooptijd-dashboard/spec.md#doorlooptijd-page-renders-heading
 	test('renders processing time analytics', async ({ page }) => {
 		// Use the /index.php-prefixed deep link (navToRoute). The comment this
 		// replaces claimed a /index.php deep-link resets to the Dashboard;
 		// measured on a CI runner (2026-08-04) it renders the view correctly.
 		await navToRoute(page, '/doorlooptijd')
-		await expect(page.getByRole('heading', { name: 'Processing Time Analytics', level: 2 })).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByRole('heading', {
+				name: 'Processing Time Analytics',
+				level: 2,
+			}),
+		).toBeVisible({ timeout: 15000 })
 		await expect(page.getByText('SLA adherence')).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Dashboard' })).toBeVisible()
 	})
 })
 
 test.describe('Settings page', () => {
-
 	// @e2e openspec/specs/admin-settings/spec.md#in-app-settings-page-renders-configuration-sections
 	// NOTE ON THE URL: these used the un-prefixed `/apps/procest/settings`.
 	// Measured on a CI runner (2026-08-04), a deep link WITHOUT the
@@ -160,7 +201,9 @@ test.describe('Settings page', () => {
 	// the prefix does. (Several comments in this suite asserted the opposite.)
 	// NOTE ON THE SECTIONS: `AdminRoot.vue` mounts its sections lazily as the
 	// viewport approaches them, so scroll them all in before asserting.
-	test('renders the configuration section and its save control', async ({ page }) => {
+	test('renders the configuration section and its save control', async ({
+		page,
+	}) => {
 		await page.goto('/index.php/apps/procest/settings')
 		await dismissSupportDialog(page)
 		await loadAllAdminSections(page)
@@ -168,7 +211,9 @@ test.describe('Settings page', () => {
 		// asserted here but exist nowhere in src/ — that surface was removed.
 		// `Settings.vue` renders a CnSettingsSection named "Configuration"
 		// with a primary "Save" action, which is the current contract.
-		await expect(page.getByRole('button', { name: 'Save' })).toBeVisible({ timeout: 15000 })
+		await expect(page.getByRole('button', { name: 'Save' })).toBeVisible({
+			timeout: 15000,
+		})
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 	})
 
@@ -187,10 +232,18 @@ test.describe('Settings page', () => {
 		// field renders its own <label> plus the NcTextField's label, so take
 		// the first exact match per name.
 		const form = page.locator('.settings-form')
-		await expect(form.getByText('Register', { exact: true }).first()).toBeVisible({ timeout: 15000 })
-		await expect(form.getByText('Case schema', { exact: true }).first()).toBeVisible()
-		await expect(form.getByText('Task schema', { exact: true }).first()).toBeVisible()
-		await expect(form.getByText('Status schema', { exact: true }).first()).toBeVisible()
+		await expect(
+			form.getByText('Register', { exact: true }).first(),
+		).toBeVisible({ timeout: 15000 })
+		await expect(
+			form.getByText('Case schema', { exact: true }).first(),
+		).toBeVisible()
+		await expect(
+			form.getByText('Task schema', { exact: true }).first(),
+		).toBeVisible()
+		await expect(
+			form.getByText('Status schema', { exact: true }).first(),
+		).toBeVisible()
 	})
 
 	// FIXME(#719): same gap — no "Case Type Management" heading renders on the
@@ -199,6 +252,8 @@ test.describe('Settings page', () => {
 		await page.goto('/index.php/apps/procest/settings')
 		await dismissSupportDialog(page)
 		await loadAllAdminSections(page)
-		await expect(page.getByRole('heading', { name: 'Case Type Management' })).toBeVisible({ timeout: 15000 })
+		await expect(
+			page.getByRole('heading', { name: 'Case Type Management' }),
+		).toBeVisible({ timeout: 15000 })
 	})
 })

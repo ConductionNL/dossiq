@@ -2,7 +2,8 @@
 	<aside class="mandaat-widget">
 		<header class="mandaat-widget__header">
 			<h4>{{ mandaat.description || mandaat.mandateNumber }}</h4>
-			<button type="button"
+			<button
+				type="button"
 				class="mandaat-widget__close"
 				:aria-label="t('procest', 'Close mandate details')"
 				@click="$emit('close')">
@@ -16,10 +17,7 @@
 
 			<dt>{{ t('procest', 'Legal basis') }}</dt>
 			<dd>
-				<a v-if="legalLink"
-					:href="legalLink"
-					target="_blank"
-					rel="noopener">
+				<a v-if="legalLink" :href="legalLink" target="_blank" rel="noopener">
 					{{ mandaat.legalBasis }}
 				</a>
 				<span v-else>{{ mandaat.legalBasis || '-' }}</span>
@@ -33,7 +31,9 @@
 				<ul v-if="roleHolders.length">
 					<li v-for="h in roleHolders" :key="h.userId">
 						{{ h.displayName || h.userId }}
-						<span v-if="h.toewijzingType === 'waarnemer'" class="mandaat-widget__waarnemer">
+						<span
+							v-if="h.toewijzingType === 'waarnemer'"
+							class="mandaat-widget__waarnemer">
 							({{ t('procest', 'substitute') }})
 						</span>
 					</li>
@@ -43,7 +43,12 @@
 		</dl>
 
 		<p v-if="hasWaarnemer" class="mandaat-widget__note">
-			{{ t('procest', 'A waarnemer (deputy) holder is active. Decisions taken by them are valid under the mandate.') }}
+			{{
+				t(
+					'procest',
+					'A waarnemer (deputy) holder is active. Decisions taken by them are valid under the mandate.',
+				)
+			}}
 		</p>
 	</aside>
 </template>
@@ -87,7 +92,9 @@ export default {
 			if (!wetMatch) {
 				return null
 			}
-			return 'https://wetten.overheid.nl/zoeken?text=' + encodeURIComponent(basis)
+			return (
+				'https://wetten.overheid.nl/zoeken?text=' + encodeURIComponent(basis)
+			)
 		},
 
 		/**

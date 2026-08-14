@@ -1,7 +1,8 @@
 <!-- SPDX-License-Identifier: EUPL-1.2 -->
 <!-- SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl> -->
 <template>
-	<NcDialog v-if="open"
+	<NcDialog
+		v-if="open"
 		:name="t('procest', 'New consultation')"
 		size="normal"
 		:can-close="!submitting"
@@ -12,16 +13,20 @@
 				<label class="consultation-create-dialog__label">
 					{{ t('procest', 'Case') }}
 				</label>
-				<span class="consultation-create-dialog__readonly">{{ caseId }}</span>
+				<span class="consultation-create-dialog__readonly">{{
+					caseId
+				}}</span>
 			</div>
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:model-value="form.adviesAuthority"
+					:model-value="form.adviesInstantie"
 					:label="t('procest', 'Advisory body')"
-					:placeholder="t('procest', 'e.g. Fire brigade, Aesthetics committee')"
+					:placeholder="
+						t('procest', 'e.g. Fire brigade, Aesthetics committee')
+					"
 					required
-					@update:model-value="v => form.adviesAuthority = v" />
+					@update:model-value="(v) => (form.adviesInstantie = v)" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
@@ -29,30 +34,34 @@
 					:model-value="form.onderwerp"
 					:label="t('procest', 'Onderwerp')"
 					required
-					@update:model-value="v => form.onderwerp = v" />
+					@update:model-value="(v) => (form.onderwerp = v)" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
-				<label class="consultation-create-dialog__label" for="consultation-create-question">
+				<label
+					class="consultation-create-dialog__label"
+					for="consultation-create-question">
 					{{ t('procest', 'Question') }} *
 				</label>
 				<textarea
 					id="consultation-create-question"
-					v-model="form.question_formulation"
+					v-model="form.vraagstelling"
 					class="consultation-create-dialog__textarea"
 					rows="4" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
-				<label class="consultation-create-dialog__label" for="consultation-create-response-date">
+				<label
+					class="consultation-create-dialog__label"
+					for="consultation-create-response-date">
 					{{ t('procest', 'Latest response date') }} *
 				</label>
 				<input
 					id="consultation-create-response-date"
-					v-model="form.latestResponseDate"
+					v-model="form.uiterlijkeReactiedatum"
 					type="date"
 					class="consultation-create-dialog__date-input"
-					:min="today">
+					:min="today" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
@@ -60,11 +69,11 @@
 					{{ t('procest', 'Priority') }}
 				</label>
 				<NcSelect
-					v-model="form.priority"
+					v-model="form.prioriteit"
 					:options="prioriteitOptions"
 					:aria-label-combobox="t('procest', 'Priority')"
 					label="label"
-					:reduce="opt => opt.value"
+					:reduce="(opt) => opt.value"
 					:placeholder="t('procest', 'Select priority')" />
 			</div>
 
@@ -77,18 +86,25 @@
 			<NcButton :disabled="submitting" @click="onClose">
 				{{ t('procest', 'Annuleren') }}
 			</NcButton>
-			<NcButton
-				type="primary"
-				:disabled="!canSubmit"
-				@click="onSubmit">
-				{{ submitting ? t('procest', 'Bezig...') : t('procest', 'Create consultation') }}
+			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
+				{{
+					submitting
+						? t('procest', 'Bezig...')
+						: t('procest', 'Create consultation')
+				}}
 			</NcButton>
 		</template>
 	</NcDialog>
 </template>
 
 <script>
-import { NcButton, NcDialog, NcNoteCard, NcSelect, NcTextField } from '@nextcloud/vue'
+import {
+	NcButton,
+	NcDialog,
+	NcNoteCard,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 
 export default {
 	name: 'ConsultationCreateDialog',
@@ -119,11 +135,11 @@ export default {
 			submitting: false,
 			validationError: '',
 			form: {
-				adviesAuthority: '',
+				adviesInstantie: '',
 				onderwerp: '',
-				question_formulation: '',
-				latestResponseDate: '',
-				priority: 'normaal',
+				vraagstelling: '',
+				uiterlijkeReactiedatum: '',
+				prioriteit: 'normaal',
 			},
 			prioriteitOptions: [
 				{ label: this.t('procest', 'Normal'), value: 'normaal' },
@@ -144,11 +160,13 @@ export default {
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		canSubmit() {
-			return !this.submitting
-				&& this.form.adviesAuthority.trim() !== ''
+			return (
+				!this.submitting
+				&& this.form.adviesInstantie.trim() !== ''
 				&& this.form.onderwerp.trim() !== ''
-				&& this.form.question_formulation.trim() !== ''
-				&& this.form.latestResponseDate !== ''
+				&& this.form.vraagstelling.trim() !== ''
+				&& this.form.uiterlijkeReactiedatum !== ''
+			)
 		},
 	},
 	watch: {
@@ -161,11 +179,11 @@ export default {
 				this.validationError = ''
 				this.submitting = false
 				this.form = {
-					adviesAuthority: '',
+					adviesInstantie: '',
 					onderwerp: this.parentZaakTitle,
-					question_formulation: '',
-					latestResponseDate: this.defaultDeadline,
-					priority: 'normaal',
+					vraagstelling: '',
+					uiterlijkeReactiedatum: this.defaultDeadline,
+					prioriteit: 'normaal',
 				}
 			}
 		},
@@ -173,20 +191,26 @@ export default {
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
-			if (this.form.adviesAuthority.trim() === '') {
-				this.validationError = this.t('procest', 'Advisory body is required.')
+			if (this.form.adviesInstantie.trim() === '') {
+				this.validationError = this.t(
+					'procest',
+					'Advisory body is required.',
+				)
 				return false
 			}
 			if (this.form.onderwerp.trim() === '') {
 				this.validationError = this.t('procest', 'Subject is required.')
 				return false
 			}
-			if (this.form.question_formulation.trim() === '') {
+			if (this.form.vraagstelling.trim() === '') {
 				this.validationError = this.t('procest', 'Question is required.')
 				return false
 			}
-			if (this.form.latestResponseDate === '') {
-				this.validationError = this.t('procest', 'Latest response date is required.')
+			if (this.form.uiterlijkeReactiedatum === '') {
+				this.validationError = this.t(
+					'procest',
+					'Latest response date is required.',
+				)
 				return false
 			}
 			return true
@@ -197,12 +221,12 @@ export default {
 			if (!this.validate()) return
 			this.submitting = true
 			this.$emit('created', {
-				parentCase: this.caseId,
-				adviesAuthority: this.form.adviesAuthority.trim(),
+				parentZaak: this.caseId,
+				adviesInstantie: this.form.adviesInstantie.trim(),
 				onderwerp: this.form.onderwerp.trim(),
-				question_formulation: this.form.question_formulation.trim(),
-				latestResponseDate: this.form.latestResponseDate,
-				priority: this.form.priority,
+				vraagstelling: this.form.vraagstelling.trim(),
+				uiterlijkeReactiedatum: this.form.uiterlijkeReactiedatum,
+				prioriteit: this.form.prioriteit,
 			})
 			this.submitting = false
 		},

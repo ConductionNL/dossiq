@@ -56,7 +56,10 @@ const FULFILLED_BY = 'x-procest-e2e-fulfilled'
  * @param timeout How long to wait for the worker to reach `activated`.
  * @return the worker's scope URL.
  */
-async function activeWorkerScope(page: import('@playwright/test').Page, timeout = 20_000): Promise<string> {
+async function activeWorkerScope(
+	page: import('@playwright/test').Page,
+	timeout = 20_000,
+): Promise<string> {
 	const deadline = Date.now() + timeout
 	while (Date.now() < deadline) {
 		const scope = await page.evaluate(async () => {
@@ -70,8 +73,8 @@ async function activeWorkerScope(page: import('@playwright/test').Page, timeout 
 	}
 	throw new Error(
 		`procest registered no ACTIVE service worker within ${timeout}ms. `
-		+ 'src/main.js registers generateUrl(\'/apps/procest/service-worker.js\') on window load; '
-		+ 'if that registration is gone these specs no longer exercise the worker at all.',
+			+ "src/main.js registers generateUrl('/apps/procest/service-worker.js') on window load; "
+			+ 'if that registration is gone these specs no longer exercise the worker at all.',
 	)
 }
 
@@ -97,14 +100,19 @@ async function openProcest(page: import('@playwright/test').Page): Promise<void>
 
 	const scope = await activeWorkerScope(page)
 	await page.goto(scope)
-	await page.waitForFunction(() => navigator.serviceWorker.controller !== null, undefined, { timeout: 20_000 })
+	await page.waitForFunction(
+		() => navigator.serviceWorker.controller !== null,
+		undefined,
+		{ timeout: 20_000 },
+	)
 	await expect(page).not.toHaveURL(/login/, { timeout: 15000 })
 }
 
 test.describe('PDOK via openconnector — shim routing', () => {
-
 	// @e2e openspec/specs/pdok-consumer/spec.md#scenario-suggest-call-reaches-openconnector-instead-of-api-pdok-nl
-	test('suggest reaches the openconnector endpoint, never api.pdok.nl', async ({ page }) => {
+	test('suggest reaches the openconnector endpoint, never api.pdok.nl', async ({
+		page,
+	}) => {
 		await openProcest(page)
 
 		const seen: string[] = []
@@ -117,7 +125,9 @@ test.describe('PDOK via openconnector — shim routing', () => {
 				status: 200,
 				contentType: 'application/json',
 				headers: { [FULFILLED_BY]: 'suggest' },
-				body: JSON.stringify({ docs: [{ id: 'adr-1', weergavenaam: 'Lauriergracht 116' }] }),
+				body: JSON.stringify({
+					docs: [{ id: 'adr-1', weergavenaam: 'Lauriergracht 116' }],
+				}),
 			}),
 		)
 		// Any direct api.pdok.nl call would be a regression — fail it loudly.
@@ -129,11 +139,17 @@ test.describe('PDOK via openconnector — shim routing', () => {
 		// leaks directly to PDOK) — both assertions hold against the live bundle.
 		const result = await page.evaluate(async () => {
 			try {
-				const res = await fetch('/index.php/apps/openconnector/api/pdok/suggest?q=Lauriergracht', {
-					headers: { 'OCS-APIRequest': 'true' },
-				})
+				const res = await fetch(
+					'/index.php/apps/openconnector/api/pdok/suggest?q=Lauriergracht',
+					{
+						headers: { 'OCS-APIRequest': 'true' },
+					},
+				)
 				const body = await res.json()
-				return { docs: body?.docs ?? [], fulfilledBy: res.headers.get('x-procest-e2e-fulfilled') }
+				return {
+					docs: body?.docs ?? [],
+					fulfilledBy: res.headers.get('x-procest-e2e-fulfilled'),
+				}
 			} catch (e) {
 				return { threw: String(e) }
 			}
@@ -142,35 +158,54 @@ test.describe('PDOK via openconnector — shim routing', () => {
 		// A rejected fetch is its own failure mode (a service worker that claims
 		// the request, a torn-down context) and must not be reported as "no
 		// suggestions" — name it before asserting on the payload.
-		expect(result.threw, `suggest() must not reject: ${result.threw ?? ''}`).toBeUndefined()
+		expect(
+			result.threw,
+			`suggest() must not reject: ${result.threw ?? ''}`,
+		).toBeUndefined()
 		// Assert the ITEM. `Array.isArray(result)` was true for the empty array a
 		// real (unintercepted) server answer produces, so it passed whether or not
 		// the request ever reached the route handler.
 		expect(result.fulfilledBy).toBe('suggest')
-		expect((result.docs as Array<{ weergavenaam: string }>).map((d) => d.weergavenaam))
-			.toContain('Lauriergracht 116')
-		const hitOpenconnector = seen.some((u) => u.includes(OC_PREFIX) && u.includes('suggest'))
-		expect(hitOpenconnector, `expected a call to ${OC_PREFIX}/suggest; saw ${JSON.stringify(seen)}`).toBeTruthy()
+		expect(
+			(result.docs as Array<{ weergavenaam: string }>).map(
+				(d) => d.weergavenaam,
+			),
+		).toContain('Lauriergracht 116')
+		const hitOpenconnector = seen.some(
+			(u) => u.includes(OC_PREFIX) && u.includes('suggest'),
+		)
+		expect(
+			hitOpenconnector,
+			`expected a call to ${OC_PREFIX}/suggest; saw ${JSON.stringify(seen)}`,
+		).toBeTruthy()
 		expect(seen.some((u) => u.includes('api.pdok.nl'))).toBe(false)
 	})
 
 	// @e2e openspec/specs/pdok-consumer/spec.md#scenario-503-response-resolves-with-null-and-surfaces-message_key
-	test('503 from openconnector degrades gracefully without throwing', async ({ page }) => {
+	test('503 from openconnector degrades gracefully without throwing', async ({
+		page,
+	}) => {
 		await openProcest(page)
 		await page.route(`**${OC_PREFIX}/lookup**`, (route) =>
 			route.fulfill({
 				status: 503,
 				contentType: 'application/json',
 				headers: { [FULFILLED_BY]: 'lookup-503' },
-				body: JSON.stringify({ error: 'pdok_unavailable', message_key: 'pdok.unavailable' }),
+				body: JSON.stringify({
+					error: 'pdok_unavailable',
+					message_key: 'pdok.unavailable',
+				}),
 			}),
 		)
 
 		const outcome = await page.evaluate(async () => {
 			try {
-				const res = await fetch('/index.php/apps/openconnector/api/pdok/lookup?id=adr-1', {
-					headers: { 'OCS-APIRequest': 'true' },
-				})
+				const res = await fetch(
+					'/index.php/apps/openconnector/api/pdok/lookup?id=adr-1',
+					{
+						headers: { 'OCS-APIRequest': 'true' },
+					},
+				)
 				const body = await res.json().catch(() => ({}))
 				return {
 					status: res.status,
@@ -184,7 +219,10 @@ test.describe('PDOK via openconnector — shim routing', () => {
 
 		// "Without throwing" is the requirement — assert it as itself, so the
 		// failure names the rejection instead of an undefined status.
-		expect(outcome.threw, `a 503 must not reject the fetch: ${outcome.threw ?? ''}`).toBeUndefined()
+		expect(
+			outcome.threw,
+			`a 503 must not reject the fetch: ${outcome.threw ?? ''}`,
+		).toBeUndefined()
 		expect(outcome.fulfilledBy).toBe('lookup-503')
 		expect(outcome.status).toBe(503)
 		expect(outcome.messageKey).toBe('pdok.unavailable')
@@ -193,23 +231,34 @@ test.describe('PDOK via openconnector — shim routing', () => {
 	// @e2e openspec/specs/pdok-consumer/spec.md#scenario-openconnector-absent-surfaces-warning-without-blocking-form
 	test('404 (openconnector absent) does not block the page', async ({ page }) => {
 		await openProcest(page)
-		await page.route(`**${OC_PREFIX}/suggest**`, (route) => route.fulfill({
-			status: 404,
-			headers: { [FULFILLED_BY]: 'suggest-404' },
-			body: 'Not Found',
-		}))
+		await page.route(`**${OC_PREFIX}/suggest**`, (route) =>
+			route.fulfill({
+				status: 404,
+				headers: { [FULFILLED_BY]: 'suggest-404' },
+				body: 'Not Found',
+			}),
+		)
 
 		const outcome = await page.evaluate(async () => {
 			try {
-				const res = await fetch('/index.php/apps/openconnector/api/pdok/suggest?q=Tilburg', {
-					headers: { 'OCS-APIRequest': 'true' },
-				})
-				return { status: res.status, fulfilledBy: res.headers.get('x-procest-e2e-fulfilled') }
+				const res = await fetch(
+					'/index.php/apps/openconnector/api/pdok/suggest?q=Tilburg',
+					{
+						headers: { 'OCS-APIRequest': 'true' },
+					},
+				)
+				return {
+					status: res.status,
+					fulfilledBy: res.headers.get('x-procest-e2e-fulfilled'),
+				}
 			} catch (e) {
 				return { threw: String(e) }
 			}
 		})
-		expect(outcome.threw, `an absent openconnector must not reject the fetch: ${outcome.threw ?? ''}`).toBeUndefined()
+		expect(
+			outcome.threw,
+			`an absent openconnector must not reject the fetch: ${outcome.threw ?? ''}`,
+		).toBeUndefined()
 		// On CI openconnector is genuinely not installed, so Nextcloud's own 404
 		// has the same status as the mock. Without this header the assertion below
 		// passed whether or not the request was ever intercepted.
@@ -221,7 +270,6 @@ test.describe('PDOK via openconnector — shim routing', () => {
 })
 
 test.describe('PDOK via openconnector — OR address fixtures (live)', () => {
-
 	// @e2e openspec/specs/pdok-consumer/spec.md#scenario-all-six-functions-are-exported-with-unchanged-signatures
 	test('seeded OR addresses are retrievable without PDOK/openconnector being available', async () => {
 		const ctx = await request.newContext({
@@ -239,18 +287,28 @@ test.describe('PDOK via openconnector — OR address fixtures (live)', () => {
 		})
 		try {
 			const available = await addressesRegisterAvailable(ctx)
-			test.skip(!available, 'OR addresses register not installed (add-addresses-register sibling change not shipped)')
+			test.skip(
+				!available,
+				'OR addresses register not installed (add-addresses-register sibling change not shipped)',
+			)
 
 			const token = await getRequestToken(ctx)
 			await seedAddressFixtures(ctx, token)
 			try {
-				const res = await ctx.get('/index.php/apps/openregister/api/objects/addresses/address?_limit=200', {
-					headers: { 'OCS-APIRequest': 'true' },
-				})
+				const res = await ctx.get(
+					'/index.php/apps/openregister/api/objects/addresses/address?_limit=200',
+					{
+						headers: { 'OCS-APIRequest': 'true' },
+					},
+				)
 				expect(res.ok()).toBeTruthy()
 				const body = await res.json()
-				const rows: any[] = Array.isArray(body) ? body : (body?.results ?? body?.data ?? [])
-				const seeded = rows.filter((r) => JSON.stringify(r).includes(ADDRESS_RUN_PREFIX))
+				const rows: any[] = Array.isArray(body)
+					? body
+					: (body?.results ?? body?.data ?? [])
+				const seeded = rows.filter((r) =>
+					JSON.stringify(r).includes(ADDRESS_RUN_PREFIX),
+				)
 				expect(seeded.length).toBe(2)
 			} finally {
 				await cleanupAddressFixtures(ctx, token)

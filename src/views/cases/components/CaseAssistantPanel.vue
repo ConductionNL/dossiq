@@ -18,9 +18,15 @@
 	<div v-if="available" class="case-assistant" data-testid="case-assistant-panel">
 		<div ref="transcript" class="case-assistant__transcript">
 			<p v-if="transcript.length === 0" class="case-assistant__empty">
-				{{ t('procest', 'Ask a question about this case. Answers are based only on case data you can already see.') }}
+				{{
+					t(
+						'procest',
+						'Ask a question about this case. Answers are based only on case data you can already see.',
+					)
+				}}
 			</p>
-			<div v-for="(entry, idx) in transcript"
+			<div
+				v-for="(entry, idx) in transcript"
 				:key="idx"
 				class="case-assistant__message"
 				:class="`case-assistant__message--${entry.role}`">
@@ -41,7 +47,7 @@
 				:placeholder="t('procest', 'Ask a question about this case…')"
 				:disabled="loading"
 				data-testid="case-assistant-input"
-				@update:model-value="v => draft = v"
+				@update:model-value="(v) => (draft = v)"
 				@keydown.enter.prevent="onSend" />
 			<NcButton
 				type="primary"
@@ -58,8 +64,15 @@
 <script>
 import { NcButton, NcTextField, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import { fetchAssistantAvailability, converse } from '../../../services/assistantApi.js'
-import { makeTranscriptEntry, canSend, assistantErrorMessage } from '../../../utils/assistantHelpers.js'
+import {
+	fetchAssistantAvailability,
+	converse,
+} from '../../../services/assistantApi.js'
+import {
+	makeTranscriptEntry,
+	canSend,
+	assistantErrorMessage,
+} from '../../../utils/assistantHelpers.js'
 
 export default {
 	name: 'CaseAssistantPanel',
@@ -106,7 +119,9 @@ export default {
 			this.loading = true
 			try {
 				const response = await converse(this.caseId, message)
-				this.transcript.push(makeTranscriptEntry('assistant', response.reply || ''))
+				this.transcript.push(
+					makeTranscriptEntry('assistant', response.reply || ''),
+				)
 			} catch (e) {
 				this.errorMessage = assistantErrorMessage(e)
 			} finally {

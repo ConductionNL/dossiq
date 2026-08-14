@@ -6,7 +6,9 @@
 		</div>
 
 		<!-- Required steps status -->
-		<div v-if="requiredStepsInfo.length > 0" class="workflow-transitions__steps-info">
+		<div
+			v-if="requiredStepsInfo.length > 0"
+			class="workflow-transitions__steps-info">
 			<p class="workflow-transitions__steps-label">
 				{{ t('procest', 'Required steps:') }}
 			</p>
@@ -21,7 +23,9 @@
 		</div>
 
 		<!-- Transition buttons -->
-		<div v-if="availableTransitions.length > 0" class="workflow-transitions__buttons">
+		<div
+			v-if="availableTransitions.length > 0"
+			class="workflow-transitions__buttons">
 			<NcButton
 				v-for="tr in availableTransitions"
 				:key="tr.id"
@@ -91,22 +95,29 @@ export default {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		versionNotice() {
 			if (!this.workflowTemplate || !this.activeVersion) return null
-			if (this.caseData.workflowVersion
+			if (
+				this.caseData.workflowVersion
 				&& this.activeVersion.version
-				&& this.caseData.workflowVersion !== this.activeVersion.version) {
-				return t('procest', 'This case uses workflow version {caseVersion}. Current version is {activeVersion}.', {
-					caseVersion: this.caseData.workflowVersion,
-					activeVersion: this.activeVersion.version,
-				})
+				&& this.caseData.workflowVersion !== this.activeVersion.version
+			) {
+				return t(
+					'procest',
+					'This case uses workflow version {caseVersion}. Current version is {activeVersion}.',
+					{
+						caseVersion: this.caseData.workflowVersion,
+						activeVersion: this.activeVersion.version,
+					},
+				)
 			}
 			return null
 		},
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		requiredStepsInfo() {
 			if (!this.workflowTemplate) return []
-			const steps = typeof this.workflowTemplate.steps === 'string'
-				? JSON.parse(this.workflowTemplate.steps || '[]')
-				: (this.workflowTemplate.steps || [])
+			const steps =
+				typeof this.workflowTemplate.steps === 'string'
+					? JSON.parse(this.workflowTemplate.steps || '[]')
+					: this.workflowTemplate.steps || []
 			const currentStatus = this.caseData.status
 			return steps
 				.filter((s) => s.status === currentStatus && s.isRequired)
@@ -146,7 +157,9 @@ export default {
 			this.loading = true
 			try {
 				// Get the active workflow for the case type
-				this.activeVersion = await this.workflowStore.getActiveVersion(this.caseData.caseType)
+				this.activeVersion = await this.workflowStore.getActiveVersion(
+					this.caseData.caseType,
+				)
 
 				// If the case has a specific workflow version binding, use that
 				if (this.caseData.workflowTemplate) {
@@ -176,13 +189,14 @@ export default {
 				return
 			}
 
-			this.availableTransitions = this.workflowStore.computeAvailableTransitions(
-				this.caseData,
-				this.userRoles,
-				this.workflowTemplate,
-				this.tasks,
-				this.documents,
-			)
+			this.availableTransitions =
+				this.workflowStore.computeAvailableTransitions(
+					this.caseData,
+					this.userRoles,
+					this.workflowTemplate,
+					this.tasks,
+					this.documents,
+				)
 		},
 
 		/**
@@ -202,13 +216,15 @@ export default {
 
 				// Dispatch automatic actions (non-blocking)
 				if (transition.automaticActions?.length > 0) {
-					this.workflowStore.dispatchActions(
-						transition.automaticActions,
-						updatedCase || this.caseData,
-						transition,
-					).catch((err) => {
-						console.error('Some workflow actions failed:', err)
-					})
+					this.workflowStore
+						.dispatchActions(
+							transition.automaticActions,
+							updatedCase || this.caseData,
+							transition,
+						)
+						.catch((err) => {
+							console.error('Some workflow actions failed:', err)
+						})
 				}
 
 				// Auto-create tasks for the new status's steps
@@ -235,15 +251,18 @@ export default {
 		async createStepTasks(statusId) {
 			if (!this.workflowTemplate) return
 
-			const steps = typeof this.workflowTemplate.steps === 'string'
-				? JSON.parse(this.workflowTemplate.steps || '[]')
-				: (this.workflowTemplate.steps || [])
+			const steps =
+				typeof this.workflowTemplate.steps === 'string'
+					? JSON.parse(this.workflowTemplate.steps || '[]')
+					: this.workflowTemplate.steps || []
 
 			const stepsForStatus = steps.filter((s) => s.status === statusId)
 
 			for (const step of stepsForStatus) {
 				// Check if a task for this step already exists
-				const existingTask = this.tasks.find((t) => t.workflowStepId === step.id)
+				const existingTask = this.tasks.find(
+					(t) => t.workflowStepId === step.id,
+				)
 				if (existingTask) continue
 
 				await this.objectStore.saveObject('task', {
@@ -255,11 +274,11 @@ export default {
 					workflowStepId: step.id,
 					checklist: step.checklist
 						? JSON.stringify(
-							step.checklist.map((item) => ({
-								...item,
-								checked: false,
-							})),
-						)
+								step.checklist.map((item) => ({
+									...item,
+									checked: false,
+								})),
+							)
 						: null,
 				})
 			}
@@ -272,18 +291,21 @@ export default {
 		async terminateOptionalTasks(fromStatusId) {
 			if (!this.workflowTemplate) return
 
-			const steps = typeof this.workflowTemplate.steps === 'string'
-				? JSON.parse(this.workflowTemplate.steps || '[]')
-				: (this.workflowTemplate.steps || [])
+			const steps =
+				typeof this.workflowTemplate.steps === 'string'
+					? JSON.parse(this.workflowTemplate.steps || '[]')
+					: this.workflowTemplate.steps || []
 
 			const optionalStepIds = steps
 				.filter((s) => s.status === fromStatusId && !s.isRequired)
 				.map((s) => s.id)
 
 			for (const task of this.tasks) {
-				if (optionalStepIds.includes(task.workflowStepId)
+				if (
+					optionalStepIds.includes(task.workflowStepId)
 					&& task.status !== 'completed'
-					&& task.status !== 'terminated') {
+					&& task.status !== 'terminated'
+				) {
 					await this.objectStore.saveObject('task', {
 						...task,
 						status: 'terminated',

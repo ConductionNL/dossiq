@@ -29,7 +29,12 @@
 		<NcEmptyContent
 			v-else-if="relations.length === 0"
 			:name="t('procest', 'No related cases')"
-			:description="t('procest', 'Link this case to a follow-up, subject, or contributing case.')" />
+			:description="
+				t(
+					'procest',
+					'Link this case to a follow-up, subject, or contributing case.',
+				)
+			" />
 
 		<div v-else class="viewTableContainer">
 			<table class="viewTable">
@@ -43,7 +48,10 @@
 					</tr>
 				</thead>
 				<tbody>
-					<tr v-for="rel in relations" :key="rel.caseId + ':' + rel.aardRelatie" class="viewTableRow">
+					<tr
+						v-for="rel in relations"
+						:key="rel.caseId + ':' + rel.aardRelatie"
+						class="viewTableRow">
 						<td>{{ typeLabel(rel.aardRelatie) }}</td>
 						<td>
 							<a
@@ -52,12 +60,20 @@
 								@click.prevent="openCase(rel.caseId)">
 								{{ rel.title }}
 							</a>
-							<span v-else class="related-cases-section__masked" :title="t('procest', 'You do not have access to this case')">
+							<span
+								v-else
+								class="related-cases-section__masked"
+								:title="
+									t(
+										'procest',
+										'You do not have access to this case',
+									)
+								">
 								{{ rel.maskedNumber }}
 							</span>
 						</td>
-						<td>{{ rel.readable ? (rel.status || '—') : '—' }}</td>
-						<td>{{ rel.notes || '—' }}</td>
+						<td>{{ rel.readable ? rel.status || '—' : '—' }}</td>
+						<td>{{ rel.toelichting || '—' }}</td>
 						<td class="related-cases-section__actions-col">
 							<NcButton
 								type="tertiary"
@@ -86,7 +102,11 @@ import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
-import { fetchRelations, removeRelation, relationTypeLabel } from '../../../services/caseRelationApi.js'
+import {
+	fetchRelations,
+	removeRelation,
+	relationTypeLabel,
+} from '../../../services/caseRelationApi.js'
 import AddCaseRelationModal from '../../../modals/AddCaseRelationModal.vue'
 
 export default {
@@ -184,7 +204,7 @@ export default {
 			const row = {
 				caseId: entry.caseId,
 				aardRelatie: entry.aardRelatie,
-				notes: entry.notes || '',
+				toelichting: entry.toelichting || '',
 				readable: false,
 				title: '',
 				status: '',

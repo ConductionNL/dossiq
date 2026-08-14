@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Smoke', () => {
-
 	test('app loads without server errors', async ({ page }) => {
 		await page.goto('/index.php/apps/procest')
 		await expect(page).toHaveURL(/.*procest/)

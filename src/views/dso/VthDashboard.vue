@@ -71,7 +71,9 @@
 						<th scope="col">{{ t('procest', 'Title') }}</th>
 						<th scope="col">{{ t('procest', 'Status') }}</th>
 						<th scope="col">{{ t('procest', 'Procedure') }}</th>
-						<th scope="col">{{ t('procest', 'Competent Authority') }}</th>
+						<th scope="col">
+							{{ t('procest', 'Competent Authority') }}
+						</th>
 						<th scope="col">{{ t('procest', 'Deadline') }}</th>
 						<th scope="col">{{ t('procest', 'Actions') }}</th>
 					</tr>
@@ -82,11 +84,17 @@
 							{{ t('procest', 'No omgevingsvergunningen found.') }}
 						</td>
 					</tr>
-					<tr v-for="zaak in cases" :key="zaak.id" class="vth-dashboard__row">
+					<tr
+						v-for="zaak in cases"
+						:key="zaak.id"
+						class="vth-dashboard__row">
 						<td>{{ zaak.identifier || zaak.id }}</td>
 						<td>{{ zaak.title }}</td>
 						<td>
-							<span :class="'vth-status vth-status--' + getStatusSlug(zaak)">
+							<span
+								:class="
+									'vth-status vth-status--' + getStatusSlug(zaak)
+								">
 								{{ getStatusLabel(zaak) }}
 							</span>
 						</td>
@@ -156,8 +164,14 @@ export default {
 				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
 			],
 			procedureTypeOptions: [
-				{ label: t('procest', 'Regular procedure (8 weeks)'), value: 'reguliere' },
-				{ label: t('procest', 'Extended procedure (26 weeks)'), value: 'uitgebreide' },
+				{
+					label: t('procest', 'Regular procedure (8 weeks)'),
+					value: 'reguliere',
+				},
+				{
+					label: t('procest', 'Extended procedure (26 weeks)'),
+					value: 'uitgebreide',
+				},
 			],
 		}
 	},
@@ -204,15 +218,23 @@ export default {
 				// error page (served under HTTP 200 for an unmatched app route)
 				// renders one row per byte. See procest#784.
 				const body = response.data
-				if (body !== null && typeof body === 'object' && Array.isArray(body.cases)) {
+				if (
+					body !== null
+					&& typeof body === 'object'
+					&& Array.isArray(body.cases)
+				) {
 					this.cases = body.cases
 				} else {
 					this.cases = Array.isArray(body) ? body : []
 				}
 			} catch (err) {
-				this.error = t('procest', 'Failed to load omgevingsvergunningen: {message}', {
-					message: err?.response?.data?.message || err.message,
-				})
+				this.error = t(
+					'procest',
+					'Failed to load omgevingsvergunningen: {message}',
+					{
+						message: err?.response?.data?.message || err.message,
+					},
+				)
 			} finally {
 				this.loading = false
 			}
@@ -330,21 +352,48 @@ export default {
 	font-size: 0.85em;
 }
 
-.vth-status--ingediend { background: var(--color-info); color: #fff; }
+.vth-status--ingediend {
+	background: var(--color-info);
+	color: #fff;
+}
 
-.vth-status--in-behandeling { background: var(--color-warning); color: #fff; }
+.vth-status--in-behandeling {
+	background: var(--color-warning);
+	color: #fff;
+}
 
-.vth-status--verleend { background: var(--color-success); color: #fff; }
+.vth-status--verleend {
+	background: var(--color-success);
+	color: #fff;
+}
 
-.vth-status--geweigerd { background: var(--color-error); color: #fff; }
+.vth-status--geweigerd {
+	background: var(--color-error);
+	color: #fff;
+}
 
-.vth-status--ingetrokken { background: var(--color-text-lighter); color: #fff; }
+.vth-status--ingetrokken {
+	background: var(--color-text-lighter);
+	color: #fff;
+}
 
-.vth-deadline--ok { color: var(--color-success); }
+.vth-deadline--ok {
+	color: var(--color-success);
+}
 
-.vth-deadline--warning { color: var(--color-warning); font-weight: bold; }
+.vth-deadline--warning {
+	color: var(--color-warning);
+	font-weight: bold;
+}
 
-.vth-deadline--critical { color: var(--color-error); font-weight: bold; }
+.vth-deadline--critical {
+	color: var(--color-error);
+	font-weight: bold;
+}
 
-.vth-deadline--overdue { color: var(--color-error); font-weight: bold; text-decoration: underline; }
+.vth-deadline--overdue {
+	color: var(--color-error);
+	font-weight: bold;
+	text-decoration: underline;
+}
 </style>

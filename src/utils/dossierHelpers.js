@@ -55,7 +55,7 @@ export const STATUS_TRANSITIONS = {
  */
 export function confidentialityOrdinal(level) {
 	const index = CONFIDENTIALITY_HIERARCHY.indexOf(level)
-	return index === -1 ? (CONFIDENTIALITY_HIERARCHY.length - 1) : index
+	return index === -1 ? CONFIDENTIALITY_HIERARCHY.length - 1 : index
 }
 
 /**
@@ -98,7 +98,10 @@ export function isClassificationAllowed(defaultLevel, requestedLevel) {
 	if (!requestedLevel) {
 		return true
 	}
-	return confidentialityOrdinal(requestedLevel) >= confidentialityOrdinal(defaultLevel)
+	return (
+		confidentialityOrdinal(requestedLevel)
+		>= confidentialityOrdinal(defaultLevel)
+	)
 }
 
 /**
@@ -117,7 +120,7 @@ export function groupByType(documents) {
 		}
 		groups[type].push(doc)
 	})
-	return Object.keys(groups).map(type => ({
+	return Object.keys(groups).map((type) => ({
 		informatieobjecttype: type,
 		count: groups[type].length,
 		documents: groups[type],
@@ -136,7 +139,7 @@ export function formatSize(bytes) {
 	if (value < 1024) {
 		return value + ' B'
 	}
-	if (value < (1024 * 1024)) {
+	if (value < 1024 * 1024) {
 		return (value / 1024).toFixed(1) + ' KB'
 	}
 	return (value / (1024 * 1024)).toFixed(1) + ' MB'

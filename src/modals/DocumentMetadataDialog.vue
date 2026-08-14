@@ -8,8 +8,13 @@
 			</h2>
 
 			<ul v-if="files.length > 0" class="dossier-metadata-dialog__files">
-				<li v-for="(file, idx) in files" :key="idx" class="dossier-metadata-dialog__file">
-					<span class="dossier-metadata-dialog__file-name">{{ file.name }}</span>
+				<li
+					v-for="(file, idx) in files"
+					:key="idx"
+					class="dossier-metadata-dialog__file">
+					<span class="dossier-metadata-dialog__file-name">{{
+						file.name
+					}}</span>
 					<NcProgressBar
 						v-if="progress[idx] !== undefined"
 						:value="progress[idx]"
@@ -21,7 +26,7 @@
 				v-model="selectedType"
 				:input-label="t('procest', 'Document type')"
 				:options="typeOptions"
-				:reduce="option => option.id"
+				:reduce="(option) => option.id"
 				label="label"
 				:clearable="false"
 				required />
@@ -30,7 +35,7 @@
 				v-model="selectedClassification"
 				:input-label="t('procest', 'Confidentiality')"
 				:options="classificationOptions"
-				:reduce="option => option.id"
+				:reduce="(option) => option.id"
 				label="label"
 				:clearable="false"
 				required />
@@ -131,10 +136,11 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		typeOptions() {
-			return this.types.map(type => ({
+			return this.types.map((type) => ({
 				id: type.id || type.uuid,
 				label: type.description || type.id,
-				vertrouwelijkheidaanduiding: type.vertrouwelijkheidaanduiding || 'intern',
+				vertrouwelijkheidaanduiding:
+					type.vertrouwelijkheidaanduiding || 'intern',
 			}))
 		},
 		/**
@@ -146,9 +152,15 @@ export default {
 		classificationOptions() {
 			return [
 				{ id: 'openbaar', label: this.t('procest', 'Public') },
-				{ id: 'beperkt_openbaar', label: this.t('procest', 'Limited public') },
+				{
+					id: 'beperkt_openbaar',
+					label: this.t('procest', 'Limited public'),
+				},
 				{ id: 'intern', label: this.t('procest', 'Internal') },
-				{ id: 'zaakvertrouwelijk', label: this.t('procest', 'Case-confidential') },
+				{
+					id: 'zaakvertrouwelijk',
+					label: this.t('procest', 'Case-confidential'),
+				},
 				{ id: 'vertrouwelijk', label: this.t('procest', 'Confidential') },
 				{ id: 'confidentieel', label: this.t('procest', 'Restricted') },
 				{ id: 'geheim', label: this.t('procest', 'Secret') },
@@ -173,7 +185,7 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		selectedType(newType) {
-			const match = this.typeOptions.find(option => option.id === newType)
+			const match = this.typeOptions.find((option) => option.id === newType)
 			if (match && this.selectedClassification === '') {
 				this.selectedClassification = match.vertrouwelijkheidaanduiding
 			}

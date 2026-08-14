@@ -6,7 +6,12 @@
 		@update:open="$emit('update:open', $event)">
 		<div class="case-transfer-dialog">
 			<p class="case-transfer-dialog__description">
-				{{ t('procest', 'Transfer ownership of this case to another organization. The target organization must accept the transfer before it takes effect.') }}
+				{{
+					t(
+						'procest',
+						'Transfer ownership of this case to another organization. The target organization must accept the transfer before it takes effect.',
+					)
+				}}
 			</p>
 
 			<div class="form-group">
@@ -21,20 +26,25 @@
 			</div>
 
 			<div class="form-group">
-				<label for="case-transfer-reason">{{ t('procest', 'Reason for transfer') }}</label>
+				<label for="case-transfer-reason">{{
+					t('procest', 'Reason for transfer')
+				}}</label>
 				<textarea
 					id="case-transfer-reason"
 					v-model="form.reason"
 					class="case-transfer-dialog__textarea"
-					:placeholder="t('procest', 'Explain why this case should be transferred...')"
+					:placeholder="
+						t(
+							'procest',
+							'Explain why this case should be transferred...',
+						)
+					"
 					rows="3" />
 			</div>
 
 			<div class="form-group">
 				<label>{{ t('procest', 'Requested transfer date') }}</label>
-				<NcDateTimePicker
-					v-model="form.requestedDate"
-					type="date" />
+				<NcDateTimePicker v-model="form.requestedDate" type="date" />
 			</div>
 
 			<!--
@@ -44,12 +54,19 @@
 				call (design.md §4). Leave empty for a same-instance transfer.
 			-->
 			<div class="form-group">
-				<label for="case-transfer-remote-cloud-id">{{ t('procest', 'Remote cloud ID (optional, for cross-instance transfer)') }}</label>
+				<label for="case-transfer-remote-cloud-id">{{
+					t(
+						'procest',
+						'Remote cloud ID (optional, for cross-instance transfer)',
+					)
+				}}</label>
 				<input
 					id="case-transfer-remote-cloud-id"
 					v-model="form.remoteCloudId"
 					type="text"
-					:placeholder="t('procest', 'e.g. partner-org@partner.example.com')">
+					:placeholder="
+						t('procest', 'e.g. partner-org@partner.example.com')
+					" />
 			</div>
 		</div>
 
@@ -61,7 +78,11 @@
 				type="primary"
 				:disabled="!isValid || saving"
 				@click="submitTransfer">
-				{{ saving ? t('procest', 'Submitting...') : t('procest', 'Submit transfer request') }}
+				{{
+					saving
+						? t('procest', 'Submitting...')
+						: t('procest', 'Submit transfer request')
+				}}
 			</NcButton>
 		</template>
 	</NcDialog>
@@ -122,7 +143,9 @@ export default {
 					targetOrganization: this.form.targetOrganization?.id,
 					reason: this.form.reason,
 					requestedDate: this.form.requestedDate
-						? new Date(this.form.requestedDate).toISOString().slice(0, 10)
+						? new Date(this.form.requestedDate)
+								.toISOString()
+								.slice(0, 10)
 						: new Date().toISOString().slice(0, 10),
 					remoteCloudId: this.form.remoteCloudId?.trim() || null,
 				})

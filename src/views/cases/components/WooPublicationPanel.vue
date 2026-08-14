@@ -5,10 +5,12 @@
 <template>
 	<div class="woo-publication-panel">
 		<div v-if="state === 'published'" class="woo-publication-panel__published">
-			<span class="woo-publication-panel__badge woo-publication-panel__badge--published">
+			<span
+				class="woo-publication-panel__badge woo-publication-panel__badge--published">
 				{{ t('procest', 'Published') }}
 			</span>
-			<a v-if="publicationUrl"
+			<a
+				v-if="publicationUrl"
 				:href="publicationUrl"
 				target="_blank"
 				rel="noopener noreferrer">
@@ -19,8 +21,11 @@
 			</NcButton>
 		</div>
 
-		<div v-else-if="state === 'unavailable'" class="woo-publication-panel__unavailable">
-			<span class="woo-publication-panel__badge woo-publication-panel__badge--unavailable">
+		<div
+			v-else-if="state === 'unavailable'"
+			class="woo-publication-panel__unavailable">
+			<span
+				class="woo-publication-panel__badge woo-publication-panel__badge--unavailable">
 				{{ t('procest', 'Publication unavailable') }}
 			</span>
 			<p>{{ unavailableMessage }}</p>
@@ -39,7 +44,10 @@
 
 <script>
 import { NcButton } from '@nextcloud/vue'
-import { publishWooDecision, withdrawWooPublication } from '../../../services/wooPublicationApi.js'
+import {
+	publishWooDecision,
+	withdrawWooPublication,
+} from '../../../services/wooPublicationApi.js'
 
 export default {
 	name: 'WooPublicationPanel',
@@ -82,7 +90,8 @@ export default {
 				const result = await publishWooDecision(this.caseId, this.decisionId)
 				if (result && result.available) {
 					this.state = 'published'
-					this.publicationUrl = result.publicationUrl || this.publicationUrl
+					this.publicationUrl =
+						result.publicationUrl || this.publicationUrl
 					this.$emit('published', result)
 				} else {
 					this.state = 'unavailable'
@@ -103,7 +112,10 @@ export default {
 		async withdraw() {
 			this.busy = true
 			try {
-				const result = await withdrawWooPublication(this.caseId, this.decisionId)
+				const result = await withdrawWooPublication(
+					this.caseId,
+					this.decisionId,
+				)
 				if (result && result.available) {
 					this.state = 'pending'
 					this.publicationUrl = ''
@@ -121,13 +133,19 @@ export default {
 		 */
 		mapReason(reason) {
 			if (reason === 'opencatalogi_not_installed') {
-				return this.t('procest', 'OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.')
+				return this.t(
+					'procest',
+					'OpenCatalogi is not installed on this instance. Ask an administrator to enable it to publish Woo decisions.',
+				)
 			}
 			if (reason === 'openregister_unavailable') {
 				return this.t('procest', 'OpenRegister is not available.')
 			}
 			if (reason === 'no_publishable_documents') {
-				return this.t('procest', 'No documents are ready to publish yet. Documents marked "not public" are never published, and partially public documents need a finalized redaction first.')
+				return this.t(
+					'procest',
+					'No documents are ready to publish yet. Documents marked "not public" are never published, and partially public documents need a finalized redaction first.',
+				)
 			}
 			return this.t('procest', 'The publication could not be sent.')
 		},

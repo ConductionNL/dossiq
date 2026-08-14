@@ -89,10 +89,16 @@ export default {
 		 */
 		async onMention(payload) {
 			try {
-				await axios.post(generateUrl('/apps/procest/api/notes/mention'), payload)
+				await axios.post(
+					generateUrl('/apps/procest/api/notes/mention'),
+					payload,
+				)
 			} catch (e) {
 				// eslint-disable-next-line no-console
-				console.warn('[CaseNotesTab] Failed to dispatch mention notification', e)
+				console.warn(
+					'[CaseNotesTab] Failed to dispatch mention notification',
+					e,
+				)
 			}
 		},
 	},

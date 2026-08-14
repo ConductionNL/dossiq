@@ -6,7 +6,10 @@
 			:start-date="caseData.startDate"
 			:deadline="caseData.deadline"
 			:processing-deadline="caseTypeData.processingDeadline"
-			:extension-allowed="caseTypeData.extensionAllowed === true || caseTypeData.extensionAllowed === 'true'"
+			:extension-allowed="
+				caseTypeData.extensionAllowed === true
+				|| caseTypeData.extensionAllowed === 'true'
+			"
 			:extension-period="caseTypeData.extensionPeriod"
 			:extension-count="caseData.extensionCount || 0"
 			:is-final="isFinal"
@@ -23,7 +26,9 @@
 					{{ milestone.completed ? '&#10003;' : '&#9675;' }}
 				</span>
 				<div class="milestone-info">
-					<span class="milestone-name">{{ milestone.title || milestone.name || '---' }}</span>
+					<span class="milestone-name">{{
+						milestone.title || milestone.name || '---'
+					}}</span>
 					<span v-if="milestone.dueDate" class="milestone-date">
 						{{ formatDate(milestone.dueDate) }}
 					</span>

@@ -106,9 +106,11 @@ export function isCaseDueToday(caseObj, isFinal = false) {
 	if (isFinal) return false
 	const deadline = new Date(caseObj.deadline)
 	const now = new Date()
-	return deadline.getFullYear() === now.getFullYear()
+	return (
+		deadline.getFullYear() === now.getFullYear()
 		&& deadline.getMonth() === now.getMonth()
 		&& deadline.getDate() === now.getDate()
+	)
 }
 
 /**
@@ -129,9 +131,11 @@ export function isCaseDueTomorrow(caseObj, isFinal = false) {
 	const deadline = new Date(caseObj.deadline)
 	const tomorrow = new Date()
 	tomorrow.setDate(tomorrow.getDate() + 1)
-	return deadline.getFullYear() === tomorrow.getFullYear()
+	return (
+		deadline.getFullYear() === tomorrow.getFullYear()
 		&& deadline.getMonth() === tomorrow.getMonth()
 		&& deadline.getDate() === tomorrow.getDate()
+	)
 }
 
 /**
@@ -178,7 +182,10 @@ export function formatDeadlineCountdown(caseObj, isFinal = false) {
 		return { text: formatDate(caseObj.deadline), style: 'deadline--final' }
 	}
 	if (isCaseOverdue(caseObj, isFinal)) {
-		return { text: getCaseOverdueText(caseObj, isFinal), style: 'deadline--overdue' }
+		return {
+			text: getCaseOverdueText(caseObj, isFinal),
+			style: 'deadline--overdue',
+		}
 	}
 	if (isCaseDueToday(caseObj, isFinal)) {
 		return { text: t('procest', 'Due today'), style: 'deadline--today' }
@@ -246,7 +253,11 @@ export function getDaysRemaining(deadline) {
 export function formatDate(dateString) {
 	if (!dateString) return '—'
 	const date = new Date(dateString)
-	return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+	return date.toLocaleDateString(undefined, {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric',
+	})
 }
 
 /**

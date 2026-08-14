@@ -9,7 +9,11 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // @vue/compat REMOVED (ADR-066 task 6.1): lib + procest source are compat-
 // construct-free (v-model, no .sync/$set/filters/Vue.extend) — pure Vue 3.
-import { translate as t, translatePlural as n, loadTranslations } from '@nextcloud/l10n'
+import {
+	translate as t,
+	translatePlural as n,
+	loadTranslations,
+} from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
 import {
 	buildManifest,
@@ -69,7 +73,10 @@ function tryLoadTranslations() {
 	try {
 		const result = loadTranslations('procest', () => {})
 		if (result && typeof result.then === 'function') {
-			result.then(() => {}, () => {})
+			result.then(
+				() => {},
+				() => {},
+			)
 		}
 	} catch {
 		// no-op
@@ -112,7 +119,10 @@ registerIntegration({
 
 // Apply ADR-037 manifest fragments before routes/app consume the manifest.
 const fragmentCtx = require.context('./manifest.d/', false, /\.json$/)
-const fragments = fragmentCtx.keys().sort().map((key) => fragmentCtx(key))
+const fragments = fragmentCtx
+	.keys()
+	.sort()
+	.map((key) => fragmentCtx(key))
 // markRaw: the manifest's ~130KB pages/menu/widget tree never needs
 // per-property reactivity — only the top-level ref reassignment (below)
 // needs to be tracked to re-render the nav after the backend delta lands.
@@ -236,8 +246,12 @@ app.mount('#content')
 if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
 	window.addEventListener('load', () => {
 		navigator.serviceWorker
-			.register(generateUrl('/apps/procest/service-worker.js'), { scope: generateUrl('/apps/procest/') })
+			.register(generateUrl('/apps/procest/service-worker.js'), {
+				scope: generateUrl('/apps/procest/'),
+			})
 			// eslint-disable-next-line no-console
-			.catch((e) => console.warn('[procest] service worker registration failed', e))
+			.catch((e) =>
+				console.warn('[procest] service worker registration failed', e),
+			)
 	})
 }

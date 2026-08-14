@@ -4,8 +4,13 @@
 			<h3>{{ t('procest', 'My authorities') }}</h3>
 			<div class="bevoegdheden-panel__controls">
 				<label class="bevoegdheden-panel__toggle">
-					<input type="checkbox" :checked="onlyUnilateral" @change="onToggleFilter">
-					<span>{{ t('procest', 'Only what I can do unilaterally') }}</span>
+					<input
+						type="checkbox"
+						:checked="onlyUnilateral"
+						@change="onToggleFilter" />
+					<span>{{
+						t('procest', 'Only what I can do unilaterally')
+					}}</span>
 				</label>
 			</div>
 		</header>
@@ -29,19 +34,32 @@
 				</tr>
 			</thead>
 			<tbody>
-				<tr v-for="row in filteredRows" :key="row.id" class="bevoegdheden-panel__row">
+				<tr
+					v-for="row in filteredRows"
+					:key="row.id"
+					class="bevoegdheden-panel__row">
 					<td>{{ row.mandateNumber }}</td>
 					<td>{{ row.description }}</td>
 					<td>{{ row.bevoegdheidType || '-' }}</td>
 					<td>{{ formatCeiling(row) }}</td>
-					<td>{{ row.subdelegatie ? t('procest', 'Yes') : t('procest', 'No') }}</td>
+					<td>
+						{{
+							row.subdelegatie
+								? t('procest', 'Yes')
+								: t('procest', 'No')
+						}}
+					</td>
 					<td>{{ formatValidity(row) }}</td>
 					<td>
 						<button
 							type="button"
 							class="bevoegdheden-panel__details-btn"
 							@click="expand(row)">
-							{{ expandedId === row.id ? t('procest', 'Hide') : t('procest', 'Show') }}
+							{{
+								expandedId === row.id
+									? t('procest', 'Hide')
+									: t('procest', 'Show')
+							}}
 						</button>
 					</td>
 				</tr>
@@ -141,12 +159,16 @@ export default {
 			this.loading = true
 			try {
 				const res = await fetch(
-					OC.generateUrl('/apps/procest/api/mandate/cases/' + this.caseId + '/applicable'),
+					OC.generateUrl(
+						'/apps/procest/api/mandate/cases/'
+							+ this.caseId
+							+ '/applicable',
+					),
 					{ headers: { requesttoken: OC.requestToken } },
 				)
 				if (res.ok) {
 					const body = await res.json()
-					this.rows = Array.isArray(body) ? body : (body.items || [])
+					this.rows = Array.isArray(body) ? body : body.items || []
 				} else {
 					this.rows = []
 				}
@@ -176,7 +198,7 @@ export default {
 		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
 		 */
 		expand(row) {
-			this.expandedId = (this.expandedId === row.id) ? null : row.id
+			this.expandedId = this.expandedId === row.id ? null : row.id
 		},
 
 		/**
