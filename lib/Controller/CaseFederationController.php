@@ -42,11 +42,15 @@ use OCA\Procest\Service\CaseSharingService;
 use OCA\Procest\Service\CaseTransferService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
+use OCP\AppFramework\Http\Attribute\BruteForceProtection;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
 use OCP\IUserSession;
+use OCP\Security\Bruteforce\IThrottler;
+use Psr\Log\LoggerInterface;
 
 /**
  * Controller for federated case shares and the shared activity stream.
@@ -56,6 +60,44 @@ use OCP\IUserSession;
  * @spec openspec/specs/federated-case-collaboration/spec.md
  */
 class CaseFederationController extends Controller {
+
+	/**
+	 * Brute-force throttler action for rejected federation share tokens.
+	 *
+	 * One action across handleFederatedTransfer, postRemoteActivity and
+	 * listRemoteActivity — they all authenticate the same way, so guesses must
+	 * not be splittable across the three to stay under a per-endpoint ceiling.
+	 *
+	 * @var string
+	 */
+	private const THROTTLE_ACTION = 'procest_case_federation_share_token';
+
+	/**
+	 * Record a rejected share token with the brute-force throttler.
+	 *
+	 * These three endpoints are `#[PublicPage]` and the token in the URL is the
+	 * only credential; a rejection means it did not resolve to a live share.
+	 *
+	 * This is the half that COUNTS. `#[BruteForceProtection]` on the endpoints
+	 * is the half that ENFORCES — BruteForceMiddleware only applies a delay
+	 * when the attribute is present, so registering without it writes a counter
+	 * nothing reads. See ADR-082.
+	 *
+	 * @return void
+	 */
+	private function registerFailedShareToken(): void {
+		try {
+			$this->throttler->registerAttempt(
+				action: self::THROTTLE_ACTION,
+				ip: $this->request->getRemoteAddress()
+			);
+		} catch (\Throwable $throttlerFailure) {
+			$this->logger->warning(
+				'CaseFederationController: registerAttempt failed: ' . $throttlerFailure->getMessage()
+			);
+		}
+	}//end registerFailedShareToken()
+
 	/**
 	 * Constructor for the CaseFederationController.
 	 *
@@ -73,6 +115,8 @@ class CaseFederationController extends Controller {
 		private CaseTransferService $caseTransferService,
 		private CaseCollaborationService $collabService,
 		private IUserSession $userSession,
+		private IThrottler $throttler,
+		private LoggerInterface $logger,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
 	}//end __construct()
@@ -174,9 +218,12 @@ class CaseFederationController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function handleFederatedTransfer(string $shareToken, string $transferId): JSONResponse {
 		$verified = $this->caseTransferService->resolveFederatedTransferShare($shareToken, $transferId);
 		if ($verified === null) {
+			$this->registerFailedShareToken();
 			return new JSONResponse(['success' => false, 'error' => 'Invalid or unauthorized transfer token'], Http::STATUS_FORBIDDEN);
 		}
 
@@ -285,6 +332,8 @@ class CaseFederationController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 30, period: 60)]
+	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function postRemoteActivity(string $shareToken, string $federatedShareId): JSONResponse {
 		$message = (string)$this->request->getParam('message', '');
 		if ($message === '') {
@@ -293,6 +342,7 @@ class CaseFederationController extends Controller {
 
 		$result = $this->collabService->postRemoteActivity($shareToken, $federatedShareId, $message);
 		if (isset($result['error']) === true) {
+			$this->registerFailedShareToken();
 			return new JSONResponse(['success' => false, 'error' => $result['error']], Http::STATUS_FORBIDDEN);
 		}
 
@@ -312,9 +362,12 @@ class CaseFederationController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	#[BruteForceProtection(action: self::THROTTLE_ACTION)]
 	public function listRemoteActivity(string $shareToken, string $federatedShareId): JSONResponse {
 		$result = $this->collabService->listRemoteActivity($shareToken, $federatedShareId);
 		if (isset($result['error']) === true) {
+			$this->registerFailedShareToken();
 			return new JSONResponse(['success' => false, 'error' => $result['error']], Http::STATUS_FORBIDDEN);
 		}
 
