@@ -38,6 +38,8 @@ use OCP\AppFramework\Http;
 use OCP\IRequest;
 use OCP\IUser;
 use OCP\IUserSession;
+use OCP\Security\Bruteforce\IThrottler;
+use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -82,6 +84,8 @@ class CaseSharingControllerFederationTest extends TestCase {
 			caseTransferService: $this->transferService,
 			collabService: $this->collaborationService,
 			userSession: $this->userSession,
+			throttler: $this->createMock(IThrottler::class),
+			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end setUp()
 
