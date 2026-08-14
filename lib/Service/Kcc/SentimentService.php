@@ -126,14 +126,14 @@ class SentimentService {
 		$score = $this->scorePolarity(text: $text);
 		$label = $this->labelForScore(score: $score);
 
-		$escalationRecommended = $this->shouldEscalate(score: $score, triggers: $triggers);
+		$escalationAdvised = $this->shouldEscalate(score: $score, triggers: $triggers);
 		$escalationLevel = $this->getEscalationLevel(score: $score, triggers: $triggers);
 
 		return [
 			'score' => $score,
 			'label' => $label,
 			'triggers' => $triggers,
-			'escalationRecommended' => $escalationRecommended,
+			'escalationRecommended' => $escalationAdvised,
 			'escalationLevel' => $escalationLevel,
 		];
 	}//end analyzeSentiment()
