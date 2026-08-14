@@ -41,10 +41,10 @@
 				:class="{ 'termijn-definities-tab__row--inactive': !isActive(def) }">
 				<div class="termijn-definities-tab__row-info">
 					<strong class="termijn-definities-tab__row-name">
-						{{ def.zaaktype }}
+						{{ def.case_type }}
 					</strong>
 					<span class="termijn-definities-tab__pill">
-						{{ def.grondslag || t('procest', '(no grondslag)') }}
+						{{ def.basis || t('procest', '(no grondslag)') }}
 					</span>
 					<span class="termijn-definities-tab__pill termijn-definities-tab__pill--alt">
 						{{ formatDuur(def) }}
@@ -114,7 +114,7 @@ export default {
 			const seen = new Set()
 			const opts = []
 			for (const d of this.definitions) {
-				const z = d.zaaktype || ''
+				const z = d.case_type || ''
 				if (z && !seen.has(z)) {
 					seen.add(z)
 					opts.push({ id: z, label: z })

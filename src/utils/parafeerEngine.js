@@ -200,9 +200,9 @@ export function findDefaultRoute(routes, caseTypeId, voorstelType) {
 	return routes.find(r =>
 		r.isDefault === true
 		&& r.caseType === caseTypeId
-		&& r.voorstelType === voorstelType,
+		&& r.proposalType === voorstelType,
 	) || routes.find(r =>
 		r.isDefault === true
-		&& r.voorstelType === voorstelType,
+		&& r.proposalType === voorstelType,
 	) || null
 }

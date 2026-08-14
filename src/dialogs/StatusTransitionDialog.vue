@@ -65,7 +65,7 @@ export default {
 		return {
 			selectedStatus: null,
 			besluitdatum: '',
-			toelichting: '',
+			notes: '',
 			submitting: false,
 			error: null,
 			statusOptions: [
@@ -88,7 +88,7 @@ export default {
 				const res = await axios.post(url, {
 					newStatus: this.selectedStatus.value,
 					besluitdatum: this.besluitdatum || null,
-					toelichting: this.toelichting || null,
+					notes: this.notes || null,
 				})
 				this.$emit('submitted', res.data)
 			} catch (err) {

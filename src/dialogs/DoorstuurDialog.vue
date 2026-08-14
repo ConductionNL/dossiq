@@ -58,7 +58,7 @@ export default {
 	name: 'DoorstuurDialog',
 	components: { NcButton, NcDialog, NcTextArea, NcTextField },
 	props: {
-		zaakId: {
+		caseId: {
 			type: String,
 			required: true,
 		},
@@ -67,7 +67,7 @@ export default {
 	data() {
 		return {
 			doelBevoegdGezag: '',
-			reden: '',
+			reason: '',
 			submitting: false,
 			error: null,
 			success: false,
@@ -84,10 +84,10 @@ export default {
 			this.error = null
 			try {
 				await axios.post(
-					generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.zaakId) + '/doorstuur'),
+					generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.caseId) + '/doorstuur'),
 					{
 						doelBevoegdGezag: this.doelBevoegdGezag,
-						reden: this.reden,
+						reason: this.reason,
 					},
 				)
 				this.success = true

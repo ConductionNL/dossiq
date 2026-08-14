@@ -37,11 +37,11 @@
 				</NcNoteCard>
 				<dl class="beschikking-composer__meta">
 					<dt>{{ t('procest', 'Kenmerk') }}</dt>
-					<dd>{{ composed.kenmerk || '—' }}</dd>
+					<dd>{{ composed.reference || '—' }}</dd>
 					<dt>{{ t('procest', 'Sjabloon') }}</dt>
 					<dd>{{ composed.templateId }}</dd>
 					<dt>{{ t('procest', 'Status') }}</dt>
-					<dd>{{ composed.huidigeStatus }}</dd>
+					<dd>{{ composed.currentStatus }}</dd>
 				</dl>
 				<NcNoteCard v-if="composed.motivering_required" type="warning">
 					{{ t('procest', 'The rationale is still missing and is required.') }}
@@ -88,7 +88,7 @@ export default {
 			type: Boolean,
 			default: false,
 		},
-		zaakId: {
+		caseId: {
 			type: String,
 			required: true,
 		},
@@ -102,7 +102,7 @@ export default {
 		return {
 			templateId: null,
 			geadresseerdeNaam: '',
-			motivering: '',
+			rationale: '',
 			composed: null,
 			submitting: false,
 			error: '',
@@ -115,12 +115,12 @@ export default {
 			try {
 				const overrides = {}
 				if (this.geadresseerdeNaam) {
-					overrides.geadresseerde = { naam: this.geadresseerdeNaam }
+					overrides.geadresseerde = { name: this.geadresseerdeNaam }
 				}
-				if (this.motivering) {
-					overrides.motivering = this.motivering
+				if (this.rationale) {
+					overrides.rationale = this.rationale
 				}
-				this.composed = await compose(this.zaakId, this.templateId, overrides)
+				this.composed = await compose(this.caseId, this.templateId, overrides)
 				this.$emit('composed', this.composed)
 			} catch (e) {
 				this.error = t('procest', 'The decision could not be drafted.')

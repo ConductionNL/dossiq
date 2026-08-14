@@ -187,11 +187,11 @@ export default {
 			step: 1,
 			ernst: null,
 			gedrag: null,
-			interventie: '',
-			dwangsomBedrag: 5000,
-			dwangsomMaximaal: 25000,
-			begunstigingstermijn: 42,
-			effectueringsDatum: '',
+			intervention: '',
+			penaltyPaymentAmount: 5000,
+			penaltyPaymentMaximum: 25000,
+			compliance_period: 42,
+			effectueringsDate: '',
 			overrideReason: '',
 			zienswijzetermijn: 14,
 			submitting: false,
@@ -232,11 +232,11 @@ export default {
 		},
 
 		isDwangsom() {
-			return this.interventie?.toLowerCase().includes('penaltyPayment')
+			return this.intervention?.toLowerCase().includes('penaltyPayment')
 		},
 
 		isBestuursdwang() {
-			return this.interventie?.toLowerCase().includes('bestuursdwang')
+			return this.intervention?.toLowerCase().includes('bestuursdwang')
 		},
 
 		/** @spec openspec/specs/vth-module/spec.md */
@@ -245,7 +245,7 @@ export default {
 				return this.ernst && this.gedrag
 			}
 			if (this.step === 2) {
-				return this.interventie
+				return this.intervention
 			}
 			return true
 		},
@@ -257,8 +257,8 @@ export default {
 		 * @spec openspec/specs/vth-module/spec.md
 		 */
 		suggestedIntervention(val) {
-			if (val && !this.interventie) {
-				this.interventie = val
+			if (val && !this.intervention) {
+				this.intervention = val
 			}
 		},
 	},
@@ -276,15 +276,15 @@ export default {
 			try {
 				const action = await this.enforcementStore.createAction({
 					case: this.caseId,
-					type: this.mapInterventionToType(this.interventie),
+					type: this.mapInterventionToType(this.intervention),
 					ernst: this.ernst,
 					gedrag: this.gedrag,
-					interventie: this.interventie,
-					dwangsomBedrag: this.isDwangsom ? this.dwangsomBedrag : null,
-					dwangsomMaximaal: this.isDwangsom ? this.dwangsomMaximaal : null,
-					begunstigingstermijn: this.begunstigingstermijn || null,
-					effectueringsDatum: this.isBestuursdwang ? this.effectueringsDatum : null,
-					overrideReason: this.interventie !== this.suggestedIntervention ? this.overrideReason : null,
+					intervention: this.intervention,
+					penaltyPaymentAmount: this.isDwangsom ? this.penaltyPaymentAmount : null,
+					penaltyPaymentMaximum: this.isDwangsom ? this.penaltyPaymentMaximum : null,
+					compliance_period: this.compliance_period || null,
+					effectueringsDate: this.isBestuursdwang ? this.effectueringsDate : null,
+					overrideReason: this.intervention !== this.suggestedIntervention ? this.overrideReason : null,
 				})
 				this.$emit('created', action)
 				this.$emit('close')

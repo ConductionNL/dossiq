@@ -145,7 +145,7 @@ export default {
 		 */
 		async addItem(item) {
 			const order = this.agenda.length + 1
-			const entry = { ...item, behandeling: 'hamerstuk', agendanummer: '1.' + order }
+			const entry = { ...item, handling: 'hamerstuk', agendanummer: '1.' + order }
 			this.agenda.push(entry)
 			this.available = this.available.filter(a => a.id !== item.id)
 			try {
@@ -159,16 +159,16 @@ export default {
 		 *
 		 * @param {object} payload The { id, behandeling } payload.
 		 * @param payload.id
-		 * @param payload.behandeling
+		 * @param payload.handling
 		 */
 		async onSetBehandeling({ id, behandeling }) {
 			const idx = this.agenda.findIndex(i => i.id === id)
 			if (idx === -1) return
-			this.agenda[idx].behandeling = behandeling
+			this.agenda[idx].handling = behandeling
 			try {
 				await addToAgenda(id, behandeling, idx + 1)
 			} catch (error) {
-				console.error('Failed to update behandeling:', error)
+				console.error('Failed to update handling:', error)
 			}
 		},
 		/**

@@ -7,7 +7,7 @@
 		:name="t('procest', 'Delete role')"
 		:open="!!role"
 		@update:open="v => { if (!v) $emit('close') }">
-		<p>{{ t('procest', 'Delete role {n}?', { n: role.naam || role.id }) }}</p>
+		<p>{{ t('procest', 'Delete role {n}?', { n: role.name || role.id }) }}</p>
 		<p v-if="blockedReason" class="rol-manager__warning">
 			{{ blockedReason }}
 		</p>
@@ -41,7 +41,7 @@ export default {
 </script>
 
 <style scoped>
-.rol-manager__warning {
+.role-manager__warning {
 	color: var(--color-error);
 	font-size: 12px;
 }

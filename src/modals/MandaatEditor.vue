@@ -59,7 +59,7 @@
 					class="mandaat-editor__textarea mandaat-editor__textarea--mono"
 					rows="6"
 					:placeholder="t('procest', 'e.g. { \&quot;maxBedrag\&quot;: 50000, \&quot;categorie\&quot;: [\&quot;subsidie\&quot;] }')" />
-				<span v-if="errors.voorwaarden" class="field-error">{{ errors.voorwaarden }}</span>
+				<span v-if="errors.terms" class="field-error">{{ errors.terms }}</span>
 			</div>
 
 			<div class="form-row">
@@ -147,9 +147,9 @@ export default {
 				inWerkingtreding: this.mandaat?.inWerkingtreding || new Date().toISOString().slice(0, 10),
 				vervaldatum: this.mandaat?.vervaldatum || '',
 				toegewezenRol: this.mandaat?.toegewezenRol || '',
-				voorwaarden: this.mandaat?.voorwaarden || {},
+				terms: this.mandaat?.terms || {},
 			},
-			voorwaardenJson: JSON.stringify(this.mandaat?.voorwaarden || {}, null, 2),
+			voorwaardenJson: JSON.stringify(this.mandaat?.terms || {}, null, 2),
 		}
 	},
 	computed: {
@@ -187,9 +187,9 @@ export default {
 			if (!this.form.bevoegdheidType) errs.bevoegdheidType = t('procest', 'Bevoegdheidstype is required')
 			if (!this.form.legalBasis) errs.legalBasis = t('procest', 'Wettelijke grondslag is required')
 			try {
-				this.form.voorwaarden = this.voorwaardenJson.trim() ? JSON.parse(this.voorwaardenJson) : {}
+				this.form.terms = this.voorwaardenJson.trim() ? JSON.parse(this.voorwaardenJson) : {}
 			} catch (e) {
-				errs.voorwaarden = t('procest', 'Voorwaarden must be valid JSON')
+				errs.terms = t('procest', 'Voorwaarden must be valid JSON')
 			}
 			this.errors = errs
 			return Object.keys(errs).length === 0

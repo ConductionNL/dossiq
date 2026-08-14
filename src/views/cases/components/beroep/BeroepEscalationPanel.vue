@@ -75,7 +75,7 @@ export default {
 	emits: ['escalated'],
 	data() {
 		return {
-			voorzieningRequested: false,
+			provisionRequested: false,
 			escalating: false,
 		}
 	},
@@ -86,7 +86,7 @@ export default {
 			const bezwaarStore = useBezwaarStore()
 
 			const beroepCase = await bezwaarStore.escalateToBeroep(this.caseData, {
-				voorzieningRequested: this.voorzieningRequested,
+				provisionRequested: this.provisionRequested,
 			})
 
 			this.escalating = false

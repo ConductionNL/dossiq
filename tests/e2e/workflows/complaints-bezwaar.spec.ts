@@ -70,7 +70,7 @@ test.describe.fixme('Complaint-family workflow — bezwaren (objections)', () =>
 	async function seedBezwaar(awb: string, status = 'Ontvangen'): Promise<any> {
 		return createObject(api, token, 'bezwaar', {
 			case: caseId,
-			ontvangstdatum: '2026-06-01',
+			receipt_date: '2026-06-01',
 			status,
 			awbReference: awb,
 		})

@@ -74,7 +74,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 		totalVerbeurd(state) {
 			return state.actions
 				.filter((a) => a.status === 'verbeurd')
-				.reduce((sum, a) => sum + (a.dwangsomBedrag || 0), 0)
+				.reduce((sum, a) => sum + (a.penaltyPaymentAmount || 0), 0)
 		},
 
 		/**
@@ -238,8 +238,8 @@ export const useEnforcementStore = defineStore('enforcement', {
 			this.error = null
 			try {
 				// Auto-lookup intervention if not provided
-				if (!actionData.interventie && actionData.ernst && actionData.gedrag) {
-					actionData.interventie = this.lookupLhs(actionData.ernst, actionData.gedrag)
+				if (!actionData.intervention && actionData.ernst && actionData.gedrag) {
+					actionData.intervention = this.lookupLhs(actionData.ernst, actionData.gedrag)
 				}
 
 				const objectStore = useObjectStore()
@@ -315,7 +315,7 @@ export const useEnforcementStore = defineStore('enforcement', {
 				return await objectStore.saveObject('task', {
 					case: caseId,
 					title: 'Hercontrole uitvoeren',
-					description: `Begunstigingstermijn van ${action.begunstigingstermijn} dagen is verlopen. Voer hercontrole uit voor ${action.interventie}.`,
+					description: `Begunstigingstermijn van ${action.compliance_period} dagen is verlopen. Voer hercontrole uit voor ${action.intervention}.`,
 					status: 'open',
 					relatedObject: action.id,
 				})

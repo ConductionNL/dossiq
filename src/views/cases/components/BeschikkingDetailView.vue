@@ -10,25 +10,25 @@
 		</div>
 		<div v-else class="beschikking-detail__body">
 			<header class="beschikking-detail__header">
-				<h3>{{ beschikking.kenmerk || t('procest', 'Beschikking') }}</h3>
+				<h3>{{ beschikking.reference || t('procest', 'Beschikking') }}</h3>
 				<span class="beschikking-detail__status">{{ statusLabel }}</span>
 			</header>
 
 			<BeschikkingActionBar :beschikking-id="decisionId"
-				:status="beschikking.huidigeStatus"
+				:status="beschikking.currentStatus"
 				@updated="onUpdated" />
 
 			<section class="beschikking-detail__section">
 				<h4>{{ t('procest', 'Inhoud') }}</h4>
 				<dl class="beschikking-detail__meta">
 					<dt>{{ t('procest', 'Type') }}</dt>
-					<dd>{{ beschikking.beschikkingType }}</dd>
+					<dd>{{ beschikking.decisionType }}</dd>
 					<dt>{{ t('procest', 'Sjabloon') }}</dt>
 					<dd>{{ beschikking.templateId }}</dd>
 					<dt>{{ t('procest', 'Onderwerp') }}</dt>
 					<dd>{{ (beschikking.beslissing && beschikking.beslissing.onderwerp) || '—' }}</dd>
 					<dt>{{ t('procest', 'Motivering') }}</dt>
-					<dd>{{ beschikking.motivering || '—' }}</dd>
+					<dd>{{ beschikking.rationale || '—' }}</dd>
 				</dl>
 			</section>
 
@@ -39,9 +39,9 @@
 					<!-- Outer key renamed; `mandaatNiveau` is NESTED inside it, so it
 					     lives in that column's JSON rather than as a column of its own
 					     and is deliberately not renamed here. -->
-					<dd>{{ beschikking.mandateGranted.mandaatNiveau }}</dd>
+					<dd>{{ beschikking.mandateGranted.mandateNiveau }}</dd>
 					<dt>{{ t('procest', 'Approved by') }}</dt>
-					<dd>{{ beschikking.mandateGranted.akkoordDoor }}</dd>
+					<dd>{{ beschikking.mandateGranted.approvedBy }}</dd>
 				</dl>
 			</section>
 
@@ -49,9 +49,9 @@
 				<h4>{{ t('procest', 'Handtekening') }}</h4>
 				<dl class="beschikking-detail__meta">
 					<dt>{{ t('procest', 'TSP-aanbieder') }}</dt>
-					<dd>{{ beschikking.handtekening.tspProvider }}</dd>
+					<dd>{{ beschikking.signature.tspProvider }}</dd>
 					<dt>{{ t('procest', 'Validatierapport') }}</dt>
-					<dd>{{ beschikking.handtekening.validatieRapportId }}</dd>
+					<dd>{{ beschikking.signature.validationRapportId }}</dd>
 				</dl>
 			</section>
 
@@ -61,7 +61,7 @@
 					<dt>{{ t('procest', 'Kanaal') }}</dt>
 					<dd>{{ beschikking.verzending.kanaal }}</dd>
 					<dt>{{ t('procest', 'Bezwaartermijn eindigt') }}</dt>
-					<dd>{{ beschikking.bezwaarTermijnEindDatum || '—' }}</dd>
+					<dd>{{ beschikking.objectionTermEndDate || '—' }}</dd>
 				</dl>
 			</section>
 
@@ -71,7 +71,7 @@
 					<dt>{{ t('procest', 'Archief-id') }}</dt>
 					<dd>{{ beschikking.archief.archiefId }}</dd>
 					<dt>{{ t('procest', 'Vernietigingsdatum') }}</dt>
-					<dd>{{ beschikking.archief.vernietigingsdatum }}</dd>
+					<dd>{{ beschikking.archief.destruction_date }}</dd>
 				</dl>
 			</section>
 		</div>
@@ -100,7 +100,7 @@ export default {
 		BeschikkingActionBar,
 	},
 	props: {
-		beschikkingId: {
+		decisionId: {
 			type: String,
 			required: true,
 		},
@@ -113,14 +113,14 @@ export default {
 	},
 	computed: {
 		statusLabel() {
-			const status = this.beschikking ? this.beschikking.huidigeStatus : ''
+			const status = this.beschikking ? this.beschikking.currentStatus : ''
 			return t('procest', STATUS_LABELS[status] || status)
 		},
 		hasMandaat() {
-			return !!(this.beschikking && this.beschikking.mandateGranted && this.beschikking.mandateGranted.akkoordDoor)
+			return !!(this.beschikking && this.beschikking.mandateGranted && this.beschikking.mandateGranted.approvedBy)
 		},
 		hasHandtekening() {
-			return !!(this.beschikking && this.beschikking.handtekening && this.beschikking.handtekening.tspProvider)
+			return !!(this.beschikking && this.beschikking.signature && this.beschikking.signature.tspProvider)
 		},
 		hasVerzending() {
 			return !!(this.beschikking && this.beschikking.verzending && this.beschikking.verzending.kanaal)
@@ -136,7 +136,7 @@ export default {
 		async load() {
 			this.loading = true
 			try {
-				this.beschikking = await getBeschikking(this.beschikkingId)
+				this.beschikking = await getBeschikking(this.decisionId)
 			} catch (e) {
 				this.beschikking = null
 			} finally {
@@ -144,7 +144,7 @@ export default {
 			}
 		},
 		onUpdated(updated) {
-			if (updated && updated.huidigeStatus) {
+			if (updated && updated.currentStatus) {
 				this.beschikking = updated
 			} else {
 				this.load()

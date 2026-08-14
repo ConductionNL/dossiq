@@ -66,7 +66,7 @@ export default {
 	name: 'BeschikkingDialog',
 	components: { NcButton, NcDialog, NcTextArea },
 	props: {
-		zaakId: {
+		caseId: {
 			type: String,
 			required: true,
 		},
@@ -105,7 +105,7 @@ export default {
 			this.error = null
 			try {
 				const { data } = await axios.post(
-					generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.zaakId) + '/beschikking'),
+					generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.caseId) + '/beschikking'),
 					{
 						outcome: this.outcome,
 						motivation: this.motivation,

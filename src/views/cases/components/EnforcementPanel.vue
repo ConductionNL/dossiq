@@ -22,7 +22,7 @@
 			</div>
 			<div class="enforcement-panel__intervention">
 				<span class="enforcement-panel__label">{{ t('procest', 'Intervention:') }}</span>
-				<strong>{{ activeAction.interventie }}</strong>
+				<strong>{{ activeAction.intervention }}</strong>
 			</div>
 			<div class="enforcement-panel__status-line">
 				<span class="enforcement-panel__label">{{ t('procest', 'Status:') }}</span>
@@ -32,15 +32,15 @@
 			</div>
 
 			<!-- Dwangsom details -->
-			<div v-if="activeAction.dwangsomBedrag" class="enforcement-panel__dwangsom">
+			<div v-if="activeAction.penaltyPaymentAmount" class="enforcement-panel__dwangsom">
 				<p>
 					<strong>{{ t('procest', 'Penalty:') }}</strong>
-					EUR {{ activeAction.dwangsomBedrag }} {{ t('procest', 'per violation') }}
-					({{ t('procest', 'max') }} EUR {{ activeAction.dwangsomMaximaal }})
+					EUR {{ activeAction.penaltyPaymentAmount }} {{ t('procest', 'per violation') }}
+					({{ t('procest', 'max') }} EUR {{ activeAction.penaltyPaymentMaximum }})
 				</p>
-				<p v-if="activeAction.begunstigingstermijn">
+				<p v-if="activeAction.compliance_period">
 					<strong>{{ t('procest', 'Grace period:') }}</strong>
-					{{ activeAction.begunstigingstermijn }} {{ t('procest', 'days') }}
+					{{ activeAction.compliance_period }} {{ t('procest', 'days') }}
 				</p>
 				<p v-if="totalVerbeurd > 0">
 					<strong>{{ t('procest', 'Total forfeited:') }}</strong>
@@ -59,7 +59,7 @@
 				<span class="enforcement-panel__status-badge" :class="'enforcement-panel__status-badge--' + action.status">
 					{{ statusLabel(action.status) }}
 				</span>
-				<span>{{ action.interventie }}</span>
+				<span>{{ action.intervention }}</span>
 				<span class="enforcement-panel__history-date">{{ action.ernst }} / {{ action.gedrag }}</span>
 			</div>
 		</div>
@@ -163,7 +163,7 @@ export default {
 				opgelegd: t('procest', 'Imposed'),
 				verbeurd: t('procest', 'Forfeited'),
 				geeffectueerd: t('procest', 'Executed'),
-				ingetrokken: t('procest', 'Withdrawn'),
+				withdrawn: t('procest', 'Withdrawn'),
 			}
 			return labels[status] || status
 		},

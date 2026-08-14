@@ -116,7 +116,7 @@ export default {
 		return {
 			selectedCase: null,
 			selectedType: null,
-			toelichting: '',
+			notes: '',
 			caseOptions: [],
 			searching: false,
 			saving: false,
@@ -203,7 +203,7 @@ export default {
 				const result = await addRelation(this.caseId, {
 					targetId: this.selectedCase.id,
 					aardRelatie: this.selectedType.value,
-					toelichting: this.toelichting || undefined,
+					notes: this.notes || undefined,
 				})
 				if (result.ok) {
 					this.$emit('created')

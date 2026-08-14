@@ -95,11 +95,11 @@
 						<td class="consultation-dashboard__cell--number">
 							{{ item.nummer || item.id }}
 						</td>
-						<td>{{ item.parentZaak }}</td>
+						<td>{{ item.parentCase }}</td>
 						<td>{{ item.onderwerp }}</td>
-						<td>{{ item.adviesInstantie }}</td>
+						<td>{{ item.adviesAuthority }}</td>
 						<td :class="{ 'consultation-dashboard__cell--overdue': isOverdue(item) }">
-							{{ formatDate(item.uiterlijkeReactiedatum) }}
+							{{ formatDate(item.latestResponseDate) }}
 						</td>
 						<td>
 							<span
@@ -178,8 +178,8 @@ export default {
 				const term = this.filters.search.trim().toLowerCase()
 				items = items.filter(c =>
 					(c.onderwerp || '').toLowerCase().includes(term)
-					|| (c.adviesInstantie || '').toLowerCase().includes(term)
-					|| (c.parentZaak || '').toLowerCase().includes(term),
+					|| (c.adviesAuthority || '').toLowerCase().includes(term)
+					|| (c.parentCase || '').toLowerCase().includes(term),
 				)
 			}
 
@@ -188,11 +188,11 @@ export default {
 			}
 
 			if (this.filters.dateFrom) {
-				items = items.filter(c => c.uiterlijkeReactiedatum >= this.filters.dateFrom)
+				items = items.filter(c => c.latestResponseDate >= this.filters.dateFrom)
 			}
 
 			if (this.filters.dateTo) {
-				items = items.filter(c => c.uiterlijkeReactiedatum <= this.filters.dateTo)
+				items = items.filter(c => c.latestResponseDate <= this.filters.dateTo)
 			}
 
 			// Overdue items first.
@@ -200,7 +200,7 @@ export default {
 				const aOverdue = this.overdueIds.has(a.id) ? 0 : 1
 				const bOverdue = this.overdueIds.has(b.id) ? 0 : 1
 				if (aOverdue !== bOverdue) return aOverdue - bOverdue
-				return (a.uiterlijkeReactiedatum || '') < (b.uiterlijkeReactiedatum || '') ? -1 : 1
+				return (a.latestResponseDate || '') < (b.latestResponseDate || '') ? -1 : 1
 			})
 
 			return items

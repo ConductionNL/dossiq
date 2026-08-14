@@ -25,8 +25,8 @@
 					:model-value="selectedRole"
 					:options="roleOptions"
 					:input-label="t('procest', 'Role')"
-					@update:model-value="v => form.rolId = v ? v.id : ''" />
-				<span v-if="errors.rolId" class="field-error">{{ errors.rolId }}</span>
+					@update:model-value="v => form.roleId = v ? v.id : ''" />
+				<span v-if="errors.roleId" class="field-error">{{ errors.roleId }}</span>
 			</div>
 
 			<div class="form-group">
@@ -87,7 +87,7 @@ export default {
 			errors: {},
 			form: {
 				persoonId: '',
-				rolId: '',
+				roleId: '',
 				toewijzingType: 'reguliere',
 				vanaf: new Date().toISOString().slice(0, 10),
 				totEnMet: '',
@@ -105,7 +105,7 @@ export default {
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
-			return this.roleOptions.find(o => o.id === this.form.rolId) || null
+			return this.roleOptions.find(o => o.id === this.form.roleId) || null
 		},
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
@@ -118,7 +118,7 @@ export default {
 		validate() {
 			const errs = {}
 			if (!this.form.persoonId) errs.persoonId = t('procest', 'Person is required')
-			if (!this.form.rolId) errs.rolId = t('procest', 'Role is required')
+			if (!this.form.roleId) errs.roleId = t('procest', 'Role is required')
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},

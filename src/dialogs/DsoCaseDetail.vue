@@ -40,11 +40,11 @@
 						<dt>{{ t('procest', 'Procedure type') }}</dt>
 						<dd>{{ zaak.procedureType || '—' }}</dd>
 						<dt>{{ t('procest', 'Deadline') }}</dt>
-						<dd>{{ formatDate(zaak.deadlineDatum) }}</dd>
+						<dd>{{ formatDate(zaak.deadlineDate) }}</dd>
 						<dt>{{ t('procest', 'Competent Authority') }}</dt>
 						<dd>{{ zaak.bevoegdGezag || '—' }}</dd>
 						<dt>{{ t('procest', 'Permit application ref') }}</dt>
-						<dd>{{ zaak.vergunningaanvraagRef || '—' }}</dd>
+						<dd>{{ zaak.permitApplicationRef || '—' }}</dd>
 					</dl>
 				</section>
 
@@ -55,18 +55,18 @@
 						<dt>{{ t('procest', 'Decision date') }}</dt>
 						<dd>{{ formatDate(zaak.besluitdatum) }}</dd>
 						<dt>{{ t('procest', 'Explanation') }}</dt>
-						<dd>{{ zaak.dsoToelichting || '—' }}</dd>
+						<dd>{{ zaak.dsoNotes || '—' }}</dd>
 					</dl>
 				</section>
 
 				<!-- Samenwerkverzoeken section -->
 				<section class="dso-section">
 					<h3>{{ t('procest', 'Collaboration requests') }}</h3>
-					<p v-if="!zaak.samenwerkverzoeken || zaak.samenwerkverzoeken.length === 0">
+					<p v-if="!zaak.collaboration_requests || zaak.collaboration_requests.length === 0">
 						{{ t('procest', 'No samenwerkverzoeken linked') }}
 					</p>
 					<ul v-else>
-						<li v-for="swId in zaak.samenwerkverzoeken" :key="swId">
+						<li v-for="swId in zaak.collaboration_requests" :key="swId">
 							{{ swId }}
 						</li>
 					</ul>
@@ -214,11 +214,11 @@ export default {
 			try {
 				const payload = {
 					newStatus: this.transitionStatus.value,
-					toelichting: this.transitionToelichting || undefined,
+					notes: this.transitionToelichting || undefined,
 					besluitdatum: this.transitionBesluitdatum || undefined,
 				}
 				const { data } = await axios.post(
-					generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.zaakId) + '/transition'),
+					generateUrl('/apps/procest/api/dso/cases/' + encodeURIComponent(this.caseId) + '/transition'),
 					payload,
 				)
 				this.showTransitionDialog = false
@@ -235,7 +235,7 @@ export default {
 			if (samenwerk?.uuid || samenwerk?.id) {
 				this.$emit('transition', {
 					...this.zaak,
-					samenwerkverzoeken: [...(this.zaak.samenwerkverzoeken || []), samenwerk.uuid || samenwerk.id],
+					collaboration_requests: [...(this.zaak.collaboration_requests || []), samenwerk.uuid || samenwerk.id],
 				})
 			}
 		},

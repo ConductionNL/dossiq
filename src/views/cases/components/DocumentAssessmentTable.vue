@@ -74,7 +74,7 @@
 						<td>
 							<NcTextField
 								v-if="localAssessments[doc.id] && localAssessments[doc.id].classification"
-								:model-value="localAssessments[doc.id] && localAssessments[doc.id].motivering"
+								:model-value="localAssessments[doc.id] && localAssessments[doc.id].rationale"
 								:disabled="isReadOnly"
 								:aria-label="t('procest', 'Motivation for {doc}', { doc: doc.title || doc.name || doc.id })"
 								:placeholder="t('procest', 'Optional motivation...')"
@@ -312,7 +312,7 @@ export default {
 				[docId]: {
 					...(this.localAssessments[docId] || {}),
 					documentRef: docId,
-					motivering: value,
+					rationale: value,
 				},
 			}
 		},

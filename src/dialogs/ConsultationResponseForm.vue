@@ -31,7 +31,7 @@
 				</label>
 				<textarea
 					id="consultation-response-toelichting"
-					v-model="form.toelichting"
+					v-model="form.notes"
 					class="consultation-response-form__textarea"
 					rows="4"
 					:placeholder="t('procest', 'Provide an explanation for your advice...')" />
@@ -43,7 +43,7 @@
 					{{ t('procest', 'Conditions') }}
 				</label>
 				<div
-					v-for="(voorwaarde, idx) in form.voorwaarden"
+					v-for="(voorwaarde, idx) in form.terms"
 					:key="idx"
 					class="consultation-response-form__condition-row">
 					<input
@@ -78,7 +78,7 @@
 				</label>
 				<input
 					id="consultation-response-datum"
-					v-model="form.datum"
+					v-model="form.date"
 					type="date"
 					class="consultation-response-form__date-input"
 					:max="today">
@@ -135,9 +135,9 @@ export default {
 			validationError: '',
 			form: {
 				advies: null,
-				toelichting: '',
-				voorwaarden: [],
-				datum: '',
+				notes: '',
+				terms: [],
+				date: '',
 			},
 			adviesOptions: [
 				{ label: this.t('procest', 'Positive'), value: 'positief' },
@@ -173,8 +173,8 @@ export default {
 		canSubmit() {
 			if (this.submitting) return false
 			if (!this.form.advies) return false
-			if (this.toelichtingRequired && this.form.toelichting.trim() === '') return false
-			if (!this.form.datum) return false
+			if (this.toelichtingRequired && this.form.notes.trim() === '') return false
+			if (!this.form.date) return false
 			return true
 		},
 	},
@@ -189,9 +189,9 @@ export default {
 				this.submitting = false
 				this.form = {
 					advies: null,
-					toelichting: '',
-					voorwaarden: [],
-					datum: this.today,
+					notes: '',
+					terms: [],
+					date: this.today,
 				}
 			}
 		},
@@ -199,14 +199,14 @@ export default {
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		addVoorwaarde() {
-			this.form.voorwaarden.push({ description: '', priority: 'normaal' })
+			this.form.terms.push({ description: '', priority: 'normaal' })
 		},
 		/**
 		 * @param idx
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
 		 */
 		removeVoorwaarde(idx) {
-			this.form.voorwaarden.splice(idx, 1)
+			this.form.terms.splice(idx, 1)
 		},
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
@@ -214,11 +214,11 @@ export default {
 				this.validationError = this.t('procest', 'Select an advice type.')
 				return false
 			}
-			if (this.toelichtingRequired && this.form.toelichting.trim() === '') {
+			if (this.toelichtingRequired && this.form.notes.trim() === '') {
 				this.validationError = this.t('procest', 'Explanation is required for this advice type.')
 				return false
 			}
-			if (!this.form.datum) {
+			if (!this.form.date) {
 				this.validationError = this.t('procest', 'Date is required.')
 				return false
 			}
@@ -232,9 +232,9 @@ export default {
 			this.$emit('submitted', {
 				consultationId: this.consultationId,
 				advies: this.form.advies,
-				toelichting: this.form.toelichting.trim(),
-				voorwaarden: this.showVoorwaarden ? [...this.form.voorwaarden] : [],
-				datum: this.form.datum,
+				notes: this.form.notes.trim(),
+				terms: this.showVoorwaarden ? [...this.form.terms] : [],
+				date: this.form.date,
 			})
 			this.submitting = false
 		},

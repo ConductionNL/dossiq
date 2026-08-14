@@ -235,7 +235,7 @@ export default {
 				const list = Array.isArray(res.data) ? res.data : (res.data?.results || [])
 				this.tenantOptions = list.map(tn => ({
 					id: tn.id || tn.tenantId,
-					label: tn.naam || tn.label || tn.id,
+					label: tn.name || tn.label || tn.id,
 				}))
 			} catch (e) {
 				this.error = e?.response?.data?.message || e.message || t('procest', 'Failed to load tenants')

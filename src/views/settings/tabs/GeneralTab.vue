@@ -282,8 +282,8 @@ export default {
 		},
 		/** @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/tasks.md#5.3 */
 		selectedIv3Taakveld() {
-			if (!this.form.iv3Taakveld) return null
-			return this.iv3TaakveldOptions.find(o => o.id === this.form.iv3Taakveld) || null
+			if (!this.form.iv3TaskField) return null
+			return this.iv3TaakveldOptions.find(o => o.id === this.form.iv3TaskField) || null
 		},
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		deadlinePreview() {

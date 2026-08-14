@@ -13,7 +13,7 @@
 		</div>
 
 		<!-- Voorlopige voorziening flag -->
-		<NcNoteCard v-if="caseData.voorzieningRequested" type="warning">
+		<NcNoteCard v-if="caseData.provisionRequested" type="warning">
 			{{ t('procest', 'Voorlopige voorziening (interim relief) has been requested. Expedited handling required.') }}
 		</NcNoteCard>
 

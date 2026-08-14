@@ -53,14 +53,14 @@
 				<div class="form-group">
 					<label>{{ t('procest', 'Intake channel') }}</label>
 					<NcSelect
-						v-model="form.ontvangstkanaal"
+						v-model="form.receipt_channel"
 						:options="channelOptions"
 						:aria-label-combobox="t('procest', 'Intake channel')" />
 				</div>
 				<div class="form-group">
 					<label>{{ t('procest', 'Priority') }}</label>
 					<NcSelect
-						v-model="form.prioriteit"
+						v-model="form.priority"
 						:options="priorityOptions"
 						:aria-label-combobox="t('procest', 'Priority')" />
 				</div>
@@ -69,7 +69,7 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Category') }}</label>
 				<NcSelect
-					v-model="form.categorie"
+					v-model="form.category"
 					:options="categories"
 					:aria-label-combobox="t('procest', 'Category')"
 					label="name"
@@ -119,9 +119,9 @@ export default {
 				description: '',
 				klagerNaam: '',
 				klagerEmail: '',
-				ontvangstkanaal: null,
-				prioriteit: 'normaal',
-				categorie: null,
+				receipt_channel: null,
+				priority: 'normaal',
+				category: null,
 			},
 			errors: {},
 		}
@@ -168,11 +168,11 @@ export default {
 				const store = useObjectStore()
 				const data = {
 					...this.form,
-					ontvangstdatum: new Date().toISOString().split('T')[0],
+					receipt_date: new Date().toISOString().split('T')[0],
 					status: 'ontvangen',
-					prioriteit: this.form.prioriteit?.id || this.form.prioriteit || 'normaal',
-					ontvangstkanaal: this.form.ontvangstkanaal?.id || this.form.ontvangstkanaal || null,
-					categorie: this.form.categorie?.id || this.form.categorie || null,
+					priority: this.form.priority?.id || this.form.priority || 'normaal',
+					receipt_channel: this.form.receipt_channel?.id || this.form.receipt_channel || null,
+					category: this.form.category?.id || this.form.category || null,
 				}
 				await store.createObject('complaint', data)
 				this.$emit('created')

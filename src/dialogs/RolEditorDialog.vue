@@ -15,10 +15,10 @@
 				<label class="required" for="rol-naam">{{ t('procest', 'Naam') }}</label>
 				<NcTextField
 					id="rol-naam"
-					:model-value="form.naam"
-					:error="!!errors.naam"
-					:helper-text="errors.naam"
-					@update:model-value="v => form.naam = v" />
+					:model-value="form.name"
+					:error="!!errors.name"
+					:helper-text="errors.name"
+					@update:model-value="v => form.name = v" />
 			</div>
 
 			<div class="form-group">
@@ -45,8 +45,8 @@
 				<label for="rol-afdeling">{{ t('procest', 'Department') }}</label>
 				<NcTextField
 					id="rol-afdeling"
-					:model-value="form.afdeling"
-					@update:model-value="v => form.afdeling = v" />
+					:model-value="form.department"
+					@update:model-value="v => form.department = v" />
 			</div>
 
 			<div class="form-group">
@@ -94,10 +94,10 @@ export default {
 		return {
 			errors: {},
 			form: {
-				naam: this.role?.naam || '',
+				name: this.role?.name || '',
 				type: this.role?.type || 'medewerker',
 				parentRole: this.role?.parentRole || '',
-				afdeling: this.role?.afdeling || '',
+				department: this.role?.department || '',
 				team: this.role?.team || '',
 				mandateLevel: this.role?.mandateLevel || 1,
 			},
@@ -132,7 +132,7 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		validate() {
 			const errs = {}
-			if (!this.form.naam) errs.naam = t('procest', 'Naam is required')
+			if (!this.form.name) errs.name = t('procest', 'Naam is required')
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
@@ -146,7 +146,7 @@ export default {
 </script>
 
 <style scoped>
-.rol-editor {
+.role-editor {
 	padding: 8px 4px;
 	min-width: 420px;
 }

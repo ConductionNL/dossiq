@@ -97,9 +97,9 @@
 			<!-- Voorlopige Voorziening -->
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
-					:model-value="form.proVoorziening"
+					:model-value="form.proProvision"
 					:disabled="isReadOnly"
-					@update:model-value="v => form.proVoorziening = v">
+					@update:model-value="v => form.proProvision = v">
 					{{ t('procest', 'Interim relief (voorlopige voorziening) requested') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -111,7 +111,7 @@
 			<div class="deadline-grid">
 				<div class="deadline-item">
 					<span class="deadline-label">{{ t('procest', 'Acknowledgment') }}</span>
-					<span class="deadline-value">{{ deadlines.ontvangstbevestigingDeadline }}</span>
+					<span class="deadline-value">{{ deadlines.acknowledgementOfReceiptDeadline }}</span>
 				</div>
 				<div class="deadline-item">
 					<span class="deadline-label">{{ t('procest', 'Processing') }}</span>
@@ -175,7 +175,7 @@ export default {
 				receivedChannel: 'brief',
 				isTimely: null,
 				timelinessAssessment: '',
-				proVoorziening: false,
+				proProvision: false,
 			},
 			errors: {},
 			saving: false,
@@ -205,7 +205,7 @@ export default {
 				this.form.receivedChannel = obj.receivedChannel || 'brief'
 				this.form.isTimely = obj.isTimely
 				this.form.timelinessAssessment = obj.timelinessAssessment || ''
-				this.form.proVoorziening = obj.proVoorziening || false
+				this.form.proProvision = obj.proProvision || false
 
 				if (this.form.receivedDate) {
 					this.checkTimeliness()

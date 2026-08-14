@@ -105,7 +105,7 @@
 					</div>
 					<div class="form-group">
 						<label>{{ t('procest', 'Department') }}</label>
-						<span class="form-value">{{ voorstel.afdeling || '-' }}</span>
+						<span class="form-value">{{ voorstel.department || '-' }}</span>
 					</div>
 				</div>
 				<div class="form-row">
@@ -133,10 +133,10 @@
 				<div v-else>
 					<p>{{ t('procest', 'No document linked') }}</p>
 				</div>
-				<div v-if="voorstel.bijlagen && voorstel.bijlagen.length > 0" class="voorstel-detail__bijlagen">
-					<h4>{{ t('procest', 'Attachments') }} ({{ voorstel.bijlagen.length }})</h4>
+				<div v-if="voorstel.attachments && voorstel.attachments.length > 0" class="voorstel-detail__bijlagen">
+					<h4>{{ t('procest', 'Attachments') }} ({{ voorstel.attachments.length }})</h4>
 					<ul>
-						<li v-for="(bijlage, idx) in voorstel.bijlagen" :key="idx">
+						<li v-for="(bijlage, idx) in voorstel.attachments" :key="idx">
 							{{ bijlage }}
 						</li>
 					</ul>

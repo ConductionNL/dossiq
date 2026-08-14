@@ -163,7 +163,7 @@ export default {
 
 				this.$emit('registered')
 			} catch (error) {
-				console.error('Failed to register besluit:', error)
+				console.error('Failed to register decision:', error)
 				this.errors.title = error.response?.data?.error || error.message || t('procest', 'Registration failed')
 			} finally {
 				this.saving = false
@@ -174,7 +174,7 @@ export default {
 </script>
 
 <style scoped>
-.besluit-registration {
+.decision-registration {
 	padding: 8px 0;
 }
 

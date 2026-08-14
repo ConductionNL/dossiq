@@ -460,10 +460,10 @@ export const useBezwaarStore = defineStore('bezwaar', {
 			const maxDeadlineWithExtension = addWeeks(received, 12)
 
 			return {
-				ontvangstbevestigingDeadline: acknowledgmentDeadline.toISOString().split('T')[0],
+				acknowledgementOfReceiptDeadline: acknowledgmentDeadline.toISOString().split('T')[0],
 				afhandelDeadline: processingDeadline.toISOString().split('T')[0],
 				maxDeadlineWithExtension: maxDeadlineWithExtension.toISOString().split('T')[0],
-				verdagingMogelijk: true,
+				verdagingPossible: true,
 			}
 		},
 
@@ -573,7 +573,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 					parentCase: bezwaarCase.id,
 					startDate: new Date().toISOString().split('T')[0],
 					priority: bezwaarCase.priority || 'normal',
-					voorzieningRequested: options.voorzieningRequested || false,
+					provisionRequested: options.provisionRequested || false,
 				}
 
 				const beroepCase = await objectStore.saveObject('case', beroepData)
