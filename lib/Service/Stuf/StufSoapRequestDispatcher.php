@@ -137,7 +137,7 @@ class StufSoapRequestDispatcher {
 	 * caller would be reading zaken and persons by BSN. A missing check that is
 	 * masked by an unfinished body is not a check.
 	 *
-	 * `inkomend()` — the third public StUF route on this controller — already
+	 * `inbound()` — the third public StUF route on this controller — already
 	 * verifies a WSSE UsernameToken against the sending endpoint's stored
 	 * credentials. This applies the same predicate to the other two, so all
 	 * three inbound routes share one posture.

@@ -286,7 +286,15 @@ $extra = [
     ['name' => 'stuf#endpoints', 'url' => '/api/stuf/endpoints', 'verb' => 'GET'],
     ['name' => 'stuf#messages',  'url' => '/api/stuf/messages',  'verb' => 'GET'],
     ['name' => 'stuf#outbound',  'url' => '/api/stuf/outbound',  'verb' => 'POST'],
-    ['name' => 'stuf#inkomend',  'url' => '/api/stuf/inkomend',  'verb' => 'POST'],
+    ['name' => 'stuf#inbound',   'url' => '/api/stuf/inbound',   'verb' => 'POST'],
+        // DEPRECATED ALIAS — remove once every configured zaaksysteem posts to
+        // /api/stuf/inbound. This URL is a WIRE CONTRACT: it is written into the
+        // upstream system's configuration, not into ours, so renaming it alone
+        // turns a working webhook into a silent 404 on somebody else's schedule.
+        // The alias keeps the Dutch spelling alive deliberately and visibly, so
+        // it is a migration step with an end rather than a name we forgot.
+    ['name' => 'stuf#inbound',   'url' => '/api/stuf/inkomend',  'verb' => 'POST',
+        'postfix' => 'legacy-dutch-alias'],
 
         // Doorlooptijd (throughput-time) dashboard metrics.
     ['name' => 'doorlooptijd#metrics', 'url' => '/api/doorlooptijd/metrics', 'verb' => 'GET'],

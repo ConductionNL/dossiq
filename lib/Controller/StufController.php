@@ -9,7 +9,7 @@
  *     npsLv01/edcLk01) and returns SOAP XML responses (Bv01/La01/Fo01).
  *   - OUTBOUND gateway (admin REST): vrijBericht send, endpoint listing with
  *     health, audit-log query — JSON. Plus an async confirmation receiver
- *     (`inkomend`) that matches a Bv01 crossRefnummer back to the outbound
+ *     (`inbound`) that matches a Bv01 crossRefnummer back to the outbound
  *     StufMessage row and transitions it to "bevestigd".
  *
  * The controller owns only the HTTP surface. Envelope parsing and per-message
@@ -197,8 +197,8 @@ class StufController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 300, period: 60)]
-	public function inkomend(): DataResponse {
-		$rawXml = (string)file_get_contents(filename: 'php://input');
+	public function inbound(): DataResponse {
+		$rawXml = $this->readRawBody();
 		if ($rawXml === '') {
 			return new DataResponse(data: 'empty body', statusCode: Http::STATUS_BAD_REQUEST);
 		}
@@ -208,12 +208,12 @@ class StufController extends Controller {
 			headerEndpointId: (string)$this->request->getHeader(name: 'x-procest-endpoint-id')
 		);
 		if ($endpoint === null) {
-			$this->logger->warning(message: 'StUF inkomend: could not resolve endpoint from envelope');
+			$this->logger->warning(message: 'StUF inbound: could not resolve endpoint from envelope');
 			return new DataResponse(data: 'unknown endpoint', statusCode: Http::STATUS_BAD_REQUEST);
 		}
 
 		if ($this->inspector->verifyWsse(envelopeXml: $rawXml, endpoint: $endpoint) === false) {
-			$this->logger->warning(message: 'StUF inkomend: WSSE signature mismatch for endpoint {id}', context: ['id' => ($endpoint['id'] ?? '')]);
+			$this->logger->warning(message: 'StUF inbound: WSSE signature mismatch for endpoint {id}', context: ['id' => ($endpoint['id'] ?? '')]);
 			// 422 (Unprocessable Entity) signals "invalid signature" without
 			// surfacing an NC session-auth status to the upstream zaaksysteem.
 			// This is WSSE signature verification of a PublicPage webhook, not
@@ -237,7 +237,30 @@ class StufController extends Controller {
 		$this->confirmOutbound(messageKind: $messageKind, crossRef: $crossRef, rawXml: $rawXml, caseId: $caseId);
 
 		return new DataResponse(data: 'ack', statusCode: Http::STATUS_OK);
-	}//end inkomend()
+	}//end inbound()
+
+
+	/**
+	 * Read the raw request body.
+	 *
+	 * A seam, and the reason this endpoint had no tests while its two siblings
+	 * did. `php://input` cannot be driven from a unit test, so the WSSE refusal
+	 * below it could never be watched to refuse — and a guard nobody has
+	 * watched refuse is a guard nobody has tested. Overriding this one method
+	 * is all a test needs; the production path is unchanged.
+	 *
+	 * `OCP\IRequest` exposes no raw-body accessor, so this cannot simply read
+	 * from the injected request.
+	 *
+	 * @return string The raw request body, or an empty string when there is none.
+	 *
+	 * @psalm-return   string
+	 * @phpstan-return string
+	 */
+	protected function readRawBody(): string {
+		return (string)file_get_contents(filename: 'php://input');
+
+	}//end readRawBody()
 
 	/**
 	 * List all configured StufEndpoint objects (admin REST).
