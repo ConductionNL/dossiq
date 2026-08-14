@@ -60,24 +60,29 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		parentCase: {
 			type: String,
 			default: null,
 		},
+
 		endDate: {
 			type: String,
 			default: null,
 		},
+
 		subCaseTypes: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['create-sub-case', 'sub-cases-loaded'],
 	data() {
 		return {
@@ -86,19 +91,23 @@ export default {
 			statusTypeCache: {},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		completedCount() {
 			return this.subCases.filter((sc) => sc.endDate).length
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		totalCount() {
 			return this.subCases.length
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		rollUpText() {
 			return t('procest', 'Sub-cases ({completed}/{total} completed)', {
@@ -106,6 +115,7 @@ export default {
 				total: this.totalCount,
 			})
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		canCreateSubCase() {
 			// Hide when: parent case is closed, current case is itself a sub-case,
@@ -116,9 +126,11 @@ export default {
 			return true
 		},
 	},
+
 	async mounted() {
 		await this.fetchSubCases()
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async fetchSubCases() {

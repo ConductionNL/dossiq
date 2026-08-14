@@ -10,9 +10,9 @@
 				v-model="selectedStatus"
 				:options="statusOptions"
 				:placeholder="t('procest', 'Select new status')"
-				:input-label="t('procest', 'New status')"
+				:inputLabel="t('procest', 'New status')"
 				label="label"
-				track-by="value" />
+				trackBy="value" />
 			<NcTextField
 				v-model="besluitdatum"
 				:label="t('procest', 'Besluitdatum (optional)')"
@@ -28,7 +28,7 @@
 					{{ t('procest', 'Apply') }}
 				</NcButton>
 				<NcButton
-					type="secondary"
+					variant="secondary"
 					:disabled="submitting"
 					@click="$emit('close')">
 					{{ t('procest', 'Cancel') }}
@@ -40,13 +40,13 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { translate as t } from '@nextcloud/l10n'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
+import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
-import NcTextField from '@nextcloud/vue/components/NcTextField'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
+import NcTextField from '@nextcloud/vue/components/NcTextField'
 
 export default {
 	name: 'StatusTransitionDialog',
@@ -57,12 +57,14 @@ export default {
 		NcTextField,
 		NcTextArea,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	emits: ['close', 'submitted'],
 	data() {
 		return {
@@ -80,6 +82,7 @@ export default {
 			],
 		}
 	},
+
 	methods: {
 		t,
 		async submit() {

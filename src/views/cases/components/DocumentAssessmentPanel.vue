@@ -26,26 +26,26 @@
 						<td>{{ doc.title || doc.name || '---' }}</td>
 						<td>
 							<NcSelect
-								:model-value="getAssessment(doc.id)"
+								:modelValue="getAssessment(doc.id)"
 								:options="assessmentOptions"
-								:input-label="t('procest', 'Assessment')"
+								:inputLabel="t('procest', 'Assessment')"
 								:disabled="isReadOnly"
-								@update:model-value="
+								@update:modelValue="
 									(val) => setAssessment(doc.id, val)
 								" />
 						</td>
 						<td>
 							<NcSelect
 								v-if="getAssessment(doc.id) === 'niet_openbaar'"
-								:model-value="getGrounds(doc.id)"
+								:modelValue="getGrounds(doc.id)"
 								:options="weigeringsgronden"
-								:input-label="t('procest', 'Grounds')"
+								:inputLabel="t('procest', 'Grounds')"
 								:multiple="true"
 								label="label"
-								track-by="code"
+								trackBy="code"
 								:disabled="isReadOnly"
 								:placeholder="t('procest', 'Select grounds...')"
-								@update:model-value="
+								@update:modelValue="
 									(val) => setGrounds(doc.id, val)
 								" />
 							<span v-else>---</span>
@@ -53,7 +53,7 @@
 						<td>
 							<NcButton
 								v-if="getAssessment(doc.id) === 'deels_openbaar'"
-								type="secondary"
+								variant="secondary"
 								:disabled="isReadOnly"
 								@click="$emit('anonymize', doc)">
 								{{ t('procest', 'Anonymize') }}
@@ -87,10 +87,10 @@
 		<!-- Woo publication (via OpenCatalogi) -->
 		<WooPublicationPanel
 			v-if="showPublicationPanel"
-			:case-id="caseId"
-			:decision-id="decisionId"
-			:initial-status="wooPublication.status || 'pending'"
-			:initial-publication-url="wooPublication.publicationUrl || ''" />
+			:caseId="caseId"
+			:decisionId="decisionId"
+			:initialStatus="wooPublication.status || 'pending'"
+			:initialPublicationUrl="wooPublication.publicationUrl || ''" />
 	</div>
 </template>
 
@@ -105,23 +105,28 @@ export default {
 		NcSelect,
 		WooPublicationPanel,
 	},
+
 	props: {
 		documents: {
 			type: Array,
 			default: () => [],
 		},
+
 		assessments: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
+
 		caseId: {
 			type: String,
 			default: '',
 		},
+
 		/**
 		 * The assembled WOO decision id (set once WOODecisionService::assembleDecision()
 		 * has run for this case). The publish action only renders once a decision exists.
@@ -130,6 +135,7 @@ export default {
 			type: String,
 			default: '',
 		},
+
 		/**
 		 * The decision's `wooPublication` field ({status, publicationUrl, ...}),
 		 * when already loaded by the parent.
@@ -139,6 +145,7 @@ export default {
 			default: () => ({}),
 		},
 	},
+
 	data() {
 		return {
 			assessmentOptions: ['openbaar', 'deels_openbaar', 'niet_openbaar'],
@@ -192,6 +199,7 @@ export default {
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		counts() {
@@ -211,18 +219,22 @@ export default {
 			}
 			return result
 		},
+
 		/** @spec openspec/specs/woo-publication-via-opencatalogi/spec.md */
 		showPublicationPanel() {
 			return this.caseId !== '' && this.decisionId !== ''
 		},
 	},
+
 	methods: {
 		getAssessment(docId) {
 			return this.assessments[docId]?.assessment || null
 		},
+
 		getGrounds(docId) {
 			return this.assessments[docId]?.grounds || []
 		},
+
 		/**
 		 * @param docId
 		 * @param value
@@ -238,6 +250,7 @@ export default {
 						: [],
 			})
 		},
+
 		/**
 		 * @param docId
 		 * @param value

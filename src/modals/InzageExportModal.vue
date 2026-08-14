@@ -35,12 +35,12 @@
 				v-model="idType"
 				class="inzage-export__field"
 				:options="idTypes"
-				:input-label="t('procest', 'Subject identifier type')"
+				:inputLabel="t('procest', 'Subject identifier type')"
 				:clearable="false" />
 
 			<NcTextField
-				class="inzage-export__field"
 				v-model="idValue"
+				class="inzage-export__field"
 				:label="t('procest', 'Subject identifier value')"
 				:placeholder="t('procest', 'e.g. a BSN or contact reference')" />
 
@@ -62,17 +62,17 @@
 						)
 					}}
 				</p>
-				<NcButton type="secondary" @click="download">
+				<NcButton variant="secondary" @click="download">
 					{{ t('procest', 'Download extract (JSON)') }}
 				</NcButton>
 			</div>
 
 			<div class="inzage-export__actions">
-				<NcButton type="tertiary" @click="$emit('close')">
+				<NcButton variant="tertiary" @click="$emit('close')">
 					{{ t('procest', 'Close') }}
 				</NcButton>
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="loading || !idValue"
 					@click="run">
 					<template #icon>
@@ -104,6 +104,7 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	data() {
 		return {
 			idType: 'BSN',
@@ -114,6 +115,7 @@ export default {
 			result: null,
 		}
 	},
+
 	methods: {
 		/** @spec openspec/specs/avg-verwerkingenlogging/spec.md */
 		async run() {
@@ -141,6 +143,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/specs/avg-verwerkingenlogging/spec.md */
 		download() {
 			const blob = new Blob([JSON.stringify(this.result, null, 2)], {

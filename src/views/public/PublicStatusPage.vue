@@ -81,12 +81,14 @@ export default {
 	components: {
 		NcLoadingIcon,
 	},
+
 	props: {
 		token: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -94,9 +96,11 @@ export default {
 			statusData: null,
 		}
 	},
+
 	mounted() {
 		this.loadStatus()
 	},
+
 	methods: {
 		/**
 		 * Resolve the public "track your case" token through OpenRegister's
@@ -136,6 +140,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param dateString
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md

@@ -54,7 +54,7 @@
 
 		<div v-if="!loading" class="lhs-matrix-admin__actions">
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="saving || !dirty"
 				@click="saveMatrix">
 				{{
@@ -73,8 +73,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { useEnforcementStore } from '../../../store/modules/enforcement.js'
 
 export default {
@@ -184,12 +184,14 @@ export default {
 					calculerend: 'Last onder dwangsom',
 					crimineel: 'PV + Last',
 				},
+
 				aanzienlijk: {
 					goedwillend: 'Herstelactie',
 					onverschillig: 'Last onder dwangsom',
 					calculerend: 'Last + PV',
 					crimineel: 'PV + Bestuursdwang',
 				},
+
 				ernstig: {
 					goedwillend: 'Last onder dwangsom',
 					onverschillig: 'Last + PV',

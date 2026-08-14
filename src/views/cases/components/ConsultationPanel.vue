@@ -80,7 +80,7 @@
 					class="consultation-panel__actions">
 					<NcButton
 						v-if="cons.status === 'open'"
-						type="secondary"
+						variant="secondary"
 						@click="
 							$emit('update-status', {
 								id: cons.id,
@@ -91,13 +91,13 @@
 					</NcButton>
 					<NcButton
 						v-if="cons.status === 'in_behandeling' && !cons.advies"
-						type="secondary"
+						variant="secondary"
 						@click="openResponseDialog(cons)">
 						{{ t('procest', 'Submit response') }}
 					</NcButton>
 					<NcButton
 						v-if="cons.status === 'advies_uitgebracht'"
-						type="secondary"
+						variant="secondary"
 						@click="
 							$emit('update-status', {
 								id: cons.id,
@@ -121,16 +121,16 @@
 		<!-- Create consultation dialog -->
 		<ConsultationCreateDialog
 			:open="showCreateDialog"
-			:case-id="caseId"
-			:parent-zaak-title="caseTitle"
+			:caseId="caseId"
+			:parentZaakTitle="caseTitle"
 			@close="showCreateDialog = false"
 			@created="onConsultationCreated" />
 
 		<!-- Response form dialog -->
 		<ConsultationResponseForm
 			:open="showResponseDialog"
-			:consultation-id="activeConsultationId"
-			:consultation-subject="activeConsultationSubject"
+			:consultationId="activeConsultationId"
+			:consultationSubject="activeConsultationSubject"
 			@close="showResponseDialog = false"
 			@submitted="onResponseSubmitted" />
 	</div>
@@ -148,24 +148,29 @@ export default {
 		ConsultationCreateDialog,
 		ConsultationResponseForm,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		caseTitle: {
 			type: String,
 			default: '',
 		},
+
 		consultations: {
 			type: Array,
 			default: () => [],
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['create', 'update-status', 'respond'],
 	data() {
 		return {
@@ -175,6 +180,7 @@ export default {
 			activeConsultationSubject: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		openCount() {
@@ -183,6 +189,7 @@ export default {
 			).length
 		},
 	},
+
 	methods: {
 		/**
 		 * @param status
@@ -197,6 +204,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+
 		/**
 		 * @param advies
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
@@ -208,11 +216,13 @@ export default {
 					'procest',
 					'Positive with conditions',
 				),
+
 				negatief: this.t('procest', 'Negative'),
 				niet_van_toepassing: this.t('procest', 'Not applicable'),
 			}
 			return labels[advies] || advies
 		},
+
 		/**
 		 * @param dateStr
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
@@ -223,6 +233,7 @@ export default {
 			if (isNaN(d.getTime())) return dateStr
 			return d.toLocaleDateString('nl-NL')
 		},
+
 		/**
 		 * @param cons
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
@@ -233,6 +244,7 @@ export default {
 				return false
 			return new Date(cons.uiterlijkeReactiedatum) < new Date()
 		},
+
 		/**
 		 * @param cons
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
@@ -249,6 +261,7 @@ export default {
 				return []
 			}
 		},
+
 		/**
 		 * @param formData
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
@@ -257,6 +270,7 @@ export default {
 			this.$emit('create', formData)
 			this.showCreateDialog = false
 		},
+
 		/**
 		 * @param cons
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
@@ -266,6 +280,7 @@ export default {
 			this.activeConsultationSubject = cons.onderwerp || ''
 			this.showResponseDialog = true
 		},
+
 		/**
 		 * @param responseData
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05

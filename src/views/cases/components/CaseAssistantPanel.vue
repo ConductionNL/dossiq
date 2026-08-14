@@ -42,15 +42,15 @@
 		</div>
 		<div class="case-assistant__composer">
 			<NcTextField
-				:model-value="draft"
+				:modelValue="draft"
 				:label="t('procest', 'Ask the assistant')"
 				:placeholder="t('procest', 'Ask a question about this case…')"
 				:disabled="loading"
 				data-testid="case-assistant-input"
-				@update:model-value="(v) => (draft = v)"
+				@update:modelValue="(v) => (draft = v)"
 				@keydown.enter.prevent="onSend" />
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="!sendAllowed"
 				:aria-label="t('procest', 'Send')"
 				data-testid="case-assistant-send"
@@ -62,16 +62,16 @@
 </template>
 
 <script>
-import { NcButton, NcTextField, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
 import {
-	fetchAssistantAvailability,
 	converse,
+	fetchAssistantAvailability,
 } from '../../../services/assistantApi.js'
 import {
-	makeTranscriptEntry,
-	canSend,
 	assistantErrorMessage,
+	canSend,
+	makeTranscriptEntry,
 } from '../../../utils/assistantHelpers.js'
 
 export default {
@@ -86,20 +86,24 @@ export default {
 			errorMessage: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/case-assistant-via-hermiq/spec.md */
 		caseId() {
 			return this.$route?.params?.id || null
 		},
+
 		/** @spec openspec/specs/case-assistant-via-hermiq/spec.md */
 		sendAllowed() {
 			return canSend(this.draft, this.loading)
 		},
 	},
+
 	async mounted() {
 		// Feature gate: Hermiq absent/disabled → render nothing.
 		this.available = await fetchAssistantAvailability()
 	},
+
 	methods: {
 		t,
 		/**
@@ -129,6 +133,7 @@ export default {
 				this.$nextTick(() => this.scrollToEnd())
 			}
 		},
+
 		/**
 		 * Keep the newest message in view.
 		 *

@@ -42,7 +42,7 @@
 							</span>
 							<div class="sub-entity-row__actions">
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="t('procest', 'Edit')"
 									@click="startEdit(item)">
 									<template #icon>
@@ -50,7 +50,7 @@
 									</template>
 								</NcButton>
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="t('procest', 'Delete')"
 									@click="deleteItem(item)">
 									<template #icon>
@@ -64,11 +64,11 @@
 							<div class="sub-entity-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.name"
+										:modelValue="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.name = v)
 										" />
 								</div>
@@ -76,11 +76,11 @@
 									<NcSelect
 										v-model="editForm.archivalAction"
 										:options="archivalActionOptions"
-										:input-label="t('procest', 'Archive action')"
+										:inputLabel="t('procest', 'Archive action')"
 										:placeholder="t('procest', 'Archive action')"
 										class="edit-field" />
 									<NcTextField
-										:model-value="editForm.archivalPeriod"
+										:modelValue="editForm.archivalPeriod"
 										:label="
 											t(
 												'procest',
@@ -88,23 +88,23 @@
 											)
 										"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.archivalPeriod = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.archivalStatus"
+										:modelValue="editForm.archivalStatus"
 										:label="t('procest', 'Archival status')"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.archivalStatus = v)
 										" />
 									<NcTextField
-										:model-value="editForm.description"
+										:modelValue="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.description = v)
 										" />
 								</div>
@@ -113,7 +113,7 @@
 								</p>
 								<div class="edit-actions">
 									<NcButton
-										type="primary"
+										variant="primary"
 										:disabled="saving"
 										@click="saveEdit">
 										{{ t('procest', 'Save') }}
@@ -139,9 +139,9 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 import { formatDuration } from '../../../utils/durationHelpers.js'
 
@@ -155,10 +155,12 @@ export default {
 		PencilIcon,
 		DeleteIcon,
 	},
+
 	props: {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -173,13 +175,16 @@ export default {
 				archivalPeriod: '',
 				archivalStatus: '',
 			},
+
 			editError: '',
 			archivalActionOptions: ['bewaren', 'vernietigen', 'blijvend_bewaren'],
 		}
 	},
+
 	async mounted() {
 		if (!this.isCreate) await this.loadItems()
 	},
+
 	methods: {
 		/** @spec openspec/specs/result-type-management/spec.md */
 		async loadItems() {
@@ -197,6 +202,7 @@ export default {
 			}
 			this.loading = false
 		},
+
 		/**
 		 * @param {string} value Archival action key
 		 * @return {string} Translated label
@@ -208,6 +214,7 @@ export default {
 			if (value === 'vernietigen') return t('procest', 'Destroy')
 			return value
 		},
+
 		/**
 		 * @param {string} value Archival action key
 		 * @return {string} Badge CSS modifier class
@@ -217,6 +224,7 @@ export default {
 			if (value === 'vernietigen') return 'sub-entity-row__badge--destroy'
 			return 'sub-entity-row__badge--retain'
 		},
+
 		/**
 		 * @param {string} iso ISO 8601 duration
 		 * @return {string} Human-readable period
@@ -225,6 +233,7 @@ export default {
 		formatPeriod(iso) {
 			return formatDuration(iso)
 		},
+
 		/** @spec openspec/specs/result-type-management/spec.md */
 		startAdd() {
 			this.editingId = 'new'
@@ -238,6 +247,7 @@ export default {
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
+
 		/**
 		 * @param item Result type to edit
 		 * @spec openspec/specs/result-type-management/spec.md
@@ -253,6 +263,7 @@ export default {
 			}
 			this.editError = ''
 		},
+
 		/** @spec openspec/specs/result-type-management/spec.md */
 		cancelEdit() {
 			if (this.editingId === 'new') {
@@ -261,6 +272,7 @@ export default {
 			this.editingId = null
 			this.editError = ''
 		},
+
 		/** @spec openspec/specs/result-type-management/spec.md */
 		async saveEdit() {
 			if (!this.editForm.name.trim()) {
@@ -297,6 +309,7 @@ export default {
 			}
 			this.saving = false
 		},
+
 		/**
 		 * @param item Result type to delete
 		 * @spec openspec/specs/result-type-management/spec.md

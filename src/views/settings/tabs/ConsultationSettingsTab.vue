@@ -18,7 +18,7 @@
 				v-model="defaultDeadlineDays"
 				type="number"
 				:disabled="!writable"
-				:placeholder="'28'" />
+				placeholder="28" />
 			<p class="setting-help">
 				{{
 					t(
@@ -38,7 +38,7 @@
 				v-model="warningOffsetDays"
 				type="number"
 				:disabled="!writable"
-				:placeholder="'5'" />
+				placeholder="5" />
 			<p class="setting-help">
 				{{
 					t(
@@ -57,7 +57,7 @@
 				id="consultation_external_response_url"
 				v-model="externalResponseUrl"
 				:disabled="!writable"
-				:placeholder="'https://procest.example.org/consultation/respond/'" />
+				placeholder="https://procest.example.org/consultation/respond/" />
 			<p class="setting-help">
 				{{
 					t(
@@ -77,7 +77,7 @@
 				v-model="bottleneckThreshold"
 				type="number"
 				:disabled="!writable"
-				:placeholder="'0.2'" />
+				placeholder="0.2" />
 			<p class="setting-help">
 				{{
 					t(
@@ -92,7 +92,7 @@
 			{{ error }}
 		</NcNoteCard>
 
-		<NcButton type="primary" :disabled="!writable || saving" @click="save">
+		<NcButton variant="primary" :disabled="!writable || saving" @click="save">
 			<template #icon>
 				<NcLoadingIcon v-if="saving" :size="20" />
 			</template>
@@ -114,10 +114,10 @@
 </template>
 
 <script>
-import { NcButton, NcInputField, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
 import { loadState } from '@nextcloud/initial-state'
 import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcInputField, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 
 /**
  * Consultation management admin settings tab.
@@ -139,12 +139,14 @@ export default {
 			error: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/consultation-management/spec.md */
 		workflowDocsUrl() {
 			return 'https://docs.procest.nl/n8n-consultation-workflows'
 		},
 	},
+
 	methods: {
 		t,
 		/**

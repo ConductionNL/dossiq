@@ -3,7 +3,7 @@
  * identifier generation, and overdue logic.
  */
 
-import { parseDuration, formatDuration } from './durationHelpers.js'
+import { formatDuration, parseDuration } from './durationHelpers.js'
 
 /**
  * Parse a case field that the schema stores as a JSON-encoded array

@@ -112,12 +112,14 @@ export default {
 			default: () => [],
 		},
 	},
+
 	data() {
 		return {
 			sortColumn: 'complianceRate',
 			sortDirection: 'asc',
 		}
 	},
+
 	computed: {
 		/**
 		 * Performance rows sorted by the active column/direction. Null values
@@ -133,6 +135,7 @@ export default {
 			)
 		},
 	},
+
 	methods: {
 		/**
 		 * Toggle sort direction when the active column is re-clicked; otherwise

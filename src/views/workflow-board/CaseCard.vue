@@ -30,8 +30,8 @@
 		@keydown.space.prevent="$emit('click', caseItem.id)">
 		<NcCheckboxRadioSwitch
 			class="case-card__select"
-			:model-value="selected"
-			@update:model-value="$emit('toggle-select', caseItem.id)"
+			:modelValue="selected"
+			@update:modelValue="$emit('toggle-select', caseItem.id)"
 			@click.stop
 			@keydown.stop>
 			<span class="hidden-visually">{{
@@ -87,7 +87,7 @@
 </template>
 
 <script>
-import { NcActions, NcActionButton, NcCheckboxRadioSwitch } from '@nextcloud/vue'
+import { NcActionButton, NcActions, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import ArrowRightBoldCircleOutline from 'vue-material-design-icons/ArrowRightBoldCircleOutline.vue'
 import { getDaysRemaining } from '../../utils/caseHelpers.js'
 import { columnsExcludingCurrent } from '../../utils/workflowBoardHelpers.js'
@@ -100,6 +100,7 @@ export default {
 		NcCheckboxRadioSwitch,
 		ArrowRightBoldCircleOutline,
 	},
+
 	props: {
 		/** The case object: { id, identifier, title, caseType, assignee, deadline }. */
 		caseItem: { type: Object, required: true },
@@ -121,6 +122,7 @@ export default {
 		 */
 		selectionMode: { type: Boolean, default: false },
 	},
+
 	emits: ['click', 'dragstart', 'move', 'toggle-select'],
 	computed: {
 		/**
@@ -132,6 +134,7 @@ export default {
 		otherColumns() {
 			return columnsExcludingCurrent(this.columns, this.caseItem.status)
 		},
+
 		/**
 		 * Days remaining on the deadline, or null when there is no deadline.
 		 *
@@ -141,6 +144,7 @@ export default {
 			if (!this.caseItem.deadline) return null
 			return getDaysRemaining(this.caseItem.deadline)
 		},
+
 		/**
 		 * Deadline severity: overdue (<0), warning (<=3), or ok.
 		 *
@@ -152,6 +156,7 @@ export default {
 			if (this.daysRemaining <= 3) return 'warning'
 			return 'ok'
 		},
+
 		/**
 		 * Human-readable deadline label (WCAG: text accompanies the colour).
 		 *
@@ -167,6 +172,7 @@ export default {
 			if (this.daysRemaining === 0) return this.t('procest', 'Due today')
 			return this.t('procest', '{days} days', { days: this.daysRemaining })
 		},
+
 		/**
 		 * @return {string} Deadline CSS modifier class
 		 */
@@ -176,6 +182,7 @@ export default {
 				: ''
 		},
 	},
+
 	methods: {
 		/**
 		 * Stash the dragged case id on the dataTransfer payload and notify the

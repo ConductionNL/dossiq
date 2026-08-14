@@ -6,7 +6,7 @@
 			<h3 class="advies-panel__title">
 				{{ t(appName, 'Adviezen') }}
 			</h3>
-			<NcButton type="primary" @click="openCreateDialog">
+			<NcButton variant="primary" @click="openCreateDialog">
 				{{ t(appName, 'Advies aanvragen') }}
 			</NcButton>
 		</div>
@@ -62,19 +62,19 @@
 				<div class="advies-panel__actions">
 					<NcButton
 						v-if="item.status === 'aangevraagd'"
-						type="secondary"
+						variant="secondary"
 						@click="onRemind(item)">
 						{{ t(appName, 'Herinnering sturen') }}
 					</NcButton>
 					<NcButton
 						v-if="item.status === 'aangevraagd' && item.adviesDocument"
-						type="secondary"
+						variant="secondary"
 						@click="onMarkReceived(item)">
 						{{ t(appName, 'Markeer als ontvangen') }}
 					</NcButton>
 					<NcButton
 						v-if="item.status === 'ontvangen' && item.adviesDocument"
-						type="tertiary"
+						variant="tertiary"
 						@click="onViewDocument(item)">
 						{{ t(appName, 'Bekijk advies') }}
 					</NcButton>
@@ -84,21 +84,21 @@
 
 		<AdviesAanvraagDialog
 			v-if="showDialog"
-			:case-id="caseId"
+			:caseId="caseId"
 			@close="showDialog = false"
 			@created="onCreated" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { CnStatusBadge } from '@conduction/nextcloud-vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
+import AdviesAanvraagDialog from '../../../dialogs/AdviesAanvraagDialog.vue'
 import {
 	dispatchReminder,
 	getAdviceForCase,
 	transitionStatus,
 } from '../../../services/adviceApi.js'
-import AdviesAanvraagDialog from '../../../dialogs/AdviesAanvraagDialog.vue'
 
 const APP_NAME = 'procest'
 
@@ -111,12 +111,14 @@ export default {
 		CnStatusBadge,
 		AdviesAanvraagDialog,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			appName: APP_NAME,
@@ -125,6 +127,7 @@ export default {
 			showDialog: false,
 		}
 	},
+
 	watch: {
 		caseId: {
 			immediate: true,
@@ -139,6 +142,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		async fetchAdvies() {
@@ -152,15 +156,18 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		openCreateDialog() {
 			this.showDialog = true
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		onCreated() {
 			this.showDialog = false
 			this.fetchAdvies()
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -172,6 +179,7 @@ export default {
 				console.error('Procest: failed to send reminder', error)
 			}
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -187,6 +195,7 @@ export default {
 				console.error('Procest: failed to mark received', error)
 			}
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -196,6 +205,7 @@ export default {
 				window.open(`/index.php/f/${item.adviesDocument}`, '_blank')
 			}
 		},
+
 		/**
 		 * @param type
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -205,6 +215,7 @@ export default {
 				? this.t(this.appName, 'Intern')
 				: this.t(this.appName, 'Extern')
 		},
+
 		/**
 		 * @param type
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -212,6 +223,7 @@ export default {
 		typeBadgeType(type) {
 			return type === 'intern' ? 'neutral' : 'info'
 		},
+
 		/**
 		 * @param status
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -224,6 +236,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+
 		/**
 		 * @param status
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -236,6 +249,7 @@ export default {
 			}
 			return types[status] || 'neutral'
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -246,6 +260,7 @@ export default {
 			}
 			return new Date(item.deadline) < new Date()
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -257,6 +272,7 @@ export default {
 			const diff = Date.now() - new Date(item.deadline).getTime()
 			return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)))
 		},
+
 		/**
 		 * @param value
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md

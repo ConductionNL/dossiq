@@ -2,7 +2,7 @@
 	<div class="checklist-admin">
 		<div class="checklist-admin__header">
 			<h3>{{ t('procest', 'Inspection Checklists') }}</h3>
-			<NcButton type="primary" @click="createChecklist">
+			<NcButton variant="primary" @click="createChecklist">
 				{{ t('procest', 'New checklist') }}
 			</NcButton>
 		</div>
@@ -36,13 +36,13 @@
 					</NcButton>
 					<NcButton
 						v-if="checklist.status === 'active'"
-						type="secondary"
+						variant="secondary"
 						@click="createVersion(checklist)">
 						{{ t('procest', 'New version') }}
 					</NcButton>
 					<NcButton
 						v-if="checklist.status === 'draft'"
-						type="error"
+						variant="error"
 						@click="deleteChecklist(checklist)">
 						{{ t('procest', 'Delete') }}
 					</NcButton>
@@ -60,7 +60,10 @@
 				<NcButton @click="cancelEdit">
 					{{ t('procest', 'Back to list') }}
 				</NcButton>
-				<NcButton type="primary" :disabled="saving" @click="saveChecklist">
+				<NcButton
+					variant="primary"
+					:disabled="saving"
+					@click="saveChecklist">
 					{{
 						saving
 							? t('procest', 'Saving...')
@@ -180,7 +183,7 @@
 						</div>
 					</div>
 
-					<NcButton type="error" @click="removeItem(index)">
+					<NcButton variant="error" @click="removeItem(index)">
 						{{ t('procest', 'Remove') }}
 					</NcButton>
 				</div>
@@ -194,8 +197,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { useInspectionStore } from '../../../store/modules/inspection.js'
 
 export default {
@@ -226,10 +229,12 @@ export default {
 		inspectionStore() {
 			return useInspectionStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		checklists() {
 			return this.inspectionStore.checklists
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-inspection-checklists/tasks.md */
 		loading() {
 			return this.inspectionStore.loading

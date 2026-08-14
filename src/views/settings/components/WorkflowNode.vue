@@ -103,7 +103,7 @@
 </template>
 
 <script>
-import { NcActions, NcActionButton } from '@nextcloud/vue'
+import { NcActionButton, NcActions } from '@nextcloud/vue'
 
 export default {
 	name: 'WorkflowNode',
@@ -111,34 +111,41 @@ export default {
 		NcActions,
 		NcActionButton,
 	},
+
 	props: {
 		status: {
 			type: Object,
 			required: true,
 		},
+
 		steps: {
 			type: Array,
 			default: () => [],
 		},
+
 		position: {
 			type: Object,
 			default: () => ({ x: 0, y: 0 }),
 		},
+
 		selected: {
 			type: Boolean,
 			default: false,
 		},
+
 		/** Every other status node — used to build the keyboard "Connect to…" menu. */
 		otherStatuses: {
 			type: Array,
 			default: () => [],
 		},
+
 		/** Transitions whose `fromStatus` is this node — used for "Disconnect from…". */
 		outgoingTransitions: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: [
 		'select',
 		'drag-start',
@@ -150,11 +157,13 @@ export default {
 		'keyboard-disconnect',
 		'delete-status',
 	],
+
 	data() {
 		return {
 			draggedStepId: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		nodeStyle() {
@@ -179,6 +188,7 @@ export default {
 			return this.otherStatuses.filter((s) => !connectedIds.has(s.id))
 		},
 	},
+
 	methods: {
 		/**
 		 * Resolve a status id to its display name from `otherStatuses`.

@@ -16,7 +16,7 @@
 					:options="roleTypes"
 					:aria-label-combobox="t('procest', 'Role type')"
 					label="name"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Select role type...')" />
 			</div>
 
@@ -27,7 +27,7 @@
 					:options="userOptions"
 					:aria-label-combobox="t('procest', 'Participant')"
 					label="label"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Select user...')" />
 			</div>
 
@@ -40,7 +40,7 @@
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="!canSubmit || saving"
 					@click="submit">
 					<template v-if="saving">
@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { NcButton, NcSelect, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcSelect } from '@nextcloud/vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
@@ -64,24 +64,29 @@ export default {
 		NcSelect,
 		NcLoadingIcon,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		roleTypes: {
 			type: Array,
 			default: () => [],
 		},
+
 		userOptions: {
 			type: Array,
 			default: () => [],
 		},
+
 		preSelectHandler: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['created', 'close'],
 	data() {
 		return {
@@ -91,16 +96,19 @@ export default {
 			saving: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		canSubmit() {
 			return !!this.selectedRoleType && !!this.selectedUser
 		},
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 	mounted() {
 		if (this.preSelectHandler) {
@@ -112,6 +120,7 @@ export default {
 			}
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async submit() {

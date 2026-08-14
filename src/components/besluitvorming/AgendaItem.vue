@@ -19,12 +19,14 @@
 		}}</span>
 		<div class="agenda-item__toggle">
 			<NcButton
-				:type="item.behandeling === 'hamerstuk' ? 'primary' : 'secondary'"
+				:variant="item.behandeling === 'hamerstuk' ? 'primary' : 'secondary'"
 				@click="setBehandeling('hamerstuk')">
 				{{ t('procest', 'Hamerstuk') }}
 			</NcButton>
 			<NcButton
-				:type="item.behandeling === 'bespreekstuk' ? 'primary' : 'secondary'"
+				:variant="
+					item.behandeling === 'bespreekstuk' ? 'primary' : 'secondary'
+				"
 				@click="setBehandeling('bespreekstuk')">
 				{{ t('procest', 'Bespreekstuk') }}
 			</NcButton>
@@ -44,6 +46,7 @@ export default {
 			required: true,
 		},
 	},
+
 	methods: {
 		/**
 		 * Emit a behandeling change for this item.

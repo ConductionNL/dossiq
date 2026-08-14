@@ -18,7 +18,7 @@
 						</span>
 						<div class="sub-entity-row__actions">
 							<NcButton
-								type="tertiary"
+								variant="tertiary"
 								:aria-label="
 									t('procest', 'Edit {name}', { name: item.name })
 								"
@@ -28,7 +28,7 @@
 								</template>
 							</NcButton>
 							<NcButton
-								type="tertiary"
+								variant="tertiary"
 								:aria-label="
 									t('procest', 'Delete {name}', {
 										name: item.name,
@@ -46,15 +46,15 @@
 						<div class="sub-entity-row__edit-form">
 							<div class="edit-row">
 								<NcTextField
-									:model-value="editForm.name"
+									:modelValue="editForm.name"
 									:label="t('procest', 'Name')"
 									:error="!!editError"
 									class="edit-field"
-									@update:model-value="
+									@update:modelValue="
 										(v) => (editForm.name = v)
 									" />
 								<NcTextField
-									:model-value="editForm.key"
+									:modelValue="editForm.key"
 									:label="
 										t(
 											'procest',
@@ -62,16 +62,14 @@
 										)
 									"
 									class="edit-field"
-									@update:model-value="
-										(v) => (editForm.key = v)
-									" />
+									@update:modelValue="(v) => (editForm.key = v)" />
 							</div>
 							<div class="edit-row">
 								<NcTextField
-									:model-value="editForm.description"
+									:modelValue="editForm.description"
 									:label="t('procest', 'Description')"
 									class="edit-field edit-field--full"
-									@update:model-value="
+									@update:modelValue="
 										(v) => (editForm.description = v)
 									" />
 							</div>
@@ -79,12 +77,12 @@
 								<NcSelect
 									v-model="editForm.hitPolicy"
 									:options="hitPolicies"
-									:input-label="t('procest', 'Hit policy')"
+									:inputLabel="t('procest', 'Hit policy')"
 									:placeholder="t('procest', 'Hit policy')"
 									class="edit-field" />
 								<NcCheckboxRadioSwitch
-									:model-value="editForm.enabled"
-									@update:model-value="
+									:modelValue="editForm.enabled"
+									@update:modelValue="
 										(v) => (editForm.enabled = v)
 									">
 									{{ t('procest', 'Enabled') }}
@@ -92,14 +90,14 @@
 							</div>
 							<div class="edit-row">
 								<NcTextArea
-									:model-value="editForm.definitionJson"
+									:modelValue="editForm.definitionJson"
 									:label="
 										t(
 											'procest',
 											'Inputs, outputs and rules (JSON)',
 										)
 									"
-									:helper-text="
+									:helperText="
 										t(
 											'procest',
 											'A JSON object with inputs[], outputs[] and rules[]. Each rule row aligns positionally to the inputs and outputs.',
@@ -107,7 +105,7 @@
 									"
 									rows="14"
 									class="edit-field edit-field--full decision-tables-tab__json"
-									@update:model-value="
+									@update:modelValue="
 										(v) => (editForm.definitionJson = v)
 									" />
 							</div>
@@ -122,7 +120,7 @@
 								</li>
 							</ul>
 							<div class="edit-actions">
-								<NcButton type="primary" @click="saveEdit">
+								<NcButton variant="primary" @click="saveEdit">
 									{{ t('procest', 'Save') }}
 								</NcButton>
 								<NcButton @click="cancelEdit">
@@ -147,26 +145,26 @@
 <script>
 import {
 	NcButton,
-	NcLoadingIcon,
-	NcTextField,
-	NcTextArea,
-	NcSelect,
 	NcCheckboxRadioSwitch,
+	NcLoadingIcon,
 	NcNoteCard,
+	NcSelect,
+	NcTextArea,
+	NcTextField,
 } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import {
-	listDecisionTables,
 	createDecisionTable,
-	updateDecisionTable,
 	deleteDecisionTable,
+	listDecisionTables,
+	updateDecisionTable,
 } from '../../../services/decisionTableApi.js'
 import {
 	HIT_POLICIES,
+	parseDefinitionJson,
 	summariseTable,
 	validateTableStructure,
-	parseDefinitionJson,
 } from '../../../utils/decisionTableHelpers.js'
 
 const DEFAULT_DEFINITION = {
@@ -201,6 +199,7 @@ export default {
 		PencilIcon,
 		DeleteIcon,
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -212,9 +211,11 @@ export default {
 			hitPolicies: HIT_POLICIES,
 		}
 	},
+
 	async mounted() {
 		await this.loadItems()
 	},
+
 	methods: {
 		/**
 		 * A blank edit form seeded with a starter definition.
@@ -232,6 +233,7 @@ export default {
 				definitionJson: JSON.stringify(DEFAULT_DEFINITION, null, 2),
 			}
 		},
+
 		/**
 		 * One-line summary for the list row.
 		 *
@@ -242,6 +244,7 @@ export default {
 		summarise(item) {
 			return summariseTable(item)
 		},
+
 		/**
 		 * Load all decision tables.
 		 *
@@ -257,6 +260,7 @@ export default {
 			}
 			this.loading = false
 		},
+
 		/**
 		 * Begin adding a new decision table.
 		 *
@@ -270,6 +274,7 @@ export default {
 			this.structuralErrors = []
 			this.items.push({ id: 'new', name: '', key: '' })
 		},
+
 		/**
 		 * Begin editing an existing decision table.
 		 *
@@ -298,6 +303,7 @@ export default {
 			this.editError = ''
 			this.structuralErrors = []
 		},
+
 		/**
 		 * Cancel the current edit.
 		 *
@@ -311,6 +317,7 @@ export default {
 			this.editError = ''
 			this.structuralErrors = []
 		},
+
 		/**
 		 * Validate and persist the current edit.
 		 *
@@ -373,6 +380,7 @@ export default {
 			this.editingId = null
 			await this.loadItems()
 		},
+
 		/**
 		 * Delete a decision table after confirmation.
 		 *

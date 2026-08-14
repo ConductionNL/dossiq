@@ -99,43 +99,48 @@
 
 <script>
 import { CnChartWidget } from '@conduction/nextcloud-vue'
-import {
-	buildDonutSeries,
-	buildDonutLabels,
-	buildHistogramSeries,
-	findHistogramTargetBinIndex,
-	buildTrendSeries,
-	buildThroughputSeries,
-} from './chartShaping.js'
 import { registerSeries } from '../../../services/analyticsSeriesApi.js'
+import {
+	buildDonutLabels,
+	buildDonutSeries,
+	buildHistogramSeries,
+	buildThroughputSeries,
+	buildTrendSeries,
+	findHistogramTargetBinIndex,
+} from './chartShaping.js'
 
 export default {
 	name: 'ComplianceCharts',
 	components: {
 		CnChartWidget,
 	},
+
 	props: {
 		/** computeSlaCompliance() output: { byType: [{ name, total, withinSla, rate }], ... }. */
 		slaData: {
 			type: Object,
 			required: true,
 		},
+
 		/** computeProcessingTimeDistribution() output: { bins: [{ label, count }], slaTargetDays }. */
 		distributionData: {
 			type: Object,
 			required: true,
 		},
+
 		/** computeMonthlyTrend() output: [{ month, rate, withinSla, total }]. */
 		trendData: {
 			type: Array,
 			default: () => [],
 		},
+
 		/** computeWeeklyThroughput() output: [{ weekLabel, count }]. */
 		throughputData: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	computed: {
 		/**
 		 * Donut series — within-SLA count per case type that has at least one case.
@@ -145,6 +150,7 @@ export default {
 		donutSeries() {
 			return buildDonutSeries(this.slaData)
 		},
+
 		/**
 		 * Donut slice labels (one per qualifying case type).
 		 *
@@ -153,6 +159,7 @@ export default {
 		donutLabels() {
 			return buildDonutLabels(this.slaData)
 		},
+
 		/**
 		 * Donut render options handed to the analytics-leaf chart widget
 		 * (colours, legend, tooltip). The widget owns the chart engine.
@@ -170,6 +177,7 @@ export default {
 					'var(--color-primary-element-light)',
 					'var(--color-text-maxcontrast)',
 				],
+
 				legend: { position: 'bottom' },
 				plotOptions: {
 					pie: {
@@ -184,6 +192,7 @@ export default {
 						},
 					},
 				},
+
 				tooltip: {
 					y: {
 						formatter: (val, opts) => {
@@ -195,6 +204,7 @@ export default {
 				},
 			}
 		},
+
 		/**
 		 * Histogram series — case count per processing-time bin.
 		 *
@@ -203,6 +213,7 @@ export default {
 		histogramSeries() {
 			return buildHistogramSeries(this.distributionData, t('procest', 'Cases'))
 		},
+
 		/**
 		 * Histogram x-axis categories (the processing-time bins).
 		 *
@@ -211,6 +222,7 @@ export default {
 		histogramCategories() {
 			return (this.distributionData.bins || []).map((b) => b.label)
 		},
+
 		/**
 		 * Histogram render options with the SLA-target annotation line.
 		 *
@@ -242,12 +254,15 @@ export default {
 				plotOptions: {
 					bar: { borderRadius: 4, columnWidth: '70%' },
 				},
+
 				xaxis: {
 					title: { text: t('procest', 'Processing time (days)') },
 				},
+
 				yaxis: {
 					title: { text: t('procest', 'Number of cases') },
 				},
+
 				colors: ['var(--color-primary)'],
 				annotations: { xaxis: annotations },
 				tooltip: {
@@ -255,6 +270,7 @@ export default {
 				},
 			}
 		},
+
 		/**
 		 * Trend series — monthly SLA compliance rate.
 		 *
@@ -263,6 +279,7 @@ export default {
 		trendSeries() {
 			return buildTrendSeries(this.trendData, t('procest', 'SLA Compliance %'))
 		},
+
 		/**
 		 * Trend x-axis categories (months).
 		 *
@@ -271,6 +288,7 @@ export default {
 		trendCategories() {
 			return this.trendData.map((d) => d.month)
 		},
+
 		/**
 		 * Trend render options (0–100% axis, 100%-target annotation, tooltip).
 		 *
@@ -284,6 +302,7 @@ export default {
 					title: { text: t('procest', 'Compliance %') },
 					labels: { formatter: (val) => (val !== null ? val + '%' : '') },
 				},
+
 				colors: ['var(--color-primary)'],
 				stroke: { curve: 'smooth', width: 3 },
 				markers: { size: 5 },
@@ -303,6 +322,7 @@ export default {
 						},
 					],
 				},
+
 				tooltip: {
 					y: {
 						formatter: (val, opts) => {
@@ -314,6 +334,7 @@ export default {
 				},
 			}
 		},
+
 		/**
 		 * Throughput series — cases closed per ISO week.
 		 *
@@ -325,6 +346,7 @@ export default {
 				t('procest', 'Cases closed'),
 			)
 		},
+
 		/**
 		 * Throughput x-axis categories (ISO week labels).
 		 *
@@ -333,6 +355,7 @@ export default {
 		throughputCategories() {
 			return this.throughputData.map((w) => w.weekLabel)
 		},
+
 		/**
 		 * Throughput render options (integer y-axis, smooth line).
 		 *
@@ -346,21 +369,25 @@ export default {
 					title: { text: t('procest', 'Cases closed') },
 					labels: { formatter: (val) => Math.round(val) },
 				},
+
 				colors: ['var(--color-primary)'],
 				stroke: { curve: 'smooth', width: 3 },
 				markers: { size: 4 },
 			}
 		},
 	},
+
 	watch: {
 		slaData: { handler: 'publishSeries', immediate: false },
 		distributionData: { handler: 'publishSeries' },
 		trendData: { handler: 'publishSeries' },
 		throughputData: { handler: 'publishSeries' },
 	},
+
 	mounted() {
 		this.publishSeries()
 	},
+
 	methods: {
 		/**
 		 * Register the four computed SLA series with OpenRegister's page-level

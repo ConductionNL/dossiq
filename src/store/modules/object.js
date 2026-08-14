@@ -8,9 +8,9 @@
  * Plugins add sub-resource support for files, audit trails, and relations.
  */
 import {
+	auditTrailsPlugin,
 	createObjectStore,
 	filesPlugin,
-	auditTrailsPlugin,
 	relationsPlugin,
 } from '@conduction/nextcloud-vue'
 

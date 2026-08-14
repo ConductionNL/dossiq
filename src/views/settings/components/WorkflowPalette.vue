@@ -15,7 +15,7 @@
 		<!-- Keyboard alternative to dragging the item above onto the canvas
 			(drag-and-drop has no keyboard equivalent). -->
 		<NcButton
-			type="secondary"
+			variant="secondary"
 			class="workflow-palette__add-button"
 			@click="$emit('add-status')">
 			{{ t('procest', 'Add status node') }}
@@ -72,6 +72,7 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	emits: ['drag-start', 'add-status'],
 	methods: {
 		/**

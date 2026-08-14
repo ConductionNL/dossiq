@@ -15,7 +15,7 @@
 				id="email_imap_host"
 				v-model="form.email_imap_host"
 				:disabled="!writable || loading"
-				:placeholder="'imap.gemeente.nl'" />
+				placeholder="imap.gemeente.nl" />
 		</div>
 
 		<div class="setting-row">
@@ -25,13 +25,13 @@
 				v-model="form.email_imap_port"
 				type="number"
 				:disabled="!writable || loading"
-				:placeholder="'993'" />
+				placeholder="993" />
 		</div>
 
 		<div class="setting-row">
 			<NcSelect
 				v-model="encryptionOption"
-				:input-label="t('procest', 'Encryption')"
+				:inputLabel="t('procest', 'Encryption')"
 				:options="encryptionOptions"
 				:disabled="!writable || loading"
 				:clearable="false" />
@@ -43,7 +43,7 @@
 				id="email_imap_username"
 				v-model="form.email_imap_username"
 				:disabled="!writable || loading"
-				:placeholder="'zaken@gemeente.nl'" />
+				placeholder="zaken@gemeente.nl" />
 		</div>
 
 		<div class="setting-row">
@@ -72,7 +72,7 @@
 				id="email_imap_folder"
 				v-model="form.email_imap_folder"
 				:disabled="!writable || loading"
-				:placeholder="'INBOX'" />
+				placeholder="INBOX" />
 		</div>
 
 		<div class="setting-row">
@@ -105,7 +105,7 @@
 				v-model="form.email_poll_interval"
 				type="number"
 				:disabled="!writable || loading"
-				:placeholder="'300'" />
+				placeholder="300" />
 		</div>
 
 		<div class="setting-row">
@@ -117,12 +117,12 @@
 				v-model="form.email_poll_batch_size"
 				type="number"
 				:disabled="!writable || loading"
-				:placeholder="'50'" />
+				placeholder="50" />
 		</div>
 
 		<div class="email-settings__actions">
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="!writable || saving || loading"
 				@click="save">
 				<template #icon>
@@ -136,7 +136,7 @@
 			</NcButton>
 
 			<NcButton
-				type="secondary"
+				variant="secondary"
 				:disabled="testing || loading"
 				@click="testConnection">
 				<template #icon>
@@ -153,6 +153,7 @@
 </template>
 
 <script>
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcInputField,
@@ -160,7 +161,6 @@ import {
 	NcNoteCard,
 	NcSelect,
 } from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
 
 /**
  * Shared case-email mailbox admin settings.
@@ -192,6 +192,7 @@ export default {
 				email_poll_interval: '300',
 				email_poll_batch_size: '50',
 			},
+
 			encryptionOptions: [
 				{ id: 'ssl', label: 'SSL/TLS' },
 				{ id: 'tls', label: 'STARTTLS' },
@@ -199,6 +200,7 @@ export default {
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		encryptionOption: {
@@ -209,10 +211,12 @@ export default {
 					) || this.encryptionOptions[0]
 				)
 			},
+
 			set(option) {
 				this.form.email_imap_encryption = option ? option.id : 'ssl'
 			},
 		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		passwordPlaceholder() {
 			return this.form.email_imap_password === '***'
@@ -220,9 +224,11 @@ export default {
 				: t('procest', 'Enter password')
 		},
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		async load() {
@@ -248,6 +254,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		async save() {
 			this.saving = true
@@ -292,6 +299,7 @@ export default {
 				this.saving = false
 			}
 		},
+
 		/** @spec openspec/specs/case-email-integration/spec.md */
 		async testConnection() {
 			this.testing = true

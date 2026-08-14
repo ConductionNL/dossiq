@@ -37,7 +37,7 @@
 			<span class="cmmn-plan-item__actions">
 				<NcButton
 					v-if="enableable"
-					type="secondary"
+					variant="secondary"
 					:disabled="busy === node.id"
 					:aria-label="t('procest', 'Enable this optional task')"
 					@click="$emit('enable', node.id)">
@@ -45,7 +45,7 @@
 				</NcButton>
 				<NcButton
 					v-if="completable"
-					type="primary"
+					variant="primary"
 					:disabled="busy === node.id"
 					:aria-label="t('procest', 'Complete this task')"
 					@click="$emit('complete', node.id)">
@@ -53,7 +53,7 @@
 				</NcButton>
 				<NcButton
 					v-if="terminable"
-					type="tertiary"
+					variant="tertiary"
 					:disabled="busy === node.id"
 					:aria-label="t('procest', 'Terminate this task')"
 					@click="$emit('terminate', node.id)">
@@ -70,7 +70,7 @@
 				:key="child.id"
 				:node="child"
 				:milestones="milestones"
-				:enableable-discretionary="enableableDiscretionary"
+				:enableableDiscretionary="enableableDiscretionary"
 				:busy="busy"
 				@enable="$emit('enable', $event)"
 				@complete="$emit('complete', $event)"
@@ -80,14 +80,14 @@
 </template>
 
 <script>
-import { NcButton } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton } from '@nextcloud/vue'
 import {
-	stateBadge,
-	isEnableable,
 	canComplete,
 	canTerminate,
+	isEnableable,
 	isMilestoneAchieved,
+	stateBadge,
 } from '../../../utils/cmmnHelpers.js'
 
 export default {
@@ -98,42 +98,51 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		milestones: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		enableableDiscretionary: {
 			type: Array,
 			default: () => [],
 		},
+
 		busy: {
 			type: String,
 			default: null,
 		},
 	},
+
 	emits: ['enable', 'complete', 'terminate'],
 	computed: {
 		/** @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-002 */
 		badge() {
 			return stateBadge(this.node.state)
 		},
+
 		/** @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-004 */
 		enableable() {
 			return isEnableable(this.node, this.enableableDiscretionary)
 		},
+
 		/** @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-007 */
 		completable() {
 			return canComplete(this.node)
 		},
+
 		/** @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-007 */
 		terminable() {
 			return canTerminate(this.node)
 		},
+
 		/** @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-005 */
 		achieved() {
 			return isMilestoneAchieved(this.milestones, this.node.id)
 		},
 	},
+
 	methods: { t },
 }
 </script>

@@ -45,7 +45,7 @@
 							</span>
 							<div class="sub-entity-row__actions">
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="t('procest', 'Edit')"
 									@click="startEdit(item)">
 									<template #icon>
@@ -53,7 +53,7 @@
 									</template>
 								</NcButton>
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="t('procest', 'Delete')"
 									@click="deleteItem(item)">
 									<template #icon>
@@ -67,36 +67,36 @@
 							<div class="sub-entity-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.name"
+										:modelValue="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.name = v)
 										" />
 									<NcSelect
 										v-model="editForm.genericRole"
 										:options="genericRoleOptions"
-										:input-label="t('procest', 'Generic role')"
+										:inputLabel="t('procest', 'Generic role')"
 										:placeholder="t('procest', 'Generic role')"
 										class="edit-field" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.ncGroupId"
+										:modelValue="editForm.ncGroupId"
 										:label="t('procest', 'NC Group ID')"
-										:helper-text="ncGroupHint"
+										:helperText="ncGroupHint"
 										class="edit-field edit-field--full"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.ncGroupId = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.description"
+										:modelValue="editForm.description"
 										:label="t('procest', 'Description')"
 										class="edit-field edit-field--full"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.description = v)
 										" />
 								</div>
@@ -105,7 +105,7 @@
 								</p>
 								<div class="edit-actions">
 									<NcButton
-										type="primary"
+										variant="primary"
 										:disabled="saving"
 										@click="saveEdit">
 										{{ t('procest', 'Save') }}
@@ -131,9 +131,9 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 const GENERIC_ROLE_LABELS = {
@@ -157,10 +157,12 @@ export default {
 		PencilIcon,
 		DeleteIcon,
 	},
+
 	props: {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -173,6 +175,7 @@ export default {
 			genericRoleOptions: Object.keys(GENERIC_ROLE_LABELS),
 		}
 	},
+
 	computed: {
 		/**
 		 * @return {string} Helper text for the NC Group ID field.
@@ -185,9 +188,11 @@ export default {
 			)
 		},
 	},
+
 	async mounted() {
 		if (!this.isCreate) await this.loadItems()
 	},
+
 	methods: {
 		/**
 		 * @param {string} value Generic role key
@@ -199,6 +204,7 @@ export default {
 				? t('procest', GENERIC_ROLE_LABELS[value])
 				: value
 		},
+
 		/**
 		 * @param {string} text Description text
 		 * @return {string} Truncated text
@@ -208,6 +214,7 @@ export default {
 			if (!text) return ''
 			return text.length > 60 ? text.slice(0, 60) + '…' : text
 		},
+
 		/** @spec openspec/specs/result-type-management/spec.md */
 		async loadItems() {
 			this.loading = true
@@ -224,6 +231,7 @@ export default {
 			}
 			this.loading = false
 		},
+
 		/** @spec openspec/specs/result-type-management/spec.md */
 		startAdd() {
 			this.editingId = 'new'
@@ -236,6 +244,7 @@ export default {
 			this.editError = ''
 			this.items.push({ id: 'new', name: '' })
 		},
+
 		/**
 		 * @param item Role type to edit
 		 * @spec openspec/specs/result-type-management/spec.md
@@ -250,6 +259,7 @@ export default {
 			}
 			this.editError = ''
 		},
+
 		/** @spec openspec/specs/result-type-management/spec.md */
 		cancelEdit() {
 			if (this.editingId === 'new')
@@ -257,6 +267,7 @@ export default {
 			this.editingId = null
 			this.editError = ''
 		},
+
 		/** @spec openspec/changes/migrate-role-routing-to-or-rbac/tasks.md#P-3.1 */
 		async saveEdit() {
 			if (!this.editForm.name.trim()) {
@@ -292,6 +303,7 @@ export default {
 			}
 			this.saving = false
 		},
+
 		/**
 		 * @param item Role type to delete
 		 * @spec openspec/specs/result-type-management/spec.md

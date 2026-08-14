@@ -37,7 +37,7 @@
 					<span>{{ permissionLabel(share.permissionLevel) }}</span>
 				</div>
 				<div class="share-tab__item-actions">
-					<NcButton type="error" @click="$emit('revoke', share.id)">
+					<NcButton variant="error" @click="$emit('revoke', share.id)">
 						{{ t('procest', 'Revoke') }}
 					</NcButton>
 				</div>
@@ -46,7 +46,7 @@
 
 		<!-- Create partner share / transfer -->
 		<div class="share-tab__actions">
-			<NcButton type="primary" @click="$emit('create-partner-share')">
+			<NcButton variant="primary" @click="$emit('create-partner-share')">
 				{{ t('procest', 'Share with partner') }}
 			</NcButton>
 			<NcButton @click="$emit('transfer-case')">
@@ -108,7 +108,7 @@
 					</NcButton>
 					<NcButton
 						v-if="share.status !== 'revoked'"
-						type="error"
+						variant="error"
 						@click="$emit('revoke-federated', share.id)">
 						{{ t('procest', 'Revoke') }}
 					</NcButton>
@@ -117,7 +117,7 @@
 		</ul>
 
 		<div class="share-tab__actions">
-			<NcButton type="primary" @click="$emit('create-federated-share')">
+			<NcButton variant="primary" @click="$emit('create-federated-share')">
 				{{ t('procest', 'Share with remote organisation') }}
 			</NcButton>
 		</div>
@@ -133,25 +133,30 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 	},
+
 	props: {
 		shares: {
 			type: Array,
 			default: () => [],
 		},
+
 		loading: {
 			type: Boolean,
 			default: false,
 		},
+
 		/** Federated (cross-instance) case shares — federated-case-collaboration. */
 		federatedShares: {
 			type: Array,
 			default: () => [],
 		},
+
 		federatedLoading: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: [
 		'revoke',
 		'create-partner-share',
@@ -160,6 +165,7 @@ export default {
 		'revoke-federated',
 		'open-activity',
 	],
+
 	methods: {
 		/**
 		 * @param {string} level the permission level slug.

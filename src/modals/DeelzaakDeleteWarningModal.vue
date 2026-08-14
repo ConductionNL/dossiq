@@ -48,7 +48,7 @@
 			<NcButton :disabled="busy" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton type="error" :disabled="busy" @click="confirmDelete">
+			<NcButton variant="error" :disabled="busy" @click="confirmDelete">
 				<template v-if="busy" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
@@ -60,9 +60,8 @@
 
 <script>
 import { NcButton, NcDialog, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-
-import { useObjectStore } from '../store/modules/object.js'
 import { useDeelzaakStore } from '../store/modules/deelzaak.js'
+import { useObjectStore } from '../store/modules/object.js'
 import { orphanWarningMessage } from '../utils/deelzaakHelpers.js'
 
 export default {
@@ -73,18 +72,21 @@ export default {
 		NcLoadingIcon,
 		NcNoteCard,
 	},
+
 	props: {
 		/** UUID of the parent case being deleted. */
 		parentCaseId: {
 			type: String,
 			required: true,
 		},
+
 		/** Number of sub-cases attached to the parent (drives the copy). */
 		subCaseCount: {
 			type: Number,
 			default: 0,
 		},
 	},
+
 	emits: ['deleted', 'close'],
 	data() {
 		return {
@@ -92,20 +94,24 @@ export default {
 			error: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T11 */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T11 */
 		deelzaakStore() {
 			return useDeelzaakStore()
 		},
+
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T11 */
 		warningMessage() {
 			return orphanWarningMessage(this.subCaseCount)
 		},
 	},
+
 	methods: {
 		/**
 		 * @param open
@@ -116,6 +122,7 @@ export default {
 				this.$emit('close')
 			}
 		},
+
 		/**
 		 * Unlink every sub-case, then delete the parent. Orphan cleanup runs
 		 * before deletion so the children survive (REQ-DZS-006-B).

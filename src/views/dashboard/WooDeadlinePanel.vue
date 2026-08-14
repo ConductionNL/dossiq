@@ -23,7 +23,7 @@
 		<template v-else-if="error">
 			<div class="woo-panel__error">
 				<p>{{ error }}</p>
-				<NcButton type="tertiary" @click="$emit('retry')">
+				<NcButton variant="tertiary" @click="$emit('retry')">
 					{{ t('procest', 'Retry') }}
 				</NcButton>
 			</div>
@@ -78,6 +78,7 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		/** Pre-computed Woo rows from getWooCases() — already sorted. */
 		cases: { type: Array, default: () => [] },
@@ -86,6 +87,7 @@ export default {
 		/** Error message — renders retry CTA when set. */
 		error: { type: String, default: null },
 	},
+
 	emits: ['click-case', 'view-all', 'retry'],
 	methods: {
 		/**
@@ -106,6 +108,7 @@ export default {
 					return this.t('procest', 'On track')
 			}
 		},
+
 		/**
 		 * Build the countdown text for a row.
 		 *
@@ -124,6 +127,7 @@ export default {
 				days: item.daysRemaining,
 			})
 		},
+
 		/**
 		 * @param {string} severity Severity key
 		 * @return {string} Row CSS modifier class
@@ -131,6 +135,7 @@ export default {
 		rowClass(severity) {
 			return `woo-panel__row--${severity}`
 		},
+
 		/**
 		 * @param {string} severity Severity key
 		 * @return {string} Days-text CSS modifier class

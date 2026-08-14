@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
-import pinia from './pinia.js'
 import StartCaseWidget from './views/widgets/StartCaseWidget.vue'
+import pinia from './pinia.js'
 
 OCA.Dashboard.register('procest_start_case_widget', async (el, { widget }) => {
 	const app = createApp(StartCaseWidget, { title: widget.title })

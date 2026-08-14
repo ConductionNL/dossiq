@@ -69,7 +69,7 @@
 		<MandaatMatrixWidget
 			v-if="expandedRow"
 			:mandaat="expandedRow"
-			:role-holders="holdersFor(expandedRow)"
+			:roleHolders="holdersFor(expandedRow)"
 			@close="expandedId = null" />
 	</div>
 </template>
@@ -98,6 +98,7 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		caseType: {
 			type: String,
 			required: true,

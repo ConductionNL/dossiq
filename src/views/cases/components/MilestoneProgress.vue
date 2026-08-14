@@ -72,23 +72,28 @@ export default {
 			type: Array,
 			default: () => [],
 		},
+
 		reached: {
 			type: Number,
 			default: 0,
 		},
+
 		total: {
 			type: Number,
 			default: 0,
 		},
+
 		percentage: {
 			type: Number,
 			default: 0,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	methods: {
 		/**
 		 * @param milestone
@@ -102,11 +107,13 @@ export default {
 					!milestone.reached
 					&& index > 0
 					&& this.milestones[index - 1]?.reached,
+
 				'milestone-progress__step--future':
 					!milestone.reached
 					&& (index === 0 || !this.milestones[index - 1]?.reached),
 			}
 		},
+
 		/**
 		 * @param milestone
 		 * @param index
@@ -119,11 +126,13 @@ export default {
 					!milestone.reached
 					&& index > 0
 					&& this.milestones[index - 1]?.reached,
+
 				'milestone-progress__dot--future':
 					!milestone.reached
 					&& (index === 0 || !this.milestones[index - 1]?.reached),
 			}
 		},
+
 		/**
 		 * @param dateStr
 		 * @spec openspec/changes/retrofit-2026-05-24-milestone-tracking/tasks.md
@@ -137,6 +146,7 @@ export default {
 				month: 'short',
 			})
 		},
+
 		/**
 		 * @param milestone
 		 * @param index

@@ -34,7 +34,7 @@
 							</span>
 							<div class="property-row__actions">
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="
 										t('procest', 'Edit {name}', {
 											name: pd.name,
@@ -46,7 +46,7 @@
 									</template>
 								</NcButton>
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="
 										t('procest', 'Delete {name}', {
 											name: pd.name,
@@ -64,20 +64,20 @@
 							<div class="property-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.name"
+										:modelValue="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.name = v)
 										" />
 								</div>
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.definition"
+										:modelValue="editForm.definition"
 										:label="t('procest', 'Definition')"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.definition = v)
 										" />
 								</div>
@@ -107,7 +107,7 @@
 										</select>
 									</div>
 									<NcTextField
-										:model-value="
+										:modelValue="
 											editForm.maxLength
 												? String(editForm.maxLength)
 												: ''
@@ -115,7 +115,7 @@
 										:label="t('procest', 'Max length')"
 										type="number"
 										class="edit-field edit-field--small"
-										@update:model-value="
+										@update:modelValue="
 											(v) =>
 												(editForm.maxLength =
 													parseInt(v, 10) || null)
@@ -150,12 +150,12 @@
 								}}</span>
 								<div class="edit-row edit-row--actions">
 									<NcButton
-										type="primary"
+										variant="primary"
 										:disabled="editSaving"
 										@click="saveEdit">
 										{{ t('procest', 'Save') }}
 									</NcButton>
-									<NcButton type="tertiary" @click="cancelEdit">
+									<NcButton variant="tertiary" @click="cancelEdit">
 										{{ t('procest', 'Cancel') }}
 									</NcButton>
 								</div>
@@ -173,17 +173,17 @@
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
-								:model-value="newForm.name"
+								:modelValue="newForm.name"
 								:label="t('procest', 'Name *')"
 								class="add-form__field"
-								@update:model-value="(v) => (newForm.name = v)" />
+								@update:modelValue="(v) => (newForm.name = v)" />
 						</div>
 						<div class="add-form__row">
 							<NcTextField
-								:model-value="newForm.definition"
+								:modelValue="newForm.definition"
 								:label="t('procest', 'Definition')"
 								class="add-form__field"
-								@update:model-value="
+								@update:modelValue="
 									(v) => (newForm.definition = v)
 								" />
 						</div>
@@ -211,7 +211,7 @@
 								</select>
 							</div>
 							<NcTextField
-								:model-value="
+								:modelValue="
 									newForm.maxLength
 										? String(newForm.maxLength)
 										: ''
@@ -219,7 +219,7 @@
 								:label="t('procest', 'Max length')"
 								type="number"
 								class="add-form__field add-form__field--small"
-								@update:model-value="
+								@update:modelValue="
 									(v) =>
 										(newForm.maxLength = parseInt(v, 10) || null)
 								" />
@@ -252,7 +252,7 @@
 							addError
 						}}</span>
 						<NcButton
-							type="primary"
+							variant="primary"
 							:disabled="addSaving"
 							@click="addProperty">
 							{{ t('procest', 'Add') }}
@@ -270,8 +270,8 @@
 
 <script>
 import { NcButton, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
@@ -281,6 +281,7 @@ export default {
 		caseTypeId: { type: String, default: null },
 		isCreate: { type: Boolean, default: false },
 	},
+
 	data() {
 		return {
 			propertyDefs: [],
@@ -294,6 +295,7 @@ export default {
 				maxLength: null,
 				requiredAtStatus: null,
 			},
+
 			addError: '',
 			addSaving: false,
 			editingId: null,
@@ -302,18 +304,21 @@ export default {
 			editSaving: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) {
 			await Promise.all([this.fetchPropertyDefs(), this.fetchStatusTypes()])
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async fetchPropertyDefs() {
@@ -332,6 +337,7 @@ export default {
 			}
 			this.loading = false
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async fetchStatusTypes() {
 			try {
@@ -344,6 +350,7 @@ export default {
 				/* ignore — status types are optional for property definitions */
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async addProperty() {
 			this.addError = ''
@@ -372,6 +379,7 @@ export default {
 					|| t('procest', 'Failed to add property')
 			}
 		},
+
 		/**
 		 * @param pd
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md
@@ -381,12 +389,14 @@ export default {
 			this.editForm = { ...pd }
 			this.editError = ''
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		cancelEdit() {
 			this.editingId = null
 			this.editForm = {}
 			this.editError = ''
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		async saveEdit() {
 			this.editError = ''
@@ -413,6 +423,7 @@ export default {
 					|| t('procest', 'Failed to save')
 			}
 		},
+
 		/**
 		 * @param pd
 		 * @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md

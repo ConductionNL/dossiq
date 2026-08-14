@@ -20,7 +20,7 @@
 				<!-- Create new workflow if none exists -->
 				<NcButton
 					v-if="versions.length === 0"
-					type="primary"
+					variant="primary"
 					@click="createWorkflow">
 					{{ t('procest', 'Create workflow') }}
 				</NcButton>
@@ -28,7 +28,7 @@
 				<!-- Publish draft -->
 				<NcButton
 					v-if="currentIsDraft"
-					type="secondary"
+					variant="secondary"
 					:disabled="publishing"
 					@click="publish">
 					<template v-if="publishing" #icon>
@@ -40,7 +40,7 @@
 				<!-- Edit published (create draft copy) -->
 				<NcButton
 					v-if="currentIsPublished && !hasDraft"
-					type="secondary"
+					variant="secondary"
 					@click="editPublished">
 					{{ t('procest', 'Edit') }}
 				</NcButton>
@@ -48,7 +48,7 @@
 				<!-- Save -->
 				<NcButton
 					v-if="currentIsDraft && dirty"
-					type="primary"
+					variant="primary"
 					:disabled="saving"
 					@click="save">
 					<template v-if="saving" #icon>
@@ -58,10 +58,10 @@
 				</NcButton>
 
 				<!-- Import / Export -->
-				<NcButton type="tertiary" @click="exportWorkflow">
+				<NcButton variant="tertiary" @click="exportWorkflow">
 					{{ t('procest', 'Export') }}
 				</NcButton>
-				<NcButton type="tertiary" @click="triggerImport">
+				<NcButton variant="tertiary" @click="triggerImport">
 					{{ t('procest', 'Import') }}
 				</NcButton>
 				<input
@@ -98,7 +98,7 @@
 					{{ t('procest', 'Missing role type: {name}', { name: type }) }}
 				</li>
 			</ul>
-			<NcButton type="secondary" @click="importReport = null">
+			<NcButton variant="secondary" @click="importReport = null">
 				{{ t('procest', 'Cancel import') }}
 			</NcButton>
 		</div>
@@ -112,8 +112,8 @@
 		<WorkflowEditor
 			v-if="selectedVersionId"
 			ref="editor"
-			:case-type-id="caseTypeId"
-			:template-id="selectedVersionId"
+			:caseTypeId="caseTypeId"
+			:templateId="selectedVersionId"
 			@dirty="dirty = true" />
 
 		<!-- Empty state -->
@@ -136,8 +136,8 @@
 <script>
 import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import WorkflowEditor from '../WorkflowEditor.vue'
-import { useWorkflowStore } from '../../../store/modules/workflow.js'
 import { useObjectStore } from '../../../store/modules/object.js'
+import { useWorkflowStore } from '../../../store/modules/workflow.js'
 
 export default {
 	name: 'WorkflowTab',
@@ -146,12 +146,14 @@ export default {
 		NcLoadingIcon,
 		WorkflowEditor,
 	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			selectedVersionId: null,
@@ -163,34 +165,42 @@ export default {
 			importReport: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		workflowStore() {
 			return useWorkflowStore()
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		versions() {
 			return this.workflowStore.versions
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		currentTemplate() {
 			return this.workflowStore.currentTemplate
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		currentIsDraft() {
 			return this.currentTemplate?.isDraft === true
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		currentIsPublished() {
 			return this.currentTemplate && !this.currentTemplate.isDraft
 		},
+
 		hasDraft() {
 			return this.versions.some((v) => v.isDraft)
 		},
+
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		versionNotice() {
 			if (!this.currentTemplate) return null
@@ -212,9 +222,11 @@ export default {
 			return null
 		},
 	},
+
 	async mounted() {
 		await this.loadVersions()
 	},
+
 	methods: {
 		/** @spec openspec/specs/workflow-definition-model/spec.md */
 		async loadVersions() {

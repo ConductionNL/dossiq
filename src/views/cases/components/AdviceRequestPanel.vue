@@ -53,11 +53,11 @@
 				>
 				<NcTextField
 					id="advice-request-department"
-					:model-value="form.department"
+					:modelValue="form.department"
 					:placeholder="
 						t('procest', 'e.g., Brandweer, Welstandscommissie')
 					"
-					@update:model-value="(v) => (form.department = v)" />
+					@update:modelValue="(v) => (form.department = v)" />
 			</div>
 			<div class="form-group">
 				<label for="advice-request-subject"
@@ -65,8 +65,8 @@
 				>
 				<NcTextField
 					id="advice-request-subject"
-					:model-value="form.subject"
-					@update:model-value="(v) => (form.subject = v)" />
+					:modelValue="form.subject"
+					@update:modelValue="(v) => (form.subject = v)" />
 			</div>
 			<div class="form-group">
 				<label for="advice-request-question">{{
@@ -83,16 +83,16 @@
 				>
 				<NcTextField
 					id="advice-request-deadline"
-					:model-value="form.deadline"
+					:modelValue="form.deadline"
 					type="date"
-					@update:model-value="(v) => (form.deadline = v)" />
+					@update:modelValue="(v) => (form.deadline = v)" />
 			</div>
 			<div class="advice-request__form-actions">
 				<NcButton @click="showForm = false">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="!isFormValid"
 					@click="submitRequest">
 					{{ t('procest', 'Send Request') }}
@@ -115,20 +115,24 @@ export default {
 		NcButton,
 		NcTextField,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		requests: {
 			type: Array,
 			default: () => [],
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	data() {
 		return {
 			showForm: false,
@@ -140,6 +144,7 @@ export default {
 			},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		isFormValid() {
@@ -150,6 +155,7 @@ export default {
 			)
 		},
 	},
+
 	methods: {
 		/**
 		 * @param status
@@ -164,6 +170,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+
 		/**
 		 * @param response
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -175,11 +182,13 @@ export default {
 					'procest',
 					'Positive with conditions',
 				),
+
 				negatief: this.t('procest', 'Negative'),
 				niet_van_toepassing: this.t('procest', 'Not applicable'),
 			}
 			return labels[response] || response
 		},
+
 		/**
 		 * @param dateStr
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -190,6 +199,7 @@ export default {
 			if (isNaN(date.getTime())) return dateStr
 			return date.toLocaleDateString('nl-NL')
 		},
+
 		/**
 		 * @param req
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
@@ -204,6 +214,7 @@ export default {
 			}
 			return new Date(req.deadline) < new Date()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		submitRequest() {
 			this.$emit('create', {

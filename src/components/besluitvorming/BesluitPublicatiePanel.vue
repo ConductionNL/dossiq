@@ -29,7 +29,7 @@
 					|| t('procest', 'The publication could not be sent.')
 				}}
 			</p>
-			<NcButton type="primary" :disabled="busy" @click="retry">
+			<NcButton variant="primary" :disabled="busy" @click="retry">
 				{{ t('procest', 'Opnieuw proberen') }}
 			</NcButton>
 		</div>
@@ -38,7 +38,7 @@
 			<span class="besluit-publicatie-panel__badge">
 				{{ t('procest', 'Publicatie in behandeling') }}
 			</span>
-			<NcButton type="secondary" :disabled="busy" @click="retry">
+			<NcButton variant="secondary" :disabled="busy" @click="retry">
 				{{ t('procest', 'Nu publiceren') }}
 			</NcButton>
 		</div>
@@ -57,15 +57,18 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		initialState: {
 			type: String,
 			default: 'pending',
 		},
+
 		publicationReference: {
 			type: String,
 			default: '',
 		},
 	},
+
 	data() {
 		return {
 			state: this.initialState,
@@ -74,6 +77,7 @@ export default {
 			busy: false,
 		}
 	},
+
 	methods: {
 		/**
 		 * Trigger (retry) the DROP/LVBB publication.
@@ -103,6 +107,7 @@ export default {
 				this.busy = false
 			}
 		},
+
 		/**
 		 * Map a backend error code to a human message.
 		 *

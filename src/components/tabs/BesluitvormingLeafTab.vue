@@ -28,12 +28,12 @@
 		<component
 			:is="leafComponent"
 			v-if="leafComponent"
-			:integration-id="integrationId"
+			:integrationId="integrationId"
 			:register="register"
 			:schema="schema"
-			:object-id="objectId"
-			:object-label="title"
-			:integration-context="integrationContext" />
+			:objectId="objectId"
+			:objectLabel="title"
+			:integrationContext="integrationContext" />
 		<NcEmptyContent
 			v-else
 			:name="unavailableTitle"

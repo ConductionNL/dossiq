@@ -58,7 +58,7 @@
 							</span>
 							<div class="status-type-row__actions">
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="
 										t('procest', 'Edit {name}', {
 											name: st.name,
@@ -70,7 +70,7 @@
 									</template>
 								</NcButton>
 								<NcButton
-									type="tertiary"
+									variant="tertiary"
 									:aria-label="
 										t('procest', 'Delete {name}', {
 											name: st.name,
@@ -89,19 +89,19 @@
 							<div class="status-type-row__edit-form">
 								<div class="edit-row">
 									<NcTextField
-										:model-value="editForm.name"
+										:modelValue="editForm.name"
 										:label="t('procest', 'Name')"
 										:error="!!editError"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.name = v)
 										" />
 									<NcTextField
-										:model-value="String(editForm.order)"
+										:modelValue="String(editForm.order)"
 										:label="t('procest', 'Order')"
 										type="number"
 										class="edit-field edit-field--small"
-										@update:model-value="
+										@update:modelValue="
 											(v) =>
 												(editForm.order =
 													parseInt(v, 10) || 0)
@@ -109,15 +109,15 @@
 								</div>
 								<div class="edit-row">
 									<NcCheckboxRadioSwitch
-										:model-value="editForm.isFinal"
-										@update:model-value="
+										:modelValue="editForm.isFinal"
+										@update:modelValue="
 											(v) => (editForm.isFinal = v)
 										">
 										{{ t('procest', 'Final status') }}
 									</NcCheckboxRadioSwitch>
 									<NcCheckboxRadioSwitch
-										:model-value="editForm.notifyInitiator"
-										@update:model-value="
+										:modelValue="editForm.notifyInitiator"
+										@update:modelValue="
 											(v) => (editForm.notifyInitiator = v)
 										">
 										{{ t('procest', 'Notify initiator') }}
@@ -127,10 +127,10 @@
 									v-if="editForm.notifyInitiator"
 									class="edit-row">
 									<NcTextField
-										:model-value="editForm.notificationText"
+										:modelValue="editForm.notificationText"
 										:label="t('procest', 'Notification text')"
 										class="edit-field"
-										@update:model-value="
+										@update:modelValue="
 											(v) => (editForm.notificationText = v)
 										" />
 								</div>
@@ -139,12 +139,12 @@
 								}}</span>
 								<div class="edit-row edit-row--actions">
 									<NcButton
-										type="primary"
+										variant="primary"
 										:disabled="editSaving"
 										@click="saveEdit">
 										{{ t('procest', 'Save') }}
 									</NcButton>
-									<NcButton type="tertiary" @click="cancelEdit">
+									<NcButton variant="tertiary" @click="cancelEdit">
 										{{ t('procest', 'Cancel') }}
 									</NcButton>
 								</div>
@@ -168,28 +168,28 @@
 					<div class="add-form">
 						<div class="add-form__row">
 							<NcTextField
-								:model-value="newForm.name"
+								:modelValue="newForm.name"
 								:label="t('procest', 'Name *')"
 								class="add-form__field"
-								@update:model-value="(v) => (newForm.name = v)" />
+								@update:modelValue="(v) => (newForm.name = v)" />
 							<NcTextField
-								:model-value="String(newForm.order)"
+								:modelValue="String(newForm.order)"
 								:label="t('procest', 'Order *')"
 								type="number"
 								class="add-form__field add-form__field--small"
-								@update:model-value="
+								@update:modelValue="
 									(v) => (newForm.order = parseInt(v, 10) || 0)
 								" />
 						</div>
 						<div class="add-form__row">
 							<NcCheckboxRadioSwitch
-								:model-value="newForm.isFinal"
-								@update:model-value="(v) => (newForm.isFinal = v)">
+								:modelValue="newForm.isFinal"
+								@update:modelValue="(v) => (newForm.isFinal = v)">
 								{{ t('procest', 'Final status') }}
 							</NcCheckboxRadioSwitch>
 							<NcCheckboxRadioSwitch
-								:model-value="newForm.notifyInitiator"
-								@update:model-value="
+								:modelValue="newForm.notifyInitiator"
+								@update:modelValue="
 									(v) => (newForm.notifyInitiator = v)
 								">
 								{{ t('procest', 'Notify initiator') }}
@@ -197,10 +197,10 @@
 						</div>
 						<div v-if="newForm.notifyInitiator" class="add-form__row">
 							<NcTextField
-								:model-value="newForm.notificationText"
+								:modelValue="newForm.notificationText"
 								:label="t('procest', 'Notification text')"
 								class="add-form__field"
-								@update:model-value="
+								@update:modelValue="
 									(v) => (newForm.notificationText = v)
 								" />
 						</div>
@@ -208,7 +208,7 @@
 							addError
 						}}</span>
 						<NcButton
-							type="primary"
+							variant="primary"
 							:disabled="addSaving"
 							@click="addStatusType">
 							{{ t('procest', 'Add') }}
@@ -227,12 +227,12 @@
 <script>
 import {
 	NcButton,
+	NcCheckboxRadioSwitch,
 	NcLoadingIcon,
 	NcTextField,
-	NcCheckboxRadioSwitch,
 } from '@nextcloud/vue'
-import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
@@ -245,16 +245,19 @@ export default {
 		PencilIcon,
 		DeleteIcon,
 	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
+
 		isCreate: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	data() {
 		return {
 			statusTypes: [],
@@ -274,11 +277,13 @@ export default {
 			dragOverIndex: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		sortedStatusTypes() {
 			return [...this.statusTypes].sort(
@@ -286,12 +291,14 @@ export default {
 			)
 		},
 	},
+
 	/** @spec openspec/specs/status-transition-engine/spec.md */
 	async mounted() {
 		if (!this.isCreate && this.caseTypeId) {
 			await this.fetchStatusTypes()
 		}
 	},
+
 	methods: {
 		/** @spec openspec/specs/status-transition-engine/spec.md */
 		getEmptyForm() {

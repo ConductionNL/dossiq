@@ -34,7 +34,7 @@
 				</p>
 			</div>
 			<div class="process-mining-dashboard__controls">
-				<NcActions :force-menu="true">
+				<NcActions :forceMenu="true">
 					<template #icon>
 						<Calendar :size="20" />
 					</template>
@@ -47,12 +47,12 @@
 					</NcActionButton>
 				</NcActions>
 				<NcSelect
-					:model-value="caseTypeFilter"
+					:modelValue="caseTypeFilter"
 					:options="caseTypeOptions"
-					:input-label="t('procest', 'Filter by case type')"
+					:inputLabel="t('procest', 'Filter by case type')"
 					:placeholder="t('procest', 'All case types')"
-					@update:model-value="onCaseTypeChange" />
-				<NcButton type="secondary" @click="load">
+					@update:modelValue="onCaseTypeChange" />
+				<NcButton variant="secondary" @click="load">
 					<template #icon>
 						<Refresh :size="18" />
 					</template>
@@ -186,26 +186,26 @@
 </template>
 
 <script>
+import { CnChartWidget, CnKpiGrid, CnStatsBlock } from '@conduction/nextcloud-vue'
 import {
-	NcActions,
 	NcActionButton,
+	NcActions,
 	NcButton,
 	NcLoadingIcon,
 	NcNoteCard,
 	NcSelect,
 } from '@nextcloud/vue'
-import { CnChartWidget, CnKpiGrid, CnStatsBlock } from '@conduction/nextcloud-vue'
 import Calendar from 'vue-material-design-icons/Calendar.vue'
 import Refresh from 'vue-material-design-icons/Refresh.vue'
-import { useObjectStore } from '../../store/modules/object.js'
 import { fetchProcessMiningReport } from '../../services/processMiningApi.js'
+import { useObjectStore } from '../../store/modules/object.js'
 import {
-	buildDwellSeries,
-	buildDwellCategories,
-	buildThroughputSeries,
-	buildThroughputCategories,
 	buildBottleneckRows,
+	buildDwellCategories,
+	buildDwellSeries,
 	buildKpiSummary,
+	buildThroughputCategories,
+	buildThroughputSeries,
 } from '../processMining/processMiningShaping.js'
 
 export default {
@@ -223,6 +223,7 @@ export default {
 		Calendar,
 		Refresh,
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -233,11 +234,13 @@ export default {
 			caseTypeFilter: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		datePresets() {
 			return [
@@ -247,6 +250,7 @@ export default {
 				{ key: 'all', label: t('procest', 'All time') },
 			]
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		caseTypeOptions() {
 			return this.caseTypes.map((ct) => ({
@@ -254,20 +258,24 @@ export default {
 				label: ct.title || ct.name,
 			}))
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		caseTypesList() {
 			return this.report?.caseTypes || []
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		kpiSummary() {
 			return buildKpiSummary(this.report)
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		topBottleneckLabel() {
 			const top = this.kpiSummary.topBottleneck
 			if (!top) return '—'
 			return `${top.statusName} (${top.medianHours}h)`
 		},
+
 		/** Dwell chart scopes to the filtered case type, or the busiest one otherwise. */
 		primaryCaseType() {
 			if (this.caseTypeFilter) {
@@ -278,6 +286,7 @@ export default {
 			}
 			return this.caseTypesList[0] || null
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		dwellSeries() {
 			return buildDwellSeries(
@@ -285,10 +294,12 @@ export default {
 				t('procest', 'Median hours'),
 			)
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		dwellCategories() {
 			return buildDwellCategories(this.primaryCaseType?.dwellTime)
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		dwellOptions() {
 			return {
@@ -298,6 +309,7 @@ export default {
 				colors: ['var(--color-warning)'],
 			}
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		throughputSeries() {
 			return buildThroughputSeries(
@@ -305,10 +317,12 @@ export default {
 				t('procest', 'Cases closed'),
 			)
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		throughputCategories() {
 			return buildThroughputCategories(this.report?.throughputTrend)
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		throughputOptions() {
 			return {
@@ -317,15 +331,18 @@ export default {
 					forceNiceScale: true,
 					labels: { formatter: (val) => Math.round(val) },
 				},
+
 				colors: ['var(--color-primary)'],
 				stroke: { curve: 'smooth', width: 3 },
 				markers: { size: 4 },
 			}
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		bottleneckRows() {
 			return buildBottleneckRows(this.caseTypesList, 10)
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		dateRange() {
 			const now = new Date()
@@ -346,17 +363,23 @@ export default {
 			return { from, to: now }
 		},
 	},
+
 	async mounted() {
 		await this.loadCaseTypes()
 		await this.load()
 	},
+
 	methods: {
 		t,
-		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
+		/**
+		 * @param key
+		 * @spec openspec/specs/process-mining-bottlenecks/spec.md
+		 */
 		applyPreset(key) {
 			this.selectedPreset = key
 			this.load()
 		},
+
 		/**
 		 * @param {object|null} opt Selected NcSelect option, or null to clear the filter.
 		 * @spec openspec/specs/process-mining-bottlenecks/spec.md
@@ -365,6 +388,7 @@ export default {
 			this.caseTypeFilter = opt ? opt.id : null
 			this.load()
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		async loadCaseTypes() {
 			try {
@@ -378,6 +402,7 @@ export default {
 				console.warn('Process mining: could not load case types', err)
 			}
 		},
+
 		/** @spec openspec/specs/process-mining-bottlenecks/spec.md */
 		async load() {
 			this.loading = true

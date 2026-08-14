@@ -5,7 +5,7 @@
 		v-if="open"
 		:name="t('procest', 'Issue advice')"
 		size="normal"
-		:can-close="!submitting"
+		:canClose="!submitting"
 		@closing="onClose">
 		<div class="consultation-response-form">
 			<div
@@ -75,7 +75,7 @@
 						class="consultation-response-form__condition-priority"
 						:placeholder="t('procest', 'Priority')" />
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:title="t('procest', 'Remove condition')"
 						@click="removeVoorwaarde(idx)">
 						✕
@@ -109,7 +109,7 @@
 			<NcButton :disabled="submitting" @click="onClose">
 				{{ t('procest', 'Annuleren') }}
 			</NcButton>
-			<NcButton type="primary" :disabled="!canSubmit" @click="onSubmit">
+			<NcButton variant="primary" :disabled="!canSubmit" @click="onSubmit">
 				{{
 					submitting
 						? t('procest', 'Bezig...')
@@ -131,20 +131,24 @@ export default {
 		NcNoteCard,
 		NcSelect,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		consultationId: {
 			type: String,
 			required: true,
 		},
+
 		consultationSubject: {
 			type: String,
 			default: '',
 		},
 	},
+
 	emits: ['close', 'submitted'],
 	data() {
 		return {
@@ -156,6 +160,7 @@ export default {
 				voorwaarden: [],
 				datum: '',
 			},
+
 			adviesOptions: [
 				{ label: this.t('procest', 'Positive'), value: 'positief' },
 				{
@@ -168,6 +173,7 @@ export default {
 					value: 'niet_van_toepassing',
 				},
 			],
+
 			priorityOptions: [
 				{ label: this.t('procest', 'High'), value: 'hoog' },
 				{ label: this.t('procest', 'Normal'), value: 'normaal' },
@@ -175,23 +181,28 @@ export default {
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		today() {
 			return new Date().toISOString().slice(0, 10)
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		showVoorwaarden() {
 			return this.form.advies === 'positief_met_voorwaarden'
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		showToelichting() {
 			return this.form.advies !== null
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		toelichtingRequired() {
 			return this.form.advies !== 'niet_van_toepassing'
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		canSubmit() {
 			if (this.submitting) return false
@@ -202,6 +213,7 @@ export default {
 			return true
 		},
 	},
+
 	watch: {
 		/**
 		 * @param value
@@ -220,11 +232,13 @@ export default {
 			}
 		},
 	},
+
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		addVoorwaarde() {
 			this.form.voorwaarden.push({ description: '', priority: 'normaal' })
 		},
+
 		/**
 		 * @param idx
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
@@ -232,6 +246,7 @@ export default {
 		removeVoorwaarde(idx) {
 			this.form.voorwaarden.splice(idx, 1)
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
 			if (!this.form.advies) {
@@ -251,6 +266,7 @@ export default {
 			}
 			return true
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		onSubmit() {
 			this.validationError = ''
@@ -265,6 +281,7 @@ export default {
 			})
 			this.submitting = false
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		onClose() {
 			if (this.submitting) return

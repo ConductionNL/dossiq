@@ -10,12 +10,12 @@
 				<label>{{ t(appName, 'Type advies') }}</label>
 				<div class="advies-dialog__type-toggle">
 					<NcButton
-						:type="form.type === 'intern' ? 'primary' : 'secondary'"
+						:variant="form.type === 'intern' ? 'primary' : 'secondary'"
 						@click="form.type = 'intern'">
 						{{ t(appName, 'Intern') }}
 					</NcButton>
 					<NcButton
-						:type="form.type === 'extern' ? 'primary' : 'secondary'"
+						:variant="form.type === 'extern' ? 'primary' : 'secondary'"
 						@click="form.type = 'extern'">
 						{{ t(appName, 'Extern') }}
 					</NcButton>
@@ -60,11 +60,11 @@
 		</div>
 
 		<template #actions>
-			<NcButton type="tertiary" @click="$emit('close')">
+			<NcButton variant="tertiary" @click="$emit('close')">
 				{{ t(appName, 'Annuleren') }}
 			</NcButton>
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="!canSubmit || submitting"
 				@click="submit">
 				{{ t(appName, 'Aanvragen') }}
@@ -97,12 +97,14 @@ export default {
 		NcDialog,
 		NcTextField,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	emits: ['close', 'created'],
 	data() {
 		return {
@@ -118,12 +120,14 @@ export default {
 			},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		canSubmit() {
 			return this.form.adviseur.trim() !== '' && this.form.deadline !== ''
 		},
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		async submit() {

@@ -200,14 +200,14 @@
 				</NcButton>
 				<NcButton
 					v-if="step < 3"
-					type="primary"
+					variant="primary"
 					:disabled="!canProceed"
 					@click="step++">
 					{{ t('procest', 'Next') }}
 				</NcButton>
 				<NcButton
 					v-if="step === 3"
-					type="primary"
+					variant="primary"
 					:disabled="submitting"
 					@click="submit">
 					{{
@@ -225,8 +225,8 @@
 </template>
 
 <script>
-import { NcButton } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton } from '@nextcloud/vue'
 import { useEnforcementStore } from '../../../store/modules/enforcement.js'
 
 export default {

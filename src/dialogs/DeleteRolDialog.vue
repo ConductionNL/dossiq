@@ -20,7 +20,7 @@
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				type="error"
+				variant="error"
 				:disabled="!!blockedReason"
 				@click="$emit('confirm')">
 				{{ t('procest', 'Delete') }}
@@ -30,8 +30,8 @@
 </template>
 
 <script>
-import { NcButton, NcDialog } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcDialog } from '@nextcloud/vue'
 
 export default {
 	name: 'DeleteRolDialog',
@@ -40,6 +40,7 @@ export default {
 		role: { type: Object, required: true },
 		blockedReason: { type: String, default: '' },
 	},
+
 	emits: ['close', 'confirm'],
 	methods: {
 		t,

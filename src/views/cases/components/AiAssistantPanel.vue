@@ -25,10 +25,10 @@
 			</div>
 			<div class="ai-assistant-panel__input">
 				<NcTextField
-					:model-value="question"
+					:modelValue="question"
 					:aria-label="t('procest', 'Ask a question about this case...')"
 					:placeholder="t('procest', 'Ask a question about this case...')"
-					@update:model-value="(v) => (question = v)"
+					@update:modelValue="(v) => (question = v)"
 					@keydown.enter="askQuestion" />
 				<NcButton :disabled="!question || askLoading" @click="askQuestion">
 					{{ t('procest', 'Ask') }}
@@ -71,14 +71,14 @@
 </template>
 
 <script>
-import { NcButton, NcTextField, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon, NcTextField } from '@nextcloud/vue'
+import AiSuggestionCard from './AiSuggestionCard.vue'
 import {
 	askQuestion as askApi,
 	suggestNext,
 	summarize,
 } from '../../../services/aiApi.js'
-import AiSuggestionCard from './AiSuggestionCard.vue'
 
 export default {
 	name: 'AiAssistantPanel',
@@ -86,6 +86,7 @@ export default {
 	props: {
 		caseId: { type: String, required: true },
 	},
+
 	data() {
 		return {
 			question: '',
@@ -97,9 +98,11 @@ export default {
 			summaryLoading: false,
 		}
 	},
+
 	mounted() {
 		this.loadSuggestions()
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
@@ -130,6 +133,7 @@ export default {
 				this.askLoading = false
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async loadSuggestions() {
 			this.suggestionsLoading = true
@@ -142,6 +146,7 @@ export default {
 				this.suggestionsLoading = false
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md */
 		async loadSummary() {
 			this.summaryLoading = true
@@ -154,6 +159,7 @@ export default {
 				this.summaryLoading = false
 			}
 		},
+
 		/**
 		 * @param suggestion
 		 * @spec openspec/changes/retrofit-2026-05-24-ai-assistance/tasks.md
@@ -161,6 +167,7 @@ export default {
 		handleAccept(suggestion) {
 			this.$emit('suggestion-accepted', suggestion)
 		},
+
 		/**
 		 * @param suggestion
 		 * @param reason

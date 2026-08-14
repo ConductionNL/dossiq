@@ -12,7 +12,10 @@
 				:aria-label="t('procest', 'Add a note...')"
 				rows="2"
 				class="activity-timeline__note-input" />
-			<NcButton type="primary" :disabled="!noteText.trim()" @click="addNote">
+			<NcButton
+				variant="primary"
+				:disabled="!noteText.trim()"
+				@click="addNote">
 				{{ t('procest', 'Add note') }}
 			</NcButton>
 		</div>
@@ -54,22 +57,26 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		activity: {
 			type: Array,
 			default: () => [],
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['add-note'],
 	data() {
 		return {
 			noteText: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		sortedActivity() {
@@ -78,6 +85,7 @@ export default {
 			)
 		},
 	},
+
 	methods: {
 		/**
 		 * @param type
@@ -97,6 +105,7 @@ export default {
 			}
 			return icons[type] || '•'
 		},
+
 		/**
 		 * @param dateString
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
@@ -104,6 +113,7 @@ export default {
 		formatEntryDate(dateString) {
 			return formatDate(dateString)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		addNote() {
 			if (!this.noteText.trim()) return

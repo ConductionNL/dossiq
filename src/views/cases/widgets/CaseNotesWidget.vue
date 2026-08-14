@@ -2,8 +2,8 @@
 	<div class="case-notes-widget">
 		<ActivityTimeline
 			:activity="activity"
-			:is-read-only="isReadOnly"
-			@add-note="$emit('add-note', $event)" />
+			:isReadOnly="isReadOnly"
+			@addNote="$emit('add-note', $event)" />
 	</div>
 </template>
 
@@ -15,16 +15,19 @@ export default {
 	components: {
 		ActivityTimeline,
 	},
+
 	props: {
 		activity: {
 			type: Array,
 			default: () => [],
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['add-note'],
 }
 </script>

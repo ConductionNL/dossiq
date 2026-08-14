@@ -44,6 +44,7 @@ export default {
 		NcActions,
 		TrayArrowDown,
 	},
+
 	methods: {
 		/**
 		 * Build the export-leaf URL for the given format from the current

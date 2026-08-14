@@ -43,12 +43,14 @@ export default {
 			default: () => [],
 		},
 	},
+
 	emits: ['update:onBehalfOf', 'update:mandate'],
 	data() {
 		return {
 			selected: '',
 		}
 	},
+
 	methods: {
 		/**
 		 * @param entry
@@ -61,6 +63,7 @@ export default {
 				ref: entry.mandateReference,
 			})
 		},
+
 		/**
 		 * @param event
 		 * @spec openspec/specs/parafering-actions/spec.md

@@ -24,7 +24,7 @@
 
 			<NcSelect
 				v-model="selectedType"
-				:input-label="t('procest', 'Document type')"
+				:inputLabel="t('procest', 'Document type')"
 				:options="typeOptions"
 				:reduce="(option) => option.id"
 				label="label"
@@ -33,7 +33,7 @@
 
 			<NcSelect
 				v-model="selectedClassification"
-				:input-label="t('procest', 'Confidentiality')"
+				:inputLabel="t('procest', 'Confidentiality')"
 				:options="classificationOptions"
 				:reduce="(option) => option.id"
 				label="label"
@@ -55,7 +55,7 @@
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="!canSubmit || uploading"
 					@click="submit">
 					{{ t('procest', 'Upload') }}
@@ -93,32 +93,39 @@ export default {
 		NcTextArea,
 		NcTextField,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		files: {
 			type: Array,
 			default: () => [],
 		},
+
 		types: {
 			type: Array,
 			default: () => [],
 		},
+
 		progress: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		errors: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		uploading: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['close', 'submit'],
 	data() {
 		return {
@@ -128,6 +135,7 @@ export default {
 			description: '',
 		}
 	},
+
 	computed: {
 		/**
 		 * Dropdown options for the document type catalog.
@@ -143,6 +151,7 @@ export default {
 					type.vertrouwelijkheidaanduiding || 'intern',
 			}))
 		},
+
 		/**
 		 * Confidentiality dropdown options (ordered lowest to highest).
 		 *
@@ -167,6 +176,7 @@ export default {
 				{ id: 'zeer_geheim', label: this.t('procest', 'Top secret') },
 			]
 		},
+
 		/**
 		 * Whether the required fields are filled.
 		 *
@@ -177,6 +187,7 @@ export default {
 			return this.selectedType !== '' && this.selectedClassification !== ''
 		},
 	},
+
 	watch: {
 		/**
 		 * When the type changes, default the classification from the type.
@@ -190,6 +201,7 @@ export default {
 				this.selectedClassification = match.vertrouwelijkheidaanduiding
 			}
 		},
+
 		/**
 		 * Pre-fill the title from the first filename when files change.
 		 *
@@ -202,6 +214,7 @@ export default {
 			}
 		},
 	},
+
 	methods: {
 		/**
 		 * Emit the collected shared metadata for upload.

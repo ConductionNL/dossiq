@@ -30,7 +30,7 @@
 				</div>
 				<div class="parafeer-inbox__item-actions">
 					<NcButton
-						type="primary"
+						variant="primary"
 						:aria-label="t('procest', 'Endorse')"
 						@click="
 							$router.push({
@@ -47,8 +47,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { getCurrentUser } from '@nextcloud/auth'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 import { isActiveActor } from '../../../utils/parafeerEngine.js'
 
@@ -64,21 +64,25 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 	},
+
 	data() {
 		return {
 			loading: true,
 			voorstellen: [],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		currentUserId() {
 			return getCurrentUser()?.uid || ''
 		},
+
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		pendingVoorstellen() {
 			return this.voorstellen.filter(
@@ -88,9 +92,11 @@ export default {
 			)
 		},
 	},
+
 	async created() {
 		await this.loadVoorstellen()
 	},
+
 	methods: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async loadVoorstellen() {
@@ -109,6 +115,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param type
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -116,6 +123,7 @@ export default {
 		formatType(type) {
 			return t('procest', TYPE_LABELS[type] || type || '-')
 		},
+
 		/**
 		 * @param voorstel
 		 * @spec openspec/specs/parafering-actions/spec.md

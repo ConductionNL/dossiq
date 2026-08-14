@@ -1,9 +1,9 @@
 <template>
 	<div class="case-roles-widget">
 		<ParticipantsSection
-			:case-id="caseId"
-			:is-read-only="isReadOnly"
-			@handler-changed="$emit('handler-changed', $event)" />
+			:caseId="caseId"
+			:isReadOnly="isReadOnly"
+			@handlerChanged="$emit('handler-changed', $event)" />
 	</div>
 </template>
 
@@ -15,16 +15,19 @@ export default {
 	components: {
 		ParticipantsSection,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['handler-changed'],
 }
 </script>

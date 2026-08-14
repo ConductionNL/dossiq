@@ -21,7 +21,7 @@
 					:options="partners"
 					:aria-label-combobox="t('procest', 'Target organization')"
 					label="name"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Select organization...')" />
 			</div>
 
@@ -75,7 +75,7 @@
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="!isValid || saving"
 				@click="submitTransfer">
 				{{
@@ -89,7 +89,7 @@
 </template>
 
 <script>
-import { NcDialog, NcButton, NcSelect, NcDateTimePicker } from '@nextcloud/vue'
+import { NcButton, NcDateTimePicker, NcDialog, NcSelect } from '@nextcloud/vue'
 
 export default {
 	name: 'CaseTransferDialog',
@@ -99,20 +99,24 @@ export default {
 		NcSelect,
 		NcDateTimePicker,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		partners: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['update:open', 'submitted'],
 	data() {
 		return {
@@ -125,11 +129,13 @@ export default {
 			},
 		}
 	},
+
 	computed: {
 		isValid() {
 			return this.form.targetOrganization && this.form.reason.trim().length > 0
 		},
 	},
+
 	methods: {
 		/**
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md

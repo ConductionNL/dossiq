@@ -1,6 +1,6 @@
+import { useBezwaarStore } from './modules/bezwaar.js'
 import { useObjectStore } from './modules/object.js'
 import { useSettingsStore } from './modules/settings.js'
-import { useBezwaarStore } from './modules/bezwaar.js'
 
 /** @spec openspec/specs/openregister-integration/spec.md */
 export async function initializeStores() {
@@ -188,4 +188,4 @@ export async function initializeStores() {
 	return { settingsStore, objectStore }
 }
 
-export { useObjectStore, useSettingsStore, useBezwaarStore }
+export { useBezwaarStore, useObjectStore, useSettingsStore }

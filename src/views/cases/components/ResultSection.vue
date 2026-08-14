@@ -33,15 +33,18 @@ export default {
 			type: Object,
 			default: null,
 		},
+
 		resultTypes: {
 			type: Array,
 			default: () => [],
 		},
+
 		showEmpty: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		resultType() {
@@ -50,10 +53,12 @@ export default {
 				this.resultTypes.find((t) => t.id === this.result.resultType) || null
 			)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		resultTypeName() {
 			return this.resultType?.name || ''
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		archivalInfo() {
 			if (!this.resultType) return ''
@@ -85,6 +90,7 @@ export default {
 			return parts.join(' — ')
 		},
 	},
+
 	methods: {
 		/**
 		 * @param isoDuration

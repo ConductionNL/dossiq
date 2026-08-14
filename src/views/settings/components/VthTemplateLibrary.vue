@@ -98,7 +98,7 @@
 
 			<div class="vth-template-library__actions">
 				<NcButton
-					type="primary"
+					variant="primary"
 					@click="$emit('import', selectedTemplate.data)">
 					{{ t('procest', 'Import this template') }}
 				</NcButton>
@@ -111,16 +111,15 @@
 </template>
 
 <script>
-import { NcButton, NcIconSvgWrapper } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-
+import { NcButton, NcIconSvgWrapper } from '@nextcloud/vue'
+import handhavingszaak from '../../../../lib/Settings/vth-templates/handhavingszaak.json'
 // Import VTH workflow template JSON files
 import omgevingsvergunningRegulair from '../../../../lib/Settings/vth-templates/omgevingsvergunning-regulier.json'
 import omgevingsvergunningUitgebreid from '../../../../lib/Settings/vth-templates/omgevingsvergunning-uitgebreid.json'
+import sloopmelding from '../../../../lib/Settings/vth-templates/sloopmelding.json'
 import toezichtzaakBouw from '../../../../lib/Settings/vth-templates/toezichtzaak-bouw.json'
 import toezichtzaakMilieu from '../../../../lib/Settings/vth-templates/toezichtzaak-milieu.json'
-import handhavingszaak from '../../../../lib/Settings/vth-templates/handhavingszaak.json'
-import sloopmelding from '../../../../lib/Settings/vth-templates/sloopmelding.json'
 
 export default {
 	name: 'VthTemplateLibrary',
@@ -149,6 +148,7 @@ export default {
 						'procest',
 						'Permit application for building activities — 8 week standard procedure',
 					),
+
 					category: t('procest', 'Permits'),
 					stepCount: omgevingsvergunningRegulair.steps.length,
 					processingTime: t('procest', '8 weeks'),
@@ -161,6 +161,7 @@ export default {
 						'procest',
 						'Extended permit procedure with public consultation — 26 week procedure',
 					),
+
 					category: t('procest', 'Permits'),
 					stepCount: omgevingsvergunningUitgebreid.steps.length,
 					processingTime: t('procest', '26 weeks'),
@@ -173,6 +174,7 @@ export default {
 						'procest',
 						'Demolition notification — 4 week assessment period',
 					),
+
 					category: t('procest', 'Permits'),
 					stepCount: sloopmelding.steps.length,
 					processingTime: t('procest', '4 weeks'),
@@ -185,6 +187,7 @@ export default {
 						'procest',
 						'Building supervision with three inspection phases: foundation, shell, completion',
 					),
+
 					category: t('procest', 'Supervision'),
 					stepCount: toezichtzaakBouw.steps.length,
 					processingTime: null,
@@ -197,6 +200,7 @@ export default {
 						'procest',
 						'Environmental supervision — periodic or incident-based inspections',
 					),
+
 					category: t('procest', 'Supervision'),
 					stepCount: toezichtzaakMilieu.steps.length,
 					processingTime: null,
@@ -209,6 +213,7 @@ export default {
 						'procest',
 						'Enforcement case following LHS national strategy — includes penalty and re-inspection cycles',
 					),
+
 					category: t('procest', 'Enforcement'),
 					stepCount: handhavingszaak.steps.length,
 					processingTime: null,
@@ -238,8 +243,10 @@ export default {
 			const icons = {
 				Vergunningen:
 					'<svg viewBox="0 0 24 24"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" fill="currentColor"/></svg>',
+
 				Toezicht:
 					'<svg viewBox="0 0 24 24"><path d="M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9Z" fill="currentColor"/></svg>',
+
 				Handhaving:
 					'<svg viewBox="0 0 24 24"><path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,5A3,3 0 0,1 15,8A3,3 0 0,1 12,11A3,3 0 0,1 9,8A3,3 0 0,1 12,5M17.13,17C15.92,18.85 14.11,20.24 12,20.92C9.89,20.24 8.08,18.85 6.87,17C6.53,16.5 6.24,16 6,15.47C6,13.82 8.71,12.47 12,12.47C15.29,12.47 18,13.79 18,15.47C17.76,16 17.47,16.5 17.13,17Z" fill="currentColor"/></svg>',
 			}

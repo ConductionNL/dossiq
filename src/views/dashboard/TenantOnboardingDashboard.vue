@@ -12,12 +12,12 @@
 			<h2>{{ t('procest', 'Tenant onboarding') }}</h2>
 			<div class="tenant-onboarding__controls">
 				<NcSelect
-					:model-value="selectedTenant"
+					:modelValue="selectedTenant"
 					:options="tenantOptions"
-					:input-label="t('procest', 'Tenant')"
+					:inputLabel="t('procest', 'Tenant')"
 					:placeholder="t('procest', 'Pick a tenant')"
-					@update:model-value="onTenantChange" />
-				<NcButton type="secondary" @click="loadProgress">
+					@update:modelValue="onTenantChange" />
+				<NcButton variant="secondary" @click="loadProgress">
 					<template #icon>
 						<Refresh :size="18" />
 					</template>
@@ -83,7 +83,7 @@
 					<NcButton
 						v-if="step.status !== 'complete'"
 						size="small"
-						type="primary"
+						variant="primary"
 						:disabled="markingStep === step.step"
 						@click="markComplete(step.step)">
 						<template #icon>
@@ -101,7 +101,7 @@
 				<h3>{{ t('procest', 'Go-live readiness') }}</h3>
 				<NcButton
 					:disabled="checkingGoLive"
-					type="secondary"
+					variant="secondary"
 					@click="checkGoLive">
 					<template #icon>
 						<NcLoadingIcon v-if="checkingGoLive" :size="18" />
@@ -118,7 +118,7 @@
 							t('procest', 'Tenant is ready to go live.')
 						}}</span>
 						<NcButton
-							type="primary"
+							variant="primary"
 							:disabled="activating"
 							@click="activate">
 							<template #icon>
@@ -148,6 +148,9 @@
 </template>
 
 <script>
+import axios from '@nextcloud/axios'
+import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcEmptyContent,
@@ -155,17 +158,14 @@ import {
 	NcNoteCard,
 	NcSelect,
 } from '@nextcloud/vue'
-import { translate as t } from '@nextcloud/l10n'
-import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
-import Refresh from 'vue-material-design-icons/Refresh.vue'
-import RocketLaunch from 'vue-material-design-icons/RocketLaunch.vue'
+import AccountTie from 'vue-material-design-icons/AccountTie.vue'
+import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
+import Check from 'vue-material-design-icons/Check.vue'
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
 import CircleOutline from 'vue-material-design-icons/CircleOutline.vue'
-import AlertCircle from 'vue-material-design-icons/AlertCircle.vue'
 import Power from 'vue-material-design-icons/Power.vue'
-import Check from 'vue-material-design-icons/Check.vue'
-import AccountTie from 'vue-material-design-icons/AccountTie.vue'
+import Refresh from 'vue-material-design-icons/Refresh.vue'
+import RocketLaunch from 'vue-material-design-icons/RocketLaunch.vue'
 
 const STEP_LABELS = {
 	tenant_provisioning: 'Tenant provisioning',
@@ -194,6 +194,7 @@ export default {
 		Check,
 		AccountTie,
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -207,33 +208,40 @@ export default {
 			activating: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		selectedTenant() {
 			return this.tenantOptions.find((o) => o.id === this.tenantId) || null
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		steps() {
 			if (!this.progress) return []
 			return this.progress.steps || this.progress.tasks || []
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		totalSteps() {
 			return this.steps.length || 7
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		completedSteps() {
 			return this.steps.filter((s) => s.status === 'complete').length
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		progressPercent() {
 			if (!this.totalSteps) return 0
 			return Math.round((this.completedSteps / this.totalSteps) * 100)
 		},
 	},
+
 	mounted() {
 		this.loadTenants()
 	},
+
 	methods: {
 		t,
 		/**
@@ -243,6 +251,7 @@ export default {
 		stepLabel(step) {
 			return t('procest', STEP_LABELS[step] || step)
 		},
+
 		/**
 		 * @param opt
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
@@ -253,6 +262,7 @@ export default {
 			this.goLiveResult = null
 			if (this.tenantId) this.loadProgress()
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async loadTenants() {
 			this.loading = true
@@ -276,6 +286,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async loadProgress() {
 			if (!this.tenantId) return
@@ -304,6 +315,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async initialise() {
 			try {
@@ -329,6 +341,7 @@ export default {
 					|| t('procest', 'Failed to initialise')
 			}
 		},
+
 		/**
 		 * @param step
 		 * @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md
@@ -355,6 +368,7 @@ export default {
 				this.markingStep = ''
 			}
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async checkGoLive() {
 			this.checkingGoLive = true
@@ -387,6 +401,7 @@ export default {
 				this.checkingGoLive = false
 			}
 		},
+
 		/** @spec openspec/changes/tenant-zaaksysteem-saas-07-onboarding-workflow/tasks.md */
 		async activate() {
 			this.activating = true

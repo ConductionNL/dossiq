@@ -10,7 +10,7 @@
 			<div class="task-create-dialog__header">
 				<h3>{{ t('procest', 'New Task') }}</h3>
 				<NcButton
-					type="tertiary"
+					variant="tertiary"
 					:aria-label="t('procest', 'Close')"
 					@click="$emit('close')">
 					✕
@@ -25,10 +25,10 @@
 					>
 					<NcTextField
 						id="task-create-title"
-						:model-value="form.title"
+						:modelValue="form.title"
 						:placeholder="t('procest', 'Enter task title...')"
 						:error="!!errors.title"
-						@update:model-value="
+						@update:modelValue="
 							(v) => {
 								form.title = v
 								errors.title = ''
@@ -68,12 +68,10 @@
 						}}</label>
 						<NcTextField
 							id="task-create-due-date"
-							:model-value="form.dueDate || ''"
+							:modelValue="form.dueDate || ''"
 							type="date"
 							:placeholder="t('procest', 'Select due date')"
-							@update:model-value="
-								(v) => (form.dueDate = v || null)
-							" />
+							@update:modelValue="(v) => (form.dueDate = v || null)" />
 					</div>
 				</div>
 
@@ -84,9 +82,9 @@
 					}}</label>
 					<NcTextField
 						id="task-create-assignee"
-						:model-value="form.assignee"
+						:modelValue="form.assignee"
 						:placeholder="t('procest', 'Username (optional)')"
-						@update:model-value="(v) => (form.assignee = v)" />
+						@update:modelValue="(v) => (form.assignee = v)" />
 				</div>
 
 				<!-- Case -->
@@ -110,7 +108,7 @@
 				<NcButton @click="$emit('close')">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
-				<NcButton type="primary" :disabled="saving" @click="submit">
+				<NcButton variant="primary" :disabled="saving" @click="submit">
 					<template v-if="saving">
 						<NcLoadingIcon :size="20" />
 					</template>
@@ -122,7 +120,7 @@
 </template>
 
 <script>
-import { NcButton, NcTextField, NcSelect, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import { useObjectStore } from '../../store/modules/object.js'
 
 export default {
@@ -133,6 +131,7 @@ export default {
 		NcSelect,
 		NcLoadingIcon,
 	},
+
 	emits: ['created', 'close'],
 	data() {
 		return {
@@ -144,17 +143,20 @@ export default {
 				assignee: '',
 				case: null,
 			},
+
 			priorityOptions: ['urgent', 'high', 'normal', 'low'],
 			cases: [],
 			errors: {},
 			saving: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/task-management/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/task-management/spec.md */
 		caseOptions() {
 			return this.cases.map((c) => ({
@@ -163,6 +165,7 @@ export default {
 			}))
 		},
 	},
+
 	/** @spec openspec/specs/task-management/spec.md */
 	async mounted() {
 		const results = await this.objectStore.fetchCollection('case', {
@@ -170,6 +173,7 @@ export default {
 		})
 		this.cases = results || []
 	},
+
 	methods: {
 		/** @spec openspec/specs/task-management/spec.md */
 		async submit() {

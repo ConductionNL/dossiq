@@ -94,8 +94,8 @@
 			<template v-if="hasAdvisoryReport">
 				<div class="form-group">
 					<NcCheckboxRadioSwitch
-						:model-value="form.followsAdvice"
-						@update:model-value="(v) => (form.followsAdvice = v)">
+						:modelValue="form.followsAdvice"
+						@update:modelValue="(v) => (form.followsAdvice = v)">
 						{{ t('procest', 'Decision follows committee advice') }}
 					</NcCheckboxRadioSwitch>
 				</div>
@@ -149,9 +149,9 @@
 					>
 					<NcTextField
 						id="bezwaar-decision-decision-date"
-						:model-value="form.decisionDate"
+						:modelValue="form.decisionDate"
 						type="date"
-						@update:model-value="(v) => (form.decisionDate = v)" />
+						@update:modelValue="(v) => (form.decisionDate = v)" />
 				</div>
 				<div class="form-group">
 					<label for="bezwaar-decision-effective-date"
@@ -159,9 +159,9 @@
 					>
 					<NcTextField
 						id="bezwaar-decision-effective-date"
-						:model-value="form.effectiveDate"
+						:modelValue="form.effectiveDate"
 						type="date"
-						@update:model-value="(v) => (form.effectiveDate = v)" />
+						@update:modelValue="(v) => (form.effectiveDate = v)" />
 				</div>
 			</div>
 
@@ -192,7 +192,7 @@
 			</div>
 
 			<div class="bezwaar-decision-form__actions">
-				<NcButton type="primary" :disabled="saving" @click="save">
+				<NcButton variant="primary" :disabled="saving" @click="save">
 					{{
 						saving
 							? t('procest', 'Saving...')
@@ -213,10 +213,10 @@
 <script>
 import {
 	NcButton,
-	NcTextField,
-	NcSelect,
 	NcCheckboxRadioSwitch,
 	NcNoteCard,
+	NcSelect,
+	NcTextField,
 } from '@nextcloud/vue'
 import { useBezwaarStore } from '../../../../store/modules/bezwaar.js'
 
@@ -229,20 +229,24 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcNoteCard,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
+
 		contestedDecisionId: {
 			type: String,
 			default: '',
 		},
 	},
+
 	emits: ['saved'],
 	data() {
 		return {
@@ -256,6 +260,7 @@ export default {
 				effectiveDate: new Date().toISOString().split('T')[0],
 				appealInformation: '',
 			},
+
 			errors: {},
 			saving: false,
 			dispositionOptions: [
@@ -270,29 +275,34 @@ export default {
 					label: t('procest', 'Inadmissible (niet-ontvankelijk)'),
 				},
 			],
+
 			defaultAppealInformation: t(
 				'procest',
 				'Tegen deze beslissing op bezwaar kunt u binnen zes weken na de dag van verzending van deze beslissing beroep instellen bij de rechtbank.',
 			),
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		hasDecision() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.hasAppealDecision
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		decision() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.currentAppealDecision
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		hasAdvisoryReport() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.hasAdvisoryReport
 		},
 	},
+
 	methods: {
 		/**
 		 * @param type
@@ -307,6 +317,7 @@ export default {
 			}
 			return labels[type] || type
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		validate() {
 			this.errors = {}
@@ -336,6 +347,7 @@ export default {
 
 			return Object.keys(this.errors).length === 0
 		},
+
 		/**
 		 * Save the bezwaar decision.
 		 *

@@ -16,7 +16,10 @@
 	<div class="verwerkingen-overview">
 		<div class="verwerkingen-overview__header">
 			<h2>{{ t('procest', 'Processing activities (AVG)') }}</h2>
-			<NcButton type="primary" :disabled="denied" @click="showExport = true">
+			<NcButton
+				variant="primary"
+				:disabled="denied"
+				@click="showExport = true">
 				<template #icon>
 					<FileExportOutline :size="20" />
 				</template>
@@ -131,6 +134,7 @@ export default {
 		FileExportOutline,
 		InzageExportModal,
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -140,9 +144,11 @@ export default {
 			showExport: false,
 		}
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		/** @spec openspec/specs/avg-verwerkingenlogging/spec.md */
 		async load() {
@@ -175,6 +181,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Human label for an OR activity lifecycle status.
 		 *

@@ -26,7 +26,7 @@
 			<div
 				v-if="appointment.status === 'scheduled'"
 				class="public-appointment-page__actions">
-				<NcButton type="error" @click="cancelAppointment">
+				<NcButton variant="error" @click="cancelAppointment">
 					{{ t('procest', 'Cancel appointment') }}
 				</NcButton>
 			</div>
@@ -41,10 +41,10 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
-import { translate as t } from '@nextcloud/l10n'
 import axios from '@nextcloud/axios'
+import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 
 export default {
 	name: 'PublicAppointmentPage',
@@ -52,9 +52,11 @@ export default {
 	props: {
 		token: { type: String, required: true },
 	},
+
 	data() {
 		return { loading: true, error: null, appointment: null, cancelled: false }
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 	async mounted() {
 		try {
@@ -72,6 +74,7 @@ export default {
 			this.loading = false
 		}
 	},
+
 	methods: {
 		t,
 		/**
@@ -85,6 +88,7 @@ export default {
 				timeStyle: 'short',
 			})
 		},
+
 		/**
 		 * @param status
 		 * @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md
@@ -98,6 +102,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-25-appointment-booking/tasks.md */
 		async cancelAppointment() {
 			try {

@@ -5,7 +5,7 @@
 <template>
 	<div class="rol-manager">
 		<div class="rol-manager__toolbar">
-			<NcButton type="primary" @click="openEditor(null)">
+			<NcButton variant="primary" @click="openEditor(null)">
 				<template #icon>
 					<Plus :size="18" />
 				</template>
@@ -35,37 +35,37 @@
 				v-for="r in roots"
 				:key="r.id"
 				:role="r"
-				:children-by-parent="childrenByParent"
-				:on-edit="openEditor"
-				:on-delete="confirmDelete" />
+				:childrenByParent="childrenByParent"
+				:onEdit="openEditor"
+				:onDelete="confirmDelete" />
 		</div>
 
 		<RolEditorDialog
 			v-if="editorOpen"
 			:role="editingRole"
-			:parent-options="parentOptions"
+			:parentOptions="parentOptions"
 			@save="onSave"
 			@close="closeEditor" />
 
 		<DeleteRolDialog
 			v-if="deleting"
 			:role="deleting"
-			:blocked-reason="deleteBlockedReason"
+			:blockedReason="deleteBlockedReason"
 			@close="deleting = null"
 			@confirm="doDelete" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
+import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
-import Plus from 'vue-material-design-icons/Plus.vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import AccountGroup from 'vue-material-design-icons/AccountGroup.vue'
-import RolNode from './RolNode.vue'
-import RolEditorDialog from '../../../dialogs/RolEditorDialog.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 import DeleteRolDialog from '../../../dialogs/DeleteRolDialog.vue'
+import RolEditorDialog from '../../../dialogs/RolEditorDialog.vue'
+import RolNode from './RolNode.vue'
 
 export default {
 	name: 'OrganisatieRolManager',
@@ -79,10 +79,12 @@ export default {
 		RolEditorDialog,
 		DeleteRolDialog,
 	},
+
 	props: {
 		roles: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 	},
+
 	emits: ['reload'],
 	data() {
 		return {
@@ -91,6 +93,7 @@ export default {
 			deleting: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		childrenByParent() {
@@ -102,10 +105,12 @@ export default {
 			}
 			return map
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		roots() {
 			return (this.roles || []).filter((r) => !r.parentRole)
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		parentOptions() {
 			return [
@@ -113,6 +118,7 @@ export default {
 				...this.roles.map((r) => ({ id: r.id, label: r.naam || r.id })),
 			]
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		deleteBlockedReason() {
 			if (!this.deleting) return ''
@@ -127,6 +133,7 @@ export default {
 			return ''
 		},
 	},
+
 	methods: {
 		t,
 		/**
@@ -137,11 +144,13 @@ export default {
 			this.editingRole = role
 			this.editorOpen = true
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		closeEditor() {
 			this.editorOpen = false
 			this.editingRole = null
 		},
+
 		/**
 		 * @param role
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -149,6 +158,7 @@ export default {
 		confirmDelete(role) {
 			this.deleting = role
 		},
+
 		/**
 		 * @param payload
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
@@ -175,6 +185,7 @@ export default {
 				// Surface in dialog; leave open.
 			}
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async doDelete() {
 			if (!this.deleting) return

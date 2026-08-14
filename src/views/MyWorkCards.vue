@@ -8,15 +8,15 @@
 		register="procest"
 		schema="case"
 		:filter="filter"
-		view-mode="cards"
-		:view-modes="['cards', 'table']"
+		viewMode="cards"
+		:viewModes="['cards', 'table']"
 		:columns="columns"
 		:sidebar="sidebar"
-		:show-view-action="false"
-		:sort-key="sortConfig.key"
-		:sort-order="sortConfig.order"
+		:showViewAction="false"
+		:sortKey="sortConfig.key"
+		:sortOrder="sortConfig.order"
 		@view="openCase"
-		@row-click="openCase">
+		@rowClick="openCase">
 		<template #below-header>
 			<WorkloadSummaryBar :handlers="workloadHandlers" />
 			<div
@@ -24,12 +24,12 @@
 				role="group"
 				:aria-label="t('procest', 'Sort My Work')">
 				<NcButton
-					:type="sortMode === 'urgency' ? 'primary' : 'tertiary'"
+					:variant="sortMode === 'urgency' ? 'primary' : 'tertiary'"
 					@click="setSortMode('urgency')">
 					{{ t('procest', 'Urgency') }}
 				</NcButton>
 				<NcButton
-					:type="sortMode === 'newest' ? 'primary' : 'tertiary'"
+					:variant="sortMode === 'newest' ? 'primary' : 'tertiary'"
 					@click="setSortMode('newest')">
 					{{ t('procest', 'Newest') }}
 				</NcButton>
@@ -41,9 +41,9 @@
 			<MyWorkCaseCard
 				:object="object"
 				:selected="selected"
-				:case-type-map="caseTypeMap"
-				:status-map="statusMap"
-				:urgency-map="urgencyMap"
+				:caseTypeMap="caseTypeMap"
+				:statusMap="statusMap"
+				:urgencyMap="urgencyMap"
 				@open="openCase" />
 		</template>
 	</CnIndexPage>
@@ -51,15 +51,15 @@
 
 <script>
 import { CnIndexPage } from '@conduction/nextcloud-vue'
-import { NcButton } from '@nextcloud/vue'
 import { getCurrentUser } from '@nextcloud/auth'
-import { generateUrl } from '@nextcloud/router'
 import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
+import { NcButton } from '@nextcloud/vue'
 import MyWorkCaseCard from './MyWorkCaseCard.vue'
 import WorkloadSummaryBar from './WorkloadSummaryBar.vue'
-import { initializeStores } from '../store/store.js'
 import { useObjectStore } from '../store/modules/object.js'
-import { resolveSortConfig, buildUrgencyMap } from '../utils/workQueueHelpers.js'
+import { initializeStores } from '../store/store.js'
+import { buildUrgencyMap, resolveSortConfig } from '../utils/workQueueHelpers.js'
 
 /**
  * My Work — the current user's assigned cases, rendered as a standard

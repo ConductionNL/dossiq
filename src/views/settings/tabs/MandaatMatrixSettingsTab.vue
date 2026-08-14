@@ -17,7 +17,7 @@
 				id="mandaat_decidesk_connection"
 				v-model="decideskConnection"
 				:disabled="!writable"
-				:placeholder="'decidesk-default'" />
+				placeholder="decidesk-default" />
 			<p class="setting-help">
 				{{
 					t(
@@ -39,7 +39,7 @@
 				v-model="defaultExtensionDays"
 				type="number"
 				:disabled="!writable"
-				:placeholder="'14'" />
+				placeholder="14" />
 			<p class="setting-help">
 				{{
 					t(
@@ -63,7 +63,7 @@
 			{{ error }}
 		</NcNoteCard>
 
-		<NcButton type="primary" :disabled="!writable || saving" @click="save">
+		<NcButton variant="primary" :disabled="!writable || saving" @click="save">
 			<template #icon>
 				<NcLoadingIcon v-if="saving" :size="20" />
 			</template>
@@ -83,6 +83,9 @@
 </template>
 
 <script>
+import { loadState } from '@nextcloud/initial-state'
+import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import {
 	NcButton,
 	NcCheckboxRadioSwitch,
@@ -90,9 +93,6 @@ import {
 	NcLoadingIcon,
 	NcNoteCard,
 } from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
-import { loadState } from '@nextcloud/initial-state'
-import { translate as t } from '@nextcloud/l10n'
 
 /**
  * Mandate matrix admin settings tab.
@@ -108,6 +108,7 @@ export default {
 		NcLoadingIcon,
 		NcNoteCard,
 	},
+
 	data() {
 		const initial = loadState('procest', 'mandaatSettings', {})
 		return {
@@ -119,12 +120,14 @@ export default {
 			error: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/mandaat-matrix/spec.md */
 		adminDocsUrl() {
 			return 'https://docs.procest.nl/user/mandate-matrix-admin'
 		},
 	},
+
 	methods: {
 		t,
 		/**

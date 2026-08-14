@@ -5,7 +5,7 @@
 <template>
 	<NcDialog
 		:name="t('procest', 'Generate Beschikking')"
-		:can-close="true"
+		:canClose="true"
 		@close="$emit('close')">
 		<template #default>
 			<div class="beschikking-dialog">
@@ -24,12 +24,16 @@
 					}}</label>
 					<div class="beschikking-dialog__outcome-buttons">
 						<NcButton
-							:type="outcome === 'verleend' ? 'primary' : 'secondary'"
+							:variant="
+								outcome === 'verleend' ? 'primary' : 'secondary'
+							"
 							@click="outcome = 'verleend'">
 							✓ {{ t('procest', 'Granted') }}
 						</NcButton>
 						<NcButton
-							:type="outcome === 'geweigerd' ? 'error' : 'secondary'"
+							:variant="
+								outcome === 'geweigerd' ? 'error' : 'secondary'
+							"
 							@click="outcome = 'geweigerd'">
 							✗ {{ t('procest', 'Refused') }}
 						</NcButton>
@@ -58,11 +62,11 @@
 		</template>
 
 		<template #actions>
-			<NcButton type="tertiary" @click="$emit('close')">
+			<NcButton variant="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="!outcome || submitting || success"
 				@click="submit">
 				{{ t('procest', 'Generate') }}
@@ -73,8 +77,8 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
@@ -88,6 +92,7 @@ export default {
 			required: true,
 		},
 	},
+
 	emits: ['close', 'generated'],
 	data() {
 		return {
@@ -98,6 +103,7 @@ export default {
 			success: false,
 		}
 	},
+
 	computed: {
 		motivationPlaceholder() {
 			if (this.outcome === 'verleend') {
@@ -117,6 +123,7 @@ export default {
 			return t('procest', 'Describe the decision motivation...')
 		},
 	},
+
 	methods: {
 		t,
 		async submit() {

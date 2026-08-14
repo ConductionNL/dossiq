@@ -67,11 +67,13 @@ export default {
 	props: {
 		row: { type: Object, required: true },
 	},
+
 	emits: ['close'],
 	methods: {
 		hasRetries(row) {
 			return Array.isArray(row.retries) && row.retries.length > 0
 		},
+
 		/**
 		 * Pretty-print a value as indented JSON for display.
 		 *

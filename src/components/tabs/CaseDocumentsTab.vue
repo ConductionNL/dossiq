@@ -18,7 +18,7 @@
 					>({{ documents.length }})</span
 				>
 			</h3>
-			<NcButton type="primary" @click="openCreate">
+			<NcButton variant="primary" @click="openCreate">
 				{{ t('procest', 'Add document') }}
 			</NcButton>
 		</div>
@@ -75,7 +75,7 @@
 			ref="formDialog"
 			:fields="formFields"
 			:item="editItem"
-			:dialog-title="
+			:dialogTitle="
 				editItem
 					? t('procest', 'Edit document')
 					: t('procest', 'Add document')
@@ -93,6 +93,7 @@
 </template>
 
 <script>
+import { CnDeleteDialog, CnFormDialog } from '@conduction/nextcloud-vue'
 import {
 	NcActionButton,
 	NcActions,
@@ -100,7 +101,6 @@ import {
 	NcEmptyContent,
 	NcLoadingIcon,
 } from '@nextcloud/vue'
-import { CnDeleteDialog, CnFormDialog } from '@conduction/nextcloud-vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import { formatDate } from '../../utils/caseHelpers.js'
@@ -116,6 +116,7 @@ export default {
 		CnDeleteDialog,
 		CnFormDialog,
 	},
+
 	props: {
 		/** Case UUID — passed by CnObjectSidebar as a shared tab prop. */
 		objectId: {
@@ -123,6 +124,7 @@ export default {
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			documents: [],
@@ -132,13 +134,16 @@ export default {
 			deleteItem: null,
 		}
 	},
+
 	computed: {
 		objectStore() {
 			return useObjectStore()
 		},
+
 		resolvedCaseId() {
 			return this.objectId || this.$route?.params?.id || null
 		},
+
 		formFields() {
 			return [
 				{ key: 'title', label: t('procest', 'Title'), required: true },
@@ -155,15 +160,18 @@ export default {
 			]
 		},
 	},
+
 	watch: {
 		resolvedCaseId() {
 			this.reload()
 		},
 	},
+
 	async mounted() {
 		await initializeStores()
 		await this.reload()
 	},
+
 	methods: {
 		formatDate,
 		async reload() {
@@ -188,17 +196,21 @@ export default {
 				this.loading = false
 			}
 		},
+
 		openCreate() {
 			this.editItem = null
 			this.showFormDialog = true
 		},
+
 		openEdit(doc) {
 			this.editItem = doc
 			this.showFormDialog = true
 		},
+
 		openDelete(doc) {
 			this.deleteItem = doc
 		},
+
 		async onFormConfirm(formData) {
 			try {
 				const result = await this.objectStore.saveObject('caseDocument', {
@@ -219,6 +231,7 @@ export default {
 				})
 			}
 		},
+
 		async onDeleteConfirm(id) {
 			try {
 				await this.objectStore.deleteObject('caseDocument', id)

@@ -35,7 +35,7 @@
 						>v{{ template.version }}</span
 					>
 					<NcButton
-						type="primary"
+						variant="primary"
 						:disabled="activating === template.id"
 						@click="activate(template.id)">
 						<template v-if="activating === template.id">
@@ -73,9 +73,9 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
 import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 
 export default {
 	name: 'TemplatesTab',
@@ -83,6 +83,7 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 	},
+
 	data() {
 		return {
 			templates: [],
@@ -92,9 +93,11 @@ export default {
 			error: '',
 		}
 	},
+
 	async mounted() {
 		await this.loadTemplates()
 	},
+
 	methods: {
 		/** @spec openspec/specs/template-library/spec.md */
 		async loadTemplates() {
@@ -113,6 +116,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param templateId
 		 * @spec openspec/specs/template-library/spec.md

@@ -21,10 +21,10 @@
 		<!-- Filter bar -->
 		<div class="consultation-dashboard__filters">
 			<NcTextField
-				:model-value="filters.search"
+				:modelValue="filters.search"
 				:label="t('procest', 'Search')"
 				:placeholder="t('procest', 'Search by subject, department...')"
-				@update:model-value="(v) => (filters.search = v)" />
+				@update:modelValue="(v) => (filters.search = v)" />
 
 			<NcSelect
 				v-model="filters.status"
@@ -126,7 +126,7 @@
 						<td>
 							<NcButton
 								v-if="item.status === 'open'"
-								type="secondary"
+								variant="secondary"
 								:title="t('procest', 'Take on consultation')"
 								@click="claimConsultation(item)">
 								{{ t('procest', 'Take on') }}
@@ -158,6 +158,7 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -170,6 +171,7 @@ export default {
 				dateFrom: '',
 				dateTo: '',
 			},
+
 			statusOptions: [
 				{ label: this.t('procest', 'Open'), value: 'open' },
 				{
@@ -184,6 +186,7 @@ export default {
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		openCount() {
@@ -191,14 +194,17 @@ export default {
 				(c) => c.status === 'open' || c.status === 'in_behandeling',
 			).length
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		overdueCount() {
 			return this.overdueItems.length
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		overdueIds() {
 			return new Set(this.overdueItems.map((c) => c.id))
 		},
+
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		displayItems() {
 			let items = [...this.consultations]
@@ -243,9 +249,11 @@ export default {
 			return items
 		},
 	},
+
 	async mounted() {
 		await this.loadConsultations()
 	},
+
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		async loadConsultations() {
@@ -270,6 +278,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
@@ -277,6 +286,7 @@ export default {
 		isOverdue(item) {
 			return this.overdueIds.has(item.id)
 		},
+
 		/**
 		 * @param dateStr
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
@@ -287,6 +297,7 @@ export default {
 			if (isNaN(d.getTime())) return dateStr
 			return d.toLocaleDateString('nl-NL')
 		},
+
 		/**
 		 * @param status
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05
@@ -300,6 +311,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+
 		/**
 		 * @param item
 		 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05

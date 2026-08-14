@@ -13,7 +13,7 @@
 		<template v-else-if="error">
 			<div class="my-work-preview__error">
 				<p>{{ error }}</p>
-				<NcButton type="tertiary" @click="$emit('retry')">
+				<NcButton variant="tertiary" @click="$emit('retry')">
 					{{ t('procest', 'Retry') }}
 				</NcButton>
 			</div>
@@ -79,11 +79,13 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		items: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 		error: { type: String, default: null },
 	},
+
 	emits: ['click-item', 'view-all', 'retry'],
 }
 </script>

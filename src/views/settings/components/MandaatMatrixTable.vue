@@ -5,13 +5,13 @@
 <template>
 	<div class="mandaat-matrix-table">
 		<div class="mandaat-matrix-table__toolbar">
-			<NcButton type="primary" @click="$emit('edit', null)">
+			<NcButton variant="primary" @click="$emit('edit', null)">
 				<template #icon>
 					<Plus :size="18" />
 				</template>
 				{{ t('procest', 'New mandaat') }}
 			</NcButton>
-			<NcButton type="secondary" @click="$emit('import')">
+			<NcButton variant="secondary" @click="$emit('import')">
 				<template #icon>
 					<Import :size="18" />
 				</template>
@@ -73,11 +73,11 @@
 </template>
 
 <script>
-import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
-import Plus from 'vue-material-design-icons/Plus.vue'
-import Import from 'vue-material-design-icons/Import.vue'
+import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
 import FileDocumentMultiple from 'vue-material-design-icons/FileDocumentMultiple.vue'
+import Import from 'vue-material-design-icons/Import.vue'
+import Plus from 'vue-material-design-icons/Plus.vue'
 
 export default {
 	name: 'MandaatMatrixTable',
@@ -89,10 +89,12 @@ export default {
 		Import,
 		FileDocumentMultiple,
 	},
+
 	props: {
 		matrices: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 	},
+
 	emits: ['edit', 'import'],
 	methods: {
 		t,

@@ -15,7 +15,7 @@
 		<!-- No hearing yet -->
 		<template v-else-if="!activeHearing && !isReadOnly">
 			<div class="hearing-panel__actions">
-				<NcButton type="primary" @click="showScheduleDialog = true">
+				<NcButton variant="primary" @click="showScheduleDialog = true">
 					{{ t('procest', 'Schedule Hearing') }}
 				</NcButton>
 				<NcButton @click="showWaiverDialog = true">
@@ -70,7 +70,7 @@
 			<div v-if="!isReadOnly" class="hearing-panel__actions">
 				<NcButton
 					v-if="activeHearing.status === 'gepland'"
-					type="primary"
+					variant="primary"
 					@click="sendInvitations">
 					{{ t('procest', 'Send Invitations') }}
 				</NcButton>
@@ -79,13 +79,13 @@
 						activeHearing.status === 'gepland'
 						|| activeHearing.status === 'uitgenodigd'
 					"
-					type="primary"
+					variant="primary"
 					@click="showMinutesDialog = true">
 					{{ t('procest', 'Record Minutes') }}
 				</NcButton>
 				<NcButton
 					v-if="activeHearing.status !== 'uitgevoerd'"
-					type="error"
+					variant="error"
 					@click="cancelHearing">
 					{{ t('procest', 'Cancel Hearing') }}
 				</NcButton>
@@ -115,9 +115,9 @@
 					>
 					<NcTextField
 						id="hearing-panel-scheduled-date"
-						:model-value="scheduleForm.scheduledDate"
+						:modelValue="scheduleForm.scheduledDate"
 						type="datetime-local"
-						@update:model-value="
+						@update:modelValue="
 							(v) => (scheduleForm.scheduledDate = v)
 						" />
 				</div>
@@ -127,9 +127,9 @@
 					}}</label>
 					<NcTextField
 						id="hearing-panel-location"
-						:model-value="scheduleForm.location"
+						:modelValue="scheduleForm.location"
 						:placeholder="t('procest', 'Location or Online')"
-						@update:model-value="(v) => (scheduleForm.location = v)" />
+						@update:modelValue="(v) => (scheduleForm.location = v)" />
 				</div>
 				<div class="form-group">
 					<label for="hearing-panel-video-call-url">{{
@@ -137,9 +137,9 @@
 					}}</label>
 					<NcTextField
 						id="hearing-panel-video-call-url"
-						:model-value="scheduleForm.videoCallUrl"
+						:modelValue="scheduleForm.videoCallUrl"
 						:placeholder="t('procest', 'https://...')"
-						@update:model-value="
+						@update:modelValue="
 							(v) => (scheduleForm.videoCallUrl = v)
 						" />
 				</div>
@@ -147,7 +147,7 @@
 					<NcButton @click="showScheduleDialog = false">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
-					<NcButton type="primary" @click="scheduleHearing">
+					<NcButton variant="primary" @click="scheduleHearing">
 						{{ t('procest', 'Schedule') }}
 					</NcButton>
 				</div>
@@ -189,7 +189,7 @@
 					<NcButton @click="showWaiverDialog = false">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
-					<NcButton type="primary" @click="recordWaiver">
+					<NcButton variant="primary" @click="recordWaiver">
 						{{ t('procest', 'Record Waiver') }}
 					</NcButton>
 				</div>
@@ -221,7 +221,7 @@
 					<NcButton @click="showMinutesDialog = false">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
-					<NcButton type="primary" @click="recordMinutes">
+					<NcButton variant="primary" @click="recordMinutes">
 						{{ t('procest', 'Save Minutes') }}
 					</NcButton>
 				</div>
@@ -231,7 +231,7 @@
 </template>
 
 <script>
-import { NcButton, NcTextField, NcNoteCard } from '@nextcloud/vue'
+import { NcButton, NcNoteCard, NcTextField } from '@nextcloud/vue'
 import { useBezwaarStore } from '../../../../store/modules/bezwaar.js'
 
 export default {
@@ -241,16 +241,19 @@ export default {
 		NcTextField,
 		NcNoteCard,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['hearing-scheduled', 'hearing-completed', 'hearing-waived'],
 	data() {
 		return {
@@ -262,25 +265,30 @@ export default {
 				location: '',
 				videoCallUrl: '',
 			},
+
 			waiverForm: {
 				reason: '',
 			},
+
 			minutesForm: {
 				summary: '',
 			},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		activeHearing() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.activeHearing
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		isHearingWaived() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.isHearingWaived
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		waiverReason() {
 			const bezwaarStore = useBezwaarStore()
@@ -290,6 +298,7 @@ export default {
 			return waived?.waiverReason || ''
 		},
 	},
+
 	methods: {
 		/**
 		 * @param status
@@ -305,6 +314,7 @@ export default {
 			}
 			return labels[status] || status
 		},
+
 		/**
 		 * @param dateStr
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md
@@ -323,6 +333,7 @@ export default {
 				return dateStr
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async scheduleHearing() {
 			const bezwaarStore = useBezwaarStore()
@@ -340,6 +351,7 @@ export default {
 			this.showScheduleDialog = false
 			this.$emit('hearing-scheduled')
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async sendInvitations() {
 			if (!this.activeHearing) return
@@ -349,6 +361,7 @@ export default {
 				status: 'uitgenodigd',
 			})
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async recordMinutes() {
 			if (!this.activeHearing || !this.minutesForm.summary) return
@@ -362,6 +375,7 @@ export default {
 			this.showMinutesDialog = false
 			this.$emit('hearing-completed')
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async recordWaiver() {
 			const bezwaarStore = useBezwaarStore()
@@ -378,6 +392,7 @@ export default {
 			this.showWaiverDialog = false
 			this.$emit('hearing-waived')
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async cancelHearing() {
 			if (!this.activeHearing) return

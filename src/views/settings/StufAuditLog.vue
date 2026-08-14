@@ -22,20 +22,20 @@
 			<NcSelect
 				v-model="filters.berichtSoort"
 				:options="berichtSoortOptions"
-				:input-label="t('procest', 'Message type')"
+				:inputLabel="t('procest', 'Message type')"
 				clearable />
 			<NcSelect
 				v-model="filters.status"
 				:options="statusOptions"
-				:input-label="t('procest', 'Status')"
+				:inputLabel="t('procest', 'Status')"
 				clearable />
-			<NcButton type="primary" :disabled="loading" @click="reload">
+			<NcButton variant="primary" :disabled="loading" @click="reload">
 				<template v-if="loading" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
 				{{ loading ? t('procest', 'Reloading…') : t('procest', 'Reload') }}
 			</NcButton>
-			<NcButton type="tertiary" @click="exportCsv">
+			<NcButton variant="tertiary" @click="exportCsv">
 				{{ t('procest', 'Export CSV') }}
 			</NcButton>
 		</div>
@@ -68,7 +68,7 @@
 					<td>{{ row.httpStatus || '—' }}</td>
 					<td>{{ row.duurMs || '—' }}</td>
 					<td class="stuf-audit-log__actions">
-						<NcButton type="tertiary" @click="inspect(row)">
+						<NcButton variant="tertiary" @click="inspect(row)">
 							{{ t('procest', 'Inspect') }}
 						</NcButton>
 					</td>
@@ -91,10 +91,10 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import { showError } from '@nextcloud/dialogs'
-import { listMessages } from '../../services/stufApi.js'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import StufEnvelopeDialog from '../../dialogs/StufEnvelopeDialog.vue'
+import { listMessages } from '../../services/stufApi.js'
 
 export default {
 	name: 'StufAuditLog',
@@ -105,6 +105,7 @@ export default {
 		NcTextField,
 		StufEnvelopeDialog,
 	},
+
 	data() {
 		return {
 			messages: [],
@@ -118,6 +119,7 @@ export default {
 			},
 		}
 	},
+
 	computed: {
 		/**
 		 * The StUF berichtsoort filter options.
@@ -127,6 +129,7 @@ export default {
 		berichtSoortOptions() {
 			return ['Lk01', 'Lk02', 'Lk03', 'Bv01', 'Lv01', 'La01', 'Du01', 'Fo02']
 		},
+
 		/**
 		 * The StUF message-status filter options.
 		 *
@@ -136,17 +139,21 @@ export default {
 			return ['verzonden', 'bevestigd', 'fout', 'wacht_op_retry']
 		},
 	},
+
 	watch: {
 		'filters.berichtSoort': 'reload',
 		'filters.status': 'reload',
 		'filters.endpointId': 'debouncedReload',
 	},
+
 	mounted() {
 		this.reload()
 	},
-	beforeDestroy() {
+
+	beforeUnmount() {
 		clearTimeout(this.endpointIdTimer)
 	},
+
 	methods: {
 		/**
 		 * Debounced wrapper around reload() for the free-text endpoint filter.
@@ -157,6 +164,7 @@ export default {
 			clearTimeout(this.endpointIdTimer)
 			this.endpointIdTimer = setTimeout(() => this.reload(), 400)
 		},
+
 		/**
 		 * Reload the StUF audit log from the backing store.
 		 *
@@ -180,6 +188,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Open the envelope-inspector dialog for a row.
 		 *
@@ -189,6 +198,7 @@ export default {
 		inspect(row) {
 			this.inspectRow = row
 		},
+
 		/**
 		 * Map a message status to its CSS modifier class.
 		 *
@@ -198,6 +208,7 @@ export default {
 		statusClass(status) {
 			return 'stuf-audit-log__status--' + (status || 'unknown')
 		},
+
 		/**
 		 * Export the current audit-log rows as a CSV download.
 		 *

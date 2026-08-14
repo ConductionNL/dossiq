@@ -13,7 +13,7 @@
 		<template v-else-if="error">
 			<div class="activity-feed__error">
 				<p>{{ error }}</p>
-				<NcButton type="tertiary" @click="$emit('retry')">
+				<NcButton variant="tertiary" @click="$emit('retry')">
 					{{ t('procest', 'Retry') }}
 				</NcButton>
 			</div>
@@ -71,11 +71,13 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		entries: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 		error: { type: String, default: null },
 	},
+
 	emits: ['view-all', 'retry'],
 	methods: {
 		/**
@@ -85,6 +87,7 @@ export default {
 		typeIcon(type) {
 			return TYPE_ICONS[type] || '&#8226;'
 		},
+
 		/**
 		 * @param date
 		 * @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md

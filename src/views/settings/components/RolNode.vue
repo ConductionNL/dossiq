@@ -20,7 +20,7 @@
 				<NcButton size="small" @click="onEdit(role)">
 					{{ t('procest', 'Edit') }}
 				</NcButton>
-				<NcButton size="small" type="error" @click="onDelete(role)">
+				<NcButton size="small" variant="error" @click="onDelete(role)">
 					{{ t('procest', 'Delete') }}
 				</NcButton>
 			</div>
@@ -30,16 +30,16 @@
 				v-for="c in children"
 				:key="c.id"
 				:role="c"
-				:children-by-parent="childrenByParent"
-				:on-edit="onEdit"
-				:on-delete="onDelete" />
+				:childrenByParent="childrenByParent"
+				:onEdit="onEdit"
+				:onDelete="onDelete" />
 		</div>
 	</div>
 </template>
 
 <script>
-import { NcButton } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton } from '@nextcloud/vue'
 
 export default {
 	name: 'RolNode',
@@ -50,12 +50,14 @@ export default {
 		onEdit: { type: Function, required: true },
 		onDelete: { type: Function, required: true },
 	},
+
 	computed: {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		children() {
 			return this.childrenByParent[this.role.id] || []
 		},
 	},
+
 	methods: { t },
 }
 </script>

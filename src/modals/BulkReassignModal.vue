@@ -37,14 +37,14 @@
 				<NcSelect
 					v-model="selectedCaseType"
 					:options="caseTypes"
-					:input-label="t('procest', 'Limit to case type (optional)')"
+					:inputLabel="t('procest', 'Limit to case type (optional)')"
 					:aria-label-combobox="t('procest', 'Limit to case type')"
 					label="title"
-					track-by="id" />
+					trackBy="id" />
 			</div>
 
 			<NcButton
-				type="secondary"
+				variant="secondary"
 				:disabled="!fromUser || loadingPreview"
 				@click="loadPreview">
 				<template v-if="loadingPreview" #icon>
@@ -134,10 +134,10 @@
 		</div>
 
 		<template #actions>
-			<NcButton type="tertiary" @click="$emit('close')">
+			<NcButton variant="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Close') }}
 			</NcButton>
-			<NcButton type="primary" :disabled="!canExecute" @click="execute">
+			<NcButton variant="primary" :disabled="!canExecute" @click="execute">
 				<template v-if="executing" #icon>
 					<NcLoadingIcon :size="20" />
 				</template>
@@ -157,8 +157,8 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import {
-	previewReassignment,
 	executeReassignment,
+	previewReassignment,
 } from '../services/substitutionApi.js'
 import { useObjectStore } from '../store/modules/object.js'
 
@@ -172,6 +172,7 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	emits: ['reassigned', 'close'],
 	data() {
 		return {
@@ -187,11 +188,13 @@ export default {
 			serverError: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		previewCount() {
 			if (!this.preview) {
@@ -199,6 +202,7 @@ export default {
 			}
 			return this.preview.cases.length + this.preview.tasks.length
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		previewRows() {
 			if (!this.preview) {
@@ -222,6 +226,7 @@ export default {
 			}))
 			return [...caseRows, ...taskRows]
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		canExecute() {
 			return (
@@ -233,9 +238,11 @@ export default {
 			)
 		},
 	},
+
 	async mounted() {
 		await this.loadCaseTypes()
 	},
+
 	methods: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async loadCaseTypes() {
@@ -253,6 +260,7 @@ export default {
 				this.caseTypes = []
 			}
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async loadPreview() {
 			this.serverError = ''
@@ -272,6 +280,7 @@ export default {
 				this.loadingPreview = false
 			}
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async execute() {
 			this.serverError = ''
@@ -293,7 +302,11 @@ export default {
 				this.executing = false
 			}
 		},
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+
+		/**
+		 * @param open
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
 		onDialogClose(open) {
 			if (!open) {
 				this.$emit('close')

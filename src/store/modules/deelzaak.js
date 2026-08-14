@@ -13,11 +13,11 @@
  */
 import { defineStore } from 'pinia'
 import {
-	fetchSubCases as apiFetchSubCases,
 	fetchParentCase as apiFetchParentCase,
 	fetchSubCaseCounts as apiFetchSubCaseCounts,
-	validateSubCase as apiValidateSubCase,
+	fetchSubCases as apiFetchSubCases,
 	unlinkSubCases as apiUnlinkSubCases,
+	validateSubCase as apiValidateSubCase,
 } from '../../services/deelzaakApi.js'
 
 export const useDeelzaakStore = defineStore('deelzaak', {

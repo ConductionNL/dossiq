@@ -35,11 +35,13 @@ export default {
 			type: Object,
 			default: () => ({}),
 		},
+
 		deadlines: {
 			type: Object,
 			default: () => ({}),
 		},
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		timelineItems() {
@@ -137,6 +139,7 @@ export default {
 			return items
 		},
 	},
+
 	methods: {
 		/**
 		 * @param type
@@ -151,6 +154,7 @@ export default {
 			}
 			return labels[type] || type
 		},
+
 		/**
 		 * @param type
 		 * @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md

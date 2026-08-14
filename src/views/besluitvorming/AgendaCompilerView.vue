@@ -16,13 +16,13 @@
 			:sidebar="false">
 			<template #header-actions>
 				<NcButton
-					type="secondary"
+					variant="secondary"
 					:disabled="agenda.length === 0"
 					@click="onGenerate">
 					{{ t('procest', 'Agenda genereren') }}
 				</NcButton>
 				<NcButton
-					type="primary"
+					variant="primary"
 					:disabled="agenda.length === 0 || !meetingDate"
 					@click="onConfirm">
 					{{ t('procest', 'Agenda bevestigen') }}
@@ -36,10 +36,10 @@
 					}}</label>
 					<NcSelect
 						v-model="gremium"
-						input-id="bvw-gremium"
-						:input-label="t('procest', 'Vergadergremium')"
+						inputId="bvw-gremium"
+						:inputLabel="t('procest', 'Vergadergremium')"
 						:options="gremiumOptions"
-						@update:model-value="loadReadyItems" />
+						@update:modelValue="loadReadyItems" />
 					<label for="bvw-date">{{ t('procest', 'Vergaderdatum') }}</label>
 					<input id="bvw-date" v-model="meetingDate" type="date" />
 				</div>
@@ -65,7 +65,7 @@
 						<span>{{
 							item.title || t('procest', 'Onbenoemd voorstel')
 						}}</span>
-						<NcButton type="tertiary" @click="addItem(item)">
+						<NcButton variant="tertiary" @click="addItem(item)">
 							{{ t('procest', 'Toevoegen') }}
 						</NcButton>
 					</div>
@@ -82,7 +82,7 @@
 						v-for="item in agenda"
 						:key="item.id"
 						:item="item"
-						@set-behandeling="onSetBehandeling" />
+						@setBehandeling="onSetBehandeling" />
 				</CnDetailCard>
 			</div>
 		</CnDetailPage>
@@ -90,15 +90,15 @@
 </template>
 
 <script>
-import { NcButton, NcSelect, NcEmptyContent } from '@nextcloud/vue'
-import { CnDetailPage, CnDetailCard } from '@conduction/nextcloud-vue'
+import { CnDetailCard, CnDetailPage } from '@conduction/nextcloud-vue'
+import { NcButton, NcEmptyContent, NcSelect } from '@nextcloud/vue'
 import AgendaItem from '../../components/besluitvorming/AgendaItem.vue'
-import { useObjectStore } from '../../store/modules/object.js'
 import {
 	addToAgenda,
 	confirmAgenda,
 	generateAgenda,
 } from '../../services/besluitvormingApi.js'
+import { useObjectStore } from '../../store/modules/object.js'
 
 export default {
 	name: 'AgendaCompilerView',
@@ -110,6 +110,7 @@ export default {
 		CnDetailCard,
 		AgendaItem,
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -120,19 +121,23 @@ export default {
 			agenda: [],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/besluitvorming-workflow/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		agendaTitle() {
 			const label = this.meetingDate ? ' ' + this.meetingDate : ''
 			return this.t('procest', 'Agenda') + label
 		},
 	},
+
 	created() {
 		this.loadReadyItems()
 	},
+
 	methods: {
 		/**
 		 * Load cases that are ready for agendering for the selected gremium.
@@ -163,6 +168,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * Move an item from the available list into the agenda.
 		 *
@@ -183,6 +189,7 @@ export default {
 				console.error('Failed to persist agenda item:', error)
 			}
 		},
+
 		/**
 		 * Update the classification of an agenda item.
 		 *
@@ -200,6 +207,7 @@ export default {
 				console.error('Failed to update behandeling:', error)
 			}
 		},
+
 		/**
 		 * Confirm the agenda — transition cases to Geagendeerd.
 		 *
@@ -219,6 +227,7 @@ export default {
 				console.error('Failed to confirm agenda:', error)
 			}
 		},
+
 		/**
 		 * Generate the ordered agenda document.
 		 *

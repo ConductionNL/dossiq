@@ -5,13 +5,13 @@
 			<div class="step-config-panel__header-actions">
 				<NcButton
 					v-if="!readOnly"
-					type="tertiary"
+					variant="tertiary"
 					class="step-config-panel__delete-button"
 					@click="$emit('delete', localStep.id)">
 					{{ t('procest', 'Delete step') }}
 				</NcButton>
 				<NcButton
-					type="tertiary"
+					variant="tertiary"
 					:aria-label="t('procest', 'Close step configuration')"
 					@click="$emit('close')">
 					<template #icon>
@@ -97,7 +97,7 @@
 						:aria-label="t('procest', 'Checklist item')"
 						@input="emitUpdate" />
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:aria-label="t('procest', 'Remove checklist item')"
 						@click="removeChecklistItem(index)">
 						<template #icon>
@@ -105,7 +105,7 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton type="secondary" @click="addChecklistItem">
+				<NcButton variant="secondary" @click="addChecklistItem">
 					{{ t('procest', 'Add checklist item') }}
 				</NcButton>
 			</div>
@@ -190,7 +190,7 @@
 								:disabled="readOnly"
 								@input="emitUpdate" />
 							<NcButton
-								type="tertiary"
+								variant="tertiary"
 								:disabled="readOnly"
 								:aria-label="t('procest', 'Remove required field')"
 								@click="removeRequiredField(index)">
@@ -200,7 +200,7 @@
 							</NcButton>
 						</div>
 						<NcButton
-							type="secondary"
+							variant="secondary"
 							:disabled="readOnly"
 							@click="addRequiredField">
 							{{ t('procest', 'Add field') }}
@@ -333,7 +333,7 @@
 						class="step-config-panel__input"
 						@input="emitUpdate" />
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:aria-label="t('procest', 'Remove action')"
 						@click="removeAction(index)">
 						<template #icon>
@@ -341,7 +341,7 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton type="secondary" @click="addAction">
+				<NcButton variant="secondary" @click="addAction">
 					{{ t('procest', 'Add action') }}
 				</NcButton>
 			</div>
@@ -361,20 +361,24 @@ export default {
 		NcButton,
 		CloseIcon,
 	},
+
 	props: {
 		step: {
 			type: Object,
 			required: true,
 		},
+
 		roleTypes: {
 			type: Array,
 			default: () => [],
 		},
+
 		readOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['update', 'close', 'delete'],
 	data() {
 		return {
@@ -388,10 +392,12 @@ export default {
 				&& this.step.config
 				&& this.step.config.escalationRule
 			),
+
 			slaValueMax: 10000,
 			dragCheckIndex: null,
 		}
 	},
+
 	watch: {
 		step: {
 			/**
@@ -409,9 +415,11 @@ export default {
 					&& newStep.config.escalationRule
 				)
 			},
+
 			deep: true,
 		},
 	},
+
 	methods: {
 		/**
 		 * @param config
@@ -433,17 +441,21 @@ export default {
 						safe.sla && Number.isFinite(safe.sla.value)
 							? safe.sla.value
 							: null,
+
 					unit:
 						safe.sla && typeof safe.sla.unit === 'string'
 							? safe.sla.unit
 							: '',
 				},
+
 				requiredFields: Array.isArray(safe.requiredFields)
 					? [...safe.requiredFields]
 					: [],
+
 				autoActions: Array.isArray(safe.autoActions)
 					? [...safe.autoActions]
 					: [],
+
 				escalationRule:
 					safe.escalationRule && typeof safe.escalationRule === 'object'
 						? {
@@ -451,24 +463,29 @@ export default {
 									typeof safe.escalationRule.trigger === 'string'
 										? safe.escalationRule.trigger
 										: 'preBreach',
+
 								offset: Number.isFinite(safe.escalationRule.offset)
 									? safe.escalationRule.offset
 									: 0,
+
 								offsetUnit:
 									typeof safe.escalationRule.offsetUnit
 									=== 'string'
 										? safe.escalationRule.offsetUnit
 										: 'businessDays',
+
 								notifyRole:
 									typeof safe.escalationRule.notifyRole
 									=== 'string'
 										? safe.escalationRule.notifyRole
 										: '',
+
 								escalateToRole:
 									typeof safe.escalationRule.escalateToRole
 									=== 'string'
 										? safe.escalationRule.escalateToRole
 										: '',
+
 								openIncident: !!safe.escalationRule.openIncident,
 							}
 						: {

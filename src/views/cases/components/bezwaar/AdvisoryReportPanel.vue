@@ -61,9 +61,9 @@
 				>
 				<NcTextField
 					id="advisory-report-advice-date"
-					:model-value="form.adviceDate"
+					:modelValue="form.adviceDate"
 					type="date"
-					@update:model-value="(v) => (form.adviceDate = v)" />
+					@update:modelValue="(v) => (form.adviceDate = v)" />
 			</div>
 
 			<div class="form-group">
@@ -103,8 +103,8 @@
 
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
-					:model-value="form.deviationFromPrimaryDecision"
-					@update:model-value="
+					:modelValue="form.deviationFromPrimaryDecision"
+					@update:modelValue="
 						(v) => (form.deviationFromPrimaryDecision = v)
 					">
 					{{
@@ -137,7 +137,7 @@
 			</NcNoteCard>
 
 			<div class="advisory-report-panel__actions">
-				<NcButton type="primary" :disabled="saving" @click="save">
+				<NcButton variant="primary" :disabled="saving" @click="save">
 					{{
 						saving
 							? t('procest', 'Saving...')
@@ -158,10 +158,10 @@
 <script>
 import {
 	NcButton,
-	NcTextField,
-	NcSelect,
 	NcCheckboxRadioSwitch,
 	NcNoteCard,
+	NcSelect,
+	NcTextField,
 } from '@nextcloud/vue'
 import { useBezwaarStore } from '../../../../store/modules/bezwaar.js'
 
@@ -174,24 +174,29 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcNoteCard,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
+
 		committeeMembers: {
 			type: Array,
 			default: () => [],
 		},
+
 		primaryDecisionMaker: {
 			type: String,
 			default: '',
 		},
 	},
+
 	emits: ['saved'],
 	data() {
 		return {
@@ -203,6 +208,7 @@ export default {
 				recommendation: '',
 				deviationFromPrimaryDecision: false,
 			},
+
 			saving: false,
 			adviceTypeOptions: [
 				{ id: 'gegrond', label: t('procest', 'Upheld (gegrond)') },
@@ -218,12 +224,14 @@ export default {
 			],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		hasReport() {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.hasAdvisoryReport
 		},
+
 		/**
 		 * The BAC advisory report read for display.
 		 *
@@ -241,10 +249,12 @@ export default {
 			const bezwaarStore = useBezwaarStore()
 			return bezwaarStore.currentAdvisoryReport
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		showCompositionWarning() {
 			return this.committeeMembers.length < 3
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		hasConflictOfInterest() {
 			if (!this.primaryDecisionMaker) return false
@@ -253,6 +263,7 @@ export default {
 			)
 		},
 	},
+
 	methods: {
 		/**
 		 * @param type
@@ -267,6 +278,7 @@ export default {
 			}
 			return labels[type] || type
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async save() {
 			this.saving = true

@@ -38,37 +38,42 @@
 		<ResultSection
 			v-if="caseResult"
 			:result="caseResult"
-			:result-types="resultTypes" />
+			:resultTypes="resultTypes" />
 	</div>
 </template>
 
 <script>
-import { formatDate } from '../../../utils/caseHelpers.js'
 import ResultSection from '../components/ResultSection.vue'
+import { formatDate } from '../../../utils/caseHelpers.js'
 
 export default {
 	name: 'CaseDecisionsWidget',
 	components: {
 		ResultSection,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			default: null,
 		},
+
 		decisions: {
 			type: Array,
 			default: () => [],
 		},
+
 		caseResult: {
 			type: Object,
 			default: null,
 		},
+
 		resultTypes: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	methods: {
 		formatDate,
 	},

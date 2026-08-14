@@ -25,15 +25,15 @@
 
 		<div class="form-group">
 			<NcPasswordField
-				:model-value="dwangsomCallbackSecret"
+				:modelValue="dwangsomCallbackSecret"
 				:label="t('procest', 'Dwangsom callback secret')"
-				:helper-text="
+				:helperText="
 					t(
 						'procest',
 						'Shared HMAC-SHA256 signing secret. Provide this value to the ERP/openconnector integrator so it can sign X-Procest-Signature headers.',
 					)
 				"
-				@update:model-value="onSecretInput" />
+				@update:modelValue="onSecretInput" />
 		</div>
 
 		<NcButton :disabled="saving" @click="generateSecret">
@@ -44,8 +44,8 @@
 </template>
 
 <script>
-import { NcButton, NcPasswordField, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon, NcNoteCard, NcPasswordField } from '@nextcloud/vue'
 import { useSettingsStore } from '../../../store/modules/settings.js'
 
 export default {
@@ -57,12 +57,14 @@ export default {
 			saving: false,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/enforce-dwangsom-callback-signature/tasks.md#task-2 */
 		secretConfigured() {
 			return !!this.dwangsomCallbackSecret
 		},
 	},
+
 	/** @spec openspec/changes/enforce-dwangsom-callback-signature/tasks.md#task-2 */
 	async created() {
 		const store = useSettingsStore()
@@ -77,6 +79,7 @@ export default {
 				? ''
 				: config.dwangsom_callback_secret || ''
 	},
+
 	methods: {
 		t,
 		/**
@@ -87,6 +90,7 @@ export default {
 			this.dwangsomCallbackSecret = value
 			await this.persist(value)
 		},
+
 		/** @spec openspec/changes/enforce-dwangsom-callback-signature/tasks.md#task-2 */
 		async generateSecret() {
 			const bytes = new Uint8Array(32)
@@ -97,6 +101,7 @@ export default {
 			this.dwangsomCallbackSecret = secret
 			await this.persist(secret)
 		},
+
 		/**
 		 * @param value
 		 * @spec openspec/changes/enforce-dwangsom-callback-signature/tasks.md#task-2

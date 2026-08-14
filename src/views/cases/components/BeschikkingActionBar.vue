@@ -4,21 +4,21 @@
 	<div class="beschikking-actionbar">
 		<NcButton
 			v-if="status === 'ontwerp'"
-			type="primary"
+			variant="primary"
 			:disabled="busy"
 			@click="onAkkoord">
 			{{ t('procest', 'Akkoord aanvragen') }}
 		</NcButton>
 		<NcButton
 			v-if="status === 'akkoord-mandaat'"
-			type="primary"
+			variant="primary"
 			:disabled="busy"
 			@click="onOnderteken">
 			{{ t('procest', 'Ondertekenen') }}
 		</NcButton>
 		<NcButton
 			v-if="status === 'ondertekend'"
-			type="primary"
+			variant="primary"
 			:disabled="busy"
 			@click="onVerzend">
 			{{ t('procest', 'Verzenden') }}
@@ -37,9 +37,9 @@
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
 import {
 	akkoord,
+	exportAuditPacket,
 	onderteken,
 	verzend,
-	exportAuditPacket,
 } from '../../../services/beschikkingApi.js'
 
 export default {
@@ -48,20 +48,24 @@ export default {
 		NcButton,
 		NcNoteCard,
 	},
+
 	props: {
 		beschikkingId: {
 			type: String,
 			required: true,
 		},
+
 		status: {
 			type: String,
 			required: true,
 		},
+
 		tspProvider: {
 			type: String,
 			default: 'kpn-gekwalificeerde-handtekening',
 		},
 	},
+
 	emits: ['updated'],
 	data() {
 		return {
@@ -69,6 +73,7 @@ export default {
 			error: '',
 		}
 	},
+
 	computed: {
 		canExport() {
 			return ['verzonden', 'ontvangen-bevestiging', 'gearchiveerd'].includes(
@@ -76,16 +81,20 @@ export default {
 			)
 		},
 	},
+
 	methods: {
 		async onAkkoord() {
 			await this.run(() => akkoord(this.beschikkingId))
 		},
+
 		async onOnderteken() {
 			await this.run(() => onderteken(this.beschikkingId, this.tspProvider))
 		},
+
 		async onVerzend() {
 			await this.run(() => verzend(this.beschikkingId))
 		},
+
 		async run(fn) {
 			this.busy = true
 			this.error = ''
@@ -98,6 +107,7 @@ export default {
 				this.busy = false
 			}
 		},
+
 		async onExport() {
 			this.busy = true
 			this.error = ''

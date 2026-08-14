@@ -37,16 +37,16 @@
 					<template v-if="editing && editingPropId === propDef.id">
 						<div class="property-item__edit">
 							<NcTextField
-								:model-value="editValue"
+								:modelValue="editValue"
 								:aria-label="propDef.name"
 								:placeholder="
 									propDef.definition
 									|| t('procest', 'Enter value...')
 								"
-								@update:model-value="(v) => (editValue = v)" />
+								@update:modelValue="(v) => (editValue = v)" />
 							<div class="property-item__edit-actions">
 								<NcButton
-									type="primary"
+									variant="primary"
 									@click="saveProperty(propDef)">
 									{{ t('procest', 'Save') }}
 								</NcButton>
@@ -94,20 +94,24 @@ export default {
 		NcLoadingIcon,
 		NcTextField,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	data() {
 		return {
 			loading: false,
@@ -118,6 +122,7 @@ export default {
 			editValue: '',
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		filledCount() {
@@ -126,6 +131,7 @@ export default {
 			).length
 		},
 	},
+
 	watch: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		caseTypeId() {
@@ -134,12 +140,14 @@ export default {
 			}
 		},
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 	async mounted() {
 		if (this.caseTypeId) {
 			await this.loadData()
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async loadData() {

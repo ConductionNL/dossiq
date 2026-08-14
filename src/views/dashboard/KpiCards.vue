@@ -3,8 +3,8 @@
 		<div
 			v-for="card in cards"
 			:key="card.id"
-			class="kpi-card"
-			:class="[card.colorClass, { 'kpi-card--clickable': true }]"
+			class="kpi-card kpi-card--clickable"
+			:class="[card.colorClass]"
 			role="button"
 			tabindex="0"
 			@keydown.enter="$emit('click-card', card.id)"
@@ -34,6 +34,7 @@ export default {
 	components: {
 		NcLoadingIcon,
 	},
+
 	props: {
 		openCases: { type: Number, default: 0 },
 		newToday: { type: Number, default: 0 },
@@ -44,6 +45,7 @@ export default {
 		tasksDueToday: { type: Number, default: 0 },
 		loading: { type: Boolean, default: false },
 	},
+
 	emits: ['click-card'],
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-dashboard/tasks.md */
@@ -57,6 +59,7 @@ export default {
 						this.newToday > 0
 							? t('procest', '+{n} today', { n: this.newToday })
 							: t('procest', '0 today'),
+
 					colorClass: 'kpi-card--primary',
 					subClass: '',
 				},
@@ -68,10 +71,12 @@ export default {
 						this.overdueCases > 0
 							? t('procest', 'action needed')
 							: t('procest', 'all on track'),
+
 					colorClass:
 						this.overdueCases > 0
 							? 'kpi-card--warning'
 							: 'kpi-card--primary',
+
 					subClass:
 						this.overdueCases > 0
 							? 'kpi-card__sub--warning'
@@ -87,6 +92,7 @@ export default {
 									days: this.avgProcessingDays,
 								})
 							: t('procest', 'no data'),
+
 					colorClass: 'kpi-card--success',
 					subClass: '',
 				},
@@ -100,6 +106,7 @@ export default {
 									n: this.tasksDueToday,
 								})
 							: t('procest', 'none due today'),
+
 					colorClass: 'kpi-card--primary',
 					subClass: this.tasksDueToday > 0 ? 'kpi-card__sub--warning' : '',
 				},

@@ -21,7 +21,7 @@
 			<NcSelect
 				v-model="bulkClassification"
 				class="dossier-bulk-bar__select"
-				:input-label="t('procest', 'Change confidentiality')"
+				:inputLabel="t('procest', 'Change confidentiality')"
 				:options="classificationOptions"
 				:reduce="(option) => option.id"
 				label="label"
@@ -33,7 +33,7 @@
 			</NcButton>
 
 			<NcButton
-				type="tertiary"
+				variant="tertiary"
 				:disabled="busy"
 				@click="$emit('clear-selection')">
 				{{ t('procest', 'Clear selection') }}
@@ -77,31 +77,37 @@ export default {
 		NcButton,
 		NcSelect,
 	},
+
 	props: {
 		selectedCount: {
 			type: Number,
 			default: 0,
 		},
+
 		busy: {
 			type: Boolean,
 			default: false,
 		},
+
 		results: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: [
 		'mark-final',
 		'change-confidentiality',
 		'download-zip',
 		'clear-selection',
 	],
+
 	data() {
 		return {
 			bulkClassification: '',
 		}
 	},
+
 	computed: {
 		/**
 		 * Confidentiality dropdown options.
@@ -128,6 +134,7 @@ export default {
 			]
 		},
 	},
+
 	methods: {
 		/**
 		 * Emit the chosen confidentiality level for the selection.

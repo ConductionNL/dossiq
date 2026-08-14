@@ -30,8 +30,8 @@
 
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
-					:model-value="voorzieningRequested"
-					@update:model-value="(v) => (voorzieningRequested = v)">
+					:modelValue="voorzieningRequested"
+					@update:modelValue="(v) => (voorzieningRequested = v)">
 					{{
 						t(
 							'procest',
@@ -51,7 +51,7 @@
 			</NcNoteCard>
 
 			<div class="beroep-escalation-panel__actions">
-				<NcButton type="primary" :disabled="escalating" @click="escalate">
+				<NcButton variant="primary" :disabled="escalating" @click="escalate">
 					{{
 						escalating
 							? t('procest', 'Creating...')
@@ -85,24 +85,29 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcNoteCard,
 	},
+
 	props: {
 		caseData: {
 			type: Object,
 			required: true,
 		},
+
 		canEscalate: {
 			type: Boolean,
 			default: false,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
+
 		linkedBeroepCase: {
 			type: Object,
 			default: null,
 		},
 	},
+
 	emits: ['escalated'],
 	data() {
 		return {
@@ -110,6 +115,7 @@ export default {
 			escalating: false,
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async escalate() {
@@ -126,6 +132,7 @@ export default {
 				this.$emit('escalated', beroepCase)
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		navigateToBeroep() {
 			if (this.linkedBeroepCase) {

@@ -16,7 +16,7 @@
 				rel="noopener noreferrer">
 				{{ t('procest', 'View publication') }}
 			</a>
-			<NcButton type="tertiary" :disabled="busy" @click="withdraw">
+			<NcButton variant="tertiary" :disabled="busy" @click="withdraw">
 				{{ t('procest', 'Withdraw') }}
 			</NcButton>
 		</div>
@@ -29,13 +29,13 @@
 				{{ t('procest', 'Publication unavailable') }}
 			</span>
 			<p>{{ unavailableMessage }}</p>
-			<NcButton type="secondary" :disabled="busy" @click="publish">
+			<NcButton variant="secondary" :disabled="busy" @click="publish">
 				{{ t('procest', 'Retry') }}
 			</NcButton>
 		</div>
 
 		<div v-else class="woo-publication-panel__pending">
-			<NcButton type="primary" :disabled="busy" @click="publish">
+			<NcButton variant="primary" :disabled="busy" @click="publish">
 				{{ t('procest', 'Publish (Woo)') }}
 			</NcButton>
 		</div>
@@ -57,19 +57,23 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		decisionId: {
 			type: String,
 			required: true,
 		},
+
 		initialStatus: {
 			type: String,
 			default: 'pending',
 		},
+
 		initialPublicationUrl: {
 			type: String,
 			default: '',
 		},
 	},
+
 	data() {
 		return {
 			state: this.initialStatus === 'published' ? 'published' : 'pending',
@@ -78,6 +82,7 @@ export default {
 			busy: false,
 		}
 	},
+
 	methods: {
 		/**
 		 * Publish the WOO decision to OpenCatalogi.
@@ -104,6 +109,7 @@ export default {
 				this.busy = false
 			}
 		},
+
 		/**
 		 * Withdraw the WOO publication from OpenCatalogi.
 		 *
@@ -125,6 +131,7 @@ export default {
 				this.busy = false
 			}
 		},
+
 		/**
 		 * Map a backend unavailability reason to a human message.
 		 *

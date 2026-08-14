@@ -69,7 +69,7 @@
 				{{ t('procest', 'Close') }}
 			</NcButton>
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="!message.trim() || posting"
 				@click="post">
 				{{ posting ? t('procest', 'Posting...') : t('procest', 'Post') }}
@@ -79,7 +79,7 @@
 </template>
 
 <script>
-import { NcDialog, NcButton, NcLoadingIcon } from '@nextcloud/vue'
+import { NcButton, NcDialog, NcLoadingIcon } from '@nextcloud/vue'
 
 export default {
 	name: 'FederatedActivityPanel',
@@ -88,24 +88,29 @@ export default {
 		NcButton,
 		NcLoadingIcon,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		federatedShareId: {
 			type: String,
 			required: true,
 		},
+
 		entries: {
 			type: Array,
 			default: () => [],
 		},
+
 		loading: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['update:open', 'post'],
 	data() {
 		return {
@@ -113,6 +118,7 @@ export default {
 			posting: false,
 		}
 	},
+
 	methods: {
 		/**
 		 * @spec openspec/specs/federated-case-collaboration/spec.md#a-local-handler-posts-an-activity-entry

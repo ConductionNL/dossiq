@@ -20,7 +20,7 @@
 						:options="partners"
 						:aria-label-combobox="t('procest', 'Partner organization')"
 						label="name"
-						track-by="id"
+						trackBy="id"
 						:placeholder="t('procest', 'Select partner...')" />
 				</div>
 
@@ -31,7 +31,7 @@
 						:options="permissionOptions"
 						:aria-label-combobox="t('procest', 'Permission level')"
 						label="label"
-						track-by="value" />
+						trackBy="value" />
 				</div>
 			</div>
 		</div>
@@ -40,7 +40,7 @@
 			<NcButton @click="$emit('update:open', false)">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
-			<NcButton type="primary" :disabled="saving" @click="createShare">
+			<NcButton variant="primary" :disabled="saving" @click="createShare">
 				{{
 					saving
 						? t('procest', 'Creating...')
@@ -52,7 +52,7 @@
 </template>
 
 <script>
-import { NcDialog, NcButton, NcSelect } from '@nextcloud/vue'
+import { NcButton, NcDialog, NcSelect } from '@nextcloud/vue'
 
 export default {
 	name: 'CreateShareDialog',
@@ -61,20 +61,24 @@ export default {
 		NcButton,
 		NcSelect,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		partners: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['update:open', 'created'],
 	data() {
 		return {
@@ -84,8 +88,10 @@ export default {
 					value: 'bekijken',
 					label: t('procest', 'View only'),
 				},
+
 				partnerId: null,
 			},
+
 			permissionOptions: [
 				{ value: 'bekijken', label: t('procest', 'View only') },
 				{
@@ -99,6 +105,7 @@ export default {
 			],
 		}
 	},
+
 	methods: {
 		/**
 		 * Emit a partner-organisation share payload. Public token links are

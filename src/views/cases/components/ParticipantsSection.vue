@@ -12,7 +12,10 @@
 		<template v-else-if="roles.length === 0">
 			<div class="participants-section__empty">
 				<p>{{ t('procest', 'No participants assigned') }}</p>
-				<NcButton v-if="!isReadOnly" type="primary" @click="onAssignHandler">
+				<NcButton
+					v-if="!isReadOnly"
+					variant="primary"
+					@click="onAssignHandler">
 					{{ t('procest', 'Assign Handler') }}
 				</NcButton>
 			</div>
@@ -42,14 +45,14 @@
 						<template v-if="isHandlerRole(role)">
 							<NcButton
 								v-if="!reassigningHandler"
-								type="tertiary"
+								variant="tertiary"
 								@click="startReassign(role)">
 								{{ t('procest', 'Reassign') }}
 							</NcButton>
 						</template>
 						<NcButton
 							v-else
-							type="tertiary"
+							variant="tertiary"
 							:aria-label="t('procest', 'Remove participant')"
 							@click="removeRole(role)">
 							<template #icon>
@@ -68,10 +71,10 @@
 					:options="userOptions"
 					:aria-label-combobox="t('procest', 'Reassign handler to')"
 					label="label"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Select user...')"
-					@update:model-value="onReassignSelected" />
-				<NcButton type="tertiary" @click="cancelReassign">
+					@update:modelValue="onReassignSelected" />
+				<NcButton variant="tertiary" @click="cancelReassign">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
 			</div>
@@ -79,10 +82,10 @@
 
 		<AddParticipantDialog
 			v-if="showAddDialog"
-			:case-id="caseId"
-			:role-types="roleTypes"
-			:user-options="userOptions"
-			:pre-select-handler="preSelectHandler"
+			:caseId="caseId"
+			:roleTypes="roleTypes"
+			:userOptions="userOptions"
+			:preSelectHandler="preSelectHandler"
 			@created="onRoleCreated"
 			@close="closeAddDialog" />
 	</div>
@@ -91,8 +94,8 @@
 <script>
 import { NcButton, NcLoadingIcon, NcSelect } from '@nextcloud/vue'
 import Delete from 'vue-material-design-icons/Delete.vue'
-import { useObjectStore } from '../../../store/modules/object.js'
 import AddParticipantDialog from './AddParticipantDialog.vue'
+import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
 	name: 'ParticipantsSection',
@@ -103,16 +106,19 @@ export default {
 		Delete,
 		AddParticipantDialog,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	emits: ['handler-changed'],
 	data() {
 		return {
@@ -127,11 +133,13 @@ export default {
 			reassignUser: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		roleTypeMap() {
 			const map = {}
@@ -140,6 +148,7 @@ export default {
 			}
 			return map
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		groupedRoles() {
 			const groups = {}
@@ -154,9 +163,11 @@ export default {
 			return Object.values(groups)
 		},
 	},
+
 	async mounted() {
 		await this.fetchData()
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		async fetchData() {

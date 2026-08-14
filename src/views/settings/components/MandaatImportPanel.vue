@@ -41,7 +41,7 @@
 		</div>
 
 		<div class="mandaat-import__actions">
-			<NcButton :disabled="!raw || running" type="primary" @click="preview">
+			<NcButton :disabled="!raw || running" variant="primary" @click="preview">
 				<template #icon>
 					<NcLoadingIcon v-if="running" :size="18" />
 					<EyeOutline v-else :size="18" />
@@ -51,7 +51,7 @@
 			<NcButton
 				v-if="previewResult"
 				:disabled="!importId || approving"
-				type="success"
+				variant="success"
 				@click="approve">
 				<template #icon>
 					<CheckBold :size="18" />
@@ -102,12 +102,12 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
+import axios from '@nextcloud/axios'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
-import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
+import { NcButton, NcLoadingIcon, NcNoteCard } from '@nextcloud/vue'
 import CheckBold from 'vue-material-design-icons/CheckBold.vue'
+import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 
 export default {
 	name: 'MandaatImportPanel',
@@ -123,6 +123,7 @@ export default {
 			importId: null,
 		}
 	},
+
 	methods: {
 		t,
 		/**
@@ -138,6 +139,7 @@ export default {
 			}
 			reader.readAsText(f)
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async preview() {
 			this.running = true
@@ -160,6 +162,7 @@ export default {
 				this.running = false
 			}
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async approve() {
 			if (!this.importId) return

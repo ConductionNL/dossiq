@@ -15,8 +15,8 @@
   -->
 <template>
 	<NcDialog
-		:name="t('procest', 'Extension request')"
 		v-model:open="open"
+		:name="t('procest', 'Extension request')"
 		size="small"
 		data-testid="leverancier-renewal-modal"
 		@update:open="onOpenChange">
@@ -97,11 +97,13 @@ export default {
 			type: Boolean,
 			default: false,
 		},
+
 		contract: {
 			type: Object,
 			default: () => ({}),
 		},
 	},
+
 	emits: ['input', 'close', 'confirm'],
 	data() {
 		return {
@@ -110,16 +112,19 @@ export default {
 			submitting: false,
 		}
 	},
+
 	computed: {
 		open: {
 			get() {
 				return this.value
 			},
+
 			set(v) {
 				this.$emit('input', v)
 			},
 		},
 	},
+
 	methods: {
 		validate() {
 			this.errors = { durationMonths: '' }
@@ -136,15 +141,18 @@ export default {
 			}
 			return true
 		},
+
 		onOpenChange(v) {
 			if (!v) {
 				this.close()
 			}
 		},
+
 		close() {
 			this.$emit('input', false)
 			this.$emit('close')
 		},
+
 		async onSubmit() {
 			if (!this.validate()) {
 				return

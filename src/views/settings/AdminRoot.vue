@@ -1,7 +1,7 @@
 <template>
 	<CnAdminSettingsShell
-		app-id="procest"
-		app-name="Procest"
+		appId="procest"
+		appName="Procest"
 		@reimported="onReimported">
 		<Settings />
 
@@ -172,21 +172,21 @@
 
 <script>
 import { CnAdminSettingsShell, CnSettingsSection } from '@conduction/nextcloud-vue'
-import Settings from './Settings.vue'
 import CaseTypeAdmin from './CaseTypeAdmin.vue'
-import ZgwMappingSettings from './ZgwMappingSettings.vue'
-import AiSettingsTab from './tabs/AiSettingsTab.vue'
-import ChecklistsTab from './tabs/ChecklistsTab.vue'
-import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
-import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
-import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
-import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
-import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
 import EmailSettings from './EmailSettings.vue'
 import KccIntegrationSettings from './KccIntegrationSettings.vue'
-import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
-import StufEndpoints from './StufEndpoints.vue'
+import Settings from './Settings.vue'
 import StufAuditLog from './StufAuditLog.vue'
+import StufEndpoints from './StufEndpoints.vue'
+import AiSettingsTab from './tabs/AiSettingsTab.vue'
+import ChecklistsTab from './tabs/ChecklistsTab.vue'
+import ConsultationSettingsTab from './tabs/ConsultationSettingsTab.vue'
+import DecisionTablesTab from './tabs/DecisionTablesTab.vue'
+import FinancialIntegrationTab from './tabs/FinancialIntegrationTab.vue'
+import MandaatMatrixSettingsTab from './tabs/MandaatMatrixSettingsTab.vue'
+import MandaatMatrixTab from './tabs/MandaatMatrixTab.vue'
+import TermijnDefinitiesTab from './tabs/TermijnDefinitiesTab.vue'
+import ZgwMappingSettings from './ZgwMappingSettings.vue'
 import { initializeStores } from '../../store/store.js'
 
 export default {
@@ -210,16 +210,19 @@ export default {
 		StufEndpoints,
 		StufAuditLog,
 	},
+
 	data() {
 		return {
 			storesReady: false,
 		}
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 	async created() {
 		await initializeStores()
 		this.storesReady = true
 	},
+
 	methods: {
 		/**
 		 * Refresh the app stores after the shell re-imports the OpenRegister configuration.

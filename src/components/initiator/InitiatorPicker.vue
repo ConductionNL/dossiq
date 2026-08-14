@@ -22,21 +22,21 @@
 				:value="tab.id"
 				name="initiator-type"
 				type="radio"
-				button-variant
-				button-variant-grouped="horizontal">
+				buttonVariant
+				buttonVariantGrouped="horizontal">
 				{{ tab.label }}
 			</NcCheckboxRadioSwitch>
 		</div>
 
 		<NcTextField
-			class="initiator-picker__search"
 			v-model="query"
+			class="initiator-picker__search"
 			:label="t('procest', 'Search initiator')"
 			:placeholder="searchPlaceholder"
-			trailing-button-icon="close"
-			:show-trailing-button="query !== ''"
-			@trailing-button-click="query = ''"
-			@update:model-value="onQueryChanged" />
+			trailingButtonIcon="close"
+			:showTrailingButton="query !== ''"
+			@trailingButtonClick="query = ''"
+			@update:modelValue="onQueryChanged" />
 
 		<NcLoadingIcon v-if="searching" :size="24" />
 
@@ -78,14 +78,14 @@ import {
 	NcTextField,
 } from '@nextcloud/vue'
 import AccountOutline from 'vue-material-design-icons/AccountOutline.vue'
-import Domain from 'vue-material-design-icons/Domain.vue'
 import CardAccountMailOutline from 'vue-material-design-icons/CardAccountMailOutline.vue'
-import { useObjectStore } from '../../store/modules/object.js'
+import Domain from 'vue-material-design-icons/Domain.vue'
 import {
 	companyResult,
 	personResult,
 	searchContacts,
 } from '../../services/initiatorSearch.js'
+import { useObjectStore } from '../../store/modules/object.js'
 
 export default {
 	name: 'InitiatorPicker',
@@ -98,6 +98,7 @@ export default {
 		Domain,
 		CardAccountMailOutline,
 	},
+
 	props: {
 		/** Currently selected initiator (unified result) or null. */
 		value: {
@@ -105,6 +106,7 @@ export default {
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			activeTab: 'person',
@@ -114,11 +116,13 @@ export default {
 			searchTimer: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		tabs() {
 			return [
@@ -127,6 +131,7 @@ export default {
 				{ id: 'contact', label: t('procest', 'Contact') },
 			]
 		},
+
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		searchPlaceholder() {
 			switch (this.activeTab) {
@@ -138,12 +143,14 @@ export default {
 					return t('procest', 'Name or BSN')
 			}
 		},
+
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		emptyTitle() {
 			return this.activeTab === 'contact'
 				? t('procest', 'No contacts found')
 				: t('procest', 'No results')
 		},
+
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		emptyDescription() {
 			return this.activeTab === 'contact'
@@ -154,6 +161,7 @@ export default {
 				: t('procest', 'No matching records in the seeded register set.')
 		},
 	},
+
 	watch: {
 		/** @spec openspec/specs/initiator-selection/spec.md */
 		activeTab() {
@@ -163,6 +171,7 @@ export default {
 			}
 		},
 	},
+
 	methods: {
 		/**
 		 * Debounced search trigger for text input.
@@ -174,6 +183,7 @@ export default {
 			clearTimeout(this.searchTimer)
 			this.searchTimer = setTimeout(() => this.runSearch(), 300)
 		},
+
 		/**
 		 * Execute the search against the active source.
 		 *
@@ -210,6 +220,7 @@ export default {
 				this.searching = false
 			}
 		},
+
 		/**
 		 * Whether a result matches the current selection.
 		 *
@@ -224,6 +235,7 @@ export default {
 				&& this.value.sourceId === result.sourceId
 			)
 		},
+
 		/**
 		 * Emit the picked initiator.
 		 *
@@ -234,6 +246,7 @@ export default {
 		select(result) {
 			this.$emit('select', result)
 		},
+
 		/**
 		 * Icon component per initiator type.
 		 *

@@ -18,9 +18,9 @@
 				>
 				<NcTextField
 					id="complaint-create-onderwerp"
-					:model-value="form.onderwerp"
+					:modelValue="form.onderwerp"
 					:error="!!errors.onderwerp"
-					@update:model-value="
+					@update:modelValue="
 						(v) => {
 							form.onderwerp = v
 							errors.onderwerp = ''
@@ -52,8 +52,8 @@
 					}}</label>
 					<NcTextField
 						id="complaint-create-klager-naam"
-						:model-value="form.klagerNaam"
-						@update:model-value="(v) => (form.klagerNaam = v)" />
+						:modelValue="form.klagerNaam"
+						@update:modelValue="(v) => (form.klagerNaam = v)" />
 				</div>
 				<div class="form-group">
 					<label for="complaint-create-klager-email">{{
@@ -61,8 +61,8 @@
 					}}</label>
 					<NcTextField
 						id="complaint-create-klager-email"
-						:model-value="form.klagerEmail"
-						@update:model-value="(v) => (form.klagerEmail = v)" />
+						:modelValue="form.klagerEmail"
+						@update:modelValue="(v) => (form.klagerEmail = v)" />
 				</div>
 			</div>
 
@@ -90,7 +90,7 @@
 					:options="categories"
 					:aria-label-combobox="t('procest', 'Category')"
 					label="name"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Select category...')" />
 			</div>
 
@@ -98,7 +98,7 @@
 				<NcButton @click="$emit('close')">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
-				<NcButton type="primary" :disabled="saving" @click="create">
+				<NcButton variant="primary" :disabled="saving" @click="create">
 					<template v-if="saving">
 						<NcLoadingIcon :size="20" />
 					</template>
@@ -110,7 +110,7 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
@@ -121,12 +121,14 @@ export default {
 		NcTextField,
 		NcSelect,
 	},
+
 	props: {
 		categories: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['close', 'created'],
 	data() {
 		return {
@@ -140,9 +142,11 @@ export default {
 				prioriteit: 'normaal',
 				categorie: null,
 			},
+
 			errors: {},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/complaint-management/spec.md */
 		channelOptions() {
@@ -155,6 +159,7 @@ export default {
 				{ id: 'socialmedia', label: this.t('procest', 'Social media') },
 			]
 		},
+
 		/** @spec openspec/specs/complaint-management/spec.md */
 		priorityOptions() {
 			return [
@@ -165,6 +170,7 @@ export default {
 			]
 		},
 	},
+
 	methods: {
 		/** @spec openspec/specs/complaint-management/spec.md */
 		validate() {
@@ -180,6 +186,7 @@ export default {
 			}
 			return Object.keys(this.errors).length === 0
 		},
+
 		/** @spec openspec/specs/complaint-management/spec.md */
 		async create() {
 			if (!this.validate()) return
@@ -194,10 +201,12 @@ export default {
 						this.form.prioriteit?.id
 						|| this.form.prioriteit
 						|| 'normaal',
+
 					ontvangstkanaal:
 						this.form.ontvangstkanaal?.id
 						|| this.form.ontvangstkanaal
 						|| null,
+
 					categorie:
 						this.form.categorie?.id || this.form.categorie || null,
 				}

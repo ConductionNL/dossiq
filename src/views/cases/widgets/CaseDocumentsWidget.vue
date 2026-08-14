@@ -31,11 +31,13 @@ export default {
 			type: String,
 			default: null,
 		},
+
 		documents: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	methods: {
 		formatDate,
 		/**

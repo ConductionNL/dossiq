@@ -11,7 +11,7 @@
 				{{ t('procest', 'Back to list') }}
 			</NcButton>
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="saving"
 				@click="$emit('save', localChecklist)">
 				{{
@@ -71,7 +71,7 @@
 		<div class="checklist-editor__items">
 			<div class="checklist-editor__items-header">
 				<h4>{{ t('procest', 'Checklist items') }}</h4>
-				<NcButton type="secondary" @click="addItem">
+				<NcButton variant="secondary" @click="addItem">
 					{{ t('procest', 'Add item') }}
 				</NcButton>
 			</div>
@@ -114,7 +114,7 @@
 						min="0"
 						max="100" />
 				</div>
-				<NcButton type="error" @click="removeItem(index)">
+				<NcButton variant="error" @click="removeItem(index)">
 					{{ t('procest', 'Remove') }}
 				</NcButton>
 			</div>
@@ -143,6 +143,7 @@ export default {
 			type: Object,
 			required: true,
 		},
+
 		saving: {
 			type: Boolean,
 			default: false,

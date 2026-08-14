@@ -57,12 +57,14 @@ export default {
 	components: {
 		NcLoadingIcon,
 	},
+
 	props: {
 		voorstelId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			acties: [],
@@ -70,9 +72,11 @@ export default {
 			error: '',
 		}
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async load() {
@@ -89,6 +93,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param actie
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -101,6 +106,7 @@ export default {
 				action: localized,
 			})
 		},
+
 		/**
 		 * @param actie
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -114,6 +120,7 @@ export default {
 			}
 			return actie.actor || '—'
 		},
+
 		/**
 		 * @param actie
 		 * @spec openspec/specs/parafering-actions/spec.md

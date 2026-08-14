@@ -18,7 +18,7 @@
 		<template v-else-if="error">
 			<div class="overdue-panel__error">
 				<p>{{ error }}</p>
-				<NcButton type="tertiary" @click="$emit('retry')">
+				<NcButton variant="tertiary" @click="$emit('retry')">
 					{{ t('procest', 'Retry') }}
 				</NcButton>
 			</div>
@@ -80,11 +80,13 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		cases: { type: Array, default: () => [] },
 		loading: { type: Boolean, default: false },
 		error: { type: String, default: null },
 	},
+
 	emits: ['click-case', 'view-all', 'retry'],
 	methods: {
 		/**

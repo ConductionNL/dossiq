@@ -5,7 +5,7 @@
 <template>
 	<NcDialog
 		:name="t('procest', 'Initiate Samenwerkverzoek')"
-		:can-close="true"
+		:canClose="true"
 		@close="$emit('close')">
 		<template #default>
 			<div class="samenwerk-dialog">
@@ -30,7 +30,7 @@
 					<NcButton
 						v-for="org in commonOrganizations"
 						:key="org"
-						type="tertiary"
+						variant="tertiary"
 						@click="aangezochtBevoegdGezag = org">
 						{{ org }}
 					</NcButton>
@@ -51,11 +51,11 @@
 		</template>
 
 		<template #actions>
-			<NcButton type="tertiary" @click="$emit('close')">
+			<NcButton variant="tertiary" @click="$emit('close')">
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="!aangezochtBevoegdGezag || submitting"
 				@click="submit">
 				{{ t('procest', 'Initiate') }}
@@ -66,8 +66,8 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
@@ -82,6 +82,7 @@ export default {
 			required: true,
 		},
 	},
+
 	emits: ['close', 'initiated'],
 	data() {
 		return {
@@ -96,6 +97,7 @@ export default {
 			],
 		}
 	},
+
 	methods: {
 		t,
 		async submit() {

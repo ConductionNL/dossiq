@@ -53,6 +53,7 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		warnedAt: {
 			type: String,
 			default: '',

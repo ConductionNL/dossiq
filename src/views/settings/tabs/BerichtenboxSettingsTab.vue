@@ -3,29 +3,29 @@
 		<h2>{{ t('procest', 'Mijn Overheid Berichtenbox') }}</h2>
 
 		<NcCheckboxRadioSwitch
-			:model-value="enabled"
-			@update:model-value="(v) => (enabled = v)">
+			:modelValue="enabled"
+			@update:modelValue="(v) => (enabled = v)">
 			{{ t('procest', 'Enable Berichtenbox integration') }}
 		</NcCheckboxRadioSwitch>
 
 		<template v-if="enabled">
 			<div class="form-group">
 				<NcTextField
-					:model-value="apiUrl"
+					:modelValue="apiUrl"
 					:label="t('procest', 'API Endpoint URL')"
-					@update:model-value="(v) => (apiUrl = v)" />
+					@update:modelValue="(v) => (apiUrl = v)" />
 			</div>
 			<div class="form-group">
 				<NcTextField
-					:model-value="oin"
+					:modelValue="oin"
 					:label="t('procest', 'OIN (Organisatie-identificatienummer)')"
-					@update:model-value="(v) => (oin = v)" />
+					@update:modelValue="(v) => (oin = v)" />
 			</div>
 			<div class="form-group">
 				<NcTextField
-					:model-value="certificatePath"
+					:modelValue="certificatePath"
 					:label="t('procest', 'Certificate path')"
-					@update:model-value="(v) => (certificatePath = v)" />
+					@update:modelValue="(v) => (certificatePath = v)" />
 			</div>
 
 			<NcButton :disabled="testLoading" @click="testConnection">
@@ -45,13 +45,13 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import {
 	NcButton,
-	NcTextField,
 	NcCheckboxRadioSwitch,
 	NcNoteCard,
+	NcTextField,
 } from '@nextcloud/vue'
-import { translate as t } from '@nextcloud/l10n'
 
 export default {
 	name: 'BerichtenboxSettingsTab',
@@ -66,6 +66,7 @@ export default {
 			testResult: null,
 		}
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/retrofit-2026-05-24-berichtenbox-integration/tasks.md */

@@ -63,7 +63,7 @@
 				{{ t('procest', 'Cancel') }}
 			</NcButton>
 			<NcButton
-				type="primary"
+				variant="primary"
 				:disabled="!isValid || saving"
 				@click="createFederatedShare">
 				{{ saving ? t('procest', 'Sharing...') : t('procest', 'Share') }}
@@ -73,11 +73,11 @@
 </template>
 
 <script>
-import { NcDialog, NcButton } from '@nextcloud/vue'
+import { NcButton, NcDialog } from '@nextcloud/vue'
 import {
 	FEDERATION_ALLOWED_FIELDS,
-	shapeFederatedSharePayload,
 	isFederatedShareFormValid,
+	shapeFederatedSharePayload,
 } from '../utils/federatedShareHelpers.js'
 
 export default {
@@ -86,21 +86,25 @@ export default {
 		NcDialog,
 		NcButton,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		/** Documents attached to the case; only these may be selected (server re-validates). */
 		documents: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['update:open', 'created'],
 	data() {
 		return {
@@ -110,6 +114,7 @@ export default {
 				sharedFields: [],
 				sharedDocuments: [],
 			},
+
 			// Field labels shown in the checkbox list; the VALUES mirror
 			// CaseSharingService::FEDERATION_ALLOWED_FIELDS via the shared
 			// helper (PHP is the source of truth; the server rejects any
@@ -121,11 +126,13 @@ export default {
 			})),
 		}
 	},
+
 	computed: {
 		isValid() {
 			return isFederatedShareFormValid(this.form)
 		},
 	},
+
 	methods: {
 		/**
 		 * @param {string} value the field name.
@@ -143,6 +150,7 @@ export default {
 			}
 			return labels[value] || value
 		},
+
 		/**
 		 * Emit a federated-share creation payload. The server independently
 		 * re-validates every field/document against the allow-list — this

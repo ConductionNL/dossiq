@@ -16,10 +16,10 @@
 				}}</label>
 				<NcTextField
 					id="me-num"
-					:model-value="form.mandateNumber"
+					:modelValue="form.mandateNumber"
 					:error="!!errors.mandateNumber"
-					:helper-text="errors.mandateNumber"
-					@update:model-value="(v) => (form.mandateNumber = v)" />
+					:helperText="errors.mandateNumber"
+					@update:modelValue="(v) => (form.mandateNumber = v)" />
 			</div>
 
 			<div class="form-group">
@@ -42,10 +42,10 @@
 				}}</label>
 				<NcSelect
 					id="me-type"
-					:model-value="selectedType"
+					:modelValue="selectedType"
 					:options="typeOptions"
-					:input-label="t('procest', 'Bevoegdheidstype')"
-					@update:model-value="
+					:inputLabel="t('procest', 'Bevoegdheidstype')"
+					@update:modelValue="
 						(v) => (form.bevoegdheidType = v ? v.id : '')
 					" />
 				<span v-if="errors.bevoegdheidType" class="field-error">{{
@@ -59,10 +59,10 @@
 				}}</label>
 				<NcTextField
 					id="me-grond"
-					:model-value="form.legalBasis"
+					:modelValue="form.legalBasis"
 					:error="!!errors.legalBasis"
-					:helper-text="errors.legalBasis"
-					@update:model-value="(v) => (form.legalBasis = v)" />
+					:helperText="errors.legalBasis"
+					@update:modelValue="(v) => (form.legalBasis = v)" />
 			</div>
 
 			<div class="form-group">
@@ -110,10 +110,10 @@
 				<label for="me-rol">{{ t('procest', 'Assigned role') }}</label>
 				<NcSelect
 					id="me-rol"
-					:model-value="selectedRole"
+					:modelValue="selectedRole"
 					:options="roleOptions"
-					:input-label="t('procest', 'Assigned role')"
-					@update:model-value="
+					:inputLabel="t('procest', 'Assigned role')"
+					@update:modelValue="
 						(v) => (form.toegewezenRol = v ? v.id : '')
 					" />
 			</div>
@@ -122,7 +122,7 @@
 				<NcButton @click="$emit('close')">
 					{{ t('procest', 'Cancel') }}
 				</NcButton>
-				<NcButton type="primary" :disabled="saving" @click="save">
+				<NcButton variant="primary" :disabled="saving" @click="save">
 					<template #icon>
 						<NcLoadingIcon v-if="saving" :size="18" />
 						<ContentSave v-else :size="18" />
@@ -135,14 +135,14 @@
 </template>
 
 <script>
-import {
-	NcModal,
-	NcButton,
-	NcTextField,
-	NcSelect,
-	NcLoadingIcon,
-} from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import {
+	NcButton,
+	NcLoadingIcon,
+	NcModal,
+	NcSelect,
+	NcTextField,
+} from '@nextcloud/vue'
 import ContentSave from 'vue-material-design-icons/ContentSave.vue'
 
 export default {
@@ -155,10 +155,12 @@ export default {
 		NcLoadingIcon,
 		ContentSave,
 	},
+
 	props: {
 		mandaat: { type: Object, default: null },
 		roleOptions: { type: Array, default: () => [] },
 	},
+
 	emits: ['save', 'close'],
 	data() {
 		return {
@@ -169,14 +171,17 @@ export default {
 				description: this.mandaat?.description || '',
 				bevoegdheidType:
 					this.mandaat?.bevoegdheidType || 'beslissingsbevoegdheid',
+
 				legalBasis: this.mandaat?.legalBasis || '',
 				inWerkingtreding:
 					this.mandaat?.inWerkingtreding
 					|| new Date().toISOString().slice(0, 10),
+
 				vervaldatum: this.mandaat?.vervaldatum || '',
 				toegewezenRol: this.mandaat?.toegewezenRol || '',
 				voorwaarden: this.mandaat?.voorwaarden || {},
 			},
+
 			voorwaardenJson: JSON.stringify(
 				this.mandaat?.voorwaarden || {},
 				null,
@@ -184,6 +189,7 @@ export default {
 			),
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		title() {
@@ -191,6 +197,7 @@ export default {
 				? t('procest', 'Edit mandaat')
 				: t('procest', 'New mandaat')
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
@@ -209,6 +216,7 @@ export default {
 				{ id: 'doormandaat', label: t('procest', 'Doormandaat') },
 			]
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
@@ -216,6 +224,7 @@ export default {
 				|| this.typeOptions[0]
 			)
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
 			return (
@@ -224,6 +233,7 @@ export default {
 			)
 		},
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
@@ -247,6 +257,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async save() {
 			if (!this.validate()) return

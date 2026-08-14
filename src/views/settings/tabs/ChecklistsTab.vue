@@ -8,7 +8,7 @@
 	<div class="checklists-tab">
 		<div class="checklists-tab__header">
 			<h3>{{ t('procest', 'VTH Inspection Checklists') }}</h3>
-			<NcButton type="primary" @click="openEditor(null)">
+			<NcButton variant="primary" @click="openEditor(null)">
 				{{ t('procest', 'New checklist') }}
 			</NcButton>
 		</div>
@@ -56,7 +56,7 @@
 					<NcButton @click="openEditor(checklist)">
 						{{ t('procest', 'Edit') }}
 					</NcButton>
-					<NcButton type="error" @click="confirmDelete(checklist)">
+					<NcButton variant="error" @click="confirmDelete(checklist)">
 						{{ t('procest', 'Delete') }}
 					</NcButton>
 				</div>
@@ -73,30 +73,30 @@
 		<CnConfirmDialog
 			v-if="showDeleteConfirm"
 			ref="deleteConfirmDialog"
-			:dialog-title="t('procest', 'Delete checklist')"
+			:dialogTitle="t('procest', 'Delete checklist')"
 			:message="
 				t('procest', 'Delete checklist “{name}”?', {
 					name: pendingDeleteChecklist && pendingDeleteChecklist.name,
 				})
 			"
 			variant="error"
-			:confirm-label="t('procest', 'Delete')"
+			:confirmLabel="t('procest', 'Delete')"
 			@confirm="onConfirmDelete"
 			@close="showDeleteConfirm = false" />
 	</div>
 </template>
 
 <script>
-import {
-	NcButton,
-	NcLoadingIcon,
-	NcEmptyContent,
-	NcIconSvgWrapper,
-} from '@nextcloud/vue'
 import { CnConfirmDialog } from '@conduction/nextcloud-vue'
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { showError, showSuccess } from '@nextcloud/dialogs'
+import { generateUrl } from '@nextcloud/router'
+import {
+	NcButton,
+	NcEmptyContent,
+	NcIconSvgWrapper,
+	NcLoadingIcon,
+} from '@nextcloud/vue'
 import InspectionChecklistEditor from '../../../components/InspectionChecklistEditor.vue'
 
 /**

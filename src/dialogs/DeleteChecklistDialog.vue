@@ -12,7 +12,7 @@
 		"
 		@close="$emit('cancel')">
 		<template #actions>
-			<NcButton type="error" @click="$emit('confirm')">
+			<NcButton variant="error" @click="$emit('confirm')">
 				{{ t('procest', 'Delete') }}
 			</NcButton>
 			<NcButton @click="$emit('cancel')">
@@ -23,8 +23,8 @@
 </template>
 
 <script>
-import { NcButton, NcDialog } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcDialog } from '@nextcloud/vue'
 
 export default {
 	name: 'DeleteChecklistDialog',

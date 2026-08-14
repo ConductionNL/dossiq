@@ -16,9 +16,9 @@
 			<NcTextField
 				v-if="!isReadOnly"
 				id="case-properties-title"
-				:model-value="form.title"
+				:modelValue="form.title"
 				:error="!!validationErrors.title"
-				@update:model-value="
+				@update:modelValue="
 					(v) => {
 						form.title = v
 						validationErrors.title = ''
@@ -76,9 +76,9 @@
 				<NcTextField
 					v-if="!isReadOnly"
 					id="case-properties-assignee"
-					:model-value="form.assignee"
+					:modelValue="form.assignee"
 					:placeholder="t('procest', 'Assign handler...')"
-					@update:model-value="(v) => (form.assignee = v)" />
+					@update:modelValue="(v) => (form.assignee = v)" />
 				<span v-else class="property-value">{{
 					caseData.assignee || '---'
 				}}</span>
@@ -101,7 +101,7 @@
 
 		<!-- Save button -->
 		<div v-if="!isReadOnly" class="property-actions">
-			<NcButton type="primary" :disabled="saving" @click="save">
+			<NcButton variant="primary" :disabled="saving" @click="save">
 				<template v-if="saving">
 					<NcLoadingIcon :size="20" />
 				</template>
@@ -113,16 +113,16 @@
 		<ResultSection
 			v-if="caseResult || isAtFinalStatus"
 			:result="caseResult"
-			:result-types="resultTypes"
-			:show-empty="isAtFinalStatus && !caseResult" />
+			:resultTypes="resultTypes"
+			:showEmpty="isAtFinalStatus && !caseResult" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon, NcTextField, NcSelect } from '@nextcloud/vue'
+import { NcButton, NcLoadingIcon, NcSelect, NcTextField } from '@nextcloud/vue'
+import ResultSection from '../components/ResultSection.vue'
 import { formatDate } from '../../../utils/caseHelpers.js'
 import { validateCaseUpdate } from '../../../utils/caseValidation.js'
-import ResultSection from '../components/ResultSection.vue'
 
 export default {
 	name: 'CasePropertiesWidget',
@@ -133,40 +133,49 @@ export default {
 		NcSelect,
 		ResultSection,
 	},
+
 	props: {
 		caseData: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		caseTypeName: {
 			type: String,
 			default: '---',
 		},
+
 		statusName: {
 			type: String,
 			default: '---',
 		},
+
 		statusBadgeClass: {
 			type: String,
 			default: 'status-badge--active',
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
+
 		isAtFinalStatus: {
 			type: Boolean,
 			default: false,
 		},
+
 		caseResult: {
 			type: Object,
 			default: null,
 		},
+
 		resultTypes: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['save'],
 	data() {
 		return {
@@ -176,11 +185,13 @@ export default {
 				assignee: '',
 				priority: 'normal',
 			},
+
 			validationErrors: {},
 			saving: false,
 			priorityOptions: ['low', 'normal', 'high', 'urgent'],
 		}
 	},
+
 	watch: {
 		caseData: {
 			immediate: true,
@@ -200,6 +211,7 @@ export default {
 			},
 		},
 	},
+
 	methods: {
 		formatDate,
 		/** @spec openspec/specs/signalering-widgets/spec.md */

@@ -40,8 +40,8 @@
 
 <script>
 import CheckCircle from 'vue-material-design-icons/CheckCircle.vue'
-import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
 import CircleOutline from 'vue-material-design-icons/CircleOutline.vue'
+import ProgressClock from 'vue-material-design-icons/ProgressClock.vue'
 
 const STEP_TYPE_LABELS = {
 	advies: 'Advice',
@@ -56,27 +56,33 @@ export default {
 		ProgressClock,
 		CircleOutline,
 	},
+
 	props: {
 		steps: {
 			type: Array,
 			required: true,
 		},
+
 		currentStep: {
 			type: Number,
 			default: 0,
 		},
+
 		acties: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	methods: {
 		isCompleted(step) {
 			return step.order < this.currentStep
 		},
+
 		isCurrent(step) {
 			return step.order === this.currentStep
 		},
+
 		/**
 		 * @param step
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -86,6 +92,7 @@ export default {
 			if (this.isCurrent(step)) return 'progress-timeline__step--current'
 			return 'progress-timeline__step--pending'
 		},
+
 		/**
 		 * @param type
 		 * @spec openspec/specs/parafering-actions/spec.md
@@ -93,6 +100,7 @@ export default {
 		formatStepType(type) {
 			return t('procest', STEP_TYPE_LABELS[type] || type || '')
 		},
+
 		/**
 		 * @param step
 		 * @spec openspec/specs/parafering-actions/spec.md

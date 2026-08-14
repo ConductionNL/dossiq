@@ -32,7 +32,7 @@
 					:key="node.id"
 					:node="node"
 					:milestones="milestones"
-					:enableable-discretionary="enableableDiscretionary"
+					:enableableDiscretionary="enableableDiscretionary"
 					:busy="busyItemId"
 					@enable="onEnable"
 					@complete="onComplete"
@@ -47,13 +47,13 @@
 </template>
 
 <script>
-import { NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcLoadingIcon } from '@nextcloud/vue'
 import CmmnPlanItemNode from './CmmnPlanItemNode.vue'
 import {
-	fetchCasePlan,
-	enableDiscretionaryItem,
 	completeTask,
+	enableDiscretionaryItem,
+	fetchCasePlan,
 	terminateTask,
 } from '../../../services/cmmnApi.js'
 import { buildPlanTree } from '../../../utils/cmmnHelpers.js'
@@ -72,19 +72,23 @@ export default {
 			busyItemId: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-001 */
 		caseId() {
 			return this.$route?.params?.id || null
 		},
+
 		/** @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-001 */
 		tree() {
 			return buildPlanTree(this.items)
 		},
 	},
+
 	async created() {
 		await this.loadPlan()
 	},
+
 	methods: {
 		t,
 		/**
@@ -116,6 +120,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/**
 		 * @param {object} plan `{items, enableableDiscretionary, milestones, caseFile}`
 		 * @spec openspec/specs/cmmn-adaptive-case/spec.md#REQ-CMMN-001
@@ -129,6 +134,7 @@ export default {
 				: []
 			this.milestones = plan?.milestones || {}
 		},
+
 		/**
 		 * @param {string} itemId Plan-item id
 		 * @return {Promise<void>}
@@ -139,6 +145,7 @@ export default {
 				enableDiscretionaryItem(this.caseId, itemId),
 			)
 		},
+
 		/**
 		 * @param {string} itemId Plan-item id
 		 * @return {Promise<void>}
@@ -147,6 +154,7 @@ export default {
 		async onComplete(itemId) {
 			await this.runAction(itemId, () => completeTask(this.caseId, itemId))
 		},
+
 		/**
 		 * @param {string} itemId Plan-item id
 		 * @return {Promise<void>}
@@ -155,6 +163,7 @@ export default {
 		async onTerminate(itemId) {
 			await this.runAction(itemId, () => terminateTask(this.caseId, itemId))
 		},
+
 		/**
 		 * Shared action runner: busy-guard, apply the returned plan, surface errors.
 		 *

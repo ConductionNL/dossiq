@@ -49,7 +49,7 @@
 
 				<NcButton
 					v-if="msg.body && msg.body.length > 200"
-					type="tertiary"
+					variant="tertiary"
 					@click="toggleExpand(msg.messageId || msg.id)">
 					{{
 						isExpanded(msg.messageId || msg.id)
@@ -75,21 +75,25 @@ export default {
 	components: {
 		NcButton,
 	},
+
 	props: {
 		messages: {
 			type: Array,
 			default: () => [],
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
+
 	data() {
 		return {
 			expandedMessages: {},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md */
 		sortedMessages() {
@@ -100,6 +104,7 @@ export default {
 			})
 		},
 	},
+
 	methods: {
 		/**
 		 * @param dateStr
@@ -117,6 +122,7 @@ export default {
 				minute: '2-digit',
 			})
 		},
+
 		/**
 		 * @param body
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
@@ -129,9 +135,11 @@ export default {
 			}
 			return body.substring(0, 200) + '...'
 		},
+
 		isExpanded(id) {
 			return this.expandedMessages[id] === true
 		},
+
 		/**
 		 * @param id
 		 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md

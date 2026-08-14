@@ -28,7 +28,9 @@
 					}}
 				</p>
 			</div>
-			<NcButton type="tertiary" @click="$router.push({ name: 'Dashboard' })">
+			<NcButton
+				variant="tertiary"
+				@click="$router.push({ name: 'Dashboard' })">
 				{{ t('procest', 'Dashboard') }}
 			</NcButton>
 		</div>
@@ -37,7 +39,7 @@
 
 		<div v-else-if="error" class="workflow-board__error">
 			<p>{{ error }}</p>
-			<NcButton type="tertiary" @click="fetchData">
+			<NcButton variant="tertiary" @click="fetchData">
 				{{ t('procest', 'Retry') }}
 			</NcButton>
 		</div>
@@ -71,7 +73,7 @@
 					<NcButton @click="openBulkDialog">
 						{{ t('procest', 'Change status…') }}
 					</NcButton>
-					<NcButton type="tertiary" @click="clearSelectionHandler">
+					<NcButton variant="tertiary" @click="clearSelectionHandler">
 						{{ t('procest', 'Cancel') }}
 					</NcButton>
 				</div>
@@ -85,40 +87,40 @@
 				<BoardColumn
 					v-for="col in columns"
 					:key="col.id"
-					:status-type="col"
+					:statusType="col"
 					:cases="casesByStatus[col.id] || []"
-					:case-type-map="caseTypeMap"
-					:all-columns="columns"
+					:caseTypeMap="caseTypeMap"
+					:allColumns="columns"
 					:loading="false"
-					:selected-case-ids="selection.caseIds.map((id) => String(id))"
-					:selection-column-id="selection.columnId"
+					:selectedCaseIds="selection.caseIds.map((id) => String(id))"
+					:selectionColumnId="selection.columnId"
 					@drop="onDrop"
 					@move="onDrop"
-					@click-case="goToCase"
+					@clickCase="goToCase"
 					@dragstart="onDragStart"
-					@toggle-select="onToggleSelect" />
+					@toggleSelect="onToggleSelect" />
 			</div>
 		</template>
 
 		<BulkTransitionDialog
 			v-if="showBulkDialog"
-			:case-ids="selection.caseIds"
+			:caseIds="selection.caseIds"
 			@close="onBulkDialogClose"
 			@completed="onBulkDialogCompleted" />
 	</div>
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { showError } from '@nextcloud/dialogs'
-import BoardColumn from './BoardColumn.vue'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import BulkTransitionDialog from '../../dialogs/BulkTransitionDialog.vue'
+import BoardColumn from './BoardColumn.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { initializeStores } from '../../store/store.js'
 import {
+	clearSelection,
 	emptySelection,
 	toggleSelection,
-	clearSelection,
 } from '../../utils/bulkTransitionHelpers.js'
 
 export default {
@@ -129,6 +131,7 @@ export default {
 		BoardColumn,
 		BulkTransitionDialog,
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -175,11 +178,13 @@ export default {
 			liveRefreshing: false,
 		}
 	},
+
 	computed: {
 		objectStore() {
 			return useObjectStore()
 		},
 	},
+
 	watch: {
 		/**
 		 * Live event hint received on the store (or-collection event →
@@ -188,10 +193,11 @@ export default {
 		 *
 		 * @spec openspec/specs/realtime-updates-ui/spec.md
 		 */
-		'objectStore.liveLastEventAt'() {
+		'objectStore.liveLastEventAt': function () {
 			this.onLiveEvent()
 		},
 	},
+
 	// @spec exclude Boot-order guard (register OR object types before fetch); no spec scenario.
 	async mounted() {
 		// Register the OR object types before fetching — this page may mount
@@ -201,15 +207,17 @@ export default {
 		await this.fetchData()
 		this.syncLiveSubscription()
 	},
+
 	/**
 	 * Release the live collection subscription on unmount.
 	 *
 	 * @spec openspec/specs/realtime-updates-ui/spec.md
 	 */
-	beforeDestroy() {
+	beforeUnmount() {
 		clearTimeout(this.liveRefetchTimer)
 		this.releaseLiveSubscription()
 	},
+
 	methods: {
 		/**
 		 * Subscribe to live updates for the `case` collection scope
@@ -255,6 +263,7 @@ export default {
 				}
 			}
 		},
+
 		/**
 		 * Release the live collection subscription, if any, and invalidate
 		 * any in-flight subscribe (its resolution unsubscribes itself via
@@ -273,6 +282,7 @@ export default {
 			}
 			this.liveHandle = null
 		},
+
 		/**
 		 * Debounced refetch on a live event hint. The board keeps its own
 		 * column/grouping model, so re-run the existing fetchData() path
@@ -309,6 +319,7 @@ export default {
 				}
 			}, 500)
 		},
+
 		/**
 		 * Load status types, case types and open cases in parallel, then build
 		 * the column model and the status → cases grouping.
@@ -395,6 +406,7 @@ export default {
 				}
 			}
 		},
+
 		/**
 		 * Track the in-flight card id.
 		 *
@@ -404,6 +416,7 @@ export default {
 		onDragStart(caseId) {
 			this.draggedCaseId = caseId
 		},
+
 		/**
 		 * Move a case card to a new status column. Optimistically moves the card
 		 * in local state, persists via saveObject('case', …) (RBAC-enforced),
@@ -482,6 +495,7 @@ export default {
 				)
 			}
 		},
+
 		/**
 		 * Navigate to a case detail view.
 		 *
@@ -493,6 +507,7 @@ export default {
 				.push({ name: 'CaseDetail', params: { id: caseId } })
 				.catch(() => {})
 		},
+
 		/**
 		 * Toggle a case's bulk-selection membership, scoped to its column.
 		 * Selecting in a different column than the current selection resets
@@ -505,6 +520,7 @@ export default {
 		onToggleSelect(caseId, columnId) {
 			this.selection = toggleSelection(this.selection, caseId, columnId)
 		},
+
 		/**
 		 * Clear the bulk selection.
 		 *
@@ -513,6 +529,7 @@ export default {
 		clearSelectionHandler() {
 			this.selection = clearSelection()
 		},
+
 		/**
 		 * Open the bulk-transition dialog for the current selection.
 		 *
@@ -521,6 +538,7 @@ export default {
 		openBulkDialog() {
 			this.showBulkDialog = true
 		},
+
 		/**
 		 * Close the bulk-transition dialog without clearing the selection.
 		 *
@@ -529,6 +547,7 @@ export default {
 		onBulkDialogClose() {
 			this.showBulkDialog = false
 		},
+
 		/**
 		 * Handle a completed bulk transition: close the dialog, clear the
 		 * selection, and refresh the board so moved cases land in their new

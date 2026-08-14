@@ -3,7 +3,7 @@
 		<div class="transition-config-panel__header">
 			<h4>{{ t('procest', 'Transition Configuration') }}</h4>
 			<NcButton
-				type="tertiary"
+				variant="tertiary"
 				:aria-label="t('procest', 'Close transition configuration')"
 				@click="$emit('close')">
 				<template #icon>
@@ -115,7 +115,7 @@
 					</select>
 
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:aria-label="t('procest', 'Remove guard')"
 						@click="removeGuard(index)">
 						<template #icon>
@@ -123,7 +123,7 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton type="secondary" @click="addGuard">
+				<NcButton variant="secondary" @click="addGuard">
 					{{ t('procest', 'Add guard') }}
 				</NcButton>
 			</div>
@@ -257,7 +257,7 @@
 					</template>
 
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:aria-label="t('procest', 'Remove action')"
 						@click="removeAction(index)">
 						<template #icon>
@@ -265,14 +265,14 @@
 						</template>
 					</NcButton>
 				</div>
-				<NcButton type="secondary" @click="addAction">
+				<NcButton variant="secondary" @click="addAction">
 					{{ t('procest', 'Add action') }}
 				</NcButton>
 			</div>
 
 			<!-- Delete transition -->
 			<div class="transition-config-panel__danger">
-				<NcButton type="error" @click="onDelete">
+				<NcButton variant="error" @click="onDelete">
 					{{ t('procest', 'Delete transition') }}
 				</NcButton>
 			</div>
@@ -290,20 +290,24 @@ export default {
 		NcButton,
 		CloseIcon,
 	},
+
 	props: {
 		transition: {
 			type: Object,
 			required: true,
 		},
+
 		roleTypes: {
 			type: Array,
 			default: () => [],
 		},
+
 		documentTypes: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['update', 'delete', 'close'],
 	data() {
 		return {
@@ -313,6 +317,7 @@ export default {
 			localActions: this.parseActions(this.transition.automaticActions),
 		}
 	},
+
 	watch: {
 		transition: {
 			/**
@@ -325,9 +330,11 @@ export default {
 				this.localGuards = this.parseGuards(newVal.guards)
 				this.localActions = this.parseActions(newVal.automaticActions)
 			},
+
 			deep: true,
 		},
 	},
+
 	methods: {
 		/**
 		 * @param guards

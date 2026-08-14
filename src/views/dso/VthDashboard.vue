@@ -20,18 +20,18 @@
 				v-model="filters.status"
 				:options="statusOptions"
 				:placeholder="t('procest', 'Filter by status')"
-				:input-label="t('procest', 'Status')"
+				:inputLabel="t('procest', 'Status')"
 				label="label"
-				track-by="value"
+				trackBy="value"
 				:multiple="true"
 				class="vth-filter" />
 			<NcSelect
 				v-model="filters.procedureType"
 				:options="procedureTypeOptions"
 				:placeholder="t('procest', 'Procedure type')"
-				:input-label="t('procest', 'Procedure type')"
+				:inputLabel="t('procest', 'Procedure type')"
 				label="label"
-				track-by="value"
+				trackBy="value"
 				class="vth-filter" />
 			<NcTextField
 				v-model="filters.gemeenteCode"
@@ -46,7 +46,7 @@
 			<NcButton @click="loadCases">
 				{{ t('procest', 'Apply filters') }}
 			</NcButton>
-			<NcButton type="secondary" @click="resetFilters">
+			<NcButton variant="secondary" @click="resetFilters">
 				{{ t('procest', 'Reset') }}
 			</NcButton>
 		</div>
@@ -106,7 +106,7 @@
 							</span>
 						</td>
 						<td>
-							<NcButton type="tertiary" @click="openDetail(zaak)">
+							<NcButton variant="tertiary" @click="openDetail(zaak)">
 								{{ t('procest', 'Open') }}
 							</NcButton>
 						</td>
@@ -126,12 +126,12 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { translate as t } from '@nextcloud/l10n'
+import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
-import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import DsoCaseDetail from '../../dialogs/DsoCaseDetail.vue'
 
 export default {
@@ -143,6 +143,7 @@ export default {
 		NcLoadingIcon,
 		DsoCaseDetail,
 	},
+
 	data() {
 		return {
 			cases: [],
@@ -156,6 +157,7 @@ export default {
 				activiteitgroep: '',
 				regelkwalificatie: '',
 			},
+
 			statusOptions: [
 				{ label: t('procest', 'Submitted'), value: 'ingediend' },
 				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
@@ -163,6 +165,7 @@ export default {
 				{ label: t('procest', 'Refused'), value: 'geweigerd' },
 				{ label: t('procest', 'Withdrawn'), value: 'ingetrokken' },
 			],
+
 			procedureTypeOptions: [
 				{
 					label: t('procest', 'Regular procedure (8 weeks)'),
@@ -175,9 +178,11 @@ export default {
 			],
 		}
 	},
+
 	mounted() {
 		this.loadCases()
 	},
+
 	methods: {
 		t,
 		/**
@@ -239,6 +244,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		resetFilters() {
 			this.filters = {
 				status: [],
@@ -249,9 +255,11 @@ export default {
 			}
 			this.loadCases()
 		},
+
 		openDetail(zaak) {
 			this.selectedCase = zaak
 		},
+
 		onCaseUpdated(updatedZaak) {
 			const idx = this.cases.findIndex((z) => z.id === updatedZaak.id)
 			if (idx !== -1) {
@@ -259,6 +267,7 @@ export default {
 			}
 			this.selectedCase = updatedZaak
 		},
+
 		getStatusLabel(zaak) {
 			const statusMap = {
 				ingediend: t('procest', 'Submitted'),
@@ -269,9 +278,11 @@ export default {
 			}
 			return statusMap[zaak.dsoStatus] || zaak.dsoStatus || '—'
 		},
+
 		getStatusSlug(zaak) {
 			return (zaak.dsoStatus || 'unknown').replace(/_/g, '-')
 		},
+
 		getDeadlineClass(zaak) {
 			if (!zaak.deadlineDatum) return 'vth-deadline vth-deadline--none'
 			const today = new Date()
@@ -282,6 +293,7 @@ export default {
 			if (diffDays <= 20) return 'vth-deadline vth-deadline--warning'
 			return 'vth-deadline vth-deadline--ok'
 		},
+
 		formatDeadline(datum) {
 			if (!datum) return '—'
 			return new Date(datum).toLocaleDateString('nl-NL')

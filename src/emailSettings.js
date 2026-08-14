@@ -1,8 +1,8 @@
-import { createApp, h } from 'vue'
-import pinia from './pinia.js'
-import EmailSettings from './views/settings/EmailSettings.vue'
-import { CnVersionInfoCard, CnSettingsSection } from '@conduction/nextcloud-vue'
+import { CnSettingsSection, CnVersionInfoCard } from '@conduction/nextcloud-vue'
 import { loadState } from '@nextcloud/initial-state'
+import { createApp, h } from 'vue'
+import EmailSettings from './views/settings/EmailSettings.vue'
+import pinia from './pinia.js'
 
 const appVersion = loadState('procest', 'version', 'Unknown')
 

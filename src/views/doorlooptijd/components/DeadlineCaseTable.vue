@@ -89,6 +89,7 @@ export default {
 			default: () => [],
 		},
 	},
+
 	emits: ['select-case'],
 }
 </script>

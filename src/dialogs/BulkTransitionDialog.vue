@@ -32,10 +32,10 @@
 						v-model="selectedTransition"
 						:options="transitionOptions"
 						:placeholder="t('procest', 'Select a status transition')"
-						:input-label="t('procest', 'New status')"
+						:inputLabel="t('procest', 'New status')"
 						:disabled="executed"
 						label="label"
-						track-by="id" />
+						trackBy="id" />
 
 					<NcTextArea
 						v-model="comment"
@@ -114,7 +114,7 @@
 							{{ t('procest', 'Execute') }}
 						</NcButton>
 						<NcButton
-							type="secondary"
+							variant="secondary"
 							:disabled="executing"
 							@click="onClose">
 							{{
@@ -132,16 +132,16 @@
 
 <script>
 import axios from '@nextcloud/axios'
-import { generateUrl } from '@nextcloud/router'
 import { translate as t } from '@nextcloud/l10n'
-import NcDialog from '@nextcloud/vue/components/NcDialog'
+import { generateUrl } from '@nextcloud/router'
 import NcButton from '@nextcloud/vue/components/NcButton'
+import NcDialog from '@nextcloud/vue/components/NcDialog'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcSelect from '@nextcloud/vue/components/NcSelect'
 import NcTextArea from '@nextcloud/vue/components/NcTextArea'
-import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import {
-	buildPreviewPayload,
 	buildExecutePayload,
+	buildPreviewPayload,
 	summarizeResults,
 } from '../utils/bulkTransitionHelpers.js'
 
@@ -154,6 +154,7 @@ export default {
 		NcTextArea,
 		NcLoadingIcon,
 	},
+
 	props: {
 		/** The selected case ids the transition applies to. */
 		caseIds: {
@@ -161,6 +162,7 @@ export default {
 			required: true,
 		},
 	},
+
 	emits: ['close', 'completed'],
 	data() {
 		return {
@@ -177,6 +179,7 @@ export default {
 			error: null,
 		}
 	},
+
 	computed: {
 		/**
 		 * NcSelect options built from the available transitions of the first
@@ -191,6 +194,7 @@ export default {
 				label: tr.label || tr.id,
 			}))
 		},
+
 		/**
 		 * Execute is enabled once a transition is selected, preview has
 		 * completed, and at least one case is ready.
@@ -203,6 +207,7 @@ export default {
 			return (this.previewSummary.counts.ready || 0) > 0
 		},
 	},
+
 	watch: {
 		selectedTransition(newVal) {
 			this.previewSummary = null
@@ -211,9 +216,11 @@ export default {
 			}
 		},
 	},
+
 	async mounted() {
 		await this.loadTransitions()
 	},
+
 	methods: {
 		t,
 		/**
@@ -247,6 +254,7 @@ export default {
 				this.loadingTransitions = false
 			}
 		},
+
 		/**
 		 * Run a read-only bulk preview for the currently selected transition.
 		 *
@@ -271,6 +279,7 @@ export default {
 				this.previewLoading = false
 			}
 		},
+
 		/**
 		 * Execute the bulk transition and render per-case results.
 		 *
@@ -298,6 +307,7 @@ export default {
 				this.executing = false
 			}
 		},
+
 		/**
 		 * Close the dialog — emits `completed` when an execute has run (so the
 		 * board refreshes and clears the selection), otherwise `close`.
@@ -307,6 +317,7 @@ export default {
 		onClose() {
 			this.$emit(this.executed ? 'completed' : 'close')
 		},
+
 		/**
 		 * Render a human-readable reason string for a blocked/failed/error entry.
 		 *

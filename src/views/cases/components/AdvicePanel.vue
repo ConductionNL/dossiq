@@ -168,7 +168,7 @@
 
 				<div class="advice-panel__dialog-actions">
 					<NcButton
-						type="primary"
+						variant="primary"
 						:disabled="!canSubmit || submitting"
 						@click="submitRequest">
 						{{
@@ -187,8 +187,8 @@
 </template>
 
 <script>
-import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcLoadingIcon } from '@nextcloud/vue'
 import { useAdviceStore } from '../../../store/modules/advice.js'
 
 export default {
@@ -204,6 +204,7 @@ export default {
 			type: String,
 			required: true,
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
@@ -229,14 +230,17 @@ export default {
 		adviceStore() {
 			return useAdviceStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		requests() {
 			return this.adviceStore.requests
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		loading() {
 			return this.adviceStore.loading
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		canSubmit() {
 			return this.newRequest.adviseur && this.newRequest.deadline

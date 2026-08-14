@@ -51,8 +51,8 @@
 						:key="ct.id"
 						class="sub-case-type-row">
 						<NcCheckboxRadioSwitch
-							:model-value="selected.includes(ct.id)"
-							@update:model-value="toggleSelection(ct.id, $event)">
+							:modelValue="selected.includes(ct.id)"
+							@update:modelValue="toggleSelection(ct.id, $event)">
 							<span class="sub-case-type-row__title">{{
 								ct.title || ct.identifier || ct.id
 							}}</span>
@@ -67,7 +67,7 @@
 
 				<div class="sub-case-types-tab__actions">
 					<NcButton
-						type="primary"
+						variant="primary"
 						:disabled="saving || !dirty"
 						@click="save">
 						{{
@@ -95,8 +95,8 @@
 </template>
 
 <script>
-import { NcButton, NcCheckboxRadioSwitch, NcLoadingIcon } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcCheckboxRadioSwitch, NcLoadingIcon } from '@nextcloud/vue'
 import { useObjectStore } from '../../../store/modules/object.js'
 
 export default {
@@ -106,12 +106,14 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcLoadingIcon,
 	},
+
 	props: {
 		caseTypeId: {
 			type: String,
 			default: null,
 		},
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -123,18 +125,22 @@ export default {
 			caseTypes: [],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		isCreate() {
 			return !this.caseTypeId
 		},
+
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 		availableCaseTypes() {
 			return (this.caseTypes || []).filter((ct) => ct.id !== this.caseTypeId)
 		},
+
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 		dirty() {
 			const current = [...this.selected].sort().join(',')
@@ -142,6 +148,7 @@ export default {
 			return current !== initial
 		},
 	},
+
 	/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 	async mounted() {
 		if (!this.isCreate) {
@@ -150,6 +157,7 @@ export default {
 			this.loading = false
 		}
 	},
+
 	methods: {
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 		async loadData() {
@@ -171,6 +179,7 @@ export default {
 			}
 			this.loading = false
 		},
+
 		/**
 		 * @param ctId The case type id being toggled
 		 * @param checked The new checked state
@@ -186,6 +195,7 @@ export default {
 				this.selected = this.selected.filter((id) => id !== ctId)
 			}
 		},
+
 		/** @spec openspec/changes/deelzaak-support/tasks.md#T12 */
 		async save() {
 			this.saving = true
@@ -204,6 +214,7 @@ export default {
 			}
 			this.saving = false
 		},
+
 		t,
 	},
 }

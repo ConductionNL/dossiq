@@ -9,7 +9,7 @@
 			:selectable="true"
 			@add="$emit('create')"
 			@refresh="fetchCaseTypes"
-			@row-click="selectCaseType">
+			@rowClick="selectCaseType">
 			<template #column-title="{ row }">
 				<span class="ct-title">
 					<StarIcon
@@ -46,7 +46,7 @@
 				<div class="ct-actions" @click.stop>
 					<NcButton
 						v-if="!row.isDraft"
-						type="tertiary"
+						variant="tertiary"
 						:title="t('procest', 'Set as default')"
 						@click="setDefault(row)">
 						<template #icon>
@@ -54,7 +54,7 @@
 						</template>
 					</NcButton>
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:disabled="duplicating === row.id"
 						:title="t('procest', 'Duplicate')"
 						@click="duplicate(row)">
@@ -66,7 +66,7 @@
 						</template>
 					</NcButton>
 					<NcButton
-						type="tertiary"
+						variant="tertiary"
 						:title="t('procest', 'Delete')"
 						@click="confirmDelete(row)">
 						<template #icon>
@@ -84,13 +84,13 @@
 </template>
 
 <script>
-import StarIcon from 'vue-material-design-icons/Star.vue'
-import DeleteIcon from 'vue-material-design-icons/Delete.vue'
-import ContentDuplicateIcon from 'vue-material-design-icons/ContentDuplicate.vue'
-import { NcLoadingIcon } from '@nextcloud/vue'
-import { generateUrl } from '@nextcloud/router'
-import axios from '@nextcloud/axios'
 import { CnIndexPage } from '@conduction/nextcloud-vue'
+import axios from '@nextcloud/axios'
+import { generateUrl } from '@nextcloud/router'
+import { NcLoadingIcon } from '@nextcloud/vue'
+import ContentDuplicateIcon from 'vue-material-design-icons/ContentDuplicate.vue'
+import DeleteIcon from 'vue-material-design-icons/Delete.vue'
+import StarIcon from 'vue-material-design-icons/Star.vue'
 import { useObjectStore } from '../../store/modules/object.js'
 import { useSettingsStore } from '../../store/modules/settings.js'
 import { formatDuration } from '../../utils/durationHelpers.js'
@@ -104,6 +104,7 @@ export default {
 		NcLoadingIcon,
 		CnIndexPage,
 	},
+
 	data() {
 		return {
 			statusTypeCounts: {},
@@ -112,33 +113,40 @@ export default {
 			duplicating: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		settingsStore() {
 			return useSettingsStore()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		loading() {
 			return this.objectStore.loading.caseType || false
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		caseTypes() {
 			return this.objectStore.collections.caseType || []
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		defaultCaseTypeId() {
 			return this.settingsStore.config?.default_case_type || ''
 		},
 	},
+
 	/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 	async mounted() {
 		this.schema = await this.objectStore.fetchSchema('caseType')
 		await this.fetchCaseTypes()
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-case-types/tasks.md */
 		async fetchCaseTypes() {

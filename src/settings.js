@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
-import pinia from './pinia.js'
 import AdminRoot from './views/settings/AdminRoot.vue'
+import pinia from './pinia.js'
 
 const app = createApp(AdminRoot)
 app.use(pinia)

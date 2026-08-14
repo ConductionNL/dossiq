@@ -15,13 +15,13 @@
 		<div class="substitution-admin__header">
 			<h2>{{ t('procest', 'Substitutions & reassignment') }}</h2>
 			<div class="substitution-admin__actions">
-				<NcButton type="secondary" @click="showReassign = true">
+				<NcButton variant="secondary" @click="showReassign = true">
 					<template #icon>
 						<AccountArrowRight :size="20" />
 					</template>
 					{{ t('procest', 'Bulk reassign') }}
 				</NcButton>
-				<NcButton type="primary" @click="showForm = true">
+				<NcButton variant="primary" @click="showForm = true">
 					<template #icon>
 						<AccountSwitch :size="20" />
 					</template>
@@ -68,12 +68,12 @@
 						}}</span>
 					</td>
 					<td class="substitution-admin__row-actions">
-						<NcButton type="tertiary" @click="openActions(sub)">
+						<NcButton variant="tertiary" @click="openActions(sub)">
 							{{ t('procest', 'Actions') }}
 						</NcButton>
 						<NcButton
 							v-if="sub.status === 'active'"
-							type="tertiary"
+							variant="tertiary"
 							@click="revoke(sub.id)">
 							{{ t('procest', 'Revoke') }}
 						</NcButton>
@@ -105,7 +105,7 @@
 
 		<SubstitutionFormModal
 			v-if="showForm"
-			:allow-coordinator="true"
+			:allowCoordinator="true"
 			@created="onCreated"
 			@close="showForm = false" />
 
@@ -118,14 +118,14 @@
 
 <script>
 import { NcButton, NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
-import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import AccountArrowRight from 'vue-material-design-icons/AccountArrowRight.vue'
-import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
+import AccountSwitch from 'vue-material-design-icons/AccountSwitch.vue'
 import BulkReassignModal from '../../modals/BulkReassignModal.vue'
+import SubstitutionFormModal from '../../modals/SubstitutionFormModal.vue'
 import {
+	fetchSubstitutionActions,
 	listSubstitutions,
 	revokeSubstitution,
-	fetchSubstitutionActions,
 } from '../../services/substitutionApi.js'
 
 export default {
@@ -139,6 +139,7 @@ export default {
 		SubstitutionFormModal,
 		BulkReassignModal,
 	},
+
 	data() {
 		return {
 			loading: true,
@@ -150,6 +151,7 @@ export default {
 			actions: [],
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		filtered() {
@@ -164,9 +166,11 @@ export default {
 			)
 		},
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async load() {
@@ -180,17 +184,23 @@ export default {
 				this.loading = false
 			}
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async onCreated() {
 			this.showForm = false
 			await this.load()
 		},
+
 		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
 		async onReassigned() {
 			this.showReassign = false
 			await this.load()
 		},
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+
+		/**
+		 * @param id
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
 		async revoke(id) {
 			try {
 				await revokeSubstitution(id)
@@ -199,7 +209,11 @@ export default {
 				console.error('[SubstitutionAdmin] revoke failed', err)
 			}
 		},
-		/** @spec openspec/specs/handler-vervanging-waarneming/spec.md */
+
+		/**
+		 * @param sub
+		 * @spec openspec/specs/handler-vervanging-waarneming/spec.md
+		 */
 		async openActions(sub) {
 			this.selectedSub = sub
 			this.actions = []
