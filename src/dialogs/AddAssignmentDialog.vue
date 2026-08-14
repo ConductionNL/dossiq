@@ -18,10 +18,10 @@
 				}}</label>
 				<NcTextField
 					id="aa-person"
-					:model-value="form.persoonId"
+					:modelValue="form.persoonId"
 					:error="!!errors.persoonId"
-					:helper-text="errors.persoonId"
-					@update:model-value="(v) => (form.persoonId = v)" />
+					:helperText="errors.persoonId"
+					@update:modelValue="(v) => (form.persoonId = v)" />
 			</div>
 
 			<div class="form-group">
@@ -30,10 +30,10 @@
 				}}</label>
 				<NcSelect
 					id="aa-role"
-					:model-value="selectedRole"
+					:modelValue="selectedRole"
 					:options="roleOptions"
-					:input-label="t('procest', 'Role')"
-					@update:model-value="(v) => (form.roleId = v ? v.id : '')" />
+					:inputLabel="t('procest', 'Role')"
+					@update:modelValue="(v) => (form.roleId = v ? v.id : '')" />
 				<span v-if="errors.roleId" class="field-error">{{
 					errors.roleId
 				}}</span>
@@ -43,10 +43,10 @@
 				<label for="aa-type">{{ t('procest', 'Type') }}</label>
 				<NcSelect
 					id="aa-type"
-					:model-value="selectedType"
+					:modelValue="selectedType"
 					:options="typeOptions"
-					:input-label="t('procest', 'Type')"
-					@update:model-value="
+					:inputLabel="t('procest', 'Type')"
+					@update:modelValue="
 						(v) => (form.toewijzingType = v ? v.id : '')
 					" />
 			</div>
@@ -86,8 +86,8 @@
 </template>
 
 <script>
-import { NcButton, NcDialog, NcSelect, NcTextField } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcDialog, NcSelect, NcTextField } from '@nextcloud/vue'
 
 export default {
 	name: 'AddAssignmentDialog',
@@ -95,6 +95,7 @@ export default {
 	props: {
 		roleOptions: { type: Array, default: () => [] },
 	},
+
 	emits: ['save', 'close'],
 	data() {
 		return {
@@ -108,6 +109,7 @@ export default {
 			},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
@@ -117,10 +119,12 @@ export default {
 				{ id: 'plaatsvervanger', label: t('procest', 'Deputy') },
 			]
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
 			return this.roleOptions.find((o) => o.id === this.form.roleId) || null
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
@@ -129,6 +133,7 @@ export default {
 			)
 		},
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
@@ -140,6 +145,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		save() {
 			if (!this.validate()) return

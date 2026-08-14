@@ -5,7 +5,7 @@
 		v-if="open"
 		:name="t('procest', 'Beschikking opstellen')"
 		size="large"
-		:can-close="!submitting"
+		:canClose="!submitting"
 		@closing="onClose">
 		<div class="beschikking-composer">
 			<div v-if="!composed" class="beschikking-composer__form">
@@ -13,22 +13,22 @@
 					<NcSelect
 						v-model="templateId"
 						:options="templateOptions"
-						:input-label="t('procest', 'Sjabloon')"
+						:inputLabel="t('procest', 'Sjabloon')"
 						label="label"
 						:reduce="(opt) => opt.value"
 						:placeholder="t('procest', 'Select a template')" />
 				</div>
 				<div class="beschikking-composer__field">
 					<NcTextField
-						:model-value="geadresseerdeNaam"
+						:modelValue="geadresseerdeNaam"
 						:label="t('procest', 'Geadresseerde')"
-						@update:model-value="(v) => (geadresseerdeNaam = v)" />
+						@update:modelValue="(v) => (geadresseerdeNaam = v)" />
 				</div>
 				<div class="beschikking-composer__field">
 					<NcTextArea
-						:model-value="rationale"
+						:modelValue="rationale"
 						:label="t('procest', 'Motivering')"
-						@update:model-value="(v) => (motivering = v)" />
+						@update:modelValue="(v) => (motivering = v)" />
 				</div>
 				<NcNoteCard v-if="error" type="error">
 					{{ error }}
@@ -105,20 +105,24 @@ export default {
 		NcTextArea,
 		NcTextField,
 	},
+
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
+
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		templateOptions: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['close', 'composed'],
 	data() {
 		return {
@@ -130,6 +134,7 @@ export default {
 			error: '',
 		}
 	},
+
 	methods: {
 		async onCompose() {
 			this.submitting = true
@@ -154,10 +159,12 @@ export default {
 				this.submitting = false
 			}
 		},
+
 		onDone() {
 			this.$emit('composed', this.composed)
 			this.onClose()
 		},
+
 		onClose() {
 			this.$emit('close')
 		},

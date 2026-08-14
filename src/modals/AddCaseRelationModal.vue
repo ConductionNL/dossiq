@@ -34,9 +34,9 @@
 					:options="caseOptions"
 					:loading="searching"
 					:aria-label-combobox="t('procest', 'Related case')"
-					:input-label="t('procest', 'Related case')"
+					:inputLabel="t('procest', 'Related case')"
 					label="label"
-					track-by="id"
+					trackBy="id"
 					:placeholder="t('procest', 'Search for a case…')"
 					@search="onSearch" />
 				<p v-if="errors.target" class="form-error" role="alert">
@@ -52,9 +52,9 @@
 					v-model="selectedType"
 					:options="typeOptions"
 					:aria-label-combobox="t('procest', 'Relation type')"
-					:input-label="t('procest', 'Relation type')"
+					:inputLabel="t('procest', 'Relation type')"
 					label="label"
-					track-by="value"
+					trackBy="value"
 					:placeholder="t('procest', 'Select a relation type…')" />
 				<p v-if="errors.type" class="form-error" role="alert">
 					{{ errors.type }}
@@ -68,9 +68,9 @@
 				}}</label>
 				<NcTextField
 					id="acr-toelichting"
-					:model-value="notes"
+					:modelValue="notes"
 					:placeholder="t('procest', 'Optional clarification…')"
-					@update:model-value="
+					@update:modelValue="
 						(v) => {
 							toelichting = v
 						}
@@ -104,13 +104,13 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
-import { useObjectStore } from '../store/modules/object.js'
 import {
+	AARD_RELATIE_TYPES,
 	addRelation,
 	relationErrorMessage,
 	relationTypeLabel,
-	AARD_RELATIE_TYPES,
 } from '../services/caseRelationApi.js'
+import { useObjectStore } from '../store/modules/object.js'
 
 export default {
 	name: 'AddCaseRelationModal',
@@ -121,6 +121,7 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
+
 	props: {
 		/** The origin case UUID. */
 		caseId: {
@@ -128,6 +129,7 @@ export default {
 			required: true,
 		},
 	},
+
 	emits: ['created', 'close'],
 	data() {
 		return {
@@ -142,11 +144,13 @@ export default {
 			searchDebounce: null,
 		}
 	},
+
 	computed: {
 		/** @spec openspec/specs/related-case-linking/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
+
 		/** @spec openspec/specs/related-case-linking/spec.md */
 		typeOptions() {
 			return AARD_RELATIE_TYPES.map((value) => ({
@@ -155,6 +159,7 @@ export default {
 			}))
 		},
 	},
+
 	methods: {
 		/**
 		 * Debounced case search via the object store, excluding the origin case.
@@ -170,6 +175,7 @@ export default {
 			}
 			this.searchDebounce = setTimeout(() => this.runSearch(term), 300)
 		},
+
 		/**
 		 * Execute the case search and map results to picker options.
 		 *
@@ -201,6 +207,7 @@ export default {
 				this.searching = false
 			}
 		},
+
 		/**
 		 * Validate and create the relation; surface guard responses inline.
 		 *
@@ -240,6 +247,7 @@ export default {
 				this.saving = false
 			}
 		},
+
 		/**
 		 * Handle NcDialog open-state changes (close on false).
 		 *

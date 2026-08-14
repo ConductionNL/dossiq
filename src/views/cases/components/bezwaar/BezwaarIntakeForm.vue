@@ -12,11 +12,11 @@
 			>
 			<NcTextField
 				id="bezwaar-intake-contested-decision"
-				:model-value="form.contestedDecision"
+				:modelValue="form.contestedDecision"
 				:disabled="isReadOnly"
 				:placeholder="t('procest', 'UUID of the contested decision')"
 				:error="!!errors.contestedDecision"
-				@update:model-value="
+				@update:modelValue="
 					(v) => {
 						form.contestedDecision = v
 						errors.contestedDecision = ''
@@ -67,11 +67,11 @@
 				>
 				<NcTextField
 					id="bezwaar-intake-received-date"
-					:model-value="form.receivedDate"
+					:modelValue="form.receivedDate"
 					:disabled="isReadOnly"
 					type="date"
 					:error="!!errors.receivedDate"
-					@update:model-value="
+					@update:modelValue="
 						(v) => {
 							form.receivedDate = v
 							errors.receivedDate = ''
@@ -132,9 +132,9 @@
 			<!-- Voorlopige Voorziening -->
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
-					:model-value="form.proProvision"
+					:modelValue="form.proProvision"
 					:disabled="isReadOnly"
-					@update:model-value="(v) => (form.proProvision = v)">
+					@update:modelValue="(v) => (form.proProvision = v)">
 					{{
 						t(
 							'procest',
@@ -192,10 +192,10 @@
 <script>
 import {
 	NcButton,
-	NcTextField,
-	NcSelect,
 	NcCheckboxRadioSwitch,
 	NcNoteCard,
+	NcSelect,
+	NcTextField,
 } from '@nextcloud/vue'
 import { useBezwaarStore } from '../../../../store/modules/bezwaar.js'
 
@@ -208,24 +208,29 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcNoteCard,
 	},
+
 	props: {
 		caseId: {
 			type: String,
 			required: true,
 		},
+
 		caseData: {
 			type: Object,
 			default: () => ({}),
 		},
+
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
+
 		besluitDate: {
 			type: String,
 			default: '',
 		},
 	},
+
 	emits: ['saved', 'deadlines-calculated'],
 	data() {
 		return {
@@ -239,6 +244,7 @@ export default {
 				timelinessAssessment: '',
 				proProvision: false,
 			},
+
 			errors: {},
 			saving: false,
 			timelinessResult: null,
@@ -251,9 +257,11 @@ export default {
 			],
 		}
 	},
+
 	mounted() {
 		this.loadExistingObjection()
 	},
+
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async loadExistingObjection() {
@@ -275,6 +283,7 @@ export default {
 				}
 			}
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		checkTimeliness() {
 			if (!this.form.receivedDate || !this.besluitDate) {
@@ -290,6 +299,7 @@ export default {
 			this.form.isTimely = this.timelinessResult.isTimely
 			this.calculateDeadlines()
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		calculateDeadlines() {
 			if (!this.form.receivedDate) {
@@ -301,6 +311,7 @@ export default {
 			this.deadlines = bezwaarStore.calculateDeadlines(this.form.receivedDate)
 			this.$emit('deadlines-calculated', this.deadlines)
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		validate() {
 			this.errors = {}
@@ -323,6 +334,7 @@ export default {
 
 			return Object.keys(this.errors).length === 0
 		},
+
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async save() {
 			if (!this.validate()) return

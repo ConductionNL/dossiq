@@ -13,12 +13,12 @@
 				}}</label>
 				<NcSelect
 					id="td-zaaktype"
-					:model-value="selectedZaaktype"
+					:modelValue="selectedZaaktype"
 					:options="zaaktypeOptions"
 					:taggable="true"
-					:input-label="t('procest', 'Zaaktype')"
+					:inputLabel="t('procest', 'Zaaktype')"
 					:placeholder="t('procest', 'Select or type a zaaktype slug')"
-					@update:model-value="
+					@update:modelValue="
 						(v) => (form.case_type = v ? v.id || v.label || v : '')
 					" />
 				<span v-if="errors.case_type" class="field-error">{{
@@ -32,9 +32,9 @@
 				}}</label>
 				<NcTextField
 					id="td-grondslag"
-					:model-value="form.basis"
+					:modelValue="form.basis"
 					:placeholder="t('procest', 'e.g. AWB art. 4:13 lid 2')"
-					@update:model-value="(v) => (form.basis = v)" />
+					@update:modelValue="(v) => (form.basis = v)" />
 				<span v-if="errors.basis" class="field-error">{{
 					errors.basis
 				}}</span>
@@ -47,8 +47,8 @@
 				<NcTextField
 					id="td-duur"
 					type="number"
-					:model-value="String(form.duurDagen)"
-					@update:model-value="(v) => (form.duurDagen = Number(v) || 0)" />
+					:modelValue="String(form.duurDagen)"
+					@update:modelValue="(v) => (form.duurDagen = Number(v) || 0)" />
 				<span v-if="errors.duurDagen" class="field-error">{{
 					errors.duurDagen
 				}}</span>
@@ -58,10 +58,10 @@
 				<label for="td-categorie">{{ t('procest', 'Category') }}</label>
 				<NcSelect
 					id="td-categorie"
-					:model-value="selectedCategorie"
+					:modelValue="selectedCategorie"
 					:options="categorieOptions"
-					:input-label="t('procest', 'Category')"
-					@update:model-value="(v) => (form.category = v ? v.id : '')" />
+					:inputLabel="t('procest', 'Category')"
+					@update:modelValue="(v) => (form.category = v ? v.id : '')" />
 			</div>
 
 			<div class="form-group">
@@ -69,8 +69,8 @@
 					t('procest', 'Extension allowed')
 				}}</label>
 				<NcCheckboxRadioSwitch
-					:model-value="form.extendable"
-					@update:model-value="(v) => (form.extendable = v)">
+					:modelValue="form.extendable"
+					@update:modelValue="(v) => (form.extendable = v)">
 					{{ t('procest', 'Tenant may grant an extension on this term') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -82,8 +82,8 @@
 				<NcTextField
 					id="td-ext-dagen"
 					type="number"
-					:model-value="String(form.maxExtensionDagen)"
-					@update:model-value="
+					:modelValue="String(form.maxExtensionDagen)"
+					@update:modelValue="
 						(v) => (form.maxExtensionDagen = Number(v) || 0)
 					" />
 			</div>
@@ -120,15 +120,15 @@
 </template>
 
 <script>
+import { translate as t } from '@nextcloud/l10n'
 import {
-	NcModal,
 	NcButton,
-	NcTextField,
-	NcSelect,
 	NcCheckboxRadioSwitch,
 	NcLoadingIcon,
+	NcModal,
+	NcSelect,
+	NcTextField,
 } from '@nextcloud/vue'
-import { translate as t } from '@nextcloud/l10n'
 import ContentSave from 'vue-material-design-icons/ContentSave.vue'
 
 export default {
@@ -142,16 +142,19 @@ export default {
 		NcLoadingIcon,
 		ContentSave,
 	},
+
 	props: {
 		definition: {
 			type: Object,
 			default: null,
 		},
+
 		zaaktypeOptions: {
 			type: Array,
 			default: () => [],
 		},
 	},
+
 	emits: ['save', 'close'],
 	data() {
 		return {
@@ -167,6 +170,7 @@ export default {
 			},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		title() {
@@ -176,6 +180,7 @@ export default {
 					})
 				: t('procest', 'New term definition')
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedZaaktype() {
 			if (!this.form.case_type) return null
@@ -184,6 +189,7 @@ export default {
 			)
 			return hit || { id: this.form.case_type, label: this.form.case_type }
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		categorieOptions() {
 			return [
@@ -193,6 +199,7 @@ export default {
 				{ id: 'beroep', label: t('procest', 'Appeal period') },
 			]
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedCategorie() {
 			return (
@@ -201,6 +208,7 @@ export default {
 			)
 		},
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
@@ -216,6 +224,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		async save() {
 			if (!this.validate()) return

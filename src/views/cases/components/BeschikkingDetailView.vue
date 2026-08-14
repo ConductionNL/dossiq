@@ -15,7 +15,7 @@
 			</header>
 
 			<BeschikkingActionBar
-				:beschikking-id="decisionId"
+				:beschikkingId="decisionId"
 				:status="beschikking.currentStatus"
 				@updated="onUpdated" />
 
@@ -87,8 +87,8 @@
 
 <script>
 import { NcEmptyContent, NcLoadingIcon } from '@nextcloud/vue'
-import { getBeschikking } from '../../../services/beschikkingApi.js'
 import BeschikkingActionBar from './BeschikkingActionBar.vue'
+import { getBeschikking } from '../../../services/beschikkingApi.js'
 
 const STATUS_LABELS = {
 	ontwerp: 'Draft ruling',
@@ -106,23 +106,27 @@ export default {
 		NcLoadingIcon,
 		BeschikkingActionBar,
 	},
+
 	props: {
 		decisionId: {
 			type: String,
 			required: true,
 		},
 	},
+
 	data() {
 		return {
 			beschikking: null,
 			loading: true,
 		}
 	},
+
 	computed: {
 		statusLabel() {
 			const status = this.beschikking ? this.beschikking.currentStatus : ''
 			return t('procest', STATUS_LABELS[status] || status)
 		},
+
 		hasMandaat() {
 			return !!(
 				this.beschikking
@@ -130,6 +134,7 @@ export default {
 				&& this.beschikking.mandateGranted.approvedBy
 			)
 		},
+
 		hasHandtekening() {
 			return !!(
 				this.beschikking
@@ -137,6 +142,7 @@ export default {
 				&& this.beschikking.signature.tspProvider
 			)
 		},
+
 		hasVerzending() {
 			return !!(
 				this.beschikking
@@ -144,6 +150,7 @@ export default {
 				&& this.beschikking.verzending.kanaal
 			)
 		},
+
 		hasArchief() {
 			return !!(
 				this.beschikking
@@ -152,9 +159,11 @@ export default {
 			)
 		},
 	},
+
 	async mounted() {
 		await this.load()
 	},
+
 	methods: {
 		async load() {
 			this.loading = true
@@ -166,6 +175,7 @@ export default {
 				this.loading = false
 			}
 		},
+
 		onUpdated(updated) {
 			if (updated && updated.currentStatus) {
 				this.beschikking = updated

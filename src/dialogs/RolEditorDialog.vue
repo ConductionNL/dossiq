@@ -21,46 +21,46 @@
 				}}</label>
 				<NcTextField
 					id="rol-naam"
-					:model-value="form.name"
+					:modelValue="form.name"
 					:error="!!errors.name"
-					:helper-text="errors.name"
-					@update:model-value="(v) => (form.name = v)" />
+					:helperText="errors.name"
+					@update:modelValue="(v) => (form.name = v)" />
 			</div>
 
 			<div class="form-group">
 				<label for="rol-type">{{ t('procest', 'Type') }}</label>
 				<NcSelect
 					id="rol-type"
-					:model-value="selectedType"
+					:modelValue="selectedType"
 					:options="typeOptions"
-					:input-label="t('procest', 'Type')"
-					@update:model-value="(v) => (form.type = v ? v.id : '')" />
+					:inputLabel="t('procest', 'Type')"
+					@update:modelValue="(v) => (form.type = v ? v.id : '')" />
 			</div>
 
 			<div class="form-group">
 				<label for="rol-parent">{{ t('procest', 'Parent role') }}</label>
 				<NcSelect
 					id="rol-parent"
-					:model-value="selectedParent"
+					:modelValue="selectedParent"
 					:options="parentOptions"
-					:input-label="t('procest', 'Parent role')"
-					@update:model-value="(v) => (form.parentRole = v ? v.id : '')" />
+					:inputLabel="t('procest', 'Parent role')"
+					@update:modelValue="(v) => (form.parentRole = v ? v.id : '')" />
 			</div>
 
 			<div class="form-group">
 				<label for="rol-afdeling">{{ t('procest', 'Department') }}</label>
 				<NcTextField
 					id="rol-afdeling"
-					:model-value="form.department"
-					@update:model-value="(v) => (form.department = v)" />
+					:modelValue="form.department"
+					@update:modelValue="(v) => (form.department = v)" />
 			</div>
 
 			<div class="form-group">
 				<label for="rol-team">{{ t('procest', 'Team') }}</label>
 				<NcTextField
 					id="rol-team"
-					:model-value="form.team"
-					@update:model-value="(v) => (form.team = v)" />
+					:modelValue="form.team"
+					@update:modelValue="(v) => (form.team = v)" />
 			</div>
 
 			<div class="form-group">
@@ -68,8 +68,8 @@
 				<NcTextField
 					id="rol-niveau"
 					type="number"
-					:model-value="String(form.mandateLevel)"
-					@update:model-value="
+					:modelValue="String(form.mandateLevel)"
+					@update:modelValue="
 						(v) => (form.mandateLevel = Number(v) || 0)
 					" />
 			</div>
@@ -87,8 +87,8 @@
 </template>
 
 <script>
-import { NcButton, NcDialog, NcSelect, NcTextField } from '@nextcloud/vue'
 import { translate as t } from '@nextcloud/l10n'
+import { NcButton, NcDialog, NcSelect, NcTextField } from '@nextcloud/vue'
 
 export default {
 	name: 'RolEditorDialog',
@@ -97,6 +97,7 @@ export default {
 		role: { type: Object, default: null },
 		parentOptions: { type: Array, default: () => [] },
 	},
+
 	emits: ['save', 'close'],
 	data() {
 		return {
@@ -111,11 +112,13 @@ export default {
 			},
 		}
 	},
+
 	computed: {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		title() {
 			return this.role ? t('procest', 'Edit role') : t('procest', 'New role')
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
@@ -126,6 +129,7 @@ export default {
 				{ id: 'waarnemer', label: t('procest', 'Substitute') },
 			]
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
@@ -133,6 +137,7 @@ export default {
 				|| this.typeOptions[3]
 			)
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedParent() {
 			return (
@@ -141,6 +146,7 @@ export default {
 			)
 		},
 	},
+
 	methods: {
 		t,
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
@@ -150,6 +156,7 @@ export default {
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
+
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		save() {
 			if (!this.validate()) return

@@ -196,6 +196,7 @@ export default {
 		 * @param {object} payload The { id, behandeling } payload.
 		 * @param payload.id
 		 * @param payload.handling
+		 * @param payload.behandeling
 		 */
 		async onSetBehandeling({ id, behandeling }) {
 			const idx = this.agenda.findIndex((i) => i.id === id)
