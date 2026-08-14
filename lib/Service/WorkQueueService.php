@@ -483,7 +483,7 @@ class WorkQueueService {
 
 		$nearest = null;
 		foreach ($instances as $instance) {
-			$date = (string)($instance['endDateActueel'] ?? '');
+			$date = (string)($instance['endDateCurrent'] ?? '');
 			if ($date === '' || ($nearest !== null && $date >= $nearest)) {
 				continue;
 			}

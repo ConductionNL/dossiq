@@ -62,7 +62,7 @@ class DwangsomUitbetalingService {
 	 * Prepare a DwangsomUitbetaling row for a locked berekening.
 	 *
 	 * @param string $calculationId Berekening id.
-	 * @param string $rekeninghouderName Account holder name.
+	 * @param string $accountHolderName Account holder name.
 	 * @param string $iban IBAN.
 	 * @param DateTimeImmutable|null $receiptDate Original ingebrekestelling receipt date (default today).
 	 *
@@ -74,11 +74,11 @@ class DwangsomUitbetalingService {
 	 */
 	public function prepareBetaling(
 		string $calculationId,
-		string $rekeninghouderName,
+		string $accountHolderName,
 		string $iban,
 		?DateTimeImmutable $receiptDate = null,
 	): array {
-		$this->assertPaymentInput(iban: $iban, rekeninghouderName: $rekeninghouderName);
+		$this->assertPaymentInput(iban: $iban, accountHolderName: $accountHolderName);
 
 		$objectService = $this->settingsService->getObjectService();
 		$register = (string)$this->settingsService->getConfigValue('register');
@@ -101,7 +101,7 @@ class DwangsomUitbetalingService {
 		$row = [
 			'dwangsomBerekening' => $calculationId,
 			'amount' => $final,
-			'rekeninghouderName' => $rekeninghouderName,
+			'accountHolderName' => $accountHolderName,
 			'iban' => strtoupper(str_replace(' ', '', $iban)),
 			'reference' => $this->buildReference(calculationId: $calculationId),
 			'legalBasis' => 'AWB 4:17',
@@ -121,18 +121,18 @@ class DwangsomUitbetalingService {
 	 * Validate the caller-supplied payment input.
 	 *
 	 * @param string $iban IBAN.
-	 * @param string $rekeninghouderName Account holder name.
+	 * @param string $accountHolderName Account holder name.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When the IBAN or the account holder name is invalid.
 	 */
-	private function assertPaymentInput(string $iban, string $rekeninghouderName): void {
+	private function assertPaymentInput(string $iban, string $accountHolderName): void {
 		if ($this->isValidIban(iban: $iban) === false) {
 			throw new RuntimeException('Invalid IBAN provided for dwangsom uitbetaling');
 		}
 
-		if (trim($rekeninghouderName) === '') {
+		if (trim($accountHolderName) === '') {
 			throw new RuntimeException('rekeninghouderNaam is required');
 		}
 	}//end assertBetalingInput()
@@ -165,7 +165,7 @@ class DwangsomUitbetalingService {
 			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
-		$final = (int)($calculation['definitievAmount'] ?? $calculation['cumulatievAmount'] ?? 0);
+		$final = (int)($calculation['definitiveAmount'] ?? $calculation['cumulativeAmount'] ?? 0);
 		if ($final <= 0) {
 			throw new RuntimeException('DwangsomBerekening has no payable amount');
 		}

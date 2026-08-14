@@ -199,7 +199,7 @@ class HearingService {
 			'verslag' => $outcome['verslag'],
 			'conclusie' => $outcome['conclusie'] ?? '',
 			'aanwezigen' => $outcome['aanwezigen'] ?? [],
-			'dateAfgerond' => $outcome['dateAfgerond'] ?? date('Y-m-d'),
+			'dateCompleted' => $outcome['dateCompleted'] ?? date('Y-m-d'),
 		];
 
 		$result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$id);

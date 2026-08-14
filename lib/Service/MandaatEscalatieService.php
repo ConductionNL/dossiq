@@ -135,7 +135,7 @@ class MandaatEscalatieService {
 		);
 
 		foreach ($matching as $m) {
-			$roleId = (string)($m['gemandateerdeRole'] ?? '');
+			$roleId = (string)($m['mandateeRole'] ?? '');
 			if ($roleId === '') {
 				continue;
 			}

@@ -66,7 +66,7 @@
               "date":     {"type": "string", "title": "Registration Date", "format": "date-time", "description": "Hash computation timestamp"}
             }
           },
-          "vergrendeldOn":        {"type": "string", "title": "Locked On", "format": "date-time", "description": "Timestamp set when status transitions to definitief"},
+          "lockedOn":        {"type": "string", "title": "Locked On", "format": "date-time", "description": "Timestamp set when status transitions to definitief"},
           "fileId":               {"type": "integer", "title": "File ID", "description": "Nextcloud file ID backing this informatieobject"}
         }
       },
@@ -81,7 +81,7 @@
         "properties": {
           "zaak":               {"type": "string", "title": "Case Reference", "facetable": true, "maxLength": 255, "description": "Reference to the case (zaak)"},
           "informatieobject":   {"type": "string", "title": "Information Object Reference", "facetable": true, "maxLength": 255, "description": "Reference to the informatieobject"},
-          "natureRelationshipWeergave": {
+          "natureRelationshipDisplay": {
             "type": "string",
             "title": "Relation Nature",
             "description": "Nature of the relation",

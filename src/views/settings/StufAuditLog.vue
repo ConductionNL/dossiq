@@ -54,7 +54,7 @@
 			</thead>
 			<tbody>
 				<tr v-for="row in messages" :key="row.id || row.referentienummer">
-					<td>{{ row.verzondenOn }}</td>
+					<td>{{ row.sentOn }}</td>
 					<td>{{ row.direction }}</td>
 					<td>{{ row.berichtSoort }}</td>
 					<td>{{ row.role }}</td>
@@ -205,7 +205,7 @@ export default {
 		 */
 		exportCsv() {
 			const headers = [
-				'verzondenOn',
+				'sentOn',
 				'direction',
 				'berichtSoort',
 				'role',

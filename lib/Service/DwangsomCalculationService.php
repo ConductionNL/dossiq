@@ -184,7 +184,7 @@ class DwangsomCalculationService {
 	 */
 	private function applyDailyAccrual(array $row): array {
 		$currentDay = (int)($row['currentDag'] ?? 0);
-		$cumulative = (int)($row['cumulatievAmount'] ?? 0);
+		$cumulative = (int)($row['cumulativeAmount'] ?? 0);
 		$plafond = (int)($row['plafondCalculated'] ?? self::AWB_PLAFOND_CENTS);
 		$regime = (string)($row['regime'] ?? 'awb-default');
 
@@ -203,7 +203,7 @@ class DwangsomCalculationService {
 
 		$row['currentDag'] = $nextDay;
 		$row['dagtarief'] = $tariff;
-		$row['cumulatievAmount'] = $newCumul;
+		$row['cumulativeAmount'] = $newCumul;
 		$row['plafondBereikt'] = $plafondHit;
 
 		return $row;
@@ -273,7 +273,7 @@ class DwangsomCalculationService {
 		}
 
 		$row['status'] = 'gestopt-wegens-beschikking';
-		$row['definitievAmount'] = (int)($row['cumulatievAmount'] ?? 0);
+		$row['definitiveAmount'] = (int)($row['cumulativeAmount'] ?? 0);
 
 		try {
 			$saved = $objectService->saveObject($register, $schema, $row);

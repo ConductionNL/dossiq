@@ -78,7 +78,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'termijnInstance' => 'ti-1',
 			'startDate' => '2026-03-29',
 			'currentDag' => 0,
-			'cumulatievAmount' => 0,
+			'cumulativeAmount' => 0,
 			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
@@ -88,7 +88,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		$row = $this->service->calculateDaily('b1');
 		self::assertSame(1, $row['currentDag']);
 		self::assertSame(2300, $row['dagtarief']);
-		self::assertSame(2300, $row['cumulatievAmount']);
+		self::assertSame(2300, $row['cumulativeAmount']);
 		self::assertFalse($row['plafondBereikt']);
 	}
 
@@ -102,7 +102,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'termijnInstance' => 'ti-1',
 			'startDate' => '2026-03-29',
 			'currentDag' => 14,
-			'cumulatievAmount' => 32200,
+			'cumulativeAmount' => 32200,
 			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
@@ -112,7 +112,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		$row = $this->service->calculateDaily('b2');
 		self::assertSame(15, $row['currentDag']);
 		self::assertSame(3500, $row['dagtarief']);
-		self::assertSame(35700, $row['cumulatievAmount']);
+		self::assertSame(35700, $row['cumulativeAmount']);
 	}
 
 	/**
@@ -125,7 +125,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'termijnInstance' => 'ti-1',
 			'startDate' => '2026-03-29',
 			'currentDag' => 28,
-			'cumulatievAmount' => 81200,
+			'cumulativeAmount' => 81200,
 			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
@@ -135,7 +135,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		$row = $this->service->calculateDaily('b3');
 		self::assertSame(29, $row['currentDag']);
 		self::assertSame(4500, $row['dagtarief']);
-		self::assertSame(85700, $row['cumulatievAmount']);
+		self::assertSame(85700, $row['cumulativeAmount']);
 	}
 
 	/**
@@ -148,7 +148,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'termijnInstance' => 'ti-1',
 			'startDate' => '2026-03-29',
 			'currentDag' => 41,
-			'cumulatievAmount' => 142000,
+			'cumulativeAmount' => 142000,
 			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
@@ -156,12 +156,12 @@ class DwangsomCalculationServiceTest extends TestCase {
 		]);
 
 		$row = $this->service->calculateDaily('b4');
-		self::assertSame(144200, $row['cumulatievAmount']);
+		self::assertSame(144200, $row['cumulativeAmount']);
 		self::assertTrue($row['plafondBereikt']);
 
 		// Second call after plafond does not change cumulative.
 		$row2 = $this->service->calculateDaily('b4');
-		self::assertSame(144200, $row2['cumulatievAmount']);
+		self::assertSame(144200, $row2['cumulativeAmount']);
 	}
 
 	/**
@@ -174,7 +174,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'termijnInstance' => 'ti-1',
 			'startDate' => '2026-03-29',
 			'currentDag' => 5,
-			'cumulatievAmount' => 11500,
+			'cumulativeAmount' => 11500,
 			'plafondCalculated' => 144200,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
@@ -182,7 +182,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 
 		$stopped = $this->service->stopForBeschikking('b5');
 		self::assertSame('gestopt-wegens-beschikking', $stopped['status']);
-		self::assertSame(11500, $stopped['definitievAmount']);
+		self::assertSame(11500, $stopped['definitiveAmount']);
 
 		// Further calculateDaily is a no-op on stopped berekeningen.
 		$row = $this->service->calculateDaily('b5');
@@ -210,7 +210,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 			'termijnInstance' => 'ti-woo',
 			'startDate' => '2026-03-29',
 			'currentDag' => 0,
-			'cumulatievAmount' => 0,
+			'cumulativeAmount' => 0,
 			'plafondCalculated' => 50000,
 			'plafondBereikt' => false,
 			'status' => 'lopend',
@@ -219,6 +219,6 @@ class DwangsomCalculationServiceTest extends TestCase {
 
 		$row = $this->service->calculateDaily('b-woo');
 		self::assertSame(1500, $row['dagtarief']);
-		self::assertSame(1500, $row['cumulatievAmount']);
+		self::assertSame(1500, $row['cumulativeAmount']);
 	}
 }

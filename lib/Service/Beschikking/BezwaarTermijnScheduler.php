@@ -111,7 +111,7 @@ class BezwaarTermijnScheduler {
 			return;
 		}
 
-		$archiefDate = (new DateTimeImmutable($endDate))->add(new DateInterval('P1D'))->format('Y-m-d');
+		$archiveDate = (new DateTimeImmutable($endDate))->add(new DateInterval('P1D'))->format('Y-m-d');
 
 		try {
 			$objectService->saveObject(
@@ -119,12 +119,12 @@ class BezwaarTermijnScheduler {
 				schema: $schema,
 				object: [
 					'decisionId' => $decisionId,
-					'bekendmakingDate' => $bekendmaking,
+					'announcementDate' => $bekendmaking,
 					'objectionTermEndDate' => $endDate,
-					'herinneringDate' => $herinnering,
-					'objectionOntvangen' => false,
+					'reminderDate' => $herinnering,
+					'objectionReceived' => false,
 					'archiefTriggerActief' => true,
-					'archiefDate' => $archiefDate,
+					'archiveDate' => $archiveDate,
 				],
 			);
 		} catch (\Throwable $e) {

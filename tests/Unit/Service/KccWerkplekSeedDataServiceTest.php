@@ -117,11 +117,11 @@ class KccWerkplekSeedDataServiceTest extends TestCase {
 		$this->service->seed();
 
 		$belplan = $this->objects->store['belplan']['kcc-belplan-algemeen'];
-		$types = array_map(static fn (array $step): string => (string)$step['type'], $belplan['routeringSteps']);
+		$types = array_map(static fn (array $step): string => (string)$step['type'], $belplan['routingSteps']);
 		self::assertContains('keuzemenu', $types);
 		self::assertContains('vaardigheid_match', $types);
 		self::assertContains('wachtrij_overflow', $types);
-		self::assertSame('voicemail', $belplan['terugvalAction']);
+		self::assertSame('voicemail', $belplan['fallbackAction']);
 	}
 
 	/**

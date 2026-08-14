@@ -100,7 +100,7 @@ class ContactMomentController extends Controller {
 		$data = [
 			'kanaal' => (string)$this->request->getParam('kanaal', ''),
 			'direction' => (string)$this->request->getParam('direction', 'inkomend'),
-			'bellerIdentification' => (string)$this->request->getParam('bellerIdentification', ''),
+			'callerIdentification' => (string)$this->request->getParam('callerIdentification', ''),
 			'nature' => (string)$this->request->getParam('nature', 'informatieverzoek'),
 			'summary' => (string)$this->request->getParam('summary', ''),
 			'kccEmployeeId' => $user->getUID(),
@@ -109,9 +109,9 @@ class ContactMomentController extends Controller {
 
 		// Auto-resolve a burger from the caller identifier when none supplied.
 		$burgerId = (string)$this->request->getParam('geidentificeerdeBurgerId', '');
-		$method = (string)$this->request->getParam('identificationMethode', 'niet_geidentificeerd');
-		if ($burgerId === '' && $data['bellerIdentification'] !== '') {
-			$resolved = $this->burgerService->lookupByIdentifier($data['bellerIdentification']);
+		$method = (string)$this->request->getParam('identificationMethod', 'niet_geidentificeerd');
+		if ($burgerId === '' && $data['callerIdentification'] !== '') {
+			$resolved = $this->burgerService->lookupByIdentifier($data['callerIdentification']);
 			if ($resolved !== '') {
 				$burgerId = $resolved;
 				$method = 'identificatievragen';
@@ -124,7 +124,7 @@ class ContactMomentController extends Controller {
 		}
 
 		$data['geidentificeerdeBurgerId'] = $identifiedBurgerId;
-		$data['identificationMethode'] = $method;
+		$data['identificationMethod'] = $method;
 
 		try {
 			$contactmoment = $this->contactMomentService->createContactMoment($data);

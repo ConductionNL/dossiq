@@ -71,7 +71,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
 			'standardDurationDays' => 56,
-			'countVerlengingen' => 1,
+			'countExtensions' => 1,
 			'validFrom' => '2026-01-01',
 		]);
 
@@ -82,7 +82,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'termijnDefinitie' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-02-25',
-			'endDateActueel' => '2026-02-25',
+			'endDateCurrent' => '2026-02-25',
 			'status' => 'overschreden',
 			'notificatiesVerstuurd' => [],
 		]);
@@ -125,7 +125,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'termijnDefinitie' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-12-31',
-			'endDateActueel' => '2026-12-31',
+			'endDateCurrent' => '2026-12-31',
 			'status' => 'lopend',
 			'notificatiesVerstuurd' => [],
 		]);
@@ -173,7 +173,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'caseType' => 'woo-verzoek',
 			'wettelijkeGrondslag' => 'Woo art 4.4',
 			'standardDurationDays' => 28,
-			'countVerlengingen' => 1,
+			'countExtensions' => 1,
 			'afwijkendDwangsomRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
@@ -183,7 +183,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'termijnDefinitie' => 'td-woo',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-01-29',
-			'endDateActueel' => '2026-01-29',
+			'endDateCurrent' => '2026-01-29',
 			'status' => 'overschreden',
 			'notificatiesVerstuurd' => [],
 		]);

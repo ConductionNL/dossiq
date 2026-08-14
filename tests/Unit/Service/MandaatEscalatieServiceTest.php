@@ -60,7 +60,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 			'mandaat',
 			[
 				'id' => 'm-low',
-				'gemandateerdeRole' => 'rol-consulent',
+				'mandateeRole' => 'rol-consulent',
 				'terms' => ['plafondCents' => 500000, 'decisionTypes' => ['wmo-toekenning']],
 				'status' => 'active',
 			]
@@ -70,7 +70,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 			'mandaat',
 			[
 				'id' => 'm-high',
-				'gemandateerdeRole' => 'rol-manager',
+				'mandateeRole' => 'rol-manager',
 				'terms' => ['plafondCents' => 2500000, 'decisionTypes' => ['wmo-toekenning']],
 				'status' => 'active',
 			]

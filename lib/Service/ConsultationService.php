@@ -480,7 +480,7 @@ class ConsultationService {
 			throw new RuntimeException('parentZaak is required');
 		}
 
-		if (empty($data['adviesAuthority']) === true) {
+		if (empty($data['adviceAuthority']) === true) {
 			throw new RuntimeException('adviesInstantie is required');
 		}
 

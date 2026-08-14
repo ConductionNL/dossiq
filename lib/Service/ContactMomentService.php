@@ -88,13 +88,13 @@ class ContactMomentService {
 			'direction' => (string)($data['direction'] ?? 'inkomend'),
 			'startTime' => (string)($data['startTime'] ?? $now),
 			'endTime' => ($data['endTime'] ?? null),
-			'bellerIdentification' => (string)($data['bellerIdentification'] ?? ''),
+			'callerIdentification' => (string)($data['callerIdentification'] ?? ''),
 			'geidentificeerdeBurgerId' => ($data['geidentificeerdeBurgerId'] ?? null),
-			'identificationMethode' => (string)($data['identificationMethode'] ?? 'niet_geidentificeerd'),
+			'identificationMethod' => (string)($data['identificationMethod'] ?? 'niet_geidentificeerd'),
 			'identificationScore' => ($data['identificationScore'] ?? null),
 			'kccEmployeeId' => trim((string)$data['kccEmployeeId']),
-			'gerelateerdeCases' => array_values((array)($data['gerelateerdeCases'] ?? [])),
-			'nieuweCaseIds' => array_values((array)($data['nieuweCaseIds'] ?? [])),
+			'relatedCases' => array_values((array)($data['relatedCases'] ?? [])),
+			'newCaseIds' => array_values((array)($data['newCaseIds'] ?? [])),
 			'nature' => (string)($data['nature'] ?? 'informatieverzoek'),
 			'summary' => (string)($data['summary'] ?? ''),
 			'volgensIntent' => (string)($data['volgensIntent'] ?? ''),
@@ -105,7 +105,7 @@ class ContactMomentService {
 
 		$duration = $this->calculateDuration(data: $data);
 		if ($duration !== null) {
-			$record['durationSeconden'] = $duration;
+			$record['durationSeconds'] = $duration;
 		}
 
 		try {
@@ -308,7 +308,7 @@ class ContactMomentService {
 				$schema,
 				[
 					'geidentificeerdeBurgerId' => $burgerId,
-					'identificationMethode' => $method,
+					'identificationMethod' => $method,
 					'identificationScore' => round($score, 2),
 				],
 				$contactmomentId,

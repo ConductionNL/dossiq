@@ -101,9 +101,9 @@ class TermijnService {
 			'termijnDefinitie' => (string)($definitie['id'] ?? ''),
 			'startDate' => $startDate->format('Y-m-d\TH:i:sP'),
 			'endDateCalculated' => $endDate,
-			'endDateActueel' => $endDate,
+			'endDateCurrent' => $endDate,
 			'status' => 'lopend',
-			'countVerlengingen' => 0,
+			'countExtensions' => 0,
 			'notificatiesVerstuurd' => [],
 		];
 

@@ -70,7 +70,7 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 
 		$this->assertSame('berichtenbox-mijnoverheid', $result['kanaal']);
 		$this->assertNotEmpty($result['messageId']);
-		$this->assertSame('systeem', $result['verzondenBy']);
+		$this->assertSame('systeem', $result['sentBy']);
 	}//end testBurgerRoutesToMijnOverheid()
 
 	/**

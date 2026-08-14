@@ -76,7 +76,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
 			'standardDurationDays' => 56,
-			'countVerlengingen' => 1,
+			'countExtensions' => 1,
 			'validFrom' => '2026-01-01',
 		]);
 	}
@@ -103,7 +103,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 
 		$paused = $this->pauseService->registerPauze($id, 14, 'Aanvrager moet aanvulling indienen', 'doc:1');
 		self::assertSame('gepauzeerd', $paused['status']);
-		self::assertSame('2026-08-10', $paused['endDateActueel']);
+		self::assertSame('2026-08-10', $paused['endDateCurrent']);
 	}
 
 	/**
@@ -133,7 +133,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 
 		$resumed = $this->pauseService->resumeAfterPauze($id, $aanvulling);
 		self::assertSame('lopend', $resumed['status']);
-		self::assertSame('2026-07-31', $resumed['endDateActueel']);
+		self::assertSame('2026-07-31', $resumed['endDateCurrent']);
 	}
 
 	/**
@@ -150,8 +150,8 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 			'doc:verlengingsbrief-1'
 		);
 		self::assertSame('verlengd', $extended['status']);
-		self::assertSame(1, $extended['countVerlengingen']);
-		self::assertSame('2026-08-31', $extended['endDateActueel']);
+		self::assertSame(1, $extended['countExtensions']);
+		self::assertSame('2026-08-31', $extended['endDateCurrent']);
 	}
 
 	/**
@@ -181,7 +181,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 			'2026-09-30',
 			'doc:second'
 		);
-		self::assertSame(2, $second['countVerlengingen']);
+		self::assertSame(2, $second['countExtensions']);
 	}
 
 	/**

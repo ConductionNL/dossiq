@@ -105,7 +105,7 @@
 						</td>
 						<td>{{ item.parentCase }}</td>
 						<td>{{ item.onderwerp }}</td>
-						<td>{{ item.adviesAuthority }}</td>
+						<td>{{ item.adviceAuthority }}</td>
 						<td
 							:class="{
 								'consultation-dashboard__cell--overdue':
@@ -208,7 +208,7 @@ export default {
 				items = items.filter(
 					(c) =>
 						(c.onderwerp || '').toLowerCase().includes(term)
-						|| (c.adviesAuthority || '').toLowerCase().includes(term)
+						|| (c.adviceAuthority || '').toLowerCase().includes(term)
 						|| (c.parentCase || '').toLowerCase().includes(term),
 				)
 			}

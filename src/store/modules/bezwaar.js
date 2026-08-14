@@ -477,7 +477,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 				maxDeadlineWithExtension: maxDeadlineWithExtension
 					.toISOString()
 					.split('T')[0],
-				verdagingPossible: true,
+				postponementPossible: true,
 			}
 		},
 

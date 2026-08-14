@@ -82,7 +82,7 @@ class StufMessageHandler {
 			'zaakIdentificatie' => ($caseId ?? ''),
 			'gerelateerdeZaakId' => ($caseId ?? ''),
 			'envelopeXml' => $envelopeXml,
-			'verzondenOn' => $this->isoNow(),
+			'sentOn' => $this->isoNow(),
 			'bronEntiteit' => ($bronEntiteit ?? ''),
 			'bronId' => ($sourceId ?? ''),
 			'status' => 'verzonden',
@@ -124,7 +124,7 @@ class StufMessageHandler {
 			'zaakIdentificatie' => ($caseId ?? ''),
 			'gerelateerdeZaakId' => ($caseId ?? ''),
 			'envelopeXml' => $responseXml,
-			'verzondenOn' => $this->isoNow(),
+			'sentOn' => $this->isoNow(),
 			'ontvangenOp' => $this->isoNow(),
 			'status' => 'bevestigd',
 		];

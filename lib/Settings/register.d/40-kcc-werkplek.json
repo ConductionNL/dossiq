@@ -31,20 +31,20 @@
                 "title": "Contactmoment",
                 "description": "A single inbound or outbound contact (telefoon, email, chat, webformulier, social media, balie) handled in the KCC-werkplek, logged against the case and the identified burger.",
                 "type": "object",
-                "required": ["kanaal", "direction", "identificationMethode", "kccEmployeeId", "nature", "summary"],
+                "required": ["kanaal", "direction", "identificationMethod", "kccEmployeeId", "nature", "summary"],
                 "properties": {
                     "kanaal": {"type": "string", "title": "Channel", "enum": ["phone", "email", "webformulier", "chat", "social_media", "balie"], "description": "Communication channel"},
                     "direction": {"type": "string", "title": "Direction", "enum": ["inkomend", "uitgaand"], "description": "Direction of the contact"},
                     "startTime": {"type": "string", "title": "Start Time", "format": "date-time", "description": "Start time of the contact"},
                     "endTime": {"type": "string", "title": "End Time", "format": "date-time", "description": "End time of the contact"},
-                    "durationSeconden": {"type": "integer", "title": "Duration Seconds", "description": "Calculated duration in seconds"},
-                    "bellerIdentification": {"type": "string", "title": "Caller Identification", "description": "Phone number, email or social handle of the caller"},
+                    "durationSeconds": {"type": "integer", "title": "Duration Seconds", "description": "Calculated duration in seconds"},
+                    "callerIdentification": {"type": "string", "title": "Caller Identification", "description": "Phone number, email or social handle of the caller"},
                     "geidentificeerdeBurgerId": {"type": "string", "title": "Identified Citizen ID", "description": "Opaque reference to the identified burger (NC contact / external person id); null when unidentified"},
-                    "identificationMethode": {"type": "string", "title": "Identification Method", "enum": ["digid", "bsn_verificatie", "identificatievragen", "niet_geidentificeerd"], "description": "How the caller was identified"},
+                    "identificationMethod": {"type": "string", "title": "Identification Method", "enum": ["digid", "bsn_verificatie", "identificatievragen", "niet_geidentificeerd"], "description": "How the caller was identified"},
                     "identificationScore": {"type": "number", "title": "Identification Score", "description": "Identification confidence score (0.0-1.0)"},
                     "kccEmployeeId": {"type": "string", "title": "KCC Employee ID", "description": "Nextcloud UID of the handling KCC-medewerker"},
-                    "gerelateerdeCases": {"type": "array", "title": "Related Cases", "items": {"type": "string"}, "description": "Case ids this contact relates to"},
-                    "nieuweCaseIds": {"type": "array", "title": "New Case IDs", "items": {"type": "string"}, "description": "Case ids created during this contact"},
+                    "relatedCases": {"type": "array", "title": "Related Cases", "items": {"type": "string"}, "description": "Case ids this contact relates to"},
+                    "newCaseIds": {"type": "array", "title": "New Case IDs", "items": {"type": "string"}, "description": "Case ids created during this contact"},
                     "nature": {"type": "string", "title": "Nature", "enum": ["informatieverzoek", "statusverzoek", "klacht", "melding", "nieuwe_aanvraag", "doorverbinding"], "description": "Nature of the contact"},
                     "summary": {"type": "string", "title": "Summary", "description": "Summary of the contact"},
                     "volgensIntent": {"type": "string", "title": "Intent Compliant", "description": "Detected dialogue intent"},
@@ -83,9 +83,9 @@
                 "properties": {
                     "name": {"type": "string", "title": "Name", "description": "Name of the belplan"},
                     "triggerNumber": {"type": "array", "title": "Trigger Number", "items": {"type": "string"}, "description": "Phone number(s) this plan applies to"},
-                    "routeringSteps": {"type": "array", "title": "Routing Steps", "items": {"type": "object"}, "description": "Ordered routing steps (keuzemenu, vaardigheid_match, wachtrij_overflow)"},
+                    "routingSteps": {"type": "array", "title": "Routing Steps", "items": {"type": "object"}, "description": "Ordered routing steps (keuzemenu, vaardigheid_match, wachtrij_overflow)"},
                     "openingHours": {"type": "string", "title": "Opening Hours", "description": "Opening hours (e.g. Mo-Fr 08:00-17:00), null for 24/7"},
-                    "terugvalAction": {"type": "string", "title": "Fallback Action", "enum": ["voicemail", "sms_callback", "email_callback"], "default": "voicemail", "description": "Fallback action outside opening hours"},
+                    "fallbackAction": {"type": "string", "title": "Fallback Action", "enum": ["voicemail", "sms_callback", "email_callback"], "default": "voicemail", "description": "Fallback action outside opening hours"},
                     "priority": {"type": "integer", "title": "Priority", "default": 0, "description": "Matching priority, higher wins"},
                     "isActive": {"type": "boolean", "title": "Is Active", "default": true, "description": "Whether the belplan is active"}
                 }
@@ -102,8 +102,8 @@
                     "employeeId": {"type": "string", "title": "Employee ID", "description": "Nextcloud UID of the specialist"},
                     "expertises": {"type": "array", "title": "Expertises", "items": {"type": "string"}, "description": "Vaardigheid / zaaktype codes the specialist handles"},
                     "status": {"type": "string", "title": "Status", "enum": ["beschikbaar", "in_gesprek", "wrap_up", "afwezig", "niet_storen"], "description": "Current availability status"},
-                    "currentQueueLengte": {"type": "integer", "title": "Current Queue Length", "default": 0, "description": "Number of calls currently queued"},
-                    "gemiddeldeHandlingDuration": {"type": "integer", "title": "Average Handling Duration", "default": 0, "description": "Rolling average handling time in seconds"},
+                    "currentQueueLength": {"type": "integer", "title": "Current Queue Length", "default": 0, "description": "Number of calls currently queued"},
+                    "averageHandlingDuration": {"type": "integer", "title": "Average Handling Duration", "default": 0, "description": "Rolling average handling time in seconds"},
                     "gespreksInProgress": {"type": "integer", "title": "Conversations In Progress", "default": 0, "description": "Number of active calls"},
                     "lastUpdate": {"type": "string", "title": "Last Update", "format": "date-time", "description": "Timestamp of the last status update"}
                 }
@@ -126,7 +126,7 @@
                     "contextSnapshot": {"type": "string", "title": "Context Snapshot", "description": "Immutable JSON snapshot captured at transfer time"},
                     "geaccepteerd": {"type": "boolean", "title": "Accepted", "description": "Whether the specialist accepted, null until answered"},
                     "acceptanceTime": {"type": "string", "title": "Acceptance Time", "format": "date-time", "description": "When the specialist answered"},
-                    "afgekeurdReason": {"type": "string", "title": "Rejection Reason", "description": "Reason for rejection, null when accepted"},
+                    "rejectedReason": {"type": "string", "title": "Rejection Reason", "description": "Reason for rejection, null when accepted"},
                     "warmTransferStarted": {"type": "string", "title": "Warm Transfer Started", "format": "date-time", "description": "When the transfer was initiated"}
                 }
             },
@@ -156,8 +156,8 @@
             {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Klacht registreren", "actionType": "klacht_registreren", "vereisteContext": [], "permissies": ["kcc_medewerker", "klachtenfunctionaris"], "volgorde": 3, "isActive": true},
             {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Doorverbinden", "actionType": "doorverbinden", "vereisteContext": [], "permissies": ["kcc_medewerker"], "volgorde": 4, "isActive": true},
             {"@self": {"schema": "kccQuickAction", "register": "procest"}, "name": "Bel terug inplannen", "actionType": "bel_terug_inplannen", "vereisteContext": [], "permissies": ["kcc_medewerker"], "volgorde": 5, "isActive": true},
-            {"@self": {"schema": "belplan", "register": "procest"}, "name": "Algemeen gemeentenummer", "triggerNumber": ["14000"], "routeringSteps": [{"type": "keuzemenu", "options": ["Omgevingsvergunningen", "Bouwtoezicht", "Infocentrum"]}, {"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen", "bouwtoezicht": "bouwtoezicht"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 180, "fallback_rol": "generalist"}], "openingHours": "Mo-Fr 08:00-17:00", "terugvalAction": "voicemail", "priority": 10, "isActive": true},
-            {"@self": {"schema": "belplan", "register": "procest"}, "name": "Vaknummer Vergunningen", "triggerNumber": ["140001"], "routeringSteps": [{"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 240, "fallback_rol": "generalist"}], "openingHours": "Mo-Fr 09:00-12:00", "terugvalAction": "sms_callback", "priority": 20, "isActive": true}
+            {"@self": {"schema": "belplan", "register": "procest"}, "name": "Algemeen gemeentenummer", "triggerNumber": ["14000"], "routingSteps": [{"type": "keuzemenu", "options": ["Omgevingsvergunningen", "Bouwtoezicht", "Infocentrum"]}, {"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen", "bouwtoezicht": "bouwtoezicht"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 180, "fallback_rol": "generalist"}], "openingHours": "Mo-Fr 08:00-17:00", "fallbackAction": "voicemail", "priority": 10, "isActive": true},
+            {"@self": {"schema": "belplan", "register": "procest"}, "name": "Vaknummer Vergunningen", "triggerNumber": ["140001"], "routingSteps": [{"type": "vaardigheid_match", "zaaktype_to_vaardigheid": {"omgevingsvergunning": "omgevingsvergunningen"}}, {"type": "wachtrij_overflow", "threshold_wachttijd_sec": 240, "fallback_rol": "generalist"}], "openingHours": "Mo-Fr 09:00-12:00", "fallbackAction": "sms_callback", "priority": 20, "isActive": true}
         ]
     }
 }

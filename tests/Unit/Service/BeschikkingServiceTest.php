@@ -263,7 +263,7 @@ class BeschikkingServiceTest extends TestCase {
 		$this->assertSame('akkoord-mandaat', $afterApproved['currentStatus']);
 		// Outer key renamed; the inner `mandaatNiveau` is nested JSON and is
 		// deliberately left Dutch until the JSON-rewrite migration.
-		$this->assertSame('afdelingsmanager', $afterApproved['mandateGranted']['mandateNiveau']);
+		$this->assertSame('afdelingsmanager', $afterApproved['mandateGranted']['mandateLevel']);
 
 		$afterSign = $this->service->onderteken($id, 'kpn-gekwalificeerde-handtekening', 'afdelingsmanager-wmo-15');
 		$this->assertSame('ondertekend', $afterSign['currentStatus']);

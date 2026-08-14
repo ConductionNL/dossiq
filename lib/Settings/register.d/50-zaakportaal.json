@@ -101,12 +101,12 @@
                         "enum": ["bezwaarschrift", "klachtschrift", "subsidie-aanvraag"],
                         "description": "Type of request."
                     },
-                    "tegenCaseId": {
+                    "againstCaseId": {
                         "title": "Contested Case ID",
                         "type": "string",
                         "description": "Source case id the request contests (for bezwaar)."
                     },
-                    "tegenDecisionId": {
+                    "againstDecisionId": {
                         "title": "Contested Decision ID",
                         "type": "string",
                         "description": "Decision id the objection is filed against."
@@ -142,7 +142,7 @@
                         "type": "string",
                         "description": "Reasoning / description of the request."
                     },
-                    "betrokkenEmployee": {
+                    "involvedEmployee": {
                         "title": "Involved Employee",
                         "type": "string",
                         "description": "Optional employee/department referenced in a complaint."
@@ -159,7 +159,7 @@
                         "format": "date-time",
                         "description": "When the request was submitted."
                     },
-                    "binnenTerm": {
+                    "withinTerm": {
                         "title": "Within Deadline",
                         "type": "boolean",
                         "description": "Whether the request was filed within the statutory deadline."
@@ -170,7 +170,7 @@
                         "format": "date",
                         "description": "The applicable statutory deadline at the moment of filing."
                     },
-                    "nieuweCaseId": {
+                    "newCaseId": {
                         "title": "New Case ID",
                         "type": "string",
                         "description": "Id of the new Procest case created from this request."
@@ -266,7 +266,7 @@
                         "type": "boolean",
                         "description": "Notify on a reply from the handler."
                     },
-                    "eventTermHerinnering": {
+                    "eventTermReminder": {
                         "title": "Event Deadline Reminder",
                         "type": "boolean",
                         "description": "Notify on deadline reminders."
@@ -299,7 +299,7 @@
                 "eventStatuswijziging": true,
                 "eventDocumentToegevoegd": true,
                 "eventMessageFromHandler": true,
-                "eventTermHerinnering": true
+                "eventTermReminder": true
             },
             {
                 "@self": {

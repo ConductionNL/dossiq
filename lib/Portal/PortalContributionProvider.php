@@ -289,7 +289,7 @@ class PortalContributionProvider {
 						'status',
 						'submittedAt',
 						'deadline',
-						'binnenTerm',
+						'withinTerm',
 					],
 				],
 			],

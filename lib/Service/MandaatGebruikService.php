@@ -87,7 +87,7 @@ class MandaatGebruikService {
 			'userId' => $userId,
 			'moment' => (new DateTimeImmutable())->format('Y-m-d\TH:i:sP'),
 			'roleOnMomentFromDecision' => $roleSnapshot,
-			'gebruikteTerms' => $conditionsApplied,
+			'usedTerms' => $conditionsApplied,
 			'mandateVersionId' => $mandateId,
 		];
 

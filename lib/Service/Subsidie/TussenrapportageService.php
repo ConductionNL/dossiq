@@ -156,13 +156,13 @@ class TussenrapportageService {
 	 *
 	 * @param string $reportId The report id.
 	 * @param string|null $beoordelingsoordeel Optional assessment narrative.
-	 * @param float|null $ingekeurdeAmount Optional approved amount.
+	 * @param float|null $approvedAmount Optional approved amount.
 	 *
 	 * @return array<string, mixed> The approved report record.
 	 *
 	 * @throws OCSBadRequestException When unauthenticated or persistence fails.
 	 */
-	public function approveReport(string $reportId, ?string $beoordelingsoordeel = null, ?float $ingekeurdeAmount = null): array {
+	public function approveReport(string $reportId, ?string $beoordelingsoordeel = null, ?float $approvedAmount = null): array {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSBadRequestException('Authenticatie vereist om te beoordelen');
@@ -179,8 +179,8 @@ class TussenrapportageService {
 			$patch['beoordelingsoordeel'] = $beoordelingsoordeel;
 		}
 
-		if ($ingekeurdeAmount !== null) {
-			$patch['ingekeurdeAmount'] = $ingekeurdeAmount;
+		if ($approvedAmount !== null) {
+			$patch['approvedAmount'] = $approvedAmount;
 		}
 
 		try {

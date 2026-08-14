@@ -151,11 +151,11 @@ class BezwaarTermijnJob extends TimedJob {
 		string $today,
 	): bool {
 		$arr = $this->toArray(value: $trigger);
-		$archiefDate = (string)($arr['archiefDate'] ?? '');
-		$objection = ($arr['objectionOntvangen'] ?? false) === true;
+		$archiveDate = (string)($arr['archiveDate'] ?? '');
+		$objection = ($arr['objectionReceived'] ?? false) === true;
 		$decisionId = (string)($arr['decisionId'] ?? '');
 
-		if ($decisionId === '' || $archiefDate === '' || $archiefDate > $today) {
+		if ($decisionId === '' || $archiveDate === '' || $archiveDate > $today) {
 			return false;
 		}
 

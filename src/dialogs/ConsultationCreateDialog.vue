@@ -20,13 +20,13 @@
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:model-value="form.adviesAuthority"
+					:model-value="form.adviceAuthority"
 					:label="t('procest', 'Advisory body')"
 					:placeholder="
 						t('procest', 'e.g. Fire brigade, Aesthetics committee')
 					"
 					required
-					@update:model-value="(v) => (form.adviesAuthority = v)" />
+					@update:model-value="(v) => (form.adviceAuthority = v)" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
@@ -135,7 +135,7 @@ export default {
 			submitting: false,
 			validationError: '',
 			form: {
-				adviesAuthority: '',
+				adviceAuthority: '',
 				onderwerp: '',
 				question_formulation: '',
 				latestResponseDate: '',
@@ -162,7 +162,7 @@ export default {
 		canSubmit() {
 			return (
 				!this.submitting
-				&& this.form.adviesAuthority.trim() !== ''
+				&& this.form.adviceAuthority.trim() !== ''
 				&& this.form.onderwerp.trim() !== ''
 				&& this.form.question_formulation.trim() !== ''
 				&& this.form.latestResponseDate !== ''
@@ -179,7 +179,7 @@ export default {
 				this.validationError = ''
 				this.submitting = false
 				this.form = {
-					adviesAuthority: '',
+					adviceAuthority: '',
 					onderwerp: this.parentZaakTitle,
 					question_formulation: '',
 					latestResponseDate: this.defaultDeadline,
@@ -191,7 +191,7 @@ export default {
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
-			if (this.form.adviesAuthority.trim() === '') {
+			if (this.form.adviceAuthority.trim() === '') {
 				this.validationError = this.t(
 					'procest',
 					'Advisory body is required.',
@@ -222,7 +222,7 @@ export default {
 			this.submitting = true
 			this.$emit('created', {
 				parentCase: this.caseId,
-				adviesAuthority: this.form.adviesAuthority.trim(),
+				adviceAuthority: this.form.adviceAuthority.trim(),
 				onderwerp: this.form.onderwerp.trim(),
 				question_formulation: this.form.question_formulation.trim(),
 				latestResponseDate: this.form.latestResponseDate,

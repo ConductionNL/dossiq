@@ -192,7 +192,7 @@ class DeadlineDailyScanService {
 			return;
 		}
 
-		$deadline = (string)($row['endDateActueel'] ?? '');
+		$deadline = (string)($row['endDateCurrent'] ?? '');
 		if ($deadline === '') {
 			return;
 		}

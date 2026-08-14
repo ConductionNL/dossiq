@@ -84,7 +84,7 @@ class NoticeOfDefaultService {
 		}
 
 		$status = (string)($instance['status'] ?? '');
-		$deadline = (string)($instance['endDateActueel'] ?? '');
+		$deadline = (string)($instance['endDateCurrent'] ?? '');
 		$receipt = $receiptDate->format('Y-m-d');
 
 		$isValid = ($status === 'overschreden' && $deadline !== '' && $deadline < $receipt);
@@ -178,7 +178,7 @@ class NoticeOfDefaultService {
 				'startDate' => $startAt,
 				'currentDag' => 0,
 				'dagtarief' => 0,
-				'cumulatievAmount' => 0,
+				'cumulativeAmount' => 0,
 				'plafondCalculated' => (int)$regime['plafond'],
 				'plafondBereikt' => false,
 				'status' => 'lopend',

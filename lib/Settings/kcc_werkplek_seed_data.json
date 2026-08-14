@@ -61,7 +61,7 @@
             "id": "kcc-belplan-algemeen",
             "name": "Algemeen gemeentenummer",
             "triggerNumber": ["+31123456789"],
-            "routeringSteps": [
+            "routingSteps": [
                 {
                     "type": "keuzemenu",
                     "options": ["Omgevingsvergunningen", "Bouwtoezicht", "Infocentrum", "Overig"]
@@ -82,7 +82,7 @@
                 }
             ],
             "openingHours": "Mo-Fr 08:00-17:00",
-            "terugvalAction": "voicemail",
+            "fallbackAction": "voicemail",
             "priority": 10,
             "isActive": true
         },
@@ -90,7 +90,7 @@
             "id": "kcc-belplan-meldingen",
             "name": "Meldingen openbare ruimte",
             "triggerNumber": ["+31123456790"],
-            "routeringSteps": [
+            "routingSteps": [
                 {
                     "type": "vaardigheid_match",
                     "zaaktype_to_vaardigheid": {
@@ -104,7 +104,7 @@
                 }
             ],
             "openingHours": "Mo-Fr 08:00-17:00",
-            "terugvalAction": "sms_callback",
+            "fallbackAction": "sms_callback",
             "priority": 5,
             "isActive": true
         }

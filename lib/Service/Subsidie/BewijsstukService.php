@@ -83,13 +83,13 @@ class BewijsstukService {
 	/**
 	 * Whether a bewijsstuk type is allowed for a source phase (REQ-SUB-007).
 	 *
-	 * @param string $gekoppeldIn The source phase.
+	 * @param string $linkedIn The source phase.
 	 * @param string $type The bewijsstuk type.
 	 *
 	 * @return bool True when the combination is on the whitelist.
 	 */
-	public function isTypeAllowed(string $gekoppeldIn, string $type): bool {
-		$allowed = self::TYPE_WHITELIST[$gekoppeldIn] ?? null;
+	public function isTypeAllowed(string $linkedIn, string $type): bool {
+		$allowed = self::TYPE_WHITELIST[$linkedIn] ?? null;
 		if ($allowed === null) {
 			return false;
 		}
@@ -101,17 +101,17 @@ class BewijsstukService {
 	 * Resolve the retention years for a source phase, preferring a
 	 * regeling-configured override (REQ-SUB-007).
 	 *
-	 * @param string $gekoppeldIn The source phase.
+	 * @param string $linkedIn The source phase.
 	 * @param int|null $override Regeling-configured retention, if any.
 	 *
 	 * @return int The retention years.
 	 */
-	public function bewaartermijnJaren(string $gekoppeldIn, ?int $override = null): int {
+	public function bewaartermijnJaren(string $linkedIn, ?int $override = null): int {
 		if ($override !== null && $override > 0) {
 			return $override;
 		}
 
-		return (self::DEFAULT_BEWAARTERMIJN[$gekoppeldIn] ?? 7);
+		return (self::DEFAULT_BEWAARTERMIJN[$linkedIn] ?? 7);
 	}//end bewaartermijnJaren()
 
 	/**
@@ -162,23 +162,23 @@ class BewijsstukService {
 	 * @throws OCSBadRequestException When validation/persistence fails.
 	 */
 	public function create(array $payload, ?string $contents = null, ?int $regelingRetention = null): array {
-		$gekoppeldIn = (string)($payload['gekoppeldIn'] ?? '');
+		$linkedIn = (string)($payload['linkedIn'] ?? '');
 		$type = (string)($payload['bewijsstukType'] ?? '');
-		if ($this->isTypeAllowed(gekoppeldIn: $gekoppeldIn, type: $type) === false) {
-			throw new OCSBadRequestException('Bewijsstuktype "' . $type . '" is niet toegestaan voor fase "' . $gekoppeldIn . '"');
+		if ($this->isTypeAllowed(linkedIn: $linkedIn, type: $type) === false) {
+			throw new OCSBadRequestException('Bewijsstuktype "' . $type . '" is niet toegestaan voor fase "' . $linkedIn . '"');
 		}
 
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$now = new DateTimeImmutable();
-		$jaren = $this->bewaartermijnJaren(gekoppeldIn: $gekoppeldIn, override: $regelingRetention);
+		$jaren = $this->bewaartermijnJaren(linkedIn: $linkedIn, override: $regelingRetention);
 		$record = array_merge(
 			$payload,
 			[
-				'retentionPeriodJaren' => $jaren,
+				'retentionPeriodYears' => $jaren,
 				'retentionPeriodEnd' => $this->bewaartermijnEinde(from: $now, jaren: $jaren)->format('Y-m-d'),
 				'archiefStatus' => 'actief',
-				'immutable' => ($gekoppeldIn === 'vaststelling'),
+				'immutable' => ($linkedIn === 'vaststelling'),
 			]
 		);
 		if ($contents !== null) {

@@ -87,7 +87,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 			'termijnDefinitie' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => $deadline,
-			'endDateActueel' => $deadline,
+			'endDateCurrent' => $deadline,
 			'status' => $status,
 			'notificatiesVerstuurd' => [],
 		]);
@@ -212,7 +212,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 				'id' => $id,
 				'termijnInstance' => 'ti-' . $id,
 				'currentDag' => 0,
-				'cumulatievAmount' => 0,
+				'cumulativeAmount' => 0,
 				'plafondBereikt' => false,
 				'status' => 'lopend',
 			]);
@@ -222,7 +222,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 			'id' => 'b-stopped',
 			'termijnInstance' => 'ti-stopped',
 			'currentDag' => 99,
-			'cumulatievAmount' => 999999,
+			'cumulativeAmount' => 999999,
 			'plafondBereikt' => false,
 			'status' => 'gestopt-wegens-beschikking',
 		]);
@@ -235,10 +235,10 @@ class DeadlineDailyScanServiceTest extends TestCase {
 		foreach (['b1', 'b2', 'b3'] as $id) {
 			$row = $this->objects->store['dwangsomBerekening'][$id];
 			self::assertSame(1, $row['currentDag'], $id . ' must advance huidigeDag by 1.');
-			self::assertSame(2300, $row['cumulatievAmount'], $id . ' must add tier-1 (2300 cents) once.');
+			self::assertSame(2300, $row['cumulativeAmount'], $id . ' must add tier-1 (2300 cents) once.');
 		}
 		$stopped = $this->objects->store['dwangsomBerekening']['b-stopped'];
 		self::assertSame(99, $stopped['currentDag'], 'stopped row must not advance.');
-		self::assertSame(999999, $stopped['cumulatievAmount'], 'stopped row must not accrue.');
+		self::assertSame(999999, $stopped['cumulativeAmount'], 'stopped row must not accrue.');
 	}
 }

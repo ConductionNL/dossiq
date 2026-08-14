@@ -177,7 +177,7 @@ class DwangsomBezwaarService {
 			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
-		$calculation['definitievAmount'] = $newAmountCents;
+		$calculation['definitiveAmount'] = $newAmountCents;
 		$calculation['status'] = 'voltooid';
 		try {
 			$calculation = $objectService->saveObject($register, $bSchema, $calculation);

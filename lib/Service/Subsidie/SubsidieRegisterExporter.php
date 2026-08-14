@@ -79,7 +79,7 @@ class SubsidieRegisterExporter {
 
 		return [
 			'@type' => 'Subsidie',
-			'regeling' => (string)($regeling['regelingName'] ?? ''),
+			'regeling' => (string)($regeling['schemeName'] ?? ''),
 			'ontvanger' => $this->publicOntvanger(request: $request),
 			'amount' => (float)($decision['grantedAmount'] ?? 0),
 			'looptijd' => [

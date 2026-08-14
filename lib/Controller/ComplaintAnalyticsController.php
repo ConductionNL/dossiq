@@ -88,7 +88,7 @@ class ComplaintAnalyticsController extends Controller {
 			dateTo: $dateTo,
 		);
 		$byDepartment = $this->analyticsService->getFrequencyByDimension(
-			dimension: 'betrokkenDepartment',
+			dimension: 'involvedDepartment',
 			dateFrom: $dateFrom,
 			dateTo: $dateTo,
 		);

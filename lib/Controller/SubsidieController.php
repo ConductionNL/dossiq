@@ -311,7 +311,7 @@ class SubsidieController extends Controller {
 		}
 
 		$opinion = $this->request->getParam('beoordelingsoordeel', null);
-		$amount = $this->request->getParam('ingekeurdeAmount', null);
+		$amount = $this->request->getParam('approvedAmount', null);
 
 		$opinionArg = null;
 		if ($opinion !== null) {
@@ -327,7 +327,7 @@ class SubsidieController extends Controller {
 			$report = $this->tussenrapportage->approveReport(
 				reportId: $reportId,
 				beoordelingsoordeel: $opinionArg,
-				ingekeurdeAmount: $amountArg,
+				approvedAmount: $amountArg,
 			);
 		} catch (OCSBadRequestException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);

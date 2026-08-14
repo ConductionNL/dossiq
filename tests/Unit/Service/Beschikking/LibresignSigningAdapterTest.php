@@ -315,7 +315,7 @@ class LibresignSigningAdapterTest extends TestCase {
 		$this->assertSame('67890', $result['signedBestandId']);
 		$this->assertSame('req-1', $result['validationRapportId']);
 		$this->assertSame('LibreSign', $result['tspProviderEidasId']);
-		$this->assertNotEmpty($result['ondertekeningMoment']);
+		$this->assertNotEmpty($result['signingMoment']);
 		$this->assertNotEmpty($result['certificateSerialNumber']);
 	}//end testSignedStatusStoresFileViaExistingDocumentServiceAndReturnsContract()
 

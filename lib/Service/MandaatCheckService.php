@@ -126,7 +126,7 @@ class MandaatCheckService {
 		$relevant = array_values(
 			array_filter(
 				$mandaten,
-				static fn (array $row): bool => (string)($row['gemandateerdeRole'] ?? '') === (string)$role['roleId']
+				static fn (array $row): bool => (string)($row['mandateeRole'] ?? '') === (string)$role['roleId']
 			)
 		);
 
@@ -290,7 +290,7 @@ class MandaatCheckService {
 
 		$out = [];
 		foreach ($rows as $row) {
-			$mandateRoleId = (string)($row['gemandateerdeRole'] ?? '');
+			$mandateRoleId = (string)($row['mandateeRole'] ?? '');
 			if ($mandateRoleId !== '' && $mandateRoleId !== $roleId) {
 				continue;
 			}

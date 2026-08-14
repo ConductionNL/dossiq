@@ -264,7 +264,7 @@
         "required": [
           "onderwerp",
           "result",
-          "stemmenFor",
+          "votesFor",
           "stemmenTegen"
         ],
         "properties": {
@@ -298,7 +298,7 @@
             "facetable": true,
             "title": "Agenda Item"
           },
-          "stemmenFor": {
+          "votesFor": {
             "type": "integer",
             "description": "Number of votes in favor",
             "minimum": 0,
@@ -1762,7 +1762,7 @@
         "type": "voorstel",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-04-herinrichting-marktplein",
-        "stemmenFor": 19,
+        "votesFor": 19,
         "stemmenTegen": 16,
         "onthoudingen": 0,
         "politicalGroupResults": [
@@ -1818,7 +1818,7 @@
         "type": "voorstel",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-05-subsidie-duurzame-energie",
-        "stemmenFor": 25,
+        "votesFor": 25,
         "stemmenTegen": 10,
         "onthoudingen": 0,
         "politicalGroupResults": [
@@ -1874,7 +1874,7 @@
         "type": "motie",
         "result": "aangenomen",
         "agendapunt": "raad-20251021-04-motie-jeugdzorg",
-        "stemmenFor": 23,
+        "votesFor": 23,
         "stemmenTegen": 12,
         "onthoudingen": 0,
         "politicalGroupResults": [
@@ -1930,7 +1930,7 @@
         "type": "amendement",
         "result": "verworpen",
         "agendapunt": "raad-20251021-05-amendement-ozb",
-        "stemmenFor": 10,
+        "votesFor": 10,
         "stemmenTegen": 25,
         "onthoudingen": 0,
         "politicalGroupResults": [
@@ -1986,7 +1986,7 @@
         "type": "motie",
         "result": "aangenomen",
         "agendapunt": "raad-20251021-06-motie-woningbouw",
-        "stemmenFor": 35,
+        "votesFor": 35,
         "stemmenTegen": 0,
         "onthoudingen": 0,
         "politicalGroupResults": [
@@ -2042,7 +2042,7 @@
         "type": "voorstel",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-06-bestemmingsplan",
-        "stemmenFor": 27,
+        "votesFor": 27,
         "stemmenTegen": 8,
         "onthoudingen": 0,
         "politicalGroupResults": [

@@ -66,10 +66,10 @@ class DoorverbindingService {
 	public function createContextSnapshot(array $contact, array $cases, array $sentiment): string {
 		$snapshot = [
 			'capturedAt' => date('c'),
-			'bellerIdentification' => (string)($contact['bellerIdentification'] ?? ''),
+			'callerIdentification' => (string)($contact['callerIdentification'] ?? ''),
 			'geidentificeerdeBurgerId' => ($contact['geidentificeerdeBurgerId'] ?? null),
 			'summary' => (string)($contact['summary'] ?? ''),
-			'gerelateerdeCases' => array_values($cases),
+			'relatedCases' => array_values($cases),
 			'sentiment' => $sentiment,
 		];
 
@@ -186,7 +186,7 @@ class DoorverbindingService {
 			doorverbindingId: $doorverbindingId,
 			patch: [
 				'geaccepteerd' => false,
-				'afgekeurdReason' => $reason,
+				'rejectedReason' => $reason,
 			],
 		);
 	}//end rejectTransfer()

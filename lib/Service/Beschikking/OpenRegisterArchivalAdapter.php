@@ -110,7 +110,7 @@ class OpenRegisterArchivalAdapter implements ArchivalAdapterInterface {
 	 * @return string The vernietigingsdatum (Y-m-d), or '' when uncomputable.
 	 */
 	private function computeDestructionDate(array $metadata, string $retentionPeriod): string {
-		$creatie = (string)($metadata['creatieDatum'] ?? ($metadata['bekendmakingDate'] ?? ''));
+		$creatie = (string)($metadata['creatieDatum'] ?? ($metadata['announcementDate'] ?? ''));
 
 		try {
 			$base = new DateTimeImmutable();

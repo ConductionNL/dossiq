@@ -2338,7 +2338,7 @@ class ZrcController extends ZgwController {
 	 */
 	private function enrichZioResponse(array $mapped, array $body): array {
 		// Zrc-004a: aardRelatieWeergave is always "Hoort bij, omgekeerd: kent".
-		$mapped['natureRelationshipWeergave'] = 'Hoort bij, omgekeerd: kent';
+		$mapped['natureRelationshipDisplay'] = 'Hoort bij, omgekeerd: kent';
 
 		// Zrc-004a: registratiedatum from the enriched body (set by business rules).
 		if (isset($body['registrationDate']) === true
@@ -2362,7 +2362,7 @@ class ZrcController extends ZgwController {
 	private function enrichZioJsonResponse(JSONResponse $response): JSONResponse {
 		$data = $response->getData();
 		if (is_array($data) === true) {
-			$data['natureRelationshipWeergave'] = 'Hoort bij, omgekeerd: kent';
+			$data['natureRelationshipDisplay'] = 'Hoort bij, omgekeerd: kent';
 			$response->setData($data);
 		}
 

@@ -241,7 +241,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 		}
 
 		// Brc-004: Set aardRelatieWeergave automatically.
-		$body['natureRelationshipWeergave'] = 'Legt vast, omgekeerd: wordt vastgelegd door';
+		$body['natureRelationshipDisplay'] = 'Legt vast, omgekeerd: wordt vastgelegd door';
 
 		return $this->isValid(body: $body);
 	}//end rulesBesluitinformatieobjectenCreate()

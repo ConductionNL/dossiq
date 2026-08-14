@@ -131,9 +131,9 @@ class BelplanController extends Controller {
 		$record = [
 			'name' => $name,
 			'triggerNumber' => (array)$this->request->getParam('triggerNumber', []),
-			'routeringSteps' => (array)$this->request->getParam('routeringSteps', []),
+			'routingSteps' => (array)$this->request->getParam('routingSteps', []),
 			'openingHours' => (string)$this->request->getParam('openingHours', ''),
-			'terugvalAction' => (string)$this->request->getParam('terugvalAction', 'voicemail'),
+			'fallbackAction' => (string)$this->request->getParam('fallbackAction', 'voicemail'),
 			'priority' => (int)$this->request->getParam('priority', 0),
 			'isActive' => (bool)$this->request->getParam('isActive', true),
 		];
@@ -170,7 +170,7 @@ class BelplanController extends Controller {
 		}
 
 		$patch = [];
-		foreach (['name', 'triggerNumber', 'routeringSteps', 'openingHours', 'terugvalAction', 'priority', 'isActive'] as $field) {
+		foreach (['name', 'triggerNumber', 'routingSteps', 'openingHours', 'fallbackAction', 'priority', 'isActive'] as $field) {
 			$value = $this->request->getParam($field, null);
 			if ($value !== null) {
 				$patch[$field] = $value;

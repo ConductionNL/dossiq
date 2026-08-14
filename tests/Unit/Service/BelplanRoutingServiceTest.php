@@ -109,7 +109,7 @@ class BelplanRoutingServiceTest extends TestCase {
 				'name' => 'Algemeen',
 				'isActive' => true,
 				'triggerNumber' => ['14000'],
-				'routeringSteps' => [
+				'routingSteps' => [
 					['type' => 'vaardigheid_match', 'zaaktype_to_vaardigheid' => ['omgevingsvergunning' => 'omgevingsvergunningen']],
 					['type' => 'wachtrij_overflow', 'threshold_wachttijd_sec' => 180, 'fallback_rol' => 'generalist'],
 				],
@@ -155,15 +155,15 @@ class BelplanRoutingServiceTest extends TestCase {
 				'employeeId' => 'busy',
 				'status' => 'beschikbaar',
 				'expertises' => ['omgevingsvergunningen'],
-				'currentQueueLengte' => 3,
-				'gemiddeldeHandlingDuration' => 100,
+				'currentQueueLength' => 3,
+				'averageHandlingDuration' => 100,
 			],
 			[
 				'employeeId' => 'free',
 				'status' => 'beschikbaar',
 				'expertises' => ['omgevingsvergunningen'],
-				'currentQueueLengte' => 0,
-				'gemiddeldeHandlingDuration' => 120,
+				'currentQueueLength' => 0,
+				'averageHandlingDuration' => 120,
 			],
 		];
 
@@ -181,8 +181,8 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testOverflowToGeneralistWhenAllBusy(): void {
 		$this->objectService->specialisten = [
-			['employeeId' => 'a', 'status' => 'in_gesprek', 'expertises' => ['omgevingsvergunningen'], 'currentQueueLengte' => 2],
-			['employeeId' => 'b', 'status' => 'wrap_up', 'expertises' => ['omgevingsvergunningen'], 'currentQueueLengte' => 1],
+			['employeeId' => 'a', 'status' => 'in_gesprek', 'expertises' => ['omgevingsvergunningen'], 'currentQueueLength' => 2],
+			['employeeId' => 'b', 'status' => 'wrap_up', 'expertises' => ['omgevingsvergunningen'], 'currentQueueLength' => 1],
 		];
 
 		$result = $this->service->routeCall('14000', 'omgevingsvergunning');

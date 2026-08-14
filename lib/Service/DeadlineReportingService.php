@@ -112,7 +112,7 @@ class DeadlineReportingService {
 
 			$byType[$type] ??= [
 				'totaal' => 0,
-				'binnenTerm' => 0,
+				'withinTerm' => 0,
 				'doorlooptijdenDagen' => [],
 				'verlengingen' => 0,
 				'overschrijdingen' => 0,
@@ -138,19 +138,19 @@ class DeadlineReportingService {
 		$bucket['totaal']++;
 		$status = (string)($row['status'] ?? '');
 		if ($status === 'voltooid') {
-			$bucket['binnenTerm']++;
+			$bucket['withinTerm']++;
 		}
 
 		if ($status === 'overschreden') {
 			$bucket['overschrijdingen']++;
 		}
 
-		if ((int)($row['countVerlengingen'] ?? 0) > 0) {
+		if ((int)($row['countExtensions'] ?? 0) > 0) {
 			$bucket['verlengingen']++;
 		}
 
 		$start = (string)($row['startDate'] ?? '');
-		$end = (string)($row['endDateActueel'] ?? '');
+		$end = (string)($row['endDateCurrent'] ?? '');
 		if ($start !== '' && $end !== '') {
 			$startD = new DateTimeImmutable(substr($start, 0, 10));
 			$endD = new DateTimeImmutable($end);
@@ -171,7 +171,7 @@ class DeadlineReportingService {
 			// $byType entries are only created when a row is counted, so
 			// 'totaal' is always >= 1 here.
 			$total = $b['totaal'];
-			$binnenPct = round(($b['binnenTerm'] / $total) * 100, 1);
+			$binnenPct = round(($b['withinTerm'] / $total) * 100, 1);
 
 			$avgDur = 0.0;
 
@@ -324,7 +324,7 @@ class DeadlineReportingService {
 			}
 
 			$start = (string)($row['startDate'] ?? '');
-			$end = (string)($row['endDateActueel'] ?? '');
+			$end = (string)($row['endDateCurrent'] ?? '');
 			if ($start !== '' && $end !== '') {
 				$durations[] = (int)(new DateTimeImmutable(substr($start, 0, 10)))->diff(new DateTimeImmutable($end))->days;
 			}

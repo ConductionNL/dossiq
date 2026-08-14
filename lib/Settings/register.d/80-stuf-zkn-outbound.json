@@ -176,7 +176,7 @@
                 "direction",
                 "berichtSoort",
                 "envelopeXml",
-                "verzondenOn"
+                "sentOn"
             ],
             "properties": {
                 "id": {
@@ -261,7 +261,7 @@
                         }
                     }
                 },
-                "verzondenOn": {
+                "sentOn": {
                     "type": "string",
                     "format": "date-time",
                     "description": "When the message was sent (or registered, for inbound messages)."

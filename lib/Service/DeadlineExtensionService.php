@@ -158,16 +158,16 @@ class DeadlineExtensionService {
 
 		$this->assertExtensionPermitted(instance: $instance, newEndDate: $newEndDate, mode: $mode);
 
-		$current = (string)($instance['endDateActueel'] ?? '');
-		$consumed = (int)($instance['countVerlengingen'] ?? 0);
+		$current = (string)($instance['endDateCurrent'] ?? '');
+		$consumed = (int)($instance['countExtensions'] ?? 0);
 		$daysImpact = $this->calculateDaysImpact(current: $current, newEndDate: $newEndDate);
 
 		$updated = $this->termService->updateTermijnInstance(
 			$termInstanceId,
 			[
-				'endDateActueel' => $newEndDate,
+				'endDateCurrent' => $newEndDate,
 				'status' => 'verlengd',
-				'countVerlengingen' => ($consumed + 1),
+				'countExtensions' => ($consumed + 1),
 			]
 		);
 
@@ -218,12 +218,12 @@ class DeadlineExtensionService {
 	 * @throws RuntimeException When the deadline does not move forward or the ceiling is exhausted.
 	 */
 	private function assertExtensionPermitted(array $instance, string $newEndDate, string $mode): void {
-		$current = (string)($instance['endDateActueel'] ?? '');
+		$current = (string)($instance['endDateCurrent'] ?? '');
 		if ($current !== '' && $newEndDate <= $current) {
 			throw new RuntimeException('newEinddatum must be later than current einddatumActueel');
 		}
 
-		$consumed = (int)($instance['countVerlengingen'] ?? 0);
+		$consumed = (int)($instance['countExtensions'] ?? 0);
 		$maxExt = $this->resolveMaxExtensions(instance: $instance);
 		if ($mode !== self::MODE_SUPERVISOR && $consumed >= $maxExt) {
 			throw new RuntimeException('AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt (' . $maxExt . ')');
@@ -313,7 +313,7 @@ class DeadlineExtensionService {
 		}
 
 		if (is_array($svcDef) === true) {
-			return (int)($svcDef['countVerlengingen'] ?? 1);
+			return (int)($svcDef['countExtensions'] ?? 1);
 		}
 
 		return 1;

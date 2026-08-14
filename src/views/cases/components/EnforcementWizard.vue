@@ -123,7 +123,7 @@
 						}}</label>
 						<input
 							id="enforcement-execution-date"
-							v-model="effectueringsDate"
+							v-model="effectuationDate"
 							type="date"
 							class="enforcement-wizard__input" />
 					</div>
@@ -254,7 +254,7 @@ export default {
 			penaltyPaymentAmount: 5000,
 			penaltyPaymentMaximum: 25000,
 			compliance_period: 42,
-			effectueringsDate: '',
+			effectuationDate: '',
 			overrideReason: '',
 			zienswijzetermijn: 14,
 			submitting: false,
@@ -358,8 +358,8 @@ export default {
 					penaltyPaymentAmount: this.isDwangsom ? this.penaltyPaymentAmount : null,
 					penaltyPaymentMaximum: this.isDwangsom ? this.penaltyPaymentMaximum : null,
 					compliance_period: this.compliance_period || null,
-					effectueringsDate: this.isBestuursdwang
-						? this.effectueringsDate
+					effectuationDate: this.isBestuursdwang
+						? this.effectuationDate
 						: null,
 					overrideReason:
 						this.intervention !== this.suggestedIntervention

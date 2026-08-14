@@ -70,7 +70,7 @@ class MandaatCheckServiceTest extends TestCase {
 		$this->objects->saveObject('procest', 'mandaat', [
 			'id' => 'm-consulent',
 			'mandaatNummer' => 'WMO-1',
-			'gemandateerdeRole' => 'rol-consulent',
+			'mandateeRole' => 'rol-consulent',
 			'terms' => [
 				'plafondCents' => 500000,
 				'decisionTypes' => ['wmo-toekenning'],
@@ -81,7 +81,7 @@ class MandaatCheckServiceTest extends TestCase {
 		$this->objects->saveObject('procest', 'mandaat', [
 			'id' => 'm-manager',
 			'mandaatNummer' => 'WMO-2',
-			'gemandateerdeRole' => 'rol-afdelingsmanager',
+			'mandateeRole' => 'rol-afdelingsmanager',
 			'terms' => [
 				'plafondCents' => 2500000,
 				'subdelegatie' => true,

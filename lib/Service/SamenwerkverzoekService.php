@@ -211,7 +211,7 @@ class SamenwerkverzoekService {
 		}
 
 		$request['advies'] = $advies;
-		$request['gereageerdOn'] = date('c');
+		$request['respondedOn'] = date('c');
 
 		$updated = $objectService->saveObject(
 			register: $register,

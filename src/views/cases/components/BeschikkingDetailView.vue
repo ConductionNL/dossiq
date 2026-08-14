@@ -46,7 +46,7 @@
 					<!-- Outer key renamed; `mandaatNiveau` is NESTED inside it, so it
 					     lives in that column's JSON rather than as a column of its own
 					     and is deliberately not renamed here. -->
-					<dd>{{ beschikking.mandateGranted.mandateNiveau }}</dd>
+					<dd>{{ beschikking.mandateGranted.mandateLevel }}</dd>
 					<dt>{{ t('procest', 'Approved by') }}</dt>
 					<dd>{{ beschikking.mandateGranted.approvedBy }}</dd>
 				</dl>

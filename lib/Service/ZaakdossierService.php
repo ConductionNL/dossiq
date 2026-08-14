@@ -507,7 +507,7 @@ class ZaakdossierService {
 		$join = [
 			'zaak' => $caseId,
 			'informatieobject' => $infoObjectId,
-			'natureRelationshipWeergave' => 'Hoort bij, omgekeerd',
+			'natureRelationshipDisplay' => 'Hoort bij, omgekeerd',
 			'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 		];
 

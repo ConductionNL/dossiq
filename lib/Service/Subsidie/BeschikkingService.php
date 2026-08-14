@@ -129,7 +129,7 @@ class BeschikkingService {
 				'status' => 'concept',
 			]
 		);
-		unset($record['ondertekendBy'], $record['ondertekendOn'], $record['publicationDate']);
+		unset($record['signedBy'], $record['signedOn'], $record['publicationDate']);
 
 		try {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
@@ -159,8 +159,8 @@ class BeschikkingService {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$patch = [
-			'ondertekendBy' => $user->getUID(),
-			'ondertekendOn' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
+			'signedBy' => $user->getUID(),
+			'signedOn' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
 		];
 
 		try {
@@ -188,7 +188,7 @@ class BeschikkingService {
 			throw new OCSBadRequestException('Beschikking niet gevonden');
 		}
 
-		if (((string)($current['ondertekendBy'] ?? '')) === '') {
+		if (((string)($current['signedBy'] ?? '')) === '') {
 			throw new OCSBadRequestException('Beschikking moet eerst worden ondertekend');
 		}
 

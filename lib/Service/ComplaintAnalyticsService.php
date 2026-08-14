@@ -66,7 +66,7 @@ class ComplaintAnalyticsService {
 	/**
 	 * Aggregate complaint frequency by a given dimension for a date range.
 	 *
-	 * @param string $dimension Grouping dimension: 'category', 'betrokkenDepartment', 'receiptChannel'
+	 * @param string $dimension Grouping dimension: 'category', 'involvedDepartment', 'receiptChannel'
 	 * @param string $dateFrom ISO date string (Y-m-d) for range start
 	 * @param string $dateTo ISO date string (Y-m-d) for range end
 	 *
@@ -90,7 +90,7 @@ class ComplaintAnalyticsService {
 		// Privacy: when slicing by an employee-identifying dimension, suppress
 		// slices below the minimum threshold so individual employees cannot be
 		// re-identified from low-count buckets.
-		if (in_array($dimension, ['betrokkenEmployee', 'handler'], true) === true) {
+		if (in_array($dimension, ['involvedEmployee', 'handler'], true) === true) {
 			$frequency = array_filter(
 				$frequency,
 				static fn (int $count): bool => $count >= self::MIN_THRESHOLD_FOR_EMPLOYEE_DATA
@@ -252,7 +252,7 @@ class ComplaintAnalyticsService {
 		$employeeDetails = [];
 
 		foreach ($complaints as $complaint) {
-			$employee = $complaint['betrokkenEmployee'] ?? null;
+			$employee = $complaint['involvedEmployee'] ?? null;
 			if ($employee === null || $employee === '') {
 				continue;
 			}

@@ -40,13 +40,13 @@
         "title": "Mandaat",
         "description": "Individual mandate granting authority to a role.",
         "type": "object",
-        "required": ["mandateNumber", "mandateDecision", "gemandateerdeRole", "bevoegdheidType"],
+        "required": ["mandateNumber", "mandateDecision", "mandateeRole", "bevoegdheidType"],
         "properties": {
           "mandateNumber":         {"type": "string", "title": "Mandate Number", "description": "Unique number identifying this mandate.", "facetable": true, "maxLength": 64},
           "mandateDecision":       {"type": "string", "title": "Mandate Decision", "description": "Reference to the mandate decision that issued this mandate."},
           "description":           {"type": "string", "title": "Description", "description": "Description of this mandate."},
           "bevoegdheidType":       {"type": "string", "title": "Authority Type", "description": "Type classification of the authority granted by this mandate.", "enum": ["mandaat", "volmacht", "machtiging"], "default": "mandaat", "facetable": true},
-          "gemandateerdeRole":      {"type": "string", "title": "Delegated Role", "description": "OrganisatieRol id"},
+          "mandateeRole":      {"type": "string", "title": "Delegated Role", "description": "OrganisatieRol id"},
           "legalBasis":            {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate.", "maxLength": 255},
           "terms": {
             "type": "object",
@@ -113,7 +113,7 @@
           "userId":               {"type": "string", "title": "User ID", "description": "Nextcloud user id of the employee who exercised the mandate."},
           "moment":             {"type": "string", "title": "Timestamp", "description": "Date and time at which the mandate was exercised.", "format": "date-time"},
           "roleOnMomentFromDecision":{"type": "object", "title": "Role At Decision Time", "description": "Snapshot of the user's role at decision time"},
-          "gebruikteTerms": {"type": "object", "title": "Applied Conditions", "description": "Snapshot of the mandaat voorwaarden used"},
+          "usedTerms": {"type": "object", "title": "Applied Conditions", "description": "Snapshot of the mandaat voorwaarden used"},
           "mandateVersionId":     {"type": "string", "title": "Mandate Version ID", "description": "Version of the mandate actually applied"}
         }
       },

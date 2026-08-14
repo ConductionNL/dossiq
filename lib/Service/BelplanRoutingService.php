@@ -118,13 +118,13 @@ class BelplanRoutingService {
 		usort(
 			$available,
 			static function (array $a, array $b): int {
-				return ((int)($a['currentQueueLengte'] ?? 0) <=> (int)($b['currentQueueLengte'] ?? 0));
+				return ((int)($a['currentQueueLength'] ?? 0) <=> (int)($b['currentQueueLength'] ?? 0));
 			}
 		);
 
 		$overflow = $this->overflowConfig(belplan: $belplan);
 
-		if (empty($available) === true || (int)($available[0]['currentQueueLengte'] ?? 0) > $overflow['wachtrij']) {
+		if (empty($available) === true || (int)($available[0]['currentQueueLength'] ?? 0) > $overflow['wachtrij']) {
 			// All busy or queue too long → overflow to generalist with escalatie.
 			return [
 				'destinationSpecialistId' => null,
@@ -141,7 +141,7 @@ class BelplanRoutingService {
 			'destinationSpecialistId' => (string)($chosen['employeeId'] ?? ''),
 			'vaardigheid' => $vaardigheid,
 			'escalatieFlag' => false,
-			'estimatedWaitTime' => ((int)($chosen['currentQueueLengte'] ?? 0) * (int)($chosen['gemiddeldeHandlingDuration'] ?? 0)),
+			'estimatedWaitTime' => ((int)($chosen['currentQueueLength'] ?? 0) * (int)($chosen['averageHandlingDuration'] ?? 0)),
 			'fallbackRol' => null,
 		];
 	}//end routeCall()
@@ -204,7 +204,7 @@ class BelplanRoutingService {
 	private function resolveVaardigheid(array $belplan, string $menuSelection): string {
 		$normalized = strtolower(trim($menuSelection));
 
-		foreach ((array)($belplan['routeringSteps'] ?? []) as $step) {
+		foreach ((array)($belplan['routingSteps'] ?? []) as $step) {
 			if (($step['type'] ?? '') !== 'vaardigheid_match') {
 				continue;
 			}
@@ -237,7 +237,7 @@ class BelplanRoutingService {
 		$queue = (int)$this->settingsService->getKccConfigValue('belplan_overflow_threshold_wachtrij_lengte');
 		$fallbackRole = 'generalist';
 
-		foreach ((array)($belplan['routeringSteps'] ?? []) as $step) {
+		foreach ((array)($belplan['routingSteps'] ?? []) as $step) {
 			if (($step['type'] ?? '') === 'wachtrij_overflow') {
 				$wachttijd = (int)($step['threshold_wachttijd_sec'] ?? $wachttijd);
 				$fallbackRole = (string)($step['fallback_rol'] ?? $fallbackRole);
@@ -262,8 +262,8 @@ class BelplanRoutingService {
 		$totalQueue = 0;
 		$totalDur = 0;
 		foreach ($specialists as $specialist) {
-			$totalQueue += (int)($specialist['currentQueueLengte'] ?? 0);
-			$totalDur += (int)($specialist['gemiddeldeHandlingDuration'] ?? 0);
+			$totalQueue += (int)($specialist['currentQueueLength'] ?? 0);
+			$totalDur += (int)($specialist['averageHandlingDuration'] ?? 0);
 		}
 
 		$avgDur = (int)($totalDur / max(1, count($specialists)));

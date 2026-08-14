@@ -194,7 +194,7 @@ class MandaatImportService {
 				throw new RuntimeException('Unknown OrganisatieRol "' . $roleName . '" at row ' . ($idx + 1));
 			}
 
-			$resolved[] = $row + ['gemandateerdeRole' => $roleIndex[$roleName]];
+			$resolved[] = $row + ['mandateeRole' => $roleIndex[$roleName]];
 		}
 
 		return $resolved;
@@ -219,7 +219,7 @@ class MandaatImportService {
 			// Key = schema property (renamed). Value = CSV column header, an
 			// external input contract that stays as operators' files write it.
 			'description' => (string)($row['description'] ?? $row['omschrijving'] ?? ''),
-			'gemandateerdeRole' => (string)$row['gemandateerdeRole'],
+			'mandateeRole' => (string)$row['mandateeRole'],
 			// Key = the schema property (renamed). Value = a CSV COLUMN HEADER,
 			// which is an external input format the operator's file already
 			// uses, so both spellings are read.
@@ -263,7 +263,7 @@ class MandaatImportService {
 	 */
 	private function collectChangedFields(array $existing, array $payload): array {
 		$changedFields = [];
-		foreach (['description', 'gemandateerdeRole', 'legalBasis'] as $f) {
+		foreach (['description', 'mandateeRole', 'legalBasis'] as $f) {
 			if ((string)($existing[$f] ?? '') !== (string)$payload[$f]) {
 				$changedFields[] = $f;
 			}

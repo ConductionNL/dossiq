@@ -107,7 +107,7 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 		$wmo = $this->objects->store['termijnDefinitie']['td-wmo-aanvraag'];
 		self::assertSame('wmo-melding', $wmo['caseType']);
 		self::assertSame(42, $wmo['standardDurationDays']);
-		self::assertSame(0, $wmo['countVerlengingen']);
+		self::assertSame(0, $wmo['countExtensions']);
 	}
 }
 

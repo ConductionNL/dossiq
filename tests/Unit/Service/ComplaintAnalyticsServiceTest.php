@@ -192,9 +192,9 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 
 		$complaints = [
-			['betrokkenEmployee' => 'medewerker-A', 'category' => 'Bejegening', 'receiptDate' => '2026-01-10'],
-			['betrokkenEmployee' => 'medewerker-A', 'category' => 'Bejegening', 'receiptDate' => '2026-02-10'],
-			['betrokkenEmployee' => 'medewerker-A', 'category' => 'Wachttijd', 'receiptDate' => '2026-03-10'],
+			['involvedEmployee' => 'medewerker-A', 'category' => 'Bejegening', 'receiptDate' => '2026-01-10'],
+			['involvedEmployee' => 'medewerker-A', 'category' => 'Bejegening', 'receiptDate' => '2026-02-10'],
+			['involvedEmployee' => 'medewerker-A', 'category' => 'Wachttijd', 'receiptDate' => '2026-03-10'],
 		];
 
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);
@@ -205,7 +205,7 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->assertNotEmpty($alerts);
 		$this->assertSame(3, $alerts[0]['count']);
 		foreach ($alerts as $alert) {
-			$this->assertArrayNotHasKey('betrokkenEmployee', $alert);
+			$this->assertArrayNotHasKey('involvedEmployee', $alert);
 		}
 	}//end testCheckEmployeeThresholdAlertsReturnsAlertsAboveThreshold()
 
@@ -220,8 +220,8 @@ class ComplaintAnalyticsServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 
 		$complaints = [
-			['betrokkenEmployee' => 'medewerker-B', 'category' => 'Wachttijd', 'receiptDate' => '2026-01-10'],
-			['betrokkenEmployee' => 'medewerker-B', 'category' => 'Wachttijd', 'receiptDate' => '2026-02-10'],
+			['involvedEmployee' => 'medewerker-B', 'category' => 'Wachttijd', 'receiptDate' => '2026-01-10'],
+			['involvedEmployee' => 'medewerker-B', 'category' => 'Wachttijd', 'receiptDate' => '2026-02-10'],
 		];
 
 		$objectServiceMock->method('searchObjectsBySlug')->willReturn($complaints);

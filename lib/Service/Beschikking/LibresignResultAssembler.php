@@ -168,7 +168,7 @@ class LibresignResultAssembler {
 			'validationRapportId' => $uuid,
 			'certificateSerialNumber' => (string)($status['certificateSerialNumber'] ?? ('libresign-' . $uuid)),
 			'tspProviderEidasId' => 'LibreSign',
-			'ondertekeningMoment' => (new DateTimeImmutable())->format('c'),
+			'signingMoment' => (new DateTimeImmutable())->format('c'),
 		];
 	}//end assembleSignedResult()
 

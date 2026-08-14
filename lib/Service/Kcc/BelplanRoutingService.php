@@ -91,7 +91,7 @@ class BelplanRoutingService {
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T06
 	 */
 	public function resolveVaardigheid(array $belplan, string|int $menuSelection): string {
-		$steps = $belplan['routeringSteps'] ?? [];
+		$steps = $belplan['routingSteps'] ?? [];
 		if (is_array($steps) === false) {
 			return '';
 		}
@@ -198,26 +198,26 @@ class BelplanRoutingService {
 		usort(
 			$available,
 			static function (array $a, array $b): int {
-				$queueA = (int)($a['currentQueueLengte'] ?? 0);
-				$queueB = (int)($b['currentQueueLengte'] ?? 0);
+				$queueA = (int)($a['currentQueueLength'] ?? 0);
+				$queueB = (int)($b['currentQueueLength'] ?? 0);
 				if ($queueA !== $queueB) {
 					return $queueA <=> $queueB;
 				}
 
-				$durationA = (int)($a['gemiddeldeHandlingDuration'] ?? 0);
-				$durationB = (int)($b['gemiddeldeHandlingDuration'] ?? 0);
+				$durationA = (int)($a['averageHandlingDuration'] ?? 0);
+				$durationB = (int)($b['averageHandlingDuration'] ?? 0);
 				return $durationA <=> $durationB;
 			}
 		);
 
 		$picked = $available[0];
-		$picked['currentQueueLengte'] = (int)($picked['currentQueueLengte'] ?? 0);
-		$picked['gemiddeldeHandlingDuration'] = (int)($picked['gemiddeldeHandlingDuration'] ?? 0);
+		$picked['currentQueueLength'] = (int)($picked['currentQueueLength'] ?? 0);
+		$picked['averageHandlingDuration'] = (int)($picked['averageHandlingDuration'] ?? 0);
 
 		return [
 			'destinationSpecialistId' => (string)($picked['employeeId'] ?? ($picked['id'] ?? '')),
 			'escalatieFlag' => false,
-			'estimatedWaitTime' => $picked['currentQueueLengte'] * $picked['gemiddeldeHandlingDuration'],
+			'estimatedWaitTime' => $picked['currentQueueLength'] * $picked['averageHandlingDuration'],
 			'vaardigheid' => $vaardigheid,
 			'candidatePool' => count($candidates),
 		];
@@ -273,7 +273,7 @@ class BelplanRoutingService {
 	private function minQueueLength(array $pool): int {
 		$min = PHP_INT_MAX;
 		foreach ($pool as $sp) {
-			$queue = (int)($sp['currentQueueLengte'] ?? 0);
+			$queue = (int)($sp['currentQueueLength'] ?? 0);
 			if ($queue < $min) {
 				$min = $queue;
 			}
@@ -300,7 +300,7 @@ class BelplanRoutingService {
 
 		$sum = 0;
 		foreach ($pool as $sp) {
-			$sum += (int)($sp['gemiddeldeHandlingDuration'] ?? 0);
+			$sum += (int)($sp['averageHandlingDuration'] ?? 0);
 		}
 
 		return (int)round($sum / count($pool));

@@ -234,7 +234,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 				object: [
 					'zaak' => $folderUuid,
 					'informatieobject' => $infoId,
-					'natureRelationshipWeergave' => 'Hoort bij, omgekeerd',
+					'natureRelationshipDisplay' => 'Hoort bij, omgekeerd',
 					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 				],
 				register: $register,

@@ -176,7 +176,7 @@ class TermijnNotificationService {
 	public function renderTemplate(string $type, array $instance, array $context): array {
 		$locale = (string)($context['locale'] ?? 'nl');
 		$case = (string)($instance['zaak'] ?? ($context['zaak'] ?? '–'));
-		$end = (string)($instance['endDateActueel'] ?? ($context['endDate'] ?? '–'));
+		$end = (string)($instance['endDateCurrent'] ?? ($context['endDate'] ?? '–'));
 
 		$subject = '';
 		$body = '';

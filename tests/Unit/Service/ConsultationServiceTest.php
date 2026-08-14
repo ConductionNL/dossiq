@@ -169,7 +169,7 @@ class ConsultationServiceTest extends TestCase {
 
 		$this->service->createConsultation(data: [
 			'parentCase' => 'zaak-uuid',
-			'adviesAuthority' => 'Brandweer',
+			'adviceAuthority' => 'Brandweer',
 			'questionFormulation' => 'Is het brandveilig?',
 			'latestResponseDate' => '2026-07-01',
 		]);
@@ -195,7 +195,7 @@ class ConsultationServiceTest extends TestCase {
 
 		$this->service->createConsultation(data: [
 			'parentCase' => 'zaak-uuid',
-			'adviesAuthority' => 'Brandweer',
+			'adviceAuthority' => 'Brandweer',
 			'questionFormulation' => 'Is het brandveilig?',
 			'latestResponseDate' => '2026-07-01',
 		]);
@@ -216,7 +216,7 @@ class ConsultationServiceTest extends TestCase {
 		$this->expectExceptionMessage('parentZaak is required');
 
 		$this->service->createConsultation(data: [
-			'adviesAuthority' => 'Brandweer',
+			'adviceAuthority' => 'Brandweer',
 			'questionFormulation' => 'Is het brandveilig?',
 			'latestResponseDate' => '2026-07-01',
 		]);

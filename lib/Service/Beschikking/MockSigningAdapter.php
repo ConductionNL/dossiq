@@ -56,7 +56,7 @@ class MockSigningAdapter implements SigningAdapterInterface {
 			'validationRapportId' => 'val-' . substr(hash('sha256', 'rapport' . $seed), 0, 12),
 			'certificateSerialNumber' => '0x' . substr(hash('sha256', 'cert' . $seed), 0, 16),
 			'tspProviderEidasId' => 'NL-TSP-0001',
-			'ondertekeningMoment' => (new DateTimeImmutable())->format('c'),
+			'signingMoment' => (new DateTimeImmutable())->format('c'),
 		];
 	}//end sign()
 

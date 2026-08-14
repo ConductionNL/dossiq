@@ -134,9 +134,9 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->objects->saveObject('procest', 'bezwaarTrigger', [
 			'id' => 'trig-1',
 			'decisionId' => 'besch-1',
-			'objectionOntvangen' => false,
+			'objectionReceived' => false,
 			'archiefTriggerActief' => true,
-			'archiefDate' => $yesterday,
+			'archiveDate' => $yesterday,
 		]);
 
 		$this->decisionService->expects($this->once())
@@ -162,9 +162,9 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->objects->saveObject('procest', 'bezwaarTrigger', [
 			'id' => 'trig-2',
 			'decisionId' => 'besch-2',
-			'objectionOntvangen' => true,
+			'objectionReceived' => true,
 			'archiefTriggerActief' => true,
-			'archiefDate' => $yesterday,
+			'archiveDate' => $yesterday,
 		]);
 
 		$this->decisionService->expects($this->never())->method('archive');
@@ -187,9 +187,9 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->objects->saveObject('procest', 'bezwaarTrigger', [
 			'id' => 'trig-3',
 			'decisionId' => 'besch-3',
-			'objectionOntvangen' => false,
+			'objectionReceived' => false,
 			'archiefTriggerActief' => true,
-			'archiefDate' => $tomorrow,
+			'archiveDate' => $tomorrow,
 		]);
 
 		$this->decisionService->expects($this->never())->method('archive');

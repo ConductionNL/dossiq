@@ -56,7 +56,7 @@ class BerichtenboxRoutingService {
 	 *
 	 * @param array<string, mixed> $decision The beschikking object.
 	 *
-	 * @return array{kanaal: string, verzondenOn: string, verzondenBy: string, messageId: string} The verzending record.
+	 * @return array{kanaal: string, sentOn: string, sentBy: string, messageId: string} The verzending record.
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T15
 	 */
@@ -80,8 +80,8 @@ class BerichtenboxRoutingService {
 
 		return [
 			'kanaal' => $channel,
-			'verzondenOn' => (new DateTimeImmutable())->format('c'),
-			'verzondenBy' => 'systeem',
+			'sentOn' => (new DateTimeImmutable())->format('c'),
+			'sentBy' => 'systeem',
 			'messageId' => $messageId,
 		];
 	}//end routeToBerichtenbox()

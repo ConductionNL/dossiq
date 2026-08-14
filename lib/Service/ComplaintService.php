@@ -135,7 +135,7 @@ class ComplaintService {
 		$data['complaintNumber'] = $this->generateComplaintNumber();
 		$data['status'] = 'ontvangen';
 		$data['priority'] = $data['priority'] ?? 'normaal';
-		$data['verdagingPossible'] = true;
+		$data['postponementPossible'] = true;
 
 		// Compute Awb deadlines.
 		$data['acknowledgementOfReceiptDeadline'] = $this->addWorkingDays(startDate: $receiptDate, days: self::AWB_ACK_WORKING_DAYS);
@@ -299,7 +299,7 @@ class ComplaintService {
 			throw new RuntimeException('Complaint not found: ' . $id);
 		}
 
-		if (($complaint['verdagingPossible'] ?? false) === false) {
+		if (($complaint['postponementPossible'] ?? false) === false) {
 			throw new RuntimeException('Verdaging is not available — already used or not applicable');
 		}
 
@@ -312,8 +312,8 @@ class ComplaintService {
 
 		$updateData = [
 			'afhandelDeadline' => $newDeadline,
-			'verdagingPossible' => false,
-			'verdagingJustification' => $justification,
+			'postponementPossible' => false,
+			'postponementJustification' => $justification,
 		];
 
 		$this->logger->info(

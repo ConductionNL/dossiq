@@ -183,7 +183,7 @@ class SentimentAnalysisJob extends TimedJob {
 		);
 
 		if ($analysis['escalatieAanbevolen'] === true) {
-			foreach ((array)($contact['gerelateerdeCases'] ?? []) as $caseId) {
+			foreach ((array)($contact['relatedCases'] ?? []) as $caseId) {
 				$this->contactMomentService->recordActivity(
 					(string)$caseId,
 					$contactId,

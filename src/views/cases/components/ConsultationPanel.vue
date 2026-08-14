@@ -18,7 +18,7 @@
 				:class="{ 'consultation-panel__item--overdue': isOverdue(cons) }">
 				<div class="consultation-panel__item-header">
 					<span class="consultation-panel__department">{{
-						cons.adviesAuthority
+						cons.adviceAuthority
 					}}</span>
 					<span
 						class="consultation-panel__status"

@@ -77,7 +77,7 @@
 						{ "title": "Executions", "register": "procest", "schema": "subsidieUitvoering", "metric": "count", "filter": { "subsidieaanvraag": "@objectId" } }
 					] } },
 					{ "id": "subsidie-related", "type": "related", "title": "Case, scheme & handler", "icon": "LinkVariant" },
-					{ "id": "subsidie-beoordelingen", "type": "object-list", "title": "Assessments", "icon": "ClipboardCheckOutline", "content": { "register": "procest", "schema": "subsidieBeoordeling", "filter": { "subsidieaanvraag": "@objectId" }, "sort": { "field": "beoordelingsdatum", "dir": "desc" }, "limit": 25, "columns": [ { "key": "beoordelaar", "label": "Assessor" }, { "key": "substantiveToetsOpinion", "label": "Content check" }, { "key": "financieleToetsOpinion", "label": "Financial check" }, { "key": "advies", "label": "Advice" }, { "key": "beoordelingsdatum", "label": "Assessed" } ], "emptyText": "No assessments for this application yet" } },
+					{ "id": "subsidie-beoordelingen", "type": "object-list", "title": "Assessments", "icon": "ClipboardCheckOutline", "content": { "register": "procest", "schema": "subsidieBeoordeling", "filter": { "subsidieaanvraag": "@objectId" }, "sort": { "field": "beoordelingsdatum", "dir": "desc" }, "limit": 25, "columns": [ { "key": "beoordelaar", "label": "Assessor" }, { "key": "substantiveAssessmentOpinion", "label": "Content check" }, { "key": "financialAssessmentOpinion", "label": "Financial check" }, { "key": "advies", "label": "Advice" }, { "key": "beoordelingsdatum", "label": "Assessed" } ], "emptyText": "No assessments for this application yet" } },
 					{ "id": "subsidie-beschikkingen", "type": "object-list", "title": "Decisions", "icon": "FileSign", "content": { "register": "procest", "schema": "subsidieBeschikking", "filter": { "subsidieaanvraag": "@objectId" }, "sort": { "field": "decisionDate", "dir": "desc" }, "limit": 25, "columns": [ { "key": "beschikkingnummer", "label": "Number" }, { "key": "beschikkingtype", "label": "Type" }, { "key": "grantedAmount", "label": "Granted" }, { "key": "status", "label": "Status" }, { "key": "decisionDate", "label": "Date" } ], "emptyText": "No decisions issued on this application yet" } },
 					{ "id": "subsidie-uitvoeringen", "type": "object-list", "title": "Executions", "icon": "Cash", "content": { "register": "procest", "schema": "subsidieUitvoering", "filter": { "subsidieaanvraag": "@objectId" }, "sort": { "field": "order", "dir": "asc" }, "limit": 25, "columns": [ { "key": "status", "label": "Status" }, { "key": "betaaldeVoorschotten", "label": "Paid advances" }, { "key": "outstandingAdvances", "label": "Open advances" } ], "emptyText": "No execution records for this application yet" } }
 				],
@@ -108,10 +108,10 @@
 				"register": "procest",
 				"schema": "subsidieRegeling",
 				"columns": [
-					"regelingName",
+					"schemeName",
 					"juridischeGrondslag",
 					"plafond",
-					"tussenrapportageFrequency",
+					"interimReportFrequency",
 					"termStart",
 					"termEnd"
 				],

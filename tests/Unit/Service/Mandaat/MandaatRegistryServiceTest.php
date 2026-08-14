@@ -114,7 +114,7 @@ class MandaatRegistryServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testRefusesARoleReferencedByAMandaat(): void {
-		$this->stubListings([['id' => 'm-1', 'gemandateerdeRole' => 'role-1']], []);
+		$this->stubListings([['id' => 'm-1', 'mandateeRole' => 'role-1']], []);
 		$this->registry->expects($this->never())->method('delete');
 
 		$this->expectException(RuntimeException::class);
@@ -182,7 +182,7 @@ class MandaatRegistryServiceTest extends TestCase {
 	 */
 	public function testAnUnrelatedReferenceDoesNotBlockDeletion(): void {
 		$this->stubListings(
-			[['id' => 'm-1', 'gemandateerdeRole' => 'some-other-role']],
+			[['id' => 'm-1', 'mandateeRole' => 'some-other-role']],
 			[['id' => 't-1', 'roleId' => 'some-other-role']]
 		);
 		$this->registry->expects($this->once())->method('delete');
@@ -197,7 +197,7 @@ class MandaatRegistryServiceTest extends TestCase {
 	 */
 	public function testReportsBothBlockerKinds(): void {
 		$this->stubListings(
-			[['id' => 'm-1', 'gemandateerdeRole' => 'role-1']],
+			[['id' => 'm-1', 'mandateeRole' => 'role-1']],
 			[['id' => 't-1', 'roleId' => 'role-1']]
 		);
 
@@ -214,7 +214,7 @@ class MandaatRegistryServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testResolvesANestedReferenceObject(): void {
-		$this->stubListings([['id' => 'm-1', 'gemandateerdeRole' => ['id' => 'role-1']]], []);
+		$this->stubListings([['id' => 'm-1', 'mandateeRole' => ['id' => 'role-1']]], []);
 		$this->registry->expects($this->never())->method('delete');
 
 		$this->expectException(RuntimeException::class);

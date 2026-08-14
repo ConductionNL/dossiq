@@ -391,8 +391,8 @@ class ZaakdossierServiceTest extends TestCase {
 		$result = $this->service->transitionStatus('inf-1', 'definitief');
 
 		$this->assertSame('definitief', $result['status']);
-		$this->assertArrayHasKey('vergrendeldOn', $result);
-		$this->assertArrayHasKey('vergrendeldOn', (array)$captured);
+		$this->assertArrayHasKey('lockedOn', $result);
+		$this->assertArrayHasKey('lockedOn', (array)$captured);
 
 	}//end testTransitionToDefinitiefLocks()
 

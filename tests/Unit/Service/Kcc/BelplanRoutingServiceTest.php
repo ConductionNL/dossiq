@@ -92,7 +92,7 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testResolveVaardigheidByNumericIndex(): void {
 		$belplan = [
-			'routeringSteps' => [
+			'routingSteps' => [
 				['label' => 'Omgevingsvergunning', 'vaardigheid' => 'omgevingsvergunning'],
 				['label' => 'Bouwtoezicht',        'vaardigheid' => 'bouwtoezicht'],
 			],
@@ -107,7 +107,7 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	public function testResolveVaardigheidByLabel(): void {
 		$belplan = [
-			'routeringSteps' => [
+			'routingSteps' => [
 				['label' => 'Omgevingsvergunning', 'vaardigheid' => 'omgevingsvergunning'],
 				['label' => 'Bouwtoezicht',        'vaardigheid' => 'bouwtoezicht'],
 			],
@@ -128,15 +128,15 @@ class BelplanRoutingServiceTest extends TestCase {
 				'employeeId' => 'sp-1',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'beschikbaar',
-				'currentQueueLengte' => 3,
-				'gemiddeldeHandlingDuration' => 240,
+				'currentQueueLength' => 3,
+				'averageHandlingDuration' => 240,
 			],
 			[
 				'employeeId' => 'sp-2',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'beschikbaar',
-				'currentQueueLengte' => 1,
-				'gemiddeldeHandlingDuration' => 300,
+				'currentQueueLength' => 1,
+				'averageHandlingDuration' => 300,
 			],
 		];
 
@@ -172,8 +172,8 @@ class BelplanRoutingServiceTest extends TestCase {
 				'employeeId' => 'sp-1',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'in_gesprek',
-				'currentQueueLengte' => 7,
-				'gemiddeldeHandlingDuration' => 60,
+				'currentQueueLength' => 7,
+				'averageHandlingDuration' => 60,
 			],
 		];
 
@@ -198,8 +198,8 @@ class BelplanRoutingServiceTest extends TestCase {
 				'employeeId' => 'sp-1',
 				'expertises' => ['bouwtoezicht'],
 				'status' => 'in_gesprek',
-				'currentQueueLengte' => 1,
-				'gemiddeldeHandlingDuration' => 30,
+				'currentQueueLength' => 1,
+				'averageHandlingDuration' => 30,
 			],
 		];
 

@@ -217,7 +217,7 @@ class ComplaintServiceTest extends TestCase {
 	 */
 	public function testRequestVerdagingUpdatesDeadlineAndSetsFlag(): void {
 		$complaint = [
-			'verdagingPossible' => true,
+			'postponementPossible' => true,
 			'afhandelDeadline' => '2026-04-12',
 		];
 
@@ -244,14 +244,14 @@ class ComplaintServiceTest extends TestCase {
 			->method('saveObject')
 			->willReturnCallback(
 				function (array $data, string $reg, string $sch, ?string $id = null) {
-					$this->assertFalse($data['verdagingPossible']);
+					$this->assertFalse($data['postponementPossible']);
 					$this->assertSame('2026-05-10', $data['afhandelDeadline']);
 					return $data;
 				}
 			);
 
 		$result = $this->service->requestVerdaging('uuid-123', 'Complexe zaak vereist extra onderzoek');
-		$this->assertFalse($result['verdagingPossible']);
+		$this->assertFalse($result['postponementPossible']);
 	}//end testRequestVerdagingUpdatesDeadlineAndSetsFlag()
 
 	/**
@@ -260,7 +260,7 @@ class ComplaintServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testRequestVerdagingThrowsWhenExtensionNotAvailable(): void {
-		$complaint = ['verdagingPossible' => false, 'afhandelDeadline' => '2026-04-12'];
+		$complaint = ['postponementPossible' => false, 'afhandelDeadline' => '2026-04-12'];
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);
@@ -279,7 +279,7 @@ class ComplaintServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testRequestVerdagingThrowsWhenJustificatieEmpty(): void {
-		$complaint = ['verdagingPossible' => true, 'afhandelDeadline' => '2026-04-12'];
+		$complaint = ['postponementPossible' => true, 'afhandelDeadline' => '2026-04-12'];
 
 		$objectServiceMock = $this->createMock(ComplaintObjectServiceStub::class);
 		$this->settingsService->method('getObjectService')->willReturn($objectServiceMock);

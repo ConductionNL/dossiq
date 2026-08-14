@@ -110,7 +110,7 @@
             "format": "date-time",
             "description": "Timestamp when the samenwerkverzoek was initiated"
           },
-          "gereageerdOn": {
+          "respondedOn": {
             "type": "string",
             "title": "Responded On",
             "format": "date-time",
@@ -140,7 +140,7 @@
         "status": "geaccepteerd",
         "advies": "Waterschap heeft geen bezwaar mits geluidsnormen worden nageleefd.",
         "requestedOn": "2026-03-20T09:00:00+01:00",
-        "gereageerdOn": "2026-03-28T14:30:00+01:00"
+        "respondedOn": "2026-03-28T14:30:00+01:00"
       },
       {
         "@self": {
@@ -168,7 +168,7 @@
         "status": "geweigerd",
         "advies": "Rijkswaterstaat kan niet meewerken wegens veiligheidszone.",
         "requestedOn": "2026-02-15T08:00:00+01:00",
-        "gereageerdOn": "2026-02-22T16:45:00+01:00"
+        "respondedOn": "2026-02-22T16:45:00+01:00"
       }
     ]
   }

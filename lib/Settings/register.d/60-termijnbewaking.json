@@ -46,7 +46,7 @@
             "description": "Standard duration in days",
             "minimum": 0
           },
-          "standardDurationWeken": {
+          "standardDurationWeeks": {
             "type": "integer",
             "title": "Standard Duration Weeks",
             "description": "Standard duration in weeks (alternative representation)",
@@ -58,7 +58,7 @@
             "description": "Maximum days a single AWB 4:14 verlenging may add",
             "minimum": 0
           },
-          "countVerlengingen": {
+          "countExtensions": {
             "type": "integer",
             "title": "Maximum Extensions",
             "description": "Maximum number of verlengingen allowed",
@@ -121,7 +121,7 @@
           "termijnDefinitie",
           "startDate",
           "endDateCalculated",
-          "endDateActueel",
+          "endDateCurrent",
           "status"
         ],
         "properties": {
@@ -148,7 +148,7 @@
             "title": "Calculated End Date",
             "description": "Original computed deadline (never mutated; used for audit)"
           },
-          "endDateActueel": {
+          "endDateCurrent": {
             "type": "string",
             "format": "date",
             "title": "Effective End Date",
@@ -169,7 +169,7 @@
             "description": "Current lifecycle status",
             "facetable": true
           },
-          "countVerlengingen": {
+          "countExtensions": {
             "type": "integer",
             "default": 0,
             "title": "Maximum Extensions",
@@ -311,7 +311,7 @@
             "title": "Validity Status",
             "description": "Validity classification"
           },
-          "decisionGeregistreerdDate": {
+          "decisionRegisteredDate": {
             "type": "string",
             "format": "date",
             "title": "Decision Registration Date",
@@ -366,7 +366,7 @@
             "title": "Daily Tariff",
             "description": "Today's tariff in EUR cents"
           },
-          "cumulatievAmount": {
+          "cumulativeAmount": {
             "type": "integer",
             "default": 0,
             "title": "Cumulative Amount",
@@ -396,7 +396,7 @@
             "description": "Current calculation lifecycle status",
             "facetable": true
           },
-          "definitievAmount": {
+          "definitiveAmount": {
             "type": "integer",
             "title": "Final Amount",
             "description": "Locked final amount in EUR cents once stopped"
@@ -435,7 +435,7 @@
             "title": "Amount",
             "description": "Payable amount in EUR cents"
           },
-          "rekeninghouderName": {
+          "accountHolderName": {
             "type": "string",
             "title": "Account Holder Name",
             "description": "Full name of the bank account holder receiving the payment",

@@ -60,7 +60,7 @@
             "title": "Template ID",
             "description": "BeschikkingTemplate identifier (Docudesk-bound)"
           },
-          "ontwerpVersion": {
+          "draftVersion": {
             "type": "integer",
             "title": "Draft Version",
             "default": 1,
@@ -81,7 +81,7 @@
             "description": "Current state-machine status",
             "facetable": true
           },
-          "bekendmakingDate": {
+          "announcementDate": {
             "type": "string",
             "title": "Announcement Date",
             "format": "date",
@@ -93,7 +93,7 @@
             "format": "date",
             "description": "End of the 6-week bezwaartermijn (Awb 6:7), computed on verzending"
           },
-          "herinneringDate": {
+          "reminderDate": {
             "type": "string",
             "title": "Reminder Date",
             "format": "date",
@@ -136,7 +136,7 @@
               "bsn": { "type": "string", "title": "BSN", "description": "Burger identifier (special category, masked in logs)" },
               "oin": { "type": "string", "title": "OIN", "description": "Business identifier" },
               "name": { "type": "string", "title": "Name", "description": "Display name of the addressee" },
-              "berichtenboxChannel": { "type": "string", "title": "Message Box Channel", "description": "Delivery channel for berichtenbox dispatch", "enum": ["mijnoverheid", "eherkenning", "print-post"] },
+              "messageBoxChannel": { "type": "string", "title": "Message Box Channel", "description": "Delivery channel for berichtenbox dispatch", "enum": ["mijnoverheid", "eherkenning", "print-post"] },
               "berichtenboxBevestigd": { "type": "boolean", "title": "Message Box Confirmed", "description": "Whether the addressee's berichtenbox address has been confirmed", "default": false }
             }
           },
@@ -158,7 +158,7 @@
             "description": "Point-in-time mandaat record captured at the akkoord step (ADR design D3)",
             "properties": {
               "mandateSchemeId": { "type": "string", "title": "Mandate Regulation ID", "description": "Reference to the mandaatRegeling in effect at the time of approval" },
-              "mandateNiveau": { "type": "string", "title": "Mandate Level", "description": "Authorization level used (e.g. consulent, afdelingsmanager)" },
+              "mandateLevel": { "type": "string", "title": "Mandate Level", "description": "Authorization level used (e.g. consulent, afdelingsmanager)" },
               "approvedBy": { "type": "string", "title": "Approved By", "description": "Nextcloud UID of the approver" },
               "approvedDate": { "type": "string", "title": "Approval Date", "description": "Timestamp at which the mandate approval was recorded", "format": "date-time" }
             }
@@ -171,7 +171,7 @@
               "tspProvider": { "type": "string", "title": "TSP Provider", "description": "Name of the Trust Service Provider that issued the signature" },
               "tspProviderEidasId": { "type": "string", "title": "TSP Provider eIDAS ID", "description": "eIDAS identifier of the TSP provider" },
               "signatory": { "type": "string", "title": "Signatory", "description": "Nextcloud UID of the person who signed the document" },
-              "ondertekeningMoment": { "type": "string", "title": "Signing Timestamp", "description": "Date and time at which the document was signed", "format": "date-time" },
+              "signingMoment": { "type": "string", "title": "Signing Timestamp", "description": "Date and time at which the document was signed", "format": "date-time" },
               "kind": { "type": "string", "title": "Signature Type", "description": "Type of electronic signature, e.g. gekwalificeerde-elektronische-handtekening" },
               "certificateSerialNumber": { "type": "string", "title": "Certificate Serial Number", "description": "Serial number of the signing certificate" },
               "validationRapportId": { "type": "string", "title": "Validation Report ID", "description": "Reference to the signature validation report" }
@@ -183,8 +183,8 @@
             "description": "Berichtenbox delivery record",
             "properties": {
               "kanaal": { "type": "string", "title": "Dispatch Channel", "description": "Channel used for dispatch, e.g. berichtenbox-mijnoverheid" },
-              "verzondenOn": { "type": "string", "title": "Sent On", "description": "Timestamp at which the beschikking was sent", "format": "date-time" },
-              "verzondenBy": { "type": "string", "title": "Sent By", "description": "Actor who sent the beschikking (user id or 'systeem')" },
+              "sentOn": { "type": "string", "title": "Sent On", "description": "Timestamp at which the beschikking was sent", "format": "date-time" },
+              "sentBy": { "type": "string", "title": "Sent By", "description": "Actor who sent the beschikking (user id or 'systeem')" },
               "messageId": { "type": "string", "title": "Message ID", "description": "Berichtenbox message identifier" },
               "receiptConfirmationOn": { "type": "string", "title": "Receipt Confirmation On", "description": "Timestamp at which receipt was confirmed", "format": "date-time" },
               "readConfirmationOn": { "type": "string", "title": "Read Confirmation On", "description": "Timestamp at which the message was read by the recipient", "format": "date-time" }
@@ -195,7 +195,7 @@
             "title": "Archive",
             "description": "Archival record (TMLO/MDTO) populated when the beschikking is archived via the OpenRegister archival pipeline",
             "properties": {
-              "gearchiveerdOn": { "type": "string", "title": "Archived On", "description": "Timestamp at which the beschikking was archived", "format": "date-time" },
+              "archivedOn": { "type": "string", "title": "Archived On", "description": "Timestamp at which the beschikking was archived", "format": "date-time" },
               "archiefId": { "type": "string", "title": "Archive ID", "description": "Identifier assigned by the archival system" },
               "tmloMetadata": { "type": "object", "title": "TMLO Metadata", "description": "TMLO-1.2 or MDTO metadata block" },
               "destructionDate": { "type": "string", "title": "Destruction Date", "description": "Date on which the archived record is scheduled for destruction", "format": "date" }
@@ -265,10 +265,10 @@
             "description": "The beschikking this trigger belongs to",
             "facetable": true
           },
-          "bekendmakingDate": { "type": "string", "title": "Announcement Date", "description": "Date the beschikking was publicly announced", "format": "date" },
+          "announcementDate": { "type": "string", "title": "Announcement Date", "description": "Date the beschikking was publicly announced", "format": "date" },
           "objectionTermEndDate": { "type": "string", "title": "Objection Period End Date", "description": "End date of the 6-week bezwaartermijn", "format": "date" },
-          "herinneringDate": { "type": "string", "title": "Reminder Date", "description": "Reminder date, one week before the bezwaarTermijnEindDatum", "format": "date" },
-          "objectionOntvangen": {
+          "reminderDate": { "type": "string", "title": "Reminder Date", "description": "Reminder date, one week before the bezwaarTermijnEindDatum", "format": "date" },
+          "objectionReceived": {
             "type": "boolean",
             "title": "Objection Received",
             "default": false,
@@ -283,7 +283,7 @@
             "description": "Whether the archival trigger is still active",
             "facetable": true
           },
-          "archiefDate": {
+          "archiveDate": {
             "type": "string",
             "title": "Archive Date",
             "format": "date",
@@ -307,7 +307,7 @@
           "name": { "type": "string", "title": "Name", "description": "Human-readable name of the mandate regulation", "maxLength": 255 },
           "grantedBy": { "type": "string", "title": "Granted By", "description": "Body that granted the mandate, e.g. college-bw" },
           "grantedDate": { "type": "string", "title": "Grant Date", "description": "Date on which the mandate was granted", "format": "date" },
-          "intrekkingsDate": { "type": "string", "title": "Revocation Date", "description": "Date on which the mandate was revoked, if applicable", "format": "date" },
+          "withdrawalDate": { "type": "string", "title": "Revocation Date", "description": "Date on which the mandate was revoked, if applicable", "format": "date" },
           "subMandateAllowed": { "type": "boolean", "title": "Sub-mandate Permitted", "description": "Whether delegation to a lower level is permitted", "default": false },
           "mandateGroups": {
             "type": "array",
@@ -336,7 +336,7 @@
         "name": "Mandaatregeling WMO toekenningen",
         "grantedBy": "college-bw",
         "grantedDate": "2024-03-15",
-        "intrekkingsDate": null,
+        "withdrawalDate": null,
         "subMandateAllowed": true,
         "mandateGroups": [
           { "niveau": "consulent", "to_amount": 5000, "caseTypes": ["wmo-melding"], "decisionTypes": ["toekenning"] },
@@ -355,16 +355,16 @@
         "decisionType": "toekenning",
         "reference": "Z/2026/04832/B01",
         "templateId": "tpl-wmo-toekenning-huishoudelijke-hulp-v4",
-        "ontwerpVersion": 1,
+        "draftVersion": 1,
         "currentStatus": "gearchiveerd",
-        "bekendmakingDate": "2026-04-02",
+        "announcementDate": "2026-04-02",
         "objectionTermEndDate": "2026-05-14",
-        "herinneringDate": "2026-05-07",
+        "reminderDate": "2026-05-07",
         "geadresseerde": {
           "type": "burger",
           "bsn": "123456789",
           "name": "M.A. Janssen-de Vries",
-          "berichtenboxChannel": "mijnoverheid",
+          "messageBoxChannel": "mijnoverheid",
           "berichtenboxBevestigd": true
         },
         "beslissing": {
@@ -377,25 +377,25 @@
         "rationale": "Op basis van het onderzoek van 28 maart 2026 is vastgesteld dat client recht heeft op huishoudelijke ondersteuning.",
         "mandateGranted": {
           "mandateSchemeId": "mr-2024-007-wmo",
-          "mandateNiveau": "afdelingsmanager",
+          "mandateLevel": "afdelingsmanager",
           "approvedBy": "afdelingsmanager-wmo-15",
           "approvedDate": "2026-04-01T14:22:00+02:00"
         },
         "signature": {
           "tspProvider": "kpn-gekwalificeerde-handtekening",
           "signatory": "afdelingsmanager-wmo-15",
-          "ondertekeningMoment": "2026-04-01T14:25:33+02:00",
+          "signingMoment": "2026-04-01T14:25:33+02:00",
           "kind": "gekwalificeerde-elektronische-handtekening",
           "validationRapportId": "val-2026-99231"
         },
         "verzending": {
           "kanaal": "berichtenbox-mijnoverheid",
-          "verzondenOn": "2026-04-02T09:00:00+02:00",
-          "verzondenBy": "systeem",
+          "sentOn": "2026-04-02T09:00:00+02:00",
+          "sentBy": "systeem",
           "messageId": "MO-2026-04-02-771234"
         },
         "archief": {
-          "gearchiveerdOn": "2026-05-15T06:30:00+02:00",
+          "archivedOn": "2026-05-15T06:30:00+02:00",
           "archiefId": "openregister-2026-99231",
           "destructionDate": "2041-04-02"
         }
@@ -411,13 +411,13 @@
         "decisionType": "toekenning",
         "reference": "Z/2026/00156/B01",
         "templateId": "tpl-omgevingsvergunning-reguliere-procedure-v3",
-        "ontwerpVersion": 1,
+        "draftVersion": 1,
         "currentStatus": "ondertekend",
         "geadresseerde": {
           "type": "bedrijf",
           "oin": "00000001234567890000",
           "name": "Bouwbedrijf de Vries B.V.",
-          "berichtenboxChannel": "eherkenning",
+          "messageBoxChannel": "eherkenning",
           "berichtenboxBevestigd": true
         },
         "beslissing": {
@@ -430,7 +430,7 @@
         "signature": {
           "tspProvider": "kpn-gekwalificeerde-handtekening",
           "signatory": "afdelingsmanager-bouw-23",
-          "ondertekeningMoment": "2026-04-22T10:15:42+02:00",
+          "signingMoment": "2026-04-22T10:15:42+02:00",
           "validationRapportId": "val-2026-99405"
         }
       },
@@ -445,13 +445,13 @@
         "decisionType": "toekenning",
         "reference": "Z/2026/00489/B01",
         "templateId": "tpl-subsidie-v2",
-        "ontwerpVersion": 1,
+        "draftVersion": 1,
         "currentStatus": "ontwerp",
         "geadresseerde": {
           "type": "burger",
           "bsn": "987654321",
           "name": "J. Pieterse",
-          "berichtenboxChannel": "mijnoverheid",
+          "messageBoxChannel": "mijnoverheid",
           "berichtenboxBevestigd": false
         },
         "beslissing": {

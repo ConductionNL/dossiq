@@ -57,9 +57,9 @@ class DeadlineReportingServiceTest extends TestCase {
 				'caseType' => 'omgevingsvergunning-regulier',
 				'zaak' => 'Z/2026/' . (400 + $i),
 				'startDate' => '2026-05-0' . $i . 'T10:00:00+00:00',
-				'endDateActueel' => '2026-07-0' . $i,
+				'endDateCurrent' => '2026-07-0' . $i,
 				'status' => ($i <= 3 ? 'voltooid' : ($i === 4 ? 'overschreden' : 'lopend')),
-				'countVerlengingen' => ($i === 5 ? 1 : 0),
+				'countExtensions' => ($i === 5 ? 1 : 0),
 			]);
 		}
 	}

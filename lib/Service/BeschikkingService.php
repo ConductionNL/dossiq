@@ -127,7 +127,7 @@ class BeschikkingService {
 			'caseId' => $caseId,
 			'decisionType' => (string)($overrides['decisionType'] ?? 'toekenning'),
 			'templateId' => $version['templateId'],
-			'ontwerpVersion' => 1,
+			'draftVersion' => 1,
 			'currentStatus' => 'ontwerp',
 			'samengesteldeInhoud' => $composition,
 			'geadresseerde' => (array)($overrides['geadresseerde'] ?? []),
@@ -187,7 +187,7 @@ class BeschikkingService {
 
 		$decision['mandateGranted'] = [
 			'mandateSchemeId' => (string)($regeling['id'] ?? ($regeling['@self']['slug'] ?? '')),
-			'mandateNiveau' => $niveau,
+			'mandateLevel' => $niveau,
 			'approvedBy' => $approvedBy,
 			'approvedDate' => (new DateTimeImmutable())->format('c'),
 		];
@@ -232,7 +232,7 @@ class BeschikkingService {
 			'tspProvider' => $tspProvider,
 			'tspProviderEidasId' => (string)($signature['tspProviderEidasId'] ?? ''),
 			'signatory' => $signatory,
-			'ondertekeningMoment' => (string)($signature['ondertekeningMoment'] ?? ''),
+			'signingMoment' => (string)($signature['signingMoment'] ?? ''),
 			'kind' => 'gekwalificeerde-elektronische-handtekening',
 			'certificateSerialNumber' => (string)($signature['certificateSerialNumber'] ?? ''),
 			'validationRapportId' => (string)($signature['validationRapportId'] ?? ''),
@@ -287,9 +287,9 @@ class BeschikkingService {
 		$term = $this->bezwaarScheduler->computeTermijn(bekendmaking: $bekendmaking);
 
 		$decision['verzending'] = $verzending;
-		$decision['bekendmakingDate'] = $bekendmaking;
+		$decision['announcementDate'] = $bekendmaking;
 		$decision['objectionTermEndDate'] = $term['endDate'];
-		$decision['herinneringDate'] = $term['herinnering'];
+		$decision['reminderDate'] = $term['herinnering'];
 		$decision['currentStatus'] = 'verzonden';
 
 		$saved = $this->repository->save(decision: $decision);
@@ -339,7 +339,7 @@ class BeschikkingService {
 			$decision[$field] = $value;
 		}
 
-		$decision['ontwerpVersion'] = ((int)($decision['ontwerpVersion'] ?? 1)) + 1;
+		$decision['draftVersion'] = ((int)($decision['draftVersion'] ?? 1)) + 1;
 
 		return $this->repository->save(decision: $decision);
 	}//end updateFields()
@@ -418,7 +418,7 @@ class BeschikkingService {
 			'identificatieKenmerk' => (string)($decision['reference'] ?? ''),
 			'aggregatieniveau' => 'Archiefstuk',
 			'creatieDatum' => (string)(($decision['mandateGranted']['approvedDate'] ?? '')),
-			'bekendmakingDate' => (string)($decision['bekendmakingDate'] ?? ''),
+			'announcementDate' => (string)($decision['announcementDate'] ?? ''),
 			'vertrouwelijkheid' => 'vertrouwelijk',
 			'bewaartermijn' => 'P15Y',
 		];
@@ -427,7 +427,7 @@ class BeschikkingService {
 		$result = $this->archivalAdapter->ingest($decisionId, $fileId, $metadata);
 
 		$decision['archief'] = [
-			'gearchiveerdOn' => (new DateTimeImmutable())->format('c'),
+			'archivedOn' => (new DateTimeImmutable())->format('c'),
 			'archiefId' => (string)$result['archiefId'],
 			'tmloMetadata' => $metadata,
 			'destructionDate' => (string)$result['destructionDate'],

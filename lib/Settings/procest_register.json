@@ -2285,19 +2285,19 @@
                         "description": "RSIN of the responsible organisation",
                         "title": "RSIN"
                     },
-                    "contactPersonBeheerName": {
+                    "contactPersonManagementName": {
                         "type": "string",
                         "maxLength": 40,
                         "description": "Name of the management contact",
                         "title": "Management Contact Name"
                     },
-                    "contactPersonBeheerPhoneNumber": {
+                    "contactPersonManagementPhoneNumber": {
                         "type": "string",
                         "maxLength": 20,
                         "description": "Phone number of the management contact",
                         "title": "Management Contact Phone"
                     },
-                    "contactPersonBeheerEmailadres": {
+                    "contactPersonManagementEmailAddress": {
                         "type": "string",
                         "maxLength": 254,
                         "description": "Email of the management contact",
@@ -4878,7 +4878,7 @@
                 "type": "object",
                 "required": [
                     "parentCase",
-                    "adviesAuthority",
+                    "adviceAuthority",
                     "questionFormulation",
                     "latestResponseDate"
                 ],
@@ -4896,7 +4896,7 @@
                         "description": "Reference to the parent case UUID",
                         "title": "Parent Case"
                     },
-                    "adviesAuthority": {
+                    "adviceAuthority": {
                         "type": "string",
                         "description": "Department or advisory body being consulted",
                         "title": "Advisory Body"
@@ -5067,7 +5067,7 @@
                         "onCreate": {
                             "subject": "Nieuwe adviesaanvraag {consultationNumber}",
                             "recipients": [
-                                "adviesAuthority"
+                                "adviceAuthority"
                             ]
                         },
                         "onStatusChange": {
@@ -5408,7 +5408,7 @@
                         "description": "Maximum total penalty amount (EUR)",
                         "title": "Maximum Penalty"
                     },
-                    "effectueringsDate": {
+                    "effectuationDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date when enforcement action takes effect",
@@ -7547,12 +7547,12 @@
                         "description": "Reference to the complaint category",
                         "title": "Category"
                     },
-                    "betrokkenEmployee": {
+                    "involvedEmployee": {
                         "type": "string",
                         "description": "Optional reference to the employee the complaint concerns (NC user ID)",
                         "title": "Employee Concerned"
                     },
-                    "betrokkenDepartment": {
+                    "involvedDepartment": {
                         "type": "string",
                         "description": "Optional reference to the department concerned",
                         "title": "Department Concerned"
@@ -7602,13 +7602,13 @@
                         "description": "Awb deadline for resolution (6 weeks after receipt)",
                         "title": "Handling Deadline"
                     },
-                    "verdagingPossible": {
+                    "postponementPossible": {
                         "type": "boolean",
                         "default": true,
                         "description": "Whether a 4-week extension is still available (Awb; only one extension allowed)",
                         "title": "Extension Possible"
                     },
-                    "verdagingJustification": {
+                    "postponementJustification": {
                         "type": "string",
                         "description": "Written justification for the deadline extension when requested",
                         "title": "Extension Justification"
@@ -7757,7 +7757,7 @@
                         "description": "Preliminary conclusion from the hearing",
                         "title": "Conclusion"
                     },
-                    "dateAfgerond": {
+                    "dateCompleted": {
                         "type": "string",
                         "format": "date",
                         "description": "Actual date the hearing took place",

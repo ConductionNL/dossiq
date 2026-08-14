@@ -247,7 +247,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 		$payload = [
 			'id' => self::BEREKENING_ID,
 			'dagtarief' => 2300,
-			'cumulatievAmount' => 11500,
+			'cumulativeAmount' => 11500,
 		];
 
 		$owningCase = $this->createMock(OwningCaseResolver::class);

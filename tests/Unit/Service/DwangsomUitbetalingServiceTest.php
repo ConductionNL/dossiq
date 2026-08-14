@@ -58,7 +58,7 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 			'ingebrekestelling' => 'ig-1',
 			'termijnInstance' => 'ti-1',
 			'status' => 'gestopt-wegens-beschikking',
-			'definitievAmount' => 35700,
+			'definitiveAmount' => 35700,
 		]);
 	}
 
@@ -115,8 +115,8 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b-zero',
 			'status' => 'gestopt-wegens-beschikking',
-			'definitievAmount' => 0,
-			'cumulatievAmount' => 0,
+			'definitiveAmount' => 0,
+			'cumulativeAmount' => 0,
 		]);
 
 		$this->expectException(RuntimeException::class);

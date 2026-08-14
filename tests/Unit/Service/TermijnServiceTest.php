@@ -68,7 +68,7 @@ class TermijnServiceTest extends TestCase {
 				'caseType' => 'omgevingsvergunning-regulier',
 				'legalBasis' => 'Wabo 3.9 lid 1',
 				'standardDurationDays' => 56,
-				'countVerlengingen' => 1,
+				'countExtensions' => 1,
 				'validFrom' => '2026-01-01',
 			]
 		);
@@ -80,7 +80,7 @@ class TermijnServiceTest extends TestCase {
 				'caseType' => 'wmo-melding',
 				'legalBasis' => 'Wmo 2015 art 2.3.5',
 				'standardDurationDays' => 42,
-				'countVerlengingen' => 0,
+				'countExtensions' => 0,
 				'validFrom' => '2026-01-01',
 			]
 		);
@@ -97,7 +97,7 @@ class TermijnServiceTest extends TestCase {
 		self::assertSame('td-omgevingsvergunning-regulier', $instance['termijnDefinitie']);
 		self::assertSame('lopend', $instance['status']);
 		self::assertSame('2026-07-27', $instance['endDateCalculated']);
-		self::assertSame('2026-07-27', $instance['endDateActueel']);
+		self::assertSame('2026-07-27', $instance['endDateCurrent']);
 
 		// Start event recorded.
 		$events = $this->objects->store['termijnGebeurtenis'] ?? [];

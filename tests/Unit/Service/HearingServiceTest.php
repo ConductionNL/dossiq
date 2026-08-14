@@ -207,7 +207,7 @@ class HearingServiceTest extends TestCase {
 		$outcome = [
 			'verslag' => 'Klager heeft zijn standpunt toegelicht.',
 			'conclusie' => 'Klacht gegrond',
-			'dateAfgerond' => '2026-04-01',
+			'dateCompleted' => '2026-04-01',
 		];
 
 		$objectServiceMock->method('saveObject')->willReturn($outcome);

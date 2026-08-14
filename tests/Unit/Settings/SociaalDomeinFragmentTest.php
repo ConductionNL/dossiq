@@ -200,9 +200,9 @@ class SociaalDomeinFragmentTest extends TestCase {
 			}
 		}
 
-		$this->assertSame(15, $bySlug['zaak-2026-wmo-04832']['avgClassificatie']['retentionTermJaren']);
-		$this->assertSame(20, $bySlug['zaak-2026-jeugd-00921']['avgClassificatie']['retentionTermJaren']);
-		$this->assertSame(10, $bySlug['zaak-2026-pw-01278']['avgClassificatie']['retentionTermJaren']);
+		$this->assertSame(15, $bySlug['zaak-2026-wmo-04832']['avgClassificatie']['retentionTermYears']);
+		$this->assertSame(20, $bySlug['zaak-2026-jeugd-00921']['avgClassificatie']['retentionTermYears']);
+		$this->assertSame(10, $bySlug['zaak-2026-pw-01278']['avgClassificatie']['retentionTermYears']);
 	}//end testSeedRetentionTermsMatchSelectielijst()
 
 	/**
