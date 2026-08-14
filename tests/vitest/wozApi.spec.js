@@ -41,7 +41,7 @@ describe('wozApi shim — endpoint routing', () => {
 
 		const result = await lookupWozValue('1234AB', '10')
 
-		expect(axios.get).toHaveBeenCalledWith(`${BASE}/value`, { params: { postcode: '1234AB', house_number: '10' } })
+		expect(axios.get).toHaveBeenCalledWith(`${BASE}/value`, { params: { postcode: '1234AB', huisnummer: '10' } })
 		expect(result).toEqual(envelope)
 		const calledUrls = axios.get.mock.calls.map((c) => c[0])
 		expect(calledUrls.every((u) => !u.includes('wozwaardeloket.nl'))).toBe(true)
@@ -53,7 +53,7 @@ describe('wozApi shim — endpoint routing', () => {
 		await lookupWozValue('1234AB', '10', { huisletter: 'A', huisnummertoevoeging: 'II' })
 
 		expect(axios.get).toHaveBeenCalledWith(`${BASE}/value`, {
-			params: { postcode: '1234AB', house_number: '10', huisletter: 'A', huisnummertoevoeging: 'II' },
+			params: { postcode: '1234AB', huisnummer: '10', huisletter: 'A', huisnummertoevoeging: 'II' },
 		})
 	})
 
@@ -73,12 +73,12 @@ describe('wozApi shim — endpoint routing', () => {
 
 		const result = await lookupWozValueByNummeraanduiding('0518010000123456')
 
-		expect(axios.get).toHaveBeenCalledWith(`${BASE}/value`, { params: { addressDesignationId: '0518010000123456' } })
+		expect(axios.get).toHaveBeenCalledWith(`${BASE}/value`, { params: { nummeraanduidingId: '0518010000123456' } })
 		expect(result).toEqual(envelope)
 	})
 
 	it('lookupWozObject delegates to the procest object route with an encoded wozobjectnummer', async () => {
-		const envelope = { lookupStatus: 'FOUND', wozObject: { value: 385000 }, dormant: false, extras: {} }
+		const envelope = { lookupStatus: 'FOUND', wozObject: { waarde: 385000 }, dormant: false, extras: {} }
 		axios.get.mockResolvedValue(ok(envelope))
 
 		const result = await lookupWozObject('05180000001234')
