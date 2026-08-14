@@ -106,7 +106,7 @@ class BezwaarDecisionListener implements IEventListener {
 				return;
 			}
 
-			if ($this->isBezwaarSchema(object: $object) === false) {
+			if ($this->isObjectionSchema(object: $object) === false) {
 				return;
 			}
 
@@ -115,12 +115,12 @@ class BezwaarDecisionListener implements IEventListener {
 				return;
 			}
 
-			if ($this->hasPublishedDecision(bezwaar: $object) === true) {
+			if ($this->hasPublishedDecision(objection: $object) === true) {
 				return;
 			}
 
 			// Guard violated — revert.
-			$this->revertStatus(bezwaar: $object, event: $event);
+			$this->revertStatus(objection: $object, event: $event);
 		} catch (Throwable $e) {
 			$this->logger->debug(
 				'Procest bezwaar-decision: guard derivation swallowed '
@@ -133,11 +133,11 @@ class BezwaarDecisionListener implements IEventListener {
 	 * Decide whether the bezwaar has at least one published
 	 * bezwaarDecision.
 	 *
-	 * @param array<string, mixed> $bezwaar The bezwaar payload.
+	 * @param array<string, mixed> $objection The bezwaar payload.
 	 *
 	 * @return bool
 	 */
-	private function hasPublishedDecision(array $bezwaar): bool {
+	private function hasPublishedDecision(array $objection): bool {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return true;
@@ -153,8 +153,8 @@ class BezwaarDecisionListener implements IEventListener {
 			return true;
 		}
 
-		$bezwaarId = (string)($bezwaar['id'] ?? ($bezwaar['uuid'] ?? ''));
-		if ($bezwaarId === '') {
+		$objectionId = (string)($objection['id'] ?? ($objection['uuid'] ?? ''));
+		if ($objectionId === '') {
 			return true;
 		}
 
@@ -181,7 +181,7 @@ class BezwaarDecisionListener implements IEventListener {
 					'filters' => [
 						'register' => $register,
 						'schema' => $decisionSchema,
-						'bezwaar' => $bezwaarId,
+						'bezwaar' => $objectionId,
 					],
 					'limit' => self::DECISION_PROBE_LIMIT,
 				]
@@ -212,7 +212,7 @@ class BezwaarDecisionListener implements IEventListener {
 				'Procest bezwaar-decision: decision probe hit its bound of '
 				. self::DECISION_PROBE_LIMIT . ' rows — allowing the transition '
 				. 'rather than reverting on an incomplete scan',
-				['bezwaarId' => $bezwaarId]
+				['bezwaarId' => $objectionId]
 			);
 			return true;
 		}
@@ -249,12 +249,12 @@ class BezwaarDecisionListener implements IEventListener {
 	 * status-transition-engine remains the sole owner of forward
 	 * transitions; this listener only reverts disallowed jumps.
 	 *
-	 * @param array<string, mixed> $bezwaar Current bezwaar payload.
+	 * @param array<string, mixed> $objection Current bezwaar payload.
 	 * @param Event $event Event instance.
 	 *
 	 * @return void
 	 */
-	private function revertStatus(array $bezwaar, Event $event): void {
+	private function revertStatus(array $objection, Event $event): void {
 		$previous = $this->extractPreviousStatus(event: $event);
 		if ($previous === '') {
 			return;
@@ -268,15 +268,15 @@ class BezwaarDecisionListener implements IEventListener {
 		$register = $this->settingsService->getConfigValue(
 			key: 'register'
 		);
-		$bezwaarSchema = $this->settingsService->getConfigValue(
+		$objectionSchema = $this->settingsService->getConfigValue(
 			key: 'bezwaar_schema'
 		);
-		if ($register === '' || $bezwaarSchema === '') {
+		if ($register === '' || $objectionSchema === '') {
 			return;
 		}
 
-		$bezwaarId = (string)($bezwaar['id'] ?? ($bezwaar['uuid'] ?? ''));
-		if ($bezwaarId === '') {
+		$objectionId = (string)($objection['id'] ?? ($objection['uuid'] ?? ''));
+		if ($objectionId === '') {
 			return;
 		}
 
@@ -284,14 +284,14 @@ class BezwaarDecisionListener implements IEventListener {
 			$objectService->saveObject(
 				object: ['status' => $previous],
 				register: $register,
-				schema: $bezwaarSchema,
-				uuid: (string)$bezwaarId
+				schema: $objectionSchema,
+				uuid: (string)$objectionId
 			);
 			$this->logger->warning(
 				'Procest bezwaar-decision: blocked transition into "'
 				. self::PROTECTED_STATUS . '" — no published bezwaarDecision; '
 				. 'reverted to "' . $previous . '"',
-				['bezwaarId' => $bezwaarId]
+				['bezwaarId' => $objectionId]
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(
@@ -326,7 +326,7 @@ class BezwaarDecisionListener implements IEventListener {
 	 *
 	 * @return bool
 	 */
-	private function isBezwaarSchema(array $object): bool {
+	private function isObjectionSchema(array $object): bool {
 		$schemaSlug = $this->settingsService->getConfigValue(
 			key: 'bezwaar_schema'
 		);

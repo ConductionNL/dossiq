@@ -98,15 +98,15 @@ class NotifyRoleHandler implements ActionHandlerInterface {
 				return new ActionResult(succeeded: false, error: 'no_recipients', data: $preview);
 			}
 
-			$notificatie = $this->resolveNotificatieService();
-			if ($notificatie === null) {
+			$notification = $this->resolveNotificationService();
+			if ($notification === null) {
 				return new ActionResult(succeeded: false, error: 'notificatie_unavailable', data: $preview);
 			}
 
 			foreach ($recipients as $userId) {
-				if (method_exists($notificatie, 'notifyUser') === true) {
+				if (method_exists($notification, 'notifyUser') === true) {
 					// @phpstan-ignore-next-line — signature owned by service.
-					$notificatie->notifyUser($userId, $message);
+					$notification->notifyUser($userId, $message);
 				}
 			}
 
@@ -187,7 +187,7 @@ class NotifyRoleHandler implements ActionHandlerInterface {
 	 *
 	 * @return object|null
 	 */
-	private function resolveNotificatieService(): ?object {
+	private function resolveNotificationService(): ?object {
 		try {
 			return $this->container->get('OCA\Procest\Service\NotificatieService');
 		} catch (\Throwable $e) {

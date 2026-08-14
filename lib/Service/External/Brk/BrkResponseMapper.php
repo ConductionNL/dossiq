@@ -80,22 +80,22 @@ final class BrkResponseMapper {
 			$kadastraleAanduidingRaw = [];
 		}
 
-		$gemeenteNaamRaw = ($kadastraleAanduidingRaw['kadastraleGemeente']['waarde'] ?? $raw['kadastraleGemeenteNaam'] ?? null);
-		$gemeenteCodeRaw = ($kadastraleAanduidingRaw['kadastraleGemeentecode']['waarde'] ?? $raw['kadastraleGemeenteCode'] ?? null);
-		$volgnummerRaw = ($kadastraleAanduidingRaw['appartementsrechtvolgnummer'] ?? $raw['appartementsrechtVolgnummer'] ?? null);
-		$grootteRaw = ($raw['kadastraleGrootte']['waarde'] ?? $raw['kadastraleGrootte'] ?? null);
+		$municipalityNameRaw = ($kadastraleAanduidingRaw['kadastraleGemeente']['value'] ?? $raw['kadastraleGemeenteNaam'] ?? null);
+		$municipalityCodeRaw = ($kadastraleAanduidingRaw['kadastraleGemeentecode']['value'] ?? $raw['kadastraleGemeenteCode'] ?? null);
+		$sequenceNumberRaw = ($kadastraleAanduidingRaw['appartementsrechtvolgnummer'] ?? $raw['appartementsrechtVolgnummer'] ?? null);
+		$grootteRaw = ($raw['kadastraleGrootte']['value'] ?? $raw['kadastraleGrootte'] ?? null);
 		$gerechtigdenRaw = ($raw['zakelijkGerechtigdheid'] ?? $raw['zakelijkGerechtigden'] ?? []);
 
 		return [
-			'kadastraleGemeente' => $this->stringOrNull(value: $gemeenteNaamRaw),
-			'kadastraleGemeenteCode' => $this->stringOrNull(value: $gemeenteCodeRaw),
+			'kadastraleGemeente' => $this->stringOrNull(value: $municipalityNameRaw),
+			'kadastraleGemeenteCode' => $this->stringOrNull(value: $municipalityCodeRaw),
 			'sectie' => $this->stringOrNull(value: $kadastraleAanduidingRaw['sectie'] ?? $raw['sectie'] ?? null),
 			'perceelnummer' => $this->intOrNull(value: $kadastraleAanduidingRaw['perceelnummer'] ?? $raw['perceelnummer'] ?? null),
-			'appartementsrechtVolgnummer' => $this->stringOrNull(value: $volgnummerRaw),
+			'appartementsrechtVolgnummer' => $this->stringOrNull(value: $sequenceNumberRaw),
 			'kadastraleAanduiding' => $this->stringOrNull(value: $raw['kadastraleAanduidingVolledig'] ?? $raw['aanduiding'] ?? null),
 			'oppervlakte' => $this->intOrNull(value: $grootteRaw),
 			'soortCultuurBebouwd' => $this->toStringArray(value: $raw['soortCultuurBebouwd'] ?? []),
-			'zakelijkGerechtigden' => $this->mapZakelijkGerechtigden(raw: $gerechtigdenRaw),
+			'zakelijkGerechtigden' => $this->mapBusinessGerechtigden(raw: $gerechtigdenRaw),
 			'geo' => $this->extractGeo(raw: $raw),
 		];
 	}//end map()
@@ -130,7 +130,7 @@ final class BrkResponseMapper {
 	 *
 	 * @return array<int,array{identificatie: string|null, aardZakelijkRecht: string|null}>
 	 */
-	private function mapZakelijkGerechtigden(mixed $raw): array {
+	private function mapBusinessGerechtigden(mixed $raw): array {
 		if (is_array($raw) === false) {
 			return [];
 		}
@@ -148,7 +148,7 @@ final class BrkResponseMapper {
 
 			$out[] = [
 				'identificatie' => $this->stringOrNull(value: $entry['identificatie'] ?? null),
-				'aardZakelijkRecht' => $this->stringOrNull(value: $entry['aardZakelijkRecht']['waarde'] ?? $entry['aardZakelijkRecht'] ?? null),
+				'aardZakelijkRecht' => $this->stringOrNull(value: $entry['aardZakelijkRecht']['value'] ?? $entry['aardZakelijkRecht'] ?? null),
 			];
 		}
 

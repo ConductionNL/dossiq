@@ -2,20 +2,20 @@
   "type": "RaadpleegMetBurgerservicenummer",
   "personen": [
     {
-      "burgerservicenummer": "999990627",
-      "naam": {
-        "voornamen": "Stephan",
-        "voorvoegsel": "",
-        "geslachtsnaam": "Janssen"
+      "citizenServiceNumber": "999990627",
+      "name": {
+        "givenNames": "Stephan",
+        "namePrefix": "",
+        "surname": "Janssen"
       },
-      "geboorte": {
-        "datum": "1975-04-06"
+      "birth": {
+        "date": "1975-04-06"
       },
-      "verblijfplaats": {
-        "straat": "Mandelaplein",
-        "huisnummer": 2,
+      "residence": {
+        "street": "Mandelaplein",
+        "houseNumber": 2,
         "postcode": "2572HT",
-        "woonplaats": "'s-Gravenhage"
+        "city": "'s-Gravenhage"
       }
     }
   ]

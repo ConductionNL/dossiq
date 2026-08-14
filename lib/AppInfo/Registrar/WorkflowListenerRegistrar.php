@@ -51,7 +51,7 @@ class WorkflowListenerRegistrar {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
 	public function register(IRegistrationContext $context): void {
-		$this->registerTermijnListeners(context: $context);
+		$this->registerTermListeners(context: $context);
 		$this->registerDecisionListeners(context: $context);
 	}//end register()
 
@@ -69,7 +69,7 @@ class WorkflowListenerRegistrar {
 	 *
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-02-termijn-binding-lifecycle/tasks.md
 	 */
-	private function registerTermijnListeners(IRegistrationContext $context): void {
+	private function registerTermListeners(IRegistrationContext $context): void {
 		$context->registerEventListener(
 			event: ObjectCreatedEvent::class,
 			listener: DeadlineCaseCreatedListener::class

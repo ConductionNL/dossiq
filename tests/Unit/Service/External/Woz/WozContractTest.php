@@ -108,13 +108,13 @@ class WozContractTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupAddress(postcode: '1234AB', huisnummer: '10');
+		$result = $adapter->lookupAddress(postcode: '1234AB', houseNumber: '10');
 		$this->assertSame('FOUND', $result->lookupStatus);
 		$this->assertSame('05180000001234', $result->wozObject['wozobjectnummer']);
-		$this->assertSame('0518010000123456', $result->wozObject['nummeraanduidingId']);
+		$this->assertSame('0518010000123456', $result->wozObject['addressDesignationId']);
 		$this->assertSame(250, $result->wozObject['grondoppervlakte']);
 		$this->assertSame(['woonfunctie'], $result->wozObject['gebruiksdoel']);
-		$this->assertSame(385000, $result->wozObject['waarde']);
+		$this->assertSame(385000, $result->wozObject['value']);
 		$this->assertSame('2025-01-01', $result->wozObject['waardepeildatum']);
 		$this->assertSame('test', $result->extras['tier']);
 	}//end testAddressContractAgainstSearchEnvelope()
@@ -134,7 +134,7 @@ class WozContractTest extends TestCase {
 
 		$result = $adapter->lookupByWozObjectNummer(wozobjectnummer: '05180000001234');
 		$this->assertSame('FOUND', $result->lookupStatus);
-		$this->assertSame(385000, $result->wozObject['waarde']);
+		$this->assertSame(385000, $result->wozObject['value']);
 		$this->assertSame('2025-01-01', $result->wozObject['waardepeildatum']);
 	}//end testObjectContractAgainstSingularEnvelope()
 }//end class

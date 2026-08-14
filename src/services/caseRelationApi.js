@@ -55,7 +55,7 @@ export async function fetchRelations(caseId) {
  * @param {object} params Relation params.
  * @param {string} params.targetId Target case UUID.
  * @param {string} params.aardRelatie Relation type.
- * @param {string} [params.toelichting] Optional clarification.
+ * @param {string} [params.notes] Optional clarification.
  * @return {Promise<{ok: boolean, reason?: string, detail?: string}>}
  *
  * @spec openspec/specs/related-case-linking/spec.md

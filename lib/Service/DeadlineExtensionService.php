@@ -57,10 +57,10 @@ class DeadlineExtensionService {
 	/**
 	 * Constructor.
 	 *
-	 * @param TermijnService $termijnService TermijnService.
+	 * @param TermijnService $termService TermijnService.
 	 */
 	public function __construct(
-		private readonly TermijnService $termijnService,
+		private readonly TermijnService $termService,
 	) {
 	}//end __construct()
 
@@ -69,9 +69,9 @@ class DeadlineExtensionService {
 	 *
 	 * Bound by the TermijnDefinitie's aantalVerlengingen ceiling.
 	 *
-	 * @param string $termijnInstanceId Instance id.
-	 * @param string $motivering Non-empty reason.
-	 * @param string $newEinddatum New deadline (YYYY-MM-DD; must be > einddatumActueel).
+	 * @param string $termInstanceId Instance id.
+	 * @param string $rationale Non-empty reason.
+	 * @param string $newEndDate New deadline (YYYY-MM-DD; must be > einddatumActueel).
 	 * @param string $documentLink Optional document link (verlengingsbrief).
 	 *
 	 * @return array<string, mixed>
@@ -81,15 +81,15 @@ class DeadlineExtensionService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
 	public function requestExtension(
-		string $termijnInstanceId,
-		string $motivering,
-		string $newEinddatum,
+		string $termInstanceId,
+		string $rationale,
+		string $newEndDate,
 		string $documentLink = '',
 	): array {
 		return $this->applyExtension(
-			termijnInstanceId: $termijnInstanceId,
-			motivering: $motivering,
-			newEinddatum: $newEinddatum,
+			termInstanceId: $termInstanceId,
+			rationale: $rationale,
+			newEndDate: $newEndDate,
 			documentLink: $documentLink,
 			mode: self::MODE_STANDARD
 		);
@@ -101,9 +101,9 @@ class DeadlineExtensionService {
 	 * Bypasses the TermijnDefinitie's aantalVerlengingen ceiling and is
 	 * recorded with the supervisor grondslag and actor.
 	 *
-	 * @param string $termijnInstanceId Instance id.
-	 * @param string $motivering Non-empty reason.
-	 * @param string $newEinddatum New deadline (YYYY-MM-DD; must be > einddatumActueel).
+	 * @param string $termInstanceId Instance id.
+	 * @param string $rationale Non-empty reason.
+	 * @param string $newEndDate New deadline (YYYY-MM-DD; must be > einddatumActueel).
 	 * @param string $documentLink Optional document link (verlengingsbrief).
 	 *
 	 * @return array<string, mixed>
@@ -113,15 +113,15 @@ class DeadlineExtensionService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
 	public function requestSupervisorExtension(
-		string $termijnInstanceId,
-		string $motivering,
-		string $newEinddatum,
+		string $termInstanceId,
+		string $rationale,
+		string $newEndDate,
 		string $documentLink = '',
 	): array {
 		return $this->applyExtension(
-			termijnInstanceId: $termijnInstanceId,
-			motivering: $motivering,
-			newEinddatum: $newEinddatum,
+			termInstanceId: $termInstanceId,
+			rationale: $rationale,
+			newEndDate: $newEndDate,
 			documentLink: $documentLink,
 			mode: self::MODE_SUPERVISOR
 		);
@@ -130,9 +130,9 @@ class DeadlineExtensionService {
 	/**
 	 * Shared verlenging implementation for both extension modes.
 	 *
-	 * @param string $termijnInstanceId Instance id.
-	 * @param string $motivering Non-empty reason.
-	 * @param string $newEinddatum New deadline (YYYY-MM-DD; must be > einddatumActueel).
+	 * @param string $termInstanceId Instance id.
+	 * @param string $rationale Non-empty reason.
+	 * @param string $newEndDate New deadline (YYYY-MM-DD; must be > einddatumActueel).
 	 * @param string $documentLink Optional document link (verlengingsbrief).
 	 * @param string $mode One of self::MODE_STANDARD or self::MODE_SUPERVISOR.
 	 *
@@ -143,42 +143,42 @@ class DeadlineExtensionService {
 	 * @spec openspec/changes/termijnbewaking-dwangsom-engine-03-pause-extension/tasks.md
 	 */
 	private function applyExtension(
-		string $termijnInstanceId,
-		string $motivering,
-		string $newEinddatum,
+		string $termInstanceId,
+		string $rationale,
+		string $newEndDate,
 		string $documentLink,
 		string $mode,
 	): array {
-		$this->assertExtensionInput(motivering: $motivering, newEinddatum: $newEinddatum);
+		$this->assertExtensionInput(rationale: $rationale, newEndDate: $newEndDate);
 
-		$instance = $this->termijnService->getTermijnInstance($termijnInstanceId);
+		$instance = $this->termService->getTermijnInstance($termInstanceId);
 		if ($instance === null) {
-			throw new RuntimeException('TermijnInstance not found: ' . $termijnInstanceId);
+			throw new RuntimeException('TermijnInstance not found: ' . $termInstanceId);
 		}
 
-		$this->assertExtensionPermitted(instance: $instance, newEinddatum: $newEinddatum, mode: $mode);
+		$this->assertExtensionPermitted(instance: $instance, newEndDate: $newEndDate, mode: $mode);
 
-		$current = (string)($instance['einddatumActueel'] ?? '');
-		$consumed = (int)($instance['aantalVerlengingen'] ?? 0);
-		$dagenImpact = $this->calculateDagenImpact(current: $current, newEinddatum: $newEinddatum);
+		$current = (string)($instance['endDateCurrent'] ?? '');
+		$consumed = (int)($instance['countExtensions'] ?? 0);
+		$daysImpact = $this->calculateDaysImpact(current: $current, newEndDate: $newEndDate);
 
-		$updated = $this->termijnService->updateTermijnInstance(
-			$termijnInstanceId,
+		$updated = $this->termService->updateTermijnInstance(
+			$termInstanceId,
 			[
-				'einddatumActueel' => $newEinddatum,
+				'endDateCurrent' => $newEndDate,
 				'status' => 'verlengd',
-				'aantalVerlengingen' => ($consumed + 1),
+				'countExtensions' => ($consumed + 1),
 			]
 		);
 
 		$context = $this->resolveExtensionContext(mode: $mode);
 
-		$this->termijnService->recordEvent(
-			termijnInstanceId: $termijnInstanceId,
+		$this->termService->recordEvent(
+			termInstanceId: $termInstanceId,
 			type: 'verleng',
-			grondslag: $context['grondslag'],
-			motivering: $motivering,
-			dagenImpact: $dagenImpact,
+			basis: $context['basis'],
+			rationale: $rationale,
+			daysImpact: $daysImpact,
 			documentLink: $documentLink,
 			actor: $context['actor'],
 		);
@@ -189,19 +189,19 @@ class DeadlineExtensionService {
 	/**
 	 * Validate the raw verlenging input before any lookup is performed.
 	 *
-	 * @param string $motivering Non-empty reason.
-	 * @param string $newEinddatum New deadline (YYYY-MM-DD).
+	 * @param string $rationale Non-empty reason.
+	 * @param string $newEndDate New deadline (YYYY-MM-DD).
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When the motivering is empty or the date is malformed.
 	 */
-	private function assertExtensionInput(string $motivering, string $newEinddatum): void {
-		if (trim($motivering) === '') {
+	private function assertExtensionInput(string $rationale, string $newEndDate): void {
+		if (trim($rationale) === '') {
 			throw new RuntimeException('Motivering is required for AWB 4:14 verlenging');
 		}
 
-		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $newEinddatum) !== 1) {
+		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $newEndDate) !== 1) {
 			throw new RuntimeException('newEinddatum must be in YYYY-MM-DD format');
 		}
 	}//end assertExtensionInput()
@@ -210,20 +210,20 @@ class DeadlineExtensionService {
 	 * Validate the verlenging against the instance state and the AWB 4:14 ceiling.
 	 *
 	 * @param array<string, mixed> $instance Instance row.
-	 * @param string $newEinddatum New deadline (YYYY-MM-DD).
+	 * @param string $newEndDate New deadline (YYYY-MM-DD).
 	 * @param string $mode One of self::MODE_STANDARD or self::MODE_SUPERVISOR.
 	 *
 	 * @return void
 	 *
 	 * @throws RuntimeException When the deadline does not move forward or the ceiling is exhausted.
 	 */
-	private function assertExtensionPermitted(array $instance, string $newEinddatum, string $mode): void {
-		$current = (string)($instance['einddatumActueel'] ?? '');
-		if ($current !== '' && $newEinddatum <= $current) {
+	private function assertExtensionPermitted(array $instance, string $newEndDate, string $mode): void {
+		$current = (string)($instance['endDateCurrent'] ?? '');
+		if ($current !== '' && $newEndDate <= $current) {
 			throw new RuntimeException('newEinddatum must be later than current einddatumActueel');
 		}
 
-		$consumed = (int)($instance['aantalVerlengingen'] ?? 0);
+		$consumed = (int)($instance['countExtensions'] ?? 0);
 		$maxExt = $this->resolveMaxExtensions(instance: $instance);
 		if ($mode !== self::MODE_SUPERVISOR && $consumed >= $maxExt) {
 			throw new RuntimeException('AWB 4:14 lid 3: maximum aantal verlengingen al verbruikt (' . $maxExt . ')');
@@ -234,18 +234,18 @@ class DeadlineExtensionService {
 	 * Compute the number of days the deadline moves by.
 	 *
 	 * @param string $current Current einddatumActueel, empty when unset.
-	 * @param string $newEinddatum New deadline (YYYY-MM-DD).
+	 * @param string $newEndDate New deadline (YYYY-MM-DD).
 	 *
 	 * @return int Absolute number of days between the current and the new deadline.
 	 */
-	private function calculateDagenImpact(string $current, string $newEinddatum): int {
+	private function calculateDaysImpact(string $current, string $newEndDate): int {
 		$currentInput = 'now';
 		if ($current !== '') {
 			$currentInput = $current;
 		}
 
 		$currentDate = new DateTimeImmutable($currentInput);
-		$newDate = new DateTimeImmutable($newEinddatum);
+		$newDate = new DateTimeImmutable($newEndDate);
 
 		return (int)$currentDate->diff($newDate)->days;
 	}//end calculateDagenImpact()
@@ -255,18 +255,18 @@ class DeadlineExtensionService {
 	 *
 	 * @param string $mode One of self::MODE_STANDARD or self::MODE_SUPERVISOR.
 	 *
-	 * @return array{grondslag: string, actor: string} Event grondslag and actor for the mode.
+	 * @return array{basis: string, actor: string} Event grondslag and actor for the mode.
 	 */
 	private function resolveExtensionContext(string $mode): array {
 		if ($mode === self::MODE_SUPERVISOR) {
 			return [
-				'grondslag' => 'AWB 4:14 lid 3 (supervisor)',
+				'basis' => 'AWB 4:14 lid 3 (supervisor)',
 				'actor' => 'supervisor',
 			];
 		}
 
 		return [
-			'grondslag' => 'AWB 4:14 lid 1',
+			'basis' => 'AWB 4:14 lid 1',
 			'actor' => 'system',
 		];
 	}//end resolveExtensionContext()
@@ -295,10 +295,10 @@ class DeadlineExtensionService {
 		// is the data we actually need.
 		$svcDef = null;
 		try {
-			$reflection = new ReflectionClass($this->termijnService);
+			$reflection = new ReflectionClass($this->termService);
 			if ($reflection->hasProperty('definitieCache') === true) {
 				$prop = $reflection->getProperty('definitieCache');
-				$cache = $prop->getValue($this->termijnService);
+				$cache = $prop->getValue($this->termService);
 				if (is_array($cache) === true) {
 					foreach ($cache as $row) {
 						if (is_array($row) === true && (string)($row['id'] ?? '') === $defId) {
@@ -313,7 +313,7 @@ class DeadlineExtensionService {
 		}
 
 		if (is_array($svcDef) === true) {
-			return (int)($svcDef['aantalVerlengingen'] ?? 1);
+			return (int)($svcDef['countExtensions'] ?? 1);
 		}
 
 		return 1;

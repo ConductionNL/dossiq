@@ -5,7 +5,7 @@
 		v-if="open"
 		:name="t('procest', 'New consultation')"
 		size="normal"
-		:canClose="!submitting"
+		:can-close="!submitting"
 		@closing="onClose">
 		<div class="consultation-create-dialog">
 			<!-- Read-only parent case display -->
@@ -20,21 +20,21 @@
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:modelValue="form.adviesInstantie"
+					:model-value="form.adviceAuthority"
 					:label="t('procest', 'Advisory body')"
 					:placeholder="
 						t('procest', 'e.g. Fire brigade, Aesthetics committee')
 					"
 					required
-					@update:modelValue="(v) => (form.adviesInstantie = v)" />
+					@update:model-value="(v) => (form.adviceAuthority = v)" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:modelValue="form.onderwerp"
+					:model-value="form.onderwerp"
 					:label="t('procest', 'Onderwerp')"
 					required
-					@update:modelValue="(v) => (form.onderwerp = v)" />
+					@update:model-value="(v) => (form.onderwerp = v)" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
@@ -45,7 +45,7 @@
 				</label>
 				<textarea
 					id="consultation-create-question"
-					v-model="form.vraagstelling"
+					v-model="form.question_formulation"
 					class="consultation-create-dialog__textarea"
 					rows="4" />
 			</div>
@@ -58,7 +58,7 @@
 				</label>
 				<input
 					id="consultation-create-response-date"
-					v-model="form.uiterlijkeReactiedatum"
+					v-model="form.latestResponseDate"
 					type="date"
 					class="consultation-create-dialog__date-input"
 					:min="today" />
@@ -69,7 +69,7 @@
 					{{ t('procest', 'Priority') }}
 				</label>
 				<NcSelect
-					v-model="form.prioriteit"
+					v-model="form.priority"
 					:options="prioriteitOptions"
 					:aria-label-combobox="t('procest', 'Priority')"
 					label="label"
@@ -115,69 +115,60 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
-
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
-
 		caseId: {
 			type: String,
 			required: true,
 		},
-
 		parentZaakTitle: {
 			type: String,
 			default: '',
 		},
 	},
-
 	emits: ['close', 'created'],
 	data() {
 		return {
 			submitting: false,
 			validationError: '',
 			form: {
-				adviesInstantie: '',
+				adviceAuthority: '',
 				onderwerp: '',
-				vraagstelling: '',
-				uiterlijkeReactiedatum: '',
-				prioriteit: 'normaal',
+				question_formulation: '',
+				latestResponseDate: '',
+				priority: 'normaal',
 			},
-
 			prioriteitOptions: [
 				{ label: this.t('procest', 'Normal'), value: 'normaal' },
 				{ label: this.t('procest', 'Urgent'), value: 'spoed' },
 			],
 		}
 	},
-
 	computed: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		today() {
 			return new Date().toISOString().slice(0, 10)
 		},
-
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		defaultDeadline() {
 			const d = new Date()
 			d.setDate(d.getDate() + 28)
 			return d.toISOString().slice(0, 10)
 		},
-
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		canSubmit() {
 			return (
 				!this.submitting
-				&& this.form.adviesInstantie.trim() !== ''
+				&& this.form.adviceAuthority.trim() !== ''
 				&& this.form.onderwerp.trim() !== ''
-				&& this.form.vraagstelling.trim() !== ''
-				&& this.form.uiterlijkeReactiedatum !== ''
+				&& this.form.question_formulation.trim() !== ''
+				&& this.form.latestResponseDate !== ''
 			)
 		},
 	},
-
 	watch: {
 		/**
 		 * @param value
@@ -188,20 +179,19 @@ export default {
 				this.validationError = ''
 				this.submitting = false
 				this.form = {
-					adviesInstantie: '',
+					adviceAuthority: '',
 					onderwerp: this.parentZaakTitle,
-					vraagstelling: '',
-					uiterlijkeReactiedatum: this.defaultDeadline,
-					prioriteit: 'normaal',
+					question_formulation: '',
+					latestResponseDate: this.defaultDeadline,
+					priority: 'normaal',
 				}
 			}
 		},
 	},
-
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		validate() {
-			if (this.form.adviesInstantie.trim() === '') {
+			if (this.form.adviceAuthority.trim() === '') {
 				this.validationError = this.t(
 					'procest',
 					'Advisory body is required.',
@@ -212,11 +202,11 @@ export default {
 				this.validationError = this.t('procest', 'Subject is required.')
 				return false
 			}
-			if (this.form.vraagstelling.trim() === '') {
+			if (this.form.question_formulation.trim() === '') {
 				this.validationError = this.t('procest', 'Question is required.')
 				return false
 			}
-			if (this.form.uiterlijkeReactiedatum === '') {
+			if (this.form.latestResponseDate === '') {
 				this.validationError = this.t(
 					'procest',
 					'Latest response date is required.',
@@ -225,23 +215,21 @@ export default {
 			}
 			return true
 		},
-
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		onSubmit() {
 			this.validationError = ''
 			if (!this.validate()) return
 			this.submitting = true
 			this.$emit('created', {
-				parentZaak: this.caseId,
-				adviesInstantie: this.form.adviesInstantie.trim(),
+				parentCase: this.caseId,
+				adviceAuthority: this.form.adviceAuthority.trim(),
 				onderwerp: this.form.onderwerp.trim(),
-				vraagstelling: this.form.vraagstelling.trim(),
-				uiterlijkeReactiedatum: this.form.uiterlijkeReactiedatum,
-				prioriteit: this.form.prioriteit,
+				question_formulation: this.form.question_formulation.trim(),
+				latestResponseDate: this.form.latestResponseDate,
+				priority: this.form.priority,
 			})
 			this.submitting = false
 		},
-
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		onClose() {
 			if (this.submitting) return

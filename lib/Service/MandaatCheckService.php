@@ -101,7 +101,7 @@ class MandaatCheckService {
 			);
 			return [
 				'authorized' => false,
-				'reden' => self::REDEN_BELANGENCONFLICT,
+				'reason' => self::REDEN_BELANGENCONFLICT,
 				'conflictReason' => ConflictOfInterestService::REASON_IDENTITY_INDETERMINATE,
 			];
 		}
@@ -110,14 +110,14 @@ class MandaatCheckService {
 		if ($conflict['conflict'] === true) {
 			return [
 				'authorized' => false,
-				'reden' => self::REDEN_BELANGENCONFLICT,
+				'reason' => self::REDEN_BELANGENCONFLICT,
 				'conflictReason' => (string)($conflict['reason'] ?? ''),
 			];
 		}
 
 		$role = $this->resolveUserRole(userId: $userId, date: $decisionDate);
 		if ($role === null) {
-			return ['authorized' => false, 'reden' => self::REDEN_NIET_BEVOEGD];
+			return ['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD];
 		}
 
 		$caseType = (string)($caseProperties['caseType'] ?? '');
@@ -126,36 +126,36 @@ class MandaatCheckService {
 		$relevant = array_values(
 			array_filter(
 				$mandaten,
-				static fn (array $row): bool => (string)($row['gemandateerdeRol'] ?? '') === (string)$role['rolId']
+				static fn (array $row): bool => (string)($row['mandateeRole'] ?? '') === (string)$role['roleId']
 			)
 		);
 
 		if (count($relevant) === 0) {
-			return ['authorized' => false, 'reden' => self::REDEN_NIET_BEVOEGD];
+			return ['authorized' => false, 'reason' => self::REDEN_NIET_BEVOEGD];
 		}
 
 		// Pick the first mandaat whose voorwaarden pass; surface the most-specific
 		// failure reason when none pass.
-		$lastFailure = ['reden' => self::REDEN_NIET_BEVOEGD, 'failedConditions' => []];
+		$lastFailure = ['reason' => self::REDEN_NIET_BEVOEGD, 'failedConditions' => []];
 		foreach ($relevant as $m) {
-			$eval = $this->evaluateConditions(mandaat: $m, caseProperties: $caseProperties);
+			$eval = $this->evaluateConditions(mandate: $m, caseProperties: $caseProperties);
 			if ($eval['passed'] === true) {
 				return [
 					'authorized' => true,
 					'mandaatId' => (string)($m['id'] ?? ''),
-					'reden' => null,
+					'reason' => null,
 				];
 			}
 
 			$lastFailure = [
-				'reden' => $eval['reden'],
+				'reason' => $eval['reason'],
 				'failedConditions' => $eval['failedConditions'],
 			];
 		}
 
 		return [
 			'authorized' => false,
-			'reden' => $lastFailure['reden'],
+			'reason' => $lastFailure['reason'],
 			'failedConditions' => $lastFailure['failedConditions'],
 		];
 	}//end isAuthorized()
@@ -199,7 +199,7 @@ class MandaatCheckService {
 				continue;
 			}
 
-			if ($this->matchesTypeVoorwaarden(row: $row, decisionType: $decisionType, caseType: $caseType) === false) {
+			if ($this->matchesTypeTerms(row: $row, decisionType: $decisionType, caseType: $caseType) === false) {
 				continue;
 			}
 
@@ -243,8 +243,8 @@ class MandaatCheckService {
 	 *
 	 * @return bool True when the mandaat applies to the pair.
 	 */
-	private function matchesTypeVoorwaarden(array $row, string $decisionType, string $caseType): bool {
-		$voorw = (array)($row['voorwaarden'] ?? []);
+	private function matchesTypeTerms(array $row, string $decisionType, string $caseType): bool {
+		$voorw = (array)($row['terms'] ?? []);
 		$decTypes = (array)($voorw['decisionTypes'] ?? []);
 		if (count($decTypes) > 0 && in_array($decisionType, $decTypes, true) === false) {
 			return false;
@@ -281,8 +281,8 @@ class MandaatCheckService {
 			return [];
 		}
 
-		$rolId = (string)($role['rolId'] ?? '');
-		if ($rolId === '') {
+		$roleId = (string)($role['roleId'] ?? '');
+		if ($roleId === '') {
 			return [];
 		}
 
@@ -290,12 +290,12 @@ class MandaatCheckService {
 
 		$out = [];
 		foreach ($rows as $row) {
-			$mandaatRolId = (string)($row['gemandateerdeRol'] ?? '');
-			if ($mandaatRolId !== '' && $mandaatRolId !== $rolId) {
+			$mandateRoleId = (string)($row['mandateeRole'] ?? '');
+			if ($mandateRoleId !== '' && $mandateRoleId !== $roleId) {
 				continue;
 			}
 
-			$row['unilateral'] = ($mandaatRolId === $rolId);
+			$row['unilateral'] = ($mandateRoleId === $roleId);
 			$out[] = $row;
 		}
 
@@ -361,39 +361,39 @@ class MandaatCheckService {
 	/**
 	 * Evaluate voorwaarden (plafond, subdelegatie) against the case properties.
 	 *
-	 * @param array<string, mixed> $mandaat Mandaat row.
+	 * @param array<string, mixed> $mandate Mandaat row.
 	 * @param array<string, mixed> $caseProperties Case properties (e.g. bedragCents, subdelegatieRequested).
 	 *
-	 * @return array{passed:bool, reden:string, failedConditions:array<int,string>}
+	 * @return array{passed:bool, reason:string, failedConditions:array<int,string>}
 	 *
 	 * @spec openspec/changes/mandaat-matrix-02-authorization-engine/tasks.md
 	 */
-	public function evaluateConditions(array $mandaat, array $caseProperties): array {
-		$voorw = (array)($mandaat['voorwaarden'] ?? []);
+	public function evaluateConditions(array $mandate, array $caseProperties): array {
+		$voorw = (array)($mandate['terms'] ?? []);
 		$failed = [];
 		$redenen = [];
 
 		// Plafond check (cents).
-		if ($this->plafondExceeded(voorwaarden: $voorw, caseProperties: $caseProperties) === true) {
+		if ($this->plafondExceeded(terms: $voorw, caseProperties: $caseProperties) === true) {
 			$failed[] = 'plafond';
 			$redenen[] = self::REDEN_PLAFOND_OVERSCHREDEN;
 		}
 
 		// Subdelegation check.
-		if ($this->subdelegatieDenied(voorwaarden: $voorw, caseProperties: $caseProperties) === true) {
+		if ($this->subdelegatieDenied(terms: $voorw, caseProperties: $caseProperties) === true) {
 			$failed[] = 'subdelegatie';
 			$redenen[] = self::REDEN_SUBDELEGATIE_NIET_TOEGESTAAN;
 		}
 
 		if (count($failed) === 0) {
-			return ['passed' => true, 'reden' => '', 'failedConditions' => []];
+			return ['passed' => true, 'reason' => '', 'failedConditions' => []];
 		}
 
 		// The most-specific failure wins; plafond is evaluated first and so
 		// takes precedence over subdelegatie.
-		$effectiveReden = ($redenen[0] ?? self::REDEN_NIET_BEVOEGD);
+		$effectiveReason = ($redenen[0] ?? self::REDEN_NIET_BEVOEGD);
 
-		return ['passed' => false, 'reden' => $effectiveReden, 'failedConditions' => $failed];
+		return ['passed' => false, 'reason' => $effectiveReason, 'failedConditions' => $failed];
 	}//end evaluateConditions()
 
 	/**
@@ -402,20 +402,20 @@ class MandaatCheckService {
 	 * Both the plafond and the case amount must be present; when either is
 	 * absent the plafond is not applicable and the check passes.
 	 *
-	 * @param array<string, mixed> $voorwaarden Mandaat voorwaarden.
+	 * @param array<string, mixed> $terms Mandaat voorwaarden.
 	 * @param array<string, mixed> $caseProperties Case properties.
 	 *
 	 * @return bool True when the plafond is exceeded.
 	 */
-	private function plafondExceeded(array $voorwaarden, array $caseProperties): bool {
-		if (isset($voorwaarden['plafondCents'], $caseProperties['bedragCents']) === false) {
+	private function plafondExceeded(array $terms, array $caseProperties): bool {
+		if (isset($terms['plafondCents'], $caseProperties['bedragCents']) === false) {
 			return false;
 		}
 
-		$plafond = (int)$voorwaarden['plafondCents'];
-		$bedrag = (int)$caseProperties['bedragCents'];
+		$plafond = (int)$terms['plafondCents'];
+		$amount = (int)$caseProperties['bedragCents'];
 
-		return ($bedrag > $plafond);
+		return ($amount > $plafond);
 	}//end plafondExceeded()
 
 	/**
@@ -423,16 +423,16 @@ class MandaatCheckService {
 	 *
 	 * Only evaluated when the case explicitly requests subdelegation.
 	 *
-	 * @param array<string, mixed> $voorwaarden Mandaat voorwaarden.
+	 * @param array<string, mixed> $terms Mandaat voorwaarden.
 	 * @param array<string, mixed> $caseProperties Case properties.
 	 *
 	 * @return bool True when subdelegation was requested but is not allowed.
 	 */
-	private function subdelegatieDenied(array $voorwaarden, array $caseProperties): bool {
+	private function subdelegatieDenied(array $terms, array $caseProperties): bool {
 		if (($caseProperties['subdelegatieRequested'] ?? false) !== true) {
 			return false;
 		}
 
-		return ((bool)($voorwaarden['subdelegatie'] ?? false) === false);
+		return ((bool)($terms['subdelegatie'] ?? false) === false);
 	}//end subdelegatieDenied()
 }//end class

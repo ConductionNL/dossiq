@@ -58,7 +58,7 @@ class TermijnNotificationServiceTest extends TestCase {
 		$objects->saveObject('procest', 'termijnInstance', [
 			'id' => 'ti-1',
 			'zaak' => 'Z/2026/300',
-			'einddatumActueel' => '2026-07-27',
+			'endDateCurrent' => '2026-07-27',
 			'status' => 'lopend',
 		]);
 

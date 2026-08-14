@@ -70,7 +70,7 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 		'cancelled',
 		'advies_uitgebracht',
 		'afgesloten',
-		'ingetrokken',
+		'withdrawn',
 		'besloten',
 		'closed',
 		'afgehandeld',
@@ -80,13 +80,13 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	/**
 	 * Constructor.
 	 *
-	 * @param BezwaarDecisionDelegationService $bezwaarDelegation Bezwaar decision delegation service.
+	 * @param BezwaarDecisionDelegationService $objectionDelegation Bezwaar decision delegation service.
 	 * @param AdviceDelegationService $adviceDelegation Advice/voorstel delegation service.
 	 * @param SettingsService $settingsService Settings / ObjectService resolver.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
-		private readonly BezwaarDecisionDelegationService $bezwaarDelegation,
+		private readonly BezwaarDecisionDelegationService $objectionDelegation,
 		private readonly AdviceDelegationService $adviceDelegation,
 		private readonly SettingsService $settingsService,
 		private readonly LoggerInterface $logger,
@@ -165,8 +165,8 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	private function buildSurfaceRaisers(): array {
 		return [
 			'bezwaar_decision_schema' => function (array $obj): string {
-				return $this->bezwaarDelegation->raiseBezwaarDecision(
-					bezwaarId: (string)($obj['bezwaar'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
+				return $this->objectionDelegation->raiseBezwaarDecision(
+					objectionId: (string)($obj['bezwaar'] ?? ($obj['uuid'] ?? ($obj['id'] ?? ''))),
 					payload: [
 						'subjectSchema' => 'bezwaarDecision',
 						'subjectId' => (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
@@ -183,8 +183,8 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 					subjectId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
 					payload: [
 						'externalReference' => (string)($obj['caseRef'] ?? ($obj['case'] ?? '')),
-						'subjectLabel' => (string)($obj['vraag'] ?? 'Adviesaanvraag'),
-						'question' => (string)($obj['vraag'] ?? ''),
+						'subjectLabel' => (string)($obj['question'] ?? 'Adviesaanvraag'),
+						'question' => (string)($obj['question'] ?? ''),
 					],
 				);
 			},
@@ -193,15 +193,15 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 					subjectSchema: 'consultation',
 					subjectId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
 					payload: [
-						'externalReference' => (string)($obj['parentZaak'] ?? ''),
+						'externalReference' => (string)($obj['parentCase'] ?? ''),
 						'subjectLabel' => (string)($obj['consultationNumber'] ?? 'Consultatie'),
-						'question' => (string)($obj['vraagstelling'] ?? ''),
+						'question' => (string)($obj['questionFormulation'] ?? ''),
 					],
 				);
 			},
 			'voorstel_schema' => function (array $obj): string {
 				return $this->adviceDelegation->raiseVoorstelBesluit(
-					voorstelId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
+					proposalId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
 					payload: [
 						'externalReference' => (string)($obj['case'] ?? ''),
 						'subjectLabel' => (string)($obj['onderwerp'] ?? ''),

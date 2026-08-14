@@ -58,7 +58,7 @@ class ContactBetrokkeneMapper {
 	 * bronId+endpointId combo (idempotent on retry).
 	 *
 	 * @param array $contact The procest Contact (array with id, bsn).
-	 * @param string $betrokkene The external betrokkene identificatie.
+	 * @param string $involvedParty The external betrokkene identificatie.
 	 * @param array $endpoint The StufEndpoint.
 	 * @param string $entiteit The external entiteit (NPS|NNP).
 	 *
@@ -66,7 +66,7 @@ class ContactBetrokkeneMapper {
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-bidirectional-mapping
 	 */
-	public function linkContact(array $contact, string $betrokkene, array $endpoint, string $entiteit = 'NPS'): array {
+	public function linkContact(array $contact, string $involvedParty, array $endpoint, string $entiteit = 'NPS'): array {
 		$existing = $this->getContactMapping(contact: $contact, endpoint: $endpoint);
 		$data = ($existing ?? [
 			'id' => $this->newId(prefix: 'map'),
@@ -76,7 +76,7 @@ class ContactBetrokkeneMapper {
 		]);
 
 		$data['externEntiteit'] = $entiteit;
-		$data['externIdentificatie'] = $betrokkene;
+		$data['externIdentificatie'] = $involvedParty;
 		$data['laatsteSynchronisatie'] = $this->isoNow();
 		$data['synchronisatieStatus'] = 'in_sync';
 
@@ -116,12 +116,12 @@ class ContactBetrokkeneMapper {
 
 		$found = $lookupCallable($bsn, $endpoint);
 		if (is_string(value: $found) === true && $found !== '') {
-			$this->linkContact(contact: $contact, betrokkene: $found, endpoint: $endpoint, entiteit: 'NPS');
+			$this->linkContact(contact: $contact, involvedParty: $found, endpoint: $endpoint, entiteit: 'NPS');
 			return $found;
 		}
 
 		// Caller will embed full NPS in Lk01; mapping persisted on the BSN itself for reuse.
-		$this->linkContact(contact: $contact, betrokkene: $bsn, endpoint: $endpoint, entiteit: 'NPS');
+		$this->linkContact(contact: $contact, involvedParty: $bsn, endpoint: $endpoint, entiteit: 'NPS');
 		return $bsn;
 	}//end findOrCreateBetrokkene()
 

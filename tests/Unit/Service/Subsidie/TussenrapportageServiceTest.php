@@ -57,8 +57,8 @@ class TussenrapportageServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testBeoordelingstermijn(): void {
-		$eind = new DateTimeImmutable('2026-12-31');
-		$deadline = $this->service->computeBeoordelingstermijn($eind, 22);
+		$end = new DateTimeImmutable('2026-12-31');
+		$deadline = $this->service->computeBeoordelingstermijn($end, 22);
 		$this->assertSame('2027-06-03', $deadline->format('Y-m-d'));
 	}//end testBeoordelingstermijn()
 

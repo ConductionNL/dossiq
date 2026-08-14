@@ -141,7 +141,7 @@ class BrcController extends ZgwController {
 
 		// Brc-006: For besluiten with a zaak, sync zaakbesluit to ZRC after creation.
 		if ($resource === 'besluiten') {
-			return $this->createBesluitWithZaakSync();
+			return $this->createDecisionWithCaseSync();
 		}
 
 		return $this->zgwService->handleCreate($this->request, self::ZGW_API, $resource);
@@ -289,7 +289,7 @@ class BrcController extends ZgwController {
 
 		// Brc-009: Cascade delete for besluiten.
 		if ($resource === 'besluiten') {
-			return $this->destroyBesluit(uuid: $uuid);
+			return $this->destroyDecision(uuid: $uuid);
 		}
 
 		// Brc-005b: Delete OIO when deleting BIO.
@@ -386,20 +386,20 @@ class BrcController extends ZgwController {
 	 *
 	 * @return JSONResponse
 	 */
-	private function createBesluitWithZaakSync(): JSONResponse {
+	private function createDecisionWithCaseSync(): JSONResponse {
 		$response = $this->zgwService->handleCreate($this->request, self::ZGW_API, 'besluiten');
 
 		// Brc-006: If created successfully and has a zaak, sync to ZRC.
 		if ($response->getStatus() === Http::STATUS_CREATED) {
 			$data = $response->getData();
-			$zaakUrl = '';
+			$caseUrl = '';
 			if (is_array($data) === true) {
-				$zaakUrl = $data['zaak'] ?? '';
+				$caseUrl = $data['zaak'] ?? '';
 
-				if ($zaakUrl !== '') {
-					$besluitUrl = $data['url'] ?? '';
-					if ($besluitUrl !== '') {
-						$this->syncZaakBesluitToZrc(zaakUrl: $zaakUrl, besluitUrl: $besluitUrl);
+				if ($caseUrl !== '') {
+					$decisionUrl = $data['url'] ?? '';
+					if ($decisionUrl !== '') {
+						$this->syncCaseDecisionToZrc(caseUrl: $caseUrl, decisionUrl: $decisionUrl);
 					}
 				}
 			}
@@ -414,12 +414,12 @@ class BrcController extends ZgwController {
 	 * Creates a "zaakbesluit" record linking the zaak to the besluit
 	 * in the ZRC register.
 	 *
-	 * @param string $zaakUrl The zaak URL
-	 * @param string $besluitUrl The besluit URL
+	 * @param string $caseUrl The zaak URL
+	 * @param string $decisionUrl The besluit URL
 	 *
 	 * @return void
 	 */
-	private function syncZaakBesluitToZrc(string $zaakUrl, string $besluitUrl): void {
+	private function syncCaseDecisionToZrc(string $caseUrl, string $decisionUrl): void {
 		$objectService = $this->zgwService->getObjectService();
 		if ($objectService === null) {
 			return;
@@ -436,7 +436,7 @@ class BrcController extends ZgwController {
 
 		$uuidPattern = '/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i';
 		$zaakUuid = '';
-		if (preg_match($uuidPattern, $zaakUrl, $match) === 1) {
+		if (preg_match($uuidPattern, $caseUrl, $match) === 1) {
 			$zaakUuid = $match[1];
 		}
 
@@ -445,8 +445,8 @@ class BrcController extends ZgwController {
 		}
 
 		// Use the zaken mapping config for register.
-		$zakenConfig = $this->zgwService->loadMappingConfig('zaken', 'zaken');
-		$register = $zakenConfig['sourceRegister'] ?? '';
+		$casesConfig = $this->zgwService->loadMappingConfig('zaken', 'zaken');
+		$register = $casesConfig['sourceRegister'] ?? '';
 		if ($register === '') {
 			return;
 		}
@@ -454,7 +454,7 @@ class BrcController extends ZgwController {
 		try {
 			$zbData = [
 				'case' => $zaakUuid,
-				'decision' => $besluitUrl,
+				'decision' => $decisionUrl,
 			];
 
 			$objectService->saveObject(
@@ -464,7 +464,7 @@ class BrcController extends ZgwController {
 			);
 
 			$this->zgwService->getLogger()->info(
-				'brc-006: Created zaakbesluit for zaak=' . $zaakUuid . ' besluit=' . $besluitUrl
+				'brc-006: Created zaakbesluit for zaak=' . $zaakUuid . ' besluit=' . $decisionUrl
 			);
 		} catch (\Throwable $e) {
 			$this->zgwService->getLogger()->warning(
@@ -616,10 +616,10 @@ class BrcController extends ZgwController {
 			);
 
 			// Brc-005a: Create OIO in DRC.
-			$besluitUrl = $enrichedBody['besluit'] ?? '';
+			$decisionUrl = $enrichedBody['decision'] ?? '';
 			$ioUrl = $enrichedBody['informatieobject'] ?? '';
-			if ($besluitUrl !== '' && $ioUrl !== '') {
-				$this->createOioInDrc(besluitUrl: $besluitUrl, ioUrl: $ioUrl);
+			if ($decisionUrl !== '' && $ioUrl !== '') {
+				$this->createOioInDrc(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
 			}
 
 			$this->zgwService->publishNotification(
@@ -645,12 +645,12 @@ class BrcController extends ZgwController {
 	/**
 	 * Create an ObjectInformatieObject in the DRC register (brc-005a).
 	 *
-	 * @param string $besluitUrl The besluit URL (full ZGW URL)
+	 * @param string $decisionUrl The besluit URL (full ZGW URL)
 	 * @param string $ioUrl The informatieobject URL (full ZGW URL)
 	 *
 	 * @return void
 	 */
-	private function createOioInDrc(string $besluitUrl, string $ioUrl): void {
+	private function createOioInDrc(string $decisionUrl, string $ioUrl): void {
 		$objectService = $this->zgwService->getObjectService();
 		if ($objectService === null) {
 			return;
@@ -664,8 +664,8 @@ class BrcController extends ZgwController {
 		try {
 			$oioData = [
 				'document' => $ioUrl,
-				'object' => $besluitUrl,
-				'objectType' => 'besluit',
+				'object' => $decisionUrl,
+				'objectType' => 'decision',
 			];
 
 			$objectService->saveObject(
@@ -683,11 +683,11 @@ class BrcController extends ZgwController {
 	/**
 	 * Delete ObjectInformatieObjecten from DRC for a given besluit (brc-005b/009).
 	 *
-	 * @param string $besluitUrl The besluit URL to match OIOs against
+	 * @param string $decisionUrl The besluit URL to match OIOs against
 	 *
 	 * @return void
 	 */
-	private function deleteOiosForBesluit(string $besluitUrl): void {
+	private function deleteOiosForDecision(string $decisionUrl): void {
 		$objectService = $this->zgwService->getObjectService();
 		if ($objectService === null) {
 			return;
@@ -700,7 +700,7 @@ class BrcController extends ZgwController {
 
 		try {
 			$query = $objectService->buildSearchQuery(
-				requestParams: ['object' => $besluitUrl],
+				requestParams: ['object' => $decisionUrl],
 				register: $oioMappingConfig['sourceRegister'],
 				schema: $oioMappingConfig['sourceSchema']
 			);
@@ -755,9 +755,9 @@ class BrcController extends ZgwController {
 
 			// Build the besluit URL from the stored decision UUID.
 			$decisionUuid = $bioData['decision'] ?? '';
-			$besluitUrl = '';
+			$decisionUrl = '';
 			if ($decisionUuid !== '') {
-				$besluitUrl = $this->zgwService->buildBaseUrl(
+				$decisionUrl = $this->zgwService->buildBaseUrl(
 					$this->request,
 					self::ZGW_API,
 					'besluiten'
@@ -770,8 +770,8 @@ class BrcController extends ZgwController {
 			$objectService->deleteObject(uuid: $uuid);
 
 			// Brc-005b: Delete matching OIO in DRC.
-			if ($besluitUrl !== '' && $ioUrl !== '') {
-				$this->deleteOioByBesluitAndIo(besluitUrl: $besluitUrl, ioUrl: $ioUrl);
+			if ($decisionUrl !== '' && $ioUrl !== '') {
+				$this->deleteOioByDecisionAndIo(decisionUrl: $decisionUrl, ioUrl: $ioUrl);
 			}
 
 			$baseUrl = $this->zgwService->buildBaseUrl($this->request, self::ZGW_API, $resource);
@@ -798,12 +798,12 @@ class BrcController extends ZgwController {
 	/**
 	 * Delete an OIO from DRC matching a specific besluit and informatieobject (brc-005b).
 	 *
-	 * @param string $besluitUrl The besluit URL
+	 * @param string $decisionUrl The besluit URL
 	 * @param string $ioUrl The informatieobject URL
 	 *
 	 * @return void
 	 */
-	private function deleteOioByBesluitAndIo(string $besluitUrl, string $ioUrl): void {
+	private function deleteOioByDecisionAndIo(string $decisionUrl, string $ioUrl): void {
 		$objectService = $this->zgwService->getObjectService();
 		if ($objectService === null) {
 			return;
@@ -817,7 +817,7 @@ class BrcController extends ZgwController {
 		try {
 			$query = $objectService->buildSearchQuery(
 				requestParams: [
-					'object' => $besluitUrl,
+					'object' => $decisionUrl,
 					'document' => $ioUrl,
 				],
 				register: $oioMappingConfig['sourceRegister'],
@@ -853,7 +853,7 @@ class BrcController extends ZgwController {
 	 *
 	 * @SuppressWarnings(PHPMD.CyclomaticComplexity)
 	 */
-	private function destroyBesluit(string $uuid): JSONResponse {
+	private function destroyDecision(string $uuid): JSONResponse {
 		$objectService = $this->zgwService->getObjectService();
 		if ($objectService === null) {
 			return $this->zgwService->unavailableResponse();
@@ -890,7 +890,7 @@ class BrcController extends ZgwController {
 			}
 
 			// Build the besluit URL for OIO cleanup.
-			$besluitUrl = $this->zgwService->buildBaseUrl(
+			$decisionUrl = $this->zgwService->buildBaseUrl(
 				$this->request,
 				self::ZGW_API,
 				'besluiten'
@@ -899,7 +899,7 @@ class BrcController extends ZgwController {
 			// Cascade delete of BesluitInformatieObjecten is handled by
 			// OpenRegister via onDelete: CASCADE on decisionDocument.decision.
 			// Brc-009: Sync-delete OIOs in DRC (cross-component side-effect).
-			$this->deleteOiosForBesluit(besluitUrl: $besluitUrl);
+			$this->deleteOiosForDecision(decisionUrl: $decisionUrl);
 
 			// Delete the besluit itself.
 			$objectService->deleteObject(uuid: $uuid);

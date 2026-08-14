@@ -44,7 +44,7 @@ class MandaatController extends Controller {
 	 *
 	 * @param string $appName The application name.
 	 * @param IRequest $request The request object.
-	 * @param MandaatValidationService $mandaatValidator The mandate validation service.
+	 * @param MandaatValidationService $mandateValidator The mandate validation service.
 	 * @param IUserSession $userSession The user session.
 	 * @param LoggerInterface $logger The logger.
 	 *
@@ -53,7 +53,7 @@ class MandaatController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly MandaatValidationService $mandaatValidator,
+		private readonly MandaatValidationService $mandateValidator,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -81,7 +81,7 @@ class MandaatController extends Controller {
 		// Mandate validation: local Awb constraints remain owned by procest;
 		// route-stage assignee decisions are delegated to decidesk (ADR-019).
 		try {
-			$this->authorizeMandaatAccess(caseId: $id, user: $this->userSession->getUser());
+			$this->authorizeMandateAccess(caseId: $id, user: $this->userSession->getUser());
 		} catch (OCSForbiddenException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_UNAUTHORIZED);
 		}
@@ -96,7 +96,7 @@ class MandaatController extends Controller {
 		}
 
 		try {
-			$result = $this->mandaatValidator->validate(
+			$result = $this->mandateValidator->validate(
 				caseId: $id,
 				signingUserId: $signingUserId,
 			);
@@ -122,7 +122,7 @@ class MandaatController extends Controller {
 	 *
 	 * @throws OCSForbiddenException When the user is not authenticated.
 	 */
-	private function authorizeMandaatAccess(string $caseId, ?IUser $user): void {
+	private function authorizeMandateAccess(string $caseId, ?IUser $user): void {
 		if ($user === null) {
 			// Log the denial with the case it targeted — an anonymous probe of
 			// the mandate surface is exactly what an audit needs to see, and

@@ -13,16 +13,16 @@
 				}}</label>
 				<NcSelect
 					id="td-zaaktype"
-					:modelValue="selectedZaaktype"
+					:model-value="selectedZaaktype"
 					:options="zaaktypeOptions"
 					:taggable="true"
-					:inputLabel="t('procest', 'Zaaktype')"
+					:input-label="t('procest', 'Zaaktype')"
 					:placeholder="t('procest', 'Select or type a zaaktype slug')"
-					@update:modelValue="
-						(v) => (form.zaaktype = v ? v.id || v.label || v : '')
+					@update:model-value="
+						(v) => (form.case_type = v ? v.id || v.label || v : '')
 					" />
-				<span v-if="errors.zaaktype" class="field-error">{{
-					errors.zaaktype
+				<span v-if="errors.case_type" class="field-error">{{
+					errors.case_type
 				}}</span>
 			</div>
 
@@ -32,11 +32,11 @@
 				}}</label>
 				<NcTextField
 					id="td-grondslag"
-					:modelValue="form.grondslag"
+					:model-value="form.basis"
 					:placeholder="t('procest', 'e.g. AWB art. 4:13 lid 2')"
-					@update:modelValue="(v) => (form.grondslag = v)" />
-				<span v-if="errors.grondslag" class="field-error">{{
-					errors.grondslag
+					@update:model-value="(v) => (form.basis = v)" />
+				<span v-if="errors.basis" class="field-error">{{
+					errors.basis
 				}}</span>
 			</div>
 
@@ -47,8 +47,8 @@
 				<NcTextField
 					id="td-duur"
 					type="number"
-					:modelValue="String(form.duurDagen)"
-					@update:modelValue="(v) => (form.duurDagen = Number(v) || 0)" />
+					:model-value="String(form.duurDagen)"
+					@update:model-value="(v) => (form.duurDagen = Number(v) || 0)" />
 				<span v-if="errors.duurDagen" class="field-error">{{
 					errors.duurDagen
 				}}</span>
@@ -58,10 +58,10 @@
 				<label for="td-categorie">{{ t('procest', 'Category') }}</label>
 				<NcSelect
 					id="td-categorie"
-					:modelValue="selectedCategorie"
+					:model-value="selectedCategorie"
 					:options="categorieOptions"
-					:inputLabel="t('procest', 'Category')"
-					@update:modelValue="(v) => (form.categorie = v ? v.id : '')" />
+					:input-label="t('procest', 'Category')"
+					@update:model-value="(v) => (form.category = v ? v.id : '')" />
 			</div>
 
 			<div class="form-group">
@@ -69,8 +69,8 @@
 					t('procest', 'Extension allowed')
 				}}</label>
 				<NcCheckboxRadioSwitch
-					:modelValue="form.extendable"
-					@update:modelValue="(v) => (form.extendable = v)">
+					:model-value="form.extendable"
+					@update:model-value="(v) => (form.extendable = v)">
 					{{ t('procest', 'Tenant may grant an extension on this term') }}
 				</NcCheckboxRadioSwitch>
 			</div>
@@ -82,8 +82,8 @@
 				<NcTextField
 					id="td-ext-dagen"
 					type="number"
-					:modelValue="String(form.maxExtensionDagen)"
-					@update:modelValue="
+					:model-value="String(form.maxExtensionDagen)"
+					@update:model-value="
 						(v) => (form.maxExtensionDagen = Number(v) || 0)
 					" />
 			</div>
@@ -120,15 +120,15 @@
 </template>
 
 <script>
-import { translate as t } from '@nextcloud/l10n'
 import {
+	NcModal,
 	NcButton,
+	NcTextField,
+	NcSelect,
 	NcCheckboxRadioSwitch,
 	NcLoadingIcon,
-	NcModal,
-	NcSelect,
-	NcTextField,
 } from '@nextcloud/vue'
+import { translate as t } from '@nextcloud/l10n'
 import ContentSave from 'vue-material-design-icons/ContentSave.vue'
 
 export default {
@@ -142,50 +142,48 @@ export default {
 		NcLoadingIcon,
 		ContentSave,
 	},
-
 	props: {
 		definition: {
 			type: Object,
 			default: null,
 		},
-
 		zaaktypeOptions: {
 			type: Array,
 			default: () => [],
 		},
 	},
-
 	emits: ['save', 'close'],
 	data() {
 		return {
 			saving: false,
 			errors: {},
 			form: {
-				zaaktype: this.definition?.zaaktype || '',
-				grondslag: this.definition?.grondslag || '',
+				case_type: this.definition?.case_type || '',
+				basis: this.definition?.basis || '',
 				duurDagen: this.definition?.duurDagen || this.definition?.duur || 0,
-				categorie: this.definition?.categorie || 'beslis',
+				category: this.definition?.category || 'beslis',
 				extendable: this.definition?.extendable || false,
 				maxExtensionDagen: this.definition?.maxExtensionDagen || 0,
 			},
 		}
 	},
-
 	computed: {
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		title() {
 			return this.definition
-				? t('procest', 'New version of {z}', { z: this.definition.zaaktype })
+				? t('procest', 'New version of {z}', {
+						z: this.definition.case_type,
+					})
 				: t('procest', 'New term definition')
 		},
-
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedZaaktype() {
-			if (!this.form.zaaktype) return null
-			const hit = this.zaaktypeOptions.find((o) => o.id === this.form.zaaktype)
-			return hit || { id: this.form.zaaktype, label: this.form.zaaktype }
+			if (!this.form.case_type) return null
+			const hit = this.zaaktypeOptions.find(
+				(o) => o.id === this.form.case_type,
+			)
+			return hit || { id: this.form.case_type, label: this.form.case_type }
 		},
-
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		categorieOptions() {
 			return [
@@ -195,32 +193,29 @@ export default {
 				{ id: 'beroep', label: t('procest', 'Appeal period') },
 			]
 		},
-
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		selectedCategorie() {
 			return (
-				this.categorieOptions.find((o) => o.id === this.form.categorie)
+				this.categorieOptions.find((o) => o.id === this.form.category)
 				|| this.categorieOptions[0]
 			)
 		},
 	},
-
 	methods: {
 		t,
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		validate() {
 			const errs = {}
-			if (!this.form.zaaktype)
-				errs.zaaktype = t('procest', 'Zaaktype is required')
-			if (!this.form.grondslag)
-				errs.grondslag = t('procest', 'Wettelijke grondslag is required')
+			if (!this.form.case_type)
+				errs.case_type = t('procest', 'Zaaktype is required')
+			if (!this.form.basis)
+				errs.basis = t('procest', 'Wettelijke grondslag is required')
 			if (!this.form.duurDagen || this.form.duurDagen < 1) {
 				errs.duurDagen = t('procest', 'Duration must be at least 1 day')
 			}
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
-
 		/** @spec openspec/changes/termijnbewaking-dwangsom-engine-11-tests-admin-docs/tasks.md */
 		async save() {
 			if (!this.validate()) return

@@ -57,13 +57,13 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface {
 	 * (initiator role); they are deliberately REDACTED before
 	 * logging per AVG / WBP article 9.
 	 *
-	 * @param array<string,mixed> $zaakEnvelope Zaak payload.
+	 * @param array<string,mixed> $caseEnvelope Zaak payload.
 	 * @param array<string,mixed> $context Push context.
 	 *
 	 * @return ZgwPushResult The dispatch outcome.
 	 */
-	public function submitZaak(array $zaakEnvelope, array $context = []): ZgwPushResult {
-		$sanitised = $this->redactBsnFromRollen(zaakEnvelope: $zaakEnvelope);
+	public function submitZaak(array $caseEnvelope, array $context = []): ZgwPushResult {
+		$sanitised = $this->redactBsnFromRoles(caseEnvelope: $caseEnvelope);
 		$correlationId = (string)($context['correlationId'] ?? 'zgw-zaak-' . bin2hex(random_bytes(6)));
 
 		$this->logger->info(
@@ -145,25 +145,25 @@ class LogZgwExternalAdapter implements ZgwExternalAdapterInterface {
 	 * Redact the `betrokkeneIdentificatie.inpBsn` field on any
 	 * `natuurlijk_persoon` row inside `rollen[]`.
 	 *
-	 * @param array<string,mixed> $zaakEnvelope Zaak payload.
+	 * @param array<string,mixed> $caseEnvelope Zaak payload.
 	 *
 	 * @return array<string,mixed> Sanitised payload.
 	 */
-	private function redactBsnFromRollen(array $zaakEnvelope): array {
-		if (isset($zaakEnvelope['rollen']) === false || is_array($zaakEnvelope['rollen']) === false) {
-			return $zaakEnvelope;
+	private function redactBsnFromRoles(array $caseEnvelope): array {
+		if (isset($caseEnvelope['rollen']) === false || is_array($caseEnvelope['rollen']) === false) {
+			return $caseEnvelope;
 		}
 
-		foreach ($zaakEnvelope['rollen'] as $idx => $rol) {
-			if (is_array($rol) === false) {
+		foreach ($caseEnvelope['rollen'] as $idx => $role) {
+			if (is_array($role) === false) {
 				continue;
 			}
 
-			if (isset($rol['betrokkeneIdentificatie']['inpBsn']) === true) {
-				$zaakEnvelope['rollen'][$idx]['betrokkeneIdentificatie']['inpBsn'] = '[REDACTED]';
+			if (isset($role['betrokkeneIdentificatie']['inpBsn']) === true) {
+				$caseEnvelope['rollen'][$idx]['betrokkeneIdentificatie']['inpBsn'] = '[REDACTED]';
 			}
 		}
 
-		return $zaakEnvelope;
+		return $caseEnvelope;
 	}//end redactBsnFromRollen()
 }//end class

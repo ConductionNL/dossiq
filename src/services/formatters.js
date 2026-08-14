@@ -156,7 +156,7 @@ export default {
 	 * @param {string} value The raw `type`.
 	 * @return {string}
 	 */
-	voorstelType: (value) =>
+	proposalType: (value) =>
 		t('procest', VOORSTEL_TYPE_LABELS[value] || value || '-'),
 
 	/**

@@ -86,8 +86,8 @@ class LhsLookupServiceTest extends TestCase {
 				$cell = $this->service->lookup(gedrag: $gedrag, gevolg: $gevolg);
 
 				$this->assertIsArray($cell);
-				$this->assertArrayHasKey(key: 'interventieStep', array: $cell);
-				$this->assertNotEmpty(actual: $cell['interventieStep']);
+				$this->assertArrayHasKey(key: 'interventionStep', array: $cell);
+				$this->assertNotEmpty(actual: $cell['interventionStep']);
 			}
 		}
 	}//end testLookupReturnsCellForAllValidCombinations()
@@ -102,7 +102,7 @@ class LhsLookupServiceTest extends TestCase {
 	public function testLookupB2ReturnsBestuurlijkeWaarschuwing(): void {
 		$cell = $this->service->lookup(gedrag: 'B', gevolg: '2');
 
-		$this->assertSame(expected: 'Last onder dwangsom', actual: $cell['interventieStep']);
+		$this->assertSame(expected: 'Last onder dwangsom', actual: $cell['interventionStep']);
 	}//end testLookupB2ReturnsBestuurlijkeWaarschuwing()
 
 	/**
@@ -158,7 +158,7 @@ class LhsLookupServiceTest extends TestCase {
 		foreach (['A', 'B', 'C', 'D'] as $g) {
 			foreach (['1', '2', '3', '4'] as $v) {
 				$cell = $this->service->lookup(gedrag: $g, gevolg: $v);
-				$this->assertNotEmpty(actual: $cell['interventieStep'], message: "Empty interventieStep for {$g}:{$v}");
+				$this->assertNotEmpty(actual: $cell['interventionStep'], message: "Empty interventieStep for {$g}:{$v}");
 				$count++;
 			}
 		}

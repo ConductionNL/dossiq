@@ -35,7 +35,7 @@
             { "name": "stemuitslag", "propertyType": "string", "isRequired": false, "description": "Uitkomst van de behandeling" },
             { "name": "vergadergremium", "propertyType": "string", "isRequired": true, "description": "Het mandaathoudende orgaan" },
             { "name": "agendanummer", "propertyType": "string", "isRequired": false, "description": "Volgnummer" },
-            { "name": "behandeling", "propertyType": "string", "isRequired": false, "description": "Classificatie als hamerstuk of bespreekstuk" },
+            { "name": "handling", "propertyType": "string", "isRequired": false, "description": "Classificatie als hamerstuk of bespreekstuk" },
             { "name": "mandaatCategorie", "propertyType": "string", "isRequired": true, "description": "Mandaatcategorie uit het mandaatregister (bijv. 'VTH-M-04')" }
         ],
         "documentTypes": [
@@ -93,7 +93,7 @@
         },
         "parafeerroute": {
             "name": "Mandaatbesluit - verkorte route",
-            "voorstelType": "dt_advies",
+            "proposalType": "dt_advies",
             "isDefault": true,
             "description": "Verkorte route voor mandaatbesluiten: directeur is eindparafeerder",
             "steps": [

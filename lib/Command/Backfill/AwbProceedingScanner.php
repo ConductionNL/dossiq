@@ -92,9 +92,9 @@ class AwbProceedingScanner {
 	 * @spec openspec/specs/archief-edepot-handover/spec.md
 	 */
 	public function scan(object $objectService, bool $includeDeleted, OutputInterface $output): array {
-		$closedBezwaar = $this->terminatedProceedingIds(objectService: $objectService, schema: 'bezwaarDecision');
+		$closedObjection = $this->terminatedProceedingIds(objectService: $objectService, schema: 'bezwaarDecision');
 		$closedAppeal = $this->terminatedProceedingIds(objectService: $objectService, schema: 'appealDecision');
-		$closed = array_merge($closedBezwaar, $closedAppeal);
+		$closed = array_merge($closedObjection, $closedAppeal);
 
 		// Report the closed set explicitly. An empty set here silently disables
 		// the "only hold OPEN proceedings" rule, which is the difference between
@@ -102,7 +102,7 @@ class AwbProceedingScanner {
 		// exactly the kind of inert safety check this whole programme is about.
 		$output->writeln(
 			'  terminal decisions found: ' . count($closed)
-			. ' (bezwaarDecision=' . count($closedBezwaar) . ', appealDecision=' . count($closedAppeal) . ')'
+			. ' (bezwaarDecision=' . count($closedObjection) . ', appealDecision=' . count($closedAppeal) . ')'
 		);
 
 		$candidates = [];

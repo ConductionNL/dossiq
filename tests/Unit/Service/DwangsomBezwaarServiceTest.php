@@ -68,12 +68,12 @@ class DwangsomBezwaarServiceTest extends TestCase {
 			'id' => 'b-1',
 			'termijnInstance' => 'ti-1',
 			'status' => 'gestopt-wegens-beschikking',
-			'definitievBedrag' => 50000,
+			'definitiveAmount' => 50000,
 		]);
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
 			'id' => 'u-1',
 			'dwangsomBerekening' => 'b-1',
-			'bedrag' => 50000,
+			'amount' => 50000,
 			'status' => 'voorbereid',
 		]);
 	}
@@ -101,11 +101,11 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		$this->service->registerBezwaar('b-1', 'AWB 7:1', 'foo');
 		$b = $this->service->resolveBezwaar('b-1', 30000, 'AWB 7:11');
 
-		self::assertSame(30000, $b['definitievBedrag']);
+		self::assertSame(30000, $b['definitiveAmount']);
 		self::assertSame('voltooid', $b['status']);
 
 		$u = $this->objects->store['dwangsomUitbetaling']['u-1'];
-		self::assertSame(30000, $u['bedrag']);
+		self::assertSame(30000, $u['amount']);
 		self::assertSame('voorbereid', $u['status']);
 	}
 

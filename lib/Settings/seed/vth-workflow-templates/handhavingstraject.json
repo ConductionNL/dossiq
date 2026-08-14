@@ -28,7 +28,7 @@
       "description": "Zienswijze van overtreder is ontvangen en beoordeeld."
     },
     {
-      "slug": "besluit",
+      "slug": "decision",
       "title": "Handhavingsbesluit",
       "statusName": "Handhavingsbesluit",
       "order": 3,

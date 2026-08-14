@@ -80,7 +80,7 @@ class ParaferingAuditListener implements IEventListener {
 		}
 
 		try {
-			$object = $this->resolveVoorstelEntity(voorstelId: $event->getVoorstelId());
+			$object = $this->resolveProposalEntity(proposalId: $event->getVoorstelId());
 			if ($object === null) {
 				$this->logger->warning(
 					'Procest: ParaferingAuditListener could not resolve voorstel ObjectEntity; audit entry skipped',
@@ -143,11 +143,11 @@ class ParaferingAuditListener implements IEventListener {
 	 * Returns null when OR is unavailable, the register/schema config is
 	 * missing, or the object cannot be loaded — the caller logs and skips.
 	 *
-	 * @param string $voorstelId The voorstel UUID/slug
+	 * @param string $proposalId The voorstel UUID/slug
 	 *
 	 * @return ObjectEntity|null
 	 */
-	private function resolveVoorstelEntity(string $voorstelId): ?ObjectEntity {
+	private function resolveProposalEntity(string $proposalId): ?ObjectEntity {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -159,7 +159,7 @@ class ParaferingAuditListener implements IEventListener {
 			return null;
 		}
 
-		$entity = $objectService->find($voorstelId, register: $register, schema: $schema);
+		$entity = $objectService->find($proposalId, register: $register, schema: $schema);
 		if ($entity instanceof ObjectEntity) {
 			return $entity;
 		}

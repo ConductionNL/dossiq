@@ -131,25 +131,25 @@ class VaststellingServiceTest extends TestCase {
 	/**
 	 * Seed the full subsidieUitvoering -> subsidieAanvraag -> case chain.
 	 *
-	 * @param string $vaststellingId Vaststelling id.
+	 * @param string $determinationId Vaststelling id.
 	 * @param string $uitvoeringId Execution id.
-	 * @param string $aanvraagId Application id.
+	 * @param string $requestId Application id.
 	 * @param string|null $caseId Linked case id (null = no case link).
 	 *
 	 * @return void
 	 */
-	private function seedChain(string $vaststellingId, string $uitvoeringId, string $aanvraagId, ?string $caseId): void {
-		$this->objects->store['subsidieVaststelling'][$vaststellingId] = [
-			'id' => $vaststellingId,
+	private function seedChain(string $determinationId, string $uitvoeringId, string $requestId, ?string $caseId): void {
+		$this->objects->store['subsidieVaststelling'][$determinationId] = [
+			'id' => $determinationId,
 			'subsidieuitvoering' => $uitvoeringId,
 			'status' => 'concept',
 		];
 		$this->objects->store['subsidieUitvoering'][$uitvoeringId] = [
 			'id' => $uitvoeringId,
-			'subsidieaanvraag' => $aanvraagId,
+			'subsidieaanvraag' => $requestId,
 		];
-		$this->objects->store['subsidieAanvraag'][$aanvraagId] = [
-			'id' => $aanvraagId,
+		$this->objects->store['subsidieAanvraag'][$requestId] = [
+			'id' => $requestId,
 			'case' => ($caseId ?? ''),
 		];
 
@@ -209,9 +209,9 @@ class VaststellingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testFinalizeWithNoLinkedCaseDoesNotThrow(): void {
-		$this->seedChain(vaststellingId: 'vst-2', uitvoeringId: 'uitv-2', aanvraagId: 'aanv-2', caseId: null);
+		$this->seedChain(determinationId: 'vst-2', uitvoeringId: 'uitv-2', requestId: 'aanv-2', caseId: null);
 
-		$result = $this->service->finalize(vaststellingId: 'vst-2', verleendBedrag: 100000.0, werkelijkeKosten: 80000.0, totaalVoorschotten: 50000.0);
+		$result = $this->service->finalize(determinationId: 'vst-2', grantedAmount: 100000.0, actualCost: 80000.0, totalAdvances: 50000.0);
 
 		$this->assertSame('vastgesteld', $result['vaststelling']['status']);
 		$this->assertSame([], $this->objects->store['case'] ?? []);

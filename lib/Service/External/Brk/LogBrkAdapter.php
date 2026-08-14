@@ -58,10 +58,10 @@ class LogBrkAdapter implements BrkAdapterInterface {
 	 * not a person), so it is logged as-is, matching the
 	 * `LogBagAdapter` precedent (postcode/huisnummer logged verbatim).
 	 *
-	 * @param string $kadastraleGemeenteCode Kadastrale gemeentecode.
-	 * @param string $sectie Sectie.
+	 * @param string $kadastraleMunicipalityCode Kadastrale gemeentecode.
+	 * @param string $section Sectie.
 	 * @param string $perceelnummer Perceelnummer.
-	 * @param string|null $appartementsrechtVolgnummer Optional appartementsrecht
+	 * @param string|null $appartementsrechtSequenceNumber Optional appartementsrecht
 	 *                                                 volgnummer.
 	 * @param array<string,mixed> $context Lookup context.
 	 *
@@ -70,19 +70,19 @@ class LogBrkAdapter implements BrkAdapterInterface {
 	 * @spec openspec/changes/brk-woz-register-adapters/proposal.md
 	 */
 	public function lookupByKadastraleAanduiding(
-		string $kadastraleGemeenteCode,
-		string $sectie,
+		string $kadastraleMunicipalityCode,
+		string $section,
 		string $perceelnummer,
-		?string $appartementsrechtVolgnummer = null,
+		?string $appartementsrechtSequenceNumber = null,
 		array $context = [],
 	): BrkLookupResult {
 		$this->logger->info(
 			'Procest BRK lookup deferred (no outbound connector bound)',
 			[
-				'kadastraleGemeenteCode' => $kadastraleGemeenteCode,
-				'sectie' => $sectie,
+				'kadastraleGemeenteCode' => $kadastraleMunicipalityCode,
+				'sectie' => $section,
 				'perceelnummer' => $perceelnummer,
-				'appartementsrechtVolgnummer' => $appartementsrechtVolgnummer,
+				'appartementsrechtVolgnummer' => $appartementsrechtSequenceNumber,
 				'context' => $context,
 			]
 		);

@@ -74,7 +74,7 @@ class VoorstelBesluitController extends Controller {
 	 * Decision. IDOR-guarded: only the voorstel owner / case assignee or an
 	 * admin may register the besluit. FAILS CLOSED when decidesk is unavailable.
 	 *
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param string $proposalId The voorstel UUID.
 	 *
 	 * @return JSONResponse The decidesk decisionRef envelope, or an error.
 	 *
@@ -86,7 +86,7 @@ class VoorstelBesluitController extends Controller {
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
 	#[NoAdminRequired]
-	public function registerBesluit(string $voorstelId): JSONResponse {
+	public function registerBesluit(string $proposalId): JSONResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new JSONResponse(['error' => 'Authenticatie vereist'], Http::STATUS_UNAUTHORIZED);
@@ -94,12 +94,12 @@ class VoorstelBesluitController extends Controller {
 
 		// Per-object IDOR gate (ADR-005 Rule 3 / OWASP A01:2021): read the
 		// voorstel and verify the caller may act on it before raising anything.
-		$voorstel = $this->loadVoorstel(voorstelId: $voorstelId);
-		if ($voorstel === null) {
+		$proposal = $this->loadProposal(proposalId: $proposalId);
+		if ($proposal === null) {
 			return new JSONResponse(['error' => 'Voorstel niet toegankelijk'], Http::STATUS_NOT_FOUND);
 		}
 
-		if ($this->callerMayRegister(voorstel: $voorstel, uid: $user->getUID()) === false) {
+		if ($this->callerMayRegister(proposal: $proposal, uid: $user->getUID()) === false) {
 			// Collapse access-denied + not-found to the same response to avoid
 			// an existence-probing oracle.
 			return new JSONResponse(['error' => 'Voorstel niet toegankelijk'], Http::STATUS_FORBIDDEN);
@@ -109,10 +109,10 @@ class VoorstelBesluitController extends Controller {
 
 		try {
 			$decisionRef = $this->adviceDelegation->raiseVoorstelBesluit(
-				voorstelId: $voorstelId,
+				proposalId: $proposalId,
 				payload: [
-					'externalReference' => (string)($voorstel['case'] ?? $voorstelId),
-					'subjectLabel' => (string)($body['title'] ?? ($voorstel['onderwerp'] ?? '')),
+					'externalReference' => (string)($proposal['case'] ?? $proposalId),
+					'subjectLabel' => (string)($body['title'] ?? ($proposal['onderwerp'] ?? '')),
 					'title' => (string)($body['title'] ?? ''),
 					'governingBody' => (string)($body['governingBody'] ?? ''),
 					'explanation' => (string)($body['explanation'] ?? ''),
@@ -132,7 +132,7 @@ class VoorstelBesluitController extends Controller {
 		}//end try
 
 		return new JSONResponse(
-			['voorstelId' => $voorstelId, 'decisionRef' => $decisionRef, 'status' => 'awaiting-decidesk'],
+			['voorstelId' => $proposalId, 'decisionRef' => $decisionRef, 'status' => 'awaiting-decidesk'],
 			Http::STATUS_ACCEPTED,
 		);
 	}//end registerBesluit()
@@ -140,24 +140,24 @@ class VoorstelBesluitController extends Controller {
 	/**
 	 * Load a voorstel via OpenRegister, or null when unavailable / not found.
 	 *
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param string $proposalId The voorstel UUID.
 	 *
 	 * @return array<string,mixed>|null The voorstel, or null.
 	 */
-	private function loadVoorstel(string $voorstelId): ?array {
+	private function loadProposal(string $proposalId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$voorstelSchema = $this->settingsService->getConfigValue(key: 'voorstel_schema');
-		if ($register === '' || $voorstelSchema === '') {
+		$proposalSchema = $this->settingsService->getConfigValue(key: 'voorstel_schema');
+		if ($register === '' || $proposalSchema === '') {
 			return null;
 		}
 
 		try {
-			$voorstel = $objectService->find($voorstelId, register: $register, schema: $voorstelSchema);
+			$proposal = $objectService->find($proposalId, register: $register, schema: $proposalSchema);
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest: voorstel lookup failed during IDOR gate: ' . $e->getMessage(),
@@ -166,8 +166,8 @@ class VoorstelBesluitController extends Controller {
 			return null;
 		}
 
-		if (is_array($voorstel) === true) {
-			return $voorstel;
+		if (is_array($proposal) === true) {
+			return $proposal;
 		}
 
 		return null;
@@ -179,18 +179,18 @@ class VoorstelBesluitController extends Controller {
 	 * Admins always may. Otherwise the caller must be the voorstel owner
 	 * (@self.owner) or its recorded assignee / behandelaar.
 	 *
-	 * @param array<string,mixed> $voorstel The voorstel record.
+	 * @param array<string,mixed> $proposal The voorstel record.
 	 * @param string $uid The caller UID.
 	 *
 	 * @return bool
 	 */
-	private function callerMayRegister(array $voorstel, string $uid): bool {
+	private function callerMayRegister(array $proposal, string $uid): bool {
 		if ($this->groupManager->isAdmin($uid) === true) {
 			return true;
 		}
 
-		$owner = (string)($voorstel['@self']['owner'] ?? '');
-		$assignee = (string)($voorstel['assignee'] ?? ($voorstel['behandelaar'] ?? ''));
+		$owner = (string)($proposal['@self']['owner'] ?? '');
+		$assignee = (string)($proposal['assignee'] ?? ($proposal['handler'] ?? ''));
 
 		return ($owner !== '' && $owner === $uid) || ($assignee !== '' && $assignee === $uid);
 	}//end callerMayRegister()

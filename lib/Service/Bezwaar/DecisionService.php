@@ -130,7 +130,7 @@ class DecisionService {
 	 * (appealNotice completeness, proceskosten resolution) are
 	 * deferred to publish().
 	 *
-	 * @param string $bezwaarId UUID of the bezwaar.
+	 * @param string $objectionId UUID of the bezwaar.
 	 * @param array<string, mixed> $payload Decision properties.
 	 *
 	 * @return array<string, mixed> The created decision record.
@@ -141,7 +141,7 @@ class DecisionService {
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function draft(string $bezwaarId, array $payload): array {
+	public function draft(string $objectionId, array $payload): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			throw new RuntimeException('OpenRegister is not available');
@@ -162,7 +162,7 @@ class DecisionService {
 		$record = array_merge(
 			$payload,
 			[
-				'bezwaar' => $bezwaarId,
+				'bezwaar' => $objectionId,
 				'status' => 'draft',
 			]
 		);
@@ -235,20 +235,20 @@ class DecisionService {
 		// raised on an Awb-invalid payload.
 		$this->validator->assertPublishable(decision: $current);
 
-		$bezwaarId = (string)($current['bezwaar'] ?? '');
+		$objectionId = (string)($current['bezwaar'] ?? '');
 
 		// REQ-PDRD-001 / REQ-PDRD-002: delegate the deciding to decidesk via the
 		// decidesk DecisionRequestedEvent. Fail closed — never author the besluit
 		// locally as a fallback. The decisionRef returned is persisted on the
 		// record so the outcome can be materialised later from the concluded event.
-		$bezwaarRef = $decisionId;
-		if ($bezwaarId !== '') {
-			$bezwaarRef = $bezwaarId;
+		$objectionRef = $decisionId;
+		if ($objectionId !== '') {
+			$objectionRef = $objectionId;
 		}
 
 		try {
 			$decisionRef = $this->decisionDelegation->raiseBezwaarDecision(
-				bezwaarId: $bezwaarRef,
+				objectionId: $objectionRef,
 				payload: [
 					'subjectRegister' => $register,
 					'subjectSchema' => $decisionSchema,
@@ -280,9 +280,9 @@ class DecisionService {
 
 		$totalAmount = $this->validator->computeProceskostenTotal(decision: $current);
 		if ($totalAmount !== null) {
-			$proceskosten = (array)($current['proceskostenvergoeding'] ?? []);
+			$proceskosten = (array)($current['legalCostsCompensation'] ?? []);
 			$proceskosten['totalAmount'] = $totalAmount;
-			$patch['proceskostenvergoeding'] = $proceskosten;
+			$patch['legalCostsCompensation'] = $proceskosten;
 		}
 
 		try {
@@ -313,31 +313,31 @@ class DecisionService {
 	 * status transition on the linked bezwaar; the status engine still owns
 	 * guards + side effects, and the besluit is never authored locally.
 	 *
-	 * @param string $bezwaarId UUID of the source bezwaar.
+	 * @param string $objectionId UUID of the source bezwaar.
 	 * @param string $decisionId UUID of the bezwaarDecision being applied.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/changes/procest-delegation-via-events/specs/contract-decision-delegation/spec.md#requirement-req-pdcd-003-the-zgw-besluit-is-materialised-from-the-decisionconcludedevent
 	 */
-	public function applyToBezwaar(string $bezwaarId, string $decisionId): void {
+	public function applyToBezwaar(string $objectionId, string $decisionId): void {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return;
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$bezwaarSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
-		if ($register === '' || $bezwaarSchema === '') {
+		$objectionSchema = $this->settingsService->getConfigValue(key: 'bezwaar_schema');
+		if ($register === '' || $objectionSchema === '') {
 			return;
 		}
 
-		$bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
-		if (is_array($bezwaar) === false) {
+		$objection = $objectService->find($objectionId, register: $register, schema: $objectionSchema);
+		if (is_array($objection) === false) {
 			return;
 		}
 
-		$caseId = (string)($bezwaar['case'] ?? '');
+		$caseId = (string)($objection['case'] ?? '');
 		if ($caseId === '') {
 			return;
 		}
@@ -381,9 +381,9 @@ class DecisionService {
 			$recipients[] = 'bezwaarmaker:' . $bezwaarmaker;
 		}
 
-		$gemachtigde = (string)($decision['gemachtigde'] ?? '');
-		if ($gemachtigde !== '') {
-			$recipients[] = 'gemachtigde:' . $gemachtigde;
+		$representative = (string)($decision['gemachtigde'] ?? '');
+		if ($representative !== '') {
+			$recipients[] = 'gemachtigde:' . $representative;
 		}
 
 		$primairBeslisser = (string)($decision['primairBeslisser'] ?? '');

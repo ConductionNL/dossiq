@@ -184,7 +184,7 @@ const EMPTY_FORM = {
 	extensionPeriod: '',
 	suspensionAllowed: false,
 	confidentiality: '',
-	iv3Taakveld: '',
+	iv3TaskField: '',
 	publicationRequired: false,
 	publicationText: '',
 	responsibleUnit: '',

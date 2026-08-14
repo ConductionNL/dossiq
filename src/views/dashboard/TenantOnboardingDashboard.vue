@@ -275,7 +275,7 @@ export default {
 					: res.data?.results || []
 				this.tenantOptions = list.map((tn) => ({
 					id: tn.id || tn.tenantId,
-					label: tn.naam || tn.label || tn.id,
+					label: tn.name || tn.label || tn.id,
 				}))
 			} catch (e) {
 				this.error =

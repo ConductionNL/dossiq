@@ -44,7 +44,7 @@ use Psr\Log\LoggerInterface;
 class DeadlineDailyScanServiceTest extends TestCase {
 	private FakeTermijnStore $objects;
 	private SettingsService $settings;
-	private TermijnService $termijnService;
+	private TermijnService $termService;
 	private DeadlineEscalationService $escalation;
 	private DeadlineDailyScanService $scan;
 
@@ -66,11 +66,11 @@ class DeadlineDailyScanServiceTest extends TestCase {
 
 		$this->settings = $settings;
 		$logger = $this->createMock(LoggerInterface::class);
-		$this->termijnService = new TermijnService($settings, $logger);
-		$this->escalation = new DeadlineEscalationService($this->termijnService, $logger);
+		$this->termService = new TermijnService($settings, $logger);
+		$this->escalation = new DeadlineEscalationService($this->termService, $logger);
 		$this->scan = new DeadlineDailyScanService(
 			$settings,
-			$this->termijnService,
+			$this->termService,
 			$this->escalation,
 			$logger
 		);
@@ -85,9 +85,9 @@ class DeadlineDailyScanServiceTest extends TestCase {
 		return $this->objects->saveObject('procest', 'termijnInstance', [
 			'zaak' => 'Z/2026/X',
 			'termijnDefinitie' => 'td-ov',
-			'startDatum' => '2026-01-01T10:00:00+00:00',
-			'einddatumBerekend' => $deadline,
-			'einddatumActueel' => $deadline,
+			'startDate' => '2026-01-01T10:00:00+00:00',
+			'endDateCalculated' => $deadline,
+			'endDateCurrent' => $deadline,
 			'status' => $status,
 			'notificatiesVerstuurd' => [],
 		]);
@@ -118,7 +118,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 		$sent1 = $this->escalation->notifyThreshold($instance, 14);
 		self::assertTrue($sent1);
 
-		$reloaded = $this->termijnService->getTermijnInstance((string)$instance['id']);
+		$reloaded = $this->termService->getTermijnInstance((string)$instance['id']);
 		$sent2 = $this->escalation->notifyThreshold($reloaded, 14);
 		self::assertFalse($sent2);
 	}
@@ -211,8 +211,8 @@ class DeadlineDailyScanServiceTest extends TestCase {
 			$this->objects->saveObject('procest', 'dwangsomBerekening', [
 				'id' => $id,
 				'termijnInstance' => 'ti-' . $id,
-				'huidigeDag' => 0,
-				'cumulatievBedrag' => 0,
+				'currentDag' => 0,
+				'cumulativeAmount' => 0,
 				'plafondBereikt' => false,
 				'status' => 'lopend',
 			]);
@@ -221,8 +221,8 @@ class DeadlineDailyScanServiceTest extends TestCase {
 		$this->objects->saveObject('procest', 'dwangsomBerekening', [
 			'id' => 'b-stopped',
 			'termijnInstance' => 'ti-stopped',
-			'huidigeDag' => 99,
-			'cumulatievBedrag' => 999999,
+			'currentDag' => 99,
+			'cumulativeAmount' => 999999,
 			'plafondBereikt' => false,
 			'status' => 'gestopt-wegens-beschikking',
 		]);
@@ -234,11 +234,11 @@ class DeadlineDailyScanServiceTest extends TestCase {
 		// Verify each lopend row advanced one tier-1 day; stopped row untouched.
 		foreach (['b1', 'b2', 'b3'] as $id) {
 			$row = $this->objects->store['dwangsomBerekening'][$id];
-			self::assertSame(1, $row['huidigeDag'], $id . ' must advance huidigeDag by 1.');
-			self::assertSame(2300, $row['cumulatievBedrag'], $id . ' must add tier-1 (2300 cents) once.');
+			self::assertSame(1, $row['currentDag'], $id . ' must advance huidigeDag by 1.');
+			self::assertSame(2300, $row['cumulativeAmount'], $id . ' must add tier-1 (2300 cents) once.');
 		}
 		$stopped = $this->objects->store['dwangsomBerekening']['b-stopped'];
-		self::assertSame(99, $stopped['huidigeDag'], 'stopped row must not advance.');
-		self::assertSame(999999, $stopped['cumulatievBedrag'], 'stopped row must not accrue.');
+		self::assertSame(99, $stopped['currentDag'], 'stopped row must not advance.');
+		self::assertSame(999999, $stopped['cumulativeAmount'], 'stopped row must not accrue.');
 	}
 }

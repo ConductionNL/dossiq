@@ -73,7 +73,7 @@
 							</span>
 						</td>
 						<td>{{ rel.readable ? rel.status || '—' : '—' }}</td>
-						<td>{{ rel.toelichting || '—' }}</td>
+						<td>{{ rel.notes || '—' }}</td>
 						<td class="related-cases-section__actions-col">
 							<NcButton
 								type="tertiary"
@@ -212,7 +212,7 @@ export default {
 			const row = {
 				caseId: entry.caseId,
 				aardRelatie: entry.aardRelatie,
-				toelichting: entry.toelichting || '',
+				notes: entry.notes || '',
 				readable: false,
 				title: '',
 				status: '',

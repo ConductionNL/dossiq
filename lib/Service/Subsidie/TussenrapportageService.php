@@ -83,14 +83,14 @@ class TussenrapportageService {
 	 * Compute the assessment deadline for an interim report (REQ-SUB-004):
 	 * the reporting period end plus the regeling-configured term.
 	 *
-	 * @param DateTimeImmutable $periodeEind The reporting period end.
-	 * @param int $termijnWeken The regeling assessment term.
+	 * @param DateTimeImmutable $periodEnd The reporting period end.
+	 * @param int $termWeken The regeling assessment term.
 	 *
 	 * @return DateTimeImmutable The assessment deadline.
 	 */
-	public function computeBeoordelingstermijn(DateTimeImmutable $periodeEind, int $termijnWeken): DateTimeImmutable {
-		$termijnWeken = max(1, $termijnWeken);
-		return $periodeEind->add(new DateInterval('P' . ($termijnWeken * 7) . 'D'));
+	public function computeBeoordelingstermijn(DateTimeImmutable $periodEnd, int $termWeken): DateTimeImmutable {
+		$termWeken = max(1, $termWeken);
+		return $periodEnd->add(new DateInterval('P' . ($termWeken * 7) . 'D'));
 	}//end computeBeoordelingstermijn()
 
 	/**
@@ -98,17 +98,17 @@ class TussenrapportageService {
 	 * (REQ-SUB-004). Returns one period per cadence step; "op_mijlpaal" and
 	 * "geen" yield no automatic periods.
 	 *
-	 * @param string $frequentie The cadence (jaarlijks/halfjaarlijks/...).
+	 * @param string $frequency The cadence (jaarlijks/halfjaarlijks/...).
 	 * @param int $year The calendar year.
 	 *
 	 * @return array<int, array{start: string, eind: string}> The reporting periods.
 	 */
-	public function periodsForFrequentie(string $frequentie, int $year): array {
-		if ($frequentie === 'jaarlijks') {
+	public function periodsForFrequentie(string $frequency, int $year): array {
+		if ($frequency === 'jaarlijks') {
 			return [['start' => sprintf('%d-01-01', $year), 'eind' => sprintf('%d-12-31', $year)]];
 		}
 
-		if ($frequentie === 'halfjaarlijks') {
+		if ($frequency === 'halfjaarlijks') {
 			return [
 				['start' => sprintf('%d-01-01', $year), 'eind' => sprintf('%d-06-30', $year)],
 				['start' => sprintf('%d-07-01', $year), 'eind' => sprintf('%d-12-31', $year)],
@@ -156,13 +156,13 @@ class TussenrapportageService {
 	 *
 	 * @param string $reportId The report id.
 	 * @param string|null $beoordelingsoordeel Optional assessment narrative.
-	 * @param float|null $ingekeurdeBedrag Optional approved amount.
+	 * @param float|null $approvedAmount Optional approved amount.
 	 *
 	 * @return array<string, mixed> The approved report record.
 	 *
 	 * @throws OCSBadRequestException When unauthenticated or persistence fails.
 	 */
-	public function approveReport(string $reportId, ?string $beoordelingsoordeel = null, ?float $ingekeurdeBedrag = null): array {
+	public function approveReport(string $reportId, ?string $beoordelingsoordeel = null, ?float $approvedAmount = null): array {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSBadRequestException('Authenticatie vereist om te beoordelen');
@@ -179,8 +179,8 @@ class TussenrapportageService {
 			$patch['beoordelingsoordeel'] = $beoordelingsoordeel;
 		}
 
-		if ($ingekeurdeBedrag !== null) {
-			$patch['ingekeurdeBedrag'] = $ingekeurdeBedrag;
+		if ($approvedAmount !== null) {
+			$patch['approvedAmount'] = $approvedAmount;
 		}
 
 		try {
@@ -198,13 +198,13 @@ class TussenrapportageService {
 	 *
 	 * @param string $reportId The report id.
 	 * @param string $correctieverzoek The required-corrections text.
-	 * @param int $huidigeTeller The current amendment count.
+	 * @param int $currentTeller The current amendment count.
 	 *
 	 * @return array<string, mixed> The updated report record.
 	 *
 	 * @throws OCSBadRequestException When the corrections text is empty or persistence fails.
 	 */
-	public function partialApprove(string $reportId, string $correctieverzoek, int $huidigeTeller): array {
+	public function partialApprove(string $reportId, string $correctieverzoek, int $currentTeller): array {
 		if (trim($correctieverzoek) === '') {
 			throw new OCSBadRequestException('Een correctieverzoek is verplicht bij gedeeltelijke goedkeuring');
 		}
@@ -219,7 +219,7 @@ class TussenrapportageService {
 		$patch = [
 			'status' => 'gedeeltelijk_goedgekeurd',
 			'correctieverzoek' => $correctieverzoek,
-			'amendementTeller' => ($huidigeTeller + 1),
+			'amendementTeller' => ($currentTeller + 1),
 			'beoordelaar' => $user->getUID(),
 			'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
 		];

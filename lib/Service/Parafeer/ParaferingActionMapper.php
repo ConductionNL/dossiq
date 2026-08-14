@@ -75,7 +75,7 @@ class ParaferingActionMapper {
 	/**
 	 * Build the parafeeractie payload, omitting the optional fields that are unset.
 	 *
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param string $proposalId The voorstel UUID.
 	 * @param int $stepOrder The step order this action applies to.
 	 * @param string $actor The acting user id (from IUserSession, never the body).
 	 * @param array<string, mixed> $input The parsed action inputs.
@@ -84,9 +84,9 @@ class ParaferingActionMapper {
 	 *
 	 * @spec openspec/specs/parafering-actions/spec.md
 	 */
-	public function buildActieData(string $voorstelId, int $stepOrder, string $actor, array $input): array {
-		$actieData = [
-			'voorstel' => $voorstelId,
+	public function buildActieData(string $proposalId, int $stepOrder, string $actor, array $input): array {
+		$actionData = [
+			'voorstel' => $proposalId,
 			'step' => $stepOrder,
 			'actor' => $actor,
 			'actorType' => 'user',
@@ -94,23 +94,23 @@ class ParaferingActionMapper {
 		];
 
 		if ($input['onBehalfOf'] !== null) {
-			$actieData['actorType'] = 'delegate';
-			$actieData['onBehalfOf'] = $input['onBehalfOf'];
+			$actionData['actorType'] = 'delegate';
+			$actionData['onBehalfOf'] = $input['onBehalfOf'];
 		}
 
 		if ($input['mandate'] !== null) {
-			$actieData['mandate'] = $input['mandate'];
+			$actionData['mandate'] = $input['mandate'];
 		}
 
 		if ($input['comment'] !== '') {
-			$actieData['comment'] = $input['comment'];
+			$actionData['comment'] = $input['comment'];
 		}
 
 		if ($input['advice'] !== '') {
-			$actieData['advice'] = $input['advice'];
+			$actionData['advice'] = $input['advice'];
 		}
 
-		return $actieData;
+		return $actionData;
 	}//end buildActieData()
 
 	/**

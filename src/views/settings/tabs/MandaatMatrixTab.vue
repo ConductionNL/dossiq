@@ -113,7 +113,7 @@ export default {
 		roleOptions() {
 			return (this.roles || []).map((r) => ({
 				id: r.id,
-				label: r.naam || r.label || r.id,
+				label: r.name || r.label || r.id,
 			}))
 		},
 	},

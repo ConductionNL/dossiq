@@ -132,8 +132,8 @@ class LibresignResultAssembler {
 	 * Download the LibreSign-produced signed PDF, persist it via the existing
 	 * document storage service, and return the full sign() contract.
 	 *
-	 * @param string $bestandId The original PDF file id.
-	 * @param string $ondertekenaar The signer UID (owns the signed file in NC storage).
+	 * @param string $fileId The original PDF file id.
+	 * @param string $signatory The signer UID (owns the signed file in NC storage).
 	 * @param string $uuid The LibreSign request uuid.
 	 * @param array<string, mixed> $status The last polled LibreSign status payload.
 	 *
@@ -144,8 +144,8 @@ class LibresignResultAssembler {
 	 * @spec openspec/specs/libresign-besluit-signing/spec.md
 	 */
 	public function assembleSignedResult(
-		string $bestandId,
-		string $ondertekenaar,
+		string $fileId,
+		string $signatory,
 		string $uuid,
 		array $status,
 	): array {
@@ -154,28 +154,28 @@ class LibresignResultAssembler {
 			throw new RuntimeException('libresign_signed_file_missing');
 		}
 
-		$content = $this->readSignedFileContent(uid: $ondertekenaar, fileId: $signedFileId);
-		$fileName = 'beschikking-' . $bestandId . '-signed.pdf';
+		$content = $this->readSignedFileContent(uid: $signatory, fileId: $signedFileId);
+		$fileName = 'beschikking-' . $fileId . '-signed.pdf';
 
 		// Persist through the EXISTING zaakdossier binary storage path — no new storage
 		// mechanism. storeRaw() returns the byte count; getFileId() resolves the id it just
 		// wrote, both against the same service.
-		$this->documentService->storeRaw(uuid: $bestandId, fileName: $fileName, content: $content);
-		$newFileId = $this->documentService->getFileId(uuid: $bestandId, fileName: $fileName);
+		$this->documentService->storeRaw(uuid: $fileId, fileName: $fileName, content: $content);
+		$newFileId = $this->documentService->getFileId(uuid: $fileId, fileName: $fileName);
 
 		return [
 			'signedBestandId' => (string)$newFileId,
-			'validatieRapportId' => $uuid,
-			'certificaatSerienummer' => (string)($status['certificateSerialNumber'] ?? ('libresign-' . $uuid)),
+			'validationRapportId' => $uuid,
+			'certificateSerialNumber' => (string)($status['certificateSerialNumber'] ?? ('libresign-' . $uuid)),
 			'tspProviderEidasId' => 'LibreSign',
-			'ondertekeningTijdstip' => (new DateTimeImmutable())->format('c'),
+			'signingMoment' => (new DateTimeImmutable())->format('c'),
 		];
 	}//end assembleSignedResult()
 
 	/**
 	 * Build the validatierapport for a resolved LibreSign status.
 	 *
-	 * @param string $validatieRapportId The LibreSign request uuid.
+	 * @param string $validationRapportId The LibreSign request uuid.
 	 * @param array<string, mixed> $status The raw LibreSign status payload.
 	 *
 	 * @return array<string, mixed>
@@ -183,14 +183,14 @@ class LibresignResultAssembler {
 	 * @spec openspec/specs/libresign-besluit-signing/spec.md
 	 */
 	public function assembleValidationReport(
-		string $validatieRapportId,
+		string $validationRapportId,
 		array $status,
 	): array {
 		$mappedStatus = $this->mapStatus(status: $status);
 
 		return [
-			'validatieRapportId' => $validatieRapportId,
-			'soort' => self::REPORT_SOORT,
+			'validationRapportId' => $validationRapportId,
+			'kind' => self::REPORT_SOORT,
 			'norm' => self::REPORT_NORM,
 			'geldig' => ($mappedStatus === self::SIGNED),
 			'status' => $mappedStatus,
@@ -207,16 +207,16 @@ class LibresignResultAssembler {
 	 * always-answers shape: a caller must never read a transport failure as a
 	 * valid signature.
 	 *
-	 * @param string $validatieRapportId The LibreSign request uuid.
+	 * @param string $validationRapportId The LibreSign request uuid.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/specs/libresign-besluit-signing/spec.md
 	 */
-	public function assembleFailedValidationReport(string $validatieRapportId): array {
+	public function assembleFailedValidationReport(string $validationRapportId): array {
 		return [
-			'validatieRapportId' => $validatieRapportId,
-			'soort' => self::REPORT_SOORT,
+			'validationRapportId' => $validationRapportId,
+			'kind' => self::REPORT_SOORT,
 			'norm' => self::REPORT_NORM,
 			'geldig' => false,
 			'foutmelding' => 'libresign_api_error',

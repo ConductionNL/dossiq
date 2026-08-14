@@ -61,7 +61,7 @@ class SubsidieService {
 		'beschikking_opgesteld',
 		'verleend',
 		'afgewezen',
-		'ingetrokken',
+		'withdrawn',
 	];
 
 	/**
@@ -70,13 +70,13 @@ class SubsidieService {
 	 * @var array<string, array<int, string>>
 	 */
 	public const TRANSITIONS = [
-		'ontvangen' => ['in_beoordeling', 'ingetrokken'],
-		'in_beoordeling' => ['beoordeeld', 'afgewezen', 'ingetrokken'],
-		'beoordeeld' => ['beschikking_opgesteld', 'afgewezen', 'ingetrokken'],
-		'beschikking_opgesteld' => ['verleend', 'afgewezen', 'ingetrokken'],
-		'verleend' => ['ingetrokken'],
+		'ontvangen' => ['in_beoordeling', 'withdrawn'],
+		'in_beoordeling' => ['beoordeeld', 'afgewezen', 'withdrawn'],
+		'beoordeeld' => ['beschikking_opgesteld', 'afgewezen', 'withdrawn'],
+		'beschikking_opgesteld' => ['verleend', 'afgewezen', 'withdrawn'],
+		'verleend' => ['withdrawn'],
 		'afgewezen' => [],
-		'ingetrokken' => [],
+		'withdrawn' => [],
 	];
 
 	/**
@@ -131,14 +131,14 @@ class SubsidieService {
 	/**
 	 * Compute the AWB decision deadline for an aanvraag.
 	 *
-	 * @param DateTimeImmutable $registratie The registration date.
+	 * @param DateTimeImmutable $registration The registration date.
 	 * @param int $weken The regeling term in weeks.
 	 *
 	 * @return DateTimeImmutable The decision deadline.
 	 */
-	public function computeBeslistermijn(DateTimeImmutable $registratie, int $weken): DateTimeImmutable {
+	public function computeBeslistermijn(DateTimeImmutable $registration, int $weken): DateTimeImmutable {
 		$weken = max(1, $weken);
-		return $registratie->add(new DateInterval('P' . ($weken * 7) . 'D'));
+		return $registration->add(new DateInterval('P' . ($weken * 7) . 'D'));
 	}//end computeBeslistermijn()
 
 	/**
@@ -146,17 +146,17 @@ class SubsidieService {
 	 * (REQ-SUB-001). Tolerates sub-cent floating-point drift.
 	 *
 	 * @param array<int, array<string, mixed>> $voorschotSchema Disbursement rows.
-	 * @param float $verleendBedrag The granted amount.
+	 * @param float $grantedAmount The granted amount.
 	 *
 	 * @return bool True when the schedule reconciles to the granted amount.
 	 */
-	public function voorschotSchemaReconciles(array $voorschotSchema, float $verleendBedrag): bool {
+	public function voorschotSchemaReconciles(array $voorschotSchema, float $grantedAmount): bool {
 		$sum = 0.0;
 		foreach ($voorschotSchema as $voorschot) {
-			$sum += (float)($voorschot['bedrag'] ?? 0);
+			$sum += (float)($voorschot['amount'] ?? 0);
 		}
 
-		return abs($sum - $verleendBedrag) < 0.01;
+		return abs($sum - $grantedAmount) < 0.01;
 	}//end voorschotSchemaReconciles()
 
 	/**
@@ -196,10 +196,10 @@ class SubsidieService {
 	 */
 	public function unmetVerplichtingen(array $verplichtingen): array {
 		$unmet = [];
-		foreach ($verplichtingen as $verplichting) {
-			$status = (string)($verplichting['status'] ?? 'open');
+		foreach ($verplichtingen as $commitment) {
+			$status = (string)($commitment['status'] ?? 'open');
 			if ($status !== 'voldaan') {
-				$unmet[] = $verplichting;
+				$unmet[] = $commitment;
 			}
 		}
 
@@ -211,13 +211,13 @@ class SubsidieService {
 	 * decision term (REQ-SUB-002).
 	 *
 	 * @param array<string, mixed> $payload The aanvraag properties.
-	 * @param int $termijnWeken The regeling decision term.
+	 * @param int $termWeken The regeling decision term.
 	 *
 	 * @return array<string, mixed> The created aanvraag record.
 	 *
 	 * @throws OCSBadRequestException When OpenRegister is unavailable/unconfigured.
 	 */
-	public function createAanvraag(array $payload, int $termijnWeken = self::DEFAULT_AANVRAAG_TERMIJN_WEKEN): array {
+	public function createAanvraag(array $payload, int $termWeken = self::DEFAULT_AANVRAAG_TERMIJN_WEKEN): array {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');
 
 		if (((string)($payload['subsidieregeling'] ?? '')) === '') {
@@ -229,12 +229,12 @@ class SubsidieService {
 			$payload,
 			[
 				'status' => 'ontvangen',
-				'beslistermijn' => $this->computeBeslistermijn(registratie: $now, weken: $termijnWeken)->format('Y-m-d'),
+				'beslistermijn' => $this->computeBeslistermijn(registration: $now, weken: $termWeken)->format('Y-m-d'),
 			]
 		);
 		// The aanvrager BSN is special-category data and is never persisted raw.
-		if (isset($record['aanvragerBsnRef']) === true) {
-			$record['aanvragerBsnRef'] = $this->maskBsn(bsn: (string)$record['aanvragerBsnRef']);
+		if (isset($record['applicantBsnRef']) === true) {
+			$record['applicantBsnRef'] = $this->maskBsn(bsn: (string)$record['applicantBsnRef']);
 		}
 
 		try {
@@ -293,7 +293,7 @@ class SubsidieService {
 		[$objectService, $register, $schema] = $this->resolve(schemaConfigKey: 'subsidie_aanvraag_schema');
 
 		$query = ['register' => (int)$register, 'schema' => (int)$schema];
-		foreach (['status', 'subsidieregeling', 'behandelaar'] as $field) {
+		foreach (['status', 'subsidieregeling', 'handler'] as $field) {
 			if (isset($filters[$field]) === true && $filters[$field] !== '') {
 				$query[$field] = (string)$filters[$field];
 			}

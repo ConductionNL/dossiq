@@ -83,7 +83,7 @@ class StufMessageParser {
 			]
 		);
 
-		$zaakId = $this->firstTextValue(
+		$caseId = $this->firstTextValue(
 			xml: $xml,
 			paths: [
 				'//stuf:antwoord/zkn:object/zkn:identificatie',
@@ -93,17 +93,17 @@ class StufMessageParser {
 
 		$this->logger->debug(
 			message: 'StUF parseBevestiging: crossRef={cross}, zaakId={zaak}',
-			context: ['cross' => $crossRef, 'zaak' => $zaakId]
+			context: ['cross' => $crossRef, 'zaak' => $caseId]
 		);
 
-		$zaakIdentificatie = null;
-		if ($zaakId !== '') {
-			$zaakIdentificatie = $zaakId;
+		$caseIdentification = null;
+		if ($caseId !== '') {
+			$caseIdentification = $caseId;
 		}
 
 		return [
 			'crossRefnummer' => $crossRef,
-			'zaakIdentificatie' => $zaakIdentificatie,
+			'zaakIdentificatie' => $caseIdentification,
 			'raw' => [],
 		];
 	}//end parseBevestiging()
@@ -123,12 +123,12 @@ class StufMessageParser {
 			return [];
 		}
 
-		$zaak = [
+		$case = [
 			'identificatie' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:identificatie', '//zkn:identificatie']),
 			'omschrijving' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:omschrijving', '//zkn:omschrijving']),
 			'startdatum' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:startdatum']),
-			'einddatum' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:einddatum']),
-			'zaaktype' => [
+			'endDate' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:einddatum']),
+			'caseType' => [
 				'omschrijving' => $this->firstTextValue(xml: $xml, paths: ['//zkn:object/zkn:zaaktype/zkn:omschrijving']),
 			],
 			'statussen' => [],
@@ -137,25 +137,25 @@ class StufMessageParser {
 
 		$this->registerStufNamespaces(xml: $xml);
 		foreach ($xml->xpath(expression: '//zkn:heeftStatus') as $statusNode) {
-			$zaak['statussen'][] = [
+			$case['statussen'][] = [
 				'datumStatusGezet' => $this->extractDescendantText(node: $statusNode, localName: 'datumStatusGezet'),
 				'statustype' => $this->extractDescendantText(node: $statusNode, localName: 'statustype'),
 			];
 		}
 
-		foreach ($xml->xpath(expression: '//zkn:heeftAlsInitiator|//zkn:heeftAlsBelanghebbende|//zkn:heeftAlsGemachtigde') as $rolNode) {
-			$zaak['betrokkenen'][] = [
-				'rol' => $rolNode->getName(),
-				'bsn' => $this->extractDescendantText(node: $rolNode, localName: 'inp.bsn'),
+		foreach ($xml->xpath(expression: '//zkn:heeftAlsInitiator|//zkn:heeftAlsBelanghebbende|//zkn:heeftAlsGemachtigde') as $roleNode) {
+			$case['betrokkenen'][] = [
+				'role' => $roleNode->getName(),
+				'bsn' => $this->extractDescendantText(node: $roleNode, localName: 'inp.bsn'),
 			];
 		}
 
 		$this->logger->debug(
 			message: 'StUF parseZaakDetails: zaak={zaak}, statussen={st}, betrokkenen={bet}',
-			context: ['zaak' => $zaak['identificatie'], 'st' => count(value: $zaak['statussen']), 'bet' => count(value: $zaak['betrokkenen'])]
+			context: ['zaak' => $case['identificatie'], 'st' => count(value: $case['statussen']), 'bet' => count(value: $case['betrokkenen'])]
 		);
 
-		return $zaak;
+		return $case;
 	}//end parseZaakDetails()
 
 	/**
@@ -167,14 +167,14 @@ class StufMessageParser {
 	 *
 	 * @param string $responseXml The full SOAP envelope XML.
 	 *
-	 * @return array{code:string,omschrijving:string,details:string,soort:string}
+	 * @return array{code:string,omschrijving:string,details:string,kind:string}
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
 	 */
 	public function parseError(string $responseXml): array {
 		$xml = $this->safeLoadXml(responseXml: $responseXml);
 		if ($xml === null) {
-			return ['code' => 'PARSE_ERROR', 'omschrijving' => 'Antwoord-envelop niet leesbaar', 'details' => '', 'soort' => 'permanent'];
+			return ['code' => 'PARSE_ERROR', 'omschrijving' => 'Antwoord-envelop niet leesbaar', 'details' => '', 'kind' => 'permanent'];
 		}
 
 		$code = $this->firstTextValue(xml: $xml, paths: ['//stuf:fout/stuf:code', '//stuf:code']);
@@ -185,7 +185,7 @@ class StufMessageParser {
 			'code' => $code,
 			'omschrijving' => $omschrijving,
 			'details' => $details,
-			'soort' => $this->classifyStufFault(code: $code),
+			'kind' => $this->classifyStufFault(code: $code),
 		];
 	}//end parseError()
 

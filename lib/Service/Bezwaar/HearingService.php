@@ -510,13 +510,13 @@ class HearingService {
 	 * empty, scheduledDate is fourteen days out — and only fires when
 	 * no hearing session already exists for the case.
 	 *
-	 * @param string $bezwaarId The bezwaar (lifecycle) UUID
+	 * @param string $objectionId The bezwaar (lifecycle) UUID
 	 *
 	 * @return array<string, mixed>|null Created hearing session, or null when one already exists / infra unavailable.
 	 *
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
-	public function seedDefaultHearing(string $bezwaarId): ?array {
+	public function seedDefaultHearing(string $objectionId): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -531,7 +531,7 @@ class HearingService {
 			return null;
 		}
 
-		$caseId = $this->resolveCaseIdFromBezwaar(bezwaarId: $bezwaarId);
+		$caseId = $this->resolveCaseIdFromObjection(objectionId: $objectionId);
 		if ($caseId === '') {
 			return null;
 		}
@@ -574,7 +574,7 @@ class HearingService {
 		} catch (\Throwable $e) {
 			$this->logger->info(
 				'Procest hearing: seedDefaultHearing skipped for bezwaar '
-				. $bezwaarId . ': ' . $e->getMessage()
+				. $objectionId . ': ' . $e->getMessage()
 			);
 			return null;
 		}
@@ -586,29 +586,29 @@ class HearingService {
 	 * not configured so the listener can still seed against case-keyed
 	 * inputs.
 	 *
-	 * @param string $bezwaarId Bezwaar UUID
+	 * @param string $objectionId Bezwaar UUID
 	 *
 	 * @return string The resolved case UUID, or empty when unresolvable.
 	 */
-	private function resolveCaseIdFromBezwaar(string $bezwaarId): string {
+	private function resolveCaseIdFromObjection(string $objectionId): string {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
-			return $bezwaarId;
+			return $objectionId;
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$bezwaarSchema = $this->settingsService->getConfigValue(
+		$objectionSchema = $this->settingsService->getConfigValue(
 			key: 'bezwaar_schema'
 		);
 
-		if ($register === '' || $bezwaarSchema === '') {
-			return $bezwaarId;
+		if ($register === '' || $objectionSchema === '') {
+			return $objectionId;
 		}
 
 		try {
-			$bezwaar = $objectService->find($bezwaarId, register: $register, schema: $bezwaarSchema);
-			if (is_array($bezwaar) === true) {
-				$candidate = (string)($bezwaar['case'] ?? '');
+			$objection = $objectService->find($objectionId, register: $register, schema: $objectionSchema);
+			if (is_array($objection) === true) {
+				$candidate = (string)($objection['case'] ?? '');
 				if ($candidate !== '') {
 					return $candidate;
 				}
@@ -619,6 +619,6 @@ class HearingService {
 			);
 		}
 
-		return $bezwaarId;
+		return $objectionId;
 	}//end resolveCaseIdFromBezwaar()
 }//end class

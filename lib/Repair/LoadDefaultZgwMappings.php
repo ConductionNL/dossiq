@@ -196,11 +196,11 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				registerId: $registerId,
 				settings: $settings
 			),
-			'zaak' => $this->getZaakMapping(
+			'zaak' => $this->getCaseMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'zaaktype' => $this->getZaakTypeMapping(
+			'caseType' => $this->getCaseTypeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -212,31 +212,31 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				registerId: $registerId,
 				settings: $settings
 			),
-			'resultaat' => $this->getResultaatMapping(
+			'result' => $this->getResultMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'resultaattype' => $this->getResultaatTypeMapping(
+			'resultaattype' => $this->getResultTypeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'rol' => $this->getRolMapping(
+			'role' => $this->getRoleMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'roltype' => $this->getRolTypeMapping(
+			'roltype' => $this->getRoleTypeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'eigenschap' => $this->getEigenschapMapping(
+			'eigenschap' => $this->getAttributeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'besluit' => $this->getBesluitMapping(
+			'decision' => $this->getDecisionMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
-			'besluittype' => $this->getBesluitTypeMapping(
+			'besluittype' => $this->getDecisionTypeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -244,7 +244,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				registerId: $registerId,
 				settings: $settings
 			),
-			'zaaktypeinformatieobjecttype' => $this->getZaaktypeInformatieobjecttypeMapping(
+			'zaaktypeinformatieobjecttype' => $this->getCaseTypeInformatieobjecttypeMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -285,7 +285,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				settings: $settings
 			),
 			'applicatie' => $this->getApplicatieMapping(),
-			'kanaal' => $this->getKanaalMapping(
+			'kanaal' => $this->getChannelMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -304,7 +304,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getZaakMapping(string $registerId, array $settings): array {
+	private function getCaseMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'zaak',
 			'zgwApiVersion' => '1',
@@ -317,15 +317,15 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'identificatie' => '{{ identifier }}',
 				'bronorganisatie' => '{{ sourceOrganisation }}',
 				'omschrijving' => '{{ title }}',
-				'toelichting' => '{{ description }}',
-				'zaaktype' => $this->tplUrl(
+				'notes' => '{{ description }}',
+				'caseType' => $this->tplUrl(
 					from: 'zaken/zaken',
 					to: 'catalogi/zaaktypen',
 					varName: 'caseType'
 				),
-				'registratiedatum' => '{{ _created }}',
+				'registrationDate' => '{{ _created }}',
 				'startdatum' => '{{ startDate }}',
-				'einddatum' => '{{ endDate }}',
+				'endDate' => '{{ endDate }}',
 				'einddatumGepland' => '{{ plannedEndDate }}',
 				'uiterlijkeEinddatumAfdoening' => '{{ deadline }}',
 				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
@@ -369,7 +369,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				],
 			],
 			'nullableFields' => [
-				'einddatum',
+				'endDate',
 				'einddatumGepland',
 				'uiterlijkeEinddatumAfdoening',
 				'archiefnominatie',
@@ -380,7 +380,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'hoofdzaak',
 			],
 			'queryParameterMapping' => [
-				'zaaktype' => [
+				'caseType' => [
 					'field' => 'caseType',
 					'extractUuid' => true,
 				],
@@ -401,7 +401,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					'field' => 'startDate',
 					'operator' => 'lte',
 				],
-				'einddatum' => [
+				'endDate' => [
 					'field' => 'endDate',
 				],
 				'einddatum__isnull' => [
@@ -430,9 +430,9 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getZaakTypeMapping(string $registerId, array $settings): array {
+	private function getCaseTypeMapping(string $registerId, array $settings): array {
 		return [
-			'zgwResource' => 'zaaktype',
+			'zgwResource' => 'caseType',
 			'zgwApiVersion' => '1',
 			'sourceRegister' => $registerId,
 			'sourceSchema' => ($settings['case_type_schema'] ?? ''),
@@ -454,19 +454,19 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'doorlooptijd' => '{{ processingDeadline }}',
 				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
 				'concept' => '{{ isDraft }}',
-				'beginGeldigheid' => '{{ validFrom }}',
-				'eindeGeldigheid' => '{{ validUntil }}',
+				'startValidity' => '{{ validFrom }}',
+				'endValidity' => '{{ validUntil }}',
 				'handelingInitiator' => '{{ origin }}',
 				'indicatieInternOfExtern' => '{{ internalOrExternal }}',
 				'handelingBehandelaar' => '{{ handlerAction }}',
 				'opschortingEnAanhoudingMogelijk' => '{{ suspensionAllowed }}',
-				'verlengingMogelijk' => '{{ extensionAllowed }}',
+				'extensionPossible' => '{{ extensionAllowed }}',
 				'verlengingstermijn' => '{{ extensionPeriod }}',
 				'publicatieIndicatie' => '{{ publicationRequired }}',
 				'productenOfDiensten' => '{{ productsOrServices | json_encode }}',
 				'selectielijstProcestype' => '{{ selectionListProcessType }}',
 				'referentieproces' => '{{ referenceProcess | json_encode }}',
-				'verantwoordelijke' => '{{ responsible }}',
+				'responsible' => '{{ responsible }}',
 				'gerelateerdeZaaktypen' => '{{ relatedCaseTypes | json_encode }}',
 				'besluittypen' => 'decisionTypes',
 				'informatieobjecttypen' => '[]',
@@ -507,7 +507,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'cast' => [
 				'concept' => 'bool',
 				'opschortingEnAanhoudingMogelijk' => 'bool',
-				'verlengingMogelijk' => 'bool',
+				'extensionPossible' => 'bool',
 				'publicatieIndicatie' => 'bool',
 				'productenOfDiensten' => 'jsonToArray',
 				'gerelateerdeZaaktypen' => 'jsonToArray',
@@ -593,12 +593,12 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'omschrijving' => '{{ name }}',
 				'omschrijvingGeneriek' => '{{ description }}',
-				'zaaktype' => $this->tplUrl(
+				'caseType' => $this->tplUrl(
 					from: 'catalogi/statustypen',
 					to: 'catalogi/zaaktypen',
 					varName: 'caseType'
 				),
-				'volgnummer' => '{{ order }}',
+				'sequenceNumber' => '{{ order }}',
 				'isEindstatus' => '{{ isFinal }}',
 			],
 			'reverseMapping' => [
@@ -613,12 +613,12 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'isFinal' => 'bool',
 			],
 			'cast' => [
-				'volgnummer' => 'int',
+				'sequenceNumber' => 'int',
 				'isEindstatus' => 'bool',
 			],
 			'valueMapping' => [],
 			'queryParameterMapping' => [
-				'zaaktype' => [
+				'caseType' => [
 					'field' => 'caseType',
 					'extractUuid' => true,
 				],
@@ -634,9 +634,9 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getResultaatMapping(string $registerId, array $settings): array {
+	private function getResultMapping(string $registerId, array $settings): array {
 		return [
-			'zgwResource' => 'resultaat',
+			'zgwResource' => 'result',
 			'zgwApiVersion' => '1',
 			'sourceRegister' => $registerId,
 			'sourceSchema' => ($settings['result_schema'] ?? ''),
@@ -654,7 +654,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					to: 'catalogi/resultaattypen',
 					varName: 'resultType'
 				),
-				'toelichting' => '{{ description }}',
+				'notes' => '{{ description }}',
 			],
 			'reverseMapping' => [
 				'name' => '{{ toelichting }}',
@@ -680,7 +680,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getResultaatTypeMapping(string $registerId, array $settings): array {
+	private function getResultTypeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'resultaattype',
 			'zgwApiVersion' => '1',
@@ -692,8 +692,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'omschrijving' => '{{ name }}',
 				'omschrijvingGeneriek' => '{{ genericDescription }}',
-				'toelichting' => '{{ description }}',
-				'zaaktype' => $this->tplUrl(
+				'notes' => '{{ description }}',
+				'caseType' => $this->tplUrl(
 					from: 'catalogi/resultaattypen',
 					to: 'catalogi/zaaktypen',
 					varName: 'caseType'
@@ -731,7 +731,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'selectielijstklasse',
 			],
 			'queryParameterMapping' => [
-				'zaaktype' => [
+				'caseType' => [
 					'field' => 'caseType',
 					'extractUuid' => true,
 				],
@@ -747,9 +747,9 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getRolMapping(string $registerId, array $settings): array {
+	private function getRoleMapping(string $registerId, array $settings): array {
 		return [
-			'zgwResource' => 'rol',
+			'zgwResource' => 'role',
 			'zgwApiVersion' => '1',
 			'sourceRegister' => $registerId,
 			'sourceSchema' => ($settings['role_schema'] ?? ''),
@@ -796,7 +796,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getRolTypeMapping(string $registerId, array $settings): array {
+	private function getRoleTypeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'roltype',
 			'zgwApiVersion' => '1',
@@ -808,7 +808,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'omschrijving' => '{{ name }}',
 				'omschrijvingGeneriek' => '{{ description }}',
-				'zaaktype' => $this->tplUrl(
+				'caseType' => $this->tplUrl(
 					from: 'catalogi/roltypen',
 					to: 'catalogi/zaaktypen',
 					varName: 'caseType'
@@ -821,7 +821,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			],
 			'valueMapping' => [],
 			'queryParameterMapping' => [
-				'zaaktype' => [
+				'caseType' => [
 					'field' => 'caseType',
 					'extractUuid' => true,
 				],
@@ -837,7 +837,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getEigenschapMapping(string $registerId, array $settings): array {
+	private function getAttributeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'eigenschap',
 			'zgwApiVersion' => '1',
@@ -847,10 +847,10 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'propertyMapping' => [
 				'url' => '{{ _baseUrl }}/{{ _uuid }}',
 				'uuid' => '{{ _uuid }}',
-				'naam' => '{{ name }}',
+				'name' => '{{ name }}',
 				'definitie' => '{{ definition }}',
-				'toelichting' => '{{ description }}',
-				'zaaktype' => $this->tplUrl(
+				'notes' => '{{ description }}',
+				'caseType' => $this->tplUrl(
 					from: 'catalogi/eigenschappen',
 					to: 'catalogi/zaaktypen',
 					varName: 'caseType'
@@ -865,7 +865,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			],
 			'valueMapping' => [],
 			'queryParameterMapping' => [
-				'zaaktype' => [
+				'caseType' => [
 					'field' => 'caseType',
 					'extractUuid' => true,
 				],
@@ -881,9 +881,9 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getBesluitMapping(string $registerId, array $settings): array {
+	private function getDecisionMapping(string $registerId, array $settings): array {
 		return [
-			'zgwResource' => 'besluit',
+			'zgwResource' => 'decision',
 			'zgwApiVersion' => '1',
 			'sourceRegister' => $registerId,
 			'sourceSchema' => ($settings['decision_schema'] ?? ''),
@@ -892,7 +892,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'url' => '{{ _baseUrl }}/{{ _uuid }}',
 				'uuid' => '{{ _uuid }}',
 				'identificatie' => '{{ title }}',
-				'toelichting' => '{{ explanation }}',
+				'notes' => '{{ explanation }}',
 				'zaak' => $this->tplUrl(
 					from: 'besluiten/besluiten',
 					to: 'zaken/zaken',
@@ -905,10 +905,10 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				),
 				'verantwoordelijkeOrganisatie' => '{{ responsibleOrganisation }}',
 				'bestuursorgaan' => '{{ governingBody }}',
-				'datum' => '{{ decisionDate }}',
-				'ingangsdatum' => '{{ effectiveDate }}',
+				'date' => '{{ decisionDate }}',
+				'effectiveDate' => '{{ effectiveDate }}',
 				'vervaldatum' => '{{ expiryDate }}',
-				'publicatiedatum' => '{{ publicationDate }}',
+				'publicationDate' => '{{ publicationDate }}',
 				'verzenddatum' => '{{ deliveryDate }}',
 			],
 			'reverseMapping' => [
@@ -942,7 +942,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getBesluitTypeMapping(string $registerId, array $settings): array {
+	private function getDecisionTypeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'besluittype',
 			'zgwApiVersion' => '1',
@@ -953,7 +953,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'url' => '{{ _baseUrl }}/{{ _uuid }}',
 				'uuid' => '{{ _uuid }}',
 				'omschrijving' => '{{ name }}',
-				'toelichting' => '{{ description }}',
+				'notes' => '{{ description }}',
 				'catalogus' => $this->tplUrl(
 					from: 'catalogi/besluittypen',
 					to: 'catalogi/catalogussen',
@@ -963,8 +963,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'concept' => '{{ isDraft }}',
 				'publicatieIndicatie' => '{{ publicationRequired }}',
 				'informatieobjecttypen' => 'documentTypes',
-				'beginGeldigheid' => '{{ validFrom }}',
-				'eindeGeldigheid' => '{{ validUntil }}',
+				'startValidity' => '{{ validFrom }}',
+				'endValidity' => '{{ validUntil }}',
 			],
 			'reverseMapping' => [
 				'name' => '{{ omschrijving }}',
@@ -1021,7 +1021,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'url' => '{{ _baseUrl }}/{{ _uuid }}',
 				'uuid' => '{{ _uuid }}',
 				'omschrijving' => '{{ name }}',
-				'toelichting' => '{{ description }}',
+				'notes' => '{{ description }}',
 				'catalogus' => $this->tplUrl(
 					from: 'catalogi/informatieobjecttypen',
 					to: 'catalogi/catalogussen',
@@ -1030,8 +1030,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'concept' => '{{ isDraft }}',
 				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
 				'informatieobjectcategorie' => '{{ category }}',
-				'beginGeldigheid' => '{{ validFrom }}',
-				'eindeGeldigheid' => '{{ validUntil }}',
+				'startValidity' => '{{ validFrom }}',
+				'endValidity' => '{{ validUntil }}',
 				'verplicht' => '{{ isRequired }}',
 			],
 			'reverseMapping' => [
@@ -1091,9 +1091,9 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
 				'auteur' => '{{ author }}',
 				'status' => '{{ status }}',
-				'formaat' => '{{ format }}',
+				'format' => '{{ format }}',
 				'taal' => '{{ language }}',
-				'bestandsnaam' => '{{ fileName }}',
+				'fileName' => '{{ fileName }}',
 				'bestandsomvang' => '{{ fileSize }}',
 				'inhoud' => '{{ _downloadUrl }}',
 				'link' => '{{ link }}',
@@ -1104,7 +1104,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					varName: 'documentType'
 				),
 				'locked' => '{{ locked }}',
-				'registratiedatum' => '{{ _created }}',
+				'registrationDate' => '{{ _created }}',
 				// phpcs:ignore Generic.Files.LineLength.MaxExceeded
 				'indicatieGebruiksrecht' => '{{ usageRightsIndication is same as(true) ? "true" : (usageRightsIndication is same as(false) ? "false" : "") }}',
 			],
@@ -1196,7 +1196,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'valueMapping' => [
 				'objectType' => [
 					'zaak' => 'zaak',
-					'besluit' => 'besluit',
+					'decision' => 'decision',
 				],
 			],
 			'queryParameterMapping' => [
@@ -1233,7 +1233,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'informatieobject' => '{{ document }}',
 				'startdatum' => '{{ startDate }}',
-				'einddatum' => '{{ endDate }}',
+				'endDate' => '{{ endDate }}',
 				'omschrijvingVoorwaarden' => '{{ conditionsDescription }}',
 			],
 			'reverseMapping' => [
@@ -1259,7 +1259,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getKanaalMapping(string $registerId, array $settings): array {
+	private function getChannelMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'kanaal',
 			'zgwApiVersion' => '1',
@@ -1269,22 +1269,22 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'propertyMapping' => [
 				'url' => '{{ _baseUrl }}/{{ _uuid }}',
 				'uuid' => '{{ _uuid }}',
-				'naam' => '{{ naam }}',
-				'documentatieLink' => '{{ documentatieLink }}',
+				'name' => '{{ naam }}',
+				'documentationLink' => '{{ documentatieLink }}',
 				'filters' => '{{ filters }}',
 			],
 			'cast' => [
 				'filters' => 'jsonToArray',
 			],
 			'reverseMapping' => [
-				'naam' => '{{ naam }}',
-				'documentatieLink' => '{{ documentatieLink }}',
+				'name' => '{{ naam }}',
+				'documentationLink' => '{{ documentatieLink }}',
 				'filters' => '{{ filters|json_encode|raw }}',
 			],
 			'valueMapping' => [],
 			'queryParameterMapping' => [
-				'naam' => [
-					'field' => 'naam',
+				'name' => [
+					'field' => 'name',
 				],
 			],
 		];
@@ -1345,9 +1345,9 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'domein' => '{{ domein }}',
 				'rsin' => '{{ rsin }}',
-				'contactpersoonBeheerNaam' => '{{ contactpersoonBeheerNaam }}',
-				'contactpersoonBeheerTelefoonnummer' => '{{ contactpersoonBeheerTelefoonnummer }}',
-				'contactpersoonBeheerEmailadres' => '{{ contactpersoonBeheerEmailadres }}',
+				'contactPersonManagementName' => '{{ contactpersoonBeheerNaam }}',
+				'contactPersonManagementPhoneNumber' => '{{ contactpersoonBeheerTelefoonnummer }}',
+				'contactPersonManagementEmailAddress' => '{{ contactpersoonBeheerEmailadres }}',
 				'zaaktypen' => '[]',
 				'besluittypen' => '[]',
 				'informatieobjecttypen' => '[]',
@@ -1360,9 +1360,9 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'reverseMapping' => [
 				'domein' => '{{ domein }}',
 				'rsin' => '{{ rsin }}',
-				'contactpersoonBeheerNaam' => '{{ contactpersoonBeheerNaam }}',
-				'contactpersoonBeheerTelefoonnummer' => '{{ contactpersoonBeheerTelefoonnummer }}',
-				'contactpersoonBeheerEmailadres' => '{{ contactpersoonBeheerEmailadres }}',
+				'contactPersonManagementName' => '{{ contactpersoonBeheerNaam }}',
+				'contactPersonManagementPhoneNumber' => '{{ contactpersoonBeheerTelefoonnummer }}',
+				'contactPersonManagementEmailAddress' => '{{ contactpersoonBeheerEmailadres }}',
 			],
 			'valueMapping' => [],
 			'queryParameterMapping' => [
@@ -1384,7 +1384,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 *
 	 * @return array
 	 */
-	private function getZaaktypeInformatieobjecttypeMapping(string $registerId, array $settings): array {
+	private function getCaseTypeInformatieobjecttypeMapping(string $registerId, array $settings): array {
 		return [
 			'zgwResource' => 'zaaktypeinformatieobjecttype',
 			'zgwApiVersion' => '1',
@@ -1394,37 +1394,37 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'propertyMapping' => [
 				'url' => '{{ _baseUrl }}/{{ _uuid }}',
 				'uuid' => '{{ _uuid }}',
-				'zaaktype' => $this->tplUrl(
+				'caseType' => $this->tplUrl(
 					from: 'catalogi/zaaktype-informatieobjecttypen',
 					to: 'catalogi/zaaktypen',
-					varName: 'zaaktype'
+					varName: 'caseType'
 				),
 				'informatieobjecttype' => $this->tplUrl(
 					from: 'catalogi/zaaktype-informatieobjecttypen',
 					to: 'catalogi/informatieobjecttypen',
 					varName: 'informatieobjecttype'
 				),
-				'volgnummer' => '{{ volgnummer }}',
-				'richting' => '{{ richting }}',
+				'sequenceNumber' => '{{ volgnummer }}',
+				'direction' => '{{ richting }}',
 				'statustype' => '{{ statustype }}',
 			],
 			'reverseMapping' => [
-				'zaaktype' => '{{ zaaktype | zgw_extract_uuid }}',
+				'caseType' => '{{ zaaktype | zgw_extract_uuid }}',
 				'informatieobjecttype' => '{{ informatieobjecttype | zgw_extract_uuid }}',
-				'volgnummer' => '{{ volgnummer }}',
-				'richting' => '{{ richting }}',
+				'sequenceNumber' => '{{ volgnummer }}',
+				'direction' => '{{ richting }}',
 				'statustype' => '{{ statustype }}',
 			],
 			'reverseCast' => [
-				'volgnummer' => 'int',
+				'sequenceNumber' => 'int',
 			],
 			'cast' => [
-				'volgnummer' => 'int',
+				'sequenceNumber' => 'int',
 			],
 			'valueMapping' => [],
 			'queryParameterMapping' => [
-				'zaaktype' => [
-					'field' => 'zaaktype',
+				'caseType' => [
+					'field' => 'caseType',
 					'extractUuid' => true,
 				],
 				'informatieobjecttype' => [
@@ -1564,10 +1564,10 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 * @return void
 	 */
 	private function createDefaultKanalen(IOutput $output): void {
-		$kanaalMapping = $this->zgwMappingService->getMapping(
+		$channelMapping = $this->zgwMappingService->getMapping(
 			resourceKey: 'kanaal'
 		);
-		if ($kanaalMapping === null) {
+		if ($channelMapping === null) {
 			$output->info('Kanaal mapping not configured. Skipping default channels.');
 			return;
 		}
@@ -1585,12 +1585,12 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		$defaults = $this->getDefaultKanalen();
 		$created = 0;
 
-		foreach ($defaults as $kanaal) {
+		foreach ($defaults as $channel) {
 			// Check if kanaal already exists.
 			$query = $objectService->buildSearchQuery(
-				requestParams: ['naam' => $kanaal['naam']],
-				register: $kanaalMapping['sourceRegister'],
-				schema: $kanaalMapping['sourceSchema']
+				requestParams: ['name' => $channel['name']],
+				register: $channelMapping['sourceRegister'],
+				schema: $channelMapping['sourceSchema']
 			);
 			$existing = $objectService->searchObjectsPaginated(query: $query);
 			if (($existing['total'] ?? 0) > 0) {
@@ -1598,9 +1598,9 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			}
 
 			$objectService->saveObject(
-				register: $kanaalMapping['sourceRegister'],
-				schema: $kanaalMapping['sourceSchema'],
-				object: $kanaal
+				register: $channelMapping['sourceRegister'],
+				schema: $channelMapping['sourceSchema'],
+				object: $channel
 			);
 			$created++;
 		}
@@ -1616,15 +1616,15 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	private function getDefaultKanalen(): array {
 		return [
 			[
-				'naam' => 'zaken',
+				'name' => 'zaken',
 				'filters' => [
 					'bronorganisatie',
-					'zaaktype',
+					'caseType',
 					'vertrouwelijkheidaanduiding',
 				],
 			],
 			[
-				'naam' => 'documenten',
+				'name' => 'documenten',
 				'filters' => [
 					'bronorganisatie',
 					'informatieobjecttype',
@@ -1632,18 +1632,18 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				],
 			],
 			[
-				'naam' => 'besluiten',
+				'name' => 'besluiten',
 				'filters' => [
 					'verantwoordelijkeOrganisatie',
 					'besluittype',
 				],
 			],
 			[
-				'naam' => 'catalogi',
+				'name' => 'catalogi',
 				'filters' => [],
 			],
 			[
-				'naam' => 'autorisaties',
+				'name' => 'autorisaties',
 				'filters' => [],
 			],
 		];
@@ -1677,7 +1677,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					to: 'catalogi/eigenschappen',
 					varName: 'propertyDefinition'
 				),
-				'waarde' => '{{ value }}',
+				'value' => '{{ value }}',
 			],
 			'reverseMapping' => [
 				'case' => '{{ zaak | zgw_extract_uuid }}',
@@ -1720,7 +1720,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'informatieobject' => '{{ document }}',
 				'titel' => '{{ title }}',
 				'beschrijving' => '{{ description }}',
-				'registratiedatum' => '{{ registrationDate }}',
+				'registrationDate' => '{{ registrationDate }}',
 			],
 			'reverseMapping' => [
 				'case' => '{{ zaak | zgw_extract_uuid }}',
@@ -1856,7 +1856,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'propertyMapping' => [
 				'url' => '{{ _baseUrl }}/{{ _uuid }}',
 				'uuid' => '{{ _uuid }}',
-				'besluit' => $this->tplUrl(
+				'decision' => $this->tplUrl(
 					from: 'besluiten/besluitinformatieobjecten',
 					to: 'besluiten/besluiten',
 					varName: 'decision'
@@ -1869,7 +1869,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			],
 			'valueMapping' => [],
 			'queryParameterMapping' => [
-				'besluit' => [
+				'decision' => [
 					'field' => 'decision',
 					'extractUuid' => true,
 				],
@@ -1901,8 +1901,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'informatieobject' => '{{ document }}',
 				'betrokkene' => '{{ involvedParty }}',
 				'aardRelatie' => '{{ relationshipType }}',
-				'toelichting' => '{{ description }}',
-				'ontvangstdatum' => '{{ receiveDate }}',
+				'notes' => '{{ description }}',
+				'receiptDate' => '{{ receiveDate }}',
 				'verzenddatum' => '{{ sendDate }}',
 				'contactPersoon' => '{{ contactPerson }}',
 				'contactpersoonnaam' => '{{ contactPersonName }}',

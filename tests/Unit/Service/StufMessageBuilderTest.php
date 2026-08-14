@@ -201,7 +201,7 @@ class StufMessageBuilderTest extends TestCase {
 		$with = $this->builder->buildLk01CreeerZaak(
 			case: $case,
 			endpoint: self::ENDPOINT,
-			zaakId: null,
+			caseId: null,
 			opts: ['includeDocuments' => true]
 		);
 		$this->assertStringContainsString('foto.jpg', $with);
@@ -222,7 +222,7 @@ class StufMessageBuilderTest extends TestCase {
 				'documenten' => [['name' => 'groot.bin', 'mime' => 'application/octet-stream', 'bytes' => str_repeat('A', 4096)]],
 			],
 			endpoint: self::ENDPOINT,
-			zaakId: null,
+			caseId: null,
 			opts: ['includeDocuments' => true, 'payloadLimitBytes' => 1024]
 		);
 	}//end testOversizedDocumentPayloadIsRefused()
@@ -233,7 +233,7 @@ class StufMessageBuilderTest extends TestCase {
 	 * @return void
 	 */
 	public function testLv01CarriesTheRequestedZaakId(): void {
-		$xml = $this->builder->buildLv01GeefDetails(zaakId: 'ZAAK-4711', endpoint: self::ENDPOINT);
+		$xml = $this->builder->buildLv01GeefDetails(caseId: 'ZAAK-4711', endpoint: self::ENDPOINT);
 
 		$this->assertStringContainsString('ZAAK-4711', $xml);
 		$this->assertStringContainsString('Lv01', $xml);
@@ -247,12 +247,12 @@ class StufMessageBuilderTest extends TestCase {
 	 */
 	public function testOutboundStuurgegevensCarryTheRoutingQuartet(): void {
 		$xml = $this->builder->buildOutboundStuurgegevens(
-			berichtCode: 'Lk01',
+			messageCode: 'Lk01',
 			endpoint: self::ENDPOINT,
 			entiteittype: 'ZAK',
-			functie: 'creeerZaak',
+			role: 'creeerZaak',
 			referentienummer: $this->builder->generateReferentienummer(),
-			tijdstipBericht: $this->builder->currentTimestampStuf()
+			momentMessage: $this->builder->currentTimestampStuf()
 		);
 
 		$this->assertStringContainsString('PROCEST', $xml);

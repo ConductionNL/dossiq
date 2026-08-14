@@ -48,8 +48,8 @@ final class VoorstelLifecycleTest extends TestCase {
 	protected function setUp(): void {
 		$registerPath = __DIR__ . '/../../../lib/Settings/procest_register.json';
 		$register = json_decode((string)file_get_contents($registerPath), true);
-		$voorstel = $register['components']['schemas']['voorstel'] ?? [];
-		$this->lifecycle = ($voorstel['configuration']['x-openregister-lifecycle'] ?? []);
+		$proposal = $register['components']['schemas']['voorstel'] ?? [];
+		$this->lifecycle = ($proposal['configuration']['x-openregister-lifecycle'] ?? []);
 	}//end setUp()
 
 	/**

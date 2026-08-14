@@ -42,7 +42,7 @@ class SendEmailHandlerTest extends TestCase {
 	 */
 	public function testFailsWhenRecipientMissing(): void {
 		$handler = new SendEmailHandler(
-			notificatieService: $this->createMock(NotificatieService::class),
+			notificationService: $this->createMock(NotificatieService::class),
 			logger: new NullLogger(),
 		);
 
@@ -64,7 +64,7 @@ class SendEmailHandlerTest extends TestCase {
 		// method_exists()-gated, so the handler must return success with a
 		// skipped flag rather than throwing.
 		$handler = new SendEmailHandler(
-			notificatieService: $this->createMock(NotificatieService::class),
+			notificationService: $this->createMock(NotificatieService::class),
 			logger: new NullLogger(),
 		);
 
@@ -88,7 +88,7 @@ class SendEmailHandlerTest extends TestCase {
 		// — instead, validate the broader contract by passing the minimal valid
 		// payload and asserting the success envelope shape.
 		$handler = new SendEmailHandler(
-			notificatieService: $this->createMock(NotificatieService::class),
+			notificationService: $this->createMock(NotificatieService::class),
 			logger: new NullLogger(),
 		);
 

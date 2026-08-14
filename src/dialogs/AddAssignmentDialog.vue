@@ -18,10 +18,10 @@
 				}}</label>
 				<NcTextField
 					id="aa-person"
-					:modelValue="form.persoonId"
+					:model-value="form.persoonId"
 					:error="!!errors.persoonId"
-					:helperText="errors.persoonId"
-					@update:modelValue="(v) => (form.persoonId = v)" />
+					:helper-text="errors.persoonId"
+					@update:model-value="(v) => (form.persoonId = v)" />
 			</div>
 
 			<div class="form-group">
@@ -30,12 +30,12 @@
 				}}</label>
 				<NcSelect
 					id="aa-role"
-					:modelValue="selectedRole"
+					:model-value="selectedRole"
 					:options="roleOptions"
-					:inputLabel="t('procest', 'Role')"
-					@update:modelValue="(v) => (form.rolId = v ? v.id : '')" />
-				<span v-if="errors.rolId" class="field-error">{{
-					errors.rolId
+					:input-label="t('procest', 'Role')"
+					@update:model-value="(v) => (form.roleId = v ? v.id : '')" />
+				<span v-if="errors.roleId" class="field-error">{{
+					errors.roleId
 				}}</span>
 			</div>
 
@@ -43,10 +43,10 @@
 				<label for="aa-type">{{ t('procest', 'Type') }}</label>
 				<NcSelect
 					id="aa-type"
-					:modelValue="selectedType"
+					:model-value="selectedType"
 					:options="typeOptions"
-					:inputLabel="t('procest', 'Type')"
-					@update:modelValue="
+					:input-label="t('procest', 'Type')"
+					@update:model-value="
 						(v) => (form.toewijzingType = v ? v.id : '')
 					" />
 			</div>
@@ -86,8 +86,8 @@
 </template>
 
 <script>
-import { translate as t } from '@nextcloud/l10n'
 import { NcButton, NcDialog, NcSelect, NcTextField } from '@nextcloud/vue'
+import { translate as t } from '@nextcloud/l10n'
 
 export default {
 	name: 'AddAssignmentDialog',
@@ -95,21 +95,19 @@ export default {
 	props: {
 		roleOptions: { type: Array, default: () => [] },
 	},
-
 	emits: ['save', 'close'],
 	data() {
 		return {
 			errors: {},
 			form: {
 				persoonId: '',
-				rolId: '',
+				roleId: '',
 				toewijzingType: 'reguliere',
 				vanaf: new Date().toISOString().slice(0, 10),
 				totEnMet: '',
 			},
 		}
 	},
-
 	computed: {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
@@ -119,12 +117,10 @@ export default {
 				{ id: 'plaatsvervanger', label: t('procest', 'Deputy') },
 			]
 		},
-
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
-			return this.roleOptions.find((o) => o.id === this.form.rolId) || null
+			return this.roleOptions.find((o) => o.id === this.form.roleId) || null
 		},
-
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
@@ -133,7 +129,6 @@ export default {
 			)
 		},
 	},
-
 	methods: {
 		t,
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
@@ -141,11 +136,10 @@ export default {
 			const errs = {}
 			if (!this.form.persoonId)
 				errs.persoonId = t('procest', 'Person is required')
-			if (!this.form.rolId) errs.rolId = t('procest', 'Role is required')
+			if (!this.form.roleId) errs.roleId = t('procest', 'Role is required')
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
-
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		save() {
 			if (!this.validate()) return

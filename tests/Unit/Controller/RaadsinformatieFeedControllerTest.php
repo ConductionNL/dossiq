@@ -161,9 +161,9 @@ class RaadsinformatieFeedControllerTest extends TestCase {
 		$objectService->method('searchObjectsBySlug')->willReturn([
 			[
 				'@self' => ['slug' => 'raadsvergadering-2026-06-15'],
-				'naam' => 'Raadsvergadering 15 juni 2026',
-				'startDatum' => '2026-06-15T19:00:00+02:00',
-				'locatie' => 'Raadzaal',
+				'name' => 'Raadsvergadering 15 juni 2026',
+				'startDate' => '2026-06-15T19:00:00+02:00',
+				'location' => 'Raadzaal',
 				'status' => 'gepland',
 			],
 		]);

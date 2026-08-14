@@ -30,8 +30,8 @@
 
 			<div class="form-group">
 				<NcCheckboxRadioSwitch
-					:modelValue="voorzieningRequested"
-					@update:modelValue="(v) => (voorzieningRequested = v)">
+					:model-value="provisionRequested"
+					@update:model-value="(v) => (voorzieningRequested = v)">
 					{{
 						t(
 							'procest',
@@ -41,7 +41,7 @@
 				</NcCheckboxRadioSwitch>
 			</div>
 
-			<NcNoteCard v-if="voorzieningRequested" type="warning">
+			<NcNoteCard v-if="provisionRequested" type="warning">
 				{{
 					t(
 						'procest',
@@ -85,37 +85,31 @@ export default {
 		NcCheckboxRadioSwitch,
 		NcNoteCard,
 	},
-
 	props: {
 		caseData: {
 			type: Object,
 			required: true,
 		},
-
 		canEscalate: {
 			type: Boolean,
 			default: false,
 		},
-
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
-
 		linkedBeroepCase: {
 			type: Object,
 			default: null,
 		},
 	},
-
 	emits: ['escalated'],
 	data() {
 		return {
-			voorzieningRequested: false,
+			provisionRequested: false,
 			escalating: false,
 		}
 	},
-
 	methods: {
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		async escalate() {
@@ -123,7 +117,7 @@ export default {
 			const bezwaarStore = useBezwaarStore()
 
 			const beroepCase = await bezwaarStore.escalateToBeroep(this.caseData, {
-				voorzieningRequested: this.voorzieningRequested,
+				provisionRequested: this.provisionRequested,
 			})
 
 			this.escalating = false
@@ -132,7 +126,6 @@ export default {
 				this.$emit('escalated', beroepCase)
 			}
 		},
-
 		/** @spec openspec/changes/retrofit-2026-05-24-bezwaar-lifecycle/tasks.md */
 		navigateToBeroep() {
 			if (this.linkedBeroepCase) {

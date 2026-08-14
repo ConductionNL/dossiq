@@ -145,7 +145,7 @@ export default {
 					return '\uD83C\uDFE0'
 				case 'weg':
 					return '\uD83D\uDEB6'
-				case 'woonplaats':
+				case 'city':
 					return '\uD83C\uDFD9'
 				case 'postcode':
 					return '\uD83D\uDCEE'

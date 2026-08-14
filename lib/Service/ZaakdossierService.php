@@ -136,9 +136,9 @@ class ZaakdossierService {
 
 		$informatieobject = [
 			'titel' => (string)($metadata['titel'] ?? $fileName),
-			'bestandsnaam' => $fileName,
+			'fileName' => $fileName,
 			'bestandsomvang' => strlen($content),
-			'formaat' => (string)($metadata['formaat'] ?? 'application/octet-stream'),
+			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
 			'vertrouwelijkheidaanduiding' => $classification,
 			'auteur' => (string)($metadata['auteur'] ?? ''),
 			'status' => 'concept',
@@ -149,8 +149,8 @@ class ZaakdossierService {
 			'description' => (string)($metadata['description'] ?? $metadata['beschrijving'] ?? ''),
 			'integriteit' => [
 				'algoritme' => 'sha256',
-				'waarde' => $hash,
-				'datum' => $now,
+				'value' => $hash,
+				'date' => $now,
 			],
 		];
 
@@ -171,7 +171,7 @@ class ZaakdossierService {
 		return [
 			'id' => $infoId,
 			'titel' => $informatieobject['titel'],
-			'bestandsnaam' => $fileName,
+			'fileName' => $fileName,
 			'status' => 'concept',
 			'vertrouwelijkheidaanduiding' => $classification,
 			'informatieobjecttype' => $type,
@@ -507,8 +507,8 @@ class ZaakdossierService {
 		$join = [
 			'zaak' => $caseId,
 			'informatieobject' => $infoObjectId,
-			'aardRelatieWeergave' => 'Hoort bij, omgekeerd',
-			'registratiedatum' => date('Y-m-d\TH:i:s\Z'),
+			'natureRelationshipDisplay' => 'Hoort bij, omgekeerd',
+			'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 		];
 
 		$saved = $objectService->saveObject(object: $join, register: $register, schema: $joinSchema);

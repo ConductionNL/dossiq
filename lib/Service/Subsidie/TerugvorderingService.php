@@ -74,23 +74,23 @@ class TerugvorderingService {
 	/**
 	 * Compute the bezwaartermijn end date from a publication date.
 	 *
-	 * @param DateTimeImmutable $publicatie The publication date.
+	 * @param DateTimeImmutable $publication The publication date.
 	 *
 	 * @return DateTimeImmutable The bezwaartermijn end.
 	 */
-	public function computeBezwaartermijn(DateTimeImmutable $publicatie): DateTimeImmutable {
-		return $publicatie->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
+	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
+		return $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
 	}//end computeBezwaartermijn()
 
 	/**
 	 * Compute the betaaltermijn end date from a publication date.
 	 *
-	 * @param DateTimeImmutable $publicatie The publication date.
+	 * @param DateTimeImmutable $publication The publication date.
 	 *
 	 * @return DateTimeImmutable The betaaltermijn end.
 	 */
-	public function computeBetaaltermijn(DateTimeImmutable $publicatie): DateTimeImmutable {
-		return $publicatie->add(new DateInterval('P' . (self::BETAALTERMIJN_WEKEN * 7) . 'D'));
+	public function computeBetaaltermijn(DateTimeImmutable $publication): DateTimeImmutable {
+		return $publication->add(new DateInterval('P' . (self::BETAALTERMIJN_WEKEN * 7) . 'D'));
 	}//end computeBetaaltermijn()
 
 	/**
@@ -99,25 +99,25 @@ class TerugvorderingService {
 	 * before the start date. The result is rounded to whole eurocents.
 	 *
 	 * @param float $openstaandBedrag The outstanding amount.
-	 * @param DateTimeImmutable $vanaf Accrual start (original payment date).
+	 * @param DateTimeImmutable $from Accrual start (original payment date).
 	 * @param DateTimeImmutable $tot Accrual end.
-	 * @param float|null $jaarFractie Annual rate fraction; defaults to the wettelijke rente.
+	 * @param float|null $yearFaction Annual rate fraction; defaults to the wettelijke rente.
 	 *
 	 * @return float The accrued rente in EUR.
 	 */
 	public function computeInvorderingsrente(
 		float $openstaandBedrag,
-		DateTimeImmutable $vanaf,
+		DateTimeImmutable $from,
 		DateTimeImmutable $tot,
-		?float $jaarFractie = null,
+		?float $yearFaction = null,
 	): float {
-		if ($openstaandBedrag <= 0.0 || $tot <= $vanaf) {
+		if ($openstaandBedrag <= 0.0 || $tot <= $from) {
 			return 0.0;
 		}
 
-		$jaarFractie = ($jaarFractie ?? self::WETTELIJKE_RENTE_FRACTIE);
-		$dagen = (int)$vanaf->diff($tot)->days;
-		$rente = ($openstaandBedrag * $jaarFractie * ($dagen / 365));
+		$yearFaction = ($yearFaction ?? self::WETTELIJKE_RENTE_FRACTIE);
+		$days = (int)$from->diff($tot)->days;
+		$rente = ($openstaandBedrag * $yearFaction * ($days / 365));
 
 		return round($rente, 2);
 	}//end computeInvorderingsrente()
@@ -125,17 +125,17 @@ class TerugvorderingService {
 	/**
 	 * Determine the clawback status after a (partial) payment is recorded.
 	 *
-	 * @param float $bedrag The total amount owed.
-	 * @param float $betaald The cumulative amount paid.
+	 * @param float $amount The total amount owed.
+	 * @param float $paid The cumulative amount paid.
 	 *
 	 * @return string The resulting status.
 	 */
-	public function statusAfterPayment(float $bedrag, float $betaald): string {
-		if ($betaald <= 0.0) {
+	public function statusAfterPayment(float $amount, float $paid): string {
+		if ($paid <= 0.0) {
 			return 'opgelegd';
 		}
 
-		if (($bedrag - $betaald) < 0.01) {
+		if (($amount - $paid) < 0.01) {
 			return 'betaald';
 		}
 
@@ -148,28 +148,28 @@ class TerugvorderingService {
 	 * may be published — never auto-published.
 	 *
 	 * @param string $uitvoeringId The execution id.
-	 * @param float $bedrag The overpayment to recover.
-	 * @param DateTimeImmutable|null $publicatie Publication date (clock injection).
+	 * @param float $amount The overpayment to recover.
+	 * @param DateTimeImmutable|null $publication Publication date (clock injection).
 	 *
 	 * @return array<string, mixed> The created clawback record.
 	 *
 	 * @throws OCSBadRequestException When the amount is non-positive or persistence fails.
 	 */
-	public function createClawbackCase(string $uitvoeringId, float $bedrag, ?DateTimeImmutable $publicatie = null): array {
-		if ($bedrag <= 0.0) {
+	public function createClawbackCase(string $uitvoeringId, float $amount, ?DateTimeImmutable $publication = null): array {
+		if ($amount <= 0.0) {
 			throw new OCSBadRequestException('Terugvorderingsbedrag moet positief zijn');
 		}
 
 		[$objectService, $register, $schema] = $this->resolve();
 
-		$publicatie = ($publicatie ?? new DateTimeImmutable());
+		$publication = ($publication ?? new DateTimeImmutable());
 		$record = [
 			'subsidieuitvoering' => $uitvoeringId,
-			'bedrag' => round($bedrag, 2),
+			'amount' => round($amount, 2),
 			'legalBasis' => 'AWB 4:57',
-			'bezwaartermijnEinde' => $this->computeBezwaartermijn(publicatie: $publicatie)->format('Y-m-d'),
-			'betaaltermijnEinde' => $this->computeBetaaltermijn(publicatie: $publicatie)->format('Y-m-d'),
-			'betaaldBedrag' => 0,
+			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $publication)->format('Y-m-d'),
+			'betaaltermijnEinde' => $this->computeBetaaltermijn(publication: $publication)->format('Y-m-d'),
+			'paidAmount' => 0,
 			'managerGoedgekeurd' => false,
 			'status' => 'concept',
 		];

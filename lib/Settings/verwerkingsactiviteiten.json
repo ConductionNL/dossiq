@@ -3,7 +3,7 @@
   "activities": [
     {
       "code": "zaakafhandeling",
-      "naam": "Behandelen van zaken (zaakgericht werken)",
+      "name": "Behandelen van zaken (zaakgericht werken)",
       "beschrijving": "Umbrella activity for handling municipal cases in procest: intake, status lifecycle, task assignment, participant roles, decisions and closure. Default attribution for reads of case and role objects; specific case types refine this once per-case-type attribution is available.",
       "doelbinding": "Uitvoering van gemeentelijke taken door het gestructureerd behandelen van zaken van inwoners en bedrijven (aanvraag tot en met besluit).",
       "rechtsgrond": "publieke_taak",
@@ -14,7 +14,7 @@
     },
     {
       "code": "behandelen-omgevingsvergunning",
-      "naam": "Behandelen omgevingsvergunning",
+      "name": "Behandelen omgevingsvergunning",
       "beschrijving": "Processing permit applications received through the DSO/Omgevingsloket intake (vergunningaanvraag), including deadline monitoring and formal decisions.",
       "doelbinding": "Beoordelen en besluiten op aanvragen omgevingsvergunning zoals bedoeld in de Omgevingswet.",
       "rechtsgrond": "publieke_taak",
@@ -25,7 +25,7 @@
     },
     {
       "code": "behandelen-bezwaarschrift",
-      "naam": "Behandelen bezwaarschrift",
+      "name": "Behandelen bezwaarschrift",
       "beschrijving": "Processing objections (bezwaar) against municipal decisions, including hearings and the advisory committee workflow.",
       "doelbinding": "Behandelen van bezwaarschriften tegen besluiten van het college of de raad (Awb hoofdstuk 7).",
       "rechtsgrond": "wettelijke_verplichting",
@@ -36,7 +36,7 @@
     },
     {
       "code": "behandelen-woo-verzoek",
-      "naam": "Behandelen Woo-verzoek",
+      "name": "Behandelen Woo-verzoek",
       "beschrijving": "Processing requests for public disclosure of government information under the Woo, including deadline monitoring.",
       "doelbinding": "Behandelen van verzoeken om publieke informatie op grond van de Wet open overheid.",
       "rechtsgrond": "wettelijke_verplichting",
@@ -47,7 +47,7 @@
     },
     {
       "code": "behandelen-klacht",
-      "naam": "Behandelen klacht",
+      "name": "Behandelen klacht",
       "beschrijving": "Processing complaints about municipal conduct (Awb hoofdstuk 9) received through the complaints intake.",
       "doelbinding": "Behoorlijke behandeling van klachten over gedragingen van het bestuursorgaan.",
       "rechtsgrond": "wettelijke_verplichting",
@@ -58,7 +58,7 @@
     },
     {
       "code": "klantcontact-registratie",
-      "naam": "Registreren klantcontact (KCC)",
+      "name": "Registreren klantcontact (KCC)",
       "beschrijving": "Logging inbound and outbound customer contacts in the KCC-werkplek (contactmomenten, customer contacts), including caller identification and case linkage. Default attribution for reads of contactmoment and customerContact objects.",
       "doelbinding": "Registreren en afhandelen van klantcontacten om inwoners en ondernemers goed te woord te staan en zaken correct te koppelen.",
       "rechtsgrond": "publieke_taak",
@@ -69,7 +69,7 @@
     },
     {
       "code": "zaak-archivering",
-      "naam": "Archiveren en overbrengen van zaken",
+      "name": "Archiveren en overbrengen van zaken",
       "beschrijving": "Retention, disposal and transfer of closed case files (including e-Depot handover with MDTO metadata).",
       "doelbinding": "Voldoen aan de archiefwettelijke bewaar-, vernietigings- en overbrengingsplicht voor afgesloten zaakdossiers.",
       "rechtsgrond": "wettelijke_verplichting",

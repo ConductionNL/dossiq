@@ -120,7 +120,7 @@ class ConsultationController extends Controller {
 
 		try {
 			$data = $this->accessGuard->requestBody();
-			$data['aanvrager'] = $this->accessGuard->currentUid();
+			$data['applicant'] = $this->accessGuard->currentUid();
 
 			$cycleError = $this->accessGuard->dependencyCycleError(data: $data);
 			if ($cycleError !== null) {

@@ -16,10 +16,10 @@
 				}}</label>
 				<NcTextField
 					id="me-num"
-					:modelValue="form.mandateNumber"
+					:model-value="form.mandateNumber"
 					:error="!!errors.mandateNumber"
-					:helperText="errors.mandateNumber"
-					@update:modelValue="(v) => (form.mandateNumber = v)" />
+					:helper-text="errors.mandateNumber"
+					@update:model-value="(v) => (form.mandateNumber = v)" />
 			</div>
 
 			<div class="form-group">
@@ -42,10 +42,10 @@
 				}}</label>
 				<NcSelect
 					id="me-type"
-					:modelValue="selectedType"
+					:model-value="selectedType"
 					:options="typeOptions"
-					:inputLabel="t('procest', 'Bevoegdheidstype')"
-					@update:modelValue="
+					:input-label="t('procest', 'Bevoegdheidstype')"
+					@update:model-value="
 						(v) => (form.bevoegdheidType = v ? v.id : '')
 					" />
 				<span v-if="errors.bevoegdheidType" class="field-error">{{
@@ -59,10 +59,10 @@
 				}}</label>
 				<NcTextField
 					id="me-grond"
-					:modelValue="form.legalBasis"
+					:model-value="form.legalBasis"
 					:error="!!errors.legalBasis"
-					:helperText="errors.legalBasis"
-					@update:modelValue="(v) => (form.legalBasis = v)" />
+					:helper-text="errors.legalBasis"
+					@update:model-value="(v) => (form.legalBasis = v)" />
 			</div>
 
 			<div class="form-group">
@@ -78,8 +78,8 @@
 							'e.g. { \&quot;maxBedrag\&quot;: 50000, \&quot;categorie\&quot;: [\&quot;subsidie\&quot;] }',
 						)
 					" />
-				<span v-if="errors.voorwaarden" class="field-error">{{
-					errors.voorwaarden
+				<span v-if="errors.terms" class="field-error">{{
+					errors.terms
 				}}</span>
 			</div>
 
@@ -110,10 +110,10 @@
 				<label for="me-rol">{{ t('procest', 'Assigned role') }}</label>
 				<NcSelect
 					id="me-rol"
-					:modelValue="selectedRole"
+					:model-value="selectedRole"
 					:options="roleOptions"
-					:inputLabel="t('procest', 'Assigned role')"
-					@update:modelValue="
+					:input-label="t('procest', 'Assigned role')"
+					@update:model-value="
 						(v) => (form.toegewezenRol = v ? v.id : '')
 					" />
 			</div>
@@ -135,14 +135,14 @@
 </template>
 
 <script>
-import { translate as t } from '@nextcloud/l10n'
 import {
-	NcButton,
-	NcLoadingIcon,
 	NcModal,
-	NcSelect,
+	NcButton,
 	NcTextField,
+	NcSelect,
+	NcLoadingIcon,
 } from '@nextcloud/vue'
+import { translate as t } from '@nextcloud/l10n'
 import ContentSave from 'vue-material-design-icons/ContentSave.vue'
 
 export default {
@@ -155,12 +155,10 @@ export default {
 		NcLoadingIcon,
 		ContentSave,
 	},
-
 	props: {
 		mandaat: { type: Object, default: null },
 		roleOptions: { type: Array, default: () => [] },
 	},
-
 	emits: ['save', 'close'],
 	data() {
 		return {
@@ -171,25 +169,17 @@ export default {
 				description: this.mandaat?.description || '',
 				bevoegdheidType:
 					this.mandaat?.bevoegdheidType || 'beslissingsbevoegdheid',
-
 				legalBasis: this.mandaat?.legalBasis || '',
 				inWerkingtreding:
 					this.mandaat?.inWerkingtreding
 					|| new Date().toISOString().slice(0, 10),
-
 				vervaldatum: this.mandaat?.vervaldatum || '',
 				toegewezenRol: this.mandaat?.toegewezenRol || '',
-				voorwaarden: this.mandaat?.voorwaarden || {},
+				terms: this.mandaat?.terms || {},
 			},
-
-			voorwaardenJson: JSON.stringify(
-				this.mandaat?.voorwaarden || {},
-				null,
-				2,
-			),
+			voorwaardenJson: JSON.stringify(this.mandaat?.terms || {}, null, 2),
 		}
 	},
-
 	computed: {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		title() {
@@ -197,7 +187,6 @@ export default {
 				? t('procest', 'Edit mandaat')
 				: t('procest', 'New mandaat')
 		},
-
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		typeOptions() {
 			return [
@@ -216,7 +205,6 @@ export default {
 				{ id: 'doormandaat', label: t('procest', 'Doormandaat') },
 			]
 		},
-
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
@@ -224,7 +212,6 @@ export default {
 				|| this.typeOptions[0]
 			)
 		},
-
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedRole() {
 			return (
@@ -233,7 +220,6 @@ export default {
 			)
 		},
 	},
-
 	methods: {
 		t,
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
@@ -248,16 +234,15 @@ export default {
 			if (!this.form.legalBasis)
 				errs.legalBasis = t('procest', 'Wettelijke grondslag is required')
 			try {
-				this.form.voorwaarden = this.voorwaardenJson.trim()
+				this.form.terms = this.voorwaardenJson.trim()
 					? JSON.parse(this.voorwaardenJson)
 					: {}
 			} catch (e) {
-				errs.voorwaarden = t('procest', 'Voorwaarden must be valid JSON')
+				errs.terms = t('procest', 'Voorwaarden must be valid JSON')
 			}
 			this.errors = errs
 			return Object.keys(errs).length === 0
 		},
-
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		async save() {
 			if (!this.validate()) return

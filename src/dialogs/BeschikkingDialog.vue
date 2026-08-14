@@ -83,7 +83,7 @@ export default {
 	name: 'BeschikkingDialog',
 	components: { NcButton, NcDialog, NcTextArea },
 	props: {
-		zaakId: {
+		caseId: {
 			type: String,
 			required: true,
 		},
@@ -133,7 +133,7 @@ export default {
 				const { data } = await axios.post(
 					generateUrl(
 						'/apps/procest/api/dso/cases/'
-							+ encodeURIComponent(this.zaakId)
+							+ encodeURIComponent(this.caseId)
 							+ '/beschikking',
 					),
 					{

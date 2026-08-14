@@ -178,7 +178,7 @@ export default {
 				'startdatum',
 				'deadline',
 				'status',
-				'behandelaar',
+				'handler',
 				'aanvragerNaam',
 			],
 		}

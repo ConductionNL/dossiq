@@ -40,15 +40,15 @@
         "title": "Mandaat",
         "description": "Individual mandate granting authority to a role.",
         "type": "object",
-        "required": ["mandateNumber", "mandateDecision", "gemandateerdeRol", "bevoegdheidType"],
+        "required": ["mandateNumber", "mandateDecision", "mandateeRole", "bevoegdheidType"],
         "properties": {
           "mandateNumber":         {"type": "string", "title": "Mandate Number", "description": "Unique number identifying this mandate.", "facetable": true, "maxLength": 64},
           "mandateDecision":       {"type": "string", "title": "Mandate Decision", "description": "Reference to the mandate decision that issued this mandate."},
           "description":           {"type": "string", "title": "Description", "description": "Description of this mandate."},
           "bevoegdheidType":       {"type": "string", "title": "Authority Type", "description": "Type classification of the authority granted by this mandate.", "enum": ["mandaat", "volmacht", "machtiging"], "default": "mandaat", "facetable": true},
-          "gemandateerdeRol":      {"type": "string", "title": "Delegated Role", "description": "OrganisatieRol id"},
+          "mandateeRole":      {"type": "string", "title": "Delegated Role", "description": "OrganisatieRol id"},
           "legalBasis":            {"type": "string", "title": "Legal Basis", "description": "Statutory or regulatory basis for this mandate.", "maxLength": 255},
-          "voorwaarden": {
+          "terms": {
             "type": "object",
             "title": "Conditions",
             "description": "Conditions including plafond (cents), subdelegatie flag, decisionTypes scope",
@@ -71,12 +71,12 @@
         "title": "Organisatie Rol",
         "description": "Hierarchical role within the organisation.",
         "type": "object",
-        "required": ["rolNaam"],
+        "required": ["roleName"],
         "properties": {
-          "rolNaam":         {"type": "string", "title": "Role Name", "description": "Human-readable name of this organisational role.", "facetable": true, "maxLength": 255},
-          "rolType":         {"type": "string", "title": "Role Type", "description": "Type classification of this organisational role.", "enum": ["bestuurlijk", "ambtelijk", "extern"], "default": "ambtelijk"},
-          "parentRolId":     {"type": "string", "title": "Parent Role ID", "description": "Hierarchical parent OrganisatieRol id"},
-          "afdeling":        {"type": "string", "title": "Department", "description": "Department to which this role belongs.", "facetable": true, "maxLength": 255},
+          "roleName":         {"type": "string", "title": "Role Name", "description": "Human-readable name of this organisational role.", "facetable": true, "maxLength": 255},
+          "roleType":         {"type": "string", "title": "Role Type", "description": "Type classification of this organisational role.", "enum": ["bestuurlijk", "ambtelijk", "extern"], "default": "ambtelijk"},
+          "parentRoleId":     {"type": "string", "title": "Parent Role ID", "description": "Hierarchical parent OrganisatieRol id"},
+          "department":        {"type": "string", "title": "Department", "description": "Department to which this role belongs.", "facetable": true, "maxLength": 255},
           "team":            {"type": "string", "title": "Team", "description": "Team to which this role belongs.", "maxLength": 255},
           "mandateLevel":    {"type": "integer", "title": "Mandate Level", "description": "Numeric tier — used for next-higher resolution"}
         }
@@ -88,10 +88,10 @@
         "title": "Medewerker Rol Toewijzing",
         "description": "Assignment of a user (Nextcloud user id) to an OrganisatieRol over a validity window.",
         "type": "object",
-        "required": ["userId", "rolId", "toewijzingType", "validFrom"],
+        "required": ["userId", "roleId", "toewijzingType", "validFrom"],
         "properties": {
           "userId":         {"type": "string", "title": "User ID", "description": "Nextcloud user id of the employee being assigned.", "facetable": true},
-          "rolId":          {"type": "string", "title": "Role ID", "description": "Reference to the OrganisatieRol being assigned.", "facetable": true},
+          "roleId":          {"type": "string", "title": "Role ID", "description": "Reference to the OrganisatieRol being assigned.", "facetable": true},
           "toewijzingType":{"type": "string", "title": "Assignment Type", "description": "Type classification of this role assignment.", "enum": ["primair", "waarnemer", "tijdelijk"], "default": "primair"},
           "validFrom":     {"type": "string", "title": "Valid From", "description": "Start date of the role assignment validity.", "format": "date"},
           "validUntil":    {"type": "string", "title": "Valid Until", "description": "End date of the role assignment validity (null = open-ended).", "format": "date"},
@@ -105,15 +105,15 @@
         "title": "Mandaat Gebruik",
         "description": "Immutable audit log of a mandate use (when a user executed a decision under a mandate).",
         "type": "object",
-        "required": ["zaakId", "mandateId", "userId", "tijdstip"],
+        "required": ["caseId", "mandateId", "userId", "moment"],
         "properties": {
-          "zaakId":               {"type": "string", "title": "Case ID", "description": "Reference to the case for which the mandate was exercised.", "facetable": true},
+          "caseId":               {"type": "string", "title": "Case ID", "description": "Reference to the case for which the mandate was exercised.", "facetable": true},
           "decisionId":           {"type": "string", "title": "Decision ID", "description": "Reference to the decision taken under this mandate."},
           "mandateId":            {"type": "string", "title": "Mandate ID", "description": "Identifier of the mandate that was used."},
           "userId":               {"type": "string", "title": "User ID", "description": "Nextcloud user id of the employee who exercised the mandate."},
-          "tijdstip":             {"type": "string", "title": "Timestamp", "description": "Date and time at which the mandate was exercised.", "format": "date-time"},
-          "rolOpMomentVanBesluit":{"type": "object", "title": "Role At Decision Time", "description": "Snapshot of the user's role at decision time"},
-          "gebruikteVoorwaarden": {"type": "object", "title": "Applied Conditions", "description": "Snapshot of the mandaat voorwaarden used"},
+          "moment":             {"type": "string", "title": "Timestamp", "description": "Date and time at which the mandate was exercised.", "format": "date-time"},
+          "roleOnMomentFromDecision":{"type": "object", "title": "Role At Decision Time", "description": "Snapshot of the user's role at decision time"},
+          "usedTerms": {"type": "object", "title": "Applied Conditions", "description": "Snapshot of the mandaat voorwaarden used"},
           "mandateVersionId":     {"type": "string", "title": "Mandate Version ID", "description": "Version of the mandate actually applied"}
         }
       },
@@ -124,16 +124,16 @@
         "title": "Mandaat Escalatie",
         "description": "Open escalation to a higher mandate holder.",
         "type": "object",
-        "required": ["zaakId", "initiatorId", "escalatieReden", "status"],
+        "required": ["caseId", "initiatorId", "escalationReason", "status"],
         "properties": {
-          "zaakId":          {"type": "string", "title": "Case ID", "description": "Reference to the case that triggered this escalation.", "facetable": true},
+          "caseId":          {"type": "string", "title": "Case ID", "description": "Reference to the case that triggered this escalation.", "facetable": true},
           "decisionType":    {"type": "string", "title": "Decision Type", "description": "Type of decision that requires escalation.", "facetable": true},
           "initiatorId":     {"type": "string", "title": "Initiator ID", "description": "User id of the employee who initiated the escalation."},
-          "escalatieReden":  {"type": "string", "title": "Escalation Reason", "description": "Reason for the escalation.", "enum": ["niet_bevoegd", "plafond_overschreden", "subdelegatie_niet_toegestaan", "belangenconflict", "manueel"], "facetable": true},
+          "escalationReason":  {"type": "string", "title": "Escalation Reason", "description": "Reason for the escalation.", "enum": ["niet_bevoegd", "plafond_overschreden", "subdelegatie_niet_toegestaan", "belangenconflict", "manueel"], "facetable": true},
           "targetMandateId": {"type": "string", "title": "Target Mandate ID", "description": "Reference to the higher mandate to which this escalation is directed."},
           "targetUserId":    {"type": "string", "title": "Target User ID", "description": "User id of the higher mandate holder to whom this escalation is directed."},
           "status":          {"type": "string", "title": "Status", "description": "Current lifecycle status of this escalation.", "enum": ["open", "goedgekeurd", "afgewezen"], "default": "open", "facetable": true},
-          "afgewezenReden":  {"type": "string", "title": "Rejection Reason", "description": "Reason provided when the escalation was rejected."},
+          "rejectedReason":  {"type": "string", "title": "Rejection Reason", "description": "Reason provided when the escalation was rejected."},
           "createdAt":       {"type": "string", "title": "Created At", "description": "Date and time at which this escalation was created.", "format": "date-time"},
           "resolvedAt":      {"type": "string", "title": "Resolved At", "description": "Date and time at which this escalation was resolved.", "format": "date-time"}
         }

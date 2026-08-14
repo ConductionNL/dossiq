@@ -76,12 +76,12 @@ class DeadlineReportingService {
 		$perType = $this->reducePerType(byType: $byType);
 
 		return [
-			// 'periode' and 'afdeling' are RESPONSE KEYS, not identifiers. They
+			// 'periode' and 'department' are RESPONSE KEYS, not identifiers. They
 			// are the published shape of /api/termijn/reports/kwartaal and are
 			// read by the dashboard; they move only with a coordinated frontend
 			// change, not with this rename.
 			'periode' => $period,
-			'afdeling' => $department,
+			'department' => $department,
 			'from' => $bounds['from'],
 			'until' => $bounds['until'],
 			'perType' => $perType,
@@ -103,16 +103,16 @@ class DeadlineReportingService {
 	private function aggregateByType(array $rows, ?string $department): array {
 		$byType = [];
 		foreach ($rows as $row) {
-			$type = (string)($row['zaaktype'] ?? 'onbekend');
-			// $row['afdeling'] is a SCHEMA PROPERTY — OpenRegister materialises
+			$type = (string)($row['caseType'] ?? 'onbekend');
+			// $row['department'] is a SCHEMA PROPERTY — OpenRegister materialises
 			// it as a real column. It moves with a data migration, not here.
-			if ($department !== null && (string)($row['afdeling'] ?? '') !== $department) {
+			if ($department !== null && (string)($row['department'] ?? '') !== $department) {
 				continue;
 			}
 
 			$byType[$type] ??= [
 				'totaal' => 0,
-				'binnenTermijn' => 0,
+				'withinTerm' => 0,
 				'doorlooptijdenDagen' => [],
 				'verlengingen' => 0,
 				'overschrijdingen' => 0,
@@ -138,23 +138,23 @@ class DeadlineReportingService {
 		$bucket['totaal']++;
 		$status = (string)($row['status'] ?? '');
 		if ($status === 'voltooid') {
-			$bucket['binnenTermijn']++;
+			$bucket['withinTerm']++;
 		}
 
 		if ($status === 'overschreden') {
 			$bucket['overschrijdingen']++;
 		}
 
-		if ((int)($row['aantalVerlengingen'] ?? 0) > 0) {
+		if ((int)($row['countExtensions'] ?? 0) > 0) {
 			$bucket['verlengingen']++;
 		}
 
-		$start = (string)($row['startDatum'] ?? '');
-		$eind = (string)($row['einddatumActueel'] ?? '');
-		if ($start !== '' && $eind !== '') {
+		$start = (string)($row['startDate'] ?? '');
+		$end = (string)($row['endDateCurrent'] ?? '');
+		if ($start !== '' && $end !== '') {
 			$startD = new DateTimeImmutable(substr($start, 0, 10));
-			$eindD = new DateTimeImmutable($eind);
-			$bucket['doorlooptijdenDagen'][] = (int)$startD->diff($eindD)->days;
+			$endD = new DateTimeImmutable($end);
+			$bucket['doorlooptijdenDagen'][] = (int)$startD->diff($endD)->days;
 		}
 	}//end accumulateRow()
 
@@ -170,8 +170,8 @@ class DeadlineReportingService {
 		foreach ($byType as $type => $b) {
 			// $byType entries are only created when a row is counted, so
 			// 'totaal' is always >= 1 here.
-			$totaal = $b['totaal'];
-			$binnenPct = round(($b['binnenTermijn'] / $totaal) * 100, 1);
+			$total = $b['totaal'];
+			$binnenPct = round(($b['withinTerm'] / $total) * 100, 1);
 
 			$avgDur = 0.0;
 
@@ -181,7 +181,7 @@ class DeadlineReportingService {
 			}
 
 			$perType[$type] = [
-				'totaal' => $totaal,
+				'totaal' => $total,
 				'binnenTermijnPct' => $binnenPct,
 				'gemiddeldeDoorlooptijdDagen' => $avgDur,
 				'verlengingen' => $b['verlengingen'],
@@ -219,26 +219,26 @@ class DeadlineReportingService {
 
 		$yearPrefix = (string)$year;
 		$outRows = [];
-		$totaal = 0;
+		$total = 0;
 		$warnings = [];
 
 		foreach ($rows as $row) {
-			$betaal = (string)($row['werkelijkeBetaaldatum'] ?? '');
-			if (str_starts_with($betaal, $yearPrefix) === false) {
+			$payment = (string)($row['actualPaymentDate'] ?? '');
+			if (str_starts_with($payment, $yearPrefix) === false) {
 				continue;
 			}
 
-			$bedrag = (int)($row['bedrag'] ?? 0);
-			$totaal += $bedrag;
+			$amount = (int)($row['amount'] ?? 0);
+			$total += $amount;
 
 			if (($row['betalingsreferentie'] ?? '') === '') {
-				$warnings[] = 'Missing betalingsreferentie for ' . ((string)($row['referentie'] ?? ''));
+				$warnings[] = 'Missing betalingsreferentie for ' . ((string)($row['reference'] ?? ''));
 			}
 
 			$outRows[] = [
-				'referentie' => (string)($row['referentie'] ?? ''),
-				'bedragCents' => $bedrag,
-				'werkelijkeBetaaldatum' => $betaal,
+				'reference' => (string)($row['reference'] ?? ''),
+				'bedragCents' => $amount,
+				'actualPaymentDate' => $payment,
 				'betalingsreferentie' => (string)($row['betalingsreferentie'] ?? ''),
 				'status' => (string)($row['status'] ?? ''),
 				'legalBasis' => (string)($row['legalBasis'] ?? ''),
@@ -249,7 +249,7 @@ class DeadlineReportingService {
 		return [
 			'jaar' => $year,
 			'rows' => $outRows,
-			'summary' => ['count' => count($outRows), 'totalCents' => $totaal],
+			'summary' => ['count' => count($outRows), 'totalCents' => $total],
 			'warnings' => $warnings,
 		];
 	}//end generateDwangsomAuditReport()
@@ -274,9 +274,9 @@ class DeadlineReportingService {
 		$overrun = $totals['overrun'];
 		$durations = $totals['durations'];
 
-		$withinTermijnPercent = 0.0;
+		$withinTermPercent = 0.0;
 		if ($total > 0) {
-			$withinTermijnPercent = round(($within / $total) * 100, 1);
+			$withinTermPercent = round(($within / $total) * 100, 1);
 		}
 
 		$aantalDuraties = count($durations);
@@ -287,7 +287,7 @@ class DeadlineReportingService {
 
 		return [
 			'totalZaken' => $total,
-			'withinTermijnPercent' => $withinTermijnPercent,
+			'withinTermijnPercent' => $withinTermPercent,
 			'avgDurationDays' => $avgDurationDays,
 			'overrunCount' => $overrun,
 			'dwangsomTotalCents' => $dwTotal,
@@ -309,7 +309,7 @@ class DeadlineReportingService {
 		$overrun = 0;
 		$durations = [];
 		foreach ($rows as $row) {
-			if (isset($filters['zaaktype']) === true && (string)($row['zaaktype'] ?? '') !== $filters['zaaktype']) {
+			if (isset($filters['caseType']) === true && (string)($row['caseType'] ?? '') !== $filters['caseType']) {
 				continue;
 			}
 
@@ -323,10 +323,10 @@ class DeadlineReportingService {
 				$overrun++;
 			}
 
-			$start = (string)($row['startDatum'] ?? '');
-			$eind = (string)($row['einddatumActueel'] ?? '');
-			if ($start !== '' && $eind !== '') {
-				$durations[] = (int)(new DateTimeImmutable(substr($start, 0, 10)))->diff(new DateTimeImmutable($eind))->days;
+			$start = (string)($row['startDate'] ?? '');
+			$end = (string)($row['endDateCurrent'] ?? '');
+			if ($start !== '' && $end !== '') {
+				$durations[] = (int)(new DateTimeImmutable(substr($start, 0, 10)))->diff(new DateTimeImmutable($end))->days;
 			}
 		}//end foreach
 
@@ -349,7 +349,7 @@ class DeadlineReportingService {
 	 */
 	public function quarterlyReportAsCsv(array $report): string {
 		$header = [
-			'zaaktype',
+			'caseType',
 			'totaal',
 			'binnenTermijnPct',
 			'gemiddeldeDoorlooptijdDagen',
@@ -422,7 +422,7 @@ class DeadlineReportingService {
 
 		$out = [];
 		foreach ($rows as $row) {
-			$start = substr((string)($row['startDatum'] ?? ''), 0, 10);
+			$start = substr((string)($row['startDate'] ?? ''), 0, 10);
 			if ($start === '' || ($start >= $from && $start <= $until) === false) {
 				continue;
 			}

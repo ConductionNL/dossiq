@@ -13,6 +13,6 @@
     {"name": "procedureType", "type": "string", "enum": ["regulier", "uitgebreid"]},
     {"name": "activiteiten", "type": "string"}
   ],
-  "roleTypes": ["behandelaar", "aanvrager", "gemachtigde", "adviseur"],
+  "roleTypes": ["handler", "applicant", "gemachtigde", "adviseur"],
   "processingDeadline": {"regulier": "P56D", "uitgebreid": "P182D"}
 }

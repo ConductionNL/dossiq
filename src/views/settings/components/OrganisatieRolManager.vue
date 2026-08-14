@@ -115,7 +115,7 @@ export default {
 		parentOptions() {
 			return [
 				{ id: '', label: t('procest', '(top level)') },
-				...this.roles.map((r) => ({ id: r.id, label: r.naam || r.id })),
+				...this.roles.map((r) => ({ id: r.id, label: r.name || r.id })),
 			]
 		},
 
@@ -207,11 +207,11 @@ export default {
 </script>
 
 <style scoped>
-.rol-manager__toolbar {
+.role-manager__toolbar {
 	margin-bottom: 12px;
 }
 
-.rol-manager__tree {
+.role-manager__tree {
 	border: 1px solid var(--color-border);
 	border-radius: var(--border-radius);
 	padding: 8px;

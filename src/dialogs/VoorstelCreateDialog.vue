@@ -10,10 +10,10 @@
 				>
 				<NcTextField
 					id="voorstel-create-onderwerp"
-					:modelValue="form.onderwerp"
+					:model-value="form.onderwerp"
 					:error="!!errors.onderwerp"
 					:placeholder="t('procest', 'Subject of the proposal...')"
-					@update:modelValue="
+					@update:model-value="
 						(v) => {
 							form.onderwerp = v
 							errors.onderwerp = ''
@@ -40,9 +40,9 @@
 					:options="cases"
 					:aria-label-combobox="t('procest', 'Case')"
 					label="title"
-					trackBy="id"
+					track-by="id"
 					:placeholder="t('procest', 'Select case...')"
-					@update:modelValue="onCaseSelected" />
+					@update:model-value="onCaseSelected" />
 			</div>
 
 			<div class="form-group">
@@ -51,9 +51,9 @@
 				}}</label>
 				<NcTextField
 					id="voorstel-create-portfolio-holder"
-					:modelValue="form.portefeuillehouder"
+					:model-value="form.portefeuillehouder"
 					:placeholder="t('procest', 'Alderman user ID')"
-					@update:modelValue="(v) => (form.portefeuillehouder = v)" />
+					@update:model-value="(v) => (form.portefeuillehouder = v)" />
 			</div>
 
 			<div class="form-group">
@@ -62,9 +62,9 @@
 				}}</label>
 				<NcTextField
 					id="voorstel-create-department"
-					:modelValue="form.afdeling"
+					:model-value="form.department"
 					:placeholder="t('procest', 'Department')"
-					@update:modelValue="(v) => (form.afdeling = v)" />
+					@update:model-value="(v) => (form.department = v)" />
 			</div>
 		</div>
 
@@ -83,7 +83,6 @@
 </template>
 
 <script>
-import { getCurrentUser } from '@nextcloud/auth'
 import {
 	NcButton,
 	NcDialog,
@@ -91,6 +90,7 @@ import {
 	NcSelect,
 	NcTextField,
 } from '@nextcloud/vue'
+import { getCurrentUser } from '@nextcloud/auth'
 import { useObjectStore } from '../store/modules/object.js'
 
 export default {
@@ -102,19 +102,16 @@ export default {
 		NcSelect,
 		NcTextField,
 	},
-
 	props: {
 		caseId: {
 			type: String,
 			default: null,
 		},
-
 		caseTitle: {
 			type: String,
 			default: '',
 		},
 	},
-
 	data() {
 		return {
 			saving: false,
@@ -124,21 +121,18 @@ export default {
 				onderwerp: this.caseTitle || '',
 				type: 'collegeadvies',
 				portefeuillehouder: '',
-				afdeling: '',
+				department: '',
 			},
-
 			errors: {},
 			typeOptions: ['dt_advies', 'collegeadvies', 'raadsvoorstel'],
 		}
 	},
-
 	computed: {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		objectStore() {
 			return useObjectStore()
 		},
 	},
-
 	/** @spec openspec/specs/parafering-actions/spec.md */
 	async created() {
 		if (!this.caseId) {
@@ -154,7 +148,6 @@ export default {
 			}
 		}
 	},
-
 	methods: {
 		/**
 		 * @param caseObj
@@ -165,7 +158,6 @@ export default {
 				this.form.onderwerp = caseObj.title || ''
 			}
 		},
-
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async create() {
 			this.errors = {}
@@ -208,11 +200,11 @@ export default {
 					type: this.form.type,
 					onderwerp: this.form.onderwerp.trim(),
 					steller: getCurrentUser()?.uid || '',
-					afdeling: this.form.afdeling,
+					department: this.form.department,
 					portefeuillehouder: this.form.portefeuillehouder,
 					status: 'concept',
 					currentStep: 0,
-					bijlagen: [],
+					attachments: [],
 				}
 
 				if (routeId) {

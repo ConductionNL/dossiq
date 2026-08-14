@@ -31,7 +31,7 @@ export function personDisplayName(naam) {
 	if (!naam) {
 		return ''
 	}
-	return [naam.voornamen, naam.voorvoegsel, naam.geslachtsnaam]
+	return [naam.given_names, naam.name_prefix, naam.surname]
 		.filter((part) => !!part && String(part).trim() !== '')
 		.join(' ')
 }
@@ -46,11 +46,11 @@ export function personDisplayName(naam) {
 export function personResult(person) {
 	return {
 		type: 'person',
-		sourceId: person.burgerservicenummer || '',
-		displayName: person.displayName || personDisplayName(person.naam),
+		sourceId: person.citizen_service_number || '',
+		displayName: person.displayName || personDisplayName(person.name),
 		detail: [
-			person.geboorte?.datum,
-			person.burgerservicenummer && `BSN ${person.burgerservicenummer}`,
+			person.birth?.date,
+			person.citizen_service_number && `BSN ${person.citizen_service_number}`,
 		]
 			.filter(Boolean)
 			.join(' · '),
@@ -68,9 +68,9 @@ export function personResult(person) {
 export function companyResult(company) {
 	return {
 		type: 'company',
-		sourceId: company.kvkNummer || '',
-		displayName: company.handelsnaam || '',
-		detail: [company.rechtsvorm, company.kvkNummer && `KVK ${company.kvkNummer}`]
+		sourceId: company.kvkNumber || '',
+		displayName: company.trade_name || '',
+		detail: [company.rechtsvorm, company.kvkNumber && `KVK ${company.kvkNumber}`]
 			.filter(Boolean)
 			.join(' · '),
 		objectId: company.id || company['@self']?.id || null,

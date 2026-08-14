@@ -41,16 +41,16 @@ class BrkResponseMapperTest extends TestCase {
 		$mapped = $mapper->map(
 			[
 				'kadastraleAanduiding' => [
-					'kadastraleGemeentecode' => ['waarde' => 'VBSTD'],
-					'kadastraleGemeente' => ['waarde' => 'Voorbeeldstad'],
+					'kadastraleGemeentecode' => ['value' => 'VBSTD'],
+					'kadastraleGemeente' => ['value' => 'Voorbeeldstad'],
 					'sectie' => 'A',
 					'perceelnummer' => 1234,
 				],
 				'kadastraleAanduidingVolledig' => 'VBSTD A 1234',
-				'kadastraleGrootte' => ['waarde' => 350],
+				'kadastraleGrootte' => ['value' => 350],
 				'soortCultuurBebouwd' => ['wonen'],
 				'zakelijkGerechtigdheid' => [
-					['identificatie' => 'ZG0001', 'aardZakelijkRecht' => ['waarde' => 'Eigendom (recht van)']],
+					['identificatie' => 'ZG0001', 'aardZakelijkRecht' => ['value' => 'Eigendom (recht van)']],
 				],
 				'centroideLL' => ['type' => 'Point', 'coordinates' => [4.4699, 51.9244]],
 			]
@@ -152,13 +152,13 @@ class BrkResponseMapperTest extends TestCase {
 		$mapped = $mapper->map(
 			[
 				'zakelijkGerechtigdheid' => [
-					['identificatie' => 'ZG0002', 'aardZakelijkRecht' => 'Eigendom', 'naam' => 'J. Jansen', 'bsn' => '123456782'],
+					['identificatie' => 'ZG0002', 'aardZakelijkRecht' => 'Eigendom', 'name' => 'J. Jansen', 'bsn' => '123456782'],
 				],
 			]
 		);
 
 		$this->assertSame(['identificatie' => 'ZG0002', 'aardZakelijkRecht' => 'Eigendom'], $mapped['zakelijkGerechtigden'][0]);
-		$this->assertArrayNotHasKey('naam', $mapped['zakelijkGerechtigden'][0]);
+		$this->assertArrayNotHasKey('name', $mapped['zakelijkGerechtigden'][0]);
 		$this->assertArrayNotHasKey('bsn', $mapped['zakelijkGerechtigden'][0]);
 	}//end testZakelijkGerechtigdenNeverLeaksPersonalDataFields()
 

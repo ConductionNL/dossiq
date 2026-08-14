@@ -62,7 +62,7 @@ class HearingService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	public function scheduleHearing(string $complaintId, array $data): array {
-		if (empty($data['datum']) === true) {
+		if (empty($data['date']) === true) {
 			throw new RuntimeException('Hearing datum is required');
 		}
 
@@ -88,8 +88,8 @@ class HearingService {
 		if ($data['type'] === 'videogesprek') {
 			$talkUrl = $this->createTalkRoom(complaintId: $complaintId);
 			$data['talkRoomUrl'] = $talkUrl;
-			if (empty($data['locatie']) === true) {
-				$data['locatie'] = $talkUrl;
+			if (empty($data['location']) === true) {
+				$data['location'] = $talkUrl;
 			}
 		}
 
@@ -99,7 +99,7 @@ class HearingService {
 		$this->sendCalendarInvitations(hearing: $hearing, data: $data);
 
 		$this->logger->info(
-			'Hearing scheduled for complaint ' . $complaintId . ' on ' . $data['datum'],
+			'Hearing scheduled for complaint ' . $complaintId . ' on ' . $data['date'],
 			['app' => Application::APP_ID],
 		);
 
@@ -199,7 +199,7 @@ class HearingService {
 			'verslag' => $outcome['verslag'],
 			'conclusie' => $outcome['conclusie'] ?? '',
 			'aanwezigen' => $outcome['aanwezigen'] ?? [],
-			'datumAfgerond' => $outcome['datumAfgerond'] ?? date('Y-m-d'),
+			'dateCompleted' => $outcome['dateCompleted'] ?? date('Y-m-d'),
 		];
 
 		$result = $objectService->saveObject(object: $updateData, register: $register, schema: $schema, uuid: (string)$id);
@@ -274,13 +274,13 @@ class HearingService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-03
 	 */
 	private function sendCalendarInvitations(mixed $hearing, array $data): void {
-		$participants = $data['deelnemers'] ?? [];
+		$participants = $data['participants'] ?? [];
 		if (empty($participants) === true) {
 			return;
 		}
 
-		$datum = $data['datum'] ?? '';
-		$locatie = $data['locatie'] ?? '';
+		$date = $data['date'] ?? '';
+		$location = $data['location'] ?? '';
 
 		// `is_callable()` rather than `method_exists()`: ObjectEntity exposes
 		// getUuid() through OCP\AppFramework\Db\Entity::__call(), which
@@ -294,7 +294,7 @@ class HearingService {
 		// Calendar integration — log attempt; actual calendar write is
 		// delegated to NC Calendar IManager search/find calendars per participant.
 		$this->logger->info(
-			'Calendar invitations queued for hearing on ' . $datum . ' at ' . $locatie
+			'Calendar invitations queued for hearing on ' . $date . ' at ' . $location
 			. ' for ' . count($participants) . ' participants',
 			['app' => Application::APP_ID, 'hearingId' => $hearingId],
 		);

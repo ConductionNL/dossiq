@@ -54,11 +54,11 @@ class TerugvorderingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTermijnDates(): void {
-		$publicatie = new DateTimeImmutable('2026-06-01');
+		$publication = new DateTimeImmutable('2026-06-01');
 		// 6 weeks bezwaartermijn.
-		$this->assertSame('2026-07-13', $this->service->computeBezwaartermijn($publicatie)->format('Y-m-d'));
+		$this->assertSame('2026-07-13', $this->service->computeBezwaartermijn($publication)->format('Y-m-d'));
 		// 4 weeks betaaltermijn.
-		$this->assertSame('2026-06-29', $this->service->computeBetaaltermijn($publicatie)->format('Y-m-d'));
+		$this->assertSame('2026-06-29', $this->service->computeBetaaltermijn($publication)->format('Y-m-d'));
 	}//end testTermijnDates()
 
 	/**
@@ -67,10 +67,10 @@ class TerugvorderingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testInvorderingsrenteOneYear(): void {
-		$vanaf = new DateTimeImmutable('2026-01-01');
+		$from = new DateTimeImmutable('2026-01-01');
 		$tot = new DateTimeImmutable('2027-01-01');
 		// 365 days at 6 %: 30000 * 0.06 * (365/365) = 1800.00.
-		$this->assertSame(1800.0, $this->service->computeInvorderingsrente(30000.0, $vanaf, $tot));
+		$this->assertSame(1800.0, $this->service->computeInvorderingsrente(30000.0, $from, $tot));
 	}//end testInvorderingsrenteOneYear()
 
 	/**
@@ -80,12 +80,12 @@ class TerugvorderingServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testInvorderingsrenteGuards(): void {
-		$vanaf = new DateTimeImmutable('2026-01-01');
-		$this->assertSame(0.0, $this->service->computeInvorderingsrente(30000.0, $vanaf, $vanaf));
+		$from = new DateTimeImmutable('2026-01-01');
+		$this->assertSame(0.0, $this->service->computeInvorderingsrente(30000.0, $from, $from));
 		$tot = new DateTimeImmutable('2025-01-01');
-		$this->assertSame(0.0, $this->service->computeInvorderingsrente(30000.0, $vanaf, $tot));
+		$this->assertSame(0.0, $this->service->computeInvorderingsrente(30000.0, $from, $tot));
 		$tot2 = new DateTimeImmutable('2027-01-01');
-		$this->assertSame(0.0, $this->service->computeInvorderingsrente(0.0, $vanaf, $tot2));
+		$this->assertSame(0.0, $this->service->computeInvorderingsrente(0.0, $from, $tot2));
 	}//end testInvorderingsrenteGuards()
 
 	/**

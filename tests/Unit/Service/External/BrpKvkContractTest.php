@@ -111,9 +111,9 @@ class BrpKvkContractTest extends TestCase {
 
 		$result = $adapter->lookup(bsn: '999990627');
 		$this->assertSame('FOUND', $result->lookupStatus);
-		$this->assertSame('Janssen', $result->persoon['naam']['geslachtsnaam']);
-		$this->assertSame('1975-04-06', $result->persoon['geboorte']['datum']);
-		$this->assertArrayNotHasKey('burgerservicenummer', $result->persoon);
+		$this->assertSame('Janssen', $result->persoon['name']['surname']);
+		$this->assertSame('1975-04-06', $result->persoon['birth']['date']);
+		$this->assertArrayNotHasKey('citizenServiceNumber', $result->persoon);
 		$this->assertSame('mock', $result->extras['tier']);
 	}//end testBrpContractAgainstMockEnvelope()
 
@@ -133,7 +133,7 @@ class BrpKvkContractTest extends TestCase {
 		$result = $adapter->lookup(kvkNumber: '69599084');
 		$this->assertSame('FOUND', $result->lookupStatus);
 		$this->assertSame('69599084', $result->kvkNumber);
-		$this->assertStringContainsString('Test EMZ', (string)$result->entity['naam']);
+		$this->assertStringContainsString('Test EMZ', (string)$result->entity['name']);
 		$this->assertSame('test', $result->extras['tier']);
 	}//end testKvkContractAgainstTestApiResponse()
 }//end class

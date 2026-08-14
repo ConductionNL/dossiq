@@ -76,8 +76,8 @@ class SubsidieServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testBeslistermijnMultiYear(): void {
-		$registratie = new DateTimeImmutable('2026-01-01');
-		$deadline = $this->service->computeBeslistermijn($registratie, 13);
+		$registration = new DateTimeImmutable('2026-01-01');
+		$deadline = $this->service->computeBeslistermijn($registration, 13);
 		$this->assertSame('2026-04-02', $deadline->format('Y-m-d'));
 	}//end testBeslistermijnMultiYear()
 
@@ -88,10 +88,10 @@ class SubsidieServiceTest extends TestCase {
 	 */
 	public function testVoorschotReconciliation(): void {
 		$schema = [
-			['datum' => '2026-01-15', 'bedrag' => 120000],
-			['datum' => '2027-01-15', 'bedrag' => 120000],
-			['datum' => '2028-01-15', 'bedrag' => 120000],
-			['datum' => '2029-03-01', 'bedrag' => 90000],
+			['date' => '2026-01-15', 'amount' => 120000],
+			['date' => '2027-01-15', 'amount' => 120000],
+			['date' => '2028-01-15', 'amount' => 120000],
+			['date' => '2029-03-01', 'amount' => 90000],
 		];
 		$this->assertTrue($this->service->voorschotSchemaReconciles($schema, 450000.0));
 		$this->assertFalse($this->service->voorschotSchemaReconciles($schema, 400000.0));
@@ -104,16 +104,16 @@ class SubsidieServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testConditionalVoorschotRelease(): void {
-		$unconditional = ['bedrag' => 100, 'voorwaarde' => ''];
+		$unconditional = ['amount' => 100, 'voorwaarde' => ''];
 		$this->assertTrue($this->service->isVoorschotReleasable($unconditional, []));
 
-		$conditional = ['bedrag' => 100, 'voorwaarde' => 'tussenrapportage:r-2026-q4'];
+		$conditional = ['amount' => 100, 'voorwaarde' => 'tussenrapportage:r-2026-q4'];
 		$this->assertFalse($this->service->isVoorschotReleasable($conditional, []));
 		$this->assertFalse($this->service->isVoorschotReleasable($conditional, ['r-other']));
 		$this->assertTrue($this->service->isVoorschotReleasable($conditional, ['r-2026-q4']));
 
 		// Unknown condition shapes fail closed.
-		$unknown = ['bedrag' => 100, 'voorwaarde' => 'magie'];
+		$unknown = ['amount' => 100, 'voorwaarde' => 'magie'];
 		$this->assertFalse($this->service->isVoorschotReleasable($unknown, ['anything']));
 	}//end testConditionalVoorschotRelease()
 

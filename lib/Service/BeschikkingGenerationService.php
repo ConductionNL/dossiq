@@ -57,7 +57,7 @@ class BeschikkingGenerationService {
 	 * bijlage on the vergunningaanvraag. Returns a result array with
 	 * success status, bijlage ID, and a human-readable message.
 	 *
-	 * @param string $zaakId The UUID of the zaak
+	 * @param string $caseId The UUID of the zaak
 	 * @param string $outcome Either 'verleend' or 'geweigerd'
 	 * @param string $motivation The motivation text for the beslissing
 	 *
@@ -65,7 +65,7 @@ class BeschikkingGenerationService {
 	 *
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T04
 	 */
-	public function generateBeschikking(string $zaakId, string $outcome, string $motivation): array {
+	public function generateBeschikking(string $caseId, string $outcome, string $motivation): array {
 		$templateKey = 'dso_beschikking_template_verleend';
 		if ($outcome === 'geweigerd') {
 			$templateKey = 'dso_beschikking_template_geweigerd';
@@ -84,14 +84,14 @@ class BeschikkingGenerationService {
 				'Procest BeschikkingGenerationService: Docudesk unavailable or template unconfigured; creating stub bijlage.',
 				[
 					'app' => Application::APP_ID,
-					'zaakId' => $zaakId,
+					'caseId' => $caseId,
 					'outcome' => $outcome,
 					'templateId' => $templateId,
 				]
 			);
 
 			$bijlageId = $this->createStubBijlage(
-				zaakId: $zaakId,
+				caseId: $caseId,
 				outcome: $outcome,
 				motivation: $motivation
 			);
@@ -107,15 +107,15 @@ class BeschikkingGenerationService {
 			$generated = $documentService->generateFromTemplate(
 				templateId: $templateId,
 				context: [
-					'zaakId' => $zaakId,
+					'caseId' => $caseId,
 					'outcome' => $outcome,
 					'motivation' => $motivation,
-					'datum' => date('Y-m-d'),
+					'date' => date('Y-m-d'),
 				]
 			);
 
 			$bijlageId = $this->attachBijlageToZaak(
-				zaakId: $zaakId,
+				caseId: $caseId,
 				generated: $generated,
 				outcome: $outcome
 			);
@@ -130,12 +130,12 @@ class BeschikkingGenerationService {
 				'Procest BeschikkingGenerationService: Docudesk generation failed: ' . $e->getMessage(),
 				[
 					'app' => Application::APP_ID,
-					'zaakId' => $zaakId,
+					'caseId' => $caseId,
 				]
 			);
 
 			$bijlageId = $this->createStubBijlage(
-				zaakId: $zaakId,
+				caseId: $caseId,
 				outcome: $outcome,
 				motivation: $motivation
 			);
@@ -177,13 +177,13 @@ class BeschikkingGenerationService {
 	 * Attaches a text-based placeholder bijlage to the vergunningaanvraag
 	 * via ObjectService so that the workflow can continue without a PDF.
 	 *
-	 * @param string $zaakId The zaak UUID
+	 * @param string $caseId The zaak UUID
 	 * @param string $outcome The decision outcome
 	 * @param string $motivation The motivation text
 	 *
 	 * @return string The UUID of the created stub bijlage
 	 */
-	private function createStubBijlage(string $zaakId, string $outcome, string $motivation): string {
+	private function createStubBijlage(string $caseId, string $outcome, string $motivation): string {
 		try {
 			$objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
 			$register = $this->appConfig->getValueString(
@@ -196,7 +196,7 @@ class BeschikkingGenerationService {
 				register: $register,
 				schema: 'beschikking_bijlage',
 				object: [
-					'zaakId' => $zaakId,
+					'caseId' => $caseId,
 					'type' => 'beschikking',
 					'outcome' => $outcome,
 					'motivation' => $motivation,
@@ -206,26 +206,26 @@ class BeschikkingGenerationService {
 				]
 			);
 
-			return (string)($bijlage['id'] ?? ($bijlage['uuid'] ?? 'stub-' . $zaakId));
+			return (string)($bijlage['id'] ?? ($bijlage['uuid'] ?? 'stub-' . $caseId));
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Procest BeschikkingGenerationService: could not create stub bijlage: ' . $e->getMessage(),
 				['app' => Application::APP_ID]
 			);
-			return 'stub-' . $zaakId;
+			return 'stub-' . $caseId;
 		}//end try
 	}//end createStubBijlage()
 
 	/**
 	 * Attach the Docudesk-generated document as a bijlage to the zaak.
 	 *
-	 * @param string $zaakId The zaak UUID
+	 * @param string $caseId The zaak UUID
 	 * @param array<string,mixed> $generated The generated document data from Docudesk
 	 * @param string $outcome The decision outcome
 	 *
 	 * @return string The bijlage UUID
 	 */
-	private function attachBijlageToZaak(string $zaakId, array $generated, string $outcome): string {
+	private function attachBijlageToZaak(string $caseId, array $generated, string $outcome): string {
 		try {
 			$objectService = $this->container->get('OCA\OpenRegister\Service\ObjectService');
 			$register = $this->appConfig->getValueString(
@@ -238,7 +238,7 @@ class BeschikkingGenerationService {
 				register: $register,
 				schema: 'beschikking_bijlage',
 				object: [
-					'zaakId' => $zaakId,
+					'caseId' => $caseId,
 					'type' => 'beschikking',
 					'outcome' => $outcome,
 					'fileId' => $generated['fileId'] ?? '',

@@ -34,6 +34,7 @@ use DateTimeImmutable;
 use OCA\Procest\Service\DwangsomUitbetalingService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
@@ -78,6 +79,10 @@ class DwangsomPaymentCallbackController extends Controller {
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
+	// Payment provider callback. Same reasoning as the DSO receiver: the
+	// caller is a provider retrying on its own schedule, and dropping a
+	// payment notification is worse than absorbing a burst.
+	#[AnonRateLimit(limit: 300, period: 60)]
 	public function callback(): JSONResponse {
 		// The OCP IRequest::getContent() method is marked protected in
 		// OC\AppFramework\Http\Request, so we cannot call it across scopes —
@@ -102,22 +107,22 @@ class DwangsomPaymentCallbackController extends Controller {
 			);
 		}
 
-		$referentie = (string)($body['referentie'] ?? '');
+		$reference = (string)($body['reference'] ?? '');
 		$status = (string)($body['status'] ?? '');
-		if ($referentie === '' || $status === '') {
+		if ($reference === '' || $status === '') {
 			return new JSONResponse(
 				['message' => 'referentie and status are required'],
 				Http::STATUS_BAD_REQUEST
 			);
 		}
 
-		$betaaldatum = $this->parseDate(value: (string)($body['werkelijkeBetaaldatum'] ?? ''));
+		$paymentDate = $this->parseDate(value: (string)($body['actualPaymentDate'] ?? ''));
 		$bankRef = (string)($body['betalingsreferentie'] ?? '');
 
 		try {
-			$updated = $this->service->handleCallback($referentie, $status, $betaaldatum, $bankRef);
+			$updated = $this->service->handleCallback($reference, $status, $paymentDate, $bankRef);
 		} catch (RuntimeException $e) {
-			$this->logger->info('Dwangsom callback: unknown referentie', ['referentie' => $referentie]);
+			$this->logger->info('Dwangsom callback: unknown referentie', ['reference' => $reference]);
 			return new JSONResponse(
 				['message' => $e->getMessage()],
 				Http::STATUS_NOT_FOUND

@@ -5,7 +5,7 @@
 		v-if="open"
 		:name="t('procest', 'Beschikking opstellen')"
 		size="large"
-		:canClose="!submitting"
+		:can-close="!submitting"
 		@closing="onClose">
 		<div class="beschikking-composer">
 			<div v-if="!composed" class="beschikking-composer__form">
@@ -13,22 +13,22 @@
 					<NcSelect
 						v-model="templateId"
 						:options="templateOptions"
-						:inputLabel="t('procest', 'Sjabloon')"
+						:input-label="t('procest', 'Sjabloon')"
 						label="label"
 						:reduce="(opt) => opt.value"
 						:placeholder="t('procest', 'Select a template')" />
 				</div>
 				<div class="beschikking-composer__field">
 					<NcTextField
-						:modelValue="geadresseerdeNaam"
+						:model-value="geadresseerdeNaam"
 						:label="t('procest', 'Geadresseerde')"
-						@update:modelValue="(v) => (geadresseerdeNaam = v)" />
+						@update:model-value="(v) => (geadresseerdeNaam = v)" />
 				</div>
 				<div class="beschikking-composer__field">
 					<NcTextArea
-						:modelValue="motivering"
+						:model-value="rationale"
 						:label="t('procest', 'Motivering')"
-						@update:modelValue="(v) => (motivering = v)" />
+						@update:model-value="(v) => (motivering = v)" />
 				</div>
 				<NcNoteCard v-if="error" type="error">
 					{{ error }}
@@ -41,11 +41,11 @@
 				</NcNoteCard>
 				<dl class="beschikking-composer__meta">
 					<dt>{{ t('procest', 'Kenmerk') }}</dt>
-					<dd>{{ composed.kenmerk || '—' }}</dd>
+					<dd>{{ composed.reference || '—' }}</dd>
 					<dt>{{ t('procest', 'Sjabloon') }}</dt>
 					<dd>{{ composed.templateId }}</dd>
 					<dt>{{ t('procest', 'Status') }}</dt>
-					<dd>{{ composed.huidigeStatus }}</dd>
+					<dd>{{ composed.currentStatus }}</dd>
 				</dl>
 				<NcNoteCard v-if="composed.motivering_required" type="warning">
 					{{
@@ -105,36 +105,31 @@ export default {
 		NcTextArea,
 		NcTextField,
 	},
-
 	props: {
 		open: {
 			type: Boolean,
 			default: false,
 		},
-
-		zaakId: {
+		caseId: {
 			type: String,
 			required: true,
 		},
-
 		templateOptions: {
 			type: Array,
 			default: () => [],
 		},
 	},
-
 	emits: ['close', 'composed'],
 	data() {
 		return {
 			templateId: null,
 			geadresseerdeNaam: '',
-			motivering: '',
+			rationale: '',
 			composed: null,
 			submitting: false,
 			error: '',
 		}
 	},
-
 	methods: {
 		async onCompose() {
 			this.submitting = true
@@ -142,13 +137,13 @@ export default {
 			try {
 				const overrides = {}
 				if (this.geadresseerdeNaam) {
-					overrides.geadresseerde = { naam: this.geadresseerdeNaam }
+					overrides.geadresseerde = { name: this.geadresseerdeNaam }
 				}
-				if (this.motivering) {
-					overrides.motivering = this.motivering
+				if (this.rationale) {
+					overrides.rationale = this.rationale
 				}
 				this.composed = await compose(
-					this.zaakId,
+					this.caseId,
 					this.templateId,
 					overrides,
 				)
@@ -159,12 +154,10 @@ export default {
 				this.submitting = false
 			}
 		},
-
 		onDone() {
 			this.$emit('composed', this.composed)
 			this.onClose()
 		},
-
 		onClose() {
 			this.$emit('close')
 		},

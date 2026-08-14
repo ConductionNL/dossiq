@@ -156,8 +156,8 @@ export default {
 		 * @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md
 		 */
 		roleLabel(a) {
-			const opt = this.roleOptions.find((o) => o.id === (a.rolId || a.role))
-			return opt ? opt.label : a.rolLabel || a.rolId || a.role || '—'
+			const opt = this.roleOptions.find((o) => o.id === (a.roleId || a.role))
+			return opt ? opt.label : a.rolLabel || a.roleId || a.role || '—'
 		},
 
 		/**

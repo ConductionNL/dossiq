@@ -19,7 +19,7 @@
             "@type": "StufEndpoint",
             "required": [
                 "id",
-                "naam",
+                "name",
                 "gemeenteCode",
                 "ontvangerApplicatie",
                 "ontvangerOrganisatie",
@@ -38,7 +38,7 @@
                     "description": "Stable identifier of this endpoint (e.g. stuf-ep-amersfoort-key2zaken).",
                     "maxLength": 128
                 },
-                "naam": {
+                "name": {
                     "type": "string",
                     "description": "Human-readable endpoint name shown in the admin UI.",
                     "maxLength": 255
@@ -136,9 +136,9 @@
                     "description": "Registered free-message templates per endpoint.",
                     "items": {
                         "type": "object",
-                        "required": ["naam", "verplichteVelden"],
+                        "required": ["name", "verplichteVelden"],
                         "properties": {
-                            "naam": {
+                            "name": {
                                 "type": "string"
                             },
                             "verplichteVelden": {
@@ -173,10 +173,10 @@
             "required": [
                 "id",
                 "endpointId",
-                "richting",
+                "direction",
                 "berichtSoort",
                 "envelopeXml",
-                "verzondenOp"
+                "sentOn"
             ],
             "properties": {
                 "id": {
@@ -189,7 +189,7 @@
                     "description": "Reference to the StufEndpoint used.",
                     "maxLength": 128
                 },
-                "richting": {
+                "direction": {
                     "type": "string",
                     "description": "Message direction.",
                     "enum": ["uitgaand", "inkomend"]
@@ -204,7 +204,7 @@
                     "description": "Entity type (ZAK, NPS, NNP).",
                     "maxLength": 32
                 },
-                "functie": {
+                "role": {
                     "type": "string",
                     "description": "StUF functie (e.g. creeerZaak, actualiseerZaak, geefZaakDetails, zetStatus, genereerZaakIdentificatie).",
                     "maxLength": 128
@@ -255,13 +255,13 @@
                         "details": {
                             "type": "string"
                         },
-                        "soort": {
+                        "kind": {
                             "type": "string",
                             "enum": ["transient", "permanent"]
                         }
                     }
                 },
-                "verzondenOp": {
+                "sentOn": {
                     "type": "string",
                     "format": "date-time",
                     "description": "When the message was sent (or registered, for inbound messages)."
@@ -390,7 +390,7 @@
                             "veld": {
                                 "type": "string"
                             },
-                            "waarde": {
+                            "value": {
                                 "type": "string"
                             },
                             "geplandOp": {
@@ -411,7 +411,7 @@
                 "slug": "amersfoort-key2zaken"
             },
             "id": "stuf-ep-amersfoort-key2zaken",
-            "naam": "Gemeente Amersfoort - Centric Key2Zaken",
+            "name": "Gemeente Amersfoort - Centric Key2Zaken",
             "gemeenteCode": "0307",
             "ontvangerApplicatie": "Key2Zaken",
             "ontvangerOrganisatie": "Gemeente Amersfoort",
@@ -436,7 +436,7 @@
             },
             "vrijeBerichtenTemplates": [
                 {
-                    "naam": "zetStatus",
+                    "name": "zetStatus",
                     "verplichteVelden": ["zaakIdentificatie", "statusType", "datumStatusGezet"]
                 }
             ],

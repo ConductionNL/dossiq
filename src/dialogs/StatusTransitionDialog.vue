@@ -18,7 +18,7 @@
 				:label="t('procest', 'Besluitdatum (optional)')"
 				type="date" />
 			<NcTextArea
-				v-model="toelichting"
+				v-model="notes"
 				:label="t('procest', 'Toelichting (optional)')" />
 			<p v-if="error" class="form-error">
 				{{ error }}
@@ -70,7 +70,7 @@ export default {
 		return {
 			selectedStatus: null,
 			besluitdatum: '',
-			toelichting: '',
+			notes: '',
 			submitting: false,
 			error: null,
 			statusOptions: [
@@ -78,7 +78,7 @@ export default {
 				{ label: t('procest', 'In behandeling'), value: 'in_behandeling' },
 				{ label: t('procest', 'Granted'), value: 'verleend' },
 				{ label: t('procest', 'Refused'), value: 'geweigerd' },
-				{ label: t('procest', 'Withdrawn'), value: 'ingetrokken' },
+				{ label: t('procest', 'Withdrawn'), value: 'withdrawn' },
 			],
 		}
 	},
@@ -98,7 +98,7 @@ export default {
 				const res = await axios.post(url, {
 					newStatus: this.selectedStatus.value,
 					besluitdatum: this.besluitdatum || null,
-					toelichting: this.toelichting || null,
+					notes: this.notes || null,
 				})
 				this.$emit('submitted', res.data)
 			} catch (err) {

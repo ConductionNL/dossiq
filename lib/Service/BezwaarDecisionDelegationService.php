@@ -60,7 +60,7 @@ class BezwaarDecisionDelegationService {
 	 * replacement guard) BEFORE invoking this — the domain rules stay in
 	 * procest. FAILS CLOSED when decidesk is unavailable.
 	 *
-	 * @param string $bezwaarId The bezwaar/case reference (UUID) persisted on the decidesk Decision.
+	 * @param string $objectionId The bezwaar/case reference (UUID) persisted on the decidesk Decision.
 	 * @param array<string,mixed> $payload Decision payload: disposition, reasoning, legalBasis,
 	 *                                     replacementDecision, subjectLabel, subjectRegister,
 	 *                                     subjectSchema, subjectId.
@@ -72,14 +72,14 @@ class BezwaarDecisionDelegationService {
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
-	public function raiseBezwaarDecision(string $bezwaarId, array $payload): string {
+	public function raiseBezwaarDecision(string $objectionId, array $payload): string {
 		return $this->core->raiseDecision(
 			decisionType: ContractDecisionDelegationService::DECISION_TYPE_BEZWAAR_DECISION,
-			externalReference: $bezwaarId,
+			externalReference: $objectionId,
 			subject: [
 				'subjectRegister' => (string)($payload['subjectRegister'] ?? ''),
 				'subjectSchema' => (string)($payload['subjectSchema'] ?? 'bezwaarDecision'),
-				'subjectId' => (string)($payload['subjectId'] ?? $bezwaarId),
+				'subjectId' => (string)($payload['subjectId'] ?? $objectionId),
 				'subjectLabel' => (string)($payload['subjectLabel'] ?? ''),
 			],
 			context: [

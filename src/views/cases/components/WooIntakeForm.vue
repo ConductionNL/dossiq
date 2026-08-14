@@ -11,10 +11,10 @@
 				>
 				<NcTextField
 					id="woo-intake-requester-name"
-					:modelValue="form.verzoekerNaam"
+					:model-value="form.verzoekerNaam"
 					:disabled="isReadOnly"
 					:error="!!errors.verzoekerNaam"
-					@update:modelValue="(v) => update('verzoekerNaam', v)" />
+					@update:model-value="(v) => update('verzoekerNaam', v)" />
 				<p v-if="errors.verzoekerNaam" class="form-error">
 					{{ errors.verzoekerNaam }}
 				</p>
@@ -25,11 +25,11 @@
 				>
 				<NcTextField
 					id="woo-intake-requester-email"
-					:modelValue="form.verzoekerEmail"
+					:model-value="form.verzoekerEmail"
 					:disabled="isReadOnly"
 					:error="!!errors.verzoekerEmail"
 					type="email"
-					@update:modelValue="(v) => update('verzoekerEmail', v)" />
+					@update:model-value="(v) => update('verzoekerEmail', v)" />
 				<p v-if="errors.verzoekerEmail" class="form-error">
 					{{ errors.verzoekerEmail }}
 				</p>
@@ -40,20 +40,20 @@
 			<div class="form-group">
 				<label>{{ t('procest', 'Requester type') }}</label>
 				<NcSelect
-					:modelValue="form.verzoekerType"
+					:model-value="form.verzoekerType"
 					:options="requesterTypes"
 					:aria-label-combobox="t('procest', 'Requester type')"
 					:disabled="isReadOnly"
-					@update:modelValue="(v) => update('verzoekerType', v)" />
+					@update:model-value="(v) => update('verzoekerType', v)" />
 			</div>
 			<div class="form-group">
 				<label>{{ t('procest', 'Desired format') }}</label>
 				<NcSelect
-					:modelValue="form.gewensteVorm"
+					:model-value="form.gewensteVorm"
 					:options="formatOptions"
 					:aria-label-combobox="t('procest', 'Desired format')"
 					:disabled="isReadOnly"
-					@update:modelValue="(v) => update('gewensteVorm', v)" />
+					@update:model-value="(v) => update('gewensteVorm', v)" />
 			</div>
 		</div>
 
@@ -61,11 +61,11 @@
 			<label for="woo-intake-subject">{{ t('procest', 'Subject') }} *</label>
 			<NcTextField
 				id="woo-intake-subject"
-				:modelValue="form.onderwerp"
+				:model-value="form.onderwerp"
 				:disabled="isReadOnly"
 				:error="!!errors.onderwerp"
 				:placeholder="t('procest', 'Topic of the information request')"
-				@update:modelValue="(v) => update('onderwerp', v)" />
+				@update:model-value="(v) => update('onderwerp', v)" />
 			<p v-if="errors.onderwerp" class="form-error">
 				{{ errors.onderwerp }}
 			</p>
@@ -77,10 +77,10 @@
 			}}</label>
 			<NcTextField
 				id="woo-intake-administrative-matter"
-				:modelValue="form.bestuurlijkeAangelegenheid"
+				:model-value="form.bestuurlijkeAangelegenheid"
 				:disabled="isReadOnly"
 				:placeholder="t('procest', 'Related administrative matter')"
-				@update:modelValue="
+				@update:model-value="
 					(v) => update('bestuurlijkeAangelegenheid', v)
 				" />
 		</div>
@@ -92,10 +92,10 @@
 				}}</label>
 				<NcTextField
 					id="woo-intake-period-from"
-					:modelValue="form.periodeVan"
+					:model-value="form.periodeVan"
 					:disabled="isReadOnly"
 					type="date"
-					@update:modelValue="(v) => update('periodeVan', v)" />
+					@update:model-value="(v) => update('periodeVan', v)" />
 			</div>
 			<div class="form-group">
 				<label for="woo-intake-period-to">{{
@@ -103,10 +103,10 @@
 				}}</label>
 				<NcTextField
 					id="woo-intake-period-to"
-					:modelValue="form.periodeTot"
+					:model-value="form.periodeTot"
 					:disabled="isReadOnly"
 					type="date"
-					@update:modelValue="(v) => update('periodeTot', v)" />
+					@update:model-value="(v) => update('periodeTot', v)" />
 			</div>
 		</div>
 
@@ -116,18 +116,18 @@
 			>
 			<NcTextField
 				id="woo-intake-receipt-date"
-				:modelValue="form.ontvangstdatum"
+				:model-value="form.receipt_date"
 				:disabled="isReadOnly"
-				:error="!!errors.ontvangstdatum"
+				:error="!!errors.receipt_date"
 				type="date"
-				@update:modelValue="(v) => update('ontvangstdatum', v)" />
-			<p v-if="errors.ontvangstdatum" class="form-error">
-				{{ errors.ontvangstdatum }}
+				@update:model-value="(v) => update('receipt_date', v)" />
+			<p v-if="errors.receipt_date" class="form-error">
+				{{ errors.receipt_date }}
 			</p>
 		</div>
 
 		<!-- Deadline info -->
-		<div v-if="form.ontvangstdatum" class="woo-intake-form__deadline-info">
+		<div v-if="form.receipt_date" class="woo-intake-form__deadline-info">
 			<span class="woo-intake-form__deadline-label">{{
 				t('procest', 'Calculated deadline:')
 			}}</span>
@@ -142,7 +142,7 @@
 </template>
 
 <script>
-import { NcSelect, NcTextField } from '@nextcloud/vue'
+import { NcTextField, NcSelect } from '@nextcloud/vue'
 
 export default {
 	name: 'WooIntakeForm',
@@ -150,7 +150,6 @@ export default {
 		NcTextField,
 		NcSelect,
 	},
-
 	props: {
 		form: {
 			type: Object,
@@ -162,36 +161,32 @@ export default {
 				periodeVan: '',
 				periodeTot: '',
 				bestuurlijkeAangelegenheid: '',
-				ontvangstdatum: '',
+				receipt_date: '',
 				gewensteVorm: 'digitaal',
 			}),
 		},
-
 		errors: {
 			type: Object,
 			default: () => ({}),
 		},
-
 		isReadOnly: {
 			type: Boolean,
 			default: false,
 		},
 	},
-
 	data() {
 		return {
-			requesterTypes: ['burger', 'journalist', 'organisatie'],
+			requesterTypes: ['burger', 'journalist', 'organisation'],
 			formatOptions: ['digitaal', 'papier', 'inzage'],
 		}
 	},
-
 	computed: {
 		/** @spec openspec/specs/woo-case-type/spec.md */
 		calculatedDeadline() {
-			if (!this.form.ontvangstdatum) {
+			if (!this.form.receipt_date) {
 				return '---'
 			}
-			const receipt = new Date(this.form.ontvangstdatum)
+			const receipt = new Date(this.form.receipt_date)
 			if (isNaN(receipt.getTime())) {
 				return '---'
 			}
@@ -204,7 +199,6 @@ export default {
 			})
 		},
 	},
-
 	methods: {
 		/**
 		 * @param field

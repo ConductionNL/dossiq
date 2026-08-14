@@ -54,12 +54,12 @@ class DeadlineReportingServiceTest extends TestCase {
 		for ($i = 1; $i <= 5; $i++) {
 			$this->objects->saveObject('procest', 'termijnInstance', [
 				'id' => 'ti-q2-' . $i,
-				'zaaktype' => 'omgevingsvergunning-regulier',
+				'caseType' => 'omgevingsvergunning-regulier',
 				'zaak' => 'Z/2026/' . (400 + $i),
-				'startDatum' => '2026-05-0' . $i . 'T10:00:00+00:00',
-				'einddatumActueel' => '2026-07-0' . $i,
+				'startDate' => '2026-05-0' . $i . 'T10:00:00+00:00',
+				'endDateCurrent' => '2026-07-0' . $i,
 				'status' => ($i <= 3 ? 'voltooid' : ($i === 4 ? 'overschreden' : 'lopend')),
-				'aantalVerlengingen' => ($i === 5 ? 1 : 0),
+				'countExtensions' => ($i === 5 ? 1 : 0),
 			]);
 		}
 	}
@@ -86,7 +86,7 @@ class DeadlineReportingServiceTest extends TestCase {
 		$report = $this->service->generateQuarterlyReport('2026-Q2');
 		$csv = $this->service->quarterlyReportAsCsv($report);
 		$lines = explode("\n", $csv);
-		self::assertStringStartsWith('zaaktype,totaal,binnenTermijnPct', $lines[0]);
+		self::assertStringStartsWith('caseType,totaal,binnenTermijnPct', $lines[0]);
 		self::assertStringStartsWith('omgevingsvergunning-regulier,5,60', $lines[1]);
 	}
 
@@ -115,9 +115,9 @@ class DeadlineReportingServiceTest extends TestCase {
 		// Seed two uitbetalingen, one in 2026 one in 2025.
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
 			'id' => 'u-1',
-			'referentie' => 'REF-1',
-			'bedrag' => 35700,
-			'werkelijkeBetaaldatum' => '2026-04-20',
+			'reference' => 'REF-1',
+			'amount' => 35700,
+			'actualPaymentDate' => '2026-04-20',
 			'betalingsreferentie' => 'ERP-1',
 			'status' => 'betaald',
 			'wettelijkeGrondslag' => 'AWB 4:17',
@@ -125,9 +125,9 @@ class DeadlineReportingServiceTest extends TestCase {
 		]);
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
 			'id' => 'u-2',
-			'referentie' => 'REF-2',
-			'bedrag' => 50000,
-			'werkelijkeBetaaldatum' => '2025-12-31',
+			'reference' => 'REF-2',
+			'amount' => 50000,
+			'actualPaymentDate' => '2025-12-31',
 			'betalingsreferentie' => 'ERP-2',
 			'status' => 'betaald',
 		]);

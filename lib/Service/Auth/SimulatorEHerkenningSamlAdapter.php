@@ -6,7 +6,7 @@
  * The eHerkenning counterpart of {@see SimulatorDigidSamlAdapter}: models
  * the maykinmedia mock-login pattern with NO real SAML. Accepts a
  * locally-entered KvK number (carried in the `samlResponse` slot as a
- * JSON `{ "kvkNummer": "..." }` blob from the procest simulator form) and
+ * JSON `{ "kvkNumber": "..." }` blob from the procest simulator form) and
  * returns an eHerkenning `BrokerAssertionResult` explicitly marked
  * `simulator: true`. Selected by `integration.digid.mode=simulator`
  * (the DigiD/eHerkenning pair share the tier key).
@@ -45,7 +45,7 @@ final class SimulatorEHerkenningSamlAdapter implements EHerkenningSamlAdapterInt
 	/**
 	 * Decode the simulator "assertion" (a local KvK entry, not SAML).
 	 *
-	 * @param string $samlResponse JSON `{ "kvkNummer": "..." }` from the simulator form.
+	 * @param string $samlResponse JSON `{ "kvkNumber": "..." }` from the simulator form.
 	 * @param string $relayState Original RelayState (correlation only).
 	 *
 	 * @return BrokerAssertionResult An eHerkenning result flagged simulator:true.
@@ -58,17 +58,17 @@ final class SimulatorEHerkenningSamlAdapter implements EHerkenningSamlAdapterInt
 	 */
 	public function decodeAssertion(string $samlResponse, string $relayState): BrokerAssertionResult {
 		$decoded = json_decode($samlResponse, true);
-		$kvkNummer = '';
+		$kvkNumber = '';
 		if (is_array($decoded) === true) {
-			$kvkNummer = (string)($decoded['kvkNummer'] ?? '');
+			$kvkNumber = (string)($decoded['kvkNumber'] ?? '');
 		}
 
-		if (preg_match('/^[0-9]{8}$/', $kvkNummer) !== 1) {
+		if (preg_match('/^[0-9]{8}$/', $kvkNumber) !== 1) {
 			throw new RuntimeException('eHerkenning simulator requires an 8-digit KvK number from the simulator login form.');
 		}
 
 		return BrokerAssertionResult::forEHerkenning(
-			kvkNummer: $kvkNummer,
+			kvkNumber: $kvkNumber,
 			assertionId: 'simulator-' . $relayState,
 			level: 3,
 			issuer: 'procest-eherkenning-simulator',

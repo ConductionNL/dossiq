@@ -64,7 +64,7 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 	 *
 	 * @var MandaatEscalatieService|\PHPUnit\Framework\MockObject\MockObject
 	 */
-	private MandaatEscalatieService $escalatie;
+	private MandaatEscalatieService $escalation;
 
 	/**
 	 * Current user session.
@@ -87,7 +87,7 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->request = $this->createMock(IRequest::class);
-		$this->escalatie = $this->createMock(MandaatEscalatieService::class);
+		$this->escalation = $this->createMock(MandaatEscalatieService::class);
 		$this->userSession = $this->createMock(IUserSession::class);
 
 		$this->controller = new MandaatMatrixController(
@@ -95,7 +95,7 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 			request: $this->request,
 			userSession: $this->userSession,
 			check: $this->createMock(MandaatCheckService::class),
-			escalatie: $this->escalatie,
+			escalation: $this->escalation,
 			gebruik: $this->createMock(MandaatGebruikService::class),
 			import: $this->createMock(MandaatImportService::class),
 			settings: $this->createMock(SettingsService::class),
@@ -136,7 +136,7 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 	 */
 	public function testAnonymousCallerIsRejectedAndServiceNeverRuns(): void {
 		$this->userSession->method('getUser')->willReturn(null);
-		$this->escalatie->expects($this->never())->method('createEscalatie');
+		$this->escalation->expects($this->never())->method('createEscalatie');
 
 		$response = $this->controller->escalateCreate();
 
@@ -153,19 +153,19 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 		$this->authenticate();
 		$this->withBody(
 			[
-				'zaakId' => 'Z/2026/1',
+				'caseId' => 'Z/2026/1',
 				'decisionType' => 'wmo-toekenning',
-				'escalatieReden' => 'plafond_overschreden',
+				'escalationReason' => 'plafond_overschreden',
 			]
 		);
 
 		$created = [
-			'zaakId' => 'Z/2026/1',
+			'caseId' => 'Z/2026/1',
 			'status' => 'open',
 			'targetUserId' => 'bob',
 		];
 
-		$this->escalatie->expects($this->once())
+		$this->escalation->expects($this->once())
 			->method('createEscalatie')
 			->with('Z/2026/1', 'wmo-toekenning', 'alice', 'plafond_overschreden')
 			->willReturn($created);
@@ -188,14 +188,14 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 		$this->authenticate();
 		$this->withBody(
 			[
-				'zaakId' => 'Z/2026/2',
+				'caseId' => 'Z/2026/2',
 				'decisionType' => 'wmo-toekenning',
-				'escalatieReden' => 'niet_bevoegd',
+				'escalationReason' => 'niet_bevoegd',
 				'initiatorId' => 'mallory',
 			]
 		);
 
-		$this->escalatie->expects($this->once())
+		$this->escalation->expects($this->once())
 			->method('createEscalatie')
 			->with('Z/2026/2', 'wmo-toekenning', 'alice', 'niet_bevoegd')
 			->willReturn(['status' => 'open']);
@@ -212,8 +212,8 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 	 */
 	public function testMissingRequiredFieldIsBadRequest(): void {
 		$this->authenticate();
-		$this->withBody(['zaakId' => 'Z/2026/3']);
-		$this->escalatie->expects($this->never())->method('createEscalatie');
+		$this->withBody(['caseId' => 'Z/2026/3']);
+		$this->escalation->expects($this->never())->method('createEscalatie');
 
 		$response = $this->controller->escalateCreate();
 
@@ -233,13 +233,13 @@ final class MandaatMatrixControllerEscalateCreateTest extends TestCase {
 		$this->authenticate();
 		$this->withBody(
 			[
-				'zaakId' => 'Z/2026/4',
+				'caseId' => 'Z/2026/4',
 				'decisionType' => 'wmo-toekenning',
-				'escalatieReden' => 'niet_bevoegd',
+				'escalationReason' => 'niet_bevoegd',
 			]
 		);
 
-		$this->escalatie->method('createEscalatie')
+		$this->escalation->method('createEscalatie')
 			->willThrowException(new RuntimeException('register not configured'));
 
 		$response = $this->controller->escalateCreate();

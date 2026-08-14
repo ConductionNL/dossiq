@@ -81,9 +81,9 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 		$path = __DIR__ . '/../../../lib/Settings/procest_register.json';
 		$json = json_decode((string)file_get_contents($path), true);
 		$this->assertIsArray($json, 'register JSON must parse');
-		$bezwaar = $json['components']['schemas']['bezwaar'] ?? null;
-		$this->assertIsArray($bezwaar, 'bezwaar schema must exist');
-		$this->calcs = $bezwaar['x-openregister-calculations'] ?? [];
+		$objection = $json['components']['schemas']['bezwaar'] ?? null;
+		$this->assertIsArray($objection, 'bezwaar schema must exist');
+		$this->calcs = $objection['x-openregister-calculations'] ?? [];
 	}//end setUp()
 
 	/**
@@ -98,7 +98,7 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 			array_is_list($this->calcs),
 			'x-openregister-calculations must be a field-keyed map, not an array (the inert legacy shape)'
 		);
-		foreach (['decisionDeadline', 'dwangsom'] as $field) {
+		foreach (['decisionDeadline', 'penaltyPayment'] as $field) {
 			$this->assertArrayHasKey($field, $this->calcs, "calculation '$field' must be keyed by output field");
 			$spec = $this->calcs[$field];
 			$this->assertIsArray($spec['expression'] ?? null, "'$field' expression must be an AST object, not a string DSL");
@@ -109,7 +109,7 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 		// decisionDeadline is not time-dependent -> materialised & filterable.
 		$this->assertTrue($this->calcs['decisionDeadline']['materialise'], 'decisionDeadline must be materialised');
 		// dwangsom references now() -> virtual (read-time) so it never goes stale.
-		$this->assertFalse($this->calcs['dwangsom']['materialise'], 'dwangsom must be virtual (time-dependent)');
+		$this->assertFalse($this->calcs['penaltyPayment']['materialise'], 'dwangsom must be virtual (time-dependent)');
 	}//end testCalculationsAreAFieldKeyedMap()
 
 	/**
@@ -139,7 +139,7 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 		$expr = $this->calcs['decisionDeadline']['expression'];
 
 		// No verdaging / opschorting: 2026-01-01 + 6 weeks (42 days) = 2026-02-12.
-		$base = $this->eval($expr, ['ontvangstdatum' => '2026-01-01', 'verdagingsperiode' => 0, 'opschorting' => 0]);
+		$base = $this->eval($expr, ['receiptDate' => '2026-01-01', 'verdagingsperiode' => 0, 'suspension' => 0]);
 		$this->assertSame('2026-02-12', $base);
 		$this->assertSame(
 			(new DateTimeImmutable('2026-01-01'))->modify('+42 days')->format('Y-m-d'),
@@ -148,7 +148,7 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 
 		// Standard 6-week verdaging (42 days) + 7 days opschorting:
 		// 2026-01-01 + 42 + 42 + 7 = 2026-01-01 + 91 days.
-		$extended = $this->eval($expr, ['ontvangstdatum' => '2026-01-01', 'verdagingsperiode' => 42, 'opschorting' => 7]);
+		$extended = $this->eval($expr, ['receiptDate' => '2026-01-01', 'verdagingsperiode' => 42, 'suspension' => 7]);
 		$this->assertSame(
 			(new DateTimeImmutable('2026-01-01'))->modify('+91 days')->format('Y-m-d'),
 			$extended
@@ -173,7 +173,7 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 		$expr = $this->calcs['decisionDeadline']['expression'];
 
 		// Only the required field is present — no verdagingsperiode/opschorting keys at all.
-		$deadline = $this->eval($expr, ['ontvangstdatum' => '2026-01-01']);
+		$deadline = $this->eval($expr, ['receiptDate' => '2026-01-01']);
 
 		$this->assertNotNull(
 			$deadline,
@@ -188,7 +188,7 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 	 * @return void
 	 */
 	public function testDwangsomMatchesWorkedAwbExample(): void {
-		$expr = $this->calcs['dwangsom']['expression'];
+		$expr = $this->calcs['penaltyPayment']['expression'];
 		$now = new DateTimeImmutable('2026-03-01T00:00:00+00:00');
 
 		// No ingebrekestelling -> no penalty clock -> EUR0 (not the plafond).

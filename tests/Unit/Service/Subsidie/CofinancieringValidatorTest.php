@@ -49,8 +49,8 @@ class CofinancieringValidatorTest extends TestCase {
 	 */
 	public function testReconciliation(): void {
 		$cofin = [
-			['partij' => 'Provincie', 'bedrag' => 50000],
-			['partij' => 'Eigen bijdrage', 'bedrag' => 25000],
+			['partij' => 'Provincie', 'amount' => 50000],
+			['partij' => 'Eigen bijdrage', 'amount' => 25000],
 		];
 		// subsidy 75000 + cofin 75000 = project 150000.
 		$this->assertTrue($this->validator->reconciles(75000.0, $cofin, 150000.0));
@@ -61,9 +61,9 @@ class CofinancieringValidatorTest extends TestCase {
 	 * @return void
 	 */
 	public function testEuDetection(): void {
-		$this->assertTrue($this->validator->hasEuCofinanciering([['partij' => 'EFRO West', 'bedrag' => 1]]));
-		$this->assertTrue($this->validator->hasEuCofinanciering([['partij' => 'Interreg', 'bedrag' => 1]]));
-		$this->assertFalse($this->validator->hasEuCofinanciering([['partij' => 'Provincie Utrecht', 'bedrag' => 1]]));
+		$this->assertTrue($this->validator->hasEuCofinanciering([['partij' => 'EFRO West', 'amount' => 1]]));
+		$this->assertTrue($this->validator->hasEuCofinanciering([['partij' => 'Interreg', 'amount' => 1]]));
+		$this->assertFalse($this->validator->hasEuCofinanciering([['partij' => 'Provincie Utrecht', 'amount' => 1]]));
 	}//end testEuDetection()
 
 	/**
@@ -73,7 +73,7 @@ class CofinancieringValidatorTest extends TestCase {
 	 * @return void
 	 */
 	public function testValidateResult(): void {
-		$cofin = [['partij' => 'ESF', 'bedrag' => 25000]];
+		$cofin = [['partij' => 'ESF', 'amount' => 25000]];
 
 		$ok = $this->validator->validate(75000.0, $cofin, 100000.0);
 		$this->assertTrue($ok['valid']);

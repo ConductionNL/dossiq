@@ -73,13 +73,13 @@ class DecisionConcludedListener implements IEventListener {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register/ObjectService bridge.
-	 * @param BesluitMaterialisationService $besluitMaterialiser ZGW Besluit projection from the outcome.
+	 * @param BesluitMaterialisationService $decisionMaterialiser ZGW Besluit projection from the outcome.
 	 * @param AdvisoryCommitteeService $bacService BAC advice-request audit writer (Awb art. 7:13 lid 7).
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly BesluitMaterialisationService $besluitMaterialiser,
+		private readonly BesluitMaterialisationService $decisionMaterialiser,
 		private readonly AdvisoryCommitteeService $bacService,
 		private readonly LoggerInterface $logger,
 	) {
@@ -127,7 +127,7 @@ class DecisionConcludedListener implements IEventListener {
 			// Locate the procest domain record carrying this decisionRef so we
 			// can resolve the owning case and any existing besluitRef. Fall back
 			// to the externalReference / subjectId as the case identifier.
-			[$caseId, $besluitId, $decisionRecord] = $this->resolveCaseAndBesluit(
+			[$caseId, $besluitId, $decisionRecord] = $this->resolveCaseAndDecision(
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
@@ -144,9 +144,9 @@ class DecisionConcludedListener implements IEventListener {
 				return;
 			}
 
-			$this->besluitMaterialiser->materialiseFromConcludedEvent(
+			$this->decisionMaterialiser->materialiseFromConcludedEvent(
 				caseId: $caseId,
-				besluitId: $besluitId,
+				decisionId: $besluitId,
 				event: $this->projectOutcome(event: $event)
 			);
 
@@ -162,7 +162,7 @@ class DecisionConcludedListener implements IEventListener {
 			// audit trail.
 			$this->recordCouncilDeviation(
 				decision: $decisionRecord,
-				besluitId: $besluitId,
+				decisionId: $besluitId,
 				subjectId: $subjectId
 			);
 		} catch (Throwable $e) {
@@ -187,7 +187,7 @@ class DecisionConcludedListener implements IEventListener {
 	 *
 	 * @return array{0:string,1:string,2:array<string,mixed>|null} [caseId, besluitId, decisionRecord].
 	 */
-	private function resolveCaseAndBesluit(
+	private function resolveCaseAndDecision(
 		object $objectService,
 		string $register,
 		string $schema,
@@ -246,7 +246,7 @@ class DecisionConcludedListener implements IEventListener {
 	 * failure here never blocks besluit materialisation.
 	 *
 	 * @param array<string,mixed>|null $decision The bezwaarDecision record, when one matched.
-	 * @param string $besluitId The materialised ZGW Besluit ref, when known.
+	 * @param string $decisionId The materialised ZGW Besluit ref, when known.
 	 * @param string $subjectId The bezwaarDecision UUID from the event.
 	 *
 	 * @return void
@@ -255,7 +255,7 @@ class DecisionConcludedListener implements IEventListener {
 	 */
 	private function recordCouncilDeviation(
 		?array $decision,
-		string $besluitId,
+		string $decisionId,
 		string $subjectId,
 	): void {
 		if ($decision === null) {
@@ -276,15 +276,15 @@ class DecisionConcludedListener implements IEventListener {
 
 		// Prefer the materialised ZGW Besluit; fall back to the bezwaarDecision
 		// itself, which IS the besluit op bezwaar when no ZGW ref is known yet.
-		$reference = $besluitId;
+		$reference = $decisionId;
 		if ($reference === '') {
 			$reference = (string)($decision['@self']['id'] ?? ($decision['id'] ?? $subjectId));
 		}
 
 		$this->bacService->recordCouncilDeviation(
 			requestId: $requestId,
-			besluitId: $reference,
-			motivatieRef: $rationale
+			decisionId: $reference,
+			rationaleRef: $rationale
 		);
 	}//end recordCouncilDeviation()
 

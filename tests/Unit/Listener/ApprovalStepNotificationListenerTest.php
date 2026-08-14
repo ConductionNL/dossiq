@@ -133,17 +133,17 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 	/**
 	 * Stub the settings bridge to return a voorstel for any UUID lookup.
 	 *
-	 * @param array<string, mixed> $voorstel The voorstel to return.
+	 * @param array<string, mixed> $proposal The voorstel to return.
 	 *
 	 * @return void
 	 */
-	private function stubVoorstel(array $voorstel): void {
-		$objectService = new class($voorstel) {
+	private function stubProposal(array $proposal): void {
+		$objectService = new class($proposal) {
 			/**
-			 * @param array<string, mixed> $voorstel Voorstel data.
+			 * @param array<string, mixed> $proposal Voorstel data.
 			 */
 			public function __construct(
-				private array $voorstel,
+				private array $proposal,
 			) {
 			}
 
@@ -154,7 +154,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 			 * @return array<string, mixed> The voorstel.
 			 */
 			public function find(string $id, ...$kw): array {
-				return $this->voorstel;
+				return $this->proposal;
 			}
 		};
 
@@ -181,7 +181,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 			$this->markTestSkipped('OpenRegister approval classes not available in this environment.');
 		}
 
-		$this->stubVoorstel(['onderwerp' => 'Omgevingsvergunning', 'steller' => 'steller1']);
+		$this->stubProposal(['onderwerp' => 'Omgevingsvergunning', 'steller' => 'steller1']);
 
 		$member = $this->createMock(IUser::class);
 		$member->method('getUID')->willReturn('hoofd1');
@@ -251,7 +251,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 			$this->markTestSkipped('OpenRegister approval classes not available in this environment.');
 		}
 
-		$this->stubVoorstel(['onderwerp' => 'Subsidiebesluit', 'steller' => 'steller2']);
+		$this->stubProposal(['onderwerp' => 'Subsidiebesluit', 'steller' => 'steller2']);
 
 		$this->notifications->expects($this->once())
 			->method('notifyVoorstelReturned')

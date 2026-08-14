@@ -54,10 +54,10 @@
 			</thead>
 			<tbody>
 				<tr v-for="row in messages" :key="row.id || row.referentienummer">
-					<td>{{ row.verzondenOp }}</td>
-					<td>{{ row.richting }}</td>
+					<td>{{ row.sentOn }}</td>
+					<td>{{ row.direction }}</td>
 					<td>{{ row.berichtSoort }}</td>
-					<td>{{ row.functie }}</td>
+					<td>{{ row.role }}</td>
 					<td>
 						<span
 							class="stuf-audit-log__status"
@@ -216,10 +216,10 @@ export default {
 		 */
 		exportCsv() {
 			const headers = [
-				'verzondenOp',
-				'richting',
+				'sentOn',
+				'direction',
 				'berichtSoort',
-				'functie',
+				'role',
 				'status',
 				'httpStatus',
 				'duurMs',

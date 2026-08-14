@@ -65,46 +65,46 @@ class VaststellingService {
 	/**
 	 * Whether an accountantsverklaring is mandatory for a granted amount.
 	 *
-	 * @param float $verleendBedrag The granted amount.
-	 * @param float $drempel The regeling threshold.
+	 * @param float $grantedAmount The granted amount.
+	 * @param float $threshold The regeling threshold.
 	 *
 	 * @return bool True when an accountant declaration is required.
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
-	public function accountantsverklaringVereist(float $verleendBedrag, float $drempel): bool {
-		return $verleendBedrag > $drempel;
+	public function accountantsverklaringVereist(float $grantedAmount, float $threshold): bool {
+		return $grantedAmount > $threshold;
 	}//end accountantsverklaringVereist()
 
 	/**
 	 * Compute the final vaststelling amount: capped at the granted amount,
 	 * never above the actual costs, never negative.
 	 *
-	 * @param float $verleendBedrag The granted amount.
-	 * @param float $werkelijkeKosten The total actual costs.
+	 * @param float $grantedAmount The granted amount.
+	 * @param float $actualCost The total actual costs.
 	 *
 	 * @return float The final settled amount.
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
-	public function computeVastgesteldBedrag(float $verleendBedrag, float $werkelijkeKosten): float {
-		$bedrag = min($verleendBedrag, $werkelijkeKosten);
-		return round(max(0.0, $bedrag), 2);
+	public function computeVastgesteldBedrag(float $grantedAmount, float $actualCost): float {
+		$amount = min($grantedAmount, $actualCost);
+		return round(max(0.0, $amount), 2);
 	}//end computeVastgesteldBedrag()
 
 	/**
 	 * Compute the overpayment to be reclaimed: positive when the disbursed
 	 * advances exceed the final settled amount (REQ-SUB-005).
 	 *
-	 * @param float $totaalVoorschotten The cumulative disbursed advances.
-	 * @param float $vastgesteldBedrag The final settled amount.
+	 * @param float $totalAdvances The cumulative disbursed advances.
+	 * @param float $determinedAmount The final settled amount.
 	 *
 	 * @return float The overpayment (0.0 when none).
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
-	public function computeOverpayment(float $totaalVoorschotten, float $vastgesteldBedrag): float {
-		$diff = ($totaalVoorschotten - $vastgesteldBedrag);
+	public function computeOverpayment(float $totalAdvances, float $determinedAmount): float {
+		$diff = ($totalAdvances - $determinedAmount);
 		if ($diff < 0.01) {
 			return 0.0;
 		}
@@ -115,15 +115,15 @@ class VaststellingService {
 	/**
 	 * Whether a terugvordering must be triggered for these figures.
 	 *
-	 * @param float $totaalVoorschotten The cumulative disbursed advances.
-	 * @param float $vastgesteldBedrag The final settled amount.
+	 * @param float $totalAdvances The cumulative disbursed advances.
+	 * @param float $determinedAmount The final settled amount.
 	 *
 	 * @return bool True when a clawback is required.
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
-	public function triggerTerugvordering(float $totaalVoorschotten, float $vastgesteldBedrag): bool {
-		return $this->computeOverpayment(totaalVoorschotten: $totaalVoorschotten, vastgesteldBedrag: $vastgesteldBedrag) > 0.0;
+	public function triggerTerugvordering(float $totalAdvances, float $determinedAmount): bool {
+		return $this->computeOverpayment(totalAdvances: $totalAdvances, determinedAmount: $determinedAmount) > 0.0;
 	}//end triggerTerugvordering()
 
 	/**
@@ -132,10 +132,10 @@ class VaststellingService {
 	 * clawback case itself is created in "concept" awaiting manager
 	 * approval — this method never publishes it.
 	 *
-	 * @param string $vaststellingId The settlement id.
-	 * @param float $verleendBedrag The granted amount.
-	 * @param float $werkelijkeKosten The total actual costs.
-	 * @param float $totaalVoorschotten The cumulative disbursed advances.
+	 * @param string $determinationId The settlement id.
+	 * @param float $grantedAmount The granted amount.
+	 * @param float $actualCost The total actual costs.
+	 * @param float $totalAdvances The cumulative disbursed advances.
 	 *
 	 * @return array<string, mixed> The finalisation result with optional clawback.
 	 *
@@ -144,31 +144,31 @@ class VaststellingService {
 	 * @spec openspec/specs/subsidie-settlement-case-costs/spec.md
 	 */
 	public function finalize(
-		string $vaststellingId,
-		float $verleendBedrag,
-		float $werkelijkeKosten,
-		float $totaalVoorschotten,
+		string $determinationId,
+		float $grantedAmount,
+		float $actualCost,
+		float $totalAdvances,
 	): array {
 		[$objectService, $register, $schema] = $this->resolve();
 
-		$vastgesteld = $this->computeVastgesteldBedrag(verleendBedrag: $verleendBedrag, werkelijkeKosten: $werkelijkeKosten);
-		$overpayment = $this->computeOverpayment(totaalVoorschotten: $totaalVoorschotten, vastgesteldBedrag: $vastgesteld);
+		$determined = $this->computeVastgesteldBedrag(grantedAmount: $grantedAmount, actualCost: $actualCost);
+		$overpayment = $this->computeOverpayment(totalAdvances: $totalAdvances, determinedAmount: $determined);
 		$trigger = ($overpayment > 0.0);
 
 		$patch = [
-			'vastgesteldBedrag' => $vastgesteld,
+			'determinedAmount' => $determined,
 			'triggerTerugvordering' => $trigger,
 			'vaststellingsbeschikkingGenerated' => true,
 			'status' => 'vastgesteld',
 		];
 
 		try {
-			$current = $objectService->find($vaststellingId, register: $register, schema: $schema);
+			$current = $objectService->find($determinationId, register: $register, schema: $schema);
 			if (is_array($current) === false) {
 				throw new OCSBadRequestException('Vaststelling niet gevonden');
 			}
 
-			$saved = $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$vaststellingId);
+			$saved = $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$determinationId);
 		} catch (OCSBadRequestException $e) {
 			throw $e;
 		} catch (Throwable $e) {
@@ -179,7 +179,7 @@ class VaststellingService {
 		$clawback = null;
 		$uitvoeringId = (string)($current['subsidieuitvoering'] ?? '');
 		if ($trigger === true && $uitvoeringId !== '') {
-			$clawback = $this->terugvordering->createClawbackCase(uitvoeringId: $uitvoeringId, bedrag: $overpayment);
+			$clawback = $this->terugvordering->createClawbackCase(uitvoeringId: $uitvoeringId, amount: $overpayment);
 		}
 
 		// The settled amount used to be appended to the linked case's `kosten`

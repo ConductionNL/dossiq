@@ -38,7 +38,7 @@ class ParafeerTransitionEvent extends Event {
 	/**
 	 * Constructor.
 	 *
-	 * @param string $voorstelId The voorstel UUID/slug
+	 * @param string $proposalId The voorstel UUID/slug
 	 * @param string $action One of started|paraferd|terugsturen|advised|route-changed|completed
 	 * @param string|null $step Step identifier (order or UUID) when applicable
 	 * @param string $actor Nextcloud user UID who triggered the transition
@@ -46,7 +46,7 @@ class ParafeerTransitionEvent extends Event {
 	 * @param string|null $reason Reason text (mandatory for terugsturen and route-changed)
 	 */
 	public function __construct(
-		private readonly string $voorstelId,
+		private readonly string $proposalId,
 		private readonly string $action,
 		private readonly ?string $step,
 		private readonly string $actor,
@@ -62,7 +62,7 @@ class ParafeerTransitionEvent extends Event {
 	 * @return string
 	 */
 	public function getVoorstelId(): string {
-		return $this->voorstelId;
+		return $this->proposalId;
 	}//end getVoorstelId()
 
 	/**

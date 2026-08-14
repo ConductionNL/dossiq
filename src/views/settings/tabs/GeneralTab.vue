@@ -7,10 +7,10 @@
 			}}</label>
 			<NcTextField
 				id="general-tab-title"
-				:modelValue="form.title"
+				:model-value="form.title"
 				:error="!!errors.title"
-				:helperText="errors.title"
-				@update:modelValue="(v) => $emit('update', 'title', v)" />
+				:helper-text="errors.title"
+				@update:model-value="(v) => $emit('update', 'title', v)" />
 		</div>
 
 		<!-- Description -->
@@ -32,10 +32,10 @@
 			}}</label>
 			<NcTextField
 				id="general-tab-purpose"
-				:modelValue="form.purpose"
+				:model-value="form.purpose"
 				:error="!!errors.purpose"
-				:helperText="errors.purpose"
-				@update:modelValue="(v) => $emit('update', 'purpose', v)" />
+				:helper-text="errors.purpose"
+				@update:model-value="(v) => $emit('update', 'purpose', v)" />
 		</div>
 
 		<!-- Trigger -->
@@ -45,10 +45,10 @@
 			}}</label>
 			<NcTextField
 				id="general-tab-trigger"
-				:modelValue="form.trigger"
+				:model-value="form.trigger"
 				:error="!!errors.trigger"
-				:helperText="errors.trigger"
-				@update:modelValue="(v) => $emit('update', 'trigger', v)" />
+				:helper-text="errors.trigger"
+				@update:model-value="(v) => $emit('update', 'trigger', v)" />
 		</div>
 
 		<!-- Subject -->
@@ -58,10 +58,10 @@
 			}}</label>
 			<NcTextField
 				id="general-tab-subject"
-				:modelValue="form.subject"
+				:model-value="form.subject"
 				:error="!!errors.subject"
-				:helperText="errors.subject"
-				@update:modelValue="(v) => $emit('update', 'subject', v)" />
+				:helper-text="errors.subject"
+				@update:model-value="(v) => $emit('update', 'subject', v)" />
 		</div>
 
 		<!-- Initiator Action -->
@@ -71,8 +71,8 @@
 			}}</label>
 			<NcTextField
 				id="general-tab-initiator-action"
-				:modelValue="form.initiatorAction"
-				@update:modelValue="(v) => $emit('update', 'initiatorAction', v)" />
+				:model-value="form.initiatorAction"
+				@update:model-value="(v) => $emit('update', 'initiatorAction', v)" />
 		</div>
 
 		<!-- Handler Action -->
@@ -82,18 +82,18 @@
 			}}</label>
 			<NcTextField
 				id="general-tab-handler-action"
-				:modelValue="form.handlerAction"
-				@update:modelValue="(v) => $emit('update', 'handlerAction', v)" />
+				:model-value="form.handlerAction"
+				@update:model-value="(v) => $emit('update', 'handlerAction', v)" />
 		</div>
 
 		<!-- Origin -->
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Origin') }}</label>
 			<NcSelect
-				:modelValue="selectedOrigin"
+				:model-value="selectedOrigin"
 				:options="originOptions"
 				:aria-label-combobox="t('procest', 'Origin')"
-				@update:modelValue="
+				@update:model-value="
 					(v) => $emit('update', 'origin', v ? v.id : '')
 				" />
 			<span v-if="errors.origin" class="field-error">{{ errors.origin }}</span>
@@ -104,7 +104,7 @@
 			<label class="required">{{ t('procest', 'Processing deadline') }}</label>
 			<DurationPicker
 				:value="form.processingDeadline"
-				presetType="deadline"
+				preset-type="deadline"
 				@input="(v) => $emit('update', 'processingDeadline', v)" />
 			<span v-if="errors.processingDeadline" class="field-error">{{
 				errors.processingDeadline
@@ -116,7 +116,7 @@
 			<label>{{ t('procest', 'Service target') }}</label>
 			<DurationPicker
 				:value="form.serviceTarget"
-				presetType="deadline"
+				preset-type="deadline"
 				@input="(v) => $emit('update', 'serviceTarget', v)" />
 			<span v-if="errors.serviceTarget" class="field-error">{{
 				errors.serviceTarget
@@ -126,8 +126,8 @@
 		<!-- Extension Allowed -->
 		<div class="form-group form-group--inline">
 			<NcCheckboxRadioSwitch
-				:modelValue="form.extensionAllowed"
-				@update:modelValue="(v) => $emit('update', 'extensionAllowed', v)">
+				:model-value="form.extensionAllowed"
+				@update:model-value="(v) => $emit('update', 'extensionAllowed', v)">
 				{{ t('procest', 'Extension allowed') }}
 			</NcCheckboxRadioSwitch>
 		</div>
@@ -137,7 +137,7 @@
 			<label class="required">{{ t('procest', 'Extension period') }}</label>
 			<DurationPicker
 				:value="form.extensionPeriod"
-				presetType="extension"
+				preset-type="extension"
 				@input="(v) => $emit('update', 'extensionPeriod', v)" />
 			<span v-if="errors.extensionPeriod" class="field-error">{{
 				errors.extensionPeriod
@@ -148,10 +148,10 @@
 		<div class="form-group">
 			<label class="required">{{ t('procest', 'Confidentiality') }}</label>
 			<NcSelect
-				:modelValue="selectedConfidentiality"
+				:model-value="selectedConfidentiality"
 				:options="confidentialityOptions"
 				:aria-label-combobox="t('procest', 'Confidentiality')"
-				@update:modelValue="
+				@update:model-value="
 					(v) => $emit('update', 'confidentiality', v ? v.id : '')
 				" />
 			<span v-if="errors.confidentiality" class="field-error">{{
@@ -163,13 +163,13 @@
 		<div class="form-group">
 			<label>{{ t('procest', 'IV3 taakveld') }}</label>
 			<NcSelect
-				:modelValue="selectedIv3Taakveld"
+				:model-value="selectedIv3Taakveld"
 				:options="iv3TaakveldOptions"
 				:loading="iv3TaakveldenLoading"
 				:placeholder="t('procest', 'No IV3 classification')"
 				:aria-label-combobox="t('procest', 'IV3 taakveld')"
-				@update:modelValue="
-					(v) => $emit('update', 'iv3Taakveld', v ? v.id : '')
+				@update:model-value="
+					(v) => $emit('update', 'iv3TaskField', v ? v.id : '')
 				" />
 			<p class="general-tab__hint">
 				{{
@@ -184,8 +184,8 @@
 		<!-- Publication Required -->
 		<div class="form-group form-group--inline">
 			<NcCheckboxRadioSwitch
-				:modelValue="form.publicationRequired"
-				@update:modelValue="
+				:model-value="form.publicationRequired"
+				@update:model-value="
 					(v) => $emit('update', 'publicationRequired', v)
 				">
 				{{ t('procest', 'Publication required') }}
@@ -211,10 +211,10 @@
 			}}</label>
 			<NcTextField
 				id="general-tab-responsible-unit"
-				:modelValue="form.responsibleUnit"
+				:model-value="form.responsibleUnit"
 				:error="!!errors.responsibleUnit"
-				:helperText="errors.responsibleUnit"
-				@update:modelValue="(v) => $emit('update', 'responsibleUnit', v)" />
+				:helper-text="errors.responsibleUnit"
+				@update:model-value="(v) => $emit('update', 'responsibleUnit', v)" />
 		</div>
 
 		<!-- Reference Process -->
@@ -224,8 +224,10 @@
 			}}</label>
 			<NcTextField
 				id="general-tab-reference-process"
-				:modelValue="form.referenceProcess"
-				@update:modelValue="(v) => $emit('update', 'referenceProcess', v)" />
+				:model-value="form.referenceProcess"
+				@update:model-value="
+					(v) => $emit('update', 'referenceProcess', v)
+				" />
 		</div>
 
 		<!-- Keywords -->
@@ -233,9 +235,9 @@
 			<label for="general-tab-keywords">{{ t('procest', 'Keywords') }}</label>
 			<NcTextField
 				id="general-tab-keywords"
-				:modelValue="form.keywords"
+				:model-value="form.keywords"
 				:placeholder="t('procest', 'Comma-separated keywords')"
-				@update:modelValue="(v) => $emit('update', 'keywords', v)" />
+				@update:model-value="(v) => $emit('update', 'keywords', v)" />
 		</div>
 
 		<!-- Valid From -->
@@ -270,15 +272,15 @@
 </template>
 
 <script>
-import axios from '@nextcloud/axios'
+import { NcTextField, NcSelect, NcCheckboxRadioSwitch } from '@nextcloud/vue'
 import { generateUrl } from '@nextcloud/router'
-import { NcCheckboxRadioSwitch, NcSelect, NcTextField } from '@nextcloud/vue'
-import DurationPicker from '../components/DurationPicker.vue'
-import {
-	getConfidentialityOptions,
-	getOriginOptions,
-} from '../../../utils/caseTypeValidation.js'
+import axios from '@nextcloud/axios'
 import { formatDuration } from '../../../utils/durationHelpers.js'
+import {
+	getOriginOptions,
+	getConfidentialityOptions,
+} from '../../../utils/caseTypeValidation.js'
+import DurationPicker from '../components/DurationPicker.vue'
 
 export default {
 	name: 'GeneralTab',
@@ -288,43 +290,39 @@ export default {
 		NcCheckboxRadioSwitch,
 		DurationPicker,
 	},
-
 	props: {
 		form: {
 			type: Object,
 			required: true,
 		},
-
 		errors: {
 			type: Object,
 			default: () => ({}),
 		},
 	},
-
 	data() {
 		return {
 			iv3Taakvelden: [],
 			iv3TaakveldenLoading: false,
 		}
 	},
-
+	mounted() {
+		this.loadIv3Taakvelden()
+	},
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		originOptions() {
 			return getOriginOptions()
 		},
-
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		confidentialityOptions() {
 			return getConfidentialityOptions()
 		},
-
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		selectedOrigin() {
 			if (!this.form.origin) return null
 			return this.originOptions.find((o) => o.id === this.form.origin) || null
 		},
-
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		selectedConfidentiality() {
 			if (!this.form.confidentiality) return null
@@ -334,7 +332,6 @@ export default {
 				) || null
 			)
 		},
-
 		/** @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/tasks.md#5.3 */
 		iv3TaakveldOptions() {
 			return this.iv3Taakvelden.map((tv) => ({
@@ -342,30 +339,26 @@ export default {
 				label: `${tv.code} — ${tv.label}`,
 			}))
 		},
-
 		/** @spec openspec/changes/archive/2026-07-13-iv3-case-cost-reporting/tasks.md#5.3 */
 		selectedIv3Taakveld() {
-			if (!this.form.iv3Taakveld) return null
+			if (!this.form.iv3TaskField) return null
 			return (
-				this.iv3TaakveldOptions.find((o) => o.id === this.form.iv3Taakveld)
+				this.iv3TaakveldOptions.find((o) => o.id === this.form.iv3TaskField)
 				|| null
 			)
 		},
-
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		deadlinePreview() {
 			return this.form.processingDeadline
 				? formatDuration(this.form.processingDeadline)
 				: ''
 		},
-
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		serviceTargetPreview() {
 			return this.form.serviceTarget
 				? formatDuration(this.form.serviceTarget)
 				: ''
 		},
-
 		/** @spec openspec/changes/retrofit-2026-05-25-admin-settings/tasks.md */
 		extensionPreview() {
 			return this.form.extensionPeriod
@@ -373,11 +366,6 @@ export default {
 				: ''
 		},
 	},
-
-	mounted() {
-		this.loadIv3Taakvelden()
-	},
-
 	methods: {
 		/**
 		 * Load the IV3 taakveld reference list once, for the picker's options.

@@ -46,7 +46,7 @@ class ContactMomentService {
 	/**
 	 * Valid contactmoment channels.
 	 */
-	private const VALID_KANALEN = ['telefoon', 'email', 'webformulier', 'chat', 'social_media', 'balie'];
+	private const VALID_KANALEN = ['phone', 'email', 'webformulier', 'chat', 'social_media', 'balie'];
 
 	/**
 	 * Valid contactmoment natures.
@@ -85,27 +85,27 @@ class ContactMomentService {
 
 		$record = [
 			'kanaal' => (string)$data['kanaal'],
-			'richting' => (string)($data['richting'] ?? 'inkomend'),
-			'startTijd' => (string)($data['startTijd'] ?? $now),
-			'eindTijd' => ($data['eindTijd'] ?? null),
-			'bellerIdentificatie' => (string)($data['bellerIdentificatie'] ?? ''),
+			'direction' => (string)($data['direction'] ?? 'inkomend'),
+			'startTime' => (string)($data['startTime'] ?? $now),
+			'endTime' => ($data['endTime'] ?? null),
+			'callerIdentification' => (string)($data['callerIdentification'] ?? ''),
 			'geidentificeerdeBurgerId' => ($data['geidentificeerdeBurgerId'] ?? null),
-			'identificatieMethode' => (string)($data['identificatieMethode'] ?? 'niet_geidentificeerd'),
-			'identificatieScore' => ($data['identificatieScore'] ?? null),
-			'kccMedewerkerId' => trim((string)$data['kccMedewerkerId']),
-			'gerelateerdeZaken' => array_values((array)($data['gerelateerdeZaken'] ?? [])),
-			'nieuweZaakIds' => array_values((array)($data['nieuweZaakIds'] ?? [])),
-			'aard' => (string)($data['aard'] ?? 'informatieverzoek'),
-			'samenvatting' => (string)($data['samenvatting'] ?? ''),
+			'identificationMethod' => (string)($data['identificationMethod'] ?? 'niet_geidentificeerd'),
+			'identificationScore' => ($data['identificationScore'] ?? null),
+			'kccEmployeeId' => trim((string)$data['kccEmployeeId']),
+			'relatedCases' => array_values((array)($data['relatedCases'] ?? [])),
+			'newCaseIds' => array_values((array)($data['newCaseIds'] ?? [])),
+			'nature' => (string)($data['nature'] ?? 'informatieverzoek'),
+			'summary' => (string)($data['summary'] ?? ''),
 			'volgensIntent' => (string)($data['volgensIntent'] ?? ''),
 			'firstTimeFix' => (bool)($data['firstTimeFix'] ?? false),
-			'transcriptie' => (string)($data['transcriptie'] ?? ''),
-			'transferNaar' => (string)($data['transferNaar'] ?? ''),
+			'transcript' => (string)($data['transcript'] ?? ''),
+			'transferTo' => (string)($data['transferTo'] ?? ''),
 		];
 
-		$duur = $this->calculateDuration(data: $data);
-		if ($duur !== null) {
-			$record['duurSeconden'] = $duur;
+		$duration = $this->calculateDuration(data: $data);
+		if ($duration !== null) {
+			$record['durationSeconds'] = $duration;
 		}
 
 		try {
@@ -131,17 +131,17 @@ class ContactMomentService {
 	 * @throws RuntimeException When a required field is missing or invalid.
 	 */
 	private function validateInput(array $data): void {
-		$kanaal = (string)($data['kanaal'] ?? '');
-		if (in_array($kanaal, self::VALID_KANALEN, true) === false) {
+		$channel = (string)($data['kanaal'] ?? '');
+		if (in_array($channel, self::VALID_KANALEN, true) === false) {
 			throw new RuntimeException('Invalid kanaal');
 		}
 
-		$aard = (string)($data['aard'] ?? 'informatieverzoek');
-		if (in_array($aard, self::VALID_AARD, true) === false) {
+		$nature = (string)($data['nature'] ?? 'informatieverzoek');
+		if (in_array($nature, self::VALID_AARD, true) === false) {
 			throw new RuntimeException('Invalid aard');
 		}
 
-		if (trim((string)($data['kccMedewerkerId'] ?? '')) === '') {
+		if (trim((string)($data['kccEmployeeId'] ?? '')) === '') {
 			throw new RuntimeException('kccMedewerkerId is required');
 		}
 	}//end validateInput()
@@ -154,12 +154,12 @@ class ContactMomentService {
 	 * @return int|null The duration in seconds, or null when not calculable.
 	 */
 	private function calculateDuration(array $data): ?int {
-		if (isset($data['startTijd']) === false || isset($data['eindTijd']) === false) {
+		if (isset($data['startTime']) === false || isset($data['endTime']) === false) {
 			return null;
 		}
 
-		$start = strtotime((string)$data['startTijd']);
-		$end = strtotime((string)$data['eindTijd']);
+		$start = strtotime((string)$data['startTime']);
+		$end = strtotime((string)$data['endTime']);
 		if ($start === false || $end === false || $end < $start) {
 			return null;
 		}
@@ -211,7 +211,7 @@ class ContactMomentService {
 		usort(
 			$records,
 			static function (array $a, array $b): int {
-				return strcmp((string)($b['startTijd'] ?? ''), (string)($a['startTijd'] ?? ''));
+				return strcmp((string)($b['startTime'] ?? ''), (string)($a['startTime'] ?? ''));
 			}
 		);
 
@@ -228,7 +228,7 @@ class ContactMomentService {
 	 * @param string $caseId The case UUID.
 	 * @param string $contactmomentId The contactmoment UUID.
 	 * @param string $type The activity type.
-	 * @param string $medewerkerName The handling medewerker.
+	 * @param string $employeeName The handling medewerker.
 	 * @param string $summary A short summary of the activity.
 	 *
 	 * @return bool True on success.
@@ -239,7 +239,7 @@ class ContactMomentService {
 		string $caseId,
 		string $contactmomentId,
 		string $type,
-		string $medewerkerName,
+		string $employeeName,
 		string $summary,
 	): bool {
 		if ($caseId === '') {
@@ -264,8 +264,8 @@ class ContactMomentService {
 			$activity[] = [
 				'type' => $type,
 				'contactmomentId' => $contactmomentId,
-				'medewerker' => $medewerkerName,
-				'samenvatting' => $summary,
+				'medewerker' => $employeeName,
+				'summary' => $summary,
 				'timestamp' => date('c'),
 			];
 
@@ -308,8 +308,8 @@ class ContactMomentService {
 				$schema,
 				[
 					'geidentificeerdeBurgerId' => $burgerId,
-					'identificatieMethode' => $method,
-					'identificatieScore' => round($score, 2),
+					'identificationMethod' => $method,
+					'identificationScore' => round($score, 2),
 				],
 				$contactmomentId,
 			);

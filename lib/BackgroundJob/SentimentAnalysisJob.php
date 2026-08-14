@@ -144,8 +144,8 @@ class SentimentAnalysisJob extends TimedJob {
 	 * @return void
 	 */
 	private function processContact($objectService, string $register, string $sentimentSchema, array $contact, array $triggerWords): void {
-		$transcriptie = trim((string)($contact['transcriptie'] ?? ''));
-		if ($transcriptie === '') {
+		$transcript = trim((string)($contact['transcript'] ?? ''));
+		if ($transcript === '') {
 			return;
 		}
 
@@ -165,7 +165,7 @@ class SentimentAnalysisJob extends TimedJob {
 			return;
 		}
 
-		$analysis = $this->sentimentService->analyzeSentiment($transcriptie, $triggerWords);
+		$analysis = $this->sentimentService->analyzeSentiment($transcript, $triggerWords);
 
 		$objectService->saveObject(
 			$register,
@@ -175,21 +175,21 @@ class SentimentAnalysisJob extends TimedJob {
 				'sentimentScore' => $analysis['score'],
 				'sentimentLabel' => $analysis['label'],
 				'triggerWoorden' => $analysis['triggers'],
-				'transcriptieSnippet' => $analysis['snippet'],
+				'transcriptSnippet' => $analysis['snippet'],
 				'escalatieAanbevolen' => $analysis['escalatieAanbevolen'],
-				'escalatieLevel' => $analysis['escalatieLevel'],
+				'escalationLevel' => $analysis['escalationLevel'],
 				'createdAt' => date('c'),
 			],
 		);
 
 		if ($analysis['escalatieAanbevolen'] === true) {
-			foreach ((array)($contact['gerelateerdeZaken'] ?? []) as $caseId) {
+			foreach ((array)($contact['relatedCases'] ?? []) as $caseId) {
 				$this->contactMomentService->recordActivity(
 					(string)$caseId,
 					$contactId,
 					'sentiment_detected',
 					'systeem',
-					'Sentiment ' . $analysis['label'] . ' (escalatie: ' . $analysis['escalatieLevel'] . ')',
+					'Sentiment ' . $analysis['label'] . ' (escalatie: ' . $analysis['escalationLevel'] . ')',
 				);
 			}
 		}

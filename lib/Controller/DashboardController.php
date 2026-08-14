@@ -43,6 +43,7 @@ namespace OCA\Procest\Controller;
 use OCA\Procest\AppInfo\Application;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
@@ -142,6 +143,10 @@ class DashboardController extends Controller {
 	 */
 	#[NoCSRFRequired]
 	#[PublicPage]
+	// PWA assets — the browser fetches these on install and on every update
+	// check, so the ceiling only exists to stop them being used as a load
+	// generator. No credential, so no brute-force counter.
+	#[AnonRateLimit(limit: 240, period: 60)]
 	public function serviceWorker(): DataDownloadResponse {
 		$body = $this->readPublicAsset(name: 'service-worker.js');
 		$status = Http::STATUS_OK;
@@ -172,6 +177,7 @@ class DashboardController extends Controller {
 	 */
 	#[NoCSRFRequired]
 	#[PublicPage]
+	#[AnonRateLimit(limit: 240, period: 60)]
 	public function webManifest(): DataDownloadResponse {
 		$body = $this->readPublicAsset(name: 'manifest.webmanifest');
 		$status = Http::STATUS_OK;

@@ -66,10 +66,10 @@ class CaseVoorbladService {
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T10
 	 */
 	public function getCaseVoorblad(string $burgerId): array {
-		$maxZaken = max(1, (int)$this->settingsService->getKccConfigValue('max_zaken_voorblad'));
+		$maxCases = max(1, (int)$this->settingsService->getKccConfigValue('max_zaken_voorblad'));
 		$maxContactmomenten = max(1, (int)$this->settingsService->getKccConfigValue('max_contactmomenten_history'));
 
-		$openZaken = array_slice($this->fetchOpenZaken(burgerId: $burgerId), 0, $maxZaken);
+		$openCases = array_slice($this->fetchOpenCases(burgerId: $burgerId), 0, $maxCases);
 		$contactmomenten = array_slice(
 			$this->contactMomentService->listForBurger($burgerId, $maxContactmomenten),
 			0,
@@ -78,9 +78,9 @@ class CaseVoorbladService {
 
 		return [
 			'burgerId' => $burgerId,
-			'openZaken' => $openZaken,
+			'openZaken' => $openCases,
 			'recenteContactmomenten' => $contactmomenten,
-			'suggestedTopic' => $this->suggestTopic(openZaken: $openZaken),
+			'suggestedTopic' => $this->suggestTopic(openCases: $openCases),
 		];
 	}//end getCaseVoorblad()
 
@@ -91,7 +91,7 @@ class CaseVoorbladService {
 	 *
 	 * @return array<int, array<string, mixed>> The open case summaries.
 	 */
-	private function fetchOpenZaken(string $burgerId): array {
+	private function fetchOpenCases(string $burgerId): array {
 		if ($burgerId === '') {
 			return [];
 		}
@@ -122,7 +122,7 @@ class CaseVoorbladService {
 			return [];
 		}
 
-		$zaken = [];
+		$cases = [];
 		foreach ((array)$results as $result) {
 			$case = $this->toArray(result: $result);
 			$status = strtolower((string)($case['status'] ?? ''));
@@ -130,41 +130,41 @@ class CaseVoorbladService {
 				continue;
 			}
 
-			$zaken[] = [
+			$cases[] = [
 				'id' => (string)($case['id'] ?? ($case['uuid'] ?? '')),
 				'titel' => (string)($case['title'] ?? ($case['titel'] ?? '')),
 				'status' => (string)($case['status'] ?? ''),
 				'laatsteActie' => (string)($case['lastActionDate'] ?? ($case['updated'] ?? '')),
-				'zaaktype' => (string)($case['caseType'] ?? ''),
+				'caseType' => (string)($case['caseType'] ?? ''),
 			];
 		}
 
 		usort(
-			$zaken,
+			$cases,
 			static function (array $a, array $b): int {
 				return strcmp((string)$b['laatsteActie'], (string)$a['laatsteActie']);
 			}
 		);
 
-		return $zaken;
+		return $cases;
 	}//end fetchOpenZaken()
 
 	/**
 	 * Suggest a likely dialogue topic from the most recent open case.
 	 *
-	 * @param array<int, array<string, mixed>> $openZaken The open case summaries.
+	 * @param array<int, array<string, mixed>> $openCases The open case summaries.
 	 *
 	 * @return string A short human-readable topic suggestion.
 	 */
-	private function suggestTopic(array $openZaken): string {
-		if (empty($openZaken) === true) {
+	private function suggestTopic(array $openCases): string {
+		if (empty($openCases) === true) {
 			return '';
 		}
 
-		$first = $openZaken[0];
+		$first = $openCases[0];
 		$titel = trim((string)($first['titel'] ?? ''));
 		if ($titel === '') {
-			$titel = trim((string)($first['zaaktype'] ?? 'lopende zaak'));
+			$titel = trim((string)($first['caseType'] ?? 'lopende zaak'));
 		}
 
 		return 'Waarschijnlijk statusvraag over ' . $titel;

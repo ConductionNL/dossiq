@@ -99,34 +99,34 @@ class SubsidieRegisterController extends Controller {
 		}
 
 		$register = $config['register'];
-		$beschikkingSchema = $config['beschikkingSchema'];
-		$aanvraagSchema = $config['aanvraagSchema'];
+		$decisionSchema = $config['beschikkingSchema'];
+		$requestSchema = $config['aanvraagSchema'];
 		$regelingSchema = $config['regelingSchema'];
 
 		try {
 			$beschikkingen = $objectService->findAll(
-				['filters' => ['register' => (int)$register, 'schema' => (int)$beschikkingSchema, 'status' => 'verleend']]
+				['filters' => ['register' => (int)$register, 'schema' => (int)$decisionSchema, 'status' => 'verleend']]
 			);
 		} catch (Throwable $e) {
 			return [];
 		}
 
 		$entries = [];
-		foreach ($beschikkingen as $beschikking) {
-			$beschikking = $this->toArray(value: $beschikking);
-			$aanvraagId = (string)($beschikking['subsidieaanvraag'] ?? '');
-			if ($aanvraagId === '') {
+		foreach ($beschikkingen as $decision) {
+			$decision = $this->toArray(value: $decision);
+			$requestId = (string)($decision['subsidieaanvraag'] ?? '');
+			if ($requestId === '') {
 				continue;
 			}
 
-			$aanvraag = $this->safeFind(objectService: $objectService, register: $register, schema: $aanvraagSchema, id: $aanvraagId);
+			$request = $this->safeFind(objectService: $objectService, register: $register, schema: $requestSchema, id: $requestId);
 			$regeling = [];
-			$regelingId = (string)($aanvraag['subsidieregeling'] ?? '');
+			$regelingId = (string)($request['subsidieregeling'] ?? '');
 			if ($regelingId !== '') {
 				$regeling = $this->safeFind(objectService: $objectService, register: $register, schema: $regelingSchema, id: $regelingId);
 			}
 
-			$entries[] = $this->exporter->toFeedEntry($aanvraag, $regeling, $beschikking);
+			$entries[] = $this->exporter->toFeedEntry($request, $regeling, $decision);
 		}//end foreach
 
 		return $entries;
@@ -136,21 +136,23 @@ class SubsidieRegisterController extends Controller {
 	 * Resolve and validate the register/schema configuration for the feed.
 	 *
 	 * @return array{register: string, beschikkingSchema: string, aanvraagSchema: string, regelingSchema: string}|null
-	 *                                                                                                                 The validated config, or null when any required value is unset.
+	 *                                                                                                                 The validated config, or null
+	 *                                   when a required
+	 *                                   value is unset.
 	 */
 	private function resolveRegisterConfig(): ?array {
 		$register = $this->settingsService->getConfigValue('register');
-		$beschikkingSchema = $this->settingsService->getConfigValue('subsidie_beschikking_schema');
-		$aanvraagSchema = $this->settingsService->getConfigValue('subsidie_aanvraag_schema');
+		$decisionSchema = $this->settingsService->getConfigValue('subsidie_beschikking_schema');
+		$requestSchema = $this->settingsService->getConfigValue('subsidie_aanvraag_schema');
 		$regelingSchema = $this->settingsService->getConfigValue('subsidie_regeling_schema');
-		if ($register === '' || $beschikkingSchema === '' || $aanvraagSchema === '' || $regelingSchema === '') {
+		if ($register === '' || $decisionSchema === '' || $requestSchema === '' || $regelingSchema === '') {
 			return null;
 		}
 
 		return [
 			'register' => $register,
-			'beschikkingSchema' => $beschikkingSchema,
-			'aanvraagSchema' => $aanvraagSchema,
+			'beschikkingSchema' => $decisionSchema,
+			'aanvraagSchema' => $requestSchema,
 			'regelingSchema' => $regelingSchema,
 		];
 	}//end resolveRegisterConfig()

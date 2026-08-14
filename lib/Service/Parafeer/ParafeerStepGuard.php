@@ -111,7 +111,7 @@ class ParafeerStepGuard {
 	/**
 	 * Resolve the current step from the route snapshot.
 	 *
-	 * @param array<string, mixed> $voorstel The voorstel array.
+	 * @param array<string, mixed> $proposal The voorstel array.
 	 *
 	 * @return array<string, mixed> The current step (order, type, actor, label).
 	 *
@@ -119,13 +119,13 @@ class ParafeerStepGuard {
 	 *
 	 * @spec openspec/changes/parafering-actions/tasks.md#T02
 	 */
-	public function resolveCurrentStep(array $voorstel): array {
-		$currentStep = (int)($voorstel['currentStep'] ?? 0);
+	public function resolveCurrentStep(array $proposal): array {
+		$currentStep = (int)($proposal['currentStep'] ?? 0);
 		if ($currentStep < 1) {
 			throw new OCSBadRequestException('Voorstel has no active step');
 		}
 
-		$snapshotRaw = $voorstel['routeSnapshot'] ?? null;
+		$snapshotRaw = $proposal['routeSnapshot'] ?? null;
 		if ($snapshotRaw === null) {
 			throw new OCSBadRequestException('Voorstel has no route snapshot');
 		}

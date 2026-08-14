@@ -95,12 +95,12 @@ class MandaatImportService {
 		}
 
 		// Resolve rol-name → rolId.
-		$resolved = $this->resolveRolReferences(rows: $rows);
+		$resolved = $this->resolveRoleReferences(rows: $rows);
 
 		// Create the decision (concept). The schemaConfigKey stays
 		// 'mandaterings_besluit_schema': it is the app-config key the schema id
 		// is already stored under on existing installs, not a display name.
-		$besluit = $this->repository->save(
+		$decision = $this->repository->save(
 			schemaConfigKey: 'mandaterings_besluit_schema',
 			object: [
 				'decisionNumber' => $decisionNumber,
@@ -115,7 +115,7 @@ class MandaatImportService {
 		$priorMandaten = [];
 		if ($prior !== null) {
 			$priorMandaten = $this->repository->findMandatenForBesluit(
-				besluitId: (string)($prior['id'] ?? '')
+				decisionId: (string)($prior['id'] ?? '')
 			);
 		}
 
@@ -125,13 +125,13 @@ class MandaatImportService {
 		$unchangedCount = 0;
 		$diff = [];
 		foreach ($resolved as $row) {
-			$payload = $this->buildMandaatPayload(row: $row, besluitId: (string)$besluit['id']);
+			$payload = $this->buildMandatePayload(row: $row, decisionId: (string)$decision['id']);
 
 			$this->repository->save(schemaConfigKey: 'mandaat_schema', object: $payload);
 
-			$existing = $this->findPriorMandaat(
+			$existing = $this->findPriorMandate(
 				priorMandaten: $priorMandaten,
-				mandaatNummer: (string)$row['mandaatNummer']
+				mandateNumber: (string)$row['mandaatNummer']
 			);
 
 			if ($existing === null) {
@@ -162,7 +162,7 @@ class MandaatImportService {
 		$diff = array_merge($diff, $removed);
 
 		return [
-			'mandateDecisionId' => (string)$besluit['id'],
+			'mandateDecisionId' => (string)$decision['id'],
 			'totalMandaten' => count($resolved),
 			'newCount' => $newCount,
 			'changedCount' => $changedCount,
@@ -181,20 +181,20 @@ class MandaatImportService {
 	 *
 	 * @throws RuntimeException When a row has no rolNaam or names an unknown OrganisatieRol.
 	 */
-	private function resolveRolReferences(array $rows): array {
+	private function resolveRoleReferences(array $rows): array {
 		$roleIndex = $this->repository->loadRoleIndex();
 		$resolved = [];
 		foreach ($rows as $idx => $row) {
-			$rolNaam = (string)($row['rolNaam'] ?? '');
-			if ($rolNaam === '') {
+			$roleName = (string)($row['rolNaam'] ?? '');
+			if ($roleName === '') {
 				throw new RuntimeException('Row ' . ($idx + 1) . ' missing rolNaam');
 			}
 
-			if (isset($roleIndex[$rolNaam]) === false) {
-				throw new RuntimeException('Unknown OrganisatieRol "' . $rolNaam . '" at row ' . ($idx + 1));
+			if (isset($roleIndex[$roleName]) === false) {
+				throw new RuntimeException('Unknown OrganisatieRol "' . $roleName . '" at row ' . ($idx + 1));
 			}
 
-			$resolved[] = $row + ['gemandateerdeRol' => $roleIndex[$rolNaam]];
+			$resolved[] = $row + ['mandateeRole' => $roleIndex[$roleName]];
 		}
 
 		return $resolved;
@@ -204,27 +204,27 @@ class MandaatImportService {
 	 * Build the concept mandaat payload for a single resolved CSV row.
 	 *
 	 * @param array<string, mixed> $row A resolved CSV row.
-	 * @param string $besluitId The owning mandate decision id.
+	 * @param string $decisionId The owning mandate decision id.
 	 *
 	 * @return array<string, mixed> The mandaat object payload.
 	 *
 	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
 	 */
-	private function buildMandaatPayload(array $row, string $besluitId): array {
+	private function buildMandatePayload(array $row, string $decisionId): array {
 		return [
 			// Key = schema property (renamed). Value = CSV column header, an
 			// external input contract that stays as operators' files write it.
 			'mandateNumber' => (string)$row['mandaatNummer'],
-			'mandateDecision' => $besluitId,
+			'mandateDecision' => $decisionId,
 			// Key = schema property (renamed). Value = CSV column header, an
 			// external input contract that stays as operators' files write it.
 			'description' => (string)($row['description'] ?? $row['omschrijving'] ?? ''),
-			'gemandateerdeRol' => (string)$row['gemandateerdeRol'],
+			'mandateeRole' => (string)$row['mandateeRole'],
 			// Key = the schema property (renamed). Value = a CSV COLUMN HEADER,
 			// which is an external input format the operator's file already
 			// uses, so both spellings are read.
 			'legalBasis' => (string)($row['legalBasis'] ?? $row['wettelijkeGrondslag'] ?? ''),
-			'voorwaarden' => [
+			'terms' => [
 				'plafondCents' => (int)($row['plafondCents'] ?? 0),
 				'subdelegatie' => $this->csvParser->parseBool(value: (string)($row['subdelegatie'] ?? 'false')),
 				'decisionTypes' => $this->csvParser->parseList(value: (string)($row['decisionTypes'] ?? '')),
@@ -237,13 +237,13 @@ class MandaatImportService {
 	 * Find the prior-version mandaat carrying a given mandaatNummer.
 	 *
 	 * @param array<int, array<string, mixed>> $priorMandaten Mandaten of the prior besluit version.
-	 * @param string $mandaatNummer The mandaat number to look for.
+	 * @param string $mandateNumber The mandaat number to look for.
 	 *
 	 * @return array<string, mixed>|null The matching prior mandaat, or null when it is new.
 	 */
-	private function findPriorMandaat(array $priorMandaten, string $mandaatNummer): ?array {
+	private function findPriorMandate(array $priorMandaten, string $mandateNumber): ?array {
 		foreach ($priorMandaten as $pm) {
-			if ((string)($pm['mandateNumber'] ?? '') === $mandaatNummer) {
+			if ((string)($pm['mandateNumber'] ?? '') === $mandateNumber) {
 				return $pm;
 			}
 		}
@@ -263,14 +263,14 @@ class MandaatImportService {
 	 */
 	private function collectChangedFields(array $existing, array $payload): array {
 		$changedFields = [];
-		foreach (['description', 'gemandateerdeRol', 'legalBasis'] as $f) {
+		foreach (['description', 'mandateeRole', 'legalBasis'] as $f) {
 			if ((string)($existing[$f] ?? '') !== (string)$payload[$f]) {
 				$changedFields[] = $f;
 			}
 		}
 
-		$exPlafond = (int)(($existing['voorwaarden'] ?? [])['plafondCents'] ?? 0);
-		if ($exPlafond !== (int)$payload['voorwaarden']['plafondCents']) {
+		$exPlafond = (int)(($existing['terms'] ?? [])['plafondCents'] ?? 0);
+		if ($exPlafond !== (int)$payload['terms']['plafondCents']) {
 			$changedFields[] = 'plafondCents';
 		}
 
@@ -303,46 +303,46 @@ class MandaatImportService {
 	 * Approve a concept besluit: flip besluit → vastgesteld + every mandaat → active,
 	 * and mark the prior besluit (if any) → vervallen.
 	 *
-	 * @param string $besluitId Besluit id.
+	 * @param string $decisionId Besluit id.
 	 *
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/mandaat-matrix-04-decidesk-import/tasks.md
 	 */
-	public function approveImport(string $besluitId): array {
+	public function approveImport(string $decisionId): array {
 		$context = $this->repository->resolveApprovalContext();
 		$objectService = $context['objectService'];
 		$register = $context['register'];
 		$bSchema = $context['bSchema'];
 		$mSchema = $context['mSchema'];
 
-		$besluit = $objectService->find($besluitId, register: $register, schema: $bSchema);
-		if (is_array($besluit) === false) {
-			throw new RuntimeException('Besluit not found: ' . $besluitId);
+		$decision = $objectService->find($decisionId, register: $register, schema: $bSchema);
+		if (is_array($decision) === false) {
+			throw new RuntimeException('Besluit not found: ' . $decisionId);
 		}
 
-		if (($besluit['status'] ?? '') !== 'concept') {
+		if (($decision['status'] ?? '') !== 'concept') {
 			throw new RuntimeException('Besluit is not in concept status');
 		}
 
 		$now = (new DateTimeImmutable())->format('Y-m-d');
-		$besluit['status'] = 'vastgesteld';
-		$besluit['effectiveFrom'] = ($besluit['effectiveFrom'] ?? $now);
-		$besluit = $objectService->saveObject($register, $bSchema, $besluit);
+		$decision['status'] = 'vastgesteld';
+		$decision['effectiveFrom'] = ($decision['effectiveFrom'] ?? $now);
+		$decision = $objectService->saveObject($register, $bSchema, $decision);
 
 		// Flip mandaten to active.
 		$this->repository->activateMandatenForBesluit(
 			objectService: $objectService,
 			register: $register,
 			mSchema: $mSchema,
-			besluitId: $besluitId,
+			decisionId: $decisionId,
 			now: $now
 		);
 
 		// Expire prior besluit.
 		$prior = $this->repository->findPriorDecision(
-			decisionNumber: (string)$besluit['decisionNumber'],
-			excludeId: $besluitId
+			decisionNumber: (string)$decision['decisionNumber'],
+			excludeId: $decisionId
 		);
 		if ($prior !== null) {
 			$prior['status'] = 'vervallen';
@@ -350,6 +350,6 @@ class MandaatImportService {
 			$objectService->saveObject($register, $bSchema, $prior);
 		}
 
-		return $besluit;
+		return $decision;
 	}//end approveImport()
 }//end class

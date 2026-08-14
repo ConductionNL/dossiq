@@ -124,7 +124,7 @@ class DsoDeadlineJob extends TimedJob {
 		}
 
 		try {
-			$zaakList = $this->searchObjectsAsArrays(
+			$caseList = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
 				schema: $caseSchema,
@@ -143,10 +143,10 @@ class DsoDeadlineJob extends TimedJob {
 			return;
 		}
 
-		foreach ($zaakList as $zaak) {
+		foreach ($caseList as $case) {
 			try {
-				$this->processZaakDeadline(
-					zaak: $zaak,
+				$this->processCaseDeadline(
+					case: $case,
 					objectService: $objectService,
 					register: $register,
 					caseSchema: $caseSchema,
@@ -154,12 +154,12 @@ class DsoDeadlineJob extends TimedJob {
 					criticalWeeks: $criticalWeeks
 				);
 			} catch (\Throwable $e) {
-				$zaakId = (string)($zaak['id'] ?? ($zaak['uuid'] ?? 'unknown'));
+				$caseId = (string)($case['id'] ?? ($case['uuid'] ?? 'unknown'));
 				$this->logger->error(
-					'Procest DsoDeadlineJob: error processing zaak ' . $zaakId . ': ' . $e->getMessage(),
+					'Procest DsoDeadlineJob: error processing zaak ' . $caseId . ': ' . $e->getMessage(),
 					[
 						'app' => Application::APP_ID,
-						'zaakId' => $zaakId,
+						'caseId' => $caseId,
 					]
 				);
 			}
@@ -171,15 +171,15 @@ class DsoDeadlineJob extends TimedJob {
 	 *
 	 * Returns a negative value when the deadline has already passed.
 	 *
-	 * @param string $deadlineDatum The deadline date as ISO 8601 (YYYY-MM-DD)
+	 * @param string $deadlineDate The deadline date as ISO 8601 (YYYY-MM-DD)
 	 *
 	 * @return int The number of remaining working days (negative = overdue)
 	 *
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T06
 	 */
-	private function getRemainingWorkingDays(string $deadlineDatum): int {
+	private function getRemainingWorkingDays(string $deadlineDate): int {
 		$today = new DateTimeImmutable('today');
-		$deadline = new DateTimeImmutable(substr($deadlineDatum, 0, 10));
+		$deadline = new DateTimeImmutable(substr($deadlineDate, 0, 10));
 
 		if ($deadline <= $today) {
 			// Count working days in the past (return negative).
@@ -244,7 +244,7 @@ class DsoDeadlineJob extends TimedJob {
 	/**
 	 * Process the deadline for a single zaak and dispatch notifications as needed.
 	 *
-	 * @param array<string,mixed> $zaak The zaak object array
+	 * @param array<string,mixed> $case The zaak object array
 	 * @param object $objectService The ObjectService instance
 	 * @param string $register The register identifier
 	 * @param string $caseSchema The case schema identifier
@@ -253,44 +253,44 @@ class DsoDeadlineJob extends TimedJob {
 	 *
 	 * @return void
 	 */
-	private function processZaakDeadline(
-		array $zaak,
+	private function processCaseDeadline(
+		array $case,
 		object $objectService,
 		string $register,
 		string $caseSchema,
 		int $warningWeeks,
 		int $criticalWeeks,
 	): void {
-		$deadlineDatum = (string)($zaak['deadlineDatum'] ?? '');
-		if ($deadlineDatum === '') {
+		$deadlineDate = (string)($case['deadlineDate'] ?? '');
+		if ($deadlineDate === '') {
 			return;
 		}
 
-		$zaakId = (string)($zaak['id'] ?? ($zaak['uuid'] ?? ''));
-		$assignee = (string)($zaak['assigneeUserId'] ?? ($zaak['behandelaar'] ?? ''));
-		$remaining = $this->getRemainingWorkingDays(deadlineDatum: $deadlineDatum);
+		$caseId = (string)($case['id'] ?? ($case['uuid'] ?? ''));
+		$assignee = (string)($case['assigneeUserId'] ?? ($case['handler'] ?? ''));
+		$remaining = $this->getRemainingWorkingDays(deadlineDate: $deadlineDate);
 
 		if ($remaining <= 0) {
 			$this->sendDeadlineNotification(
-				zaakId: $zaakId,
+				caseId: $caseId,
 				assignee: $assignee,
 				subject: 'dso_deadline_overdue'
 			);
 
 			// Mark zaak as overdue.
-			if (($zaak['deadlineOverdue'] ?? false) === false) {
-				$zaak['deadlineOverdue'] = true;
-				$activityLog = $zaak['activityLog'] ?? [];
+			if (($case['deadlineOverdue'] ?? false) === false) {
+				$case['deadlineOverdue'] = true;
+				$activityLog = $case['activityLog'] ?? [];
 				$activityLog[] = [
 					'timestamp' => date('c'),
 					'action' => 'deadline_overdue',
 					'note' => 'Wettelijke beslistermijn overschreden.',
 				];
-				$zaak['activityLog'] = $activityLog;
+				$case['activityLog'] = $activityLog;
 				$objectService->saveObject(
 					register: $register,
 					schema: $caseSchema,
-					object: $zaak
+					object: $case
 				);
 			}
 
@@ -299,7 +299,7 @@ class DsoDeadlineJob extends TimedJob {
 
 		if ($remaining <= $criticalWeeks) {
 			$this->sendDeadlineNotification(
-				zaakId: $zaakId,
+				caseId: $caseId,
 				assignee: $assignee,
 				subject: 'dso_deadline_critical'
 			);
@@ -308,7 +308,7 @@ class DsoDeadlineJob extends TimedJob {
 
 		if ($remaining <= $warningWeeks) {
 			$this->sendDeadlineNotification(
-				zaakId: $zaakId,
+				caseId: $caseId,
 				assignee: $assignee,
 				subject: 'dso_deadline_warning'
 			);
@@ -318,13 +318,13 @@ class DsoDeadlineJob extends TimedJob {
 	/**
 	 * Send a deadline notification to the zaak assignee.
 	 *
-	 * @param string $zaakId The zaak UUID
+	 * @param string $caseId The zaak UUID
 	 * @param string $assignee The Nextcloud user UID to notify (may be empty)
 	 * @param string $subject The notification subject key
 	 *
 	 * @return void
 	 */
-	private function sendDeadlineNotification(string $zaakId, string $assignee, string $subject): void {
+	private function sendDeadlineNotification(string $caseId, string $assignee, string $subject): void {
 		if ($assignee === '') {
 			return;
 		}
@@ -333,8 +333,8 @@ class DsoDeadlineJob extends TimedJob {
 			$notification = $this->notificationManager->createNotification();
 			$notification->setApp(app: Application::APP_ID);
 			$notification->setUser(user: $assignee);
-			$notification->setSubject(subject: $subject, parameters: ['zaakId' => $zaakId]);
-			$notification->setObject(type: 'case', id: $zaakId);
+			$notification->setSubject(subject: $subject, parameters: ['caseId' => $caseId]);
+			$notification->setObject(type: 'case', id: $caseId);
 			$notification->setDateTime(dateTime: new DateTime());
 			$this->notificationManager->notify(notification: $notification);
 		} catch (\Throwable $e) {
@@ -342,7 +342,7 @@ class DsoDeadlineJob extends TimedJob {
 				'Procest DsoDeadlineJob: could not send notification: ' . $e->getMessage(),
 				[
 					'app' => Application::APP_ID,
-					'zaakId' => $zaakId,
+					'caseId' => $caseId,
 					'subject' => $subject,
 				]
 			);

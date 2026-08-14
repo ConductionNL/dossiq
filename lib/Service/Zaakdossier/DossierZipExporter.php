@@ -49,14 +49,14 @@ class DossierZipExporter {
 	/**
 	 * Constructor.
 	 *
-	 * @param ZaakdossierService $dossierService The dossier orchestrator.
+	 * @param ZaakdossierService $fileService The dossier orchestrator.
 	 * @param ZipManifestBuilder $zipBuilder The ZIP export builder.
 	 * @param LoggerInterface $logger The logger.
 	 *
 	 * @return void
 	 */
 	public function __construct(
-		private readonly ZaakdossierService $dossierService,
+		private readonly ZaakdossierService $fileService,
 		private readonly ZipManifestBuilder $zipBuilder,
 		private readonly LoggerInterface $logger,
 	) {
@@ -75,8 +75,8 @@ class DossierZipExporter {
 	 * @spec openspec/changes/document-zaakdossier/tasks.md#T05
 	 */
 	public function collectDocuments(string $caseId, array $selectedIds): array {
-		$dossier = $this->dossierService->getDossierForCase(caseId: $caseId);
-		$documents = ($dossier['informatieobjecten'] ?? []);
+		$file = $this->fileService->getDossierForCase(caseId: $caseId);
+		$documents = ($file['informatieobjecten'] ?? []);
 
 		if (empty($selectedIds) === true) {
 			return $documents;

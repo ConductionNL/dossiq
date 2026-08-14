@@ -41,11 +41,11 @@ class VergunningStatusChangedEventTest extends TestCase {
 	 */
 	public function testEventExtendsOcpEvent(): void {
 		$event = new VergunningStatusChangedEvent(
-			aanvraagRef: 'ref-001',
+			requestRef: 'ref-001',
 			oldStatus: 'ingediend',
 			newStatus: 'in_behandeling',
 			besluitdatum: null,
-			toelichting: null,
+			notes: null,
 			userId: 'user1',
 		);
 
@@ -61,11 +61,11 @@ class VergunningStatusChangedEventTest extends TestCase {
 	 */
 	public function testGettersReturnConstructorValues(): void {
 		$event = new VergunningStatusChangedEvent(
-			aanvraagRef: 'aanvraag-abc-123',
+			requestRef: 'aanvraag-abc-123',
 			oldStatus: 'ingediend',
 			newStatus: 'verleend',
 			besluitdatum: '2026-06-01',
-			toelichting: 'Voldoet aan alle eisen.',
+			notes: 'Voldoet aan alle eisen.',
 			userId: 'behandelaar1',
 		);
 
@@ -88,11 +88,11 @@ class VergunningStatusChangedEventTest extends TestCase {
 	 */
 	public function testNullableFieldsAcceptNull(): void {
 		$event = new VergunningStatusChangedEvent(
-			aanvraagRef: 'ref-002',
+			requestRef: 'ref-002',
 			oldStatus: 'in_behandeling',
 			newStatus: 'geweigerd',
 			besluitdatum: null,
-			toelichting: null,
+			notes: null,
 			userId: 'user2',
 		);
 

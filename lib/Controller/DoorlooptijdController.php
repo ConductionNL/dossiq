@@ -43,12 +43,12 @@ class DoorlooptijdController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request Inbound request.
-	 * @param DoorlooptijdService $doorlooptijdService Metrics service.
+	 * @param DoorlooptijdService $leadTimeService Metrics service.
 	 * @param IUserSession $userSession Current user session.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly DoorlooptijdService $doorlooptijdService,
+		private readonly DoorlooptijdService $leadTimeService,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: Application::APP_ID, request: $request);
@@ -92,6 +92,6 @@ class DoorlooptijdController extends Controller {
 			$params['caseType'] = $caseType;
 		}
 
-		return new JSONResponse($this->doorlooptijdService->getMetrics(params: $params));
+		return new JSONResponse($this->leadTimeService->getMetrics(params: $params));
 	}//end metrics()
 }//end class

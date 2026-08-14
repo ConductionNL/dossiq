@@ -57,7 +57,7 @@ class DsoController extends Controller {
 	 * @param string $appName The app name
 	 * @param IRequest $request The HTTP request
 	 * @param DsoCaseService $dsoCaseService The DSO case service
-	 * @param BeschikkingGenerationService $beschikkingService The beschikking generation service
+	 * @param BeschikkingGenerationService $decisionService The beschikking generation service
 	 * @param SamenwerkverzoekService $samenwerkService The samenwerkverzoek service
 	 * @param DsoObjectRepository $repository The OpenRegister read collaborator
 	 * @param DsoDoorsturenNotifier $doorsturenNotifier The doorsturen event dispatcher
@@ -68,7 +68,7 @@ class DsoController extends Controller {
 		string $appName,
 		IRequest $request,
 		private readonly DsoCaseService $dsoCaseService,
-		private readonly BeschikkingGenerationService $beschikkingService,
+		private readonly BeschikkingGenerationService $decisionService,
 		private readonly SamenwerkverzoekService $samenwerkService,
 		private readonly DsoObjectRepository $repository,
 		private readonly DsoDoorsturenNotifier $doorsturenNotifier,
@@ -99,7 +99,7 @@ class DsoController extends Controller {
 
 		$activiteitgroep = $this->request->getParam('activiteitgroep', '');
 		$regelkwalificatie = $this->request->getParam('regelkwalificatie', '');
-		$locatie = $this->request->getParam('locatie', '');
+		$location = $this->request->getParam('location', '');
 
 		$params = ['caseType' => 'omgevingsvergunning'];
 
@@ -118,7 +118,7 @@ class DsoController extends Controller {
 				params: $params,
 				activiteitgroep: (string)$activiteitgroep,
 				regelkwalificatie: (string)$regelkwalificatie,
-				locatie: (string)$locatie
+				location: (string)$location
 			);
 
 			if ($outcome['error'] !== null) {
@@ -161,24 +161,24 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'newStatus is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$allowedStatuses = ['ingediend', 'in_behandeling', 'verleend', 'geweigerd', 'ingetrokken'];
+		$allowedStatuses = ['ingediend', 'in_behandeling', 'verleend', 'geweigerd', 'withdrawn'];
 		if (in_array(needle: $newStatus, haystack: $allowedStatuses, strict: true) === false) {
 			return new JSONResponse(['error' => 'Invalid status value'], Http::STATUS_BAD_REQUEST);
 		}
 
 		try {
-			$zaak = $this->repository->findZaak(caseId: $caseId);
-			if ($zaak === null) {
+			$case = $this->repository->findZaak(caseId: $caseId);
+			if ($case === null) {
 				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			$this->dsoCaseService->authorizeZaakMutation(zaak: $zaak, user: $user);
+			$this->dsoCaseService->authorizeZaakMutation(case: $case, user: $user);
 
 			$updated = $this->dsoCaseService->transitionStatus(
-				zaakId: $caseId,
+				caseId: $caseId,
 				newStatus: $newStatus,
 				besluitdatum: $this->optionalString(body: $body, key: 'besluitdatum'),
-				toelichting: $this->optionalString(body: $body, key: 'toelichting'),
+				notes: $this->optionalString(body: $body, key: 'notes'),
 				userId: $user->getUID()
 			);
 
@@ -223,15 +223,15 @@ class DsoController extends Controller {
 		}
 
 		try {
-			$zaak = $this->repository->findZaak(caseId: $caseId);
-			if ($zaak === null) {
+			$case = $this->repository->findZaak(caseId: $caseId);
+			if ($case === null) {
 				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			$this->dsoCaseService->authorizeZaakMutation(zaak: $zaak, user: $user);
+			$this->dsoCaseService->authorizeZaakMutation(case: $case, user: $user);
 
-			$result = $this->beschikkingService->generateBeschikking(
-				zaakId: $caseId,
+			$result = $this->decisionService->generateBeschikking(
+				caseId: $caseId,
 				outcome: $outcome,
 				motivation: $motivation
 			);
@@ -279,15 +279,15 @@ class DsoController extends Controller {
 		}
 
 		try {
-			$zaak = $this->repository->findZaak(caseId: $caseId);
-			if ($zaak === null) {
+			$case = $this->repository->findZaak(caseId: $caseId);
+			if ($case === null) {
 				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			$this->dsoCaseService->authorizeZaakMutation(zaak: $zaak, user: $user);
+			$this->dsoCaseService->authorizeZaakMutation(case: $case, user: $user);
 
 			$samenwerkverzoek = $this->samenwerkService->initiateSamenwerking(
-				zaakId: $caseId,
+				caseId: $caseId,
 				aangezochtGezag: $bevoegdGezag,
 				rationale: $rationale
 			);
@@ -378,7 +378,7 @@ class DsoController extends Controller {
 
 		$body = $this->readJsonBody();
 		$targetBevoegdGezag = (string)($body['targetBevoegdGezag'] ?? '');
-		$reden = (string)($body['reden'] ?? '');
+		$reason = (string)($body['reason'] ?? '');
 
 		if ($targetBevoegdGezag === '') {
 			return new JSONResponse(
@@ -388,18 +388,18 @@ class DsoController extends Controller {
 		}
 
 		try {
-			$zaak = $this->repository->findZaak(caseId: $caseId);
-			if ($zaak === null) {
+			$case = $this->repository->findZaak(caseId: $caseId);
+			if ($case === null) {
 				return new JSONResponse(['error' => 'Case not found'], Http::STATUS_NOT_FOUND);
 			}
 
-			$this->dsoCaseService->authorizeZaakMutation(zaak: $zaak, user: $user);
+			$this->dsoCaseService->authorizeZaakMutation(case: $case, user: $user);
 
 			$this->doorsturenNotifier->dispatchDoorgestuurd(
-				zaak: $zaak,
+				case: $case,
 				caseId: $caseId,
 				targetBevoegdGezag: $targetBevoegdGezag,
-				reden: $reden,
+				reason: $reason,
 				userId: $user->getUID()
 			);
 

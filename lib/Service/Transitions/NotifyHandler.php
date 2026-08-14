@@ -37,11 +37,11 @@ class NotifyHandler implements ActionHandlerInterface {
 	/**
 	 * Constructor.
 	 *
-	 * @param NotificatieService $notificatieService Notification dispatcher
+	 * @param NotificatieService $notificationService Notification dispatcher
 	 * @param LoggerInterface $logger Logger
 	 */
 	public function __construct(
-		private readonly NotificatieService $notificatieService,
+		private readonly NotificatieService $notificationService,
 		private readonly LoggerInterface $logger,
 	) {
 	}//end __construct()
@@ -63,8 +63,8 @@ class NotifyHandler implements ActionHandlerInterface {
 			$recipient = (string)($actionConfig['userId'] ?? ($case['assignee'] ?? ''));
 			$message = (string)($actionConfig['message'] ?? sprintf('Status gewijzigd: %s', $transitionContext['transitionLabel'] ?? ''));
 
-			if (method_exists($this->notificatieService, 'notifyUser') === true && $recipient !== '') {
-				$this->notificatieService->notifyUser($recipient, $message, ['caseId' => $caseId]);
+			if (method_exists($this->notificationService, 'notifyUser') === true && $recipient !== '') {
+				$this->notificationService->notifyUser($recipient, $message, ['caseId' => $caseId]);
 				return new ActionResult(succeeded: true, data: ['userId' => $recipient]);
 			}
 

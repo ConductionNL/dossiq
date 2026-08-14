@@ -152,7 +152,7 @@ class ParafeerActieService {
 	 * @param ParaferingApprovalBridge $approvalBridge Bridge to OpenRegister approval-workflow (ADR-022).
 	 * @param ParaferingActionMapper $actionMapper Pure shaping of action input, payload and route steps.
 	 * @param ParafeerStepGuard $stepGuard Current-step resolution + fail-closed authorisation.
-	 * @param ParafeerVoorstelRepository $voorstelRepository Register/schema resolution + voorstel loads.
+	 * @param ParafeerVoorstelRepository $proposalRepository Register/schema resolution + voorstel loads.
 	 * @param ObjectArrayNormalizer $normalizer Collapses OpenRegister's array-or-entity shape.
 	 */
 	public function __construct(
@@ -163,7 +163,7 @@ class ParafeerActieService {
 		private readonly ParaferingApprovalBridge $approvalBridge,
 		private readonly ParaferingActionMapper $actionMapper,
 		private readonly ParafeerStepGuard $stepGuard,
-		private readonly ParafeerVoorstelRepository $voorstelRepository,
+		private readonly ParafeerVoorstelRepository $proposalRepository,
 		private readonly ObjectArrayNormalizer $normalizer,
 	) {
 	}//end __construct()
@@ -189,7 +189,7 @@ class ParafeerActieService {
 	/**
 	 * Best-effort dispatch of a ParafeerTransitionEvent.
 	 *
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 * @param string $action Transition action
 	 * @param string|null $step Step identifier
 	 * @param string $actor The actor user UID
@@ -199,7 +199,7 @@ class ParafeerActieService {
 	 * @return void
 	 */
 	private function dispatchTransition(
-		string $voorstelId,
+		string $proposalId,
 		string $action,
 		?string $step,
 		string $actor,
@@ -209,7 +209,7 @@ class ParafeerActieService {
 		try {
 			$this->eventDispatcher->dispatchTyped(
 				new ParafeerTransitionEvent(
-					voorstelId: $voorstelId,
+					proposalId: $proposalId,
 					action: $action,
 					step: $step,
 					actor: $actor,
@@ -221,7 +221,7 @@ class ParafeerActieService {
 			$this->logger->warning(
 				'Procest: ParafeerTransitionEvent dispatch failed',
 				[
-					'voorstel' => $voorstelId,
+					'voorstel' => $proposalId,
 					'action' => $action,
 					'exception' => $e->getMessage(),
 				],
@@ -236,7 +236,7 @@ class ParafeerActieService {
 	 *   - currentUser->getUID() MUST equal the step actor, OR
 	 *   - $data['onBehalfOf'] MUST equal the step actor AND a mandate reference is provided.
 	 *
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param string $proposalId The voorstel UUID.
 	 * @param array<string, mixed> $data Request payload (action, comment, advice, onBehalfOf, mandate).
 	 * @param IUser $currentUser The authenticated user from IUserSession.
 	 *
@@ -247,10 +247,10 @@ class ParafeerActieService {
 	 *
 	 * @spec openspec/changes/parafering-actions/tasks.md#T02
 	 */
-	public function recordAction(string $voorstelId, array $data, IUser $currentUser): array {
+	public function recordAction(string $proposalId, array $data, IUser $currentUser): array {
 		try {
 			return $this->performRecordAction(
-				voorstelId: $voorstelId,
+				proposalId: $proposalId,
 				data: $data,
 				currentUser: $currentUser,
 			);
@@ -260,7 +260,7 @@ class ParafeerActieService {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ParafeerActieService::recordAction failed',
-				['voorstel' => $voorstelId, 'exception' => $e->getMessage()]
+				['voorstel' => $proposalId, 'exception' => $e->getMessage()]
 			);
 			throw new RuntimeException('Operation failed');
 		}//end try
@@ -269,7 +269,7 @@ class ParafeerActieService {
 	/**
 	 * Run the parafering action pipeline: validate, persist, propagate, advance.
 	 *
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param string $proposalId The voorstel UUID.
 	 * @param array<string, mixed> $data Request payload (action, comment, advice, onBehalfOf, mandate).
 	 * @param IUser $currentUser The authenticated user from IUserSession.
 	 *
@@ -278,17 +278,17 @@ class ParafeerActieService {
 	 * @throws OCSForbiddenException When the current user is not authorized for this step.
 	 * @throws OCSBadRequestException When request data is invalid (e.g. missing reason on returned).
 	 */
-	private function performRecordAction(string $voorstelId, array $data, IUser $currentUser): array {
-		[$register, $voorstelSchema, $actieSchema] = $this->voorstelRepository->resolveSchemas();
-		$objectService = $this->voorstelRepository->requireObjectService();
+	private function performRecordAction(string $proposalId, array $data, IUser $currentUser): array {
+		[$register, $proposalSchema, $actionSchema] = $this->proposalRepository->resolveSchemas();
+		$objectService = $this->proposalRepository->requireObjectService();
 
-		$voorstel = $this->voorstelRepository->findVoorstel(
+		$proposal = $this->proposalRepository->findVoorstel(
 			objectService: $objectService,
 			register: $register,
-			schema: $voorstelSchema,
-			voorstelId: $voorstelId,
+			schema: $proposalSchema,
+			proposalId: $proposalId,
 		);
-		$step = $this->stepGuard->resolveCurrentStep(voorstel: $voorstel);
+		$step = $this->stepGuard->resolveCurrentStep(proposal: $proposal);
 
 		$input = $this->actionMapper->parseActionInput(data: $data);
 		$action = (string)$input['action'];
@@ -308,21 +308,21 @@ class ParafeerActieService {
 		);
 
 		$timestamp = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
-		$stepOrder = (int)($step['order'] ?? ($voorstel['currentStep'] ?? 0));
+		$stepOrder = (int)($step['order'] ?? ($proposal['currentStep'] ?? 0));
 
-		$actieData = $this->actionMapper->buildActieData(
-			voorstelId: $voorstelId,
+		$actionData = $this->actionMapper->buildActieData(
+			proposalId: $proposalId,
 			stepOrder: $stepOrder,
 			actor: $currentUser->getUID(),
 			input: $input,
 		);
 
 		// Persist the parafeeractie.
-		$savedActie = $objectService->saveObject(object: $actieData, register: $register, schema: $actieSchema);
+		$savedAction = $objectService->saveObject(object: $actionData, register: $register, schema: $actionSchema);
 
 		$this->propagateDecision(
-			voorstel: $voorstel,
-			voorstelId: $voorstelId,
+			proposal: $proposal,
+			proposalId: $proposalId,
 			input: $input,
 			stepOrder: $stepOrder,
 			currentUser: $currentUser,
@@ -333,48 +333,48 @@ class ParafeerActieService {
 			$this->handleReturn(
 				objectService: $objectService,
 				register: $register,
-				voorstelSchema: $voorstelSchema,
-				voorstel: $voorstel,
-				voorstelId: $voorstelId,
+				proposalSchema: $proposalSchema,
+				proposal: $proposal,
+				proposalId: $proposalId,
 				currentUser: $currentUser,
 				reason: $comment,
 			);
 
 			return [
-				'parafeeractie' => $this->normalizer->toArray(value: $savedActie),
-				'voorstel' => ['id' => $voorstelId, 'status' => self::STATUS_TERUGGESTUURD],
+				'parafeeractie' => $this->normalizer->toArray(value: $savedAction),
+				'voorstel' => ['id' => $proposalId, 'status' => self::STATUS_TERUGGESTUURD],
 			];
 		}
 
 		// Advance the route on success.
-		$updatedVoorstel = $this->advanceVoorstel(
+		$updatedProposal = $this->advanceProposal(
 			objectService: $objectService,
 			register: $register,
-			voorstelSchema: $voorstelSchema,
-			voorstel: $voorstel,
-			voorstelId: $voorstelId,
+			proposalSchema: $proposalSchema,
+			proposal: $proposal,
+			proposalId: $proposalId,
 		);
 
 		$this->applyAccorderingEffects(
 			step: $step,
 			action: $action,
-			voorstel: $voorstel,
-			voorstelId: $voorstelId,
+			proposal: $proposal,
+			proposalId: $proposalId,
 			currentUser: $currentUser,
 			timestamp: $timestamp,
 		);
 
 		return [
-			'parafeeractie' => $this->normalizer->toArray(value: $savedActie),
-			'voorstel' => $this->normalizer->toArray(value: $updatedVoorstel),
+			'parafeeractie' => $this->normalizer->toArray(value: $savedAction),
+			'voorstel' => $this->normalizer->toArray(value: $updatedProposal),
 		];
 	}//end performRecordAction()
 
 	/**
 	 * Propagate the step decision to OpenRegister and emit the audit transition.
 	 *
-	 * @param array<string, mixed> $voorstel The voorstel array (provides approvalChainUuid).
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param array<string, mixed> $proposal The voorstel array (provides approvalChainUuid).
+	 * @param string $proposalId The voorstel UUID.
 	 * @param array<string, mixed> $input The parsed action inputs.
 	 * @param int $stepOrder The step order this action applies to.
 	 * @param IUser $currentUser The authenticated user from IUserSession.
@@ -382,8 +382,8 @@ class ParafeerActieService {
 	 * @return void
 	 */
 	private function propagateDecision(
-		array $voorstel,
-		string $voorstelId,
+		array $proposal,
+		string $proposalId,
 		array $input,
 		int $stepOrder,
 		IUser $currentUser,
@@ -399,8 +399,8 @@ class ParafeerActieService {
 		// in-array currentStep/status update below remains the
 		// consumer-facing projection during the migration window.
 		$this->delegateToApprovalWorkflow(
-			voorstel: $voorstel,
-			voorstelId: $voorstelId,
+			proposal: $proposal,
+			proposalId: $proposalId,
 			action: $action,
 			comment: $comment,
 			advice: (string)$input['advice'],
@@ -417,7 +417,7 @@ class ParafeerActieService {
 		}
 
 		$this->dispatchTransition(
-			voorstelId: $voorstelId,
+			proposalId: $proposalId,
 			action: $transitionType,
 			step: (string)$stepOrder,
 			actor: $currentUser->getUID(),
@@ -432,8 +432,8 @@ class ParafeerActieService {
 	 *
 	 * @param array<string, mixed> $step The current route step.
 	 * @param string $action The recorded action.
-	 * @param array<string, mixed> $voorstel The voorstel array (current state).
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param array<string, mixed> $proposal The voorstel array (current state).
+	 * @param string $proposalId The voorstel UUID.
 	 * @param IUser $currentUser The authenticated user from IUserSession.
 	 * @param string $timestamp The ATOM timestamp of this action.
 	 *
@@ -442,8 +442,8 @@ class ParafeerActieService {
 	private function applyAccorderingEffects(
 		array $step,
 		string $action,
-		array $voorstel,
-		string $voorstelId,
+		array $proposal,
+		string $proposalId,
 		IUser $currentUser,
 		string $timestamp,
 	): void {
@@ -454,10 +454,10 @@ class ParafeerActieService {
 		}
 
 		// PDF signature on completed accordering step (only when document attached).
-		if (empty($voorstel['document']) === false) {
+		if (empty($proposal['document']) === false) {
 			$this->applyPdfSignature(
-				voorstelId: $voorstelId,
-				fileId: (string)$voorstel['document'],
+				proposalId: $proposalId,
+				fileId: (string)$proposal['document'],
 				actor: $currentUser,
 				step: (int)($step['order'] ?? 0),
 				timestamp: $timestamp,
@@ -465,19 +465,19 @@ class ParafeerActieService {
 		}
 
 		// Notify steller on full accordering.
-		if (empty($voorstel['steller']) === false) {
+		if (empty($proposal['steller']) === false) {
 			try {
 				$this->notificationService->notifyVoorstelReturned(
-					(string)$voorstel['steller'],
-					(string)($voorstel['onderwerp'] ?? ''),
-					$voorstelId,
+					(string)$proposal['steller'],
+					(string)($proposal['onderwerp'] ?? ''),
+					$proposalId,
 					$currentUser->getDisplayName(),
 					'Voorstel volledig geaccordeerd'
 				);
 			} catch (\Throwable $e) {
 				$this->logger->warning(
 					'Failed to send accordering notification to steller',
-					['voorstel' => $voorstelId, 'exception' => $e->getMessage()]
+					['voorstel' => $proposalId, 'exception' => $e->getMessage()]
 				);
 			}
 		}
@@ -495,8 +495,8 @@ class ParafeerActieService {
 	 * Best-effort: a failed OR transition is logged and does NOT abort the
 	 * consumer-facing action during the migration window.
 	 *
-	 * @param array<string, mixed> $voorstel The voorstel array (provides approvalChainUuid).
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param array<string, mixed> $proposal The voorstel array (provides approvalChainUuid).
+	 * @param string $proposalId The voorstel UUID.
 	 * @param string $action The procest action (parafered/advised/accorded/returned/skipped).
 	 * @param string $comment The human-readable comment/reden.
 	 * @param string $advice The advisory text (advies steps).
@@ -509,8 +509,8 @@ class ParafeerActieService {
 	 * @spec openspec/changes/migrate-parafering-to-or-approval-workflow/tasks.md#P1.2
 	 */
 	private function delegateToApprovalWorkflow(
-		array $voorstel,
-		string $voorstelId,
+		array $proposal,
+		string $proposalId,
 		string $action,
 		string $comment,
 		string $advice,
@@ -518,13 +518,13 @@ class ParafeerActieService {
 		?string $mandate,
 		IUser $currentUser,
 	): void {
-		$chainUuid = (string)($voorstel['approvalChainUuid'] ?? '');
+		$chainUuid = (string)($proposal['approvalChainUuid'] ?? '');
 		if ($chainUuid === '' || $this->approvalBridge->isAvailable() === false) {
 			return;
 		}
 
 		// The OR object UUID for the step lookup is the voorstel UUID.
-		$objectUuid = (string)($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId);
+		$objectUuid = (string)($proposal['id'] ?? $proposal['uuid'] ?? $proposalId);
 		$userId = $currentUser->getUID();
 
 		$actorType = 'user';
@@ -567,7 +567,7 @@ class ParafeerActieService {
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'Procest: approval-workflow delegation failed; legacy path governs',
-				['voorstel' => $voorstelId, 'action' => $action, 'exception' => $e->getMessage()]
+				['voorstel' => $proposalId, 'action' => $action, 'exception' => $e->getMessage()]
 			);
 		}//end try
 	}//end delegateToApprovalWorkflow()
@@ -575,16 +575,16 @@ class ParafeerActieService {
 	/**
 	 * List all parafeeracties for a voorstel, sorted by createdAt ascending.
 	 *
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param string $proposalId The voorstel UUID.
 	 *
 	 * @return array<int, array<string, mixed>> The parafeeractie objects.
 	 *
 	 * @spec openspec/changes/parafering-actions/tasks.md#T02
 	 */
-	public function listActions(string $voorstelId): array {
+	public function listActions(string $proposalId): array {
 		try {
-			[$register, , $actieSchema] = $this->voorstelRepository->resolveSchemas();
-			$objectService = $this->voorstelRepository->objectServiceOrNull();
+			[$register, , $actionSchema] = $this->proposalRepository->resolveSchemas();
+			$objectService = $this->proposalRepository->objectServiceOrNull();
 			if ($objectService === null) {
 				return [];
 			}
@@ -592,8 +592,8 @@ class ParafeerActieService {
 			$results = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $actieSchema,
-				filters: ['voorstel' => $voorstelId, '_limit' => 500],
+				schema: $actionSchema,
+				filters: ['voorstel' => $proposalId, '_limit' => 500],
 			);
 
 			$rows = [];
@@ -617,7 +617,7 @@ class ParafeerActieService {
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'ParafeerActieService::listActions failed',
-				['voorstel' => $voorstelId, 'exception' => $e->getMessage()]
+				['voorstel' => $proposalId, 'exception' => $e->getMessage()]
 			);
 			return [];
 		}//end try
@@ -629,7 +629,7 @@ class ParafeerActieService {
 	 * Non-blocking: failures are logged at warning level and swallowed
 	 * per REQ-PAA-005-002 (absence of a writable document is a valid state).
 	 *
-	 * @param string $voorstelId The voorstel UUID (for logging context).
+	 * @param string $proposalId The voorstel UUID (for logging context).
 	 * @param string $fileId The Nextcloud file ID of the voorstel document.
 	 * @param IUser $actor The authenticated actor performing the accordering.
 	 * @param int $step The completed step number.
@@ -640,7 +640,7 @@ class ParafeerActieService {
 	 * @spec openspec/changes/parafering-actions/tasks.md#T02
 	 */
 	public function applyPdfSignature(
-		string $voorstelId,
+		string $proposalId,
 		string $fileId,
 		IUser $actor,
 		int $step,
@@ -652,7 +652,7 @@ class ParafeerActieService {
 			if (count($nodes) === 0) {
 				$this->logger->warning(
 					'ParafeerActieService: voorstel document not found for PDF signing',
-					['voorstel' => $voorstelId, 'file' => $fileId]
+					['voorstel' => $proposalId, 'file' => $fileId]
 				);
 				return;
 			}
@@ -661,7 +661,7 @@ class ParafeerActieService {
 			if (($file instanceof File) === false) {
 				$this->logger->warning(
 					'ParafeerActieService: voorstel node is not a writable file',
-					['voorstel' => $voorstelId, 'file' => $fileId]
+					['voorstel' => $proposalId, 'file' => $fileId]
 				);
 				return;
 			}
@@ -684,7 +684,7 @@ class ParafeerActieService {
 			$this->logger->info(
 				'ParafeerActieService: PDF signature annotation applied',
 				[
-					'voorstel' => $voorstelId,
+					'voorstel' => $proposalId,
 					'file' => $fileId,
 					'actor' => $actor->getUID(),
 				]
@@ -692,12 +692,12 @@ class ParafeerActieService {
 		} catch (NotFoundException $e) {
 			$this->logger->warning(
 				'ParafeerActieService: PDF signing skipped — file not found',
-				['voorstel' => $voorstelId, 'file' => $fileId]
+				['voorstel' => $proposalId, 'file' => $fileId]
 			);
 		} catch (\Throwable $e) {
 			$this->logger->warning(
 				'ParafeerActieService: PDF signature could not be applied',
-				['voorstel' => $voorstelId, 'file' => $fileId, 'exception' => $e->getMessage()]
+				['voorstel' => $proposalId, 'file' => $fileId, 'exception' => $e->getMessage()]
 			);
 		}//end try
 	}//end applyPdfSignature()
@@ -707,9 +707,9 @@ class ParafeerActieService {
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
 	 * @param string $register The register identifier.
-	 * @param string $voorstelSchema The voorstel schema identifier.
-	 * @param array<string, mixed> $voorstel The voorstel array (current state).
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param string $proposalSchema The voorstel schema identifier.
+	 * @param array<string, mixed> $proposal The voorstel array (current state).
+	 * @param string $proposalId The voorstel UUID.
 	 * @param IUser $currentUser The user who returned the voorstel.
 	 * @param string $reason The mandatory return reason.
 	 *
@@ -718,35 +718,35 @@ class ParafeerActieService {
 	private function handleReturn(
 		object $objectService,
 		string $register,
-		string $voorstelSchema,
-		array $voorstel,
-		string $voorstelId,
+		string $proposalSchema,
+		array $proposal,
+		string $proposalId,
 		IUser $currentUser,
 		string $reason,
 	): void {
-		$currentStep = (int)($voorstel['currentStep'] ?? 0);
+		$currentStep = (int)($proposal['currentStep'] ?? 0);
 
 		$updateData = [
 			'status' => self::STATUS_TERUGGESTUURD,
 			'returnedFromStep' => $currentStep,
 		];
 
-		$objectService->saveObject(object: $updateData, register: $register, schema: $voorstelSchema, uuid: (string)$voorstelId);
+		$objectService->saveObject(object: $updateData, register: $register, schema: $proposalSchema, uuid: (string)$proposalId);
 
-		$steller = (string)($voorstel['steller'] ?? '');
+		$steller = (string)($proposal['steller'] ?? '');
 		if ($steller !== '') {
 			try {
 				$this->notificationService->notifyVoorstelReturned(
 					$steller,
-					(string)($voorstel['onderwerp'] ?? ''),
-					$voorstelId,
+					(string)($proposal['onderwerp'] ?? ''),
+					$proposalId,
 					$currentUser->getDisplayName(),
 					$reason
 				);
 			} catch (\Throwable $e) {
 				$this->logger->warning(
 					'Failed to send teruggestuurd notification',
-					['voorstel' => $voorstelId, 'exception' => $e->getMessage()]
+					['voorstel' => $proposalId, 'exception' => $e->getMessage()]
 				);
 			}
 		}
@@ -757,22 +757,22 @@ class ParafeerActieService {
 	 *
 	 * @param object $objectService The OpenRegister ObjectService.
 	 * @param string $register The register identifier.
-	 * @param string $voorstelSchema The voorstel schema identifier.
-	 * @param array<string, mixed> $voorstel The current voorstel state.
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param string $proposalSchema The voorstel schema identifier.
+	 * @param array<string, mixed> $proposal The current voorstel state.
+	 * @param string $proposalId The voorstel UUID.
 	 *
 	 * @return array<string, mixed> The updated voorstel.
 	 */
-	private function advanceVoorstel(
+	private function advanceProposal(
 		object $objectService,
 		string $register,
-		string $voorstelSchema,
-		array $voorstel,
-		string $voorstelId,
+		string $proposalSchema,
+		array $proposal,
+		string $proposalId,
 	): array {
-		$currentStep = (int)($voorstel['currentStep'] ?? 0);
+		$currentStep = (int)($proposal['currentStep'] ?? 0);
 		$next = $this->actionMapper->findNextRouteStep(
-			snapshotRaw: ($voorstel['routeSnapshot'] ?? null),
+			snapshotRaw: ($proposal['routeSnapshot'] ?? null),
 			currentStep: $currentStep,
 		);
 
@@ -789,7 +789,7 @@ class ParafeerActieService {
 			];
 		}
 
-		$updated = $objectService->saveObject(object: $updateData, register: $register, schema: $voorstelSchema, uuid: (string)$voorstelId);
+		$updated = $objectService->saveObject(object: $updateData, register: $register, schema: $proposalSchema, uuid: (string)$proposalId);
 
 		return $this->normalizer->toArray(value: $updated);
 	}//end advanceVoorstel()

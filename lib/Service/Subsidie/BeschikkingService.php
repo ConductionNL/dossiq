@@ -53,13 +53,13 @@ class BeschikkingService {
 	 * Constructor.
 	 *
 	 * @param SettingsService $settingsService Schema/register bridge.
-	 * @param SubsidieService $subsidieService Core service (voorschot validation, nummers).
+	 * @param SubsidieService $subsidyService Core service (voorschot validation, nummers).
 	 * @param IUserSession $userSession Acting identity source.
 	 * @param LoggerInterface $logger Logger.
 	 */
 	public function __construct(
 		private readonly SettingsService $settingsService,
-		private readonly SubsidieService $subsidieService,
+		private readonly SubsidieService $subsidyService,
 		private readonly IUserSession $userSession,
 		private readonly LoggerInterface $logger,
 	) {
@@ -68,12 +68,12 @@ class BeschikkingService {
 	/**
 	 * Compute the bezwaartermijn end date from a publication date.
 	 *
-	 * @param DateTimeImmutable $publicatie The publication date.
+	 * @param DateTimeImmutable $publication The publication date.
 	 *
 	 * @return DateTimeImmutable The bezwaartermijn end.
 	 */
-	public function computeBezwaartermijn(DateTimeImmutable $publicatie): DateTimeImmutable {
-		return $publicatie->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
+	public function computeBezwaartermijn(DateTimeImmutable $publication): DateTimeImmutable {
+		return $publication->add(new DateInterval('P' . (self::BEZWAARTERMIJN_WEKEN * 7) . 'D'));
 	}//end computeBezwaartermijn()
 
 	/**
@@ -86,8 +86,8 @@ class BeschikkingService {
 	 * @throws OCSBadRequestException When validation fails.
 	 */
 	public function assertDraftValid(array $payload): void {
-		$verleend = (float)($payload['verleendBedrag'] ?? 0);
-		if ($verleend <= 0.0) {
+		$granted = (float)($payload['grantedAmount'] ?? 0);
+		if ($granted <= 0.0) {
 			throw new OCSBadRequestException('verleendBedrag moet positief zijn');
 		}
 
@@ -97,7 +97,7 @@ class BeschikkingService {
 		}
 
 		if (is_array($schema) === true && $schema !== []) {
-			if ($this->subsidieService->voorschotSchemaReconciles(voorschotSchema: $schema, verleendBedrag: $verleend) === false) {
+			if ($this->subsidyService->voorschotSchemaReconciles(voorschotSchema: $schema, grantedAmount: $granted) === false) {
 				throw new OCSBadRequestException(
 					'De som van de voorschotten moet gelijk zijn aan het verleende bedrag'
 				);
@@ -108,7 +108,7 @@ class BeschikkingService {
 	/**
 	 * Create a draft beschikking with a generated beschikkingnummer.
 	 *
-	 * @param string $aanvraagId The application id.
+	 * @param string $requestId The application id.
 	 * @param array<string, mixed> $payload The beschikking properties.
 	 * @param int $sequence The running beschikking sequence.
 	 *
@@ -116,20 +116,20 @@ class BeschikkingService {
 	 *
 	 * @throws OCSBadRequestException When validation/persistence fails.
 	 */
-	public function createDraft(string $aanvraagId, array $payload, int $sequence): array {
+	public function createDraft(string $requestId, array $payload, int $sequence): array {
 		$this->assertDraftValid(payload: $payload);
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$record = array_merge(
 			$payload,
 			[
-				'subsidieaanvraag' => $aanvraagId,
-				'beschikkingnummer' => $this->subsidieService->generateBeschikkingnummer(sequence: $sequence),
+				'subsidieaanvraag' => $requestId,
+				'beschikkingnummer' => $this->subsidyService->generateBeschikkingnummer(sequence: $sequence),
 				'beschikkingtype' => (string)($payload['beschikkingtype'] ?? 'verleningsbeschikking'),
 				'status' => 'concept',
 			]
 		);
-		unset($record['ondertekendDoor'], $record['ondertekendOp'], $record['publicatiedatum']);
+		unset($record['signedBy'], $record['signedOn'], $record['publicationDate']);
 
 		try {
 			return $objectService->saveObject(object: $record, register: $register, schema: $schema);
@@ -144,13 +144,13 @@ class BeschikkingService {
 	 * The signer identity is always derived from the session, never trusted
 	 * from the request body.
 	 *
-	 * @param string $beschikkingId The beschikking id.
+	 * @param string $decisionId The beschikking id.
 	 *
 	 * @return array<string, mixed> The signed beschikking record.
 	 *
 	 * @throws OCSBadRequestException When unauthenticated or persistence fails.
 	 */
-	public function sign(string $beschikkingId): array {
+	public function sign(string $decisionId): array {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			throw new OCSBadRequestException('Authenticatie vereist om te ondertekenen');
@@ -159,12 +159,12 @@ class BeschikkingService {
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$patch = [
-			'ondertekendDoor' => $user->getUID(),
-			'ondertekendOp' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
+			'signedBy' => $user->getUID(),
+			'signedOn' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
 		];
 
 		try {
-			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$beschikkingId);
+			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$decisionId);
 		} catch (Throwable $e) {
 			$this->logger->error('Procest subsidie: sign beschikking failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon beschikking niet ondertekenen');
@@ -174,33 +174,33 @@ class BeschikkingService {
 	/**
 	 * Publish a beschikking, stamping the publicatiedatum and bezwaartermijn.
 	 *
-	 * @param string $beschikkingId The beschikking id.
+	 * @param string $decisionId The beschikking id.
 	 *
 	 * @return array<string, mixed> The published beschikking record.
 	 *
 	 * @throws OCSBadRequestException When the beschikking is unsigned or persistence fails.
 	 */
-	public function publish(string $beschikkingId): array {
+	public function publish(string $decisionId): array {
 		[$objectService, $register, $schema] = $this->resolve();
 
-		$current = $objectService->find($beschikkingId, register: $register, schema: $schema);
+		$current = $objectService->find($decisionId, register: $register, schema: $schema);
 		if (is_array($current) === false) {
 			throw new OCSBadRequestException('Beschikking niet gevonden');
 		}
 
-		if (((string)($current['ondertekendDoor'] ?? '')) === '') {
+		if (((string)($current['signedBy'] ?? '')) === '') {
 			throw new OCSBadRequestException('Beschikking moet eerst worden ondertekend');
 		}
 
 		$now = new DateTimeImmutable();
 		$patch = [
 			'status' => 'verleend',
-			'publicatiedatum' => $now->format('Y-m-d'),
-			'bezwaartermijnEinde' => $this->computeBezwaartermijn(publicatie: $now)->format('Y-m-d'),
+			'publicationDate' => $now->format('Y-m-d'),
+			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $now)->format('Y-m-d'),
 		];
 
 		try {
-			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$beschikkingId);
+			return $objectService->saveObject(object: $patch, register: $register, schema: $schema, uuid: (string)$decisionId);
 		} catch (Throwable $e) {
 			$this->logger->error('Procest subsidie: publish beschikking failed: ' . $e->getMessage());
 			throw new OCSBadRequestException('Kon beschikking niet publiceren');

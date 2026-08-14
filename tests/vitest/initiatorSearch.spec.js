@@ -38,16 +38,16 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 	it('composes a person display name incl voorvoegsel', () => {
 		expect(
 			personDisplayName({
-				voornamen: 'Tina-Antïna',
-				voorvoegsel: 'de',
-				geslachtsnaam: 'Bruin',
+				given_names: 'Tina-Antïna',
+				name_prefix: 'de',
+				surname: 'Bruin',
 			}),
 		).toBe('Tina-Antïna de Bruin')
 		expect(
 			personDisplayName({
-				voornamen: 'Stephan',
-				voorvoegsel: '',
-				geslachtsnaam: 'Janssen',
+				given_names: 'Stephan',
+				name_prefix: '',
+				surname: 'Janssen',
 			}),
 		).toBe('Stephan Janssen')
 		expect(personDisplayName(null)).toBe('')
@@ -56,10 +56,10 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 	it('shapes a brpPerson row into a unified person result', () => {
 		const result = personResult({
 			id: 'uuid-1',
-			burgerservicenummer: '999990627',
+			citizen_service_number: '999990627',
 			displayName: 'Stephan Janssen',
-			geboorte: { datum: '1975-04-06' },
-			naam: { voornamen: 'Stephan', geslachtsnaam: 'Janssen' },
+			birth: { date: '1975-04-06' },
+			name: { given_names: 'Stephan', surname: 'Janssen' },
 		})
 		expect(result.type).toBe('person')
 		expect(result.sourceId).toBe('999990627')
@@ -71,8 +71,8 @@ describe('initiatorSearch (brp-kvk-register-sets)', () => {
 	it('shapes a kvkCompany row into a unified company result', () => {
 		const result = companyResult({
 			id: 'uuid-2',
-			kvkNummer: '69599084',
-			handelsnaam: 'Test EMZ Dagobert',
+			kvkNumber: '69599084',
+			trade_name: 'Test EMZ Dagobert',
 			rechtsvorm: 'Eenmanszaak',
 		})
 		expect(result.type).toBe('company')

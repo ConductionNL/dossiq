@@ -186,7 +186,7 @@ export default {
 				await this.recordAttendees(agendaCase.id, f.attendees)
 				await this.loadCases()
 			} catch (error) {
-				console.error('Failed to record besluit:', error)
+				console.error('Failed to record decision:', error)
 			}
 		},
 
@@ -224,7 +224,7 @@ export default {
 				})
 				await this.loadCases()
 			} catch (error) {
-				console.error('Failed to defer besluit:', error)
+				console.error('Failed to defer decision:', error)
 			}
 		},
 	},

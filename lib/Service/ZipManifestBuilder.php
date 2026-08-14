@@ -44,7 +44,7 @@ class ZipManifestBuilder {
 	 * Manifest.csv column order.
 	 */
 	public const MANIFEST_COLUMNS = [
-		'bestandsnaam',
+		'fileName',
 		'titel',
 		'informatieobjecttype',
 		'status',
@@ -162,7 +162,7 @@ class ZipManifestBuilder {
 		$usedNames = [];
 		foreach ($included as $doc) {
 			$infoId = (string)($doc['id'] ?? ($doc['uuid'] ?? ''));
-			$fileName = (string)($doc['bestandsnaam'] ?? '');
+			$fileName = (string)($doc['fileName'] ?? '');
 			if ($infoId === '' || $fileName === '') {
 				continue;
 			}

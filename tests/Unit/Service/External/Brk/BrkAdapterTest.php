@@ -125,7 +125,7 @@ class BrkAdapterTest extends TestCase {
 
 		$this->assertTrue($adapter->isDormant());
 
-		$searchResult = $adapter->lookupByKadastraleAanduiding(kadastraleGemeenteCode: 'VBSTD', sectie: 'A', perceelnummer: '1234');
+		$searchResult = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'A', perceelnummer: '1234');
 		$this->assertSame('LOOKUP_DEFERRED', $searchResult->lookupStatus);
 		$this->assertTrue($searchResult->dormant);
 		$this->assertSame([], $searchResult->parcel);
@@ -163,7 +163,7 @@ class BrkAdapterTest extends TestCase {
 			[
 				'_embedded' => [
 					'kadastraalOnroerendeZaken' => [
-						['kadastraleAanduiding' => ['sectie' => 'A', 'perceelnummer' => 1234], 'kadastraleGrootte' => ['waarde' => 350]],
+						['kadastraleAanduiding' => ['sectie' => 'A', 'perceelnummer' => 1234], 'kadastraleGrootte' => ['value' => 350]],
 					],
 				],
 			]
@@ -177,7 +177,7 @@ class BrkAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleGemeenteCode: 'VBSTD', sectie: 'a', perceelnummer: '1234');
+		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'a', perceelnummer: '1234');
 
 		$this->assertStringEndsWith('/kadastraalonroerendezaken', $captured['url']);
 		$this->assertSame('VBSTD', $captured['options']['query']['kadastraleGemeenteCode']);
@@ -208,10 +208,10 @@ class BrkAdapterTest extends TestCase {
 		);
 
 		$adapter->lookupByKadastraleAanduiding(
-			kadastraleGemeenteCode: 'VBSTD',
-			sectie: 'A',
+			kadastraleMunicipalityCode: 'VBSTD',
+			section: 'A',
 			perceelnummer: '1234',
-			appartementsrechtVolgnummer: 'a2',
+			appartementsrechtSequenceNumber: 'a2',
 		);
 
 		$this->assertSame('A2', $captured['options']['query']['appartementsrechtVolgnummer']);
@@ -235,20 +235,20 @@ class BrkAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleGemeenteCode: '', sectie: 'A', perceelnummer: '1234');
+		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: '', section: 'A', perceelnummer: '1234');
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleGemeenteCode: 'VBSTD', sectie: 'ABC', perceelnummer: '1234');
+		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'ABC', perceelnummer: '1234');
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleGemeenteCode: 'VBSTD', sectie: 'A', perceelnummer: 'not-a-number');
+		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'A', perceelnummer: 'not-a-number');
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 
 		$result = $adapter->lookupByKadastraleAanduiding(
-			kadastraleGemeenteCode: 'VBSTD',
-			sectie: 'A',
+			kadastraleMunicipalityCode: 'VBSTD',
+			section: 'A',
 			perceelnummer: '1234',
-			appartementsrechtVolgnummer: 'invalid',
+			appartementsrechtSequenceNumber: 'invalid',
 		);
 		$this->assertSame('INVALID_INPUT', $result->lookupStatus);
 	}//end testInvalidKadastraleAanduidingInputIsRejectedWithoutNetworkCall()
@@ -267,7 +267,7 @@ class BrkAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$result = $adapter->lookupByKadastraleAanduiding(kadastraleGemeenteCode: 'ZZZZZ', sectie: 'Z', perceelnummer: '99999');
+		$result = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'ZZZZZ', section: 'Z', perceelnummer: '99999');
 		$this->assertSame('NOT_FOUND', $result->lookupStatus);
 	}//end testSearchEmptyResultIsNotFound()
 
@@ -369,7 +369,7 @@ class BrkAdapterTest extends TestCase {
 			logger: $this->createMock(LoggerInterface::class),
 		);
 
-		$searchResult = $adapter->lookupByKadastraleAanduiding(kadastraleGemeenteCode: 'VBSTD', sectie: 'A', perceelnummer: '1234');
+		$searchResult = $adapter->lookupByKadastraleAanduiding(kadastraleMunicipalityCode: 'VBSTD', section: 'A', perceelnummer: '1234');
 		$this->assertSame('LOOKUP_ERROR', $searchResult->lookupStatus);
 		$this->assertSame('transport-error', $searchResult->extras['reason']);
 

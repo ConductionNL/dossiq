@@ -42,7 +42,7 @@ test.describe('Semantic case intake — handoff provenance UI', () => {
 			identifier: 'HANDOFF-INTAKE-1',
 			description: 'Case that arrived via the ns#Case semantic handoff.',
 			// NOT 'handoff': the case schema's intakeChannel enum is
-			// ["manual","balie","telefoon","email","post","website","overig",
+			// ["manual","balie","phone","email","post","website","overig",
 			// "zgw-api"], so 'handoff' is rejected by OpenRegister with a 400
 			// and the fixture never got created. The provenance UI keys off
 			// `handoffSource` alone (InitiatorSection#hasHandoff), so the

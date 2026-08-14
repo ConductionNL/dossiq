@@ -134,7 +134,7 @@ export default {
 </script>
 
 <style scoped>
-.besluit-publicatie-panel__badge {
+.decision-publicatie-panel__badge {
 	display: inline-block;
 	padding: 2px 10px;
 	border-radius: var(--border-radius-pill);
@@ -142,12 +142,12 @@ export default {
 	margin-bottom: 8px;
 }
 
-.besluit-publicatie-panel__badge--success {
+.decision-publicatie-panel__badge--success {
 	background: var(--color-success);
 	color: var(--color-primary-element-text);
 }
 
-.besluit-publicatie-panel__badge--failed {
+.decision-publicatie-panel__badge--failed {
 	background: var(--color-error);
 	color: var(--color-primary-element-text);
 }

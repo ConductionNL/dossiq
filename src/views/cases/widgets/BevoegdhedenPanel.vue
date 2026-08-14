@@ -225,8 +225,8 @@ export default {
 		 * @spec openspec/changes/mandaat-matrix-08-user-ui/tasks.md
 		 */
 		formatCeiling(row) {
-			if (row.voorwaarden && typeof row.voorwaarden.plafond === 'number') {
-				return '€ ' + row.voorwaarden.plafond.toLocaleString('nl-NL')
+			if (row.terms && typeof row.terms.plafond === 'number') {
+				return '€ ' + row.terms.plafond.toLocaleString('nl-NL')
 			}
 			return '-'
 		},

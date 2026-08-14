@@ -132,7 +132,7 @@ class BagControllerTest extends TestCase {
 			static function (string $key, $default = null) {
 				return match ($key) {
 					'postcode' => '1234AB',
-					'huisnummer' => '10',
+					'houseNumber' => '10',
 					default => $default,
 				};
 			}
@@ -165,7 +165,7 @@ class BagControllerTest extends TestCase {
 			static function (string $key, $default = null) {
 				return match ($key) {
 					'postcode' => '1234AB',
-					'huisnummer' => '10',
+					'houseNumber' => '10',
 					default => $default,
 				};
 			}
@@ -198,7 +198,7 @@ class BagControllerTest extends TestCase {
 			static function (string $key, $default = null) {
 				return match ($key) {
 					'postcode' => '1234AB',
-					'huisnummer' => '10',
+					'houseNumber' => '10',
 					default => $default,
 				};
 			}

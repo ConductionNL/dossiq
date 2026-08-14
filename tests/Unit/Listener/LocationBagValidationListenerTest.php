@@ -211,7 +211,7 @@ class LocationBagValidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testBagSourceWithMalformedIdIsRejected(): void {
-		$entity = $this->entity(['source' => 'bag', 'nummeraanduidingId' => '12345']);
+		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '12345']);
 		$event = $this->creatingEvent($entity);
 
 		$this->bagAdapter->expects($this->never())->method('lookupObject');
@@ -228,7 +228,7 @@ class LocationBagValidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testValidIdWithDormantAdapterIsAcceptedWithoutRemoteCall(): void {
-		$entity = $this->entity(['source' => 'bag', 'nummeraanduidingId' => '0363010000123456']);
+		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '0363010000123456']);
 		$event = $this->creatingEvent($entity);
 
 		$this->bagAdapter->method('isDormant')->willReturn(true);
@@ -245,7 +245,7 @@ class LocationBagValidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testValidIdWithNonDormantFoundIsAccepted(): void {
-		$entity = $this->entity(['source' => 'bag', 'nummeraanduidingId' => '0363010000123456']);
+		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '0363010000123456']);
 		$event = $this->creatingEvent($entity);
 
 		$this->bagAdapter->method('isDormant')->willReturn(false);
@@ -265,7 +265,7 @@ class LocationBagValidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testValidIdWithNonDormantNotFoundIsRejected(): void {
-		$entity = $this->entity(['source' => 'bag', 'nummeraanduidingId' => '0363010000123456']);
+		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '0363010000123456']);
 		$event = $this->creatingEvent($entity);
 
 		$this->bagAdapter->method('isDormant')->willReturn(false);
@@ -286,7 +286,7 @@ class LocationBagValidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testValidIdWithLookupErrorAcceptsWithWarning(): void {
-		$entity = $this->entity(['source' => 'bag', 'nummeraanduidingId' => '0363010000123456']);
+		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '0363010000123456']);
 		$event = $this->creatingEvent($entity);
 
 		$this->bagAdapter->method('isDormant')->willReturn(false);
@@ -307,7 +307,7 @@ class LocationBagValidationListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testValidIdWithAdapterThrowingAcceptsWithWarning(): void {
-		$entity = $this->entity(['source' => 'bag', 'nummeraanduidingId' => '0363010000123456']);
+		$entity = $this->entity(['source' => 'bag', 'addressDesignationId' => '0363010000123456']);
 		$event = $this->creatingEvent($entity);
 
 		$this->bagAdapter->method('isDormant')->willReturn(false);

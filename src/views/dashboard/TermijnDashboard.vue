@@ -275,7 +275,7 @@ export default {
 			this.error = null
 			try {
 				const params = {}
-				if (this.zaaktypeFilter) params.zaaktype = this.zaaktypeFilter
+				if (this.zaaktypeFilter) params.case_type = this.zaaktypeFilter
 				const res = await axios.get(
 					generateUrl('/apps/procest/api/termijn/dashboard/kpi'),
 					{ params },
@@ -334,7 +334,7 @@ export default {
 		downloadQuarterCsv() {
 			if (!this.quarterly || !this.quarterly.perType) return
 			const headers = [
-				'zaaktype',
+				'case_type',
 				'totaal',
 				'binnenTermijnPercent',
 				'overschrijdingen',

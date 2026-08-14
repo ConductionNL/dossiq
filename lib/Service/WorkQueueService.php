@@ -438,7 +438,7 @@ class WorkQueueService {
 	 * @return string|null The resolved deadline, or null when none available.
 	 */
 	private function resolveCaseDeadline(object $objectService, string $register, string $caseId, string $fallback): ?string {
-		$nearest = $this->nearestActiveTermijnDeadline(objectService: $objectService, register: $register, caseId: $caseId);
+		$nearest = $this->nearestActiveTermDeadline(objectService: $objectService, register: $register, caseId: $caseId);
 		if ($nearest !== null) {
 			return $nearest;
 		}
@@ -461,9 +461,9 @@ class WorkQueueService {
 	 *
 	 * @return string|null The nearest active deadline, or null.
 	 */
-	private function nearestActiveTermijnDeadline(object $objectService, string $register, string $caseId): ?string {
-		$termijnSchema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
-		if ($termijnSchema === '' || $caseId === '') {
+	private function nearestActiveTermDeadline(object $objectService, string $register, string $caseId): ?string {
+		$termSchema = (string)$this->settingsService->getConfigValue('termijn_instance_schema');
+		if ($termSchema === '' || $caseId === '') {
 			return null;
 		}
 
@@ -471,7 +471,7 @@ class WorkQueueService {
 			$instances = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: $register,
-				schema: $termijnSchema,
+				schema: $termSchema,
 				filters: [
 					'zaak' => $caseId,
 					'status' => 'lopend',
@@ -483,7 +483,7 @@ class WorkQueueService {
 
 		$nearest = null;
 		foreach ($instances as $instance) {
-			$date = (string)($instance['einddatumActueel'] ?? '');
+			$date = (string)($instance['endDateCurrent'] ?? '');
 			if ($date === '' || ($nearest !== null && $date >= $nearest)) {
 				continue;
 			}

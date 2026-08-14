@@ -110,7 +110,7 @@ class ParafeerRouteService {
 	 * Failures MUST NOT propagate back to the routing service — operational
 	 * transitions must not be blocked by audit-listener outages.
 	 *
-	 * @param string $voorstelId The voorstel UUID/slug
+	 * @param string $proposalId The voorstel UUID/slug
 	 * @param string $action The transition action
 	 * @param string|null $step Step identifier when applicable
 	 * @param string $actor The actor user UID
@@ -120,7 +120,7 @@ class ParafeerRouteService {
 	 * @return void
 	 */
 	private function dispatchTransition(
-		string $voorstelId,
+		string $proposalId,
 		string $action,
 		?string $step,
 		string $actor,
@@ -130,7 +130,7 @@ class ParafeerRouteService {
 		try {
 			$this->eventDispatcher->dispatchTyped(
 				new ParafeerTransitionEvent(
-					voorstelId: $voorstelId,
+					proposalId: $proposalId,
 					action: $action,
 					step: $step,
 					actor: $actor,
@@ -142,7 +142,7 @@ class ParafeerRouteService {
 			$this->logger->warning(
 				'Procest: ParafeerTransitionEvent dispatch failed',
 				[
-					'voorstel' => $voorstelId,
+					'voorstel' => $proposalId,
 					'action' => $action,
 					'exception' => $e->getMessage(),
 				],
@@ -157,7 +157,7 @@ class ParafeerRouteService {
 	 * voorstel, sets currentStep=1, transitions to in_parafering, and
 	 * activates step 1 (task + notification).
 	 *
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 *
 	 * @return array<string, mixed> The updated voorstel
 	 *
@@ -165,13 +165,13 @@ class ParafeerRouteService {
 	 *
 	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
 	 */
-	public function startParafering(string $voorstelId): array {
-		[$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
+	public function startParafering(string $proposalId): array {
+		[$objectService, $register, $proposalSchema] = $this->bootstrapVoorstel();
 		$routeSchema = $this->requireConfig(key: 'parafeerroute_schema');
 
-		$voorstel = $this->normalizer->toArrayWithCast(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
+		$proposal = $this->normalizer->toArrayWithCast(value: $objectService->find($proposalId, register: $register, schema: $proposalSchema));
 
-		$routeRef = (string)($voorstel['parafeerroute'] ?? '');
+		$routeRef = (string)($proposal['parafeerroute'] ?? '');
 		if ($routeRef === '') {
 			throw new RuntimeException('Voorstel has no linked parafeerroute');
 		}
@@ -182,34 +182,34 @@ class ParafeerRouteService {
 			throw new RuntimeException('Linked parafeerroute has no steps');
 		}
 
-		$voorstel['routeSnapshot'] = json_encode($steps);
-		$voorstel['currentStep'] = 1;
-		$voorstel['status'] = self::STATUS_IN_PARAFERING;
+		$proposal['routeSnapshot'] = json_encode($steps);
+		$proposal['currentStep'] = 1;
+		$proposal['status'] = self::STATUS_IN_PARAFERING;
 
 		// Per ADR-022, the chain-state backend is OpenRegister's approval-workflow.
 		// Create the OpenRegister ApprovalChain and persist its UUID on the voorstel.
 		// No new procest-local Parafeerroute row is written for the chain state.
-		$voorstelUuid = (string)($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId);
+		$voorstelUuid = (string)($proposal['id'] ?? $proposal['uuid'] ?? $proposalId);
 		$chainUuid = $this->createApprovalChain(voorstelUuid: $voorstelUuid, route: $route, steps: $steps);
 		if ($chainUuid !== null) {
-			$voorstel['approvalChainUuid'] = $chainUuid;
+			$proposal['approvalChainUuid'] = $chainUuid;
 		}
 
-		$voorstel = $this->normalizer->toArrayWithCast(
-			value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema)
+		$proposal = $this->normalizer->toArrayWithCast(
+			value: $objectService->saveObject(object: $proposal, register: $register, schema: $proposalSchema)
 		);
 
-		$this->stepActivator->activateStep(voorstel: $voorstel, step: 1, steps: $steps);
+		$this->stepActivator->activateStep(proposal: $proposal, step: 1, steps: $steps);
 
 		$this->dispatchTransition(
-			voorstelId: (string)($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId),
+			proposalId: (string)($proposal['id'] ?? $proposal['uuid'] ?? $proposalId),
 			action: 'started',
 			step: '1',
 			actor: $this->requireUserId(),
 			actorRole: 'steller',
 		);
 
-		return $voorstel;
+		return $proposal;
 	}//end startParafering()
 
 	/**
@@ -255,7 +255,7 @@ class ParafeerRouteService {
 	 * Records a parafeeractie, advances voorstel.currentStep, and either
 	 * activates the next step or marks the voorstel as geaccordeerd.
 	 *
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 * @param array<string, mixed> $actionData The parafeeractie payload (action, comment, advice, etc.)
 	 *
 	 * @return array<string, mixed> The updated voorstel
@@ -264,24 +264,24 @@ class ParafeerRouteService {
 	 *
 	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
 	 */
-	public function completeStep(string $voorstelId, array $actionData): array {
-		[$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
-		$actieSchema = $this->requireConfig(key: 'parafeeractie_schema');
+	public function completeStep(string $proposalId, array $actionData): array {
+		[$objectService, $register, $proposalSchema] = $this->bootstrapVoorstel();
+		$actionSchema = $this->requireConfig(key: 'parafeeractie_schema');
 
-		$voorstel = $this->normalizer->toArrayWithCast(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
-		$steps = $this->routeMapper->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
+		$proposal = $this->normalizer->toArrayWithCast(value: $objectService->find($proposalId, register: $register, schema: $proposalSchema));
+		$steps = $this->routeMapper->normalizeSteps(value: $proposal['routeSnapshot'] ?? '[]');
 
-		if (($voorstel['status'] ?? '') !== self::STATUS_IN_PARAFERING) {
+		if (($proposal['status'] ?? '') !== self::STATUS_IN_PARAFERING) {
 			throw new RuntimeException('Voorstel is not in parafering');
 		}
 
-		$currentStep = (int)($voorstel['currentStep'] ?? 0);
+		$currentStep = (int)($proposal['currentStep'] ?? 0);
 		if ($currentStep < 1) {
 			throw new RuntimeException('Voorstel has no active step');
 		}
 
 		$actieData = [
-			'voorstel' => $voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId,
+			'voorstel' => $proposal['id'] ?? $proposal['uuid'] ?? $proposalId,
 			'step' => $currentStep,
 			'actor' => $this->requireUserId(),
 			'actorType' => (string)($actionData['actorType'] ?? 'user'),
@@ -294,7 +294,7 @@ class ParafeerRouteService {
 			}
 		}
 
-		$objectService->saveObject(object: $actieData, register: $register, schema: $actieSchema);
+		$objectService->saveObject(object: $actieData, register: $register, schema: $actionSchema);
 
 		$action = (string)($actionData['action'] ?? 'parafered');
 		$transition = 'paraferd';
@@ -305,23 +305,23 @@ class ParafeerRouteService {
 		}
 
 		$this->dispatchTransition(
-			voorstelId: (string)($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId),
+			proposalId: (string)($proposal['id'] ?? $proposal['uuid'] ?? $proposalId),
 			action: $transition,
 			step: (string)$currentStep,
 			actor: $actieData['actor'],
 			actorRole: $actorRole,
 		);
 
-		$voorstel = $this->advanceVoorstel(
+		$proposal = $this->advanceProposal(
 			objectService: $objectService,
 			register: $register,
-			voorstelSchema: $voorstelSchema,
-			voorstel: $voorstel,
+			proposalSchema: $proposalSchema,
+			proposal: $proposal,
 			steps: $steps,
 			fromStep: $currentStep,
 		);
 
-		return $voorstel;
+		return $proposal;
 	}//end completeStep()
 
 	/**
@@ -331,7 +331,7 @@ class ParafeerRouteService {
 	 * entry on the voorstel, and advances currentStep if the skipped step
 	 * is the active one.
 	 *
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 * @param int $step The step order to skip (1-based)
 	 * @param string $reason Mandatory reason text
 	 *
@@ -341,16 +341,16 @@ class ParafeerRouteService {
 	 *
 	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
 	 */
-	public function skipStep(string $voorstelId, int $step, string $reason): array {
+	public function skipStep(string $proposalId, int $step, string $reason): array {
 		if (trim($reason) === '') {
 			throw new RuntimeException('Reden is verplicht bij overslaan');
 		}
 
-		[$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
-		$actieSchema = $this->requireConfig(key: 'parafeeractie_schema');
+		[$objectService, $register, $proposalSchema] = $this->bootstrapVoorstel();
+		$actionSchema = $this->requireConfig(key: 'parafeeractie_schema');
 
-		$voorstel = $this->normalizer->toArrayWithCast(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
-		$steps = $this->routeMapper->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
+		$proposal = $this->normalizer->toArrayWithCast(value: $objectService->find($proposalId, register: $register, schema: $proposalSchema));
+		$steps = $this->routeMapper->normalizeSteps(value: $proposal['routeSnapshot'] ?? '[]');
 
 		$target = null;
 		foreach ($steps as $candidate) {
@@ -372,7 +372,7 @@ class ParafeerRouteService {
 
 		$objectService->saveObject(
 			object: [
-				'voorstel' => $voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId,
+				'voorstel' => $proposal['id'] ?? $proposal['uuid'] ?? $proposalId,
 				'step' => $step,
 				'actor' => $userId,
 				'actorType' => 'user',
@@ -380,10 +380,10 @@ class ParafeerRouteService {
 				'comment' => $reason,
 			],
 			register: $register,
-			schema: $actieSchema,
+			schema: $actionSchema,
 		);
 
-		$voorstel['routeSnapshot'] = json_encode(
+		$proposal['routeSnapshot'] = json_encode(
 			array_map(
 				static function (array $candidate) use ($step): array {
 					if ((int)($candidate['order'] ?? 0) === $step) {
@@ -396,8 +396,8 @@ class ParafeerRouteService {
 			),
 		);
 
-		$voorstel = $this->routeMapper->appendAuditTrail(
-			voorstel: $voorstel,
+		$proposal = $this->routeMapper->appendAuditTrail(
+			proposal: $proposal,
 			entry: [
 				'action' => 'step_skipped',
 				'actor' => $userId,
@@ -413,7 +413,7 @@ class ParafeerRouteService {
 		);
 
 		$this->dispatchTransition(
-			voorstelId: (string)($voorstel['id'] ?? $voorstel['uuid'] ?? $voorstelId),
+			proposalId: (string)($proposal['id'] ?? $proposal['uuid'] ?? $proposalId),
 			action: 'route-changed',
 			step: (string)$step,
 			actor: $userId,
@@ -421,19 +421,19 @@ class ParafeerRouteService {
 			reason: $reason,
 		);
 
-		if ((int)($voorstel['currentStep'] ?? 0) === $step) {
-			return $this->advanceVoorstel(
+		if ((int)($proposal['currentStep'] ?? 0) === $step) {
+			return $this->advanceProposal(
 				objectService: $objectService,
 				register: $register,
-				voorstelSchema: $voorstelSchema,
-				voorstel: $voorstel,
-				steps: $this->routeMapper->normalizeSteps(value: $voorstel['routeSnapshot']),
+				proposalSchema: $proposalSchema,
+				proposal: $proposal,
+				steps: $this->routeMapper->normalizeSteps(value: $proposal['routeSnapshot']),
 				fromStep: $step,
 			);
 		}
 
 		return $this->normalizer->toArrayWithCast(
-			value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema)
+			value: $objectService->saveObject(object: $proposal, register: $register, schema: $proposalSchema)
 		);
 	}//end skipStep()
 
@@ -445,7 +445,7 @@ class ParafeerRouteService {
 	 * is already past the insertion point, the step is inserted immediately
 	 * after currentStep instead.
 	 *
-	 * @param string $voorstelId The voorstel UUID
+	 * @param string $proposalId The voorstel UUID
 	 * @param int $afterStep The order to insert after
 	 * @param array<string, mixed> $stepData The step fields (type, actor, actorType, mandatory)
 	 *
@@ -455,13 +455,13 @@ class ParafeerRouteService {
 	 *
 	 * @spec openspec/changes/parafeerroute-engine/tasks.md#T04
 	 */
-	public function addAdhocStep(string $voorstelId, int $afterStep, array $stepData): array {
-		[$objectService, $register, $voorstelSchema] = $this->bootstrapVoorstel();
+	public function addAdhocStep(string $proposalId, int $afterStep, array $stepData): array {
+		[$objectService, $register, $proposalSchema] = $this->bootstrapVoorstel();
 
-		$voorstel = $this->normalizer->toArrayWithCast(value: $objectService->find($voorstelId, register: $register, schema: $voorstelSchema));
-		$steps = $this->routeMapper->normalizeSteps(value: $voorstel['routeSnapshot'] ?? '[]');
+		$proposal = $this->normalizer->toArrayWithCast(value: $objectService->find($proposalId, register: $register, schema: $proposalSchema));
+		$steps = $this->routeMapper->normalizeSteps(value: $proposal['routeSnapshot'] ?? '[]');
 
-		$currentStep = (int)($voorstel['currentStep'] ?? 0);
+		$currentStep = (int)($proposal['currentStep'] ?? 0);
 		$insertAfter = $afterStep;
 		if ($currentStep > 0 && $afterStep < $currentStep) {
 			// Cannot insert before the active step — clamp to immediately after current.
@@ -496,11 +496,11 @@ class ParafeerRouteService {
 			$rebuilt[] = $newStep;
 		}
 
-		$voorstel['routeSnapshot'] = json_encode($rebuilt);
+		$proposal['routeSnapshot'] = json_encode($rebuilt);
 
 		$userId = $this->requireUserId();
-		$voorstel = $this->routeMapper->appendAuditTrail(
-			voorstel: $voorstel,
+		$proposal = $this->routeMapper->appendAuditTrail(
+			proposal: $proposal,
 			entry: [
 				'action' => 'step_added',
 				'actor' => $userId,
@@ -516,11 +516,11 @@ class ParafeerRouteService {
 		);
 
 		$saved = $this->normalizer->toArrayWithCast(
-			value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema)
+			value: $objectService->saveObject(object: $proposal, register: $register, schema: $proposalSchema)
 		);
 
 		$this->dispatchTransition(
-			voorstelId: (string)($saved['id'] ?? $saved['uuid'] ?? $voorstelId),
+			proposalId: (string)($saved['id'] ?? $saved['uuid'] ?? $proposalId),
 			action: 'route-changed',
 			step: (string)$newStep['order'],
 			actor: $userId,
@@ -536,18 +536,18 @@ class ParafeerRouteService {
 	 *
 	 * @param object $objectService The OpenRegister ObjectService
 	 * @param string $register The register slug/UUID
-	 * @param string $voorstelSchema The voorstel schema slug/UUID
-	 * @param array<string, mixed> $voorstel The current voorstel data
+	 * @param string $proposalSchema The voorstel schema slug/UUID
+	 * @param array<string, mixed> $proposal The current voorstel data
 	 * @param array<int, array<string, mixed>> $steps The decoded routeSnapshot
 	 * @param int $fromStep The step that just completed
 	 *
 	 * @return array<string, mixed>
 	 */
-	private function advanceVoorstel(
+	private function advanceProposal(
 		object $objectService,
 		string $register,
-		string $voorstelSchema,
-		array $voorstel,
+		string $proposalSchema,
+		array $proposal,
 		array $steps,
 		int $fromStep,
 	): array {
@@ -561,37 +561,37 @@ class ParafeerRouteService {
 		}
 
 		if ($nextStep === null) {
-			$voorstel['status'] = self::STATUS_GEACCORDEERD;
-			$voorstel = $this->normalizer->toArrayWithCast(
-				value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema)
+			$proposal['status'] = self::STATUS_GEACCORDEERD;
+			$proposal = $this->normalizer->toArrayWithCast(
+				value: $objectService->saveObject(object: $proposal, register: $register, schema: $proposalSchema)
 			);
 			$this->logger->info(
 				'Procest: voorstel {id} fully accorded',
 				[
-					'id' => $voorstel['id'] ?? '',
+					'id' => $proposal['id'] ?? '',
 					'app' => Application::APP_ID,
 				],
 			);
 
 			$this->dispatchTransition(
-				voorstelId: (string)($voorstel['id'] ?? $voorstel['uuid'] ?? ''),
+				proposalId: (string)($proposal['id'] ?? $proposal['uuid'] ?? ''),
 				action: 'completed',
 				step: (string)$fromStep,
 				actor: $this->safeUserId(),
 				actorRole: 'accorderend',
 			);
 
-			return $voorstel;
+			return $proposal;
 		}//end if
 
-		$voorstel['currentStep'] = $nextStep;
-		$voorstel = $this->normalizer->toArrayWithCast(
-			value: $objectService->saveObject(object: $voorstel, register: $register, schema: $voorstelSchema)
+		$proposal['currentStep'] = $nextStep;
+		$proposal = $this->normalizer->toArrayWithCast(
+			value: $objectService->saveObject(object: $proposal, register: $register, schema: $proposalSchema)
 		);
 
-		$this->stepActivator->activateStep(voorstel: $voorstel, step: $nextStep, steps: $steps);
+		$this->stepActivator->activateStep(proposal: $proposal, step: $nextStep, steps: $steps);
 
-		return $voorstel;
+		return $proposal;
 	}//end advanceVoorstel()
 
 	/**

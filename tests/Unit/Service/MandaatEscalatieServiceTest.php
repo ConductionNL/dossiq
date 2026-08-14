@@ -60,8 +60,8 @@ class MandaatEscalatieServiceTest extends TestCase {
 			'mandaat',
 			[
 				'id' => 'm-low',
-				'gemandateerdeRol' => 'rol-consulent',
-				'voorwaarden' => ['plafondCents' => 500000, 'decisionTypes' => ['wmo-toekenning']],
+				'mandateeRole' => 'rol-consulent',
+				'terms' => ['plafondCents' => 500000, 'decisionTypes' => ['wmo-toekenning']],
 				'status' => 'active',
 			]
 		);
@@ -70,8 +70,8 @@ class MandaatEscalatieServiceTest extends TestCase {
 			'mandaat',
 			[
 				'id' => 'm-high',
-				'gemandateerdeRol' => 'rol-manager',
-				'voorwaarden' => ['plafondCents' => 2500000, 'decisionTypes' => ['wmo-toekenning']],
+				'mandateeRole' => 'rol-manager',
+				'terms' => ['plafondCents' => 2500000, 'decisionTypes' => ['wmo-toekenning']],
 				'status' => 'active',
 			]
 		);
@@ -80,7 +80,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 			'medewerkerRolToewijzing',
 			[
 				'userId' => 'carol',
-				'rolId' => 'rol-manager',
+				'roleId' => 'rol-manager',
 				'toewijzingType' => 'primair',
 				'validFrom' => '2026-01-01',
 			]
@@ -122,7 +122,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 		$created = $this->service->createEscalatie('Z/2026/E4', 'wmo-toekenning', 'alice', 'niet_bevoegd');
 		$rejected = $this->service->rejectEscalatie((string)$created['id'], 'Onvoldoende onderbouwing');
 		self::assertSame('afgewezen', $rejected['status']);
-		self::assertSame('Onvoldoende onderbouwing', $rejected['afgewezenReden']);
+		self::assertSame('Onvoldoende onderbouwing', $rejected['rejectedReason']);
 	}//end testRejectEscalatieRecordsReason()
 
 	/**

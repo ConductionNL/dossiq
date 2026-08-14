@@ -178,7 +178,7 @@ class RenameDutchDeadlineColumnsTest extends TestCase {
 	 */
 	public function testRefusesAmbiguousRename(): void {
 		// Both `omschrijving` and `beschrijving` map to `description`.
-		$columns = ['omschrijving', 'beschrijving', 'naam'];
+		$columns = ['omschrijving', 'beschrijving', 'name'];
 		self::assertTrue($this->call('hasCollision', ['tbl', $columns, 'description']));
 
 	}//end testRefusesAmbiguousRename()
@@ -189,7 +189,7 @@ class RenameDutchDeadlineColumnsTest extends TestCase {
 	 * @return void
 	 */
 	public function testSingleSourceIsNotACollision(): void {
-		$columns = ['omschrijving', 'naam'];
+		$columns = ['omschrijving', 'name'];
 		self::assertFalse($this->call('hasCollision', ['tbl', $columns, 'description']));
 		self::assertFalse($this->call('hasCollision', ['tbl', $columns, 'name']));
 
@@ -207,7 +207,7 @@ class RenameDutchDeadlineColumnsTest extends TestCase {
 	public function testZaaktypeIsNotInTheColumnMap(): void {
 		$map = $this->constant('COLUMN_MAP');
 		self::assertIsArray($map);
-		self::assertArrayNotHasKey('zaaktype', $map);
+		self::assertArrayNotHasKey('caseType', $map);
 
 	}//end testZaaktypeIsNotInTheColumnMap()
 

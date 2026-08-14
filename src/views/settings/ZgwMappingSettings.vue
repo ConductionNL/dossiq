@@ -85,15 +85,15 @@ export default {
 		resourceKeys() {
 			return [
 				'zaak',
-				'zaaktype',
+				'case_type',
 				'status',
 				'statustype',
-				'resultaat',
+				'result',
 				'resultaattype',
-				'rol',
+				'role',
 				'roltype',
 				'eigenschap',
-				'besluit',
+				'decision',
 				'besluittype',
 				'informatieobjecttype',
 			]

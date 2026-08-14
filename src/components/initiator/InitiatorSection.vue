@@ -242,8 +242,8 @@ export default {
 			}
 			const keyField =
 				this.caseObject.initiatorType === 'person'
-					? 'burgerservicenummer'
-					: 'kvkNummer'
+					? 'citizen_service_number'
+					: 'kvkNumber'
 			try {
 				const rows = await this.objectStore.fetchCollection(
 					this.typeSchema,

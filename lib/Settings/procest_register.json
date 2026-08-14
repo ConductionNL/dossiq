@@ -240,7 +240,7 @@
                         "description": "Subscribed wmsLayer UUIDs visible on this case type's maps (wms-wfs-layers REQ-WMS-4). Empty array = only isDefault layers visible.",
                         "title": "Layer IDs"
                     },
-                    "iv3Taakveld": {
+                    "iv3TaskField": {
                         "type": "string",
                         "description": "Optional IV3 (Informatie voor Derden) / BBV taakveld code classifying cases of this type for the quarterly CBS cost report (e.g. \"8.1\" Ruimtelijke ordening). Validated against the shipped taakveld list (Iv3TaakveldList); unset = cases of this type are reported as uncategorized.",
                         "title": "IV3 Task Field"
@@ -757,7 +757,7 @@
                             "weight": 0.4
                         },
                         {
-                            "field": "vergunningaanvraagRef",
+                            "field": "permitApplicationRef",
                             "method": "exact",
                             "weight": 0.3
                         },
@@ -782,7 +782,7 @@
                     "objectDescriptionField": "description",
                     "tmloDefaults": {
                         "archiefstatus": "actief",
-                        "classificatie": "zaakdossier"
+                        "classification": "zaakdossier"
                     },
                     "implements": [
                         "https://openregister.app/ns#Case"
@@ -1134,7 +1134,7 @@
                         "enum": [
                             "manual",
                             "balie",
-                            "telefoon",
+                            "phone",
                             "email",
                             "post",
                             "website",
@@ -1283,7 +1283,7 @@
                         "visible": false,
                         "title": "Workflow Version"
                     },
-                    "vergunningaanvraagRef": {
+                    "permitApplicationRef": {
                         "type": "string",
                         "format": "uuid",
                         "x-external-register": "dso",
@@ -1301,7 +1301,7 @@
                         "title": "Procedure type",
                         "facetable": true
                     },
-                    "deadlineDatum": {
+                    "deadlineDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Computed legal deadline (indieningsdatum + procedure working days)",
@@ -1313,7 +1313,7 @@
                         "title": "Competent Authority",
                         "facetable": true
                     },
-                    "samenwerkverzoeken": {
+                    "collaborationRequests": {
                         "type": "string",
                         "description": "JSON-encoded array of samenwerkverzoek UUIDs linked to this zaak",
                         "visible": false,
@@ -1371,7 +1371,7 @@
                         "title": "Handoff source",
                         "description": "Provenance back-link (ADR-048/ADR-051) to the originating object that was handed off into this case (e.g. a Pipelinq request), carrying the contract `source` field. Empty for manually-created cases; the chain source→case is also navigable via OpenRegister's handoff provenance relations."
                     },
-                    "portaalSubject": {
+                    "portalSubject": {
                         "type": "string",
                         "title": "Portal subject reference",
                         "description": "Pseudonymous, one-way subject reference (never a raw BSN/KvK) of the citizen this case belongs to in the external Portaliq portal (ADR-046 citizen audience). Server-stamped from the authenticated portal identity; the sole IDOR-safe scope key for a citizen's 'Mijn gemeente' cases. Empty for cases with no external citizen owner."
@@ -2188,7 +2188,7 @@
                         "type": "string",
                         "enum": [
                             "zaak",
-                            "besluit"
+                            "decision"
                         ],
                         "description": "Type of the related object",
                         "title": "Object Type"
@@ -2205,16 +2205,16 @@
                 "description": "A notification channel (kanaal) for ZGW event distribution",
                 "type": "object",
                 "required": [
-                    "naam"
+                    "name"
                 ],
                 "properties": {
-                    "naam": {
+                    "name": {
                         "type": "string",
                         "maxLength": 50,
                         "description": "Name of this channel (e.g. zaken, documenten)",
                         "title": "Name"
                     },
-                    "documentatieLink": {
+                    "documentationLink": {
                         "type": "string",
                         "format": "uri",
                         "description": "URL to API documentation for this channel",
@@ -2285,19 +2285,19 @@
                         "description": "RSIN of the responsible organisation",
                         "title": "RSIN"
                     },
-                    "contactpersoonBeheerNaam": {
+                    "contactPersonManagementName": {
                         "type": "string",
                         "maxLength": 40,
                         "description": "Name of the management contact",
                         "title": "Management Contact Name"
                     },
-                    "contactpersoonBeheerTelefoonnummer": {
+                    "contactPersonManagementPhoneNumber": {
                         "type": "string",
                         "maxLength": 20,
                         "description": "Phone number of the management contact",
                         "title": "Management Contact Phone"
                     },
-                    "contactpersoonBeheerEmailadres": {
+                    "contactPersonManagementEmailAddress": {
                         "type": "string",
                         "maxLength": 254,
                         "description": "Email of the management contact",
@@ -2315,13 +2315,13 @@
                 "description": "Links a case type to a document type with direction and ordering",
                 "type": "object",
                 "required": [
-                    "zaaktype",
+                    "caseType",
                     "informatieobjecttype",
-                    "volgnummer",
-                    "richting"
+                    "sequenceNumber",
+                    "direction"
                 ],
                 "properties": {
-                    "zaaktype": {
+                    "caseType": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "caseType",
@@ -2335,12 +2335,12 @@
                         "description": "Reference to the document type",
                         "title": "Document Type Reference"
                     },
-                    "volgnummer": {
+                    "sequenceNumber": {
                         "type": "integer",
                         "description": "Ordering number",
                         "title": "Sequence Number"
                     },
-                    "richting": {
+                    "direction": {
                         "type": "string",
                         "enum": [
                             "inkomend",
@@ -2715,7 +2715,7 @@
                         "title": "Drafter",
                         "facetable": true
                     },
-                    "afdeling": {
+                    "department": {
                         "type": "string",
                         "description": "Department of the steller",
                         "title": "Department"
@@ -2747,7 +2747,7 @@
                         "format": "uuid",
                         "$ref": "parafeerroute",
                         "x-relation-filter": {
-                            "voorstelType": "@object.type"
+                            "proposalType": "@object.type"
                         },
                         "description": "Reference to the parafeerroute being used",
                         "title": "Sign-off Route"
@@ -2775,7 +2775,7 @@
                         "description": "Nextcloud file ID of the primary voorstel document",
                         "title": "Document"
                     },
-                    "bijlagen": {
+                    "attachments": {
                         "type": "array",
                         "items": {
                             "type": "string"
@@ -2783,7 +2783,7 @@
                         "description": "Nextcloud file IDs of attached documents (bijlagen)",
                         "title": "Attachments"
                     },
-                    "behandeling": {
+                    "handling": {
                         "type": "string",
                         "enum": [
                             "hamerstuk",
@@ -2907,7 +2907,7 @@
                         "facetable": true,
                         "title": "Case Type"
                     },
-                    "voorstelType": {
+                    "proposalType": {
                         "type": "string",
                         "enum": [
                             "dt_advies",
@@ -3319,7 +3319,7 @@
                 "type": "object",
                 "required": [
                     "case",
-                    "ontvangstdatum",
+                    "receiptDate",
                     "status"
                 ],
                 "properties": {
@@ -3362,13 +3362,13 @@
                         "description": "AWB article reference for the most recent legal-posture transition (e.g. 'Awb 7:10 lid 3'); required by guards on verdaging/opschorting/niet-ontvankelijk/intrekking transitions",
                         "title": "AWB Reference"
                     },
-                    "ontvangstdatum": {
+                    "receiptDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date the bezwaarschrift was received (start of the AWB 7:10 lid 1 termijn)",
                         "title": "Receipt Date"
                     },
-                    "verdaagdOp": {
+                    "adjournedOn": {
                         "type": "string",
                         "format": "date",
                         "description": "Date verdaging (extension) was recorded per AWB 7:10 lid 3",
@@ -3380,19 +3380,19 @@
                         "description": "Verdaging in days (0 = no verdaging; 42 = standard 6-week extension)",
                         "title": "Extension Period"
                     },
-                    "opschortingStart": {
+                    "suspensionStart": {
                         "type": "string",
                         "format": "date",
                         "description": "Opschorting start date per AWB 7:10 lid 4",
                         "title": "Suspension Start"
                     },
-                    "opschortingEnd": {
+                    "suspensionEnd": {
                         "type": "string",
                         "format": "date",
                         "description": "Opschorting end date — adds (end - start) days to decisionDeadline",
                         "title": "Suspension End"
                     },
-                    "opschorting": {
+                    "suspension": {
                         "type": "integer",
                         "default": 0,
                         "description": "Opschorting in days (computed elapsed delta between opschortingStart/End)",
@@ -3415,7 +3415,7 @@
                         "description": "Date the bezwaarmaker submitted an ingebrekestelling per AWB 4:17 — starts the 14-day grace clock",
                         "title": "Notice of Default"
                     },
-                    "dwangsom": {
+                    "penaltyPayment": {
                         "type": "number",
                         "default": 0,
                         "description": "Accrued dwangsom liability in euros — computed declaratively, capped at €1442 (AWB 4:17 lid 2)",
@@ -3441,7 +3441,7 @@
                                         "date": {
                                             "dateAdd": {
                                                 "date": {
-                                                    "prop": "ontvangstdatum"
+                                                    "prop": "receiptDate"
                                                 },
                                                 "amount": 6,
                                                 "unit": "weeks"
@@ -3461,7 +3461,7 @@
                                 "amount": {
                                     "coalesce": [
                                         {
-                                            "prop": "opschorting"
+                                            "prop": "suspension"
                                         },
                                         0
                                     ]
@@ -3470,7 +3470,7 @@
                             }
                         }
                     },
-                    "dwangsom": {
+                    "penaltyPayment": {
                         "type": "number",
                         "materialise": false,
                         "description": "Accrued dwangsom for niet tijdig beslissen (AWB 4:17 lid 1-2): tiered EUR23/day (days 1-14), EUR35/day (15-28), EUR45/day (29-42), capped at EUR1442, accruing from 14 days after the ingebrekestelling. Virtual (materialise:false): time-dependent (references now), computed at read time via _extend=calculations. Zero until the 14-day grace after ingebrekestelling lapses; null ingebrekestelling yields 0.",
@@ -3767,7 +3767,7 @@
                         "description": "Explanation of timeliness determination",
                         "title": "Timeliness Assessment"
                     },
-                    "proVoorziening": {
+                    "proProvision": {
                         "type": "boolean",
                         "default": false,
                         "description": "Whether a voorlopige voorziening (interim relief) was requested",
@@ -4276,7 +4276,7 @@
                                 "description": "Bevoegde rechter (e.g. 'Rechtbank Midden-Nederland, sector bestuursrecht')",
                                 "title": "Competent Court"
                             },
-                            "beroepTerm": {
+                            "appealTerm": {
                                 "type": "string",
                                 "description": "ISO 8601 duration of the beroep filing window; default P6W (Awb 6:7)",
                                 "default": "P6W",
@@ -4313,7 +4313,7 @@
                                 "description": "Griffierecht copy (amount + payment instructions)",
                                 "title": "Court Fee"
                             },
-                            "voorlopigeVoorziening": {
+                            "provisionalProvision": {
                                 "type": "boolean",
                                 "description": "Mentions option to request voorlopige voorziening at the court",
                                 "title": "Provisional Relief"
@@ -4321,7 +4321,7 @@
                         },
                         "title": "Appeal Notice"
                     },
-                    "proceskostenvergoeding": {
+                    "legalCostsCompensation": {
                         "type": "object",
                         "description": "Awb art. 7:15 cost award — awardable only when dispositionType is gegrond_herroepen or gegrond_wijzigen, the bezwaarmaker requested it, and the herroeping is attributable to onrechtmatigheid van het primair besluit; totalAmount is calculated as awardedPoints * pointValue",
                         "properties": {
@@ -4429,7 +4429,7 @@
                 "type": "object",
                 "required": [
                     "case",
-                    "sourceBezwaar",
+                    "sourceObjection",
                     "contestedDecision",
                     "appellantFilingDate"
                 ],
@@ -4442,7 +4442,7 @@
                         "description": "The procest case that wraps the beroep (zaaktype = Beroep)",
                         "title": "Case"
                     },
-                    "sourceBezwaar": {
+                    "sourceObjection": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "bezwaar",
@@ -4496,7 +4496,7 @@
                         "description": "Computed: contestedDecision.effectiveDate + P6W (Awb 6:7, 6:8). The system NEVER decides timeliness itself; the rechtbank does.",
                         "title": "Filing Deadline"
                     },
-                    "voorzieningRequested": {
+                    "provisionRequested": {
                         "type": "boolean",
                         "default": false,
                         "description": "Whether a voorlopige voorziening (provisional ruling) was also filed alongside the beroep",
@@ -4531,7 +4531,7 @@
                                     "description": "Date the bestuursorgaan submitted the dossier",
                                     "title": "Submitted At"
                                 },
-                                "dossierBundle": {
+                                "fileBundle": {
                                     "type": "string",
                                     "description": "Reference to the compiled bundle (NC file ID or document-zaakdossier artifact)",
                                     "title": "Dossier Bundle"
@@ -4552,7 +4552,7 @@
                             "niet_ontvankelijk",
                             "ongegrond",
                             "gegrond_rechtsgevolgen_in_stand",
-                            "ingetrokken",
+                            "withdrawn",
                             "schikking"
                         ],
                         "description": "Categorical outcome of the rechtbank's uitspraak. Procest persists the category and the uploaded ruling; never paraphrases the ruling.",
@@ -4580,7 +4580,7 @@
                         "description": "Cascade action triggered by the judgment outcome. reopen_bezwaar forks a new bezwaar via status-transition-engine; new_primary_decision opens a fresh decision case; none clears the dwingende marker on the source bezwaar.",
                         "title": "Cascade Action"
                     },
-                    "cascadeBezwaarCase": {
+                    "cascadeObjectionCase": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "case",
@@ -4835,7 +4835,7 @@
                         "description": "WGS84 longitude in decimal degrees",
                         "title": "Longitude"
                     },
-                    "nummeraanduidingId": {
+                    "addressDesignationId": {
                         "type": "string",
                         "maxLength": 32,
                         "description": "BAG nummeraanduiding identifier (16-digit) — MUST be present when source = bag",
@@ -4877,10 +4877,10 @@
                 "description": "Inter-departmental consultation (adviesaanvraag) — a first-class entity linked to a parent case with its own lifecycle, structured response, and deadline enforcement per Awb 3:5-3:9",
                 "type": "object",
                 "required": [
-                    "parentZaak",
-                    "adviesInstantie",
-                    "vraagstelling",
-                    "uiterlijkeReactiedatum"
+                    "parentCase",
+                    "adviceAuthority",
+                    "questionFormulation",
+                    "latestResponseDate"
                 ],
                 "properties": {
                     "consultationNumber": {
@@ -4889,14 +4889,14 @@
                         "readOnly": true,
                         "title": "Consultation Number"
                     },
-                    "parentZaak": {
+                    "parentCase": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "case",
                         "description": "Reference to the parent case UUID",
                         "title": "Parent Case"
                     },
-                    "adviesInstantie": {
+                    "adviceAuthority": {
                         "type": "string",
                         "description": "Department or advisory body being consulted",
                         "title": "Advisory Body"
@@ -4913,18 +4913,18 @@
                         "description": "Subject of the consultation",
                         "title": "Subject"
                     },
-                    "vraagstelling": {
+                    "questionFormulation": {
                         "type": "string",
                         "description": "The specific question(s) being asked",
                         "title": "Question"
                     },
-                    "uiterlijkeReactiedatum": {
+                    "latestResponseDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Deadline for response",
                         "title": "Response Deadline"
                     },
-                    "prioriteit": {
+                    "priority": {
                         "type": "string",
                         "enum": [
                             "normaal",
@@ -4942,7 +4942,7 @@
                             "in_behandeling",
                             "advies_uitgebracht",
                             "afgesloten",
-                            "ingetrokken"
+                            "withdrawn"
                         ],
                         "default": "open",
                         "description": "Current status",
@@ -4973,7 +4973,7 @@
                         "description": "256-bit token for external body access; expires on closure",
                         "title": "Secure Token"
                     },
-                    "bijlagen": {
+                    "attachments": {
                         "type": "array",
                         "items": {
                             "type": "string"
@@ -4987,7 +4987,7 @@
                         "title": "Created At",
                         "description": "Timestamp when the consultation was created"
                     },
-                    "aanvrager": {
+                    "applicant": {
                         "type": "string",
                         "description": "UID of the requesting case worker",
                         "title": "Requester"
@@ -5021,7 +5021,7 @@
                         "initial": "open",
                         "final": [
                             "afgesloten",
-                            "ingetrokken"
+                            "withdrawn"
                         ],
                         "transitions": {
                             "acknowledge": {
@@ -5058,7 +5058,7 @@
                                     "ontvangen",
                                     "in_behandeling"
                                 ],
-                                "to": "ingetrokken",
+                                "to": "withdrawn",
                                 "description": "Case worker withdraws the consultation request."
                             }
                         }
@@ -5067,13 +5067,13 @@
                         "onCreate": {
                             "subject": "Nieuwe adviesaanvraag {consultationNumber}",
                             "recipients": [
-                                "adviesInstantie"
+                                "adviceAuthority"
                             ]
                         },
                         "onStatusChange": {
                             "subject": "Adviesaanvraag {consultationNumber} status gewijzigd naar {status}",
                             "recipients": [
-                                "aanvrager"
+                                "applicant"
                             ]
                         }
                     }
@@ -5109,12 +5109,12 @@
                         "description": "Formal advice conclusion",
                         "title": "Advice"
                     },
-                    "toelichting": {
+                    "notes": {
                         "type": "string",
                         "description": "Explanation (mandatory except for niet_van_toepassing)",
                         "title": "Explanation"
                     },
-                    "voorwaarden": {
+                    "terms": {
                         "type": "array",
                         "items": {
                             "type": "object",
@@ -5145,13 +5145,13 @@
                         "description": "Conditions (required when advies is positief_met_voorwaarden)",
                         "title": "Conditions"
                     },
-                    "datum": {
+                    "date": {
                         "type": "string",
                         "format": "date",
                         "description": "Date the advice was given",
                         "title": "Date"
                     },
-                    "bijlagen": {
+                    "attachments": {
                         "type": "array",
                         "items": {
                             "type": "string"
@@ -5388,27 +5388,27 @@
                         "description": "Behavior of the violator (LHS gedrag axis)",
                         "title": "Behaviour"
                     },
-                    "interventie": {
+                    "intervention": {
                         "type": "string",
                         "description": "Suggested intervention from LHS matrix (may be overridden)",
                         "title": "Intervention"
                     },
-                    "begunstigingstermijn": {
+                    "compliancePeriod": {
                         "type": "integer",
                         "description": "Grace period in days before enforcement takes effect",
                         "title": "Grace Period"
                     },
-                    "dwangsomBedrag": {
+                    "penaltyPaymentAmount": {
                         "type": "number",
                         "description": "Penalty amount per violation (EUR)",
                         "title": "Penalty Amount"
                     },
-                    "dwangsomMaximaal": {
+                    "penaltyPaymentMaximum": {
                         "type": "number",
                         "description": "Maximum total penalty amount (EUR)",
                         "title": "Maximum Penalty"
                     },
-                    "effectueringsDatum": {
+                    "effectuationDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date when enforcement action takes effect",
@@ -5420,7 +5420,7 @@
                             "opgelegd",
                             "verbeurd",
                             "geeffectueerd",
-                            "ingetrokken"
+                            "withdrawn"
                         ],
                         "default": "opgelegd",
                         "description": "Current status of the enforcement action",
@@ -5438,7 +5438,7 @@
                         "initial": "opgelegd",
                         "final": [
                             "geeffectueerd",
-                            "ingetrokken"
+                            "withdrawn"
                         ],
                         "transitions": {
                             "forfeit": {
@@ -5460,7 +5460,7 @@
                                     "opgelegd",
                                     "verbeurd"
                                 ],
-                                "to": "ingetrokken",
+                                "to": "withdrawn",
                                 "description": "Withdraw the enforcement action."
                             }
                         }
@@ -5536,7 +5536,7 @@
                                 "ernst",
                                 "gedrag",
                                 "actorType",
-                                "interventie"
+                                "intervention"
                             ],
                             "properties": {
                                 "ernst": {
@@ -5554,7 +5554,7 @@
                                     "title": "Actor Type",
                                     "description": "Actor type axis value for this matrix cell"
                                 },
-                                "interventie": {
+                                "intervention": {
                                     "type": "string",
                                     "enum": [
                                         "waarschuwing",
@@ -5629,7 +5629,7 @@
                     "gedrag",
                     "actorType",
                     "matrixVersion",
-                    "recommendedInterventie",
+                    "recommendedIntervention",
                     "recommendedBy"
                 ],
                 "properties": {
@@ -5685,7 +5685,7 @@
                         "description": "Frozen lhsMatrix version this recommendation was looked up against",
                         "title": "Matrix Version"
                     },
-                    "recommendedInterventie": {
+                    "recommendedIntervention": {
                         "type": "string",
                         "enum": [
                             "waarschuwing",
@@ -7472,10 +7472,10 @@
                 "required": [
                     "onderwerp",
                     "description",
-                    "ontvangstdatum"
+                    "receiptDate"
                 ],
                 "properties": {
-                    "klachtnummer": {
+                    "complaintNumber": {
                         "type": "string",
                         "description": "Auto-generated complaint number in format KL-{year}-{sequence}, e.g. KL-2026-0042",
                         "readOnly": true,
@@ -7485,7 +7485,7 @@
                         "type": "object",
                         "description": "Person filing the complaint",
                         "properties": {
-                            "naam": {
+                            "name": {
                                 "type": "string",
                                 "description": "Full name of the complainant",
                                 "title": "Name"
@@ -7496,7 +7496,7 @@
                                 "description": "Email address",
                                 "title": "Email"
                             },
-                            "telefoon": {
+                            "phone": {
                                 "type": "string",
                                 "description": "Phone number",
                                 "title": "Phone Number"
@@ -7521,17 +7521,17 @@
                         "description": "Detailed description of the complaint",
                         "title": "Description"
                     },
-                    "ontvangstdatum": {
+                    "receiptDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date the complaint was received (Awb deadline calculation basis)",
                         "title": "Receipt Date"
                     },
-                    "ontvangstkanaal": {
+                    "receiptChannel": {
                         "type": "string",
                         "enum": [
                             "balie",
-                            "telefoon",
+                            "phone",
                             "email",
                             "brief",
                             "website",
@@ -7540,19 +7540,19 @@
                         "description": "Intake channel through which the complaint was received",
                         "title": "Intake Channel"
                     },
-                    "categorie": {
+                    "category": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "complaintCategory",
                         "description": "Reference to the complaint category",
                         "title": "Category"
                     },
-                    "betrokkenMedewerker": {
+                    "involvedEmployee": {
                         "type": "string",
                         "description": "Optional reference to the employee the complaint concerns (NC user ID)",
                         "title": "Employee Concerned"
                     },
-                    "betrokkenAfdeling": {
+                    "involvedDepartment": {
                         "type": "string",
                         "description": "Optional reference to the department concerned",
                         "title": "Department Concerned"
@@ -7566,19 +7566,19 @@
                             "hoorgesprek_gepland",
                             "hoorgesprek_afgerond",
                             "afgehandeld",
-                            "ingetrokken"
+                            "withdrawn"
                         ],
                         "default": "ontvangen",
                         "description": "Current status in the Awb chapter 9 complaint lifecycle",
                         "facetable": true,
                         "title": "Status"
                     },
-                    "behandelaar": {
+                    "handler": {
                         "type": "string",
                         "description": "Assigned complaint handler (NC user ID)",
                         "title": "Handler"
                     },
-                    "prioriteit": {
+                    "priority": {
                         "type": "string",
                         "enum": [
                             "laag",
@@ -7590,7 +7590,7 @@
                         "description": "Priority level of the complaint",
                         "title": "Priority"
                     },
-                    "ontvangstbevestigingDeadline": {
+                    "acknowledgementOfReceiptDeadline": {
                         "type": "string",
                         "format": "date",
                         "description": "Awb deadline for acknowledgment (5 working days after receipt)",
@@ -7602,29 +7602,29 @@
                         "description": "Awb deadline for resolution (6 weeks after receipt)",
                         "title": "Handling Deadline"
                     },
-                    "verdagingMogelijk": {
+                    "postponementPossible": {
                         "type": "boolean",
                         "default": true,
                         "description": "Whether a 4-week extension is still available (Awb; only one extension allowed)",
                         "title": "Extension Possible"
                     },
-                    "verdagingJustificatie": {
+                    "postponementJustification": {
                         "type": "string",
                         "description": "Written justification for the deadline extension when requested",
                         "title": "Extension Justification"
                     },
-                    "geescaleerdeZaak": {
+                    "escalatedCase": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "case",
                         "description": "Reference to the formal case created when this complaint was escalated",
                         "title": "Escalated Case"
                     },
-                    "hoorgespreksWaiver": {
+                    "hearingWaiver": {
                         "type": "object",
                         "description": "Waiver details when complainant waives right to hearing",
                         "properties": {
-                            "datum": {
+                            "date": {
                                 "type": "string",
                                 "format": "date",
                                 "title": "Date",
@@ -7635,12 +7635,12 @@
                                 "enum": [
                                     "email",
                                     "brief",
-                                    "telefoon"
+                                    "phone"
                                 ],
                                 "title": "Method",
                                 "description": "Method by which the waiver was communicated (schriftelijk, mondeling, email)"
                             },
-                            "bevestiging": {
+                            "confirmation": {
                                 "type": "string",
                                 "title": "Confirmation",
                                 "description": "Reference to the waiver confirmation document"
@@ -7683,7 +7683,7 @@
                         },
                         {
                             "from": "*",
-                            "to": "ingetrokken",
+                            "to": "withdrawn",
                             "label": "Klacht ingetrokken"
                         }
                     ]
@@ -7698,7 +7698,7 @@
                 "type": "object",
                 "required": [
                     "complaint",
-                    "datum",
+                    "date",
                     "type"
                 ],
                 "properties": {
@@ -7710,13 +7710,13 @@
                         "description": "Parent complaint this hearing belongs to",
                         "title": "Complaint"
                     },
-                    "datum": {
+                    "date": {
                         "type": "string",
                         "format": "date-time",
                         "description": "Scheduled date and time of the hearing",
                         "title": "Date"
                     },
-                    "locatie": {
+                    "location": {
                         "type": "string",
                         "description": "Physical address or video conferencing link",
                         "title": "Location"
@@ -7731,7 +7731,7 @@
                         "description": "Hearing format",
                         "title": "Type"
                     },
-                    "deelnemers": {
+                    "participants": {
                         "type": "array",
                         "description": "Planned participants (user IDs or names)",
                         "items": {
@@ -7757,7 +7757,7 @@
                         "description": "Preliminary conclusion from the hearing",
                         "title": "Conclusion"
                     },
-                    "datumAfgerond": {
+                    "dateCompleted": {
                         "type": "string",
                         "format": "date",
                         "description": "Actual date the hearing took place",
@@ -7784,8 +7784,8 @@
                 "type": "object",
                 "required": [
                     "complaint",
-                    "oordeel",
-                    "afsluitdatum"
+                    "opinion",
+                    "closureDate"
                 ],
                 "properties": {
                     "complaint": {
@@ -7796,24 +7796,24 @@
                         "description": "Parent complaint this disposition closes",
                         "title": "Complaint"
                     },
-                    "oordeel": {
+                    "opinion": {
                         "type": "string",
                         "enum": [
                             "gegrond",
                             "deels_gegrond",
                             "ongegrond",
-                            "ingetrokken",
+                            "withdrawn",
                             "niet_ontvankelijk"
                         ],
                         "description": "Judgment on the complaint",
                         "title": "Verdict"
                     },
-                    "toelichting": {
+                    "notes": {
                         "type": "string",
                         "description": "Explanation of the judgment (mandatory for gegrond and deels_gegrond)",
                         "title": "Explanation"
                     },
-                    "maatregelen": {
+                    "measures": {
                         "type": "array",
                         "description": "Actions taken or promised",
                         "items": {
@@ -7824,7 +7824,7 @@
                                     "title": "Description",
                                     "description": "Description of the measure taken to address the complaint"
                                 },
-                                "verantwoordelijke": {
+                                "responsible": {
                                     "type": "string",
                                     "title": "Responsible Party",
                                     "description": "Person or department responsible for implementing this measure"
@@ -7833,7 +7833,7 @@
                         },
                         "title": "Measures"
                     },
-                    "afsluitdatum": {
+                    "closureDate": {
                         "type": "string",
                         "format": "date",
                         "description": "Date of closure",
@@ -8958,7 +8958,7 @@
                     "adviseur",
                     "deadline",
                     "status",
-                    "vraag"
+                    "question"
                 ],
                 "properties": {
                     "case": {
@@ -8997,7 +8997,7 @@
                         "description": "Lifecycle status of the advice request.",
                         "title": "Status"
                     },
-                    "vraag": {
+                    "question": {
                         "type": "string",
                         "description": "The question(s) put to the adviser.",
                         "title": "Question"
@@ -9193,7 +9193,7 @@
                 "required": [
                     "gedragRow",
                     "gevolgColumn",
-                    "interventieStep"
+                    "interventionStep"
                 ],
                 "properties": {
                     "gedragRow": {
@@ -9206,7 +9206,7 @@
                         "description": "The consequence (gevolg) column identifier in the LHS matrix.",
                         "title": "Consequence Column"
                     },
-                    "interventieStep": {
+                    "interventionStep": {
                         "type": "string",
                         "description": "The recommended intervention step for this gedrag/gevolg combination.",
                         "title": "Intervention Step"
@@ -9436,7 +9436,7 @@
                     "slug": "route-collegeadvies-omgevingsvergunning"
                 },
                 "name": "Collegeadvies - Omgevingsvergunning",
-                "voorstelType": "collegeadvies",
+                "proposalType": "collegeadvies",
                 "isDefault": true,
                 "description": "Standaard accorderingslijn voor collegeadviezen over omgevingsvergunningen",
                 "steps": [
@@ -9477,7 +9477,7 @@
                     "slug": "route-collegeadvies-bestemmingsplan"
                 },
                 "name": "Collegeadvies - Bestemmingsplan",
-                "voorstelType": "collegeadvies",
+                "proposalType": "collegeadvies",
                 "isDefault": false,
                 "description": "Uitgebreide route voor bestemmingsplanwijzigingen met planologisch en juridisch advies",
                 "steps": [
@@ -9525,14 +9525,14 @@
                     "slug": "route-dt-advies-standaard"
                 },
                 "name": "DT-advies - Standaard",
-                "voorstelType": "dt_advies",
+                "proposalType": "dt_advies",
                 "isDefault": true,
                 "description": "Standaard directieteam-advies: behandelaar parafering gevolgd door afdelingshoofd accordering",
                 "steps": [
                     {
                         "order": 1,
                         "type": "parafering",
-                        "actor": "behandelaar",
+                        "actor": "handler",
                         "actorType": "role",
                         "mandatory": true
                     },
@@ -9552,7 +9552,7 @@
                     "slug": "route-raadsvoorstel-groot-project"
                 },
                 "name": "Raadsvoorstel - Groot project",
-                "voorstelType": "raadsvoorstel",
+                "proposalType": "raadsvoorstel",
                 "isDefault": true,
                 "description": "Volledige route voor raadsvoorstellen: financieel, juridisch, management, gemeentesecretaris en burgemeester",
                 "steps": [

@@ -73,14 +73,14 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface {
 	 */
 	public function handle(array $actionConfig, array $case, array $transitionContext): ActionResult {
 		try {
-			$voorstelId = $this->resolveVoorstelId(case: $case);
-			if ($voorstelId === '') {
+			$proposalId = $this->resolveProposalId(case: $case);
+			if ($proposalId === '') {
 				return new ActionResult(succeeded: false, error: 'no_active_voorstel');
 			}
 
-			$this->parafeerService->activate($voorstelId);
+			$this->parafeerService->activate($proposalId);
 
-			return new ActionResult(succeeded: true, data: ['voorstel' => $voorstelId]);
+			return new ActionResult(succeeded: true, data: ['voorstel' => $proposalId]);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BesluitvormingActivateHandler failed',
@@ -97,7 +97,7 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface {
 	 *
 	 * @return string The voorstel id, or empty string.
 	 */
-	private function resolveVoorstelId(array $case): string {
+	private function resolveProposalId(array $case): string {
 		// A voorstel may be linked directly on the case.
 		$direct = (string)($case['voorstel'] ?? '');
 		if ($direct !== '') {
@@ -110,16 +110,16 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface {
 		}
 
 		$register = $this->settingsService->getConfigValue(key: 'register');
-		$voorstelSchema = $this->settingsService->getConfigValue(key: 'voorstel_schema');
+		$proposalSchema = $this->settingsService->getConfigValue(key: 'voorstel_schema');
 		$caseId = (string)($case['id'] ?? $case['uuid'] ?? '');
-		if ($register === '' || $voorstelSchema === '' || $caseId === '') {
+		if ($register === '' || $proposalSchema === '' || $caseId === '') {
 			return '';
 		}
 
 		try {
 			$results = $objectService->findAll(
 				[
-					'filters' => ['register' => $register, 'schema' => $voorstelSchema, 'case' => $caseId],
+					'filters' => ['register' => $register, 'schema' => $proposalSchema, 'case' => $caseId],
 					'limit' => 1,
 				],
 			);

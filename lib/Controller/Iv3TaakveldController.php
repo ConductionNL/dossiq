@@ -53,13 +53,13 @@ class Iv3TaakveldController extends Controller {
 	 *
 	 * @param string $appName The app name.
 	 * @param IRequest $request The request.
-	 * @param Iv3TaakveldList $taakveldList Taakveld reference list.
+	 * @param Iv3TaakveldList $taskFieldList Taakveld reference list.
 	 * @param IUserSession $userSession Current user session.
 	 */
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private readonly Iv3TaakveldList $taakveldList,
+		private readonly Iv3TaakveldList $taskFieldList,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct(appName: $appName, request: $request);
@@ -80,8 +80,8 @@ class Iv3TaakveldController extends Controller {
 
 		return new JSONResponse(
 			[
-				'version' => $this->taakveldList->version(),
-				'taakvelden' => $this->taakveldList->allTaakvelden(),
+				'version' => $this->taskFieldList->version(),
+				'taakvelden' => $this->taskFieldList->allTaakvelden(),
 			]
 		);
 	}//end taakvelden()

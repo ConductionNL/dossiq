@@ -100,7 +100,7 @@ class AdviceDelegationService {
 	 * untouched; only the besluit *decision* is delegated. FAILS CLOSED when
 	 * the decidesk leaf is unavailable.
 	 *
-	 * @param string $voorstelId The voorstel UUID.
+	 * @param string $proposalId The voorstel UUID.
 	 * @param array<string,mixed> $payload Provenance + context: subjectRegister, subjectLabel, externalReference, title, governingBody.
 	 *
 	 * @return string The decidesk decisionRef (UUID) to persist on the case.
@@ -110,14 +110,14 @@ class AdviceDelegationService {
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md
 	 * @spec openspec/specs/remaining-decision-delegation/spec.md#requirement-req-pdrd-002-delegation-fails-closed-when-decidesk-is-unavailable
 	 */
-	public function raiseVoorstelBesluit(string $voorstelId, array $payload = []): string {
+	public function raiseVoorstelBesluit(string $proposalId, array $payload = []): string {
 		return $this->core->raiseDecision(
 			decisionType: ContractDecisionDelegationService::DECISION_TYPE_REPORT_ADOPTION,
-			externalReference: (string)($payload['externalReference'] ?? $voorstelId),
+			externalReference: (string)($payload['externalReference'] ?? $proposalId),
 			subject: [
 				'subjectRegister' => (string)($payload['subjectRegister'] ?? ''),
 				'subjectSchema' => 'voorstel',
-				'subjectId' => $voorstelId,
+				'subjectId' => $proposalId,
 				'subjectLabel' => (string)($payload['subjectLabel'] ?? ($payload['title'] ?? '')),
 			],
 			context: [

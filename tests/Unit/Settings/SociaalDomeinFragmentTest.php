@@ -115,16 +115,16 @@ class SociaalDomeinFragmentTest extends TestCase {
 	public function testZaaktypesRequireAvgClassificatie(): void {
 		$schemas = $this->merged['components']['schemas'];
 
-		foreach (['wmoZaak', 'jeugdwetZaak', 'participatiewetZaak'] as $zaaktype) {
+		foreach (['wmoZaak', 'jeugdwetZaak', 'participatiewetZaak'] as $caseType) {
 			$this->assertContains(
 				'avgClassificatie',
-				$schemas[$zaaktype]['required'],
-				$zaaktype . ' must require an avgClassificatie block'
+				$schemas[$caseType]['required'],
+				$caseType . ' must require an avgClassificatie block'
 			);
 			$this->assertArrayHasKey(
 				'avgClassificatie',
-				$schemas[$zaaktype]['properties'],
-				$zaaktype . ' must expose the avgClassificatie property'
+				$schemas[$caseType]['properties'],
+				$caseType . ' must expose the avgClassificatie property'
 			);
 		}
 	}//end testZaaktypesRequireAvgClassificatie()
@@ -200,9 +200,9 @@ class SociaalDomeinFragmentTest extends TestCase {
 			}
 		}
 
-		$this->assertSame(15, $bySlug['zaak-2026-wmo-04832']['avgClassificatie']['bewaarTermijnJaren']);
-		$this->assertSame(20, $bySlug['zaak-2026-jeugd-00921']['avgClassificatie']['bewaarTermijnJaren']);
-		$this->assertSame(10, $bySlug['zaak-2026-pw-01278']['avgClassificatie']['bewaarTermijnJaren']);
+		$this->assertSame(15, $bySlug['zaak-2026-wmo-04832']['avgClassificatie']['retentionTermYears']);
+		$this->assertSame(20, $bySlug['zaak-2026-jeugd-00921']['avgClassificatie']['retentionTermYears']);
+		$this->assertSame(10, $bySlug['zaak-2026-pw-01278']['avgClassificatie']['retentionTermYears']);
 	}//end testSeedRetentionTermsMatchSelectielijst()
 
 	/**

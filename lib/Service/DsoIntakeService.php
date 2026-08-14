@@ -87,7 +87,7 @@ class DsoIntakeService {
 		return array_map(
 			static function ($act) {
 				if (is_array($act) === true) {
-					return $act['naam'] ?? '';
+					return $act['name'] ?? '';
 				}
 
 				return (string)$act;
@@ -155,12 +155,12 @@ class DsoIntakeService {
 	 */
 	public function map(array $dsoMessage): array {
 		$activiteiten = $dsoMessage['activiteiten'] ?? [];
-		$locatie = $dsoMessage['locatie'] ?? '';
-		$aanvrager = $dsoMessage['aanvrager'] ?? [];
+		$location = $dsoMessage['location'] ?? '';
+		$applicant = $dsoMessage['applicant'] ?? [];
 		$bouwkosten = $dsoMessage['bouwkosten'] ?? 0;
 		$procedureType = $dsoMessage['procedureType'] ?? 'regulier';
 		$dsoZaaknummer = $dsoMessage['zaaknummer'] ?? '';
-		$bijlagen = $dsoMessage['bijlagen'] ?? [];
+		$attachments = $dsoMessage['attachments'] ?? [];
 
 		$activityNames = $this->extractActivityNames(activiteiten: $activiteiten);
 		$activityStr = implode(', ', array_filter($activityNames));
@@ -179,12 +179,12 @@ class DsoIntakeService {
 
 		// Cast only after the array case has been JSON-encoded, so an array
 		// value never reaches the string cast (which would warn).
-		$locatieRaw = $locatie;
-		if (is_array($locatie) === true) {
-			$locatieRaw = json_encode($locatie);
+		$locationRaw = $location;
+		if (is_array($location) === true) {
+			$locationRaw = json_encode($location);
 		}
 
-		$locatieStr = (string)$locatieRaw;
+		$locationStr = (string)$locationRaw;
 
 		return [
 			'title' => $title,
@@ -194,12 +194,12 @@ class DsoIntakeService {
 			'dsoZaaknummer' => $dsoZaaknummer,
 			'activiteiten' => $activityStr,
 			'activityNames' => $activityNames,
-			'locatie' => $locatieStr,
+			'location' => $locationStr,
 			'bouwkosten' => (string)$bouwkosten,
 			'procedureType' => $procedureType,
-			'aanvragerNaam' => $aanvrager['naam'] ?? '',
+			'aanvragerNaam' => $applicant['name'] ?? '',
 			'deadline' => $deadline,
-			'bijlagen' => $bijlagen,
+			'attachments' => $attachments,
 		];
 	}//end map()
 
@@ -251,7 +251,7 @@ class DsoIntakeService {
 			properties: [
 				'dsoZaaknummer' => $dsoZaaknummer,
 				'activiteiten' => $mappedData['activiteiten'] ?? '',
-				'locatie' => $mappedData['locatie'] ?? '',
+				'location' => $mappedData['location'] ?? '',
 				'bouwkosten' => $mappedData['bouwkosten'] ?? '',
 				'procedureType' => $mappedData['procedureType'] ?? '',
 				'aanvragerNaam' => $mappedData['aanvragerNaam'] ?? '',

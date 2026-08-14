@@ -60,7 +60,7 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 	 */
 	public function testBurgerRoutesToMijnOverheid(): void {
 		$result = $this->service->routeToBerichtenbox([
-			'kenmerk' => 'Z/2026/1/B01',
+			'reference' => 'Z/2026/1/B01',
 			'geadresseerde' => [
 				'type' => 'burger',
 				'bsn' => '123456789',
@@ -69,8 +69,8 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 		]);
 
 		$this->assertSame('berichtenbox-mijnoverheid', $result['kanaal']);
-		$this->assertNotEmpty($result['berichtId']);
-		$this->assertSame('systeem', $result['verzondenDoor']);
+		$this->assertNotEmpty($result['messageId']);
+		$this->assertSame('systeem', $result['sentBy']);
 	}//end testBurgerRoutesToMijnOverheid()
 
 	/**
@@ -80,7 +80,7 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 	 */
 	public function testBedrijfRoutesToEherkenning(): void {
 		$result = $this->service->routeToBerichtenbox([
-			'kenmerk' => 'Z/2026/2/B01',
+			'reference' => 'Z/2026/2/B01',
 			'geadresseerde' => [
 				'type' => 'bedrijf',
 				'oin' => '00000001234567890000',
@@ -98,7 +98,7 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 	 */
 	public function testFallbackToPrint(): void {
 		$result = $this->service->routeToBerichtenbox([
-			'kenmerk' => 'Z/2026/3/B01',
+			'reference' => 'Z/2026/3/B01',
 			'geadresseerde' => [
 				'type' => 'burger',
 				'bsn' => '987654321',

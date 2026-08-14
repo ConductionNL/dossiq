@@ -77,7 +77,7 @@ export default {
 	name: 'SamenwerkverzoekDialog',
 	components: { NcButton, NcDialog, NcTextArea, NcTextField },
 	props: {
-		zaakId: {
+		caseId: {
 			type: String,
 			required: true,
 		},
@@ -111,7 +111,7 @@ export default {
 				const { data } = await axios.post(
 					generateUrl(
 						'/apps/procest/api/dso/cases/'
-							+ encodeURIComponent(this.zaakId)
+							+ encodeURIComponent(this.caseId)
 							+ '/samenwerking',
 					),
 					{

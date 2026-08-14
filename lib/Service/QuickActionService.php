@@ -92,7 +92,7 @@ class QuickActionService {
 	/**
 	 * Create a new case from the KCC contact context.
 	 *
-	 * @param string $zaaktype The target case type slug.
+	 * @param string $caseType The target case type slug.
 	 * @param string $burgerId The identified burger reference.
 	 * @param array<string, mixed> $details The intake details (location, etc.).
 	 *
@@ -102,21 +102,21 @@ class QuickActionService {
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
-	public function executeNieuweZaak(string $zaaktype, string $burgerId, array $details): array {
-		$zaaktype = trim($zaaktype);
-		if ($zaaktype === '') {
+	public function executeNieuweZaak(string $caseType, string $burgerId, array $details): array {
+		$caseType = trim($caseType);
+		if ($caseType === '') {
 			throw new RuntimeException('zaaktype is required');
 		}
 
 		[$objectService, $register, $caseSchema] = $this->resolveCase();
 
 		$record = [
-			'caseType' => $zaaktype,
+			'caseType' => $caseType,
 			'initiator' => $burgerId,
 			'sourceChannel' => 'kcc_telefoon',
 			'status' => 'intake',
 			'startDate' => date('c'),
-			'title' => (string)($details['title'] ?? ('Melding via KCC: ' . $zaaktype)),
+			'title' => (string)($details['title'] ?? ('Melding via KCC: ' . $caseType)),
 			'description' => (string)($details['description'] ?? ''),
 		];
 
@@ -137,7 +137,7 @@ class QuickActionService {
 	 * Register a klacht as an Awb 9:1 case linked to the original case.
 	 *
 	 * @param string $caseId The case being complained about (may be empty).
-	 * @param string $samenvatting The klacht text.
+	 * @param string $summary The klacht text.
 	 * @param string $burgerId The identified burger reference.
 	 *
 	 * @return array{klachtCaseId: string, deadline: string}
@@ -146,9 +146,9 @@ class QuickActionService {
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T07
 	 */
-	public function executeKlachtRegistreren(string $caseId, string $samenvatting, string $burgerId): array {
-		$samenvatting = trim($samenvatting);
-		if ($samenvatting === '') {
+	public function executeKlachtRegistreren(string $caseId, string $summary, string $burgerId): array {
+		$summary = trim($summary);
+		if ($summary === '') {
 			throw new RuntimeException('Klacht samenvatting is required');
 		}
 
@@ -165,7 +165,7 @@ class QuickActionService {
 			'startDate' => date('c'),
 			'deadline' => $deadline,
 			'title' => 'Klacht (Awb 9:1)',
-			'description' => $samenvatting,
+			'description' => $summary,
 			'gerelateerdeZaak' => $caseId,
 		];
 
@@ -179,19 +179,19 @@ class QuickActionService {
 			throw new RuntimeException('Could not register klacht');
 		}
 
-		$klachtId = (string)($created['id'] ?? ($created['uuid'] ?? ''));
+		$complaintId = (string)($created['id'] ?? ($created['uuid'] ?? ''));
 
-		if ($caseId !== '' && $klachtId !== '') {
+		if ($caseId !== '' && $complaintId !== '') {
 			$this->contactMomentService->recordActivity(
 				$caseId,
 				'',
 				'klacht_geregistreerd',
 				'KCC',
-				'Klacht geregistreerd als zaak ' . $klachtId,
+				'Klacht geregistreerd als zaak ' . $complaintId,
 			);
 		}
 
-		return ['klachtCaseId' => $klachtId, 'deadline' => $deadline];
+		return ['klachtCaseId' => $complaintId, 'deadline' => $deadline];
 	}//end executeKlachtRegistreren()
 
 	/**

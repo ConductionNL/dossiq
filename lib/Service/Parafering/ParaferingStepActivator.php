@@ -69,7 +69,7 @@ class ParaferingStepActivator {
 	 * A step order that is absent from the snapshot is a no-op, matching the
 	 * pre-split behaviour.
 	 *
-	 * @param array<string, mixed> $voorstel The voorstel.
+	 * @param array<string, mixed> $proposal The voorstel.
 	 * @param int $step The step order to activate.
 	 * @param array<int, array<string, mixed>> $steps The decoded routeSnapshot.
 	 *
@@ -77,7 +77,7 @@ class ParaferingStepActivator {
 	 *
 	 * @spec openspec/changes/role-based-step-routing/tasks.md#T07
 	 */
-	public function activateStep(array $voorstel, int $step, array $steps): void {
+	public function activateStep(array $proposal, int $step, array $steps): void {
 		$stepInfo = null;
 		foreach ($steps as $candidate) {
 			if ((int)($candidate['order'] ?? 0) === $step) {
@@ -90,13 +90,13 @@ class ParaferingStepActivator {
 			return;
 		}
 
-		$resolvedActors = $this->resolveStepActors(stepInfo: $stepInfo, voorstel: $voorstel);
+		$resolvedActors = $this->resolveStepActors(stepInfo: $stepInfo, proposal: $proposal);
 
 		$this->logger->info(
 			'Procest: activated parafering step {step} of voorstel {voorstelId} for actor {actor}',
 			[
 				'step' => $step,
-				'voorstelId' => $voorstel['id'] ?? $voorstel['uuid'] ?? '',
+				'voorstelId' => $proposal['id'] ?? $proposal['uuid'] ?? '',
 				'actor' => (string)($stepInfo['actor'] ?? ''),
 				'resolved' => $resolvedActors,
 				'app' => Application::APP_ID,
@@ -114,13 +114,13 @@ class ParaferingStepActivator {
 	 * returned as-is.
 	 *
 	 * @param array<string, mixed> $stepInfo The step from routeSnapshot.
-	 * @param array<string, mixed> $voorstel The voorstel object (provides caseRef + caseType).
+	 * @param array<string, mixed> $proposal The voorstel object (provides caseRef + caseType).
 	 *
 	 * @return array<int, string> The resolved actor UIDs.
 	 *
 	 * @spec openspec/changes/role-based-step-routing/tasks.md#T07
 	 */
-	public function resolveStepActors(array $stepInfo, array $voorstel): array {
+	public function resolveStepActors(array $stepInfo, array $proposal): array {
 		$actorType = (string)($stepInfo['actorType'] ?? 'user');
 		$actor = (string)($stepInfo['actor'] ?? '');
 		if ($actor === '') {
@@ -131,12 +131,12 @@ class ParaferingStepActivator {
 			return [$actor];
 		}
 
-		$caseRef = (string)($voorstel['case'] ?? ($voorstel['zaak'] ?? ''));
+		$caseRef = (string)($proposal['case'] ?? ($proposal['zaak'] ?? ''));
 		if ($caseRef === '') {
 			return [$actor];
 		}
 
-		$case = ['id' => $caseRef, 'caseType' => (string)($voorstel['caseType'] ?? '')];
+		$case = ['id' => $caseRef, 'caseType' => (string)($proposal['caseType'] ?? '')];
 		$rule = $stepInfo['routingRule'] ?? null;
 		if (is_array($rule) === false || isset($rule['strategy']) === false) {
 			$rule = [
