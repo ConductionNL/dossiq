@@ -142,6 +142,15 @@ export default {
 			)
 		},
 
+		/**
+		 * Whether the beschikking has a dispatch record to show.
+		 *
+		 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+		 *  migration; this method changed only because the property it reads was
+		 *  renamed from `kanaal` to `notificationChannel`.
+		 *
+		 * @return {boolean} True when a dispatch channel is recorded.
+		 */
 		hasVerzending() {
 			return !!(
 				this.beschikking
