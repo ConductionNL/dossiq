@@ -128,10 +128,12 @@ class SamenwerkverzoekService {
 			'requestedOn' => date('c'),
 		];
 
-		$created = $objectService->saveObject(
-			register: $register,
-			schema: $requestSchema,
-			object: $samenwerkverzoek
+		$created = $this->asArray(
+			value: $objectService->saveObject(
+				register: $register,
+				schema: $requestSchema,
+				object: $samenwerkverzoek
+			)
 		);
 
 		$event = new GenericEvent(
@@ -215,10 +217,12 @@ class SamenwerkverzoekService {
 		$request['advies'] = $advies;
 		$request['respondedOn'] = date('c');
 
-		$updated = $objectService->saveObject(
-			register: $register,
-			schema: $requestSchema,
-			object: $request
+		$updated = $this->asArray(
+			value: $objectService->saveObject(
+				register: $register,
+				schema: $requestSchema,
+				object: $request
+			)
 		);
 
 		$this->logger->info(
@@ -232,6 +236,27 @@ class SamenwerkverzoekService {
 
 		return $updated;
 	}//end respondToSamenwerking()
+
+	/**
+	 * Normalise an OpenRegister save result to a plain array.
+	 *
+	 * `ObjectServiceInterface::saveObject()` returns an
+	 * `ObjectEntityInterface`, not an array, so returning it straight out of a
+	 * method declared `: array` is a TypeError. Mirrors the helper of the same
+	 * name in CaseCollaborationService, and stays defensive so either shape
+	 * works.
+	 *
+	 * @param mixed $value The saveObject() result.
+	 *
+	 * @return array<string,mixed> The object data as an array.
+	 */
+	private function asArray(mixed $value): array {
+		if (is_array($value) === true) {
+			return $value;
+		}
+
+		return $value->jsonSerialize();
+	}//end asArray()
 
 	/**
 	 * Authorise a samenwerkverzoek mutation.
