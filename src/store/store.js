@@ -155,7 +155,7 @@ export async function initializeStores() {
 		}
 		if (config.register && config.voorstel_schema) {
 			objectStore.registerObjectType(
-				'voorstel',
+				'proposal',
 				config.voorstel_schema,
 				config.register,
 			)

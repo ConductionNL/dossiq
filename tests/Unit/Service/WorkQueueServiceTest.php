@@ -58,7 +58,7 @@ class WorkQueueServiceTest extends TestCase {
 					'register' => 'procest',
 					'case_schema' => 'case',
 					'task_schema' => 'task',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_instance_schema' => 'deadlineInstance',
 					default => '',
 				};
 			}
@@ -243,7 +243,7 @@ class WorkQueueServiceTest extends TestCase {
 			'deadline' => '2026-08-01',
 			'priority' => 'normal',
 		]);
-		$this->objects->saveObject('termijnInstance', [
+		$this->objects->saveObject('deadlineInstance', [
 			'id' => 'ti-1',
 			'case' => 'case-1',
 			'status' => 'lopend',

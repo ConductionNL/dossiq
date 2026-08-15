@@ -49,8 +49,8 @@ class TermijnServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_definitie_schema' => 'deadlineDefinition',
+					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
 					default => '',
 				};
@@ -62,7 +62,7 @@ class TermijnServiceTest extends TestCase {
 		// Seed two definitions: omgevingsvergunning 56d (active) + Wmo 42d (active).
 		$this->objects->saveObject(
 			'procest',
-			'termijnDefinitie',
+			'deadlineDefinition',
 			[
 				'id' => 'td-omgevingsvergunning-regulier',
 				'caseType' => 'omgevingsvergunning-regulier',
@@ -74,7 +74,7 @@ class TermijnServiceTest extends TestCase {
 		);
 		$this->objects->saveObject(
 			'procest',
-			'termijnDefinitie',
+			'deadlineDefinition',
 			[
 				'id' => 'td-wmo-aanvraag',
 				'caseType' => 'wmo-melding',
@@ -94,7 +94,7 @@ class TermijnServiceTest extends TestCase {
 		$instance = $this->service->createTermijnInstance('Z/2026/123', 'omgevingsvergunning-regulier', $start);
 
 		self::assertSame('Z/2026/123', $instance['case']);
-		self::assertSame('td-omgevingsvergunning-regulier', $instance['termijnDefinitie']);
+		self::assertSame('td-omgevingsvergunning-regulier', $instance['deadlineDefinition']);
 		self::assertSame('lopend', $instance['status']);
 		self::assertSame('2026-07-27', $instance['endDateCalculated']);
 		self::assertSame('2026-07-27', $instance['endDateCurrent']);
@@ -135,7 +135,7 @@ class TermijnServiceTest extends TestCase {
 		// Add a newer version of the omgevingsvergunning definition.
 		$this->objects->saveObject(
 			'procest',
-			'termijnDefinitie',
+			'deadlineDefinition',
 			[
 				'id' => 'td-omgevingsvergunning-regulier-v2',
 				'caseType' => 'omgevingsvergunning-regulier',
@@ -152,8 +152,8 @@ class TermijnServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_definitie_schema' => 'deadlineDefinition',
+					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
 					default => '',
 				};
@@ -223,14 +223,14 @@ class TermijnServiceTest extends TestCase {
 			'omgevingsvergunning-regulier',
 			new DateTimeImmutable('2026-01-15T09:00:00+00:00')
 		);
-		self::assertSame('td-omgevingsvergunning-regulier', $existing['termijnDefinitie']);
+		self::assertSame('td-omgevingsvergunning-regulier', $existing['deadlineDefinition']);
 		// 2026-01-15 + 56 days = 2026-03-12.
 		self::assertSame('2026-03-12', $existing['endDateCalculated']);
 
 		// Phase 2 — publish a new v2 (70 days) for the same zaaktype.
 		$this->objects->saveObject(
 			'procest',
-			'termijnDefinitie',
+			'deadlineDefinition',
 			[
 				'id' => 'td-omgevingsvergunning-regulier-v2',
 				'caseType' => 'omgevingsvergunning-regulier',
@@ -245,7 +245,7 @@ class TermijnServiceTest extends TestCase {
 		// at creation time and is never re-resolved against the catalogue.
 		$reloaded = $this->service->getTermijnInstance((string)$existing['id']);
 		self::assertNotNull($reloaded);
-		self::assertSame('td-omgevingsvergunning-regulier', $reloaded['termijnDefinitie']);
+		self::assertSame('td-omgevingsvergunning-regulier', $reloaded['deadlineDefinition']);
 		self::assertSame('2026-03-12', $reloaded['endDateCalculated']);
 
 		// Phase 4 — a brand-new instance for the same zaaktype binds to v2.
@@ -257,8 +257,8 @@ class TermijnServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_definitie_schema' => 'deadlineDefinition',
+					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
 					default => '',
 				};
@@ -271,7 +271,7 @@ class TermijnServiceTest extends TestCase {
 			'omgevingsvergunning-regulier',
 			new DateTimeImmutable('2026-04-01T09:00:00+00:00')
 		);
-		self::assertSame('td-omgevingsvergunning-regulier-v2', $fresh['termijnDefinitie']);
+		self::assertSame('td-omgevingsvergunning-regulier-v2', $fresh['deadlineDefinition']);
 		// 2026-04-01 + 70 days = 2026-06-10.
 		self::assertSame('2026-06-10', $fresh['endDateCalculated']);
 	}//end testExistingTermijnInstanceRetainsOriginalDefinitieAfterVersionBump()

@@ -49,7 +49,7 @@ class ZgwMappingService {
 	 * @var string[]
 	 */
 	private const RESOURCE_KEYS = [
-		'catalogus',
+		'catalog',
 		'zaak',
 		'zaaktype',
 		'status',
@@ -73,7 +73,7 @@ class ZgwMappingService {
 		'enkelvoudiginformatieobject',
 		'objectinformatieobject',
 		'gebruiksrechten',
-		'kanaal',
+		'notificationChannel',
 		'abonnement',
 	];
 

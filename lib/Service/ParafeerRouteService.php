@@ -142,7 +142,7 @@ class ParafeerRouteService {
 			$this->logger->warning(
 				'Procest: ParafeerTransitionEvent dispatch failed',
 				[
-					'voorstel' => $proposalId,
+					'proposal' => $proposalId,
 					'action' => $action,
 					'exception' => $e->getMessage(),
 				],
@@ -243,7 +243,7 @@ class ParafeerRouteService {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest: ApprovalChain creation failed, falling back to in-array routing',
-				['voorstel' => $voorstelUuid, 'exception' => $e->getMessage()]
+				['proposal' => $voorstelUuid, 'exception' => $e->getMessage()]
 			);
 			return null;
 		}
@@ -281,7 +281,7 @@ class ParafeerRouteService {
 		}
 
 		$actieData = [
-			'voorstel' => $proposal['id'] ?? $proposal['uuid'] ?? $proposalId,
+			'proposal' => $proposal['id'] ?? $proposal['uuid'] ?? $proposalId,
 			'step' => $currentStep,
 			'actor' => $this->requireUserId(),
 			'actorType' => (string)($actionData['actorType'] ?? 'user'),
@@ -372,7 +372,7 @@ class ParafeerRouteService {
 
 		$objectService->saveObject(
 			object: [
-				'voorstel' => $proposal['id'] ?? $proposal['uuid'] ?? $proposalId,
+				'proposal' => $proposal['id'] ?? $proposal['uuid'] ?? $proposalId,
 				'step' => $step,
 				'actor' => $userId,
 				'actorType' => 'user',
@@ -532,7 +532,7 @@ class ParafeerRouteService {
 	}//end addAdhocStep()
 
 	/**
-	 * Advance the voorstel: either activate the next step or mark geaccordeerd.
+	 * Advance the proposal: either activate the next step or mark geaccordeerd.
 	 *
 	 * @param object $objectService The OpenRegister ObjectService
 	 * @param string $register The register slug/UUID

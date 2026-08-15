@@ -283,7 +283,7 @@ class DeadlineExtensionService {
 	 */
 	private function resolveMaxExtensions(array $instance): int {
 		// Prefer to look up the definition by the linked id.
-		$defId = (string)($instance['termijnDefinitie'] ?? '');
+		$defId = (string)($instance['deadlineDefinition'] ?? '');
 		if ($defId === '') {
 			return 1;
 		}

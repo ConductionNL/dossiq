@@ -244,7 +244,7 @@ export default {
 		 */
 		buildPayload(action) {
 			const payload = {
-				voorstel: this.voorstelId,
+				proposal: this.voorstelId,
 				action,
 			}
 			if (this.comment.trim() !== '') payload.comment = this.comment.trim()
@@ -280,7 +280,7 @@ export default {
 			}
 			this.validationError = ''
 			const payload = {
-				voorstel: this.voorstelId,
+				proposal: this.voorstelId,
 				action: 'returned',
 				comment: this.returnReason.trim(),
 			}

@@ -48,7 +48,7 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'termijn_definitie_schema' => 'termijnDefinitie',
+					'termijn_definitie_schema' => 'deadlineDefinition',
 					default => '',
 				};
 			},
@@ -69,7 +69,7 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 		self::assertSame(true, $result['success']);
 		self::assertSame(3, $result['definities']);
 		self::assertSame(0, $result['skipped']);
-		self::assertCount(3, $this->objects->store['termijnDefinitie']);
+		self::assertCount(3, $this->objects->store['deadlineDefinition']);
 	}
 
 	/**
@@ -82,7 +82,7 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 		self::assertSame(true, $second['success']);
 		self::assertSame(0, $second['definities']);
 		self::assertSame(3, $second['skipped']);
-		self::assertCount(3, $this->objects->store['termijnDefinitie']);
+		self::assertCount(3, $this->objects->store['deadlineDefinition']);
 	}
 
 	/**
@@ -91,7 +91,7 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 	public function testWooSeedHasCustomRegime(): void {
 		$this->service->seed();
 
-		$woo = $this->objects->store['termijnDefinitie']['td-woo-verzoek'];
+		$woo = $this->objects->store['deadlineDefinition']['td-woo-verzoek'];
 		self::assertSame('woo-verzoek', $woo['caseType']);
 		self::assertSame(28, $woo['standardDurationDays']);
 		self::assertSame(1500, $woo['deviatingPenaltyPaymentRegime']['dailyTariff']);
@@ -104,7 +104,7 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 	public function testWmoSeedHas42DayDuration(): void {
 		$this->service->seed();
 
-		$wmo = $this->objects->store['termijnDefinitie']['td-wmo-aanvraag'];
+		$wmo = $this->objects->store['deadlineDefinition']['td-wmo-aanvraag'];
 		self::assertSame('wmo-melding', $wmo['caseType']);
 		self::assertSame(42, $wmo['standardDurationDays']);
 		self::assertSame(0, $wmo['countExtensions']);

@@ -120,7 +120,7 @@ class BesluitvormingParafeerService {
 		$updated = $objectService->saveObject(object: array_merge($proposal, $updateData), register: $register, schema: $proposalSchema);
 
 		$this->logger->info(
-			'Besluitvorming parafering activated for voorstel: ' . $proposalId,
+			'Besluitvorming parafering activated for proposal: ' . $proposalId,
 			['app' => Application::APP_ID]
 		);
 
@@ -205,7 +205,7 @@ class BesluitvormingParafeerService {
 			);
 
 			$this->logger->info(
-				'All parafen collected for voorstel: ' . $proposalId . ', transitioning case.',
+				'All parafen collected for proposal: ' . $proposalId . ', transitioning case.',
 				['app' => Application::APP_ID]
 			);
 
@@ -321,7 +321,7 @@ class BesluitvormingParafeerService {
 				objectService: $objectService,
 				register: $register,
 				schema: $actionSchema,
-				filters: ['voorstel' => $proposalId]
+				filters: ['proposal' => $proposalId]
 			);
 
 			if (empty($acties) === true) {

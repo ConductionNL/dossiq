@@ -123,7 +123,7 @@ class OriDataQualityCheck extends TimedJob {
 			$vergaderingen = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: 'ori',
-				schema: 'vergadering',
+				schema: 'meeting',
 				filters: ['_limit' => 500]
 			);
 		} catch (\Throwable $e) {
@@ -139,7 +139,7 @@ class OriDataQualityCheck extends TimedJob {
 
 			if (empty($v['location']) === true) {
 				$issues[] = [
-					'schema' => 'vergadering',
+					'schema' => 'meeting',
 					'slug' => $slug,
 					'field' => 'location',
 					'severity' => 'warning',
@@ -165,7 +165,7 @@ class OriDataQualityCheck extends TimedJob {
 			$agendapunten = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: 'ori',
-				schema: 'agendapunt',
+				schema: 'agendaItem',
 				filters: ['_limit' => 1000]
 			);
 		} catch (\Throwable $e) {
@@ -178,35 +178,35 @@ class OriDataQualityCheck extends TimedJob {
 
 		foreach ($agendapunten as $ap) {
 			$apSlug = (string)($ap['@self']['slug'] ?? ($ap['id'] ?? '?'));
-			$vergaderingRef = (string)($ap['vergadering'] ?? '');
+			$vergaderingRef = (string)($ap['meeting'] ?? '');
 
 			if (empty($vergaderingRef) === true) {
 				continue;
 			}
 
 			try {
-				$vergadering = $this->findObjectAsArray(
+				$meeting = $this->findObjectAsArray(
 					objectService: $objectService,
 					register: 'ori',
-					schema: 'vergadering',
+					schema: 'meeting',
 					id: $vergaderingRef
 				);
 
-				if ($vergadering === null) {
+				if ($meeting === null) {
 					$issues[] = [
-						'schema' => 'agendapunt',
+						'schema' => 'agendaItem',
 						'slug' => $apSlug,
-						'field' => 'vergadering',
+						'field' => 'meeting',
 						'severity' => 'warning',
-						'message' => 'Agendapunt references non-existent vergadering: ' . $vergaderingRef,
+						'message' => 'Agendapunt references non-existent meeting: ' . $vergaderingRef,
 					];
 				}
 			} catch (\Throwable $e) {
 				// Reference resolution failure; log as issue.
 				$issues[] = [
-					'schema' => 'agendapunt',
+					'schema' => 'agendaItem',
 					'slug' => $apSlug,
-					'field' => 'vergadering',
+					'field' => 'meeting',
 					'severity' => 'warning',
 					'message' => 'Agendapunt vergadering reference could not be resolved: ' . $vergaderingRef,
 				];
@@ -230,7 +230,7 @@ class OriDataQualityCheck extends TimedJob {
 			$raadsleden = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: 'ori',
-				schema: 'raadslid',
+				schema: 'councilMember',
 				filters: ['_limit' => 500]
 			);
 		} catch (\Throwable $e) {
@@ -239,7 +239,7 @@ class OriDataQualityCheck extends TimedJob {
 
 		foreach ($raadsleden as $rl) {
 			$rlSlug = (string)($rl['@self']['slug'] ?? ($rl['id'] ?? '?'));
-			$politicalGroupRef = (string)($rl['fractie'] ?? '');
+			$politicalGroupRef = (string)($rl['politicalGroup'] ?? '');
 
 			if (empty($politicalGroupRef) === true) {
 				continue;
@@ -249,17 +249,17 @@ class OriDataQualityCheck extends TimedJob {
 				$politicalGroup = $this->findObjectAsArray(
 					objectService: $objectService,
 					register: 'ori',
-					schema: 'fractie',
+					schema: 'politicalGroup',
 					id: $politicalGroupRef
 				);
 
 				if ($politicalGroup === null) {
 					$issues[] = [
-						'schema' => 'raadslid',
+						'schema' => 'councilMember',
 						'slug' => $rlSlug,
-						'field' => 'fractie',
+						'field' => 'politicalGroup',
 						'severity' => 'warning',
-						'message' => 'Raadslid references non-existent fractie: ' . $politicalGroupRef,
+						'message' => 'Raadslid references non-existent politicalGroup: ' . $politicalGroupRef,
 					];
 				}
 			} catch (\Throwable $e) {
@@ -284,13 +284,13 @@ class OriDataQualityCheck extends TimedJob {
 			$documenten = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: 'ori',
-				schema: 'raadsdocument',
+				schema: 'councilDocument',
 				filters: ['_limit' => 500]
 			);
 			$agendapunten = $this->searchObjectsAsArrays(
 				objectService: $objectService,
 				register: 'ori',
-				schema: 'agendapunt',
+				schema: 'agendaItem',
 				filters: ['_limit' => 1000]
 			);
 		} catch (\Throwable $e) {
@@ -312,7 +312,7 @@ class OriDataQualityCheck extends TimedJob {
 			$slug = (string)($doc['@self']['slug'] ?? ($doc['id'] ?? '?'));
 			if (isset($referenced[$slug]) === false) {
 				$issues[] = [
-					'schema' => 'raadsdocument',
+					'schema' => 'councilDocument',
 					'slug' => $slug,
 					'field' => 'attachments',
 					'severity' => 'info',

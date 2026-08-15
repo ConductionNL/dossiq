@@ -64,7 +64,7 @@ class ZgwService {
 			'klantcontacten' => 'klantcontact',
 		],
 		'catalogi' => [
-			'catalogussen' => 'catalogus',
+			'catalogussen' => 'catalog',
 			'zaaktypen' => 'caseType',
 			'statustypen' => 'statustype',
 			'resultaattypen' => 'resultaattype',
@@ -89,7 +89,7 @@ class ZgwService {
 			'verzendingen' => 'dispatch',
 		],
 		'notificaties' => [
-			'kanaal' => 'kanaal',
+			'notificationChannel' => 'notificationChannel',
 			'abonnement' => 'abonnement',
 		],
 	];

@@ -80,7 +80,7 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface {
 
 			$this->parafeerService->activate($proposalId);
 
-			return new ActionResult(succeeded: true, data: ['voorstel' => $proposalId]);
+			return new ActionResult(succeeded: true, data: ['proposal' => $proposalId]);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'BesluitvormingActivateHandler failed',
@@ -99,7 +99,7 @@ class BesluitvormingActivateHandler implements ActionHandlerInterface {
 	 */
 	private function resolveProposalId(array $case): string {
 		// A voorstel may be linked directly on the case.
-		$direct = (string)($case['voorstel'] ?? '');
+		$direct = (string)($case['proposal'] ?? '');
 		if ($direct !== '') {
 			return $direct;
 		}

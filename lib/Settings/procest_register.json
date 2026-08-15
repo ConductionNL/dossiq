@@ -45,7 +45,7 @@
                         "description": "Auto-generated identifier",
                         "title": "Identifier"
                     },
-                    "catalogus": {
+                    "catalog": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "catalogus",
@@ -493,7 +493,7 @@
                         "x-translatable": true,
                         "title": "Description"
                     },
-                    "catalogus": {
+                    "catalog": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "catalogus",
@@ -584,7 +584,7 @@
                         "x-translatable": true,
                         "title": "Description"
                     },
-                    "catalogus": {
+                    "catalog": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "catalogus",
@@ -2195,8 +2195,8 @@
                     }
                 }
             },
-            "kanaal": {
-                "slug": "kanaal",
+            "notificationChannel": {
+                "slug": "notificationChannel",
                 "icon": "BellRingOutline",
                 "version": "1.0.0",
                 "x-schema-org": "schema:BroadcastChannel",
@@ -2260,8 +2260,8 @@
                     }
                 }
             },
-            "catalogus": {
-                "slug": "catalogus",
+            "catalog": {
+                "slug": "catalog",
                 "icon": "BookOpenPageVariant",
                 "version": "1.0.0",
                 "x-schema-org": "schema:DataCatalog",
@@ -2668,8 +2668,8 @@
                     }
                 }
             },
-            "voorstel": {
-                "slug": "voorstel",
+            "proposal": {
+                "slug": "proposal",
                 "icon": "FileDocumentEditOutline",
                 "version": "1.1.0",
                 "x-schema-org": "schema:CreativeWork",
@@ -2990,13 +2990,13 @@
                 "description": "An immutable record of a parafering action on a voorstel step",
                 "type": "object",
                 "required": [
-                    "voorstel",
+                    "proposal",
                     "step",
                     "actor",
                     "action"
                 ],
                 "properties": {
-                    "voorstel": {
+                    "proposal": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "voorstel",
@@ -3156,7 +3156,7 @@
                 "description": "DEPRECATED (migrate-parafering-to-or-audit): historical append-only audit entries for parafeerroute transitions. New transitions are recorded via OR's native audit trail instead of this schema. Existing rows remain readable for one major release. Originally: regulator-grade entry per transition (started, paraferd, advised, terugsturen, route-changed, completed) with actor, role, timestamp, reason, content snapshot, redacted IP, and SHA-256 tamper-detection hash.",
                 "type": "object",
                 "required": [
-                    "voorstel",
+                    "proposal",
                     "action",
                     "actor",
                     "actorRole",
@@ -3165,7 +3165,7 @@
                     "auditEntryHash"
                 ],
                 "properties": {
-                    "voorstel": {
+                    "proposal": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "voorstel",
@@ -3409,7 +3409,7 @@
                         "description": "Required motivation when hearingWaived = true",
                         "title": "Waiver Reason"
                     },
-                    "ingebrekestelling": {
+                    "noticeOfDefault": {
                         "type": "string",
                         "format": "date",
                         "description": "Date the bezwaarmaker submitted an ingebrekestelling per AWB 4:17 — starts the 14-day grace clock",
@@ -3494,7 +3494,7 @@
                                                                                 "from": {
                                                                                     "dateAdd": {
                                                                                         "date": {
-                                                                                            "prop": "ingebrekestelling"
+                                                                                            "prop": "noticeOfDefault"
                                                                                         },
                                                                                         "amount": 14,
                                                                                         "unit": "days"
@@ -3533,7 +3533,7 @@
                                                                                         "from": {
                                                                                             "dateAdd": {
                                                                                                 "date": {
-                                                                                                    "prop": "ingebrekestelling"
+                                                                                                    "prop": "noticeOfDefault"
                                                                                                 },
                                                                                                 "amount": 14,
                                                                                                 "unit": "days"
@@ -3575,7 +3575,7 @@
                                                                                         "from": {
                                                                                             "dateAdd": {
                                                                                                 "date": {
-                                                                                                    "prop": "ingebrekestelling"
+                                                                                                    "prop": "noticeOfDefault"
                                                                                                 },
                                                                                                 "amount": 14,
                                                                                                 "unit": "days"
@@ -9241,7 +9241,7 @@
                     "decision",
                     "document",
                     "documentLink",
-                    "catalogus",
+                    "catalog",
                     "zaaktypeInformatieobjecttype",
                     "caseProperty",
                     "caseDocument",
@@ -9251,13 +9251,13 @@
                     "dispatch",
                     "usageRights",
                     "workflowTemplate",
-                    "kanaal",
+                    "notificationChannel",
                     "abonnement",
                     "objection",
                     "hearingSession",
                     "advisoryReport",
                     "appealDecision",
-                    "voorstel",
+                    "proposal",
                     "parafeerroute",
                     "parafeeractie",
                     "paraferingAuditEntry",
@@ -9319,7 +9319,7 @@
                             "type": "string"
                         },
                         {
-                            "field": "voorstel",
+                            "field": "proposal",
                             "type": "string"
                         },
                         {
@@ -9345,7 +9345,7 @@
                             "label": "Actor role"
                         },
                         {
-                            "field": "voorstel",
+                            "field": "proposal",
                             "label": "Voorstel"
                         },
                         {

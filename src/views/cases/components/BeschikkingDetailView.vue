@@ -65,7 +65,7 @@
 				<h4>{{ t('procest', 'Verzending') }}</h4>
 				<dl class="beschikking-detail__meta">
 					<dt>{{ t('procest', 'Kanaal') }}</dt>
-					<dd>{{ beschikking.dispatch.kanaal }}</dd>
+					<dd>{{ beschikking.dispatch.notificationChannel }}</dd>
 					<dt>{{ t('procest', 'Bezwaartermijn eindigt') }}</dt>
 					<dd>{{ beschikking.objectionTermEndDate || '—' }}</dd>
 				</dl>
@@ -146,7 +146,7 @@ export default {
 			return !!(
 				this.beschikking
 				&& this.beschikking.dispatch
-				&& this.beschikking.dispatch.kanaal
+				&& this.beschikking.dispatch.notificationChannel
 			)
 		},
 

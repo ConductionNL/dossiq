@@ -101,7 +101,7 @@ class NoticeOfDefaultController extends Controller {
 		}
 
 		$instanceId = (string)($body['termijnInstanceId'] ?? '');
-		$channel = (string)($body['kanaal'] ?? '');
+		$channel = (string)($body['notificationChannel'] ?? '');
 		$whenStr = (string)($body['receiptDate'] ?? '');
 		$documentLink = (string)($body['documentLink'] ?? '');
 		if ($instanceId === '' || $channel === '' || $whenStr === '') {

@@ -31,9 +31,9 @@
                 "title": "Contactmoment",
                 "description": "A single inbound or outbound contact (telefoon, email, chat, webformulier, social media, balie) handled in the KCC-werkplek, logged against the case and the identified burger.",
                 "type": "object",
-                "required": ["kanaal", "direction", "identificationMethod", "kccEmployeeId", "nature", "summary"],
+                "required": ["notificationChannel", "direction", "identificationMethod", "kccEmployeeId", "nature", "summary"],
                 "properties": {
-                    "kanaal": {"type": "string", "title": "Channel", "enum": ["phone", "email", "webformulier", "chat", "social_media", "balie"], "description": "Communication channel"},
+                    "notificationChannel": {"type": "string", "title": "Channel", "enum": ["phone", "email", "webformulier", "chat", "social_media", "balie"], "description": "Communication channel"},
                     "direction": {"type": "string", "title": "Direction", "enum": ["inbound", "outbound"], "description": "Direction of the contact"},
                     "startTime": {"type": "string", "title": "Start Time", "format": "date-time", "description": "Start time of the contact"},
                     "endTime": {"type": "string", "title": "End Time", "format": "date-time", "description": "End time of the contact"},

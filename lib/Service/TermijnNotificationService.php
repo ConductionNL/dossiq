@@ -135,7 +135,7 @@ class TermijnNotificationService {
 		$payload = $this->renderTemplate(type: $type, instance: $instance ?? [], context: $context);
 
 		$payload['recipient'] = $recipientUserId;
-		$payload['termijnInstance'] = $termInstanceId;
+		$payload['deadlineInstance'] = $termInstanceId;
 		$payload['template'] = $type;
 
 		// Route the rendered notification through the procest notification
@@ -155,7 +155,7 @@ class TermijnNotificationService {
 				'type' => $type,
 				'recipient' => $recipientUserId,
 				'instance' => $termInstanceId,
-				'kanaal' => $payload['dispatch']['kanaal'],
+				'notificationChannel' => $payload['dispatch']['notificationChannel'],
 			]
 		);
 

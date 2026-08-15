@@ -295,7 +295,7 @@ class DwangsomCalculationService {
 	 * @return int Cents.
 	 */
 	private function resolveCustomDailyTariff(array $calculation): int {
-		$instanceId = (string)($calculation['termijnInstance'] ?? '');
+		$instanceId = (string)($calculation['deadlineInstance'] ?? '');
 		if ($instanceId === '') {
 			return self::AWB_TIER_1_CENTS;
 		}
@@ -352,7 +352,7 @@ class DwangsomCalculationService {
 			return '';
 		}
 
-		return (string)($instance['termijnDefinitie'] ?? '');
+		return (string)($instance['deadlineDefinition'] ?? '');
 	}//end resolveTermijnDefinitieId()
 
 	/**

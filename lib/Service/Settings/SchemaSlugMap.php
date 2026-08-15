@@ -46,7 +46,7 @@ class SchemaSlugMap {
 	 * @var array<string, string>
 	 */
 	public const SLUG_TO_CONFIG_KEY = [
-		'catalogus' => 'catalogus_schema',
+		'catalog' => 'catalogus_schema',
 		'case' => 'case_schema',
 		'task' => 'task_schema',
 		'status' => 'status_schema',
@@ -71,7 +71,7 @@ class SchemaSlugMap {
 		'document' => 'document_schema',
 		'documentLink' => 'document_link_schema',
 		'usageRights' => 'usage_rights_schema',
-		'kanaal' => 'kanaal_schema',
+		'notificationChannel' => 'kanaal_schema',
 		'abonnement' => 'abonnement_schema',
 		'inspectieChecklist' => 'inspectie_checklist_schema',
 		'inspectieRapport' => 'inspectie_rapport_schema',
@@ -87,7 +87,7 @@ class SchemaSlugMap {
 		'hearingSession' => 'hearing_session_schema',
 		'advisoryReport' => 'advisory_report_schema',
 		'appealDecision' => 'appeal_decision_schema',
-		'voorstel' => 'voorstel_schema',
+		'proposal' => 'voorstel_schema',
 		'parafeerroute' => 'parafeerroute_schema',
 		'parafeeractie' => 'parafeeractie_schema',
 		'paraferingAuditEntry' => 'parafering_audit_entry_schema',
@@ -141,11 +141,11 @@ class SchemaSlugMap {
 		'portaalVerzoek' => 'portaal_verzoek_schema',
 		'portaalNotificatieVoorkeur' => 'portaal_notificatie_voorkeur_schema',
 		// Termijnbewaking + dwangsom (AWB 4:13/4:14/4:17).
-		'termijnDefinitie' => 'termijn_definitie_schema',
-		'termijnInstance' => 'termijn_instance_schema',
+		'deadlineDefinition' => 'termijn_definitie_schema',
+		'deadlineInstance' => 'termijn_instance_schema',
 		'termijnGebeurtenis' => 'termijn_gebeurtenis_schema',
-		'ingebrekestelling' => 'ingebrekestelling_schema',
-		'dwangsomBerekening' => 'dwangsom_berekening_schema',
+		'noticeOfDefault' => 'ingebrekestelling_schema',
+		'penaltyPaymentCalculation' => 'dwangsom_berekening_schema',
 		'dwangsomUitbetaling' => 'dwangsom_uitbetaling_schema',
 		// Mandaat-matrix authorization engine.
 		// KEY renamed with the schema slug; VALUE deliberately left as-is. The

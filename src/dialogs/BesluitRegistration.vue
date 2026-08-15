@@ -105,7 +105,7 @@ export default {
 	},
 
 	props: {
-		voorstel: {
+		proposal: {
 			type: Object,
 			required: true,
 		},
@@ -117,7 +117,7 @@ export default {
 			decisionTypes: [],
 			selectedDecisionType: null,
 			form: {
-				title: this.voorstel.subject || '',
+				title: this.proposal.subject || '',
 				effectiveDate: new Date().toISOString().split('T')[0],
 				explanation: '',
 				governingBody: 'College van B&W',
@@ -175,7 +175,7 @@ export default {
 				// procest keeps the parafeerroute untouched; only the besluit
 				// decision is delegated, and the besluit is materialised from
 				// the decidesk outcome.
-				await registerBesluit(this.voorstel.id || this.voorstel._self?.id, {
+				await registerBesluit(this.proposal.id || this.proposal._self?.id, {
 					title: this.form.title.trim(),
 					effectiveDate: this.form.effectiveDate || undefined,
 					explanation: this.form.explanation || undefined,
@@ -187,8 +187,8 @@ export default {
 
 				// Reflect the awaiting-decidesk state on the voorstel (projection;
 				// the decided besluit lands when decidesk posts the outcome).
-				await this.objectStore.saveObject('voorstel', {
-					...this.voorstel,
+				await this.objectStore.saveObject('proposal', {
+					...this.proposal,
 					status: 'awaiting-decidesk',
 				})
 

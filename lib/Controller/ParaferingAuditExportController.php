@@ -130,7 +130,7 @@ class ParaferingAuditExportController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Procest: parafering audit export failed',
-				['voorstel' => $id, 'exception' => $e->getMessage()],
+				['proposal' => $id, 'exception' => $e->getMessage()],
 			);
 
 			return new JSONResponse(
@@ -224,7 +224,7 @@ class ParaferingAuditExportController extends Controller {
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest: failed to resolve voorstel onderwerp for export',
-				['voorstel' => $proposalId, 'exception' => $e->getMessage()],
+				['proposal' => $proposalId, 'exception' => $e->getMessage()],
 			);
 
 			return null;

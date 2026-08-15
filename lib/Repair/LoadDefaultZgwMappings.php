@@ -192,7 +192,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 		$settings = $this->settingsService->getSettings();
 
 		return [
-			'catalogus' => $this->getCatalogusMapping(
+			'catalog' => $this->getCatalogusMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -285,7 +285,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				settings: $settings
 			),
 			'applicatie' => $this->getApplicatieMapping(),
-			'kanaal' => $this->getChannelMapping(
+			'notificationChannel' => $this->getChannelMapping(
 				registerId: $registerId,
 				settings: $settings
 			),
@@ -443,10 +443,10 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'identificatie' => '{{ identifier }}',
 				'omschrijving' => '{{ title }}',
 				'omschrijvingGeneriek' => '{{ description }}',
-				'catalogus' => $this->tplUrl(
+				'catalog' => $this->tplUrl(
 					from: 'catalogi/zaaktypen',
 					to: 'catalogi/catalogussen',
-					varName: 'catalogus'
+					varName: 'catalog'
 				),
 				'doel' => '{{ purpose }}',
 				'aanleiding' => '{{ trigger }}',
@@ -475,7 +475,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'title' => '{{ omschrijving }}',
 				'description' => '{{ omschrijvingGeneriek }}',
 				'identifier' => '{{ identificatie }}',
-				'catalogus' => '{{ catalogus | zgw_extract_uuid }}',
+				'catalog' => '{{ catalogus | zgw_extract_uuid }}',
 				'purpose' => '{{ doel }}',
 				'trigger' => '{{ aanleiding }}',
 				'subject' => '{{ onderwerp }}',
@@ -519,8 +519,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'identificatie' => [
 					'field' => 'identifier',
 				],
-				'catalogus' => [
-					'field' => 'catalogus',
+				'catalog' => [
+					'field' => 'catalog',
 					'extractUuid' => true,
 				],
 			],
@@ -954,10 +954,10 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'omschrijving' => '{{ name }}',
 				'notes' => '{{ description }}',
-				'catalogus' => $this->tplUrl(
+				'catalog' => $this->tplUrl(
 					from: 'catalogi/besluittypen',
 					to: 'catalogi/catalogussen',
-					varName: 'catalogus'
+					varName: 'catalog'
 				),
 				'zaaktypen' => 'caseTypes',
 				'concept' => '{{ isDraft }}',
@@ -969,7 +969,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'reverseMapping' => [
 				'name' => '{{ omschrijving }}',
 				'description' => '{{ toelichting }}',
-				'catalogus' => '{{ catalogus | zgw_extract_uuid }}',
+				'catalog' => '{{ catalogus | zgw_extract_uuid }}',
 				'isDraft' => '{{ concept }}',
 				'publicationRequired' => '{{ publicatieIndicatie }}',
 				'caseTypes' => 'zaaktypen',
@@ -991,8 +991,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					'field' => 'caseType',
 					'extractUuid' => true,
 				],
-				'catalogus' => [
-					'field' => 'catalogus',
+				'catalog' => [
+					'field' => 'catalog',
 					'extractUuid' => true,
 				],
 				'omschrijving' => [
@@ -1022,10 +1022,10 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				'uuid' => '{{ _uuid }}',
 				'omschrijving' => '{{ name }}',
 				'notes' => '{{ description }}',
-				'catalogus' => $this->tplUrl(
+				'catalog' => $this->tplUrl(
 					from: 'catalogi/informatieobjecttypen',
 					to: 'catalogi/catalogussen',
-					varName: 'catalogus'
+					varName: 'catalog'
 				),
 				'concept' => '{{ isDraft }}',
 				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
@@ -1037,7 +1037,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			'reverseMapping' => [
 				'name' => '{{ omschrijving }}',
 				'description' => '{{ toelichting }}',
-				'catalogus' => '{{ catalogus | zgw_extract_uuid }}',
+				'catalog' => '{{ catalogus | zgw_extract_uuid }}',
 				'isDraft' => '{{ concept }}',
 				'confidentiality' => '{{ vertrouwelijkheidaanduiding }}',
 				'category' => '{{ informatieobjectcategorie }}',
@@ -1055,8 +1055,8 @@ class LoadDefaultZgwMappings implements IRepairStep {
 			],
 			'valueMapping' => [],
 			'queryParameterMapping' => [
-				'catalogus' => [
-					'field' => 'catalogus',
+				'catalog' => [
+					'field' => 'catalog',
 					'extractUuid' => true,
 				],
 			],
@@ -1261,7 +1261,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function getChannelMapping(string $registerId, array $settings): array {
 		return [
-			'zgwResource' => 'kanaal',
+			'zgwResource' => 'notificationChannel',
 			'zgwApiVersion' => '1',
 			'sourceRegister' => $registerId,
 			'sourceSchema' => ($settings['kanaal_schema'] ?? ''),
@@ -1335,7 +1335,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function getCatalogusMapping(string $registerId, array $settings): array {
 		return [
-			'zgwResource' => 'catalogus',
+			'zgwResource' => 'catalog',
 			'zgwApiVersion' => '1',
 			'sourceRegister' => $registerId,
 			'sourceSchema' => ($settings['catalogus_schema'] ?? ''),
@@ -1565,7 +1565,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 	 */
 	private function createDefaultKanalen(IOutput $output): void {
 		$channelMapping = $this->zgwMappingService->getMapping(
-			resourceKey: 'kanaal'
+			resourceKey: 'notificationChannel'
 		);
 		if ($channelMapping === null) {
 			$output->info('Kanaal mapping not configured. Skipping default channels.');
@@ -1814,7 +1814,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 					varName: 'case'
 				),
 				'datumtijd' => '{{ contactDateTime }}',
-				'kanaal' => '{{ channel }}',
+				'notificationChannel' => '{{ channel }}',
 				'subject' => '{{ subject }}',
 				'initiator' => '{{ initiator }}',
 			],
