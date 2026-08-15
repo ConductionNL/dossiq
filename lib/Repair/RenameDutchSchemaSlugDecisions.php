@@ -105,4 +105,19 @@ class RenameDutchSchemaSlugDecisions {
 		return array_values(array_unique($ids));
 	}//end schemaIdsFrom()
 
+	/**
+	 * Build the `?,?,?` placeholder list for an IN clause.
+	 *
+	 * Trivial, and here rather than inline because the step builds one three
+	 * times and a mismatch between the placeholder count and the bound
+	 * parameters is the kind of error that only shows up at runtime, inside a
+	 * repair step, on somebody else's install.
+	 *
+	 * @param int $count Number of bound parameters.
+	 *
+	 * @return string The placeholder list.
+	 */
+	public function placeholders(int $count): string {
+		return implode(',', array_fill(0, max(0, $count), '?'));
+	}//end placeholders()
 }//end class

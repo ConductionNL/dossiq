@@ -155,7 +155,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 * @return array<int, int>
 	 */
 	private function inScopeSchemaIds(): array {
-		$placeholders = implode(',', array_fill(0, count(self::REGISTER_SLUGS), '?'));
+		$placeholders = $this->decisions->placeholders(count: count(self::REGISTER_SLUGS));
 
 		try {
 			$rows = $this->db->executeQuery(
@@ -181,7 +181,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 * @return array<int, string>
 	 */
 	private function slugsOf(array $schemaIds): array {
-		$placeholders = implode(',', array_fill(0, count($schemaIds), '?'));
+		$placeholders = $this->decisions->placeholders(count: count($schemaIds));
 
 		try {
 			$rows = $this->db->executeQuery(
@@ -209,7 +209,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 * @return bool True when the row was updated.
 	 */
 	private function renameSlug(string $old, string $new, array $schemaIds): bool {
-		$placeholders = implode(',', array_fill(0, count($schemaIds), '?'));
+		$placeholders = $this->decisions->placeholders(count: count($schemaIds));
 
 		try {
 			$this->db->executeStatement(

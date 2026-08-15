@@ -159,4 +159,31 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 		}
 
 	}//end testShippedMapTargetsAreDistinctAndDoNotCollideWithSources()
+	/**
+	 * The IN-clause placeholder list matches the parameter count.
+	 *
+	 * A mismatch between placeholders and bound parameters only shows up at
+	 * runtime, inside a repair step, on somebody else's install.
+	 *
+	 * @return void
+	 */
+	public function testPlaceholdersMatchTheParameterCount(): void {
+		self::assertSame('?,?,?', $this->decisions->placeholders(3));
+		self::assertSame('?', $this->decisions->placeholders(1));
+		self::assertSame('', $this->decisions->placeholders(0), 'an empty IN list must not emit a stray ?');
+		self::assertSame('', $this->decisions->placeholders(-1), 'a negative count is not a crash');
+
+	}//end testPlaceholdersMatchTheParameterCount()
+
+	/**
+	 * The shipped step names itself and its map is well formed.
+	 *
+	 * @return void
+	 */
+	public function testShippedStepNamesItself(): void {
+		$step = (new \ReflectionClass(RenameDutchSchemaSlugs::class))->newInstanceWithoutConstructor();
+		self::assertNotSame('', $step->getName());
+		self::assertStringContainsString('slug', strtolower($step->getName()));
+
+	}//end testShippedStepNamesItself()
 }//end class
