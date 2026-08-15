@@ -119,7 +119,7 @@ abstract class ZgwRulesBase {
 	/**
 	 * Set the per-request services for cross-resource lookups.
 	 *
-	 * @param object|null $this->objectService The OpenRegister ObjectService
+	 * @param object|null $objectService The OpenRegister ObjectService
 	 * @param array|null $mappingConfig The mapping config
 	 *
 	 * @return void

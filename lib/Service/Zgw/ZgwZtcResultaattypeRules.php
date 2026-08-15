@@ -78,7 +78,7 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 	/**
 	 * Set the per-request services on this service and its collaborators.
 	 *
-	 * @param object|null $this->objectService The OpenRegister ObjectService
+	 * @param object|null $objectService The OpenRegister ObjectService
 	 * @param array|null $mappingConfig The mapping config
 	 *
 	 * @return void
