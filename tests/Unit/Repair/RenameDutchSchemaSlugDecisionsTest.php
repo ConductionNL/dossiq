@@ -20,6 +20,10 @@ namespace OCA\Procest\Tests\Unit\Repair;
 
 use OCA\Procest\Repair\RenameDutchSchemaSlugDecisions;
 use OCA\Procest\Repair\RenameDutchSchemaSlugs;
+use OCP\DB\IResult;
+use OCP\IDBConnection;
+use OCP\Migration\IOutput;
+use Psr\Log\LoggerInterface;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -207,4 +211,55 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 		self::assertSame([], $this->decisions->slugsFrom([]));
 
 	}//end testSlugsFromToleratesMissingSlugs()
+	/**
+	 * With no registers resolvable the step reports it and renames nothing.
+	 *
+	 * The failure mode this guards is the opposite of a crash: a repair step
+	 * that cannot read the registers must say so and stop, not proceed against
+	 * an empty id list and issue an UPDATE with an empty IN clause.
+	 *
+	 * @return void
+	 */
+	public function testNoRegistersIsANoOp(): void {
+		// An EMPTY result, not a thrown exception: the step catches
+		// OCP\DB\Exception specifically, so a RuntimeException from a mock
+		// escapes the try/catch and the test measures the mock rather than the
+		// step. The mirror of that trap — a mock throwing a type the step DOES
+		// catch — is how a broken step once read as a green no-op.
+		$result = $this->createMock(IResult::class);
+		$result->method('fetchAll')->willReturn([]);
+
+		$db = $this->createMock(IDBConnection::class);
+		$db->method('executeQuery')->willReturn($result);
+		$db->expects(self::never())->method('executeStatement');
+
+		$step = new RenameDutchSchemaSlugs($db, $this->createMock(LoggerInterface::class));
+
+		$output = $this->createMock(IOutput::class);
+		$output->expects(self::once())->method('info')->with(self::stringContains('nothing to do'));
+
+		$step->run($output);
+
+	}//end testNoRegistersIsANoOp()
+
+	/**
+	 * The step is a repair step and its map is non-empty snake-free slugs.
+	 *
+	 * @return void
+	 */
+	public function testShippedMapIsWellFormed(): void {
+		$map = RenameDutchSchemaSlugs::SLUG_MAP;
+		self::assertNotSame([], $map);
+
+		foreach ($map as $old => $new) {
+			self::assertNotSame($old, $new, "`$old` maps to itself");
+			self::assertMatchesRegularExpression('/^[A-Za-z][A-Za-z0-9-]*$/', (string)$old);
+			self::assertMatchesRegularExpression('/^[A-Za-z][A-Za-z0-9-]*$/', (string)$new);
+		}
+
+		self::assertTrue(
+			(new \ReflectionClass(RenameDutchSchemaSlugs::class))->implementsInterface(\OCP\Migration\IRepairStep::class)
+		);
+
+	}//end testShippedMapIsWellFormed()
 }//end class
