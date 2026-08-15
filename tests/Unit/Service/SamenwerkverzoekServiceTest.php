@@ -232,8 +232,6 @@ class SamenwerkverzoekServiceTest extends TestCase {
 			->expects($this->once())
 			->method('saveObject')
 			->with(
-				$this->anything(),
-				$this->anything(),
 				$this->callback(
 					function (array $obj) {
 						return ($obj['status'] ?? '') === 'geaccepteerd';
@@ -241,8 +239,11 @@ class SamenwerkverzoekServiceTest extends TestCase {
 				)
 			)
 			->willReturnCallback(
-				function (string $r, string $s, array $obj) {
-					return $obj;
+				// ObjectServiceInterface::saveObject() takes $object FIRST, and the
+				// caller uses named arguments — so the double receives them in the
+				// CONTRACT's order, not the old ($register, $schema, $object) one.
+				function (array $object, ...$rest) {
+					return $this->entity($object);
 				}
 			);
 
@@ -293,8 +294,11 @@ class SamenwerkverzoekServiceTest extends TestCase {
 		$objectServiceMock
 			->method('saveObject')
 			->willReturnCallback(
-				function (string $r, string $s, array $obj) {
-					return $obj;
+				// ObjectServiceInterface::saveObject() takes $object FIRST, and the
+				// caller uses named arguments — so the double receives them in the
+				// CONTRACT's order, not the old ($register, $schema, $object) one.
+				function (array $object, ...$rest) {
+					return $this->entity($object);
 				}
 			);
 
