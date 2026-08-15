@@ -48,8 +48,8 @@
                     "catalog": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "catalogus",
-                        "description": "Reference to the parent catalogus",
+                        "$ref": "catalog",
+                        "description": "Reference to the parent catalog",
                         "title": "Catalog"
                     },
                     "purpose": {
@@ -496,8 +496,8 @@
                     "catalog": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "catalogus",
-                        "description": "Reference to the parent catalogus",
+                        "$ref": "catalog",
+                        "description": "Reference to the parent catalog",
                         "title": "Catalog"
                     },
                     "caseType": {
@@ -587,8 +587,8 @@
                     "catalog": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "catalogus",
-                        "description": "Reference to the parent catalogus",
+                        "$ref": "catalog",
+                        "description": "Reference to the parent catalog",
                         "title": "Catalog"
                     },
                     "caseType": {
@@ -2999,9 +2999,9 @@
                     "proposal": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "voorstel",
+                        "$ref": "proposal",
                         "onDelete": "CASCADE",
-                        "description": "Reference to the voorstel",
+                        "description": "Reference to the proposal",
                         "title": "Proposal"
                     },
                     "step": {
@@ -3168,9 +3168,9 @@
                     "proposal": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "voorstel",
+                        "$ref": "proposal",
                         "onDelete": "CASCADE",
-                        "description": "Reference to the voorstel that this transition occurred on",
+                        "description": "Reference to the proposal that this transition occurred on",
                         "title": "Proposal"
                     },
                     "step": {
