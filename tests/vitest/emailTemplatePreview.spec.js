@@ -27,7 +27,7 @@ describe('collectUnresolved', () => {
 		const text =
 			'Hallo {{contactNaam}}, veld {{nonExistentField}} en {{onbekend}}'
 		const result = collectUnresolved(text, KNOWN)
-		expect(result).toContain('unknown')
+		expect(result).toContain('onbekend')
 		expect(result).toContain('nonExistentField')
 		expect(result).not.toContain('contactNaam')
 	})

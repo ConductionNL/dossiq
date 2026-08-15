@@ -74,7 +74,7 @@ describe('aggregateByStatus', () => {
 		const result = aggregateByStatus(openCases, STATUS_TYPES)
 		const byName = Object.fromEntries(result.map((r) => [r.name, r.count]))
 
-		expect(byName).toEqual({ Ontvangen: 2, 'In handling': 1, Unknown: 2 })
+		expect(byName).toEqual({ Received: 2, 'In handling': 1, Unknown: 2 })
 		// The Unknown bucket carries no statusIds (null + junk contribute none).
 		expect(result.find((r) => r.name === 'Unknown').statusIds).toEqual([])
 	})

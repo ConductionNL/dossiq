@@ -302,9 +302,9 @@ export default {
 		 */
 		statusLabel(status) {
 			const labels = {
-				aangevraagd: t('procest', 'Requested'),
-				ontvangen: t('procest', 'Received'),
-				verlopen: t('procest', 'Expired'),
+				requested: t('procest', 'Requested'),
+				received: t('procest', 'Received'),
+				expired: t('procest', 'Expired'),
 			}
 			return labels[status] || status
 		},

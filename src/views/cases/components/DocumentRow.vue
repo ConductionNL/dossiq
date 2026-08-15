@@ -143,9 +143,9 @@ export default {
 		 */
 		statusLabel() {
 			const labels = {
-				concept: this.t('procest', 'Draft'),
-				definitief: this.t('procest', 'Final'),
-				gearchiveerd: this.t('procest', 'Archived'),
+				draft: this.t('procest', 'Draft'),
+				final: this.t('procest', 'Final'),
+				archived: this.t('procest', 'Archived'),
 			}
 			return labels[this.document.status] || this.document.status
 		},

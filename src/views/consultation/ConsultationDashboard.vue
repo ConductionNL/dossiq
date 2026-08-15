@@ -304,9 +304,9 @@ export default {
 		getStatusLabel(status) {
 			const labels = {
 				open: this.t('procest', 'Open'),
-				in_behandeling: this.t('procest', 'In handling'),
-				advies_uitgebracht: this.t('procest', 'Advice issued'),
-				afgesloten: this.t('procest', 'Closed'),
+				in_handling: this.t('procest', 'In handling'),
+				advice_uitgebracht: this.t('procest', 'Advice issued'),
+				closed: this.t('procest', 'Closed'),
 			}
 			return labels[status] || status
 		},

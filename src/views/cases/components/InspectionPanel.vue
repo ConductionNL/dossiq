@@ -397,8 +397,8 @@ export default {
 		resultLabel(result) {
 			const labels = {
 				conform: t('procest', 'Compliant'),
-				niet_conform: t('procest', 'Non-conform'),
-				deels_conform: t('procest', 'Partially conform'),
+				non_conform: t('procest', 'Non-conform'),
+				partly_conform: t('procest', 'Partially conform'),
 			}
 			return labels[result] || result
 		},

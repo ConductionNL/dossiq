@@ -164,9 +164,9 @@ export default {
 		getStatusLabel(status) {
 			const labels = {
 				open: this.t('procest', 'Open'),
-				in_behandeling: this.t('procest', 'In progress'),
-				advies_uitgebracht: this.t('procest', 'Advice received'),
-				afgesloten: this.t('procest', 'Closed'),
+				in_handling: this.t('procest', 'In progress'),
+				advice_uitgebracht: this.t('procest', 'Advice received'),
+				closed: this.t('procest', 'Closed'),
 			}
 			return labels[status] || status
 		},
@@ -177,14 +177,14 @@ export default {
 		 */
 		getResponseLabel(response) {
 			const labels = {
-				positief: this.t('procest', 'Positive'),
-				positief_met_voorwaarden: this.t(
+				positive: this.t('procest', 'Positive'),
+				positief_with_terms: this.t(
 					'procest',
 					'Positive with conditions',
 				),
 
-				negatief: this.t('procest', 'Negative'),
-				niet_van_toepassing: this.t('procest', 'Not applicable'),
+				negative: this.t('procest', 'Negative'),
+				non_from_application: this.t('procest', 'Not applicable'),
 			}
 			return labels[response] || response
 		},

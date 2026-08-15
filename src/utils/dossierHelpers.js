@@ -40,9 +40,9 @@ export const PUBLISH_THRESHOLD = 'vertrouwelijk'
  * @type {Object<string, string[]>}
  */
 export const STATUS_TRANSITIONS = {
-	concept: ['final'],
-	definitief: ['archived'],
-	gearchiveerd: [],
+	draft: ['final'],
+	final: ['archived'],
+	archived: [],
 }
 
 /**

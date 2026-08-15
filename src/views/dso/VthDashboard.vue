@@ -270,10 +270,10 @@ export default {
 
 		getStatusLabel(zaak) {
 			const statusMap = {
-				ingediend: t('procest', 'Submitted'),
-				in_behandeling: t('procest', 'In handling'),
-				verleend: t('procest', 'Granted'),
-				geweigerd: t('procest', 'Refused'),
+				submitted: t('procest', 'Submitted'),
+				in_handling: t('procest', 'In handling'),
+				granted: t('procest', 'Granted'),
+				refused: t('procest', 'Refused'),
 				withdrawn: t('procest', 'Withdrawn'),
 			}
 			return statusMap[zaak.dsoStatus] || zaak.dsoStatus || '—'

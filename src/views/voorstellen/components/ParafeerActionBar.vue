@@ -158,7 +158,7 @@ export default {
 		 */
 		formatStepType(type) {
 			const labels = {
-				advies: 'Advies',
+				advice: 'Advies',
 				parafering: 'Parafering',
 				accordering: 'Accordering',
 			}

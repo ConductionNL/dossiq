@@ -2638,7 +2638,7 @@ class ZrcController extends ZgwController {
 			// The ZIO stores 'case' as a UUID (format: uuid with $ref) and
 			// 'document' as a full URL (format: uri). Build the zaak URL from
 			// the case UUID, and use the document URL directly.
-			$zaakUuid = $zioData['case'] ?? ($zioData['case'] ?? '');
+			$zaakUuid = $zioData['case'] ?? ($zioData['zaak'] ?? '');
 			$ioUrl = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
 
 			if ($zaakUuid === '' || $ioUrl === '') {

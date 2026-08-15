@@ -133,8 +133,8 @@ export default {
 			const labels = {
 				beroep_gegrond: t('procest', 'Appeal upheld'),
 				beroep_ongegrond: t('procest', 'Appeal rejected'),
-				deels_gegrond: t('procest', 'Partially upheld'),
-				niet_ontvankelijk: t('procest', 'Inadmissible'),
+				partly_upheld: t('procest', 'Partially upheld'),
+				inadmissible: t('procest', 'Inadmissible'),
 			}
 			return labels[outcome] || outcome
 		},

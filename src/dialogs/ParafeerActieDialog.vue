@@ -212,7 +212,7 @@ export default {
 		 */
 		formatStepType(type) {
 			const labels = {
-				advies: this.t('procest', 'Advise'),
+				advice: this.t('procest', 'Advise'),
 				parafering: this.t('procest', 'Approve (paraferen)'),
 				accordering: this.t('procest', 'Accord'),
 			}

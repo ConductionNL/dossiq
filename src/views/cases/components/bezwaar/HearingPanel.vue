@@ -306,10 +306,10 @@ export default {
 		 */
 		getHearingStatusLabel(status) {
 			const labels = {
-				gepland: t('procest', 'Scheduled'),
+				planned: t('procest', 'Scheduled'),
 				uitgenodigd: t('procest', 'Invitations sent'),
-				uitgevoerd: t('procest', 'Completed'),
-				geannuleerd: t('procest', 'Cancelled'),
+				executed: t('procest', 'Completed'),
+				cancelled: t('procest', 'Cancelled'),
 				afgezien: t('procest', 'Waived'),
 			}
 			return labels[status] || status

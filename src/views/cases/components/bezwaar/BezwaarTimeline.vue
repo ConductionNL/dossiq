@@ -147,10 +147,10 @@ export default {
 		 */
 		getAdviceTypeLabel(type) {
 			const labels = {
-				gegrond: t('procest', 'Upheld'),
-				ongegrond: t('procest', 'Rejected'),
-				deels_gegrond: t('procest', 'Partially upheld'),
-				niet_ontvankelijk: t('procest', 'Inadmissible'),
+				upheld: t('procest', 'Upheld'),
+				dismissed: t('procest', 'Rejected'),
+				partly_upheld: t('procest', 'Partially upheld'),
+				inadmissible: t('procest', 'Inadmissible'),
 			}
 			return labels[type] || type
 		},
@@ -161,10 +161,10 @@ export default {
 		 */
 		getDispositionLabel(type) {
 			const labels = {
-				gegrond: t('procest', 'Upheld'),
-				ongegrond: t('procest', 'Rejected'),
-				deels_gegrond: t('procest', 'Partially upheld'),
-				niet_ontvankelijk: t('procest', 'Inadmissible'),
+				upheld: t('procest', 'Upheld'),
+				dismissed: t('procest', 'Rejected'),
+				partly_upheld: t('procest', 'Partially upheld'),
+				inadmissible: t('procest', 'Inadmissible'),
 			}
 			return labels[type] || type
 		},

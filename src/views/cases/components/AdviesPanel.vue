@@ -230,9 +230,9 @@ export default {
 		 */
 		statusLabel(status) {
 			const labels = {
-				aangevraagd: this.t(this.appName, 'Aangevraagd'),
-				ontvangen: this.t(this.appName, 'Received'),
-				verlopen: this.t(this.appName, 'Verlopen'),
+				requested: this.t(this.appName, 'Aangevraagd'),
+				received: this.t(this.appName, 'Received'),
+				expired: this.t(this.appName, 'Verlopen'),
 			}
 			return labels[status] || status
 		},
@@ -243,9 +243,9 @@ export default {
 		 */
 		statusBadgeType(status) {
 			const types = {
-				aangevraagd: 'info',
-				ontvangen: 'success',
-				verlopen: 'error',
+				requested: 'info',
+				received: 'success',
+				expired: 'error',
 			}
 			return types[status] || 'neutral'
 		},
