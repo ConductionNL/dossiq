@@ -34,6 +34,7 @@ use OCP\IUser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 
 /**
  * Service for samenwerkverzoek lifecycle management.
@@ -61,6 +62,7 @@ class SamenwerkverzoekService {
 		private readonly ContainerInterface $container,
 		private readonly IEventDispatcher $eventDispatcher,
 		private readonly LoggerInterface $logger,
+		private readonly ObjectServiceInterface $objectService,
 	) {
 	}//end __construct()
 
@@ -272,14 +274,10 @@ class SamenwerkverzoekService {
 	 * @throws \RuntimeException When the service is not available
 	 */
 	private function getObjectService(): object {
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Throwable $e) {
-			throw new RuntimeException(
-				'OpenRegister ObjectService not available: ' . $e->getMessage(),
-				0,
-				$e
-			);
-		}
+		// Injected (ADR-083), so this cannot fail — a property read throws
+		// nothing, and phpstan reports the old try/catch as a dead catch.
+		// Absence is now a CONSTRUCTION failure on the route that needed the
+		// data, which is what ADR-083 rule 1 asks for.
+		return $this->objectService;
 	}//end getObjectService()
 }//end class

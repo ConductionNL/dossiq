@@ -22,6 +22,8 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\OpenRegister\Contract\ObjectEntityInterface;
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCA\Procest\Service\SamenwerkverzoekService;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -122,6 +124,10 @@ class SamenwerkverzoekServiceTest extends TestCase {
 			container: $this->container,
 			eventDispatcher: $this->eventDispatcher,
 			logger: $this->logger,
+			// ADR-084: mock the published CONTRACT. The concrete ObjectService
+			// does not load in this app's test environment — that is the whole
+			// reason the interface exists.
+			objectService: $this->createMock(ObjectServiceInterface::class),
 		);
 	}//end setUp()
 
@@ -136,7 +142,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
 	 */
 	public function testInitiateSamenwerkingCreatesObject(): void {
-		$objectServiceMock = $this->createMock(SamenwerkObjectServiceStub::class);
+		$objectServiceMock = $this->createMock(ObjectServiceInterface::class);
 
 		$case = [
 			'id' => 'zaak-uuid-1',
@@ -146,7 +152,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 		$objectServiceMock
 			->expects($this->once())
 			->method('find')
-			->willReturn($case);
+			->willReturn($this->entity($case));
 
 		$expectedSamenwerkverzoek = [
 			'id' => 'samenwerk-uuid-1',
@@ -166,19 +172,16 @@ class SamenwerkverzoekServiceTest extends TestCase {
 					}
 				)
 			)
-			->willReturn($expectedSamenwerkverzoek);
+			->willReturn($this->entity($expectedSamenwerkverzoek));
 
-		$this->container
-			->method('get')
-			->willReturnCallback(
-				function (string $id) use ($objectServiceMock) {
-					if ($id === 'OCA\OpenRegister\Service\ObjectService') {
-						return $objectServiceMock;
-					}
-
-					return null;
-				}
-			);
+		// Injected now, so the container path is dead: rebuild with this double.
+		$this->service = new SamenwerkverzoekService(
+			appConfig: $this->appConfig,
+			container: $this->container,
+			eventDispatcher: $this->eventDispatcher,
+			logger: $this->logger,
+			objectService: $objectServiceMock,
+		);
 
 		$this->appConfig
 			->method('getValueString')
@@ -213,7 +216,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
 	 */
 	public function testRespondToSamenwerkingAcceptUpdatesStatus(): void {
-		$objectServiceMock = $this->createMock(SamenwerkObjectServiceStub::class);
+		$objectServiceMock = $this->createMock(ObjectServiceInterface::class);
 
 		$request = [
 			'id' => 'samenwerk-uuid-1',
@@ -223,14 +226,12 @@ class SamenwerkverzoekServiceTest extends TestCase {
 		$objectServiceMock
 			->expects($this->once())
 			->method('find')
-			->willReturn($request);
+			->willReturn($this->entity($request));
 
 		$objectServiceMock
 			->expects($this->once())
 			->method('saveObject')
 			->with(
-				$this->anything(),
-				$this->anything(),
 				$this->callback(
 					function (array $obj) {
 						return ($obj['status'] ?? '') === 'geaccepteerd';
@@ -238,14 +239,22 @@ class SamenwerkverzoekServiceTest extends TestCase {
 				)
 			)
 			->willReturnCallback(
-				function (string $r, string $s, array $obj) {
-					return $obj;
+				// ObjectServiceInterface::saveObject() takes $object FIRST, and the
+				// caller uses named arguments — so the double receives them in the
+				// CONTRACT's order, not the old ($register, $schema, $object) one.
+				function (array $object, ...$rest) {
+					return $this->entity($object);
 				}
 			);
 
-		$this->container
-			->method('get')
-			->willReturn($objectServiceMock);
+		// Injected now, so the container path is dead: rebuild with this double.
+		$this->service = new SamenwerkverzoekService(
+			appConfig: $this->appConfig,
+			container: $this->container,
+			eventDispatcher: $this->eventDispatcher,
+			logger: $this->logger,
+			objectService: $objectServiceMock,
+		);
 
 		$this->appConfig
 			->method('getValueString')
@@ -271,7 +280,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
 	 */
 	public function testRespondToSamenwerkingRejectUpdatesStatus(): void {
-		$objectServiceMock = $this->createMock(SamenwerkObjectServiceStub::class);
+		$objectServiceMock = $this->createMock(ObjectServiceInterface::class);
 
 		$request = [
 			'id' => 'samenwerk-uuid-2',
@@ -280,19 +289,27 @@ class SamenwerkverzoekServiceTest extends TestCase {
 
 		$objectServiceMock
 			->method('find')
-			->willReturn($request);
+			->willReturn($this->entity($request));
 
 		$objectServiceMock
 			->method('saveObject')
 			->willReturnCallback(
-				function (string $r, string $s, array $obj) {
-					return $obj;
+				// ObjectServiceInterface::saveObject() takes $object FIRST, and the
+				// caller uses named arguments — so the double receives them in the
+				// CONTRACT's order, not the old ($register, $schema, $object) one.
+				function (array $object, ...$rest) {
+					return $this->entity($object);
 				}
 			);
 
-		$this->container
-			->method('get')
-			->willReturn($objectServiceMock);
+		// Injected now, so the container path is dead: rebuild with this double.
+		$this->service = new SamenwerkverzoekService(
+			appConfig: $this->appConfig,
+			container: $this->container,
+			eventDispatcher: $this->eventDispatcher,
+			logger: $this->logger,
+			objectService: $objectServiceMock,
+		);
 
 		$this->appConfig
 			->method('getValueString')
@@ -309,4 +326,23 @@ class SamenwerkverzoekServiceTest extends TestCase {
 		$this->assertSame('geweigerd', $result['status']);
 		$this->assertSame('Wij wijzen af.', $result['advies']);
 	}//end testRespondToSamenwerkingRejectUpdatesStatus()
+
+	/**
+	 * An ObjectEntityInterface double whose jsonSerialize() is the given array.
+	 *
+	 * ADR-084: find() and saveObject() return entities, and the service
+	 * normalises them with jsonSerialize(). Returning a bare array — which the
+	 * old local stub did, and which the untyped container lookup allowed —
+	 * makes the service see nothing and throw "not found".
+	 *
+	 * @param array<string,mixed> $data The payload the entity should carry.
+	 *
+	 * @return ObjectEntityInterface
+	 */
+	private function entity(array $data): ObjectEntityInterface {
+		$e = $this->createMock(ObjectEntityInterface::class);
+		$e->method('jsonSerialize')->willReturn($data);
+		return $e;
+	}//end entity()
+
 }//end class

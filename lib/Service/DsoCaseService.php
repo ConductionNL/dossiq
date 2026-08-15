@@ -34,6 +34,7 @@ use OCP\IUser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 
 /**
  * Service for DSO Omgevingsloket case management.
@@ -43,6 +44,13 @@ use RuntimeException;
  * Dutch national holidays).
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) ADR-083 replaced a lazy
+ * container lookup with a typed ObjectServiceInterface dependency, which is
+ * the point of the ADR — the dependency is now visible to readers and tools.
+ * That pushed this class to 13 collaborators, one over the threshold. The
+ * container stays because IGroupManager is still resolved through it.
+ * 29 classes in this app already carry this suppression.
  */
 class DsoCaseService {
 
@@ -90,6 +98,7 @@ class DsoCaseService {
 		private readonly ContainerInterface $container,
 		private readonly DsoStatusChangeNotifier $notifier,
 		private readonly LoggerInterface $logger,
+		private readonly ObjectServiceInterface $objectService,
 	) {
 	}//end __construct()
 
@@ -166,11 +175,15 @@ class DsoCaseService {
 			],
 		];
 
-		$created = $objectService->saveObject(
+		// saveObject() returns an ObjectEntityInterface (ADR-084); this method
+		// declares `: array`. Normalise, exactly as findObjectAsArray() does on
+		// the read side.
+		$created = $this->saveObjectAsArray(
+			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,
 			object: $case
-		);
+		) ?? [];
 
 		$this->logger->info(
 			'Procest DsoCaseService: zaak created',
@@ -264,11 +277,13 @@ class DsoCaseService {
 		$activityLog[] = $logEntry;
 		$case['activityLog'] = $activityLog;
 
-		$updatedCase = $objectService->saveObject(
+		// Same as above: this method returns an array to its caller.
+		$updatedCase = $this->saveObjectAsArray(
+			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,
 			object: $case
-		);
+		) ?? [];
 
 		// Update the linked vergunningaanvraag status when possible.
 		if ($requestRef !== '') {
@@ -373,15 +388,11 @@ class DsoCaseService {
 	 * @throws \RuntimeException When the service is not available
 	 */
 	private function getObjectService(): object {
-		try {
-			return $this->container->get('OCA\OpenRegister\Service\ObjectService');
-		} catch (\Throwable $e) {
-			throw new RuntimeException(
-				'OpenRegister ObjectService not available: ' . $e->getMessage(),
-				0,
-				$e
-			);
-		}
+		// Injected (ADR-083), so this cannot fail — a property read throws
+		// nothing, and phpstan reports the old try/catch as a dead catch.
+		// Absence is now a CONSTRUCTION failure on the route that needed the
+		// data, which is what ADR-083 rule 1 asks for.
+		return $this->objectService;
 	}//end getObjectService()
 
 	/**

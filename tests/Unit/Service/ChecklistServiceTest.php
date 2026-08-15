@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\ChecklistService;
+use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -64,6 +65,10 @@ class ChecklistServiceTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
+		// OCA\Procest\Service\ChecklistService takes NO constructor arguments.
+		// The three that were here belong to OCA\Procest\Service\Inspection\
+		// ChecklistService — a different class with the same file name, which an
+		// earlier fixer keyed constructors by.
 		$this->service = new ChecklistService();
 	}//end setUp()
 
