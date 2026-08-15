@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCA\Procest\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Procest\Service\DsoCaseService;
 use OCP\EventDispatcher\IEventDispatcher;
@@ -128,6 +129,10 @@ class DsoCaseServiceTest extends TestCase {
 			container: $this->container,
 			notifier: new DsoStatusChangeNotifier(eventDispatcher: $this->eventDispatcher),
 			logger: $this->logger,
+			// ADR-084: mock the published CONTRACT. The concrete ObjectService
+			// does not load in this app's test environment — that is the whole
+			// reason the interface exists.
+			objectService: $this->createMock(ObjectServiceInterface::class),
 		);
 	}//end setUp()
 

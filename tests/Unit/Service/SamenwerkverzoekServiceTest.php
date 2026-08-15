@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCA\Procest\Service\SamenwerkverzoekService;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IAppConfig;
@@ -122,6 +123,10 @@ class SamenwerkverzoekServiceTest extends TestCase {
 			container: $this->container,
 			eventDispatcher: $this->eventDispatcher,
 			logger: $this->logger,
+			// ADR-084: mock the published CONTRACT. The concrete ObjectService
+			// does not load in this app's test environment — that is the whole
+			// reason the interface exists.
+			objectService: $this->createMock(ObjectServiceInterface::class),
 		);
 	}//end setUp()
 
