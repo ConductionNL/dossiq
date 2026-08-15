@@ -146,7 +146,7 @@
             "description": "Decision content",
             "properties": {
               "kind": { "type": "string", "title": "Decision Sort", "description": "Type of the decision, e.g. toekenning or afwijzing" },
-              "onderwerp": { "type": "string", "title": "Decision Subject", "description": "Subject of the decision" },
+              "subject": { "type": "string", "title": "Decision Subject", "description": "Subject of the decision" },
               "size": { "type": "string", "title": "Scope", "description": "Extent or scope of the decision, e.g. number of hours per week" },
               "effectiveDate": { "type": "string", "title": "Start Date", "description": "Date from which the decision takes effect", "format": "date" },
               "endDate": { "type": "string", "title": "End Date", "description": "Date on which the decision expires", "format": "date" }
@@ -369,7 +369,7 @@
         },
         "decision": {
           "kind": "toekenning",
-          "onderwerp": "huishoudelijke ondersteuning",
+          "subject": "huishoudelijke ondersteuning",
           "size": "4 uur per week",
           "effectiveDate": "2026-04-01",
           "endDate": "2027-04-01"
@@ -422,7 +422,7 @@
         },
         "decision": {
           "kind": "toekenning",
-          "onderwerp": "bouwactiviteiten Kerkstraat 12",
+          "subject": "bouwactiviteiten Kerkstraat 12",
           "size": "n.v.t.",
           "effectiveDate": "2026-05-01"
         },
@@ -456,7 +456,7 @@
         },
         "decision": {
           "kind": "toekenning",
-          "onderwerp": "subsidie culturele activiteiten",
+          "subject": "subsidie culturele activiteiten",
           "size": "2500",
           "effectiveDate": "2026-06-01",
           "endDate": "2026-12-31"

@@ -14,7 +14,7 @@
  *
  * @type {Array<string>}
  */
-export const AARD_RELATIE_TYPES = ['vervolg', 'onderwerp', 'bijdrage']
+export const AARD_RELATIE_TYPES = ['vervolg', 'subject', 'bijdrage']
 
 /**
  * Direction-aware label for a relation type. The same type names both sides of
@@ -29,7 +29,7 @@ export function relationTypeLabel(aardRelatie) {
 	switch (aardRelatie) {
 		case 'vervolg':
 			return t('procest', 'Follow-up')
-		case 'onderwerp':
+		case 'subject':
 			return t('procest', 'Subject')
 		case 'bijdrage':
 			return t('procest', 'Contribution')

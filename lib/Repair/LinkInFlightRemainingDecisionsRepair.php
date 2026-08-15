@@ -204,8 +204,8 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 					proposalId: (string)($obj['uuid'] ?? ($obj['id'] ?? '')),
 					payload: [
 						'externalReference' => (string)($obj['case'] ?? ''),
-						'subjectLabel' => (string)($obj['onderwerp'] ?? ''),
-						'title' => (string)($obj['onderwerp'] ?? ''),
+						'subjectLabel' => (string)($obj['subject'] ?? ''),
+						'title' => (string)($obj['subject'] ?? ''),
 					],
 				);
 			},

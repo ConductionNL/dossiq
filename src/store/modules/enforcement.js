@@ -244,12 +244,12 @@ export const useEnforcementStore = defineStore('enforcement', {
 				// Auto-lookup intervention if not provided
 				if (
 					!actionData.intervention
-					&& actionData.ernst
-					&& actionData.gedrag
+					&& actionData.severity
+					&& actionData.behaviour
 				) {
 					actionData.intervention = this.lookupLhs(
-						actionData.ernst,
-						actionData.gedrag,
+						actionData.severity,
+						actionData.behaviour,
 					)
 				}
 

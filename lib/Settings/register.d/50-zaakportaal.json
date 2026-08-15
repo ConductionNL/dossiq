@@ -132,7 +132,7 @@
                         "type": "string",
                         "description": "Category of a klacht (Bejegening, Doorlooptijd, Communicatie, Medische/Zorgkwaliteit, Andere)."
                     },
-                    "onderwerp": {
+                    "subject": {
                         "title": "Subject",
                         "type": "string",
                         "description": "Subject of the request."

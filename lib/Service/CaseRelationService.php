@@ -53,7 +53,7 @@ class CaseRelationService {
 	 *
 	 * @var array<int, string>
 	 */
-	public const RELATION_TYPES = ['vervolg', 'onderwerp', 'bijdrage'];
+	public const RELATION_TYPES = ['vervolg', 'subject', 'bijdrage'];
 
 	/**
 	 * Constructor.

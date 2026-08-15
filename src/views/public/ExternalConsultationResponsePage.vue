@@ -49,7 +49,7 @@
 				<dl class="external-consultation-response__details">
 					<div>
 						<dt>{{ t('procest', 'Onderwerp') }}</dt>
-						<dd>{{ consultationData.onderwerp }}</dd>
+						<dd>{{ consultationData.subject }}</dd>
 					</div>
 					<div v-if="consultationData.question_formulation">
 						<dt>{{ t('procest', 'Question') }}</dt>

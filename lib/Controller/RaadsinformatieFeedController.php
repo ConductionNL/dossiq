@@ -280,7 +280,7 @@ class RaadsinformatieFeedController extends Controller {
 	private function extractTitle(string $schema, array $object): string {
 		return match ($schema) {
 			'vergadering' => (string)($object['name'] ?? ''),
-			'agendapunt' => (string)($object['onderwerp'] ?? ''),
+			'agendapunt' => (string)($object['subject'] ?? ''),
 			'raadsdocument' => (string)($object['title'] ?? ''),
 			default => (string)($object['name'] ?? ($object['titel'] ?? $schema)),
 		};

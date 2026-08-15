@@ -30,10 +30,10 @@
 						: t(appName, 'Adviseur (organisatie)')
 				"
 				:placeholder="
-					form.type === 'intern' ? 'gebruikersnaam' : 'Naam organisatie'
+					form.type === 'intern' ? 'username' : 'Naam organisatie'
 				" />
 
-			<NcTextField v-model="form.onderwerp" :label="t(appName, 'Onderwerp')" />
+			<NcTextField v-model="form.subject" :label="t(appName, 'Onderwerp')" />
 
 			<NcTextField
 				v-model="form.deadline"
@@ -114,7 +114,7 @@ export default {
 			form: {
 				type: 'intern',
 				advisor: '',
-				onderwerp: '',
+				subject: '',
 				deadline: defaultDeadline(),
 				questions: '',
 			},
@@ -141,7 +141,7 @@ export default {
 					case: this.caseId,
 					type: this.form.type,
 					advisor: this.form.advisor.trim(),
-					onderwerp: this.form.onderwerp.trim(),
+					subject: this.form.subject.trim(),
 					deadline: this.form.deadline,
 					questions: this.form.questions.trim(),
 				}

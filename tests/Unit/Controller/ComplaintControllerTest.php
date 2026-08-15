@@ -185,8 +185,8 @@ class ComplaintControllerTest extends TestCase {
 		$this->complaintService
 			->method('listComplaints')
 			->willReturn([
-				['id' => 'uuid-1', 'onderwerp' => 'Klacht A'],
-				['id' => 'uuid-2', 'onderwerp' => 'Klacht B'],
+				['id' => 'uuid-1', 'subject' => 'Klacht A'],
+				['id' => 'uuid-2', 'subject' => 'Klacht B'],
 			]);
 
 		$response = $this->controller->index();
@@ -240,13 +240,13 @@ class ComplaintControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testShowReturnsComplaintWhenFound(): void {
-		$complaint = ['id' => 'uuid-1', 'onderwerp' => 'Test klacht', 'status' => 'ontvangen'];
+		$complaint = ['id' => 'uuid-1', 'subject' => 'Test klacht', 'status' => 'ontvangen'];
 		$this->complaintService->method('getComplaint')->willReturn($complaint);
 
 		$response = $this->controller->show('uuid-1');
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
-		$this->assertSame('Test klacht', $response->getData()['onderwerp']);
+		$this->assertSame('Test klacht', $response->getData()['subject']);
 	}//end testShowReturnsComplaintWhenFound()
 
 	/**

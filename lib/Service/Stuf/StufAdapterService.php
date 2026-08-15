@@ -90,7 +90,7 @@ class StufAdapterService {
 	 * @param array $endpoint The StufEndpoint.
 	 * @param array $opts Options: includeDocuments (bool), payloadLimitBytes (int).
 	 *
-	 * @return array{success:bool,referentienummer:string,stufMessageId:string,zaakIdentificatie:?string,mappingId:?string,fout:?array<string,mixed>}
+	 * @return array{success:bool,referentienummer:string,stufMessageId:string,caseIdentification:?string,mappingId:?string,fout:?array<string,mixed>}
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
 	 */
@@ -101,7 +101,7 @@ class StufAdapterService {
 		}
 
 		$caseId = null;
-		if (($endpoint['zaakIdentificatieStrategie'] ?? '') === 'vooraf') {
+		if (($endpoint['caseIdentificationStrategy'] ?? '') === 'vooraf') {
 			$caseId = $this->genereerZaakIdentificatie(endpoint: $endpoint);
 			// Anticipatory mapping.
 			$this->mappings->persist(case: $case, externId: $caseId, endpoint: $endpoint);
@@ -131,7 +131,7 @@ class StufAdapterService {
 			role: 'creeerZaak'
 		);
 
-		$serverCaseId = ($result['zaakIdentificatie'] ?? $caseId);
+		$serverCaseId = ($result['caseIdentification'] ?? $caseId);
 		$mapping = null;
 		if ($result['success'] === true && $serverCaseId !== null && $serverCaseId !== '') {
 			$mapping = $this->mappings->persist(case: $case, externId: $serverCaseId, endpoint: $endpoint);
@@ -146,7 +146,7 @@ class StufAdapterService {
 			'success' => $result['success'],
 			'referentienummer' => $referentienummer,
 			'stufMessageId' => $result['messageId'],
-			'zaakIdentificatie' => $caseIdentification,
+			'caseIdentification' => $caseIdentification,
 			'mappingId' => ($mapping['id'] ?? null),
 			'fout' => ($result['fout'] ?? null),
 		];
@@ -197,7 +197,7 @@ class StufAdapterService {
 				referentienummer: $referentienummer,
 				messageKind: 'Lk02',
 				role: 'actualiseerZaak',
-				caseId: (string)($mapping['externIdentificatie'] ?? ''),
+				caseId: (string)($mapping['externalIdentification'] ?? ''),
 				bronEntiteit: 'case',
 				sourceId: (string)($case['id'] ?? '')
 			),
@@ -297,7 +297,7 @@ class StufAdapterService {
 
 		$envelope = $this->builder->buildDu01VrijBericht(name: $name, payload: $payload, endpoint: $endpoint);
 		$referentienummer = $this->extractReferentienummer(envelope: $envelope);
-		$caseId = (string)($payload['zaakIdentificatie'] ?? '');
+		$caseId = (string)($payload['caseIdentification'] ?? '');
 		$caseIdArg = $caseId;
 		if ($caseId === '') {
 			$caseIdArg = null;
@@ -358,11 +358,11 @@ class StufAdapterService {
 				'httpStatus' => $response['httpStatus'],
 				'duurMs' => $response['durationMs'],
 				'responseEnvelopeXml' => $response['responseXml'],
-				'zaakIdentificatie' => ($confirmation['zaakIdentificatie'] ?? ''),
+				'caseIdentification' => ($confirmation['caseIdentification'] ?? ''),
 			]
 		);
 
-		return (string)($confirmation['zaakIdentificatie'] ?? '');
+		return (string)($confirmation['caseIdentification'] ?? '');
 	}//end genereerZaakIdentificatie()
 
 	/**

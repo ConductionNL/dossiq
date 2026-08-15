@@ -117,7 +117,7 @@ export default {
 			decisionTypes: [],
 			selectedDecisionType: null,
 			form: {
-				title: this.voorstel.onderwerp || '',
+				title: this.voorstel.subject || '',
 				effectiveDate: new Date().toISOString().split('T')[0],
 				explanation: '',
 				governingBody: 'College van B&W',

@@ -10,17 +10,17 @@
 				>
 				<NcTextField
 					id="voorstel-create-onderwerp"
-					:modelValue="form.onderwerp"
-					:error="!!errors.onderwerp"
+					:modelValue="form.subject"
+					:error="!!errors.subject"
 					:placeholder="t('procest', 'Subject of the proposal...')"
 					@update:modelValue="
 						(v) => {
-							form.onderwerp = v
-							errors.onderwerp = ''
+							form.subject = v
+							errors.subject = ''
 						}
 					" />
-				<p v-if="errors.onderwerp" class="form-error">
-					{{ errors.onderwerp }}
+				<p v-if="errors.subject" class="form-error">
+					{{ errors.subject }}
 				</p>
 			</div>
 
@@ -51,9 +51,9 @@
 				}}</label>
 				<NcTextField
 					id="voorstel-create-portfolio-holder"
-					:modelValue="form.portefeuillehouder"
+					:modelValue="form.portfolioHolder"
 					:placeholder="t('procest', 'Alderman user ID')"
-					@update:modelValue="(v) => (form.portefeuillehouder = v)" />
+					@update:modelValue="(v) => (form.portfolioHolder = v)" />
 			</div>
 
 			<div class="form-group">
@@ -121,9 +121,9 @@ export default {
 			cases: [],
 			selectedCase: null,
 			form: {
-				onderwerp: this.caseTitle || '',
+				subject: this.caseTitle || '',
 				type: 'collegeadvies',
-				portefeuillehouder: '',
+				portfolioHolder: '',
 				department: '',
 			},
 
@@ -161,22 +161,22 @@ export default {
 		 * @spec openspec/specs/parafering-actions/spec.md
 		 */
 		onCaseSelected(caseObj) {
-			if (caseObj && !this.form.onderwerp) {
-				this.form.onderwerp = caseObj.title || ''
+			if (caseObj && !this.form.subject) {
+				this.form.subject = caseObj.title || ''
 			}
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async create() {
 			this.errors = {}
-			if (!this.form.onderwerp.trim()) {
-				this.errors.onderwerp = t('procest', 'Subject is required')
+			if (!this.form.subject.trim()) {
+				this.errors.subject = t('procest', 'Subject is required')
 				return
 			}
 
 			const caseRef = this.caseId || this.selectedCase?.id
 			if (!caseRef) {
-				this.errors.onderwerp = t('procest', 'Select a case')
+				this.errors.subject = t('procest', 'Select a case')
 				return
 			}
 
@@ -206,10 +206,10 @@ export default {
 				const voorstelData = {
 					case: caseRef,
 					type: this.form.type,
-					onderwerp: this.form.onderwerp.trim(),
+					subject: this.form.subject.trim(),
 					author: getCurrentUser()?.uid || '',
 					department: this.form.department,
-					portefeuillehouder: this.form.portefeuillehouder,
+					portfolioHolder: this.form.portfolioHolder,
 					status: 'concept',
 					currentStep: 0,
 					attachments: [],
@@ -223,7 +223,7 @@ export default {
 				this.$emit('created')
 			} catch (error) {
 				console.error('Failed to create voorstel:', error)
-				this.errors.onderwerp =
+				this.errors.subject =
 					error.message || t('procest', 'Failed to create')
 			} finally {
 				this.saving = false

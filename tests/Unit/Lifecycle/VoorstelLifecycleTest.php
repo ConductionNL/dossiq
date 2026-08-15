@@ -115,15 +115,15 @@ final class VoorstelLifecycleTest extends TestCase {
 
 		// Missing onderwerp.
 		$this->assertFalse(
-			$guard->check(['onderwerp' => '', 'type' => 'collegeadvies'], 'startParafering', 'carol')->isAllowed()
+			$guard->check(['subject' => '', 'type' => 'collegeadvies'], 'startParafering', 'carol')->isAllowed()
 		);
 		// Missing type.
 		$this->assertFalse(
-			$guard->check(['onderwerp' => 'Kapvergunning', 'type' => ''], 'startParafering', 'carol')->isAllowed()
+			$guard->check(['subject' => 'Kapvergunning', 'type' => ''], 'startParafering', 'carol')->isAllowed()
 		);
 		// Both present.
 		$this->assertTrue(
-			$guard->check(['onderwerp' => 'Kapvergunning', 'type' => 'collegeadvies'], 'startParafering', 'carol')->isAllowed()
+			$guard->check(['subject' => 'Kapvergunning', 'type' => 'collegeadvies'], 'startParafering', 'carol')->isAllowed()
 		);
 	}//end testSubmitGuardEnforcesRequiredFields()
 }//end class

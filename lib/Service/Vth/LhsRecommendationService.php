@@ -91,13 +91,13 @@ class LhsRecommendationService {
 	 *
 	 * Loads the matrix (active by default, or the explicitly requested
 	 * version), maps cells into an in-memory dictionary keyed
-	 * "ernst:gedrag:actorType", and persists an `lhsRecommendation` row
+	 * "severity:behaviour:actorType", and persists an `lhsRecommendation` row
 	 * carrying the lookup result. Identity is always derived from the
 	 * session — never from caller-supplied data.
 	 *
 	 * @param string $caseId The parent case UUID
-	 * @param string $ernst Severity axis value
-	 * @param string $gedrag Behaviour axis value
+	 * @param string $severity Severity axis value
+	 * @param string $behaviour Behaviour axis value
 	 * @param string $actorType Actor-type axis value
 	 * @param int|null $lhsVersion Optional explicit matrix version; null = active
 	 * @param string|null $inspection Optional inspection rapport UUID for traceability
@@ -111,8 +111,8 @@ class LhsRecommendationService {
 	 */
 	public function recommend(
 		string $caseId,
-		string $ernst,
-		string $gedrag,
+		string $severity,
+		string $behaviour,
 		string $actorType,
 		?int $lhsVersion = null,
 		?string $inspection = null,
@@ -124,7 +124,7 @@ class LhsRecommendationService {
 
 		$matrix = $this->loadMatrix(version: $lhsVersion);
 		$cellIndex = $this->indexCells(cells: ($matrix['cells'] ?? []));
-		$key = $ernst . ':' . $gedrag . ':' . $actorType;
+		$key = $severity . ':' . $behaviour . ':' . $actorType;
 
 		if (isset($cellIndex[$key]) === false) {
 			throw new RuntimeException(
@@ -136,8 +136,8 @@ class LhsRecommendationService {
 		$recommendation = [
 			'case' => $caseId,
 			'inspection' => $inspection,
-			'ernst' => $ernst,
-			'gedrag' => $gedrag,
+			'severity' => $severity,
+			'behaviour' => $behaviour,
 			'actorType' => $actorType,
 			'matrixVersion' => (int)($matrix['version'] ?? 1),
 			'recommendedIntervention' => (string)($cell['intervention'] ?? ''),
@@ -326,7 +326,7 @@ class LhsRecommendationService {
 	}//end persistRecommendation()
 
 	/**
-	 * Build an in-memory dictionary of cells keyed `ernst:gedrag:actorType`.
+	 * Build an in-memory dictionary of cells keyed `severity:behaviour:actorType`.
 	 *
 	 * Accepts both a JSON-encoded string (as stored on some legacy rows)
 	 * and a native array.
@@ -354,8 +354,8 @@ class LhsRecommendationService {
 				continue;
 			}
 
-			$key = ((string)($cell['ernst'] ?? ''))
-				. ':' . ((string)($cell['gedrag'] ?? ''))
+			$key = ((string)($cell['severity'] ?? ''))
+				. ':' . ((string)($cell['behaviour'] ?? ''))
 				. ':' . ((string)($cell['actorType'] ?? ''));
 			$index[$key] = $cell;
 		}

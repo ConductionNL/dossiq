@@ -22,7 +22,7 @@
  * assertions all happen against the rendered DOM in the spec files.
  *
  * Every object created here carries a unique run prefix in a human-visible
- * field (case.title, complaint.onderwerp, caseType.name) so list assertions
+ * field (case.title, complaint.subject, caseType.name) so list assertions
  * can find exactly the seeded row, and afterAll cleanup can find + delete
  * every object this run produced.
  */

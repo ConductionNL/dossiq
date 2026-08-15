@@ -107,12 +107,12 @@ class StufMessageHandler {
 			'role' => $role,
 			'entiteittype' => 'ZAK',
 			'referentienummer' => $referentienummer,
-			'zaakIdentificatie' => ($caseId ?? ''),
+			'caseIdentification' => ($caseId ?? ''),
 			'gerelateerdeZaakId' => ($caseId ?? ''),
 			'envelopeXml' => $envelopeXml,
 			'sentOn' => $this->isoNow(),
 			'bronEntiteit' => ($bronEntiteit ?? ''),
-			'bronId' => ($sourceId ?? ''),
+			'sourceId' => ($sourceId ?? ''),
 			'status' => 'verzonden',
 			'retries' => [],
 		];
@@ -149,11 +149,11 @@ class StufMessageHandler {
 			'role' => ($role ?? ''),
 			'entiteittype' => 'ZAK',
 			'crossRefnummer' => $crossRefnummer,
-			'zaakIdentificatie' => ($caseId ?? ''),
+			'caseIdentification' => ($caseId ?? ''),
 			'gerelateerdeZaakId' => ($caseId ?? ''),
 			'envelopeXml' => $responseXml,
 			'sentOn' => $this->isoNow(),
-			'ontvangenOp' => $this->isoNow(),
+			'receivedOn' => $this->isoNow(),
 			'status' => 'bevestigd',
 		];
 		return $this->register->saveObject(schema: StufRegisterAccess::SCHEMA_MESSAGE, data: $data);
@@ -200,8 +200,8 @@ class StufMessageHandler {
 	 */
 	public function transitionStatus(array $msg, string $newStatus, array $extras = []): array {
 		$msg['status'] = $newStatus;
-		if (array_key_exists(key: 'ontvangenOp', array: $extras) === false) {
-			$msg['ontvangenOp'] = $this->isoNow();
+		if (array_key_exists(key: 'receivedOn', array: $extras) === false) {
+			$msg['receivedOn'] = $this->isoNow();
 		}
 
 		foreach ($extras as $key => $value) {

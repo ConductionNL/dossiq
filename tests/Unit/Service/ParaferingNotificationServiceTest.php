@@ -111,7 +111,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 
 		$this->service->notifyStepActivated(
 			actorUserId: 'actor-user-1',
-			onderwerp: 'Testvoorstel',
+			subject: 'Testvoorstel',
 			proposalId: 'voorstel-uuid-123',
 			stepLabel: 'Afdelingshoofd',
 		);
@@ -131,9 +131,9 @@ class ParaferingNotificationServiceTest extends TestCase {
 				'parafering_step_activated',
 				$this->callback(
 					function (array $params): bool {
-						return isset($params['onderwerp']) === true
+						return isset($params['subject']) === true
 							&& isset($params['stepLabel']) === true
-							&& $params['onderwerp'] === 'Testvoorstel'
+							&& $params['subject'] === 'Testvoorstel'
 							&& $params['stepLabel'] === 'Afdelingshoofd';
 					}
 				)
@@ -142,7 +142,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 
 		$this->service->notifyStepActivated(
 			actorUserId: 'actor-user-1',
-			onderwerp: 'Testvoorstel',
+			subject: 'Testvoorstel',
 			proposalId: 'voorstel-uuid-123',
 			stepLabel: 'Afdelingshoofd',
 		);
@@ -163,7 +163,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 
 		$this->service->notifyStepActivated(
 			actorUserId: 'actor-user-1',
-			onderwerp: 'Testvoorstel',
+			subject: 'Testvoorstel',
 			proposalId: 'voorstel-uuid-123',
 			stepLabel: 'Afdelingshoofd',
 		);
@@ -189,7 +189,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 
 		$this->service->notifyVoorstelReturned(
 			stellerUserId: 'steller-user-1',
-			onderwerp: 'Testvoorstel',
+			subject: 'Testvoorstel',
 			proposalId: 'voorstel-uuid-123',
 			returnedBy: 'manager-user',
 			comment: 'Aanpassing nodig',
@@ -219,7 +219,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 
 		$this->service->notifyVoorstelReturned(
 			stellerUserId: 'steller-user-1',
-			onderwerp: 'Testvoorstel',
+			subject: 'Testvoorstel',
 			proposalId: 'voorstel-uuid-123',
 			returnedBy: 'manager-user',
 			comment: 'Aanpassing nodig',
@@ -245,7 +245,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 
 		$this->service->notifyParaferingReminder(
 			actorUserId: 'actor-user-1',
-			onderwerp: 'Testvoorstel',
+			subject: 'Testvoorstel',
 			proposalId: 'voorstel-uuid-123',
 			daysWaiting: 3,
 		);
@@ -274,7 +274,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 
 		$this->service->notifyParaferingReminder(
 			actorUserId: 'actor-user-1',
-			onderwerp: 'Testvoorstel',
+			subject: 'Testvoorstel',
 			proposalId: 'voorstel-uuid-123',
 			daysWaiting: 5,
 		);
@@ -302,7 +302,7 @@ class ParaferingNotificationServiceTest extends TestCase {
 		// Should not throw — exception must be swallowed.
 		$this->service->notifyStepActivated(
 			actorUserId: 'actor-user-1',
-			onderwerp: 'Testvoorstel',
+			subject: 'Testvoorstel',
 			proposalId: 'voorstel-uuid-123',
 			stepLabel: 'Afdelingshoofd',
 		);

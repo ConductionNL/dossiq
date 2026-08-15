@@ -57,7 +57,7 @@ class LhsLookupService {
 	private const VALID_GEVOLG = ['1', '2', '3', '4'];
 
 	/**
-	 * Embedded fallback table (gedrag:gevolg → interventieStep).
+	 * Embedded fallback table (behaviour:gevolg → interventieStep).
 	 *
 	 * Used when the OpenRegister matrix has not been seeded.
 	 *
@@ -99,7 +99,7 @@ class LhsLookupService {
 	/**
 	 * Look up the recommended intervention for a gedrag + gevolg combination.
 	 *
-	 * @param string $gedrag Behaviour axis: A, B, C, or D
+	 * @param string $behaviour Behaviour axis: A, B, C, or D
 	 * @param string $gevolg Impact axis: 1, 2, 3, or 4
 	 *
 	 * @return array<string, mixed> Cell data with interventieStep and description
@@ -108,12 +108,12 @@ class LhsLookupService {
 	 *
 	 * @spec openspec/changes/vth-module/tasks.md#task-8
 	 */
-	public function lookup(string $gedrag, string $gevolg): array {
-		$gedrag = strtoupper(string: trim(string: $gedrag));
+	public function lookup(string $behaviour, string $gevolg): array {
+		$behaviour = strtoupper(string: trim(string: $behaviour));
 		$gevolg = trim(string: $gevolg);
 
-		if (in_array(needle: $gedrag, haystack: self::VALID_GEDRAG, strict: true) === false) {
-			throw new RuntimeException('Invalid gedrag value: ' . $gedrag . '. Must be A, B, C or D.');
+		if (in_array(needle: $behaviour, haystack: self::VALID_GEDRAG, strict: true) === false) {
+			throw new RuntimeException('Invalid gedrag value: ' . $behaviour . '. Must be A, B, C or D.');
 		}
 
 		if (in_array(needle: $gevolg, haystack: self::VALID_GEVOLG, strict: true) === false) {
@@ -121,19 +121,19 @@ class LhsLookupService {
 		}
 
 		// Try OpenRegister first.
-		$cell = $this->lookupFromRegister(gedrag: $gedrag, gevolg: $gevolg);
+		$cell = $this->lookupFromRegister(behaviour: $behaviour, gevolg: $gevolg);
 		if ($cell !== null) {
 			return $cell;
 		}
 
-		// Fallback to embedded table. The validated $gedrag/$gevolg pair is
+		// Fallback to embedded table. The validated $behaviour/$gevolg pair is
 		// guaranteed to be a key in FALLBACK_MATRIX (4x4 = 16 cells), so no
 		// null-coalescing default is required.
-		$key = $gedrag . ':' . $gevolg;
+		$key = $behaviour . ':' . $gevolg;
 		$intervention = self::FALLBACK_MATRIX[$key];
 
 		return [
-			'behaviourRow' => $gedrag,
+			'behaviourRow' => $behaviour,
 			'consequenceColumn' => $gevolg,
 			'interventionStep' => $intervention,
 			'description' => '',
@@ -144,12 +144,12 @@ class LhsLookupService {
 	/**
 	 * Look up a cell from the OpenRegister lhsMatrixCell schema.
 	 *
-	 * @param string $gedrag Behaviour value
+	 * @param string $behaviour Behaviour value
 	 * @param string $gevolg Impact value
 	 *
 	 * @return array<string, mixed>|null Cell data or null when not found
 	 */
-	private function lookupFromRegister(string $gedrag, string $gevolg): ?array {
+	private function lookupFromRegister(string $behaviour, string $gevolg): ?array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			return null;
@@ -165,7 +165,7 @@ class LhsLookupService {
 				objectService: $objectService,
 				register: $register,
 				schema: 'lhsMatrixCell',
-				filters: ['behaviourRow' => $gedrag, 'consequenceColumn' => $gevolg, '_limit' => 1]
+				filters: ['behaviourRow' => $behaviour, 'consequenceColumn' => $gevolg, '_limit' => 1]
 			);
 
 			if (is_array($results) === true && isset($results[0]) === true && is_array($results[0]) === true) {

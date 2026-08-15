@@ -129,7 +129,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 		'id' => 'advice-1',
 		'advisor' => 'alice',
 		'case' => 'case-1',
-		'onderwerp' => 'Kapvergunning',
+		'subject' => 'Kapvergunning',
 		'status' => 'aangevraagd',
 	];
 

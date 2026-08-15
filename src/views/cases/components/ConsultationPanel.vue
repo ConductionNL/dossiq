@@ -27,7 +27,7 @@
 					</span>
 				</div>
 				<p class="consultation-panel__subject">
-					{{ cons.onderwerp }}
+					{{ cons.subject }}
 				</p>
 				<p
 					v-if="cons.question_formulation"
@@ -277,7 +277,7 @@ export default {
 		 */
 		openResponseDialog(cons) {
 			this.activeConsultationId = cons.id
-			this.activeConsultationSubject = cons.onderwerp || ''
+			this.activeConsultationSubject = cons.subject || ''
 			this.showResponseDialog = true
 		},
 

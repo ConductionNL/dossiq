@@ -68,16 +68,16 @@ class StufMessageBuilderOutboundTest extends TestCase {
 			'soapVersion' => '1.1',
 			'stufVersion' => '0310',
 			'sectormodel' => 'ZKN',
-			'authenticatie' => [
+			'authentication' => [
 				'type' => 'wsse-usernametoken',
-				'gebruikersnaam' => 'procest',
-				'wachtwoordKluisRef' => 'vault://stuf/test',
+				'username' => 'procest',
+				'passwordVaultRef' => 'vault://stuf/test',
 			],
 			'zaaktypeMappings' => [
 				'evenementenvergunning' => 'Evenementenvergunning',
 			],
 			'freeMessagesTemplates' => [
-				['name' => 'zetStatus', 'verplichteVelden' => ['zaakIdentificatie', 'statusType', 'datumStatusGezet']],
+				['name' => 'zetStatus', 'verplichteVelden' => ['caseIdentification', 'statusType', 'datumStatusGezet']],
 			],
 		];
 	}//end endpointFixture()
@@ -199,7 +199,7 @@ class StufMessageBuilderOutboundTest extends TestCase {
 		$this->expectException(VrijBerichtNotRegisteredException::class);
 		$this->builder->buildDu01VrijBericht(
 			name: 'zetStatus',
-			payload: ['zaakIdentificatie' => 'X'],
+			payload: ['caseIdentification' => 'X'],
 			endpoint: $this->endpointFixture()
 		);
 	}//end testVrijBerichtRequiresMandatoryFields()

@@ -56,8 +56,8 @@
 						</template>
 					</div>
 				</div>
-				<p v-if="item.onderwerp" class="advies-panel__subject">
-					{{ item.onderwerp }}
+				<p v-if="item.subject" class="advies-panel__subject">
+					{{ item.subject }}
 				</p>
 				<div class="advies-panel__actions">
 					<NcButton

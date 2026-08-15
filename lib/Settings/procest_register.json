@@ -2679,7 +2679,7 @@
                 "required": [
                     "case",
                     "type",
-                    "onderwerp",
+                    "subject",
                     "author",
                     "status"
                 ],
@@ -2703,7 +2703,7 @@
                         "title": "Type",
                         "facetable": true
                     },
-                    "onderwerp": {
+                    "subject": {
                         "type": "string",
                         "maxLength": 255,
                         "description": "Subject of the voorstel (usually derived from case title)",
@@ -2720,7 +2720,7 @@
                         "description": "Department of the steller",
                         "title": "Department"
                     },
-                    "portefeuillehouder": {
+                    "portfolioHolder": {
                         "type": "string",
                         "description": "Nextcloud user UID of the responsible portfolio holder (wethouder)",
                         "title": "Portfolio Holder"
@@ -4908,7 +4908,7 @@
                         "description": "Reference to advisoryBody object if using the registry",
                         "title": "Advisory Body ID"
                     },
-                    "onderwerp": {
+                    "subject": {
                         "type": "string",
                         "description": "Subject of the consultation",
                         "title": "Subject"
@@ -5261,7 +5261,7 @@
                         "description": "Whether advice is from internal staff or external party",
                         "title": "Type"
                     },
-                    "onderwerp": {
+                    "subject": {
                         "type": "string",
                         "description": "Subject/topic of the advice request",
                         "title": "Subject"
@@ -5344,8 +5344,8 @@
                 "required": [
                     "case",
                     "type",
-                    "ernst",
-                    "gedrag"
+                    "severity",
+                    "behaviour"
                 ],
                 "properties": {
                     "case": {
@@ -5367,7 +5367,7 @@
                         "description": "Type of enforcement action",
                         "title": "Type"
                     },
-                    "ernst": {
+                    "severity": {
                         "type": "string",
                         "enum": [
                             "gering",
@@ -5377,7 +5377,7 @@
                         "description": "Severity of the violation (LHS ernst axis)",
                         "title": "Severity"
                     },
-                    "gedrag": {
+                    "behaviour": {
                         "type": "string",
                         "enum": [
                             "goedwillend",
@@ -5533,18 +5533,18 @@
                         "items": {
                             "type": "object",
                             "required": [
-                                "ernst",
-                                "gedrag",
+                                "severity",
+                                "behaviour",
                                 "actorType",
                                 "intervention"
                             ],
                             "properties": {
-                                "ernst": {
+                                "severity": {
                                     "type": "string",
                                     "title": "Severity",
                                     "description": "Severity axis value for this matrix cell (gering, aanzienlijk, or ernstig)"
                                 },
-                                "gedrag": {
+                                "behaviour": {
                                     "type": "string",
                                     "title": "Behaviour",
                                     "description": "Behaviour axis value for this matrix cell"
@@ -5625,8 +5625,8 @@
                 "type": "object",
                 "required": [
                     "case",
-                    "ernst",
-                    "gedrag",
+                    "severity",
+                    "behaviour",
                     "actorType",
                     "matrixVersion",
                     "recommendedIntervention",
@@ -5647,7 +5647,7 @@
                         "description": "Optional reference to the originating inspection rapport",
                         "title": "Inspection"
                     },
-                    "ernst": {
+                    "severity": {
                         "type": "string",
                         "enum": [
                             "gering",
@@ -5657,7 +5657,7 @@
                         "description": "Severity of the violation (LHS ernst axis)",
                         "title": "Severity"
                     },
-                    "gedrag": {
+                    "behaviour": {
                         "type": "string",
                         "enum": [
                             "goedwillend",
@@ -7470,7 +7470,7 @@
                 "description": "Klacht (complaint) entity — tracks citizen complaints per Awb chapter 9 with lifecycle, Awb deadlines, hearing, disposition, and escalation support.",
                 "type": "object",
                 "required": [
-                    "onderwerp",
+                    "subject",
                     "description",
                     "receiptDate"
                 ],
@@ -7509,7 +7509,7 @@
                         },
                         "title": "Complainant"
                     },
-                    "onderwerp": {
+                    "subject": {
                         "type": "string",
                         "maxLength": 255,
                         "description": "Short subject of the complaint",
@@ -9996,7 +9996,7 @@
                 "case": "zaak-omgevingsvergunning-0042",
                 "advisor": "welstandscommissie",
                 "type": "intern",
-                "onderwerp": "Welstandstoets gevelwijziging Keizersgracht 123",
+                "subject": "Welstandstoets gevelwijziging Keizersgracht 123",
                 "deadline": "2026-04-30",
                 "status": "aangevraagd",
                 "requestedAt": "2026-04-16T09:00:00+02:00",
@@ -10011,7 +10011,7 @@
                 "case": "zaak-evenementenvergunning-0038",
                 "advisor": "Veiligheidsregio Amsterdam-Amstelland",
                 "type": "extern",
-                "onderwerp": "Veiligheidsadvies evenement Museumplein 500+ bezoekers",
+                "subject": "Veiligheidsadvies evenement Museumplein 500+ bezoekers",
                 "deadline": "2026-04-25",
                 "status": "aangevraagd",
                 "requestedAt": "2026-04-10T14:30:00+02:00",
@@ -10026,7 +10026,7 @@
                 "case": "zaak-milieumelding-0031",
                 "advisor": "Regionale Uitvoeringsdienst Noord-Holland",
                 "type": "extern",
-                "onderwerp": "Milieukundig advies lozing grondwater bouwproject",
+                "subject": "Milieukundig advies lozing grondwater bouwproject",
                 "deadline": "2026-03-28",
                 "status": "verlopen",
                 "requestedAt": "2026-03-07T10:00:00+01:00",
@@ -10041,7 +10041,7 @@
                 "case": "zaak-bezwaar-0055",
                 "advisor": "juridische-dienst",
                 "type": "intern",
-                "onderwerp": "Juridische toets ontvankelijkheid bezwaarschrift",
+                "subject": "Juridische toets ontvankelijkheid bezwaarschrift",
                 "deadline": "2026-05-02",
                 "status": "ontvangen",
                 "requestedAt": "2026-04-11T08:45:00+02:00",
@@ -10057,7 +10057,7 @@
                 "case": "zaak-bouwvergunning-0047",
                 "advisor": "Brandweer Amsterdam-Amstelland",
                 "type": "extern",
-                "onderwerp": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",
+                "subject": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",
                 "deadline": "2026-05-14",
                 "status": "aangevraagd",
                 "requestedAt": "2026-04-14T11:00:00+02:00",

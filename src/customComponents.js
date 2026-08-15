@@ -107,7 +107,7 @@ async function voorstelReminder({ actionId, item }) {
 			body: JSON.stringify({
 				voorstelId: item.id,
 				actor,
-				onderwerp: item.onderwerp,
+				subject: item.subject,
 			}),
 		})
 	} catch (error) {

@@ -190,15 +190,15 @@ class VaststellingServiceTest extends TestCase {
 	public function testOverpaymentAndTrigger(): void {
 		// €360.000 advances vs €330.000 settled -> €30.000 clawback.
 		$this->assertSame(30000.0, $this->service->computeOverpayment(360000.0, 330000.0));
-		$this->assertTrue($this->service->triggerTerugvordering(360000.0, 330000.0));
+		$this->assertTrue($this->service->recoveryTrigger(360000.0, 330000.0));
 
 		// Advances equal to settled -> no clawback.
 		$this->assertSame(0.0, $this->service->computeOverpayment(330000.0, 330000.0));
-		$this->assertFalse($this->service->triggerTerugvordering(330000.0, 330000.0));
+		$this->assertFalse($this->service->recoveryTrigger(330000.0, 330000.0));
 
 		// Settled above advances (under-disbursed) -> no clawback.
 		$this->assertSame(0.0, $this->service->computeOverpayment(300000.0, 330000.0));
-		$this->assertFalse($this->service->triggerTerugvordering(300000.0, 330000.0));
+		$this->assertFalse($this->service->recoveryTrigger(300000.0, 330000.0));
 	}//end testOverpaymentAndTrigger()
 
 	/**

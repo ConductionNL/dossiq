@@ -469,7 +469,7 @@ class ParafeerActieService {
 			try {
 				$this->notificationService->notifyVoorstelReturned(
 					(string)$proposal['author'],
-					(string)($proposal['onderwerp'] ?? ''),
+					(string)($proposal['subject'] ?? ''),
 					$proposalId,
 					$currentUser->getDisplayName(),
 					'Voorstel volledig geaccordeerd'
@@ -738,7 +738,7 @@ class ParafeerActieService {
 			try {
 				$this->notificationService->notifyVoorstelReturned(
 					$author,
-					(string)($proposal['onderwerp'] ?? ''),
+					(string)($proposal['subject'] ?? ''),
 					$proposalId,
 					$currentUser->getDisplayName(),
 					$reason

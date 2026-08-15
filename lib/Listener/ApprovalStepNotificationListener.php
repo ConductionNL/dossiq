@@ -136,7 +136,7 @@ class ApprovalStepNotificationListener implements IEventListener {
 
 		$objectUuid = (string)$event->getObjectUuid();
 		$proposal = $this->loadProposal(objectUuid: $objectUuid);
-		$onderwerp = (string)($proposal['onderwerp'] ?? '');
+		$subject = (string)($proposal['subject'] ?? '');
 
 		$role = '';
 		if (is_callable([$nextStep, 'getRole']) === true) {
@@ -146,7 +146,7 @@ class ApprovalStepNotificationListener implements IEventListener {
 		foreach ($this->resolveGroupMembers(role: $role) as $userId) {
 			$this->notificationService->notifyStepActivated(
 				$userId,
-				$onderwerp,
+				$subject,
 				$objectUuid,
 				$role
 			);
@@ -187,7 +187,7 @@ class ApprovalStepNotificationListener implements IEventListener {
 
 		$this->notificationService->notifyVoorstelReturned(
 			$author,
-			(string)($proposal['onderwerp'] ?? ''),
+			(string)($proposal['subject'] ?? ''),
 			$objectUuid,
 			$rejectedBy,
 			$comment

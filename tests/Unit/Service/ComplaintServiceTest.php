@@ -356,7 +356,7 @@ class ComplaintServiceTest extends TestCase {
 		// This will throw "Required fields missing" before OpenRegister check
 		// for onderwerp/omschrijving/ontvangstdatum; pass them all.
 		$this->service->createComplaint([
-			'onderwerp' => 'Test',
+			'subject' => 'Test',
 			'omschrijving' => 'Description',
 			'receiptDate' => '2026-03-01',
 		]);

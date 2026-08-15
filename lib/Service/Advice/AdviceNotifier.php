@@ -125,7 +125,7 @@ class AdviceNotifier {
 					userId: $advisor,
 					subject: 'advies_aangevraagd',
 					objectId: $adviceId,
-					message: (string)($current['onderwerp'] ?? '')
+					message: (string)($current['subject'] ?? '')
 				);
 			}
 

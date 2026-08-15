@@ -283,7 +283,7 @@ class PortalContributionProvider {
 					'fields' => [
 						'kind',
 						'category',
-						'onderwerp',
+						'subject',
 						'rationale',
 						'reference',
 						'status',
@@ -305,7 +305,7 @@ class PortalContributionProvider {
 					'fields' => [
 						'kind',
 						'category',
-						'onderwerp',
+						'subject',
 						'rationale',
 						'attachments',
 					],

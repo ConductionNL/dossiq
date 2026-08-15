@@ -450,7 +450,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				),
 				'doel' => '{{ purpose }}',
 				'aanleiding' => '{{ trigger }}',
-				'onderwerp' => '{{ subject }}',
+				'subject' => '{{ subject }}',
 				'doorlooptijd' => '{{ processingDeadline }}',
 				'vertrouwelijkheidaanduiding' => '{{ confidentiality }}',
 				'concept' => '{{ isDraft }}',
@@ -1815,7 +1815,7 @@ class LoadDefaultZgwMappings implements IRepairStep {
 				),
 				'datumtijd' => '{{ contactDateTime }}',
 				'kanaal' => '{{ channel }}',
-				'onderwerp' => '{{ subject }}',
+				'subject' => '{{ subject }}',
 				'initiator' => '{{ initiator }}',
 			],
 			'reverseMapping' => [

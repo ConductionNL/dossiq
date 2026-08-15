@@ -39,7 +39,10 @@
 					<label>{{ t('procest', 'Severity (ernst)') }}</label>
 					<div class="enforcement-wizard__radio-group">
 						<label v-for="e in ernstOptions" :key="e.value">
-							<input v-model="ernst" type="radio" :value="e.value" />
+							<input
+								v-model="severity"
+								type="radio"
+								:value="e.value" />
 							<span>{{ e.label }}</span>
 						</label>
 					</div>
@@ -49,7 +52,10 @@
 					<label>{{ t('procest', 'Behavior (gedrag)') }}</label>
 					<div class="enforcement-wizard__radio-group">
 						<label v-for="g in gedragOptions" :key="g.value">
-							<input v-model="gedrag" type="radio" :value="g.value" />
+							<input
+								v-model="behaviour"
+								type="radio"
+								:value="g.value" />
 							<span>{{ g.label }}</span>
 						</label>
 					</div>
@@ -248,8 +254,8 @@ export default {
 	data() {
 		return {
 			step: 1,
-			ernst: null,
-			gedrag: null,
+			severity: null,
+			behaviour: null,
 			intervention: '',
 			penaltyPaymentAmount: 5000,
 			penaltyPaymentMaximum: 25000,
@@ -300,10 +306,10 @@ export default {
 
 		/** @spec openspec/specs/vth-module/spec.md */
 		suggestedIntervention() {
-			if (!this.ernst || !this.gedrag) {
+			if (!this.severity || !this.behaviour) {
 				return null
 			}
-			return this.enforcementStore.lookupLhs(this.ernst, this.gedrag)
+			return this.enforcementStore.lookupLhs(this.severity, this.behaviour)
 		},
 
 		isDwangsom() {
@@ -317,7 +323,7 @@ export default {
 		/** @spec openspec/specs/vth-module/spec.md */
 		canProceed() {
 			if (this.step === 1) {
-				return this.ernst && this.gedrag
+				return this.severity && this.behaviour
 			}
 			if (this.step === 2) {
 				return this.intervention
@@ -352,8 +358,8 @@ export default {
 				const action = await this.enforcementStore.createAction({
 					case: this.caseId,
 					type: this.mapInterventionToType(this.intervention),
-					ernst: this.ernst,
-					gedrag: this.gedrag,
+					severity: this.severity,
+					behaviour: this.behaviour,
 					intervention: this.intervention,
 					penaltyPaymentAmount: this.isDwangsom
 						? this.penaltyPaymentAmount
