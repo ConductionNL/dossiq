@@ -442,7 +442,6 @@ class DsoControllerTest extends TestCase {
 			decisionService: $this->decisionService,
 			samenwerkService: $this->samenwerkService,
 			repository: new DsoObjectRepository(
-				settingsService: $this->settingsService,
 				logger: $this->logger,
 			),
 			doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
@@ -519,7 +518,6 @@ class DsoControllerTest extends TestCase {
 			decisionService: $this->decisionService,
 			samenwerkService: $this->samenwerkService,
 			repository: new DsoObjectRepository(
-				settingsService: $settingsServiceMock,
 				logger: $this->logger,
 			),
 			doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),
@@ -557,7 +555,6 @@ class DsoControllerTest extends TestCase {
 			decisionService: $this->decisionService,
 			samenwerkService: $this->samenwerkService,
 			repository: new DsoObjectRepository(
-				settingsService: $this->settingsService,
 				logger: $this->logger,
 			),
 			doorsturenNotifier: new DsoDoorsturenNotifier(eventDispatcher: $this->eventDispatcher),

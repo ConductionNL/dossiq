@@ -172,10 +172,8 @@ class AdviceServiceAuthorizationTest extends TestCase {
 			guard: new AdviceAuthorizationGuard(
 				settingsService: $this->settingsService,
 				userSession: $this->userSession,
-				groupManager: $this->groupManager,
 			),
 			notifier: new AdviceNotifier(
-				notificationManager: $this->createMock(INotificationManager::class),
 				logger: $logger,
 			),
 		);
