@@ -128,11 +128,14 @@ class SamenwerkverzoekService {
 			'requestedOn' => date('c'),
 		];
 
+		// saveObject() returns an ObjectEntityInterface (which extends
+		// JsonSerializable), never an array — returning it straight out of a
+		// method declared `: array` is a TypeError.
 		$created = $objectService->saveObject(
 			register: $register,
 			schema: $requestSchema,
 			object: $samenwerkverzoek
-		);
+		)->jsonSerialize();
 
 		$event = new GenericEvent(
 			subject: $created,
@@ -215,11 +218,13 @@ class SamenwerkverzoekService {
 		$request['advies'] = $advies;
 		$request['respondedOn'] = date('c');
 
+		// See initiateSamenwerking() — saveObject() returns an entity, not an
+		// array.
 		$updated = $objectService->saveObject(
 			register: $register,
 			schema: $requestSchema,
 			object: $request
-		);
+		)->jsonSerialize();
 
 		$this->logger->info(
 			'Procest SamenwerkverzoekService: samenwerking responded',

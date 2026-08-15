@@ -163,14 +163,19 @@ class SamenwerkverzoekServiceTest extends TestCase {
 		$objectServiceMock
 			->expects($this->once())
 			->method('saveObject')
+			// ObjectServiceInterface::saveObject() takes $object FIRST, and the
+			// caller uses named arguments — so the double receives them in the
+			// CONTRACT's order ($object, $extend, $register, $schema), not the
+			// old ($register, $schema, $object) one.
 			->with(
-				$this->equalTo('procest-register'),
-				$this->anything(),
 				$this->callback(
 					function (array $obj) {
 						return ($obj['status'] ?? '') === 'aangevraagd';
 					}
-				)
+				),
+				$this->anything(),
+				$this->equalTo('procest-register'),
+				$this->equalTo('samenwerk-schema-id')
 			)
 			->willReturn($this->entity($expectedSamenwerkverzoek));
 
