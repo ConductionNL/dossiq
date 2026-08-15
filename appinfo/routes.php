@@ -280,8 +280,16 @@ $extra = [
 
         // ── StUF (Standaard Uitwisselings Formaat) ──────────────────────
         // Inbound SOAP endpoints accept raw XML POST.
-    ['name' => 'stuf#zaken',    'url' => '/api/stuf/zaken',    'verb' => 'POST'],
-    ['name' => 'stuf#personen', 'url' => '/api/stuf/personen', 'verb' => 'POST'],
+    ['name' => 'stuf#cases',   'url' => '/api/stuf/cases',   'verb' => 'POST'],
+    ['name' => 'stuf#persons', 'url' => '/api/stuf/persons', 'verb' => 'POST'],
+        // DEPRECATED ALIASES — same reasoning as /api/stuf/inkomend below: the
+        // URL lives in the SENDING zaaksysteem's configuration, so renaming it
+        // alone turns a working SOAP receiver into a silent 404 on somebody
+        // else's schedule. Each needs its OWN method name because AppHost
+        // Routes::standard() rejects duplicates by `name` and ignores `postfix`.
+        // Remove once every configured sender posts to the English paths.
+    ['name' => 'stuf#casesLegacyPath',   'url' => '/api/stuf/zaken',    'verb' => 'POST'],
+    ['name' => 'stuf#personsLegacyPath', 'url' => '/api/stuf/personen', 'verb' => 'POST'],
         // Outbound StUF-ZKN gateway (admin REST) + async confirmation receiver.
     ['name' => 'stuf#endpoints', 'url' => '/api/stuf/endpoints', 'verb' => 'GET'],
     ['name' => 'stuf#messages',  'url' => '/api/stuf/messages',  'verb' => 'GET'],

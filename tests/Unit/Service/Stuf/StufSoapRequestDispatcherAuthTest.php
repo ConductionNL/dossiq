@@ -3,7 +3,7 @@
 /**
  * Unit tests for the inbound StUF sender authentication.
  *
- * These four cases exist because `StufController::zaken()` and `::personen()`
+ * These four cases exist because `StufController::cases()` and `::persons()`
  * are `#[PublicPage]` routes: nothing in Nextcloud's middleware stack will ever
  * refuse a caller on them, so the refusal has to come from the dispatcher and
  * has to be tested here.
@@ -116,7 +116,7 @@ class StufSoapRequestDispatcherAuthTest extends TestCase {
 		$this->inspector->method('resolveEndpoint')->willReturn(null);
 		$this->responder->expects($this->never())->method('respond');
 
-		$response = $this->dispatcher()->dispatch(self::ENVELOPE, 'zaken');
+		$response = $this->dispatcher()->dispatch(self::ENVELOPE, StufSoapRequestDispatcher::SERVICE_CASES);
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 	}//end testUnknownSenderIsRefusedWithoutReachingTheResponder()
@@ -132,7 +132,7 @@ class StufSoapRequestDispatcherAuthTest extends TestCase {
 		$this->inspector->method('verifyWsse')->willReturn(false);
 		$this->responder->expects($this->never())->method('respond');
 
-		$response = $this->dispatcher()->dispatch(self::ENVELOPE, 'personen');
+		$response = $this->dispatcher()->dispatch(self::ENVELOPE, StufSoapRequestDispatcher::SERVICE_PERSONS);
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $response->getStatus());
 	}//end testWsseMismatchIsRefusedWithoutReachingTheResponder()
@@ -151,12 +151,12 @@ class StufSoapRequestDispatcherAuthTest extends TestCase {
 	 */
 	public function testBothRefusalsAreIndistinguishableToTheCaller(): void {
 		$this->inspector->method('resolveEndpoint')->willReturn(null);
-		$unknown = $this->dispatcher()->dispatch(self::ENVELOPE, 'zaken');
+		$unknown = $this->dispatcher()->dispatch(self::ENVELOPE, StufSoapRequestDispatcher::SERVICE_CASES);
 
 		$this->setUp();
 		$this->inspector->method('resolveEndpoint')->willReturn(['id' => 'ep-1']);
 		$this->inspector->method('verifyWsse')->willReturn(false);
-		$badPassword = $this->dispatcher()->dispatch(self::ENVELOPE, 'zaken');
+		$badPassword = $this->dispatcher()->dispatch(self::ENVELOPE, StufSoapRequestDispatcher::SERVICE_CASES);
 
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $unknown->getStatus());
 		$this->assertSame($unknown->getStatus(), $badPassword->getStatus());
@@ -177,7 +177,7 @@ class StufSoapRequestDispatcherAuthTest extends TestCase {
 			->method('respond')
 			->willReturn(new DataDisplayResponse('<ok/>', Http::STATUS_OK));
 
-		$response = $this->dispatcher()->dispatch(self::ENVELOPE, 'zaken');
+		$response = $this->dispatcher()->dispatch(self::ENVELOPE, StufSoapRequestDispatcher::SERVICE_CASES);
 
 		$this->assertSame(Http::STATUS_OK, $response->getStatus());
 	}//end testVerifiedSenderReachesTheResponder()

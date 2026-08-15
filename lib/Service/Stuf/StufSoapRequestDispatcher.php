@@ -48,6 +48,27 @@ use Psr\Log\LoggerInterface;
  * @spec openspec/specs/stuf-integration/spec.md
  */
 class StufSoapRequestDispatcher {
+
+	/**
+	 * StUF-ZKN service: case operations.
+	 *
+	 * An INTERNAL discriminator. It never reaches the wire — the sending
+	 * endpoint is resolved from the envelope's `zender`, not from this value,
+	 * and the only other use is log context. That is what makes it safe to
+	 * hold in English while the ZGW REST resource `zaken` (ZrcController,
+	 * ZgwService) stays Dutch: the latter IS the statutory API path.
+	 *
+	 * @var string
+	 */
+	public const SERVICE_CASES = 'cases';
+
+	/**
+	 * StUF-BG service: person operations.
+	 *
+	 * @var string
+	 */
+	public const SERVICE_PERSONS = 'persons';
+
 	/**
 	 * Inbound body ceiling (2 MiB) — mitigates XML bomb / DoS.
 	 */
@@ -76,7 +97,7 @@ class StufSoapRequestDispatcher {
 	 * Handle one inbound SOAP request body.
 	 *
 	 * @param string|false $rawBody The raw request body (false when unreadable).
-	 * @param string $service The service type ('zaken' or 'personen').
+	 * @param string $service The service type (SERVICE_CASES or SERVICE_PERSONS).
 	 *
 	 * @return DataDisplayResponse The SOAP XML response.
 	 *
@@ -154,7 +175,7 @@ class StufSoapRequestDispatcher {
 	 * so the endpoint is not an oracle for which zaaksystemen are configured.
 	 *
 	 * @param string $rawBody The raw inbound envelope.
-	 * @param string $service The service type ('zaken' or 'personen').
+	 * @param string $service The service type (SERVICE_CASES or SERVICE_PERSONS).
 	 *
 	 * @return DataDisplayResponse|null A SOAP Fault when refused, null when the
 	 *                                  sender is authenticated.
@@ -169,7 +190,7 @@ class StufSoapRequestDispatcher {
 				['service' => $service]
 			);
 			return $this->fault(
-				message: 'Authenticatie mislukt',
+				message: 'Authentication failed',
 				statusCode: Http::STATUS_UNAUTHORIZED
 			);
 		}
@@ -180,7 +201,7 @@ class StufSoapRequestDispatcher {
 				['service' => $service, 'id' => ($endpoint['id'] ?? '')]
 			);
 			return $this->fault(
-				message: 'Authenticatie mislukt',
+				message: 'Authentication failed',
 				statusCode: Http::STATUS_UNAUTHORIZED
 			);
 		}
@@ -192,7 +213,7 @@ class StufSoapRequestDispatcher {
 	 * Parse an inbound SOAP envelope with XXE/DTD protections.
 	 *
 	 * @param string $rawBody The raw request body.
-	 * @param string $service The service type ('zaken' or 'personen').
+	 * @param string $service The service type (SERVICE_CASES or SERVICE_PERSONS).
 	 *
 	 * @return DOMDocument|DataDisplayResponse The parsed document, or a SOAP fault response.
 	 */
@@ -209,7 +230,7 @@ class StufSoapRequestDispatcher {
 
 		if ($parseResult === false || empty($errors) === false) {
 			$this->logger->warning('Invalid XML received at StUF endpoint: {service}', ['service' => $service]);
-			return $this->fault(message: 'Ongeldig XML bericht');
+			return $this->fault(message: 'Invalid XML message');
 		}
 
 		return $dom;

@@ -105,12 +105,41 @@ class StufController extends Controller {
 	// on its own retry schedule, so the ceiling is generous — dropping a StUF
 	// delivery is worse than absorbing a burst.
 	#[AnonRateLimit(limit: 300, period: 60)]
-	public function zaken(): DataDisplayResponse {
+	public function cases(): DataDisplayResponse {
 		return $this->dispatcher->dispatch(
-			rawBody: file_get_contents('php://input'),
-			service: 'zaken'
+			rawBody: $this->readRawBody(),
+			service: StufSoapRequestDispatcher::SERVICE_CASES
 		);
-	}//end zaken()
+
+	}//end cases()
+
+
+	/**
+	 * Serve the deprecated Dutch URL, /api/stuf/zaken.
+	 *
+	 * Delegates to cases(). Its own method because the URL is a WIRE CONTRACT
+	 * held in the sending zaaksysteem's configuration, and because
+	 * openregister's AppHost Routes::standard() rejects duplicate route names
+	 * by `name` alone and never reads `postfix` — the two-entries-one-name form
+	 * throws at boot and takes the whole app's routing down.
+	 *
+	 * Remove once every configured sender posts to /api/stuf/cases.
+	 *
+	 * @return DataDisplayResponse SOAP XML response.
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for cases(); behaviour covered by the cases() tests.
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 300, period: 60)]
+	public function casesLegacyPath(): DataDisplayResponse {
+		return $this->cases();
+
+	}//end casesLegacyPath()
 
 	/**
 	 * Handle inbound StUF-BG SOAP messages for person operations.
@@ -124,12 +153,36 @@ class StufController extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[AnonRateLimit(limit: 300, period: 60)]
-	public function personen(): DataDisplayResponse {
+	public function persons(): DataDisplayResponse {
 		return $this->dispatcher->dispatch(
-			rawBody: file_get_contents('php://input'),
-			service: 'personen'
+			rawBody: $this->readRawBody(),
+			service: StufSoapRequestDispatcher::SERVICE_PERSONS
 		);
-	}//end personen()
+
+	}//end persons()
+
+
+	/**
+	 * Serve the deprecated Dutch URL, /api/stuf/personen.
+	 *
+	 * Delegates to persons(). Its own method for the same reason
+	 * casesLegacyPath() is — see the note there.
+	 *
+	 * @return DataDisplayResponse SOAP XML response.
+	 *
+	 * @psalm-suppress PossiblyUnusedMethod
+	 *
+	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 *
+	 * @contract exclude Deprecated path alias for persons(); behaviour covered by the persons() tests.
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 300, period: 60)]
+	public function personsLegacyPath(): DataDisplayResponse {
+		return $this->persons();
+
+	}//end personsLegacyPath()
 
 	/**
 	 * Send a vrijBericht to the named endpoint (outbound).
