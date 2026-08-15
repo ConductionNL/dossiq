@@ -182,7 +182,7 @@
             "title": "Dispatch",
             "description": "Berichtenbox delivery record",
             "properties": {
-              "kanaal": { "type": "string", "title": "Dispatch Channel", "description": "Channel used for dispatch, e.g. berichtenbox-mijnoverheid" },
+              "notificationChannel": { "type": "string", "title": "Dispatch Channel", "description": "Channel used for dispatch, e.g. berichtenbox-mijnoverheid" },
               "sentOn": { "type": "string", "title": "Sent On", "description": "Timestamp at which the beschikking was sent", "format": "date-time" },
               "sentBy": { "type": "string", "title": "Sent By", "description": "Actor who sent the beschikking (user id or 'systeem')" },
               "messageId": { "type": "string", "title": "Message ID", "description": "Berichtenbox message identifier" },
@@ -389,7 +389,7 @@
           "validationRapportId": "val-2026-99231"
         },
         "dispatch": {
-          "kanaal": "berichtenbox-mijnoverheid",
+          "notificationChannel": "berichtenbox-mijnoverheid",
           "sentOn": "2026-04-02T09:00:00+02:00",
           "sentBy": "systeem",
           "messageId": "MO-2026-04-02-771234"

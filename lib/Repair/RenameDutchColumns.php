@@ -539,6 +539,14 @@ class RenameDutchColumns implements IRepairStep {
 		'wachtwoord_kluis_ref' => 'password_vault_ref',
 		'zaak_identificatie' => 'case_identification',
 		'zaak_identificatie_strategie' => 'case_identification_strategy',
+		'avg_classificatie' => 'gdpr_classification',
+		'catalogus' => 'catalog',
+		'dwangsom_berekening' => 'penalty_payment_calculation',
+		'ingebrekestelling' => 'notice_of_default',
+		'kanaal' => 'notification_channel',
+		'termijn_definitie' => 'deadline_definition',
+		'termijn_instance' => 'deadline_instance',
+		'voorstel' => 'proposal',
 	];
 
 	/**

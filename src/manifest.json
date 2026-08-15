@@ -1419,7 +1419,7 @@
 						"icon": "ClipboardList",
 						"content": {
 							"register": "procest",
-							"schema": "voorstel",
+							"schema": "proposal",
 							"filter": {
 								"case": "@objectId"
 							},
@@ -2352,7 +2352,7 @@
 			"title": "Voorstellen",
 			"config": {
 				"register": "procest",
-				"schema": "voorstel",
+				"schema": "proposal",
 				"allowSavedViews": true,
 				"quickFilters": [
 					{
@@ -2459,7 +2459,7 @@
 			"title": "Voorstel",
 			"config": {
 				"register": "procest",
-				"schema": "voorstel",
+				"schema": "proposal",
 				"_note": "WORKFLOW-RECORD archetype (parafering/besluitvorming proposal). Intentionally kept as a bespoke full-page slot (VoorstelDetailView) rather than a widget grid: a voorstel is driven by its parafeerroute — currentStep, routeSnapshot (per-step actor/status) and the accord/return lifecycle need a live step-progress rail and inline accord/terugsturen actions that the generic data/object-list grid cannot express. The view renders the proposal document + bijlagen, the linked case and decision, and the routing timeline. The status lifecycle (concept → in_parafering → … → besloten) is driven inside the view. Audit history stays a sidebar tab; metadata remains available for provenance.",
 				"lifecycleActions": {
 					"field": "status"
@@ -4717,7 +4717,7 @@
 		},
 		{
 			"registerSlug": "procest",
-			"schemaSlug": "voorstel",
+			"schemaSlug": "proposal",
 			"urlTemplate": "/apps/procest/voorstellen/{uuid}",
 			"displayName": "Voorstel"
 		},

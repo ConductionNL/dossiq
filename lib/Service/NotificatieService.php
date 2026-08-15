@@ -121,7 +121,7 @@ class NotificatieService {
 		array $characteristics = [],
 	): void {
 		$notification = [
-			'kanaal' => $channel,
+			'notificationChannel' => $channel,
 			'hoofdObject' => $hoofdObject,
 			'resource' => $resource,
 			'resourceUrl' => $resourceUrl,
@@ -136,7 +136,7 @@ class NotificatieService {
 			$this->logger->warning(
 				'Failed to deliver notification',
 				[
-					'kanaal' => $channel,
+					'notificationChannel' => $channel,
 					'action' => $action,
 					'exception' => $e->getMessage(),
 				]
@@ -206,7 +206,7 @@ class NotificatieService {
 		// Check if this subscription listens to the notification channel.
 		$matches = false;
 		foreach ($kanalen as $channelConfig) {
-			if (($channelConfig['name'] ?? '') === $notification['kanaal']) {
+			if (($channelConfig['name'] ?? '') === $notification['notificationChannel']) {
 				$matches = true;
 				break;
 			}
@@ -249,7 +249,7 @@ class NotificatieService {
 			$this->logger->info(
 				'Notification delivered',
 				[
-					'kanaal' => $notification['kanaal'],
+					'notificationChannel' => $notification['notificationChannel'],
 					'callbackUrl' => $callbackUrl,
 				]
 			);

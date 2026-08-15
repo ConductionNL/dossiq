@@ -109,7 +109,7 @@ class DwangsomController extends Controller {
 		$caseId = $this->owningCase->resolveVia(
 			objectId: $calculationId,
 			schemaKey: 'dwangsom_berekening_schema',
-			linkField: 'termijnInstance',
+			linkField: 'deadlineInstance',
 			viaSchemaKey: 'termijn_instance_schema',
 			caseField: 'case'
 		);

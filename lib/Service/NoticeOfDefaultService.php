@@ -90,9 +90,9 @@ class NoticeOfDefaultService {
 		$isValid = ($status === 'overschreden' && $deadline !== '' && $deadline < $receipt);
 
 		$row = [
-			'termijnInstance' => $termInstanceId,
+			'deadlineInstance' => $termInstanceId,
 			'receiptDate' => $receipt,
-			'kanaal' => $channel,
+			'notificationChannel' => $channel,
 			'gevalideerd' => $isValid,
 			'documentLink' => $documentLink,
 		];
@@ -108,7 +108,7 @@ class NoticeOfDefaultService {
 		if ($isValid === false) {
 			$this->logger->info(
 				'Premature ingebrekestelling rejected',
-				['termijnInstance' => $termInstanceId, 'receiptDate' => $receipt]
+				['deadlineInstance' => $termInstanceId, 'receiptDate' => $receipt]
 			);
 			return $row;
 		}
@@ -119,13 +119,13 @@ class NoticeOfDefaultService {
 		if ($existing !== '') {
 			$this->logger->info(
 				'Additional ingebrekestelling recorded; first remains the dwangsom basis',
-				['termijnInstance' => $termInstanceId, 'firstNotice' => $existing]
+				['deadlineInstance' => $termInstanceId, 'firstNotice' => $existing]
 			);
 			return $row;
 		}
 
 		// First valid notice: link it and start a DwangsomBerekening.
-		$row['dwangsomBerekening'] = $this->startPenaltyPaymentCalculation(
+		$row['penaltyPaymentCalculation'] = $this->startPenaltyPaymentCalculation(
 			termInstanceId: $termInstanceId,
 			instance: $instance,
 			ingebrekestellingId: (string)$row['id'],
@@ -173,8 +173,8 @@ class NoticeOfDefaultService {
 		$calculation = $this->saveSchema(
 			schemaConfigKey: 'dwangsom_berekening_schema',
 			object: [
-				'ingebrekestelling' => $ingebrekestellingId,
-				'termijnInstance' => $termInstanceId,
+				'noticeOfDefault' => $ingebrekestellingId,
+				'deadlineInstance' => $termInstanceId,
 				'startDate' => $startAt,
 				'currentDag' => 0,
 				'dailyRate' => 0,
@@ -216,7 +216,7 @@ class NoticeOfDefaultService {
 	 * @return array{plafond:int,grace:int,custom:bool,dailyTariff?:int}
 	 */
 	private function resolveRegime(array $instance): array {
-		$defId = (string)($instance['termijnDefinitie'] ?? '');
+		$defId = (string)($instance['deadlineDefinition'] ?? '');
 		if ($defId === '') {
 			return ['plafond' => self::TARIFF_AWB_PLAFOND, 'grace' => self::TARIFF_AWB_GRACE, 'custom' => false];
 		}

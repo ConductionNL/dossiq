@@ -69,11 +69,11 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_definitie_schema' => 'deadlineDefinition',
+					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
-					'ingebrekestelling_schema' => 'ingebrekestelling',
-					'dwangsom_berekening_schema' => 'dwangsomBerekening',
+					'ingebrekestelling_schema' => 'noticeOfDefault',
+					'dwangsom_berekening_schema' => 'penaltyPaymentCalculation',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -103,7 +103,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		);
 
 		// Seed AWB-default Wmo definition.
-		$this->objects->saveObject('procest', 'termijnDefinitie', [
+		$this->objects->saveObject('procest', 'deadlineDefinition', [
 			'id' => 'td-ov',
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
@@ -192,9 +192,9 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 */
 	public function testScenario4OverschrijdingAndDwangsom(): void {
 		// Seed overdue instance directly to simulate elapsed time without sleeping.
-		$instance = $this->objects->saveObject('procest', 'termijnInstance', [
+		$instance = $this->objects->saveObject('procest', 'deadlineInstance', [
 			'case' => 'Z/2026/S4',
-			'termijnDefinitie' => 'td-ov',
+			'deadlineDefinition' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-02-26',
 			'endDateCurrent' => '2026-02-26',
@@ -211,14 +211,14 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			'doc:notice'
 		);
 		self::assertTrue($row['gevalideerd']);
-		self::assertArrayHasKey('dwangsomBerekening', $row);
-		$calculationId = (string)$row['dwangsomBerekening']['id'];
+		self::assertArrayHasKey('penaltyPaymentCalculation', $row);
+		$calculationId = (string)$row['penaltyPaymentCalculation']['id'];
 
 		// Accrue 5 days.
 		for ($i = 0; $i < 5; $i++) {
 			$this->calcService->calculateDaily($calculationId);
 		}
-		$accrued = $this->objects->store['dwangsomBerekening'][$calculationId];
+		$accrued = $this->objects->store['penaltyPaymentCalculation'][$calculationId];
 		self::assertSame(5, $accrued['currentDag']);
 		self::assertSame(11500, $accrued['cumulativeAmount']);
 
@@ -254,15 +254,15 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 	 */
 	public function testScenario5Bezwaar(): void {
 		// Stand up a stopped berekening + linked uitbetaling.
-		$this->objects->saveObject('procest', 'dwangsomBerekening', [
+		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
 			'id' => 'b-s5',
-			'termijnInstance' => 'ti-s5',
+			'deadlineInstance' => 'ti-s5',
 			'status' => 'gestopt-wegens-beschikking',
 			'definitiveAmount' => 50000,
 		]);
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
 			'id' => 'u-s5',
-			'dwangsomBerekening' => 'b-s5',
+			'penaltyPaymentCalculation' => 'b-s5',
 			'amount' => 50000,
 			'status' => 'voorbereid',
 		]);

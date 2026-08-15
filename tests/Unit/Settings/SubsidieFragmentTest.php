@@ -102,7 +102,7 @@ class SubsidieFragmentTest extends TestCase {
 	public function testBaseSchemasPreserved(): void {
 		$schemas = $this->merged['components']['schemas'];
 		$this->assertArrayHasKey('case', $schemas);
-		$this->assertArrayHasKey('voorstel', $schemas);
+		$this->assertArrayHasKey('proposal', $schemas);
 	}//end testBaseSchemasPreserved()
 
 	/**

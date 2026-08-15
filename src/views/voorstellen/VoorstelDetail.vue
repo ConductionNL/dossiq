@@ -186,7 +186,7 @@
 
 		<BesluitRegistration
 			v-if="showBesluitDialog"
-			:voorstel="voorstel"
+			:voorstel="proposal"
 			@close="showBesluitDialog = false"
 			@registered="onBesluitRegistered" />
 	</div>
@@ -249,7 +249,7 @@ export default {
 		return {
 			loading: true,
 			loadingActies: true,
-			voorstel: {},
+			proposal: {},
 			acties: [],
 			showBesluitDialog: false,
 			actieDialogOpen: false,
@@ -267,11 +267,11 @@ export default {
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		steps() {
-			if (this.voorstel.routeSnapshot) {
+			if (this.proposal.routeSnapshot) {
 				try {
-					return typeof this.voorstel.routeSnapshot === 'string'
-						? JSON.parse(this.voorstel.routeSnapshot)
-						: this.voorstel.routeSnapshot
+					return typeof this.proposal.routeSnapshot === 'string'
+						? JSON.parse(this.proposal.routeSnapshot)
+						: this.proposal.routeSnapshot
 				} catch {
 					return []
 				}
@@ -281,9 +281,9 @@ export default {
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		currentStepInfo() {
-			if (!this.voorstel.currentStep || !this.steps.length) return null
+			if (!this.proposal.currentStep || !this.steps.length) return null
 			return (
-				this.steps.find((s) => s.order === this.voorstel.currentStep) || null
+				this.steps.find((s) => s.order === this.proposal.currentStep) || null
 			)
 		},
 
@@ -299,23 +299,23 @@ export default {
 		},
 
 		isSteller() {
-			return this.voorstel.author === this.currentUserId
+			return this.proposal.author === this.currentUserId
 		},
 
 		isTerminalStatus() {
-			return ['besloten', 'gearchiveerd'].includes(this.voorstel.status)
+			return ['besloten', 'gearchiveerd'].includes(this.proposal.status)
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canRegisterBesluit() {
-			return ['geaccordeerd', 'aangeboden'].includes(this.voorstel.status)
+			return ['geaccordeerd', 'aangeboden'].includes(this.proposal.status)
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		canOverrideRoute() {
 			if (
-				this.voorstel.status !== 'in_parafering'
-				&& this.voorstel.status !== 'ter_accordering'
+				this.proposal.status !== 'in_parafering'
+				&& this.proposal.status !== 'ter_accordering'
 			) {
 				return false
 			}
@@ -336,7 +336,7 @@ export default {
 	/** @spec openspec/specs/parafering-actions/spec.md */
 	async created() {
 		// Widgets can mount before App.vue's initializeStores() resolves the
-		// app-config — await it (idempotent) so 'voorstel'/'parafeeractie'
+		// app-config — await it (idempotent) so 'proposal'/'parafeeractie'
 		// are registered before the first fetch.
 		await initializeStores()
 		await Promise.all([this.loadVoorstel(), this.loadActies()])
@@ -347,12 +347,12 @@ export default {
 		async loadVoorstel() {
 			this.loading = true
 			try {
-				this.voorstel = await this.objectStore.fetchObject(
-					'voorstel',
+				this.proposal = await this.objectStore.fetchObject(
+					'proposal',
 					this.voorstelId,
 				)
 			} catch (error) {
-				console.error('Failed to load voorstel:', error)
+				console.error('Failed to load proposal:', error)
 			} finally {
 				this.loading = false
 			}
@@ -428,15 +428,15 @@ export default {
 		/** @spec openspec/specs/parafering-actions/spec.md */
 		async resubmit() {
 			try {
-				const resumeStep = this.voorstel.returnedFromStep || 1
-				await this.objectStore.saveObject('voorstel', {
-					...this.voorstel,
+				const resumeStep = this.proposal.returnedFromStep || 1
+				await this.objectStore.saveObject('proposal', {
+					...this.proposal,
 					status: 'in_parafering',
 					currentStep: resumeStep,
 				})
 				await this.loadVoorstel()
 			} catch (error) {
-				console.error('Failed to resubmit voorstel:', error)
+				console.error('Failed to resubmit proposal:', error)
 			}
 		},
 
@@ -450,37 +450,37 @@ export default {
 </script>
 
 <style scoped>
-.voorstel-detail__status {
+.proposal-detail__status {
 	margin-bottom: 12px;
 }
 
-.voorstel-detail__status-badge {
+.proposal-detail__status-badge {
 	display: inline-block;
 	padding: 4px 12px;
 	border-radius: var(--border-radius-pill);
 	font-weight: 600;
 }
 
-.voorstel-detail__status-badge--concept {
+.proposal-detail__status-badge--concept {
 	background: var(--color-background-dark);
 }
 
-.voorstel-detail__status-badge--in_parafering {
+.proposal-detail__status-badge--in_parafering {
 	background: var(--color-primary-element-light);
 	color: var(--color-primary-element);
 }
 
-.voorstel-detail__status-badge--geaccordeerd {
+.proposal-detail__status-badge--geaccordeerd {
 	background: var(--color-success-light, #e8f5e9);
 	color: var(--color-success, #2e7d32);
 }
 
-.voorstel-detail__status-badge--besloten {
+.proposal-detail__status-badge--besloten {
 	background: var(--color-success-light, #e8f5e9);
 	color: var(--color-success, #2e7d32);
 }
 
-.voorstel-detail__status-badge--teruggestuurd {
+.proposal-detail__status-badge--teruggestuurd {
 	background: var(--color-warning-light, #fff3e0);
 	color: var(--color-warning, #e65100);
 }
@@ -507,12 +507,12 @@ export default {
 	color: var(--color-main-text);
 }
 
-.voorstel-detail__bijlagen ul {
+.proposal-detail__bijlagen ul {
 	list-style: none;
 	padding: 0;
 }
 
-.voorstel-detail__bijlagen li {
+.proposal-detail__bijlagen li {
 	padding: 4px 0;
 }
 </style>

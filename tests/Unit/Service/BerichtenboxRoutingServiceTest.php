@@ -68,7 +68,7 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 			],
 		]);
 
-		$this->assertSame('berichtenbox-mijnoverheid', $result['kanaal']);
+		$this->assertSame('berichtenbox-mijnoverheid', $result['notificationChannel']);
 		$this->assertNotEmpty($result['messageId']);
 		$this->assertSame('systeem', $result['sentBy']);
 	}//end testBurgerRoutesToMijnOverheid()
@@ -88,7 +88,7 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 			],
 		]);
 
-		$this->assertSame('berichtenbox-eherkenning', $result['kanaal']);
+		$this->assertSame('berichtenbox-eherkenning', $result['notificationChannel']);
 	}//end testBedrijfRoutesToEherkenning()
 
 	/**
@@ -106,6 +106,6 @@ class BerichtenboxRoutingServiceTest extends TestCase {
 			],
 		]);
 
-		$this->assertSame('print-post', $result['kanaal']);
+		$this->assertSame('print-post', $result['notificationChannel']);
 	}//end testFallbackToPrint()
 }//end class

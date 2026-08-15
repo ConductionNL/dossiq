@@ -1759,7 +1759,7 @@
           "slug": "stemming-herinrichting-marktplein"
         },
         "subject": "Voorstel: Herinrichting marktplein Voorbeeldstad",
-        "type": "voorstel",
+        "type": "proposal",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-04-herinrichting-marktplein",
         "votesFor": 19,
@@ -1815,7 +1815,7 @@
           "slug": "stemming-subsidieregeling-duurzame-energie"
         },
         "subject": "Voorstel: Subsidieregeling duurzame energie 2025-2026",
-        "type": "voorstel",
+        "type": "proposal",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-05-subsidie-duurzame-energie",
         "votesFor": 25,
@@ -2039,7 +2039,7 @@
           "slug": "stemming-bestemmingsplan-buitengebied"
         },
         "subject": "Voorstel: Bestemmingsplan buitengebied Voorbeeldstad",
-        "type": "voorstel",
+        "type": "proposal",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-06-bestemmingsplan",
         "votesFor": 27,

@@ -110,7 +110,7 @@ export default {
 	},
 
 	props: {
-		voorstel: {
+		proposal: {
 			type: Object,
 			required: true,
 		},
@@ -173,8 +173,8 @@ export default {
 
 				// Create parafeeractie
 				const actieData = {
-					voorstel: this.voorstel.id,
-					step: this.voorstel.currentStep,
+					proposal: this.proposal.id,
+					step: this.proposal.currentStep,
 					actor: userId,
 					actorType: this.isDelegating ? 'delegate' : 'user',
 					action: 'parafered',
@@ -186,11 +186,11 @@ export default {
 				await this.objectStore.saveObject('parafeeractie', actieData)
 
 				// Advance voorstel
-				const nextStep = getNextStep(this.voorstel)
-				const newStatus = getStatusAfterAdvance(this.voorstel)
-				await this.objectStore.saveObject('voorstel', {
-					...this.voorstel,
-					currentStep: nextStep || this.voorstel.currentStep,
+				const nextStep = getNextStep(this.proposal)
+				const newStatus = getStatusAfterAdvance(this.proposal)
+				await this.objectStore.saveObject('proposal', {
+					...this.proposal,
+					currentStep: nextStep || this.proposal.currentStep,
 					status: newStatus,
 				})
 
@@ -209,19 +209,19 @@ export default {
 				const userId = getCurrentUser()?.uid || ''
 
 				await this.objectStore.saveObject('parafeeractie', {
-					voorstel: this.voorstel.id,
-					step: this.voorstel.currentStep,
+					proposal: this.proposal.id,
+					step: this.proposal.currentStep,
 					actor: userId,
 					actorType: 'user',
 					action: 'advised',
 					advice: this.adviceText,
 				})
 
-				const nextStep = getNextStep(this.voorstel)
-				const newStatus = getStatusAfterAdvance(this.voorstel)
-				await this.objectStore.saveObject('voorstel', {
-					...this.voorstel,
-					currentStep: nextStep || this.voorstel.currentStep,
+				const nextStep = getNextStep(this.proposal)
+				const newStatus = getStatusAfterAdvance(this.proposal)
+				await this.objectStore.saveObject('proposal', {
+					...this.proposal,
+					currentStep: nextStep || this.proposal.currentStep,
 					status: newStatus,
 				})
 
@@ -245,18 +245,18 @@ export default {
 				const userId = getCurrentUser()?.uid || ''
 
 				await this.objectStore.saveObject('parafeeractie', {
-					voorstel: this.voorstel.id,
-					step: this.voorstel.currentStep,
+					proposal: this.proposal.id,
+					step: this.proposal.currentStep,
 					actor: userId,
 					actorType: 'user',
 					action: 'returned',
 					comment: this.returnComment.trim(),
 				})
 
-				await this.objectStore.saveObject('voorstel', {
-					...this.voorstel,
+				await this.objectStore.saveObject('proposal', {
+					...this.proposal,
 					status: 'teruggestuurd',
-					returnedFromStep: this.voorstel.currentStep,
+					returnedFromStep: this.proposal.currentStep,
 				})
 
 				this.$emit('action-completed')

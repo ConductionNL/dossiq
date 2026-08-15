@@ -41,7 +41,7 @@ class DeadlineReportingServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_instance_schema' => 'deadlineInstance',
 					'dwangsom_uitbetaling_schema' => 'dwangsomUitbetaling',
 					default => '',
 				};
@@ -52,7 +52,7 @@ class DeadlineReportingServiceTest extends TestCase {
 
 		// Seed 5 instances spread across Q2-2026 for one zaaktype.
 		for ($i = 1; $i <= 5; $i++) {
-			$this->objects->saveObject('procest', 'termijnInstance', [
+			$this->objects->saveObject('procest', 'deadlineInstance', [
 				'id' => 'ti-q2-' . $i,
 				'caseType' => 'omgevingsvergunning-regulier',
 				'case' => 'Z/2026/' . (400 + $i),

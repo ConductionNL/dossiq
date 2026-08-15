@@ -192,22 +192,22 @@ final class BezwaarCalculationRegistryTest extends TestCase {
 		$now = new DateTimeImmutable('2026-03-01T00:00:00+00:00');
 
 		// No ingebrekestelling -> no penalty clock -> EUR0 (not the plafond).
-		$none = $this->eval($expr, ['ingebrekestelling' => null], $now);
+		$none = $this->eval($expr, ['noticeOfDefault' => null], $now);
 		$this->assertSame(0.0, (float)$none, 'null ingebrekestelling must yield EUR0, never the EUR1442 cap');
 
 		// Ingebrekestelling 2026-02-25: grace ends 2026-03-11 -> at 2026-03-01 the
 		// grace has not lapsed -> EUR0.
-		$withinGrace = $this->eval($expr, ['ingebrekestelling' => '2026-02-25'], $now);
+		$withinGrace = $this->eval($expr, ['noticeOfDefault' => '2026-02-25'], $now);
 		$this->assertSame(0.0, (float)$withinGrace, 'within the 14-day grace no dwangsom accrues');
 
 		// Ingebrekestelling 2026-01-25: grace ends 2026-02-08; at 2026-03-01 that
 		// is 21 penalty days -> tier1 14*23=322 + tier2 7*35=245 = EUR567.
-		$midTier = $this->eval($expr, ['ingebrekestelling' => '2026-01-25'], $now);
+		$midTier = $this->eval($expr, ['noticeOfDefault' => '2026-01-25'], $now);
 		$this->assertSame(567.0, (float)$midTier, '21 penalty days = 322 + 245 = 567');
 
 		// Ingebrekestelling 2026-01-01: grace ends 2026-01-15; at 2026-03-01 that
 		// is 45 penalty days -> past 42 -> plafond EUR1442.
-		$capped = $this->eval($expr, ['ingebrekestelling' => '2026-01-01'], $now);
+		$capped = $this->eval($expr, ['noticeOfDefault' => '2026-01-01'], $now);
 		$this->assertSame(1442.0, (float)$capped, '45 penalty days exceeds 42 -> capped at EUR1442');
 	}//end testDwangsomMatchesWorkedAwbExample()
 

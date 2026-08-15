@@ -3,18 +3,18 @@
     "registers": {
       "procest": {
         "schemas": [
-          "termijnDefinitie",
-          "termijnInstance",
+          "deadlineDefinition",
+          "deadlineInstance",
           "termijnGebeurtenis",
-          "ingebrekestelling",
-          "dwangsomBerekening",
+          "noticeOfDefault",
+          "penaltyPaymentCalculation",
           "dwangsomUitbetaling"
         ]
       }
     },
     "schemas": {
-      "termijnDefinitie": {
-        "slug": "termijnDefinitie",
+      "deadlineDefinition": {
+        "slug": "deadlineDefinition",
         "icon": "TimerOutline",
         "version": "1.0.0",
         "x-schema-org": "schema:DefinedTerm",
@@ -108,8 +108,8 @@
           }
         }
       },
-      "termijnInstance": {
-        "slug": "termijnInstance",
+      "deadlineInstance": {
+        "slug": "deadlineInstance",
         "icon": "TimerSandFull",
         "version": "1.0.0",
         "x-schema-org": "schema:Action",
@@ -118,7 +118,7 @@
         "type": "object",
         "required": [
           "case",
-          "termijnDefinitie",
+          "deadlineDefinition",
           "startDate",
           "endDateCalculated",
           "endDateCurrent",
@@ -131,7 +131,7 @@
             "description": "Reference to the procest case (case id)",
             "facetable": true
           },
-          "termijnDefinitie": {
+          "deadlineDefinition": {
             "type": "string",
             "title": "Deadline Definition Reference",
             "description": "Reference to the TermijnDefinitie this instance materialised from"
@@ -203,12 +203,12 @@
         "description": "Immutable append-only audit log entry for any termijn lifecycle event. Once written, never updated.",
         "type": "object",
         "required": [
-          "termijnInstance",
+          "deadlineInstance",
           "type",
           "moment"
         ],
         "properties": {
-          "termijnInstance": {
+          "deadlineInstance": {
             "type": "string",
             "title": "Deadline Instance Reference",
             "description": "TermijnInstance reference",
@@ -266,8 +266,8 @@
           }
         }
       },
-      "ingebrekestelling": {
-        "slug": "ingebrekestelling",
+      "noticeOfDefault": {
+        "slug": "noticeOfDefault",
         "icon": "EmailAlert",
         "version": "1.0.0",
         "x-schema-org": "schema:Message",
@@ -275,12 +275,12 @@
         "description": "Burger notice that the deadline has lapsed (AWB 4:17). Validated against the TermijnInstance to start a DwangsomBerekening.",
         "type": "object",
         "required": [
-          "termijnInstance",
+          "deadlineInstance",
           "receiptDate",
-          "kanaal"
+          "notificationChannel"
         ],
         "properties": {
-          "termijnInstance": {
+          "deadlineInstance": {
             "type": "string",
             "title": "Deadline Instance Reference",
             "description": "TermijnInstance the notice relates to",
@@ -292,7 +292,7 @@
             "title": "Receipt Date",
             "description": "Date the notice arrived"
           },
-          "kanaal": {
+          "notificationChannel": {
             "type": "string",
             "enum": ["post", "email", "portaal", "balie", "phone"],
             "title": "Channel",
@@ -324,8 +324,8 @@
           }
         }
       },
-      "dwangsomBerekening": {
-        "slug": "dwangsomBerekening",
+      "penaltyPaymentCalculation": {
+        "slug": "penaltyPaymentCalculation",
         "icon": "Calculator",
         "version": "1.0.0",
         "x-schema-org": "schema:MonetaryAmount",
@@ -333,17 +333,17 @@
         "description": "Daily-accruing dwangsom calculation per AWB 4:17. Tracks current day, tariff tier, cumulative amount in EUR cents, plafond enforcement.",
         "type": "object",
         "required": [
-          "ingebrekestelling",
+          "noticeOfDefault",
           "startDate"
         ],
         "properties": {
-          "ingebrekestelling": {
+          "noticeOfDefault": {
             "type": "string",
             "title": "Default Notice Reference",
             "description": "Ingebrekestelling that started the calculation",
             "facetable": true
           },
-          "termijnInstance": {
+          "deadlineInstance": {
             "type": "string",
             "title": "Deadline Instance Reference",
             "description": "Convenience back-reference to the termijn"
@@ -419,12 +419,12 @@
         "description": "Payment signal towards the burger after the dwangsom is locked.",
         "type": "object",
         "required": [
-          "dwangsomBerekening",
+          "penaltyPaymentCalculation",
           "amount",
           "reference"
         ],
         "properties": {
-          "dwangsomBerekening": {
+          "penaltyPaymentCalculation": {
             "type": "string",
             "title": "Penalty Calculation Reference",
             "description": "Berekening reference",

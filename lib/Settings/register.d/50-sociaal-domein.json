@@ -8,7 +8,7 @@
                 "title": "WMO Zaak",
                 "description": "Sociaal-domein zaaktype wmo-melding (Wmo 2015, art. 2.3.2-2.3.6). Maatschappelijke ondersteuning voor volwassenen. Volledig OpenRegister-backed; status-lifecycle als configuratie, geen custom state machine.",
                 "type": "object",
-                "required": ["caseType", "bsn", "districtTeam", "avgClassificatie"],
+                "required": ["caseType", "bsn", "districtTeam", "gdprClassification"],
                 "properties": {
                     "caseType": {
                         "title": "Case Type",
@@ -117,8 +117,8 @@
                         "type": "string",
                         "description": "Referentie naar de bijbehorende Indicatiestelling"
                     },
-                    "avgClassificatie": {
-                        "$ref": "#/components/schemas/avgClassificatie"
+                    "gdprClassification": {
+                        "$ref": "#/components/schemas/gdprClassification"
                     }
                 }
             },
@@ -210,7 +210,7 @@
                 "title": "Jeugdwet Zaak",
                 "description": "Sociaal-domein zaaktype jeugdwet-melding (Jeugdwet 2015, art. 2.3, 6.1.2, 7.3). Gezinsgerichte, multi-agency jeugdhulp. OpenRegister-backed.",
                 "type": "object",
-                "required": ["caseType", "jeugdigeBsn", "districtTeam", "avgClassificatie"],
+                "required": ["caseType", "jeugdigeBsn", "districtTeam", "gdprClassification"],
                 "properties": {
                     "caseType": {
                         "title": "Case Type",
@@ -304,8 +304,8 @@
                         "items": {"type": "string"},
                         "description": "Historie van eerdere gezinsplannen (verlengingen)"
                     },
-                    "avgClassificatie": {
-                        "$ref": "#/components/schemas/avgClassificatie"
+                    "gdprClassification": {
+                        "$ref": "#/components/schemas/gdprClassification"
                     }
                 }
             },
@@ -482,7 +482,7 @@
                 "title": "Participatiewet Zaak",
                 "description": "Sociaal-domein zaaktype bijstandsaanvraag (Participatiewet 2015, art. 18, 31-34, 9). Inkomens- en werkgerichte ondersteuning met vermogens-/inkomenstoets. OpenRegister-backed.",
                 "type": "object",
-                "required": ["caseType", "bsn", "avgClassificatie"],
+                "required": ["caseType", "bsn", "gdprClassification"],
                 "properties": {
                     "caseType": {
                         "title": "Case Type",
@@ -612,8 +612,8 @@
                         "type": "boolean",
                         "description": "True bij vermogen boven vrijstelling (auto-afwijzing)"
                     },
-                    "avgClassificatie": {
-                        "$ref": "#/components/schemas/avgClassificatie"
+                    "gdprClassification": {
+                        "$ref": "#/components/schemas/gdprClassification"
                     }
                 }
             },
@@ -814,8 +814,8 @@
                     }
                 }
             },
-            "avgClassificatie": {
-                "slug": "avgClassificatie",
+            "gdprClassification": {
+                "slug": "gdprClassification",
                 "icon": "ShieldLockOutline",
                 "version": "1.0.0",
                 "title": "AVG Classificatie",
@@ -998,7 +998,7 @@
                     "participatiewetZaak",
                     "reIntegratieTraject",
                     "toestemming",
-                    "avgClassificatie",
+                    "gdprClassification",
                     "sociaalDomeinAuditLog",
                     "avgIncident"
                 ]
@@ -1023,7 +1023,7 @@
                 "handlerId": "consulent-wmo-211",
                 "status": "beschikking-verleend",
                 "leadTimeStatutory": {"investigationWeeks": 6, "decisionWeeks": 2, "totalWeeks": 8},
-                "avgClassificatie": {
+                "gdprClassification": {
                     "categories": ["medisch"],
                     "specialPersonalData": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1053,7 +1053,7 @@
                 "handlerId": "consulent-wmo-211",
                 "status": "uitvoering",
                 "leadTimeStatutory": {"investigationWeeks": 6, "decisionWeeks": 2, "totalWeeks": 8},
-                "avgClassificatie": {
+                "gdprClassification": {
                     "categories": ["medisch", "gezinssituatie"],
                     "specialPersonalData": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1083,7 +1083,7 @@
                 "handlerId": "consulent-wmo-188",
                 "status": "beschikking-voorbereiding",
                 "leadTimeStatutory": {"investigationWeeks": 6, "decisionWeeks": 2, "totalWeeks": 8},
-                "avgClassificatie": {
+                "gdprClassification": {
                     "categories": ["medisch", "gezinssituatie"],
                     "specialPersonalData": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1112,7 +1112,7 @@
                 "districtTeam": "jeugdteam-noord",
                 "handlerId": "jeugdconsulent-340",
                 "status": "ondersteuning-loopt",
-                "avgClassificatie": {
+                "gdprClassification": {
                     "categories": ["gezinssituatie", "medisch"],
                     "specialPersonalData": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1141,7 +1141,7 @@
                 "districtTeam": "jeugdteam-zuid",
                 "handlerId": "jeugdconsulent-355",
                 "status": "gezinsplan-gereed",
-                "avgClassificatie": {
+                "gdprClassification": {
                     "categories": ["medisch", "gezinssituatie"],
                     "specialPersonalData": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1170,7 +1170,7 @@
                 "districtTeam": "jeugdteam-west",
                 "handlerId": "jeugdconsulent-362",
                 "status": "ondersteuning-gestart",
-                "avgClassificatie": {
+                "gdprClassification": {
                     "categories": ["medisch", "gezinssituatie"],
                     "specialPersonalData": true,
                     "justification": "artikel-9-2-h-avg",
@@ -1200,7 +1200,7 @@
                 "handlerId": "klantmanager-477",
                 "districtTeam": "werk-en-inkomenteam-oost",
                 "status": "re-integratie-loopt",
-                "avgClassificatie": {
+                "gdprClassification": {
                     "categories": ["financieel", "gezinssituatie"],
                     "specialPersonalData": true,
                     "justification": "artikel-9-2-b-avg",
@@ -1230,7 +1230,7 @@
                 "handlerId": "klantmanager-501",
                 "districtTeam": "werk-en-inkomenteam-west",
                 "status": "re-integratie-loopt",
-                "avgClassificatie": {
+                "gdprClassification": {
                     "categories": ["financieel", "medisch"],
                     "specialPersonalData": true,
                     "justification": "artikel-9-2-b-avg",
@@ -1260,7 +1260,7 @@
                 "handlerId": "klantmanager-512",
                 "districtTeam": "werk-en-inkomenteam-centrum",
                 "status": "beschikking-voorbereiding",
-                "avgClassificatie": {
+                "gdprClassification": {
                     "categories": ["financieel", "gezinssituatie"],
                     "specialPersonalData": true,
                     "justification": "artikel-9-2-b-avg",

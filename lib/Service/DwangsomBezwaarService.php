@@ -119,7 +119,7 @@ class DwangsomBezwaarService {
 		}
 
 		// Record event on termijn.
-		$instanceId = (string)($calculation['termijnInstance'] ?? '');
+		$instanceId = (string)($calculation['deadlineInstance'] ?? '');
 		if ($instanceId !== '') {
 			$this->termService->recordEvent(
 				termInstanceId: $instanceId,
@@ -202,7 +202,7 @@ class DwangsomBezwaarService {
 			}
 		}
 
-		$instanceId = (string)($calculation['termijnInstance'] ?? '');
+		$instanceId = (string)($calculation['deadlineInstance'] ?? '');
 		if ($instanceId !== '') {
 			$this->termService->recordEvent(
 				termInstanceId: $instanceId,
@@ -268,7 +268,7 @@ class DwangsomBezwaarService {
 				objectService: $objectService,
 				register: $register,
 				schema: $uSchema,
-				filters: ['dwangsomBerekening' => $calculationId]
+				filters: ['penaltyPaymentCalculation' => $calculationId]
 			);
 		} catch (\Throwable $e) {
 			// Lookup failures must not block the bezwaar transition.

@@ -246,14 +246,14 @@ class OriDataQualityCheck extends TimedJob {
 			}
 
 			try {
-				$politicalGroup = $this->findObjectAsArray(
+				$fractie = $this->findObjectAsArray(
 					objectService: $objectService,
 					register: 'ori',
 					schema: 'fractie',
 					id: $politicalGroupRef
 				);
 
-				if ($politicalGroup === null) {
+				if ($fractie === null) {
 					$issues[] = [
 						'schema' => 'raadslid',
 						'slug' => $rlSlug,

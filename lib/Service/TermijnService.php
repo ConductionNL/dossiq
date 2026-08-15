@@ -98,7 +98,7 @@ class TermijnService {
 
 		$instance = [
 			'case' => $caseId,
-			'termijnDefinitie' => (string)($definitie['id'] ?? ''),
+			'deadlineDefinition' => (string)($definitie['id'] ?? ''),
 			'startDate' => $startDate->format('Y-m-d\TH:i:sP'),
 			'endDateCalculated' => $endDate,
 			'endDateCurrent' => $endDate,
@@ -371,7 +371,7 @@ class TermijnService {
 	): ?array {
 		$moment = ($moment ?? new DateTimeImmutable());
 		$event = [
-			'termijnInstance' => $termInstanceId,
+			'deadlineInstance' => $termInstanceId,
 			'type' => $type,
 			'moment' => $moment->format('Y-m-d\TH:i:sP'),
 			'actor' => $actor,

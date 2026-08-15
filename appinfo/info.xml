@@ -120,6 +120,17 @@ Vrij en open source onder de EUPL-1.2-licentie.
 
     <repair-steps>
         <post-migration>
+            <!--
+                MUST stay first. OpenRegister's import matches a schema to an
+                existing row by SLUG, so a renamed slug in the register JSON
+                renames nothing: the import finds no match, creates a SECOND
+                schema, and every stored object keeps pointing at the old one —
+                data stranded behind a schema nothing reads, which presents as
+                an app with no records rather than as an error. Renaming the
+                slug on the existing row first makes the import recognise it.
+                Ahead of the import trigger, InitializeSettings.
+            -->
+            <step>OCA\Procest\Repair\RenameDutchSchemaSlugs</step>
             <step>OCA\Procest\Repair\InitializeSettings</step>
             <step>OCA\Procest\Repair\LoadDefaultZgwMappings</step>
             <step>OCA\Procest\Repair\SeedBezwaarBeroepData</step>

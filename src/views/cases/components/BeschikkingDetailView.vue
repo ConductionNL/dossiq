@@ -65,7 +65,7 @@
 				<h4>{{ t('procest', 'Verzending') }}</h4>
 				<dl class="beschikking-detail__meta">
 					<dt>{{ t('procest', 'Kanaal') }}</dt>
-					<dd>{{ beschikking.dispatch.kanaal }}</dd>
+					<dd>{{ beschikking.dispatch.notificationChannel }}</dd>
 					<dt>{{ t('procest', 'Bezwaartermijn eindigt') }}</dt>
 					<dd>{{ beschikking.objectionTermEndDate || '—' }}</dd>
 				</dl>
@@ -142,11 +142,20 @@ export default {
 			)
 		},
 
+		/**
+		 * Whether the beschikking has a dispatch record to show.
+		 *
+		 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+		 *  migration; this method changed only because the property it reads was
+		 *  renamed from `kanaal` to `notificationChannel`.
+		 *
+		 * @return {boolean} True when a dispatch channel is recorded.
+		 */
 		hasVerzending() {
 			return !!(
 				this.beschikking
 				&& this.beschikking.dispatch
-				&& this.beschikking.dispatch.kanaal
+				&& this.beschikking.dispatch.notificationChannel
 			)
 		},
 

@@ -219,10 +219,10 @@ export default {
 					voorstelData.parafeerroute = routeId
 				}
 
-				await this.objectStore.saveObject('voorstel', voorstelData)
+				await this.objectStore.saveObject('proposal', voorstelData)
 				this.$emit('created')
 			} catch (error) {
-				console.error('Failed to create voorstel:', error)
+				console.error('Failed to create proposal:', error)
 				this.errors.subject =
 					error.message || t('procest', 'Failed to create')
 			} finally {
@@ -234,7 +234,7 @@ export default {
 </script>
 
 <style scoped>
-.voorstel-create {
+.proposal-create {
 	padding: 8px 0;
 }
 

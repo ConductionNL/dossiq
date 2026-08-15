@@ -57,8 +57,8 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'termijn_definitie_schema' => 'termijnDefinitie',
-					'termijn_instance_schema' => 'termijnInstance',
+					'termijn_definitie_schema' => 'deadlineDefinition',
+					'termijn_instance_schema' => 'deadlineInstance',
 					'termijn_gebeurtenis_schema' => 'termijnGebeurtenis',
 					default => '',
 				};
@@ -71,7 +71,7 @@ class DeadlinePauseExtensionServiceTest extends TestCase {
 		$this->extService = new DeadlineExtensionService($this->termService);
 
 		// Seed an Omgevingsvergunning definition (max 1 extension).
-		$this->objects->saveObject('procest', 'termijnDefinitie', [
+		$this->objects->saveObject('procest', 'deadlineDefinition', [
 			'id' => 'td-ov',
 			'caseType' => 'omgevingsvergunning-regulier',
 			'wettelijkeGrondslag' => 'Wabo 3.9 lid 1',
