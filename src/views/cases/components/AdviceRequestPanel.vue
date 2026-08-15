@@ -178,10 +178,7 @@ export default {
 		getResponseLabel(response) {
 			const labels = {
 				positive: this.t('procest', 'Positive'),
-				positief_with_terms: this.t(
-					'procest',
-					'Positive with conditions',
-				),
+				positief_with_terms: this.t('procest', 'Positive with conditions'),
 
 				negative: this.t('procest', 'Negative'),
 				non_from_application: this.t('procest', 'Not applicable'),
