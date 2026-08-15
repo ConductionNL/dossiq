@@ -274,7 +274,7 @@ class StufZknMessageResponder {
 
 		$response = $this->responses->buildFo01(
 			'StUF001',
-			'Onbekend berichttype',
+			'Unknown message type',
 			'server',
 			self::DEFAULT_ZENDER,
 			[]
