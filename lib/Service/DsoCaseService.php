@@ -44,6 +44,13 @@ use OCA\OpenRegister\Contract\ObjectServiceInterface;
  * Dutch national holidays).
  *
  * @spec openspec/changes/dso-omgevingsloket/tasks.md#T03
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) ADR-083 replaced a lazy
+ * container lookup with a typed ObjectServiceInterface dependency, which is
+ * the point of the ADR — the dependency is now visible to readers and tools.
+ * That pushed this class to 13 collaborators, one over the threshold. The
+ * container stays because IGroupManager is still resolved through it.
+ * 29 classes in this app already carry this suppression.
  */
 class DsoCaseService {
 
