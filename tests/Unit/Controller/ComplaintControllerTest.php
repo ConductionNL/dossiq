@@ -212,6 +212,8 @@ class ComplaintControllerTest extends TestCase {
 			complaintService: $this->complaintService,
 			accessGuard: new ComplaintAccessGuard(
 				request: $this->request,
+				userSession: $unauthSession,
+				groupManager: $this->groupManager,
 			),
 		);
 

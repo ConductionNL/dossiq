@@ -90,6 +90,8 @@ class ZgwZrcRulesServiceTest extends TestCase {
 		// FieldValidator is a pure, stateless utility — use the real
 		// implementation so the service exercises genuine format validation.
 		$this->service = new ZgwZrcRulesService(
+			logger: $this->logger,
+			settingsService: $this->settingsService,
 			fieldValidator: new \OCA\Procest\Service\FieldValidator()
 		);
 

@@ -66,8 +66,14 @@ class ProcestToolProviderTest extends TestCase {
 		// mocking them out would make these tests assert nothing.
 		$this->provider = new ProcestToolProvider(
 			caseReader: new ProcestCaseReader(
+				settingsService: $settingsService,
+				logger: $logger,
 			),
 			authorizer: new ProcestCaseAuthorizer(
+				settingsService: $settingsService,
+				userSession: $userSession,
+				groupManager: $groupManager,
+				logger: $logger,
 			),
 		);
 

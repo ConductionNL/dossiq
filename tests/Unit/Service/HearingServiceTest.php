@@ -108,6 +108,10 @@ class HearingServiceTest extends TestCase {
 		$this->service = new HearingService(
 			settingsService: $this->settingsService,
 			logger: $this->logger,
+			auditTrail: $this->createMock(BezwaarAuditTrail::class),
+			planner: $this->createMock(HearingSchedulePlanner::class),
+			minutes: $this->createMock(HearingMinutesRecorder::class),
+			owningCase: $this->createMock(OwningCaseResolver::class),
 		);
 	}//end setUp()
 

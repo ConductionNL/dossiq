@@ -39,6 +39,8 @@ class BelplanRoutingServiceTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->service = new BelplanRoutingService(
+			settingsService: $this->createMock(SettingsService::class),
+			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end setUp()
 

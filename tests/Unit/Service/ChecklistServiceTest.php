@@ -66,6 +66,9 @@ class ChecklistServiceTest extends TestCase {
 	 */
 	protected function setUp(): void {
 		$this->service = new ChecklistService(
+			settingsService: $this->createMock(SettingsService::class),
+			userSession: $this->createMock(IUserSession::class),
+			logger: $this->createMock(LoggerInterface::class),
 		);
 	}//end setUp()
 
