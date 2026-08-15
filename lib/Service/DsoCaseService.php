@@ -381,15 +381,11 @@ class DsoCaseService {
 	 * @throws \RuntimeException When the service is not available
 	 */
 	private function getObjectService(): object {
-		try {
-			return $this->objectService;
-		} catch (\Throwable $e) {
-			throw new RuntimeException(
-				'OpenRegister ObjectService not available: ' . $e->getMessage(),
-				0,
-				$e
-			);
-		}
+		// Injected (ADR-083), so this cannot fail — a property read throws
+		// nothing, and phpstan reports the old try/catch as a dead catch.
+		// Absence is now a CONSTRUCTION failure on the route that needed the
+		// data, which is what ADR-083 rule 1 asks for.
+		return $this->objectService;
 	}//end getObjectService()
 
 	/**
