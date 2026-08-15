@@ -148,6 +148,49 @@ trait SearchesObjects {
 	}//end findObjectAsArray()
 
 	/**
+	 * Persist an object and return it as an array.
+	 *
+	 * The symmetric counterpart to findObjectAsArray(), and needed for the same
+	 * reason. `ObjectServiceInterface::saveObject()` returns an
+	 * `ObjectEntityInterface` (ADR-084); several callers here declare `: array`
+	 * and returned what saveObject() gave them. That worked only while the
+	 * service was reached through an untyped container lookup, which returned
+	 * whatever it returned and told no one.
+	 *
+	 * @param object              $objectService The OpenRegister object service.
+	 * @param int|string          $register      Register id, UUID or slug.
+	 * @param int|string          $schema        Schema id, UUID or slug.
+	 * @param array<string,mixed> $object        The object to store.
+	 *
+	 * @return array<string,mixed>|null The stored object, or null if it cannot be represented as one.
+	 */
+	protected function saveObjectAsArray(
+		object $objectService,
+		int|string $register,
+		int|string $schema,
+		array $object,
+	): ?array {
+		$saved = $objectService->saveObject(
+			register: $register,
+			schema: $schema,
+			object: $object
+		);
+
+		if (is_array($saved) === true) {
+			return $saved;
+		}
+
+		if (is_object($saved) === true && method_exists($saved, 'jsonSerialize') === true) {
+			$serialized = $saved->jsonSerialize();
+			if (is_array($serialized) === true) {
+				return $serialized;
+			}
+		}
+
+		return null;
+	}//end saveObjectAsArray()
+
+	/**
 	 * Run a callable through `ObjectService::runAsSystem()` when available,
 	 * falling back to a direct call otherwise.
 	 *

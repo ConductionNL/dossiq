@@ -168,11 +168,15 @@ class DsoCaseService {
 			],
 		];
 
-		$created = $objectService->saveObject(
+		// saveObject() returns an ObjectEntityInterface (ADR-084); this method
+		// declares `: array`. Normalise, exactly as findObjectAsArray() does on
+		// the read side.
+		$created = $this->saveObjectAsArray(
+			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,
 			object: $case
-		);
+		) ?? [];
 
 		$this->logger->info(
 			'Procest DsoCaseService: zaak created',
@@ -266,11 +270,13 @@ class DsoCaseService {
 		$activityLog[] = $logEntry;
 		$case['activityLog'] = $activityLog;
 
-		$updatedCase = $objectService->saveObject(
+		// Same as above: this method returns an array to its caller.
+		$updatedCase = $this->saveObjectAsArray(
+			objectService: $objectService,
 			register: $register,
 			schema: $caseSchema,
 			object: $case
-		);
+		) ?? [];
 
 		// Update the linked vergunningaanvraag status when possible.
 		if ($requestRef !== '') {

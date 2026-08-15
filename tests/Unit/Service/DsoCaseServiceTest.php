@@ -23,6 +23,7 @@ declare(strict_types=1);
 
 namespace OCA\Procest\Tests\Unit\Service;
 
+use OCA\OpenRegister\Contract\ObjectEntityInterface;
 use OCA\OpenRegister\Contract\ObjectServiceInterface;
 use OCA\Procest\Service\Dso\DsoStatusChangeNotifier;
 use OCA\Procest\Service\DsoCaseService;
@@ -32,38 +33,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-
-/**
- * Minimal ObjectService stub with named-parameter signatures.
- *
- * The OpenRegister ObjectService is resolved at runtime and called with named
- * arguments; a \stdClass-based mock generates positional-only signatures and
- * fails at call time with "Unknown named parameter". This typed interface lets
- * PHPUnit generate a mock whose method signatures accept the named arguments.
- */
-interface DsoCaseObjectServiceStub {
-	/**
-	 * Find a single object by ID (real ObjectService::find()).
-	 *
-	 * @param int|string $id Object UUID
-	 * @param mixed ...$args Remaining find() args (extend/files/register/schema).
-	 *
-	 * @return mixed
-	 */
-	public function find(int|string $id, ...$args): mixed;
-
-	/**
-	 * Save or update an object.
-	 *
-	 * @param array<string,mixed> $object Object data
-	 * @param string $register Register slug
-	 * @param string $schema Schema slug
-	 * @param string|null $uuid Optional object UUID for updates
-	 *
-	 * @return array<string,mixed>
-	 */
-	public function saveObject(array $object, string $register, string $schema, ?string $uuid = null): array;
-}//end interface
 
 /**
  * Unit tests for DsoCaseService.
@@ -289,7 +258,12 @@ class DsoCaseServiceTest extends TestCase {
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T02
 	 */
 	public function testCreateZaakFromVergunningaanvraagCallsObjectService(): void {
-		$objectServiceMock = $this->createMock(DsoCaseObjectServiceStub::class);
+		// ADR-084: mock the published contract, and return what it promises.
+		// find() and saveObject() hand back an ObjectEntityInterface; the
+		// service normalises via jsonSerialize(). The old local stub returned
+		// raw arrays, which is what the untyped container lookup allowed and
+		// what hid the production mismatch fixed alongside this.
+		$objectServiceMock = $this->createMock(ObjectServiceInterface::class);
 
 		$request = [
 			'id' => 'aanvraag-uuid-1',
@@ -300,17 +274,23 @@ class DsoCaseServiceTest extends TestCase {
 			],
 		];
 
+		$requestEntity = $this->createMock(ObjectEntityInterface::class);
+		$requestEntity->method('jsonSerialize')->willReturn($request);
+
 		$objectServiceMock
 			->expects($this->once())
 			->method('find')
-			->willReturn($request);
+			->willReturn($requestEntity);
 
 		$savedCase = ['id' => 'zaak-uuid-1', 'status' => 'ingediend'];
+
+		$savedEntity = $this->createMock(ObjectEntityInterface::class);
+		$savedEntity->method('jsonSerialize')->willReturn($savedCase);
 
 		$objectServiceMock
 			->expects($this->once())
 			->method('saveObject')
-			->willReturn($savedCase);
+			->willReturn($savedEntity);
 
 		$this->container
 			->method('get')
@@ -339,7 +319,17 @@ class DsoCaseServiceTest extends TestCase {
 
 		$this->logger->expects($this->once())->method('info');
 
-		$result = $this->service->createZaakFromVergunningaanvraag(
+		// Rebuild with this test's double: the service takes the contract in its
+		// constructor now, so the container path setUp() configured is dead.
+		$service = new DsoCaseService(
+			appConfig: $this->appConfig,
+			container: $this->container,
+			notifier: new DsoStatusChangeNotifier(eventDispatcher: $this->eventDispatcher),
+			logger: $this->logger,
+			objectService: $objectServiceMock,
+		);
+
+		$result = $service->createZaakFromVergunningaanvraag(
 			permitApplicationId: 'aanvraag-uuid-1'
 		);
 
