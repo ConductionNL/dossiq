@@ -34,7 +34,7 @@ use OCP\IUser;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use OCA\OpenRegister\Service\ObjectService;
+use OCA\OpenRegister\Contract\ObjectServiceInterface;
 
 /**
  * Service for DSO Omgevingsloket case management.
@@ -91,7 +91,7 @@ class DsoCaseService {
 		private readonly ContainerInterface $container,
 		private readonly DsoStatusChangeNotifier $notifier,
 		private readonly LoggerInterface $logger,
-		private readonly ObjectService $objectService,
+		private readonly ObjectServiceInterface $objectService,
 	) {
 	}//end __construct()
 
