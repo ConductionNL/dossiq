@@ -48,6 +48,10 @@ use Psr\Log\LoggerInterface;
 
 /**
  * Renames Dutch schema slugs on the rows the import will match against.
+ *
+ * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+ *  migration. Pointing this at an existing spec would report conformance to a
+ *  requirement that says nothing about it.
  */
 class RenameDutchSchemaSlugs implements IRepairStep {
 
@@ -92,6 +96,10 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 * @param IDBConnection                  $db        Database connection.
 	 * @param LoggerInterface                $logger    Logger.
 	 * @param RenameDutchSchemaSlugDecisions $decisions The pure predicates.
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function __construct(
 		private readonly IDBConnection $db,
@@ -104,6 +112,10 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 * Step name shown by `occ maintenance:repair`.
 	 *
 	 * @return string
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function getName(): string {
 		return 'Rename Dutch Procest schema slugs';
@@ -115,6 +127,10 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 * @param IOutput $output Repair output.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function run(IOutput $output): void {
 		$schemaIds = $this->inScopeSchemaIds();

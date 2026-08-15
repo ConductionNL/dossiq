@@ -29,6 +29,10 @@ namespace OCA\Procest\Repair;
 
 /**
  * Pure predicates for the Dutch-to-English schema slug migration.
+ *
+ * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+ *  migration. Pointing this at an existing spec would report conformance to a
+ *  requirement that says nothing about it.
  */
 class RenameDutchSchemaSlugDecisions {
 
@@ -48,6 +52,10 @@ class RenameDutchSchemaSlugDecisions {
 	 * @param array<int, string>    $existing Slugs currently present.
 	 *
 	 * @return array{renames: array<string, string>, refused: array<string, string>}
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function plan(array $map, array $existing): array {
 		$renames = [];
@@ -85,6 +93,10 @@ class RenameDutchSchemaSlugDecisions {
 	 * @param array<int, array<string, mixed>> $rows Register rows.
 	 *
 	 * @return array<int, int> Distinct schema ids.
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function schemaIdsFrom(array $rows): array {
 		$ids = [];
@@ -116,6 +128,10 @@ class RenameDutchSchemaSlugDecisions {
 	 * @param int $count Number of bound parameters.
 	 *
 	 * @return string The placeholder list.
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function placeholders(int $count): string {
 		return implode(',', array_fill(0, max(0, $count), '?'));
@@ -130,6 +146,10 @@ class RenameDutchSchemaSlugDecisions {
 	 * @param array<int, array<string, mixed>> $rows Schema rows.
 	 *
 	 * @return array<int, string> The slugs.
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function slugsFrom(array $rows): array {
 		return array_map(static fn (array $row): string => (string)($row['slug'] ?? ''), $rows);
