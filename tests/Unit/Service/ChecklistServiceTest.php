@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service;
 
 use OCA\Procest\Service\ChecklistService;
+use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 
@@ -64,7 +65,11 @@ class ChecklistServiceTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->service = new ChecklistService();
+		$this->service = new ChecklistService(
+			settingsService: $this->createMock(SettingsService::class),
+			userSession: $this->createMock(IUserSession::class),
+			logger: $this->createMock(LoggerInterface::class),
+		);
 	}//end setUp()
 
 	/**

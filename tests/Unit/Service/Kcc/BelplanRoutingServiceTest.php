@@ -25,6 +25,7 @@ declare(strict_types=1);
 namespace OCA\Procest\Tests\Unit\Service\Kcc;
 
 use OCA\Procest\Service\Kcc\BelplanRoutingService;
+use OCA\Procest\Service\SettingsService;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -37,7 +38,10 @@ class BelplanRoutingServiceTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->service = new BelplanRoutingService();
+		$this->service = new BelplanRoutingService(
+			settingsService: $this->createMock(SettingsService::class),
+			logger: $this->createMock(LoggerInterface::class),
+		);
 	}//end setUp()
 
 	/**

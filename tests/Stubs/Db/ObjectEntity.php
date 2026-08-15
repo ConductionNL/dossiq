@@ -27,7 +27,35 @@ namespace OCA\OpenRegister\Db;
 /**
  * Stub of OpenRegister's ObjectEntity for unit tests.
  */
-class ObjectEntity {
+class ObjectEntity implements \OCA\OpenRegister\Contract\ObjectEntityInterface {
+		/**
+		 * @return ?string
+		 */
+		public function getRegister(): ?string {
+			return $this->register ?? null;
+		}
+
+		/**
+		 * @return ?string
+		 */
+		public function getSchema(): ?string {
+			return $this->schema ?? null;
+		}
+
+		/**
+		 * @return ?string
+		 */
+		public function getOrganisation(): ?string {
+			return $this->organisation ?? null;
+		}
+
+		/**
+		 * @return ?string
+		 */
+		public function getOwner(): ?string {
+			return $this->owner ?? null;
+		}
+
 	/**
 	 * Object UUID.
 	 *
