@@ -104,9 +104,9 @@ class StufEnvelopeInspector {
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-async-confirmation
 	 */
 	public function verifyWsse(string $envelopeXml, array $endpoint): bool {
-		$auth = ($endpoint['authenticatie'] ?? []);
-		$expectedUser = (string)($auth['gebruikersnaam'] ?? '');
-		$expectedPasswordRef = (string)($auth['wachtwoordKluisRef'] ?? '');
+		$auth = ($endpoint['authentication'] ?? []);
+		$expectedUser = (string)($auth['username'] ?? '');
+		$expectedPasswordRef = (string)($auth['passwordVaultRef'] ?? '');
 		$expectedPassword = $this->vault->resolveSecret(reference: $expectedPasswordRef);
 
 		if ($expectedUser === '' || $expectedPassword === '') {

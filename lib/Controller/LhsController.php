@@ -104,10 +104,10 @@ class LhsController extends Controller {
 		}
 
 		$caseId = (string)$this->request->getParam('caseId', '');
-		$ernst = (string)$this->request->getParam('ernst', '');
-		$gedrag = (string)$this->request->getParam('gedrag', '');
+		$severity = (string)$this->request->getParam('severity', '');
+		$behaviour = (string)$this->request->getParam('behaviour', '');
 		$actorType = (string)$this->request->getParam('actorType', '');
-		if (in_array('', [$caseId, $ernst, $gedrag, $actorType], true) === true) {
+		if (in_array('', [$caseId, $severity, $behaviour, $actorType], true) === true) {
 			return new JSONResponse(
 				['error' => 'caseId, ernst, gedrag en actorType zijn verplicht'],
 				Http::STATUS_BAD_REQUEST,
@@ -139,8 +139,8 @@ class LhsController extends Controller {
 		try {
 			$recommendation = $this->lhsService->recommend(
 				caseId: $caseId,
-				ernst: $ernst,
-				gedrag: $gedrag,
+				severity: $severity,
+				behaviour: $behaviour,
 				actorType: $actorType,
 				lhsVersion: $version,
 				inspection: $inspectionId,
@@ -257,10 +257,10 @@ class LhsController extends Controller {
 			);
 		}
 
-		$gedrag = (string)$this->request->getParam('gedrag', '');
+		$behaviour = (string)$this->request->getParam('behaviour', '');
 		$gevolg = (string)$this->request->getParam('gevolg', '');
 
-		if ($gedrag === '' || $gevolg === '') {
+		if ($behaviour === '' || $gevolg === '') {
 			return new JSONResponse(
 				['error' => 'gedrag en gevolg zijn verplicht'],
 				Http::STATUS_BAD_REQUEST,
@@ -268,7 +268,7 @@ class LhsController extends Controller {
 		}
 
 		try {
-			$cell = $this->lhsLookupService->lookup(gedrag: $gedrag, gevolg: $gevolg);
+			$cell = $this->lhsLookupService->lookup(behaviour: $behaviour, gevolg: $gevolg);
 		} catch (RuntimeException $e) {
 			return new JSONResponse(
 				['error' => $e->getMessage()],

@@ -21,7 +21,7 @@
 				:key="voorstel.id"
 				class="parafeer-inbox__item">
 				<div class="parafeer-inbox__item-info">
-					<strong>{{ voorstel.onderwerp }}</strong>
+					<strong>{{ voorstel.subject }}</strong>
 					<span class="parafeer-inbox__item-meta">
 						{{ formatType(voorstel.type) }} — {{ t('procest', 'by') }}
 						{{ voorstel.author }} — {{ t('procest', 'waiting since') }}

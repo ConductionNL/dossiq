@@ -53,8 +53,8 @@
 						</template>
 					</span>
 				</div>
-				<p v-if="request.onderwerp" class="advice-panel__subject">
-					{{ request.onderwerp }}
+				<p v-if="request.subject" class="advice-panel__subject">
+					{{ request.subject }}
 				</p>
 				<div v-if="!isReadOnly" class="advice-panel__actions">
 					<NcButton
@@ -133,7 +133,7 @@
 					}}</label>
 					<input
 						id="advice-panel-onderwerp"
-						v-model="newRequest.onderwerp"
+						v-model="newRequest.subject"
 						type="text"
 						class="advice-panel__input"
 						:placeholder="t('procest', 'What advice is needed?')" />
@@ -216,7 +216,7 @@ export default {
 			newRequest: {
 				type: 'intern',
 				advisor: '',
-				onderwerp: '',
+				subject: '',
 				deadline: this.defaultDeadline(),
 				questions: '',
 			},
@@ -333,7 +333,7 @@ export default {
 				this.newRequest = {
 					type: 'intern',
 					advisor: '',
-					onderwerp: '',
+					subject: '',
 					deadline: this.defaultDeadline(),
 					questions: '',
 				}

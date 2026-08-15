@@ -87,7 +87,7 @@ class ContactBetrokkeneMapperTest extends TestCase {
 	 * @return void
 	 */
 	public function testFindOrCreateReusesExistingMapping(): void {
-		$this->existingMapping = ['id' => 'm-1', 'externIdentificatie' => 'NPS-999'];
+		$this->existingMapping = ['id' => 'm-1', 'externalIdentification' => 'NPS-999'];
 		$bsn = $this->mapper->findOrCreateBetrokkene(
 			contact: ['id' => 'c-1', 'bsn' => '111111111'],
 			endpoint: ['id' => 'ep-1'],
@@ -108,10 +108,10 @@ class ContactBetrokkeneMapperTest extends TestCase {
 		$this->assertSame('NPS-FROM-LOOKUP', $bsn);
 		$this->assertNotEmpty($this->saved[StufRegisterAccess::SCHEMA_MAPPING] ?? []);
 		$saved = end($this->saved[StufRegisterAccess::SCHEMA_MAPPING]);
-		$this->assertSame('NPS-FROM-LOOKUP', $saved['externIdentificatie']);
+		$this->assertSame('NPS-FROM-LOOKUP', $saved['externalIdentification']);
 		// De-pipelinq'd mapping keys.
 		$this->assertSame('contact', $saved['bronEntiteit']);
-		$this->assertSame('c-2', $saved['bronId']);
+		$this->assertSame('c-2', $saved['sourceId']);
 	}//end testFindOrCreateUsesLookupResult()
 
 	/**
@@ -125,7 +125,7 @@ class ContactBetrokkeneMapperTest extends TestCase {
 		);
 		$this->assertSame('333333333', $bsn);
 		$saved = end($this->saved[StufRegisterAccess::SCHEMA_MAPPING]);
-		$this->assertSame('333333333', $saved['externIdentificatie']);
+		$this->assertSame('333333333', $saved['externalIdentification']);
 	}//end testFindOrCreateFallbackOnLookupMissReusesBsn()
 
 	/**

@@ -167,7 +167,7 @@ class CaseRelationControllerTest extends TestCase {
 			static function (string $k, $d = null) {
 				return match ($k) {
 					'targetId' => 'b',
-					'aardRelatie' => 'onderwerp',
+					'aardRelatie' => 'subject',
 					default => $d,
 				};
 			}
@@ -278,7 +278,7 @@ class CaseRelationControllerTest extends TestCase {
 	public function testListReturnsResults(): void {
 		$this->authenticate();
 		$this->service->method('listRelations')->willReturn([
-			['caseId' => 'b', 'aardRelatie' => 'onderwerp'],
+			['caseId' => 'b', 'aardRelatie' => 'subject'],
 		]);
 
 		$response = $this->controller->list(caseId: 'a');
@@ -321,7 +321,7 @@ class CaseRelationControllerTest extends TestCase {
 		$this->authenticate();
 		$this->request->method('getParam')->willReturnMap([
 			['targetId', '', 'b'],
-			['aardRelatie', '', 'onderwerp'],
+			['aardRelatie', '', 'subject'],
 			['notes', null, null],
 		]);
 		$this->service->expects($this->never())->method('addRelation');
@@ -343,7 +343,7 @@ class CaseRelationControllerTest extends TestCase {
 		$this->authenticate();
 		$this->request->method('getParam')->willReturnMap([
 			['targetId', '', 'b'],
-			['aardRelatie', '', 'onderwerp'],
+			['aardRelatie', '', 'subject'],
 			['notes', null, null],
 		]);
 		$this->service->expects($this->never())->method('addRelation');
@@ -367,7 +367,7 @@ class CaseRelationControllerTest extends TestCase {
 		$this->service->expects($this->never())->method('removeRelation');
 
 		$response = $this->controllerWithReadableCases(['a' => false, 'b' => false])
-			->destroy(caseId: 'a', targetId: 'b', natureRelationship: 'onderwerp');
+			->destroy(caseId: 'a', targetId: 'b', natureRelationship: 'subject');
 
 		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
 	}//end testDestroyIsRefusedForUnrelatedUser()

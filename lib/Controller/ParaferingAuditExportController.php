@@ -220,7 +220,7 @@ class ParaferingAuditExportController extends Controller {
 
 			$array = $this->coerceToArray(value: $proposal);
 
-			return (string)($array['onderwerp'] ?? '');
+			return (string)($array['subject'] ?? '');
 		} catch (Throwable $e) {
 			$this->logger->warning(
 				'Procest: failed to resolve voorstel onderwerp for export',

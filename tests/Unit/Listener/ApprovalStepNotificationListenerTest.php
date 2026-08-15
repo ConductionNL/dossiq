@@ -181,7 +181,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 			$this->markTestSkipped('OpenRegister approval classes not available in this environment.');
 		}
 
-		$this->stubProposal(['onderwerp' => 'Omgevingsvergunning', 'author' => 'steller1']);
+		$this->stubProposal(['subject' => 'Omgevingsvergunning', 'author' => 'steller1']);
 
 		$member = $this->createMock(IUser::class);
 		$member->method('getUID')->willReturn('hoofd1');
@@ -251,7 +251,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 			$this->markTestSkipped('OpenRegister approval classes not available in this environment.');
 		}
 
-		$this->stubProposal(['onderwerp' => 'Subsidiebesluit', 'author' => 'steller2']);
+		$this->stubProposal(['subject' => 'Subsidiebesluit', 'author' => 'steller2']);
 
 		$this->notifications->expects($this->once())
 			->method('notifyVoorstelReturned')

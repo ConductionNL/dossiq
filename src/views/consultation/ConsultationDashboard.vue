@@ -104,7 +104,7 @@
 							{{ item.nummer || item.id }}
 						</td>
 						<td>{{ item.parentCase }}</td>
-						<td>{{ item.onderwerp }}</td>
+						<td>{{ item.subject }}</td>
 						<td>{{ item.adviceAuthority }}</td>
 						<td
 							:class="{
@@ -213,7 +213,7 @@ export default {
 				const term = this.filters.search.trim().toLowerCase()
 				items = items.filter(
 					(c) =>
-						(c.onderwerp || '').toLowerCase().includes(term)
+						(c.subject || '').toLowerCase().includes(term)
 						|| (c.adviceAuthority || '').toLowerCase().includes(term)
 						|| (c.parentCase || '').toLowerCase().includes(term),
 				)

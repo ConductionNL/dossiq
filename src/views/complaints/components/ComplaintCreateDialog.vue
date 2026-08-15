@@ -18,16 +18,16 @@
 				>
 				<NcTextField
 					id="complaint-create-onderwerp"
-					:modelValue="form.onderwerp"
-					:error="!!errors.onderwerp"
+					:modelValue="form.subject"
+					:error="!!errors.subject"
 					@update:modelValue="
 						(v) => {
-							form.onderwerp = v
-							errors.onderwerp = ''
+							form.subject = v
+							errors.subject = ''
 						}
 					" />
-				<p v-if="errors.onderwerp" class="form-error">
-					{{ errors.onderwerp }}
+				<p v-if="errors.subject" class="form-error">
+					{{ errors.subject }}
 				</p>
 			</div>
 
@@ -134,7 +134,7 @@ export default {
 		return {
 			saving: false,
 			form: {
-				onderwerp: '',
+				subject: '',
 				description: '',
 				klagerNaam: '',
 				klagerEmail: '',
@@ -175,8 +175,8 @@ export default {
 		/** @spec openspec/specs/complaint-management/spec.md */
 		validate() {
 			this.errors = {}
-			if (!this.form.onderwerp.trim()) {
-				this.errors.onderwerp = this.t('procest', 'Subject is required')
+			if (!this.form.subject.trim()) {
+				this.errors.subject = this.t('procest', 'Subject is required')
 			}
 			if (!this.form.description.trim()) {
 				this.errors.description = this.t(

@@ -523,6 +523,22 @@ class RenameDutchColumns implements IRepairStep {
 		'zaak' => 'case',
 		'zender_applicatie' => 'sender_application',
 		'zender_organisatie' => 'sender_organisation',
+		'authenticatie' => 'authentication',
+		'bron_id' => 'source_id',
+		'ernst' => 'severity',
+		'extern_entiteit' => 'external_entity',
+		'extern_identificatie' => 'external_identification',
+		'gebruikersnaam' => 'username',
+		'gedrag' => 'behaviour',
+		'laatste_synchronisatie' => 'last_synchronisation',
+		'onderwerp' => 'subject',
+		'ontvangen_op' => 'received_on',
+		'portefeuillehouder' => 'portfolio_holder',
+		'synchronisatie_status' => 'synchronisation_status',
+		'trigger_terugvordering' => 'recovery_trigger',
+		'wachtwoord_kluis_ref' => 'password_vault_ref',
+		'zaak_identificatie' => 'case_identification',
+		'zaak_identificatie_strategie' => 'case_identification_strategy',
 	];
 
 	/**

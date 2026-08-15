@@ -50,7 +50,7 @@ class ParaferingNotificationService {
 	 * Send notification when a new parafering step is activated.
 	 *
 	 * @param string $actorUserId The user who should act on the step
-	 * @param string $onderwerp The voorstel subject
+	 * @param string $subject The voorstel subject
 	 * @param string $proposalId The voorstel UUID
 	 * @param string $stepLabel The step label (e.g. 'Afdelingshoofd')
 	 *
@@ -60,7 +60,7 @@ class ParaferingNotificationService {
 	 */
 	public function notifyStepActivated(
 		string $actorUserId,
-		string $onderwerp,
+		string $subject,
 		string $proposalId,
 		string $stepLabel,
 	): void {
@@ -73,7 +73,7 @@ class ParaferingNotificationService {
 				->setSubject(
 					'parafering_step_activated',
 					[
-						'onderwerp' => $onderwerp,
+						'subject' => $subject,
 						'stepLabel' => $stepLabel,
 					]
 				);
@@ -95,7 +95,7 @@ class ParaferingNotificationService {
 	 * Send notification when a voorstel is returned to the steller.
 	 *
 	 * @param string $stellerUserId The steller user who should receive the notification
-	 * @param string $onderwerp The voorstel subject
+	 * @param string $subject The voorstel subject
 	 * @param string $proposalId The voorstel UUID
 	 * @param string $returnedBy The actor who returned it
 	 * @param string $comment The return comment
@@ -106,7 +106,7 @@ class ParaferingNotificationService {
 	 */
 	public function notifyVoorstelReturned(
 		string $stellerUserId,
-		string $onderwerp,
+		string $subject,
 		string $proposalId,
 		string $returnedBy,
 		string $comment,
@@ -120,7 +120,7 @@ class ParaferingNotificationService {
 				->setSubject(
 					'voorstel_returned',
 					[
-						'onderwerp' => $onderwerp,
+						'subject' => $subject,
 						'returnedBy' => $returnedBy,
 						'comment' => $comment,
 					]
@@ -143,7 +143,7 @@ class ParaferingNotificationService {
 	 * Send a reminder notification for an overdue parafering step.
 	 *
 	 * @param string $actorUserId The user who should act
-	 * @param string $onderwerp The voorstel subject
+	 * @param string $subject The voorstel subject
 	 * @param string $proposalId The voorstel UUID
 	 * @param int $daysWaiting Number of days the step has been waiting
 	 *
@@ -153,7 +153,7 @@ class ParaferingNotificationService {
 	 */
 	public function notifyParaferingReminder(
 		string $actorUserId,
-		string $onderwerp,
+		string $subject,
 		string $proposalId,
 		int $daysWaiting,
 	): void {
@@ -166,7 +166,7 @@ class ParaferingNotificationService {
 				->setSubject(
 					'parafering_reminder',
 					[
-						'onderwerp' => $onderwerp,
+						'subject' => $subject,
 						'daysWaiting' => $daysWaiting,
 					]
 				);

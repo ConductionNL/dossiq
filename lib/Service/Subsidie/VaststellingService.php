@@ -113,7 +113,7 @@ class VaststellingService {
 	}//end computeOverpayment()
 
 	/**
-	 * Whether a terugvordering must be triggered for these figures.
+	 * Whether a recovery must be triggered for these figures.
 	 *
 	 * @param float $totalAdvances The cumulative disbursed advances.
 	 * @param float $determinedAmount The final settled amount.
@@ -122,9 +122,9 @@ class VaststellingService {
 	 *
 	 * @spec openspec/changes/subsidieverlening-keten/specs.md
 	 */
-	public function triggerTerugvordering(float $totalAdvances, float $determinedAmount): bool {
+	public function recoveryTrigger(float $totalAdvances, float $determinedAmount): bool {
 		return $this->computeOverpayment(totalAdvances: $totalAdvances, determinedAmount: $determinedAmount) > 0.0;
-	}//end triggerTerugvordering()
+	}//end recoveryTrigger()
 
 	/**
 	 * Finalise a settlement: persist the vastgesteld bedrag and, when the
@@ -157,7 +157,7 @@ class VaststellingService {
 
 		$patch = [
 			'determinedAmount' => $determined,
-			'triggerTerugvordering' => $trigger,
+			'recoveryTrigger' => $trigger,
 			'vaststellingsbeschikkingGenerated' => true,
 			'status' => 'vastgesteld',
 		];

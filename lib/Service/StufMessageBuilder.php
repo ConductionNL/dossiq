@@ -216,7 +216,7 @@ class StufMessageBuilder {
 			momentMessage: $this->currentTimestampStuf()
 		);
 
-		$caseId = (string)($mapping['externIdentificatie'] ?? '');
+		$caseId = (string)($mapping['externalIdentification'] ?? '');
 		$body = '<zkn:zakLk02>' . $stuurgegevens
 			. '<zkn:object stuf:entiteittype="ZAK" stuf:verwerkingssoort="W">'
 			. '<zkn:identificatie>' . $this->escape(value: $caseId) . '</zkn:identificatie>'
@@ -555,9 +555,9 @@ class StufMessageBuilder {
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
 	 */
 	private function wrapEnvelope(string $bodyXml, array $endpoint): string {
-		$auth = ($endpoint['authenticatie'] ?? []);
-		$username = $this->escape(value: (string)($auth['gebruikersnaam'] ?? ''));
-		$passwordRef = (string)($auth['wachtwoordKluisRef'] ?? '');
+		$auth = ($endpoint['authentication'] ?? []);
+		$username = $this->escape(value: (string)($auth['username'] ?? ''));
+		$passwordRef = (string)($auth['passwordVaultRef'] ?? '');
 		$password = $this->escape(value: $this->vault->resolveSecret(reference: $passwordRef));
 
 		$security = '<wsse:Security>'

@@ -89,8 +89,8 @@ class StufCaseMappingStore {
 			$identity,
 			[
 				'id' => 'map-' . bin2hex(string: random_bytes(length: 6)),
-				'caseId' => $identity['bronId'],
-				'externEntiteit' => 'ZAK',
+				'caseId' => $identity['sourceId'],
+				'externalEntity' => 'ZAK',
 			]
 		));
 
@@ -99,10 +99,10 @@ class StufCaseMappingStore {
 			data: array_merge(
 				$data,
 				[
-					'caseId' => $identity['bronId'],
-					'externIdentificatie' => $externId,
-					'laatsteSynchronisatie' => $this->now(),
-					'synchronisatieStatus' => 'in_sync',
+					'caseId' => $identity['sourceId'],
+					'externalIdentification' => $externId,
+					'lastSynchronisation' => $this->now(),
+					'synchronisationStatus' => 'in_sync',
 				]
 			)
 		);
@@ -119,7 +119,7 @@ class StufCaseMappingStore {
 	private function identity(array $case, array $endpoint): array {
 		return [
 			'bronEntiteit' => 'case',
-			'bronId' => (string)($case['id'] ?? ''),
+			'sourceId' => (string)($case['id'] ?? ''),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
 		];
 	}//end identity()

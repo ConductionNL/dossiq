@@ -29,7 +29,7 @@
 					<dt>{{ t('procest', 'Onderwerp') }}</dt>
 					<dd>
 						{{
-							(beschikking.decision && beschikking.decision.onderwerp)
+							(beschikking.decision && beschikking.decision.subject)
 							|| '—'
 						}}
 					</dd>

@@ -158,7 +158,7 @@
                     "determinedAmount": { "title": "Settled Amount", "type": "number", "description": "Final EUR amount (may be lower due to unmet conditions)" },
                     "determinationDate": { "title": "Settlement Date", "type": "string", "format": "date", "description": "Settlement date" },
                     "vaststellingsbeschikkingGenerated": { "title": "Settlement Decision Generated", "type": "boolean", "default": false, "description": "Whether the settlement decision PDF was generated" },
-                    "triggerTerugvordering": { "title": "Recovery Trigger", "type": "boolean", "default": false, "description": "True when vastgesteldBedrag < totaal voorschotten" },
+                    "recoveryTrigger": { "title": "Recovery Trigger", "type": "boolean", "default": false, "description": "True when vastgesteldBedrag < totaal voorschotten" },
                     "status": { "title": "Status", "type": "string", "enum": ["concept", "vastgesteld"], "default": "concept", "description": "Settlement status", "facetable": true }
                 }
             },

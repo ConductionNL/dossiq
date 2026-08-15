@@ -62,7 +62,7 @@ class StufMessageParserTest extends TestCase {
 
 		$result = $this->parser->parseBevestiging($xml);
 		$this->assertSame('01HXAMERSFOORTKZTOUR0001', $result['crossRefnummer']);
-		$this->assertSame('ZAAK-2026-0008813', $result['zaakIdentificatie']);
+		$this->assertSame('ZAAK-2026-0008813', $result['caseIdentification']);
 	}//end testParseBevestigingExtractsCrossRefnummerAndZaakId()
 
 	/**

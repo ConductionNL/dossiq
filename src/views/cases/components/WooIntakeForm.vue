@@ -61,13 +61,13 @@
 			<label for="woo-intake-subject">{{ t('procest', 'Subject') }} *</label>
 			<NcTextField
 				id="woo-intake-subject"
-				:modelValue="form.onderwerp"
+				:modelValue="form.subject"
 				:disabled="isReadOnly"
-				:error="!!errors.onderwerp"
+				:error="!!errors.subject"
 				:placeholder="t('procest', 'Topic of the information request')"
-				@update:modelValue="(v) => update('onderwerp', v)" />
-			<p v-if="errors.onderwerp" class="form-error">
-				{{ errors.onderwerp }}
+				@update:modelValue="(v) => update('subject', v)" />
+			<p v-if="errors.subject" class="form-error">
+				{{ errors.subject }}
 			</p>
 		</div>
 
@@ -158,7 +158,7 @@ export default {
 				verzoekerNaam: '',
 				verzoekerEmail: '',
 				verzoekerType: 'burger',
-				onderwerp: '',
+				subject: '',
 				periodeVan: '',
 				periodeTot: '',
 				bestuurlijkeAangelegenheid: '',

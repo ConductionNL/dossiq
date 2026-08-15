@@ -17,11 +17,11 @@
 				}}</span>
 				<span
 					class="enforcement-panel__badge enforcement-panel__badge--ernst">
-					{{ activeAction.ernst }}
+					{{ activeAction.severity }}
 				</span>
 				<span
 					class="enforcement-panel__badge enforcement-panel__badge--gedrag">
-					{{ activeAction.gedrag }}
+					{{ activeAction.behaviour }}
 				</span>
 			</div>
 			<div class="enforcement-panel__intervention">
@@ -83,7 +83,7 @@
 				</span>
 				<span>{{ action.intervention }}</span>
 				<span class="enforcement-panel__history-date"
-					>{{ action.ernst }} / {{ action.gedrag }}</span
+					>{{ action.severity }} / {{ action.behaviour }}</span
 				>
 			</div>
 		</div>

@@ -81,9 +81,9 @@ class LhsLookupServiceTest extends TestCase {
 		$gedragValues = ['A', 'B', 'C', 'D'];
 		$gevolgValues = ['1', '2', '3', '4'];
 
-		foreach ($gedragValues as $gedrag) {
+		foreach ($gedragValues as $behaviour) {
 			foreach ($gevolgValues as $gevolg) {
-				$cell = $this->service->lookup(gedrag: $gedrag, gevolg: $gevolg);
+				$cell = $this->service->lookup(behaviour: $behaviour, gevolg: $gevolg);
 
 				$this->assertIsArray($cell);
 				$this->assertArrayHasKey(key: 'interventionStep', array: $cell);
@@ -100,7 +100,7 @@ class LhsLookupServiceTest extends TestCase {
 	 * @spec openspec/changes/vth-module/tasks.md#task-8
 	 */
 	public function testLookupB2ReturnsBestuurlijkeWaarschuwing(): void {
-		$cell = $this->service->lookup(gedrag: 'B', gevolg: '2');
+		$cell = $this->service->lookup(behaviour: 'B', gevolg: '2');
 
 		$this->assertSame(expected: 'Last onder dwangsom', actual: $cell['interventionStep']);
 	}//end testLookupB2ReturnsBestuurlijkeWaarschuwing()
@@ -116,7 +116,7 @@ class LhsLookupServiceTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('Invalid gedrag value');
 
-		$this->service->lookup(gedrag: 'X', gevolg: '1');
+		$this->service->lookup(behaviour: 'X', gevolg: '1');
 	}//end testLookupThrowsForInvalidGedrag()
 
 	/**
@@ -130,7 +130,7 @@ class LhsLookupServiceTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('Invalid gevolg value');
 
-		$this->service->lookup(gedrag: 'A', gevolg: '5');
+		$this->service->lookup(behaviour: 'A', gevolg: '5');
 	}//end testLookupThrowsForInvalidGevolg()
 
 	/**
@@ -141,7 +141,7 @@ class LhsLookupServiceTest extends TestCase {
 	 * @spec openspec/changes/vth-module/tasks.md#task-8
 	 */
 	public function testLookupNormalizeGedragToUppercase(): void {
-		$cell = $this->service->lookup(gedrag: 'a', gevolg: '1');
+		$cell = $this->service->lookup(behaviour: 'a', gevolg: '1');
 
 		$this->assertSame(expected: 'A', actual: $cell['behaviourRow']);
 	}//end testLookupNormalizeGedragToUppercase()
@@ -157,7 +157,7 @@ class LhsLookupServiceTest extends TestCase {
 		$count = 0;
 		foreach (['A', 'B', 'C', 'D'] as $g) {
 			foreach (['1', '2', '3', '4'] as $v) {
-				$cell = $this->service->lookup(gedrag: $g, gevolg: $v);
+				$cell = $this->service->lookup(behaviour: $g, gevolg: $v);
 				$this->assertNotEmpty(actual: $cell['interventionStep'], message: "Empty interventieStep for {$g}:{$v}");
 				$count++;
 			}

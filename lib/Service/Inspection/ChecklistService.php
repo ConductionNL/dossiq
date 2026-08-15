@@ -689,8 +689,8 @@ class ChecklistService {
 		$payload = [
 			'case' => $caseId,
 			'type' => 'waarschuwing',
-			'ernst' => 'aanzienlijk',
-			'gedrag' => 'onverschillig',
+			'severity' => 'aanzienlijk',
+			'behaviour' => 'onverschillig',
 			'intervention' => 'Suggested by inspection checklist run ' . $runId . ' item ' . $itemId,
 		];
 

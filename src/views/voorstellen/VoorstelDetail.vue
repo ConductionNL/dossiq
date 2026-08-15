@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<CnDetailPage
-			:title="voorstel.onderwerp || t('procest', 'Proposal')"
+			:title="voorstel.subject || t('procest', 'Proposal')"
 			:subtitle="formatType(voorstel.type)"
 			:backRoute="{ name: 'Voorstellen' }"
 			:backLabel="t('procest', 'Back to overview')"
@@ -106,9 +106,7 @@
 				<div class="form-row">
 					<div class="form-group">
 						<label>{{ t('procest', 'Onderwerp') }}</label>
-						<span class="form-value">{{
-							voorstel.onderwerp || '-'
-						}}</span>
+						<span class="form-value">{{ voorstel.subject || '-' }}</span>
 					</div>
 					<div class="form-group">
 						<label>{{ t('procest', 'Type') }}</label>
@@ -133,7 +131,7 @@
 					<div class="form-group">
 						<label>{{ t('procest', 'Portfolio holder') }}</label>
 						<span class="form-value">{{
-							voorstel.portefeuillehouder || '-'
+							voorstel.portfolioHolder || '-'
 						}}</span>
 					</div>
 					<div class="form-group">

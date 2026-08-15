@@ -276,7 +276,7 @@ class StufController extends Controller {
 
 		$messageKind = $this->inspector->detectBerichtSoort(envelopeXml: $rawXml);
 		$crossRef = $this->inspector->extractCrossRefnummer(envelopeXml: $rawXml);
-		$caseId = ($this->stuf->parser->parseBevestiging(responseXml: $rawXml)['zaakIdentificatie'] ?? null);
+		$caseId = ($this->stuf->parser->parseBevestiging(responseXml: $rawXml)['caseIdentification'] ?? null);
 
 		$this->stuf->messageHandler->logInbound(
 			endpoint: $endpoint,
@@ -425,7 +425,7 @@ class StufController extends Controller {
 			newStatus: 'bevestigd',
 			extras: [
 				'responseEnvelopeXml' => $rawXml,
-				'zaakIdentificatie' => ($caseId ?? ($outbound['zaakIdentificatie'] ?? '')),
+				'caseIdentification' => ($caseId ?? ($outbound['zaakIdentificatie'] ?? '')),
 			]
 		);
 	}//end confirmOutbound()

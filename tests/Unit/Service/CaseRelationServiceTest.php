@@ -184,18 +184,18 @@ class CaseRelationServiceTest extends TestCase {
 		];
 		$service = $this->makeService($store);
 
-		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'onderwerp', notes: 'Bezwaar over besluit');
+		$result = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'subject', notes: 'Bezwaar over besluit');
 		$this->assertTrue($result['ok']);
 
 		$aRel = $this->relationsOf($store, 'a');
 		$bRel = $this->relationsOf($store, 'b');
 		$this->assertCount(1, $aRel);
 		$this->assertSame('b', $aRel[0]['caseId']);
-		$this->assertSame('onderwerp', $aRel[0]['aardRelatie']);
+		$this->assertSame('subject', $aRel[0]['aardRelatie']);
 		$this->assertSame('Bezwaar over besluit', $aRel[0]['notes']);
 		$this->assertCount(1, $bRel);
 		$this->assertSame('a', $bRel[0]['caseId']);
-		$this->assertSame('onderwerp', $bRel[0]['aardRelatie']);
+		$this->assertSame('subject', $bRel[0]['aardRelatie']);
 	}//end testAddRelationIsTwoSided()
 
 	/**
@@ -248,7 +248,7 @@ class CaseRelationServiceTest extends TestCase {
 		$this->assertFalse($dup['ok']);
 		$this->assertSame('duplicate', $dup['reason']);
 
-		$other = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'onderwerp');
+		$other = $service->addRelation(caseId: 'a', targetId: 'b', natureRelationship: 'subject');
 		$this->assertTrue($other['ok']);
 		$this->assertCount(2, $this->relationsOf($store, 'a'));
 	}//end testDuplicatePairRejectedDifferentTypeAccepted()
@@ -352,7 +352,7 @@ class CaseRelationServiceTest extends TestCase {
 	public function testNormaliseRestoresSymmetry(): void {
 		// a has a direct (one-sided) relation to b; b has none yet.
 		$store = [
-			'a' => ['id' => 'a', 'relatedCases' => json_encode([['caseId' => 'b', 'aardRelatie' => 'onderwerp']])],
+			'a' => ['id' => 'a', 'relatedCases' => json_encode([['caseId' => 'b', 'aardRelatie' => 'subject']])],
 			'b' => ['id' => 'b'],
 		];
 		$service = $this->makeService($store);
@@ -361,7 +361,7 @@ class CaseRelationServiceTest extends TestCase {
 		$bRel = $this->relationsOf($store, 'b');
 		$this->assertCount(1, $bRel);
 		$this->assertSame('a', $bRel[0]['caseId']);
-		$this->assertSame('onderwerp', $bRel[0]['aardRelatie']);
+		$this->assertSame('subject', $bRel[0]['aardRelatie']);
 	}//end testNormaliseRestoresSymmetry()
 
 	/**

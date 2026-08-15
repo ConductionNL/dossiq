@@ -31,10 +31,10 @@
 
 			<div class="consultation-create-dialog__field">
 				<NcTextField
-					:modelValue="form.onderwerp"
+					:modelValue="form.subject"
 					:label="t('procest', 'Onderwerp')"
 					required
-					@update:modelValue="(v) => (form.onderwerp = v)" />
+					@update:modelValue="(v) => (form.subject = v)" />
 			</div>
 
 			<div class="consultation-create-dialog__field">
@@ -140,7 +140,7 @@ export default {
 			validationError: '',
 			form: {
 				adviceAuthority: '',
-				onderwerp: '',
+				subject: '',
 				question_formulation: '',
 				latestResponseDate: '',
 				priority: 'normaal',
@@ -171,7 +171,7 @@ export default {
 			return (
 				!this.submitting
 				&& this.form.adviceAuthority.trim() !== ''
-				&& this.form.onderwerp.trim() !== ''
+				&& this.form.subject.trim() !== ''
 				&& this.form.question_formulation.trim() !== ''
 				&& this.form.latestResponseDate !== ''
 			)
@@ -189,7 +189,7 @@ export default {
 				this.submitting = false
 				this.form = {
 					adviceAuthority: '',
-					onderwerp: this.parentZaakTitle,
+					subject: this.parentZaakTitle,
 					question_formulation: '',
 					latestResponseDate: this.defaultDeadline,
 					priority: 'normaal',
@@ -208,7 +208,7 @@ export default {
 				)
 				return false
 			}
-			if (this.form.onderwerp.trim() === '') {
+			if (this.form.subject.trim() === '') {
 				this.validationError = this.t('procest', 'Subject is required.')
 				return false
 			}
@@ -234,7 +234,7 @@ export default {
 			this.$emit('created', {
 				parentCase: this.caseId,
 				adviceAuthority: this.form.adviceAuthority.trim(),
-				onderwerp: this.form.onderwerp.trim(),
+				subject: this.form.subject.trim(),
 				question_formulation: this.form.question_formulation.trim(),
 				latestResponseDate: this.form.latestResponseDate,
 				priority: this.form.priority,

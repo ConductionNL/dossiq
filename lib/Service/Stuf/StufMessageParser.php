@@ -65,14 +65,14 @@ class StufMessageParser {
 	 *
 	 * @param string $responseXml The full SOAP envelope XML.
 	 *
-	 * @return array{crossRefnummer:string,zaakIdentificatie:?string,raw:array<string,mixed>}
+	 * @return array{crossRefnummer:string,caseIdentification:?string,raw:array<string,mixed>}
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-response-parsing
 	 */
 	public function parseBevestiging(string $responseXml): array {
 		$xml = $this->safeLoadXml(responseXml: $responseXml);
 		if ($xml === null) {
-			return ['crossRefnummer' => '', 'zaakIdentificatie' => null, 'raw' => []];
+			return ['crossRefnummer' => '', 'caseIdentification' => null, 'raw' => []];
 		}
 
 		$crossRef = $this->firstTextValue(
@@ -103,7 +103,7 @@ class StufMessageParser {
 
 		return [
 			'crossRefnummer' => $crossRef,
-			'zaakIdentificatie' => $caseIdentification,
+			'caseIdentification' => $caseIdentification,
 			'raw' => [],
 		];
 	}//end parseBevestiging()

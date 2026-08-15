@@ -108,7 +108,7 @@ class StufOutboundTransport {
 	 * @param array $message The persisted StufMessage row.
 	 * @param string $role The functie for SOAPAction.
 	 *
-	 * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
+	 * @return array{success:bool,messageId:string,caseIdentification:?string,fout:?array<string,mixed>}
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-outbound-orchestration
 	 */
@@ -131,7 +131,7 @@ class StufOutboundTransport {
 	 * @param string $role The functie.
 	 * @param int $attempt The current attempt number (1-indexed).
 	 *
-	 * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
+	 * @return array{success:bool,messageId:string,caseIdentification:?string,fout:?array<string,mixed>}
 	 *
 	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-circuit-breaker-and-retry
 	 */
@@ -204,7 +204,7 @@ class StufOutboundTransport {
 	 * @param int $duration The round-trip duration in ms.
 	 * @param string $body The response envelope XML.
 	 *
-	 * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
+	 * @return array{success:bool,messageId:string,caseIdentification:?string,fout:?array<string,mixed>}
 	 */
 	private function acceptConfirmation(
 		array $endpoint,
@@ -220,8 +220,8 @@ class StufOutboundTransport {
 			'duurMs' => $duration,
 			'responseEnvelopeXml' => $body,
 		];
-		if (($confirmation['zaakIdentificatie'] ?? null) !== null) {
-			$extras['zaakIdentificatie'] = $confirmation['zaakIdentificatie'];
+		if (($confirmation['caseIdentification'] ?? null) !== null) {
+			$extras['caseIdentification'] = $confirmation['caseIdentification'];
 		}
 
 		$this->messageHandler->transitionStatus(msg: $message, newStatus: 'bevestigd', extras: $extras);
@@ -230,7 +230,7 @@ class StufOutboundTransport {
 		return [
 			'success' => true,
 			'messageId' => $messageId,
-			'zaakIdentificatie' => ($confirmation['zaakIdentificatie'] ?? null),
+			'caseIdentification' => ($confirmation['caseIdentification'] ?? null),
 			'fout' => null,
 		];
 	}//end acceptBevestiging()
@@ -272,13 +272,13 @@ class StufOutboundTransport {
 	 * @param string $messageId The StufMessage id.
 	 * @param array<string, mixed>|null $fout The classified fout.
 	 *
-	 * @return array{success:bool,messageId:string,zaakIdentificatie:?string,fout:?array<string,mixed>}
+	 * @return array{success:bool,messageId:string,caseIdentification:?string,fout:?array<string,mixed>}
 	 */
 	private function failure(string $messageId, ?array $fout): array {
 		return [
 			'success' => false,
 			'messageId' => $messageId,
-			'zaakIdentificatie' => null,
+			'caseIdentification' => null,
 			'fout' => $fout,
 		];
 	}//end failure()

@@ -61,10 +61,10 @@ class VoorstelSubmitGuard implements LifecycleGuardInterface {
 	 * @spec openspec/changes/migrate-status-engine-to-or-lifecycle/tasks.md#P-1.2
 	 */
 	public function check(array $object, string $action, string $userId): GuardResult {
-		$onderwerp = trim((string)($object['onderwerp'] ?? ''));
+		$subject = trim((string)($object['subject'] ?? ''));
 		$type = trim((string)($object['type'] ?? ''));
 
-		if ($onderwerp === '' || $type === '') {
+		if ($subject === '' || $type === '') {
 			return GuardResult::deny(
 				'Het voorstel kan pas in parafering worden gebracht als onderwerp en type zijn ingevuld.'
 			);

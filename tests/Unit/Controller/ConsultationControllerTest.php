@@ -252,7 +252,7 @@ class ConsultationControllerTest extends TestCase {
 		$consultation = [
 			'id' => 'con-uuid',
 			'status' => 'in_behandeling',
-			'onderwerp' => 'Brandveiligheidsadvies',
+			'subject' => 'Brandveiligheidsadvies',
 			'latestResponseDate' => '2026-08-01',
 		];
 

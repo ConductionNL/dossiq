@@ -71,14 +71,14 @@ class ContactBetrokkeneMapper {
 		$data = ($existing ?? [
 			'id' => $this->newId(prefix: 'map'),
 			'bronEntiteit' => 'contact',
-			'bronId' => (string)($contact['id'] ?? ''),
+			'sourceId' => (string)($contact['id'] ?? ''),
 			'endpointId' => (string)($endpoint['id'] ?? ''),
 		]);
 
-		$data['externEntiteit'] = $entiteit;
-		$data['externIdentificatie'] = $involvedParty;
-		$data['laatsteSynchronisatie'] = $this->isoNow();
-		$data['synchronisatieStatus'] = 'in_sync';
+		$data['externalEntity'] = $entiteit;
+		$data['externalIdentification'] = $involvedParty;
+		$data['lastSynchronisation'] = $this->isoNow();
+		$data['synchronisationStatus'] = 'in_sync';
 
 		return $this->register->saveObject(schema: StufRegisterAccess::SCHEMA_MAPPING, data: $data);
 	}//end linkContact()
@@ -101,8 +101,8 @@ class ContactBetrokkeneMapper {
 	 */
 	public function findOrCreateBetrokkene(array $contact, array $endpoint, callable $lookupCallable): string {
 		$existing = $this->getContactMapping(contact: $contact, endpoint: $endpoint);
-		if ($existing !== null && ($existing['externIdentificatie'] ?? '') !== '') {
-			return (string)$existing['externIdentificatie'];
+		if ($existing !== null && ($existing['externalIdentification'] ?? '') !== '') {
+			return (string)$existing['externalIdentification'];
 		}
 
 		$bsn = $this->bsnFromContact(contact: $contact);
@@ -146,7 +146,7 @@ class ContactBetrokkeneMapper {
 			schema: StufRegisterAccess::SCHEMA_MAPPING,
 			filters: [
 				'bronEntiteit' => 'contact',
-				'bronId' => $contactId,
+				'sourceId' => $contactId,
 				'endpointId' => $endpointId,
 			]
 		);

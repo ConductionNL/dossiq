@@ -126,12 +126,12 @@
         "summary": "An agenda item within a council meeting",
         "description": "Represents a single item on the agenda of a meeting. Contains the subject, description, ordering position, and references to the parent meeting and any related documents.",
         "required": [
-          "onderwerp",
+          "subject",
           "sortOrder",
           "vergadering"
         ],
         "properties": {
-          "onderwerp": {
+          "subject": {
             "type": "string",
             "description": "Subject or title of the agenda item",
             "maxLength": 255,
@@ -262,13 +262,13 @@
         "summary": "A vote on a council proposal",
         "description": "Represents a formal vote taken during a council meeting. Contains the subject, result, vote counts, and per-party breakdown of the voting results.",
         "required": [
-          "onderwerp",
+          "subject",
           "result",
           "votesFor",
           "votesAgainst"
         ],
         "properties": {
-          "onderwerp": {
+          "subject": {
             "type": "string",
             "description": "Subject that was voted on",
             "maxLength": 255,
@@ -1070,7 +1070,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250902-01-opening"
         },
-        "onderwerp": "Opening en mededelingen",
+        "subject": "Opening en mededelingen",
         "omschrijving": "De voorzitter opent de vergadering en deelt de mededelingen.",
         "sortOrder": 1,
         "vergadering": "raadsvergadering-2025-09-02"
@@ -1081,7 +1081,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250902-02-agenda"
         },
-        "onderwerp": "Vaststelling agenda",
+        "subject": "Vaststelling agenda",
         "omschrijving": "De raad stelt de agenda voor deze vergadering vast.",
         "sortOrder": 2,
         "vergadering": "raadsvergadering-2025-09-02"
@@ -1092,7 +1092,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250902-03-vragenuur"
         },
-        "onderwerp": "Vragenuur",
+        "subject": "Vragenuur",
         "omschrijving": "Raadsleden kunnen mondeling vragen stellen aan het college van burgemeester en wethouders.",
         "sortOrder": 3,
         "vergadering": "raadsvergadering-2025-09-02"
@@ -1103,7 +1103,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250902-04-herinrichting-marktplein"
         },
-        "onderwerp": "Voorstel: Herinrichting marktplein",
+        "subject": "Voorstel: Herinrichting marktplein",
         "omschrijving": "Het college stelt voor om het marktplein in het centrum van Voorbeeldstad opnieuw in te richten met meer groen, autoluwe zones en nieuwe terrassen. Het totale budget bedraagt 2,3 miljoen euro. De oppositie heeft een amendement ingediend om het ontwerp aan te passen.",
         "sortOrder": 4,
         "vergadering": "raadsvergadering-2025-09-02",
@@ -1119,7 +1119,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250902-05-subsidie-duurzame-energie"
         },
-        "onderwerp": "Voorstel: Subsidieregeling duurzame energie",
+        "subject": "Voorstel: Subsidieregeling duurzame energie",
         "omschrijving": "Voorstel tot vaststelling van een gemeentelijke subsidieregeling voor woningeigenaren die zonnepanelen, warmtepompen of isolatie willen aanschaffen. Totaal beschikbaar budget: 500.000 euro voor 2025-2026.",
         "sortOrder": 5,
         "vergadering": "raadsvergadering-2025-09-02",
@@ -1133,7 +1133,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250902-06-bestemmingsplan"
         },
-        "onderwerp": "Voorstel: Bestemmingsplan buitengebied",
+        "subject": "Voorstel: Bestemmingsplan buitengebied",
         "omschrijving": "Vaststelling van het gewijzigde bestemmingsplan voor het buitengebied van Voorbeeldstad. Het plan maakt beperkte woningbouw mogelijk op drie locaties aan de dorpsrand, met behoud van het groene karakter.",
         "sortOrder": 6,
         "vergadering": "raadsvergadering-2025-09-02",
@@ -1148,7 +1148,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250902-07-ingekomen-stukken"
         },
-        "onderwerp": "Ingekomen stukken",
+        "subject": "Ingekomen stukken",
         "omschrijving": "Behandeling van de ingekomen brieven en stukken van het college, inwoners en externe partijen.",
         "sortOrder": 7,
         "vergadering": "raadsvergadering-2025-09-02",
@@ -1162,7 +1162,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250902-08-sluiting"
         },
-        "onderwerp": "Sluiting",
+        "subject": "Sluiting",
         "omschrijving": "De voorzitter sluit de vergadering.",
         "sortOrder": 8,
         "vergadering": "raadsvergadering-2025-09-02"
@@ -1173,7 +1173,7 @@
           "schema": "agendapunt",
           "slug": "cie-ms-20250911-01-opening"
         },
-        "onderwerp": "Opening",
+        "subject": "Opening",
         "omschrijving": "De voorzitter opent de commissievergadering.",
         "sortOrder": 1,
         "vergadering": "commissie-mens-samenleving-2025-09-11"
@@ -1184,7 +1184,7 @@
           "schema": "agendapunt",
           "slug": "cie-ms-20250911-02-jeugdzorg"
         },
-        "onderwerp": "Bespreking: Stand van zaken jeugdzorg",
+        "subject": "Bespreking: Stand van zaken jeugdzorg",
         "omschrijving": "Bespreking van de brief van het college over de ontwikkelingen in de jeugdzorg. De wachtlijsten zijn opgelopen en het college wordt gevraagd maatregelen te treffen.",
         "sortOrder": 2,
         "vergadering": "commissie-mens-samenleving-2025-09-11",
@@ -1198,7 +1198,7 @@
           "schema": "agendapunt",
           "slug": "cie-ms-20250911-03-wmo"
         },
-        "onderwerp": "Bespreking: Evaluatie Wmo-beleid 2024",
+        "subject": "Bespreking: Evaluatie Wmo-beleid 2024",
         "omschrijving": "Evaluatie van het Wmo-beleid over het afgelopen jaar. Aandachtspunten zijn de toegankelijkheid van voorzieningen en de eigen bijdrage.",
         "sortOrder": 3,
         "vergadering": "commissie-mens-samenleving-2025-09-11"
@@ -1209,7 +1209,7 @@
           "schema": "agendapunt",
           "slug": "cie-ms-20250911-04-sluiting"
         },
-        "onderwerp": "Sluiting",
+        "subject": "Sluiting",
         "omschrijving": "De voorzitter sluit de commissievergadering.",
         "sortOrder": 4,
         "vergadering": "commissie-mens-samenleving-2025-09-11"
@@ -1220,7 +1220,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250916-01-opening"
         },
-        "onderwerp": "Opening en mededelingen",
+        "subject": "Opening en mededelingen",
         "sortOrder": 1,
         "vergadering": "raadsvergadering-2025-09-16"
       },
@@ -1230,7 +1230,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250916-02-notulen"
         },
-        "onderwerp": "Vaststelling notulen raadsvergadering 2 september 2025",
+        "subject": "Vaststelling notulen raadsvergadering 2 september 2025",
         "omschrijving": "De raad stelt de notulen van de vorige vergadering vast.",
         "sortOrder": 2,
         "vergadering": "raadsvergadering-2025-09-16",
@@ -1244,7 +1244,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250916-03-vuurwerkverbod"
         },
-        "onderwerp": "Motie: Vuurwerkverbod jaarwisseling",
+        "subject": "Motie: Vuurwerkverbod jaarwisseling",
         "omschrijving": "Groen Links Voorbeeldstad dient een motie in om een gemeentelijk vuurwerkverbod in te stellen voor de komende jaarwisseling. De motie vraagt het college om een verbod voor te bereiden en alternatief entertainment te organiseren.",
         "sortOrder": 3,
         "vergadering": "raadsvergadering-2025-09-16",
@@ -1258,7 +1258,7 @@
           "schema": "agendapunt",
           "slug": "raad-20250916-04-sluiting"
         },
-        "onderwerp": "Sluiting",
+        "subject": "Sluiting",
         "sortOrder": 4,
         "vergadering": "raadsvergadering-2025-09-16"
       },
@@ -1268,7 +1268,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251007-01-opening"
         },
-        "onderwerp": "Opening en mededelingen",
+        "subject": "Opening en mededelingen",
         "sortOrder": 1,
         "vergadering": "raadsvergadering-2025-10-07"
       },
@@ -1278,7 +1278,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251007-02-jaarrekening"
         },
-        "onderwerp": "Vaststelling jaarrekening 2024",
+        "subject": "Vaststelling jaarrekening 2024",
         "omschrijving": "De raad behandelt de jaarrekening over het boekjaar 2024. De accountant heeft een goedkeurende verklaring afgegeven.",
         "sortOrder": 2,
         "vergadering": "raadsvergadering-2025-10-07",
@@ -1292,7 +1292,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251007-03-sluiting"
         },
-        "onderwerp": "Sluiting",
+        "subject": "Sluiting",
         "sortOrder": 3,
         "vergadering": "raadsvergadering-2025-10-07"
       },
@@ -1302,7 +1302,7 @@
           "schema": "agendapunt",
           "slug": "cie-re-20251009-01-opening"
         },
-        "onderwerp": "Opening",
+        "subject": "Opening",
         "sortOrder": 1,
         "vergadering": "commissie-ruimte-economie-2025-10-09"
       },
@@ -1312,7 +1312,7 @@
           "schema": "agendapunt",
           "slug": "cie-re-20251009-02-woningbouw"
         },
-        "onderwerp": "Bespreking: Woningbouwmonitor Voorbeeldstad",
+        "subject": "Bespreking: Woningbouwmonitor Voorbeeldstad",
         "omschrijving": "Bespreking van de halfjaarlijkse woningbouwmonitor. Er is een tekort van 1.200 woningen. Het college wordt gevraagd om versnellingsmaatregelen.",
         "sortOrder": 2,
         "vergadering": "commissie-ruimte-economie-2025-10-09",
@@ -1326,7 +1326,7 @@
           "schema": "agendapunt",
           "slug": "cie-re-20251009-03-sluiting"
         },
-        "onderwerp": "Sluiting",
+        "subject": "Sluiting",
         "sortOrder": 3,
         "vergadering": "commissie-ruimte-economie-2025-10-09"
       },
@@ -1336,7 +1336,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251021-01-opening"
         },
-        "onderwerp": "Opening",
+        "subject": "Opening",
         "omschrijving": "De voorzitter opent de begrotingsvergadering.",
         "sortOrder": 1,
         "vergadering": "raadsvergadering-2025-10-21"
@@ -1347,7 +1347,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251021-02-algemene-beschouwingen"
         },
-        "onderwerp": "Algemene beschouwingen",
+        "subject": "Algemene beschouwingen",
         "omschrijving": "Alle fracties geven hun visie op de begroting en het beleid van het college voor het komende jaar.",
         "sortOrder": 2,
         "vergadering": "raadsvergadering-2025-10-21"
@@ -1358,7 +1358,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251021-03-programmabegroting"
         },
-        "onderwerp": "Programmabegroting 2026",
+        "subject": "Programmabegroting 2026",
         "omschrijving": "Behandeling en vaststelling van de programmabegroting 2026 van de gemeente Voorbeeldstad. Totale begroting: 89 miljoen euro.",
         "sortOrder": 3,
         "vergadering": "raadsvergadering-2025-10-21"
@@ -1369,7 +1369,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251021-04-motie-jeugdzorg"
         },
-        "onderwerp": "Motie: Extra budget jeugdzorg",
+        "subject": "Motie: Extra budget jeugdzorg",
         "omschrijving": "Voorbeeldstad Vooruit en Groen Links Voorbeeldstad dienen een motie in om 750.000 euro extra budget vrij te maken voor jeugdzorg om de wachtlijsten terug te dringen.",
         "sortOrder": 4,
         "vergadering": "raadsvergadering-2025-10-21",
@@ -1383,7 +1383,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251021-05-amendement-ozb"
         },
-        "onderwerp": "Amendement: Verlaging OZB",
+        "subject": "Amendement: Verlaging OZB",
         "omschrijving": "Lokaal Belang en VVD Voorbeeldstad dienen een amendement in om de OZB-verhoging van 5% terug te brengen naar 2%, conform het inflatieniveau.",
         "sortOrder": 5,
         "vergadering": "raadsvergadering-2025-10-21",
@@ -1397,7 +1397,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251021-06-motie-woningbouw"
         },
-        "onderwerp": "Motie: Onderzoek woningbouw",
+        "subject": "Motie: Onderzoek woningbouw",
         "omschrijving": "PvdA Voorbeeldstad dient een motie in om een extern onderzoek te laten uitvoeren naar mogelijkheden voor versnelling van de woningbouwopgave in Voorbeeldstad.",
         "sortOrder": 6,
         "vergadering": "raadsvergadering-2025-10-21",
@@ -1411,7 +1411,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251021-07-sluiting"
         },
-        "onderwerp": "Sluiting",
+        "subject": "Sluiting",
         "sortOrder": 7,
         "vergadering": "raadsvergadering-2025-10-21"
       },
@@ -1421,7 +1421,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251104-01-opening"
         },
-        "onderwerp": "Opening en mededelingen",
+        "subject": "Opening en mededelingen",
         "sortOrder": 1,
         "vergadering": "raadsvergadering-2025-11-04"
       },
@@ -1431,7 +1431,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251104-02-notulen"
         },
-        "onderwerp": "Vaststelling notulen begrotingsbehandeling 21 oktober 2025",
+        "subject": "Vaststelling notulen begrotingsbehandeling 21 oktober 2025",
         "sortOrder": 2,
         "vergadering": "raadsvergadering-2025-11-04",
         "attachments": [
@@ -1444,7 +1444,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251104-03-sluiting"
         },
-        "onderwerp": "Sluiting",
+        "subject": "Sluiting",
         "sortOrder": 3,
         "vergadering": "raadsvergadering-2025-11-04"
       },
@@ -1454,7 +1454,7 @@
           "schema": "agendapunt",
           "slug": "cie-bf-20251113-01-opening"
         },
-        "onderwerp": "Opening",
+        "subject": "Opening",
         "sortOrder": 1,
         "vergadering": "commissie-bestuur-financien-2025-11-13"
       },
@@ -1464,7 +1464,7 @@
           "schema": "agendapunt",
           "slug": "cie-bf-20251113-02-ict-aanbesteding"
         },
-        "onderwerp": "Bespreking: ICT-aanbesteding gemeentelijke dienstverlening",
+        "subject": "Bespreking: ICT-aanbesteding gemeentelijke dienstverlening",
         "omschrijving": "Het college informeert de commissie over de voortgang van de ICT-aanbesteding voor de modernisering van de gemeentelijke dienstverlening. Het betreft een meerjarig contract van 1,2 miljoen euro.",
         "sortOrder": 2,
         "vergadering": "commissie-bestuur-financien-2025-11-13"
@@ -1475,7 +1475,7 @@
           "schema": "agendapunt",
           "slug": "cie-bf-20251113-03-sluiting"
         },
-        "onderwerp": "Sluiting",
+        "subject": "Sluiting",
         "sortOrder": 3,
         "vergadering": "commissie-bestuur-financien-2025-11-13"
       },
@@ -1485,7 +1485,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251202-01-opening"
         },
-        "onderwerp": "Opening en mededelingen",
+        "subject": "Opening en mededelingen",
         "sortOrder": 1,
         "vergadering": "raadsvergadering-2025-12-02"
       },
@@ -1495,7 +1495,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251202-02-decembercirculaire"
         },
-        "onderwerp": "Bespreking: Decembercirculaire gemeentefonds",
+        "subject": "Bespreking: Decembercirculaire gemeentefonds",
         "omschrijving": "Bespreking van de gevolgen van de decembercirculaire van het gemeentefonds voor de begroting van Voorbeeldstad.",
         "sortOrder": 2,
         "vergadering": "raadsvergadering-2025-12-02"
@@ -1506,7 +1506,7 @@
           "schema": "agendapunt",
           "slug": "raad-20251202-03-sluiting"
         },
-        "onderwerp": "Sluiting",
+        "subject": "Sluiting",
         "sortOrder": 3,
         "vergadering": "raadsvergadering-2025-12-02"
       },
@@ -1516,7 +1516,7 @@
           "schema": "agendapunt",
           "slug": "raad-20260114-01-opening"
         },
-        "onderwerp": "Opening en nieuwjaarstoespraak",
+        "subject": "Opening en nieuwjaarstoespraak",
         "omschrijving": "De burgemeester opent het nieuwe raadsjaar met een nieuwjaarstoespraak.",
         "sortOrder": 1,
         "vergadering": "raadsvergadering-2026-01-14"
@@ -1527,7 +1527,7 @@
           "schema": "agendapunt",
           "slug": "raad-20260114-02-werkprogramma"
         },
-        "onderwerp": "Vaststelling werkprogramma raad 2026",
+        "subject": "Vaststelling werkprogramma raad 2026",
         "omschrijving": "De raad stelt het werkprogramma vast voor het kalenderjaar 2026, inclusief de vergaderplanning en de aandachtspunten per commissie.",
         "sortOrder": 2,
         "vergadering": "raadsvergadering-2026-01-14"
@@ -1538,7 +1538,7 @@
           "schema": "agendapunt",
           "slug": "raad-20260114-03-sluiting"
         },
-        "onderwerp": "Sluiting",
+        "subject": "Sluiting",
         "sortOrder": 3,
         "vergadering": "raadsvergadering-2026-01-14"
       },
@@ -1758,7 +1758,7 @@
           "schema": "stemming",
           "slug": "stemming-herinrichting-marktplein"
         },
-        "onderwerp": "Voorstel: Herinrichting marktplein Voorbeeldstad",
+        "subject": "Voorstel: Herinrichting marktplein Voorbeeldstad",
         "type": "voorstel",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-04-herinrichting-marktplein",
@@ -1814,7 +1814,7 @@
           "schema": "stemming",
           "slug": "stemming-subsidieregeling-duurzame-energie"
         },
-        "onderwerp": "Voorstel: Subsidieregeling duurzame energie 2025-2026",
+        "subject": "Voorstel: Subsidieregeling duurzame energie 2025-2026",
         "type": "voorstel",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-05-subsidie-duurzame-energie",
@@ -1870,7 +1870,7 @@
           "schema": "stemming",
           "slug": "stemming-motie-extra-budget-jeugdzorg"
         },
-        "onderwerp": "Motie: Extra budget jeugdzorg",
+        "subject": "Motie: Extra budget jeugdzorg",
         "type": "motie",
         "result": "aangenomen",
         "agendapunt": "raad-20251021-04-motie-jeugdzorg",
@@ -1926,7 +1926,7 @@
           "schema": "stemming",
           "slug": "stemming-amendement-verlaging-ozb"
         },
-        "onderwerp": "Amendement: Verlaging OZB-verhoging van 5% naar 2%",
+        "subject": "Amendement: Verlaging OZB-verhoging van 5% naar 2%",
         "type": "amendement",
         "result": "verworpen",
         "agendapunt": "raad-20251021-05-amendement-ozb",
@@ -1982,7 +1982,7 @@
           "schema": "stemming",
           "slug": "stemming-motie-onderzoek-woningbouw"
         },
-        "onderwerp": "Motie: Onderzoek versnelling woningbouw",
+        "subject": "Motie: Onderzoek versnelling woningbouw",
         "type": "motie",
         "result": "aangenomen",
         "agendapunt": "raad-20251021-06-motie-woningbouw",
@@ -2038,7 +2038,7 @@
           "schema": "stemming",
           "slug": "stemming-bestemmingsplan-buitengebied"
         },
-        "onderwerp": "Voorstel: Bestemmingsplan buitengebied Voorbeeldstad",
+        "subject": "Voorstel: Bestemmingsplan buitengebied Voorbeeldstad",
         "type": "voorstel",
         "result": "aangenomen",
         "agendapunt": "raad-20250902-06-bestemmingsplan",

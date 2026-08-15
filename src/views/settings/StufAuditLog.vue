@@ -224,7 +224,7 @@ export default {
 				'httpStatus',
 				'durationMs',
 				'referenceNumber',
-				'zaakIdentificatie',
+				'caseIdentification',
 			]
 			const lines = [headers.join(',')]
 			for (const row of this.messages) {
