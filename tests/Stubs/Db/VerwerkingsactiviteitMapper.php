@@ -71,7 +71,7 @@ class VerwerkingsactiviteitMapper {
 	 */
 	public function insert(Verwerkingsactiviteit $entity): Verwerkingsactiviteit {
 		if ($entity->getStatus() === null || $entity->getStatus() === '') {
-			$entity->setStatus('concept');
+			$entity->setStatus('draft');
 		}
 
 		$this->store[(string)$entity->getCode()] = $entity;

@@ -50,10 +50,10 @@ class BewijsstukService {
 	 * @var array<string, array<int, string>>
 	 */
 	public const TYPE_WHITELIST = [
-		'aanvraag' => ['aanvraagdocument', 'budget', 'projectplan', 'cofinancieringsverklaring', 'ander'],
-		'tussenrapportage' => ['voortgangsrapport', 'urenstaat', 'factuur', 'bankafschrift', 'deelnemerslijst', 'ander'],
-		'vaststelling' => ['eindrapport', 'accountantsverklaring', 'factuur', 'bankafschrift', 'ander'],
-		'verplichtingsbewijs' => ['deelnemerslijst', 'urenstaat', 'factuur', 'ander'],
+		'request' => ['aanvraagdocument', 'budget', 'projectplan', 'cofinancieringsverklaring', 'ander'],
+		'interimReport' => ['voortgangsrapport', 'timesheet', 'invoice', 'bankafschrift', 'deelnemerslijst', 'ander'],
+		'determination' => ['eindrapport', 'auditorsStatement', 'invoice', 'bankafschrift', 'ander'],
+		'verplichtingsbewijs' => ['deelnemerslijst', 'timesheet', 'invoice', 'ander'],
 	];
 
 	/**
@@ -62,9 +62,9 @@ class BewijsstukService {
 	 * @var array<string, int>
 	 */
 	public const DEFAULT_BEWAARTERMIJN = [
-		'aanvraag' => 7,
-		'tussenrapportage' => 7,
-		'vaststelling' => 10,
+		'request' => 7,
+		'interimReport' => 7,
+		'determination' => 10,
 		'verplichtingsbewijs' => 7,
 	];
 
@@ -177,8 +177,8 @@ class BewijsstukService {
 			[
 				'retentionPeriodYears' => $jaren,
 				'retentionPeriodEnd' => $this->bewaartermijnEinde(from: $now, jaren: $jaren)->format('Y-m-d'),
-				'archiveStatus' => 'actief',
-				'immutable' => ($linkedIn === 'vaststelling'),
+				'archiveStatus' => 'active',
+				'immutable' => ($linkedIn === 'determination'),
 			]
 		);
 		if ($contents !== null) {

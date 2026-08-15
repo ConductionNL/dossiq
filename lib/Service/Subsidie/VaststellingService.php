@@ -129,7 +129,7 @@ class VaststellingService {
 	/**
 	 * Finalise a settlement: persist the vastgesteld bedrag and, when the
 	 * advances exceed it, open a clawback case for the difference. The
-	 * clawback case itself is created in "concept" awaiting manager
+	 * clawback case itself is created in "draft" awaiting manager
 	 * approval — this method never publishes it.
 	 *
 	 * @param string $determinationId The settlement id.
@@ -159,7 +159,7 @@ class VaststellingService {
 			'determinedAmount' => $determined,
 			'recoveryTrigger' => $trigger,
 			'vaststellingsbeschikkingGenerated' => true,
-			'status' => 'vastgesteld',
+			'status' => 'determined',
 		];
 
 		try {
@@ -193,7 +193,7 @@ class VaststellingService {
 		// where it was always authoritative; the `kosten` copy was a
 		// denormalisation for a report that no longer exists.
 		return [
-			'vaststelling' => $saved,
+			'determination' => $saved,
 			'terugvordering' => $clawback,
 		];
 	}//end finalize()

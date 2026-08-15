@@ -54,11 +54,11 @@ class DecisionValidator {
 	 * @var array<int, string>
 	 */
 	public const VALID_DISPOSITIONS = [
-		'niet_ontvankelijk',
-		'ongegrond',
-		'gegrond_handhaven',
-		'gegrond_herroepen',
-		'gegrond_wijzigen',
+		'inadmissible',
+		'dismissed',
+		'upheld_maintain',
+		'upheld_revoke',
+		'upheld_amend',
 	];
 
 	/**
@@ -67,8 +67,8 @@ class DecisionValidator {
 	 * @var array<int, string>
 	 */
 	private const REPLACEMENT_ALLOWED = [
-		'gegrond_herroepen',
-		'gegrond_wijzigen',
+		'upheld_revoke',
+		'upheld_amend',
 	];
 
 	/**
@@ -78,8 +78,8 @@ class DecisionValidator {
 	 * @var array<int, string>
 	 */
 	private const PROCESKOSTEN_ELIGIBLE = [
-		'gegrond_herroepen',
-		'gegrond_wijzigen',
+		'upheld_revoke',
+		'upheld_amend',
 	];
 
 	/**
@@ -156,10 +156,10 @@ class DecisionValidator {
 
 		// REQ-BD-3: gegrond_wijzigen requires replacementDecision.
 		$replacement = (string)($decision['replacementDecision'] ?? '');
-		if ($disposition === 'gegrond_wijzigen' && $replacement === '') {
+		if ($disposition === 'upheld_amend' && $replacement === '') {
 			throw new RuntimeException(
 				'replacementDecision is required when disposition is '
-				. 'gegrond_wijzigen'
+				. 'upheld_amend'
 			);
 		}
 
@@ -217,7 +217,7 @@ class DecisionValidator {
 		}
 
 		$method = (string)$appealNotice['filingMethod'];
-		if (in_array($method, ['digitaal', 'beide'], true) === true) {
+		if (in_array($method, ['digitaal', 'both'], true) === true) {
 			$url = (string)($appealNotice['filingUrl'] ?? '');
 			if ($url === '') {
 				throw new RuntimeException(
@@ -226,7 +226,7 @@ class DecisionValidator {
 			}
 		}
 
-		if (in_array($method, ['schriftelijk', 'beide'], true) === true) {
+		if (in_array($method, ['schriftelijk', 'both'], true) === true) {
 			$address = (string)($appealNotice['filingAddress'] ?? '');
 			if ($address === '') {
 				throw new RuntimeException(

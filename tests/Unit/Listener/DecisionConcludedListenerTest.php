@@ -243,7 +243,7 @@ class DecisionConcludedListenerTest extends TestCase {
 			'dec-1',
 			'contract-renewal',
 			$status,
-			'verleend',
+			'granted',
 			false,
 			null,
 			[],

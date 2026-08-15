@@ -126,7 +126,7 @@ class CaseVoorbladService {
 		foreach ((array)$results as $result) {
 			$case = $this->toArray(result: $result);
 			$status = strtolower((string)($case['status'] ?? ''));
-			if (in_array($status, ['afgehandeld', 'gesloten', 'afgesloten'], true) === true) {
+			if (in_array($status, ['handled', 'gesloten', 'closed'], true) === true) {
 				continue;
 			}
 

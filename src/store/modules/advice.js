@@ -29,7 +29,7 @@ export const useAdviceStore = defineStore('advice', {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		pendingRequests(state) {
-			return state.requests.filter((r) => r.status === 'aangevraagd')
+			return state.requests.filter((r) => r.status === 'requested')
 		},
 
 		/**
@@ -45,7 +45,7 @@ export const useAdviceStore = defineStore('advice', {
 		overdueRequests(state) {
 			const now = new Date()
 			return state.requests.filter((r) => {
-				if (r.status !== 'aangevraagd' || !r.deadline) {
+				if (r.status !== 'requested' || !r.deadline) {
 					return false
 				}
 				return new Date(r.deadline) < now
@@ -63,7 +63,7 @@ export const useAdviceStore = defineStore('advice', {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		receivedRequests(state) {
-			return state.requests.filter((r) => r.status === 'ontvangen')
+			return state.requests.filter((r) => r.status === 'received')
 		},
 
 		/**
@@ -80,7 +80,7 @@ export const useAdviceStore = defineStore('advice', {
 			return (
 				state.requests.length > 0
 				&& state.requests.every(
-					(r) => r.status === 'ontvangen' || r.status === 'verlopen',
+					(r) => r.status === 'received' || r.status === 'expired',
 				)
 			)
 		},
@@ -137,7 +137,7 @@ export const useAdviceStore = defineStore('advice', {
 				const objectStore = useObjectStore()
 				const saved = await objectStore.saveObject('adviesAanvraag', {
 					...requestData,
-					status: 'aangevraagd',
+					status: 'requested',
 					requestedAt: new Date().toISOString(),
 				})
 				this.requests.push(saved)
@@ -187,7 +187,7 @@ export const useAdviceStore = defineStore('advice', {
 				const objectStore = useObjectStore()
 				const updated = await objectStore.saveObject('adviesAanvraag', {
 					...request,
-					status: 'ontvangen',
+					status: 'received',
 					receivedAt: new Date().toISOString(),
 					adviceDocument: documentId || request.adviceDocument,
 				})
@@ -226,7 +226,7 @@ export const useAdviceStore = defineStore('advice', {
 				const objectStore = useObjectStore()
 				const updated = await objectStore.saveObject('adviesAanvraag', {
 					...request,
-					status: 'verlopen',
+					status: 'expired',
 				})
 
 				// Create task for behandelaar

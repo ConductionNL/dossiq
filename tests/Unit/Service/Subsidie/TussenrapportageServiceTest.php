@@ -66,7 +66,7 @@ class TussenrapportageServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testPeriodsJaarlijks(): void {
-		$periods = $this->service->periodsForFrequentie('jaarlijks', 2026);
+		$periods = $this->service->periodsForFrequentie('annually', 2026);
 		$this->assertCount(1, $periods);
 		$this->assertSame('2026-01-01', $periods[0]['start']);
 		$this->assertSame('2026-12-31', $periods[0]['eind']);
@@ -86,7 +86,7 @@ class TussenrapportageServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testPeriodsNoneForMilestoneOrGeen(): void {
-		$this->assertSame([], $this->service->periodsForFrequentie('op_mijlpaal', 2026));
-		$this->assertSame([], $this->service->periodsForFrequentie('geen', 2026));
+		$this->assertSame([], $this->service->periodsForFrequentie('on_milestone', 2026));
+		$this->assertSame([], $this->service->periodsForFrequentie('none', 2026));
 	}//end testPeriodsNoneForMilestoneOrGeen()
 }//end class

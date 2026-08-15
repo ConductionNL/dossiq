@@ -159,7 +159,7 @@ export default {
 		},
 
 		isActive(voorstel) {
-			return !['besloten', 'gearchiveerd'].includes(voorstel.status)
+			return !['besloten', 'archived'].includes(voorstel.status)
 		},
 
 		/**

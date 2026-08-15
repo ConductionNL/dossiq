@@ -108,7 +108,7 @@ class SubsidieRegisterController extends Controller {
 
 		try {
 			$beschikkingen = $objectService->findAll(
-				['filters' => ['register' => (int)$register, 'schema' => (int)$decisionSchema, 'status' => 'verleend']]
+				['filters' => ['register' => (int)$register, 'schema' => (int)$decisionSchema, 'status' => 'granted']]
 			);
 		} catch (Throwable $e) {
 			return [];

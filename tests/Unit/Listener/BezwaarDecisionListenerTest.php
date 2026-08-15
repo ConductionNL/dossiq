@@ -54,7 +54,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 	 *
 	 * @var string
 	 */
-	private const PROTECTED_STATUS = 'Beslissing op bezwaar';
+	private const PROTECTED_STATUS = 'Decision on objection';
 
 	/**
 	 * Mocked settings/OpenRegister bridge.
@@ -248,7 +248,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 		$listener->handle(
 			$this->event(
 				$this->objectionOnProtectedStatus(),
-				['status' => 'In behandeling']
+				['status' => 'In handling']
 			)
 		);
 
@@ -279,7 +279,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 		$listener->handle(
 			$this->event(
 				$this->objectionOnProtectedStatus(),
-				['status' => 'In behandeling']
+				['status' => 'In handling']
 			)
 		);
 
@@ -298,17 +298,17 @@ class BezwaarDecisionListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testRevertsWhenNoDecidedDecisionExists(): void {
-		$listener = $this->listener($this->objectService([['status' => 'concept']]));
+		$listener = $this->listener($this->objectService([['status' => 'draft']]));
 
 		$listener->handle(
 			$this->event(
 				$this->objectionOnProtectedStatus(),
-				['status' => 'In behandeling']
+				['status' => 'In handling']
 			)
 		);
 
 		$this->assertNotNull($this->capturedSave, 'the guard did not revert');
-		$this->assertSame(['status' => 'In behandeling'], $this->capturedSave['object']);
+		$this->assertSame(['status' => 'In handling'], $this->capturedSave['object']);
 		$this->assertSame('bezwaar-1', $this->capturedSave['uuid']);
 		$this->assertSame('bezwaar', $this->capturedSave['schema']);
 	}//end testRevertsWhenNoDecidedDecisionExists()
@@ -325,7 +325,7 @@ class BezwaarDecisionListenerTest extends TestCase {
 		$listener->handle(
 			$this->event(
 				$this->objectionOnProtectedStatus(),
-				['status' => 'In behandeling']
+				['status' => 'In handling']
 			)
 		);
 
@@ -340,13 +340,13 @@ class BezwaarDecisionListenerTest extends TestCase {
 	 * @return void
 	 */
 	public function testFailsOpenWhenTheProbeHitsItsBound(): void {
-		$undecided = array_fill(0, 100, ['status' => 'concept']);
+		$undecided = array_fill(0, 100, ['status' => 'draft']);
 		$listener = $this->listener($this->objectService($undecided));
 
 		$listener->handle(
 			$this->event(
 				$this->objectionOnProtectedStatus(),
-				['status' => 'In behandeling']
+				['status' => 'In handling']
 			)
 		);
 
@@ -369,9 +369,9 @@ class BezwaarDecisionListenerTest extends TestCase {
 				[
 					'id' => 'bezwaar-1',
 					'@self' => ['schema' => 'bezwaar'],
-					'status' => 'In behandeling',
+					'status' => 'In handling',
 				],
-				['status' => 'Ontvangen']
+				['status' => 'Received']
 			)
 		);
 

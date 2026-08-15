@@ -188,7 +188,7 @@ export default {
 		 */
 		statusLabel(status) {
 			switch (status) {
-				case 'concept':
+				case 'draft':
 					return t('procest', 'Draft (awaiting FG review)')
 				case 'published':
 					return t('procest', 'Published')

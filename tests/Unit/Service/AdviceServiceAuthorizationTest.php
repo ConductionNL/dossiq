@@ -130,7 +130,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 		'advisor' => 'alice',
 		'case' => 'case-1',
 		'subject' => 'Kapvergunning',
-		'status' => 'aangevraagd',
+		'status' => 'requested',
 	];
 
 	/**
@@ -235,7 +235,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('Advice request not accessible');
 
-		$this->service->transitionStatus('advice-1', 'ontvangen');
+		$this->service->transitionStatus('advice-1', 'received');
 	}//end testUnrelatedUserIsRejectedFromMarkingAdviceReceived()
 
 	/**
@@ -249,11 +249,11 @@ class AdviceServiceAuthorizationTest extends TestCase {
 
 		$this->objectService->expects($this->once())
 			->method('saveObject')
-			->willReturn(['id' => 'advice-1', 'status' => 'ontvangen']);
+			->willReturn(['id' => 'advice-1', 'status' => 'received']);
 
-		$result = $this->service->transitionStatus('advice-1', 'ontvangen');
+		$result = $this->service->transitionStatus('advice-1', 'received');
 
-		$this->assertSame('ontvangen', $result['status']);
+		$this->assertSame('received', $result['status']);
 	}//end testAssignedAdviseurMayMarkAdviceReceived()
 
 	/**
@@ -267,11 +267,11 @@ class AdviceServiceAuthorizationTest extends TestCase {
 
 		$this->objectService->expects($this->once())
 			->method('saveObject')
-			->willReturn(['id' => 'advice-1', 'status' => 'ontvangen']);
+			->willReturn(['id' => 'advice-1', 'status' => 'received']);
 
-		$result = $this->service->transitionStatus('advice-1', 'ontvangen');
+		$result = $this->service->transitionStatus('advice-1', 'received');
 
-		$this->assertSame('ontvangen', $result['status']);
+		$this->assertSame('received', $result['status']);
 	}//end testAdminMayMarkAdviceReceived()
 
 	/**
@@ -285,11 +285,11 @@ class AdviceServiceAuthorizationTest extends TestCase {
 
 		$this->objectService->expects($this->once())
 			->method('saveObject')
-			->willReturn(['id' => 'advice-1', 'status' => 'aangevraagd']);
+			->willReturn(['id' => 'advice-1', 'status' => 'requested']);
 
-		$result = $this->service->transitionStatus('advice-1', 'aangevraagd');
+		$result = $this->service->transitionStatus('advice-1', 'requested');
 
-		$this->assertSame('aangevraagd', $result['status']);
+		$this->assertSame('requested', $result['status']);
 	}//end testCaseHandlerMayRequestAdvice()
 
 	/**
@@ -304,7 +304,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 		$this->objectService->expects($this->never())->method('saveObject');
 
 		$this->expectException(RuntimeException::class);
-		$this->service->transitionStatus('advice-1', 'aangevraagd');
+		$this->service->transitionStatus('advice-1', 'requested');
 	}//end testUnrelatedUserIsRejectedFromRequestingAdvice()
 
 	/**
@@ -320,7 +320,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 		$this->objectService->expects($this->never())->method('saveObject');
 
 		$this->expectException(RuntimeException::class);
-		$this->service->transitionStatus('advice-1', 'verlopen');
+		$this->service->transitionStatus('advice-1', 'expired');
 	}//end testExpiryTransitionIsRejectedOverTheHttpPath()
 
 	/**
@@ -336,11 +336,11 @@ class AdviceServiceAuthorizationTest extends TestCase {
 
 		$this->objectService->expects($this->once())
 			->method('saveObject')
-			->willReturn(['id' => 'advice-1', 'status' => 'verlopen']);
+			->willReturn(['id' => 'advice-1', 'status' => 'expired']);
 
 		$result = $this->service->expireAdvice('advice-1');
 
-		$this->assertSame('verlopen', $result['status']);
+		$this->assertSame('expired', $result['status']);
 	}//end testExpireAdviceStillWorksWithoutASession()
 
 	/**
@@ -357,7 +357,7 @@ class AdviceServiceAuthorizationTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('Not authenticated');
 
-		$this->service->transitionStatus('advice-1', 'ontvangen');
+		$this->service->transitionStatus('advice-1', 'received');
 	}//end testUnauthenticatedCallerIsRejected()
 
 	/**
@@ -389,6 +389,6 @@ class AdviceServiceAuthorizationTest extends TestCase {
 		$this->expectException(RuntimeException::class);
 		$this->expectExceptionMessage('Advice request not accessible');
 
-		$this->service->transitionStatus('advice-does-not-exist', 'ontvangen');
+		$this->service->transitionStatus('advice-does-not-exist', 'received');
 	}//end testMissingAdviceCollapsesToNotAccessible()
 }//end class

@@ -71,7 +71,7 @@ class ChecklistService {
 	 *
 	 * @var string
 	 */
-	public const PHOTO_ON_FAIL = 'bij_nee';
+	public const PHOTO_ON_FAIL = 'if_no';
 
 	/**
 	 * Photo gate: a photo is always required once the item is answered.
@@ -85,7 +85,7 @@ class ChecklistService {
 	 *
 	 * @var string
 	 */
-	private const TYPE_JA_NEE_NVT = 'ja_nee_nvt';
+	private const TYPE_JA_NEE_NVT = 'yes_no_na';
 
 	/**
 	 * Reads items and responses out of a payload.

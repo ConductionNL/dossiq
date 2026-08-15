@@ -142,7 +142,7 @@ class BeschikkingControllerTest extends TestCase {
 	 */
 	public function testShowSuccess(): void {
 		$this->authenticate();
-		$this->service->method('find')->willReturn(['id' => 'besch-1', 'currentStatus' => 'ontwerp']);
+		$this->service->method('find')->willReturn(['id' => 'besch-1', 'currentStatus' => 'draft']);
 
 		$response = $this->controller->show('besch-1');
 
@@ -172,7 +172,7 @@ class BeschikkingControllerTest extends TestCase {
 	public function testCreateSuccess(): void {
 		$this->authenticate();
 		$this->request->method('getContent')->willReturn('{"caseId":"zaak-1"}');
-		$this->service->method('compose')->willReturn(['id' => 'besch-1', 'currentStatus' => 'ontwerp']);
+		$this->service->method('compose')->willReturn(['id' => 'besch-1', 'currentStatus' => 'draft']);
 
 		$response = $this->controller->create();
 

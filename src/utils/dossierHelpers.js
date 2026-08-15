@@ -40,8 +40,8 @@ export const PUBLISH_THRESHOLD = 'vertrouwelijk'
  * @type {Object<string, string[]>}
  */
 export const STATUS_TRANSITIONS = {
-	concept: ['definitief'],
-	definitief: ['gearchiveerd'],
+	concept: ['final'],
+	definitief: ['archived'],
 	gearchiveerd: [],
 }
 
@@ -114,7 +114,7 @@ export function isClassificationAllowed(defaultLevel, requestedLevel) {
 export function groupByType(documents) {
 	const groups = {}
 	documents.forEach((doc) => {
-		const type = doc.informatieobjecttype || 'onbekend'
+		const type = doc.informatieobjecttype || 'unknown'
 		if (!groups[type]) {
 			groups[type] = []
 		}

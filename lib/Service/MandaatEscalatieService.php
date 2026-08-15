@@ -157,7 +157,7 @@ class MandaatEscalatieService {
 				static function (array $a, array $b): int {
 					$rank = static fn (array $r): int => match ((string)($r['allocationType'] ?? 'primair')) {
 						'primair' => 0,
-						'waarnemer' => 1,
+						'observer' => 1,
 						'tijdelijk' => 2,
 						default => 99,
 					};
@@ -240,7 +240,7 @@ class MandaatEscalatieService {
 			throw new RuntimeException('Escalation not in open status');
 		}
 
-		$escalation['status'] = 'goedgekeurd';
+		$escalation['status'] = 'approved';
 		$escalation['resolvedAt'] = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
 		return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalation);
 	}//end approveEscalatie()
@@ -267,7 +267,7 @@ class MandaatEscalatieService {
 			throw new RuntimeException('Escalation not in open status');
 		}
 
-		$escalation['status'] = 'afgewezen';
+		$escalation['status'] = 'rejected';
 		$escalation['rejectedReason'] = $reason;
 		$escalation['resolvedAt'] = (new DateTimeImmutable())->format('Y-m-d\TH:i:sP');
 		return $this->save(schemaConfigKey: 'mandaat_escalatie_schema', object: $escalation);

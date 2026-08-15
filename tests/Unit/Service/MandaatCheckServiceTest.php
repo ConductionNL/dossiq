@@ -45,7 +45,7 @@ class MandaatCheckServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'mandaat_schema' => 'mandaat',
+					'mandaat_schema' => 'mandate',
 					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
 					default => '',
 				};
@@ -67,7 +67,7 @@ class MandaatCheckServiceTest extends TestCase {
 		//   - m-consulent: rol=consulent, decisionType=wmo-toekenning, plafond €5000
 		//   - m-manager:   rol=afdelingsmanager, decisionType=wmo-toekenning, plafond €25000, subdelegatie=true
 		//   - m-bestuurder: rol=bestuurder, decisionType=omgevingsvergunning, plafond=infinity
-		$this->objects->saveObject('procest', 'mandaat', [
+		$this->objects->saveObject('procest', 'mandate', [
 			'id' => 'm-consulent',
 			'mandaatNummer' => 'WMO-1',
 			'mandateeRole' => 'rol-consulent',
@@ -78,7 +78,7 @@ class MandaatCheckServiceTest extends TestCase {
 			'validFrom' => '2026-01-01',
 			'status' => 'active',
 		]);
-		$this->objects->saveObject('procest', 'mandaat', [
+		$this->objects->saveObject('procest', 'mandate', [
 			'id' => 'm-manager',
 			'mandaatNummer' => 'WMO-2',
 			'mandateeRole' => 'rol-afdelingsmanager',
@@ -101,7 +101,7 @@ class MandaatCheckServiceTest extends TestCase {
 		$this->objects->saveObject('procest', 'medewerkerRolToewijzing', [
 			'userId' => 'bob',
 			'roleId' => 'rol-consulent',
-			'allocationType' => 'waarnemer',
+			'allocationType' => 'observer',
 			'validFrom' => '2026-01-01',
 			'observerFor' => 'alice',
 		]);
@@ -200,7 +200,7 @@ class MandaatCheckServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'mandaat_schema' => 'mandaat',
+					'mandaat_schema' => 'mandate',
 					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
 					default => '',
 				};

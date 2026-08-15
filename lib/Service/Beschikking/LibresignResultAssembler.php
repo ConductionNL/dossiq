@@ -192,7 +192,7 @@ class LibresignResultAssembler {
 			'validationRapportId' => $validationRapportId,
 			'kind' => self::REPORT_SOORT,
 			'norm' => self::REPORT_NORM,
-			'geldig' => ($mappedStatus === self::SIGNED),
+			'valid' => ($mappedStatus === self::SIGNED),
 			'status' => $mappedStatus,
 			'signers' => (array)($status['signers'] ?? []),
 			'gegenereerdOp' => (new DateTimeImmutable())->format('c'),
@@ -218,7 +218,7 @@ class LibresignResultAssembler {
 			'validationRapportId' => $validationRapportId,
 			'kind' => self::REPORT_SOORT,
 			'norm' => self::REPORT_NORM,
-			'geldig' => false,
+			'valid' => false,
 			'foutmelding' => 'libresign_api_error',
 			'gegenereerdOp' => (new DateTimeImmutable())->format('c'),
 		];

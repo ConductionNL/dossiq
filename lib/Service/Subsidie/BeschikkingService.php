@@ -126,7 +126,7 @@ class BeschikkingService {
 				'subsidieaanvraag' => $requestId,
 				'beschikkingnummer' => $this->subsidyService->generateBeschikkingnummer(sequence: $sequence),
 				'beschikkingtype' => (string)($payload['beschikkingtype'] ?? 'verleningsbeschikking'),
-				'status' => 'concept',
+				'status' => 'draft',
 			]
 		);
 		unset($record['signedBy'], $record['signedOn'], $record['publicationDate']);
@@ -194,7 +194,7 @@ class BeschikkingService {
 
 		$now = new DateTimeImmutable();
 		$patch = [
-			'status' => 'verleend',
+			'status' => 'granted',
 			'publicationDate' => $now->format('Y-m-d'),
 			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $now)->format('Y-m-d'),
 		];

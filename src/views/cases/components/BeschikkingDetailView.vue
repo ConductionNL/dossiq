@@ -91,10 +91,10 @@ import { getBeschikking } from '../../../services/beschikkingApi.js'
 
 const STATUS_LABELS = {
 	ontwerp: 'Draft ruling',
-	'akkoord-mandaat': 'Approved (mandate)',
+	'approved-mandate': 'Approved (mandate)',
 	ondertekend: 'Signed',
 	verzonden: 'Sent',
-	'ontvangen-bevestiging': 'Receipt confirmation',
+	'received-confirmation': 'Receipt confirmation',
 	gearchiveerd: 'Archived',
 }
 

@@ -181,7 +181,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		]);
 
 		$stopped = $this->service->stopForBeschikking('b5');
-		self::assertSame('gestopt-wegens-beschikking', $stopped['status']);
+		self::assertSame('gestopt-wegens-decision', $stopped['status']);
 		self::assertSame(11500, $stopped['definitiveAmount']);
 
 		// Further calculateDaily is a no-op on stopped berekeningen.

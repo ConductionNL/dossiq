@@ -118,7 +118,7 @@ class AgendaServiceTest extends TestCase {
 
 		$this->settingsService->method('getObjectService')->willReturn($objectService);
 
-		$result = $this->service->addToAgenda('c1', ['meetingDate' => '2026-07-01', 'discussionStatus' => 'gepland']);
+		$result = $this->service->addToAgenda('c1', ['meetingDate' => '2026-07-01', 'discussionStatus' => 'planned']);
 
 		$this->assertSame(expected: 'c1', actual: $result['caseId']);
 		$this->assertCount(expectedCount: 1, haystack: $result['agendaItems']);
@@ -159,7 +159,7 @@ class AgendaServiceTest extends TestCase {
 			[
 				'id' => 'c1',
 				'agendaItems' => [
-					['itemId' => 'a1', 'meetingDate' => '2026-06-01', 'discussionStatus' => 'gepland'],
+					['itemId' => 'a1', 'meetingDate' => '2026-06-01', 'discussionStatus' => 'planned'],
 				],
 			]
 		);

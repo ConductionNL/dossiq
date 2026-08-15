@@ -118,7 +118,7 @@ class ComplaintHearingController extends Controller {
 			$data = $this->accessGuard->parseBody();
 			$result = $this->hearingService->scheduleHearing($id, $data);
 			// Transition complaint to hoorgesprek_gepland.
-			$this->complaintService->transitionStatus($id, 'hoorgesprek_gepland');
+			$this->complaintService->transitionStatus($id, 'hoorgesprek_planned');
 			return new JSONResponse($result, Http::STATUS_CREATED);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);
@@ -154,7 +154,7 @@ class ComplaintHearingController extends Controller {
 			$data = $this->accessGuard->parseBody();
 			$result = $this->hearingService->recordOutcome($hearingId, $data);
 			// Transition complaint to hoorgesprek_afgerond.
-			$this->complaintService->transitionStatus($id, 'hoorgesprek_afgerond');
+			$this->complaintService->transitionStatus($id, 'hoorgesprek_completed');
 			return new JSONResponse($result);
 		} catch (\RuntimeException $e) {
 			return new JSONResponse(['error' => $e->getMessage()], Http::STATUS_BAD_REQUEST);

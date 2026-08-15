@@ -175,14 +175,14 @@ export default {
 			statusOptions: [
 				{ label: this.t('procest', 'Open'), value: 'open' },
 				{
-					label: this.t('procest', 'In behandeling'),
-					value: 'in_behandeling',
+					label: this.t('procest', 'In handling'),
+					value: 'in_handling',
 				},
 				{
 					label: this.t('procest', 'Advice issued'),
-					value: 'advies_uitgebracht',
+					value: 'advice_uitgebracht',
 				},
-				{ label: this.t('procest', 'Closed'), value: 'afgesloten' },
+				{ label: this.t('procest', 'Closed'), value: 'closed' },
 			],
 		}
 	},
@@ -191,7 +191,7 @@ export default {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		openCount() {
 			return this.consultations.filter(
-				(c) => c.status === 'open' || c.status === 'in_behandeling',
+				(c) => c.status === 'open' || c.status === 'in_handling',
 			).length
 		},
 
@@ -304,7 +304,7 @@ export default {
 		getStatusLabel(status) {
 			const labels = {
 				open: this.t('procest', 'Open'),
-				in_behandeling: this.t('procest', 'In behandeling'),
+				in_behandeling: this.t('procest', 'In handling'),
 				advies_uitgebracht: this.t('procest', 'Advice issued'),
 				afgesloten: this.t('procest', 'Closed'),
 			}

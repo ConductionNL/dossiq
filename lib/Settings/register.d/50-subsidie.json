@@ -18,7 +18,7 @@
                     "termEnd": { "title": "Duration End", "type": "string", "format": "date", "description": "When the regeling expires" },
                     "targetGroup": { "title": "Target Group", "type": "string", "description": "Target group (gemeenten, kmo's, ngo's, ...)" },
                     "beoordelingscriteriaTemplate": { "title": "Assessment Criteria Template", "type": "string", "description": "JSON schema defining evaluation criteria" },
-                    "interimReportFrequency": { "title": "Interim Report Frequency", "type": "string", "enum": ["geen", "jaarlijks", "halfjaarlijks", "op_mijlpaal"], "default": "geen", "description": "Interim-report cadence", "facetable": true },
+                    "interimReportFrequency": { "title": "Interim Report Frequency", "type": "string", "enum": ["none", "annually", "halfjaarlijks", "on_milestone"], "default": "none", "description": "Interim-report cadence", "facetable": true },
                     "interimReportTermWeeks": { "title": "Interim Report Deadline Weeks", "type": "integer", "default": 22, "description": "Assessment deadline (weeks) for an interim report" },
                     "requestTermWeeks": { "title": "Application Deadline Weeks", "type": "integer", "default": 13, "description": "Decision deadline (weeks) on a grant application (AWB 4:13)" },
                     "determinationTermWeeks": { "title": "Settlement Deadline Weeks", "type": "integer", "default": 22, "description": "Assessment deadline (weeks) for the final settlement" },
@@ -46,7 +46,7 @@
                     "applicantKvkRef": { "title": "Applicant KvK Reference", "type": "string", "description": "KvK number for organisations", "facetable": true },
                     "applicantBsnRef": { "title": "Applicant BSN Reference", "type": "string", "description": "Masked BSN reference for individuals (special-category data, never stored raw)" },
                     "handler": { "title": "Handler", "type": "string", "description": "Nextcloud UID of the handler", "facetable": true },
-                    "status": { "title": "Status", "type": "string", "enum": ["ontvangen", "in_beoordeling", "beoordeeld", "beschikking_opgesteld", "verleend", "afgewezen", "withdrawn"], "default": "ontvangen", "description": "Application status", "facetable": true }
+                    "status": { "title": "Status", "type": "string", "enum": ["received", "in_assessment", "assessed", "decision_prepared", "granted", "rejected", "withdrawn"], "default": "received", "description": "Application status", "facetable": true }
                 }
             },
             "subsidieBeoordeling": {
@@ -60,8 +60,8 @@
                 "properties": {
                     "subsidieaanvraag": { "title": "Grant Application", "type": "string", "format": "uuid", "$ref": "subsidieAanvraag", "onDelete": "CASCADE", "description": "The application being assessed" },
                     "assessor": { "title": "Assessor", "type": "string", "description": "Nextcloud UID of the assessor" },
-                    "substantiveAssessmentOpinion": { "title": "Substantive Assessment Outcome", "type": "string", "enum": ["voldoende", "onvoldoende", "nader_onderzoek"], "description": "Substantive assessment outcome" },
-                    "financialAssessmentOpinion": { "title": "Financial Assessment Outcome", "type": "string", "enum": ["acceptabel", "onacceptabel_budget", "onacceptabel_cofinanciering"], "description": "Financial assessment outcome" },
+                    "substantiveAssessmentOpinion": { "title": "Substantive Assessment Outcome", "type": "string", "enum": ["voldoende", "onvoldoende", "nader_investigation"], "description": "Substantive assessment outcome" },
+                    "financialAssessmentOpinion": { "title": "Financial Assessment Outcome", "type": "string", "enum": ["acceptabel", "onacceptabel_budget", "onacceptabel_co_financing"], "description": "Financial assessment outcome" },
                     "scorings": { "title": "Scores", "type": "string", "description": "JSON map criteria_id -> score" },
                     "advies": { "title": "Recommendation", "type": "string", "description": "Assessment summary and recommendation" },
                     "adviceSubstantiation": { "title": "Recommendation Substantiation", "type": "string", "description": "Detailed reasoning" },
@@ -88,7 +88,7 @@
                     "advanceSchema": { "title": "Advance Payment Schedule", "type": "string", "description": "JSON array: [{datum, bedrag, voorwaarde, status}] — must sum to verleendBedrag" },
                     "verplichtingen": { "title": "Obligations", "type": "string", "description": "JSON array: [{id, beschrijving, status, bewijsstukkenVereist, deadline}]" },
                     "legalBasis": { "title": "Legal Basis", "type": "string", "description": "Exact AWB/kaderwet article" },
-                    "stateAidCategory": { "title": "State Aid Category", "type": "string", "enum": ["geen", "de_minimis", "agvv", "daeb", "notificatieplicht"], "default": "geen", "description": "EU state-aid classification" },
+                    "stateAidCategory": { "title": "State Aid Category", "type": "string", "enum": ["none", "de_minimis", "agvv", "daeb", "notificatieplicht"], "default": "none", "description": "EU state-aid classification" },
                     "objectionPeriodEnd": { "title": "Objection Deadline", "type": "string", "format": "date", "description": "6 weeks from publication" },
                     "drawsInDecision": { "title": "Superseded Decision", "type": "string", "format": "uuid", "$ref": "subsidieBeschikking", "description": "Prior beschikking being superseded" },
                     "wijzigingsreden": { "title": "Amendment Reason", "type": "string", "description": "Legal justification for a wijzigingsbeschikking" },
@@ -96,7 +96,7 @@
                     "signedOn": { "title": "Signed On", "type": "string", "format": "date-time", "description": "Signing timestamp" },
                     "decisionDate": { "title": "Decision Date", "type": "string", "format": "date", "description": "Decision date" },
                     "publicationDate": { "title": "Publication Date", "type": "string", "format": "date", "description": "Publication date" },
-                    "status": { "title": "Status", "type": "string", "enum": ["concept", "verleend", "withdrawn"], "default": "concept", "description": "Decision status", "facetable": true }
+                    "status": { "title": "Status", "type": "string", "enum": ["draft", "granted", "withdrawn"], "default": "draft", "description": "Decision status", "facetable": true }
                 }
             },
             "subsidieUitvoering": {
@@ -110,7 +110,7 @@
                 "properties": {
                     "subsidieaanvraag": { "title": "Grant Application", "type": "string", "format": "uuid", "$ref": "subsidieAanvraag", "onDelete": "CASCADE", "description": "The application" },
                     "subsidyDecision": { "title": "Grant Decision", "type": "string", "format": "uuid", "$ref": "subsidieBeschikking", "description": "The grant decision" },
-                    "status": { "title": "Status", "type": "string", "enum": ["verleend", "in_uitvoering", "tussenrapportage_ontvangen", "tussenrapportage_beoordeeld", "vaststelling_aangevraagd", "vastgesteld", "terugvordering_gestart", "afgerond"], "default": "verleend", "description": "Execution status", "facetable": true },
+                    "status": { "title": "Status", "type": "string", "enum": ["granted", "in_execution", "interim_report_received", "interim_report_assessed", "determination_requested", "determined", "recovery_gestart", "completed"], "default": "granted", "description": "Execution status", "facetable": true },
                     "betaaldeVoorschotten": { "title": "Paid Advances", "type": "string", "description": "JSON array: [{datum, bedrag, betaalIdErp}]" },
                     "outstandingAdvances": { "title": "Outstanding Advances", "type": "string", "description": "JSON array of pending scheduled disbursements" },
                     "supportingDocumentsIndex": { "title": "Evidence Documents Index", "type": "string", "description": "JSON map verplichting_id -> [bewijsstuk_references]" }
@@ -132,7 +132,7 @@
                     "substantiveProgress": { "title": "Substantive Progress", "type": "string", "description": "Progress narrative" },
                     "financialAccountability": { "title": "Financial Accountability", "type": "string", "description": "JSON: {uitgavenTotaal, naarBegrotingVergeleken, afwijkingen}" },
                     "supportingDocuments": { "title": "Evidence Documents", "type": "string", "description": "JSON array of Bewijsstuk references" },
-                    "status": { "title": "Status", "type": "string", "enum": ["verwacht", "ingediend", "in_beoordeling", "goedgekeurd", "afgekeurd", "gedeeltelijk_goedgekeurd"], "default": "verwacht", "description": "Report lifecycle status", "facetable": true },
+                    "status": { "title": "Status", "type": "string", "enum": ["expected", "submitted", "in_assessment", "approved", "rejected", "gedeeltelijk_approved"], "default": "expected", "description": "Report lifecycle status", "facetable": true },
                     "correctionRequest": { "title": "Correction Request", "type": "string", "description": "Required-corrections text for partial approval" },
                     "amendmentNumerator": { "title": "Amendment Count", "type": "integer", "default": 0, "description": "Resubmission/amendment count" },
                     "assessor": { "title": "Assessor", "type": "string", "description": "UID of the assessor when approved" },
@@ -159,7 +159,7 @@
                     "determinationDate": { "title": "Settlement Date", "type": "string", "format": "date", "description": "Settlement date" },
                     "vaststellingsbeschikkingGenerated": { "title": "Settlement Decision Generated", "type": "boolean", "default": false, "description": "Whether the settlement decision PDF was generated" },
                     "recoveryTrigger": { "title": "Recovery Trigger", "type": "boolean", "default": false, "description": "True when vastgesteldBedrag < totaal voorschotten" },
-                    "status": { "title": "Status", "type": "string", "enum": ["concept", "vastgesteld"], "default": "concept", "description": "Settlement status", "facetable": true }
+                    "status": { "title": "Status", "type": "string", "enum": ["draft", "determined"], "default": "draft", "description": "Settlement status", "facetable": true }
                 }
             },
             "terugvordering": {
@@ -182,7 +182,7 @@
                     "betaalherinneringenCount": { "title": "Payment Reminders Count", "type": "integer", "default": 0, "description": "Number of payment reminders sent" },
                     "bailiffsReference": { "title": "Bailiff Reference", "type": "string", "description": "Case ID if escalated to a bailiff" },
                     "managerGoedgekeurd": { "title": "Manager Approved", "type": "boolean", "default": false, "description": "Manager approval before publication" },
-                    "status": { "title": "Status", "type": "string", "enum": ["concept", "opgelegd", "gedeeltelijk_betaald", "betaald", "in_invorderingsprocedure", "invordering_afgerond"], "default": "concept", "description": "Clawback status", "facetable": true }
+                    "status": { "title": "Status", "type": "string", "enum": ["draft", "opgelegd", "gedeeltelijk_paid", "paid", "in_invorderingsprocedure", "recovery_completed"], "default": "draft", "description": "Clawback status", "facetable": true }
                 }
             },
             "bewijsstuk": {
@@ -196,13 +196,13 @@
                 "properties": {
                     "title": { "title": "Title", "type": "string", "maxLength": 255, "description": "Document title" },
                     "description": { "title": "Description", "type": "string", "description": "Optional description" },
-                    "evidenceType": { "title": "Evidence Document Type", "type": "string", "enum": ["aanvraagdocument", "budget", "projectplan", "cofinancieringsverklaring", "voortgangsrapport", "urenstaat", "factuur", "bankafschrift", "accountantsverklaring", "eindrapport", "deelnemerslijst", "ander"], "description": "Evidence type", "facetable": true },
-                    "linkedIn": { "title": "Linked To", "type": "string", "enum": ["aanvraag", "tussenrapportage", "vaststelling", "verplichtingsbewijs"], "description": "Source phase", "facetable": true },
+                    "evidenceType": { "title": "Evidence Document Type", "type": "string", "enum": ["aanvraagdocument", "budget", "projectplan", "cofinancieringsverklaring", "voortgangsrapport", "timesheet", "invoice", "bankafschrift", "auditorsStatement", "eindrapport", "deelnemerslijst", "ander"], "description": "Evidence type", "facetable": true },
+                    "linkedIn": { "title": "Linked To", "type": "string", "enum": ["request", "interimReport", "determination", "verplichtingsbewijs"], "description": "Source phase", "facetable": true },
                     "gekoppeldObjectRef": { "title": "Linked Object Reference", "type": "string", "format": "uuid", "description": "Actual Aanvraag/Tussenrapportage/Vaststelling reference" },
                     "linkedCommitmentId": { "title": "Linked Obligation ID", "type": "string", "description": "Verplichting id when type = verplichtingsbewijs" },
                     "retentionPeriodYears": { "title": "Retention Years", "type": "integer", "default": 7, "description": "Retention years per Selectielijst" },
                     "retentionPeriodEnd": { "title": "Retention End Date", "type": "string", "format": "date", "description": "Calculated retention end date" },
-                    "archiveStatus": { "title": "Archive Status", "type": "string", "enum": ["actief", "gearchiveerd", "verwijderd"], "default": "actief", "description": "Archive status", "facetable": true },
+                    "archiveStatus": { "title": "Archive Status", "type": "string", "enum": ["active", "archived", "verwijderd"], "default": "active", "description": "Archive status", "facetable": true },
                     "immutable": { "title": "Immutable", "type": "boolean", "default": false, "description": "Locked once linked to a vaststelling" },
                     "fileId": { "title": "File ID", "type": "integer", "description": "Nextcloud file id" },
                     "fileHashSha256": { "title": "File Hash SHA-256", "type": "string", "description": "SHA-256 content hash" }
@@ -237,7 +237,7 @@
                 "termStart": "2026-01-01",
                 "termEnd": "2028-12-31",
                 "targetGroup": "MKB en kennisinstellingen",
-                "interimReportFrequency": "jaarlijks",
+                "interimReportFrequency": "annually",
                 "interimReportTermWeeks": 22,
                 "requestTermWeeks": 13,
                 "determinationTermWeeks": 22,

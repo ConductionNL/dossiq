@@ -162,22 +162,22 @@ export default {
 			},
 
 			adviesOptions: [
-				{ label: this.t('procest', 'Positive'), value: 'positief' },
+				{ label: this.t('procest', 'Positive'), value: 'positive' },
 				{
 					label: this.t('procest', 'Positive with conditions'),
-					value: 'positief_met_voorwaarden',
+					value: 'positief_with_terms',
 				},
-				{ label: this.t('procest', 'Negative'), value: 'negatief' },
+				{ label: this.t('procest', 'Negative'), value: 'negative' },
 				{
 					label: this.t('procest', 'Not applicable'),
-					value: 'niet_van_toepassing',
+					value: 'non_from_application',
 				},
 			],
 
 			priorityOptions: [
-				{ label: this.t('procest', 'High'), value: 'hoog' },
-				{ label: this.t('procest', 'Normal'), value: 'normaal' },
-				{ label: this.t('procest', 'Low'), value: 'laag' },
+				{ label: this.t('procest', 'High'), value: 'high' },
+				{ label: this.t('procest', 'Normal'), value: 'normal' },
+				{ label: this.t('procest', 'Low'), value: 'low' },
 			],
 		}
 	},
@@ -190,7 +190,7 @@ export default {
 
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		showVoorwaarden() {
-			return this.form.advies === 'positief_met_voorwaarden'
+			return this.form.advies === 'positief_with_terms'
 		},
 
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
@@ -200,7 +200,7 @@ export default {
 
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		toelichtingRequired() {
-			return this.form.advies !== 'niet_van_toepassing'
+			return this.form.advies !== 'non_from_application'
 		},
 
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
@@ -236,7 +236,7 @@ export default {
 	methods: {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		addVoorwaarde() {
-			this.form.terms.push({ description: '', priority: 'normaal' })
+			this.form.terms.push({ description: '', priority: 'normal' })
 		},
 
 		/**

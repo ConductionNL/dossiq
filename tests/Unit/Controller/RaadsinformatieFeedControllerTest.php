@@ -164,7 +164,7 @@ class RaadsinformatieFeedControllerTest extends TestCase {
 				'name' => 'Raadsvergadering 15 juni 2026',
 				'startDate' => '2026-06-15T19:00:00+02:00',
 				'location' => 'Raadzaal',
-				'status' => 'gepland',
+				'status' => 'planned',
 			],
 		]);
 

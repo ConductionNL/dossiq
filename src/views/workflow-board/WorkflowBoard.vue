@@ -362,7 +362,7 @@ export default {
 
 				// Merge all non-final status types that share a name into one
 				// column. Status types are defined per case type, so the same
-				// name (e.g. "Ontvangen") recurs across every workflow; without
+				// name (e.g. "Received") recurs across every workflow; without
 				// this merge the board renders one near-empty column per type.
 				const colByName = new Map()
 				for (const st of statusTypes || []) {

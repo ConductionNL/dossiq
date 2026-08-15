@@ -136,15 +136,15 @@ class TerugvorderingService {
 		}
 
 		if (($amount - $paid) < 0.01) {
-			return 'betaald';
+			return 'paid';
 		}
 
-		return 'gedeeltelijk_betaald';
+		return 'gedeeltelijk_paid';
 	}//end statusAfterPayment()
 
 	/**
 	 * Open a clawback case for an overpayment (REQ-SUB-005). The case is
-	 * created in status "concept" and requires manager approval before it
+	 * created in status "draft" and requires manager approval before it
 	 * may be published — never auto-published.
 	 *
 	 * @param string $uitvoeringId The execution id.
@@ -171,7 +171,7 @@ class TerugvorderingService {
 			'paymentTermEnd' => $this->computeBetaaltermijn(publication: $publication)->format('Y-m-d'),
 			'paidAmount' => 0,
 			'managerGoedgekeurd' => false,
-			'status' => 'concept',
+			'status' => 'draft',
 		];
 
 		try {

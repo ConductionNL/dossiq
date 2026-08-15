@@ -201,7 +201,7 @@ export default {
 	data() {
 		return {
 			form: {
-				adviceType: 'ongegrond',
+				adviceType: 'dismissed',
 				adviceDate: new Date().toISOString().split('T')[0],
 				summary: '',
 				grounds: '',
@@ -211,14 +211,14 @@ export default {
 
 			saving: false,
 			adviceTypeOptions: [
-				{ id: 'gegrond', label: t('procest', 'Upheld (gegrond)') },
-				{ id: 'ongegrond', label: t('procest', 'Rejected (ongegrond)') },
+				{ id: 'upheld', label: t('procest', 'Upheld (gegrond)') },
+				{ id: 'dismissed', label: t('procest', 'Rejected (ongegrond)') },
 				{
-					id: 'deels_gegrond',
+					id: 'partly_upheld',
 					label: t('procest', 'Partially upheld (deels gegrond)'),
 				},
 				{
-					id: 'niet_ontvankelijk',
+					id: 'inadmissible',
 					label: t('procest', 'Inadmissible (niet-ontvankelijk)'),
 				},
 			],

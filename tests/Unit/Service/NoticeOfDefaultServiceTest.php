@@ -83,7 +83,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-02-25',
 			'endDateCurrent' => '2026-02-25',
-			'status' => 'overschreden',
+			'status' => 'exceeded',
 			'notificatiesVerstuurd' => [],
 		]);
 	}
@@ -100,7 +100,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		);
 
 		self::assertTrue($row['gevalideerd']);
-		self::assertSame('geldig', $row['validityStatus']);
+		self::assertSame('valid', $row['validityStatus']);
 		self::assertArrayHasKey('penaltyPaymentCalculation', $row);
 
 		$b = $row['penaltyPaymentCalculation'];
@@ -184,7 +184,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-01-29',
 			'endDateCurrent' => '2026-01-29',
-			'status' => 'overschreden',
+			'status' => 'exceeded',
 			'notificatiesVerstuurd' => [],
 		]);
 

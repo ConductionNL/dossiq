@@ -54,8 +54,8 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 	 * @var array<string, string>
 	 */
 	private const LEGAL_POSTURE_TARGETS = [
-		'Niet-ontvankelijk' => 'Niet-ontvankelijk vergt AWB-motivering (6:6)',
-		'Ingetrokken' => 'Intrekking vergt AWB-motivering (6:21)',
+		'Inadmissible' => 'Niet-ontvankelijk vergt AWB-motivering (6:6)',
+		'Withdrawn' => 'Intrekking vergt AWB-motivering (6:21)',
 	];
 
 	/**
@@ -126,16 +126,16 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 		}
 
 		$required = [
-			'Ontvangen',
-			'Ontvankelijkheidstoets',
-			'In behandeling',
-			'Hoorzitting gepland',
-			'Hoorzitting afgerond',
-			'Advies uitgebracht',
-			'Beslissing op bezwaar',
-			'Afgehandeld',
-			'Niet-ontvankelijk',
-			'Ingetrokken',
+			'Received',
+			'AdmissibilityCheck',
+			'In handling',
+			'Hearing planned',
+			'Hearing completed',
+			'Advice uitgebracht',
+			'Decision on objection',
+			'Handled',
+			'Inadmissible',
+			'Withdrawn',
 		];
 
 		$statusByName = $this->resolveStatusIndex(
@@ -403,18 +403,18 @@ class SeedBezwaarWorkflowDefinition implements IRepairStep {
 	 */
 	private function buildTransitions(array $statusByName): array {
 		$matrix = [
-			['Ontvangen',              'Ontvankelijkheidstoets', 'Intake compleet'],
-			['Ontvankelijkheidstoets', 'In behandeling',         'Ontvankelijk'],
-			['Ontvankelijkheidstoets', 'Niet-ontvankelijk',      'Niet-ontvankelijk (motivering vereist)'],
-			['In behandeling',         'Hoorzitting gepland',    'Hoorzitting ingepland'],
-			['In behandeling',         'Advies uitgebracht',     'Hoorrecht afgezien (rechtstreeks advies)'],
-			['In behandeling',         'Beslissing op bezwaar',  'Hoorrecht afgezien (rechtstreeks beslissing)'],
-			['Hoorzitting gepland',    'Hoorzitting afgerond',   'Hoorzitting uitgevoerd'],
-			['Hoorzitting afgerond',   'Advies uitgebracht',     'Advies uitgebracht'],
-			['Hoorzitting afgerond',   'Beslissing op bezwaar',  'Geen commissie — direct beslissing'],
-			['Advies uitgebracht',     'Beslissing op bezwaar',  'Beslissing genomen'],
-			['Beslissing op bezwaar',  'Afgehandeld',            'Beslissing verzonden'],
-			['*',                      'Ingetrokken',            'Bezwaar ingetrokken (AWB 6:21)'],
+			['Received',              'AdmissibilityCheck', 'Intake compleet'],
+			['AdmissibilityCheck', 'In handling',         'Ontvankelijk'],
+			['AdmissibilityCheck', 'Inadmissible',      'Niet-ontvankelijk (motivering vereist)'],
+			['In handling',         'Hearing planned',    'Hoorzitting ingepland'],
+			['In handling',         'Advice uitgebracht',     'Hoorrecht afgezien (rechtstreeks advies)'],
+			['In handling',         'Decision on objection',  'Hoorrecht afgezien (rechtstreeks beslissing)'],
+			['Hearing planned',    'Hearing completed',   'Hoorzitting uitgevoerd'],
+			['Hearing completed',   'Advice uitgebracht',     'Advice uitgebracht'],
+			['Hearing completed',   'Decision on objection',  'Geen commissie — direct beslissing'],
+			['Advice uitgebracht',     'Decision on objection',  'Beslissing genomen'],
+			['Decision on objection',  'Handled',            'Beslissing verzonden'],
+			['*',                      'Withdrawn',            'Bezwaar ingetrokken (AWB 6:21)'],
 		];
 
 		$transitions = [];

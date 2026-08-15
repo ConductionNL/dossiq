@@ -95,7 +95,7 @@ final class BezwaarLifecycleTest extends TestCase {
 	 */
 	public function testLifecycleDeclaresStatusFieldAndInitialState(): void {
 		$this->assertSame('status', ($this->lifecycle['field'] ?? null));
-		$this->assertSame('Ontvangen', ($this->lifecycle['initial'] ?? null));
+		$this->assertSame('Received', ($this->lifecycle['initial'] ?? null));
 	}//end testLifecycleDeclaresStatusFieldAndInitialState()
 
 	/**
@@ -104,10 +104,10 @@ final class BezwaarLifecycleTest extends TestCase {
 	 * @return void
 	 */
 	public function testSequentialAwbProgressionIsDeclared(): void {
-		$this->assertTrue($this->transitionAllowed('Ontvangen', 'Ontvankelijkheidstoets'));
-		$this->assertTrue($this->transitionAllowed('Ontvankelijkheidstoets', 'In behandeling'));
-		$this->assertTrue($this->transitionAllowed('In behandeling', 'Hoorzitting gepland'));
-		$this->assertTrue($this->transitionAllowed('Beslissing op bezwaar', 'Afgehandeld'));
+		$this->assertTrue($this->transitionAllowed('Received', 'AdmissibilityCheck'));
+		$this->assertTrue($this->transitionAllowed('AdmissibilityCheck', 'In handling'));
+		$this->assertTrue($this->transitionAllowed('In handling', 'Hearing planned'));
+		$this->assertTrue($this->transitionAllowed('Decision on objection', 'Handled'));
 	}//end testSequentialAwbProgressionIsDeclared()
 
 	/**
@@ -117,9 +117,9 @@ final class BezwaarLifecycleTest extends TestCase {
 	 */
 	public function testOutOfSequenceTransitionIsNotDeclared(): void {
 		// Skipping the ontvankelijkheidstoets is illegal.
-		$this->assertFalse($this->transitionAllowed('Ontvangen', 'In behandeling'));
+		$this->assertFalse($this->transitionAllowed('Received', 'In handling'));
 		// Re-opening a closed bezwaar is illegal.
-		$this->assertFalse($this->transitionAllowed('Afgehandeld', 'In behandeling'));
+		$this->assertFalse($this->transitionAllowed('Handled', 'In handling'));
 	}//end testOutOfSequenceTransitionIsNotDeclared()
 
 	/**
@@ -128,12 +128,12 @@ final class BezwaarLifecycleTest extends TestCase {
 	 * @return void
 	 */
 	public function testIntrekkenAcceptedFromOpenStatesOnly(): void {
-		$this->assertTrue($this->transitionAllowed('Ontvangen', 'Ingetrokken'));
-		$this->assertTrue($this->transitionAllowed('Ontvankelijkheidstoets', 'Ingetrokken'));
-		$this->assertTrue($this->transitionAllowed('In behandeling', 'Ingetrokken'));
-		$this->assertTrue($this->transitionAllowed('Hoorzitting gepland', 'Ingetrokken'));
+		$this->assertTrue($this->transitionAllowed('Received', 'Withdrawn'));
+		$this->assertTrue($this->transitionAllowed('AdmissibilityCheck', 'Withdrawn'));
+		$this->assertTrue($this->transitionAllowed('In handling', 'Withdrawn'));
+		$this->assertTrue($this->transitionAllowed('Hearing planned', 'Withdrawn'));
 		// Not from a terminal/late state.
-		$this->assertFalse($this->transitionAllowed('Beslissing op bezwaar', 'Ingetrokken'));
+		$this->assertFalse($this->transitionAllowed('Decision on objection', 'Withdrawn'));
 	}//end testIntrekkenAcceptedFromOpenStatesOnly()
 
 	/**

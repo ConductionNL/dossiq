@@ -57,7 +57,7 @@
 				{{ t('procest', 'Share') }}
 			</NcActionButton>
 			<NcActionButton
-				v-if="document.status === 'concept'"
+				v-if="document.status === 'draft'"
 				@click="$emit('delete', document)">
 				<template #icon>
 					<Delete :size="20" />

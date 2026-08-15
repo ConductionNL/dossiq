@@ -207,8 +207,8 @@ export default {
 		isOverdue(req) {
 			if (
 				!req.deadline
-				|| req.status === 'afgesloten'
-				|| req.status === 'advies_uitgebracht'
+				|| req.status === 'closed'
+				|| req.status === 'advice_uitgebracht'
 			) {
 				return false
 			}

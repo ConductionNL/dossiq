@@ -4,7 +4,7 @@
  * Procest Bezwaar Hearing Scheduled Listener.
  *
  * Watches OpenRegister `bezwaar` (lifecycle) object updates for the
- * status transition to "Hoorzitting gepland" and optionally seeds a
+ * status transition to "Hearing planned" and optionally seeds a
  * default hearingSession via HearingService::seedDefaultHearing(). The
  * canonical hearing lifecycle states are owned by the bezwaar-hearing
  * capability; this listener does not own any transition logic.
@@ -43,14 +43,14 @@ use Throwable;
 
 /**
  * Seeds a default hearingSession when bezwaar status becomes
- * "Hoorzitting gepland".
+ * "Hearing planned".
  *
  * @implements IEventListener<Event>
  *
  * @spec openspec/specs/bezwaar-hearing/spec.md
  */
 class BezwaarHearingScheduledListener implements IEventListener {
-	private const TRIGGER_STATUS = 'Hoorzitting gepland';
+	private const TRIGGER_STATUS = 'Hearing planned';
 
 	/**
 	 * Constructor.

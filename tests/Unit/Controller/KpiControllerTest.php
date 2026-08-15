@@ -140,7 +140,7 @@ class KpiControllerTest extends TestCase {
 			'taskCount' => 3,
 			'tasksDueToday' => 1,
 			'statusBreakdown' => [['status' => 'open', 'count' => 10]],
-			'typeBreakdown' => [['type' => 'aanvraag', 'count' => 8]],
+			'typeBreakdown' => [['type' => 'request', 'count' => 8]],
 			'avgProcessingDays' => 6.0,
 		];
 	}//end kpiFixture()

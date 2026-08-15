@@ -14,7 +14,7 @@
         {
             "id": "kcc-qa-nieuwe-zaak",
             "name": "Nieuwe zaak",
-            "actionType": "nieuwe_zaak",
+            "actionType": "new_case",
             "requirementContext": ["is_geidentificeerd"],
             "targetCaseType": "",
             "template": "",
@@ -25,7 +25,7 @@
         {
             "id": "kcc-qa-klacht-registreren",
             "name": "Klacht registreren",
-            "actionType": "klacht_registreren",
+            "actionType": "complaint_registreren",
             "requirementContext": [],
             "targetCaseType": "klacht_ex_artikel_9_1_awb",
             "template": "",

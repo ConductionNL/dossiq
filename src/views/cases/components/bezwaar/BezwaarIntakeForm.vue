@@ -252,7 +252,7 @@ export default {
 			channelOptions: [
 				{ id: 'brief', label: t('procest', 'Letter (brief)') },
 				{ id: 'email', label: t('procest', 'Email') },
-				{ id: 'formulier', label: t('procest', 'Online form (formulier)') },
+				{ id: 'form', label: t('procest', 'Online form (formulier)') },
 				{ id: 'balie', label: t('procest', 'In person (balie)') },
 			],
 		}

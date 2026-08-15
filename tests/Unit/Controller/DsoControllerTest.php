@@ -112,7 +112,7 @@ class DsoControllerRequestStub implements IRequest {
 		}
 
 		return match ($key) {
-			'newStatus' => 'in_behandeling',
+			'newStatus' => 'in_handling',
 			'besluitdatum' => null,
 			'notes' => null,
 			default => $default,
@@ -510,7 +510,7 @@ class DsoControllerTest extends TestCase {
 		$settingsServiceMock->method('getConfigValue')->willReturn('procest-register');
 		// phpcs:enable CustomSn.Functions.NamedParameters
 
-		$requestStub = new DsoControllerRequestStub(content: '{"newStatus":"in_behandeling"}');
+		$requestStub = new DsoControllerRequestStub(content: '{"newStatus":"in_handling"}');
 
 		$controller = new DsoController(
 			appName: 'procest',

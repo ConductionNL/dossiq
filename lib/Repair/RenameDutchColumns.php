@@ -3,7 +3,7 @@
 /**
  * Procest RenameDutchColumns Repair Step
  *
- * Moves stored data from the Dutch columns to the English ones the shillinq
+ * Moves stored data from the Dutch columns to the English ones the procest
  * register now declares. Covers every vocabulary cluster migrated so far, not
  * only amounts — the class was renamed from RenameDutchAmountColumns when the
  * second cluster landed, because one register-scoped step must carry them all.
@@ -60,7 +60,7 @@ use OCP\Migration\IRepairStep;
 use Psr\Log\LoggerInterface;
 
 /**
- * Rename shillinq's Dutch amount columns to their English equivalents.
+ * Rename procest's Dutch amount columns to their English equivalents.
  *
  * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
 	 *  migration. Pointing this at an existing spec would report conformance to a

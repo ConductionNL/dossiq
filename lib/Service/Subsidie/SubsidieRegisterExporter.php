@@ -72,9 +72,9 @@ class SubsidieRegisterExporter {
 	 */
 	public function toFeedEntry(array $request, array $regeling, array $decision): array {
 		$determined = (string)($decision['beschikkingtype'] ?? '') === 'vaststellingsbeschikking';
-		$status = 'verleend';
+		$status = 'granted';
 		if ($determined === true) {
-			$status = 'vastgesteld';
+			$status = 'determined';
 		}
 
 		return [

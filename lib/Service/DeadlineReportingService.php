@@ -103,7 +103,7 @@ class DeadlineReportingService {
 	private function aggregateByType(array $rows, ?string $department): array {
 		$byType = [];
 		foreach ($rows as $row) {
-			$type = (string)($row['caseType'] ?? 'onbekend');
+			$type = (string)($row['caseType'] ?? 'unknown');
 			// $row['department'] is a SCHEMA PROPERTY — OpenRegister materialises
 			// it as a real column. It moves with a data migration, not here.
 			if ($department !== null && (string)($row['department'] ?? '') !== $department) {
@@ -137,11 +137,11 @@ class DeadlineReportingService {
 	private function accumulateRow(array $row, array &$bucket): void {
 		$bucket['totaal']++;
 		$status = (string)($row['status'] ?? '');
-		if ($status === 'voltooid') {
+		if ($status === 'completed') {
 			$bucket['withinTerm']++;
 		}
 
-		if ($status === 'overschreden') {
+		if ($status === 'exceeded') {
 			$bucket['overschrijdingen']++;
 		}
 
@@ -315,11 +315,11 @@ class DeadlineReportingService {
 
 			$total++;
 			$status = (string)($row['status'] ?? '');
-			if ($status === 'voltooid') {
+			if ($status === 'completed') {
 				$within++;
 			}
 
-			if ($status === 'overschreden') {
+			if ($status === 'exceeded') {
 				$overrun++;
 			}
 

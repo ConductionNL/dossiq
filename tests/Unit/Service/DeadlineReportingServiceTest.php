@@ -58,7 +58,7 @@ class DeadlineReportingServiceTest extends TestCase {
 				'case' => 'Z/2026/' . (400 + $i),
 				'startDate' => '2026-05-0' . $i . 'T10:00:00+00:00',
 				'endDateCurrent' => '2026-07-0' . $i,
-				'status' => ($i <= 3 ? 'voltooid' : ($i === 4 ? 'overschreden' : 'lopend')),
+				'status' => ($i <= 3 ? 'completed' : ($i === 4 ? 'exceeded' : 'lopend')),
 				'countExtensions' => ($i === 5 ? 1 : 0),
 			]);
 		}
@@ -119,7 +119,7 @@ class DeadlineReportingServiceTest extends TestCase {
 			'amount' => 35700,
 			'actualPaymentDate' => '2026-04-20',
 			'betalingsreferentie' => 'ERP-1',
-			'status' => 'betaald',
+			'status' => 'paid',
 			'wettelijkeGrondslag' => 'AWB 4:17',
 			'iban' => 'NL91ABNA0417164300',
 		]);
@@ -129,7 +129,7 @@ class DeadlineReportingServiceTest extends TestCase {
 			'amount' => 50000,
 			'actualPaymentDate' => '2025-12-31',
 			'betalingsreferentie' => 'ERP-2',
-			'status' => 'betaald',
+			'status' => 'paid',
 		]);
 
 		$report = $this->service->generateDwangsomAuditReport(2026);

@@ -63,18 +63,18 @@ class LinkInFlightRemainingDecisionsRepair implements IRepairStep {
 	private const TERMINAL_STATUSES = [
 		'published',
 		'advice-issued',
-		'niet-ontvankelijk',
-		'ontvangen',
-		'verlopen',
+		'inadmissible',
+		'received',
+		'expired',
 		'received',
 		'cancelled',
-		'advies_uitgebracht',
-		'afgesloten',
+		'advice_uitgebracht',
+		'closed',
 		'withdrawn',
 		'besloten',
 		'closed',
-		'afgehandeld',
-		'gearchiveerd',
+		'handled',
+		'archived',
 	];
 
 	/**

@@ -294,7 +294,7 @@ class ZrcController extends ZgwController {
 				$mapped = $this->enrichZioResponse(mapped: $mapped, body: $body);
 
 				// Zrc-005a: Create ObjectInformatieObject in DRC.
-				$caseUrl = $originalBody['case'] ?? ($body['zaak'] ?? '');
+				$caseUrl = $originalBody['case'] ?? ($body['case'] ?? '');
 				$ioUrl = $originalBody['informatieobject'] ?? ($body['informatieobject'] ?? '');
 				$this->syncCreateObjectInformatieObject(caseUrl: $caseUrl, ioUrl: $ioUrl);
 			}
@@ -2188,7 +2188,7 @@ class ZrcController extends ZgwController {
 		array $brondatum,
 	): ?string {
 		switch ($afleidingswijze) {
-			case 'afgehandeld':
+			case 'handled':
 			case 'termijn':
 				return $endDate;
 			case 'ander_datumkenmerk':
@@ -2638,7 +2638,7 @@ class ZrcController extends ZgwController {
 			// The ZIO stores 'case' as a UUID (format: uuid with $ref) and
 			// 'document' as a full URL (format: uri). Build the zaak URL from
 			// the case UUID, and use the document URL directly.
-			$zaakUuid = $zioData['case'] ?? ($zioData['zaak'] ?? '');
+			$zaakUuid = $zioData['case'] ?? ($zioData['case'] ?? '');
 			$ioUrl = $zioData['document'] ?? ($zioData['informatieobject'] ?? '');
 
 			if ($zaakUuid === '' || $ioUrl === '') {

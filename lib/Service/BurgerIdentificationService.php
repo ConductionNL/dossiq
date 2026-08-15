@@ -137,7 +137,7 @@ class BurgerIdentificationService {
 	public function resolveFromDigiD(string $bsn): array {
 		$bsn = trim($bsn);
 		if ($bsn === '') {
-			return ['burgerId' => '', 'method' => 'niet_geidentificeerd'];
+			return ['burgerId' => '', 'method' => 'non_geidentificeerd'];
 		}
 
 		$this->logger->info(

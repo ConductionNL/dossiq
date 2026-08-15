@@ -80,12 +80,12 @@ export default {
 					date: hearing.scheduledDate.split('T')[0],
 					label: t('procest', 'Hearing scheduled'),
 					detail:
-						hearing.status === 'uitgevoerd'
+						hearing.status === 'executed'
 							? t('procest', 'Completed')
 							: t('procest', hearing.status),
-					completed: hearing.status === 'uitgevoerd',
+					completed: hearing.status === 'executed',
 					active:
-						hearing.status === 'gepland'
+						hearing.status === 'planned'
 						|| hearing.status === 'uitgenodigd',
 					isDeadline: false,
 				})

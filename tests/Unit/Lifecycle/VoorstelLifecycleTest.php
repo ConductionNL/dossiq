@@ -86,8 +86,8 @@ final class VoorstelLifecycleTest extends TestCase {
 	 */
 	public function testValidTransitionDeclaredInvalidRejected(): void {
 		$this->assertSame('status', ($this->lifecycle['field'] ?? null));
-		$this->assertSame('concept', ($this->lifecycle['initial'] ?? null));
-		$this->assertTrue($this->transitionAllowed('concept', 'in_parafering'));
+		$this->assertSame('draft', ($this->lifecycle['initial'] ?? null));
+		$this->assertTrue($this->transitionAllowed('draft', 'in_parafering'));
 		// A finished proposal cannot jump back into parafering.
 		$this->assertFalse($this->transitionAllowed('besloten', 'in_parafering'));
 	}//end testValidTransitionDeclaredInvalidRejected()

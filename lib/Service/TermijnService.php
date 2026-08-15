@@ -325,7 +325,7 @@ class TermijnService {
 
 		$updated = $this->updateTermijnInstance(
 			termInstanceId: $termInstanceId,
-			patch: ['status' => 'voltooid', 'voltooiDatum' => $voltooiDatum->format('Y-m-d')]
+			patch: ['status' => 'completed', 'voltooiDatum' => $voltooiDatum->format('Y-m-d')]
 		);
 
 		if ($updated !== null) {

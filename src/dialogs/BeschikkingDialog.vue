@@ -24,13 +24,13 @@
 					}}</label>
 					<div class="beschikking-dialog__outcome-buttons">
 						<NcButton
-							:type="outcome === 'verleend' ? 'primary' : 'secondary'"
-							@click="outcome = 'verleend'">
+							:type="outcome === 'granted' ? 'primary' : 'secondary'"
+							@click="outcome = 'granted'">
 							✓ {{ t('procest', 'Granted') }}
 						</NcButton>
 						<NcButton
-							:type="outcome === 'geweigerd' ? 'error' : 'secondary'"
-							@click="outcome = 'geweigerd'">
+							:type="outcome === 'refused' ? 'error' : 'secondary'"
+							@click="outcome = 'refused'">
 							✗ {{ t('procest', 'Refused') }}
 						</NcButton>
 					</div>
@@ -102,14 +102,14 @@ export default {
 
 	computed: {
 		motivationPlaceholder() {
-			if (this.outcome === 'verleend') {
+			if (this.outcome === 'granted') {
 				return t(
 					'procest',
 					'The application meets all criteria of the omgevingsplan...',
 				)
 			}
 
-			if (this.outcome === 'geweigerd') {
+			if (this.outcome === 'refused') {
 				return t(
 					'procest',
 					'The application is refused due to conflict with the omgevingsplan...',

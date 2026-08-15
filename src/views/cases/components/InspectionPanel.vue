@@ -174,7 +174,7 @@
 
 						<!-- Yes/No/N.A. -->
 						<div
-							v-if="item.type === 'ja_nee_nvt'"
+							v-if="item.type === 'yes_no_na'"
 							class="inspection-panel__radio-group">
 							<label>
 								<input
@@ -210,7 +210,7 @@
 
 						<!-- Text -->
 						<input
-							v-if="item.type === 'tekst'"
+							v-if="item.type === 'text'"
 							:id="`inspection-item-${index}-input`"
 							v-model="formResults[index].comment"
 							type="text"
@@ -219,7 +219,7 @@
 
 						<!-- Comment for all types -->
 						<input
-							v-if="item.type !== 'tekst'"
+							v-if="item.type !== 'text'"
 							v-model="formResults[index].comment"
 							type="text"
 							class="inspection-panel__input inspection-panel__input--comment"

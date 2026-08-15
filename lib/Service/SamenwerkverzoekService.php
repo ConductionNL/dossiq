@@ -69,7 +69,7 @@ class SamenwerkverzoekService {
 	/**
 	 * Initiate a samenwerking request for a zaak.
 	 *
-	 * Creates a samenwerkverzoek object with status 'aangevraagd' and
+	 * Creates a samenwerkverzoek object with status 'requested' and
 	 * dispatches a SamenwerkverzoekInitiated event for downstream listeners.
 	 *
 	 * @param string $caseId The UUID of the zaak
@@ -124,7 +124,7 @@ class SamenwerkverzoekService {
 			'permitApplicationRef' => $requestRef,
 			'requestedCompetentAuthority' => $aangezochtGezag,
 			'rationale' => $rationale,
-			'status' => 'aangevraagd',
+			'status' => 'requested',
 			'requestedOn' => date('c'),
 		];
 
@@ -162,8 +162,8 @@ class SamenwerkverzoekService {
 	/**
 	 * Respond to a pending samenwerkverzoek.
 	 *
-	 * Validates that the verzoek is in 'aangevraagd' status, then updates
-	 * it to 'geaccepteerd' or 'geweigerd' with the provided advies text.
+	 * Validates that the verzoek is in 'requested' status, then updates
+	 * it to 'accepted' or 'refused' with the provided advies text.
 	 *
 	 * @param string $samenwerkId The UUID of the samenwerkverzoek
 	 * @param bool $accept True to accept, false to reject
@@ -171,7 +171,7 @@ class SamenwerkverzoekService {
 	 *
 	 * @return array<string,mixed> The updated samenwerkverzoek object
 	 *
-	 * @throws \RuntimeException When the verzoek cannot be found or is not in 'aangevraagd' status
+	 * @throws \RuntimeException When the verzoek cannot be found or is not in 'requested' status
 	 *
 	 * @spec openspec/changes/dso-omgevingsloket/tasks.md#T05
 	 */
@@ -201,18 +201,18 @@ class SamenwerkverzoekService {
 		}
 
 		$currentStatus = (string)($request['status'] ?? '');
-		if ($currentStatus !== 'aangevraagd') {
+		if ($currentStatus !== 'requested') {
 			throw new RuntimeException(
 				'Samenwerkverzoek is not in aangevraagd status; current status: ' . $currentStatus
 			);
 		}
 
-		$request['status'] = 'geweigerd';
+		$request['status'] = 'refused';
 		if ($accept === true) {
-			$request['status'] = 'geaccepteerd';
+			$request['status'] = 'accepted';
 		}
 
-		$request['advies'] = $advies;
+		$request['advice'] = $advies;
 		$request['respondedOn'] = date('c');
 
 		$updated = $objectService->saveObject(

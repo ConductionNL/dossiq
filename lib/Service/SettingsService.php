@@ -338,7 +338,7 @@ class SettingsService {
 		'max_contactmomenten_history' => '5',
 		'belplan_overflow_threshold_wachttijd' => '180',
 		'belplan_overflow_threshold_wachtrij_lengte' => '5',
-		'sentiment_trigger_words' => '["ongelooflijk","klacht","wethouder","advocaat","media","rechtszaak"]',
+		'sentiment_trigger_words' => '["ongelooflijk","complaint","alderman","advocaat","media","rechtszaak"]',
 		'quick_action_templates' => '{}',
 	];
 

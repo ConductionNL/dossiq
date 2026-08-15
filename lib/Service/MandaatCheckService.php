@@ -48,9 +48,9 @@ use Psr\Log\LoggerInterface;
 class MandaatCheckService {
 	use SearchesObjects;
 
-	public const REDEN_NIET_BEVOEGD = 'niet_bevoegd';
-	public const REDEN_PLAFOND_OVERSCHREDEN = 'plafond_overschreden';
-	public const REDEN_SUBDELEGATIE_NIET_TOEGESTAAN = 'subdelegatie_niet_toegestaan';
+	public const REDEN_NIET_BEVOEGD = 'non_competent';
+	public const REDEN_PLAFOND_OVERSCHREDEN = 'ceiling_exceeded';
+	public const REDEN_SUBDELEGATIE_NIET_TOEGESTAAN = 'subdelegatie_non_permitted';
 	public const REDEN_BELANGENCONFLICT = 'belangenconflict';
 
 	/**
@@ -348,7 +348,7 @@ class MandaatCheckService {
 		}
 
 		// Sort: primair first, then waarnemer, then tijdelijk.
-		$order = ['primair' => 0, 'waarnemer' => 1, 'tijdelijk' => 2];
+		$order = ['primair' => 0, 'observer' => 1, 'tijdelijk' => 2];
 		usort(
 			$active,
 			static fn (array $a, array $b): int

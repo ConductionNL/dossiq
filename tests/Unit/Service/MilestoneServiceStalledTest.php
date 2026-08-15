@@ -178,7 +178,7 @@ class MilestoneServiceStalledTest extends TestCase {
 						'id' => 'zaak-1',
 						'title' => 'Omgevingsvergunning',
 						'caseType' => 'ct-1',
-						'status' => 'in_behandeling',
+						'status' => 'in_handling',
 						'assignee' => 'behandelaar-a',
 						'startDate' => $longAgo,
 					],
@@ -225,7 +225,7 @@ class MilestoneServiceStalledTest extends TestCase {
 					[
 						'id' => 'zaak-2',
 						'caseType' => 'ct-1',
-						'status' => 'in_behandeling',
+						'status' => 'in_handling',
 						'assignee' => 'behandelaar-a',
 						'startDate' => $today,
 					],
@@ -265,7 +265,7 @@ class MilestoneServiceStalledTest extends TestCase {
 					[
 						'id' => 'zaak-3',
 						'caseType' => 'ct-1',
-						'status' => 'afgehandeld',
+						'status' => 'handled',
 						'assignee' => 'behandelaar-a',
 						'startDate' => $longAgo,
 					],
@@ -307,7 +307,7 @@ class MilestoneServiceStalledTest extends TestCase {
 					[
 						'id' => 'zaak-4',
 						'caseType' => 'ct-1',
-						'status' => 'in_behandeling',
+						'status' => 'in_handling',
 						'assignee' => 'behandelaar-a',
 						'startDate' => $longAgo,
 					],

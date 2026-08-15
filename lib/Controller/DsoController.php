@@ -161,7 +161,7 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'newStatus is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$allowedStatuses = ['ingediend', 'in_behandeling', 'verleend', 'geweigerd', 'withdrawn'];
+		$allowedStatuses = ['submitted', 'in_handling', 'granted', 'refused', 'withdrawn'];
 		if (in_array(needle: $newStatus, haystack: $allowedStatuses, strict: true) === false) {
 			return new JSONResponse(['error' => 'Invalid status value'], Http::STATUS_BAD_REQUEST);
 		}
@@ -217,7 +217,7 @@ class DsoController extends Controller {
 			return new JSONResponse(['error' => 'outcome is required'], Http::STATUS_BAD_REQUEST);
 		}
 
-		$allowedOutcomes = ['verleend', 'geweigerd'];
+		$allowedOutcomes = ['granted', 'refused'];
 		if (in_array(needle: $outcome, haystack: $allowedOutcomes, strict: true) === false) {
 			return new JSONResponse(['error' => 'Invalid outcome value'], Http::STATUS_BAD_REQUEST);
 		}
@@ -325,7 +325,7 @@ class DsoController extends Controller {
 
 		$body = $this->readJsonBody();
 		$accept = (bool)($body['accept'] ?? false);
-		$advies = (string)($body['advies'] ?? '');
+		$advies = (string)($body['advice'] ?? '');
 
 		try {
 			$samenwerkverzoek = $this->repository->findSamenwerkverzoek(samenwerkId: $samenwerkId);

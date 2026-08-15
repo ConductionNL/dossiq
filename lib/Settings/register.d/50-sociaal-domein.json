@@ -77,8 +77,8 @@
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "enum": ["melding", "onderzoek-loopt", "beschikking-voorbereiding", "beschikking-verleend", "uitvoering", "evaluatie", "afgesloten"],
-                        "default": "melding",
+                        "enum": ["report", "investigation-loopt", "decision-voorbereiding", "decision-granted", "execution", "evaluation", "closed"],
+                        "default": "report",
                         "description": "Status-lifecycle (ADR-031: declaratief, geen custom workflow engine)"
                     },
                     "leadTimeStatutory": {
@@ -278,8 +278,8 @@
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "enum": ["melding", "gezinsplan-opstellen", "gezinsplan-gereed", "ondersteuning-gestart", "ondersteuning-loopt", "evaluatie", "verlenging-aangevraagd", "afgesloten"],
-                        "default": "melding",
+                        "enum": ["report", "gezinsplan-opstellen", "gezinsplan-gereed", "support-gestart", "support-loopt", "evaluation", "extension-requested", "closed"],
+                        "default": "report",
                         "description": "Gezinsgerichte status-lifecycle (ADR-031: declaratief)"
                     },
                     "gezinsplanId": {
@@ -470,7 +470,7 @@
                     "gedeeldeGegevens": {
                         "title": "Shared Data",
                         "type": "string",
-                        "enum": ["alle-gegevens", "alleen-anonimiseerde-samenvatting"],
+                        "enum": ["alle-gegevens", "alleen-anonimiseerde-summary"],
                         "description": "Welke gegevens gedeeld zijn"
                     }
                 }
@@ -504,7 +504,7 @@
                     "requestKind": {
                         "title": "Application Type",
                         "type": "string",
-                        "enum": ["algemene-bijstand", "inburgering-gerelateerde-bijstand", "bijstand-werkloze-uitkeringontvangers", "noodvoorziening"],
+                        "enum": ["general-social-assistance", "inburgering-related-social-assistance", "social-assistance-werkloze-uitkeringontvangers", "noodvoorziening"],
                         "description": "Soort bijstandsaanvraag"
                     },
                     "requestDate": {
@@ -603,8 +603,8 @@
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "enum": ["aanvraag-ontvangen", "toetsing-loopt", "toetsing-afgerond", "beschikking-voorbereiding", "beschikking-gereed", "bijstand-actief", "re-integratie-loopt", "afgesloten"],
-                        "default": "aanvraag-ontvangen",
+                        "enum": ["request-received", "toetsing-loopt", "toetsing-completed", "decision-voorbereiding", "decision-gereed", "social-assistance-active", "re-integration-loopt", "closed"],
+                        "default": "request-received",
                         "description": "Inkomensgerichte status-lifecycle (ADR-031: declaratief)"
                     },
                     "afwijzingsvoorstel": {
@@ -650,7 +650,7 @@
                     "distanceToLabourMarket": {
                         "title": "Distance to Labour Market",
                         "type": "string",
-                        "enum": ["klein", "gemiddeld", "groot", "zeer-groot"],
+                        "enum": ["klein", "average", "groot", "zeer-groot"],
                         "description": "Ingeschatte afstand tot de arbeidsmarkt"
                     },
                     "instrumenten": {
@@ -828,7 +828,7 @@
                         "type": "array",
                         "items": {
                             "type": "string",
-                            "enum": ["medisch", "gezinssituatie", "financieel", "justitieel", "etnisch", "religieus", "politieke-overtuiging"]
+                            "enum": ["medisch", "gezinssituatie", "financial", "justitieel", "etnisch", "religieus", "politieke-overtuiging"]
                         },
                         "description": "AVG art. 9 gegevenscategorieën die in deze zaak worden verwerkt"
                     },
@@ -931,7 +931,7 @@
                     "result": {
                         "title": "Result",
                         "type": "string",
-                        "enum": ["succes", "geweigerd-geen-toegang", "fg-audit-mode-metadata-only", "geanonimiseerd"],
+                        "enum": ["succes", "geweigerd-none-toegang", "fg-audit-mode-metadata-only", "geanonimiseerd"],
                         "description": "Resultaat van de toegangspoging"
                     }
                 }
@@ -1021,7 +1021,7 @@
                 "supportRequest": "Na heupoperatie tijdelijk niet in staat het huishouden te voeren; verzoek om huishoudelijke hulp.",
                 "districtTeam": "wijkteam-zuid",
                 "handlerId": "consulent-wmo-211",
-                "status": "beschikking-verleend",
+                "status": "decision-granted",
                 "leadTimeStatutory": {"investigationWeeks": 6, "decisionWeeks": 2, "totalWeeks": 8},
                 "gdprClassification": {
                     "categories": ["medisch"],
@@ -1051,7 +1051,7 @@
                 "householdsComposition": "Woont samen met echtgenote (mantelzorger).",
                 "districtTeam": "wijkteam-zuid",
                 "handlerId": "consulent-wmo-211",
-                "status": "uitvoering",
+                "status": "execution",
                 "leadTimeStatutory": {"investigationWeeks": 6, "decisionWeeks": 2, "totalWeeks": 8},
                 "gdprClassification": {
                     "categories": ["medisch", "gezinssituatie"],
@@ -1081,7 +1081,7 @@
                 "householdsComposition": "Alleenstaande ouder met pasgeborene.",
                 "districtTeam": "wijkteam-oost",
                 "handlerId": "consulent-wmo-188",
-                "status": "beschikking-voorbereiding",
+                "status": "decision-voorbereiding",
                 "leadTimeStatutory": {"investigationWeeks": 6, "decisionWeeks": 2, "totalWeeks": 8},
                 "gdprClassification": {
                     "categories": ["medisch", "gezinssituatie"],
@@ -1111,7 +1111,7 @@
                 "supportRequest": "Gedragsproblemen na echtscheiding; verzoek om ambulante jeugdhulp.",
                 "districtTeam": "jeugdteam-noord",
                 "handlerId": "jeugdconsulent-340",
-                "status": "ondersteuning-loopt",
+                "status": "support-loopt",
                 "gdprClassification": {
                     "categories": ["gezinssituatie", "medisch"],
                     "specialPersonalData": true,
@@ -1169,7 +1169,7 @@
                 "supportRequest": "Ontwikkelingsachterstand peuter; vroeg-interventietraject met koppeling naar voorschoolse educatie.",
                 "districtTeam": "jeugdteam-west",
                 "handlerId": "jeugdconsulent-362",
-                "status": "ondersteuning-gestart",
+                "status": "support-gestart",
                 "gdprClassification": {
                     "categories": ["medisch", "gezinssituatie"],
                     "specialPersonalData": true,
@@ -1190,7 +1190,7 @@
                 "caseType": "bijstandsaanvraag",
                 "caseNumber": "zaak-2026-pw-01278",
                 "bsn": "***maskeren***",
-                "requestKind": "algemene-bijstand",
+                "requestKind": "general-social-assistance",
                 "requestDate": "2026-01-15",
                 "effectiveDateDesired": "2026-02-01",
                 "ageGroup": "18-26",
@@ -1199,7 +1199,7 @@
                 "incomeAssessment": {"uitgevoerd": true, "income": 0, "socialAssistanceNorm": 1234.45, "rightOnSocialAssistance": true},
                 "handlerId": "klantmanager-477",
                 "districtTeam": "werk-en-inkomenteam-oost",
-                "status": "re-integratie-loopt",
+                "status": "re-integration-loopt",
                 "gdprClassification": {
                     "categories": ["financieel", "gezinssituatie"],
                     "specialPersonalData": true,
@@ -1220,7 +1220,7 @@
                 "caseType": "bijstandsaanvraag",
                 "caseNumber": "zaak-2026-pw-02641",
                 "bsn": "***maskeren***",
-                "requestKind": "bijstand-werkloze-uitkeringontvangers",
+                "requestKind": "social-assistance-werkloze-uitkeringontvangers",
                 "requestDate": "2026-01-22",
                 "effectiveDateDesired": "2026-02-15",
                 "ageGroup": "55-67",
@@ -1229,7 +1229,7 @@
                 "incomeAssessment": {"uitgevoerd": true, "income": 480, "socialAssistanceNorm": 1234.45, "rightOnSocialAssistance": true},
                 "handlerId": "klantmanager-501",
                 "districtTeam": "werk-en-inkomenteam-west",
-                "status": "re-integratie-loopt",
+                "status": "re-integration-loopt",
                 "gdprClassification": {
                     "categories": ["financieel", "medisch"],
                     "specialPersonalData": true,
@@ -1250,7 +1250,7 @@
                 "caseType": "bijstandsaanvraag",
                 "caseNumber": "zaak-2026-pw-03502",
                 "bsn": "***maskeren***",
-                "requestKind": "inburgering-gerelateerde-bijstand",
+                "requestKind": "inburgering-related-social-assistance",
                 "requestDate": "2026-02-08",
                 "effectiveDateDesired": "2026-03-01",
                 "ageGroup": "27-44",
@@ -1259,7 +1259,7 @@
                 "incomeAssessment": {"uitgevoerd": true, "income": 0, "socialAssistanceNorm": 1763.49, "rightOnSocialAssistance": true},
                 "handlerId": "klantmanager-512",
                 "districtTeam": "werk-en-inkomenteam-centrum",
-                "status": "beschikking-voorbereiding",
+                "status": "decision-voorbereiding",
                 "gdprClassification": {
                     "categories": ["financieel", "gezinssituatie"],
                     "specialPersonalData": true,

@@ -118,8 +118,8 @@ export default {
 					id: 'beroep_ongegrond',
 					label: t('procest', 'Appeal rejected (beroep ongegrond)'),
 				},
-				{ id: 'deels_gegrond', label: t('procest', 'Partially upheld') },
-				{ id: 'niet_ontvankelijk', label: t('procest', 'Inadmissible') },
+				{ id: 'partly_upheld', label: t('procest', 'Partially upheld') },
+				{ id: 'inadmissible', label: t('procest', 'Inadmissible') },
 			],
 		}
 	},

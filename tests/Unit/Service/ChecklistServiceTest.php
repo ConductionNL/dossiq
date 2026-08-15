@@ -89,14 +89,14 @@ class ChecklistServiceTest extends TestCase {
 							[
 								'id' => 'fundering',
 								'label' => 'Fundering conform tekening',
-								'responseType' => 'ja_nee_nvt',
+								'responseType' => 'yes_no_na',
 								'required' => true,
 								'photoRequired' => ChecklistService::PHOTO_ON_FAIL,
 							],
 							[
 								'id' => 'wapening',
 								'label' => 'Wapening',
-								'responseType' => 'ja_nee_nvt',
+								'responseType' => 'yes_no_na',
 								'required' => true,
 								'photoRequired' => ChecklistService::PHOTO_NEVER,
 							],
@@ -353,8 +353,8 @@ class ChecklistServiceTest extends TestCase {
 	public function testTheFlatItemsShapeIsSupported(): void {
 		$flat = [
 			'items' => [
-				['id' => 'a', 'label' => 'A', 'responseType' => 'tekst', 'required' => true],
-				['id' => 'b', 'label' => 'B', 'responseType' => 'tekst', 'required' => false],
+				['id' => 'a', 'label' => 'A', 'responseType' => 'text', 'required' => true],
+				['id' => 'b', 'label' => 'B', 'responseType' => 'text', 'required' => false],
 			],
 			'responses' => [['itemId' => 'a', 'value' => 'done']],
 		];
@@ -374,7 +374,7 @@ class ChecklistServiceTest extends TestCase {
 	 */
 	public function testItemsWithoutAnIdAreKeyedByOrder(): void {
 		$payload = [
-			'items' => [['order' => 7, 'label' => 'Seventh', 'responseType' => 'tekst', 'required' => true]],
+			'items' => [['order' => 7, 'label' => 'Seventh', 'responseType' => 'text', 'required' => true]],
 			'responses' => [['itemId' => '7', 'value' => 'ok']],
 		];
 

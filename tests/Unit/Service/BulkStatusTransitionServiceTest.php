@@ -92,7 +92,7 @@ final class BulkStatusTransitionServiceTest extends TestCase {
 					'failedGuards' => $failedGuards,
 				],
 			],
-			'current' => ['statusId' => 'status-1', 'statusName' => 'Ontvangen'],
+			'current' => ['statusId' => 'status-1', 'statusName' => 'Received'],
 		];
 	}//end availableResult()
 

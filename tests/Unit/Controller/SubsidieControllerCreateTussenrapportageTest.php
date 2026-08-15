@@ -151,7 +151,7 @@ final class SubsidieControllerCreateTussenrapportageTest extends TestCase {
 		$created = [
 			'id' => 'TR/1',
 			'subsidieuitvoering' => 'U/2026/1',
-			'status' => 'verwacht',
+			'status' => 'expected',
 		];
 
 		$this->tussenrapportage->expects($this->once())
@@ -192,7 +192,7 @@ final class SubsidieControllerCreateTussenrapportageTest extends TestCase {
 		$this->tussenrapportage->expects($this->once())
 			->method('createExpected')
 			->with('U/2026/2', ['frequentie' => 'halfjaarlijks'])
-			->willReturn(['status' => 'verwacht']);
+			->willReturn(['status' => 'expected']);
 
 		$response = $this->controller->createTussenrapportage(uitvoeringId: 'U/2026/2');
 

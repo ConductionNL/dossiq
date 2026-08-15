@@ -83,6 +83,14 @@ class Application extends App implements IBootstrap {
 			ObjectServiceInterface::class,
 			'OCA\OpenRegister\Service\ObjectService'
 		);
+
+		// Storage seam for the Dutch-to-English value migration. The repair step
+		// depends on the interface so its own logic can be exercised against a
+		// fake; only this binding knows the database.
+		$context->registerServiceAlias(
+			\OCA\Procest\Repair\ValueMigrationPort::class,
+			\OCA\Procest\Repair\DbValueMigrationPort::class
+		);
 		(new ServiceRegistrar())->register(context: $context);
 		(new ListenerRegistrar())->register(context: $context);
 	}//end register()

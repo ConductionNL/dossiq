@@ -210,7 +210,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 			'format' => $file->getMimeType(),
 			'vertrouwelijkheidaanduiding' => 'intern',
 			'auteur' => $author,
-			'status' => 'concept',
+			'status' => 'draft',
 			'informatieobjecttype' => '',
 			'creatiedatum' => date('Y-m-d', $file->getMTime()),
 			'taal' => 'nld',
@@ -234,7 +234,7 @@ class BackfillInformatieobjectMetadata implements IRepairStep {
 				object: [
 					'case' => $folderUuid,
 					'informatieobject' => $infoId,
-					'natureRelationshipDisplay' => 'Hoort bij, omgekeerd',
+					'natureRelationshipDisplay' => 'Hoort at omgekeerd',
 					'registrationDate' => date('Y-m-d\TH:i:s\Z'),
 				],
 				register: $register,

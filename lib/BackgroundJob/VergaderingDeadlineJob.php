@@ -6,7 +6,7 @@
  * Nightly background job that advances the status of vergadering-backed
  * Procest cases whose agenda-publication deadline has been reached.
  * A vergadering with a startDatum of today or in the past and current status
- * "gepland" is transitioned to "lopend" by this job.
+ * "planned" is transitioned to "lopend" by this job.
  *
  * @category BackgroundJob
  * @package  OCA\Procest\BackgroundJob

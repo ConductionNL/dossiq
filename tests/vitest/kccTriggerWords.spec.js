@@ -16,7 +16,7 @@ import {
 
 describe('triggerWordsToText', () => {
 	it('renders a JSON array as newline-separated words', () => {
-		expect(triggerWordsToText('["klacht","advocaat","media"]')).toBe(
+		expect(triggerWordsToText('["complaint","advocaat","media"]')).toBe(
 			'klacht\nadvocaat\nmedia',
 		)
 	})
@@ -40,19 +40,19 @@ describe('triggerWordsToText', () => {
 describe('textToTriggerWords', () => {
 	it('serialises newline-separated text into a JSON array', () => {
 		expect(textToTriggerWords('klacht\nadvocaat\nmedia')).toBe(
-			'["klacht","advocaat","media"]',
+			'["complaint","advocaat","media"]',
 		)
 	})
 
 	it('trims lines and drops blank lines', () => {
 		expect(textToTriggerWords('  klacht  \n\n advocaat \n')).toBe(
-			'["klacht","advocaat"]',
+			'["complaint","advocaat"]',
 		)
 	})
 
 	it('de-duplicates while preserving first-seen order', () => {
 		expect(textToTriggerWords('klacht\nadvocaat\nklacht')).toBe(
-			'["klacht","advocaat"]',
+			'["complaint","advocaat"]',
 		)
 	})
 
@@ -64,7 +64,7 @@ describe('textToTriggerWords', () => {
 
 describe('round-trip', () => {
 	it('is lossless for a clean word list', () => {
-		const json = '["klacht","advocaat","wethouder"]'
+		const json = '["complaint","advocaat","alderman"]'
 		expect(textToTriggerWords(triggerWordsToText(json))).toBe(json)
 	})
 })

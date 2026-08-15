@@ -254,7 +254,7 @@ class SubsidieController extends Controller {
 	}//end signBeschikking()
 
 	/**
-	 * Schedule an interim report on a grant execution, in status "verwacht".
+	 * Schedule an interim report on a grant execution, in status "expected".
 	 *
 	 * The auth posture mirrors createBeschikking() deliberately: the two are the
 	 * same shape — an authenticated caseworker drafting a new lifecycle record

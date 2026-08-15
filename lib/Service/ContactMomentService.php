@@ -51,7 +51,7 @@ class ContactMomentService {
 	/**
 	 * Valid contactmoment natures.
 	 */
-	private const VALID_AARD = ['informatieverzoek', 'statusverzoek', 'klacht', 'melding', 'nieuwe_aanvraag', 'doorverbinding'];
+	private const VALID_AARD = ['informatieverzoek', 'statusverzoek', 'complaint', 'report', 'new_request', 'doorverbinding'];
 
 	/**
 	 * Constructor.
@@ -90,7 +90,7 @@ class ContactMomentService {
 			'endTime' => ($data['endTime'] ?? null),
 			'callerIdentification' => (string)($data['callerIdentification'] ?? ''),
 			'geidentificeerdeBurgerId' => ($data['geidentificeerdeBurgerId'] ?? null),
-			'identificationMethod' => (string)($data['identificationMethod'] ?? 'niet_geidentificeerd'),
+			'identificationMethod' => (string)($data['identificationMethod'] ?? 'non_geidentificeerd'),
 			'identificationScore' => ($data['identificationScore'] ?? null),
 			'kccEmployeeId' => trim((string)$data['kccEmployeeId']),
 			'relatedCases' => array_values((array)($data['relatedCases'] ?? [])),
@@ -264,7 +264,7 @@ class ContactMomentService {
 			$activity[] = [
 				'type' => $type,
 				'interactionId' => $interactionId,
-				'medewerker' => $employeeName,
+				'employee' => $employeeName,
 				'summary' => $summary,
 				'timestamp' => date('c'),
 			];

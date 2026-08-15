@@ -131,7 +131,7 @@ class ParaferingStepActivator {
 			return [$actor];
 		}
 
-		$caseRef = (string)($proposal['case'] ?? ($proposal['zaak'] ?? ''));
+		$caseRef = (string)($proposal['case'] ?? ($proposal['case'] ?? ''));
 		if ($caseRef === '') {
 			return [$actor];
 		}

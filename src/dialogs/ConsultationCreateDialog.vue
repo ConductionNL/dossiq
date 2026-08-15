@@ -143,11 +143,11 @@ export default {
 				subject: '',
 				question_formulation: '',
 				latestResponseDate: '',
-				priority: 'normaal',
+				priority: 'normal',
 			},
 
 			prioriteitOptions: [
-				{ label: this.t('procest', 'Normal'), value: 'normaal' },
+				{ label: this.t('procest', 'Normal'), value: 'normal' },
 				{ label: this.t('procest', 'Urgent'), value: 'spoed' },
 			],
 		}
@@ -192,7 +192,7 @@ export default {
 					subject: this.parentZaakTitle,
 					question_formulation: '',
 					latestResponseDate: this.defaultDeadline,
-					priority: 'normaal',
+					priority: 'normal',
 				}
 			}
 		},

@@ -76,7 +76,7 @@
 
 				<!-- Actions -->
 				<div
-					v-if="!isReadOnly && cons.status !== 'afgesloten'"
+					v-if="!isReadOnly && cons.status !== 'closed'"
 					class="consultation-panel__actions">
 					<NcButton
 						v-if="cons.status === 'open'"
@@ -84,24 +84,24 @@
 						@click="
 							$emit('update-status', {
 								id: cons.id,
-								status: 'in_behandeling',
+								status: 'in_handling',
 							})
 						">
 						{{ t('procest', 'Acknowledge') }}
 					</NcButton>
 					<NcButton
-						v-if="cons.status === 'in_behandeling' && !cons.advies"
+						v-if="cons.status === 'in_handling' && !cons.advies"
 						type="secondary"
 						@click="openResponseDialog(cons)">
 						{{ t('procest', 'Submit response') }}
 					</NcButton>
 					<NcButton
-						v-if="cons.status === 'advies_uitgebracht'"
+						v-if="cons.status === 'advice_uitgebracht'"
 						type="secondary"
 						@click="
 							$emit('update-status', {
 								id: cons.id,
-								status: 'afgesloten',
+								status: 'closed',
 							})
 						">
 						{{ t('procest', 'Close') }}
@@ -185,7 +185,7 @@ export default {
 		/** @spec openspec/changes/consultation-management/tasks.md#TASK-CN-05 */
 		openCount() {
 			return this.consultations.filter(
-				(c) => c.status === 'open' || c.status === 'in_behandeling',
+				(c) => c.status === 'open' || c.status === 'in_handling',
 			).length
 		},
 	},
@@ -240,7 +240,7 @@ export default {
 		 */
 		isOverdue(cons) {
 			if (!cons.latestResponseDate) return false
-			if (cons.status === 'afgesloten' || cons.status === 'advies_uitgebracht')
+			if (cons.status === 'closed' || cons.status === 'advice_uitgebracht')
 				return false
 			return new Date(cons.latestResponseDate) < new Date()
 		},

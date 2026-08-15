@@ -58,22 +58,22 @@ class ChecklistService {
 	/**
 	 * Run status when initially created.
 	 */
-	public const STATUS_CONCEPT = 'concept';
+	public const STATUS_CONCEPT = 'draft';
 
 	/**
 	 * Run status while answers are being entered.
 	 */
-	public const STATUS_IN_UITVOERING = 'in_uitvoering';
+	public const STATUS_IN_UITVOERING = 'in_execution';
 
 	/**
 	 * Run status once the inspector submits — append-only from here.
 	 */
-	public const STATUS_INGEDIEND = 'ingediend';
+	public const STATUS_INGEDIEND = 'submitted';
 
 	/**
 	 * Run status when retention has archived the run.
 	 */
-	public const STATUS_GEARCHIVEERD = 'gearchiveerd';
+	public const STATUS_GEARCHIVEERD = 'archived';
 
 	/**
 	 * Overall result: every item passes or is N/A.
@@ -83,20 +83,20 @@ class ChecklistService {
 	/**
 	 * Overall result: at least one failure and no skipped items.
 	 */
-	public const RESULT_NIET_CONFORM = 'niet_conform';
+	public const RESULT_NIET_CONFORM = 'non_conform';
 
 	/**
 	 * Overall result: at least one failure AND at least one skipped item.
 	 */
-	public const RESULT_DEELS_CONFORM = 'deels_conform';
+	public const RESULT_DEELS_CONFORM = 'partly_conform';
 
 	/**
 	 * Follow-up types matching the failureAction.type enum.
 	 */
 	public const FOLLOWUP_HERINSPECTIE = 'herinspectie';
 	public const FOLLOWUP_HANDHAVINGSTAAK = 'handhavingstaak';
-	public const FOLLOWUP_DOCUMENT_VERZOEK = 'documentVerzoek';
-	public const FOLLOWUP_GEEN = 'geen';
+	public const FOLLOWUP_DOCUMENT_VERZOEK = 'documentRequest';
+	public const FOLLOWUP_GEEN = 'none';
 
 	/**
 	 * Constructor.
@@ -334,7 +334,7 @@ class ChecklistService {
 	 * @throws RuntimeException On validation failure with the spec error codes.
 	 */
 	private function assertValueMatchesType(string $type, array $item, array $payload): void {
-		if ($type === 'ja_nee_nvt') {
+		if ($type === 'yes_no_na') {
 			$value = (string)($payload['value'] ?? '');
 			if (in_array($value, ['ja', 'nee', 'nvt'], true) === false) {
 				throw new RuntimeException('INVALID_VALUE');
@@ -354,7 +354,7 @@ class ChecklistService {
 			}
 		}
 
-		if ($type === 'tekst') {
+		if ($type === 'text') {
 			$comment = (string)($payload['value'] ?? ($payload['comment'] ?? ''));
 			if (strlen($comment) > 2000) {
 				throw new RuntimeException('TEXT_TOO_LONG');
@@ -364,7 +364,7 @@ class ChecklistService {
 
 	/**
 	 * Assert the photo obligations hold: a `foto` item needs at least one photo, and the item's
-	 * `fotoRequired` gate ('altijd' / 'bij_nee') is honoured (REQ-IC-3).
+	 * `fotoRequired` gate ('altijd' / 'if_no') is honoured (REQ-IC-3).
 	 *
 	 * @param string $type Frozen item response type
 	 * @param array<string, mixed> $item Frozen item definition
@@ -375,7 +375,7 @@ class ChecklistService {
 	 * @throws RuntimeException PHOTO_REQUIRED when a mandated photo is missing.
 	 */
 	private function assertPhotoRules(string $type, array $item, array $payload): void {
-		if ($type === 'foto') {
+		if ($type === 'photo') {
 			if ($this->photoCount(response: $payload) < 1) {
 				throw new RuntimeException('PHOTO_REQUIRED');
 			}
@@ -392,7 +392,7 @@ class ChecklistService {
 			throw new RuntimeException('PHOTO_REQUIRED');
 		}
 
-		if ($fotoGate === 'bij_nee' && $value === 'nee') {
+		if ($fotoGate === 'if_no' && $value === 'nee') {
 			throw new RuntimeException('PHOTO_REQUIRED');
 		}
 	}//end assertPhotoRules()
@@ -688,7 +688,7 @@ class ChecklistService {
 
 		$payload = [
 			'case' => $caseId,
-			'type' => 'waarschuwing',
+			'type' => 'warning',
 			'severity' => 'aanzienlijk',
 			'behaviour' => 'onverschillig',
 			'intervention' => 'Suggested by inspection checklist run ' . $runId . ' item ' . $itemId,
@@ -737,7 +737,7 @@ class ChecklistService {
 		$type = (string)($item['responseType'] ?? '');
 		$value = (string)($response['value'] ?? '');
 
-		if ($type === 'ja_nee_nvt') {
+		if ($type === 'yes_no_na') {
 			return $this->classifyJaNeeNvt(value: $value);
 		}
 
@@ -787,7 +787,7 @@ class ChecklistService {
 			return $this->hasInvalidChoice(item: $item, choice: (string)($response['choice'] ?? $value));
 		}
 
-		if ($type === 'foto') {
+		if ($type === 'photo') {
 			return ($this->photoCount(response: $response) < 1);
 		}
 

@@ -197,7 +197,7 @@ class ConsultationRepository {
 			objectService: $objectService,
 			register: $register,
 			schema: $schema,
-			filters: ['status' => 'in_behandeling', '_limit' => 200],
+			filters: ['status' => 'in_handling', '_limit' => 200],
 		);
 
 		$all = array_merge($openList, $inProgressList);
@@ -265,7 +265,7 @@ class ConsultationRepository {
 		$consultation = $results[0];
 		$status = $consultation['status'] ?? '';
 
-		if ($status === 'afgesloten' || $status === 'withdrawn') {
+		if ($status === 'closed' || $status === 'withdrawn') {
 			return null;
 		}
 

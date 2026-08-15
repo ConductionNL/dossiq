@@ -4,7 +4,7 @@
  * Procest Bezwaar Advice Requested Listener.
  *
  * Watches OpenRegister `bezwaar` (lifecycle) object updates for the
- * status transition to "Hoorzitting gepland" (the canonical state where
+ * status transition to "Hearing planned" (the canonical state where
  * the bezwaar is formally referred to an advisory committee for the
  * hearing+advice track) and triggers the auto-assignment of the default
  * bezwaaradviescommissie via AdvisoryCommitteeService. The bezwaar
@@ -42,14 +42,14 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Auto-assigns the default BAC when bezwaar enters "Hoorzitting gepland".
+ * Auto-assigns the default BAC when bezwaar enters "Hearing planned".
  *
  * @implements IEventListener<Event>
  *
  * @spec openspec/specs/bezwaar-advisory-committee/spec.md
  */
 class BezwaarAdviceRequestedListener implements IEventListener {
-	private const TRIGGER_STATUS = 'Hoorzitting gepland';
+	private const TRIGGER_STATUS = 'Hearing planned';
 
 	/**
 	 * Constructor.

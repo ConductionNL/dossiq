@@ -303,7 +303,7 @@ export default {
 		},
 
 		isTerminalStatus() {
-			return ['besloten', 'gearchiveerd'].includes(this.proposal.status)
+			return ['besloten', 'archived'].includes(this.proposal.status)
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */

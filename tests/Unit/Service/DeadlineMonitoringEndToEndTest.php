@@ -130,7 +130,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			new DateTimeImmutable('2026-07-15')
 		);
 
-		self::assertSame('voltooid', $voltooid['status']);
+		self::assertSame('completed', $voltooid['status']);
 		self::assertSame('2026-07-15', $voltooid['voltooiDatum']);
 	}
 
@@ -149,7 +149,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$id = (string)$instance['id'];
 
 		$paused = $this->pauseService->registerPauze($id, 14, 'Aanvulling vereist');
-		self::assertSame('gepauzeerd', $paused['status']);
+		self::assertSame('paused', $paused['status']);
 		self::assertSame('2026-08-10', $paused['endDateCurrent']);
 
 		// Resume 7 days into the pause (7 days unused).
@@ -182,7 +182,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		self::assertSame(1, $extended['countExtensions']);
 
 		$voltooid = $this->termService->markTermijnCompleted($id, new DateTimeImmutable('2026-09-20'));
-		self::assertSame('voltooid', $voltooid['status']);
+		self::assertSame('completed', $voltooid['status']);
 	}
 
 	/**
@@ -198,7 +198,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-02-26',
 			'endDateCurrent' => '2026-02-26',
-			'status' => 'overschreden',
+			'status' => 'exceeded',
 			'notificatiesVerstuurd' => [],
 		]);
 		$instanceId = (string)$instance['id'];
@@ -224,7 +224,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 
 		// Beschikking arrives — stop.
 		$stopped = $this->calcService->stopForBeschikking($calculationId);
-		self::assertSame('gestopt-wegens-beschikking', $stopped['status']);
+		self::assertSame('gestopt-wegens-decision', $stopped['status']);
 		self::assertSame(11500, $stopped['definitiveAmount']);
 
 		// Prepare payment.
@@ -240,11 +240,11 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		// Callback arrives confirming payment.
 		$paid = $this->outService->handleCallback(
 			(string)$uitb['reference'],
-			'betaald',
+			'paid',
 			new DateTimeImmutable('2026-04-05'),
 			'ERP-S4-001'
 		);
-		self::assertSame('betaald', $paid['status']);
+		self::assertSame('paid', $paid['status']);
 	}
 
 	/**
@@ -257,7 +257,7 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
 			'id' => 'b-s5',
 			'deadlineInstance' => 'ti-s5',
-			'status' => 'gestopt-wegens-beschikking',
+			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 50000,
 		]);
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
@@ -268,14 +268,14 @@ class DeadlineMonitoringEndToEndTest extends TestCase {
 		]);
 
 		$frozen = $this->bezService->registerBezwaar('b-s5', 'AWB 7:1', 'Bedrag te hoog');
-		self::assertSame('bezwaar-bevroren', $frozen['status']);
+		self::assertSame('objection-bevroren', $frozen['status']);
 		$outFrozen = $this->objects->store['dwangsomUitbetaling']['u-s5'];
-		self::assertSame('on-hold-bezwaar', $outFrozen['status']);
+		self::assertSame('on-hold-objection', $outFrozen['status']);
 
 		// Heroverweging halves the amount.
 		$resolved = $this->bezService->resolveBezwaar('b-s5', 25000, 'AWB 7:11');
 		self::assertSame(25000, $resolved['definitiveAmount']);
-		self::assertSame('voltooid', $resolved['status']);
+		self::assertSame('completed', $resolved['status']);
 		$outResumed = $this->objects->store['dwangsomUitbetaling']['u-s5'];
 		self::assertSame(25000, $outResumed['amount']);
 		self::assertSame('voorbereid', $outResumed['status']);

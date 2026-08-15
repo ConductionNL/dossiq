@@ -76,9 +76,9 @@ class AdviceController extends Controller {
 	 * point of view.
 	 *
 	 * Accepted payloads:
-	 *   { "to": "aangevraagd" }                  — fire "advies_aangevraagd"
-	 *   { "to": "ontvangen", "adviceDocument": "<fileId>" } — mark received
-	 *   { "to": "verlopen" }                     — mark expired
+	 *   { "to": "requested" }                  — fire "advies_aangevraagd"
+	 *   { "to": "received", "adviceDocument": "<fileId>" } — mark received
+	 *   { "to": "expired" }                     — mark expired
 	 *
 	 * @param string $id The advice UUID
 	 *

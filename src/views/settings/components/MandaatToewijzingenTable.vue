@@ -138,7 +138,7 @@ export default {
 		 */
 		isWaarnemer(a) {
 			const tt = (a.allocationType || a.type || '').toLowerCase()
-			return tt === 'waarnemer' || tt === 'plaatsvervanger'
+			return tt === 'observer' || tt === 'plaatsvervanger'
 		},
 
 		/**

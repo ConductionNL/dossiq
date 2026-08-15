@@ -58,14 +58,14 @@
 				</p>
 				<div v-if="!isReadOnly" class="advice-panel__actions">
 					<NcButton
-						v-if="request.status === 'aangevraagd'"
+						v-if="request.status === 'requested'"
 						size="small"
 						@click="markReceived(request)">
 						{{ t('procest', 'Mark received') }}
 					</NcButton>
 					<NcButton
 						v-if="
-							request.status === 'ontvangen' && request.adviceDocument
+							request.status === 'received' && request.adviceDocument
 						"
 						size="small"
 						@click="viewDocument(request)">
@@ -275,7 +275,7 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		isOverdue(request) {
-			if (request.status !== 'aangevraagd' || !request.deadline) {
+			if (request.status !== 'requested' || !request.deadline) {
 				return false
 			}
 			return new Date(request.deadline) < new Date()
@@ -315,9 +315,9 @@ export default {
 		 */
 		statusClass(status) {
 			return {
-				'advice-panel__status-badge--aangevraagd': status === 'aangevraagd',
-				'advice-panel__status-badge--ontvangen': status === 'ontvangen',
-				'advice-panel__status-badge--verlopen': status === 'verlopen',
+				'advice-panel__status-badge--aangevraagd': status === 'requested',
+				'advice-panel__status-badge--ontvangen': status === 'received',
+				'advice-panel__status-badge--verlopen': status === 'expired',
 			}
 		},
 

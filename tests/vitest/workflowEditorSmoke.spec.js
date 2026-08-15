@@ -196,8 +196,8 @@ function buildMockObjectStore(overrides = {}) {
 describe('WorkflowEditor.vue — renders a loaded definition', () => {
 	it('renders one status node per statusType loaded for the case type', async () => {
 		const statusNodes = [
-			{ id: 's1', name: 'Ontvangen', isFinal: false },
-			{ id: 's2', name: 'Afgehandeld', isFinal: true },
+			{ id: 's1', name: 'Received', isFinal: false },
+			{ id: 's2', name: 'Handled', isFinal: true },
 		]
 		const objectStore = buildMockObjectStore({
 			fetchCollection: vi.fn((schema) =>
@@ -228,17 +228,17 @@ describe('WorkflowEditor.vue — renders a loaded definition', () => {
 		const nodeEls = wrapper.findAll('.workflow-node-stub')
 		expect(nodeEls).toHaveLength(2)
 		expect(nodeEls.at(0).attributes('data-status-id')).toBe('s1')
-		expect(nodeEls.at(0).text()).toBe('Ontvangen')
+		expect(nodeEls.at(0).text()).toBe('Received')
 		expect(nodeEls.at(1).attributes('data-status-id')).toBe('s2')
-		expect(nodeEls.at(1).text()).toBe('Afgehandeld')
+		expect(nodeEls.at(1).text()).toBe('Handled')
 	})
 })
 
 describe('WorkflowEditor.vue — blocks save/publish on an invalid graph', () => {
 	it('validate() returns false and records real-engine validation errors for a graph with no final status', async () => {
 		const statusNodes = [
-			{ id: 's1', name: 'Ontvangen', isFinal: false },
-			{ id: 's2', name: 'In behandeling', isFinal: false },
+			{ id: 's1', name: 'Received', isFinal: false },
+			{ id: 's2', name: 'In handling', isFinal: false },
 		]
 		const objectStore = buildMockObjectStore({
 			fetchCollection: vi.fn((schema) =>
@@ -275,8 +275,8 @@ describe('WorkflowEditor.vue — blocks save/publish on an invalid graph', () =>
 
 	it('validate() returns true for a well-formed graph', async () => {
 		const statusNodes = [
-			{ id: 's1', name: 'Ontvangen', isFinal: false },
-			{ id: 's2', name: 'Afgehandeld', isFinal: true },
+			{ id: 's1', name: 'Received', isFinal: false },
+			{ id: 's2', name: 'Handled', isFinal: true },
 		]
 		const objectStore = buildMockObjectStore({
 			fetchCollection: vi.fn((schema) =>
