@@ -127,7 +127,7 @@ abstract class ZgwRulesBase {
 	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
 	 */
 	public function setContext(?object $objectService, ?array $mappingConfig): void {
-		$this->objectService = $objectService;
+		$objectService = $objectService;
 		$this->mappingConfig = $mappingConfig;
 	}//end setContext()
 
