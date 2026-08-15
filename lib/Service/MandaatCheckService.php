@@ -352,7 +352,7 @@ class MandaatCheckService {
 		usort(
 			$active,
 			static fn (array $a, array $b): int
-				=> ($order[(string)($a['toewijzingType'] ?? 'primair')] ?? 99) <=> ($order[(string)($b['toewijzingType'] ?? 'primair')] ?? 99)
+				=> ($order[(string)($a['allocationType'] ?? 'primair')] ?? 99) <=> ($order[(string)($b['allocationType'] ?? 'primair')] ?? 99)
 		);
 
 		return $active[0];

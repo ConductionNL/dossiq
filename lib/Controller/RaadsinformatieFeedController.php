@@ -281,7 +281,7 @@ class RaadsinformatieFeedController extends Controller {
 		return match ($schema) {
 			'vergadering' => (string)($object['name'] ?? ''),
 			'agendapunt' => (string)($object['onderwerp'] ?? ''),
-			'raadsdocument' => (string)($object['titel'] ?? ''),
+			'raadsdocument' => (string)($object['title'] ?? ''),
 			default => (string)($object['name'] ?? ($object['titel'] ?? $schema)),
 		};
 

@@ -4133,7 +4133,7 @@
 									"schema": "bacAdviceRequest",
 									"metric": "count",
 									"filter": {
-										"commissie": "@objectId"
+										"committee": "@objectId"
 									}
 								}
 							]
@@ -4152,7 +4152,7 @@
 									"schema": "bacAdviceRequest",
 									"metric": "count",
 									"filter": {
-										"commissie": "@objectId",
+										"committee": "@objectId",
 										"status": "in-deliberation"
 									}
 								}
@@ -4185,7 +4185,7 @@
 							"register": "procest",
 							"schema": "bacAdviceRequest",
 							"filter": {
-								"commissie": "@objectId"
+								"committee": "@objectId"
 							},
 							"sort": {
 								"field": "order",

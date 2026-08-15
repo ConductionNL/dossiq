@@ -88,21 +88,21 @@ class DoorverbindingService {
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
 	 */
 	public function initiateWarmTransfer(array $data): array {
-		$contactmomentId = trim((string)($data['contactmomentId'] ?? ''));
+		$interactionId = trim((string)($data['interactionId'] ?? ''));
 		$fromEmployeeId = trim((string)($data['fromEmployeeId'] ?? ''));
-		if ($contactmomentId === '' || $fromEmployeeId === '') {
+		if ($interactionId === '' || $fromEmployeeId === '') {
 			throw new RuntimeException('contactmomentId and vanMedewerkerId are required');
 		}
 
 		[$objectService, $register, $schema] = $this->resolve();
 
 		$record = [
-			'contactmomentId' => $contactmomentId,
+			'interactionId' => $interactionId,
 			'fromEmployeeId' => $fromEmployeeId,
 			'toEmployeeId' => ($data['toEmployeeId'] ?? null),
 			'toQueue' => ($data['toQueue'] ?? null),
 			'transferReason' => (string)($data['transferReason'] ?? ''),
-			'contextOverdracht' => (string)($data['contextOverdracht'] ?? ''),
+			'contextTransfer' => (string)($data['contextTransfer'] ?? ''),
 			'contextSnapshot' => (string)($data['contextSnapshot'] ?? '{}'),
 			'geaccepteerd' => null,
 			'warmTransferStarted' => date('c'),
@@ -206,7 +206,7 @@ class DoorverbindingService {
 	 */
 	public function appendContextNotes(string $doorverbindingId, string $notes, string $specialistUid): array {
 		$current = $this->load(doorverbindingId: $doorverbindingId);
-		$existing = (string)($current['contextOverdracht'] ?? '');
+		$existing = (string)($current['contextTransfer'] ?? '');
 
 		$entry = '[' . date('c') . ' ' . $specialistUid . '] ' . trim($notes);
 		$merged = $entry;
@@ -214,7 +214,7 @@ class DoorverbindingService {
 			$merged = $existing . "\n" . $entry;
 		}
 
-		return $this->update(doorverbindingId: $doorverbindingId, patch: ['contextOverdracht' => $merged]);
+		return $this->update(doorverbindingId: $doorverbindingId, patch: ['contextTransfer' => $merged]);
 	}//end appendContextNotes()
 
 	/**

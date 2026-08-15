@@ -20,16 +20,16 @@
             "required": [
                 "id",
                 "name",
-                "gemeenteCode",
-                "ontvangerApplicatie",
-                "ontvangerOrganisatie",
-                "ontvangerGebruiker",
-                "zenderApplicatie",
-                "zenderOrganisatie",
+                "municipalityCode",
+                "recipientApplication",
+                "recipientOrganisation",
+                "recipientUser",
+                "senderApplication",
+                "senderOrganisation",
                 "endpointUrl",
                 "soapVersion",
                 "stufVersion",
-                "sectormodel",
+                "sectorModel",
                 "authenticatie"
             ],
             "properties": {
@@ -43,32 +43,32 @@
                     "description": "Human-readable endpoint name shown in the admin UI.",
                     "maxLength": 255
                 },
-                "gemeenteCode": {
+                "municipalityCode": {
                     "type": "string",
                     "description": "4-digit gemeente CBS code (e.g. 0307 for Amersfoort).",
                     "maxLength": 16
                 },
-                "ontvangerApplicatie": {
+                "recipientApplication": {
                     "type": "string",
                     "description": "Receiving zaaksysteem application name (StUF stuurgegevens.ontvanger.applicatie).",
                     "maxLength": 255
                 },
-                "ontvangerOrganisatie": {
+                "recipientOrganisation": {
                     "type": "string",
                     "description": "Receiving organisation (gemeente).",
                     "maxLength": 255
                 },
-                "ontvangerGebruiker": {
+                "recipientUser": {
                     "type": "string",
                     "description": "Receiving system user identifier.",
                     "maxLength": 255
                 },
-                "zenderApplicatie": {
+                "senderApplication": {
                     "type": "string",
                     "description": "Sender (Procest) application identifier.",
                     "maxLength": 255
                 },
-                "zenderOrganisatie": {
+                "senderOrganisation": {
                     "type": "string",
                     "description": "Sender organisation (gemeente).",
                     "maxLength": 255
@@ -89,7 +89,7 @@
                     "description": "StUF protocol version.",
                     "enum": ["0310"]
                 },
-                "sectormodel": {
+                "sectorModel": {
                     "type": "string",
                     "description": "StUF sectormodel; ZKN for cases.",
                     "enum": ["ZKN"]
@@ -131,7 +131,7 @@
                         "type": "string"
                     }
                 },
-                "vrijeBerichtenTemplates": {
+                "freeMessagesTemplates": {
                     "type": "array",
                     "description": "Registered free-message templates per endpoint.",
                     "items": {
@@ -174,7 +174,7 @@
                 "id",
                 "endpointId",
                 "direction",
-                "berichtSoort",
+                "messageKind",
                 "envelopeXml",
                 "sentOn"
             ],
@@ -194,7 +194,7 @@
                     "description": "Message direction.",
                     "enum": ["outbound", "inbound"]
                 },
-                "berichtSoort": {
+                "messageKind": {
                     "type": "string",
                     "description": "StUF message type code (Lk01, Lk02, Lk03, Bv01, Lv01, La01, Du01, Fo02).",
                     "enum": ["Lk01", "Lk02", "Lk03", "Bv01", "Lv01", "La01", "Du01", "Fo02"]
@@ -209,7 +209,7 @@
                     "description": "StUF functie (e.g. creeerZaak, actualiseerZaak, geefZaakDetails, zetStatus, genereerZaakIdentificatie).",
                     "maxLength": 128
                 },
-                "referentienummer": {
+                "referenceNumber": {
                     "type": "string",
                     "description": "Outbound referentienummer (ULID, unique per envelope).",
                     "maxLength": 64
@@ -238,7 +238,7 @@
                     "type": "integer",
                     "description": "HTTP response status code."
                 },
-                "duurMs": {
+                "durationMs": {
                     "type": "integer",
                     "description": "Wall-clock duration in milliseconds."
                 },
@@ -271,12 +271,12 @@
                     "format": "date-time",
                     "description": "When the response was received."
                 },
-                "gerelateerdeZaakId": {
+                "relatedCaseId": {
                     "type": "string",
                     "description": "Zaak identificatie this message is related to, if applicable.",
                     "maxLength": 128
                 },
-                "bronEntiteit": {
+                "sourceEntity": {
                     "type": "string",
                     "description": "Type of the procest source entity that triggered this message.",
                     "enum": ["case", "contact"]
@@ -296,9 +296,9 @@
                     "description": "Retry history.",
                     "items": {
                         "type": "object",
-                        "required": ["poging", "timestamp"],
+                        "required": ["attempt", "timestamp"],
                         "properties": {
-                            "poging": {
+                            "attempt": {
                                 "type": "integer"
                             },
                             "timestamp": {
@@ -308,7 +308,7 @@
                             "httpStatus": {
                                 "type": "integer"
                             },
-                            "duurMs": {
+                            "durationMs": {
                                 "type": "integer"
                             },
                             "fout": {
@@ -329,7 +329,7 @@
             "@type": "ZaaksysteemMapping",
             "required": [
                 "id",
-                "bronEntiteit",
+                "sourceEntity",
                 "bronId",
                 "externEntiteit",
                 "externIdentificatie",
@@ -341,7 +341,7 @@
                     "description": "Stable identifier (e.g. map-evenement-tour-amersfoort).",
                     "maxLength": 128
                 },
-                "bronEntiteit": {
+                "sourceEntity": {
                     "type": "string",
                     "description": "Type of procest entity bound to the external one.",
                     "enum": ["case", "contact"]
@@ -412,16 +412,16 @@
             },
             "id": "stuf-ep-amersfoort-key2zaken",
             "name": "Gemeente Amersfoort - Centric Key2Zaken",
-            "gemeenteCode": "0307",
-            "ontvangerApplicatie": "Key2Zaken",
-            "ontvangerOrganisatie": "Gemeente Amersfoort",
-            "ontvangerGebruiker": "procest",
-            "zenderApplicatie": "Procest",
-            "zenderOrganisatie": "Gemeente Amersfoort",
+            "municipalityCode": "0307",
+            "recipientApplication": "Key2Zaken",
+            "recipientOrganisation": "Gemeente Amersfoort",
+            "recipientUser": "procest",
+            "senderApplication": "Procest",
+            "senderOrganisation": "Gemeente Amersfoort",
             "endpointUrl": "https://stuf.amersfoort.nl/CGS/StUFZKN/2.04/OntvangAsynchroon",
             "soapVersion": "1.1",
             "stufVersion": "0310",
-            "sectormodel": "ZKN",
+            "sectorModel": "ZKN",
             "authenticatie": {
                 "type": "wsse-usernametoken",
                 "gebruikersnaam": "procest_amersfoort",
@@ -434,7 +434,7 @@
                 "klacht-openbare-ruimte": "Klacht openbare ruimte",
                 "vraag-algemeen": "Algemene vraag KCC"
             },
-            "vrijeBerichtenTemplates": [
+            "freeMessagesTemplates": [
                 {
                     "name": "zetStatus",
                     "verplichteVelden": ["zaakIdentificatie", "statusType", "datumStatusGezet"]

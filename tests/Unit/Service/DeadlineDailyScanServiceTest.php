@@ -83,7 +83,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 	 */
 	private function seedInstance(string $deadline, string $status = 'lopend'): array {
 		return $this->objects->saveObject('procest', 'termijnInstance', [
-			'zaak' => 'Z/2026/X',
+			'case' => 'Z/2026/X',
 			'termijnDefinitie' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => $deadline,
@@ -147,7 +147,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 	 */
 	public function testScanRaisesPauseExpiredEvent(): void {
 		$row = $this->seedInstance('2026-07-01', 'gepauzeerd');
-		$row['pauzeDeadline'] = '2026-05-30';
+		$row['pauseDeadline'] = '2026-05-30';
 		$this->objects->store['termijnInstance'][$row['id']] = $row;
 
 		$counts = $this->scan->run(new DateTimeImmutable('2026-06-01T10:00:00+00:00'));

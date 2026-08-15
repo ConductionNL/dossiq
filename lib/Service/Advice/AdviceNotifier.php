@@ -119,10 +119,10 @@ class AdviceNotifier {
 		string $callerId,
 	): void {
 		if ($to === 'aangevraagd') {
-			$adviseur = (string)($current['adviseur'] ?? '');
-			if ($adviseur !== '') {
+			$advisor = (string)($current['advisor'] ?? '');
+			if ($advisor !== '') {
 				$this->sendUserNotification(
-					userId: $adviseur,
+					userId: $advisor,
 					subject: 'advies_aangevraagd',
 					objectId: $adviceId,
 					message: (string)($current['onderwerp'] ?? '')
@@ -153,15 +153,15 @@ class AdviceNotifier {
 	 * @spec openspec/specs/advice-management/spec.md
 	 */
 	public function notifyAdviseur(string $caseId, array $payload, array $saved): void {
-		$adviseur = $payload['adviseur'];
-		if ($adviseur === '') {
+		$advisor = $payload['advisor'];
+		if ($advisor === '') {
 			return;
 		}
 
 		$notificationObjectId = $saved['id'] ?? $caseId;
 
 		$this->sendUserNotification(
-			userId: $adviseur,
+			userId: $advisor,
 			subject: 'advice_requested',
 			objectId: $notificationObjectId,
 			message: 'Adviesaanvraag voor zaak ' . $caseId

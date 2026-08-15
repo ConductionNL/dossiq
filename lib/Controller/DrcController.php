@@ -1473,7 +1473,7 @@ class DrcController extends ZgwController {
 				return new JSONResponse(
 					data: [
 						'sequenceNumber' => $sequenceNumber,
-						'omvang' => $chunkSize,
+						'size' => $chunkSize,
 						'uploadComplete' => true,
 						'bestandsomvang' => $mergedSize,
 						'uploadedParts' => count($uploaded),
@@ -1486,7 +1486,7 @@ class DrcController extends ZgwController {
 			return new JSONResponse(
 				data: [
 					'sequenceNumber' => $sequenceNumber,
-					'omvang' => $chunkSize,
+					'size' => $chunkSize,
 					'uploadComplete' => false,
 					'uploadedParts' => count($uploaded),
 					'totalParts' => $totalParts,
@@ -1604,7 +1604,7 @@ class DrcController extends ZgwController {
 			$bestandsdelen[] = [
 				'url' => $baseUrl . '/' . $uuid . '?volgnummer=' . $i,
 				'sequenceNumber' => $i,
-				'omvang' => $chunkSize,
+				'size' => $chunkSize,
 				'lock' => '',
 			];
 		}

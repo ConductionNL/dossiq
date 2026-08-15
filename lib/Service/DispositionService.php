@@ -150,7 +150,7 @@ class DispositionService {
 		$data['closureDate'] = $data['closureDate'] ?? date('Y-m-d');
 
 		if ($approval === self::APPROVAL_REQUIRED) {
-			$data['goedkeuringStatus'] = 'wacht_op_goedkeuring';
+			$data['approvalStatus'] = 'wacht_op_goedkeuring';
 		}
 
 		$disposition = $objectService->saveObject(object: $data, register: $register, schema: $schema);
@@ -189,7 +189,7 @@ class DispositionService {
 		$schema = $this->settingsService->getConfigValue('complaint_disposition_schema');
 
 		$updateData = [
-			'goedkeuringStatus' => 'goedgekeurd',
+			'approvalStatus' => 'goedgekeurd',
 			'goedkeurder' => $approverId,
 		];
 
@@ -229,7 +229,7 @@ class DispositionService {
 		$schema = $this->settingsService->getConfigValue('complaint_disposition_schema');
 
 		$updateData = [
-			'goedkeuringStatus' => 'afgekeurd',
+			'approvalStatus' => 'afgekeurd',
 			'goedkeurder' => $rejectorId,
 		];
 

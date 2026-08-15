@@ -94,8 +94,8 @@ class DeadlineMonitoringSeedDataServiceTest extends TestCase {
 		$woo = $this->objects->store['termijnDefinitie']['td-woo-verzoek'];
 		self::assertSame('woo-verzoek', $woo['caseType']);
 		self::assertSame(28, $woo['standardDurationDays']);
-		self::assertSame(1500, $woo['afwijkendDwangsomRegime']['dailyTariff']);
-		self::assertSame(50000, $woo['afwijkendDwangsomRegime']['plafond']);
+		self::assertSame(1500, $woo['deviatingPenaltyPaymentRegime']['dailyTariff']);
+		self::assertSame(50000, $woo['deviatingPenaltyPaymentRegime']['plafond']);
 	}
 
 	/**

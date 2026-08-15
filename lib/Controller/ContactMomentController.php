@@ -324,7 +324,7 @@ class ContactMomentController extends Controller {
 		}
 
 		$data = [
-			'contactmomentId' => (string)$this->request->getParam('contactmomentId', ''),
+			'interactionId' => (string)$this->request->getParam('interactionId', ''),
 			'fromEmployeeId' => $user->getUID(),
 			'toEmployeeId' => $this->request->getParam('toEmployeeId', null),
 			'toQueue' => $this->request->getParam('toQueue', null),

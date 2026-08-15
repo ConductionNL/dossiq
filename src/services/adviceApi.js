@@ -80,7 +80,7 @@ export async function getAdviceForCase(caseId) {
  * Use { to: 'aangevraagd' } right after creating an advice object to fire
  * the notification to the adviseur (workflow side-effect).
  *
- * Use { to: 'ontvangen', adviesDocument: '<fileId>' } to mark received.
+ * Use { to: 'ontvangen', adviceDocument: '<fileId>' } to mark received.
  *
  * @param {string} id   Advice UUID
  * @param {object} body Transition payload (to, adviesDocument, ...)
@@ -137,7 +137,7 @@ export async function dispatchReminder(id) {
  * @spec openspec/specs/remaining-decision-delegation/spec.md
  */
 export async function createAdviceWithNotification(data) {
-	const caseId = data.case || data.caseRef || data.zaak
+	const caseId = data.case || data.caseRef || data.case
 	const url = generateUrl('/apps/procest/api/vth/cases/{caseId}/advice-requests', {
 		caseId,
 	})

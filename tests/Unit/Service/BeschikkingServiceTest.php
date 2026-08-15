@@ -209,8 +209,8 @@ class BeschikkingServiceTest extends TestCase {
 				'id' => 'mr-2024-007-wmo',
 				'name' => 'Mandaatregeling WMO',
 				'mandateGroups' => [
-					['niveau' => 'consulent', 'to_amount' => 5000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning']],
-					['niveau' => 'afdelingsmanager', 'to_amount' => 25000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning', 'afwijzing']],
+					['level' => 'consulent', 'to_amount' => 5000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning']],
+					['level' => 'afdelingsmanager', 'to_amount' => 25000, 'caseTypes' => ['wmo-melding'], 'decisionTypes' => ['toekenning', 'afwijzing']],
 				],
 			]
 		);
@@ -227,7 +227,7 @@ class BeschikkingServiceTest extends TestCase {
 			'tpl-wmo-v1',
 			[
 				'decisionType' => 'toekenning',
-				'geadresseerde' => ['type' => 'burger', 'bsn' => '123456789', 'name' => 'M. Jansen', 'berichtenboxBevestigd' => true],
+				'addressee' => ['type' => 'burger', 'bsn' => '123456789', 'name' => 'M. Jansen', 'messageBoxConfirmed' => true],
 				'rationale' => 'Toegekend op basis van onderzoek.',
 			],
 		);
@@ -246,8 +246,8 @@ class BeschikkingServiceTest extends TestCase {
 		$decision = $this->composeWmo();
 
 		$this->assertSame('ontwerp', $decision['currentStatus']);
-		$this->assertSame('pdf-a3', $decision['samengesteldeInhoud']['format']);
-		$this->assertNotEmpty($decision['samengesteldeInhoud']['fileId']);
+		$this->assertSame('pdf-a3', $decision['compositeContent']['format']);
+		$this->assertNotEmpty($decision['compositeContent']['fileId']);
 	}//end testComposeCreatesDraft()
 
 	/**
@@ -276,12 +276,12 @@ class BeschikkingServiceTest extends TestCase {
 		// A BezwaarTrigger was created with a 6-week termijn. [V08]
 		$triggers = $this->objects->searchObjectsBySlug('procest', 'bezwaarTrigger', ['decisionId' => $id]);
 		$this->assertCount(1, $triggers);
-		$this->assertTrue($triggers[0]['archiefTriggerActief']);
+		$this->assertTrue($triggers[0]['archiveTriggerActive']);
 
 		$afterArchive = $this->service->archive($id);
 		$this->assertSame('gearchiveerd', $afterArchive['currentStatus']);
-		$this->assertNotEmpty($afterArchive['archief']['archiefId']);
-		$this->assertNotEmpty($afterArchive['archief']['destructionDate']);
+		$this->assertNotEmpty($afterArchive['archive']['archiveId']);
+		$this->assertNotEmpty($afterArchive['archive']['destructionDate']);
 
 		// Every transition was logged. [V05 logging]
 		$logs = $this->objects->searchObjectsBySlug('procest', 'stateMachineLog', ['decisionId' => $id]);

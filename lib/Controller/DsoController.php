@@ -103,7 +103,7 @@ class DsoController extends Controller {
 
 		$params = ['caseType' => 'omgevingsvergunning'];
 
-		foreach (['status', 'procedureType', 'gemeenteCode'] as $key) {
+		foreach (['status', 'procedureType', 'municipalityCode'] as $key) {
 			$value = (string)$this->request->getParam($key, '');
 			if ($value !== '') {
 				$params[$key] = $value;
@@ -268,10 +268,10 @@ class DsoController extends Controller {
 		}
 
 		$body = $this->readJsonBody();
-		$bevoegdGezag = (string)($body['aangezochtBevoegdGezag'] ?? '');
+		$competentAuthority = (string)($body['requestedCompetentAuthority'] ?? '');
 		$rationale = (string)($body['rationale'] ?? '');
 
-		if ($bevoegdGezag === '') {
+		if ($competentAuthority === '') {
 			return new JSONResponse(
 				['error' => 'aangezochtBevoegdGezag is required'],
 				Http::STATUS_BAD_REQUEST
@@ -288,7 +288,7 @@ class DsoController extends Controller {
 
 			$samenwerkverzoek = $this->samenwerkService->initiateSamenwerking(
 				caseId: $caseId,
-				aangezochtGezag: $bevoegdGezag,
+				aangezochtGezag: $competentAuthority,
 				rationale: $rationale
 			);
 

@@ -70,7 +70,7 @@ export function companyResult(company) {
 		type: 'company',
 		sourceId: company.kvkNumber || '',
 		displayName: company.trade_name || '',
-		detail: [company.rechtsvorm, company.kvkNumber && `KVK ${company.kvkNumber}`]
+		detail: [company.legalForm, company.kvkNumber && `KVK ${company.kvkNumber}`]
 			.filter(Boolean)
 			.join(' · '),
 		objectId: company.id || company['@self']?.id || null,

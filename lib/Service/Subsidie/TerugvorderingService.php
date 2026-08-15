@@ -168,7 +168,7 @@ class TerugvorderingService {
 			'amount' => round($amount, 2),
 			'legalBasis' => 'AWB 4:57',
 			'objectionPeriodEnd' => $this->computeBezwaartermijn(publication: $publication)->format('Y-m-d'),
-			'betaaltermijnEinde' => $this->computeBetaaltermijn(publication: $publication)->format('Y-m-d'),
+			'paymentTermEnd' => $this->computeBetaaltermijn(publication: $publication)->format('Y-m-d'),
 			'paidAmount' => 0,
 			'managerGoedgekeurd' => false,
 			'status' => 'concept',

@@ -19,7 +19,7 @@
 				</p>
 
 				<NcTextField
-					v-model="aangezochtBevoegdGezag"
+					v-model="requestedCompetentAuthority"
 					:label="t('procest', 'Aangezocht bevoegd gezag (OIN or name)')"
 					:required="true"
 					:placeholder="
@@ -86,7 +86,7 @@ export default {
 	emits: ['close', 'initiated'],
 	data() {
 		return {
-			aangezochtBevoegdGezag: '',
+			requestedCompetentAuthority: '',
 			rationale: '',
 			submitting: false,
 			error: null,
@@ -101,7 +101,7 @@ export default {
 	methods: {
 		t,
 		async submit() {
-			if (!this.aangezochtBevoegdGezag) {
+			if (!this.requestedCompetentAuthority) {
 				return
 			}
 
@@ -115,7 +115,8 @@ export default {
 							+ '/samenwerking',
 					),
 					{
-						aangezochtBevoegdGezag: this.aangezochtBevoegdGezag,
+						requestedCompetentAuthority:
+							this.requestedCompetentAuthority,
 						rationale: this.rationale,
 					},
 				)

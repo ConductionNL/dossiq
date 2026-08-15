@@ -246,7 +246,7 @@ class DwangsomControllerAuthzTest extends TestCase {
 	public function testAuthorisedCallerGetsTheBerekeningNormalisedFromAnEntity(): void {
 		$payload = [
 			'id' => self::BEREKENING_ID,
-			'dagtarief' => 2300,
+			'dailyRate' => 2300,
 			'cumulativeAmount' => 11500,
 		];
 

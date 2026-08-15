@@ -1307,7 +1307,7 @@
                         "description": "Computed legal deadline (indieningsdatum + procedure working days)",
                         "title": "Deadline Date"
                     },
-                    "bevoegdGezag": {
+                    "competentAuthority": {
                         "type": "string",
                         "description": "OIN or organization name of the competent authority",
                         "title": "Competent Authority",
@@ -2270,10 +2270,10 @@
                 "description": "A catalogus groups case types, decision types, and document types",
                 "type": "object",
                 "required": [
-                    "domein"
+                    "domain"
                 ],
                 "properties": {
-                    "domein": {
+                    "domain": {
                         "type": "string",
                         "maxLength": 5,
                         "description": "Abbreviated domain name (max 5 characters)",
@@ -2680,7 +2680,7 @@
                     "case",
                     "type",
                     "onderwerp",
-                    "steller",
+                    "author",
                     "status"
                 ],
                 "properties": {
@@ -2709,7 +2709,7 @@
                         "description": "Subject of the voorstel (usually derived from case title)",
                         "title": "Subject"
                     },
-                    "steller": {
+                    "author": {
                         "type": "string",
                         "description": "Nextcloud user UID who created the voorstel",
                         "title": "Drafter",
@@ -4308,7 +4308,7 @@
                                 "description": "Postal filing address (required when filingMethod is schriftelijk or beide)",
                                 "title": "Filing Address"
                             },
-                            "griffierecht": {
+                            "courtFee": {
                                 "type": "string",
                                 "description": "Griffierecht copy (amount + payment instructions)",
                                 "title": "Court Fee"
@@ -5236,7 +5236,7 @@
                 "type": "object",
                 "required": [
                     "case",
-                    "adviseur",
+                    "advisor",
                     "type"
                 ],
                 "properties": {
@@ -5247,7 +5247,7 @@
                         "description": "Reference to the case this advice is requested for",
                         "title": "Case"
                     },
-                    "adviseur": {
+                    "advisor": {
                         "type": "string",
                         "description": "User UID (internal) or organization name (external)",
                         "title": "Advisor"
@@ -5283,7 +5283,7 @@
                         "description": "Current status of the advice request",
                         "title": "Status"
                     },
-                    "adviesDocument": {
+                    "adviceDocument": {
                         "type": "string",
                         "description": "Nextcloud file ID of the advice document",
                         "title": "Advice Document"
@@ -5479,8 +5479,8 @@
                     "name",
                     "version",
                     "active",
-                    "ernstAxis",
-                    "gedragAxis",
+                    "severityAxis",
+                    "behaviourAxis",
                     "actorTypeAxis",
                     "cells"
                 ],
@@ -5503,7 +5503,7 @@
                         "description": "Whether this is the currently active matrix. Exactly one matrix is active=true per tenant.",
                         "title": "Active"
                     },
-                    "ernstAxis": {
+                    "severityAxis": {
                         "type": "array",
                         "items": {
                             "type": "string"
@@ -5511,7 +5511,7 @@
                         "description": "Ordered severity axis values, e.g. [gering, aanzienlijk, ernstig]",
                         "title": "Severity Axis"
                     },
-                    "gedragAxis": {
+                    "behaviourAxis": {
                         "type": "array",
                         "items": {
                             "type": "string"
@@ -5821,7 +5821,7 @@
                                     "description": "Whether this item must be completed",
                                     "title": "Required"
                                 },
-                                "fotoRequired": {
+                                "photoRequired": {
                                     "type": "boolean",
                                     "default": false,
                                     "description": "Whether a photo is required (especially on failure)",
@@ -6121,7 +6121,7 @@
                                                 "description": "Whether the item must be answered",
                                                 "title": "Required"
                                             },
-                                            "fotoRequired": {
+                                            "photoRequired": {
                                                 "type": "string",
                                                 "enum": [
                                                     "nooit",
@@ -7304,7 +7304,7 @@
                 "type": "object",
                 "required": [
                     "bezwaar",
-                    "commissie",
+                    "committee",
                     "status"
                 ],
                 "properties": {
@@ -7316,7 +7316,7 @@
                         "description": "The bezwaar (lifecycle record) being reviewed; the wrapped procest case is resolved via bezwaar.case",
                         "title": "Objection"
                     },
-                    "commissie": {
+                    "committee": {
                         "type": "string",
                         "format": "uuid",
                         "$ref": "bezwaaradviescommissie",
@@ -7481,7 +7481,7 @@
                         "readOnly": true,
                         "title": "Complaint Number"
                     },
-                    "klager": {
+                    "complainant": {
                         "type": "object",
                         "description": "Person filing the complaint",
                         "properties": {
@@ -7630,7 +7630,7 @@
                                 "title": "Date",
                                 "description": "Date on which the waiver of the right to be heard was received"
                             },
-                            "methode": {
+                            "method": {
                                 "type": "string",
                                 "enum": [
                                     "email",
@@ -7739,7 +7739,7 @@
                         },
                         "title": "Participants"
                     },
-                    "aanwezigen": {
+                    "attendees": {
                         "type": "array",
                         "description": "Actual attendees (recorded after the hearing)",
                         "items": {
@@ -7747,12 +7747,12 @@
                         },
                         "title": "Attendees"
                     },
-                    "verslag": {
+                    "minutes": {
                         "type": "string",
                         "description": "Summary of the hearing (mandatory after completion)",
                         "title": "Minutes"
                     },
-                    "conclusie": {
+                    "conclusion": {
                         "type": "string",
                         "description": "Preliminary conclusion from the hearing",
                         "title": "Conclusion"
@@ -7849,7 +7849,7 @@
                         "description": "Optional coordinator who approved this disposition (NC user ID)",
                         "title": "Approver"
                     },
-                    "goedkeuringStatus": {
+                    "approvalStatus": {
                         "type": "string",
                         "enum": [
                             "wacht_op_goedkeuring",
@@ -8955,7 +8955,7 @@
                 "required": [
                     "case",
                     "requestedBy",
-                    "adviseur",
+                    "advisor",
                     "deadline",
                     "status",
                     "question"
@@ -8973,7 +8973,7 @@
                         "description": "UID of the user who submitted the advice request.",
                         "title": "Requested By"
                     },
-                    "adviseur": {
+                    "advisor": {
                         "type": "string",
                         "description": "Name or UID of the adviser (person, team, or external party) being consulted.",
                         "title": "Advisor"
@@ -9002,7 +9002,7 @@
                         "description": "The question(s) put to the adviser.",
                         "title": "Question"
                     },
-                    "adviesText": {
+                    "adviceText": {
                         "type": "string",
                         "description": "The advice text returned by the adviser once received.",
                         "title": "Advice Text"
@@ -9191,17 +9191,17 @@
                 "description": "A single cell in the Landelijk Handhavingsbeleid Stedenbouw (LHS) intervention matrix, mapping a behaviour row and consequence column to a recommended intervention step.",
                 "type": "object",
                 "required": [
-                    "gedragRow",
-                    "gevolgColumn",
+                    "behaviourRow",
+                    "consequenceColumn",
                     "interventionStep"
                 ],
                 "properties": {
-                    "gedragRow": {
+                    "behaviourRow": {
                         "type": "string",
                         "description": "The behaviour (gedrag) row identifier in the LHS matrix.",
                         "title": "Behaviour Row"
                     },
-                    "gevolgColumn": {
+                    "consequenceColumn": {
                         "type": "string",
                         "description": "The consequence (gevolg) column identifier in the LHS matrix.",
                         "title": "Consequence Column"
@@ -9994,7 +9994,7 @@
                     "slug": "advies-welstand-2026-0042"
                 },
                 "case": "zaak-omgevingsvergunning-0042",
-                "adviseur": "welstandscommissie",
+                "advisor": "welstandscommissie",
                 "type": "intern",
                 "onderwerp": "Welstandstoets gevelwijziging Keizersgracht 123",
                 "deadline": "2026-04-30",
@@ -10009,7 +10009,7 @@
                     "slug": "advies-veiligheidsregio-2026-0038"
                 },
                 "case": "zaak-evenementenvergunning-0038",
-                "adviseur": "Veiligheidsregio Amsterdam-Amstelland",
+                "advisor": "Veiligheidsregio Amsterdam-Amstelland",
                 "type": "extern",
                 "onderwerp": "Veiligheidsadvies evenement Museumplein 500+ bezoekers",
                 "deadline": "2026-04-25",
@@ -10024,7 +10024,7 @@
                     "slug": "advies-rud-2026-0031"
                 },
                 "case": "zaak-milieumelding-0031",
-                "adviseur": "Regionale Uitvoeringsdienst Noord-Holland",
+                "advisor": "Regionale Uitvoeringsdienst Noord-Holland",
                 "type": "extern",
                 "onderwerp": "Milieukundig advies lozing grondwater bouwproject",
                 "deadline": "2026-03-28",
@@ -10039,7 +10039,7 @@
                     "slug": "advies-juridisch-2026-0055"
                 },
                 "case": "zaak-bezwaar-0055",
-                "adviseur": "juridische-dienst",
+                "advisor": "juridische-dienst",
                 "type": "intern",
                 "onderwerp": "Juridische toets ontvankelijkheid bezwaarschrift",
                 "deadline": "2026-05-02",
@@ -10055,7 +10055,7 @@
                     "slug": "advies-brandweer-2026-0047"
                 },
                 "case": "zaak-bouwvergunning-0047",
-                "adviseur": "Brandweer Amsterdam-Amstelland",
+                "advisor": "Brandweer Amsterdam-Amstelland",
                 "type": "extern",
                 "onderwerp": "Brandveiligheidsadvies transformatie kantoorpand naar woningen",
                 "deadline": "2026-05-14",

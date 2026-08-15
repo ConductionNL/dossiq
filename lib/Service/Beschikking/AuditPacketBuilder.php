@@ -168,14 +168,14 @@ class AuditPacketBuilder {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	private function maskDecision(array $decision): array {
-		if (isset($decision['geadresseerde']['bsn']) === true) {
-			$bsn = (string)$decision['geadresseerde']['bsn'];
+		if (isset($decision['addressee']['bsn']) === true) {
+			$bsn = (string)$decision['addressee']['bsn'];
 			$masked = '***';
 			if (strlen($bsn) > 3) {
 				$masked = str_repeat('*', (strlen($bsn) - 3)) . substr($bsn, -3);
 			}
 
-			$decision['geadresseerde']['bsn'] = $masked;
+			$decision['addressee']['bsn'] = $masked;
 		}
 
 		return $decision;

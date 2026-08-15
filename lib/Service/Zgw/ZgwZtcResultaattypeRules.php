@@ -134,9 +134,9 @@ class ZgwZtcResultaattypeRules extends ZgwRulesBase {
 		}
 
 		// Validate brondatumArchiefprocedure cross-field constraints (ztc-003 to ztc-008).
-		$archief = $body['brondatumArchiefprocedure'] ?? null;
-		if ($archief !== null) {
-			$errors = $this->brondatumValidator->validate(archief: $archief, selectielijstData: $selectielijstData);
+		$archive = $body['brondatumArchiefprocedure'] ?? null;
+		if ($archive !== null) {
+			$errors = $this->brondatumValidator->validate(archive: $archive, selectielijstData: $selectielijstData);
 		}
 
 		if (empty($errors) === false) {

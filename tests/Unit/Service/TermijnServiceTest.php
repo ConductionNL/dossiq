@@ -93,7 +93,7 @@ class TermijnServiceTest extends TestCase {
 		$start = new DateTimeImmutable('2026-06-01T10:00:00+00:00');
 		$instance = $this->service->createTermijnInstance('Z/2026/123', 'omgevingsvergunning-regulier', $start);
 
-		self::assertSame('Z/2026/123', $instance['zaak']);
+		self::assertSame('Z/2026/123', $instance['case']);
 		self::assertSame('td-omgevingsvergunning-regulier', $instance['termijnDefinitie']);
 		self::assertSame('lopend', $instance['status']);
 		self::assertSame('2026-07-27', $instance['endDateCalculated']);

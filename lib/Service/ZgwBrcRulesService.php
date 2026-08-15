@@ -113,7 +113,7 @@ class ZgwBrcRulesService extends ZgwRulesBase {
 		}
 
 		// Brc-007: Validate zaak-besluittype relation.
-		$caseUrl = $body['zaak'] ?? null;
+		$caseUrl = $body['case'] ?? null;
 		if ($caseUrl !== null && $caseUrl !== '' && empty($decisionTypeUrl) === false
 			&& $this->objectService !== null
 		) {

@@ -103,7 +103,7 @@ class NotificatieService {
 	 *
 	 * @param string $channel The channel name (e.g. 'zaken', 'documenten')
 	 * @param string $hoofdObject The main object URL
-	 * @param string $resource The resource name (e.g. 'zaak', 'status')
+	 * @param string $resource The resource name (e.g. 'case', 'status')
 	 * @param string $resourceUrl The resource URL
 	 * @param string $action The action ('create', 'update', 'destroy')
 	 * @param array $characteristics Optional filter attributes for matching

@@ -207,7 +207,7 @@ export default {
 					case: caseRef,
 					type: this.form.type,
 					onderwerp: this.form.onderwerp.trim(),
-					steller: getCurrentUser()?.uid || '',
+					author: getCurrentUser()?.uid || '',
 					department: this.form.department,
 					portefeuillehouder: this.form.portefeuillehouder,
 					status: 'concept',

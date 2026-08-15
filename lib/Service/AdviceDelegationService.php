@@ -88,7 +88,7 @@ class AdviceDelegationService {
 			context: [
 				'question' => (string)($payload['question'] ?? ''),
 				'adviceType' => (string)($payload['adviceType'] ?? ''),
-				'adviseur' => (string)($payload['adviseur'] ?? ''),
+				'advisor' => (string)($payload['advisor'] ?? ''),
 			],
 		);
 	}//end raiseAdviceDecision()

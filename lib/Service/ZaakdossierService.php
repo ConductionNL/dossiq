@@ -135,7 +135,7 @@ class ZaakdossierService {
 		$hash = hash('sha256', $content);
 
 		$informatieobject = [
-			'titel' => (string)($metadata['titel'] ?? $fileName),
+			'title' => (string)($metadata['title'] ?? $fileName),
 			'fileName' => $fileName,
 			'bestandsomvang' => strlen($content),
 			'format' => (string)($metadata['format'] ?? 'application/octet-stream'),
@@ -147,8 +147,8 @@ class ZaakdossierService {
 			'bronorganisatie' => (string)($metadata['bronorganisatie'] ?? ''),
 			'taal' => (string)($metadata['taal'] ?? 'nld'),
 			'description' => (string)($metadata['description'] ?? $metadata['beschrijving'] ?? ''),
-			'integriteit' => [
-				'algoritme' => 'sha256',
+			'integrity' => [
+				'algorithm' => 'sha256',
 				'value' => $hash,
 				'date' => $now,
 			],
@@ -170,12 +170,12 @@ class ZaakdossierService {
 
 		return [
 			'id' => $infoId,
-			'titel' => $informatieobject['titel'],
+			'title' => $informatieobject['title'],
 			'fileName' => $fileName,
 			'status' => 'concept',
 			'vertrouwelijkheidaanduiding' => $classification,
 			'informatieobjecttype' => $type,
-			'integriteit' => $informatieobject['integriteit'],
+			'integrity' => $informatieobject['integrity'],
 		];
 	}//end uploadDocument()
 
@@ -201,13 +201,13 @@ class ZaakdossierService {
 			objectService: $objectService,
 			register: $register,
 			schema: $joinSchema,
-			filters: ['zaak' => $caseId, 'informatieobject' => $infoObjectId, '_limit' => 1],
+			filters: ['case' => $caseId, 'informatieobject' => $infoObjectId, '_limit' => 1],
 		);
 
 		if (empty($existing) === false) {
 			return [
 				'id' => ($existing[0]['id'] ?? ''),
-				'zaak' => $caseId,
+				'case' => $caseId,
 				'duplicated' => false,
 			];
 		}
@@ -238,7 +238,7 @@ class ZaakdossierService {
 			objectService: $objectService,
 			register: $register,
 			schema: $joinSchema,
-			filters: ['zaak' => $caseId, 'informatieobject' => $infoObjectId, '_limit' => 100],
+			filters: ['case' => $caseId, 'informatieobject' => $infoObjectId, '_limit' => 100],
 		);
 
 		$removed = false;
@@ -310,7 +310,7 @@ class ZaakdossierService {
 			objectService: $objectService,
 			register: $register,
 			schema: $joinSchema,
-			filters: ['zaak' => $caseId, '_limit' => 500],
+			filters: ['case' => $caseId, '_limit' => 500],
 		);
 
 		$documents = [];
@@ -419,7 +419,7 @@ class ZaakdossierService {
 			throw new DomainException('Definitieve documenten kunnen niet worden gewijzigd');
 		}
 
-		$allowed = ['titel', 'description', 'informatieobjecttype', 'vertrouwelijkheidaanduiding'];
+		$allowed = ['title', 'description', 'informatieobjecttype', 'vertrouwelijkheidaanduiding'];
 		$updateData = [];
 		foreach ($allowed as $field) {
 			if (array_key_exists($field, $metadata) === true) {
@@ -505,7 +505,7 @@ class ZaakdossierService {
 		$joinSchema = $this->settingsService->getConfigValue('dossier_zaakinformatieobject_schema');
 
 		$join = [
-			'zaak' => $caseId,
+			'case' => $caseId,
 			'informatieobject' => $infoObjectId,
 			'natureRelationshipDisplay' => 'Hoort bij, omgekeerd',
 			'registrationDate' => date('Y-m-d\TH:i:s\Z'),
@@ -516,7 +516,7 @@ class ZaakdossierService {
 
 		return [
 			'id' => $joinId,
-			'zaak' => $caseId,
+			'case' => $caseId,
 			'informatieobject' => $infoObjectId,
 			'duplicated' => true,
 		];

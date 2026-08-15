@@ -136,7 +136,7 @@ class TussenrapportageService {
 			[
 				'subsidieuitvoering' => $uitvoeringId,
 				'status' => 'verwacht',
-				'amendementTeller' => 0,
+				'amendmentNumerator' => 0,
 			]
 		);
 
@@ -172,7 +172,7 @@ class TussenrapportageService {
 
 		$patch = [
 			'status' => 'goedgekeurd',
-			'beoordelaar' => $user->getUID(),
+			'assessor' => $user->getUID(),
 			'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
 		];
 		if ($beoordelingsoordeel !== null) {
@@ -197,15 +197,15 @@ class TussenrapportageService {
 	 * counter.
 	 *
 	 * @param string $reportId The report id.
-	 * @param string $correctieverzoek The required-corrections text.
+	 * @param string $correctionRequest The required-corrections text.
 	 * @param int $currentTeller The current amendment count.
 	 *
 	 * @return array<string, mixed> The updated report record.
 	 *
 	 * @throws OCSBadRequestException When the corrections text is empty or persistence fails.
 	 */
-	public function partialApprove(string $reportId, string $correctieverzoek, int $currentTeller): array {
-		if (trim($correctieverzoek) === '') {
+	public function partialApprove(string $reportId, string $correctionRequest, int $currentTeller): array {
+		if (trim($correctionRequest) === '') {
 			throw new OCSBadRequestException('Een correctieverzoek is verplicht bij gedeeltelijke goedkeuring');
 		}
 
@@ -218,9 +218,9 @@ class TussenrapportageService {
 
 		$patch = [
 			'status' => 'gedeeltelijk_goedgekeurd',
-			'correctieverzoek' => $correctieverzoek,
-			'amendementTeller' => ($currentTeller + 1),
-			'beoordelaar' => $user->getUID(),
+			'correctionRequest' => $correctionRequest,
+			'amendmentNumerator' => ($currentTeller + 1),
+			'assessor' => $user->getUID(),
 			'beoordelingsdatum' => (new DateTimeImmutable())->format(DateTimeImmutable::ATOM),
 		];
 

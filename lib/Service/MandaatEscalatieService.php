@@ -155,7 +155,7 @@ class MandaatEscalatieService {
 			usort(
 				$assigns,
 				static function (array $a, array $b): int {
-					$rank = static fn (array $r): int => match ((string)($r['toewijzingType'] ?? 'primair')) {
+					$rank = static fn (array $r): int => match ((string)($r['allocationType'] ?? 'primair')) {
 						'primair' => 0,
 						'waarnemer' => 1,
 						'tijdelijk' => 2,

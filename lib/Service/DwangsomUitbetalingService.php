@@ -105,7 +105,7 @@ class DwangsomUitbetalingService {
 			'iban' => strtoupper(str_replace(' ', '', $iban)),
 			'reference' => $this->buildReference(calculationId: $calculationId),
 			'legalBasis' => 'AWB 4:17',
-			'betaaldatumUiterlijk' => $uiterlijk,
+			'paymentDateLatest' => $uiterlijk,
 			'status' => 'voorbereid',
 		];
 

@@ -147,7 +147,7 @@
 						</label>
 
 						<label class="checklist-admin__toggle">
-							<input v-model="item.fotoRequired" type="checkbox" />
+							<input v-model="item.photoRequired" type="checkbox" />
 							{{ t('procest', 'Photo required') }}
 						</label>
 					</div>
@@ -329,7 +329,7 @@ export default {
 				label: '',
 				type: 'ja_nee_nvt',
 				required: true,
-				fotoRequired: false,
+				photoRequired: false,
 				options: [],
 				helpText: '',
 			})

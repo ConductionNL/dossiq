@@ -209,7 +209,7 @@ class ParaferingAuditListenerTest extends TestCase {
 			action: 'returned',
 			step: null,
 			actor: 'user-b',
-			actorRole: 'steller',
+			actorRole: 'author',
 			reason: null,
 		);
 

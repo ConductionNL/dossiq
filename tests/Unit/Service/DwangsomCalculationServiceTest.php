@@ -87,7 +87,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 
 		$row = $this->service->calculateDaily('b1');
 		self::assertSame(1, $row['currentDag']);
-		self::assertSame(2300, $row['dagtarief']);
+		self::assertSame(2300, $row['dailyRate']);
 		self::assertSame(2300, $row['cumulativeAmount']);
 		self::assertFalse($row['plafondBereikt']);
 	}
@@ -111,7 +111,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 
 		$row = $this->service->calculateDaily('b2');
 		self::assertSame(15, $row['currentDag']);
-		self::assertSame(3500, $row['dagtarief']);
+		self::assertSame(3500, $row['dailyRate']);
 		self::assertSame(35700, $row['cumulativeAmount']);
 	}
 
@@ -134,7 +134,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 
 		$row = $this->service->calculateDaily('b3');
 		self::assertSame(29, $row['currentDag']);
-		self::assertSame(4500, $row['dagtarief']);
+		self::assertSame(4500, $row['dailyRate']);
 		self::assertSame(85700, $row['cumulativeAmount']);
 	}
 
@@ -197,7 +197,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		$this->objects->saveObject('procest', 'termijnDefinitie', [
 			'id' => 'td-woo',
 			'caseType' => 'woo-verzoek',
-			'afwijkendDwangsomRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
+			'deviatingPenaltyPaymentRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
 		$this->objects->saveObject('procest', 'termijnInstance', [
@@ -218,7 +218,7 @@ class DwangsomCalculationServiceTest extends TestCase {
 		]);
 
 		$row = $this->service->calculateDaily('b-woo');
-		self::assertSame(1500, $row['dagtarief']);
+		self::assertSame(1500, $row['dailyRate']);
 		self::assertSame(1500, $row['cumulativeAmount']);
 	}
 }

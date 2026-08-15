@@ -2,8 +2,8 @@
     "name": "Landelijke Handhavingsstrategie 2024",
     "version": 1,
     "active": true,
-    "ernstAxis": ["gering", "aanzienlijk", "ernstig"],
-    "gedragAxis": ["goedwillend", "onverschillig", "calculerend", "crimineel"],
+    "severityAxis": ["gering", "aanzienlijk", "ernstig"],
+    "behaviourAxis": ["goedwillend", "onverschillig", "calculerend", "crimineel"],
     "actorTypeAxis": ["burger", "bedrijf", "overheid", "recidivist"],
     "cells": [
         { "ernst": "gering", "gedrag": "goedwillend", "actorType": "burger", "intervention": "waarschuwing", "note": "Eenvoudige overtreding, eerste signaal." },

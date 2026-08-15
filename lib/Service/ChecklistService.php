@@ -316,7 +316,7 @@ class ChecklistService {
 	 * @spec openspec/specs/inspection-checklists/spec.md
 	 */
 	private function photoViolation(array $item, array $response): ?string {
-		$gate = (string)($item['fotoRequired'] ?? self::PHOTO_NEVER);
+		$gate = (string)($item['photoRequired'] ?? self::PHOTO_NEVER);
 		if ($gate === self::PHOTO_NEVER || $gate === '') {
 			return null;
 		}

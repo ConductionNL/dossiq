@@ -442,7 +442,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		}
 
 		// Drc-002c/d: Validate objectType matches the URL path.
-		if ($objectType === 'zaak' && strpos($objectUrl, '/zaken/') === false) {
+		if ($objectType === 'case' && strpos($objectUrl, '/zaken/') === false) {
 			return $this->error(
 				status: 400,
 				detail: 'De object URL wijst niet naar een zaak.',
@@ -498,7 +498,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		}
 
 		$typeMap = [
-			'zaak' => ['case_document_schema', 'case'],
+			'case' => ['case_document_schema', 'case'],
 			'decision' => ['decision_document_schema', 'decision'],
 		];
 		if (isset($typeMap[$objectType]) === false) {
@@ -527,7 +527,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 
 			if ($total === 0) {
 				$detail = 'Er bestaat geen BesluitInformatieObject in de Besluiten API voor deze combinatie.';
-				if ($objectType === 'zaak') {
+				if ($objectType === 'case') {
 					$detail = 'Er bestaat geen ZaakInformatieObject in de Zaken API voor deze combinatie.';
 				}
 
@@ -605,7 +605,7 @@ class ZgwDrcRulesService extends ZgwRulesBase {
 		// as a duplicate for OIO creation.
 		$crossSchemaKey = '';
 		$crossField = '';
-		if ($objectType === 'zaak') {
+		if ($objectType === 'case') {
 			$crossSchemaKey = 'case_document_schema';
 			$crossField = 'case';
 		} elseif ($objectType === 'decision') {

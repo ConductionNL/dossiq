@@ -97,7 +97,7 @@ class TermijnService {
 		$endDate = $startDate->modify('+' . $durationDays . ' days')->format('Y-m-d');
 
 		$instance = [
-			'zaak' => $caseId,
+			'case' => $caseId,
 			'termijnDefinitie' => (string)($definitie['id'] ?? ''),
 			'startDate' => $startDate->format('Y-m-d\TH:i:sP'),
 			'endDateCalculated' => $endDate,
@@ -185,7 +185,7 @@ class TermijnService {
 		}
 
 		try {
-			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['zaak' => $caseId]);
+			$rows = $this->searchObjectsAsArrays(objectService: $objectService, register: $register, schema: $schema, filters: ['case' => $caseId]);
 		} catch (\Throwable $e) {
 			return null;
 		}

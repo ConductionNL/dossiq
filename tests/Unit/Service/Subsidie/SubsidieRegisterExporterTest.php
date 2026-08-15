@@ -66,7 +66,7 @@ class SubsidieRegisterExporterTest extends TestCase {
 	 */
 	public function testFeedEntryMapping(): void {
 		$request = ['applicantKvkRef' => '999', 'aanvragerNaam' => 'BV Y'];
-		$regeling = ['schemeName' => 'Innovatiefonds 2026', 'doelgroep' => 'MKB'];
+		$regeling = ['schemeName' => 'Innovatiefonds 2026', 'targetGroup' => 'MKB'];
 		$decision = [
 			'beschikkingtype' => 'verleningsbeschikking',
 			'grantedAmount' => 450000,

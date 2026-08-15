@@ -294,7 +294,7 @@ class ZrcController extends ZgwController {
 				$mapped = $this->enrichZioResponse(mapped: $mapped, body: $body);
 
 				// Zrc-005a: Create ObjectInformatieObject in DRC.
-				$caseUrl = $originalBody['zaak'] ?? ($body['zaak'] ?? '');
+				$caseUrl = $originalBody['case'] ?? ($body['zaak'] ?? '');
 				$ioUrl = $originalBody['informatieobject'] ?? ($body['informatieobject'] ?? '');
 				$this->syncCreateObjectInformatieObject(caseUrl: $caseUrl, ioUrl: $ioUrl);
 			}
@@ -1300,7 +1300,7 @@ class ZrcController extends ZgwController {
 			$objectService->deleteObject(uuid: $uuid);
 		} catch (\Throwable $e) {
 			return new JSONResponse(
-				data: ['detail' => 'Failed to delete zaak: ' . $e->getMessage()],
+				data: ['detail' => 'Failed to delete case: ' . $e->getMessage()],
 				statusCode: Http::STATUS_BAD_REQUEST
 			);
 		}
@@ -1379,7 +1379,7 @@ class ZrcController extends ZgwController {
 	 */
 	private function checkReopenScope(array $body): ?JSONResponse {
 		try {
-			$caseUrl = $body['zaak'] ?? '';
+			$caseUrl = $body['case'] ?? '';
 			$statustypeUrl = $body['statustype'] ?? '';
 			if ($caseUrl === '' || $statustypeUrl === '') {
 				return null;
@@ -1392,7 +1392,7 @@ class ZrcController extends ZgwController {
 				return null;
 			}
 
-			$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('zaak');
+			$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('case');
 			if ($caseConfig === null) {
 				return null;
 			}
@@ -1474,7 +1474,7 @@ class ZrcController extends ZgwController {
 	 */
 	private function checkIndicationGebruiksrechtBeforeClose(array $body): ?JSONResponse {
 		try {
-			$caseUrl = $body['zaak'] ?? '';
+			$caseUrl = $body['case'] ?? '';
 			$statustypeUrl = $body['statustype'] ?? '';
 			if ($caseUrl === '' || $statustypeUrl === '') {
 				return null;
@@ -1531,7 +1531,7 @@ class ZrcController extends ZgwController {
 			}
 
 			// Check if zaak is already closed (has endDate).
-			$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('zaak');
+			$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('case');
 			$caseAlreadyClosed = false;
 			if ($caseConfig !== null) {
 				$caseObj = $this->zgwService->getObjectService()->find(
@@ -1762,7 +1762,7 @@ class ZrcController extends ZgwController {
 				}//end if
 			}//end if
 
-			$caseUrl = $body['zaak'] ?? '';
+			$caseUrl = $body['case'] ?? '';
 			if ($caseUrl === '') {
 				return;
 			}
@@ -1771,7 +1771,7 @@ class ZrcController extends ZgwController {
 				return;
 			}
 
-			$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('zaak');
+			$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('case');
 			if ($caseConfig === null) {
 				return;
 			}
@@ -1969,7 +1969,7 @@ class ZrcController extends ZgwController {
 	 */
 	private function handleResultCreated(array $body, array $objectData): void {
 		try {
-			$caseUrl = $body['zaak'] ?? '';
+			$caseUrl = $body['case'] ?? '';
 			if ($caseUrl === '') {
 				return;
 			}
@@ -1979,7 +1979,7 @@ class ZrcController extends ZgwController {
 				return;
 			}
 
-			$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('zaak');
+			$caseConfig = $this->zgwService->getZgwMappingService()->getMapping('case');
 			if ($caseConfig === null) {
 				return;
 			}
@@ -2582,7 +2582,7 @@ class ZrcController extends ZgwController {
 
 			$oioData = [
 				'object' => $caseUrl,
-				'objectType' => 'zaak',
+				'objectType' => 'case',
 				'informatieobject' => $ioUrl,
 			];
 

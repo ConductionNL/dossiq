@@ -120,7 +120,7 @@ class SamenwerkverzoekService {
 		$samenwerkverzoek = [
 			'caseId' => $caseId,
 			'permitApplicationRef' => $requestRef,
-			'aangezochtBevoegdGezag' => $aangezochtGezag,
+			'requestedCompetentAuthority' => $aangezochtGezag,
 			'rationale' => $rationale,
 			'status' => 'aangevraagd',
 			'requestedOn' => date('c'),
@@ -137,7 +137,7 @@ class SamenwerkverzoekService {
 			arguments: [
 				'caseId' => $caseId,
 				'permitApplicationRef' => $requestRef,
-				'aangezochtBevoegdGezag' => $aangezochtGezag,
+				'requestedCompetentAuthority' => $aangezochtGezag,
 			]
 		);
 		$this->eventDispatcher->dispatch(
@@ -150,7 +150,7 @@ class SamenwerkverzoekService {
 			[
 				'app' => Application::APP_ID,
 				'caseId' => $caseId,
-				'aangezochtBevoegdGezag' => $aangezochtGezag,
+				'requestedCompetentAuthority' => $aangezochtGezag,
 			]
 		);
 

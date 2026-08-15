@@ -81,7 +81,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 			[
 				'userId' => 'carol',
 				'roleId' => 'rol-manager',
-				'toewijzingType' => 'primair',
+				'allocationType' => 'primair',
 				'validFrom' => '2026-01-01',
 			]
 		);

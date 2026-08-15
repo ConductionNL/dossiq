@@ -111,7 +111,7 @@ class DwangsomController extends Controller {
 			schemaKey: 'dwangsom_berekening_schema',
 			linkField: 'termijnInstance',
 			viaSchemaKey: 'termijn_instance_schema',
-			caseField: 'zaak'
+			caseField: 'case'
 		);
 
 		if ($caseId !== null

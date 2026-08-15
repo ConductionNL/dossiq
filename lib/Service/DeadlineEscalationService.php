@@ -136,7 +136,7 @@ class DeadlineEscalationService {
 			'priority' => $config['priority'],
 			'recipients' => $config['recipients'],
 			'instanceId' => $instanceId,
-			'caseId' => (string)($instance['zaak'] ?? ''),
+			'caseId' => (string)($instance['case'] ?? ''),
 			'deadline' => (string)($instance['endDateCurrent'] ?? ''),
 		];
 

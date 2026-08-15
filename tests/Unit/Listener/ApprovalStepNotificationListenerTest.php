@@ -181,7 +181,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 			$this->markTestSkipped('OpenRegister approval classes not available in this environment.');
 		}
 
-		$this->stubProposal(['onderwerp' => 'Omgevingsvergunning', 'steller' => 'steller1']);
+		$this->stubProposal(['onderwerp' => 'Omgevingsvergunning', 'author' => 'steller1']);
 
 		$member = $this->createMock(IUser::class);
 		$member->method('getUID')->willReturn('hoofd1');
@@ -203,7 +203,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 		$event = new ApprovalStepApprovedEvent(
 			chain: new ApprovalChain(),
 			step: $step,
-			userId: 'beoordelaar',
+			userId: 'assessor',
 			statusOnApprove: 'approved',
 			nextStep: $nextStep
 		);
@@ -251,7 +251,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 			$this->markTestSkipped('OpenRegister approval classes not available in this environment.');
 		}
 
-		$this->stubProposal(['onderwerp' => 'Subsidiebesluit', 'steller' => 'steller2']);
+		$this->stubProposal(['onderwerp' => 'Subsidiebesluit', 'author' => 'steller2']);
 
 		$this->notifications->expects($this->once())
 			->method('notifyVoorstelReturned')
@@ -259,7 +259,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 				'steller2',
 				'Subsidiebesluit',
 				'voorstel-xyz',
-				'beoordelaar',
+				'assessor',
 				'Financiele paragraaf ontbreekt'
 			);
 
@@ -272,7 +272,7 @@ class ApprovalStepNotificationListenerTest extends TestCase {
 		$event = new ApprovalStepRejectedEvent(
 			chain: new ApprovalChain(),
 			step: $step,
-			userId: 'beoordelaar',
+			userId: 'assessor',
 			statusOnReject: 'rejected'
 		);
 

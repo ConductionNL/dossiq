@@ -143,7 +143,7 @@ class LhsLookupServiceTest extends TestCase {
 	public function testLookupNormalizeGedragToUppercase(): void {
 		$cell = $this->service->lookup(gedrag: 'a', gevolg: '1');
 
-		$this->assertSame(expected: 'A', actual: $cell['gedragRow']);
+		$this->assertSame(expected: 'A', actual: $cell['behaviourRow']);
 	}//end testLookupNormalizeGedragToUppercase()
 
 	/**

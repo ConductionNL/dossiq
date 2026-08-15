@@ -91,7 +91,7 @@ class SubsidieController extends Controller {
 
 		$filters = [
 			'status' => $this->request->getParam('status', ''),
-			'subsidieregeling' => $this->request->getParam('regeling', ''),
+			'subsidyScheme' => $this->request->getParam('regeling', ''),
 			'handler' => $this->request->getParam('handler', ''),
 		];
 

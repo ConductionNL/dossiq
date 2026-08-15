@@ -29,8 +29,7 @@
 					<dt>{{ t('procest', 'Onderwerp') }}</dt>
 					<dd>
 						{{
-							(beschikking.beslissing
-								&& beschikking.beslissing.onderwerp)
+							(beschikking.decision && beschikking.decision.onderwerp)
 							|| '—'
 						}}
 					</dd>
@@ -66,7 +65,7 @@
 				<h4>{{ t('procest', 'Verzending') }}</h4>
 				<dl class="beschikking-detail__meta">
 					<dt>{{ t('procest', 'Kanaal') }}</dt>
-					<dd>{{ beschikking.verzending.kanaal }}</dd>
+					<dd>{{ beschikking.dispatch.kanaal }}</dd>
 					<dt>{{ t('procest', 'Bezwaartermijn eindigt') }}</dt>
 					<dd>{{ beschikking.objectionTermEndDate || '—' }}</dd>
 				</dl>
@@ -76,9 +75,9 @@
 				<h4>{{ t('procest', 'Archief') }}</h4>
 				<dl class="beschikking-detail__meta">
 					<dt>{{ t('procest', 'Archief-id') }}</dt>
-					<dd>{{ beschikking.archief.archiefId }}</dd>
+					<dd>{{ beschikking.archive.archiveId }}</dd>
 					<dt>{{ t('procest', 'Vernietigingsdatum') }}</dt>
-					<dd>{{ beschikking.archief.destruction_date }}</dd>
+					<dd>{{ beschikking.archive.destruction_date }}</dd>
 				</dl>
 			</section>
 		</div>
@@ -146,16 +145,16 @@ export default {
 		hasVerzending() {
 			return !!(
 				this.beschikking
-				&& this.beschikking.verzending
-				&& this.beschikking.verzending.kanaal
+				&& this.beschikking.dispatch
+				&& this.beschikking.dispatch.kanaal
 			)
 		},
 
 		hasArchief() {
 			return !!(
 				this.beschikking
-				&& this.beschikking.archief
-				&& this.beschikking.archief.archiefId
+				&& this.beschikking.archive
+				&& this.beschikking.archive.archiveId
 			)
 		},
 	},

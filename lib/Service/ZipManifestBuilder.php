@@ -45,7 +45,7 @@ class ZipManifestBuilder {
 	 */
 	public const MANIFEST_COLUMNS = [
 		'fileName',
-		'titel',
+		'title',
 		'informatieobjecttype',
 		'status',
 		'vertrouwelijkheidaanduiding',

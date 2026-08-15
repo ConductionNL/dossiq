@@ -191,7 +191,7 @@ class HearingServiceTest extends TestCase {
 		$this->expectException(\RuntimeException::class);
 		$this->expectExceptionMessageMatches('/Verslag/i');
 
-		$this->service->recordOutcome('hearing-uuid', ['conclusie' => 'geen bezwaar']);
+		$this->service->recordOutcome('hearing-uuid', ['conclusion' => 'geen bezwaar']);
 	}//end testRecordOutcomeThrowsWhenVerslagMissing()
 
 	/**
@@ -205,15 +205,15 @@ class HearingServiceTest extends TestCase {
 		$this->settingsService->method('getConfigValue')->willReturn('procest');
 
 		$outcome = [
-			'verslag' => 'Klager heeft zijn standpunt toegelicht.',
-			'conclusie' => 'Klacht gegrond',
+			'minutes' => 'Klager heeft zijn standpunt toegelicht.',
+			'conclusion' => 'Klacht gegrond',
 			'dateCompleted' => '2026-04-01',
 		];
 
 		$objectServiceMock->method('saveObject')->willReturn($outcome);
 
 		$result = $this->service->recordOutcome('hearing-uuid', $outcome);
-		$this->assertSame('Klager heeft zijn standpunt toegelicht.', $result['verslag']);
+		$this->assertSame('Klager heeft zijn standpunt toegelicht.', $result['minutes']);
 	}//end testRecordOutcomeSucceedsWithVerslag()
 
 	/**

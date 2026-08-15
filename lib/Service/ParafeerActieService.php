@@ -178,7 +178,7 @@ class ParafeerActieService {
 	private function transitionForAction(string $action): array {
 		return match ($action) {
 			'parafered' => ['paraferd',    'parafeerder'],
-			'advised' => ['advised',     'adviseur'],
+			'advised' => ['advised',     'advisor'],
 			'returned' => ['terugsturen', 'parafeerder'],
 			'accorded' => ['completed',   'accorderend'],
 			'skipped' => ['route-changed', 'beheerder'],
@@ -465,10 +465,10 @@ class ParafeerActieService {
 		}
 
 		// Notify steller on full accordering.
-		if (empty($proposal['steller']) === false) {
+		if (empty($proposal['author']) === false) {
 			try {
 				$this->notificationService->notifyVoorstelReturned(
-					(string)$proposal['steller'],
+					(string)$proposal['author'],
 					(string)($proposal['onderwerp'] ?? ''),
 					$proposalId,
 					$currentUser->getDisplayName(),
@@ -733,11 +733,11 @@ class ParafeerActieService {
 
 		$objectService->saveObject(object: $updateData, register: $register, schema: $proposalSchema, uuid: (string)$proposalId);
 
-		$steller = (string)($proposal['steller'] ?? '');
-		if ($steller !== '') {
+		$author = (string)($proposal['author'] ?? '');
+		if ($author !== '') {
 			try {
 				$this->notificationService->notifyVoorstelReturned(
-					$steller,
+					$author,
 					(string)($proposal['onderwerp'] ?? ''),
 					$proposalId,
 					$currentUser->getDisplayName(),

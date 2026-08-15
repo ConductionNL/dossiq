@@ -139,7 +139,7 @@ class ZipManifestBuilderTest extends TestCase {
 		$docs = [
 			[
 				'fileName' => 'a.pdf',
-				'titel' => 'Doc A',
+				'title' => 'Doc A',
 				'informatieobjecttype' => 'Advies',
 				'status' => 'definitief',
 				'vertrouwelijkheidaanduiding' => 'intern',

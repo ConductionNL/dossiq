@@ -162,7 +162,7 @@ class CaseEmailRepository {
 		// Flatten for variable resolution.
 		return [
 			'zaakNummer' => $caseObj['identifier'] ?? '',
-			'titel' => $caseObj['title'] ?? '',
+			'title' => $caseObj['title'] ?? '',
 			'startdatum' => $caseObj['startDate'] ?? '',
 			'deadline' => $caseObj['deadline'] ?? '',
 			'status' => $caseObj['status'] ?? '',

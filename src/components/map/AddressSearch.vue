@@ -141,7 +141,7 @@ export default {
 		 */
 		getTypeIcon(type) {
 			switch (type) {
-				case 'adres':
+				case 'address':
 					return '\uD83C\uDFE0'
 				case 'weg':
 					return '\uD83D\uDEB6'

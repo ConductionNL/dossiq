@@ -41,7 +41,7 @@
 				required />
 
 			<NcTextField
-				v-model="titel"
+				v-model="title"
 				:label="t('procest', 'Title')"
 				:placeholder="t('procest', 'Document title')" />
 
@@ -131,7 +131,7 @@ export default {
 		return {
 			selectedType: '',
 			selectedClassification: '',
-			titel: '',
+			title: '',
 			description: '',
 		}
 	},
@@ -209,8 +209,8 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		files(files) {
-			if (files.length === 1 && this.titel === '') {
-				this.titel = files[0].name
+			if (files.length === 1 && this.title === '') {
+				this.title = files[0].name
 			}
 		},
 	},
@@ -228,7 +228,7 @@ export default {
 			this.$emit('submit', {
 				informatieobjecttype: this.selectedType,
 				vertrouwelijkheidaanduiding: this.selectedClassification,
-				titel: this.titel,
+				title: this.title,
 				description: this.description,
 			})
 		},

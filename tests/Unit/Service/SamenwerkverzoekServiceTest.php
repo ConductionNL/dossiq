@@ -151,7 +151,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 		$expectedSamenwerkverzoek = [
 			'id' => 'samenwerk-uuid-1',
 			'status' => 'aangevraagd',
-			'aangezochtBevoegdGezag' => 'gemeente-haarlem',
+			'requestedCompetentAuthority' => 'gemeente-haarlem',
 		];
 
 		$objectServiceMock

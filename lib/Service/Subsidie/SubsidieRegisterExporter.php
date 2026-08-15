@@ -86,7 +86,7 @@ class SubsidieRegisterExporter {
 				'start' => (string)($decision['termStart'] ?? ''),
 				'eind' => (string)($decision['termEnd'] ?? ''),
 			],
-			'doel' => (string)($regeling['doelgroep'] ?? ''),
+			'doel' => (string)($regeling['targetGroup'] ?? ''),
 			'status' => $status,
 			'basis' => (string)($decision['legalBasis'] ?? ''),
 		];

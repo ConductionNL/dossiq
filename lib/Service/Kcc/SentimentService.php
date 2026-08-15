@@ -113,7 +113,7 @@ class SentimentService {
 	 *                                              DEFAULT_TRIGGER_WORDS.
 	 *
 	 * @return array{score: float, label: string, triggers: array<int, string>,
-	 *               escalatieAanbevolen: bool, escalationLevel: string}
+	 *               escalationRecommended: bool, escalationLevel: string}
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
@@ -126,14 +126,14 @@ class SentimentService {
 		$score = $this->scorePolarity(text: $text);
 		$label = $this->labelForScore(score: $score);
 
-		$escalatieAanbevolen = $this->shouldEscalate(score: $score, triggers: $triggers);
+		$escalationAdvised = $this->shouldEscalate(score: $score, triggers: $triggers);
 		$escalationLevel = $this->getEscalationLevel(score: $score, triggers: $triggers);
 
 		return [
 			'score' => $score,
 			'label' => $label,
 			'triggers' => $triggers,
-			'escalatieAanbevolen' => $escalatieAanbevolen,
+			'escalationRecommended' => $escalationAdvised,
 			'escalationLevel' => $escalationLevel,
 		];
 	}//end analyzeSentiment()

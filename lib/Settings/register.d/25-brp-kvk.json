@@ -133,12 +133,12 @@
                         "title": "Handelsnaam",
                         "description": "Trade name of the company as returned by the KvK Zoeken API."
                     },
-                    "rechtsvorm": {
+                    "legalForm": {
                         "type": "string",
                         "title": "Rechtsvorm",
                         "description": "Legal form of the company (per the developers.kvk.nl test-data table)."
                     },
-                    "adres": {
+                    "address": {
                         "type": "object",
                         "title": "Adres",
                         "description": "Address block per KvK Zoeken naming (straatnaam, huisnummer, postcode, plaats). Fields are optional — some fixtures carry only a partial or foreign address.",
@@ -272,80 +272,80 @@
                 "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-69599084" },
                 "kvkNumber": "69599084",
                 "tradeName": "Test EMZ Dagobert",
-                "rechtsvorm": "Eenmanszaak",
-                "adres": { "streetName": "Abebe Bikilalaan", "place": "Amsterdam" },
+                "legalForm": "Eenmanszaak",
+                "address": { "streetName": "Abebe Bikilalaan", "place": "Amsterdam" },
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
                 "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-68750110" },
                 "kvkNumber": "68750110",
                 "tradeName": "Test BV Donald",
-                "rechtsvorm": "BV",
-                "adres": { "streetName": "Hizzaarderlaan", "place": "Lollum" },
+                "legalForm": "BV",
+                "address": { "streetName": "Hizzaarderlaan", "place": "Lollum" },
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
                 "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-69599068" },
                 "kvkNumber": "69599068",
                 "tradeName": "Test Stichting Bolderbast",
-                "rechtsvorm": "Stichting",
-                "adres": { "streetName": "Oosterwal", "place": "Lochem" },
+                "legalForm": "Stichting",
+                "address": { "streetName": "Oosterwal", "place": "Lochem" },
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
                 "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-55344526" },
                 "kvkNumber": "55344526",
                 "tradeName": "Regional Stimflex Coöperatie",
-                "rechtsvorm": "Coöperatie",
-                "adres": { "place": "Spanje" },
+                "legalForm": "Coöperatie",
+                "address": { "place": "Spanje" },
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
                 "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-68727720" },
                 "kvkNumber": "68727720",
                 "tradeName": "Test NV Katrien - Handelsnaam",
-                "rechtsvorm": "NV",
-                "adres": { "streetName": "Rietdekkershof", "place": "Veendam" },
+                "legalForm": "NV",
+                "address": { "streetName": "Rietdekkershof", "place": "Veendam" },
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
                 "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90004760" },
                 "kvkNumber": "90004760",
                 "tradeName": "Local Funzoom N.V. - Statutory Naam",
-                "rechtsvorm": "NV",
-                "adres": { "streetName": "Klepelstraat 1581346628486 9010", "place": "Denekamp" },
+                "legalForm": "NV",
+                "address": { "streetName": "Klepelstraat 1581346628486 9010", "place": "Denekamp" },
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
                 "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90001354" },
                 "kvkNumber": "90001354",
                 "tradeName": "Grand Joyflex B.V.",
-                "rechtsvorm": "BV",
-                "adres": { "place": "Sterksel" },
+                "legalForm": "BV",
+                "address": { "place": "Sterksel" },
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
                 "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90000102" },
                 "kvkNumber": "90000102",
                 "tradeName": "Stichting Free opentrans - Eigenaar",
-                "rechtsvorm": "Stichting",
-                "adres": { "streetName": "Rijnsburgerweg", "place": "Leiden" },
+                "legalForm": "Stichting",
+                "address": { "streetName": "Rijnsburgerweg", "place": "Leiden" },
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
                 "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-69599076" },
                 "kvkNumber": "69599076",
                 "tradeName": "Test VOF Guus",
-                "rechtsvorm": "VoF",
-                "adres": { "streetName": "Benny Goodmanstraat", "place": "Almere" },
+                "legalForm": "VoF",
+                "address": { "streetName": "Benny Goodmanstraat", "place": "Almere" },
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             },
             {
                 "@self": { "register": "procest", "schema": "kvkCompany", "slug": "kvk-90001745" },
                 "kvkNumber": "90001745",
                 "tradeName": "Free Movelax",
-                "rechtsvorm": "Maatschap",
-                "adres": { "streetName": "Burg G van Andellaan", "place": "Zuidland" },
+                "legalForm": "Maatschap",
+                "address": { "streetName": "Burg G van Andellaan", "place": "Zuidland" },
                 "description": "Officieel fictief testbedrijf uit de KvK Handelsregister-testomgeving (developers.kvk.nl) — geen echt bedrijf."
             }
         ]

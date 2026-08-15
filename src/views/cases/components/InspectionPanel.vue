@@ -229,7 +229,7 @@
 						<!-- Photo upload warning -->
 						<p
 							v-if="
-								item.fotoRequired
+								item.photoRequired
 								&& formResults[index].result === 'fail'
 							"
 							class="inspection-panel__photo-warning">

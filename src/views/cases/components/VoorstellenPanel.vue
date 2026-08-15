@@ -46,7 +46,7 @@
 						</span>
 					</div>
 					<div class="voorstellen-panel__item-meta">
-						{{ voorstel.steller }}
+						{{ voorstel.author }}
 						<span v-if="voorstel.currentStep && isActive(voorstel)">
 							— {{ t('procest', 'step') }}
 							{{ formatStepProgress(voorstel) }}

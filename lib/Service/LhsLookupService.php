@@ -133,8 +133,8 @@ class LhsLookupService {
 		$intervention = self::FALLBACK_MATRIX[$key];
 
 		return [
-			'gedragRow' => $gedrag,
-			'gevolgColumn' => $gevolg,
+			'behaviourRow' => $gedrag,
+			'consequenceColumn' => $gevolg,
 			'interventionStep' => $intervention,
 			'description' => '',
 			'source' => 'fallback',
@@ -165,7 +165,7 @@ class LhsLookupService {
 				objectService: $objectService,
 				register: $register,
 				schema: 'lhsMatrixCell',
-				filters: ['gedragRow' => $gedrag, 'gevolgColumn' => $gevolg, '_limit' => 1]
+				filters: ['behaviourRow' => $gedrag, 'consequenceColumn' => $gevolg, '_limit' => 1]
 			);
 
 			if (is_array($results) === true && isset($results[0]) === true && is_array($results[0]) === true) {

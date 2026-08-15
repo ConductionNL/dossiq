@@ -245,7 +245,7 @@ class WorkQueueServiceTest extends TestCase {
 		]);
 		$this->objects->saveObject('termijnInstance', [
 			'id' => 'ti-1',
-			'zaak' => 'case-1',
+			'case' => 'case-1',
 			'status' => 'lopend',
 			'endDateCurrent' => '2026-07-14',
 		]);

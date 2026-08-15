@@ -23,7 +23,7 @@
 			</div>
 
 			<NcTextField
-				v-model="form.adviseur"
+				v-model="form.advisor"
 				:label="
 					form.type === 'intern'
 						? t(appName, 'Adviseur (gebruiker)')
@@ -113,7 +113,7 @@ export default {
 			errorMessage: '',
 			form: {
 				type: 'intern',
-				adviseur: '',
+				advisor: '',
 				onderwerp: '',
 				deadline: defaultDeadline(),
 				questions: '',
@@ -124,7 +124,7 @@ export default {
 	computed: {
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		canSubmit() {
-			return this.form.adviseur.trim() !== '' && this.form.deadline !== ''
+			return this.form.advisor.trim() !== '' && this.form.deadline !== ''
 		},
 	},
 
@@ -140,7 +140,7 @@ export default {
 				const payload = {
 					case: this.caseId,
 					type: this.form.type,
-					adviseur: this.form.adviseur.trim(),
+					advisor: this.form.advisor.trim(),
 					onderwerp: this.form.onderwerp.trim(),
 					deadline: this.form.deadline,
 					questions: this.form.questions.trim(),

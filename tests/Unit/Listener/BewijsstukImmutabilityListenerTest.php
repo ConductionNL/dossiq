@@ -105,8 +105,8 @@ class BewijsstukImmutabilityListenerTest extends TestCase {
 	 */
 	public function testMutableBewijsstukUpdateIsAllowed(): void {
 		$event = new ObjectUpdatingEvent(
-			$this->entity(['immutable' => false, 'bewijsstukType' => 'factuur']),
-			$this->entity(['immutable' => false, 'bewijsstukType' => 'urenstaat'])
+			$this->entity(['immutable' => false, 'evidenceType' => 'factuur']),
+			$this->entity(['immutable' => false, 'evidenceType' => 'urenstaat'])
 		);
 
 		$this->listener->handle($event);
@@ -126,8 +126,8 @@ class BewijsstukImmutabilityListenerTest extends TestCase {
 	 */
 	public function testImmutableBewijsstukUpdateIsRejected(): void {
 		$event = new ObjectUpdatingEvent(
-			$this->entity(['immutable' => true, 'bewijsstukType' => 'factuur']),
-			$this->entity(['immutable' => true, 'bewijsstukType' => 'urenstaat'])
+			$this->entity(['immutable' => true, 'evidenceType' => 'factuur']),
+			$this->entity(['immutable' => true, 'evidenceType' => 'urenstaat'])
 		);
 
 		$this->listener->handle($event);
@@ -150,9 +150,9 @@ class BewijsstukImmutabilityListenerTest extends TestCase {
 	public function testPayloadCannotClearTheImmutableFlagToBypassTheGuard(): void {
 		$event = new ObjectUpdatingEvent(
 			// Attacker-supplied new state claims the document is mutable.
-			$this->entity(['immutable' => false, 'bewijsstukType' => 'factuur']),
+			$this->entity(['immutable' => false, 'evidenceType' => 'factuur']),
 			// Stored state says otherwise.
-			$this->entity(['immutable' => true, 'bewijsstukType' => 'urenstaat'])
+			$this->entity(['immutable' => true, 'evidenceType' => 'urenstaat'])
 		);
 
 		$this->listener->handle($event);

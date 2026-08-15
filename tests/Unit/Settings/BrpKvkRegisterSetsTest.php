@@ -70,7 +70,7 @@ class BrpKvkRegisterSetsTest extends TestCase {
 		}
 
 		$company = $schemas['kvkCompany']['properties'];
-		foreach (['kvkNumber', 'tradeName', 'rechtsvorm', 'adres'] as $field) {
+		foreach (['kvkNumber', 'tradeName', 'legalForm', 'address'] as $field) {
 			$this->assertArrayHasKey($field, $company, "KvK Zoeken field {$field} required");
 		}
 
@@ -147,7 +147,7 @@ class BrpKvkRegisterSetsTest extends TestCase {
 		foreach ($companies as $company) {
 			$this->assertMatchesRegularExpression('/^[0-9]{8}$/', $company['kvkNumber']);
 			$this->assertNotEmpty($company['tradeName']);
-			$this->assertNotEmpty($company['rechtsvorm']);
+			$this->assertNotEmpty($company['legalForm']);
 			$this->assertStringContainsString('developers.kvk.nl', $company['description'], 'row must name its fixture source');
 		}
 

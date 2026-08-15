@@ -62,9 +62,9 @@ class DossierCompiler {
 		'bezwaarschrift' => 20,
 		'verweerschrift' => 30,
 		'hoorzittingverslag' => 40,
-		'verslag' => 40,
+		'minutes' => 40,
 		'advies' => 50,
-		'beslissing' => 60,
+		'decision' => 60,
 	];
 
 	/**

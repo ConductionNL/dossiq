@@ -78,7 +78,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		// Seed an overdue TermijnInstance.
 		$this->objects->saveObject('procest', 'termijnInstance', [
 			'id' => 'ti-1',
-			'zaak' => 'Z/2026/300',
+			'case' => 'Z/2026/300',
 			'termijnDefinitie' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-02-25',
@@ -121,7 +121,7 @@ class NoticeOfDefaultServiceTest extends TestCase {
 		// Use a different instance still in lopend (not overschreden).
 		$this->objects->saveObject('procest', 'termijnInstance', [
 			'id' => 'ti-lopend',
-			'zaak' => 'Z/2026/301',
+			'case' => 'Z/2026/301',
 			'termijnDefinitie' => 'td-ov',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-12-31',
@@ -174,12 +174,12 @@ class NoticeOfDefaultServiceTest extends TestCase {
 			'wettelijkeGrondslag' => 'Woo art 4.4',
 			'standardDurationDays' => 28,
 			'countExtensions' => 1,
-			'afwijkendDwangsomRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
+			'deviatingPenaltyPaymentRegime' => ['dailyTariff' => 1500, 'plafond' => 50000, 'grace' => 14],
 			'validFrom' => '2026-01-01',
 		]);
 		$this->objects->saveObject('procest', 'termijnInstance', [
 			'id' => 'ti-woo',
-			'zaak' => 'Z/2026/302',
+			'case' => 'Z/2026/302',
 			'termijnDefinitie' => 'td-woo',
 			'startDate' => '2026-01-01T10:00:00+00:00',
 			'endDateCalculated' => '2026-01-29',

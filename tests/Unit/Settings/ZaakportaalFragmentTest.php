@@ -126,7 +126,7 @@ class ZaakportaalFragmentTest extends TestCase {
 	 */
 	public function testPreferenceSchemaHasBerichtenbox(): void {
 		$properties = $this->merged['components']['schemas']['portaalNotificatieVoorkeur']['properties'];
-		$this->assertArrayHasKey('berichtenboxActief', $properties);
+		$this->assertArrayHasKey('messageBoxActive', $properties);
 		$this->assertArrayHasKey('subjectRef', $properties);
 	}//end testPreferenceSchemaHasBerichtenbox()
 }//end class

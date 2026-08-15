@@ -123,7 +123,7 @@ class BezwaarTermijnScheduler {
 					'objectionTermEndDate' => $endDate,
 					'reminderDate' => $herinnering,
 					'objectionReceived' => false,
-					'archiefTriggerActief' => true,
+					'archiveTriggerActive' => true,
 					'archiveDate' => $archiveDate,
 				],
 			);

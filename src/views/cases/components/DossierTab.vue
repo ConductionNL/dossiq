@@ -206,7 +206,7 @@ export default {
 		sortOptions() {
 			return [
 				{ id: 'creatiedatum', label: this.t('procest', 'Creation date') },
-				{ id: 'titel', label: this.t('procest', 'Title') },
+				{ id: 'title', label: this.t('procest', 'Title') },
 				{ id: 'status', label: this.t('procest', 'Status') },
 			]
 		},
@@ -529,7 +529,7 @@ export default {
 			this.$emit('count-changed', this.total)
 			showSuccess(
 				this.t('procest', 'Share requested for {name}', {
-					name: document.titel,
+					name: document.title,
 				}),
 			)
 		},

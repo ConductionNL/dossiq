@@ -50,7 +50,7 @@ class BurgerIdentificationService {
 	private const WEIGHTS = [
 		'name' => 0.30,
 		'geboortedatum' => 0.30,
-		'adres' => 0.20,
+		'address' => 0.20,
 		'bsn' => 0.15,
 		'out_of_wallet' => 0.05,
 	];

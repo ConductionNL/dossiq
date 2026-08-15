@@ -118,14 +118,14 @@ class StateMachineService {
 	 *
 	 * @param string $decisionId The beschikking UUID.
 	 * @param string $from The source status.
-	 * @param string $naar The target status.
+	 * @param string $to The target status.
 	 * @param array<string, mixed> $metadata Actor/trigger/evidence metadata.
 	 *
 	 * @return array<string, mixed> The persisted log record (or an empty array when storage is unavailable).
 	 *
 	 * @spec openspec/changes/beschikking-generatie/tasks.md#T16
 	 */
-	public function logTransition(string $decisionId, string $from, string $naar, array $metadata = []): array {
+	public function logTransition(string $decisionId, string $from, string $to, array $metadata = []): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$this->logger->warning('StateMachineService: storage unavailable, transition not logged');
@@ -143,7 +143,7 @@ class StateMachineService {
 			'decisionId' => $decisionId,
 			'overgang' => [
 				'van' => $from,
-				'naar' => $naar,
+				'to' => $to,
 				'moment' => (new DateTimeImmutable())->format('c'),
 				'actor' => (string)($metadata['actor'] ?? 'systeem'),
 				'actorType' => (string)($metadata['actorType'] ?? 'systeem'),

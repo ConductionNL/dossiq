@@ -220,7 +220,7 @@ class DeadlineDailyScanService {
 	 * @return void
 	 */
 	private function handlePauseExpiry(array $row, string $rowId, DateTimeImmutable $now, array &$counts): void {
-		$pauseEnd = (string)($row['pauzeDeadline'] ?? '');
+		$pauseEnd = (string)($row['pauseDeadline'] ?? '');
 		if ($pauseEnd !== '' && $pauseEnd < $now->format('Y-m-d')) {
 			$counts['pauseExpired']++;
 			$this->termService->recordEvent(

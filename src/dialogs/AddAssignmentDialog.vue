@@ -47,7 +47,7 @@
 					:options="typeOptions"
 					:inputLabel="t('procest', 'Type')"
 					@update:modelValue="
-						(v) => (form.toewijzingType = v ? v.id : '')
+						(v) => (form.allocationType = v ? v.id : '')
 					" />
 			</div>
 
@@ -103,7 +103,7 @@ export default {
 			form: {
 				persoonId: '',
 				roleId: '',
-				toewijzingType: 'reguliere',
+				allocationType: 'reguliere',
 				vanaf: new Date().toISOString().slice(0, 10),
 				totEnMet: '',
 			},
@@ -128,7 +128,7 @@ export default {
 		/** @spec openspec/changes/mandaat-matrix-07-admin-ui/tasks.md */
 		selectedType() {
 			return (
-				this.typeOptions.find((o) => o.id === this.form.toewijzingType)
+				this.typeOptions.find((o) => o.id === this.form.allocationType)
 				|| this.typeOptions[0]
 			)
 		},

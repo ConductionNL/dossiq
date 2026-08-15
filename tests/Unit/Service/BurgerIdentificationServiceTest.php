@@ -89,7 +89,7 @@ class BurgerIdentificationServiceTest extends TestCase {
 			[
 				'name' => true,
 				'geboortedatum' => true,
-				'adres' => true,
+				'address' => true,
 				'bsn' => true,
 				'out_of_wallet' => true,
 			]
@@ -121,7 +121,7 @@ class BurgerIdentificationServiceTest extends TestCase {
 	 */
 	public function testMatchAtThresholdIdentified(): void {
 		$result = $this->service->startIdentificatievragen(
-			['name' => true, 'geboortedatum' => true, 'adres' => true],
+			['name' => true, 'geboortedatum' => true, 'address' => true],
 			'burger:abc',
 		);
 

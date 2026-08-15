@@ -403,7 +403,7 @@ class BrcController extends ZgwController {
 			$data = $response->getData();
 			$caseUrl = '';
 			if (is_array($data) === true) {
-				$caseUrl = $data['zaak'] ?? '';
+				$caseUrl = $data['case'] ?? '';
 
 				if ($caseUrl !== '') {
 					$decisionUrl = $data['url'] ?? '';

@@ -40,7 +40,7 @@
 					class="bevoegdheden-panel__row">
 					<td>{{ row.mandateNumber }}</td>
 					<td>{{ row.description }}</td>
-					<td>{{ row.bevoegdheidType || '-' }}</td>
+					<td>{{ row.competenceType || '-' }}</td>
 					<td>{{ formatCeiling(row) }}</td>
 					<td>
 						{{

@@ -52,6 +52,9 @@ class StufZknMessageResponder {
 	 *
 	 * @var array<string, string>
 	 */
+	// Internal keys, NOT element names: StufResponseBuilder hardcodes
+	// `<stuf:organisatie>` and reads this array by key, so the English key is
+	// correct here and renaming it would empty the element.
 	private const DEFAULT_ZENDER = [
 		'organisation' => 'Procest',
 		'applicatie' => 'Procest',
@@ -137,12 +140,16 @@ class StufZknMessageResponder {
 		// Extract basic fields.
 		$stufFields = $this->extractFields(
 			element: $objectEl,
+			// StUF-ZKN ELEMENT NAMES: extractFields() passes each straight to
+			// getElementsByTagName(), so a translated entry matches nothing and the
+			// field is silently dropped. `toelichting` and `einddatum` had been
+			// renamed to `notes` and `endDate`.
 			fieldNames: [
 				'identificatie',
 				'omschrijving',
-				'notes',
+				'toelichting',
 				'startdatum',
-				'endDate',
+				'einddatum',
 				'einddatumGepland',
 				'uiterlijkeEinddatumAfdoening',
 				'vertrouwelijkAanduiding',

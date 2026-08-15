@@ -16,9 +16,7 @@
 				class="advice-panel__item"
 				:class="{ 'advice-panel__item--overdue': isOverdue(request) }">
 				<div class="advice-panel__item-header">
-					<span class="advice-panel__adviseur">{{
-						request.adviseur
-					}}</span>
+					<span class="advice-panel__adviseur">{{ request.advisor }}</span>
 					<span
 						class="advice-panel__type-badge"
 						:class="'advice-panel__type-badge--' + request.type">
@@ -67,7 +65,7 @@
 					</NcButton>
 					<NcButton
 						v-if="
-							request.status === 'ontvangen' && request.adviesDocument
+							request.status === 'ontvangen' && request.adviceDocument
 						"
 						size="small"
 						@click="viewDocument(request)">
@@ -119,7 +117,7 @@
 					}}</label>
 					<input
 						id="advice-panel-adviseur"
-						v-model="newRequest.adviseur"
+						v-model="newRequest.advisor"
 						type="text"
 						class="advice-panel__input"
 						:placeholder="
@@ -217,7 +215,7 @@ export default {
 			submitting: false,
 			newRequest: {
 				type: 'intern',
-				adviseur: '',
+				advisor: '',
 				onderwerp: '',
 				deadline: this.defaultDeadline(),
 				questions: '',
@@ -243,7 +241,7 @@ export default {
 
 		/** @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md */
 		canSubmit() {
-			return this.newRequest.adviseur && this.newRequest.deadline
+			return this.newRequest.advisor && this.newRequest.deadline
 		},
 	},
 
@@ -334,7 +332,7 @@ export default {
 				this.showRequestDialog = false
 				this.newRequest = {
 					type: 'intern',
-					adviseur: '',
+					advisor: '',
 					onderwerp: '',
 					deadline: this.defaultDeadline(),
 					questions: '',
@@ -357,9 +355,9 @@ export default {
 		 * @spec openspec/changes/retrofit-2026-05-24-advice-management/tasks.md
 		 */
 		viewDocument(request) {
-			if (request.adviesDocument) {
+			if (request.adviceDocument) {
 				window.open(
-					`/apps/files/?fileid=${request.adviesDocument}`,
+					`/apps/files/?fileid=${request.adviceDocument}`,
 					'_blank',
 				)
 			}

@@ -326,7 +326,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	public function rulesStatussenCreate(array $body): array {
 		// Zrc-016: Validate statustype belongs to zaak's zaaktype.
 		$statustypeUrl = $body['statustype'] ?? '';
-		$caseUrl = $body['zaak'] ?? '';
+		$caseUrl = $body['case'] ?? '';
 		if ($statustypeUrl !== '' && $caseUrl !== '') {
 			$error = $this->validateSubResourceType(
 				caseUrl: $caseUrl,
@@ -360,7 +360,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	public function rulesResultatenCreate(array $body): array {
 		// Zrc-020: Validate resultaattype belongs to zaak's zaaktype.
 		$resultaattypeUrl = $body['resultaattype'] ?? '';
-		$caseUrl = $body['zaak'] ?? '';
+		$caseUrl = $body['case'] ?? '';
 		if ($resultaattypeUrl !== '' && $caseUrl !== '') {
 			$error = $this->validateSubResourceType(
 				caseUrl: $caseUrl,
@@ -394,7 +394,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	public function rulesRollenCreate(array $body): array {
 		// Zrc-019: Validate roltype belongs to zaak's zaaktype.
 		$roltypeUrl = $body['roltype'] ?? '';
-		$caseUrl = $body['zaak'] ?? '';
+		$caseUrl = $body['case'] ?? '';
 		if ($roltypeUrl !== '' && $caseUrl !== '') {
 			$error = $this->validateSubResourceType(
 				caseUrl: $caseUrl,
@@ -428,7 +428,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	public function rulesZaakeigenschappenCreate(array $body): array {
 		// Zrc-018: Validate eigenschap belongs to zaak's zaaktype.
 		$attributeUrl = $body['eigenschap'] ?? '';
-		$caseUrl = $body['zaak'] ?? '';
+		$caseUrl = $body['case'] ?? '';
 		if ($attributeUrl !== '' && $caseUrl !== '') {
 			$error = $this->validateSubResourceType(
 				caseUrl: $caseUrl,

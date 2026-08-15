@@ -165,7 +165,7 @@ class DispositionServiceTest extends TestCase {
 			->method('saveObject')
 			->willReturnCallback(
 				function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) {
-					$this->assertSame('wacht_op_goedkeuring', $object['goedkeuringStatus']);
+					$this->assertSame('wacht_op_goedkeuring', $object['approvalStatus']);
 					return $object;
 				}
 			);
@@ -175,7 +175,7 @@ class DispositionServiceTest extends TestCase {
 			['opinion' => 'ongegrond', 'closureDate' => '2026-04-01']
 		);
 
-		$this->assertSame('wacht_op_goedkeuring', $result['goedkeuringStatus']);
+		$this->assertSame('wacht_op_goedkeuring', $result['approvalStatus']);
 	}//end testSubmitDispositionSetsApprovalStatusWhenRequired()
 
 	/**
@@ -192,14 +192,14 @@ class DispositionServiceTest extends TestCase {
 			->method('saveObject')
 			->willReturnCallback(
 				function (array $object, array $extend = [], ?string $register = null, ?string $schema = null, ?string $uuid = null) {
-					$this->assertSame('goedgekeurd', $object['goedkeuringStatus']);
+					$this->assertSame('goedgekeurd', $object['approvalStatus']);
 					$this->assertSame('coordinator-uid', $object['goedkeurder']);
 					return $object;
 				}
 			);
 
 		$result = $this->service->approveDisposition('disposition-uuid', 'coordinator-uid');
-		$this->assertSame('goedgekeurd', $result['goedkeuringStatus']);
+		$this->assertSame('goedgekeurd', $result['approvalStatus']);
 	}//end testApproveDispositionSetsStatusToGoedgekeurd()
 
 	/**

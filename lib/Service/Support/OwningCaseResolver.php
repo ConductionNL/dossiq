@@ -111,7 +111,7 @@ class OwningCaseResolver {
 		string $schemaKey,
 		string $linkField,
 		string $viaSchemaKey,
-		string $caseField = 'zaak',
+		string $caseField = 'case',
 	): ?string {
 		$child = $this->loadChild(objectId: $objectId, schemaKey: $schemaKey);
 		if ($child === null) {

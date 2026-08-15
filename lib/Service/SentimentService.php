@@ -71,7 +71,7 @@ class SentimentService {
 	 * @param string $text The transcription / message text.
 	 * @param array<int, string> $triggerWords Configured trigger words to detect.
 	 *
-	 * @return array{score: float, label: string, triggers: array<int, string>, escalatieAanbevolen: bool, escalationLevel: string, snippet: string}
+	 * @return array{score: float, label: string, triggers: array<int, string>, escalationRecommended: bool, escalationLevel: string, snippet: string}
 	 *
 	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T09
 	 */
@@ -112,7 +112,7 @@ class SentimentService {
 			'score' => round($score, 2),
 			'label' => $this->labelFor(score: $score, triggers: $foundTriggers),
 			'triggers' => $foundTriggers,
-			'escalatieAanbevolen' => $escalate,
+			'escalationRecommended' => $escalate,
 			'escalationLevel' => $this->getEscalationLevel(score: $score, triggers: $foundTriggers),
 			'snippet' => $this->extractSnippet(text: $text, triggers: $foundTriggers),
 		];

@@ -24,7 +24,7 @@
 					<strong>{{ voorstel.onderwerp }}</strong>
 					<span class="parafeer-inbox__item-meta">
 						{{ formatType(voorstel.type) }} — {{ t('procest', 'by') }}
-						{{ voorstel.steller }} — {{ t('procest', 'waiting since') }}
+						{{ voorstel.author }} — {{ t('procest', 'waiting since') }}
 						{{ formatDate(voorstel) }}
 					</span>
 				</div>

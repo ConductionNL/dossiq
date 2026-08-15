@@ -135,7 +135,7 @@ class BezwaarTermijnJobTest extends TestCase {
 			'id' => 'trig-1',
 			'decisionId' => 'besch-1',
 			'objectionReceived' => false,
-			'archiefTriggerActief' => true,
+			'archiveTriggerActive' => true,
 			'archiveDate' => $yesterday,
 		]);
 
@@ -147,7 +147,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->runJob();
 
 		$trigger = $this->objects->find('trig-1', 'procest', 'bezwaarTrigger');
-		$this->assertFalse($trigger['archiefTriggerActief']);
+		$this->assertFalse($trigger['archiveTriggerActive']);
 	}//end testLapsedTriggerArchives()
 
 	/**
@@ -163,7 +163,7 @@ class BezwaarTermijnJobTest extends TestCase {
 			'id' => 'trig-2',
 			'decisionId' => 'besch-2',
 			'objectionReceived' => true,
-			'archiefTriggerActief' => true,
+			'archiveTriggerActive' => true,
 			'archiveDate' => $yesterday,
 		]);
 
@@ -172,7 +172,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->runJob();
 
 		$trigger = $this->objects->find('trig-2', 'procest', 'bezwaarTrigger');
-		$this->assertFalse($trigger['archiefTriggerActief']);
+		$this->assertFalse($trigger['archiveTriggerActive']);
 	}//end testBezwaarReceivedSkipsArchival()
 
 	/**
@@ -188,7 +188,7 @@ class BezwaarTermijnJobTest extends TestCase {
 			'id' => 'trig-3',
 			'decisionId' => 'besch-3',
 			'objectionReceived' => false,
-			'archiefTriggerActief' => true,
+			'archiveTriggerActive' => true,
 			'archiveDate' => $tomorrow,
 		]);
 
@@ -197,7 +197,7 @@ class BezwaarTermijnJobTest extends TestCase {
 		$this->runJob();
 
 		$trigger = $this->objects->find('trig-3', 'procest', 'bezwaarTrigger');
-		$this->assertTrue($trigger['archiefTriggerActief']);
+		$this->assertTrue($trigger['archiveTriggerActive']);
 	}//end testFutureTriggerUntouched()
 
 	/**

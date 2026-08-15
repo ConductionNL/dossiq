@@ -120,7 +120,7 @@
 				<div class="form-row">
 					<div class="form-group">
 						<label>{{ t('procest', 'Drafter') }}</label>
-						<span class="form-value">{{ voorstel.steller || '-' }}</span>
+						<span class="form-value">{{ voorstel.author || '-' }}</span>
 					</div>
 					<div class="form-group">
 						<label>{{ t('procest', 'Department') }}</label>
@@ -301,7 +301,7 @@ export default {
 		},
 
 		isSteller() {
-			return this.voorstel.steller === this.currentUserId
+			return this.voorstel.author === this.currentUserId
 		},
 
 		isTerminalStatus() {
