@@ -337,7 +337,7 @@ class BerichtenboxService {
 	/**
 	 * Resolve the OpenRegister ObjectService if OpenRegister is installed.
 	 *
-	 * @return \OCA\OpenRegister\Service\ObjectServiceInterface|null The object service or null.
+	 * @return \OCA\OpenRegister\Contract\ObjectServiceInterface|null The object service or null.
 	 */
 	private function getObjectService(): ?\OCA\OpenRegister\Contract\ObjectServiceInterface {
 		if (in_array('openregister', $this->appManager->getInstalledApps()) === false) {
