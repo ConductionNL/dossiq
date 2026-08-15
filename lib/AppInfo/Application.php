@@ -67,24 +67,24 @@ class Application extends App implements IBootstrap {
 	 * @spec openspec/specs/beschikking-generatie/spec.md
 	 */
 	public function register(IRegistrationContext $context): void {
-		(new ServiceRegistrar())->register(context: $context);
-		(new ListenerRegistrar())->register(context: $context);
 
-		// ADR-084: services type-hint OpenRegister's PUBLISHED interface, never
-		// its concrete class, so this app's unit tests can mock a type they are
-		// able to load. Nextcloud autowires concrete classes across apps but not
-		// interfaces, so the binding has to be stated — and the composition root
-		// is the right place to state it.
+		// ADR-084: services type-hint OpenRegister's PUBLISHED interface, never its
+		// concrete class, so this app's unit tests can mock a type they are able to
+		// load. Nextcloud autowires concrete classes across apps but not interfaces,
+		// so the binding has to be stated — and the composition root is where this
+		// app says how it is wired.
 		//
-		// An ALIAS, not a factory: it resolves when something actually asks for
-		// the interface, so an instance without OpenRegister fails at the route
-		// that needed the data rather than at registration. Both names are
-		// strings here and neither triggers an autoload, which is what keeps
-		// ADR-083 rule 3's promise that the start screen still boots.
+		// An ALIAS, not a factory: it resolves when something actually asks for the
+		// interface, so an instance without OpenRegister fails at the route that
+		// needed the data rather than at registration. Both names are strings and
+		// neither triggers an autoload, which is what keeps ADR-083 rule 3's promise
+		// that the start screen still boots.
 		$context->registerServiceAlias(
 			ObjectServiceInterface::class,
 			'OCA\OpenRegister\Service\ObjectService'
 		);
+		(new ServiceRegistrar())->register(context: $context);
+		(new ListenerRegistrar())->register(context: $context);
 	}//end register()
 
 	/**
