@@ -500,7 +500,7 @@ class DsoCaseService {
 	 *
 	 * Best-effort: errors are logged but do not propagate to the caller.
 	 *
-	 * @param object $objectService The ObjectService instance
+	 * @param object $this->objectService The ObjectService instance
 	 * @param string $requestRef The vergunningaanvraag UUID
 	 * @param string $newStatus The new status to set
 	 * @param string|null $besluitdatum Optional decision date

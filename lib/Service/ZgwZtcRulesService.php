@@ -682,7 +682,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	/**
 	 * Load the caseType row itself, returning an empty array when it cannot be read.
 	 *
-	 * @param object $objectService The OpenRegister object service.
+	 * @param object $this->objectService The OpenRegister object service.
 	 * @param string $register Register slug.
 	 * @param string $schema Case type schema slug.
 	 * @param string $caseTypeId Case type id.
@@ -778,7 +778,7 @@ class ZgwZtcRulesService extends ZgwRulesBase {
 	/**
 	 * Load the ids of the final statusTypes of a case type, or an empty list when unreadable.
 	 *
-	 * @param object $objectService The OpenRegister object service.
+	 * @param object $this->objectService The OpenRegister object service.
 	 * @param string $register Register slug.
 	 * @param string $caseTypeId Case type id.
 	 *

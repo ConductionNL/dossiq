@@ -179,7 +179,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 * Returns null whenever the zaaktype cannot be resolved or declares no default — a lookup
 	 * failure is swallowed, exactly as the inline block did.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
+	 * @param object $this->objectService The OpenRegister ObjectService
 	 * @param mixed $caseTypeUrl The `zaaktype` value from the request body
 	 *
 	 * @return mixed The default assignee, or null when there is none
@@ -1012,7 +1012,7 @@ class ZgwZrcRulesService extends ZgwRulesBase {
 	 * Returns false when the register/schema are unconfigured or the lookup fails — a failure is
 	 * logged and never raised, exactly as the inline block did.
 	 *
-	 * @param object $objectService The OpenRegister ObjectService
+	 * @param object $this->objectService The OpenRegister ObjectService
 	 * @param string $statustypeUuid The statustype UUID to check
 	 * @param string $zaaktypeUuid The zaaktype UUID to fetch all statustypes for
 	 *
