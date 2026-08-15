@@ -65,11 +65,11 @@ class ChecklistServiceTest extends TestCase {
 	 * @return void
 	 */
 	protected function setUp(): void {
-		$this->service = new ChecklistService(
-			settingsService: $this->createMock(SettingsService::class),
-			userSession: $this->createMock(IUserSession::class),
-			logger: $this->createMock(LoggerInterface::class),
-		);
+		// OCA\Procest\Service\ChecklistService takes NO constructor arguments.
+		// The three that were here belong to OCA\Procest\Service\Inspection\
+		// ChecklistService — a different class with the same file name, which an
+		// earlier fixer keyed constructors by.
+		$this->service = new ChecklistService();
 	}//end setUp()
 
 	/**
