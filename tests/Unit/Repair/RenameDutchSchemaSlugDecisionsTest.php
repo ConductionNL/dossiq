@@ -36,6 +36,10 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Procest\Repair\RenameDutchSchemaSlugDecisions
  * @covers \OCA\Procest\Repair\RenameDutchSchemaSlugs
+ *
+ * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+ *  migration. Pointing this at an existing spec would report conformance to a
+ *  requirement that says nothing about it.
  */
 final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 
