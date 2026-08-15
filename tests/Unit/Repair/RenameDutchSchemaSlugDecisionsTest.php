@@ -50,6 +50,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * Set up the subject.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	protected function setUp(): void {
 		parent::setUp();
@@ -61,6 +65,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * A slug present on the install is renamed; one that is absent is skipped.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function testPlanRenamesOnlyWhatIsPresent(): void {
 		$plan = $this->decisions->plan(
@@ -80,6 +88,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * data — never something a repair step should do on its own.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function testPlanRefusesWhenTheTargetSlugExists(): void {
 		$plan = $this->decisions->plan(
@@ -101,6 +113,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * database rather than here.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function testPlanSeesItsOwnEarlierRenames(): void {
 		$plan = $this->decisions->plan(
@@ -121,6 +137,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * the upgrade.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function testSchemaIdsFromToleratesMalformedRows(): void {
 		$ids = $this->decisions->schemaIdsFrom([
@@ -144,6 +164,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * the outcome.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function testShippedMapTargetsAreDistinctAndDoNotCollideWithSources(): void {
 		$map = RenameDutchSchemaSlugs::SLUG_MAP;
@@ -171,6 +195,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * runtime, inside a repair step, on somebody else's install.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function testPlaceholdersMatchTheParameterCount(): void {
 		self::assertSame('?,?,?', $this->decisions->placeholders(3));
@@ -184,6 +212,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * The shipped step names itself and its map is well formed.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function testShippedStepNamesItself(): void {
 		$step = (new \ReflectionClass(RenameDutchSchemaSlugs::class))->newInstanceWithoutConstructor();
@@ -198,6 +230,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * step where an exception aborts the upgrade.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function testSlugsFromToleratesMissingSlugs(): void {
 		self::assertSame(
@@ -219,6 +255,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * an empty id list and issue an UPDATE with an empty IN clause.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function testNoRegistersIsANoOp(): void {
 		// An EMPTY result, not a thrown exception: the step catches
@@ -246,6 +286,10 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 	 * The step is a repair step and its map is non-empty snake-free slugs.
 	 *
 	 * @return void
+	 *
+	 * @spec exclude No canonical spec covers the Dutch-to-English vocabulary
+	 *  migration. Pointing this at an existing spec would report conformance to a
+	 *  requirement that says nothing about it.
 	 */
 	public function testShippedMapIsWellFormed(): void {
 		$map = RenameDutchSchemaSlugs::SLUG_MAP;
