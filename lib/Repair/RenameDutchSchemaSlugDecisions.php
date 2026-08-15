@@ -120,4 +120,18 @@ class RenameDutchSchemaSlugDecisions {
 	public function placeholders(int $count): string {
 		return implode(',', array_fill(0, max(0, $count), '?'));
 	}//end placeholders()
+	/**
+	 * Pull the slugs out of schema rows.
+	 *
+	 * Sibling of schemaIdsFrom(), and defensive for the same reason: a row with
+	 * a null slug must yield an empty string rather than a TypeError inside a
+	 * repair step, where an exception aborts the upgrade.
+	 *
+	 * @param array<int, array<string, mixed>> $rows Schema rows.
+	 *
+	 * @return array<int, string> The slugs.
+	 */
+	public function slugsFrom(array $rows): array {
+		return array_map(static fn (array $row): string => (string)($row['slug'] ?? ''), $rows);
+	}//end slugsFrom()
 }//end class

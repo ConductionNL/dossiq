@@ -187,4 +187,24 @@ final class RenameDutchSchemaSlugDecisionsTest extends TestCase {
 		self::assertStringContainsString('slug', strtolower($step->getName()));
 
 	}//end testShippedStepNamesItself()
+	/**
+	 * Slugs are read out of schema rows defensively.
+	 *
+	 * A null slug must yield an empty string, not a TypeError inside a repair
+	 * step where an exception aborts the upgrade.
+	 *
+	 * @return void
+	 */
+	public function testSlugsFromToleratesMissingSlugs(): void {
+		self::assertSame(
+			['catalogus', '', 'module'],
+			$this->decisions->slugsFrom([
+				['id' => 1, 'slug' => 'catalogus'],
+				['id' => 2, 'slug' => null],
+				['id' => 3, 'slug' => 'module'],
+			])
+		);
+		self::assertSame([], $this->decisions->slugsFrom([]));
+
+	}//end testSlugsFromToleratesMissingSlugs()
 }//end class

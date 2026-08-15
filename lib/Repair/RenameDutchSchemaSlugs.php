@@ -196,7 +196,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 			return [];
 		}
 
-		return array_map(static fn (array $row): string => (string)$row['slug'], $rows);
+		return $this->decisions->slugsFrom(rows: $rows);
 	}//end slugsOf()
 
 	/**
