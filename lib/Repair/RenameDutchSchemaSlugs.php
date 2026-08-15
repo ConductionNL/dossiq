@@ -15,9 +15,8 @@
  * table is named for the register and schema IDs, which this step never
  * touches, so the rows move with the schema untouched.
  *
- * ORDERING: this MUST run before `InitializeSettings` (which triggers the
- * procest register import) and before `RegisterOriRegister` (which imports the
- * ORI register). Registered first in info.xml's post-migration block.
+ * ORDERING: this MUST run before `InitializeSettings`, which triggers the
+ * procest register import. Registered first in info.xml's post-migration block.
  *
  * `bezwaar` is deliberately absent. procest declares BOTH `bezwaar` and
  * `objection`, and they are two entities rather than a duplicate — the
@@ -59,29 +58,24 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 * `catalogus` was already titled "Catalog", `voorstel` "Proposal", `kanaal`
 	 * "Notification Channel".
 	 *
-	 * The six `ori` schemas are the Open Raadsinformatie / VNG ODS-O standard's
-	 * vocabulary. They are renamed because a SCHEMA is English; the standard's
-	 * own spelling belongs in a MAPPING, which is configuration. procest has no
-	 * ORI mapping yet — it has `LoadDefaultZgwMappings` for ZGW and nothing
-	 * equivalent for ORI — so nothing consumes the standard's spelling from
-	 * these schemas today.
+	 * The `ori` register's schemas are deliberately ABSENT. decidesk already
+	 * owns the canonical Popolo-shaped schemas — Person, Membership, Post,
+	 * Meeting, Vote, VotingRound, AgendaItem, GovernanceBody — extended with
+	 * schema.org, plus an OriController/OriSerializer that maps them onto ORI.
+	 * procest's `ori` register duplicates that and should be REMOVED rather than
+	 * renamed: renaming would cement a structure that is going away, and mint
+	 * names that collide conceptually with decidesk's canonical ones.
 	 *
 	 * @var array<string, string>
 	 */
 	public const SLUG_MAP = [
-		'agendapunt' => 'agendaItem',
 		'avgClassificatie' => 'gdprClassification',
 		'catalogus' => 'catalog',
 		'dwangsomBerekening' => 'penaltyPaymentCalculation',
-		'fractie' => 'politicalGroup',
 		'ingebrekestelling' => 'noticeOfDefault',
 		'kanaal' => 'notificationChannel',
-		'raadsdocument' => 'councilDocument',
-		'raadslid' => 'councilMember',
-		'stemming' => 'vote',
 		'termijnDefinitie' => 'deadlineDefinition',
 		'termijnInstance' => 'deadlineInstance',
-		'vergadering' => 'meeting',
 		'voorstel' => 'proposal',
 	];
 
@@ -90,7 +84,7 @@ class RenameDutchSchemaSlugs implements IRepairStep {
 	 *
 	 * @var array<int, string>
 	 */
-	private const REGISTER_SLUGS = ['procest', 'ori'];
+	private const REGISTER_SLUGS = ['procest'];
 
 	/**
 	 * Constructor.

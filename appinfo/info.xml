@@ -128,8 +128,7 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 data stranded behind a schema nothing reads, which presents as
                 an app with no records rather than as an error. Renaming the
                 slug on the existing row first makes the import recognise it.
-                Ahead of BOTH import triggers: InitializeSettings (procest
-                register) and RegisterOriRegister (ORI register).
+                Ahead of the import trigger, InitializeSettings.
             -->
             <step>OCA\Procest\Repair\RenameDutchSchemaSlugs</step>
             <step>OCA\Procest\Repair\InitializeSettings</step>

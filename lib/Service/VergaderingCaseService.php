@@ -82,13 +82,13 @@ class VergaderingCaseService {
 	 * THEN a linked Procest case is created with status "gepland"
 	 * AND deadline = startDatum − 7 days (agenda publication deadline).
 	 *
-	 * @param array $meeting The vergadering object from the ORI register
+	 * @param array $vergadering The vergadering object from the ORI register
 	 *
 	 * @return array The created case object, or empty array when skipped
 	 *
 	 * @spec openspec/changes/open-raadsinformatie/tasks.md#task-5
 	 */
-	public function createForVergadering(array $meeting): array {
+	public function createForVergadering(array $vergadering): array {
 		$objectService = $this->settingsService->getObjectService();
 		if ($objectService === null) {
 			$this->logger->warning(
@@ -109,7 +109,7 @@ class VergaderingCaseService {
 			return [];
 		}
 
-		$startDate = ($meeting['startDate'] ?? '');
+		$startDate = ($vergadering['startDate'] ?? '');
 		$deadline = '';
 
 		if (empty($startDate) === false) {
@@ -125,13 +125,13 @@ class VergaderingCaseService {
 		}
 
 		$caseData = [
-			'title' => ($meeting['name'] ?? 'Vergadering'),
+			'title' => ($vergadering['name'] ?? 'Vergadering'),
 			'status' => 'gepland',
 			'deadline' => $deadline,
-			'oriVergaderingId' => ($meeting['@self']['slug'] ?? ''),
+			'oriVergaderingId' => ($vergadering['@self']['slug'] ?? ''),
 			'oriRegister' => 'ori',
-			'type' => ($meeting['type'] ?? ''),
-			'organisation' => ($meeting['organisation'] ?? ''),
+			'type' => ($vergadering['type'] ?? ''),
+			'organisation' => ($vergadering['organisation'] ?? ''),
 		];
 
 		try {
@@ -144,7 +144,7 @@ class VergaderingCaseService {
 			$this->logger->info(
 				'Procest: created case for vergadering',
 				[
-					'vergaderingSlug' => ($meeting['@self']['slug'] ?? ''),
+					'vergaderingSlug' => ($vergadering['@self']['slug'] ?? ''),
 					'caseId' => ($case['id'] ?? ''),
 					'deadline' => $deadline,
 				]

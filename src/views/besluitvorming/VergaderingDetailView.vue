@@ -232,14 +232,14 @@ export default {
 </script>
 
 <style scoped>
-.meeting-detail__form {
+.vergadering-detail__form {
 	display: flex;
 	flex-direction: column;
 	gap: 8px;
 	max-width: 520px;
 }
 
-.meeting-detail__actions {
+.vergadering-detail__actions {
 	display: flex;
 	gap: 8px;
 	margin-top: 8px;

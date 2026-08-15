@@ -100,7 +100,7 @@ class RaadsinformatieFeedController extends Controller {
 	public function vergaderingen(string $organisation = ''): DataDisplayResponse {
 		return $this->buildFeed(
 			type: 'vergaderingen',
-			schema: 'meeting',
+			schema: 'vergadering',
 			organisation: $organisation
 		);
 
@@ -121,7 +121,7 @@ class RaadsinformatieFeedController extends Controller {
 	public function agendapunten(string $organisation = ''): DataDisplayResponse {
 		return $this->buildFeed(
 			type: 'agendapunten',
-			schema: 'agendaItem',
+			schema: 'agendapunt',
 			organisation: $organisation
 		);
 
@@ -142,7 +142,7 @@ class RaadsinformatieFeedController extends Controller {
 	public function documenten(string $organisation = ''): DataDisplayResponse {
 		return $this->buildFeed(
 			type: 'documenten',
-			schema: 'councilDocument',
+			schema: 'raadsdocument',
 			organisation: $organisation
 		);
 
@@ -172,7 +172,7 @@ class RaadsinformatieFeedController extends Controller {
 	/**
 	 * Fetch the latest objects for the given schema from the ORI register.
 	 *
-	 * @param string $schema The ORI schema slug (e.g. "meeting")
+	 * @param string $schema The ORI schema slug (e.g. "vergadering")
 	 * @param string $organisation Optional organisatie filter
 	 *
 	 * @return array<int,array> Array of object arrays
@@ -279,9 +279,9 @@ class RaadsinformatieFeedController extends Controller {
 	 */
 	private function extractTitle(string $schema, array $object): string {
 		return match ($schema) {
-			'meeting' => (string)($object['name'] ?? ''),
-			'agendaItem' => (string)($object['subject'] ?? ''),
-			'councilDocument' => (string)($object['title'] ?? ''),
+			'vergadering' => (string)($object['name'] ?? ''),
+			'agendapunt' => (string)($object['subject'] ?? ''),
+			'raadsdocument' => (string)($object['title'] ?? ''),
 			default => (string)($object['name'] ?? ($object['titel'] ?? $schema)),
 		};
 
@@ -296,7 +296,7 @@ class RaadsinformatieFeedController extends Controller {
 	 * @return string Summary string
 	 */
 	private function extractSummary(string $schema, array $object): string {
-		if ($schema === 'meeting') {
+		if ($schema === 'vergadering') {
 			$parts = [];
 			if (empty($object['startDate']) === false) {
 				$parts[] = 'Datum: ' . $object['startDate'];
@@ -313,11 +313,11 @@ class RaadsinformatieFeedController extends Controller {
 			return implode(separator: ' | ', array: $parts);
 		}
 
-		if ($schema === 'agendaItem') {
+		if ($schema === 'agendapunt') {
 			return (string)($object['omschrijving'] ?? '');
 		}
 
-		if ($schema === 'councilDocument') {
+		if ($schema === 'raadsdocument') {
 			$parts = [];
 			if (empty($object['type']) === false) {
 				$parts[] = 'Type: ' . $object['type'];
