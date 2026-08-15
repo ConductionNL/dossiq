@@ -128,13 +128,14 @@ class SamenwerkverzoekService {
 			'requestedOn' => date('c'),
 		];
 
-		$created = $this->asArray(
-			value: $objectService->saveObject(
-				register: $register,
-				schema: $requestSchema,
-				object: $samenwerkverzoek
-			)
-		);
+		// saveObject() returns an ObjectEntityInterface (which extends
+		// JsonSerializable), never an array — returning it straight out of a
+		// method declared `: array` is a TypeError.
+		$created = $objectService->saveObject(
+			register: $register,
+			schema: $requestSchema,
+			object: $samenwerkverzoek
+		)->jsonSerialize();
 
 		$event = new GenericEvent(
 			subject: $created,
@@ -217,13 +218,13 @@ class SamenwerkverzoekService {
 		$request['advies'] = $advies;
 		$request['respondedOn'] = date('c');
 
-		$updated = $this->asArray(
-			value: $objectService->saveObject(
-				register: $register,
-				schema: $requestSchema,
-				object: $request
-			)
-		);
+		// See initiateSamenwerking() — saveObject() returns an entity, not an
+		// array.
+		$updated = $objectService->saveObject(
+			register: $register,
+			schema: $requestSchema,
+			object: $request
+		)->jsonSerialize();
 
 		$this->logger->info(
 			'Procest SamenwerkverzoekService: samenwerking responded',
@@ -236,27 +237,6 @@ class SamenwerkverzoekService {
 
 		return $updated;
 	}//end respondToSamenwerking()
-
-	/**
-	 * Normalise an OpenRegister save result to a plain array.
-	 *
-	 * `ObjectServiceInterface::saveObject()` returns an
-	 * `ObjectEntityInterface`, not an array, so returning it straight out of a
-	 * method declared `: array` is a TypeError. Mirrors the helper of the same
-	 * name in CaseCollaborationService, and stays defensive so either shape
-	 * works.
-	 *
-	 * @param mixed $value The saveObject() result.
-	 *
-	 * @return array<string,mixed> The object data as an array.
-	 */
-	private function asArray(mixed $value): array {
-		if (is_array($value) === true) {
-			return $value;
-		}
-
-		return $value->jsonSerialize();
-	}//end asArray()
 
 	/**
 	 * Authorise a samenwerkverzoek mutation.
