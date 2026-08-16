@@ -282,7 +282,7 @@ class DsoCaseServiceTest extends TestCase {
 			->method('find')
 			->willReturn($requestEntity);
 
-		$savedCase = ['id' => 'zaak-uuid-1', 'status' => 'ingediend'];
+		$savedCase = ['id' => 'zaak-uuid-1', 'status' => 'submitted'];
 
 		$savedEntity = $this->createMock(ObjectEntityInterface::class);
 		$savedEntity->method('jsonSerialize')->willReturn($savedCase);

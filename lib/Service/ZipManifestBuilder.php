@@ -208,7 +208,7 @@ class ZipManifestBuilder {
 	private function buildEntryName(array $doc, string $fileName, string $layout, array &$usedNames): string {
 		$prefix = '';
 		if ($layout === self::LAYOUT_PER_TYPE) {
-			$type = (string)($doc['informatieobjecttype'] ?? 'onbekend');
+			$type = (string)($doc['informatieobjecttype'] ?? 'unknown');
 			$prefix = $this->sanitizeFolderName(name: $type) . '/';
 		}
 
@@ -260,7 +260,7 @@ class ZipManifestBuilder {
 	private function sanitizeFileName(string $name): string {
 		$clean = trim(str_replace(['/', '\\', "\0"], '_', $name));
 		if ($clean === '' || $clean === '.' || $clean === '..') {
-			return 'onbekend';
+			return 'unknown';
 		}
 
 		return $clean;

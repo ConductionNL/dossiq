@@ -97,8 +97,8 @@ class KccWerkplekSeedDataServiceTest extends TestCase {
 
 		$allowed = [
 			'status_geven',
-			'nieuwe_zaak',
-			'klacht_registreren',
+			'new_case',
+			'complaint_registreren',
 			'doorverbinden',
 			'bel_terug_inplannen',
 			'email_sturen',

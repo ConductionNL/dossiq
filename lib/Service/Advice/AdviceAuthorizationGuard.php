@@ -174,11 +174,11 @@ class AdviceAuthorizationGuard {
 		$advisor = (string)($advice['advisor'] ?? '');
 		$isAdviseur = ($advisor !== '' && $advisor === $uid);
 
-		if ($to === 'ontvangen') {
+		if ($to === 'received') {
 			return $isAdviseur;
 		}
 
-		if ($to === 'aangevraagd') {
+		if ($to === 'requested') {
 			return ($isAdviseur === true || $this->isHandlerOfLinkedCase(advice: $advice, uid: $uid) === true);
 		}
 

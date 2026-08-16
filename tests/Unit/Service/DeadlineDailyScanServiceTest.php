@@ -131,14 +131,14 @@ class DeadlineDailyScanServiceTest extends TestCase {
 		$counts = $this->scan->run(new DateTimeImmutable('2026-06-01T10:00:00+00:00'));
 
 		self::assertSame(1, $counts['scanned']);
-		self::assertSame(1, $counts['overschreden']);
+		self::assertSame(1, $counts['exceeded']);
 		self::assertSame(1, $counts['escalated']);
 
 		$rows = array_values($this->objects->store['deadlineInstance']);
-		self::assertSame('overschreden', $rows[0]['status']);
+		self::assertSame('exceeded', $rows[0]['status']);
 
 		$events = array_values($this->objects->store['termijnGebeurtenis'] ?? []);
-		$overTypes = array_values(array_filter($events, static fn (array $e): bool => $e['type'] === 'overschreden'));
+		$overTypes = array_values(array_filter($events, static fn (array $e): bool => $e['type'] === 'exceeded'));
 		self::assertCount(1, $overTypes);
 	}
 
@@ -146,7 +146,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testScanRaisesPauseExpiredEvent(): void {
-		$row = $this->seedInstance('2026-07-01', 'gepauzeerd');
+		$row = $this->seedInstance('2026-07-01', 'paused');
 		$row['pauseDeadline'] = '2026-05-30';
 		$this->objects->store['deadlineInstance'][$row['id']] = $row;
 
@@ -154,7 +154,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 		self::assertSame(1, $counts['pauseExpired']);
 
 		$events = array_values($this->objects->store['termijnGebeurtenis'] ?? []);
-		$pauseExpired = array_values(array_filter($events, static fn (array $e): bool => $e['type'] === 'pauze-verlopen'));
+		$pauseExpired = array_values(array_filter($events, static fn (array $e): bool => $e['type'] === 'pause-expired'));
 		self::assertCount(1, $pauseExpired);
 	}
 
@@ -162,9 +162,9 @@ class DeadlineDailyScanServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testScanIgnoresCompletedInstances(): void {
-		$this->seedInstance('2026-05-01', 'voltooid');
+		$this->seedInstance('2026-05-01', 'completed');
 		$counts = $this->scan->run(new DateTimeImmutable('2026-06-01T10:00:00+00:00'));
-		self::assertSame(0, $counts['overschreden']);
+		self::assertSame(0, $counts['exceeded']);
 		self::assertSame(0, $counts['escalated']);
 	}
 
@@ -224,7 +224,7 @@ class DeadlineDailyScanServiceTest extends TestCase {
 			'currentDag' => 99,
 			'cumulativeAmount' => 999999,
 			'plafondBereikt' => false,
-			'status' => 'gestopt-wegens-beschikking',
+			'status' => 'gestopt-wegens-decision',
 		]);
 
 		$counts = $scan->run(new DateTimeImmutable('2026-06-01T10:00:00+00:00'));

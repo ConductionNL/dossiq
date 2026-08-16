@@ -483,7 +483,7 @@ class DsoIntakeServiceTest extends TestCase {
 			'missing type falls back to regulier' => [null, 'P56D'],
 			'regulier' => ['regulier', 'P56D'],
 			'uitgebreid' => ['uitgebreid', 'P182D'],
-			'unknown type falls back to regulier' => ['onbekend', 'P56D'],
+			'unknown type falls back to regulier' => ['unknown', 'P56D'],
 		];
 	}//end deadlineProvider()
 
@@ -513,6 +513,6 @@ class DsoIntakeServiceTest extends TestCase {
 	public function testGetDeadlineDurationMatchesIntakeDeadlines(): void {
 		$this->assertSame('P56D', $this->service->getDeadlineDuration('regulier'));
 		$this->assertSame('P182D', $this->service->getDeadlineDuration('uitgebreid'));
-		$this->assertSame('P56D', $this->service->getDeadlineDuration('onbekend'));
+		$this->assertSame('P56D', $this->service->getDeadlineDuration('unknown'));
 	}//end testGetDeadlineDurationMatchesIntakeDeadlines()
 }//end class

@@ -80,12 +80,12 @@ export default {
 					date: hearing.scheduledDate.split('T')[0],
 					label: t('procest', 'Hearing scheduled'),
 					detail:
-						hearing.status === 'uitgevoerd'
+						hearing.status === 'executed'
 							? t('procest', 'Completed')
 							: t('procest', hearing.status),
-					completed: hearing.status === 'uitgevoerd',
+					completed: hearing.status === 'executed',
 					active:
-						hearing.status === 'gepland'
+						hearing.status === 'planned'
 						|| hearing.status === 'uitgenodigd',
 					isDeadline: false,
 				})
@@ -147,10 +147,10 @@ export default {
 		 */
 		getAdviceTypeLabel(type) {
 			const labels = {
-				gegrond: t('procest', 'Upheld'),
-				ongegrond: t('procest', 'Rejected'),
-				deels_gegrond: t('procest', 'Partially upheld'),
-				niet_ontvankelijk: t('procest', 'Inadmissible'),
+				upheld: t('procest', 'Upheld'),
+				dismissed: t('procest', 'Rejected'),
+				partly_upheld: t('procest', 'Partially upheld'),
+				inadmissible: t('procest', 'Inadmissible'),
 			}
 			return labels[type] || type
 		},
@@ -161,10 +161,10 @@ export default {
 		 */
 		getDispositionLabel(type) {
 			const labels = {
-				gegrond: t('procest', 'Upheld'),
-				ongegrond: t('procest', 'Rejected'),
-				deels_gegrond: t('procest', 'Partially upheld'),
-				niet_ontvankelijk: t('procest', 'Inadmissible'),
+				upheld: t('procest', 'Upheld'),
+				dismissed: t('procest', 'Rejected'),
+				partly_upheld: t('procest', 'Partially upheld'),
+				inadmissible: t('procest', 'Inadmissible'),
 			}
 			return labels[type] || type
 		},

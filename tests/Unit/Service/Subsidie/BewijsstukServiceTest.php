@@ -55,23 +55,23 @@ class BewijsstukServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testTypeWhitelist(): void {
-		$this->assertTrue($this->service->isTypeAllowed('aanvraag', 'projectplan'));
-		$this->assertTrue($this->service->isTypeAllowed('vaststelling', 'accountantsverklaring'));
+		$this->assertTrue($this->service->isTypeAllowed('request', 'projectplan'));
+		$this->assertTrue($this->service->isTypeAllowed('determination', 'auditorsStatement'));
 		// accountantsverklaring is not an aanvraag-phase document.
-		$this->assertFalse($this->service->isTypeAllowed('aanvraag', 'accountantsverklaring'));
-		$this->assertFalse($this->service->isTypeAllowed('onbekend', 'projectplan'));
+		$this->assertFalse($this->service->isTypeAllowed('request', 'auditorsStatement'));
+		$this->assertFalse($this->service->isTypeAllowed('unknown', 'projectplan'));
 	}//end testTypeWhitelist()
 
 	/**
 	 * @return void
 	 */
 	public function testRetentionDefaultsAndOverride(): void {
-		$this->assertSame(7, $this->service->bewaartermijnJaren('aanvraag'));
-		$this->assertSame(10, $this->service->bewaartermijnJaren('vaststelling'));
+		$this->assertSame(7, $this->service->bewaartermijnJaren('request'));
+		$this->assertSame(10, $this->service->bewaartermijnJaren('determination'));
 		// Regeling override wins.
-		$this->assertSame(15, $this->service->bewaartermijnJaren('aanvraag', 15));
+		$this->assertSame(15, $this->service->bewaartermijnJaren('request', 15));
 		// Zero/negative override is ignored.
-		$this->assertSame(7, $this->service->bewaartermijnJaren('aanvraag', 0));
+		$this->assertSame(7, $this->service->bewaartermijnJaren('request', 0));
 	}//end testRetentionDefaultsAndOverride()
 
 	/**

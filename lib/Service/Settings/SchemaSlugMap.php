@@ -120,7 +120,7 @@ class SchemaSlugMap {
 		'subsidieBeoordeling' => 'subsidie_beoordeling_schema',
 		'subsidieBeschikking' => 'subsidie_beschikking_schema',
 		'subsidieUitvoering' => 'subsidie_uitvoering_schema',
-		'tussenrapportage' => 'tussenrapportage_schema',
+		'interimReport' => 'tussenrapportage_schema',
 		'subsidieVaststelling' => 'subsidie_vaststelling_schema',
 		'terugvordering' => 'terugvordering_schema',
 		'bewijsstuk' => 'bewijsstuk_schema',

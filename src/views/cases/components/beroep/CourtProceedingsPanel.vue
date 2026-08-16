@@ -118,8 +118,8 @@ export default {
 					id: 'beroep_ongegrond',
 					label: t('procest', 'Appeal rejected (beroep ongegrond)'),
 				},
-				{ id: 'deels_gegrond', label: t('procest', 'Partially upheld') },
-				{ id: 'niet_ontvankelijk', label: t('procest', 'Inadmissible') },
+				{ id: 'partly_upheld', label: t('procest', 'Partially upheld') },
+				{ id: 'inadmissible', label: t('procest', 'Inadmissible') },
 			],
 		}
 	},
@@ -133,8 +133,8 @@ export default {
 			const labels = {
 				beroep_gegrond: t('procest', 'Appeal upheld'),
 				beroep_ongegrond: t('procest', 'Appeal rejected'),
-				deels_gegrond: t('procest', 'Partially upheld'),
-				niet_ontvankelijk: t('procest', 'Inadmissible'),
+				partly_upheld: t('procest', 'Partially upheld'),
+				inadmissible: t('procest', 'Inadmissible'),
 			}
 			return labels[outcome] || outcome
 		},

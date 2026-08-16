@@ -49,12 +49,12 @@ class StateMachineService {
 	 * @var array<string, array<int, string>>
 	 */
 	private const TRANSITIONS = [
-		'ontwerp' => ['akkoord-mandaat'],
-		'akkoord-mandaat' => ['ondertekend', 'ontwerp'],
-		'ondertekend' => ['verzonden'],
-		'verzonden' => ['ontvangen-bevestiging', 'gearchiveerd'],
-		'ontvangen-bevestiging' => ['gearchiveerd'],
-		'gearchiveerd' => [],
+		'draft' => ['approved-mandate'],
+		'approved-mandate' => ['signed', 'draft'],
+		'signed' => ['sent'],
+		'sent' => ['received-confirmation', 'archived'],
+		'received-confirmation' => ['archived'],
+		'archived' => [],
 	];
 
 	/**
@@ -63,10 +63,10 @@ class StateMachineService {
 	 * @var array<int, string>
 	 */
 	public const IMMUTABLE_STATUSES = [
-		'ondertekend',
-		'verzonden',
-		'ontvangen-bevestiging',
-		'gearchiveerd',
+		'signed',
+		'sent',
+		'received-confirmation',
+		'archived',
 	];
 
 	/**
@@ -147,7 +147,7 @@ class StateMachineService {
 				'moment' => (new DateTimeImmutable())->format('c'),
 				'actor' => (string)($metadata['actor'] ?? 'systeem'),
 				'actorType' => (string)($metadata['actorType'] ?? 'systeem'),
-				'trigger' => (string)($metadata['trigger'] ?? 'automatisch'),
+				'trigger' => (string)($metadata['trigger'] ?? 'automatic'),
 				'evidenceMaterial' => ($metadata['evidenceMaterial'] ?? null),
 			],
 		];

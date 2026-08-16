@@ -57,7 +57,7 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 			'id' => 'b-stopped',
 			'noticeOfDefault' => 'ig-1',
 			'deadlineInstance' => 'ti-1',
-			'status' => 'gestopt-wegens-beschikking',
+			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 35700,
 		]);
 	}
@@ -114,7 +114,7 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 	public function testPrepareBetalingRejectsZeroAmount(): void {
 		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
 			'id' => 'b-zero',
-			'status' => 'gestopt-wegens-beschikking',
+			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 0,
 			'cumulativeAmount' => 0,
 		]);
@@ -136,12 +136,12 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 
 		$updated = $this->service->handleCallback(
 			(string)$created['reference'],
-			'betaald',
+			'paid',
 			new DateTimeImmutable('2026-04-20'),
 			'ERP-XYZ-987'
 		);
 
-		self::assertSame('betaald', $updated['status']);
+		self::assertSame('paid', $updated['status']);
 		self::assertSame('2026-04-20', $updated['actualPaymentDate']);
 		self::assertSame('ERP-XYZ-987', $updated['betalingsreferentie']);
 	}
@@ -151,6 +151,6 @@ class DwangsomUitbetalingServiceTest extends TestCase {
 	 */
 	public function testHandleCallbackRejectsUnknownReferentie(): void {
 		$this->expectException(RuntimeException::class);
-		$this->service->handleCallback('UNKNOWN-REF', 'betaald', new DateTimeImmutable());
+		$this->service->handleCallback('UNKNOWN-REF', 'paid', new DateTimeImmutable());
 	}
 }

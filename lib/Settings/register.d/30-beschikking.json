@@ -42,9 +42,9 @@
             "title": "Decision Type",
             "enum": [
               "toekenning",
-              "afwijzing",
-              "wijziging",
-              "intrekking"
+              "rejection",
+              "amendment",
+              "withdrawal"
             ],
             "description": "Type of decision",
             "facetable": true
@@ -70,14 +70,14 @@
             "type": "string",
             "title": "Current Status",
             "enum": [
-              "ontwerp",
-              "akkoord-mandaat",
-              "ondertekend",
-              "verzonden",
-              "ontvangen-bevestiging",
-              "gearchiveerd"
+              "draft",
+              "approved-mandate",
+              "signed",
+              "sent",
+              "received-confirmation",
+              "archived"
             ],
-            "default": "ontwerp",
+            "default": "draft",
             "description": "Current state-machine status",
             "facetable": true
           },
@@ -231,8 +231,8 @@
               "to": { "type": "string", "title": "To Status", "description": "Target status" },
               "moment": { "type": "string", "title": "Timestamp", "description": "Date and time of the state transition", "format": "date-time" },
               "actor": { "type": "string", "title": "Actor", "description": "Nextcloud UID or 'systeem'" },
-              "actorType": { "type": "string", "title": "Actor Type", "description": "Whether the actor is a medewerker or the system", "enum": ["medewerker", "systeem"] },
-              "trigger": { "type": "string", "title": "Trigger", "description": "Whether the transition was initiated manually or automatically", "enum": ["handmatig", "automatisch"] },
+              "actorType": { "type": "string", "title": "Actor Type", "description": "Whether the actor is a employee or the system", "enum": ["employee", "systeem"] },
+              "trigger": { "type": "string", "title": "Trigger", "description": "Whether the transition was initiated manually or automatically", "enum": ["manual", "automatic"] },
               "evidenceMaterial": {
                 "type": "object",
                 "title": "Evidence Material",
@@ -356,7 +356,7 @@
         "reference": "Z/2026/04832/B01",
         "templateId": "tpl-wmo-toekenning-huishoudelijke-hulp-v4",
         "draftVersion": 1,
-        "currentStatus": "gearchiveerd",
+        "currentStatus": "archived",
         "announcementDate": "2026-04-02",
         "objectionTermEndDate": "2026-05-14",
         "reminderDate": "2026-05-07",
@@ -412,7 +412,7 @@
         "reference": "Z/2026/00156/B01",
         "templateId": "tpl-omgevingsvergunning-reguliere-procedure-v3",
         "draftVersion": 1,
-        "currentStatus": "ondertekend",
+        "currentStatus": "signed",
         "addressee": {
           "type": "bedrijf",
           "oin": "00000001234567890000",
@@ -446,7 +446,7 @@
         "reference": "Z/2026/00489/B01",
         "templateId": "tpl-subsidie-v2",
         "draftVersion": 1,
-        "currentStatus": "ontwerp",
+        "currentStatus": "draft",
         "addressee": {
           "type": "burger",
           "bsn": "987654321",

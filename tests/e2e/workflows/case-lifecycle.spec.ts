@@ -174,7 +174,7 @@ test.describe('Case lifecycle — state machine', () => {
 			`${RUN_PREFIX} In behandeling`,
 		)
 
-		// … and the board renders the card in the "In behandeling" column.
+		// … and the board renders the card in the "In handling" column.
 		await openBoard(page)
 		await expect(
 			page.getByText(`${RUN_PREFIX} Advance case`, { exact: false }).first(),
@@ -201,7 +201,7 @@ test.describe('Case lifecycle — state machine', () => {
 
 		await openBoard(page)
 		// Columns: the non-final statusTypes render as headers (Ontvangen,
-		// In behandeling). The final "Afgehandeld" is not a board column.
+		// In behandeling). The final "Handled" is not a board column.
 		await expect(
 			page.getByText(`${RUN_PREFIX} Ontvangen`, { exact: false }).first(),
 		).toBeVisible()

@@ -59,9 +59,9 @@ class LhsRecommendationService {
 	 * @var array<string, int>
 	 */
 	private const INTERVENTIE_SEVERITY = [
-		'waarschuwing' => 1,
+		'warning' => 1,
 		'herstelactie' => 2,
-		'last_onder_dwangsom' => 3,
+		'last_under_penaltypayment' => 3,
 		'last_plus_pv' => 4,
 		'bestuursdwang' => 5,
 		'pv_plus_bestuursdwang' => 6,

@@ -50,7 +50,7 @@ class MandaatImportServiceTest extends TestCase {
 					// Config KEY unchanged (it holds the stored schema id on
 					// existing installs); the resolved schema SLUG is renamed.
 					'mandaterings_besluit_schema' => 'mandateDecision',
-					'mandaat_schema' => 'mandaat',
+					'mandaat_schema' => 'mandate',
 					'organisatie_rol_schema' => 'organisatieRol',
 					default => '',
 				};
@@ -83,10 +83,10 @@ class MandaatImportServiceTest extends TestCase {
 		self::assertSame(0, $r['removedCount']);
 
 		$decision = $this->objects->store['mandateDecision'][$r['mandateDecisionId']];
-		self::assertSame('concept', $decision['status']);
-		self::assertCount(2, $this->objects->store['mandaat']);
+		self::assertSame('draft', $decision['status']);
+		self::assertCount(2, $this->objects->store['mandate']);
 
-		$m = array_values($this->objects->store['mandaat'])[0];
+		$m = array_values($this->objects->store['mandate'])[0];
 		self::assertSame(500000, $m['terms']['plafondCents']);
 		self::assertFalse($m['terms']['subdelegatie']);
 		self::assertSame(['wmo-toekenning'], $m['terms']['decisionTypes']);
@@ -120,8 +120,8 @@ class MandaatImportServiceTest extends TestCase {
 		$r = $this->service->importFromCsv('B-2026-4', 'X', 'decidesk-uuid-4', $csv);
 		$approved = $this->service->approveImport((string)$r['mandateDecisionId']);
 
-		self::assertSame('vastgesteld', $approved['status']);
-		$m = array_values($this->objects->store['mandaat'])[0];
+		self::assertSame('determined', $approved['status']);
+		$m = array_values($this->objects->store['mandate'])[0];
 		self::assertSame('active', $m['status']);
 	}
 

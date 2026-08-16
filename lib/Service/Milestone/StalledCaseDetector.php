@@ -58,11 +58,11 @@ class StalledCaseDetector {
 	 * @var string[]
 	 */
 	private const CLOSED_STATUS_NEEDLES = [
-		'afgesloten',
-		'afgehandeld',
-		'geweigerd',
+		'closed',
+		'handled',
+		'refused',
 		'withdrawn',
-		'gearchiveerd',
+		'archived',
 	];
 
 	/**

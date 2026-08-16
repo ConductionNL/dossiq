@@ -337,7 +337,7 @@ class InspectionChecklistService {
 			$photoRef = $answer['photoRef'] ?? '';
 			$itemRef = $answer['itemRef'] ?? '';
 
-			if ($value !== 'niet_conform' || $photoRef !== '') {
+			if ($value !== 'non_conform' || $photoRef !== '') {
 				continue;
 			}
 
@@ -402,12 +402,12 @@ class InspectionChecklistService {
 	 * Calculate the overall result based on answer values.
 	 *
 	 * - All answers conform → 'conform'
-	 * - Any answer niet_conform → 'niet_conform'
-	 * - Otherwise → 'deels_conform'
+	 * - Any answer niet_conform → 'non_conform'
+	 * - Otherwise → 'partly_conform'
 	 *
 	 * @param array<int, mixed> $answers Array of answer objects
 	 *
-	 * @return string 'conform'|'deels_conform'|'niet_conform'
+	 * @return string 'conform'|'partly_conform'|'non_conform'
 	 */
 	private function calculateOverallResult(array $answers): string {
 		$hasNietConform = false;
@@ -419,7 +419,7 @@ class InspectionChecklistService {
 			}
 
 			$value = $answer['value'] ?? '';
-			if ($value === 'niet_conform') {
+			if ($value === 'non_conform') {
 				$hasNietConform = true;
 			} elseif ($value === 'conform') {
 				$hasConform = true;
@@ -427,11 +427,11 @@ class InspectionChecklistService {
 		}
 
 		if ($hasNietConform === true && $hasConform === false) {
-			return 'niet_conform';
+			return 'non_conform';
 		}
 
 		if ($hasNietConform === true) {
-			return 'deels_conform';
+			return 'partly_conform';
 		}
 
 		return 'conform';

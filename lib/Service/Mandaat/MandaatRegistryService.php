@@ -191,7 +191,7 @@ class MandaatRegistryService {
 		}
 
 		if ($byMandate > 0) {
-			$blockers[] = $byMandate . ' mandaat(en)';
+			$blockers[] = $byMandate . ' mandate(s)';
 		}
 
 		$active = 0;

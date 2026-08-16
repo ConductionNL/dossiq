@@ -30,7 +30,7 @@ test.describe('Workflow Board page', () => {
 		// With no status types configured the board shows its guidance
 		// empty-state; with statuses it renders one `.board-column` per status
 		// type (the seeded register uses the Dutch ZGW status names —
-		// "Ontvangen", … — each with a per-column "No cases" surface). Assert
+		// "Received", … — each with a per-column "No cases" surface). Assert
 		// the data- and locale-independent kanban surface: a status column or
 		// the no-statuses guidance, never an error render.
 		await expect(

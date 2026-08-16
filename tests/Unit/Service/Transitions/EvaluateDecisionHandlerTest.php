@@ -169,7 +169,7 @@ class EvaluateDecisionHandlerTest extends TestCase {
 				'outputMapping' => ['eligible' => 'subsidyEligible', 'tier' => 'subsidyTier'],
 			],
 			case: $case,
-			transitionContext: ['toStatus' => 'beoordeeld'],
+			transitionContext: ['toStatus' => 'assessed'],
 		);
 
 		self::assertTrue($result->succeeded);

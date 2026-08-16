@@ -20,9 +20,9 @@ import { describe, it, expect } from 'vitest'
 import { aggregateByStatus } from '../../src/utils/dashboardHelpers.js'
 
 const STATUS_TYPES = [
-	{ id: 'uuid-ontvangen', name: 'Ontvangen', order: 1 },
-	{ id: 'uuid-behandeling', name: 'In behandeling', order: 2 },
-	{ id: 'uuid-afgehandeld', name: 'Afgehandeld', order: 3 },
+	{ id: 'uuid-ontvangen', name: 'Received', order: 1 },
+	{ id: 'uuid-behandeling', name: 'In handling', order: 2 },
+	{ id: 'uuid-afgehandeld', name: 'Handled', order: 3 },
 ]
 
 describe('aggregateByStatus', () => {
@@ -36,8 +36,8 @@ describe('aggregateByStatus', () => {
 		const result = aggregateByStatus(openCases, STATUS_TYPES)
 
 		expect(result).toEqual([
-			{ name: 'Ontvangen', count: 1, statusIds: ['uuid-ontvangen'] },
-			{ name: 'In behandeling', count: 2, statusIds: ['uuid-behandeling'] },
+			{ name: 'Received', count: 1, statusIds: ['uuid-ontvangen'] },
+			{ name: 'In handling', count: 2, statusIds: ['uuid-behandeling'] },
 		])
 	})
 
@@ -74,7 +74,7 @@ describe('aggregateByStatus', () => {
 		const result = aggregateByStatus(openCases, STATUS_TYPES)
 		const byName = Object.fromEntries(result.map((r) => [r.name, r.count]))
 
-		expect(byName).toEqual({ Ontvangen: 2, 'In behandeling': 1, Unknown: 2 })
+		expect(byName).toEqual({ Received: 2, 'In handling': 1, Unknown: 2 })
 		// The Unknown bucket carries no statusIds (null + junk contribute none).
 		expect(result.find((r) => r.name === 'Unknown').statusIds).toEqual([])
 	})

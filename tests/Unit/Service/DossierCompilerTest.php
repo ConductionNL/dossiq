@@ -115,7 +115,7 @@ class DossierCompilerTest extends TestCase {
 
 		// Bezwaar-own documents (out of AWB order on purpose).
 		$objectionDocs = [
-			['title' => 'Beslissing op bezwaar', 'document' => 'nc://b/beslissing.pdf'],
+			['title' => 'Decision on objection', 'document' => 'nc://b/beslissing.pdf'],
 			['title' => 'Bezwaarschrift van indiener', 'document' => 'nc://b/bezwaar.pdf'],
 			['title' => 'Hoorzittingverslag', 'document' => 'nc://b/verslag.pdf'],
 		];
@@ -169,7 +169,7 @@ class DossierCompilerTest extends TestCase {
 				'Primair besluit omgevingsvergunning',
 				'Bezwaarschrift van indiener',
 				'Hoorzittingverslag',
-				'Beslissing op bezwaar',
+				'Decision on objection',
 			],
 			$titles
 		);

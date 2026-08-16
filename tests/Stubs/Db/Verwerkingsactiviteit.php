@@ -64,7 +64,7 @@ class Verwerkingsactiviteit {
 	 *
 	 * @var array<int, string>
 	 */
-	public const STATUS_VOCABULARY = ['concept', 'published', 'archived'];
+	public const STATUS_VOCABULARY = ['draft', 'published', 'archived'];
 
 	/**
 	 * Captured field values (setter sink for assertions).

@@ -62,7 +62,7 @@ class AdvisoryCommitteeService {
 		'assigned',
 		'in-deliberation',
 		'advice-issued',
-		'niet-ontvankelijk',
+		'inadmissible',
 	];
 
 	/**
@@ -72,9 +72,9 @@ class AdvisoryCommitteeService {
 	 */
 	private const ALLOWED_TRANSITIONS = [
 		'assigned' => ['in-deliberation'],
-		'in-deliberation' => ['advice-issued', 'niet-ontvankelijk'],
+		'in-deliberation' => ['advice-issued', 'inadmissible'],
 		'advice-issued' => [],
-		'niet-ontvankelijk' => [],
+		'inadmissible' => [],
 	];
 
 	/**
@@ -302,7 +302,7 @@ class AdvisoryCommitteeService {
 
 	/**
 	 * Listener entry-point: when a bezwaar enters status
-	 * "Hoorzitting gepland", auto-assign the default committee for the
+	 * "Hearing planned", auto-assign the default committee for the
 	 * bezwaar's jurisdiction.
 	 *
 	 * @param string $objectionId The bezwaar (lifecycle) UUID
@@ -568,7 +568,7 @@ class AdvisoryCommitteeService {
 			$update['decisionRef'] = $adviceDecisionRef;
 		}
 
-		$terminal = ['advice-issued', 'niet-ontvankelijk'];
+		$terminal = ['advice-issued', 'inadmissible'];
 		if (in_array($newStatus, $terminal, true) === false) {
 			return $update;
 		}

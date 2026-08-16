@@ -132,7 +132,7 @@ class SeedVerwerkingsactiviteitenTest extends TestCase {
 
 		$default = $this->mapper->findByCode(code: 'zaakafhandeling');
 		$this->assertNotNull($default, 'the default attribution activity must be seeded');
-		$this->assertSame('concept', $default->getStatus(), 'seeded activities are drafts for FG review');
+		$this->assertSame('draft', $default->getStatus(), 'seeded activities are drafts for FG review');
 		$this->assertNotEmpty($default->getNaam());
 		$this->assertNotEmpty($default->getDoelbinding());
 		$this->assertContains($default->getRechtsgrond(), Verwerkingsactiviteit::RECHTSGROND_VOCABULARY);
@@ -322,7 +322,7 @@ final class InMemoryVerwerkingsactiviteitMapperDouble {
 	 */
 	public function insert(Verwerkingsactiviteit $entity): Verwerkingsactiviteit {
 		if ($entity->getStatus() === null || $entity->getStatus() === '') {
-			$entity->setStatus('concept');
+			$entity->setStatus('draft');
 		}
 
 		$this->inserts++;

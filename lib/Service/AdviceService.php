@@ -53,9 +53,9 @@ class AdviceService {
 	 * Valid advice statuses.
 	 */
 	private const VALID_STATUSES = [
-		'aangevraagd',
-		'ontvangen',
-		'verlopen',
+		'requested',
+		'received',
+		'expired',
 	];
 
 	/**
@@ -139,7 +139,7 @@ class AdviceService {
 	private function applyTransition(string $adviceId, string $to, array $current, array $payload = []): array {
 		$update = ['status' => $to];
 
-		if ($to === 'ontvangen') {
+		if ($to === 'received') {
 			$update['receivedAt'] = date('c');
 			$fileId = (string)($payload['adviceDocument'] ?? ($payload['fileId'] ?? ''));
 			if ($fileId !== '') {
@@ -243,7 +243,7 @@ class AdviceService {
 
 		foreach ($all as $advice) {
 			$status = (string)($advice['status'] ?? '');
-			if ($status === 'aangevraagd') {
+			if ($status === 'requested') {
 				$pending[] = $advice;
 			}
 		}
@@ -304,7 +304,7 @@ class AdviceService {
 				throw new RuntimeException('Advice request not accessible');
 			}
 
-			return $this->applyTransition(adviceId: $adviceId, to: 'verlopen', current: $current);
+			return $this->applyTransition(adviceId: $adviceId, to: 'expired', current: $current);
 		} catch (\Throwable $e) {
 			$this->logger->error(
 				'Procest: failed to expire advice: ' . $e->getMessage(),

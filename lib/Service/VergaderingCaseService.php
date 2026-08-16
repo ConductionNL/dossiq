@@ -32,7 +32,7 @@ use RuntimeException;
 /**
  * Wraps ORI vergaderingen as Procest cases with lifecycle and deadline tracking.
  *
- * A vergadering is created in the ORI register with status "gepland".  This
+ * A vergadering is created in the ORI register with status "planned".  This
  * service creates a linked Procest case so that the full Procest lifecycle
  * engine (status, deadlines, tasks, audit trail) applies to council meetings.
  *
@@ -48,10 +48,10 @@ class VergaderingCaseService {
 	 * @var string[]
 	 */
 	private const VALID_STATUSES = [
-		'gepland',
+		'planned',
 		'lopend',
-		'afgerond',
-		'geannuleerd',
+		'completed',
+		'cancelled',
 	];
 
 	/**
@@ -79,7 +79,7 @@ class VergaderingCaseService {
 	 * Create a Procest case for a newly registered vergadering.
 	 *
 	 * GIVEN a vergadering created with startDatum
-	 * THEN a linked Procest case is created with status "gepland"
+	 * THEN a linked Procest case is created with status "planned"
 	 * AND deadline = startDatum − 7 days (agenda publication deadline).
 	 *
 	 * @param array $vergadering The vergadering object from the ORI register
@@ -126,7 +126,7 @@ class VergaderingCaseService {
 
 		$caseData = [
 			'title' => ($vergadering['name'] ?? 'Vergadering'),
-			'status' => 'gepland',
+			'status' => 'planned',
 			'deadline' => $deadline,
 			'oriVergaderingId' => ($vergadering['@self']['slug'] ?? ''),
 			'oriRegister' => 'ori',
@@ -248,7 +248,7 @@ class VergaderingCaseService {
 				register: $register,
 				schema: $caseSchema,
 				filters: [
-					'status' => 'gepland',
+					'status' => 'planned',
 					'deadline' => $today,
 					'_limit' => 200,
 				]

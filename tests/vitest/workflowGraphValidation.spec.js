@@ -30,9 +30,9 @@ describe('validateWorkflowGraph', () => {
 
 	it('passes a well-formed graph with no issues', () => {
 		const statusNodes = [
-			{ id: 's1', name: 'Ontvangen', isFinal: false },
-			{ id: 's2', name: 'In behandeling', isFinal: false },
-			{ id: 's3', name: 'Afgehandeld', isFinal: true },
+			{ id: 's1', name: 'Received', isFinal: false },
+			{ id: 's2', name: 'In handling', isFinal: false },
+			{ id: 's3', name: 'Handled', isFinal: true },
 		]
 		const transitions = [
 			{ id: 't1', fromStatus: 's1', toStatus: 's2' },
@@ -43,8 +43,8 @@ describe('validateWorkflowGraph', () => {
 
 	it('NO_FINAL_STATUS: flags a graph with no isFinal:true status', () => {
 		const statusNodes = [
-			{ id: 's1', name: 'Ontvangen', isFinal: false },
-			{ id: 's2', name: 'In behandeling', isFinal: false },
+			{ id: 's1', name: 'Received', isFinal: false },
+			{ id: 's2', name: 'In handling', isFinal: false },
 		]
 		const transitions = [{ id: 't1', fromStatus: 's1', toStatus: 's2' }]
 		const issues = validateWorkflowGraph({ statusNodes, transitions })
@@ -58,7 +58,7 @@ describe('validateWorkflowGraph', () => {
 		const statusNodes = [
 			{ id: 's1', name: 'A', isFinal: false },
 			{ id: 's2', name: 'B', isFinal: false },
-			{ id: 's3', name: 'Afgehandeld', isFinal: true },
+			{ id: 's3', name: 'Handled', isFinal: true },
 		]
 		// s1 <-> s2 is a cycle with no node lacking an incoming edge, so
 		// there is no clear entry point into the workflow at all — s3 has
@@ -73,7 +73,7 @@ describe('validateWorkflowGraph', () => {
 		expect(codesOf(issues)).toContain(RULES.UNREACHABLE_FINAL)
 		const issue = issues.find((i) => i.code === RULES.UNREACHABLE_FINAL)
 		expect(issue.type).toBe('error')
-		expect(issue.message).toContain('Afgehandeld')
+		expect(issue.message).toContain('Handled')
 		// The cycle DOES have an exit to a final status (s2 -> s3), so it
 		// must not also be flagged as CYCLE_NO_EXIT — the two rules answer
 		// different questions (can the cycle escape vs. can anything ever
@@ -83,8 +83,8 @@ describe('validateWorkflowGraph', () => {
 
 	it('DANGLING_EDGE: flags a transition referencing a status not in the graph', () => {
 		const statusNodes = [
-			{ id: 's1', name: 'Ontvangen', isFinal: false },
-			{ id: 's2', name: 'Afgehandeld', isFinal: true },
+			{ id: 's1', name: 'Received', isFinal: false },
+			{ id: 's2', name: 'Handled', isFinal: true },
 		]
 		const transitions = [
 			{
@@ -101,8 +101,8 @@ describe('validateWorkflowGraph', () => {
 
 	it('DUPLICATE_TRANSITION: flags two transitions with the same from/to pair', () => {
 		const statusNodes = [
-			{ id: 's1', name: 'Ontvangen', isFinal: false },
-			{ id: 's2', name: 'Afgehandeld', isFinal: true },
+			{ id: 's1', name: 'Received', isFinal: false },
+			{ id: 's2', name: 'Handled', isFinal: true },
 		]
 		const transitions = [
 			{ id: 't1', fromStatus: 's1', toStatus: 's2' },
@@ -117,8 +117,8 @@ describe('validateWorkflowGraph', () => {
 
 	it('ORPHAN_NODE: flags a status with no incoming or outgoing transitions', () => {
 		const statusNodes = [
-			{ id: 's1', name: 'Ontvangen', isFinal: false },
-			{ id: 's2', name: 'Afgehandeld', isFinal: true },
+			{ id: 's1', name: 'Received', isFinal: false },
+			{ id: 's2', name: 'Handled', isFinal: true },
 			{ id: 's3', name: 'Losstaand', isFinal: false },
 		]
 		const transitions = [{ id: 't1', fromStatus: 's1', toStatus: 's2' }]
@@ -171,9 +171,9 @@ describe('validateWorkflowGraph', () => {
 
 	it('serialization round-trip: validating JSON-string steps/transitions (as stored on workflowTemplate) matches validating the parsed object form', () => {
 		const statusNodes = [
-			{ id: 's1', name: 'Ontvangen', isFinal: false },
-			{ id: 's2', name: 'In behandeling', isFinal: false },
-			{ id: 's3', name: 'Afgehandeld', isFinal: true },
+			{ id: 's1', name: 'Received', isFinal: false },
+			{ id: 's2', name: 'In handling', isFinal: false },
+			{ id: 's3', name: 'Handled', isFinal: true },
 		]
 		const transitions = [
 			{ id: 't1', fromStatus: 's1', toStatus: 's2' },

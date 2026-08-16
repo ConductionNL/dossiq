@@ -167,7 +167,7 @@ class AdviceRepository {
 				objectService: $objectService,
 				register: $register,
 				schema: $schema,
-				filters: ['status' => 'aangevraagd', '_limit' => 500],
+				filters: ['status' => 'requested', '_limit' => 500],
 			);
 		} catch (Throwable $e) {
 			$this->logger->error(

@@ -435,7 +435,7 @@ export default {
 		async bulkMarkFinal() {
 			await this.runBulk('/apps/procest/api/informatieobjecten/bulk/status', {
 				ids: this.selectedIds,
-				status: 'definitief',
+				status: 'final',
 			})
 		},
 

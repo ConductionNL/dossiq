@@ -67,7 +67,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		$this->objects->saveObject('procest', 'penaltyPaymentCalculation', [
 			'id' => 'b-1',
 			'deadlineInstance' => 'ti-1',
-			'status' => 'gestopt-wegens-beschikking',
+			'status' => 'gestopt-wegens-decision',
 			'definitiveAmount' => 50000,
 		]);
 		$this->objects->saveObject('procest', 'dwangsomUitbetaling', [
@@ -83,15 +83,15 @@ class DwangsomBezwaarServiceTest extends TestCase {
 	 */
 	public function testRegisterBezwaarFreezesBerekeningAndHoldsUitbetaling(): void {
 		$b = $this->service->registerBezwaar('b-1', 'AWB 7:1', 'Belanghebbende betwist bedrag');
-		self::assertSame('bezwaar-bevroren', $b['status']);
+		self::assertSame('objection-bevroren', $b['status']);
 
 		$u = $this->objects->store['dwangsomUitbetaling']['u-1'];
-		self::assertSame('on-hold-bezwaar', $u['status']);
+		self::assertSame('on-hold-objection', $u['status']);
 
 		// bezwaar-ingediend event recorded.
 		$events = array_values($this->objects->store['termijnGebeurtenis'] ?? []);
 		self::assertNotEmpty($events);
-		self::assertSame('bezwaar-ingediend', $events[0]['type']);
+		self::assertSame('objection-submitted', $events[0]['type']);
 	}
 
 	/**
@@ -102,7 +102,7 @@ class DwangsomBezwaarServiceTest extends TestCase {
 		$b = $this->service->resolveBezwaar('b-1', 30000, 'AWB 7:11');
 
 		self::assertSame(30000, $b['definitiveAmount']);
-		self::assertSame('voltooid', $b['status']);
+		self::assertSame('completed', $b['status']);
 
 		$u = $this->objects->store['dwangsomUitbetaling']['u-1'];
 		self::assertSame(30000, $u['amount']);

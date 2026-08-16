@@ -104,7 +104,7 @@ export default {
 		 * @spec openspec/changes/document-zaakdossier/tasks.md#T07
 		 */
 		restoreDisabled() {
-			return this.document.status === 'definitief'
+			return this.document.status === 'final'
 		},
 	},
 

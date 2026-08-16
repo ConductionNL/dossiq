@@ -77,10 +77,10 @@ export async function getAdviceForCase(caseId) {
 /**
  * Transition the status of an advice request.
  *
- * Use { to: 'aangevraagd' } right after creating an advice object to fire
+ * Use { to: 'requested' } right after creating an advice object to fire
  * the notification to the adviseur (workflow side-effect).
  *
- * Use { to: 'ontvangen', adviceDocument: '<fileId>' } to mark received.
+ * Use { to: 'received', adviceDocument: '<fileId>' } to mark received.
  *
  * @param {string} id   Advice UUID
  * @param {object} body Transition payload (to, adviesDocument, ...)
@@ -113,7 +113,7 @@ export async function dispatchReminder(id) {
 
 /**
  * Create an advice request (CRUD via manifest renderer) and fire the
- * "aangevraagd" notification via transitionStatus.
+ * "requested" notification via transitionStatus.
  *
  * Kept as a convenience for the case-detail dialog so callers do not need
  * to chain two requests manually.

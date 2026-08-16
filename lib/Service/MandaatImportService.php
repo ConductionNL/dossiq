@@ -105,7 +105,7 @@ class MandaatImportService {
 			object: [
 				'decisionNumber' => $decisionNumber,
 				'decisionName' => $decisionName,
-				'status' => 'concept',
+				'status' => 'draft',
 				'decideskUuid' => $decideskUuid,
 			]
 		);
@@ -229,7 +229,7 @@ class MandaatImportService {
 				'subdelegatie' => $this->csvParser->parseBool(value: (string)($row['subdelegatie'] ?? 'false')),
 				'decisionTypes' => $this->csvParser->parseList(value: (string)($row['decisionTypes'] ?? '')),
 			],
-			'status' => 'concept',
+			'status' => 'draft',
 		];
 	}//end buildMandaatPayload()
 
@@ -321,12 +321,12 @@ class MandaatImportService {
 			throw new RuntimeException('Besluit not found: ' . $decisionId);
 		}
 
-		if (($decision['status'] ?? '') !== 'concept') {
+		if (($decision['status'] ?? '') !== 'draft') {
 			throw new RuntimeException('Besluit is not in concept status');
 		}
 
 		$now = (new DateTimeImmutable())->format('Y-m-d');
-		$decision['status'] = 'vastgesteld';
+		$decision['status'] = 'determined';
 		$decision['effectiveFrom'] = ($decision['effectiveFrom'] ?? $now);
 		$decision = $objectService->saveObject($register, $bSchema, $decision);
 
@@ -345,7 +345,7 @@ class MandaatImportService {
 			excludeId: $decisionId
 		);
 		if ($prior !== null) {
-			$prior['status'] = 'vervallen';
+			$prior['status'] = 'lapsed';
 			$prior['expiryDate'] = $now;
 			$objectService->saveObject($register, $bSchema, $prior);
 		}

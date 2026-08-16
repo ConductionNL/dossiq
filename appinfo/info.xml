@@ -175,6 +175,22 @@ Vrij en open source onder de EUPL-1.2-licentie.
                 would leave the rest silently reading null.
             -->
             <step>OCA\Procest\Repair\RenameDutchColumns</step>
+            <!--
+                Must run AFTER RenameDutchColumns: that step moves the COLUMNS,
+                this one moves what is IN them, across every mapped property
+                rather than the single `direction` column
+                RenameDutchDirectionValues covers. Once the schema declares
+                `upheld`, a row still holding `gegrond` does not error — a filter
+                on the new value returns null and the caller reads that as
+                "nothing to do".
+
+                The ZGW and StUF vocabularies are deliberately NOT in its map:
+                they are the standard's, they travel on the wire, and the ZGW
+                `vertrouwelijkheidaanduiding` values (openbaar … zeer_geheim) are
+                statutory. Translating them would break the mapping the adapter
+                exists to perform.
+            -->
+            <step>OCA\Procest\Repair\RenameDutchValues</step>
         </post-migration>
         <!--
             FRESH INSTALL. Nextcloud does NOT run post-migration on a first install:

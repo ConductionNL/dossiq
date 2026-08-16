@@ -284,7 +284,7 @@ class MilestoneService {
 	 * A case is considered stalled when its earliest unreached milestone has
 	 * an expected deadline (case start + cumulative expectedDurationWorkingDays)
 	 * that lies more than `$thresholdDays` calendar days in the past. Closed
-	 * cases (status containing "afgesloten"/"afgehandeld"/"geweigerd") are
+	 * cases (status containing "closed"/"handled"/"refused") are
 	 * skipped. The earliest unreached milestone — ordered by `order` — is the
 	 * one a case is "waiting on", so it is the one reported.
 	 *

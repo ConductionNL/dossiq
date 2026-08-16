@@ -141,7 +141,7 @@ export default {
 		},
 
 		isAdvisoryStep() {
-			return this.currentStepInfo?.type === 'advies'
+			return this.currentStepInfo?.type === 'advice'
 		},
 
 		/** @spec openspec/specs/parafering-actions/spec.md */
@@ -158,7 +158,7 @@ export default {
 		 */
 		formatStepType(type) {
 			const labels = {
-				advies: 'Advies',
+				advice: 'Advies',
 				parafering: 'Parafering',
 				accordering: 'Accordering',
 			}

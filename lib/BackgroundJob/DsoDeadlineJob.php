@@ -130,7 +130,7 @@ class DsoDeadlineJob extends TimedJob {
 				schema: $caseSchema,
 				filters: [
 					'caseType' => 'omgevingsvergunning',
-					'status' => ['ingediend', 'in_behandeling'],
+					'status' => ['submitted', 'in_handling'],
 					'_limit' => 500,
 					'_offset' => 0,
 				]

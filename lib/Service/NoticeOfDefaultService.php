@@ -87,7 +87,7 @@ class NoticeOfDefaultService {
 		$deadline = (string)($instance['endDateCurrent'] ?? '');
 		$receipt = $receiptDate->format('Y-m-d');
 
-		$isValid = ($status === 'overschreden' && $deadline !== '' && $deadline < $receipt);
+		$isValid = ($status === 'exceeded' && $deadline !== '' && $deadline < $receipt);
 
 		$row = [
 			'deadlineInstance' => $termInstanceId,
@@ -99,7 +99,7 @@ class NoticeOfDefaultService {
 
 		$row['validityStatus'] = 'premaat';
 		if ($isValid === true) {
-			$row['validityStatus'] = 'geldig';
+			$row['validityStatus'] = 'valid';
 		}
 
 		$saved = $this->saveSchema(schemaConfigKey: 'ingebrekestelling_schema', object: $row);
@@ -188,7 +188,7 @@ class NoticeOfDefaultService {
 
 		$this->termService->recordEvent(
 			termInstanceId: $termInstanceId,
-			type: 'ingebrekestelling-ontvangen',
+			type: 'ingebrekestelling-received',
 			basis: 'AWB 4:17',
 			rationale: 'Ingebrekestelling ontvangen via ' . $channel,
 			daysImpact: 0,
@@ -198,7 +198,7 @@ class NoticeOfDefaultService {
 
 		$this->termService->recordEvent(
 			termInstanceId: $termInstanceId,
-			type: 'dwangsom-gestart',
+			type: 'penaltypayment-gestart',
 			basis: 'AWB 4:17',
 			rationale: 'Dwangsom-berekening gestart na grace period',
 			daysImpact: 0,

@@ -41,17 +41,17 @@ class DispositionService {
 	 * Valid disposition judgment values (oordeel).
 	 */
 	private const VALID_OORDELEN = [
-		'gegrond',
-		'deels_gegrond',
-		'ongegrond',
+		'upheld',
+		'partly_upheld',
+		'dismissed',
 		'withdrawn',
-		'niet_ontvankelijk',
+		'inadmissible',
 	];
 
 	/**
 	 * Oordelen that require a mandatory toelichting.
 	 */
-	private const REQUIRES_TOELICHTING = ['gegrond', 'deels_gegrond'];
+	private const REQUIRES_TOELICHTING = ['upheld', 'partly_upheld'];
 
 	/**
 	 * Approval mode: the disposition is final on submission.
@@ -98,7 +98,7 @@ class DispositionService {
 	/**
 	 * Submit a disposition that must first be approved by a coordinator.
 	 *
-	 * The created disposition carries goedkeuringStatus 'wacht_op_goedkeuring'
+	 * The created disposition carries goedkeuringStatus 'awaiting_approval'
 	 * until {@see self::approveDisposition()} clears it.
 	 *
 	 * @param string $complaintId Complaint UUID
@@ -150,7 +150,7 @@ class DispositionService {
 		$data['closureDate'] = $data['closureDate'] ?? date('Y-m-d');
 
 		if ($approval === self::APPROVAL_REQUIRED) {
-			$data['approvalStatus'] = 'wacht_op_goedkeuring';
+			$data['approvalStatus'] = 'awaiting_approval';
 		}
 
 		$disposition = $objectService->saveObject(object: $data, register: $register, schema: $schema);
@@ -189,7 +189,7 @@ class DispositionService {
 		$schema = $this->settingsService->getConfigValue('complaint_disposition_schema');
 
 		$updateData = [
-			'approvalStatus' => 'goedgekeurd',
+			'approvalStatus' => 'approved',
 			'goedkeurder' => $approverId,
 		];
 
@@ -229,7 +229,7 @@ class DispositionService {
 		$schema = $this->settingsService->getConfigValue('complaint_disposition_schema');
 
 		$updateData = [
-			'approvalStatus' => 'afgekeurd',
+			'approvalStatus' => 'rejected',
 			'goedkeurder' => $rejectorId,
 		];
 

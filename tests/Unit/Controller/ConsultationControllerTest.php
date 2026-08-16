@@ -188,7 +188,7 @@ class ConsultationControllerTest extends TestCase {
 
 		$consultations = [
 			['id' => 'c1', 'status' => 'open'],
-			['id' => 'c2', 'status' => 'in_behandeling'],
+			['id' => 'c2', 'status' => 'in_handling'],
 		];
 		$this->consultationService->method('getConsultationsForCase')
 			->with(caseId: 'zaak-uuid')
@@ -251,7 +251,7 @@ class ConsultationControllerTest extends TestCase {
 	public function testPublicResponseGetReturnsConsultationForValidToken(): void {
 		$consultation = [
 			'id' => 'con-uuid',
-			'status' => 'in_behandeling',
+			'status' => 'in_handling',
 			'subject' => 'Brandveiligheidsadvies',
 			'latestResponseDate' => '2026-08-01',
 		];

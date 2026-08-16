@@ -106,7 +106,7 @@ class BezwaarListenerRegistrar {
 	 */
 	private function registerObjectionStatusListeners(IRegistrationContext $context): void {
 		// Bezwaar-advisory-committee auto-assignment when a bezwaar enters
-		// status "Hoorzitting gepland" — listener defers to
+		// status "Hearing planned" — listener defers to
 		// AdvisoryCommitteeService::autoAssignDefaultCommittee.
 		$context->registerEventListener(
 			event: ObjectUpdatedEvent::class,
@@ -114,7 +114,7 @@ class BezwaarListenerRegistrar {
 		);
 
 		// Bezwaar-hearing default-session seeding when a bezwaar enters
-		// status "Hoorzitting gepland" — listener defers to
+		// status "Hearing planned" — listener defers to
 		// HearingService::seedDefaultHearing.
 		$context->registerEventListener(
 			event: ObjectUpdatedEvent::class,
@@ -122,7 +122,7 @@ class BezwaarListenerRegistrar {
 		);
 
 		// Bezwaar-decision guard: a bezwaar may only enter status
-		// "Beslissing op bezwaar" when a published bezwaarDecision
+		// "Decision on objection" when a published bezwaarDecision
 		// exists for it. The listener reverts illegal transitions
 		// without bypassing the status-transition-engine.
 		$context->registerEventListener(

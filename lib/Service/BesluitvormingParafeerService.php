@@ -130,7 +130,7 @@ class BesluitvormingParafeerService {
 	/**
 	 * Handle a paraaf action for a voorstel.
 	 *
-	 * Loads the parafeeractie, advances to next step on 'goedgekeurd', or
+	 * Loads the parafeeractie, advances to next step on 'approved', or
 	 * sets status 'retour' on 'retour'. When all steps are complete, transitions
 	 * the parent case to 'Gereed voor agendering'.
 	 *
@@ -231,7 +231,7 @@ class BesluitvormingParafeerService {
 	 * @param string $actionSchema The parafeeractie schema identifier, may be empty.
 	 * @param string $parafeeractieId The UUID of the parafeeractie.
 	 *
-	 * @return string The action slug ('goedgekeurd' when unresolvable).
+	 * @return string The action slug ('approved' when unresolvable).
 	 */
 	private function resolveParaafActionType(
 		object $objectService,
@@ -240,7 +240,7 @@ class BesluitvormingParafeerService {
 		string $parafeeractieId,
 	): string {
 		if (empty($actionSchema) === true) {
-			return 'goedgekeurd';
+			return 'approved';
 		}
 
 		$actionResults = $this->searchObjectsAsArrays(
@@ -251,12 +251,12 @@ class BesluitvormingParafeerService {
 		);
 
 		if (empty($actionResults) === true) {
-			return 'goedgekeurd';
+			return 'approved';
 		}
 
 		$action = $this->toArray(value: $actionResults[0]);
 
-		return (string)($action['action'] ?? 'goedgekeurd');
+		return (string)($action['action'] ?? 'approved');
 	}//end resolveParaafActionType()
 
 	/**
@@ -295,7 +295,7 @@ class BesluitvormingParafeerService {
 	 * Check whether all required parafen have been collected for a voorstel.
 	 *
 	 * Queries all parafeeracties for the voorstel and checks whether every
-	 * required step has action='goedgekeurd'.
+	 * required step has action='approved'.
 	 *
 	 * @param string $proposalId The UUID of the voorstel.
 	 *
@@ -330,7 +330,7 @@ class BesluitvormingParafeerService {
 
 			foreach ($acties as $action) {
 				$actionArr = $this->toArray(value: $action);
-				if ((string)($actionArr['action'] ?? '') !== 'goedgekeurd') {
+				if ((string)($actionArr['action'] ?? '') !== 'approved') {
 					return false;
 				}
 			}

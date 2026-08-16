@@ -90,12 +90,12 @@ import BeschikkingActionBar from './BeschikkingActionBar.vue'
 import { getBeschikking } from '../../../services/beschikkingApi.js'
 
 const STATUS_LABELS = {
-	ontwerp: 'Draft ruling',
-	'akkoord-mandaat': 'Approved (mandate)',
-	ondertekend: 'Signed',
-	verzonden: 'Sent',
-	'ontvangen-bevestiging': 'Receipt confirmation',
-	gearchiveerd: 'Archived',
+	draft: 'Draft ruling',
+	'approved-mandate': 'Approved (mandate)',
+	signed: 'Signed',
+	sent: 'Sent',
+	'received-confirmation': 'Receipt confirmation',
+	archived: 'Archived',
 }
 
 export default {

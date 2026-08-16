@@ -80,7 +80,7 @@ class ParafeerStepGuard {
 	 *
 	 * @var string
 	 */
-	public const STEP_TYPE_ADVIES = 'advies';
+	public const STEP_TYPE_ADVIES = 'advice';
 
 	/**
 	 * Step type: parafering.

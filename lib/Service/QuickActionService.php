@@ -77,7 +77,7 @@ class QuickActionService {
 	 */
 	public function executeStatusTerugkoppelen(string $caseId): array {
 		$case = $this->loadCase(caseId: $caseId);
-		$status = (string)($case['status'] ?? 'onbekend');
+		$status = (string)($case['status'] ?? 'unknown');
 		$title = (string)($case['title'] ?? ($case['titel'] ?? 'uw aanvraag'));
 
 		$draft = sprintf(

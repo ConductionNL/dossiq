@@ -240,7 +240,7 @@ class ComplaintControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testShowReturnsComplaintWhenFound(): void {
-		$complaint = ['id' => 'uuid-1', 'subject' => 'Test klacht', 'status' => 'ontvangen'];
+		$complaint = ['id' => 'uuid-1', 'subject' => 'Test klacht', 'status' => 'received'];
 		$this->complaintService->method('getComplaint')->willReturn($complaint);
 
 		$response = $this->controller->show('uuid-1');
@@ -269,7 +269,7 @@ class ComplaintControllerTest extends TestCase {
 	 * @return void
 	 */
 	public function testTransitionReturns400ForInvalidTransition(): void {
-		$complaint = ['id' => 'uuid-1', 'status' => 'ontvangen', 'handler' => 'test-user'];
+		$complaint = ['id' => 'uuid-1', 'status' => 'received', 'handler' => 'test-user'];
 		$this->complaintService->method('getComplaint')->willReturn($complaint);
 		$this->complaintService
 			->method('transitionStatus')

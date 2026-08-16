@@ -115,7 +115,7 @@ export default {
 		typeOptions() {
 			return [
 				{ id: 'reguliere', label: t('procest', 'Regular assignment') },
-				{ id: 'waarnemer', label: t('procest', 'Substitute') },
+				{ id: 'observer', label: t('procest', 'Substitute') },
 				{ id: 'plaatsvervanger', label: t('procest', 'Deputy') },
 			]
 		},

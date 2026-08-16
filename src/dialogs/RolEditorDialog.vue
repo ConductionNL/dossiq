@@ -104,7 +104,7 @@ export default {
 			errors: {},
 			form: {
 				name: this.role?.name || '',
-				type: this.role?.type || 'medewerker',
+				type: this.role?.type || 'employee',
 				parentRole: this.role?.parentRole || '',
 				department: this.role?.department || '',
 				team: this.role?.team || '',
@@ -125,8 +125,8 @@ export default {
 				{ id: 'bestuurder', label: t('procest', 'Director') },
 				{ id: 'manager', label: t('procest', 'Manager') },
 				{ id: 'teamleider', label: t('procest', 'Team leader') },
-				{ id: 'medewerker', label: t('procest', 'Employee') },
-				{ id: 'waarnemer', label: t('procest', 'Substitute') },
+				{ id: 'employee', label: t('procest', 'Employee') },
+				{ id: 'observer', label: t('procest', 'Substitute') },
 			]
 		},
 

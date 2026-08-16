@@ -45,7 +45,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 			static function (string $key): string {
 				return match ($key) {
 					'register' => 'procest',
-					'mandaat_schema' => 'mandaat',
+					'mandaat_schema' => 'mandate',
 					'medewerker_rol_toewijzing_schema' => 'medewerkerRolToewijzing',
 					'mandaat_escalatie_schema' => 'mandaatEscalatie',
 					default => '',
@@ -57,7 +57,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 		// Seed mandates + assignments.
 		$this->objects->saveObject(
 			'procest',
-			'mandaat',
+			'mandate',
 			[
 				'id' => 'm-low',
 				'mandateeRole' => 'rol-consulent',
@@ -67,7 +67,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 		);
 		$this->objects->saveObject(
 			'procest',
-			'mandaat',
+			'mandate',
 			[
 				'id' => 'm-high',
 				'mandateeRole' => 'rol-manager',
@@ -91,7 +91,7 @@ class MandaatEscalatieServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testCreateEscalatieResolvesNextHigherHolder(): void {
-		$row = $this->service->createEscalatie('Z/2026/E1', 'wmo-toekenning', 'alice', 'plafond_overschreden');
+		$row = $this->service->createEscalatie('Z/2026/E1', 'wmo-toekenning', 'alice', 'ceiling_exceeded');
 		self::assertSame('open', $row['status']);
 		self::assertSame('carol', $row['targetUserId']);
 		self::assertSame('m-high', $row['targetMandateId']);
@@ -101,16 +101,16 @@ class MandaatEscalatieServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testApproveByCorrectMandateHolder(): void {
-		$created = $this->service->createEscalatie('Z/2026/E2', 'wmo-toekenning', 'alice', 'niet_bevoegd');
+		$created = $this->service->createEscalatie('Z/2026/E2', 'wmo-toekenning', 'alice', 'non_competent');
 		$approved = $this->service->approveEscalatie((string)$created['id'], 'carol');
-		self::assertSame('goedgekeurd', $approved['status']);
+		self::assertSame('approved', $approved['status']);
 	}//end testApproveByCorrectMandateHolder()
 
 	/**
 	 * @return void
 	 */
 	public function testApproveByWrongUserRejects(): void {
-		$created = $this->service->createEscalatie('Z/2026/E3', 'wmo-toekenning', 'alice', 'niet_bevoegd');
+		$created = $this->service->createEscalatie('Z/2026/E3', 'wmo-toekenning', 'alice', 'non_competent');
 		$this->expectException(RuntimeException::class);
 		$this->service->approveEscalatie((string)$created['id'], 'bob');
 	}//end testApproveByWrongUserRejects()
@@ -119,9 +119,9 @@ class MandaatEscalatieServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testRejectEscalatieRecordsReason(): void {
-		$created = $this->service->createEscalatie('Z/2026/E4', 'wmo-toekenning', 'alice', 'niet_bevoegd');
+		$created = $this->service->createEscalatie('Z/2026/E4', 'wmo-toekenning', 'alice', 'non_competent');
 		$rejected = $this->service->rejectEscalatie((string)$created['id'], 'Onvoldoende onderbouwing');
-		self::assertSame('afgewezen', $rejected['status']);
+		self::assertSame('rejected', $rejected['status']);
 		self::assertSame('Onvoldoende onderbouwing', $rejected['rejectedReason']);
 	}//end testRejectEscalatieRecordsReason()
 
@@ -129,8 +129,8 @@ class MandaatEscalatieServiceTest extends TestCase {
 	 * @return void
 	 */
 	public function testAutoRerouteOnPersonnelChange(): void {
-		$this->service->createEscalatie('Z/2026/E5', 'wmo-toekenning', 'alice', 'niet_bevoegd');
-		$this->service->createEscalatie('Z/2026/E6', 'wmo-toekenning', 'alice', 'plafond_overschreden');
+		$this->service->createEscalatie('Z/2026/E5', 'wmo-toekenning', 'alice', 'non_competent');
+		$this->service->createEscalatie('Z/2026/E6', 'wmo-toekenning', 'alice', 'ceiling_exceeded');
 
 		$count = $this->service->autoRerouteOnPersonnelChange('carol', 'dave');
 		self::assertSame(2, $count);

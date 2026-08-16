@@ -62,7 +62,7 @@ class ChecklistRunImmutabilityListener implements IEventListener {
 	 *
 	 * @var string[]
 	 */
-	private const FROZEN_STATUSES = ['ingediend', 'gearchiveerd'];
+	private const FROZEN_STATUSES = ['submitted', 'archived'];
 
 	/**
 	 * Constructor.

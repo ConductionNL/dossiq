@@ -77,7 +77,7 @@
     {
       "id": "step-afgehandeld",
       "label": "Afgehandeld",
-      "status": "Afgehandeld",
+      "status": "Handled",
       "isInitial": false,
       "isFinal": true,
       "assigneeRole": null,

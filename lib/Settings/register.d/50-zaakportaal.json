@@ -28,7 +28,7 @@
                     "senderType": {
                         "title": "Sender Type",
                         "type": "string",
-                        "enum": ["burger", "bedrijf", "gemachtigde"],
+                        "enum": ["burger", "bedrijf", "authorisedRepresentative"],
                         "description": "Type of the authenticated sender."
                     },
                     "senderRef": {
@@ -98,7 +98,7 @@
                     "kind": {
                         "title": "Kind",
                         "type": "string",
-                        "enum": ["bezwaarschrift", "klachtschrift", "subsidie-aanvraag"],
+                        "enum": ["bezwaarschrift", "klachtschrift", "subsidy-request"],
                         "description": "Type of request."
                     },
                     "againstCaseId": {
@@ -114,7 +114,7 @@
                     "submitterType": {
                         "title": "Submitter Type",
                         "type": "string",
-                        "enum": ["burger", "bedrijf", "gemachtigde"],
+                        "enum": ["burger", "bedrijf", "authorisedRepresentative"],
                         "description": "Type of the authenticated submitter."
                     },
                     "submitterRef": {
@@ -183,7 +183,7 @@
                     "status": {
                         "title": "Status",
                         "type": "string",
-                        "enum": ["ontvangen", "in-behandeling", "afgehandeld"],
+                        "enum": ["received", "in-handling", "handled"],
                         "description": "Processing status."
                     }
                 }

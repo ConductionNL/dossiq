@@ -26,50 +26,50 @@ describe('emptySelection', () => {
 
 describe('toggleSelection', () => {
 	it('selects a case into an empty selection', () => {
-		const result = toggleSelection(emptySelection(), 'case-1', 'Ontvangen')
-		expect(result).toEqual({ columnId: 'Ontvangen', caseIds: ['case-1'] })
+		const result = toggleSelection(emptySelection(), 'case-1', 'Received')
+		expect(result).toEqual({ columnId: 'Received', caseIds: ['case-1'] })
 	})
 
 	it('adds a second case within the same column', () => {
-		const first = toggleSelection(emptySelection(), 'case-1', 'Ontvangen')
-		const second = toggleSelection(first, 'case-2', 'Ontvangen')
+		const first = toggleSelection(emptySelection(), 'case-1', 'Received')
+		const second = toggleSelection(first, 'case-2', 'Received')
 		expect(second).toEqual({
-			columnId: 'Ontvangen',
+			columnId: 'Received',
 			caseIds: ['case-1', 'case-2'],
 		})
 	})
 
 	it('removes a case already selected within the same column', () => {
-		const selection = { columnId: 'Ontvangen', caseIds: ['case-1', 'case-2'] }
-		const result = toggleSelection(selection, 'case-1', 'Ontvangen')
-		expect(result).toEqual({ columnId: 'Ontvangen', caseIds: ['case-2'] })
+		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
+		const result = toggleSelection(selection, 'case-1', 'Received')
+		expect(result).toEqual({ columnId: 'Received', caseIds: ['case-2'] })
 	})
 
 	it('clears the column scope when the last case is deselected', () => {
-		const selection = { columnId: 'Ontvangen', caseIds: ['case-1'] }
-		const result = toggleSelection(selection, 'case-1', 'Ontvangen')
+		const selection = { columnId: 'Received', caseIds: ['case-1'] }
+		const result = toggleSelection(selection, 'case-1', 'Received')
 		expect(result).toEqual({ columnId: null, caseIds: [] })
 	})
 
 	it('resets the selection when a case is selected in a different column (cross-column reset)', () => {
-		const selection = { columnId: 'Ontvangen', caseIds: ['case-1', 'case-2'] }
-		const result = toggleSelection(selection, 'case-9', 'In behandeling')
-		expect(result).toEqual({ columnId: 'In behandeling', caseIds: ['case-9'] })
+		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
+		const result = toggleSelection(selection, 'case-9', 'In handling')
+		expect(result).toEqual({ columnId: 'In handling', caseIds: ['case-9'] })
 	})
 
 	it('compares case ids as strings so numeric/string mismatches still toggle correctly', () => {
-		const selection = { columnId: 'Ontvangen', caseIds: [1, 2] }
-		const result = toggleSelection(selection, '1', 'Ontvangen')
-		expect(result).toEqual({ columnId: 'Ontvangen', caseIds: [2] })
+		const selection = { columnId: 'Received', caseIds: [1, 2] }
+		const result = toggleSelection(selection, '1', 'Received')
+		expect(result).toEqual({ columnId: 'Received', caseIds: [2] })
 	})
 
 	it('tolerates a null/undefined selection as the starting state', () => {
-		expect(toggleSelection(null, 'case-1', 'Ontvangen')).toEqual({
-			columnId: 'Ontvangen',
+		expect(toggleSelection(null, 'case-1', 'Received')).toEqual({
+			columnId: 'Received',
 			caseIds: ['case-1'],
 		})
-		expect(toggleSelection(undefined, 'case-1', 'Ontvangen')).toEqual({
-			columnId: 'Ontvangen',
+		expect(toggleSelection(undefined, 'case-1', 'Received')).toEqual({
+			columnId: 'Received',
 			caseIds: ['case-1'],
 		})
 	})
@@ -77,12 +77,12 @@ describe('toggleSelection', () => {
 
 describe('isSelected', () => {
 	it('returns true when the case id is in the selection', () => {
-		const selection = { columnId: 'Ontvangen', caseIds: ['case-1', 'case-2'] }
+		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
 		expect(isSelected(selection, 'case-1')).toBe(true)
 	})
 
 	it('returns false when the case id is not in the selection', () => {
-		const selection = { columnId: 'Ontvangen', caseIds: ['case-1'] }
+		const selection = { columnId: 'Received', caseIds: ['case-1'] }
 		expect(isSelected(selection, 'case-9')).toBe(false)
 	})
 
@@ -101,7 +101,7 @@ describe('clearSelection', () => {
 
 describe('buildPreviewPayload', () => {
 	it('builds a payload from the selection and transitionId', () => {
-		const selection = { columnId: 'Ontvangen', caseIds: ['case-1', 'case-2'] }
+		const selection = { columnId: 'Received', caseIds: ['case-1', 'case-2'] }
 		expect(buildPreviewPayload(selection, 'submit')).toEqual({
 			caseIds: ['case-1', 'case-2'],
 			transitionId: 'submit',
@@ -118,7 +118,7 @@ describe('buildPreviewPayload', () => {
 
 describe('buildExecutePayload', () => {
 	it('builds a payload including the comment', () => {
-		const selection = { columnId: 'Ontvangen', caseIds: ['case-1'] }
+		const selection = { columnId: 'Received', caseIds: ['case-1'] }
 		expect(buildExecutePayload(selection, 'submit', 'go ahead')).toEqual({
 			caseIds: ['case-1'],
 			transitionId: 'submit',
@@ -127,7 +127,7 @@ describe('buildExecutePayload', () => {
 	})
 
 	it('nulls out an empty/undefined comment', () => {
-		const selection = { columnId: 'Ontvangen', caseIds: ['case-1'] }
+		const selection = { columnId: 'Received', caseIds: ['case-1'] }
 		expect(buildExecutePayload(selection, 'submit', '')).toEqual({
 			caseIds: ['case-1'],
 			transitionId: 'submit',

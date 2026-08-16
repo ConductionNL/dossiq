@@ -58,7 +58,7 @@ class BeschikkingGenerationService {
 	 * success status, bijlage ID, and a human-readable message.
 	 *
 	 * @param string $caseId The UUID of the zaak
-	 * @param string $outcome Either 'verleend' or 'geweigerd'
+	 * @param string $outcome Either 'granted' or 'refused'
 	 * @param string $motivation The motivation text for the beslissing
 	 *
 	 * @return array<string,mixed> Result with keys: success, bijlageId, message
@@ -67,7 +67,7 @@ class BeschikkingGenerationService {
 	 */
 	public function generateBeschikking(string $caseId, string $outcome, string $motivation): array {
 		$templateKey = 'dso_beschikking_template_verleend';
-		if ($outcome === 'geweigerd') {
+		if ($outcome === 'refused') {
 			$templateKey = 'dso_beschikking_template_geweigerd';
 		}
 

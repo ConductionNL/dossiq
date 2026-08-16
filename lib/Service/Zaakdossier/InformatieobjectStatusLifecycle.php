@@ -59,9 +59,9 @@ class InformatieobjectStatusLifecycle {
 	 * @var string[]
 	 */
 	public const VALID_STATUSES = [
-		'concept',
-		'definitief',
-		'gearchiveerd',
+		'draft',
+		'final',
+		'archived',
 	];
 
 	/**
@@ -70,9 +70,9 @@ class InformatieobjectStatusLifecycle {
 	 * @var array<string, string[]>
 	 */
 	public const STATUS_TRANSITIONS = [
-		'concept' => ['definitief'],
-		'definitief' => ['gearchiveerd'],
-		'gearchiveerd' => [],
+		'draft' => ['final'],
+		'final' => ['archived'],
+		'archived' => [],
 	];
 
 	/**
@@ -139,7 +139,7 @@ class InformatieobjectStatusLifecycle {
 			throw new RuntimeException('Informatieobject not found: ' . $infoObjectId);
 		}
 
-		$currentStatus = (string)($current['status'] ?? 'concept');
+		$currentStatus = (string)($current['status'] ?? 'draft');
 		if ($this->isTransitionAllowed(from: $currentStatus, to: $newStatus) === false) {
 			throw new InvalidArgumentException(
 				'Invalid status transition from ' . $currentStatus . ' to ' . $newStatus
@@ -147,7 +147,7 @@ class InformatieobjectStatusLifecycle {
 		}
 
 		$updateData = ['status' => $newStatus];
-		if ($newStatus === 'definitief') {
+		if ($newStatus === 'final') {
 			$updateData['lockedOn'] = date('Y-m-d\TH:i:s');
 		}
 

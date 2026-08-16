@@ -128,7 +128,7 @@ class BeschikkingService {
 			'decisionType' => (string)($overrides['decisionType'] ?? 'toekenning'),
 			'templateId' => $version['templateId'],
 			'draftVersion' => 1,
-			'currentStatus' => 'ontwerp',
+			'currentStatus' => 'draft',
 			'compositeContent' => $composition,
 			'addressee' => (array)($overrides['addressee'] ?? []),
 			'decision' => (array)($overrides['decision'] ?? []),
@@ -170,7 +170,7 @@ class BeschikkingService {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 		$current = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->validateTransition($current, 'akkoord-mandaat') === false) {
+		if ($this->stateMachine->validateTransition($current, 'approved-mandate') === false) {
 			throw new RuntimeException('invalid_transition');
 		}
 
@@ -191,14 +191,14 @@ class BeschikkingService {
 			'approvedBy' => $approvedBy,
 			'approvedDate' => (new DateTimeImmutable())->format('c'),
 		];
-		$decision['currentStatus'] = 'akkoord-mandaat';
+		$decision['currentStatus'] = 'approved-mandate';
 
 		$saved = $this->repository->save(decision: $decision);
 		$this->stateMachine->logTransition(
 			$decisionId,
 			$current,
-			'akkoord-mandaat',
-			['actor' => $approvedBy, 'actorType' => 'medewerker', 'trigger' => 'handmatig'],
+			'approved-mandate',
+			['actor' => $approvedBy, 'actorType' => 'employee', 'trigger' => 'manual'],
 		);
 
 		return $saved;
@@ -221,7 +221,7 @@ class BeschikkingService {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 		$current = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->validateTransition($current, 'ondertekend') === false) {
+		if ($this->stateMachine->validateTransition($current, 'signed') === false) {
 			throw new RuntimeException('invalid_transition');
 		}
 
@@ -238,17 +238,17 @@ class BeschikkingService {
 			'validationRapportId' => (string)($signature['validationRapportId'] ?? ''),
 		];
 		$decision['compositeContent']['fileId'] = (string)($signature['signedBestandId'] ?? $fileId);
-		$decision['currentStatus'] = 'ondertekend';
+		$decision['currentStatus'] = 'signed';
 
 		$saved = $this->repository->save(decision: $decision);
 		$this->stateMachine->logTransition(
 			$decisionId,
 			$current,
-			'ondertekend',
+			'signed',
 			[
 				'actor' => $signatory,
-				'actorType' => 'medewerker',
-				'trigger' => 'handmatig',
+				'actorType' => 'employee',
+				'trigger' => 'manual',
 				'evidenceMaterial' => [
 					'kind' => 'tsp-handtekening-rapport',
 					'rapportId' => (string)($signature['validationRapportId'] ?? ''),
@@ -277,7 +277,7 @@ class BeschikkingService {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 		$current = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->validateTransition($current, 'verzonden') === false) {
+		if ($this->stateMachine->validateTransition($current, 'sent') === false) {
 			throw new RuntimeException('invalid_transition');
 		}
 
@@ -290,7 +290,7 @@ class BeschikkingService {
 		$decision['announcementDate'] = $bekendmaking;
 		$decision['objectionTermEndDate'] = $term['endDate'];
 		$decision['reminderDate'] = $term['herinnering'];
-		$decision['currentStatus'] = 'verzonden';
+		$decision['currentStatus'] = 'sent';
 
 		$saved = $this->repository->save(decision: $decision);
 
@@ -304,8 +304,8 @@ class BeschikkingService {
 		$this->stateMachine->logTransition(
 			$decisionId,
 			$current,
-			'verzonden',
-			['actor' => $actor, 'actorType' => 'medewerker', 'trigger' => 'handmatig'],
+			'sent',
+			['actor' => $actor, 'actorType' => 'employee', 'trigger' => 'manual'],
 		);
 
 		return $saved;
@@ -409,7 +409,7 @@ class BeschikkingService {
 		$decision = $this->repository->requireBeschikking(decisionId: $decisionId);
 		$current = (string)($decision['currentStatus'] ?? '');
 
-		if ($this->stateMachine->validateTransition($current, 'gearchiveerd') === false) {
+		if ($this->stateMachine->validateTransition($current, 'archived') === false) {
 			throw new RuntimeException('invalid_transition');
 		}
 
@@ -432,14 +432,14 @@ class BeschikkingService {
 			'tmloMetadata' => $metadata,
 			'destructionDate' => (string)$result['destructionDate'],
 		];
-		$decision['currentStatus'] = 'gearchiveerd';
+		$decision['currentStatus'] = 'archived';
 
 		$saved = $this->repository->save(decision: $decision);
 		$this->stateMachine->logTransition(
 			$decisionId,
 			$current,
-			'gearchiveerd',
-			['actor' => 'systeem', 'actorType' => 'systeem', 'trigger' => 'automatisch'],
+			'archived',
+			['actor' => 'systeem', 'actorType' => 'systeem', 'trigger' => 'automatic'],
 		);
 
 		return $saved;

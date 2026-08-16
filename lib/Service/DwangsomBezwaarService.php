@@ -94,7 +94,7 @@ class DwangsomBezwaarService {
 			throw new RuntimeException('DwangsomBerekening not found: ' . $calculationId);
 		}
 
-		$calculation['status'] = 'bezwaar-bevroren';
+		$calculation['status'] = 'objection-bevroren';
 		try {
 			$calculation = $objectService->saveObject($register, $bSchema, $calculation);
 		} catch (\Throwable $e) {
@@ -110,7 +110,7 @@ class DwangsomBezwaarService {
 		);
 
 		foreach ($uitbetalingen as $u) {
-			$u['status'] = 'on-hold-bezwaar';
+			$u['status'] = 'on-hold-objection';
 			try {
 				$objectService->saveObject($register, $uSchema, $u);
 			} catch (\Throwable $e) {
@@ -123,7 +123,7 @@ class DwangsomBezwaarService {
 		if ($instanceId !== '') {
 			$this->termService->recordEvent(
 				termInstanceId: $instanceId,
-				type: 'bezwaar-ingediend',
+				type: 'objection-submitted',
 				basis: $basis,
 				rationale: $rationale,
 				daysImpact: 0,
@@ -178,7 +178,7 @@ class DwangsomBezwaarService {
 		}
 
 		$calculation['definitiveAmount'] = $newAmountCents;
-		$calculation['status'] = 'voltooid';
+		$calculation['status'] = 'completed';
 		try {
 			$calculation = $objectService->saveObject($register, $bSchema, $calculation);
 		} catch (\Throwable $e) {
@@ -206,7 +206,7 @@ class DwangsomBezwaarService {
 		if ($instanceId !== '') {
 			$this->termService->recordEvent(
 				termInstanceId: $instanceId,
-				type: 'bezwaar-opgelost',
+				type: 'objection-resolved',
 				basis: $basis,
 				rationale: 'Bezwaar opgelost; bedrag herzien',
 				daysImpact: 0,

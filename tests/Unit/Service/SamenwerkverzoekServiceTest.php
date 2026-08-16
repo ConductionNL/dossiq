@@ -134,7 +134,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 	/**
 	 * Test that initiateSamenwerking creates a samenwerkverzoek object.
 	 *
-	 * The service must call ObjectService::saveObject with status 'aangevraagd'
+	 * The service must call ObjectService::saveObject with status 'requested'
 	 * and dispatch a SamenwerkverzoekInitiated event.
 	 *
 	 * @return void
@@ -156,7 +156,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 
 		$expectedSamenwerkverzoek = [
 			'id' => 'samenwerk-uuid-1',
-			'status' => 'aangevraagd',
+			'status' => 'requested',
 			'requestedCompetentAuthority' => 'gemeente-haarlem',
 		];
 
@@ -170,7 +170,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 			->with(
 				$this->callback(
 					function (array $obj) {
-						return ($obj['status'] ?? '') === 'aangevraagd';
+						return ($obj['status'] ?? '') === 'requested';
 					}
 				),
 				$this->anything(),
@@ -210,11 +210,11 @@ class SamenwerkverzoekServiceTest extends TestCase {
 			rationale: 'Bevoegdheidsgrens.'
 		);
 
-		$this->assertSame('aangevraagd', $result['status']);
+		$this->assertSame('requested', $result['status']);
 	}//end testInitiateSamenwerkingCreatesObject()
 
 	/**
-	 * Test that respondToSamenwerking sets status to 'geaccepteerd' on accept.
+	 * Test that respondToSamenwerking sets status to 'accepted' on accept.
 	 *
 	 * @return void
 	 *
@@ -225,7 +225,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 
 		$request = [
 			'id' => 'samenwerk-uuid-1',
-			'status' => 'aangevraagd',
+			'status' => 'requested',
 		];
 
 		$objectServiceMock
@@ -239,7 +239,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 			->with(
 				$this->callback(
 					function (array $obj) {
-						return ($obj['status'] ?? '') === 'geaccepteerd';
+						return ($obj['status'] ?? '') === 'accepted';
 					}
 				)
 			)
@@ -273,12 +273,12 @@ class SamenwerkverzoekServiceTest extends TestCase {
 			advies: 'Wij stemmen in.'
 		);
 
-		$this->assertSame('geaccepteerd', $result['status']);
-		$this->assertSame('Wij stemmen in.', $result['advies']);
+		$this->assertSame('accepted', $result['status']);
+		$this->assertSame('Wij stemmen in.', $result['advice']);
 	}//end testRespondToSamenwerkingAcceptUpdatesStatus()
 
 	/**
-	 * Test that respondToSamenwerking sets status to 'geweigerd' on rejection.
+	 * Test that respondToSamenwerking sets status to 'refused' on rejection.
 	 *
 	 * @return void
 	 *
@@ -289,7 +289,7 @@ class SamenwerkverzoekServiceTest extends TestCase {
 
 		$request = [
 			'id' => 'samenwerk-uuid-2',
-			'status' => 'aangevraagd',
+			'status' => 'requested',
 		];
 
 		$objectServiceMock
@@ -328,8 +328,8 @@ class SamenwerkverzoekServiceTest extends TestCase {
 			advies: 'Wij wijzen af.'
 		);
 
-		$this->assertSame('geweigerd', $result['status']);
-		$this->assertSame('Wij wijzen af.', $result['advies']);
+		$this->assertSame('refused', $result['status']);
+		$this->assertSame('Wij wijzen af.', $result['advice']);
 	}//end testRespondToSamenwerkingRejectUpdatesStatus()
 
 	/**

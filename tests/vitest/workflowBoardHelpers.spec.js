@@ -11,15 +11,15 @@ import { columnsExcludingCurrent } from '../../src/utils/workflowBoardHelpers.js
 
 describe('columnsExcludingCurrent', () => {
 	const columns = [
-		{ id: 'status-1', name: 'Ontvangen' },
-		{ id: 'status-2', name: 'In behandeling' },
+		{ id: 'status-1', name: 'Received' },
+		{ id: 'status-2', name: 'In handling' },
 		{ id: 'status-3', name: 'Besluitvorming' },
 	]
 
 	it('excludes only the current status column', () => {
 		const result = columnsExcludingCurrent(columns, 'status-2')
 		expect(result).toEqual([
-			{ id: 'status-1', name: 'Ontvangen' },
+			{ id: 'status-1', name: 'Received' },
 			{ id: 'status-3', name: 'Besluitvorming' },
 		])
 	})
@@ -31,11 +31,11 @@ describe('columnsExcludingCurrent', () => {
 
 	it('compares ids as strings so numeric/string mismatches still match', () => {
 		const numericColumns = [
-			{ id: 1, name: 'Ontvangen' },
-			{ id: 2, name: 'In behandeling' },
+			{ id: 1, name: 'Received' },
+			{ id: 2, name: 'In handling' },
 		]
 		const result = columnsExcludingCurrent(numericColumns, '1')
-		expect(result).toEqual([{ id: 2, name: 'In behandeling' }])
+		expect(result).toEqual([{ id: 2, name: 'In handling' }])
 	})
 
 	it('returns an empty array for a non-array input', () => {
@@ -45,7 +45,7 @@ describe('columnsExcludingCurrent', () => {
 
 	it('returns an empty array when there are no other columns', () => {
 		const result = columnsExcludingCurrent(
-			[{ id: 'status-1', name: 'Ontvangen' }],
+			[{ id: 'status-1', name: 'Received' }],
 			'status-1',
 		)
 		expect(result).toEqual([])

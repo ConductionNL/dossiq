@@ -42,12 +42,12 @@ class ComplaintService {
 	 * Valid complaint statuses in lifecycle order.
 	 */
 	private const VALID_STATUSES = [
-		'ontvangen',
-		'ontvangst_bevestigd',
-		'in_behandeling',
-		'hoorgesprek_gepland',
-		'hoorgesprek_afgerond',
-		'afgehandeld',
+		'received',
+		'receipt_confirmed',
+		'in_handling',
+		'hoorgesprek_planned',
+		'hoorgesprek_completed',
+		'handled',
 		'withdrawn',
 	];
 
@@ -55,12 +55,12 @@ class ComplaintService {
 	 * Allowed status transitions (from => [to, ...]).
 	 */
 	private const TRANSITIONS = [
-		'ontvangen' => ['ontvangst_bevestigd', 'withdrawn'],
-		'ontvangst_bevestigd' => ['in_behandeling', 'withdrawn'],
-		'in_behandeling' => ['hoorgesprek_gepland', 'afgehandeld', 'withdrawn'],
-		'hoorgesprek_gepland' => ['hoorgesprek_afgerond', 'withdrawn'],
-		'hoorgesprek_afgerond' => ['afgehandeld', 'withdrawn'],
-		'afgehandeld' => [],
+		'received' => ['receipt_confirmed', 'withdrawn'],
+		'receipt_confirmed' => ['in_handling', 'withdrawn'],
+		'in_handling' => ['hoorgesprek_planned', 'handled', 'withdrawn'],
+		'hoorgesprek_planned' => ['hoorgesprek_completed', 'withdrawn'],
+		'hoorgesprek_completed' => ['handled', 'withdrawn'],
+		'handled' => [],
 		'withdrawn' => [],
 	];
 
@@ -133,8 +133,8 @@ class ComplaintService {
 
 		// Generate klachtnummer.
 		$data['complaintNumber'] = $this->generateComplaintNumber();
-		$data['status'] = 'ontvangen';
-		$data['priority'] = $data['priority'] ?? 'normaal';
+		$data['status'] = 'received';
+		$data['priority'] = $data['priority'] ?? 'normal';
 		$data['postponementPossible'] = true;
 
 		// Compute Awb deadlines.
@@ -269,7 +269,7 @@ class ComplaintService {
 			throw new RuntimeException('Unknown complaint status: ' . $newStatus);
 		}
 
-		$currentStatus = $complaint['status'] ?? 'ontvangen';
+		$currentStatus = $complaint['status'] ?? 'received';
 		$allowed = self::TRANSITIONS[$currentStatus] ?? [];
 
 		if (in_array($newStatus, $allowed, true) === false) {
@@ -355,7 +355,7 @@ class ComplaintService {
 	 * @spec openspec/changes/complaint-management/tasks.md#task-TASK-CM-02
 	 */
 	public function getDeadlineAlerts(int $warningDays = 3): array {
-		$activeStatuses = ['ontvangen', 'ontvangst_bevestigd', 'in_behandeling', 'hoorgesprek_gepland', 'hoorgesprek_afgerond'];
+		$activeStatuses = ['received', 'receipt_confirmed', 'in_handling', 'hoorgesprek_planned', 'hoorgesprek_completed'];
 		$all = $this->listComplaints(filters: ['status' => $activeStatuses]);
 		$today = new DateTimeImmutable('today');
 		$overdue = [];

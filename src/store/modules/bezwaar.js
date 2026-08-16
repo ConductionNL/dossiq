@@ -90,7 +90,7 @@ export const useBezwaarStore = defineStore('bezwaar', {
 		activeHearing: (state) => {
 			return (
 				state.hearingSessions.find(
-					(h) => h.status !== 'geannuleerd' && h.status !== 'afgezien',
+					(h) => h.status !== 'cancelled' && h.status !== 'afgezien',
 				) || null
 			)
 		},

@@ -4,7 +4,7 @@
  * Procest Bezwaar Decision Listener.
  *
  * Observes OpenRegister object events on the `bezwaar` schema and
- * blocks a transition into status "Beslissing op bezwaar" when no
+ * blocks a transition into status "Decision on objection" when no
  * published bezwaarDecision exists for the case. The listener is a
  * pure guard: when the precondition is satisfied it is a no-op; when
  * the precondition fails it reverts the status to the previous value
@@ -43,7 +43,7 @@ use Psr\Log\LoggerInterface;
 use Throwable;
 
 /**
- * Guards bezwaar transitions into "Beslissing op bezwaar" by requiring
+ * Guards bezwaar transitions into "Decision on objection" by requiring
  * a published bezwaarDecision to exist for the bezwaar.
  *
  * @template-implements IEventListener<Event>
@@ -54,7 +54,7 @@ class BezwaarDecisionListener implements IEventListener {
 	/**
 	 * Target status the guard protects.
 	 */
-	private const PROTECTED_STATUS = 'Beslissing op bezwaar';
+	private const PROTECTED_STATUS = 'Decision on objection';
 
 	/**
 	 * Upper bound on the decision rows the guard will pull per bezwaar.
@@ -88,7 +88,7 @@ class BezwaarDecisionListener implements IEventListener {
 	 * guard, not follow-up work. Its whole job is to undo a status change that
 	 * should not have been persisted, so it has to run inside the write that
 	 * made it. Deferring the revert would publish an invalid
-	 * "Beslissing op bezwaar" state to every reader, and to the notification
+	 * "Decision on objection" state to every reader, and to the notification
 	 * and audit listeners that fire off the same write, for as long as the
 	 * queue took to drain. The revert is a single bounded saveObject() on the
 	 * object already being written.

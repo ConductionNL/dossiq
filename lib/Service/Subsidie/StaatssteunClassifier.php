@@ -124,7 +124,7 @@ class StaatssteunClassifier {
 
 		if ($this->fitsDeMinimis(newAmount: $amount, eerdereDeMinimis: $eerdereDeMinimis) === true) {
 			if ($amount <= 0.0) {
-				return 'geen';
+				return 'none';
 			}
 
 			return 'de_minimis';

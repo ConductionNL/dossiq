@@ -118,7 +118,7 @@ class MandaatRegistryServiceTest extends TestCase {
 		$this->registry->expects($this->never())->method('delete');
 
 		$this->expectException(RuntimeException::class);
-		$this->expectExceptionMessageMatches('/1 mandaat/');
+		$this->expectExceptionMessageMatches('/1 mandate/');
 
 		$this->service->deleteRole('role-1');
 	}//end testRefusesARoleReferencedByAMandaat()
@@ -204,7 +204,7 @@ class MandaatRegistryServiceTest extends TestCase {
 		$blockers = $this->service->findRoleReferences('role-1');
 
 		$this->assertCount(2, $blockers);
-		$this->assertStringContainsString('mandaat', $blockers[0]);
+		$this->assertStringContainsString('mandate', $blockers[0]);
 		$this->assertStringContainsString('assignment', $blockers[1]);
 	}//end testReportsBothBlockerKinds()
 

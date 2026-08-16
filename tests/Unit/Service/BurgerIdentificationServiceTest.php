@@ -152,7 +152,7 @@ class BurgerIdentificationServiceTest extends TestCase {
 	public function testEmptyBsnNotIdentified(): void {
 		$result = $this->service->resolveFromDigiD('   ');
 
-		$this->assertSame(expected: 'niet_geidentificeerd', actual: $result['method']);
+		$this->assertSame(expected: 'non_geidentificeerd', actual: $result['method']);
 		$this->assertSame(expected: '', actual: $result['burgerId']);
 	}//end testEmptyBsnNotIdentified()
 }//end class

@@ -79,18 +79,18 @@ class SubsidieRegisterExporterTest extends TestCase {
 		$this->assertSame('Innovatiefonds 2026', $entry['regeling']);
 		$this->assertSame('BV Y', $entry['ontvanger']);
 		$this->assertSame(450000.0, $entry['amount']);
-		$this->assertSame('verleend', $entry['status']);
+		$this->assertSame('granted', $entry['status']);
 		$this->assertSame('2028-12-31', $entry['looptijd']['eind']);
 	}//end testFeedEntryMapping()
 
 	/**
-	 * A vaststellingsbeschikking flips the feed status to "vastgesteld".
+	 * A vaststellingsbeschikking flips the feed status to "determined".
 	 *
 	 * @return void
 	 */
 	public function testVastgesteldStatus(): void {
 		$entry = $this->exporter->toFeedEntry([], [], ['beschikkingtype' => 'vaststellingsbeschikking']);
-		$this->assertSame('vastgesteld', $entry['status']);
+		$this->assertSame('determined', $entry['status']);
 	}//end testVastgesteldStatus()
 
 	/**

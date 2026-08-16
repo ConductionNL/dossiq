@@ -393,15 +393,15 @@ export default {
 				return 'bestuursdwang'
 			}
 			if (lower.includes('penalty_payment')) {
-				return 'last_onder_dwangsom'
+				return 'last_under_penaltypayment'
 			}
 			if (lower.includes('pv') || lower.includes('proces')) {
-				return 'proces_verbaal'
+				return 'process_verbaal'
 			}
 			if (lower.includes('vooraankondiging')) {
 				return 'vooraankondiging'
 			}
-			return 'waarschuwing'
+			return 'warning'
 		},
 	},
 }
