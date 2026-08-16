@@ -14,6 +14,9 @@
 import { test, expect, request } from '@playwright/test'
 import { BASE_URL } from '../base-url'
 import { navToRoute } from '../helpers/nav'
+// Route named after the component that renders it, so this spec states WHICH
+// screen it covers in executable code rather than in a comment.
+import { VerwerkingenOverview } from '../helpers/page-components'
 
 const APP_URL = '/apps/procest'
 // Single source of truth — see tests/e2e/base-url.ts. The old
@@ -30,7 +33,7 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 		// loads the app root and leaves the hash unrouted, so the overview
 		// never renders. `/index.php/apps/procest/verwerkingen` renders it —
 		// measured on a CI runner (2026-08-04).
-		await navToRoute(page, '/verwerkingen')
+		await navToRoute(page, VerwerkingenOverview)
 		await expect(
 			page.getByRole('heading', { name: 'Processing activities (AVG)' }),
 		).toBeVisible({ timeout: 15000 })
@@ -51,7 +54,7 @@ test.describe('AVG verwerkingenlogging spec coverage', () => {
 		// loads the app root and leaves the hash unrouted, so the overview
 		// never renders. `/index.php/apps/procest/verwerkingen` renders it —
 		// measured on a CI runner (2026-08-04).
-		await navToRoute(page, '/verwerkingen')
+		await navToRoute(page, VerwerkingenOverview)
 		await page
 			.getByRole('button', { name: 'Data subject access export' })
 			.click()
