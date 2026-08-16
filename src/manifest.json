@@ -1850,7 +1850,7 @@
 			"title": "Bezwaar",
 			"config": {
 				"register": "procest",
-				"schema": "bezwaar",
+				"schema": "objectionProceeding",
 				"_note": "OBJECTION-CASE archetype (AWB bezwaar), ADR-062 round 2. `bezwaar` is a supporting schema on a unified case (bezwaar.case) and declares NO comms linkedTypes — so NO files/notes/contacts/calendar leaves here; those live on the parent CaseDetail. The lead row pairs the field-scoped 'Objection' core widget (case/objection/status/awbReference/ontvangstdatum/decisionDeadline) with an in-grid KPI stats-block (advice-request and decision counts, replacing the deprecated header summaryAggregates). The AWB statutory-clock fields (verdaging/opschorting/hearing waiver/ingebrekestelling/dwangsom) are a genuinely distinct group and get their own 'Statutory clock & suspension' data widget. The two real child collections follow as FK-scoped object-lists side by side: committee advice requests (bacAdviceRequest.bezwaar) and decisions on the objection (bezwaarDecision.bezwaar), each deep-linking to its own detail page. lifecycleActions drive the bezwaar status (Ontvangen → … → Afgehandeld). Audit history stays a sidebar tab.",
 				"documentationUrl": "https://procest.conduction.nl",
 				"widgets": [
@@ -4711,7 +4711,7 @@
 		},
 		{
 			"registerSlug": "procest",
-			"schemaSlug": "bezwaar",
+			"schemaSlug": "objectionProceeding",
 			"urlTemplate": "/apps/procest/bezwaren/{uuid}",
 			"displayName": "Bezwaar"
 		},

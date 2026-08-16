@@ -106,7 +106,7 @@ class SchemaSlugMap {
 		'lhsMatrix' => 'lhs_matrix_schema',
 		'lhsRecommendation' => 'lhs_recommendation_schema',
 		'location' => 'location_schema',
-		'bezwaar' => 'bezwaar_schema',
+		'objectionProceeding' => 'bezwaar_schema',
 		'bezwaaradviescommissie' => 'bezwaaradviescommissie_schema',
 		'bacAdviceRequest' => 'bac_advice_request_schema',
 		'beroep' => 'beroep_schema',

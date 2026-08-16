@@ -21,7 +21,13 @@ const REGISTER_PATH = path.resolve(
 )
 const MANIFEST_PATH = path.resolve(__dirname, '../../src/manifest.json')
 
-const EXPECTED_SEARCHABLE_SLUGS = ['case', 'task', 'bezwaar', 'proposal', 'beroep']
+const EXPECTED_SEARCHABLE_SLUGS = [
+	'case',
+	'task',
+	'objectionProceeding',
+	'proposal',
+	'beroep',
+]
 
 const loadJson = (filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8'))
 
@@ -60,7 +66,10 @@ describe('deep links cover all searchable schemas', () => {
 		const expectedTemplates = {
 			case: '/apps/procest/cases/{uuid}',
 			task: '/apps/procest/tasks/{uuid}',
-			bezwaar: '/apps/procest/bezwaren/{uuid}',
+			// The KEY is the schema slug and moved with it; the URL is a published
+			// ROUTE and deliberately did not — a route resolves at request time,
+			// so breaking one fails silently.
+			objectionProceeding: '/apps/procest/bezwaren/{uuid}',
 			proposal: '/apps/procest/voorstellen/{uuid}',
 			beroep: '/apps/procest/beroepen/{uuid}',
 		}
@@ -68,7 +77,7 @@ describe('deep links cover all searchable schemas', () => {
 		const expectedRoutes = {
 			case: '/cases/:id',
 			task: '/tasks/:id',
-			bezwaar: '/bezwaren/:id',
+			objectionProceeding: '/bezwaren/:id',
 			proposal: '/voorstellen/:id',
 			beroep: '/beroepen/:id',
 		}

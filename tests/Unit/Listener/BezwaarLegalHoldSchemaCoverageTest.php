@@ -57,7 +57,7 @@ class BezwaarLegalHoldSchemaCoverageTest extends TestCase {
 	public function testOpeningSchemasCoverEveryAwbProceeding(): void {
 		$opens = $this->constant(name: 'PROCEEDING_OPENED_SCHEMAS');
 
-		$this->assertContains(needle: 'bezwaar', haystack: $opens);
+		$this->assertContains(needle: 'objectionProceeding', haystack: $opens);
 		$this->assertContains(needle: 'objection', haystack: $opens);
 		$this->assertContains(
 			needle: 'beroep',
@@ -81,7 +81,7 @@ class BezwaarLegalHoldSchemaCoverageTest extends TestCase {
 
 		$counterparts = [
 			'appealDecision' => 'beroep',
-			'bezwaarDecision' => 'bezwaar',
+			'bezwaarDecision' => 'objectionProceeding',
 		];
 
 		foreach ($closes as $closingSchema) {

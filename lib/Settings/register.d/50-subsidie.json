@@ -116,8 +116,8 @@
                     "supportingDocumentsIndex": { "title": "Evidence Documents Index", "type": "string", "description": "JSON map verplichting_id -> [bewijsstuk_references]" }
                 }
             },
-            "tussenrapportage": {
-                "slug": "tussenrapportage",
+            "interimReport": {
+                "slug": "interimReport",
                 "icon": "FileChartOutline",
                 "version": "1.0.0",
                 "title": "Tussenrapportage",
@@ -217,7 +217,7 @@
                     "subsidieBeoordeling",
                     "subsidieBeschikking",
                     "subsidieUitvoering",
-                    "tussenrapportage",
+                    "interimReport",
                     "subsidieVaststelling",
                     "terugvordering",
                     "bewijsstuk"
