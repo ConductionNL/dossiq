@@ -15,6 +15,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { becomesVisible } from '../helpers/becomes-visible.js'
 import { dismissSupportDialog } from '../helpers/nav'
 
 test.describe('Handler vervanging/waarneming spec coverage', () => {
@@ -25,7 +26,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		await page.goto('/index.php/apps/procest/substitution')
 		await dismissSupportDialog(page)
 		const heading = page.getByRole('heading', { name: /Substitution/ }).first()
-		if (await heading.isVisible({ timeout: 10000 }).catch(() => false)) {
+		if (await becomesVisible(heading)) {
 			await expect(
 				page.getByRole('button', { name: /Register substitution/ }).first(),
 			).toBeVisible()
@@ -46,7 +47,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		const btn = page
 			.getByRole('button', { name: /Register substitution/ })
 			.first()
-		if (await btn.isVisible({ timeout: 10000 }).catch(() => false)) {
+		if (await becomesVisible(btn)) {
 			await btn.click()
 			await expect(
 				page.getByText(/Substitute \(user id\)/).first(),
@@ -77,7 +78,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		// active waarnemer; its presence (or graceful absence) must not error.
 		await expect(page.locator('body')).not.toContainText('Internal Server Error')
 		const toggle = page.getByTestId('substituted-toggle')
-		if (await toggle.isVisible({ timeout: 3000 }).catch(() => false)) {
+		if (await becomesVisible(toggle, 3000)) {
 			await toggle.locator('input').click()
 			await expect(page.locator('body')).not.toContainText(
 				'Internal Server Error',
@@ -96,7 +97,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		const heading = page
 			.getByRole('heading', { name: /Substitutions & reassignment/ })
 			.first()
-		if (await heading.isVisible({ timeout: 10000 }).catch(() => false)) {
+		if (await becomesVisible(heading)) {
 			const reassign = page
 				.getByRole('button', { name: /Bulk reassign/ })
 				.first()
@@ -124,7 +125,7 @@ test.describe('Handler vervanging/waarneming spec coverage', () => {
 		const heading = page
 			.getByRole('heading', { name: /Substitutions & reassignment/ })
 			.first()
-		if (await heading.isVisible({ timeout: 10000 }).catch(() => false)) {
+		if (await becomesVisible(heading)) {
 			await expect(page.locator('body')).not.toContainText(
 				'Internal Server Error',
 			)

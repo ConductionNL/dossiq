@@ -12,6 +12,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { becomesVisible } from '../helpers/becomes-visible.js'
 import { dismissSupportDialog } from '../helpers/nav'
 
 test.describe('Workflow Board keyboard status transition', () => {
@@ -23,13 +24,13 @@ test.describe('Workflow Board keyboard status transition', () => {
 		await dismissSupportDialog(page)
 
 		const heading = page.getByRole('heading', { name: /Workflow Board/ }).first()
-		if (!(await heading.isVisible({ timeout: 10000 }).catch(() => false))) {
+		if (!(await becomesVisible(heading))) {
 			test.skip(true, 'Workflow Board surface not deployed in target instance')
 			return
 		}
 
 		const firstCard = page.locator('.case-card').first()
-		if (!(await firstCard.isVisible({ timeout: 8000 }).catch(() => false))) {
+		if (!(await becomesVisible(firstCard, 8000))) {
 			test.skip(
 				true,
 				'No cases on the Workflow Board to exercise the move control',
@@ -61,7 +62,7 @@ test.describe('Workflow Board keyboard status transition', () => {
 		await dismissSupportDialog(page)
 
 		const firstCard = page.locator('.case-card').first()
-		if (!(await firstCard.isVisible({ timeout: 8000 }).catch(() => false))) {
+		if (!(await becomesVisible(firstCard, 8000))) {
 			test.skip(
 				true,
 				'No cases on the Workflow Board to exercise the drag path',
