@@ -29,9 +29,11 @@ declare(strict_types=1);
 namespace OCA\Procest\Service\Stuf;
 
 use OCA\Procest\AppInfo\Application;
+use OCP\App\IAppManager;
 use OCP\AppFramework\IAppContainer;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 /**
  * Thin OpenRegister ObjectService wrapper for StUF schemas.
@@ -54,6 +56,7 @@ class StufRegisterAccess {
 		private IAppContainer $container,
 		private IAppConfig $appConfig,
 		private LoggerInterface $logger,
+		private IAppManager $appManager,
 	) {
 	}//end __construct()
 
@@ -69,6 +72,15 @@ class StufRegisterAccess {
 	 */
 	public function saveObject(string $schema, array $data): array {
 		$service = $this->getObjectService();
+		if ($service === null) {
+			// Returning the payload unsaved would look like a successful write to
+			// every caller. An outbound StUF audit record that silently did not
+			// persist is worse than a loud failure, so say so.
+			throw new RuntimeException(
+				'Cannot save StUF object: OpenRegister is unavailable.'
+			);
+		}
+
 		$registerId = $this->getRegisterId();
 		$saved = $service->saveObject($data, [], $registerId, $schema, null);
 		return $this->normalise(value: $saved);
@@ -103,6 +115,13 @@ class StufRegisterAccess {
 	public function findAll(string $schema, array $filters = [], int $limit = 100): array {
 		try {
 			$service = $this->getObjectService();
+			if ($service === null) {
+				// A READ, so an empty list is the honest answer for an absent
+				// register — and it matches what this method already returns when
+				// the lookup throws, two lines below.
+				return [];
+			}
+
 			$objects = $service->findAll(
 				[
 					'filters' => array_merge(['register' => $this->getRegisterId(), 'schema' => $schema], $filters),
@@ -141,10 +160,35 @@ class StufRegisterAccess {
 	/**
 	 * Resolve the ObjectService from the DI container.
 	 *
-	 * @return object The ObjectService instance.
+	 * ADR-083 rule 1 (gate-66): this used to be a bare `$container->get()`, which
+	 * declares the OpenRegister dependency NOWHERE a reader or a gate can see it —
+	 * the app looked constructable without OpenRegister and then failed at the
+	 * first StUF write, with a container exception rather than a stated reason.
+	 *
+	 * OpenRegister is genuinely OPTIONAL on this path (StUF outbound is one
+	 * integration among several), so the rule's second remedy applies: establish
+	 * availability first and keep the lookup. `OpenRegisterSharingGateway` in this
+	 * same app already does exactly this, so this is adopting the shape the app
+	 * had rather than inventing one.
+	 *
+	 * @return object|null The ObjectService, or null when OpenRegister is unavailable.
 	 */
-	private function getObjectService(): object {
-		return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+	private function getObjectService(): ?object {
+		if ($this->appManager->isInstalled('openregister') === false) {
+			$this->logger->warning(
+				'Procest StUF: OpenRegister is not installed; the StUF register is unavailable.'
+			);
+			return null;
+		}
+
+		try {
+			return $this->container->get('OCA\\OpenRegister\\Service\\ObjectService');
+		} catch (\Throwable $e) {
+			$this->logger->warning(
+				'Procest StUF: could not resolve OpenRegister ObjectService: ' . $e->getMessage()
+			);
+			return null;
+		}
 	}//end getObjectService()
 
 	/**
