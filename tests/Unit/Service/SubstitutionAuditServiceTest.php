@@ -110,7 +110,7 @@ class SubstitutionAuditServiceTest extends TestCase {
 	 */
 	public function testStampsSubstitutedAction(): void {
 		$os = $this->objectServiceMock();
-		$os->method('find')->willReturn(['id' => 'case-1', 'assignee' => 'jan', 'caseType' => 'bezwaar', 'activity' => '[]']);
+		$os->method('find')->willReturn(['id' => 'case-1', 'assignee' => 'jan', 'caseType' => 'objectionProceeding', 'activity' => '[]']);
 		$captured = null;
 		$os->expects($this->once())->method('updateObject')->willReturnCallback(
 			function (string $r, string $s, string $id, array $payload) use (&$captured) {

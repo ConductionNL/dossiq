@@ -162,7 +162,7 @@ class DecisionService {
 		$record = array_merge(
 			$payload,
 			[
-				'bezwaar' => $objectionId,
+				'objectionProceeding' => $objectionId,
 				'status' => 'draft',
 			]
 		);
@@ -235,7 +235,7 @@ class DecisionService {
 		// raised on an Awb-invalid payload.
 		$this->validator->assertPublishable(decision: $current);
 
-		$objectionId = (string)($current['bezwaar'] ?? '');
+		$objectionId = (string)($current['objectionProceeding'] ?? '');
 
 		// REQ-PDRD-001 / REQ-PDRD-002: delegate the deciding to decidesk via the
 		// decidesk DecisionRequestedEvent. Fail closed — never author the besluit

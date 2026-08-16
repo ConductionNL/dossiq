@@ -3308,8 +3308,8 @@
                     }
                 }
             },
-            "bezwaar": {
-                "slug": "bezwaar",
+            "objectionProceeding": {
+                "slug": "objectionProceeding",
                 "icon": "Gavel",
                 "version": "1.0.0",
                 "x-schema-org": "schema:LegalCase",
@@ -4216,7 +4216,7 @@
                     "bezwaar": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "bezwaar",
+                        "$ref": "objectionProceeding",
                         "onDelete": "CASCADE",
                         "description": "The bezwaar case this decision belongs to",
                         "title": "Objection"
@@ -4445,7 +4445,7 @@
                     "sourceObjection": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "bezwaar",
+                        "$ref": "objectionProceeding",
                         "description": "The bezwaar lifecycle record that escalated to beroep — immutable after appellantFilingDate is set",
                         "title": "Source Objection"
                     },
@@ -7311,7 +7311,7 @@
                     "bezwaar": {
                         "type": "string",
                         "format": "uuid",
-                        "$ref": "bezwaar",
+                        "$ref": "objectionProceeding",
                         "onDelete": "CASCADE",
                         "description": "The bezwaar (lifecycle record) being reviewed; the wrapped procest case is resolved via bezwaar.case",
                         "title": "Objection"
