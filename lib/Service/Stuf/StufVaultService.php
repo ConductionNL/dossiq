@@ -34,7 +34,6 @@ namespace OCA\Procest\Service\Stuf;
 use OCA\Procest\AppInfo\Application;
 use OCP\IAppConfig;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
  * Resolves vault references to plaintext secrets at send time.
@@ -84,26 +83,19 @@ class StufVaultService {
 		return $value;
 	}//end resolveSecret()
 
-	/**
-	 * Store a secret behind a vault reference (admin tooling / install seed).
+	/*
+	 * NO storeSecret() HERE, AND THAT IS THE POINT.
 	 *
-	 * @param string $reference The vault reference (vault://...).
-	 * @param string $secret The plaintext secret.
-	 *
-	 * @return void
-	 *
-	 * @throws RuntimeException When the reference is empty.
-	 *
-	 * @spec openspec/specs/stuf-zkn-outbound/spec.md#requirement-secure-credential-handling
+	 * It wrote a plaintext secret into app config behind a `vault://`
+	 * reference, described as "admin tooling / install seed". It had no
+	 * caller: all three consumers of this vault (`StufEnvelopeInspector`,
+	 * `StufHttpClient`, `StufMessageBuilder`) only ever call
+	 * `resolveSecret()`. This app therefore READS StUF credentials and never
+	 * writes them — they are placed by an administrator through Nextcloud's
+	 * own config surface. Wiring a writer would have added the first
+	 * credential-writing path in the app, which is the widest kind of
+	 * surface this gate exists to stop being opened by accident.
 	 */
-	public function storeSecret(string $reference, string $secret): void {
-		if ($reference === '') {
-			throw new RuntimeException(message: 'Vault reference cannot be empty');
-		}
-
-		$key = $this->vaultKey(reference: $reference);
-		$this->appConfig->setValueString(app: Application::APP_ID, key: $key, value: $secret, sensitive: true);
-	}//end storeSecret()
 
 	/**
 	 * Build the IAppConfig key for a vault reference.

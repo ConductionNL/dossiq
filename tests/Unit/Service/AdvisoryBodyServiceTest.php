@@ -162,25 +162,11 @@ class AdvisoryBodyServiceTest extends TestCase {
 
 	}//end testSearchBySpecializationRanksMatchingFirst()
 
-	/**
-	 * issueSecureToken returns a 64-character hexadecimal string.
-	 *
-	 * @return void
-	 */
-	public function testIssueSecureTokenReturns64CharHexString(): void {
-		$objectService = $this->createMock(AdvisoryObjectServiceStub::class);
-		$savedObj = new \stdClass();
-
-		$objectService->method('saveObject')->willReturn($savedObj);
-		$this->settings->method('getObjectService')->willReturn($objectService);
-		$this->settings->method('getConfigValue')->willReturn('some-id');
-
-		$token = $this->service->issueSecureToken(consultationId: 'con-uuid');
-
-		$this->assertSame(64, strlen($token));
-		$this->assertMatchesRegularExpression('/^[0-9a-f]{64}$/', $token);
-
-	}//end testIssueSecureTokenReturns64CharHexString()
+	// testIssueSecureTokenReturns64CharHexString was removed with
+	// AdvisoryBodyService::issueSecureToken(). Nothing minted a consultation
+	// access token, so the public consultation surface it feeds
+	// (/api/public/consultations/{token}) could never be entered; adding a
+	// minter with no route and no guard in front of it was not the remedy.
 
 	/**
 	 * findAll returns empty array when ObjectService is unavailable.

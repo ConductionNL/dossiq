@@ -35,23 +35,14 @@ use InvalidArgumentException;
 use RuntimeException;
 
 /**
- * HMAC-based JWT minting + validation with first-class tenant claim support.
+ * HMAC-based JWT validation with first-class tenant claim support. Minting
+ * lives with the external broker that issues the tokens — see the note below.
  */
 class TenantJwtService {
-	/**
-	 * HMAC algorithm — HS256 by default.
-	 */
-	public const ALG = 'HS256';
-
 	/**
 	 * Hash function name passed to hash_hmac.
 	 */
 	private const HASH_FN = 'sha256';
-
-	/**
-	 * Token validity window in seconds (default 1 hour).
-	 */
-	public const DEFAULT_TTL = 3600;
 
 	/**
 	 * Constructor.
@@ -77,57 +68,26 @@ class TenantJwtService {
 	 *
 	 * @return string Compact JWT string.
 	 */
-	public function createToken(string $subject, string $tenantId, string $tenantSlug, array $roles = [], ?int $ttl = null): string {
-		$iat = time();
-		$exp = $iat + ($ttl ?? self::DEFAULT_TTL);
-
-		$header = ['alg' => self::ALG, 'typ' => 'JWT'];
-		$claims = [
-			'sub' => $subject,
-			'tenant_id' => $tenantId,
-			'tenant_slug' => $tenantSlug,
-			'roles' => array_values($roles),
-			'iat' => $iat,
-			'exp' => $exp,
-			'iss' => 'procest',
-		];
-
-		$hPart = $this->b64UrlEncode(bytes: (string)json_encode($header, JSON_UNESCAPED_SLASHES));
-		$cPart = $this->b64UrlEncode(bytes: (string)json_encode($claims, JSON_UNESCAPED_SLASHES));
-		$sig = $this->b64UrlEncode(bytes: $this->signRaw(input: $hPart . '.' . $cPart));
-		return $hPart . '.' . $cPart . '.' . $sig;
-	}//end createToken()
-
-	/**
-	 * Build a tenant-scoped JWT from a (mocked / decoded) eHerkenning assertion.
+	/*
+	 * THIS SERVICE VALIDATES TENANT JWTs. IT DOES NOT MINT THEM.
 	 *
-	 * The assertion is expected to carry: `subject`, `eherkenningLevel`,
-	 * `tenantId`, `tenantSlug`, `roles`.
+	 * `createTokenFromSaml()` built a tenant-scoped JWT out of an eHerkenning
+	 * assertion — taking `roles` straight from the assertion and appending an
+	 * `eh:level:*` role — and `createToken()` signed it. Neither had a caller:
+	 * `createToken()`'s only call site was `createTokenFromSaml()`, and
+	 * `createTokenFromSaml()` had none at all. Nothing in `appinfo/routes.php`
+	 * issues a token, and the eHerkenning/DigiD SAML adapters in
+	 * `lib/Service/Auth/` are log-and-simulator implementations that produce a
+	 * `BrokerAssertionResult` nobody consumes.
 	 *
-	 * @param array<string, mixed> $assertion eHerkenning assertion payload.
-	 *
-	 * @return string Compact JWT.
+	 * Both are removed together, deliberately: deleting only the SAML wrapper
+	 * would have left `createToken()` orphaned and reported by this same gate
+	 * on the next run. A token minter is the widest surface in this file —
+	 * anything that can call it can assert any tenant and any role — so it is
+	 * removed rather than wired. The live path is unchanged:
+	 * `TenantClaimValidationMiddleware` calls `validate()`, and the tokens it
+	 * validates are minted by the external broker.
 	 */
-	public function createTokenFromSaml(array $assertion): string {
-		$required = ['subject', 'tenantId', 'tenantSlug'];
-		foreach ($required as $field) {
-			if (isset($assertion[$field]) === false || $assertion[$field] === '') {
-				throw new InvalidArgumentException('SAML assertion missing field: ' . $field);
-			}
-		}
-
-		$roles = (array)($assertion['roles'] ?? []);
-		if (isset($assertion['eherkenningLevel']) === true) {
-			$roles[] = 'eh:level:' . $assertion['eherkenningLevel'];
-		}
-
-		return $this->createToken(
-			subject: (string)$assertion['subject'],
-			tenantId: (string)$assertion['tenantId'],
-			tenantSlug: (string)$assertion['tenantSlug'],
-			roles: $roles,
-		);
-	}//end createTokenFromSaml()
 
 	/**
 	 * Validate a JWT and return its claims.

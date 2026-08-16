@@ -257,80 +257,23 @@ class AdvisoryBodyService {
 		return array_merge($matching, $rest);
 	}//end searchBySpecialization()
 
-	/**
-	 * Issue a secure 32-byte hex token for external body access to a consultation.
+	/*
+	 * NO issueSecureToken() / sendExternalNotification() HERE.
 	 *
-	 * The token is stored on the consultation object and should expire when the
-	 * consultation is closed. External parties access the consultation via
-	 * ConsultationController::publicResponse().
+	 * `issueSecureToken()` minted a 32-byte hex token and wrote it onto a
+	 * consultation object as `secureToken`; `sendExternalNotification()` was a
+	 * single logger->info() whose own docblock said "the actual HTTP call to
+	 * n8n is intentionally not implemented here — it is triggered by the
+	 * x-openregister-notifications schema configuration on the consultation
+	 * schema" (ADR-031). Neither had a caller.
 	 *
-	 * @param string $consultationId The consultation UUID to issue the token for
-	 *
-	 * @return string 64-character hex string (32 random bytes)
-	 *
-	 * @throws \RuntimeException If OpenRegister is unavailable
-	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
+	 * The read half IS live: `ConsultationPublicController::publicResponseGet`
+	 * / `publicResponsePost` serve `/api/public/consultations/{token}` and
+	 * `Consultation\ConsultationRepository` looks a consultation up by
+	 * `secureToken`. Because nothing ever minted one, that public surface can
+	 * never be entered — which is a capability gap, reported as such, not a
+	 * reason to add a public-token minter with no route and no guard in front
+	 * of it. Wiring the notification stub would have been worse still: it
+	 * would have made "no mail is sent" look like "mail is sent".
 	 */
-	public function issueSecureToken(string $consultationId): string {
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue('register');
-		$schema = $this->settingsService->getConfigValue('consultation_schema');
-
-		if (empty($register) === true || empty($schema) === true) {
-			throw new RuntimeException('Consultation schema not configured');
-		}
-
-		$token = bin2hex(random_bytes(32));
-
-		$objectService->saveObject($register, $schema, ['secureToken' => $token], $consultationId);
-
-		$this->logger->info(
-			'Secure token issued for consultation ' . $consultationId,
-			['app' => Application::APP_ID],
-		);
-
-		return $token;
-	}//end issueSecureToken()
-
-	/**
-	 * Send (or log) an external notification for a consultation.
-	 *
-	 * Real email delivery is delegated to an n8n webhook in production.
-	 * This method records the notification attempt in the application log
-	 * for BIO audit compliance. The actual HTTP call to n8n is intentionally
-	 * not implemented here — it is triggered by the x-openregister-notifications
-	 * schema configuration on the consultation schema.
-	 *
-	 * @param string $consultationId The consultation UUID
-	 * @param array<string, mixed> $consultationData The consultation data snapshot
-	 * @param string $token The secure access token
-	 *
-	 * @return void
-	 *
-	 * @spec openspec/changes/consultation-management/tasks.md#TASK-CN-03
-	 */
-	public function sendExternalNotification(
-		string $consultationId,
-		array $consultationData,
-		string $token,
-	): void {
-		$number = $consultationData['consultationNumber'] ?? $consultationId;
-		$bodyName = $consultationData['adviceAuthority'] ?? 'unknown';
-
-		$this->logger->info(
-			'External notification attempt for consultation ' . $number
-			. ' to advisory body: ' . $bodyName
-			. '. Token issued; real delivery via n8n webhook.',
-			[
-				'app' => Application::APP_ID,
-				'consultationId' => $consultationId,
-				'token_prefix' => substr($token, 0, 8) . '...',
-			],
-		);
-	}//end sendExternalNotification()
 }//end class

@@ -89,15 +89,19 @@ class TenantLifecycleControlServiceTest extends TestCase {
 		$this->assertSame('terminated', $r['tenant']['status']);
 	}
 
-	public function testArchiveAndDeleteDropsSchemaAndLogs(): void {
-		$this->provisioning->method('buildSchemaName')->willReturn('tenant_abc_amsterdam');
-		$this->schemaProv->expects($this->once())
-			->method('dropSchema')
-			->with('tenant_abc_amsterdam');
-
-		$r = $this->svc->archiveAndDelete('t-1', 'amsterdam', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
-		$this->assertSame('tenant_abc_amsterdam', $r['schemaName']);
-		$this->assertNotSame('', $r['deletionAt']);
+	/**
+	 * The service exposes no schema-dropping entry point. Nothing in the app
+	 * references TenantLifecycleControlService, and there is no retention
+	 * timer to decide the window has passed, so an irreversible whole-tenant
+	 * delete must not sit here waiting for its first caller.
+	 *
+	 * @return void
+	 */
+	public function testServiceExposesNoSchemaDrop(): void {
+		$this->assertFalse(
+			condition: method_exists(TenantLifecycleControlService::class, 'archiveAndDelete'),
+			message: 'TenantLifecycleControlService must not expose an irreversible tenant delete.'
+		);
 	}
 
 	public function testCountUnsettledEventsHonoursInvoiceRef(): void {

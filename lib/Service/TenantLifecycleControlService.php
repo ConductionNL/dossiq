@@ -28,7 +28,6 @@ namespace OCA\Procest\Service;
 
 use DateTimeImmutable;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * Suspension / reactivation / termination orchestration.
@@ -112,37 +111,18 @@ class TenantLifecycleControlService {
 		];
 	}//end terminate()
 
-	/**
-	 * Archive the tenant schema after the retention window has passed.
-	 * Logs an immutable deletion-confirmation entry.
+	/*
+	 * NO archiveAndDelete() HERE — IT DROPPED A TENANT'S DATABASE SCHEMA.
 	 *
-	 * @param string $tenantId Tenant UUID.
-	 * @param string $slug Tenant slug.
-	 * @param string $uuid Tenant UUID (used for schema-name build).
-	 *
-	 * @return array{deletionAt: string, schemaName: string}
+	 * It called `schemaProvisioner->dropSchema()` on a tenant schema and wrote
+	 * a TENANT_SCHEMA_DELETED confirmation. It had no caller — nothing in this
+	 * app references `TenantLifecycleControlService` at all — and no retention
+	 * timer, job or endpoint exists to decide that a retention window has
+	 * passed. An irreversible, whole-tenant destructive operation reachable
+	 * from nowhere is not a wiring gap to close; it is the single most
+	 * dangerous thing to give a first caller to. `terminate()` above still
+	 * records the termination and the retention window.
 	 */
-	public function archiveAndDelete(string $tenantId, string $slug, string $uuid): array {
-		$schemaName = $this->provisioning->buildSchemaName(uuid: $uuid, slug: $slug);
-
-		try {
-			$this->schemaProvisioner->dropSchema($schemaName);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Procest: schema drop failed during termination — manual cleanup required',
-				['tenantId' => $tenantId, 'schemaName' => $schemaName, 'exception' => $e->getMessage()]
-			);
-		}
-
-		$deletionAt = (new DateTimeImmutable('now'))->format(DATE_ATOM);
-		// Immutable deletion-confirmation log entry — INFO-level so SIEMs ingest it.
-		$this->logger->info(
-			'Procest TENANT_SCHEMA_DELETED',
-			['tenantId' => $tenantId, 'schemaName' => $schemaName, 'deletionAt' => $deletionAt]
-		);
-
-		return ['deletionAt' => $deletionAt, 'schemaName' => $schemaName];
-	}//end archiveAndDelete()
 
 	/**
 	 * Count events with invoiceRef === null (unsettled).

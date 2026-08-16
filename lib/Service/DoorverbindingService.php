@@ -52,29 +52,15 @@ class DoorverbindingService {
 	) {
 	}//end __construct()
 
-	/**
-	 * Build an immutable context snapshot for a transfer.
+	/*
+	 * NO createContextSnapshot() HERE.
 	 *
-	 * @param array<string, mixed> $contact The originating contactmoment data.
-	 * @param array<int, mixed> $cases The related case summaries.
-	 * @param array<string, mixed> $sentiment The sentiment data, if any.
-	 *
-	 * @return string A JSON-encoded immutable snapshot.
-	 *
-	 * @spec openspec/changes/kcc-werkplek-zaaksysteem-bridge/tasks.md#T08
+	 * It JSON-encoded a context snapshot for a warm transfer and had no
+	 * caller — not even `initiateWarmTransfer()` below, which builds and
+	 * persists the doorverbinding record itself. The snapshot the class
+	 * docblock describes is produced on the live path; this was a second,
+	 * unreached builder for it.
 	 */
-	public function createContextSnapshot(array $contact, array $cases, array $sentiment): string {
-		$snapshot = [
-			'capturedAt' => date('c'),
-			'callerIdentification' => (string)($contact['callerIdentification'] ?? ''),
-			'geidentificeerdeBurgerId' => ($contact['geidentificeerdeBurgerId'] ?? null),
-			'summary' => (string)($contact['summary'] ?? ''),
-			'relatedCases' => array_values($cases),
-			'sentiment' => $sentiment,
-		];
-
-		return (string)json_encode($snapshot, JSON_UNESCAPED_UNICODE);
-	}//end createContextSnapshot()
 
 	/**
 	 * Initiate a warm transfer and persist the doorverbinding record.

@@ -297,73 +297,17 @@ class BeroepService {
 		}
 	}//end addFileInspectionRequest()
 
-	/**
-	 * Record the rechtbank's uitspraak on a beroep.
+	/*
+	 * NO recordJudgment() HERE.
 	 *
-	 * Persists the categorical outcome plus judgmentDate and (optional)
-	 * judgmentDocument. Does NOT interpret or paraphrase the ruling.
-	 *
-	 * @param string $appealId UUID of the beroep
-	 * @param string $outcome One of self::VALID_OUTCOMES
-	 * @param string $judgmentDate ISO date of the uitspraak
-	 * @param string|null $judgmentDocument Optional NC file ID of the
-	 *                                      ruling document
-	 *
-	 * @return array<string, mixed> The updated beroep record
-	 *
-	 * @throws RuntimeException When the outcome is invalid, OpenRegister
-	 *                          is unavailable, or the beroep cannot be
-	 *                          loaded.
-	 *
-	 * @spec openspec/changes/retrofit-2026-05-24-case-management/tasks.md
+	 * It persisted the rechtbank's categorical uitspraak onto the beroep
+	 * record. Nothing called it — nothing calls this service at all: the only
+	 * reference to `BeroepService` outside its own file is a prose sentence in
+	 * `lib/Settings/procest_register.json`. There is no controller, listener
+	 * or job that records a judgment, so wiring this method would have meant
+	 * inventing the surface that records a court ruling, which is a feature
+	 * decision and not dead-code removal.
 	 */
-	public function recordJudgment(
-		string $appealId,
-		string $outcome,
-		string $judgmentDate,
-		?string $judgmentDocument = null,
-	): array {
-		if (in_array($outcome, self::VALID_OUTCOMES, true) === false) {
-			throw new RuntimeException('Invalid judgment outcome');
-		}
-
-		$objectService = $this->settingsService->getObjectService();
-		if ($objectService === null) {
-			throw new RuntimeException('OpenRegister is not available');
-		}
-
-		$register = $this->settingsService->getConfigValue(key: 'register');
-		$appealSchema = $this->settingsService->getConfigValue(
-			key: 'beroep_schema'
-		);
-
-		$current = $objectService->find($appealId, register: $register, schema: $appealSchema);
-		if (is_array($current) === false) {
-			throw new RuntimeException('Beroep not found');
-		}
-
-		$patch = [
-			'judgmentOutcome' => $outcome,
-			'judgmentDate' => $judgmentDate,
-		];
-		if ($judgmentDocument !== null && $judgmentDocument !== '') {
-			$patch['judgmentDocument'] = $judgmentDocument;
-		}
-
-		try {
-			return $objectService->saveObject(
-				object: $patch,
-				register: $register,
-				schema: $appealSchema,
-				uuid: (string)$appealId
-			);
-		} catch (Throwable $e) {
-			$this->logger->error(
-				'Procest beroep: failed to record judgment: ' . $e->getMessage()
-			);
-			throw new RuntimeException('Could not record judgment');
-		}
-	}//end recordJudgment()
 
 	/**
 	 * Execute the post-uitspraak cascade on the linked bezwaar workflow.

@@ -92,20 +92,12 @@ class TenantConfigurationServiceTest extends TestCase {
 		$this->assertSame('', $out);
 	}
 
-	public function testUpdateLocaleRejectsBadLocale(): void {
-		$this->expectException(InvalidArgumentException::class);
-		$this->svc->updateLocale('t-1', ['locale' => 'xx_YY']);
-	}
-
-	public function testUpdateLocaleRejectsBadTimezone(): void {
-		$this->expectException(InvalidArgumentException::class);
-		$this->svc->updateLocale('t-1', ['timezone' => 'Atlantis/Sea']);
-	}
-
-	public function testUpdateLocaleRejectsBadCurrency(): void {
-		$this->expectException(InvalidArgumentException::class);
-		$this->svc->updateLocale('t-1', ['currency' => 'euros']);
-	}
+	// The three testUpdateLocaleRejects* cases were removed with
+	// TenantConfigurationService::updateLocale() and ::updateBranding(). Both
+	// were per-tenant configuration writers with no caller and no route, so
+	// their input validation never guarded a real request. The allow-lists
+	// they checked (ALLOWED_LOCALES, ALLOWED_TIMEZONES, the ISO-4217 pattern)
+	// are still on the class for the writer that eventually arrives.
 
 	public function testValidateLogoUploadRejectsTooBig(): void {
 		$this->expectException(InvalidArgumentException::class);
