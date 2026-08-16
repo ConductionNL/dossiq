@@ -2355,7 +2355,7 @@
                         "format": "uuid",
                         "$ref": "statusType",
                         "x-relation-filter": {
-                            "caseType": "@object.zaaktype"
+                            "caseType": "@object.caseType"
                         },
                         "description": "Reference to a status type",
                         "title": "Status Type Reference"
