@@ -29,52 +29,55 @@
  *
  * `waitFor` polls. **The skip that survives it is a real one.**
  *
- * ⚠️ THE COUNT DID NOT MOVE — AND THAT IS NOT THE SAME AS "THE REASONS WERE TRUE".
- * ---------------------------------------------------------------------------
- * Measured with these polling gates in place: 128 collected, 90 passed,
- * 38 skipped — byte-identical to the baseline. It is worth being precise about
- * what that does and does not show, because I got it wrong twice.
+ * ⚠️ NOTHING MOVED — AND THE RECORDED REASONS SAY WHY. READ THIS FIRST.
+ * ---------------------------------------------------------------------
+ * Measured base vs branch: 128 collected, 90 passed, 38 skipped on BOTH, and —
+ * decisively — the SKIP REASONS THEMSELVES ARE IDENTICAL on both sides. They
+ * are recoverable from the `playwright-report` artifact (recipe at the bottom).
  *
- * I first asserted the reasons were FALSE (reasoning from source: the route is
- * declared, the component resolves, the `<h2>` is unconditional). I then
- * over-corrected and wrote that they were all TRUE, because the count had not
- * moved. **Both were wrong, because the question is PER GATE and the count
- * cannot answer it.** The kanban test has two gates in series:
+ * The reasons actually recorded, base and branch alike:
  *
- *   1. heading "Workflow Board"  → "Workflow Board surface not deployed in
- *                                   target instance"        ← REASON IS FALSE
- *   2. `.case-card`              → "No cases on the Workflow Board to
- *                                   exercise the move control" ← REASON IS TRUE
+ *    12  Sub-cases tab not present in the deployed build (deploy mismatch).
+ *     9  Related cases sidebar tab not present in the deployed build (…).
+ *     9  No case types in the deployed/seeded register — the Workflow tab is
+ *        data-dependent.
+ *     3  No cases on the Workflow Board to exercise the move control
+ *     3  No cases on the Workflow Board to exercise the drag path
+ *     3  OR addresses register not installed (sibling change not shipped)
  *
- * Gate 1's reason is false, and the proof is a SIBLING TEST THAT PASSES IN THE
- * SAME RUN: `spec-coverage/workflow-operations.spec.ts:18` reaches
- * `/index.php/apps/procest/workflow-board` by the identical navigation
- * (`navToRoute` is literally `page.goto('/index.php/apps/procest'+route)` plus
- * the same dialog dismissal) and asserts `.workflow-board__header h2` visible.
- * The board renders.
+ * 🔑 NOTE WHAT IS ABSENT: "Workflow Board surface not deployed in target
+ * instance" — the reason I twice argued about — **never fires, on either side.**
+ * That gate was already passing before this change; the non-waiting probe
+ * happened to win. The gates that actually fire are the SECOND ones in each
+ * chain, and their reasons are true: these specs seed nothing, and the only
+ * spec that ever sees case cards (`workflows/case-lifecycle.spec.ts:185`)
+ * **seeds two cases itself** first.
  *
- * Gate 2's reason is true, and the proof is also a passing test:
- * `workflows/case-lifecycle.spec.ts:185` is the only spec that sees case cards
- * — and it **seeds two cases itself** before looking. This file's specs seed
- * nothing, so there are no cards, and "no cases on the board" is exactly right.
+ * So the honest verdict for these nine gates is: **they were latent, not
+ * false.** Nothing here was an invisible pass. The value of this change is that
+ * each surviving skip now reports a real absence instead of depending on a
+ * probe that could not have known — not that any test was recovered.
  *
- * 🔑 SO THE SKIP MOVED FROM A FALSE REASON TO A TRUE ONE, AND THE COUNT — the
- * only thing CI reports — COULD NOT SHOW IT. De-racing gate 1 simply hands
- * control to gate 2. A stable skip count is compatible with every reason
- * underneath it changing.
+ * ➡️ WHERE THE REAL SUSPECTS ARE, AND THEY ARE NOT `isVisible()`:
+ * The two largest clusters above (21 of 39 records) come from
+ * `spec-coverage/deelzaak-support.spec.ts` and
+ * `spec-coverage/related-case-linking.spec.ts`, which gate on
+ * **`(await tab.count()) === 0`** after a bare `waitForTimeout(1000)`.
+ * `count()` DOES NOT WAIT EITHER — it is the same defect with a different
+ * method name, invisible to any `isVisible` grep — and the reason blames the
+ * DEPLOYMENT ("deploy mismatch"), which is the tell. "Sub-cases" is declared in
+ * `src/manifest.json`. **Unverified**, deliberately: declaration is not
+ * rendering, and this file has already been wrong about that once.
  *
- * 🔑 AND SOURCE CODE PROVES A SURFACE IS DECLARED, NOT THAT IT RENDERS. What
- * settled both gates was not reading the app — it was finding a PASSING TEST
- * that already exercised the same thing. Prefer that evidence.
- *
- * ➡️ FOLLOW-UP, EVIDENCED AND NOT DONE HERE: to actually recover these tests,
- * seed cases the way `case-lifecycle.spec.ts` does rather than hoping the
- * shared fixture has some. That is a fixture change, not a timing change, and
- * it belongs in its own reviewed commit.
- *
- * So this file's value is NOT that it unskipped anything. It is that each
- * surviving skip now reports a real absence rather than a race, so the next
- * person can trust it instead of re-deriving it — as I had to, twice.
+ * 🔑 HOW TO CHECK A SKIP REASON (this is the instrument, and it is cheap):
+ *   1. download the run's `playwright-report` artifact and unzip it;
+ *   2. the report data is base64 inside index.html:
+ *      `<script id="playwrightReportBase64">data:application/zip;base64,…`
+ *   3. b64-decode → it is a ZIP of JSON → collect every
+ *      `{"type":"skip","description":…}`.
+ * The `list` reporter drops reasons entirely, so the CI log CANNOT answer this.
+ * Compare the reason SETS between base and branch — the skip COUNT is the one
+ * number that cannot tell you whether a reason changed.
  */
 
 /**
