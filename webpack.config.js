@@ -61,18 +61,54 @@ webpackConfig.entry = {
 	},
 }
 
-// Use local source when available (monorepo dev), otherwise fall back to npm
-// package. The USE_LOCAL_LIB env var lets CI/release builds force the published
-// @conduction/nextcloud-vue (npm) even when a stale sibling worktree is present
-// next to this repo: `USE_LOCAL_LIB=false` disables the sibling-source alias.
-// LOCAL_LIB_PATH repoints the alias at another checkout of the library's `src`
-// (e.g. a git worktree on a feature branch), so a library change can be built
+// USE_LOCAL_LIB is opt-IN (ADR-090). It used to be opt-OUT — unset, which is its
+// normal state, meant "build from whatever sibling checkout happens to be on
+// disk". That is the wrong default for a build that can ship, and here it was
+// not theoretical: with the sibling present this config failed to build at all
+// with
+//   Module not found: Error: Can't resolve 'stream' in '.../node_modules/sax/lib'
+// because compiling the sibling's SOURCE also drags in the sibling's own
+// dependency graph, which needs node core polyfills this app does not configure.
+// The same command with USE_LOCAL_LIB=false succeeds.
+//
+// LOCAL_LIB_PATH still repoints the alias at another checkout of the library's
+// `src` (e.g. a worktree on a feature branch), so a library change can be built
 // and tested here without touching the shared sibling checkout.
+//
+// The sibling must satisfy this app's own declared range, and the check fails
+// CLOSED: if it cannot run, the sibling is refused rather than trusted.
 const localLib = process.env.LOCAL_LIB_PATH
 	? path.resolve(process.env.LOCAL_LIB_PATH)
 	: path.resolve(__dirname, '../nextcloud-vue/src')
-const useLocalLib =
-	process.env.USE_LOCAL_LIB === 'false' ? false : fs.existsSync(localLib)
+const localLibPkg = path.resolve(localLib, '../package.json')
+let useLocalLib = process.env.USE_LOCAL_LIB === 'true' && fs.existsSync(localLib)
+if (useLocalLib) {
+	let localVersion = 'unreadable'
+	let satisfied = false
+	try {
+		// eslint-disable-next-line n/no-extraneous-require
+		const semver = require('semver')
+		const required =
+			require('./package.json').dependencies['@conduction/nextcloud-vue']
+		localVersion = String(
+			JSON.parse(fs.readFileSync(localLibPkg, 'utf8')).version || '',
+		)
+		satisfied = semver.satisfies(localVersion, required, {
+			includePrerelease: true,
+		})
+	} catch (e) {
+		satisfied = false
+	}
+
+	if (!satisfied) {
+		// eslint-disable-next-line no-console
+		console.warn(
+			`[procest] IGNORING sibling @conduction/nextcloud-vue@${localVersion} — `
+				+ "it does not satisfy this app's declared range. Building against the npm dist.",
+		)
+		useLocalLib = false
+	}
+}
 
 webpackConfig.resolve = {
 	extensions: ['.vue', '.js'],
