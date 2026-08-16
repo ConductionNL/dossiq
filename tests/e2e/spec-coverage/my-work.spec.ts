@@ -14,13 +14,16 @@
 
 import { test, expect } from '@playwright/test'
 import { dismissSupportDialog } from '../helpers/nav'
+// Route named after the component that renders it, so this spec states WHICH
+// screen it covers in executable code rather than in a comment.
+import { MyWorkCards } from '../helpers/page-components'
 
 test.describe('My Work spec coverage', () => {
 	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
 	test("shows the current user's assigned cases as a card list", async ({
 		page,
 	}) => {
-		await page.goto('/index.php/apps/procest/my-work')
+		await page.goto(`/index.php/apps/procest${MyWorkCards}`)
 		await dismissSupportDialog(page)
 		// The My Work route renders NO page heading — measured on a CI runner
 		// (2026-08-04) it exposes zero `heading` roles. Identify the view by
@@ -37,7 +40,7 @@ test.describe('My Work spec coverage', () => {
 
 	// @e2e openspec/specs/my-work/spec.md#personal-workload-view
 	test('view mode can be switched between cards and table', async ({ page }) => {
-		await page.goto('/index.php/apps/procest/my-work')
+		await page.goto(`/index.php/apps/procest${MyWorkCards}`)
 		await dismissSupportDialog(page)
 		const tableToggle = page.getByRole('button', { name: /Table/ }).first()
 		await expect(tableToggle).toBeVisible({ timeout: 10000 })

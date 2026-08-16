@@ -16,6 +16,10 @@
 import { test, request, type APIRequestContext } from '@playwright/test'
 import { shootSurface, shootByNav } from './_visual-helpers'
 import { STORAGE_STATE } from '../helpers/auth'
+// Routes named after the component that renders them — see
+// tests/e2e/helpers/page-components.ts for why the identifier, not a comment,
+// is what states which screen a baseline belongs to.
+import { VerwerkingenOverview } from '../helpers/page-components'
 import {
 	getRequestToken,
 	ensureCaseType,
@@ -36,12 +40,17 @@ test.describe('Procest — visual baselines', () => {
 		await shootByNav(page, `${APP}#/`, 'Cases', 'cases.png')
 	})
 
-	// VerwerkingenOverview (src/views/admin/VerwerkingenOverview.vue) — the FG
-	// window on OR's processing-activity register (avg-verwerkingenlogging).
-	// The surface is data-light (catalogue table or seed empty-state), so the
-	// shot is deterministic once the repair step has seeded the drafts.
+	// The FG window on OR's processing-activity register
+	// (avg-verwerkingenlogging). The surface is data-light (catalogue table or
+	// seed empty-state), so the shot is deterministic once the repair step has
+	// seeded the drafts. The screen is named by the imported constant rather
+	// than by this paragraph — a comment is not a reference.
 	test('verwerkingen overview (AVG)', async ({ page }) => {
-		await shootSurface(page, `${APP}#/verwerkingen`, 'verwerkingen-overview.png')
+		await shootSurface(
+			page,
+			`${APP}#${VerwerkingenOverview}`,
+			'verwerkingen-overview.png',
+		)
 	})
 })
 

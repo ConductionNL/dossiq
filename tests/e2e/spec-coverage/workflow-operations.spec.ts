@@ -12,6 +12,9 @@
 
 import { test, expect } from '@playwright/test'
 import { navTo, navToRoute, trackProcestErrors } from '../helpers/nav'
+// Routes named after the component that renders them, so this spec states
+// WHICH screen it covers in executable code rather than in a comment.
+import { CasesOnMapView, WorkflowBoard } from '../helpers/page-components'
 
 test.describe('Workflow Board page', () => {
 	// @e2e openspec/specs/workflow-board/spec.md#workflow-board-renders-kanban-shell
@@ -20,7 +23,7 @@ test.describe('Workflow Board page', () => {
 	}) => {
 		// The nav label is "Workflow board" (lower-case b) and it sits inside
 		// the collapsed "Work queue" group — navigate by route instead.
-		await navToRoute(page, '/workflow-board')
+		await navToRoute(page, WorkflowBoard)
 		// The board view renders its own header h2 inside `.workflow-board__header`
 		// (the page also has a dashboard-wrapper title + widget title with the
 		// same text, so scope to the board's own header).
@@ -54,7 +57,7 @@ test.describe('Workflow Board page', () => {
 		const errors = trackProcestErrors(page)
 		// The nav label is "Workflow board" (lower-case b) and it sits inside
 		// the collapsed "Work queue" group — navigate by route instead.
-		await navToRoute(page, '/workflow-board')
+		await navToRoute(page, WorkflowBoard)
 		await expect(page.locator('.workflow-board__header h2')).toBeVisible({
 			timeout: 15000,
 		})
@@ -71,7 +74,7 @@ test.describe('Case Map page', () => {
 		const errors = trackProcestErrors(page)
 		// Case Map has no top-level sidebar leaf after the nav-dedup pass; its
 		// /map page route stays reachable, so navigate to it client-side.
-		await navToRoute(page, '/map')
+		await navToRoute(page, CasesOnMapView)
 		// The rendered heading is "Cases on map" — measured on a CI runner
 		// (2026-08-04). "Case map" is the manifest page TITLE, not the heading
 		// the view renders.
