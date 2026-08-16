@@ -38,6 +38,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { becomesVisible } from '../helpers/becomes-visible.js'
 
 const ADMIN_SETTINGS_URL = '/settings/admin/procest'
 
@@ -52,7 +53,7 @@ const ADMIN_SETTINGS_URL = '/settings/admin/procest'
 async function openFirstCaseTypeWorkflowTabOrSkip(page): Promise<boolean> {
 	await page.goto(ADMIN_SETTINGS_URL)
 	const heading = page.getByRole('heading', { name: 'Case Type Management' })
-	if (!(await heading.isVisible({ timeout: 15000 }).catch(() => false))) {
+	if (!(await becomesVisible(heading, 15000))) {
 		test.skip(
 			true,
 			'Case Type Management admin section not present in the deployed build',
@@ -61,7 +62,7 @@ async function openFirstCaseTypeWorkflowTabOrSkip(page): Promise<boolean> {
 	}
 
 	const row = page.locator('.viewTableRow, tr[role="row"], .list-item').first()
-	if (!(await row.isVisible({ timeout: 10000 }).catch(() => false))) {
+	if (!(await becomesVisible(row))) {
 		test.skip(
 			true,
 			'No case types in the deployed/seeded register — the Workflow tab is data-dependent.',
@@ -73,7 +74,7 @@ async function openFirstCaseTypeWorkflowTabOrSkip(page): Promise<boolean> {
 	const workflowTab = page
 		.locator('.case-type-detail__tab', { hasText: 'Workflow' })
 		.first()
-	if (!(await workflowTab.isVisible({ timeout: 10000 }).catch(() => false))) {
+	if (!(await becomesVisible(workflowTab))) {
 		test.skip(
 			true,
 			'Workflow tab not present on the case type detail page (deploy mismatch).',
@@ -111,7 +112,7 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 		if (!opened) return
 
 		const node = page.locator('.workflow-node').first()
-		if (!(await node.isVisible({ timeout: 5000 }).catch(() => false))) {
+		if (!(await becomesVisible(node, 5000))) {
 			test.skip(
 				true,
 				'No workflow definition with status nodes for this case type — canvas keyboard interaction is data-dependent.',
@@ -144,7 +145,7 @@ test.describe('Visual workflow editor canvas (workflow-editor-integration)', () 
 		if (!opened) return
 
 		const canvas = page.locator('.workflow-editor')
-		if (!(await canvas.isVisible({ timeout: 5000 }).catch(() => false))) {
+		if (!(await becomesVisible(canvas, 5000))) {
 			test.skip(
 				true,
 				'No workflow defined for this case type yet — the palette only renders alongside the canvas.',
